@@ -9,7 +9,7 @@ const envSchema = workerEnvBase.extend({
 
   YJS_SECRET: z.string().min(16, 'YJS_SECRET must be at least 16 characters'),
   YJS_PORT: z.coerce.number().default(appConfig.devPorts.yjs),
-  YJS_DB_POOL_MAX: z.coerce.number().default(20),
+  YJS_DB_POOL_MAX: z.coerce.number().default(10),
 
   NODB: z
     .string()

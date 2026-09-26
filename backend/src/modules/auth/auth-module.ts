@@ -1,7 +1,7 @@
 import { defineBackendModule } from '#/lib/module';
 import { authGeneralHandlers } from './general/general-handlers';
-import { schedulePruneDevices } from './jobs/prune-devices';
-import { scheduleReapUnprovenAccounts } from './jobs/reap-unproven-accounts';
+import { pruneDevices } from './jobs/prune-devices';
+import { reapUnprovenAccounts } from './jobs/reap-unproven-accounts';
 import { authMagicLinkHandlers } from './magic/magic-handlers';
 import { authOAuthHandlers } from './oauth/oauth-handlers';
 import { authPasskeysHandlers } from './passkeys/passkeys-handlers';
@@ -14,10 +14,10 @@ defineBackendModule({
   description: `Endpoints for authentication, supporting multiple sign-in methods including OAuth
     (Google, Microsoft, GitHub) and passkeys (WebAuthn). They cover sign-up, sign-in, email verification,
     account linking, and impersonation for system admins.`,
-  // Jobs run on the migration-owning instance only, so exactly one process reaps and prunes.
+  // Nightly sweeps, staggered around the partition maintenance at 03:15 UTC.
   jobs: [
-    { name: 'reap-unproven-accounts', start: () => scheduleReapUnprovenAccounts() },
-    { name: 'prune-devices', start: () => schedulePruneDevices() },
+    { name: 'reap-unproven-accounts', cron: '30 3 * * *', run: () => reapUnprovenAccounts() },
+    { name: 'prune-devices', cron: '0 3 * * *', run: () => pruneDevices() },
   ],
   routes: [
     { path: '/auth/', app: authGeneralHandlers },

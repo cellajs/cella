@@ -13,6 +13,7 @@ services:
       - '4002:4002'
       - '4003:4003'
       - '4004:4004'
+      - '4005:4005'
     stop_grace_period: '30s'
     env_file:
       - .env
@@ -225,6 +226,41 @@ services:
       coHosted: true
       bindings:
         OAUTH_URL: '@{self.url}'
+  jobs:
+    image: ${REGISTRY}/backend:${JOBS_TAG:-latest}
+    profiles: [jobs]
+    restart: unless-stopped
+    ports:
+      - '4005:4005'
+    stop_grace_period: '30s'
+    env_file:
+      - .env
+      - .env.runtime
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      MODE: jobs
+      PORT: '4005'
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4005/health']
+      interval: '5s'
+      timeout: '5s'
+      retries: 3
+      start_period: '15s'
+    x-service:
+      slug: jobs
+      healthPort: 4005
+      healthTimeoutSeconds: 240
+      healthExpectStatus: 204
+      runRelease: false
+      replacementStrategy: stop-first
+      drainSeconds: 0
+      instanceType: DEV1-S
+      reusesImageOf: backend
+      coHosted: true
   frontend:
     image: ${REGISTRY}/frontend:${FRONTEND_TAG:-latest}
     profiles: [frontend]

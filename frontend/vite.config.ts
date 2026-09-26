@@ -100,6 +100,7 @@ const repoDocRoutes = {
   'cella/INTEROPERABILITY.md': '/docs/page/architecture/interoperability',
   'oauth/README.md': '/docs/page/architecture/oauth',
   'mcp/README.md': '/docs/page/architecture/mcp',
+  'jobs/README.md': '/docs/page/architecture/jobs',
   'bench/README.md': '/docs/page/guides/load-testing',
 } as const;
 

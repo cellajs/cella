@@ -16,8 +16,8 @@
 #
 # Per service: `<svc>-deps` (prod install) / `<svc>-builder` (full install +
 # tsup build) → `<svc>` (production target). Targets: `backend` (also reused by
-# the `mcp` service, MODE=mcp on :4003 via `reusesImageOf`), `cdc`,
-# `yjs`. Not used in local dev.
+# the `mcp`, `oauth` and `jobs` services through `reusesImageOf`, each with its
+# own MODE and port), `cdc`, `yjs`. Not used in local dev.
 # =============================================================================
 
 # -----------------------------------------------------------------------------
@@ -126,7 +126,7 @@ EXPOSE 4000
 
 # Compose injects its own healthcheck on deploy (infra/compose/infrastructure.ts);
 # this baked one covers standalone runs. ${PORT} keeps it honest when the image
-# is reused on another port (mcp runs it with PORT=4003).
+# is reused on another port (mcp runs it with PORT=4003, jobs with PORT=4005).
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-4000}/health || exit 1
 

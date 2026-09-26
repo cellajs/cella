@@ -5,7 +5,6 @@ import { baseLog } from '#/lib/pino';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { getIsoDate } from '#/utils/iso-date';
 
-const HOUR_MS = 60 * 60 * 1000;
 /** Consumed codes and rotated refresh tokens stay this long for replay detection, then go. */
 const CONSUMED_RETENTION_DAYS = 30;
 
@@ -25,20 +24,9 @@ export async function sweepOidcPayloads(): Promise<number> {
   return deleted.length;
 }
 
-/** Hourly, on the migration-owning instance like every backend job; the first run waits so boot stays quiet. */
+/** Hourly, on the jobs service; the quarter-hour offset keeps it clear of the digest tick. */
 export const oidcPayloadsSweepJob: BackendJob = {
   name: 'oidc-payloads-sweep',
-  start: () => {
-    const run = () => {
-      sweepOidcPayloads().catch((error) => baseLog.error('oidc_payloads sweep failed', { err: error }));
-    };
-    const first = setTimeout(run, 5 * 60 * 1000);
-    const interval = setInterval(run, HOUR_MS);
-    first.unref();
-    interval.unref();
-    return () => {
-      clearTimeout(first);
-      clearInterval(interval);
-    };
-  },
+  cron: '15 * * * *',
+  run: () => sweepOidcPayloads(),
 };

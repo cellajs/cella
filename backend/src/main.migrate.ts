@@ -16,6 +16,11 @@ try {
 
   console.info(pc.green(`${timestamp()} [migrate] ✓ Migrations complete`));
 
+  // The job store (pg-boss) is installed and upgraded here as the table owner; runtime processes never migrate it.
+  console.info(`${timestamp()} [migrate] Installing job store...`);
+  const { installJobsSchema } = await import('../scripts/db/install-jobs-schema');
+  await installJobsSchema();
+
   // Seed the system administrator only for an empty user table; the lazy import keeps mock helpers out of this path.
   console.info(`${timestamp()} [migrate] Seeding system admin (idempotent)...`);
   const { initSeed } = await import('../scripts/seeds/00-init.seed');

@@ -1345,6 +1345,27 @@
    ],
    "requires": [],
    "summary": "Keys are named after their Scaleway bearer: the Owner API key (SCW_OWNER_*, your own key as organization Owner; a durable one mints a 30-minute key per privileged run) and the admin application key (SCW_ADMIN_* in infra/.env.<mode>; setup writes it, Fetch admin application key does elsewhere). SCW_BOOTSTRAP_* and SCW_STATE_* are read for one release with rename warnings. Apply validates the key, previews and confirms once, and verifies live grants and database privileges afterwards. Stack locks are renewed leases released on Ctrl-C. A preflight names owed Applies in the deploy and in the infra-preflight job on release PRs. keychain: and op: references resolve when the env file loads. Synced files arrive migrated; operators update their infra/.env.<mode> once."
+  },
+  {
+   "id": "20260926T0700-jobs-pg-boss",
+   "version": "next",
+   "title": "Scheduled jobs run on pg-boss through the jobs service",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/scripts",
+    "infra/config",
+    "shared/config"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm --filter infra compose:generate",
+    "pnpm check"
+   ],
+   "summary": "BackendJob is { name, cron, run }: pg-boss cron (UTC) on a singleton queue, run by the new jobs service (MODE=jobs, devPorts.jobs 4005, jobs/ dev package, coHosted under singleVM, stop-first). defineBackendModule gains queues: [{ name, handler, ... }] (pg-boss queue options; the jobs service creates and works them). The RUN_MIGRATIONS_ON_BOOT timers in main.api.ts are gone. The migrate companion installs the pgboss schema and grants runtime_role (installJobsSchema, side-effect block jobs_grants); every runtime process uses the runtime DSN with migrate: false. The MCP worker no longer starts pg-boss or needs DATABASE_ADMIN_URL; its health component drops queueDepth. /health gains a jobs component (cron freshness, per-queue depth, dead letters), pnpm jobs inspects the store. Pool defaults: DATABASE_POOL_MAX 20, cdc 10, YJS_DB_POOL_MAX 10. Apps convert each job, add services.jobs and devPorts.jobs to a pinned config, regenerate migrations and compose, and run Apply infra change once before deploying."
   }
  ]
 }

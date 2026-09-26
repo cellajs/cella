@@ -30,8 +30,8 @@ Three principles ([infra/README.md](../infra/README.md#core-philosophy)): **crea
  │                  ▼                ▼                  ▼                  │
  │           ┌─────────────┐  ┌─────────────┐ ┌──────────────────────────┐ │
  │           │ frontend VM │  │ backend VM  │ │  workers: cdc, yjs, mcp, │ │
- │           │   (Caddy)   │  │             │ │  oauth (run on backend   │ │
- │           │             │  │             │ │  VM when singleVM)       │ │
+ │           │   (Caddy)   │  │             │ │  oauth, jobs (run on     │ │
+ │           │             │  │             │ │  backend VM when singleVM)│ │
  │           └──────┬──────┘  └──────┬──────┘ └─────────┬────────────────┘ │
  │                  │                │                  │                  │
  │                  │                ▼                  ▼                  │
@@ -48,7 +48,7 @@ Three principles ([infra/README.md](../infra/README.md#core-philosophy)): **crea
      └─────────────────────────────┘  presigned URLs)
 ```
 
-- **Load balancer:** the only public entrypoint. Backend, yjs, mcp and oauth share the app origin via registry-declared `pathPrefix` values (`/api`, `/yjs`, `/mcp`, `/oauth`). The LB never rewrites paths. `cdc` never takes an LB route.
+- **Load balancer:** the only public entrypoint. Backend, yjs, mcp and oauth share the app origin via registry-declared `pathPrefix` values (`/api`, `/yjs`, `/mcp`, `/oauth`). The LB never rewrites paths. `cdc` and `jobs` never take an LB route.
 - **VMs:** public IP for egress only (image pulls). All inbound is dropped, including SSH. Every service gets its own VM unless `singleVM` co-hosts the workers and the frontend Caddy container on the backend VM.
 - **Frontend VM:** Caddy adds security headers/CSP and the SPA deep-link fallback.
 - **Database:** private-network only. A break-glass toggle can expose it temporarily ([Changing infrastructure](#changing-infrastructure)).
@@ -125,7 +125,7 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 | Strategy | When | Behavior | Downtime |
 | --- | --- | --- | --- |
 | **start-first** | backend, frontend, yjs, mcp (LB-backed) | Pulumi provisions the pending generation (`vm-<svc>-<genId>`) next to the active one. [tasks/cutover.ts](../infra/tasks/cutover.ts) reconciles the live LB server list with idempotent `SetBackendServers` calls: expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It always issues the corrective call, so an empty or stale pool is repaired. | None (LB overlap). |
-| **stop-first** | cdc (holds one Postgres replication slot) | Pulumi provisions only the new generation, replacing the old in the same `up`. The new worker takes the slot the old one releases on drain (lossless: the slot retains the WAL position). | Worker gap during replacement. |
+| **stop-first** | cdc (holds one Postgres replication slot), jobs (the one cron scheduler) | Pulumi provisions only the new generation, replacing the old in the same `up`. The new worker takes the slot the old one releases on drain (lossless: the slot retains the WAL position). | Worker gap during replacement. |
 | **exclusive** (`singleVM`) | the backend VM when it hosts a stop-first worker | Plan marked `exclusive` in [tasks/rollout-plans.ts](../infra/tasks/rollout-plans.ts): `drainSeconds` 0, no old IPs. The cutover health-gates, then points the LB pool straight at the new generation. | Yes, on that host. Split-VM (the default) is unaffected. |
 
 ### Runtime secret delivery

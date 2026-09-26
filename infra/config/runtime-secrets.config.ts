@@ -12,7 +12,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'mcp', 'oauth'],
+    services: ['backend', 'mcp', 'oauth', 'jobs'],
   },
   unsubscribeSecret: {
     secretName: 'unsubscribe-token-secret',
@@ -21,7 +21,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'mcp'],
+    services: ['backend', 'mcp', 'jobs'],
   },
   cdcSecret: {
     secretName: 'cdc-secret',
@@ -30,7 +30,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'cdc', 'mcp'],
+    services: ['backend', 'cdc', 'mcp', 'jobs'],
   },
   yjsSecret: {
     secretName: 'yjs-secret',
@@ -39,7 +39,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'yjs', 'mcp'],
+    services: ['backend', 'yjs', 'mcp', 'jobs'],
   },
   piiHashSecret: {
     secretName: 'pii-hash-secret',
@@ -48,7 +48,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'mcp'],
+    services: ['backend', 'mcp', 'jobs'],
   },
   dataEncryptionKey: {
     secretName: 'data-encryption-key',
@@ -57,7 +57,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'mcp', 'oauth'],
+    services: ['backend', 'mcp', 'oauth', 'jobs'],
   },
   adminEmail: {
     secretName: 'admin-email',
@@ -66,7 +66,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'operator',
     generation: 'manual',
-    services: ['backend', 'mcp'],
+    services: ['backend', 'mcp', 'jobs'],
   },
   brevoApiKey: {
     secretName: 'brevo-api-key',
@@ -75,7 +75,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: false,
     valueSource: 'operator',
     generation: 'manual',
-    services: ['backend', 'mcp'],
+    services: ['backend', 'mcp', 'jobs'],
   },
   scwAiApiKey: {
     secretName: 'scw-ai-api-key',
@@ -93,7 +93,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: false,
     valueSource: 'operator',
     generation: 'manual',
-    services: ['backend', 'cdc', 'yjs'],
+    services: ['backend', 'cdc', 'yjs', 'jobs'],
   },
   githubClientId: {
     secretName: 'github-client-id',

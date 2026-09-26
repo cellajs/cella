@@ -1,0 +1,20 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "incremental": true,
+    "tsBuildInfoFile": "./tsconfig.tsbuildinfo",
+    "allowImportingTsExtensions": true,
+    "rootDir": "../",
+    "sourceMap": true,
+    "inlineSources": true,
+    "sourceRoot": "/",
+    "skipLibCheck": true,
+    "paths": {
+      "#/*": ["../backend/src/*"],
+      "#json/*": ["../json/*"]
+    }
+  },
+  "include": ["src/**/*", "../shared/*"],
+  "exclude": ["**/node_modules", "**/dist", "**/.*/", "../backend/tests"]
+}

@@ -3,7 +3,6 @@ import { appConfig } from 'shared';
 import { waitForBackend } from 'shared/utils/wait-for-backend';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { env } from '#/env';
-import { getPgBoss, stopPgBoss } from '#/lib/pg-boss';
 import { baseLog } from '#/lib/pino';
 import { otel } from '#/lib/tracing';
 import '#/modules'; // composition root: registers every backend module (this worker mounts only mcp routes)
@@ -30,11 +29,6 @@ export async function startMcpWorker(options: { port?: number } = {}): Promise<v
 
   baseApp.route('/:tenantId/:organizationId/mcp', mcpHandlers);
 
-  if (hasAiKey) {
-    await getPgBoss();
-    baseLog.info('pg-boss started, queues ready');
-  }
-
   const server: ServerType = serve({ fetch: baseApp.fetch, hostname: '0.0.0.0', port }, () => {
     baseLog.info(`MCP service listening on port ${port}${hasAiKey ? '' : ' (AI features off)'}`);
   });
@@ -43,7 +37,6 @@ export async function startMcpWorker(options: { port?: number } = {}): Promise<v
     name: 'mcp-worker',
     cleanup: async () => {
       server.close();
-      if (hasAiKey) await stopPgBoss();
       await otel.shutdown();
     },
     log: (msg) => baseLog.info(msg),

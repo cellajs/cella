@@ -13,4 +13,4 @@ export const buildVerifiedSsl = (connectionString: string) => verifiedPostgresSs
  * open a logical replication slot, to admin users only. Append-only behaviour on the activities table
  * comes from the immutability triggers, not from role privileges.
  */
-export const cdcDb: PgDB = createPgConnection(env.DATABASE_CDC_URL, { max: 20, sslCa, logger: env.DEBUG });
+export const cdcDb: PgDB = createPgConnection(env.DATABASE_CDC_URL, { max: 10, sslCa, logger: env.DEBUG });

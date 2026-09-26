@@ -11,7 +11,7 @@ import '#/lib/i18n';
 import process from 'node:process';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { startGeoipRefresh } from '#/lib/geoip';
-import { getBackendJobs } from '#/lib/module';
+import { stopPgBoss } from '#/lib/pg-boss';
 import { otel } from '#/lib/tracing';
 import { registerCacheInvalidation } from '#/middlewares/product-cache/cache-invalidation';
 import { baseApp as app } from '#/routes';
@@ -22,7 +22,7 @@ otel.start();
 otel.verifyConnection();
 
 let server: import('@hono/node-server').ServerType | undefined;
-const stopJobs: (() => void)[] = [];
+let stopGeoipRefresh: (() => void) | undefined;
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).startTunnel : () => null;
 
@@ -49,13 +49,11 @@ const main = async () => {
     await pgMigrate(migrationDb, migrateConfig);
     const { schedulePartitionMaintenance } = await import('../scripts/db/schedule-partition-maintenance');
     await schedulePartitionMaintenance();
+    // The job store (pg-boss) is installed by the same owner that migrates; the jobs service runs it.
+    const { installJobsSchema } = await import('../scripts/db/install-jobs-schema');
+    await installJobsSchema();
 
     console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
-
-    // The migration-owning instance also owns every scheduled job, so only one instance runs each.
-    const jobs = getBackendJobs();
-    for (const job of jobs) stopJobs.push(job.start());
-    console.info(`${timestamp()} [startup] scheduled jobs: ${jobs.map((job) => job.name).join(', ') || 'none'}`);
   } else {
     console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false: skipping migrations (run as MODE=migrate)`);
   }
@@ -63,7 +61,7 @@ const main = async () => {
   registerCacheInvalidation();
 
   // Per process, not a scheduled job: every replica keeps its own GeoIP copy current.
-  stopJobs.push(startGeoipRefresh());
+  stopGeoipRefresh = startGeoipRefresh();
 
   server = serve(
     {
@@ -104,6 +102,9 @@ const main = async () => {
             port: appConfig.devPorts.oauth,
             inProcess: true,
           });
+        // The folded jobs service needs no port: this process's /health carries the jobs component.
+        if (appConfig.services.jobs.enabled)
+          await (await import('#/lib/jobs-worker')).startJobsWorker({ inProcess: true });
       }
 
       const tunnelUrl = await startTunnel();
@@ -124,7 +125,8 @@ Tunnel: ${pc.bold(pc.magentaBright(tunnelUrl || '-'))}`);
 setupGracefulShutdown({
   name: 'api',
   cleanup: async () => {
-    for (const stop of stopJobs) stop();
+    stopGeoipRefresh?.();
+    await stopPgBoss();
     if (server) {
       server.close();
     }

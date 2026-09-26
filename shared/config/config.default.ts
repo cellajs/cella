@@ -120,6 +120,8 @@ export const config = {
     yjs: { enabled: true as boolean },
     mcp: { enabled: false as boolean },
     oauth: { enabled: false as boolean },
+    // The job store's maintainer (cron and queue supervision); off means no sweeps or queues run anywhere.
+    jobs: { enabled: true as boolean },
   },
 
   // Cost escape hatch: when true the backend (MODE=api) also boots every enabled
@@ -159,6 +161,7 @@ export const config = {
     yjs: 4002,
     mcp: 4003,
     oauth: 4004,
+    jobs: 4005,
   },
 
   has: {

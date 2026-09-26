@@ -1,4 +1,5 @@
 import type { Hono } from 'hono';
+import type { Job, Queue, WorkOptions } from 'pg-boss';
 import type { ProductEntityType, TrackedEventType } from 'shared';
 import { type ModuleConfig, registerModule } from 'shared/module-registry';
 import type { Env } from '#/core/context';
@@ -7,10 +8,35 @@ import type { MutationHandler } from '#/lib/mutation-bus';
 import type { NotificationType } from '#/modules/notification/notification-types';
 import type { YjsMaterializer } from '#/modules/yjs/yjs-materializers';
 
-/** A periodic in-process job. `start` schedules it and returns the stop handle called on shutdown. */
+/**
+ * A periodic job: pg-boss cron on a singleton queue named after the job, run by the jobs service.
+ * One run per period whatever the number of API processes; a run that overruns delays the next
+ * one, never overlaps it. A throw fails the run (no retry, the next period runs again).
+ */
 export interface BackendJob {
+  /** Queue and schedule name, unique across jobs and queues. */
   name: string;
-  start: () => () => void;
+  /** Five-field cron expression, evaluated in UTC. */
+  cron: string;
+  run: () => Promise<unknown>;
+  /** Seconds a run may stay active before the store fails it; defaults to pg-boss's 15 minutes. */
+  expireInSeconds?: number;
+}
+
+/** A pg-boss job handler: one batch per call (`batchSize` 1 by default), a throw fails every job in it. */
+export type BackendQueueHandler = (jobs: Job<Record<string, unknown>>[]) => Promise<unknown>;
+
+/**
+ * A queue a module owns. The jobs service creates it, converges its options at every start, and
+ * runs `handler` when one is given; a queue without a handler is worked by another worker service.
+ * `partition: true` needs the table owner, so the migrate companion creates such queues (it creates
+ * every declared queue); a dead-letter queue named here must be declared as a queue too.
+ */
+export interface BackendQueue extends Omit<Queue, 'name' | 'notify'> {
+  name: string;
+  handler?: BackendQueueHandler;
+  /** Worker options for `handler` (`batchSize`, `localConcurrency`, polling); `notify` wake-ups are on. */
+  work?: Omit<WorkOptions, 'includeMetadata' | 'transactional' | 'perJobResults'>;
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: a mounted app carries its own route schema; the entrypoint only needs the Env.
@@ -95,8 +121,10 @@ export interface BackendModule extends ModuleConfig {
   yjsMaterializer?: YjsMaterializer;
   /** In-request reactions keyed by `<type>.<verb>`; a module may react to any tracked type, several to one event. */
   onMutation?: Partial<Record<TrackedEventType, MutationHandler>>;
-  /** Scheduled jobs; the API entrypoint starts them on the migration-owning instance only, so exactly one process runs each. */
+  /** Cron jobs the jobs service schedules and runs (see {@link BackendJob}). */
   jobs?: BackendJob[];
+  /** Queues the jobs service creates and, given a handler, works (see {@link BackendQueue}). */
+  queues?: BackendQueue[];
   /** Notification source for `productEntity`: `true` for the table-derived defaults, or overrides (indexed by the notification module). */
   notifications?: true | ModuleNotifications;
   /** Handler apps the API entrypoint mounts (see {@link BackendRoutePhase}); the composition root is the mount list. */
@@ -106,6 +134,7 @@ export interface BackendModule extends ModuleConfig {
 const backendModules: BackendModule[] = [];
 const listeners: ((module: BackendModule) => void)[] = [];
 const backendJobs: BackendJob[] = [];
+const backendQueues: BackendQueue[] = [];
 const backendRoutes: BackendRoute[] = [];
 
 /** Metadata goes to the shared registry, capabilities to registration listeners. Call once at module-load time. */
@@ -115,6 +144,7 @@ export function defineBackendModule(module: BackendModule): void {
     yjsMaterializer: _yjsMaterializer,
     onMutation: _onMutation,
     jobs = [],
+    queues = [],
     routes = [],
     notifications: _notifications,
     ...metadata
@@ -122,6 +152,7 @@ export function defineBackendModule(module: BackendModule): void {
   registerModule(metadata);
   backendModules.push(module);
   backendJobs.push(...jobs);
+  backendQueues.push(...queues);
   backendRoutes.push(...routes);
   for (const listener of listeners) listener(module);
 }
@@ -131,7 +162,7 @@ export function getBackendRoutes(): readonly BackendRoute[] {
   return backendRoutes;
 }
 
-/** Registers a job that belongs to no module (core infrastructure such as DB maintenance). */
+/** Registers a job that belongs to no module (core infrastructure). */
 export function registerBackendJob(job: BackendJob): void {
   backendJobs.push(job);
 }
@@ -139,6 +170,11 @@ export function registerBackendJob(job: BackendJob): void {
 /** Jobs from every module definition and direct registration, in registration order. */
 export function getBackendJobs(): readonly BackendJob[] {
   return backendJobs;
+}
+
+/** Queues from every module definition, in registration order. */
+export function getBackendQueues(): readonly BackendQueue[] {
+  return backendQueues;
 }
 
 /** Subscribe to backend module registrations; replays modules already registered. */
