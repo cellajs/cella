@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { generateRandomCodeVerifier, generateRandomState } from 'oauth4webapi';
 import { github, githubCallback, google, googleCallback, invokeToken, microsoft, microsoftCallback } from 'sdk';
 import { appConfig } from 'shared';
+import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -9,6 +10,7 @@ import { mailer } from '#/lib/mailer';
 import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/helpers/providers';
+import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
@@ -350,8 +352,20 @@ describe('OAuth Authentication', async () => {
     const state = 'mock-state-connect';
     const providerEmail = 'github-user@example.com';
 
-    /** The pin startOAuthConnect leaves: a token row for the user, and its raw value in this browser's cookie. */
+    /**
+     * The pin startOAuthConnect leaves: a token row for the user and the session that asked, and its raw value in this
+     * browser's cookie. Returns that session's id.
+     */
     const pinConnect = async (user: { id: string; email: string }) => {
+      const sessionId = generateId();
+      await db.insert(sessionsTable).values({
+        id: sessionId,
+        secret: hashToken(nanoid(40)),
+        userId: user.id,
+        type: 'regular',
+        authStrategy: 'passkey',
+        expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
+      });
       const rawPin = nanoid(40);
       await db.insert(tokensTable).values({
         secret: hashToken(rawPin),
@@ -359,9 +373,11 @@ describe('OAuth Authentication', async () => {
         email: user.email,
         userId: user.id,
         createdBy: user.id,
+        sessionId,
         expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
       });
       mockCookieStore.set('oauth-connect', rawPin);
+      return sessionId;
     };
 
     const connectCallback = (payload: Record<string, unknown> = {}) => {
@@ -429,6 +445,27 @@ describe('OAuth Authentication', async () => {
       expect(await identitiesOf(attacker.id)).toHaveLength(1);
     });
 
+    it('must not connect a provider via a pin whose session has ended', async () => {
+      const user = await createUser('local-account@example.com');
+      const sessionId = await pinConnect(user);
+
+      // Signed out, or revoked from another device, while the provider's page stayed open in this browser.
+      await db
+        .update(sessionsTable)
+        .set({ revokedAt: new Date().toISOString() })
+        .where(eq(sessionsTable.id, sessionId));
+      const ended = await connectCallback();
+      expect(ended.response.status).toBe(401);
+      expect((ended.error as { type: string }).type).toBe('oauth-connect_not_found');
+      expect(await identitiesOf(user.id)).toHaveLength(0);
+      expect(await db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-connect'))).toHaveLength(0);
+
+      // A new pin of a live session connects (positive control).
+      await pinConnect(user);
+      expect((await connectCallback()).response.status).toBe(302);
+      expect(await identitiesOf(user.id)).toHaveLength(1);
+    });
+
     it('connects once per pin, then refuses the same callback', async () => {
       const user = await createUser('local-account@example.com');
       await pinConnect(user);
@@ -444,20 +481,25 @@ describe('OAuth Authentication', async () => {
     it('starts a connect only with a pin of the signed-in account, and keeps any user id out of the state', async () => {
       const user = await createUser('local-account@example.com');
       const other = await createUser('other-account@example.com');
-      const signedInAs = (id: string) =>
-        vi.mocked(resolveSession).mockResolvedValueOnce({ user: { id }, session: { id: 'session' } } as never);
+      const signedInAs = (id: string, sessionId = 'session') =>
+        vi.mocked(resolveSession).mockResolvedValueOnce({ user: { id }, session: { id: sessionId } } as never);
 
       signedInAs(user.id);
       const unpinned = await call(github, { query: { type: 'connect' }, headers: defaultHeaders });
       expect(unpinned.response.status).toBe(401);
 
-      await pinConnect(other);
-      signedInAs(user.id);
+      const othersSession = await pinConnect(other);
+      signedInAs(user.id, othersSession);
       const othersPin = await call(github, { query: { type: 'connect' }, headers: defaultHeaders });
       expect(othersPin.response.status).toBe(401);
 
-      await pinConnect(user);
+      // The user's own pin, but from another of their sessions: refused too.
+      const ownSession = await pinConnect(user);
       signedInAs(user.id);
+      const otherSessionsPin = await call(github, { query: { type: 'connect' }, headers: defaultHeaders });
+      expect(otherSessionsPin.response.status).toBe(401);
+
+      signedInAs(user.id, ownSession);
       const started = await call(github, { query: { type: 'connect' }, headers: defaultHeaders });
       expect(started.response.status).toBe(302);
       const statePayload = [...mockCookieStore.entries()].find(([name]) => name.startsWith('oauth-state-'))?.[1];

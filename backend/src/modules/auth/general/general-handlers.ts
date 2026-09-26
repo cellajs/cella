@@ -138,6 +138,9 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
   // first, so it goes whatever becomes of the session below and the next person at a shared computer cannot reopen it.
   if (await getAuthCookie(ctx, 'magic')) await spendCookieToken(ctx, 'magic');
 
+  // Likewise a provider connect started here and never finished: the next person must not finish it on this account.
+  if (await getAuthCookie(ctx, 'oauth-connect')) await spendCookieToken(ctx, 'oauth-connect');
+
   // A second-factor challenge this browser holds ends too: its cookie goes and its token row is spent.
   if (await getAuthCookie(ctx, 'confirm-mfa')) {
     await spendCookieToken(ctx, 'confirm-mfa');

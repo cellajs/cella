@@ -151,8 +151,9 @@ const connectCallbackFlow = async ({
   provider,
   identity = null,
 }: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
+  // Spent only while the session that issued it lives: a connect abandoned before a sign-out cannot be finished.
   const pin = await spendCookieToken(ctx, 'oauth-connect');
-  if (!pin?.userId) throw new AppError(401, 'oauth-connect_not_found', 'warn');
+  if (!pin?.userId || !pin.sessionId) throw new AppError(401, 'oauth-connect_not_found', 'warn');
   const connectUserId = pin.userId;
 
   const user = await findUserById({ var: { db } }, { id: connectUserId });

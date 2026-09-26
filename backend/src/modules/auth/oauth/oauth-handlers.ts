@@ -29,10 +29,17 @@ const microsoftScopes = ['openid', 'profile', 'email'];
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(authOAuthRoutes.startOAuthConnect, async (ctx) => {
-  const { user } = ctx.var;
+  const { user, session } = ctx.var;
 
-  // The provider's callback is a navigation from another site: this Lax cookie's token is what names the account.
-  await issueCookieToken(ctx, { type: 'oauth-connect', userId: user.id, email: user.email, createdBy: user.id });
+  // The provider's callback is a navigation from another site: this Lax cookie's token is what names the account. It
+  // serves only while the session that asked lives, so a sign-out (here or elsewhere) ends a connect left half-way.
+  await issueCookieToken(ctx, {
+    type: 'oauth-connect',
+    userId: user.id,
+    email: user.email,
+    createdBy: user.id,
+    sessionId: session.id,
+  });
 
   return ctx.body(null, 204);
 });

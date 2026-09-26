@@ -1,4 +1,4 @@
-import { and, eq, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { and, eq, gt, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import type { TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -8,6 +8,7 @@ import { AppError } from '#/core/error';
 import { baseDb, type DbOrTx, type Tx } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { resolveSession } from '#/modules/auth/general/helpers/session';
+import { sessionsTable } from '#/modules/auth/sessions-db';
 import {
   type CookieTokenType,
   type LinkTokenType,
@@ -315,7 +316,9 @@ interface SpendCookieTokenOpts {
  * something for the spend, such as a session after a second factor, goes on only with the returned row: of two
  * concurrent completions exactly one gets it. Call it once the proof has succeeded; a failed attempt leaves the token
  * for the next try.
- * @returns The spent token, or null when there was nothing live to spend (no cookie, never issued, spent or expired).
+ * A token issued for one session serves only that session: once it has ended, the token is spent without granting.
+ * @returns The spent token, or null when there was nothing live to spend (no cookie, never issued, spent or expired,
+ *   or its session has ended).
  */
 export const spendCookieToken = async (
   ctx: Context<Env>,
@@ -327,5 +330,19 @@ export const spendCookieToken = async (
   if (!cookie) return null;
 
   const [spent] = await db.delete(tokensTable).where(boundTo(type, cookie)).returning(tokenColumns);
-  return spent && !isExpiredDate(spent.expiresAt) ? spent : null;
+  if (!spent || isExpiredDate(spent.expiresAt)) return null;
+  if (spent.sessionId && !(await isLiveSession(db, spent.sessionId))) return null;
+  return spent;
+};
+
+/** Whether a session is still live: neither revoked nor expired. */
+const isLiveSession = async (db: DbOrTx, sessionId: string) => {
+  const [live] = await db
+    .select({ id: sessionsTable.id })
+    .from(sessionsTable)
+    .where(
+      and(eq(sessionsTable.id, sessionId), isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, getIsoDate())),
+    )
+    .limit(1);
+  return !!live;
 };
