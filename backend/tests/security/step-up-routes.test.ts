@@ -23,6 +23,7 @@ import { mailer } from '#/lib/mailer';
 import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
+import { type AuthStrategy, sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
@@ -37,6 +38,7 @@ import {
   createTestUser,
   createTotpUser,
   type ErrorResponse,
+  insertTestSession,
 } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient, type TestResult } from '../test-client';
@@ -78,8 +80,8 @@ const expectStepUpRequired = (result: TestResult) => {
 
 /**
  * Account-security routes need the user present again on the very session: a stale session, an impersonation, a
- * step-up of another session and an emailed link opened elsewhere are all refused, and the same request passes once
- * this session stepped up (the positive control).
+ * step-up of another session or past its window, a recent sign-in without the factor the user holds and an emailed
+ * link opened elsewhere are refused; the same request passes once this session stepped up (the positive control).
  */
 describe('account-security routes need a step-up', async () => {
   const call = await createAppClient();
@@ -325,6 +327,37 @@ describe('account-security routes need a step-up', async () => {
 
     expectStepUpRequired(await call(deleteTotp, { headers: other.headers }));
     expect((await call(deleteTotp, { headers: stepped.headers })).response.status).toBe(204);
+  });
+
+  it('must not pass the guard via a step-up older than ten minutes', async () => {
+    const user = await totpHolder('old-step-up');
+    const session = await insertSession(user, STALE);
+    await stepUpWithTotp(session);
+    await db
+      .update(sessionsTable)
+      .set({ steppedUpAt: new Date(Date.now() - 11 * 60 * 1000).toISOString() })
+      .where(eq(sessionsTable.id, session.id));
+
+    expectStepUpRequired(await call(deleteTotp, { headers: session.headers }));
+    expect(await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id))).toHaveLength(1);
+  });
+
+  it('must not pass the guard via a recent sign-in that proved no factor the user holds', async () => {
+    const user = await totpHolder('recent-magic-sign-in');
+    const totpsOf = () => db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
+    /** A session of this user signed in a minute ago with `authStrategy`. */
+    const signedIn = async (authStrategy: AuthStrategy) => {
+      const { id, cookie } = await insertTestSession(user, { authStrategy, ageMs: 60 * 1000 });
+      return asSession(id, cookie);
+    };
+
+    // A magic link proves the inbox, not the authenticator app the account holds.
+    expectStepUpRequired(await call(deleteTotp, { headers: (await signedIn('magic')).headers }));
+    expect(await totpsOf()).toHaveLength(1);
+
+    // Positive control: a sign-in with the authenticator app a minute ago stands as its proof.
+    expect((await call(deleteTotp, { headers: (await signedIn('totp')).headers })).response.status).toBe(204);
+    expect(await totpsOf()).toHaveLength(0);
   });
 
   it('must not pass the guard via the emailed link opened in another browser', async () => {
