@@ -125,13 +125,22 @@ describe('boot', () => {
     });
 
     const ok = (stdout = ''): ExecResult => ({ code: 0, stdout, stderr: '' });
-    // The migrate companion dies printing its connection string; the container log tail repeats secrets it saw.
+    // The migrate companion dies printing its connection string; the container log tail repeats secrets it saw, the
+    // service key and the boot key among them, each without the name that would get its line scrubbed.
     const exec: ExecFn = async (command, args) => {
       const line = [command, ...args].join(' ');
       if (line === 'ip -4 addr show') return ok('inet 10.0.0.12/24 scope global ens2');
       if (line.includes('run --rm backend-release'))
         return { code: 1, stdout: '', stderr: `migrate: dial ${dsn} refused (auth ${dbPassword})` };
-      if (line.includes(' logs ')) return ok(`backend | auth rejected ${cookieSecret}\nbackend | sink ${sinkKey}`);
+      if (line.includes(' logs ')) {
+        return ok(
+          [
+            `backend | auth rejected ${cookieSecret}`,
+            `backend | sink ${sinkKey}`,
+            `backend | s3 refused ${serviceKey.secretKey}, then ${bootKey.secretKey}`,
+          ].join('\n'),
+        );
+      }
       return ok();
     };
 
