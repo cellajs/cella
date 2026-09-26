@@ -198,9 +198,12 @@ async function until(check: () => boolean, ms = 2000): Promise<void> {
   }
 }
 
-/** An upgrade request on a plain TCP socket, so a test can reset the connection at any moment; `response` resolves the head the server sent, if any. */
-function rawUpgrade(target: string): { client: Socket; response: Promise<string> } {
-  const client = tcpConnect(port, '127.0.0.1');
+/**
+ * An upgrade request on a plain TCP socket, so a test can reset the connection at any moment; `response` resolves the
+ * head the server sent, if any. A `halfOpen` client keeps its side open after the server ends its own.
+ */
+function rawUpgrade(target: string, { halfOpen = false } = {}): { client: Socket; response: Promise<string> } {
+  const client = tcpConnect({ port, host: '127.0.0.1', allowHalfOpen: halfOpen });
   client.on('error', () => {});
   let received = '';
   const response = new Promise<string>((resolve) => {
@@ -278,17 +281,17 @@ describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () 
 
   it('must not crash the process via a connection reset after a refused upgrade', async () => {
     const seen = upgradeSockets.length;
-    // No token: refused at the HTTP level.
-    const { client, response } = rawUpgrade('/entity-1?entityType=task&tenantId=tenant-1');
+    // No token: refused at the HTTP level, to a peer that never closes its side of the connection.
+    const { client, response } = rawUpgrade('/entity-1?entityType=task&tenantId=tenant-1', { halfOpen: true });
     expect((await response).split('\r\n')[0]).toBe('HTTP/1.1 400 Bad Request');
     const serverSide = upgradeSockets[seen];
+    // The refusal ends the connection itself: a peer that never closes cannot hold the socket open.
+    await until(() => serverSide.destroyed);
 
     client.resetAndDestroy();
     await settle();
 
     expect(crashes).toEqual([]);
-    // The refusal ends the connection itself: a peer that never closes cannot hold the socket open.
-    expect(serverSide.destroyed).toBe(true);
     await expectStillServing();
   });
 
