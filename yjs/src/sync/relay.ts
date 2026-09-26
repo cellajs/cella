@@ -3,7 +3,7 @@ import * as encoding from 'lib0/encoding';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
 import type { DocKey, DocScope, SocketContext } from '../constants';
-import { YJS_AWARENESS_RATE_LIMIT, YJS_COMPACT_DEBOUNCE_MS } from '../constants';
+import { YJS_AWARENESS_MAX_ENTRIES, YJS_AWARENESS_RATE_LIMIT, YJS_COMPACT_DEBOUNCE_MS } from '../constants';
 import { loadEntityDescription } from '../data/entity-content';
 import { appendUpdate, ensureDoc, loadBase, readLog } from '../data/storage';
 import { descriptionToYUpdate } from '../lib/blocknote-seed';
@@ -60,10 +60,13 @@ interface AwarenessEntry {
   state: string;
 }
 
-function decodeAwarenessEntries(update: Uint8Array): AwarenessEntry[] {
+/** The entries of an awareness update; null, before any is decoded, for one with more than YJS_AWARENESS_MAX_ENTRIES. */
+function decodeAwarenessEntries(update: Uint8Array): AwarenessEntry[] | null {
   const decoder = decoding.createDecoder(update);
+  const count = decoding.readVarUint(decoder);
+  if (count > YJS_AWARENESS_MAX_ENTRIES) return null;
   const entries: AwarenessEntry[] = [];
-  for (let count = decoding.readVarUint(decoder); count > 0; count--) {
+  for (let i = 0; i < count; i++) {
     entries.push({
       clientId: decoding.readVarUint(decoder),
       clock: decoding.readVarUint(decoder),
@@ -128,17 +131,27 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
     if (now - lastTime < 1000 / YJS_AWARENESS_RATE_LIMIT) return;
     awarenessTimestamps.set(ws, now);
 
-    let entries: AwarenessEntry[];
+    let entries: AwarenessEntry[] | null;
     try {
       entries = decodeAwarenessEntries(decoding.readVarUint8Array(decoder));
     } catch {
       refuseFrame(scope, ctx.userId, ws, 'Malformed awareness');
       return;
     }
-    // Presence for another user's client would show a cursor under their name, or remove theirs.
-    const own = entries.filter((entry) => claimAwarenessClient(collab, ws, ctx.userId, entry.clientId));
-    if (own.length === 0) return;
-    broadcastToCollab(scope, own.length === entries.length ? data : encodeAwarenessMessage(own), ws);
+    // A frame with more entries than a client announces reaches no peer and holds no client.
+    if (!entries) return;
+    // Presence for another user's client would move or remove their cursor.
+    const relayed: AwarenessEntry[] = [];
+    for (const entry of entries) {
+      const verdict = claimAwarenessClient(collab, ws, ctx.userId, {
+        clientId: entry.clientId,
+        removes: entry.state === 'null',
+      });
+      if (verdict === 'refuse') return refuseFrame(scope, ctx.userId, ws, 'Too many awareness clients');
+      if (verdict === 'relay') relayed.push(entry);
+    }
+    if (relayed.length === 0) return;
+    broadcastToCollab(scope, relayed.length === entries.length ? data : encodeAwarenessMessage(relayed), ws);
   }
 }
 

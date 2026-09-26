@@ -428,6 +428,89 @@ describe('handleMessage: awareness ownership', () => {
     for (const ws of [peer.ws, first.ws, later.ws]) leaveCollab(collab.scope, ws as never);
   });
 
+  /** The awareness client ids a socket holds in its session. */
+  const heldBy = (collab: ReturnType<typeof session>['collab'], ws: unknown) =>
+    [...collab.awarenessOwners].filter(([, owner]) => owner.ws === ws).map(([clientId]) => clientId);
+
+  it('must not grow the session via a frame announcing thousands of clients', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const attacker = joined(scope, 'user-attacker');
+    const many = Array.from({ length: 10_000 }, (_, i) => ({ clientId: 1_000 + i, state: {} }));
+
+    await handleMessage(attacker.ctx, attacker.ws as never, buildAwarenessMessage(awarenessUpdate(...many)));
+
+    // Dropped whole, undecoded: nothing held, nothing relayed.
+    expect(collab.awarenessOwners.size).toBe(0);
+    expect(peer.ws.sent).toHaveLength(0);
+    // Positive control: the socket's next frame, its own client alone, is relayed.
+    vi.advanceTimersByTime(600);
+    await handleMessage(attacker.ctx, attacker.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 7 })));
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[7]]);
+    for (const ws of [peer.ws, attacker.ws]) leaveCollab(collab.scope, ws as never);
+  });
+
+  it('must not let one socket hold more than four awareness clients: the fifth closes it with 4400', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const attacker = joined(scope, 'user-attacker');
+
+    for (let i = 0; i < 5; i++) {
+      vi.advanceTimersByTime(600);
+      await handleMessage(
+        attacker.ctx,
+        attacker.ws as never,
+        buildAwarenessMessage(awarenessUpdate({ clientId: 2_000 + i })),
+      );
+    }
+
+    expect(attacker.ws.closed).toEqual({ code: 4400, reason: 'Too many awareness clients' });
+    expect(heldBy(collab, attacker.ws)).toEqual([2000, 2001, 2002, 2003]);
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[2000], [2001], [2002], [2003]]);
+    // The clients a socket held go with it.
+    leaveCollab(collab.scope, attacker.ws as never);
+    expect(collab.awarenessOwners.size).toBe(0);
+    leaveCollab(collab.scope, peer.ws as never);
+  });
+
+  it('never closes a socket for the changes y-websocket re-sends: removals take no client (positive control)', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const editor = joined(scope, 'user-editor');
+    await handleMessage(editor.ctx, editor.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 60 })));
+
+    // It times out ten clients whose socket left, and re-sends their removal.
+    for (let i = 0; i < 10; i++) {
+      vi.advanceTimersByTime(600);
+      const removal = awarenessUpdate({ clientId: 3_000 + i, clock: 2, state: null });
+      await handleMessage(editor.ctx, editor.ws as never, buildAwarenessMessage(removal));
+    }
+    expect(editor.ws.closed).toBeNull();
+    expect(heldBy(collab, editor.ws)).toEqual([60]);
+    expect(peer.ws.sent).toHaveLength(11);
+
+    // Five more sockets of the same user, whose clients it re-sends: it keeps its own and never closes.
+    const tabs = Array.from({ length: 5 }, () => joined(scope, 'user-editor'));
+    for (const [i, tab] of tabs.entries()) {
+      await handleMessage(tab.ctx, tab.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 70 + i })));
+      vi.advanceTimersByTime(600);
+      await handleMessage(
+        editor.ctx,
+        editor.ws as never,
+        buildAwarenessMessage(awarenessUpdate({ clientId: 70 + i, clock: 2 })),
+      );
+    }
+    expect(editor.ws.closed).toBeNull();
+    expect(heldBy(collab, editor.ws)).toContain(60);
+
+    // Its own removal frees its client.
+    vi.advanceTimersByTime(600);
+    const own = awarenessUpdate({ clientId: 60, clock: 3, state: null });
+    await handleMessage(editor.ctx, editor.ws as never, buildAwarenessMessage(own));
+    expect(collab.awarenessOwners.has(60)).toBe(false);
+    for (const ws of [peer.ws, editor.ws, ...tabs.map((tab) => tab.ws)]) leaveCollab(collab.scope, ws as never);
+  });
+
   it('must not relay an awareness frame no decoder accepts, and closes its sender with 4400', async () => {
     const { scope, collab } = session();
     const peer = joined(scope, 'user-peer');

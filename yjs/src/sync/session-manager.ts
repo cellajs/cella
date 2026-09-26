@@ -1,6 +1,6 @@
 import type { WebSocket } from 'ws';
 import type { DocKey, DocScope } from '../constants';
-import { YJS_CLEANUP_DELAY_MS, YJS_CLEANUP_MAX_ATTEMPTS } from '../constants';
+import { YJS_AWARENESS_MAX_CLIENTS, YJS_CLEANUP_DELAY_MS, YJS_CLEANUP_MAX_ATTEMPTS } from '../constants';
 import { deleteDoc } from '../data/storage';
 import { log } from '../lib/pino';
 import { compactDocument } from './compaction';
@@ -9,7 +9,7 @@ export interface CollabSession {
   /** The document as its entity row places it; compaction, materialize and cleanup act in it as the system, never as a joiner. */
   scope: DocScope;
   clients: Set<WebSocket>;
-  /** Awareness client id → the socket that announced it and its user; only they relay presence for that id. */
+  /** Awareness client id → the socket holding it and its user; no other user's socket relays that id. Up to YJS_AWARENESS_MAX_CLIENTS per socket. */
   awarenessOwners: Map<number, { ws: WebSocket; userId: string }>;
   /** Document lock: seeding, compaction and cleanup run one at a time through this chain. */
   chain: Promise<unknown>;
@@ -142,15 +142,39 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
   collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
 }
 
+/** How many awareness clients a socket holds in its session. */
+function heldClientCount(collab: CollabSession, ws: WebSocket): number {
+  let held = 0;
+  for (const owner of collab.awarenessOwners.values()) if (owner.ws === ws) held++;
+  return held;
+}
+
 /**
- * Whether a socket may relay presence for an awareness client id: one no other user's socket announced first. The
- * socket claims it, so a user's reconnecting socket takes over its client before the old socket's close is processed.
+ * Decides one awareness entry from a socket of `userId`: `relay` it, `drop` it (another user's socket holds its client),
+ * or `refuse` the socket, which announced more clients than it may hold. An announcement takes a client no socket holds,
+ * or one another socket of the same user holds (a reconnect takes its client over), while the socket holds fewer than
+ * YJS_AWARENESS_MAX_CLIENTS. A removal takes nothing and frees a client the socket holds: y-websocket re-sends every
+ * change it applies, including the removal of each peer it timed out.
  */
-export function claimAwarenessClient(collab: CollabSession, ws: WebSocket, userId: string, clientId: number): boolean {
-  const owner = collab.awarenessOwners.get(clientId);
-  if (owner && owner.userId !== userId) return false;
-  collab.awarenessOwners.set(clientId, { ws, userId });
-  return true;
+export function claimAwarenessClient(
+  collab: CollabSession,
+  ws: WebSocket,
+  userId: string,
+  entry: { clientId: number; removes: boolean },
+): 'relay' | 'drop' | 'refuse' {
+  const owner = collab.awarenessOwners.get(entry.clientId);
+  if (owner && owner.userId !== userId) return 'drop';
+  if (entry.removes) {
+    if (owner?.ws === ws) collab.awarenessOwners.delete(entry.clientId);
+    return 'relay';
+  }
+  if (owner?.ws === ws) return 'relay';
+  if (heldClientCount(collab, ws) < YJS_AWARENESS_MAX_CLIENTS) {
+    collab.awarenessOwners.set(entry.clientId, { ws, userId });
+    return 'relay';
+  }
+  // A client another socket of this user holds stays with it; a free one would grow the session past the cap.
+  return owner ? 'relay' : 'refuse';
 }
 
 export function broadcastToCollab(doc: DocKey, message: Uint8Array, exclude?: WebSocket): void {

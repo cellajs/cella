@@ -7,6 +7,10 @@ export const YJS_COMPACT_DEBOUNCE_MS = 3000;
 /** Sync messages a socket may queue while its entity access is still being verified. */
 export const YJS_PENDING_QUEUE_CAP = 100;
 export const YJS_AWARENESS_RATE_LIMIT = 2; // Max 2 awareness updates per client per second to prevent spam and DoS
+/** Entries one awareness frame may carry: y-websocket announces its own client alone, and its larger frames re-send changes to other clients. */
+export const YJS_AWARENESS_MAX_ENTRIES = 8;
+/** Awareness clients one socket may hold: its own, plus a few that another socket of its user held or whose socket left. */
+export const YJS_AWARENESS_MAX_CLIENTS = 4;
 
 /**
  * A document and its place as the entity row states them: the session key, the tenant its rows are stored and read
