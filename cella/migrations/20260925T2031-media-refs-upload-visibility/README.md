@@ -22,6 +22,7 @@ No script: manual.
 2. In `transloadit-config.ts`, set `publicBucket: true` on avatar and cover, `false` on attachment, and add the `newsletter` template and id.
 3. Pass the entity's `organizationId` to `assertBlockMediaUrls` and `sanitizeBlockMediaUrls`.
 4. Drop `publicBucket` from `getUploadToken` and `createAttachments` calls.
+5. In the Transloadit workspace, turn on "Require a correct Signature": the server-decided visibility and key prefix hold only for signed assemblies.
 
 ## Verify
 
