@@ -10,6 +10,7 @@ import { childNodes, isDocumentNode, isRefusedMediaBlock } from 'shared/utils/va
 import type { CarouselItemData } from '~/modules/attachment/attachments-carousel';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
+import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import {
   findClickedMedia,
   getHeadlessEditor,
@@ -41,31 +42,51 @@ const cacheFirstPass = (key: string, html: string) => {
   firstPassHtmlCache.set(key, html);
 };
 
+/** Whether the editor's schema has a block type: blocksToFullHTML throws on any other. Own keys only, never `toString`. */
+const isSchemaBlockType = (type: string) => Object.hasOwn(customSchema.blockSchema, type);
+
 /**
  * The blocks the static render shows, walked as the media validator walks them. A media block the validator
- * refuses renders nothing, in either pass, and neither does a node without a string type: each is dropped
- * and its nested blocks take its place. A list item that is no object is skipped.
+ * refuses renders nothing, in either pass, and neither does a node without a string type or with a type outside
+ * the editor's schema: each is dropped and its nested blocks take its place. A list item that is no object is
+ * skipped, and a document that is no list shows nothing.
  */
-const withRenderableMedia = (nodes: unknown[], ctx: MediaRefContext): CustomBlock[] =>
-  nodes.flatMap((node) => {
-    if (!isDocumentNode(node)) return [];
-    const children = withRenderableMedia(childNodes(node), ctx);
-    if (typeof node.type !== 'string' || isRefusedMediaBlock(node, ctx)) return children;
-    // A string-typed node keeps its own shape; BlockNote reads it as the block it names.
-    return [{ ...node, children } as CustomBlock];
-  });
+const renderableBlocks = (nodes: unknown, ctx: MediaRefContext): CustomBlock[] =>
+  Array.isArray(nodes)
+    ? nodes.flatMap((node) => {
+        if (!isDocumentNode(node)) return [];
+        const children = renderableBlocks(childNodes(node), ctx);
+        if (typeof node.type !== 'string' || !isSchemaBlockType(node.type) || isRefusedMediaBlock(node, ctx)) {
+          return children;
+        }
+        // A node of a schema type keeps its own shape; BlockNote reads it as the block it names.
+        return [{ ...node, children } as CustomBlock];
+      })
+    : [];
+
+/**
+ * A document's HTML, or null when BlockNote still cannot render it (an unknown inline node or style, content of the
+ * wrong shape): that document shows nothing, and no other document fails with it.
+ */
+const toFullHtml = (blocks: CustomBlock[]): string | null => {
+  try {
+    return getHeadlessEditor().blocksToFullHTML(blocks);
+  } catch {
+    return null;
+  }
+};
 
 /**
  * Computes a document's first-pass HTML into the cache ahead of render, so the component's first
- * commit is synchronous. Calls blocksToFullHTML (flushSync inside): never call during React render
- * or commit; an effect's async continuation is safe.
+ * commit is synchronous; never throws, so one document cannot stop a batch. Calls blocksToFullHTML
+ * (flushSync inside): never call during React render or commit; an effect's async continuation is safe.
  */
 export function precomputeDocumentHtml(document: string, organizationId?: string): void {
   const key = firstPassKey(document, organizationId);
   if (firstPassHtmlCache.has(key)) return;
   const blocks = getParsedContent(document);
   if (!blocks) return;
-  cacheFirstPass(key, getHeadlessEditor().blocksToFullHTML(withRenderableMedia(blocks, { organizationId })));
+  cacheFirstPass(key, toFullHtml(renderableBlocks(blocks, { organizationId })) ?? '');
 }
 
 interface BlockNoteFullHtmlProps {
@@ -92,7 +113,7 @@ async function processBlocks(
       blocks.map(async (block) => {
         let props = block.props;
 
-        // withRenderableMedia ran first: a media block here holds a props object.
+        // renderableBlocks ran first: a media block here holds a props object.
         if (mediaBlockTypes.has(block.type) && 'url' in props && props.url) {
           const rawUrl = props.url as string;
           const resolvedUrl = await resolveUrl(rawUrl);
@@ -153,7 +174,7 @@ function BlockNoteFullHtml({
       setRenderState({ html: '', mediaItems: [] });
       return;
     }
-    const blocks = withRenderableMedia(parsed, { organizationId: propOrganizationId });
+    const blocks = renderableBlocks(parsed, { organizationId: propOrganizationId });
     const cacheKey = firstPassKey(defaultValue, propOrganizationId);
 
     let cancelled = false;
@@ -165,7 +186,7 @@ function BlockNoteFullHtml({
     } else {
       queueMicrotask(() => {
         if (cancelled) return;
-        const html = getHeadlessEditor().blocksToFullHTML(blocks);
+        const html = toFullHtml(blocks) ?? '';
         cacheFirstPass(cacheKey, html);
         setRenderState({ html, mediaItems: [] });
       });
@@ -178,7 +199,7 @@ function BlockNoteFullHtml({
       const { resolved, media } = await processBlocks(blocks, resolveUrl);
       if (cancelled) return;
 
-      setRenderState({ html: getHeadlessEditor().blocksToFullHTML(resolved), mediaItems: media });
+      setRenderState({ html: toFullHtml(resolved) ?? '', mediaItems: media });
     }
 
     resolveUrls(blocks);

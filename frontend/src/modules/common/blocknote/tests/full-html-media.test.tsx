@@ -2,7 +2,7 @@
 import { act } from 'react';
 import { createRoot } from 'react-dom/client';
 import { appConfig } from 'shared';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 
 // Presigning waits for the test, so the first pass (unresolved refs) is committed and observed on its own.
 let releasePresign = () => {};
@@ -24,6 +24,7 @@ vi.mock('~/modules/attachment/query', () => ({ findAttachmentInCache: () => unde
 vi.mock('~/modules/attachment/dialog/open-attachment-dialog', () => ({ openAttachmentDialog: vi.fn() }));
 
 const { BlockNoteFullHtml } = await import('~/modules/common/blocknote/full-html');
+const { useStaticDocumentsReady } = await import('~/modules/common/blocknote/lazy-full-html');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -125,5 +126,70 @@ describe('BlockNoteFullHtml media', () => {
 
     expect(container.textContent).toContain('children not a list');
     expect(watcher.sources.filter((src) => src?.includes('evil.example'))).toEqual([]);
+  });
+});
+
+describe('BlockNoteFullHtml: documents BlockNote cannot render', () => {
+  const container = document.createElement('div');
+  const root = createRoot(container);
+  // A render error thrown outside React (a microtask, a promise) is uncaught: no boundary sees it.
+  const crashes: unknown[] = [];
+  const record = (err: unknown) => void crashes.push(err);
+
+  beforeAll(() => {
+    process.on('uncaughtException', record);
+    process.on('unhandledRejection', record);
+  });
+
+  afterAll(() => {
+    process.off('uncaughtException', record);
+    process.off('unhandledRejection', record);
+  });
+
+  afterEach(() => act(() => root.render(null)));
+
+  const unknownType = JSON.stringify([
+    { id: 'unknown', type: 'x', props: {}, content: [], children: [{ ...paragraph('nested survives'), id: 'nested' }] },
+    { id: 'inherited', type: 'toString', props: {}, content: [], children: [] },
+    paragraph('text survives'),
+  ]);
+  // Passes the block schema check: a paragraph whose inline node BlockNote does not know.
+  const unknownInline = JSON.stringify([
+    { id: 'inline', type: 'paragraph', props: {}, content: [{ type: 'x' }], children: [] },
+  ]);
+
+  it('must not blank a document via a block type outside the schema: its nested blocks and the rest render', async () => {
+    await act(async () =>
+      root.render(<BlockNoteFullHtml id="doc" defaultValue={unknownType} organizationId={organizationId} />),
+    );
+
+    await vi.waitFor(() => expect(container.textContent).toContain('text survives'));
+    expect(container.textContent).toContain('nested survives');
+    expect(crashes).toEqual([]);
+  });
+
+  it('must not fail other documents via one BlockNote cannot render', async () => {
+    let ready = false;
+    const documents = [unknownInline, '{"type":"x"}', unknownType, JSON.stringify([paragraph('warm document')])];
+    const Harness = () => {
+      ready = useStaticDocumentsReady(documents, organizationId);
+      return null;
+    };
+
+    await act(async () => root.render(<Harness />));
+    await vi.waitFor(() => expect(ready).toBe(true));
+
+    // The broken document renders nothing, and a warmed one paints from the first pass.
+    await act(async () =>
+      root.render(
+        <>
+          <BlockNoteFullHtml id="broken" defaultValue={unknownInline} organizationId={organizationId} />
+          <BlockNoteFullHtml id="warm" defaultValue={documents[3]} organizationId={organizationId} />
+        </>,
+      ),
+    );
+    expect(container.textContent).toContain('warm document');
+    await vi.waitFor(() => expect(container.querySelector('#broken')?.textContent).toBe(''));
+    expect(crashes).toEqual([]);
   });
 });
