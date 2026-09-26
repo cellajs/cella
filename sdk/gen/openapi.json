@@ -2516,98 +2516,6 @@
         },
         "x-tags": ["data", "attachments", "cella"]
       },
-      "Membership": {
-        "type": "object",
-        "properties": {
-          "createdAt": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "tenantId": {
-            "type": "string",
-            "maxLength": 24
-          },
-          "channelType": {
-            "type": "string",
-            "enum": ["organization"]
-          },
-          "channelId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "userId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "role": {
-            "type": "string",
-            "enum": ["admin", "member"]
-          },
-          "createdBy": {
-            "type": ["string", "null"],
-            "format": "uuid"
-          },
-          "updatedAt": {
-            "type": ["string", "null"]
-          },
-          "updatedBy": {
-            "type": ["string", "null"],
-            "format": "uuid"
-          },
-          "archived": {
-            "type": "boolean"
-          },
-          "muted": {
-            "type": "boolean"
-          },
-          "displayOrder": {
-            "type": "number",
-            "minimum": -140737488355328,
-            "maximum": 140737488355327
-          },
-          "organizationId": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "required": [
-          "createdAt",
-          "id",
-          "tenantId",
-          "channelType",
-          "channelId",
-          "userId",
-          "role",
-          "createdBy",
-          "updatedAt",
-          "updatedBy",
-          "archived",
-          "muted",
-          "displayOrder",
-          "organizationId"
-        ],
-        "description": "A user's membership in a channel entity, including role and activity data.",
-        "example": {
-          "id": "14e27393-e22a-45d1-8c22-3250dc6fc109",
-          "tenantId": "k4z795",
-          "channelType": "organization",
-          "channelId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
-          "userId": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
-          "organizationId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
-          "role": "member",
-          "displayOrder": 93,
-          "muted": false,
-          "archived": false,
-          "createdAt": "2024-10-28T10:38:59.996Z",
-          "createdBy": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
-          "updatedAt": "2024-10-28T10:38:59.996Z",
-          "updatedBy": null
-        },
-        "x-tags": ["data", "memberships", "cella"]
-      },
       "ServiceAccount": {
         "type": "object",
         "properties": {
@@ -11631,7 +11539,7 @@
         "operationId": "membershipInvite",
         "tags": ["memberships", "cella"],
         "summary": "Create memberships",
-        "description": "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization.",
+        "description": "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization. A created membership carries muted, archived and display order only when it is the caller's own.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
@@ -11730,7 +11638,49 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/MembershipBase"
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "tenantId": {
+                            "type": "string",
+                            "maxLength": 24
+                          },
+                          "channelType": {
+                            "type": "string",
+                            "enum": ["organization"]
+                          },
+                          "channelId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "userId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "role": {
+                            "type": "string",
+                            "enum": ["admin", "member"]
+                          },
+                          "organizationId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "archived": {
+                            "type": "boolean"
+                          },
+                          "muted": {
+                            "type": "boolean"
+                          },
+                          "displayOrder": {
+                            "type": "number",
+                            "minimum": -140737488355328,
+                            "maximum": 140737488355327
+                          }
+                        },
+                        "required": ["id", "tenantId", "channelType", "channelId", "userId", "role", "organizationId"]
                       }
                     },
                     "rejectedIds": {
@@ -11917,7 +11867,7 @@
         "operationId": "updateMembership",
         "tags": ["memberships", "cella"],
         "summary": "Update membership",
-        "description": "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only. A role change, and any change to another member's membership, requires update permission on the channel.",
+        "description": "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. A role change, and any change to another member's membership, requires update permission on the channel.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -11996,7 +11946,75 @@
                   "updatedBy": null
                 },
                 "schema": {
-                  "$ref": "#/components/schemas/Membership"
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "tenantId": {
+                      "type": "string",
+                      "maxLength": 24
+                    },
+                    "channelType": {
+                      "type": "string",
+                      "enum": ["organization"]
+                    },
+                    "channelId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": ["admin", "member"]
+                    },
+                    "createdBy": {
+                      "type": ["string", "null"],
+                      "format": "uuid"
+                    },
+                    "updatedAt": {
+                      "type": ["string", "null"]
+                    },
+                    "updatedBy": {
+                      "type": ["string", "null"],
+                      "format": "uuid"
+                    },
+                    "organizationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "archived": {
+                      "type": "boolean"
+                    },
+                    "muted": {
+                      "type": "boolean"
+                    },
+                    "displayOrder": {
+                      "type": "number",
+                      "minimum": -140737488355328,
+                      "maximum": 140737488355327
+                    }
+                  },
+                  "required": [
+                    "createdAt",
+                    "id",
+                    "tenantId",
+                    "channelType",
+                    "channelId",
+                    "userId",
+                    "role",
+                    "createdBy",
+                    "updatedAt",
+                    "updatedBy",
+                    "organizationId"
+                  ]
                 }
               }
             }

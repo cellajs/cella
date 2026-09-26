@@ -507,26 +507,6 @@ export const zAttachment = z.object({
 });
 
 /**
- * A user's membership in a channel entity, including role and activity data.
- */
-export const zMembership = z.object({
-  createdAt: z.string(),
-  id: z.uuid(),
-  tenantId: z.string().max(24),
-  channelType: z.enum(['organization']),
-  channelId: z.uuid(),
-  userId: z.uuid(),
-  role: z.enum(['admin', 'member']),
-  createdBy: z.uuid().nullable(),
-  updatedAt: z.string().nullable(),
-  updatedBy: z.uuid().nullable(),
-  archived: z.boolean(),
-  muted: z.boolean(),
-  displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
-  organizationId: z.uuid(),
-});
-
-/**
  * The actor an API key runs as, with its role bindings.
  */
 export const zServiceAccount = z.object({
@@ -1998,7 +1978,20 @@ export const zMembershipInviteQuery = z.object({
  * Created memberships and invite count
  */
 export const zMembershipInviteResponse = z.object({
-  data: z.array(zMembershipBase),
+  data: z.array(
+    z.object({
+      id: z.uuid(),
+      tenantId: z.string().max(24),
+      channelType: z.enum(['organization']),
+      channelId: z.uuid(),
+      userId: z.uuid(),
+      role: z.enum(['admin', 'member']),
+      organizationId: z.uuid(),
+      archived: z.boolean().optional(),
+      muted: z.boolean().optional(),
+      displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
+    }),
+  ),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
   invitesSentCount: z.number(),
@@ -2020,7 +2013,22 @@ export const zUpdateMembershipPath = z.object({
 /**
  * Membership updated
  */
-export const zUpdateMembershipResponse = zMembership;
+export const zUpdateMembershipResponse = z.object({
+  createdAt: z.string(),
+  id: z.uuid(),
+  tenantId: z.string().max(24),
+  channelType: z.enum(['organization']),
+  channelId: z.uuid(),
+  userId: z.uuid(),
+  role: z.enum(['admin', 'member']),
+  createdBy: z.uuid().nullable(),
+  updatedAt: z.string().nullable(),
+  updatedBy: z.uuid().nullable(),
+  organizationId: z.uuid(),
+  archived: z.boolean().optional(),
+  muted: z.boolean().optional(),
+  displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
+});
 
 export const zHandleMembershipInvitationPath = z.object({
   id: z.string().max(50),

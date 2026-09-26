@@ -4,12 +4,12 @@ import { crossTenantGuard, orgGuard, tenantGuard, userGuard } from '#/middleware
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   memberListQuerySchema,
-  membershipBaseSchema,
+  memberMembershipSchema,
   membershipCreateBodySchema,
-  membershipSchema,
   membershipUpdateBodySchema,
   pendingMembershipListQuerySchema,
   pendingMembershipSchema,
+  updatedMembershipSchema,
 } from '#/modules/memberships/memberships-schema';
 import { memberSchema } from '#/modules/user/user-schema';
 import {
@@ -41,7 +41,7 @@ const membershipRoutes = {
     tags: ['memberships', 'cella'],
     summary: 'Create memberships',
     description:
-      'Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization.',
+      "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization. A created membership carries muted, archived and display order only when it is the caller's own.",
     request: {
       params: tenantOrgParamSchema,
       query: entityWithTypeQuerySchema,
@@ -55,7 +55,7 @@ const membershipRoutes = {
         description: 'Created memberships and invite count',
         content: {
           'application/json': {
-            schema: batchResponseSchema(membershipBaseSchema).extend({ invitesSentCount: z.number() }),
+            schema: batchResponseSchema(memberMembershipSchema).extend({ invitesSentCount: z.number() }),
             example: mockMembershipInviteResponse(),
           },
         },
@@ -102,7 +102,7 @@ const membershipRoutes = {
     tags: ['memberships', 'cella'],
     summary: 'Update membership',
     description:
-      "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only. A role change, and any change to another member's membership, requires update permission on the channel.",
+      "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. A role change, and any change to another member's membership, requires update permission on the channel.",
     request: {
       params: idInTenantOrgParamSchema,
       body: {
@@ -112,7 +112,7 @@ const membershipRoutes = {
     responses: {
       200: {
         description: 'Membership updated',
-        content: { 'application/json': { schema: membershipSchema, example: mockMembershipResponse() } },
+        content: { 'application/json': { schema: updatedMembershipSchema, example: mockMembershipResponse() } },
       },
       ...errorResponseRefs,
     },

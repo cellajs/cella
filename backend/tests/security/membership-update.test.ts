@@ -14,12 +14,16 @@ import { clearSecurityTestData, createOrgUser } from './helpers';
 const [adminRole] = hierarchy.getRoles('organization');
 const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
+const personalView = ['archived', 'muted', 'displayOrder'];
+
 /**
  * Archive, mute and order are a member's own view of a channel: nobody sets them for someone else, whatever their
- * role. A role change is an admin's act on the channel and needs `update` there, also on one's own membership.
+ * role, and a response shows them on the caller's own membership only. A role change is an admin's act on the channel
+ * and needs `update` there, also on one's own membership.
  */
 describe('Membership updates', async () => {
   const call = await createAppClient();
+  const { baseApp } = await import('#/routes');
 
   afterEach(async () => await clearSecurityTestData());
 
@@ -40,7 +44,16 @@ describe('Membership updates', async () => {
         body: body as never,
         headers: { ...defaultHeaders, Cookie: as.sessionCookie },
       });
-    return { org, admin, member, membershipOf, update };
+    /** Raw JSON: the SDK's response parsing would hide a field the schema does not declare. */
+    const updateRaw = async (as: { sessionCookie: string }, membershipId: string, body: Record<string, unknown>) => {
+      const response = await baseApp.request(`/${org.tenantId}/${org.id}/memberships/${membershipId}`, {
+        method: 'PUT',
+        headers: { ...defaultHeaders, Cookie: as.sessionCookie },
+        body: JSON.stringify(body),
+      });
+      return { status: response.status, body: (await response.json()) as Record<string, unknown> };
+    };
+    return { org, admin, member, membershipOf, update, updateRaw };
   }
 
   it("must not touch another member's membership via an empty update", async () => {
@@ -61,6 +74,31 @@ describe('Membership updates', async () => {
     expect((await update(admin, target.id, {})).response.status).toBe(400);
     expect((await update(member, target.id, {})).response.status).toBe(400);
     expect(await membershipOf(member.id)).toEqual(target);
+  });
+
+  it("must not read another member's archive, mute and order via updateMembership", async () => {
+    const { admin, member, membershipOf, updateRaw } = await orgWithAdminAndMember();
+    // The member archived and muted the organization and moved it in their menu.
+    await db
+      .update(membershipsTable)
+      .set({ archived: true, muted: true, displayOrder: 42 })
+      .where(eq(membershipsTable.id, (await membershipOf(member.id)).id));
+    const target = await membershipOf(member.id);
+
+    const { status, body } = await updateRaw(admin, target.id, { role: adminRole });
+    expect(status).toBe(200);
+    for (const field of personalView) expect(body).not.toHaveProperty(field);
+    expect(body).toMatchObject({ id: target.id, userId: member.id, role: adminRole });
+    expect((await membershipOf(member.id)).role).toBe(adminRole);
+  });
+
+  it("returns the caller's own archive, mute and order (positive control)", async () => {
+    const { member, membershipOf, updateRaw } = await orgWithAdminAndMember();
+    const own = await membershipOf(member.id);
+
+    const { status, body } = await updateRaw(member, own.id, { muted: true });
+    expect(status).toBe(200);
+    expect(body).toMatchObject({ id: own.id, archived: false, muted: true, displayOrder: own.displayOrder });
   });
 
   it("must not mute or archive another member's membership via updateMembership", async () => {

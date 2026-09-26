@@ -3,6 +3,7 @@ import { getEdgeOrder } from 'shared/utils/display-order';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { getIsoDate } from '#/utils/iso-date';
@@ -78,5 +79,5 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
 
   log.info('Membership updated', { userId: updatedMembership.userId, membershipId: updatedMembership.id });
 
-  return updatedMembership;
+  return membershipAsSeenBy(updatedMembership, actorId);
 }

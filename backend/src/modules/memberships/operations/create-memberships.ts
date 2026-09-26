@@ -6,6 +6,7 @@ import { mailer } from '#/lib/mailer';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
 import { getMembershipEntityIds, insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
+import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import {
   countMembershipsByChannel,
   countPendingInvitesByChannel,
@@ -263,5 +264,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     entityId,
   });
 
-  return { data: createdMemberships, rejectedIds, invitesSentCount };
+  const data = createdMemberships.map((membership) => membershipAsSeenBy(membership, user.id));
+
+  return { data, rejectedIds, invitesSentCount };
 }

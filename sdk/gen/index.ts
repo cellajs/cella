@@ -456,7 +456,6 @@ export type {
   MarkSeenResponses,
   Me,
   MeAuthData,
-  Membership,
   MembershipBase,
   MembershipInviteData,
   MembershipInviteError,

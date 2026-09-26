@@ -591,26 +591,6 @@ export type Attachment = {
 };
 
 /**
- * A user's membership in a channel entity, including role and activity data.
- */
-export type Membership = {
-  createdAt: string;
-  id: string;
-  tenantId: string;
-  channelType: 'organization';
-  channelId: string;
-  userId: string;
-  role: 'admin' | 'member';
-  createdBy: string | null;
-  updatedAt: string | null;
-  updatedBy: string | null;
-  archived: boolean;
-  muted: boolean;
-  displayOrder: number;
-  organizationId: string;
-};
-
-/**
  * The actor an API key runs as, with its role bindings.
  */
 export type ServiceAccount = {
@@ -5525,7 +5505,18 @@ export type MembershipInviteResponses = {
    * Created memberships and invite count
    */
   200: {
-    data: Array<MembershipBase>;
+    data: Array<{
+      id: string;
+      tenantId: string;
+      channelType: 'organization';
+      channelId: string;
+      userId: string;
+      role: 'admin' | 'member';
+      organizationId: string;
+      archived?: boolean;
+      muted?: boolean;
+      displayOrder?: number;
+    }>;
     /**
      * Identifiers of items that could not be processed
      */
@@ -5591,7 +5582,22 @@ export type UpdateMembershipResponses = {
   /**
    * Membership updated
    */
-  200: Membership;
+  200: {
+    createdAt: string;
+    id: string;
+    tenantId: string;
+    channelType: 'organization';
+    channelId: string;
+    userId: string;
+    role: 'admin' | 'member';
+    createdBy: string | null;
+    updatedAt: string | null;
+    updatedBy: string | null;
+    organizationId: string;
+    archived?: boolean;
+    muted?: boolean;
+    displayOrder?: number;
+  };
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];

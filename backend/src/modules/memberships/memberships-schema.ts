@@ -57,17 +57,21 @@ export const membershipBaseSchema = membershipSchema
     'x-tags': schemaTags('base', 'memberships', 'cella'),
   });
 
+const personalViewKeys = { archived: true, muted: true, displayOrder: true } as const;
+const optionalPersonalView = {
+  archived: membershipBaseSchema.shape.archived.optional(),
+  muted: membershipBaseSchema.shape.muted.optional(),
+  displayOrder: membershipBaseSchema.shape.displayOrder.optional(),
+};
+
 /**
- * A membership as the channel's members list shows it: archive, mute and menu order are each member's own view, so
- * they come with the caller's own row only.
+ * A membership in a response that may be about another member (the members list, the memberships an invitation
+ * creates): archive, mute and menu order are each member's own view, so they come with the caller's own row only.
  */
-export const memberMembershipSchema = membershipBaseSchema
-  .omit({ archived: true, muted: true, displayOrder: true })
-  .extend({
-    archived: membershipBaseSchema.shape.archived.optional(),
-    muted: membershipBaseSchema.shape.muted.optional(),
-    displayOrder: membershipBaseSchema.shape.displayOrder.optional(),
-  });
+export const memberMembershipSchema = membershipBaseSchema.omit(personalViewKeys).extend(optionalPersonalView);
+
+/** An updated membership with its audit fields; archive, mute and menu order as in `memberMembershipSchema`. */
+export const updatedMembershipSchema = membershipSchema.omit(personalViewKeys).extend(optionalPersonalView);
 
 export const membershipCreateBodySchema = z.object({
   emails: validEmailSchema.array().min(1).max(50),
