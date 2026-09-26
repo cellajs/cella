@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { invokeToken, signOut } from 'sdk';
+import { confirmMagicLink, getPendingMagicLink, invokeToken, signOut } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -12,7 +12,7 @@ import { authCookie, createTestUser, type ErrorResponse } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
-import { cookiesAfter } from './session-helpers';
+import { cookiesAfter, insertSession } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['magic', 'passkey'] });
 
@@ -105,6 +105,39 @@ describe('Sign-out after a magic-link sign-in', async () => {
     const reopened = await openLink(raw, ownerBrowser);
     expect(reopened.response.status).toBe(401);
     expect(sessionCookieSet(reopened.response)).toBe(false);
+  });
+
+  it('must not sign the next person in as the owner via a magic link held for confirmation at sign-out', async () => {
+    const owner = await createTestUser(`held-link-${nanoid(6)}@security-test.com`.toLowerCase());
+    const { raw, row } = await requestedMagicLink(owner);
+
+    // Opened in a browser that never asked for it: the link waits there for its holder to confirm.
+    const held = await openLink(raw, '');
+    expect(held.response.status).toBe(302);
+    expect(held.response.headers.get('location')).toContain('/auth/confirm-sign-in');
+    const heldCookie = cookiesAfter('', held.response);
+    const pending = () => call(getPendingMagicLink, { headers: { ...defaultHeaders, Cookie: heldCookie } });
+    expect((await pending()).response.status).toBe(200);
+
+    // The owner signs in another way in this browser, and later signs out.
+    const session = await insertSession(owner);
+    const signedOut = await call(signOut, {
+      headers: { ...defaultHeaders, Cookie: `${heldCookie}; ${session.cookie}` },
+    });
+    expect(signedOut.response.status).toBe(204);
+    expect(
+      signedOut.response.headers.getSetCookie().some((line) => line.startsWith(`${authCookieName('magic-pending')}=;`)),
+    ).toBe(true);
+    expect(await tokenRow(row.id)).toBeUndefined();
+
+    // The next person: the confirmation page, even with the held cookie as it was, and the link from the history.
+    expect((await pending()).response.status).toBe(401);
+    const confirmed = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: heldCookie } });
+    expect(confirmed.response.status).toBe(401);
+    expect(sessionCookieSet(confirmed.response)).toBe(false);
+    const reopened = await openLink(raw, '');
+    expect(reopened.response.status).toBe(401);
+    expect((reopened.error as ErrorResponse).type).toBe('magic_not_found');
   });
 
   it("spends only this browser's link: another browser's opened link keeps working (positive control)", async () => {

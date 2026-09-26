@@ -16,6 +16,7 @@ import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-ac
 import { readSession, setUserSession } from '#/modules/auth/general/helpers/session';
 import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accept-invitation-token';
 import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
+import { dropHeldMagicLink } from '#/modules/auth/magic/helpers/magic-link-browser';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
@@ -137,6 +138,8 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
   // A magic link this browser opened lets it back in, with no other proof, until its single-use window closes: spent
   // first, so it goes whatever becomes of the session below and the next person at a shared computer cannot reopen it.
   if (await getAuthCookie(ctx, 'magic')) await spendCookieToken(ctx, 'magic');
+  // A link held here for confirmation, never confirmed, goes as well.
+  await dropHeldMagicLink(ctx);
 
   // Likewise a provider connect started here and never finished: the next person must not finish it on this account.
   if (await getAuthCookie(ctx, 'oauth-connect')) await spendCookieToken(ctx, 'oauth-connect');

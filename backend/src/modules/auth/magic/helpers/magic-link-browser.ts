@@ -2,8 +2,8 @@ import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { findLinkToken } from '#/modules/auth/tokens/token-lifecycle';
+import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { findLinkToken, withdrawLinkToken } from '#/modules/auth/tokens/token-lifecycle';
 import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { TimeSpan } from '#/utils/time-span';
@@ -60,4 +60,15 @@ export const holdMagicLinkOutsideItsBrowser = async (ctx: Context<Env>, rawToken
   await findOpenableMagicLink(rawToken);
   await setAuthCookie(ctx, 'magic-pending', rawToken, heldLinkLifetime);
   return ctx.redirect(new URL(confirmSignInPath, appConfig.frontendUrl), 302);
+};
+
+/**
+ * Gives up the link this browser holds for confirmation, at sign-out: the link goes too, so the next person at a shared
+ * computer can neither confirm it here nor reopen it from the history.
+ */
+export const dropHeldMagicLink = async (ctx: Context<Env>) => {
+  const rawToken = await getAuthCookie(ctx, 'magic-pending');
+  if (!rawToken) return;
+  deleteAuthCookie(ctx, 'magic-pending');
+  await withdrawLinkToken({ type: 'magic', rawToken });
 };

@@ -186,6 +186,13 @@ export const findLinkToken = async ({ type, rawToken }: LinkTokenOpts): Promise<
   return token;
 };
 
+/** Deletes the unopened link a raw value names, so neither its URL nor a confirmation page can redeem it any more. */
+export const withdrawLinkToken = async ({ type, rawToken }: LinkTokenOpts) => {
+  await baseDb
+    .delete(tokensTable)
+    .where(and(eq(tokensTable.secret, hashToken(rawToken)), eq(tokensTable.type, type), isNull(tokensTable.invokedAt)));
+};
+
 /**
  * Redeems a link token (a magic link, an invitation or a verification link) from the raw value in its URL. The first
  * redemption wins a compare-and-set on `invokedAt`: the token's lifetime becomes its type's single-use window and this
