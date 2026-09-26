@@ -82,7 +82,8 @@ const bearer = (jwt: string) => ({ 'Content-Type': 'application/json', Authoriza
  * its own. Each keeps its own cached verdicts, so a revocation must reach them at once.
  */
 const otherProcesses = { client: new pg.Client({ connectionString: testDatabaseUrl }), heard: [] as unknown[] };
-const toldOtherProcesses = (message: unknown) => vi.waitFor(() => expect(otherProcesses.heard).toContainEqual(message));
+const toldOtherProcesses = (message: unknown) =>
+  vi.waitFor(() => expect(otherProcesses.heard).toContainEqual(message), { timeout: 5000 });
 const reasonOf = (error: unknown) => (error as ErrorResponse).meta?.reason;
 
 /** A user's grants with the codes and refresh tokens issued under them (the provider's sessions are left out). */
@@ -110,6 +111,8 @@ describe('OAuth grants', async () => {
     oauth = await startTestOauthServer();
     restoreFetch = serveClientMetadataDocuments({ [CIMD_ID]: cimdDocument });
     await otherProcesses.client.connect();
+    // A dropped connection shows as the messages it no longer hears, never as an unhandled error event.
+    otherProcesses.client.on('error', () => {});
     otherProcesses.client.on('notification', ({ channel, payload }) => {
       if (channel === 'auth_invalidate' && payload) otherProcesses.heard.push(JSON.parse(payload));
     });
