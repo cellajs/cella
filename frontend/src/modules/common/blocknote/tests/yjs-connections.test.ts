@@ -169,20 +169,42 @@ describe('yjs connection: final closes', () => {
 });
 
 describe('yjs connection: token refusals', () => {
-  /** The relay closes an unusable token right after the handshake: the socket opens, then closes with 4001. */
+  /**
+   * One connection attempt the relay refuses: y-websocket opens the socket with the token in its params and reports
+   * 'connecting', the socket opens, and the relay closes an unusable token right after the handshake with 4001.
+   */
   const refuseToken = async (provider: MockProvider) => {
+    await act(async () => provider.emit('status', { status: 'connecting' }));
     await act(async () => provider.emit('status', { status: 'connected' }));
     await close(provider, 4001);
   };
+  /** The refetch a refusal starts lands a new token before the next attempt. */
+  const fetchToken = (tokenKey: string, token: string) =>
+    act(async () => useUserStore.getState().setYjsToken(tokenKey, token));
 
-  it('must not retry forever via a token the relay keeps refusing: it stops after five refusals', async () => {
+  it('must not stop syncing via an API outage at token refresh: an expired token refused again never counts', async () => {
     const { provider, state } = await mountConnection();
 
-    for (let i = 0; i < 4; i++) await refuseToken(provider);
-    // Each refusal refetches the token and lets y-websocket reconnect.
-    expect(invalidateQueries).toHaveBeenCalledTimes(4);
+    // The token expired while no refetch could reach the API, so every reconnect carries it again.
+    for (let i = 0; i < 20; i++) await refuseToken(provider);
+
+    expect(provider.disconnect).not.toHaveBeenCalled();
+    expect(state()?.stopped).toBe(false);
+    expect(warning).not.toHaveBeenCalled();
+    // Each refusal asks for a fresh token.
+    expect(invalidateQueries).toHaveBeenCalledTimes(20);
+  });
+
+  it('must not retry forever via tokens the relay keeps refusing: it stops after five refused tokens', async () => {
+    const { provider, tokenKey, state } = await mountConnection();
+
+    for (let i = 2; i <= 5; i++) {
+      await refuseToken(provider);
+      await fetchToken(tokenKey, `token-v${i}`);
+    }
     expect(provider.disconnect).not.toHaveBeenCalled();
 
+    // The fifth token, freshly fetched, is refused too.
     await refuseToken(provider);
     expect(provider.disconnect).toHaveBeenCalledTimes(1);
     expect(state()?.stopped).toBe(true);
@@ -190,10 +212,11 @@ describe('yjs connection: token refusals', () => {
   });
 
   it('a synced connection resets the count, so routine expiry closes never stop it (positive control)', async () => {
-    const { provider, state } = await mountConnection();
+    const { provider, tokenKey, state } = await mountConnection();
 
-    for (let i = 0; i < 8; i++) {
+    for (let i = 2; i < 10; i++) {
       await refuseToken(provider);
+      await fetchToken(tokenKey, `token-v${i}`);
       await act(async () => provider.emit('sync', true));
     }
     expect(provider.disconnect).not.toHaveBeenCalled();

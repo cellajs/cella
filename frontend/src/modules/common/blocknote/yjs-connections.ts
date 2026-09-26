@@ -16,7 +16,7 @@ import { queryClient } from '~/query/query-client';
 const GRACE_PERIOD_MS = 30_000;
 const MAX_BACKOFF_MS = 30_000;
 
-// Consecutive token refusals, with no synced connection between them, before the connection stops for good.
+// Distinct tokens the relay refused, with no synced connection between them, before the connection stops for good.
 const MAX_TOKEN_FAILURES = 5;
 
 /** WebSocket close codes sent by the Yjs relay; the 4000-4999 range is reserved for application use. */
@@ -125,24 +125,31 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
     }
   });
 
-  // Counts refusals since the last synced connection: the relay closes an unusable token right after the handshake,
-  // so a connection that merely opened proves nothing.
-  let tokenFailures = 0;
+  // The token each attempt carries: y-websocket reads the params as it opens a socket, then reports 'connecting'.
+  let attemptToken = token;
+  provider.on('status', ({ status }) => {
+    if (status === 'connecting') attemptToken = provider.params.token;
+  });
+
+  // Tokens refused since the last synced connection: the relay closes an unusable token right after the handshake, so
+  // a connection that merely opened proves nothing.
+  const refusedTokens = new Set<string>();
   provider.on('sync', (isSynced: boolean) => {
-    if (isSynced) tokenFailures = 0;
+    if (isSynced) refusedTokens.clear();
   });
 
   provider.on('connection-close', (event: CloseEvent | null) => {
     // A local close carries no event; it and every transient close reconnect with backoff.
     if (!event || conn.stopped) return;
 
-    // The relay closes an expired or invalid token with 4001: a refetched token reaches the provider params before
-    // y-websocket reconnects, so only repeated refusals with no synced connection between them stop the connection.
+    // The relay closes an expired or invalid token with 4001, and the refetch this starts reaches the provider params
+    // before a later reconnect. Only distinct tokens count: while the API is unreachable every reconnect carries the
+    // expired token again, and that must not end collaboration for good once the API is back.
     if (event.code === YJS_CLOSE.TOKEN_INVALID) {
-      tokenFailures++;
+      refusedTokens.add(attemptToken);
       void queryClient.invalidateQueries({ queryKey: yjsTokenKeys.entity(entityType, editSessionId) });
-      if (tokenFailures < MAX_TOKEN_FAILURES) return;
-      console.warn(`[yjs] Circuit breaker: ${tokenFailures} consecutive token failures for ${editSessionId}`);
+      if (refusedTokens.size < MAX_TOKEN_FAILURES) return;
+      console.warn(`[yjs] Circuit breaker: ${refusedTokens.size} tokens refused in a row for ${editSessionId}`);
       stopConnection(editSessionId, conn, 'error:sync_token_expired.text');
       return;
     }

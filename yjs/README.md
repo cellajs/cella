@@ -99,7 +99,7 @@ Clients need no unload handlers or final flush: an update is durable before peer
 | Failure | Outcome |
 | --- | --- |
 | A client loses its connection | The client keeps editing and reconnects with backoff after any close but a final one. Everything it sent is logged; the next handshake uploads what it had not. |
-| The relay ends a session for good (`4003`, `4400`, a frame too big, or five token refusals with no sync between them) | The client stops reconnecting and its editor turns read-only with a notice, so nothing is typed that could not be saved |
+| The relay ends a session for good (`4003`, `4400`, a frame too big, or five different tokens refused with no sync between them) | The client stops reconnecting and its editor turns read-only with a notice, so nothing is typed that could not be saved. An expired token refused again, while no refetch reaches the API, does not count: the client keeps reconnecting with backoff and syncs once a fresh token arrives |
 | The backend is unavailable | Materialization is retried on the next window, at cleanup, or by the sweep; the log stays until the backend recovers |
 | The relay restarts | Clients reconnect with complete documents. The startup sweep compacts orphaned sessions. |
 | Access revoked | The socket closes when its token expires and cannot reconnect. Materialization credits the newest editor who may still update the entity; when none may, it is refused and retried, and the rows stay until a write succeeds. |
