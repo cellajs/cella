@@ -1625,6 +1625,37 @@
    ],
    "requires": [],
    "summary": "Rate-limit budgets reserve before the handler and block in the database only, logs and spans keep a failed query's reason but never its SQL or parameters, and server messages show in development and test only. Unsubscribe tokens are stored hashed, email templates name params through param() with a per-send nonce, COOKIE_SECRET entries need 16 characters outside development, and clientCacheVersion is bumped."
+  },
+  {
+   "id": "20260926T0537-sign-out-sign-up-streams",
+   "version": "next",
+   "title": "Sign-out spends magic links, sign-up gated at completion, streams never stall",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "locales"
+   ],
+   "requires": [],
+   "summary": "Sign-out spends the magic link its browser opened and a second click on an opened link says so. maySignUp is the one sign-up gate, checked again when a pending OAuth sign-up completes, and an invitee's provider sign-up needs no second mail. An inbox proof and the cleanup it triggers commit together. Closing streams never waits on a client that stopped reading, the sweep leaves sessionless subscribers alone and follows a gained system role, the auth_invalidate listener notices a silent connection loss, and the digest overflow line is translated."
+  },
+  {
+   "id": "20260926T0537-oauth-sessions-revocations",
+   "version": "next",
+   "title": "Authorization server sessions follow the app session, revocations reach every process",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src",
+    "locales"
+   ],
+   "requires": [],
+   "summary": "The authorization server's session holds only while the same person keeps a live app session, and ending app sessions deletes the provider sessions; codes and refresh tokens outlive them. Every grant, API-key, installation and tenant-policy revocation reaches every process through auth_invalidate. A code naming no resource leaves its grant alone, service accounts mint only for their own tenant's resource, /oauth has a per-IP request budget, and the consent page names the tenant and organization a grant reaches."
   }
  ]
 }
