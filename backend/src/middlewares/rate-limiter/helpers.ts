@@ -11,6 +11,7 @@ import type { Identifiers, RateLimiterHandler, RateLimitIdentifier } from '#/mid
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { getIp } from '#/utils/get-ip';
 import { toRateLimitIp } from '#/utils/ip-subnet';
+import { log } from '#/utils/logger';
 
 type RateLimiterOptions = {
   keyPrefix?: string;
@@ -67,8 +68,7 @@ export const getRateLimiterInstance = ({ inMemoryBlock = true, ...options }: Rat
 };
 
 /** The in-memory store a database store falls back to while the database is unreachable; none for a memory store. */
-export const insuranceOf = (store: LimiterStore) =>
-  store instanceof RateLimiterDrizzle ? insurances.get(store) : undefined;
+const insuranceOf = (store: LimiterStore) => (store instanceof RateLimiterDrizzle ? insurances.get(store) : undefined);
 
 const msUntil = (expire: Date | null) => (expire ? Math.max(expire.getTime() - Date.now(), 0) : -1);
 
@@ -97,12 +97,9 @@ export const openBucket = async (store: LimiterStore, rateLimitKey: string, dura
 /**
  * Takes one attempt from a bucket while its budget lasts, in one statement: a new or expired bucket starts at one, a
  * live one below `points` gains one. A spent bucket stays as it is, so a refused request neither counts nor blocks.
- * @param store - The bucket's limiter.
- * @param rateLimitKey - The key as the middleware passes it to the store.
- * @param limits - The budget and the counting window a new or restarted bucket gets.
  * @returns The bucket with this attempt, or null when its budget is spent.
  */
-export const takeAttempt = async (
+const takeAttempt = async (
   store: LimiterStore,
   rateLimitKey: string,
   { points, duration }: { points: number; duration: number },
@@ -130,6 +127,41 @@ export const takeAttempt = async (
   if (taken.consumedPoints <= points) return taken;
   await store.reward(rateLimitKey, 1);
   return null;
+};
+
+/**
+ * Counts an attempt before the work it bounds runs, so a parallel burst takes the budget one point at a time and at
+ * most `points` attempts go through. A spent budget refuses without counting or blocking; the caller settles the
+ * attempt once its outcome is known (`refundAttempt`, `blockSpentBucket`).
+ * @param store - The bucket's limiter.
+ * @param rateLimitKey - The key as the middleware passes it to the store.
+ * @param limits - The budget and the counting window a new or restarted bucket gets.
+ * @returns The store holding the attempt (process memory while the database is unreachable) and the bucket with it,
+ *   or the spent bucket that refused it.
+ */
+export const reserveAttempt = async (
+  store: LimiterStore,
+  rateLimitKey: string,
+  limits: { points: number; duration: number },
+): Promise<
+  { granted: true; store: LimiterStore; state: RateLimiterRes } | { granted: false; state: RateLimiterRes }
+> => {
+  let holder = store;
+  let taken: RateLimiterRes | null;
+  try {
+    taken = await takeAttempt(holder, rateLimitKey, limits);
+  } catch (err) {
+    const insurance = insuranceOf(store);
+    if (!insurance) throw err;
+    log.warn('Rate limit attempt counted in process memory', { rateLimitKey, err });
+    holder = insurance;
+    taken = await takeAttempt(holder, rateLimitKey, limits);
+  }
+  if (taken) return { granted: true, store: holder, state: taken };
+  // Read for Retry-After; a bucket reset, expired or given back since the refusal lets the client retry at once.
+  const state = await holder.get(rateLimitKey);
+  const spent = state !== null && state.consumedPoints >= limits.points;
+  return { granted: false, state: spent ? state : new RateLimiterRes(0, 1000, limits.points) };
 };
 
 /**
@@ -165,16 +197,17 @@ export const refundAttempt = async (store: LimiterStore, rateLimitKey: string) =
  * @param rateLimitKey - The key as the middleware passes it to the store.
  * @param points - The bucket's budget.
  * @param blockSeconds - How long the block lasts, the same in every process.
+ * @returns Whether the bucket was spent and is blocked now.
  */
 export const blockSpentBucket = async (
   store: LimiterStore,
   rateLimitKey: string,
   points: number,
   blockSeconds: number,
-) => {
+): Promise<boolean> => {
   const now = new Date();
   if (store instanceof RateLimiterDrizzle) {
-    await db
+    const blocked = await db
       .update(rateLimitsTable)
       .set({ expire: new Date(now.getTime() + blockSeconds * 1000) })
       .where(
@@ -183,11 +216,14 @@ export const blockSpentBucket = async (
           gte(rateLimitsTable.points, points),
           gt(rateLimitsTable.expire, now),
         ),
-      );
-    return;
+      )
+      .returning({ key: rateLimitsTable.key });
+    return blocked.length > 0;
   }
   const state = await store.get(rateLimitKey);
-  if (state && state.consumedPoints >= points) await store.set(rateLimitKey, state.consumedPoints, blockSeconds);
+  if (!state || state.consumedPoints < points) return false;
+  await store.set(rateLimitKey, state.consumedPoints, blockSeconds);
+  return true;
 };
 
 export const rateLimitError = (ctx: Context<Env>, limitState: RateLimiterRes, rateLimitKey: string) => {

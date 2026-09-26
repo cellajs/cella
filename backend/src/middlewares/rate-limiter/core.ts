@@ -5,11 +5,10 @@ import {
   blockSpentBucket,
   extractIdentifiers,
   getRateLimiterInstance,
-  insuranceOf,
   openBucket,
   rateLimitError,
   refundAttempt,
-  takeAttempt,
+  reserveAttempt,
 } from '#/middlewares/rate-limiter/helpers';
 import { restoreDebt, syncFromDb, takeDebt, tryFastConsume } from '#/middlewares/rate-limiter/points-cache';
 import type {
@@ -70,36 +69,6 @@ async function openBucketSafely(store: FailureStore, rateLimitKey: string, durat
   } catch (err) {
     log.warn('Rate limit bucket could not be opened', { rateLimitKey, err });
   }
-}
-
-/**
- * Counts an attempt before the handler runs, so a parallel burst takes the budget one point at a time and at most
- * `points` requests reach the handler. A spent budget refuses without counting or blocking; the outcome settles the
- * attempt (`settleAttempt`).
- * @returns The store holding the attempt (process memory while the database is unreachable) and the bucket with it,
- *   or the spent bucket that refused it.
- */
-async function reserveAttempt(
-  store: FailureStore,
-  rateLimitKey: string,
-  limits: BucketLimits,
-): Promise<{ granted: true; store: FailureStore; state: RateLimiterRes } | { granted: false; state: RateLimiterRes }> {
-  let holder = store;
-  let taken: RateLimiterRes | null;
-  try {
-    taken = await takeAttempt(holder, rateLimitKey, limits);
-  } catch (err) {
-    const insurance = insuranceOf(store);
-    if (!insurance) throw err;
-    log.warn('Rate limit attempt counted in process memory', { rateLimitKey, err });
-    holder = insurance;
-    taken = await takeAttempt(holder, rateLimitKey, limits);
-  }
-  if (taken) return { granted: true, store: holder, state: taken };
-  // Read for Retry-After; a bucket reset, expired or given back since the refusal lets the client retry at once.
-  const state = await holder.get(rateLimitKey);
-  const spent = state !== null && state.consumedPoints >= limits.points;
-  return { granted: false, state: spent ? state : new RateLimiterRes(0, 1000, limits.points) };
 }
 
 type Outcome = 'fail' | 'success' | 'other';

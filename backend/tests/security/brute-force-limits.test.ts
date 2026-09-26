@@ -4,10 +4,11 @@ import { nanoid } from 'nanoid';
 import { checkEmail, signInWithTotp, toggleMfa } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { baseDb as db } from '#/db/db';
+import { baseDb as db, getAdminDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
+import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
@@ -154,5 +155,53 @@ describe('brute-force budgets', async () => {
     });
     expect(response.status).toBe(204);
     expect(lockoutMailsTo(user.email)).toHaveLength(0);
+  });
+
+  it("must not check more of one account's codes than its budget via a parallel burst", async () => {
+    const user = await createTotpUser(`totp-burst-${nanoid(8)}@security-test.com`);
+    const cookie = authCookie('confirm-mfa', await createMfaToken(user));
+
+    // Ten wrong codes at once, each from its own address, against an account with its whole budget left.
+    const statuses = await Promise.all(
+      Array.from({ length: 10 }, async () => {
+        const { response } = await call(signInWithTotp, {
+          body: { code: wrongCode() },
+          headers: { ...fromIp(randomIp()), Cookie: cookie },
+        });
+        return response.status;
+      }),
+    );
+    expect(statuses.filter((status) => status === 401)).toHaveLength(5);
+    expect(statuses.filter((status) => status === 429)).toHaveLength(5);
+    // One lockout, one mail.
+    expect(lockoutMailsTo(user.email)).toHaveLength(1);
+
+    const { response } = await call(signInWithTotp, {
+      body: { code: currentCode() },
+      headers: { ...fromIp(randomIp()), Cookie: cookie },
+    });
+    expect(response.status).toBe(429);
+    expect(response.headers.get('set-cookie') ?? '').not.toContain('-session-');
+  });
+
+  it("must not keep one account's TOTP checks locked in a process after the lockout ended in the database", async () => {
+    const user = await createTotpUser(`totp-ended-${nanoid(8)}@security-test.com`);
+    const cookie = authCookie('confirm-mfa', await createMfaToken(user));
+    const attempt = async (code: string) =>
+      (await call(signInWithTotp, { body: { code }, headers: { ...fromIp(randomIp()), Cookie: cookie } })).response;
+
+    for (let failure = 0; failure < 5; failure++) expect((await attempt(wrongCode())).status).toBe(401);
+    expect((await attempt(currentCode())).status).toBe(429);
+
+    // The lockout runs out in the database, which every process reads.
+    await getAdminDb('rate limit test')
+      .update(rateLimitsTable)
+      .set({ expire: new Date(Date.now() - 1000) })
+      .where(eq(rateLimitsTable.key, `totpAccount:userId:${user.id}`));
+
+    const response = await attempt(currentCode());
+    expect(response.status).toBe(204);
+    expect(response.headers.get('set-cookie') ?? '').toContain('-session-');
+    expect(lockoutMailsTo(user.email)).toHaveLength(1);
   });
 });

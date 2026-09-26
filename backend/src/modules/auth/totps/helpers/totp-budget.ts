@@ -1,8 +1,13 @@
 import type { Context } from 'hono';
-import { RateLimiterRes } from 'rate-limiter-flexible';
 import type { Env } from '#/core/context';
 import { slowOptions } from '#/middlewares/rate-limiter/core';
-import { getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
+import {
+  blockSpentBucket,
+  getRateLimiterInstance,
+  rateLimitError,
+  refundAttempt,
+  reserveAttempt,
+} from '#/middlewares/rate-limiter/helpers';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import type { UserModel } from '#/modules/user/user-db';
 import { log } from '#/utils/logger';
@@ -19,7 +24,8 @@ interface TierLimits {
 const tier = (keyPrefix: string, limits: TierLimits, endsOnSuccess: boolean) => ({
   limits,
   endsOnSuccess,
-  store: getRateLimiterInstance({ ...limits, keyPrefix }),
+  // A lockout lives in the database only, so every process holds it for the same time.
+  store: getRateLimiterInstance({ ...limits, keyPrefix, inMemoryBlock: false }),
 });
 
 /**
@@ -32,50 +38,71 @@ const tiers = [
   tier('totpAccount:slow', slowOptions, false),
 ];
 
-/** One TOTP attempt: its count in each tier of the account's budget, or null where the store was unavailable. */
+type TierStore = (typeof tiers)[number]['store'];
+
+/** One TOTP attempt: per tier, the store holding it and its count there, or null where the tier did not count it. */
 export interface TotpAttempt {
   key: string;
-  counts: (number | null)[];
+  held: ({ store: TierStore; count: number } | null)[];
 }
 
-/**
- * Counts a TOTP attempt against the account's budget before its code is checked, so parallel guesses cannot all pass
- * a budget that is already spent.
- * @throws AppError 429 `too_many_requests` while a tier is spent, even for the right code.
- */
-export const takeTotpAttempt = async (ctx: Context<Env>, userId: string): Promise<TotpAttempt> => {
-  const key = `userId:${userId}`;
-  const counts: (number | null)[] = [];
-
-  for (const { store } of tiers) {
+/** Gives back the attempt in every tier that counted it. */
+const giveBack = async ({ key, held }: TotpAttempt) => {
+  for (const counted of held) {
+    if (!counted) continue;
     try {
-      counts.push((await store.consume(key)).consumedPoints);
+      await refundAttempt(counted.store, key);
     } catch (err) {
-      // The store refuses a spent tier, also while it holds the key blocked in memory.
-      if (err instanceof RateLimiterRes) return rateLimitError(ctx, err, key);
-      // Unreachable store: the check goes on uncounted, as the route limiters do.
-      log.warn('TOTP budget unavailable', { key, err });
-      counts.push(null);
+      log.warn('TOTP budget not settled', { key, err });
     }
   }
-
-  return { key, counts };
 };
 
 /**
- * Settles an attempt once its code is checked. A verified code gives the attempt back and ends the hourly series. The
- * failure that spends a tier locks the account's TOTP checks for that tier's block and mails the owner.
+ * Counts a TOTP attempt against the account's budget before its code is checked. Each tier takes it only while its
+ * budget lasts, so a parallel burst checks at most the budget's codes; a spent tier counts nothing and refuses.
+ * @throws AppError 429 `too_many_requests` while a tier is spent, even for the right code.
  */
-export const settleTotpAttempt = async ({ key, counts }: TotpAttempt, user: TotpUser, verified: boolean) => {
-  for (const [index, { store, limits, endsOnSuccess }] of tiers.entries()) {
-    const count = counts[index];
-    if (count === null || count === undefined) continue;
+export const takeTotpAttempt = async (ctx: Context<Env>, userId: string): Promise<TotpAttempt> => {
+  const attempt: TotpAttempt = { key: `userId:${userId}`, held: [] };
+
+  for (const { store, limits } of tiers) {
+    let reservation: Awaited<ReturnType<typeof reserveAttempt>>;
+    try {
+      reservation = await reserveAttempt(store, attempt.key, limits);
+    } catch (err) {
+      // Neither the database nor process memory counted it: the check goes on uncounted in this tier.
+      log.warn('TOTP budget unavailable', { key: attempt.key, err });
+      attempt.held.push(null);
+      continue;
+    }
+    if (!reservation.granted) {
+      await giveBack(attempt);
+      return rateLimitError(ctx, reservation.state, attempt.key);
+    }
+    attempt.held.push({ store: reservation.store, count: reservation.state.consumedPoints });
+  }
+
+  return attempt;
+};
+
+/**
+ * Settles an attempt once its code is checked. A verified code gives the attempt back and ends the hourly series. A
+ * failure keeps it, and a failure answered while a tier's whole budget is taken locks the account's TOTP checks for
+ * that tier's block; the failure that took the last attempt mails the owner, once per lockout.
+ */
+export const settleTotpAttempt = async ({ key, held }: TotpAttempt, user: TotpUser, verified: boolean) => {
+  for (const [index, { limits, endsOnSuccess }] of tiers.entries()) {
+    const counted = held[index];
+    if (!counted) continue;
 
     try {
       if (verified) {
-        await (endsOnSuccess ? store.delete(key) : store.reward(key));
-      } else if (count >= limits.points) {
-        await store.block(key, limits.blockDuration);
+        await (endsOnSuccess ? counted.store.delete(key) : refundAttempt(counted.store, key));
+      } else if (
+        (await blockSpentBucket(counted.store, key, limits.points, limits.blockDuration)) &&
+        counted.count >= limits.points
+      ) {
         sendAccountSecurityEmail(user, 'totp-lockout', {
           attempts: limits.points,
           duration: Math.round(limits.blockDuration / 60),
