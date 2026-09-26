@@ -317,7 +317,11 @@ interface BindInactiveMembershipsByEmailOpts {
   userId: string;
 }
 
-/** Binds every unbound invitation addressed to `email` and returns the ids it bound. The caller has proven that inbox. */
+/**
+ * Binds every unbound, {@link claimableBy claimable} invitation addressed to `email` and returns the ids it bound. The
+ * caller has proven that inbox. An invitation already bound to the user is left out, so the link flow that bound it
+ * keeps its token.
+ */
 export const bindInactiveMembershipsByEmail = async (
   ctx: DbContext,
   { email, userId }: BindInactiveMembershipsByEmailOpts,
@@ -326,7 +330,7 @@ export const bindInactiveMembershipsByEmail = async (
   const bound = await db
     .update(inactiveMembershipsTable)
     .set({ userId })
-    .where(and(eq(inactiveMembershipsTable.email, email), isNull(inactiveMembershipsTable.userId)))
+    .where(and(eq(inactiveMembershipsTable.email, email), isNull(inactiveMembershipsTable.userId), claimableBy(userId)))
     .returning({ id: inactiveMembershipsTable.id });
   return bound.map((row) => row.id);
 };

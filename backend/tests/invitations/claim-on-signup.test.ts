@@ -11,6 +11,7 @@ import { defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { createInvitation } from './helpers';
 
 const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 const invitedEmail = 'newcomer@example.com';
@@ -79,6 +80,23 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
     expect(pending).toHaveLength(3);
     expect(pending.every((m) => m.userId === user.id)).toBe(true);
     expect(await tokensFor(invitedEmail)).toHaveLength(0);
+  });
+
+  it('keeps the link of an invitation already bound to the user: the flow that bound it still holds its cookie', async () => {
+    const organization = await createTestOrganization();
+    const user = await handleCreateUser({ var: { db } }, { newUser: newcomer });
+    // Opening the emailed link binds the invitation and its token to the account that proved the address.
+    await createInvitation({
+      organization,
+      email: invitedEmail,
+      createdBy: user.id,
+      boundTo: user.id,
+      token: 'invoked',
+    });
+
+    await markEmailVerified(db, { userId: user.id, email: invitedEmail, via: 'magic' });
+
+    expect(await tokensFor(invitedEmail)).toHaveLength(1);
   });
 
   it('leaves invitations for other addresses untouched', async () => {

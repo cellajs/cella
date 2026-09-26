@@ -3,6 +3,7 @@ import { acceptInvitationToken, handleMembershipInvitation, membershipInvite } f
 import { hierarchy } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { markEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
@@ -126,6 +127,35 @@ describe('Rejected invitations', async () => {
     });
     expect(viaToken.response.status).toBe(200);
     expect(await membershipsIn(byToken.id, organization.id)).toHaveLength(1);
+  });
+
+  it('must not bind a rejected invitation via an inbox proof', async () => {
+    const owner = await createTestUser('proven-owner@security-test.com', false);
+    // A rejected invitation that no account holds, and a pending one, both to the owner's address.
+    const rejected = await createInvitation({
+      organization: await createTestOrganization(),
+      email: owner.email,
+      createdBy: owner.id,
+    });
+    await markRejected(rejected.inactiveMembership.id);
+    const pending = await createInvitation({
+      organization: await createTestOrganization(),
+      email: owner.email,
+      createdBy: owner.id,
+    });
+
+    expect(await markEmailVerified(db, { userId: owner.id, email: owner.email, via: 'magic' })).toBe(true);
+
+    const boundUserOf = async (id: string) =>
+      (
+        await db
+          .select({ userId: inactiveMembershipsTable.userId })
+          .from(inactiveMembershipsTable)
+          .where(eq(inactiveMembershipsTable.id, id))
+      )[0]?.userId;
+    expect(await boundUserOf(rejected.inactiveMembership.id)).toBeNull();
+    // The pending invitation to the same address is claimed (positive control).
+    expect(await boundUserOf(pending.inactiveMembership.id)).toBe(owner.id);
   });
 
   it('must not list or count a rejected invitation as pending', async () => {
