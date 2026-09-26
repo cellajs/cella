@@ -7,16 +7,18 @@ import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import { createExpiredToken, createSignedToken, deferred } from './helpers';
 
 // The real upgrade handler over mocked collaborators: entity access is granted in the requested scope, the relay and session manager are inert.
-// `hold` keeps a verification pending until the test releases it.
-const verifyGate: { delayMs: number; allowed: boolean; hold: Promise<void> | null } = {
+// `hold` keeps a verification pending until the test releases it; `error` makes it fail, as an unreachable database does.
+const verifyGate: { delayMs: number; allowed: boolean; hold: Promise<void> | null; error: Error | null } = {
   delayMs: 0,
   allowed: true,
   hold: null,
+  error: null,
 };
 vi.mock('../data/permissions', () => ({
   authorizeDoc: vi.fn(async (_userId: string, requested: unknown) => {
     if (verifyGate.hold) await verifyGate.hold;
     if (verifyGate.delayMs) await new Promise((resolve) => setTimeout(resolve, verifyGate.delayMs));
+    if (verifyGate.error) throw verifyGate.error;
     return verifyGate.allowed ? requested : null;
   }),
 }));
@@ -339,6 +341,7 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     verifyGate.delayMs = 0;
     verifyGate.allowed = true;
     verifyGate.hold = null;
+    verifyGate.error = null;
   });
 
   it('sync frames sent before verification wait for it and then apply in arrival order, one at a time', async () => {
@@ -391,5 +394,24 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     expect(await closed).toBe(4003);
     await wait(60);
     expect(applied.filter((frame) => frame.type === 0)).toHaveLength(0);
+  });
+
+  it('must not leave a socket open when its verification fails: it closes with 4503 and its queued frames never apply', async () => {
+    const verification = deferred();
+    verifyGate.hold = verification.promise;
+    verifyGate.error = new Error('ECONNREFUSED');
+    const before = framesReceived;
+    const token = createSignedToken({ userId: 'user-1', entityId: 'entity-unavailable' });
+    const ws = new WsWebSocket(`${baseUrl}/entity-unavailable?token=${token}&entityType=task&tenantId=tenant-1`);
+    const closed = new Promise<number>((resolve) => ws.on('close', (code) => resolve(code)));
+    await new Promise<void>((resolve) => ws.on('open', () => resolve()));
+    ws.send(new Uint8Array([0, 2, 6]));
+    await until(() => framesReceived === before + 1);
+
+    verification.release();
+    const outcome = await Promise.race([closed, wait(1000).then(() => 'still open')]);
+    expect(outcome).toBe(4503);
+    await wait(60);
+    expect(applied).toHaveLength(0);
   });
 });

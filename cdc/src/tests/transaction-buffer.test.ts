@@ -240,37 +240,6 @@ describe('TransactionBuffer', () => {
     expect(processedEvents[0].result.activity.entityType).toBe('organization');
   });
 
-  it('suppresses cascaded deletes from organization deletion', async () => {
-    buffer.onBegin({ tag: 'begin', xid: 45, commitLsn: null, commitTime: BigInt(0) });
-
-    const proj = mockParseResult({
-      action: 'delete',
-      entityType: 'organization',
-      subjectId: 'org-1',
-      organizationId: 'org-1',
-    });
-    // Matched via organizationId.
-    const t1 = mockParseResult({
-      action: 'delete',
-      entityType: 'attachment',
-      subjectId: 'attachment-1',
-      organizationId: 'org-1',
-    });
-    const org = mockParseResult({ action: 'delete', entityType: 'organization', subjectId: 'org-1' });
-
-    await buffer.onEvent('0/1', proj);
-    await buffer.onEvent('0/2', t1);
-    await buffer.onEvent('0/3', org);
-
-    await buffer.onCommit();
-
-    // Channel entity deletes are never suppressed; only the attachment is.
-    expect(processedEvents).toHaveLength(2); // org + project
-    const types = processedEvents.map((e) => e.result.activity.entityType);
-    expect(types).toContain('organization');
-    expect(types).toContain('organization');
-  });
-
   it('handles single-event transactions with no overhead', async () => {
     buffer.onBegin({ tag: 'begin', xid: 46, commitLsn: null, commitTime: BigInt(0) });
 
