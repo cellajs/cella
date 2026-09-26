@@ -58,9 +58,10 @@ export function SetupTotp() {
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
+  // A new key once the QR code expired may come after the step-up window: the re-auth dialog opens, then it loads.
   const { data } = useSuspenseQuery({
     queryKey: ['totp', 'uri'],
-    queryFn: async () => await generateTotpKey(),
+    queryFn: () => withStepUp(() => generateTotpKey()),
     staleTime: 0,
   });
 
