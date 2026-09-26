@@ -2,7 +2,7 @@ import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
-import type { DocScope, SocketContext } from '../constants';
+import type { DocKey, DocScope, SocketContext } from '../constants';
 import { YJS_AWARENESS_RATE_LIMIT, YJS_COMPACT_DEBOUNCE_MS } from '../constants';
 import { loadEntityDescription } from '../data/entity-content';
 import { appendUpdate, ensureDoc, loadBase, readLog } from '../data/storage';
@@ -17,10 +17,18 @@ const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
 
 const awarenessTimestamps = new WeakMap<WebSocket, number>();
 
-/** Message type of a raw frame, without decoding the rest; null for a frame too short to carry one. */
+/** The frame's leading varint; null when it is cut short or out of range, on which lib0 throws. */
+function readMessageType(decoder: decoding.Decoder): number | null {
+  try {
+    return decoding.readVarUint(decoder);
+  } catch {
+    return null;
+  }
+}
+
+/** Message type of a raw frame, without decoding the rest; null for a frame that carries none a decoder accepts. */
 export function peekMessageType(data: Uint8Array): number | null {
-  if (data.length < 2) return null;
-  return decoding.readVarUint(decoding.createDecoder(data));
+  return readMessageType(decoding.createDecoder(data));
 }
 
 function encodeSyncStep2(update: Uint8Array): Uint8Array {
@@ -39,9 +47,9 @@ function encodeSyncStep1(stateVector: Uint8Array): Uint8Array {
   return encoding.toUint8Array(encoder);
 }
 
-/** Closes a socket whose frame no decoder accepts: its client is broken or hostile, and nothing it sent reaches the log or a peer. */
-function refuseMalformed(scope: DocScope, userId: string, ws: WebSocket, reason = 'Malformed update'): void {
-  log.warn(`${reason} refused for ${scope.entityType}:${scope.entityId}`, { userId });
+/** Closes a socket whose frame the relay refuses: its client is broken or hostile, and nothing it sent reaches the log or a peer. */
+export function refuseFrame(doc: DocKey, userId: string, ws: WebSocket, reason = 'Malformed update'): void {
+  log.warn(`${reason} refused for ${doc.entityType}:${doc.entityId}`, { userId });
   ws.close(4400, reason);
 }
 
@@ -89,7 +97,8 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
   const { scope } = ctx;
 
   const decoder = decoding.createDecoder(data);
-  const messageType = decoding.readVarUint(decoder);
+  const messageType = readMessageType(decoder);
+  if (messageType === null) return refuseFrame(scope ?? ctx.requested, ctx.userId, ws, 'Malformed frame');
 
   if (messageType === YMessage.Sync) {
     if (!scope) return;
@@ -100,7 +109,7 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
       syncType = decoding.readVarUint(decoder);
       payload = decoding.readVarUint8Array(decoder);
     } catch {
-      refuseMalformed(scope, ctx.userId, ws);
+      refuseFrame(scope, ctx.userId, ws);
       return;
     }
 
@@ -123,7 +132,7 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
     try {
       entries = decodeAwarenessEntries(decoding.readVarUint8Array(decoder));
     } catch {
-      refuseMalformed(scope, ctx.userId, ws, 'Malformed awareness');
+      refuseFrame(scope, ctx.userId, ws, 'Malformed awareness');
       return;
     }
     // Presence for another user's client would show a cursor under their name, or remove theirs.
@@ -181,7 +190,7 @@ async function handleSyncUpdate(
   // A client's Step2 reply carries nothing when it holds nothing the relay lacks.
   if (kind === 'empty') return;
   // Logged, it would break every later merge of the document.
-  if (kind === 'malformed') return refuseMalformed(scope, userId, ws);
+  if (kind === 'malformed') return refuseFrame(scope, userId, ws);
 
   const collab = getCollab(scope);
   if (!collab) {

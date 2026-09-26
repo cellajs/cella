@@ -7,7 +7,7 @@ import { type SocketContext, YJS_PENDING_QUEUE_CAP } from '../constants';
 import { authorizeDoc } from '../data/permissions';
 import { log } from '../lib/pino';
 import { createSerialQueue } from '../lib/serial-queue';
-import { handleMessage, peekMessageType, YMessage } from '../sync/relay';
+import { handleMessage, peekMessageType, refuseFrame, YMessage } from '../sync/relay';
 import { joinCollab, leaveCollab } from '../sync/session-manager';
 import { verifyToken } from './auth';
 import { stripYjsPrefix } from './path-prefix';
@@ -258,11 +258,12 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       });
     };
 
-    ws.on('message', (rawData: Buffer) => {
+    const receive = (data: Uint8Array) => {
       // ws still emits frames that arrive while the socket closes: none reach the document or its peers.
       if (ws.readyState !== ws.OPEN) return;
-      const data = new Uint8Array(rawData);
-      if (peekMessageType(data) === YMessage.Awareness) {
+      const messageType = peekMessageType(data);
+      if (messageType === null) return refuseFrame(ctx.requested, ctx.userId, ws, 'Malformed frame');
+      if (messageType === YMessage.Awareness) {
         if (joined) relayAwareness(data);
         else if (!queue.closed) heldAwareness = data;
         return;
@@ -270,6 +271,16 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       // Bounds memory while a slow verification holds the queue; a verified socket is not capped.
       if (!ctx.scope && queue.size >= YJS_PENDING_QUEUE_CAP) return;
       void queue.enqueue(() => handleMessage(ctx, ws, data));
+    };
+
+    // An exception out of a socket listener is uncaught and ends the process, under singleVM the whole API.
+    ws.on('message', (rawData: Buffer) => {
+      try {
+        receive(new Uint8Array(rawData));
+      } catch (err) {
+        log.error(`Frame handling failed for ${docLabel(ctx)}`, { err });
+        ws.close(1011, 'Frame handling failed');
+      }
     });
 
     ws.on('close', cleanup);

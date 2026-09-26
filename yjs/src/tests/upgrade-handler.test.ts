@@ -22,9 +22,15 @@ vi.mock('../data/permissions', () => ({
 }));
 // Frames are recorded with the verification state they were applied under; awareness frames bypass the queue.
 const applied: { type: number; verified: boolean; body: number }[] = [];
+// A frame starting with 0xff stands for one the relay throws on.
 vi.mock('../sync/relay', () => ({
   YMessage: { Sync: 0, Awareness: 1 },
-  peekMessageType: (data: Uint8Array) => (data.length < 2 ? null : data[0]),
+  peekMessageType: (data: Uint8Array) => {
+    if (data[0] === 0xff) throw new Error('relay failure');
+    return data.length === 0 ? null : data[0];
+  },
+  refuseFrame: (_scope: unknown, _userId: string, ws: { close: (code: number, reason: string) => void }) =>
+    ws.close(4400, 'Malformed frame'),
   handleMessage: vi.fn(async (ctx: { scope: unknown }, _ws: unknown, data: Uint8Array) => {
     // A slow first frame: later frames must still apply after it, in order.
     if (data[2] === 1) await new Promise((resolve) => setTimeout(resolve, 30));
@@ -283,6 +289,23 @@ describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () 
     expect(crashes).toEqual([]);
     // The refusal ends the connection itself: a peer that never closes cannot hold the socket open.
     expect(serverSide.destroyed).toBe(true);
+    await expectStillServing();
+  });
+
+  it('must not crash the process via a frame the relay throws on: only its socket closes, with 1011', async () => {
+    const token = createSignedToken({ userId: 'user-1', entityId: 'entity-throw' });
+    const ws = new WsWebSocket(`${baseUrl}/entity-throw?token=${token}&entityType=task&tenantId=tenant-1`);
+    const closed = new Promise<number>((resolve) => ws.on('close', (code) => resolve(code)));
+    await new Promise<void>((resolve) => ws.on('open', () => resolve()));
+
+    ws.send(new Uint8Array([0xff, 0]));
+    const outcome = await Promise.race([
+      closed,
+      new Promise((resolve) => setTimeout(() => resolve('still open'), 1000)),
+    ]);
+
+    expect(outcome).toBe(1011);
+    expect(crashes).toEqual([]);
     await expectStillServing();
   });
 

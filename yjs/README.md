@@ -42,10 +42,13 @@ Entity authorization runs after the socket opens, via an RLS-scoped read of the 
 
 | Close code | Meaning |
 | --- | --- |
+| `1011` | Handling a frame failed in the relay; the client reconnects |
 | `4001` | Invalid or expired token, or the socket's token expired |
 | `4003` | Entity access denied |
-| `4400` | Missing or invalid entity scope, or a sync frame or update Yjs cannot decode |
+| `4400` | Missing or invalid entity scope, or a frame no decoder accepts: its message type, a sync frame, an update or an awareness update |
 | `4503` | Authorization unavailable |
+
+Every frame is decoded without throwing: one no decoder accepts closes only its own socket, and nothing a frame does can end the process, which under singleVM is the whole API.
 
 ## Session lifecycle
 

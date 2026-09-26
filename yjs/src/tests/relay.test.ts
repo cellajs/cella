@@ -35,7 +35,7 @@ vi.mock('../sync/materialize', () => ({
   stateToBlocksJson: vi.fn(() => '[]'),
 }));
 
-const { handleMessage, runCompaction } = await import('../sync/relay');
+const { handleMessage, peekMessageType, runCompaction } = await import('../sync/relay');
 const { loadEntityDescription } = await import('../data/entity-content');
 const { postMaterialize, stateToBlocksJson } = await import('../sync/materialize');
 const { yUpdateToBlocks } = await import('../lib/blocknote-seed');
@@ -86,6 +86,26 @@ describe('handleMessage: gating and validation', () => {
     await handleMessage(ctx, ws as never, new Uint8Array([9, 0, 0]));
     expect(ws.sent).toHaveLength(0);
     expect(storage.appendUpdate).not.toHaveBeenCalled();
+  });
+
+  it('must not throw on a frame whose message type is cut short, and closes its sender with 4400', async () => {
+    const { ctx: c, scope, key, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+    // Two continuation bytes: a varint that never ends.
+    const frame = new Uint8Array([0x80, 0x80]);
+
+    expect(peekMessageType(frame)).toBeNull();
+    await expect(handleMessage(c, ws as never, frame)).resolves.toBeUndefined();
+    expect(ws.closed).toEqual({ code: 4400, reason: 'Malformed frame' });
+    expect(peer.sent).toHaveLength(0);
+
+    // Positive control: a well-formed frame reads its type and applies.
+    const update = buildSyncUpdate(mapUpdate('k', 1));
+    expect(peekMessageType(update)).toBe(0);
+    await handleMessage(c, peer as never, update);
+    expect(storage.logs.get(key)).toHaveLength(1);
+    leaveCollab(collab.scope, peer as never);
   });
 });
 

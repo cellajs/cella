@@ -134,6 +134,37 @@ describe('upgrade: a closing socket', () => {
   });
 });
 
+describe('upgrade: a frame no decoder accepts', () => {
+  // A listener that throws is an uncaught exception: it ends the relay, and under singleVM the whole API.
+  const crashes: unknown[] = [];
+  const record = (err: unknown) => void crashes.push(err);
+
+  beforeAll(() => {
+    process.on('uncaughtException', record);
+  });
+
+  afterAll(() => {
+    process.off('uncaughtException', record);
+  });
+
+  it('must not crash the relay via a frame whose message type is cut short', async () => {
+    const doc = 'doc-malformed-frame';
+    const peer = await open('user-a', doc);
+    const sender = await open('user-b', doc);
+    await until(() => clientCount(doc) === 2);
+
+    sender.ws.send(Buffer.from([0x80, 0x80]));
+    const outcome = await Promise.race([sender.closed, wait(1000).then(() => 'still open')]);
+
+    expect(outcome).toBe(4400);
+    expect(crashes).toEqual([]);
+    // Positive control: only the sender's socket closed, and the peer's next update is logged.
+    peer.ws.send(buildSyncUpdate(mapUpdate('k', 1)));
+    await until(() => storage.logs.get(storageKey(docOf(doc)))?.length === 1);
+    expect(peer.ws.readyState).toBe(WsWebSocket.OPEN);
+  });
+});
+
 describe('upgrade: a socket joins its document only once verified', () => {
   it("must not relay a peer's edits to a socket still pending verification", async () => {
     const doc = 'doc-pending-edits';
