@@ -3,7 +3,7 @@
   "version": "v1",
   "description": "⚠️ ATTENTION: PRERELEASE!\n                  This API is organized into modules based on logical domains.",
   "openapiVersion": "3.1.0",
-  "documentedOperationCount": 96,
+  "documentedOperationCount": 103,
   "hiddenOperationCount": 0,
   "extensions": [
     {
@@ -38,6 +38,14 @@
           "name": "relatable",
           "description": "Checks that the requesting user shares at least one organization with the target user"
         },
+        "stepUpGuard": {
+          "name": "stepUp",
+          "description": "Requires a recent proof of presence on this session: the enrolled passkey or TOTP, else a fresh sign-in or a confirmed email link. Refuses impersonation."
+        },
+        "stepUpOrFactorProofGuard": {
+          "name": "stepUpOrFactorProof",
+          "description": "Requires a recent proof of presence on this session, or a passkey or TOTP proof on the request itself. Refuses impersonation."
+        },
         "sysAdminGuard": { "name": "sysAdmin", "description": "Requires system admin + IP whitelist" },
         "tenantGuard": {
           "name": "tenant",
@@ -60,7 +68,10 @@
           "name": "spam",
           "description": "Max 10 requests/hour per user (per IP when anonymous) for email-sending endpoints"
         },
-        "emailEnumLimiter": { "name": "emailEnum", "description": "Blocks IP for 30 min after 5 consecutive failures" },
+        "emailEnumLimiter": {
+          "name": "emailEnum",
+          "description": "Max 30 address lookups/hour per IP, then blocks the IP for 30 min"
+        },
         "presignedUrlLimiter": {
           "name": "presignedUrl",
           "description": "Max 2000 requests/hour per user for presigned URLs"
@@ -69,6 +80,14 @@
           "name": "totpVerification",
           "description": "Blocks IP for 30 min after 5 failed TOTP attempts"
         },
+        "mfaToggleLimiter": {
+          "name": "mfaToggle",
+          "description": "Blocks the account for 30 min after 5 failed second-factor checks on the MFA toggle"
+        },
+        "stepUpLimiter": {
+          "name": "stepUp",
+          "description": "Blocks the account for 30 min after 5 failed second-factor checks on step-up"
+        },
         "magicLinkLimiter": {
           "name": "magicLink",
           "description": "Max 2 magic link emails per 30 min per email address"
@@ -76,6 +95,10 @@
         "passkeyChallengeLimiter": {
           "name": "passkeyChallenge",
           "description": "Max 30 passkey challenges/hour per IP"
+        },
+        "clientMetadataFetchLimiter": {
+          "name": "clientMetadataFetch",
+          "description": "Max 60 client metadata document fetches per minute per IP"
         },
         "serviceBurstLimiter": { "name": "serviceBurst", "description": "Max 30 requests/second per service account" },
         "syncReadLimiter": {
@@ -118,6 +141,13 @@
       "key": "x-service",
       "id": "x-service",
       "description": "Service gating the endpoint; route returns 404 when the service is disabled",
+      "required": false,
+      "kind": "metadata"
+    },
+    {
+      "key": "x-strategy",
+      "id": "x-strategy",
+      "description": "Sign-in method the endpoint belongs to; refused while that method is switched off",
       "required": false,
       "kind": "metadata"
     }

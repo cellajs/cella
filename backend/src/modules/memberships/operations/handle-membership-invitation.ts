@@ -2,12 +2,12 @@ import { and, eq } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
+import { deleteInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import {
   bindInactiveMemberships,
-  deleteInvitationTokens,
   findClaimableInactiveMembership,
   findInactiveMembershipForUser,
 } from '#/modules/memberships/memberships-queries';
@@ -73,6 +73,7 @@ export async function handleMembershipInvitationOp(
         .update(inactiveMembershipsTable)
         .set({ rejectedAt: getIsoDate() })
         .where(and(eq(inactiveMembershipsTable.id, inactiveMembership.id)));
+      await deleteInvitationTokens({ var: { db: tx } }, { inactiveMembershipIds: [inactiveMembership.id] });
     }
   });
 

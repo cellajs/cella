@@ -184,7 +184,15 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   mcpUrl: string;
   oauthUrl: string;
-  devPorts: { frontend: number; api: number; cdcHealth: number; yjs: number; mcp: number; oauth: number };
+  devPorts: {
+    frontend: number;
+    api: number;
+    cdcHealth: number;
+    yjs: number;
+    mcp: number;
+    oauth: number;
+    internal: number;
+  };
   services: Record<string, AppServiceEndpointConfig>;
   singleVM: boolean;
   aboutUrl: string;
@@ -219,6 +227,8 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
   defaultBodyLimit: number;
 
   s3: S3ConfigInput;
+  /** Origin of the media asset CDN; empty while none is configured. */
+  mediaAssetOrigin: string;
   uppy: { defaultRestrictions: UppyRestrictionsConfig };
   localBlobStorage: LocalBlobStorageConfig;
 

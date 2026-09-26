@@ -111,7 +111,7 @@ export const config = {
    * with the dev `frontendUrl` port (unique per app) so parallel local stacks never collide.
    * `frontend` is the Vite fallback for when `frontendUrl` carries no port (tunnel mode).
    */
-  devPorts: { frontend: 3000, api: 4000, cdcHealth: 4001, yjs: 4002, mcp: 4003, oauth: 4004 },
+  devPorts: { frontend: 3000, api: 4000, cdcHealth: 4001, yjs: 4002, mcp: 4003, oauth: 4004, internal: 4005 },
   /**
    * Per-service toggles and public URLs. `enabled` controls whether the service
    * is wired up; `publicUrl` is the externally reachable endpoint.
@@ -195,7 +195,7 @@ export const config = {
   enabledOAuthProviders: ['github'] as const,
 
   /** Token types used for verification flows */
-  tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic'] as const,
+  tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up'] as const,
 
   /** Max concurrent sessions per user (regular and mfa); oldest beyond it are evicted on sign-in (bloat/abuse guard). */
   maxSessionsPerUser: 10,
@@ -247,7 +247,10 @@ export const config = {
   } as S3ConfigInput,
 
   /** Upload template IDs for Transloadit processing pipelines */
-  uploadTemplateIds: ['avatar', 'cover', 'attachment'] as const,
+  uploadTemplateIds: ['avatar', 'cover', 'attachment', 'newsletter'] as const,
+
+  /** Media asset CDN origin (re-hosted images referenced by URL); empty while no asset service is configured */
+  mediaAssetOrigin: '',
 
   /** Uppy upload widget default restrictions */
   uppy: {

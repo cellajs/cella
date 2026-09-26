@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
 import { baseDb } from '#/db/db';
 import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bus';
+import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { findUserById } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
@@ -11,10 +12,15 @@ const securityEmailType = {
   delete: 'system-role-revoked',
 } as const;
 
-/** Notify the security contact for every CDC-observed system-role change. */
+/**
+ * Every CDC-observed system-role change drops the user's cached sessions in every process, so the role (and the
+ * impersonations it backs) holds only while it is granted, and notifies the security contact.
+ */
 const notifySystemRoleChange = async (event: ActivityEvent) => {
   const systemRole = getEventData(event, 'system_role');
   if (!systemRole) return;
+
+  invalidateCache.user(systemRole.userId);
 
   try {
     // On delete the user may already be cascade-deleted; fall back to the raw id

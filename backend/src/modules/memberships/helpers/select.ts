@@ -27,5 +27,20 @@ export const toMembershipBase = (membership: Record<string, unknown>): Membershi
   return result as MembershipBaseModel;
 };
 
+type PersonalViewKey = 'archived' | 'muted' | 'displayOrder';
+
+/**
+ * A membership as the user `viewerId` may see it. Archive, mute and menu order are each member's own view of a channel,
+ * so a response keeps them on the viewer's own membership and leaves them out of anyone else's.
+ */
+export const membershipAsSeenBy = <M extends Pick<MembershipBaseModel, 'userId' | PersonalViewKey>>(
+  membership: M,
+  viewerId: string,
+): M | Omit<M, PersonalViewKey> => {
+  if (membership.userId === viewerId) return membership;
+  const { archived: _archived, muted: _muted, displayOrder: _displayOrder, ...seen } = membership;
+  return seen;
+};
+
 /** A user's binding is its membership row; a service account's binding is not. Narrows `actor.bindings` elements. */
 export const isMembershipRow = (grant: ActorBinding): grant is MembershipBaseModel => 'userId' in grant;

@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockDocContext, mockWebSocket, storageMock } from './helpers';
+import { mockScope, mockWebSocket, storageMock } from './helpers';
 
 vi.mock('../data/storage', () => storageMock());
 vi.mock('../sync/compaction', () => ({ compactDocument: vi.fn().mockResolvedValue('ok') }));
@@ -31,13 +31,10 @@ describe('runStartupSweep', () => {
     await runStartupSweep();
 
     expect(compactDocument).toHaveBeenCalledTimes(2);
-    expect(compactDocument).toHaveBeenCalledWith({ ...staleRow(), userId: '', verified: true });
+    // As the system, in the scope the row stored: no user context.
+    expect(compactDocument).toHaveBeenCalledWith(staleRow());
     expect(deleteDoc).toHaveBeenCalledTimes(2);
-    expect(deleteDoc).toHaveBeenCalledWith({
-      ...staleRow({ entityId: 'entity-2', organizationId: null }),
-      userId: '',
-      verified: true,
-    });
+    expect(deleteDoc).toHaveBeenCalledWith(staleRow({ entityId: 'entity-2', organizationId: null }));
   });
 
   it('deletes a row with nothing logged without a write (empty compaction)', async () => {
@@ -47,15 +44,22 @@ describe('runStartupSweep', () => {
     expect(deleteDoc).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps the rows when materialization is retry-class or compaction throws', async () => {
-    vi.mocked(listStaleDocs).mockResolvedValueOnce([staleRow(), staleRow({ entityId: 'entity-2' })]);
-    vi.mocked(compactDocument).mockResolvedValueOnce('retry').mockRejectedValueOnce(new Error('db down'));
+  it('keeps the rows when the log was not written or compaction throws', async () => {
+    vi.mocked(listStaleDocs).mockResolvedValueOnce([
+      staleRow(),
+      staleRow({ entityId: 'entity-2' }),
+      staleRow({ entityId: 'entity-3' }),
+    ]);
+    vi.mocked(compactDocument)
+      .mockResolvedValueOnce('retry')
+      .mockResolvedValueOnce('permanent')
+      .mockRejectedValueOnce(new Error('db down'));
     await runStartupSweep();
     expect(deleteDoc).not.toHaveBeenCalled();
   });
 
   it('skips a document that has a live session in this process', async () => {
-    const live = mockDocContext({ entityId: 'entity-live', verified: true });
+    const live = mockScope({ entityId: 'entity-live' });
     joinCollab(live, mockWebSocket() as never);
     vi.mocked(listStaleDocs).mockResolvedValueOnce([staleRow({ entityId: 'entity-live' })]);
     await runStartupSweep();

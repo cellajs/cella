@@ -6,6 +6,7 @@ import { env } from '#/env';
 import { getPgBoss, stopPgBoss } from '#/lib/pg-boss';
 import { baseLog } from '#/lib/pino';
 import { otel } from '#/lib/tracing';
+import { listenForAuthInvalidation } from '#/middlewares/guard/invalidation-listener';
 import '#/modules'; // composition root: registers every backend module (this worker mounts only mcp routes)
 import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
 import { baseApp } from '#/server';
@@ -29,6 +30,8 @@ export async function startMcpWorker(options: { port?: number } = {}): Promise<v
   if (env.NODE_ENV === 'development') await waitForBackend(2000, 60_000);
 
   baseApp.route('/:tenantId/:organizationId/mcp', mcpHandlers);
+  // The token users and memberships this process caches drop when another process invalidates them.
+  const stopInvalidationListener = listenForAuthInvalidation();
 
   if (hasAiKey) {
     await getPgBoss();
@@ -43,6 +46,7 @@ export async function startMcpWorker(options: { port?: number } = {}): Promise<v
     name: 'mcp-worker',
     cleanup: async () => {
       server.close();
+      await stopInvalidationListener();
       if (hasAiKey) await stopPgBoss();
       await otel.shutdown();
     },

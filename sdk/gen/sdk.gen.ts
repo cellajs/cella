@@ -20,6 +20,8 @@ import type {
   CheckSlugData,
   CheckSlugErrors,
   CheckSlugResponses,
+  ConfirmMagicLinkData,
+  ConfirmMagicLinkErrors,
   CreateApiKeyData,
   CreateApiKeyErrors,
   CreateApiKeyResponses,
@@ -143,6 +145,9 @@ import type {
   GetOrganizationsData,
   GetOrganizationsErrors,
   GetOrganizationsResponses,
+  GetPendingMagicLinkData,
+  GetPendingMagicLinkErrors,
+  GetPendingMagicLinkResponses,
   GetPendingMembershipsData,
   GetPendingMembershipsErrors,
   GetPendingMembershipsResponses,
@@ -161,6 +166,12 @@ import type {
   GetServiceAccountsData,
   GetServiceAccountsErrors,
   GetServiceAccountsResponses,
+  GetStepUpData,
+  GetStepUpErrors,
+  GetStepUpPasskeyChallengeData,
+  GetStepUpPasskeyChallengeErrors,
+  GetStepUpPasskeyChallengeResponses,
+  GetStepUpResponses,
   GetTenantsData,
   GetTenantsErrors,
   GetTenantsResponses,
@@ -238,6 +249,9 @@ import type {
   SendNewsletterData,
   SendNewsletterErrors,
   SendNewsletterResponses,
+  SendStepUpLinkData,
+  SendStepUpLinkErrors,
+  SendStepUpLinkResponses,
   SignInWithPasskeyData,
   SignInWithPasskeyErrors,
   SignInWithPasskeyResponses,
@@ -250,6 +264,12 @@ import type {
   StartImpersonationData,
   StartImpersonationErrors,
   StartImpersonationResponses,
+  StartOAuthConnectData,
+  StartOAuthConnectErrors,
+  StartOAuthConnectResponses,
+  StepUpData,
+  StepUpErrors,
+  StepUpResponses,
   StopImpersonationData,
   StopImpersonationErrors,
   StopImpersonationResponses,
@@ -379,6 +399,7 @@ import {
   zGetOrganizationResponse,
   zGetOrganizationsQuery,
   zGetOrganizationsResponse,
+  zGetPendingMagicLinkResponse,
   zGetPendingMembershipsPath,
   zGetPendingMembershipsQuery,
   zGetPendingMembershipsResponse,
@@ -392,6 +413,8 @@ import {
   zGetServiceAccountsPath,
   zGetServiceAccountsQuery,
   zGetServiceAccountsResponse,
+  zGetStepUpPasskeyChallengeResponse,
+  zGetStepUpResponse,
   zGetTenantsQuery,
   zGetTenantsResponse,
   zGetTokenDataPath,
@@ -404,6 +427,7 @@ import {
   zGetUserResponse,
   zGetUsersQuery,
   zGetUsersResponse,
+  zGetYjsTokenPath,
   zGetYjsTokenQuery,
   zGetYjsTokenResponse,
   zGithubCallbackQuery,
@@ -445,6 +469,8 @@ import {
   zSendNewsletterBody,
   zSendNewsletterQuery,
   zSendNewsletterResponse,
+  zSendStepUpLinkBody,
+  zSendStepUpLinkResponse,
   zSignInWithPasskeyBody,
   zSignInWithPasskeyResponse,
   zSignInWithTotpBody,
@@ -452,6 +478,9 @@ import {
   zSignOutResponse,
   zStartImpersonationBody,
   zStartImpersonationResponse,
+  zStartOAuthConnectResponse,
+  zStepUpBody,
+  zStepUpResponse,
   zStopImpersonationResponse,
   zSystemInviteBody,
   zSystemInviteResponse,
@@ -533,15 +562,15 @@ export const getAuthHealth = <ThrowOnError extends boolean = true>(
   });
 
 /**
- * Check if email exists
+ * Check email
  *
- * Checks if a user with the specified email address exists in the system.
+ * Tells whether this browser has signed in to the account with this email address before, by its device cookie. Any other browser gets `recognized: false`, whether or not the address has an account.
  *
  * **POST /auth/check-email** ·· [checkEmail](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/check-email) ·· [checkEmail](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/check-email) ·· _auth_cella_
  *
  * @param {checkEmailData} options
  * @param {string=} options.body.email - `string` (optional)
- * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const checkEmail = <ThrowOnError extends boolean = true>(
   options: Options<CheckEmailData, ThrowOnError>,
@@ -651,7 +680,7 @@ export const acceptInvitationToken = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -687,7 +716,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -726,7 +755,7 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -737,11 +766,12 @@ export const stopImpersonation = <ThrowOnError extends boolean = true>(
 /**
  * Resend invitation
  *
- * Resends an invitation email with token to a new user using the provided email address and token ID.
+ * Re-sends a pending invitation, named by the id of one of its tokens, to the address it went to. The fresh link replaces the older ones. Answers 204 whether or not an email went out.
  *
  * **POST /auth/resend-invitation** ·· [resendInvitationWithToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/resend-invitation) ·· [resendInvitationWithToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/resend-invitation) ·· _auth_cella_
  *
  * @param {resendInvitationWithTokenData} options
+ * @param {string=} options.body.tokenId - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
  */
 export const resendInvitationWithToken = <ThrowOnError extends boolean = true>(
@@ -834,6 +864,61 @@ export const sendMagicLink = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Get pending magic link
+ *
+ * For a magic link opened in a browser that did not request it: the address it signs in, so the holder can recognize the account before confirming.
+ *
+ * **GET /auth/magic/pending** ·· [getPendingMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/magic/pending) ·· [getPendingMagicLink](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/magic/pending) ·· _auth_cella_
+ *
+ * @param {getPendingMagicLinkData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getPendingMagicLink = <ThrowOnError extends boolean = true>(
+  options?: Options<GetPendingMagicLinkData, ThrowOnError>,
+): RequestResult<GetPendingMagicLinkResponses, GetPendingMagicLinkErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetPendingMagicLinkResponses, GetPendingMagicLinkErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetPendingMagicLinkResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/magic/pending',
+    ...options,
+  });
+
+/**
+ * Confirm magic link
+ *
+ * Signs in with the magic link this browser holds, confirmed from the app page. A form post from the app origin; redirects like opening the link.
+ *
+ * **POST /auth/magic/confirm** ·· [confirmMagicLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/magic/confirm) ·· [confirmMagicLink](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/magic/confirm) ·· _auth_cella_
+ *
+ * @param {confirmMagicLinkData} options
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ */
+export const confirmMagicLink = <ThrowOnError extends boolean = true>(
+  options?: Options<ConfirmMagicLinkData, ThrowOnError>,
+): RequestResult<unknown, ConfirmMagicLinkErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<unknown, ConfirmMagicLinkErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/magic/confirm',
+    ...options,
+  });
+
+/**
  * Generate TOTP key
  *
  * Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.
@@ -860,7 +945,7 @@ export const generateTotpKey = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -895,7 +980,7 @@ export const deleteTotp = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -930,7 +1015,7 @@ export const createTotp = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1004,7 +1089,7 @@ export const createPasskey = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1044,7 +1129,7 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1061,7 +1146,6 @@ export const deletePasskey = <ThrowOnError extends boolean = true>(
  *
  * @param {generatePasskeyChallengeData} options
  * @param {enum=} options.body.type - `enum` (optional)
- * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
@@ -1101,7 +1185,6 @@ export const generatePasskeyChallenge = <ThrowOnError extends boolean = true>(
  * @param {signInWithPasskeyData} options
  * @param {object} options.body.assertion - `object`
  * @param {enum=} options.body.type - `enum` (optional)
- * @param {string=} options.body.email - `string` (optional)
  * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
  */
 export const signInWithPasskey = <ThrowOnError extends boolean = true>(
@@ -1124,6 +1207,41 @@ export const signInWithPasskey = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options.headers,
     },
+  });
+
+/**
+ * Start connecting a provider
+ *
+ * Pins this browser's next provider sign-in with `type=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.
+ *
+ * **POST /auth/oauth-connect** ·· [startOAuthConnect](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/oauth-connect) ·· [startOAuthConnect](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/oauth-connect) ·· _auth_cella_
+ *
+ * @param {startOAuthConnectData} options
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const startOAuthConnect = <ThrowOnError extends boolean = true>(
+  options?: Options<StartOAuthConnectData, ThrowOnError>,
+): RequestResult<StartOAuthConnectResponses, StartOAuthConnectErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<StartOAuthConnectResponses, StartOAuthConnectErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zStartOAuthConnectResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/oauth-connect',
+    ...options,
   });
 
 /**
@@ -1304,6 +1422,162 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Get step-up state
+ *
+ * Whether this session stands stepped up for account-security actions, and what the user can offer to step up: a passkey or TOTP they hold, else an emailed confirmation link or a new sign-in.
+ *
+ * **GET /auth/step-up** ·· [getStepUp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/step-up) ·· [getStepUp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/step-up) ·· _auth_cella_
+ *
+ * @param {getStepUpData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getStepUp = <ThrowOnError extends boolean = true>(
+  options?: Options<GetStepUpData, ThrowOnError>,
+): RequestResult<GetStepUpResponses, GetStepUpErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).get<GetStepUpResponses, GetStepUpErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetStepUpResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/step-up',
+    ...options,
+  });
+
+/**
+ * Step up with a second factor
+ *
+ * Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes. Refused while impersonating.
+ *
+ * **POST /auth/step-up** ·· [stepUp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up) ·· [stepUp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/step-up) ·· _auth_cella_
+ *
+ * @param {stepUpData} options
+ * @param {object} options.body.passkeyData - `object`
+ * @param {string=} options.body.totpCode - `string` (optional)
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const stepUp = <ThrowOnError extends boolean = true>(
+  options: Options<StepUpData, ThrowOnError>,
+): RequestResult<StepUpResponses, StepUpErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<StepUpResponses, StepUpErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zStepUpBody,
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zStepUpResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/step-up',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get a step-up passkey challenge
+ *
+ * Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it. Refused while impersonating.
+ *
+ * **POST /auth/step-up/passkey-challenge** ·· [getStepUpPasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/passkey-challenge) ·· [getStepUpPasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/step-up/passkey-challenge) ·· _auth_cella_
+ *
+ * @param {getStepUpPasskeyChallengeData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getStepUpPasskeyChallenge = <ThrowOnError extends boolean = true>(
+  options?: Options<GetStepUpPasskeyChallengeData, ThrowOnError>,
+): RequestResult<GetStepUpPasskeyChallengeResponses, GetStepUpPasskeyChallengeErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<
+    GetStepUpPasskeyChallengeResponses,
+    GetStepUpPasskeyChallengeErrors,
+    ThrowOnError,
+    'data'
+  >({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetStepUpPasskeyChallengeResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/step-up/passkey-challenge',
+    ...options,
+  });
+
+/**
+ * Email a step-up link
+ *
+ * For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in. Refused while impersonating.
+ *
+ * **POST /auth/step-up/link** ·· [sendStepUpLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/link) ·· [sendStepUpLink](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/step-up/link) ·· _auth_cella_
+ *
+ * @param {sendStepUpLinkData} options
+ * @param {string=} options.body.redirect - `string` (optional)
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
+ */
+export const sendStepUpLink = <ThrowOnError extends boolean = true>(
+  options?: Options<SendStepUpLinkData, ThrowOnError>,
+): RequestResult<SendStepUpLinkResponses, SendStepUpLinkErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<SendStepUpLinkResponses, SendStepUpLinkErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zSendStepUpLinkBody.optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zSendStepUpLinkResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/auth/step-up/link',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options?.headers,
+    },
+  });
+
+/**
  * List domains for a tenant
  *
  * Returns all domains belonging to a tenant, including verification tokens. System admin access required.
@@ -1331,7 +1605,7 @@ export const getDomains = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1368,7 +1642,7 @@ export const createDomain = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1409,7 +1683,7 @@ export const deleteDomain = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1446,7 +1720,7 @@ export const getDomain = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1483,7 +1757,7 @@ export const verifyDomain = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1522,7 +1796,7 @@ export const checkSlug = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1560,7 +1834,7 @@ export const getAppStream = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1597,7 +1871,7 @@ export const postAppCatchup = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1636,7 +1910,7 @@ export const deleteMe = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1671,7 +1945,7 @@ export const getMe = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1715,7 +1989,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1730,7 +2004,7 @@ export const updateMe = <ThrowOnError extends boolean = true>(
 /**
  * Toggle MFA
  *
- * Enable or disable multifactor authentication for the current user. Always requires passkey or TOTP reauthentication.
+ * Enable or disable multifactor authentication for the current user. Needs a passkey or TOTP proof on the request, or a session stepped up with one.
  *
  * **PUT /me/mfa** ·· [toggleMfa](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/PUT/me/mfa) ·· [toggleMfa](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/me/mfa) ·· _me_cella_
  *
@@ -1757,7 +2031,7 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1796,7 +2070,7 @@ export const getMyAuth = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1831,7 +2105,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1842,7 +2116,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
 /**
  * Revoke sessions
  *
- * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.
+ * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out. An impersonation session is refused.
  *
  * **DELETE /me/sessions** ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/sessions) ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/me/sessions) ·· _me_cella_
  *
@@ -1867,7 +2141,7 @@ export const revokeMySessions = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1908,7 +2182,7 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -1919,12 +2193,11 @@ export const deleteMyMembership = <ThrowOnError extends boolean = true>(
 /**
  * Get upload token
  *
- * Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the current user and organization
+ * Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. Only a system admin gets a newsletter image token.
  *
  * **GET /me/upload-token** ·· [getUploadToken](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/upload-token) ·· [getUploadToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/upload-token) ·· _me_cella_
  *
  * @param {getUploadTokenData} options
- * @param {any=} options.query.publicbucket - `any` (optional)
  * @param {string=} options.query.organizationid - `string` (optional)
  * @param {enum} options.query.templateid - `enum`
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
@@ -1946,7 +2219,7 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2009,7 +2282,7 @@ export const getMyMemberships = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2044,7 +2317,7 @@ export const getConnectedApps = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2080,7 +2353,7 @@ export const revokeConnectedApp = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2147,7 +2420,7 @@ export const getNotifications = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2184,7 +2457,7 @@ export const markNotificationsRead = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2228,7 +2501,7 @@ export const getNotificationPreferences = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2271,7 +2544,7 @@ export const updateNotificationPreferences = <ThrowOnError extends boolean = tru
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2340,7 +2613,7 @@ export const getPushVapid = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2381,7 +2654,7 @@ export const deletePushSubscription = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2419,7 +2692,7 @@ export const createPushSubscription = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2459,7 +2732,7 @@ export const deleteRequests = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2504,7 +2777,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2515,7 +2788,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(
 /**
  * Create request
  *
- * Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.
+ * Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.
  *
  * **POST /requests** ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=requests#tag/requests/POST/requests) ·· [createRequest](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/requests) ·· _requests_cella_
  *
@@ -2523,7 +2796,7 @@ export const getRequests = <ThrowOnError extends boolean = true>(
  * @param {string=} options.body.email - `string` (optional)
  * @param {enum=} options.body.type - `enum` (optional)
  * @param {string | null=} options.body.message - `string | null` (optional)
- * @returns Possible status codes: 201, 400, 401, 403, 404, 409, 429
+ * @returns Possible status codes: 204, 400, 401, 403, 404, 409, 429
  */
 export const createRequest = <ThrowOnError extends boolean = true>(
   options: Options<CreateRequestData, ThrowOnError>,
@@ -2574,7 +2847,7 @@ export const getUnseenCounts = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2610,7 +2883,7 @@ export const systemInvite = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2650,7 +2923,7 @@ export const deleteUsers = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2698,7 +2971,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2742,7 +3015,7 @@ export const sendNewsletter = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2788,7 +3061,7 @@ export const getTenants = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2824,7 +3097,7 @@ export const selfCreateTenant = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2871,7 +3144,7 @@ export const updateTenant = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2886,7 +3159,7 @@ export const updateTenant = <ThrowOnError extends boolean = true>(
 /**
  * Get list of users
  *
- * Returns a list of users.
+ * Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.
  *
  * **GET /users/users** ·· [getUsers](https://www.cellajs.com/docs/operations?operationTag=users#tag/users/GET/users/users) ·· [getUsers](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/users/users) ·· _users_cella_
  *
@@ -2917,7 +3190,7 @@ export const getUsers = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -2954,49 +3227,11 @@ export const getUser = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
     url: '/users/users/{relatableUserId}',
-    ...options,
-  });
-
-/**
- * Get Yjs token
- *
- * Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.
- *
- * **GET /yjs/token** ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/GET/yjs/token) ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/yjs/token) ·· _yjs_cella_
- *
- * @param {getYjsTokenData} options
- * @param {enum} options.query.entitytype - `enum`
- * @param {string} options.query.tenantid - `string`
- * @param {string} options.query.organizationid - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getYjsToken = <ThrowOnError extends boolean = true>(
-  options: Options<GetYjsTokenData, ThrowOnError>,
-): RequestResult<GetYjsTokenResponses, GetYjsTokenErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetYjsTokenResponses, GetYjsTokenErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: zGetYjsTokenQuery,
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetYjsTokenResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v2',
-        type: 'apiKey',
-      },
-    ],
-    url: '/yjs/token',
     ...options,
   });
 
@@ -3068,7 +3303,7 @@ export const deleteOrganizations = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3108,7 +3343,7 @@ export const createOrganizations = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3157,7 +3392,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3196,7 +3431,7 @@ export const getOrganization = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3261,7 +3496,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3314,7 +3549,7 @@ export const deleteAttachments = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3372,7 +3607,7 @@ export const getAttachments = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3419,7 +3654,7 @@ export const createAttachments = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3471,7 +3706,7 @@ export const getPresignedUrls = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3523,7 +3758,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3574,7 +3809,7 @@ export const updateAttachment = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
       {
@@ -3708,7 +3943,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3723,7 +3958,7 @@ export const deleteMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Create memberships
  *
- * Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization.
+ * Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization. A created membership carries muted, archived and display order only when it is the caller's own.
  *
  * **POST /{tenantId}/{organizationId}/memberships** ·· [membershipInvite](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships) ·· [membershipInvite](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/memberships) ·· _memberships_cella_
  *
@@ -3753,7 +3988,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3768,7 +4003,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
 /**
  * Update membership
  *
- * Updates the membership metadata, such as role, muted, or archived status.
+ * Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. A role change, and any change to another member's membership, requires update permission on the channel.
  *
  * **PUT /{tenantId}/{organizationId}/memberships/{id}** ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/PUT/{tenantId}/{organizationId}/memberships/{id}) ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/{organizationId}/memberships/{id}) ·· _memberships_cella_
  *
@@ -3799,7 +4034,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3845,7 +4080,7 @@ export const handleMembershipInvitation = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3893,7 +4128,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3904,7 +4139,7 @@ export const getMembers = <ThrowOnError extends boolean = true>(
 /**
  * Get list of pending memberships
  *
- * Returns pending memberships for a channel entity, identified by ID. This does not include pending invitations for non-existing users.
+ * Returns the pending invitations of a channel entity, identified by ID: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.
  *
  * **GET /{tenantId}/{organizationId}/memberships/pending** ·· [getPendingMemberships](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/GET/{tenantId}/{organizationId}/memberships/pending) ·· [getPendingMemberships](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/memberships/pending) ·· _memberships_cella_
  *
@@ -3938,7 +4173,7 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -3949,7 +4184,7 @@ export const getPendingMemberships = <ThrowOnError extends boolean = true>(
 /**
  * Resend pending invitation
  *
- * Re-sends the invitation email for a pending membership, minting a fresh token for its own invite. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
+ * Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.
  *
  * **POST /{tenantId}/{organizationId}/memberships/pending/{id}/resend** ·· [resendPendingInvitation](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/POST/{tenantId}/{organizationId}/memberships/pending/{id}/resend) ·· [resendPendingInvitation](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/memberships/pending/{id}/resend) ·· _memberships_cella_
  *
@@ -3981,7 +4216,7 @@ export const resendPendingInvitation = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4020,7 +4255,7 @@ export const markSeen = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4064,7 +4299,7 @@ export const getServiceAccounts = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4104,7 +4339,7 @@ export const createServiceAccount = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4148,7 +4383,7 @@ export const updateServiceAccount = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4190,7 +4425,7 @@ export const getApiKeys = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4233,7 +4468,7 @@ export const createApiKey = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
@@ -4276,10 +4511,49 @@ export const revokeApiKey = <ThrowOnError extends boolean = true>(
     security: [
       {
         in: 'cookie',
-        name: 'cella-development-session-v2',
+        name: 'cella-development-session-v3',
         type: 'apiKey',
       },
     ],
     url: '/{tenantId}/{organizationId}/service-accounts/{id}/keys/{keyId}',
+    ...options,
+  });
+
+/**
+ * Get Yjs token
+ *
+ * Returns an Ed25519-signed token for collaboratively editing one product entity the caller may update. It names the entity, its tenant and organization, and expires after five minutes; the Yjs relay worker verifies it with the public key alone, without a backend callback, and closes the socket when it expires.
+ *
+ * **GET /{tenantId}/{organizationId}/yjs/token** ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/GET/{tenantId}/{organizationId}/yjs/token) ·· [getYjsToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/{tenantId}/{organizationId}/yjs/token) ·· _yjs_cella_
+ *
+ * @param {getYjsTokenData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {enum} options.query.entitytype - `enum`
+ * @param {string} options.query.entityid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getYjsToken = <ThrowOnError extends boolean = true>(
+  options: Options<GetYjsTokenData, ThrowOnError>,
+): RequestResult<GetYjsTokenResponses, GetYjsTokenErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetYjsTokenResponses, GetYjsTokenErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetYjsTokenPath,
+          query: zGetYjsTokenQuery,
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetYjsTokenResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/yjs/token',
     ...options,
   });

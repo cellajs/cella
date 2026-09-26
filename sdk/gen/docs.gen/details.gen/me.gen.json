@@ -716,7 +716,29 @@
                   "revocationReason": {
                     "type": ["string", "null"],
                     "required": true,
-                    "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                    "enum": [
+                      "sign_out",
+                      "other_session",
+                      "mfa_enabled",
+                      "session_cap",
+                      "replaced",
+                      "impersonation_stopped",
+                      null
+                    ]
+                  },
+                  "impersonatorSessionId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
+                  "steppedUpAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "steppedUpVia": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["passkey", "totp", "email", null]
                   },
                   "isCurrent": { "type": "boolean", "required": true },
                   "isNewDevice": {
@@ -788,6 +810,9 @@
               "revokedAt": null,
               "revokedBy": null,
               "revocationReason": null,
+              "impersonatorSessionId": null,
+              "steppedUpAt": null,
+              "steppedUpVia": null,
               "isCurrent": true,
               "isNewDevice": false
             }
@@ -1148,7 +1173,29 @@
                   "revocationReason": {
                     "type": ["string", "null"],
                     "required": true,
-                    "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                    "enum": [
+                      "sign_out",
+                      "other_session",
+                      "mfa_enabled",
+                      "session_cap",
+                      "replaced",
+                      "impersonation_stopped",
+                      null
+                    ]
+                  },
+                  "impersonatorSessionId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
+                  "steppedUpAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "steppedUpVia": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["passkey", "totp", "email", null]
                   }
                 }
               }
@@ -1302,7 +1349,11 @@
           "type": "object",
           "description": "A signed token authorizing file uploads to the configured storage provider.",
           "properties": {
-            "publicBucket": { "type": "boolean", "required": true },
+            "publicBucket": {
+              "type": "boolean",
+              "required": true,
+              "description": "Whether the upload is stored public-read in the public bucket; the template decides."
+            },
             "sub": { "type": "string", "required": true },
             "s3": { "type": "boolean", "required": true },
             "signature": {
@@ -1384,24 +1435,11 @@
     "request": {
       "query": {
         "properties": {
-          "publicBucket": {
-            "required": false,
-            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
-            "anyOf": [
-              {
-                "type": "string",
-                "required": false,
-                "enum": ["true", "false"]
-              },
-              { "type": "boolean", "required": false }
-            ],
-            "ref": "#/components/schemas/BooleanQueryValue"
-          },
           "organizationId": { "type": "string", "required": false, "format": "uuid" },
           "templateId": {
             "type": "string",
             "required": true,
-            "enum": ["avatar", "cover", "attachment"]
+            "enum": ["avatar", "cover", "attachment", "newsletter"]
           }
         }
       }

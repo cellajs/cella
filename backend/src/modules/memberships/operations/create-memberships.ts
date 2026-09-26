@@ -1,24 +1,23 @@
 import { appConfig, type ChannelEntityType, type EntityRole, hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { nanoid } from 'shared/utils/nanoid';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
 import { getMembershipEntityIds, insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
+import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import {
   countMembershipsByChannel,
   countPendingInvitesByChannel,
-  findMembershipAwareRows,
+  findInvitationAccounts,
+  findInvitationsToAddresses,
   insertInactiveMemberships,
-  insertTokens,
   stampInactiveMembershipsReminded,
 } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
-import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug-from-email';
-import { createDate, TimeSpan } from '#/utils/time-span';
 import { memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail } from '../../../../emails';
 
 interface CreateMembershipsInput {
@@ -82,62 +81,52 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   const senderName = user.name;
   const senderThumbnailUrl = user.thumbnailUrl;
 
-  const membershipAwareRows = await findMembershipAwareRows(ctx, {
-    emails: normalizedEmails,
-    entityType,
-    entityId: entity.id,
-  });
-
-  type MembershipAwareRow = (typeof membershipAwareRows)[number];
-  const rowsByEmail = new Map<string, MembershipAwareRow[]>();
-  for (const e of normalizedEmails) rowsByEmail.set(e, []);
-  for (const r of membershipAwareRows) rowsByEmail.get(r.email)?.push(r);
+  const [accounts, addressedInvitations] = await Promise.all([
+    findInvitationAccounts(ctx, { emails: normalizedEmails, entityType, entityId: entity.id }),
+    findInvitationsToAddresses(ctx, { emails: normalizedEmails, channelId: entity.id }),
+  ]);
+  const accountByEmail = new Map(accounts.map((account) => [account.email, account]));
+  const invitationByEmail = new Map(addressedInvitations.map((invitation) => [invitation.email, invitation]));
 
   // Reminder throttle: a pending invite is re-emailed at most once per 7 days
   const reminderThrottleBefore = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
   const remindedInactiveMembershipIds: string[] = [];
 
+  // Anyone may invite any address, so the answer rests only on what the inviter already sees: the channel's invitations
+  // by address and its members by their listed (primary) address. An account behind an address picks the email and
+  // whether a token is minted, never the answer.
   for (const email of normalizedEmails) {
-    const rows = rowsByEmail.get(email)!;
+    const invitation = invitationByEmail.get(email);
+    const account = accountByEmail.get(email);
 
-    const hasActiveMembership = rows.some((r) => r.membershipId);
-    const hasUserInactiveMembership = rows.some((r) => r.inactiveMembershipId);
-    const hasTokenInvite = rows.some((r) => r.tokenId);
+    if (invitation) {
+      // A declined invitation is not sent again; a pending one gets a reminder, except against a draft context and
+      // within the throttle.
+      if (invitation.rejectedAt) continue;
+      const throttled = new Date(invitation.remindedAt ?? invitation.createdAt) >= reminderThrottleBefore;
+      if (!deferDispatch && !throttled) {
+        reminderEmails.push(email);
+        remindedInactiveMembershipIds.push(invitation.id);
+      }
+      continue;
+    }
 
-    if (hasActiveMembership) {
+    const isListedAddress = account?.primaryEmail === email;
+
+    if (account?.membershipId && isListedAddress) {
       rejectedIds.push(email);
       continue;
     }
 
-    if (hasUserInactiveMembership || hasTokenInvite) {
-      // No reminders against a draft context; otherwise throttle on last dispatch
-      const inactiveRow = rows.find((r) => r.inactiveMembershipId);
-      const lastDispatch = inactiveRow?.inactiveMembershipRemindedAt ?? inactiveRow?.inactiveMembershipCreatedAt;
-      const throttled = !!lastDispatch && new Date(lastDispatch) >= reminderThrottleBefore;
-
-      if (!deferDispatch && !throttled) {
-        reminderEmails.push(email);
-        if (inactiveRow?.inactiveMembershipId) remindedInactiveMembershipIds.push(inactiveRow.inactiveMembershipId);
-      }
-      continue;
-    }
-
-    const userRow = rows.find((r) => r.userId);
-    if (userRow?.userId) {
+    if (account) {
       const isAdminInvitingSelf = user.email === email && isSystemAdmin;
+      // An organization member invited below the organization by their listed address joins at once. Draft context:
+      // existing users are deferred too, with no membership, nav entry, or email.
+      const joinsDirectly =
+        entityType !== 'organization' && !!account.orgMembershipId && isListedAddress && !deferDispatch;
 
-      if (isAdminInvitingSelf) {
-        existingUsersToDirectAdd.push({ userId: userRow.userId, email });
-      } else {
-        const hasActiveOrgMembership = entityType !== 'organization' && !!rows.find((r) => r.orgMembershipId);
-
-        // Draft context: existing users are deferred too, with no membership, nav entry, or email.
-        if (hasActiveOrgMembership && !deferDispatch) {
-          existingUsersToDirectAdd.push({ userId: userRow.userId, email });
-        } else {
-          existingUsersToActivate.push({ userId: userRow.userId, email });
-        }
-      }
+      if (isAdminInvitingSelf || joinsDirectly) existingUsersToDirectAdd.push({ userId: account.userId, email });
+      else existingUsersToActivate.push({ userId: account.userId, email });
       continue;
     }
 
@@ -187,30 +176,16 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   const newUserInactiveMembershipIdsByEmail = new Map<string, string>();
   for (const email of newUserTokenEmails) newUserInactiveMembershipIdsByEmail.set(email, generateId());
 
-  const rawTokens: Array<{ email: string; raw: string }> = [];
-  const tokensToInsert = newUserTokenEmails.map((email) => {
-    const raw = nanoid(40);
-    const hashed = hashToken(raw);
-    rawTokens.push({ email, raw });
-
-    return {
-      secret: hashed,
+  const issuedTokens = await issueTokens(
+    ctx,
+    newUserTokenEmails.map((email) => ({
       type: 'invitation' as const,
       email,
       createdBy: user.id,
-      expiresAt: createDate(new TimeSpan(7, 'd')),
-      role,
-      entityType,
       inactiveMembershipId: newUserInactiveMembershipIdsByEmail.get(email)!,
-      ...getMembershipEntityIds(entity),
-      channelId: entity.id,
-    };
-  });
-
-  let insertedTokens: Array<{ id: string; email: string; secret: string; type: string }> = [];
-  if (tokensToInsert.length > 0) {
-    insertedTokens = await insertTokens(ctx, { tokens: tokensToInsert });
-  }
+    })),
+  );
+  const insertedTokens = issuedTokens.map(({ token }) => token);
 
   let insertedInactiveMemberships: Array<{ id: string; email: string }> = [];
 
@@ -239,7 +214,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     });
   }
 
-  const rawByEmail = new Map(rawTokens.map((t) => [t.email, t.raw]));
+  const rawByEmail = new Map(issuedTokens.map(({ token, rawToken }) => [token.email, rawToken]));
 
   const withTokenRecipients = insertedTokens
     .filter(({ email }) => insertedInactiveMemberships.some((m) => m.email === email))
@@ -289,5 +264,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     entityId,
   });
 
-  return { data: createdMemberships, rejectedIds, invitesSentCount };
+  const data = createdMemberships.map((membership) => membershipAsSeenBy(membership, user.id));
+
+  return { data, rejectedIds, invitesSentCount };
 }

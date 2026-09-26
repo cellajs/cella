@@ -11,16 +11,16 @@ export function AuthErrorPage() {
 
   const { error: errorType, tokenId } = useSearch({ from: '/_public/auth/error' });
 
-  const { email, error } = useAuthStore();
+  const { error } = useAuthStore();
 
-  const showResendButton = errorType === 'invitation_expired';
-  const resendData = tokenId ? { tokenId } : email ? { email } : false;
+  // Resending needs the expired invitation's token id: an address alone would tell anyone who was invited.
+  const resendTokenId = errorType === 'invitation_expired' ? tokenId : undefined;
 
   return (
     <ErrorNotice error={error} boundary="public">
-      {showResendButton && resendData && <ResendInvitationButton resendData={resendData} />}
+      {resendTokenId && <ResendInvitationButton resendData={{ tokenId: resendTokenId }} />}
 
-      <Button variant={showResendButton ? 'plain' : 'default'} render={<Link to="/auth/authenticate" replace />}>
+      <Button variant={resendTokenId ? 'plain' : 'default'} render={<Link to="/auth/authenticate" replace />}>
         <LogInIcon className="mr-2" />
         {t('c:sign_in')}
       </Button>

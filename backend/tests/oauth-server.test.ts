@@ -14,6 +14,7 @@ import { createOauthListener } from '#/modules/oauth-server/server';
 import { verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { defaultHeaders } from './fixtures';
 import { createTestOrganization } from './helpers';
+import { authorizationCodeToken, serveClientMetadataDocuments } from './oauth-helpers';
 import { clearSecurityTestData, createOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
@@ -140,6 +141,40 @@ describe('OAuth authorization server', async () => {
       headers: tokenHeaders(jwt),
     });
     expect(otherTenant.response.status).toBe(401);
+  });
+
+  it('takes a client identified by its metadata document through consent to a token', async () => {
+    const clientId = 'https://mcp-client.example/metadata.json';
+    const redirectUri = 'http://localhost:9999/callback';
+    const restore = serveClientMetadataDocuments({
+      [clientId]: {
+        client_name: 'MCP client',
+        redirect_uris: [redirectUri],
+        token_endpoint_auth_method: 'none',
+        grant_types: ['authorization_code', 'refresh_token'],
+        response_types: ['code'],
+      },
+    });
+    try {
+      const { org, user } = await orgWithAdmin();
+      const resource = resourceUri({ face: 'mcp', tenantId: org.tenantId, organizationId: org.id });
+      const result = await authorizationCodeToken(issuer, {
+        clientId,
+        redirectUri,
+        scope: 'attachment:read',
+        resource,
+        sessionCookie: user.sessionCookie,
+      });
+      expect(result.consent).toMatchObject({ client: { id: clientId, kind: 'cimd' }, refusal: null });
+      expect(result.status).toBe(200);
+      const token = await verifyAccessToken(String(result.body.access_token), {
+        tenantId: org.tenantId,
+        organizationId: org.id,
+      });
+      expect(token).toMatchObject({ kind: 'user', actorId: user.id, clientId, scopes: ['attachment:read'] });
+    } finally {
+      restore();
+    }
   });
 
   it('lists a consent as a connected app and revokes it with its tokens', async () => {

@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { User } from 'sdk';
 import { deleteMe } from 'sdk';
+import { withStepUp } from '~/modules/auth/step-up';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { DeleteForm } from '~/modules/common/delete-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -22,7 +23,7 @@ export function DeleteSelf({ callback, dialog: isDialog }: Props) {
 
   const { mutate: _deleteMe, isPending } = useMutation({
     mutationFn: async () => {
-      await deleteMe();
+      await withStepUp(() => deleteMe());
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: userQueryKeys.detail.byId(user.id) });

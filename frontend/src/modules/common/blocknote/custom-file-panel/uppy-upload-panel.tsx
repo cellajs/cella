@@ -10,10 +10,15 @@ import Url from '@uppy/url';
 import Webcam, { type WebcamOptions } from '@uppy/webcam';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { appConfig } from 'shared';
+import { appConfig, type UploadTemplateId } from 'shared';
+import { isSystemUploadTemplate } from 'shared/utils/upload-visibility';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
+import {
+  attachmentBlockProps,
+  storedFileBlockProps,
+} from '~/modules/common/blocknote/custom-file-panel/file-block-props';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import type { BaseUppyFilePanelProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { Spinner } from '~/modules/common/spinner';
@@ -78,11 +83,10 @@ export function UppyFilePanel({
   organizationId,
   blockId,
   mediaMode,
+  templateId: ownTemplateId,
   editor,
   onClose,
 }: UppyFilePanelProps) {
-  // Private media uses the private bucket and an attachment id reference; both public modes use the public bucket and a cloud key.
-  const publicBucket = mediaMode !== 'private-attachment';
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const isOnline = useOnlineManager();
@@ -138,12 +142,15 @@ export function UppyFilePanel({
     let localUppy: CustomUppy | null = null;
     setIsInitializing(true);
 
+    // Attachment modes upload through the attachment template; a block without an attachment row names its own.
+    const templateId = ownTemplateId ?? 'attachment';
+
     const initializeUppy = async () => {
       try {
         localUppy = await createBaseTransloaditUppy(uppyOptions, {
-          publicBucket,
-          templateId: 'attachment',
-          organizationId,
+          templateId,
+          // A system upload belongs to no organization, so its token request names none.
+          organizationId: isSystemUploadTemplate(templateId) ? undefined : organizationId,
         });
 
         localUppy
@@ -163,24 +170,16 @@ export function UppyFilePanel({
             if (assembly?.error) throw new Error(assembly?.error);
 
             setOpen(false);
-            const result = assembly.results as UploadedUppyFile<'attachment'>;
+            const results = assembly.results as UploadedUppyFile<UploadTemplateId>;
             // Parse once so the block reference and the persisted entity share the same id.
-            const attachments = parseUploadedAttachments(result, organizationId);
+            const attachments = ownTemplateId ? [] : parseUploadedAttachments(results, organizationId);
+            const fileBlocks = ownTemplateId
+              ? storedFileBlockProps(results, ownTemplateId)
+              : attachments.map((attachment) => attachmentBlockProps(attachment, blockType === 'image', mediaMode));
             const activeEditor = editorRef.current;
 
-            for (const attachment of attachments) {
-              // Public mode stores a cloud key: images the mid-size preview, other types the converted variant, never the full-size file.
-              const publicKey =
-                blockType === 'image'
-                  ? attachment.keys.preview || attachment.keys.converted || attachment.keys.original
-                  : attachment.keys.converted || attachment.keys.original;
-              const url = mediaMode === 'private-attachment' ? attachment.id : publicKey;
-              const props = {
-                name: attachment.filename,
-                url,
-                attachmentId: attachment.id,
-                ...imageSizesRef.current.get(attachment.id),
-              };
+            for (const { measuredId, ...fileProps } of fileBlocks) {
+              const props = { ...fileProps, ...(measuredId ? imageSizesRef.current.get(measuredId) : undefined) };
 
               const targetBlock = activeEditor.getBlock(latestBlockIdRef.current);
               if (targetBlock) {
@@ -194,10 +193,10 @@ export function UppyFilePanel({
             }
 
             // The host persists these attachments; the block already references their ids and keys.
-            latestOnCompleteRef.current?.(attachments);
+            if (!ownTemplateId) latestOnCompleteRef.current?.(attachments);
           });
 
-        const imageEditorOptions = getImageEditorOptions('attachment');
+        const imageEditorOptions = getImageEditorOptions(templateId);
         const webcamOptions: WebcamOptions<Meta, Body> = {
           videoConstraints: { width: 1280, height: 720 },
           preferredVideoMimeType: 'video/webm;codecs=vp9',
@@ -232,7 +231,7 @@ export function UppyFilePanel({
       setUppy(null);
       if (localUppy) localUppy.destroy();
     };
-  }, [blockType, publicBucket, organizationId, uppyOptions, mediaMode]);
+  }, [blockType, organizationId, uppyOptions, mediaMode, ownTemplateId]);
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>

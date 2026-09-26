@@ -1,13 +1,16 @@
 import type { WebSocket } from 'ws';
-import type { DocContext } from '../constants';
-import { YJS_CLEANUP_DELAY_MS } from '../constants';
+import type { DocKey, DocScope } from '../constants';
+import { YJS_AWARENESS_MAX_CLIENTS, YJS_CLEANUP_DELAY_MS, YJS_CLEANUP_MAX_ATTEMPTS } from '../constants';
 import { deleteDoc } from '../data/storage';
 import { log } from '../lib/pino';
 import { compactDocument } from './compaction';
 
 export interface CollabSession {
-  ctx: DocContext;
+  /** The document as its entity row places it; compaction, materialize and cleanup act in it as the system, never as a joiner. */
+  scope: DocScope;
   clients: Set<WebSocket>;
+  /** Awareness client id → the socket holding it and its user; no other user's socket relays that id. Up to YJS_AWARENESS_MAX_CLIENTS per socket. */
+  awarenessOwners: Map<number, { ws: WebSocket; userId: string }>;
   /** Document lock: seeding, compaction and cleanup run one at a time through this chain. */
   chain: Promise<unknown>;
   cleanupTimer?: ReturnType<typeof setTimeout>;
@@ -16,12 +19,13 @@ export interface CollabSession {
 
 const collabSessions = new Map<string, CollabSession>();
 
-function collabKey(entityType: string, entityId: string): string {
-  return `${entityType}:${entityId}`;
+/** Keyed by tenant, type and id, so no session is shared across tenants. */
+function collabKey({ tenantId, entityType, entityId }: DocKey): string {
+  return `${tenantId}:${entityType}:${entityId}`;
 }
 
-export function getCollab(entityType: string, entityId: string): CollabSession | undefined {
-  return collabSessions.get(collabKey(entityType, entityId));
+export function getCollab(doc: DocKey): CollabSession | undefined {
+  return collabSessions.get(collabKey(doc));
 }
 
 export function getActiveDocumentCount(): number {
@@ -46,9 +50,13 @@ export function withDocLock<T>(collab: CollabSession, fn: () => Promise<T>): Pro
   return run;
 }
 
-/** Registers a client for a document and cancels pending cleanup when reconnecting. */
-export function joinCollab(ctx: DocContext, ws: WebSocket): CollabSession {
-  const key = collabKey(ctx.entityType, ctx.entityId);
+/**
+ * Registers an authorized client for a document and cancels pending cleanup when reconnecting. `scope` is the one
+ * authorization read from the entity row, so every joiner of a document brings the same one and the first opens the
+ * session in it.
+ */
+export function joinCollab(scope: DocScope, ws: WebSocket): CollabSession {
+  const key = collabKey(scope);
   let collab = collabSessions.get(key);
 
   if (collab) {
@@ -60,68 +68,128 @@ export function joinCollab(ctx: DocContext, ws: WebSocket): CollabSession {
     return collab;
   }
 
-  collab = { ctx, clients: new Set([ws]), chain: Promise.resolve() };
+  collab = { scope, clients: new Set([ws]), awarenessOwners: new Map(), chain: Promise.resolve() };
   collabSessions.set(key, collab);
   return collab;
 }
 
-/** When the last client leaves, a grace period runs before the log is compacted and the session rows are deleted. */
-export function leaveCollab(entityType: string, entityId: string, ws: WebSocket): void {
-  const key = collabKey(entityType, entityId);
-  const collab = collabSessions.get(key);
-  if (!collab) return;
+/** Takes a session out of the map, when it is still the one there, and clears its timers: none may later run on it. */
+function dropCollab(key: string, collab: CollabSession): void {
+  clearTimeout(collab.cleanupTimer);
+  clearTimeout(collab.compactTimer);
+  collab.cleanupTimer = undefined;
+  collab.compactTimer = undefined;
+  if (collabSessions.get(key) === collab) collabSessions.delete(key);
+}
 
-  collab.clients.delete(ws);
+/**
+ * When the last client leaves, a grace period runs before the log is compacted and the session rows
+ * are deleted. Rows go once the log is written or empty, or the entity is gone: a retryable failure
+ * keeps them and retries, up to YJS_CLEANUP_MAX_ATTEMPTS, and a permanent refusal or the last failed
+ * attempt keeps them for the next session or the startup sweep. A socket that joins while cleanup
+ * runs keeps the session and its rows; when it leaves again first, the cleanup its leave arms takes
+ * over, so what it logged is compacted before the rows go. A session leaves the map only while it has
+ * no client and no timer armed on it, so the relay always finds a joined socket's session.
+ */
+export function leaveCollab(doc: DocKey, ws: WebSocket): void {
+  const key = collabKey(doc);
+  const collab = collabSessions.get(key);
+  // Only a client of the live session leaves it: a socket that never joined it, or left it already, changes nothing.
+  if (!collab?.clients.delete(ws)) return;
+  for (const [clientId, owner] of collab.awarenessOwners) {
+    if (owner.ws === ws) collab.awarenessOwners.delete(clientId);
+  }
   if (collab.clients.size > 0) return;
 
+  // A socket joined since this cleanup started: it is still in the session, or its leave armed a newer cleanup.
+  const joinedSince = () => collab.clients.size > 0 || collab.cleanupTimer !== undefined;
+  let attempts = 0;
   const cleanup = async () => {
     collab.cleanupTimer = undefined;
-    if (collab.clients.size > 0) return;
+    if (collabSessions.get(key) !== collab || collab.clients.size > 0) return;
     if (collab.compactTimer) {
       clearTimeout(collab.compactTimer);
       collab.compactTimer = undefined;
     }
+    attempts++;
 
-    const outcome = await withDocLock(collab, async (): Promise<'rejoined' | 'retry' | 'done'> => {
-      if (collab.clients.size > 0) return 'rejoined';
+    const outcome = await withDocLock(collab, async (): Promise<'rejoined' | 'retry' | 'kept' | 'done'> => {
+      if (joinedSince()) return 'rejoined';
 
       let result: Awaited<ReturnType<typeof compactDocument>>;
       try {
-        result = await compactDocument(collab.ctx);
+        result = await compactDocument(collab.scope);
       } catch (err) {
         log.error(`Cleanup compaction failed for ${key}`, { err });
         result = 'retry';
       }
-      // A transient backend failure keeps the rows: the log is durable, so the retry loses nothing.
+      // A socket joined while the compaction wrote: its session goes on with the rows.
+      if (joinedSince()) return 'rejoined';
+      // An unwritten log keeps the rows: they hold edits the entity has not received. A gone entity's rows go.
       if (result === 'retry') return 'retry';
+      if (result === 'permanent') return 'kept';
 
       try {
-        await deleteDoc(collab.ctx);
+        await deleteDoc(collab.scope);
       } catch (err) {
         log.error(`Failed to delete session rows for ${key}`, { err });
       }
       return 'done';
     });
 
-    if (outcome === 'rejoined') return;
+    if (outcome === 'rejoined' || joinedSince()) return;
     if (outcome === 'retry') {
-      log.warn(`Materialize unavailable for ${key}: keeping session rows, retrying cleanup`);
-      collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
-      return;
+      if (attempts < YJS_CLEANUP_MAX_ATTEMPTS) {
+        log.warn(`Materialize unavailable for ${key}: keeping session rows, retrying cleanup`);
+        collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
+        return;
+      }
+      log.error(`Materialize failed ${attempts} times for ${key}: keeping session rows for the next session or sweep`);
     }
-    collabSessions.delete(key);
+    if (outcome === 'kept') log.warn(`Materialize refused for ${key}: keeping session rows for the next session`);
+    dropCollab(key, collab);
   };
 
   collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
 }
 
-export function broadcastToCollab(
-  entityType: string,
-  entityId: string,
-  message: Uint8Array,
-  exclude?: WebSocket,
-): void {
-  const collab = getCollab(entityType, entityId);
+/** How many awareness clients a socket holds in its session. */
+function heldClientCount(collab: CollabSession, ws: WebSocket): number {
+  let held = 0;
+  for (const owner of collab.awarenessOwners.values()) if (owner.ws === ws) held++;
+  return held;
+}
+
+/**
+ * Decides one awareness entry from a socket of `userId`: `relay` it, `drop` it (another user's socket holds its client),
+ * or `refuse` the socket, which announced more clients than it may hold. An announcement takes a client no socket holds,
+ * or one another socket of the same user holds (a reconnect takes its client over), while the socket holds fewer than
+ * YJS_AWARENESS_MAX_CLIENTS. A removal takes nothing and frees a client the socket holds: y-websocket re-sends every
+ * change it applies, including the removal of each peer it timed out.
+ */
+export function claimAwarenessClient(
+  collab: CollabSession,
+  ws: WebSocket,
+  userId: string,
+  entry: { clientId: number; removes: boolean },
+): 'relay' | 'drop' | 'refuse' {
+  const owner = collab.awarenessOwners.get(entry.clientId);
+  if (owner && owner.userId !== userId) return 'drop';
+  if (entry.removes) {
+    if (owner?.ws === ws) collab.awarenessOwners.delete(entry.clientId);
+    return 'relay';
+  }
+  if (owner?.ws === ws) return 'relay';
+  if (heldClientCount(collab, ws) < YJS_AWARENESS_MAX_CLIENTS) {
+    collab.awarenessOwners.set(entry.clientId, { ws, userId });
+    return 'relay';
+  }
+  // A client another socket of this user holds stays with it; a free one would grow the session past the cap.
+  return owner ? 'relay' : 'refuse';
+}
+
+export function broadcastToCollab(doc: DocKey, message: Uint8Array, exclude?: WebSocket): void {
+  const collab = getCollab(doc);
   if (!collab) return;
 
   for (const client of collab.clients) {

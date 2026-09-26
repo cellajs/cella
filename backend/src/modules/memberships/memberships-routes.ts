@@ -4,12 +4,12 @@ import { crossTenantGuard, orgGuard, tenantGuard, userGuard } from '#/middleware
 import { bulkPointsLimiter, singlePointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   memberListQuerySchema,
-  membershipBaseSchema,
+  memberMembershipSchema,
   membershipCreateBodySchema,
-  membershipSchema,
   membershipUpdateBodySchema,
   pendingMembershipListQuerySchema,
   pendingMembershipSchema,
+  updatedMembershipSchema,
 } from '#/modules/memberships/memberships-schema';
 import { memberSchema } from '#/modules/user/user-schema';
 import {
@@ -27,8 +27,8 @@ import { mockChannelBase } from '#/schemas/entity-base-mocks';
 import {
   mockMembershipInviteResponse,
   mockMembershipResponse,
-  mockPaginatedInactiveMembershipsResponse,
   mockPaginatedMembersResponse,
+  mockPaginatedPendingMembershipsResponse,
 } from './memberships-mocks';
 
 const membershipRoutes = {
@@ -41,7 +41,7 @@ const membershipRoutes = {
     tags: ['memberships', 'cella'],
     summary: 'Create memberships',
     description:
-      'Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization.',
+      "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization. A created membership carries muted, archived and display order only when it is the caller's own.",
     request: {
       params: tenantOrgParamSchema,
       query: entityWithTypeQuerySchema,
@@ -55,7 +55,7 @@ const membershipRoutes = {
         description: 'Created memberships and invite count',
         content: {
           'application/json': {
-            schema: batchResponseSchema(membershipBaseSchema).extend({ invitesSentCount: z.number() }),
+            schema: batchResponseSchema(memberMembershipSchema).extend({ invitesSentCount: z.number() }),
             example: mockMembershipInviteResponse(),
           },
         },
@@ -101,7 +101,8 @@ const membershipRoutes = {
     xRateLimiter: [singlePointsLimiter],
     tags: ['memberships', 'cella'],
     summary: 'Update membership',
-    description: 'Updates the membership metadata, such as role, muted, or archived status.',
+    description:
+      "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. A role change, and any change to another member's membership, requires update permission on the channel.",
     request: {
       params: idInTenantOrgParamSchema,
       body: {
@@ -111,7 +112,7 @@ const membershipRoutes = {
     responses: {
       200: {
         description: 'Membership updated',
-        content: { 'application/json': { schema: membershipSchema, example: mockMembershipResponse() } },
+        content: { 'application/json': { schema: updatedMembershipSchema, example: mockMembershipResponse() } },
       },
       ...errorResponseRefs,
     },
@@ -169,7 +170,7 @@ const membershipRoutes = {
     tags: ['memberships', 'cella'],
     summary: 'Get list of pending memberships',
     description:
-      'Returns pending memberships for a channel entity, identified by ID. This does not include pending invitations for non-existing users.',
+      'Returns the pending invitations of a channel entity, identified by ID: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.',
     request: {
       params: tenantOrgParamSchema,
       query: pendingMembershipListQuerySchema,
@@ -180,7 +181,7 @@ const membershipRoutes = {
         content: {
           'application/json': {
             schema: paginationSchema(pendingMembershipSchema),
-            example: mockPaginatedInactiveMembershipsResponse(),
+            example: mockPaginatedPendingMembershipsResponse(),
           },
         },
       },
@@ -196,7 +197,7 @@ const membershipRoutes = {
     tags: ['memberships', 'cella'],
     summary: 'Resend pending invitation',
     description:
-      'Re-sends the invitation email for a pending membership, minting a fresh token for its own invite. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.',
+      'Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.',
     request: {
       params: idInTenantOrgParamSchema,
     },

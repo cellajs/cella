@@ -1,6 +1,6 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { invalidateApiKeyCacheByAccount } from '#/middlewares/guard/api-key-cache';
+import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { issueApiKey } from '#/modules/service-accounts/helpers/issue-api-key';
 import { requireManagedServiceAccount } from '#/modules/service-accounts/helpers/managed-service-account';
 import { countLiveApiKeys, scheduleApiKeyExpiry } from '#/modules/service-accounts/service-accounts-queries';
@@ -38,7 +38,7 @@ export async function createApiKeyOp(ctx: UserContext, serviceAccountId: string,
     });
   });
 
-  invalidateApiKeyCacheByAccount(account.id);
+  invalidateCache.serviceAccount(account.id);
   log.info('ApiKey issued', { keyId: issued.apiKey.id, serviceAccountId: account.id });
   return { ...issued.apiKey, secret: issued.secret };
 }

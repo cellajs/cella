@@ -1,60 +1,30 @@
+import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
 import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/utils/nanoid';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb as db } from '#/db/db';
-import { getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { type DbOrTx, baseDb as db, type Tx } from '#/db/db';
+import { findRemainingMfaMethods } from '#/modules/auth/auth-queries';
+import { setUserSession } from '#/modules/auth/general/helpers/session';
+import { verifyPasskeyAssertion } from '#/modules/auth/passkeys/helpers/passkey';
+import { issueCookieToken, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
+import { verifyTotp } from '#/modules/auth/totps/helpers/totps';
 import { userSelect } from '#/modules/user/helpers/select';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
-import { getValidToken } from '#/utils/get-valid-token';
-import { hashToken } from '#/utils/hash-token';
-import { createDate, TimeSpan } from '#/utils/time-span';
 
-/** Starts an MFA challenge: stores a hashed `confirm-mfa` token, sets its cookie, and returns the `/auth/mfa` path or null when MFA is off. */
+/** Starts an MFA challenge: issues a `confirm-mfa` token in its cookie and returns the `/auth/mfa` path, or null when MFA is off. */
 export const initiateMfa = async (ctx: Context<Env>, user: UserModel) => {
   if (!user.mfaRequired) return null;
 
-  const timespan = new TimeSpan(10, 'm');
-
-  // Generate token and store hashed
-  const newToken = nanoid(40);
-  const hashedToken = hashToken(newToken);
-
-  await db
-    .insert(tokensTable)
-    .values({
-      secret: hashedToken,
-      type: 'confirm-mfa',
-      userId: user.id,
-      email: user.email,
-      createdBy: user.id,
-      expiresAt: createDate(timespan), // token expires in 10 minutes
-    })
-    .returning({ secret: tokensTable.secret });
-
-  await setAuthCookie(ctx, 'confirm-mfa', newToken, timespan);
+  await issueCookieToken(ctx, { type: 'confirm-mfa', userId: user.id, email: user.email, createdBy: user.id });
 
   return '/auth/mfa';
 };
 
-/** Validates the `confirm-mfa` cookie token and returns its user. Throws if missing, not found, or expired. */
+/** The user of the MFA challenge this browser holds, which stays open. Throws if missing, not found, or expired. */
 export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserModel> => {
-  const tokenFromCookie = await getAuthCookie(ctx, 'confirm-mfa');
-  if (!tokenFromCookie)
-    throw new AppError(401, 'confirm-mfa_not_found', 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error' },
-    });
-
-  const tokenRecord = await getValidToken({
-    ctx,
-    token: tokenFromCookie,
-    invokeToken: false,
-    tokenType: 'confirm-mfa',
-  });
+  const tokenRecord = await readBoundToken(ctx, 'confirm-mfa');
 
   if (!tokenRecord.userId) throw new AppError(400, 'invalid_request', 'error');
 
@@ -62,4 +32,77 @@ export const validateConfirmMfaToken = async (ctx: Context<Env>): Promise<UserMo
   if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
 
   return user;
+};
+
+/**
+ * Ends the MFA challenge this browser holds once its second factor has verified: the challenge is spent, row and cookie.
+ * Of two concurrent completions exactly one passes.
+ * @throws AppError 401 `confirm-mfa_not_found` when the challenge was spent or expired meanwhile.
+ */
+const spendConfirmMfaToken = async (ctx: Context<Env>) => {
+  const spent = await spendCookieToken(ctx, 'confirm-mfa');
+  if (!spent) throw new AppError(401, 'confirm-mfa_not_found', 'warn');
+  return spent;
+};
+
+/** A second factor offered for an MFA challenge: a code from the authenticator app, or a passkey response. */
+export type MfaProof =
+  | { strategy: 'totp'; code: string }
+  | { strategy: 'passkey'; assertion: AuthenticationResponseJSON };
+
+/**
+ * The only way out of an MFA challenge: reads the challenge this browser holds, verifies the offered factor for the
+ * challenge's account, spends the challenge, and signs the account in with an mfa session. A factor that fails leaves
+ * the challenge open for the next try.
+ * @throws AppError 401 `confirm-mfa_not_found` or `confirm-mfa_expired` without a live challenge, and what the factor's
+ *   verification throws (`verifyTotp`, `verifyPasskeyAssertion`).
+ */
+export const completeMfaChallenge = async (ctx: Context<Env>, proof: MfaProof) => {
+  const user = await validateConfirmMfaToken(ctx);
+
+  if (proof.strategy === 'totp') await verifyTotp(ctx, { user, code: proof.code });
+  else await verifyPasskeyAssertion(ctx, { assertion: proof.assertion, purpose: 'mfa', userId: user.id });
+
+  await spendConfirmMfaToken(ctx);
+  await setUserSession(ctx, user, proof.strategy, 'mfa');
+};
+
+/**
+ * MFA keeps both a passkey and an authenticator app, so a lost one can be replaced while the other still signs in.
+ * Enabling needs both methods switched on and enrolled; while MFA is on, the last of either cannot be removed. The
+ * interface enforces the same, this makes it hold for every caller.
+ */
+export const mfaFactorRules = {
+  /**
+   * Runs a change to the MFA switch or the factors in a transaction that first locks the user's row. Every such change
+   * takes the lock, so they run one at a time and each check reads what the one before it committed; the checks below
+   * run inside `change`.
+   */
+  async locked<T>(userId: string, change: (tx: Tx) => Promise<T>): Promise<T> {
+    return db.transaction(async (tx) => {
+      await tx.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.id, userId)).for('update');
+      return change(tx);
+    });
+  },
+
+  /** Refuses turning MFA on unless both methods are enabled for the app and enrolled by the user. */
+  async assertCanEnable(tx: DbOrTx, userId: string) {
+    const missing = (['passkey', 'totp'] as const).find((method) => !appConfig.enabledAuthStrategies.includes(method));
+    if (missing) throw new AppError(400, 'forbidden_strategy', 'warn', { meta: { strategy: missing } });
+
+    const { passkeys, totps } = await findRemainingMfaMethods({ var: { db: tx } }, { userId });
+    if (!passkeys.length || !totps.length) throw new AppError(400, 'mfa_factors_required', 'warn');
+  },
+
+  /** Run after deleting a factor, in the same `locked` transaction: refuses when MFA is on and a method is now gone. */
+  async assertKeepsFactors(tx: DbOrTx, userId: string) {
+    const [user] = await tx
+      .select({ mfaRequired: usersTable.mfaRequired })
+      .from(usersTable)
+      .where(eq(usersTable.id, userId));
+    if (!user?.mfaRequired) return;
+
+    const { passkeys, totps } = await findRemainingMfaMethods({ var: { db: tx } }, { userId });
+    if (!passkeys.length || !totps.length) throw new AppError(400, 'mfa_factor_in_use', 'warn');
+  },
 };

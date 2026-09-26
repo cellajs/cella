@@ -1,7 +1,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppError } from '#/core/error';
+import { countOrganizationsByTenant } from '#/modules/organization/organization-queries';
 import { clearTenantCache, setTenantCache } from './tenant-cache';
 import { tenantGuard } from './tenant-guard';
+
+// The creator's foothold depends on whether the tenant holds an organization yet.
+vi.mock('#/modules/organization/organization-queries', () => ({ countOrganizationsByTenant: vi.fn() }));
 
 // The tenant row is served from the cache; a miss would reach the prepared lookup, which these cases never do.
 const TENANT_ID = 'tenant1';
@@ -55,6 +59,7 @@ describe('tenantGuard', () => {
   beforeEach(() => {
     clearTenantCache();
     setTenantCache(TENANT_ID, tenantRow());
+    vi.mocked(countOrganizationsByTenant).mockReset().mockResolvedValue(0);
   });
 
   it('admits a member of the tenant and sets tenant context', async () => {
@@ -69,10 +74,15 @@ describe('tenantGuard', () => {
     expect(error.status).toBe(403);
   });
 
-  it('admits a system admin and the tenant creator without a membership', async () => {
+  it('admits a system admin, and the tenant creator without a membership while the tenant has no organization', async () => {
     expect(await run(mockCtx({ actor: user([]), isSystemAdmin: true, tenantId: TENANT_ID }))).toHaveBeenCalled();
     const creator: Actor = { kind: 'user', id: 'founder', bindings: [], scopes: null };
     expect(await run(mockCtx({ actor: creator, tenantId: TENANT_ID }))).toHaveBeenCalled();
+
+    vi.mocked(countOrganizationsByTenant).mockResolvedValue(1);
+    const error = await runExpectingError(mockCtx({ actor: creator, tenantId: TENANT_ID }));
+    expect(error.status).toBe(403);
+    expect(error.meta).toEqual({ resource: 'tenant' });
   });
 
   it('refuses a service account whose key belongs to another tenant, before any lookup', async () => {
@@ -87,11 +97,18 @@ describe('tenantGuard', () => {
     expect(error.status).toBe(403);
   });
 
-  it('refuses an inactive tenant and a missing tenant id', async () => {
+  it('refuses an inactive tenant, naming its status only to an actor with a foothold, and a missing tenant id', async () => {
     setTenantCache(TENANT_ID, tenantRow('suspended'));
-    expect(
-      (await runExpectingError(mockCtx({ actor: user([membership(TENANT_ID)]), tenantId: TENANT_ID }))).status,
-    ).toBe(403);
+    const member = await runExpectingError(mockCtx({ actor: user([membership(TENANT_ID)]), tenantId: TENANT_ID }));
+    expect(member.status).toBe(403);
+    expect(member.meta).toEqual({ resource: 'tenant', tenantStatus: 'suspended' });
+
+    const outsider = await runExpectingError(
+      mockCtx({ actor: user([membership(OTHER_TENANT_ID)]), tenantId: TENANT_ID }),
+    );
+    expect(outsider.status).toBe(403);
+    expect(outsider.meta).toEqual({ resource: 'tenant' });
+
     expect((await runExpectingError(mockCtx({ actor: user([]), tenantId: undefined }))).status).toBe(400);
   });
 

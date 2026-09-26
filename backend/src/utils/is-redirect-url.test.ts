@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { maxLength } from '#/db/utils/constraints';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 
 describe('isValidRedirectPath', () => {
@@ -52,10 +53,11 @@ describe('isValidRedirectPath', () => {
   });
 
   it('normalizes traversal that stays same-origin', () => {
-    // `/../etc` resolves back to an origin-relative path, never escaping the origin.
-    const result = isValidRedirectPath('/../etc');
-    expect(result).not.toBe(false);
-    expect(typeof result).toBe('string');
-    expect((result as string).startsWith('/')).toBe(true);
+    expect(isValidRedirectPath('/../etc')).toBe('/etc');
+  });
+
+  it('caps the result at the stored column length', () => {
+    expect(isValidRedirectPath(`/${'a'.repeat(maxLength.field - 1)}`)).toBe(`/${'a'.repeat(maxLength.field - 1)}`);
+    expect(isValidRedirectPath(`/${'a'.repeat(maxLength.field)}`)).toBe(false);
   });
 });

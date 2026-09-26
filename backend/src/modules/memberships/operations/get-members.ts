@@ -1,6 +1,7 @@
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { UserContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
+import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import { findMembersPaginated } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
@@ -48,5 +49,8 @@ export async function getMembersOp(ctx: UserContext, input: GetMembersInput) {
       ? await tenantRead(ctx, (readCtx) => findMembersPaginated(readCtx, listOpts))
       : await findMembersPaginated(ctx, listOpts);
 
-  return { items, total };
+  const callerId = ctx.var.user.id;
+  const projected = items.map((item) => ({ ...item, membership: membershipAsSeenBy(item.membership, callerId) }));
+
+  return { items: projected, total };
 }

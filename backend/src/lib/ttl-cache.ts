@@ -58,6 +58,18 @@ export class TTLCache<T> {
     return deleted;
   }
 
+  /** Invalidate every entry the predicate picks, returning the number deleted. */
+  invalidateWhere(predicate: (value: T, key: string) => boolean): number {
+    let deleted = 0;
+    for (const [key, value] of this.cache.entries()) {
+      if (predicate(value, key)) {
+        this.cache.delete(key);
+        deleted++;
+      }
+    }
+    return deleted;
+  }
+
   clear(): void {
     this.cache.clear();
   }

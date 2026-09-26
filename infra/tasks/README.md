@@ -6,6 +6,10 @@
 | [`geoip-refresh.ts`](./geoip-refresh.ts) | `sequenceGeoipRefresh` downloads the DB-IP Lite databases, verifies each is a real MMDB archive and publishes them plus a `manifest.json` to the `geoip/` prefix of the public bucket, where API processes fetch them at boot and daily. Pure like the reset sequencer; unit tests assert the month fallback, the staleness gate and that nothing uploads on a bad archive. | "Refresh GeoIP data" in `pnpm infra`; the deploy's "Ensure GeoIP data" step (35-day gate, best-effort); the monthly [geoip-refresh workflow](../../.github/workflows/geoip-refresh.yml); by hand `pnpm --filter infra geoip-refresh --bucket <name> --region <region>`. |
 | [`reset-database.ts`](./reset-database.ts) | `sequenceDatabaseReset` deletes and recreates the app's logical database over the Scaleway RDB API, then re-grants both roles. Pure like the cutover sequencer; unit tests assert step order and every guard. | "Reset database" in `pnpm infra`; live effects in [`cli/actions/reset-database.ts`](../cli/actions/reset-database.ts). |
 
+## Failing a task
+
+A task that [deploy-run.ts](./deploy-run.ts) runs in-process reports failure by throwing, never through `process.exit` or `process.exitCode`: the deploy stops only on a throw. A task whose exit code means something to a standalone caller (the preflight exits 2 for a pending privileged change) throws `ExitCodeError` ([lib/utils/errors.ts](../lib/utils/errors.ts)), and `runIfMain` exits with its code.
+
 ## Cutover strategies
 
 `ReplacementStrategy` is declared per service in [config/services.config.ts](../config/services.config.ts); behavior per strategy: [rollout strategies](../../cella/DEPLOYMENT.md#rollout-strategies).

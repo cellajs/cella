@@ -30,7 +30,8 @@ const formSchema = zUpdateOrganizationBody.omit({ welcomeText: true }).extend({
   websiteUrl: z
     .string()
     .max(2048)
-    .refine((v) => v === '' || v.startsWith('https://'), { message: i18n.t('error:invalid_url') })
+    // Translated on failure: at module load the language may not be loaded yet, and it can change later.
+    .refine((v) => v === '' || v.startsWith('https://'), { error: () => i18n.t('error:invalid_url') })
     .transform((v) => (v.trim() === '' ? null : v))
     .nullable()
     .optional(),

@@ -1,14 +1,13 @@
 import { appConfig } from 'shared';
-import { nanoid } from 'shared/utils/nanoid';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
+import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
+import { findSystemInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
 import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
-import { findPendingInvitationTokens, findVerifiedEmails, insertTokens } from '#/modules/system/system-queries';
-import { hashToken } from '#/utils/hash-token';
+import { findVerifiedEmails } from '#/modules/system/system-queries';
 import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug-from-email';
-import { createDate, TimeSpan } from '#/utils/time-span';
 import { systemInviteEmail } from '../../../../emails';
 
 export async function createInviteOp(ctx: UserContext, emails: string[]) {
@@ -26,7 +25,7 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
   const existingEmailRecords = await findVerifiedEmails(ctx, { emails: normalizedEmails });
   const existingEmails = new Set(existingEmailRecords.map((r) => r.email));
 
-  const pendingTokens = await findPendingInvitationTokens(ctx, { emails: normalizedEmails });
+  const pendingTokens = await findSystemInvitationTokens(ctx, { emails: normalizedEmails });
 
   const activeTokenByEmail = new Map<string, { id: string }>();
   const expiredTokenIdsByEmail = new Map<string, string[]>();
@@ -63,29 +62,20 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
     return { data: [] as never[], rejectedIds, invitesSentCount: 0 };
   }
 
-  // One independent random secret per recipient, so one link never authenticates another's invitation.
-  const rawByEmail = new Map<string, string>();
-  const tokens = recipientEmails.map((email) => {
-    const raw = nanoid(40);
-    rawByEmail.set(email, raw);
-    return {
-      secret: hashToken(raw),
-      type: 'invitation' as const,
-      email,
-      createdBy: user.id,
-      expiresAt: createDate(new TimeSpan(7, 'd')),
-    };
-  });
+  // One independent random secret per recipient, so one link never authenticates another's invitation. Each replaces
+  // the earlier system invitations of its address.
+  const issued = await issueTokens(
+    ctx,
+    recipientEmails.map((email) => ({ type: 'invitation' as const, email, createdBy: user.id })),
+  );
 
-  const insertedTokens = await insertTokens(ctx, { tokens });
+  await Promise.all(issued.map(({ token }) => linkWaitlistRequest(ctx, { email: token.email, tokenId: token.id })));
 
-  await Promise.all(insertedTokens.map((t) => linkWaitlistRequest(ctx, { email: t.email, tokenId: t.id })));
-
-  const recipients = insertedTokens.map(({ email, type }) => ({
-    email,
+  const recipients = issued.map(({ token, rawToken }) => ({
+    email: token.email,
     lng,
-    name: slugFromEmail(email),
-    inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${rawByEmail.get(email)}`,
+    name: slugFromEmail(token.email),
+    inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${token.type}/${rawToken}`,
   }));
 
   const staticProps = { senderName, senderThumbnailUrl };

@@ -1,9 +1,11 @@
-import { eq } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 import { isProduct } from 'shared';
 import { uuidv7 } from 'uuidv7';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
+import { tenantReadById } from '#/db/tenant-context';
+import { resolveEntity } from '#/modules/entities/entities-queries';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
 import { sanitizeBlockMediaUrls } from '#/modules/yjs/helpers/sanitize-block-media';
@@ -16,62 +18,103 @@ export interface MaterializeDescriptionInput {
   tenantId: string;
   organizationId: string | null;
   description: string;
-  /** Last editor whose update was in the compacted log; becomes `updatedBy` and the permission subject. */
-  editedBy: string;
+  /** Senders of the compacted log, newest first: the first who may still update the entity is credited with the write. */
+  editors: string[];
 }
 
+/** `written` names the editor credited; `gone` means the entity no longer exists in the document's tenant. */
+export type MaterializeDescriptionResult =
+  | { outcome: 'written'; sanitized: boolean; editedBy: string }
+  | { outcome: 'gone' };
+
 /**
- * Persists a Yjs collab description on behalf of the last editing user; called by the Yjs relay.
- * Dispatches to the entity's materializer, which re-checks permission because access may be revoked mid-session.
+ * Persists a Yjs collab description; called by the Yjs relay on the internal listener. The tenant and organization come
+ * from the entity row: a row missing from the named tenant is `gone`, and another organization is refused (403). The
+ * write is credited to the newest editor who may still update the entity, through the entity's materializer, which
+ * runs the normal update operation and its permission check. When no editor may, the write is refused (403) and the
+ * relay keeps the edits.
  */
-export async function materializeDescriptionOp(input: MaterializeDescriptionInput): Promise<{ sanitized: boolean }> {
-  if (!isProduct(input.entityType)) {
+export async function materializeDescriptionOp(
+  input: MaterializeDescriptionInput,
+): Promise<MaterializeDescriptionResult> {
+  const { entityType } = input;
+  if (!isProduct(entityType)) {
     throw new AppError(400, 'invalid_request', 'warn', {
-      meta: { reason: `Unknown entity type: ${input.entityType}` },
+      meta: { reason: `Unknown entity type: ${entityType}` },
     });
   }
 
-  const materializer = getYjsMaterializer(input.entityType);
+  const materializer = getYjsMaterializer(entityType);
   if (!materializer) {
     throw new AppError(400, 'invalid_request', 'warn', {
-      meta: { reason: `No Yjs materializer registered for ${input.entityType}` },
+      meta: { reason: `No Yjs materializer registered for ${entityType}` },
     });
   }
 
-  const [user] = await baseDb.select().from(usersTable).where(eq(usersTable.id, input.editedBy)).limit(1);
-  if (!user) throw new AppError(404, 'not_found', 'warn', { meta: { reason: 'Editing user not found' } });
+  const row = await tenantReadById(input.tenantId, (tx) =>
+    resolveEntity({ var: { db: tx } }, { entityType, identifier: input.entityId }),
+  );
+  if (!row || row.tenantId !== input.tenantId) return { outcome: 'gone' };
+  if (row.organizationId !== input.organizationId) {
+    throw new AppError(403, 'forbidden', 'warn', {
+      entityType,
+      meta: { reason: 'Organization does not match the entity' },
+    });
+  }
 
-  const memberships = await baseDb.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
-
-  // Worker context only: persist as the last editor with no system-administrator bypass, matching relay authorization.
-  const ctx = {
-    var: {
-      user,
-      userId: user.id,
-      actor: { kind: 'user', id: user.id, bindings: memberships, scopes: null },
-      isSystemAdmin: false,
-      memberships,
-      db: baseDb,
-      tenantId: input.tenantId,
-      organizationId: input.organizationId ?? undefined,
-    },
-  } as unknown as UserContext;
-
-  const { description, sanitized, invalidUrls } = sanitizeBlockMediaUrls(input.description);
+  const { description, sanitized, invalidUrls } = sanitizeBlockMediaUrls(input.description, {
+    organizationId: row.organizationId,
+  });
   if (sanitized) {
     log.warn('Yjs materialization sanitized untrusted media URLs', {
-      entityType: input.entityType,
+      entityType,
       entityId: input.entityId,
       invalidUrls,
     });
   }
 
-  // Empty fieldTimestamps lets the pipeline stamp a fresh server HLC.
-  await materializer(
-    ctx,
-    input.entityId,
-    { ops: { description }, stx: { mutationId: uuidv7(), sourceId: 'yjs-relay', fieldTimestamps: {} } },
-    { serverOrigin: true },
-  );
-  return { sanitized };
+  const [users, memberships] = await Promise.all([
+    baseDb.select().from(usersTable).where(inArray(usersTable.id, input.editors)),
+    baseDb.select().from(membershipsTable).where(inArray(membershipsTable.userId, input.editors)),
+  ]);
+
+  for (const editorId of input.editors) {
+    const user = users.find((candidate) => candidate.id === editorId);
+    if (!user) continue;
+    const bindings = memberships.filter((membership) => membership.userId === editorId);
+
+    // Worker context only: persist as this editor with no system-administrator bypass, matching relay authorization.
+    const ctx = {
+      var: {
+        user,
+        userId: user.id,
+        actor: { kind: 'user', id: user.id, bindings, scopes: null },
+        isSystemAdmin: false,
+        memberships: bindings,
+        db: baseDb,
+        tenantId: row.tenantId,
+        organizationId: row.organizationId,
+      },
+    } as unknown as UserContext;
+
+    try {
+      // Empty fieldTimestamps lets the pipeline stamp a fresh server HLC.
+      await materializer(
+        ctx,
+        input.entityId,
+        { ops: { description }, stx: { mutationId: uuidv7(), sourceId: 'yjs-relay', fieldTimestamps: {} } },
+        { serverOrigin: true },
+      );
+      return { outcome: 'written', sanitized, editedBy: user.id };
+    } catch (err) {
+      // This editor may no longer update the row (or no longer see it, as with another author's draft): try the next.
+      if (err instanceof AppError && (err.status === 403 || err.status === 404)) continue;
+      throw err;
+    }
+  }
+
+  throw new AppError(403, 'forbidden', 'warn', {
+    entityType,
+    meta: { reason: 'No editor in the log may still update the entity' },
+  });
 }

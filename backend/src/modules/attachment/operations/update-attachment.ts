@@ -24,11 +24,13 @@ export async function updateAttachmentOp(
   const { serverOrigin } = opts;
   const actorId = ctx.var.actor.id;
 
-  // Media in a description must come from trusted sources (CDN only).
-  if (rawOps.description) assertBlockMediaUrls(rawOps.description, 'attachment', 'description');
-
   const updatedAttachmentRecord = await tenantContext(ctx, async (txCtx) => {
     const { entity } = await getValidProduct(txCtx, id, 'attachment', 'update');
+
+    // Media in a description may reference only uploads of the attachment's own organization.
+    if (rawOps.description) {
+      assertBlockMediaUrls(rawOps.description, entity.organizationId, 'attachment', 'description');
+    }
 
     // Server-origin writes carry no client field timestamps, so every changed scalar gets a fresh server HLC.
     const resolved = serverOrigin

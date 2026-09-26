@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
 import { useAuthStore } from '~/modules/auth/auth-store';
+import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import type { AuthStep } from '~/modules/auth/types';
 import { invitationResumePath } from '~/modules/auth/use-post-auth-redirect';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -40,7 +41,8 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
       const params = new URLSearchParams();
 
       // Only forward an explicit deep link: a default reads as explicit server-side and skips the welcome page for new users.
-      if (redirect?.startsWith('/')) params.set('redirectAfter', redirect);
+      const redirectAfter = safeRedirectPath(redirect);
+      if (redirectAfter) params.set('redirectAfter', redirectAfter);
 
       if (tokenId && inviteOtherAccount) {
         // Another account than the invited address: a plain sign-in that returns to confirm the invitation.

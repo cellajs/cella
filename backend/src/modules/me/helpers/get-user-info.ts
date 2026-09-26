@@ -3,7 +3,6 @@ import { and, desc, eq, getColumns, gt, isNull, or, sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import type { DbContext, Env } from '#/core/context';
 import { devicesTable } from '#/modules/auth/devices-db';
-import { getParsedSessionCookie } from '#/modules/auth/general/helpers/session';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
@@ -69,12 +68,11 @@ export const getUserSessions = async (ctx: Context<Env>, userId: string): Promis
     );
 
   const [sessions, newDevices] = await Promise.all([getSessions, getNewDevices]);
-  const { sessionToken } = await getParsedSessionCookie(ctx);
   const newDeviceHashes = new Set(newDevices.map(({ deviceIdHash }) => deviceIdHash));
 
   return sessions.map(({ secret, ...session }) => ({
     ...session,
-    isCurrent: sessionToken === secret,
+    isCurrent: session.id === ctx.var.sessionId,
     isNewDevice: session.deviceIdHash !== null && newDeviceHashes.has(session.deviceIdHash),
   }));
 };

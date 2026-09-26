@@ -55,6 +55,7 @@ export function WaitlistForm({
   const onSubmit = (body: FormValues) => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
 
+    // Every submission gets the same answer; an address with an account hears it by email.
     createRequest(body, {
       onSuccess: () => {
         navigate({ to: '/about', replace: true });
@@ -62,12 +63,6 @@ export function WaitlistForm({
 
         if (isDialog) useDialoger.getState().remove();
         callback?.({ status: 'success' });
-      },
-      onError: (error) => {
-        if (callback && error.status === 409) {
-          callback({ error, status: 'fail' });
-          return;
-        }
       },
     });
   };

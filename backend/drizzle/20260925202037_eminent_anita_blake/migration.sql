@@ -1,0 +1,1 @@
+ALTER TABLE "tokens" ADD COLUMN "pending_sign_up" jsonb;

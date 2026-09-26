@@ -1,5 +1,4 @@
-import type { z } from '@hono/zod-openapi';
-import { and, desc, eq, gt, inArray, isNull, ne } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, ne } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -8,17 +7,17 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { lookupIp } from '#/lib/geoip';
-import { revokeSessions } from '#/modules/auth/auth-queries';
+import { getSessionCache, type SessionCacheEntry, setSessionCache } from '#/middlewares/guard/auth-cache';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
+import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import { enrollDevice } from '#/modules/auth/general/helpers/enroll-device';
 import { type NewDevice, notifySignIn } from '#/modules/auth/general/helpers/notify-sign-in';
-import { type AuthStrategy, type SessionModel, type SessionTypes, sessionsTable } from '#/modules/auth/sessions-db';
+import { type AuthStrategy, type SessionTypes, sessionFactColumns, sessionsTable } from '#/modules/auth/sessions-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
-import { type UserWithCounters, userSelect } from '#/modules/user/helpers/select';
+import { userSelect } from '#/modules/user/helpers/select';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
-import { sessionCookieSchema } from '#/schemas';
 import { getIp } from '#/utils/get-ip';
 import { hashDeviceIdForUser, hashIpForUser, hashSubnet } from '#/utils/hash-pii';
 import { hashToken } from '#/utils/hash-token';
@@ -40,13 +39,9 @@ const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
   return deviceId;
 };
 
-/**
- * Revokes the user's oldest live sessions beyond the cap before a sign-in inserts one. Regular and mfa sessions count
- * together, since an mfa session is the full session of a user with MFA on; impersonation is left alone. Concurrent
- * sign-ins may exceed the cap by one.
- */
-export const evictExcessSessions = async (userId: string): Promise<void> => {
-  const excess = await db
+/** The user's live sessions that are not impersonations, newest first, optionally only those of one browser. */
+const liveOwnSessions = (userId: string, deviceIdHash?: string) =>
+  db
     .select({ id: sessionsTable.id })
     .from(sessionsTable)
     .where(
@@ -55,28 +50,22 @@ export const evictExcessSessions = async (userId: string): Promise<void> => {
         ne(sessionsTable.type, 'impersonation'),
         gt(sessionsTable.expiresAt, getIsoDate()),
         isNull(sessionsTable.revokedAt),
+        deviceIdHash ? eq(sessionsTable.deviceIdHash, deviceIdHash) : undefined,
       ),
     )
-    .orderBy(desc(sessionsTable.createdAt))
-    .offset(appConfig.maxSessionsPerUser - 1);
+    .orderBy(desc(sessionsTable.createdAt));
 
+/**
+ * Revokes the user's oldest live sessions beyond the cap before a sign-in inserts one. Regular and mfa sessions count
+ * together, since an mfa session is the full session of a user with MFA on; impersonation is left alone. Concurrent
+ * sign-ins may exceed the cap by one.
+ */
+export const evictExcessSessions = async (userId: string): Promise<void> => {
+  const excess = await liveOwnSessions(userId).offset(appConfig.maxSessionsPerUser - 1);
   if (excess.length === 0) return;
 
-  await revokeSessions(
-    { var: { db } },
-    {
-      filters: [
-        inArray(
-          sessionsTable.id,
-          excess.map((s) => s.id),
-        ),
-      ],
-      reason: 'session_cap',
-      revokedBy: null,
-    },
-  );
-
-  log.info('Revoked sessions beyond per-user cap', { userId, count: excess.length });
+  const sessionIds = excess.map((s) => s.id);
+  await endSessions({ var: { db } }, { userId, sessionIds, reason: 'session_cap', by: null });
 };
 
 /** What the sign-in request says about the browser and the network. Raw IP and device id stay in memory; only their hashes are stored. */
@@ -120,28 +109,31 @@ const enrollNewDevice = async (userId: string, deviceId: string): Promise<NewDev
   }
 };
 
-/** Stores a session for the user and returns what the session cookie needs. Database only, so it runs without a request. */
+/**
+ * Stores a session for the user and returns what its cookie needs: the random token, which exists only there, since the
+ * row keeps its hash. An impersonation names the admin session it is layered on. Database only, so it runs without a
+ * request.
+ */
 export const createSession = async (
   user: Pick<UserModel, 'id'>,
   context: SignInContext,
   strategy: AuthStrategy,
   type: SessionTypes = 'regular',
+  impersonatorSessionId: string | null = null,
 ) => {
   const { rawIp, country, asn, device, deviceId } = context;
 
   // Pseudonymize network identity. Raw IP is never persisted.
   const subnet = rawIp ? toSubnet(rawIp) : null;
 
-  // Generate token and store hashed
   const sessionToken = nanoid(40);
-  const hashedSessionToken = hashToken(sessionToken);
 
   const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
   const sessionId = generateId();
   const session = {
     id: sessionId,
-    secret: hashedSessionToken,
+    secret: hashToken(sessionToken),
     userId: user.id,
     type,
     deviceName: device.name,
@@ -156,31 +148,21 @@ export const createSession = async (
     deviceIdHash: deviceId ? hashDeviceIdForUser(deviceId, user.id) : null,
     createdAt: getIsoDate(),
     expiresAt: createDate(timeSpan),
+    impersonatorSessionId,
   };
 
   if (type !== 'impersonation') {
     // A3: a browser holds at most one live session, so repeated sign-ins do not stack up.
     if (session.deviceIdHash) {
-      await revokeSessions(
-        { var: { db } },
-        {
-          filters: [
-            eq(sessionsTable.userId, user.id),
-            eq(sessionsTable.deviceIdHash, session.deviceIdHash),
-            ne(sessionsTable.type, 'impersonation'),
-            gt(sessionsTable.expiresAt, getIsoDate()),
-          ],
-          reason: 'replaced',
-          revokedBy: null,
-        },
-      );
+      const sessionIds = (await liveOwnSessions(user.id, session.deviceIdHash)).map((s) => s.id);
+      await endSessions({ var: { db } }, { userId: user.id, sessionIds, reason: 'replaced', by: null });
     }
     await evictExcessSessions(user.id);
   }
 
   await db.insert(sessionsTable).values(session);
 
-  if (type === 'impersonation') return { sessionId, hashedSessionToken, timeSpan, newDevice: null };
+  if (type === 'impersonation') return { sessionId, sessionToken, timeSpan, newDevice: null };
 
   const newDevice = deviceId ? await enrollNewDevice(user.id, deviceId) : null;
 
@@ -191,10 +173,13 @@ export const createSession = async (
     set: { lastSignInAt },
   });
 
-  return { sessionId, hashedSessionToken, timeSpan, newDevice };
+  return { sessionId, sessionToken, timeSpan, newDevice };
 };
 
-/** Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. Impersonation records the admin in the cookie. */
+/**
+ * Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. An impersonation
+ * gets a cookie of its own, layered over the admin's session cookie, which stays: stopping returns the browser to it.
+ */
 export const setUserSession = async (
   ctx: Context<Env>,
   user: UserModel,
@@ -213,66 +198,113 @@ export const setUserSession = async (
   }
 
   const context = await collectSignInContext(ctx, type);
-  const { sessionId, hashedSessionToken, timeSpan, newDevice } = await createSession(user, context, strategy, type);
+  const impersonatorSessionId = type === 'impersonation' ? ctx.var.sessionId : null;
+  const { sessionToken, timeSpan, newDevice } = await createSession(
+    user,
+    context,
+    strategy,
+    type,
+    impersonatorSessionId,
+  );
 
-  const adminUserIdPart = type === 'impersonation' ? ctx.var.user.id : '';
-  const cookieContent = `${hashedSessionToken}.${sessionId}.${adminUserIdPart}`;
-
-  // Set session cookie with the unhashed version
-  await setAuthCookie(ctx, 'session', cookieContent, timeSpan);
+  if (type === 'impersonation') await setAuthCookie(ctx, 'impersonation', sessionToken, timeSpan);
+  else {
+    await setAuthCookie(ctx, 'session', sessionToken, timeSpan);
+    // A sign-in replaces whatever this browser held, an impersonation included.
+    if (await getAuthCookie(ctx, 'impersonation')) deleteAuthCookie(ctx, 'impersonation');
+  }
 
   notifySignIn({ user, isSystemAdmin, context, strategy, newDevice });
 
   if (type !== 'impersonation') log.info('User signed in', { strategy });
 };
 
-/** Returns the session (secret stripped) and its user; throws when the session is missing, revoked or expired. The sweep removes dead rows. */
-export const validateSession = async (
-  hashedSessionToken: string,
-): Promise<{ session: SessionModel; user: UserWithCounters }> => {
+/**
+ * The live session a cookie's token names, with its user and whether the user holds the admin system role: from the
+ * auth cache, keyed by the token's hash, or else from the database, which stores only that hash. A cached entry
+ * answers only to the token itself and stops at the session's expiry; endings drop it through `endSessions`.
+ * @throws AppError 401 `no_session` for an unknown token, `session_revoked` or `session_expired`.
+ */
+export const readSession = async (sessionToken: string): Promise<SessionCacheEntry> => {
+  const secretHash = hashToken(sessionToken);
+
+  const cached = getSessionCache(secretHash);
+  if (cached) {
+    if (isExpiredDate(cached.session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
+    return cached;
+  }
+
+  // The role is read whatever the address, so the cached entry is right for every request that hits it.
   const [result] = await db
-    .select({ session: sessionsTable, user: userSelect })
+    .select({
+      session: sessionFactColumns,
+      revokedAt: sessionsTable.revokedAt,
+      user: userSelect,
+      systemRole: systemRolesTable.role,
+    })
     .from(sessionsTable)
-    .where(eq(sessionsTable.secret, hashedSessionToken))
-    .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id));
+    .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id))
+    .leftJoin(systemRolesTable, eq(systemRolesTable.userId, usersTable.id))
+    .where(eq(sessionsTable.secret, secretHash))
+    .limit(1);
 
   if (!result) throw new AppError(401, 'no_session', 'warn');
+  if (result.revokedAt) throw new AppError(401, 'session_revoked', 'warn');
+  if (isExpiredDate(result.session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
 
-  const { session, user } = result;
-
-  if (session.revokedAt) throw new AppError(401, 'session_revoked', 'warn');
-  if (isExpiredDate(session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
-
-  const { secret: _, ...safeSession } = session;
-  return { session: safeSession, user };
+  const entry = { session: result.session, user: result.user, hasSystemRole: result.systemRole === 'admin' };
+  setSessionCache(secretHash, entry);
+  return entry;
 };
 
-type ParseSessionCookieOptions = {
-  deleteOnError?: boolean;
-  deleteAfterAttempt?: boolean;
-};
+/**
+ * The app session a request presents, read from its cookies only, so any process serving the app's origin can call it
+ * with a raw request context. An impersonation counts only on top of the admin session that started it, held by this
+ * same browser, while that admin still has system access (the role, from an allowed address); without an
+ * impersonation cookie it is the browser's own session, which is never an impersonation. With `clearOnError`, a
+ * refusal also deletes the cookie that failed.
+ * @throws AppError 401 without a session cookie, for an unknown, revoked or expired token, or an impersonation that
+ *   this browser's own session does not back.
+ */
+export const resolveSession = async (
+  ctx: Context,
+  { clearOnError = false }: { clearOnError?: boolean } = {},
+): Promise<SessionCacheEntry> => {
+  const sessionToken = await getAuthCookie(ctx, 'session');
+  const impersonationToken = await getAuthCookie(ctx, 'impersonation');
 
-export const getParsedSessionCookie = async (
-  ctx: Context<Env>,
-  options?: ParseSessionCookieOptions,
-): Promise<z.infer<typeof sessionCookieSchema>> => {
-  const { deleteOnError = false, deleteAfterAttempt = false } = options ?? {};
-  try {
-    const sessionData = await getAuthCookie(ctx, 'session');
+  // Only a refusal clears the cookie: it holds the only copy of the token, so a failed read (the database away) keeps it.
+  const clearIfRefused = async (cookie: 'session' | 'impersonation', read: () => Promise<SessionCacheEntry>) => {
+    try {
+      return await read();
+    } catch (err) {
+      if (clearOnError && err instanceof AppError && err.status === 401) deleteAuthCookie(ctx, cookie);
+      throw err;
+    }
+  };
 
-    if (!sessionData) throw new Error();
+  /** The admin session behind an impersonation; a refusal means none, a failed read is the request's failure. */
+  const readAdminSession = (token: string) =>
+    readSession(token).catch((err) => {
+      if (err instanceof AppError) return null;
+      throw err;
+    });
 
-    // Parse delimited string: "<hashedSessionToken>.<sessionId>.<adminUserId>"
-    const [sessionToken, sessionId, adminUserIdRaw] = sessionData.split('.');
-    if (!sessionToken || !sessionId) throw new Error();
-
-    const adminUserId = adminUserIdRaw || undefined;
-
-    return sessionCookieSchema.parse({ sessionToken, sessionId, adminUserId });
-  } catch (error) {
-    if (deleteOnError) deleteAuthCookie(ctx, 'session');
-    throw new AppError(401, 'unauthorized', 'warn');
-  } finally {
-    if (deleteAfterAttempt) deleteAuthCookie(ctx, 'session');
+  if (impersonationToken) {
+    return clearIfRefused('impersonation', async () => {
+      const impersonation = await readSession(impersonationToken);
+      const admin = sessionToken ? await readAdminSession(sessionToken) : null;
+      const { type, impersonatorSessionId } = impersonation.session;
+      const backed = admin?.session.id === impersonatorSessionId && admin.hasSystemRole && isSystemAccessAllowed(ctx);
+      if (type !== 'impersonation' || !backed) throw new AppError(401, 'unauthorized', 'warn');
+      return impersonation;
+    });
   }
+
+  return clearIfRefused('session', async () => {
+    if (!sessionToken) throw new AppError(401, 'unauthorized', 'warn');
+    const entry = await readSession(sessionToken);
+    if (entry.session.type === 'impersonation') throw new AppError(401, 'unauthorized', 'warn');
+    return entry;
+  });
 };

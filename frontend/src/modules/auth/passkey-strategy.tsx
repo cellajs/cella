@@ -2,7 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import { FingerprintPatternIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { type SignInWithPasskeyData, type SignInWithPasskeyResponse, signInWithPasskey } from 'sdk';
+import { type SignInWithPasskeyResponse, signInWithPasskey } from 'sdk';
 import { ApiError } from '~/lib/api';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { getPasskeyVerifyCredential } from '~/modules/auth/passkey-credentials';
@@ -12,24 +12,20 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
 
-interface PasskeyStrategyProps extends Omit<PasskeyCredentialProps, 'type'> {
+interface PasskeyStrategyProps {
   type: Exclude<PasskeyCredentialProps['type'], 'registration'>;
 }
 
-export function PasskeyStrategy({ email, type }: PasskeyStrategyProps) {
+export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const mode = useUIStore((state) => state.mode);
 
   const navigateAfterAuth = useNavigateAfterAuth();
 
-  const { mutate: passkeyAuth } = useMutation<
-    SignInWithPasskeyResponse,
-    ApiError | Error,
-    NonNullable<SignInWithPasskeyData['body']>['email']
-  >({
-    mutationFn: async (email) => {
-      const body = await getPasskeyVerifyCredential({ email, type });
+  const { mutate: passkeyAuth } = useMutation<SignInWithPasskeyResponse, ApiError | Error, void>({
+    mutationFn: async () => {
+      const body = await getPasskeyVerifyCredential({ type });
       return await signInWithPasskey({ body });
     },
     onSuccess: () => {
@@ -49,7 +45,7 @@ export function PasskeyStrategy({ email, type }: PasskeyStrategyProps) {
       <Button
         type="button"
         variant={type === 'mfa' ? 'default' : 'plain'}
-        onClick={() => passkeyAuth(email)}
+        onClick={() => passkeyAuth()}
         className="w-full gap-1.5 truncate"
       >
         <FingerprintPatternIcon />

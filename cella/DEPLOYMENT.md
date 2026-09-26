@@ -48,7 +48,7 @@ Three principles ([infra/README.md](../infra/README.md#core-philosophy)): **crea
      └─────────────────────────────┘  presigned URLs)
 ```
 
-- **Load balancer:** the only public entrypoint. Backend, yjs, mcp and oauth share the app origin via registry-declared `pathPrefix` values (`/api`, `/yjs`, `/mcp`, `/oauth`). The LB never rewrites paths. `cdc` never takes an LB route.
+- **Load balancer:** the only public entrypoint. Backend, yjs, mcp and oauth share the app origin via registry-declared `pathPrefix` values (`/api`, `/yjs`, `/mcp`, `/oauth`). The LB never rewrites paths. `cdc` never takes an LB route. The backend's internal listener (`internalPort`: the CDC socket and the Yjs relay's materialize route) is reached only through a private, ACL-guarded LB frontend that admits the private network; no public pool forwards to it.
 - **VMs:** public IP for egress only (image pulls). All inbound is dropped, including SSH. Every service gets its own VM unless `singleVM` co-hosts the workers and the frontend Caddy container on the backend VM.
 - **Frontend VM:** Caddy adds security headers/CSP and the SPA deep-link fallback.
 - **Database:** private-network only. A break-glass toggle can expose it temporarily ([Changing infrastructure](#changing-infrastructure)).
@@ -59,10 +59,11 @@ Three principles ([infra/README.md](../infra/README.md#core-philosophy)): **crea
 ```
 Release published, push to main (staging), or manual dispatch
         ↓
-CI builds images in parallel
+CI builds images in parallel, and the frontend
+in a job that holds no secret
         ↓
-`infra deploy` (one command): preflights + stack lock;
-frontend build + asset upload run inside it, concurrent
+`infra deploy --dist` (one command): preflights + stack lock;
+the frontend asset upload runs inside it, concurrent
 with the wait for image tags
         ↓
 Wave 1: provision + cut over the primary service (backend)
@@ -94,7 +95,7 @@ Scaleway API keys descend in privilege, each in a different store, each minting 
 | **Owner API key** (your own key as organization Owner, **or** an application holding ProjectManager + IAMManager) | Everything: required for any `pulumi up` that touches privileged resources (DB, VPC, private network, IAM policies), and for setup, teardown and runtime secrets. The CLI checks the bearer before using one: an application the engine created is refused by name. | Your durable key stays in the OS keychain or password manager; a privileged run never drives Pulumi with it but mints a 30-minute key from it and revokes that at the end. A short-lived key you paste is used as it is, and you revoke it afterwards. | `SCW_OWNER_ACCESS_KEY` / `SCW_OWNER_SECRET_KEY` in `infra/.env.<mode>` as a `keychain:` or `op:` reference; without it the CLI prompts. |
 | **CI deploy application key** (`<slug>-<mode>-ci-deploy`) | Write on compute / LB / private networks / edge / secrets / object storage / registry / DNS. **Read-only** on VPC and RDB (privileged resources). Project-scoped. | Long-lived. Rotate via the CLI **Rotate keys** action ([Key rotation](#key-rotation)) | The stack's GitHub Environment (`staging` or `production`) secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`, the names the Scaleway provider reads. |
 | **Admin application key** (`<slug>-<mode>-admin`) | Read-only on every project resource, object storage full access, IAM read; admitted to the state bucket. The day-2 key for status, Preview, and the state side of Apply infra change. | Long-lived. Created by the CLI **Rotate keys** action; custody copy at `/<slug>-<mode>/engine/admin-key`. | `infra/.env.<mode>` as `SCW_ADMIN_ACCESS_KEY` / `SCW_ADMIN_SECRET_KEY` (0600, never committed): setup writes it on the machine that ran it; anywhere else, **Manage keys & secrets → Fetch admin application key** reads it from Secret Manager with your Owner API key. |
-| **Boot + service application keys** (`<slug>-<mode>-boot`, `<slug>-<mode>-vm-<service>`) | Boot key: registry pull + boot-diag write + handoff-only secret read. Service key: path-conditioned secret read (its own + shared folders). The backend additionally gets granular S3 object sets. | Minted per deploy by the CI key. Superseded keys are pruned on the next mint | Boot key baked into VM cloud-init. Each service key is delivered via a single-access handoff bundle in Secret Manager. Not in stack config. |
+| **Boot + service application keys** (`<slug>-<mode>-boot`, `<slug>-<mode>-vm-<service>`) | Boot key: registry pull + boot-diag write + handoff-only secret read. Service key: path-conditioned secret read (its own folder plus the shared folder of each secret it consumes). The backend additionally gets granular S3 object sets. | Minted per deploy by the CI key. Superseded keys are pruned on the next mint | Boot key baked into VM cloud-init. Each service key is delivered via a single-access handoff bundle in Secret Manager. Not in stack config. |
 
 The **Pulumi passphrase** sits outside the chain: it encrypts the stack's secret outputs in the state bucket ([Passphrase rotation](#passphrase-rotation)). **Store passphrase in keychain** moves this machine's copy into the OS keychain and leaves `keychain:<slug>-<mode>/PULUMI_CONFIG_PASSPHRASE` in the env file; the password-manager copy stays the durable one.
 
@@ -116,7 +117,7 @@ pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref
 1. **Env**: export `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`, `PULUMI_CONFIG_PASSPHRASE` (the workflow maps its `SCW_PROJECT_ID` / `SCW_ORGANIZATION_ID` secrets onto the `SCW_DEFAULT_*` names the Scaleway provider reads). Install node, pnpm, docker (buildx), and the pulumi CLI.
 2. **Deploy**: `pnpm --filter infra run deploy --mode <mode> --sha <sha> --build`. `--build` bakes and pushes every image (app services + boot runner) via `docker buildx bake` with the registry `:buildcache` shared with CI. Safe to re-run. The stack lock serializes concurrent attempts.
 
-GitHub Actions builds images as a parallel matrix and omits `--build`. `--dist <dir>` supplies a prebuilt frontend. `--git-ref`, when provided, gates production deploys to main/release refs.
+GitHub Actions builds images as a parallel matrix and omits `--build`. `--dist <dir>` supplies a prebuilt frontend: GitHub Actions builds it in a job with no secrets, because the Vite build and its dependencies' install scripts run third-party code. Without `--dist` the command builds the frontend itself in a child process stripped of the deploy's keys, which keeps them out of its environment but not out of reach of code running as the same user on that machine. `--git-ref`, when provided, gates production deploys to main/release refs.
 
 ## Rollout strategies
 

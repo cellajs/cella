@@ -27,13 +27,13 @@ const bodyChannelIdColumns = (): BodyChannelIdColumns => {
   return { [key]: plan?.channelIdColumns[key] } as BodyChannelIdColumns;
 };
 
-const attachmentBody = (id: string) => ({
+/** A create body keyed under the organization's upload prefix. */
+const attachmentBody = (id: string, organizationId: string) => ({
   id,
   filename: 'cross-org.pdf',
   contentType: 'application/pdf',
   size: '1024',
-  keys: { original: `test/cross-org-${id}.pdf` },
-  bucketName: 'test-bucket',
+  keys: { original: `${organizationId}/test/cross-org-${id}.pdf` },
   // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
   ...bodyChannelIdColumns(),
   stx: { mutationId: id, sourceId: 'cross-org', fieldTimestamps: {} },
@@ -123,7 +123,7 @@ describe('Cross-organization API isolation', async () => {
     it('should reject User A creating attachment in org B with 403', async () => {
       const { error, response } = await call(createAttachments, {
         path: { tenantId: orgB.tenantId, organizationId: orgB.id },
-        body: [attachmentBody('00000000-0000-4000-a000-000000000001')],
+        body: [attachmentBody('00000000-0000-4000-a000-000000000001', orgB.id)],
         headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
       });
       expect(response.status).toBe(403);
@@ -133,7 +133,7 @@ describe('Cross-organization API isolation', async () => {
     it('should reject User B creating attachment in org A with 403', async () => {
       const { error, response } = await call(createAttachments, {
         path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        body: [attachmentBody('00000000-0000-4000-a000-000000000002')],
+        body: [attachmentBody('00000000-0000-4000-a000-000000000002', tenant.organization.id)],
         headers: { ...defaultHeaders, Cookie: userB.sessionCookie },
       });
       expect(response.status).toBe(403);
@@ -182,7 +182,7 @@ describe('Cross-organization API isolation', async () => {
 
       const createRes = await call(createAttachments, {
         path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        body: [attachmentBody(id)],
+        body: [attachmentBody(id, tenant.organization.id)],
         headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
       });
       expect(createRes.response.status).toBe(201);

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { publicGuard, userGuard } from '#/middlewares/guard';
+import { publicGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter, totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTotpKeyResponse } from '#/modules/auth/auth-mocks';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
@@ -9,9 +9,10 @@ import { cookieSchema, errorResponseRefs } from '#/schemas';
 const authTotpsRoutes = {
   generateTotpKey: createXRoute({
     operationId: 'generateTotpKey',
+    'x-strategy': 'totp',
     method: 'post',
     path: '/totp/generate-key',
-    xGuard: [userGuard],
+    xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['auth', 'cella'],
     summary: 'Generate TOTP key',
@@ -31,9 +32,10 @@ const authTotpsRoutes = {
   }),
   createTotp: createXRoute({
     operationId: 'createTotp',
+    'x-strategy': 'totp',
     method: 'post',
     path: '/totp',
-    xGuard: [userGuard],
+    xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['auth', 'cella'],
     summary: 'Set TOTP',
@@ -55,9 +57,10 @@ const authTotpsRoutes = {
   }),
   deleteTotp: createXRoute({
     operationId: 'deleteTotp',
+    'x-strategy': null,
     method: 'delete',
     path: '/totp',
-    xGuard: [userGuard],
+    xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['auth', 'cella'],
     summary: 'Delete TOTP',
@@ -69,6 +72,7 @@ const authTotpsRoutes = {
   }),
   signInWithTotp: createXRoute({
     operationId: 'signInWithTotp',
+    'x-strategy': 'totp',
     method: 'post',
     path: '/totp-verification',
     xGuard: [publicGuard],

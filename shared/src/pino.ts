@@ -2,6 +2,8 @@ import { trace } from '@opentelemetry/api';
 import pino from 'pino';
 import type { Severity } from '../types.ts';
 import { appConfig } from './config-builder/app-config.ts';
+import { failedQueryReason, isFailedQueryMessage, redactFailedQuery } from './utils/failed-query.ts';
+import { scrubUrl } from './utils/scrub-url.ts';
 
 export type { Logger } from 'pino';
 
@@ -12,7 +14,8 @@ interface CreateLoggerOptions {
   level?: string;
   isProduction: boolean;
   isTest: boolean;
-  redact?: pino.LoggerOptions['redact'];
+  /** Keys censored in every line (fast-redact paths): secret columns and transport keys. Required, so no logger skips it. */
+  redactPaths: readonly string[];
   formatters?: pino.LoggerOptions['formatters'];
   transportOptions?: Record<string, unknown>;
   /** With a `mapleSecretIngestKey` set, ships structured logs to Maple.dev alongside the console output, in dev and production alike. */
@@ -21,18 +24,67 @@ interface CreateLoggerOptions {
   mapleSecretIngestKey?: string;
   /** Reported as `service.name` on exported logs; match the service's tracing serviceName. */
   serviceName?: string;
+  /** Writes every line here and builds no console or Maple target (tests). */
+  destination?: pino.DestinationStream;
 }
+
+/** Nested causes a serialized error is searched to; deeper ones are left as the serializer wrote them. */
+const maxCauseDepth = 8;
+
+/** A message or stack without the values of a failed query or the secrets of a URL it quotes. */
+const scrubErrorText = (text: string) => scrubUrl(redactFailedQuery(text));
+
+/** The fields of a database error that quote the row or statement: a unique violation's `detail` names the value. */
+const valueQuotingFields = ['detail', 'where', 'internalQuery'] as const;
+
+/**
+ * Removes failed queries and URL secrets from a serialized error and its causes, in place. A failed query's own node
+ * takes the database's reason as its message and loses its `query` and `params`; every message and stack goes through
+ * `redactFailedQuery` and `scrubUrl`, and the fields a database error quotes values in go. Only error-like nodes (a
+ * string `message`) are touched: the serializer built those, the caller did not.
+ */
+const redactSerializedError = (node: unknown, depth = 0): void => {
+  if (typeof node !== 'object' || node === null || depth > maxCauseDepth) return;
+  const error = node as Record<string, unknown>;
+  const { message, stack } = error;
+  if (typeof message !== 'string') return;
+
+  if (isFailedQueryMessage(message)) {
+    const reason = failedQueryReason(error.cause);
+    error.message = scrubUrl(reason);
+    if (typeof stack === 'string') error.stack = stack.split(message).join(reason);
+    delete error.query;
+    delete error.params;
+  } else {
+    error.message = scrubErrorText(message);
+  }
+  if (typeof error.stack === 'string') error.stack = scrubErrorText(error.stack);
+  for (const field of valueQuotingFields) delete error[field];
+
+  redactSerializedError(error.cause, depth + 1);
+  if (Array.isArray(error.aggregateErrors)) {
+    for (const inner of error.aggregateErrors) redactSerializedError(inner, depth + 1);
+  }
+};
+
+/** Pino's `errWithCause` output ({ type, message, stack, cause }) without failed-query values or URL secrets. */
+const serializeError = (err: unknown): unknown => {
+  const serialized: unknown = pino.stdSerializers.errWithCause(err as Error);
+  redactSerializedError(serialized);
+  return serialized;
+};
 
 export const createLogger = ({
   level,
   isProduction,
   isTest,
-  redact,
+  redactPaths,
   formatters,
   transportOptions,
   enableOtelTransport,
   mapleSecretIngestKey,
   serviceName,
+  destination: injectedDestination,
 }: CreateLoggerOptions): pino.Logger => {
   // Console target: human-readable pretty in dev, raw JSON on stdout in production/containers.
   const consoleTarget: pino.TransportTargetOptions = isProduction
@@ -51,7 +103,7 @@ export const createLogger = ({
   // the endpoint and ingest key passed explicitly. Enabled in dev too, so logs reach Maple in the
   // production shape while the console keeps pretty output.
   const otelTarget: pino.TransportTargetOptions | undefined =
-    !isTest && enableOtelTransport && mapleSecretIngestKey
+    !injectedDestination && !isTest && enableOtelTransport && mapleSecretIngestKey
       ? {
           target: 'pino-opentelemetry-transport',
           options: {
@@ -75,18 +127,24 @@ export const createLogger = ({
       : undefined;
 
   // Without OTel: raw stdout in production (no worker thread), pretty transport in dev.
-  const destination = otelTarget
-    ? pino.transport({ targets: [consoleTarget, otelTarget] })
-    : isProduction
-      ? undefined
-      : pino.transport(consoleTarget);
+  const destination =
+    injectedDestination ??
+    (otelTarget
+      ? pino.transport({ targets: [consoleTarget, otelTarget] })
+      : isProduction
+        ? undefined
+        : pino.transport(consoleTarget));
 
   return pino(
     {
       level: level ?? (isTest ? 'silent' : 'info'),
-      // Pino convention: an Error under `err` expands to { type, message, stack }, keeping nested
-      // `cause` chains, which is where Drizzle puts pg errors.
-      serializers: { err: pino.stdSerializers.errWithCause },
+      // Pino convention: an Error under `err` (or `error`) expands to { type, message, stack }, keeping nested
+      // `cause` chains, which is where Drizzle puts pg errors. A logged `url` goes through `scrubUrl`.
+      serializers: {
+        err: serializeError,
+        error: serializeError,
+        url: (url: unknown) => (typeof url === 'string' ? scrubUrl(url) : url),
+      },
       // Tag each line with the active OTel span so Maple joins logs to traces, including those
       // started by the frontend's traceparent.
       mixin() {
@@ -99,7 +157,7 @@ export const createLogger = ({
         ...(!otelTarget && { level: (label) => ({ level: label.toUpperCase() }) }),
         ...formatters,
       },
-      ...(redact && { redact }),
+      redact: { paths: [...redactPaths], censor: '[REDACTED]' },
     },
     destination,
   );
@@ -161,7 +219,8 @@ export const createLog = (logger: pino.Logger): Log => {
         ...rest,
         ...(err !== undefined && { err: toError(err) }),
         ...(repeated && { repeated }),
-        msg,
+        // A message can quote a URL, as a logged `url` does.
+        msg: scrubUrl(msg),
       });
     };
 
@@ -194,6 +253,6 @@ export const createWorkerLog = (serviceSuffix: string, env: WorkerLogEnv, redact
       enableOtelTransport: true,
       mapleSecretIngestKey: env.MAPLE_SECRET_INGEST_KEY,
       serviceName: `${appConfig.slug}-${serviceSuffix}`,
-      redact: { paths: [...redactPaths], censor: '[REDACTED]' },
+      redactPaths,
     }),
   );

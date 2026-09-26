@@ -1,4 +1,3 @@
-import { serve } from '@hono/node-server';
 import { sql } from 'drizzle-orm';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import pc from 'picocolors';
@@ -9,10 +8,12 @@ import { registerOpenApiDocs } from '#/core/openapi-registration';
 import { baseDb, getAdminDb, migrateConfig } from '#/db/db';
 import '#/lib/i18n';
 import process from 'node:process';
-import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { startGeoipRefresh } from '#/lib/geoip';
+import { startJobOwnership } from '#/lib/job-ownership';
+import { serveApi, serveInternal } from '#/lib/listeners';
 import { getBackendJobs } from '#/lib/module';
 import { otel } from '#/lib/tracing';
+import { listenForAuthInvalidation } from '#/middlewares/guard/invalidation-listener';
 import { registerCacheInvalidation } from '#/middlewares/product-cache/cache-invalidation';
 import { baseApp as app } from '#/routes';
 import { timestamp } from '#/utils/console';
@@ -22,6 +23,7 @@ otel.start();
 otel.verifyConnection();
 
 let server: import('@hono/node-server').ServerType | undefined;
+let internalListener: ReturnType<typeof serveInternal> | undefined;
 const stopJobs: (() => void)[] = [];
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).startTunnel : () => null;
@@ -51,35 +53,32 @@ const main = async () => {
     await schedulePartitionMaintenance();
 
     console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
-
-    // The migration-owning instance also owns every scheduled job, so only one instance runs each.
-    const jobs = getBackendJobs();
-    for (const job of jobs) stopJobs.push(job.start());
-    console.info(`${timestamp()} [startup] scheduled jobs: ${jobs.map((job) => job.name).join(', ') || 'none'}`);
   } else {
     console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false: skipping migrations (run as MODE=migrate)`);
   }
 
+  // One instance runs the scheduled jobs: every RUN_JOBS instance contends for an advisory lock, also across a rollout.
+  if (env.RUN_JOBS && !env.NODB) {
+    const jobs = getBackendJobs();
+    stopJobs.push(startJobOwnership({ jobs }));
+    console.info(`${timestamp()} [startup] scheduled jobs: ${jobs.map((job) => job.name).join(', ') || 'none'}`);
+  }
+
   registerCacheInvalidation();
+  stopJobs.push(listenForAuthInvalidation());
 
   // Per process, not a scheduled job: every replica keeps its own GeoIP copy current.
   stopJobs.push(startGeoipRefresh());
 
-  server = serve(
+  // Server-to-server routes (the CDC socket, the Yjs relay) listen apart from the public API.
+  internalListener = serveInternal({ port: Number(env.INTERNAL_PORT) });
+
+  server = serveApi(
     {
       fetch: app.fetch,
-      hostname: '0.0.0.0',
       port,
-      serverOptions: { keepAlive: true, keepAliveTimeout: 30_000 },
     },
     async () => {
-      if (server && 'headersTimeout' in server) {
-        server.headersTimeout = 60_000;
-        server.requestTimeout = 30_000;
-      }
-
-      cdcWebSocketServer.attachToServer(server!);
-
       // Single-VM: this API process also runs every enabled service in-process, through each subsystem's own start().
       if (appConfig.singleVM) {
         if (appConfig.services.cdc.enabled) {
@@ -128,7 +127,7 @@ setupGracefulShutdown({
     if (server) {
       server.close();
     }
-    cdcWebSocketServer.close();
+    internalListener?.close();
     await otel.shutdown();
   },
   log: (msg) => process.stderr.write(`[api] ${msg}\n`),

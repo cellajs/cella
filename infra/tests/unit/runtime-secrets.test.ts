@@ -1,6 +1,9 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { signYjsToken, verifyYjsToken, yjsTokenSigningKey, yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { describe, expect, it } from 'vitest';
+import { modeSecrets } from '../../../backend/src/env-mode-secrets';
+import { appServices } from '../../config/services.config';
 import {
   defineRuntimeSecrets,
   runtimeSecretConsumers,
@@ -84,10 +87,17 @@ describe('runtime secret registry', () => {
     expect(runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar)).toEqual([
       'DATABASE_URL',
       'DATABASE_SSL_CA',
-      'YJS_SECRET',
+      'YJS_TOKEN_PUBLIC_KEY',
+      'YJS_RELAY_SECRET',
       'MAPLE_SECRET_INGEST_KEY',
     ]);
     expect(runtimeSecretsForConsumer('frontend')).toEqual([]);
+    expect(runtimeSecretsForConsumer('oauth').map((secret) => secret.envVar)).toEqual([
+      'DATABASE_URL',
+      'DATABASE_SSL_CA',
+      'COOKIE_SECRET',
+      'DATA_ENCRYPTION_KEY',
+    ]);
   });
 
   it('does not leak service-exclusive secrets across VM boundaries', () => {
@@ -95,9 +105,23 @@ describe('runtime secret registry', () => {
     const yjsVars = new Set(runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar));
     const backendVars = new Set(runtimeSecretsForConsumer('backend').map((secret) => secret.envVar));
 
-    expect(cdcVars.has('YJS_SECRET')).toBe(false);
+    expect(cdcVars.has('YJS_RELAY_SECRET')).toBe(false);
     expect(yjsVars.has('CDC_SECRET')).toBe(false);
     expect(backendVars.has('DATABASE_CDC_URL')).toBe(false);
+  });
+
+  it('derives the relay public key from the signing key, so the two change together', () => {
+    const publicKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PUBLIC_KEY');
+    const privateKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PRIVATE_KEY');
+    expect(publicKey?.derivedFrom?.secretId).toBe(privateKey?.id);
+    const material = 'key-material-of-at-least-thirty-two-chars';
+    const token = signYjsToken(
+      { userId: 'u', entityType: 'attachment', entityId: 'e', tenantId: 't', organizationId: null },
+      yjsTokenSigningKey(material),
+      60_000,
+    );
+    const derived = publicKey?.derivedFrom?.derive(material) ?? '';
+    expect(verifyYjsToken(token, yjsTokenVerifyKey(derived)).ok).toBe(true);
   });
 });
 
@@ -113,6 +137,39 @@ describe('runtime secret schema alignment', () => {
           source,
           `${secret.envVar} must be declared in ${service}/src/env.ts when assigned to ${service}`,
         ).toContain(`${secret.envVar}:`);
+      }
+    }
+  });
+
+  // The backend image serves each of these as its own VM under split-VM; the MODE its env names picks the process.
+  const backendImageModes = runtimeSecretConsumers
+    .filter((slug) => {
+      const cfg = appServices[slug];
+      return slug === 'backend' || ('reusesImageOf' in cfg && cfg.reusesImageOf === 'backend');
+    })
+    .map((slug) => {
+      const cfg = appServices[slug];
+      const env: Readonly<Record<string, string>> = 'env' in cfg ? cfg.env : {};
+      return [slug, env.MODE ?? 'api'] as const;
+    });
+
+  it('delivers a mode-bound secret to exactly the backend-image VMs whose mode reads it', () => {
+    expect(backendImageModes.map(([slug]) => slug)).toEqual(['backend', 'mcp', 'oauth']);
+    for (const [service, mode] of backendImageModes) {
+      const delivered = new Set(runtimeSecretsForConsumer(service).map((secret) => secret.envVar));
+      for (const [envVar, modes] of Object.entries(modeSecrets)) {
+        const reads = modes.some((readingMode) => readingMode === mode);
+        // Missing, the worker's env schema refuses to boot; extra, the VM holds a key its process never reads.
+        expect(delivered.has(envVar), `${service} (MODE=${mode}) and ${envVar}`).toBe(reads);
+      }
+    }
+  });
+
+  it('delivers the secrets every backend mode requires to each backend-image VM', () => {
+    for (const [service] of backendImageModes) {
+      const delivered = new Set(runtimeSecretsForConsumer(service).map((secret) => secret.envVar));
+      for (const envVar of ['DATABASE_URL', 'COOKIE_SECRET', 'DATA_ENCRYPTION_KEY']) {
+        expect(delivered.has(envVar), `${service} and ${envVar}`).toBe(true);
       }
     }
   });

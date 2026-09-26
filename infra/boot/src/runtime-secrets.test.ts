@@ -25,7 +25,7 @@ describe('hydrateRuntimeSecrets', () => {
   it('writes deliverable secrets mode 0600', async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'infra-boot-'));
     const outputPath = join(tempDir, '.env.runtime');
-    await hydrateRuntimeSecrets({
+    const delivered = await hydrateRuntimeSecrets({
       manifest: [{ envVar: 'COOKIE_SECRET', secretId: 'secret-1', required: true }],
       secretKey: 'secret',
       region: 'nl-ams',
@@ -33,6 +33,8 @@ describe('hydrateRuntimeSecrets', () => {
       fetchImpl: fetchSecret({ 'secret-1': 'abc' }),
     });
     expect(await readFile(outputPath, 'utf-8')).toBe('COOKIE_SECRET=abc\n');
+    // Boot redacts by these values, so every delivered secret is returned.
+    expect(delivered).toEqual(['abc']);
     expect((await stat(outputPath)).mode & 0o777).toBe(0o600);
   });
 
@@ -46,7 +48,7 @@ describe('hydrateRuntimeSecrets', () => {
         outputPath: join(tempDir, '.env.runtime'),
         fetchImpl: fetchSecret({ missing: null }),
       }),
-    ).resolves.toBeUndefined();
+    ).resolves.toEqual([]);
     await expect(
       hydrateRuntimeSecrets({
         manifest: [{ envVar: 'REQUIRED', secretId: 'missing', required: true }],

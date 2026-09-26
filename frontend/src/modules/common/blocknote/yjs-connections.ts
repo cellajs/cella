@@ -6,6 +6,8 @@ import { toWsUrl } from 'shared/utils/ws-url';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import { create } from 'zustand';
+import type { TKey } from '~/lib/i18n-locales';
+import { yjsTokenKeys } from '~/modules/common/blocknote/query';
 import { watchPendingStructs } from '~/modules/common/blocknote/yjs-resync';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
@@ -14,7 +16,7 @@ import { queryClient } from '~/query/query-client';
 const GRACE_PERIOD_MS = 30_000;
 const MAX_BACKOFF_MS = 30_000;
 
-// Stop repeated token failures after the WebSocket backoff safety threshold and notify the user.
+// Distinct tokens the relay refused, with no synced connection between them, before the connection stops for good.
 const MAX_TOKEN_FAILURES = 5;
 
 /** WebSocket close codes sent by the Yjs relay; the 4000-4999 range is reserved for application use. */
@@ -25,11 +27,24 @@ const YJS_CLOSE = {
   BACKEND_UNAVAILABLE: 4503,
 } as const;
 
+/**
+ * Closes after which no reconnect can succeed: access denied, a document or update the relay refuses, and a frame
+ * too big for the relay, which a reconnect would send again. Every other close is transient: y-websocket backs off,
+ * reconnects with the current token and resyncs, so edits made meanwhile reach the relay.
+ */
+const FINAL_CLOSES: ReadonlyMap<number, TKey> = new Map<number, TKey>([
+  [YJS_CLOSE.ACCESS_DENIED, 'error:no_permission_for_sync.text'],
+  [YJS_CLOSE.BAD_REQUEST, 'error:sync_failed.text'],
+  [1009, 'error:sync_failed.text'],
+]);
+
 interface YjsConnection {
   yDoc: Y.Doc;
   provider: WebsocketProvider;
   fragment: Y.XmlFragment;
   refCount: number;
+  /** Set once the relay ended the session for good; a stopped connection never reconnects and is not reused. */
+  stopped: boolean;
   graceTimer?: ReturnType<typeof setTimeout>;
   unsubOnline?: () => void;
   unsubToken?: () => void;
@@ -43,11 +58,26 @@ const connections = new Map<string, YjsConnection>();
 interface YjsSyncState {
   /** editSessionId → synced boolean */
   synced: Record<string, boolean>;
+  /** editSessionId → true once its connection stopped for good */
+  stopped: Record<string, boolean>;
 }
 
 const useYjsSyncStore = create<YjsSyncState>(() => ({
   synced: {},
+  stopped: {},
 }));
+
+/**
+ * Ends a connection for good: no reconnect, and its editor turns read-only (useYjsConnection reports `stopped`), so
+ * nothing typed after this is lost unsynced. `message` is the toast naming the reason, if any.
+ */
+function stopConnection(editSessionId: string, conn: YjsConnection, message: TKey | null) {
+  if (conn.stopped) return;
+  conn.stopped = true;
+  conn.provider.disconnect();
+  useYjsSyncStore.setState((s) => ({ stopped: { ...s.stopped, [editSessionId]: true } }));
+  if (message) toaster.warning(i18n.t(message));
+}
 
 function acquireConnection(editSessionId: string, entityType: ProductEntityType, tenantId: string): YjsConnection {
   const existing = connections.get(editSessionId);
@@ -62,7 +92,8 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   }
 
   const serverUrl = toWsUrl(appConfig.yjsUrl!);
-  const tokenKey = yjsTokenKey(entityType, tenantId);
+  // The session is the entity's document, and a token opens that one document only.
+  const tokenKey = yjsTokenKey(entityType, editSessionId);
   const token = useUserStore.getState().yjsTokens[tokenKey];
   if (!token) throw new Error(`[yjs] No token available for ${tokenKey}`);
 
@@ -73,63 +104,61 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
     maxBackoffTime: MAX_BACKOFF_MS,
   });
   const fragment = yDoc.getXmlFragment('document-store');
+  const conn: YjsConnection = { yDoc, provider, fragment, refCount: 1, stopped: false };
 
-  const unsubOnline = onlineManager.subscribe((isOnline) => {
-    if (isOnline) provider.connect();
-    else provider.disconnect();
+  // A withdrawn token stays withdrawn across an offline blip: reconnect only while one is held.
+  conn.unsubOnline = onlineManager.subscribe((isOnline) => {
+    if (!isOnline) provider.disconnect();
+    else if (!conn.stopped && useUserStore.getState().yjsTokens[tokenKey]) provider.connect();
   });
 
-  // Keep provider params on the latest token so a reconnect after sleep uses a fresh one.
-  const unsubToken = useUserStore.subscribe((state) => {
+  // Keep provider params on the latest token so a reconnect (after sleep, or the relay's close at expiry) uses a fresh one.
+  conn.unsubToken = useUserStore.subscribe((state, prevState) => {
     const newToken = state.yjsTokens[tokenKey];
-    if (newToken && provider.params) {
-      (provider.params as Record<string, string>).token = newToken;
+    if (newToken) {
+      if (provider.params) (provider.params as Record<string, string>).token = newToken;
+      return;
+    }
+    // Withdrawn (access revoked, the entity gone, or signed out), also while offline: the token cannot come back.
+    if (prevState.yjsTokens[tokenKey]) {
+      stopConnection(editSessionId, conn, state.user ? 'error:no_permission_for_sync.text' : null);
     }
   });
 
-  let tokenFailures = 0;
-
-  provider.on('status', ({ status }: { status: string }) => {
-    if (status === 'connected') tokenFailures = 0;
+  // The token each attempt carries: y-websocket reads the params as it opens a socket, then reports 'connecting'.
+  let attemptToken = token;
+  provider.on('status', ({ status }) => {
+    if (status === 'connecting') attemptToken = provider.params.token;
   });
 
-  const handleConnectionClose = (event: CloseEvent | null) => {
-    if (!event || event.code === 1000) return;
+  // Tokens refused since the last synced connection: the relay closes an unusable token right after the handshake, so
+  // a connection that merely opened proves nothing.
+  const refusedTokens = new Set<string>();
+  provider.on('sync', (isSynced: boolean) => {
+    if (isSynced) refusedTokens.clear();
+  });
 
-    // TOKEN_INVALID is recoverable: the relay closes after the handshake so this code arrives; refetching the token updates the provider params before y-websocket's backoff reconnects, so give up only after MAX_TOKEN_FAILURES.
+  provider.on('connection-close', (event: CloseEvent | null) => {
+    // A local close carries no event; it and every transient close reconnect with backoff.
+    if (!event || conn.stopped) return;
+
+    // The relay closes an expired or invalid token with 4001, and the refetch this starts reaches the provider params
+    // before a later reconnect. Only distinct tokens count: while the API is unreachable every reconnect carries the
+    // expired token again, and that must not end collaboration for good once the API is back.
     if (event.code === YJS_CLOSE.TOKEN_INVALID) {
-      tokenFailures++;
-      void queryClient.invalidateQueries({ queryKey: ['yjs', 'token', entityType, tenantId] });
-      if (tokenFailures < MAX_TOKEN_FAILURES) return;
-      console.warn(`[yjs] Circuit breaker: ${tokenFailures} consecutive token failures for ${editSessionId}`);
+      refusedTokens.add(attemptToken);
+      void queryClient.invalidateQueries({ queryKey: yjsTokenKeys.entity(entityType, editSessionId) });
+      if (refusedTokens.size < MAX_TOKEN_FAILURES) return;
+      console.warn(`[yjs] Circuit breaker: ${refusedTokens.size} tokens refused in a row for ${editSessionId}`);
+      stopConnection(editSessionId, conn, 'error:sync_token_expired.text');
+      return;
     }
 
-    // Non-recoverable or circuit breaker tripped: stop retrying.
-    provider.off('connection-close', handleConnectionClose);
-    provider.disconnect();
+    const message = FINAL_CLOSES.get(event.code);
+    if (message) stopConnection(editSessionId, conn, message);
+  });
 
-    switch (event.code) {
-      case YJS_CLOSE.TOKEN_INVALID:
-        toaster.warning(i18n.t('error:sync_token_expired.text'));
-        break;
-      case YJS_CLOSE.ACCESS_DENIED:
-        toaster.warning(i18n.t('error:no_permission_for_sync.text'));
-        break;
-      case YJS_CLOSE.BACKEND_UNAVAILABLE:
-        toaster.warning(i18n.t('error:sync_unavailable.text'));
-        break;
-      default:
-        toaster.warning(i18n.t('error:sync_failed.text'));
-    }
-
-    // Clearing the token disables collaborative mode until the next refresh.
-    useUserStore.getState().setYjsToken(tokenKey, null);
-  };
-  provider.on('connection-close', handleConnectionClose);
-
-  const stopResyncWatch = watchPendingStructs(yDoc, provider);
-
-  const conn: YjsConnection = { yDoc, provider, fragment, refCount: 1, unsubOnline, unsubToken, stopResyncWatch };
+  conn.stopResyncWatch = watchPendingStructs(yDoc, provider);
   connections.set(editSessionId, conn);
 
   const handleSync = (isSynced: boolean) => {
@@ -147,28 +176,38 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   return conn;
 }
 
+function destroyConnection(editSessionId: string, conn: YjsConnection) {
+  conn.unsubOnline?.();
+  conn.unsubToken?.();
+  conn.stopResyncWatch?.();
+  conn.provider.destroy();
+  conn.yDoc.destroy();
+  connections.delete(editSessionId);
+  useYjsSyncStore.setState((s) => {
+    const { [editSessionId]: _synced, ...synced } = s.synced;
+    const { [editSessionId]: _stopped, ...stopped } = s.stopped;
+    return { synced, stopped };
+  });
+}
+
 function releaseConnection(editSessionId: string) {
   const conn = connections.get(editSessionId);
   if (!conn) return;
 
   conn.refCount--;
-  if (conn.refCount <= 0) {
-    conn.graceTimer = setTimeout(() => {
-      conn.unsubOnline?.();
-      conn.unsubToken?.();
-      conn.stopResyncWatch?.();
-      conn.provider.destroy();
-      conn.yDoc.destroy();
-      connections.delete(editSessionId);
-      useYjsSyncStore.setState((s) => {
-        const { [editSessionId]: _, ...rest } = s.synced;
-        return { synced: rest };
-      });
-    }, GRACE_PERIOD_MS);
+  if (conn.refCount > 0) return;
+  // A stopped connection holds nothing to reuse: reopening the editor starts a fresh one.
+  if (conn.stopped) {
+    destroyConnection(editSessionId, conn);
+    return;
   }
+  conn.graceTimer = setTimeout(() => destroyConnection(editSessionId, conn), GRACE_PERIOD_MS);
 }
 
-/** Ref-counted Yjs connection kept alive for a grace period after the last consumer unmounts, so a remount reuses it; `undefined` disables it. */
+/**
+ * Ref-counted Yjs connection kept alive for a grace period after the last consumer unmounts, so a remount reuses it;
+ * `undefined` disables it. `stopped` turns true once the relay ended the session for good: the editor must go read-only.
+ */
 export function useYjsConnection(editSessionId: string | undefined, entityType: ProductEntityType, tenantId: string) {
   const [conn, setConn] = useState<YjsConnection | null>(() => {
     return editSessionId ? (connections.get(editSessionId) ?? null) : null;
@@ -188,7 +227,8 @@ export function useYjsConnection(editSessionId: string | undefined, entityType: 
   }, [editSessionId, entityType, tenantId]);
 
   const synced = useYjsSyncStore((s) => s.synced[editSessionId ?? ''] ?? false);
+  const stopped = useYjsSyncStore((s) => s.stopped[editSessionId ?? ''] ?? false);
 
   if (!conn) return null;
-  return { provider: conn.provider, fragment: conn.fragment, synced };
+  return { provider: conn.provider, fragment: conn.fragment, synced, stopped };
 }

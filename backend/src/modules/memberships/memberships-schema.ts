@@ -57,6 +57,22 @@ export const membershipBaseSchema = membershipSchema
     'x-tags': schemaTags('base', 'memberships', 'cella'),
   });
 
+const personalViewKeys = { archived: true, muted: true, displayOrder: true } as const;
+const optionalPersonalView = {
+  archived: membershipBaseSchema.shape.archived.optional(),
+  muted: membershipBaseSchema.shape.muted.optional(),
+  displayOrder: membershipBaseSchema.shape.displayOrder.optional(),
+};
+
+/**
+ * A membership in a response that may be about another member (the members list, the memberships an invitation
+ * creates): archive, mute and menu order are each member's own view, so they come with the caller's own row only.
+ */
+export const memberMembershipSchema = membershipBaseSchema.omit(personalViewKeys).extend(optionalPersonalView);
+
+/** An updated membership with its audit fields; archive, mute and menu order as in `memberMembershipSchema`. */
+export const updatedMembershipSchema = membershipSchema.omit(personalViewKeys).extend(optionalPersonalView);
+
 export const membershipCreateBodySchema = z.object({
   emails: validEmailSchema.array().min(1).max(50),
   role: membershipSchema.shape.role,
@@ -90,12 +106,11 @@ export const pendingMembershipListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['createdAt']).default('createdAt'),
 });
 
+/** An invitation as the channel sees it: nothing here tells whether an account holds the invited address. */
 export const pendingMembershipSchema = z.object({
   id: z.string(),
-  /** The pending invitation's token id; null when the invite's token row is gone. */
-  tokenId: z.string().nullable(),
+  /** The address the invitation went to. */
   email: userBaseSchema.shape.email,
-  thumbnailUrl: userBaseSchema.shape.thumbnailUrl.nullable(),
   role: membershipSchema.shape.role.nullable(),
   createdAt: membershipSchema.shape.createdAt,
   createdBy: nullableUserMinimalBaseSchema,

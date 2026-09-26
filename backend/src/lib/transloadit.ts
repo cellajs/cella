@@ -2,10 +2,12 @@ import crypto from 'node:crypto';
 import { appConfig, type UploadTemplateId } from 'shared';
 import { uploadTemplates } from 'shared/transloadit-config';
 import { nanoid } from 'shared/utils/nanoid';
+import { isPublicUploadTemplate } from 'shared/utils/upload-visibility';
 import { env } from '#/env';
 import { utcDateString } from '#/utils/utc-data-string';
 
-export const getParams = (templateId: UploadTemplateId, publicBucket: boolean, sub: string) => {
+/** Signed assembly params for one upload; where the files land follows the template's own visibility. */
+export const getParams = (templateId: UploadTemplateId, sub: string) => {
   // Transloadit security requires us to set an expiration date like this
   const expires = utcDateString(Date.now() + 1 * 60 * 60 * 1000); // 1 hour
 
@@ -17,6 +19,7 @@ export const getParams = (templateId: UploadTemplateId, publicBucket: boolean, s
   if (!authKey || !authSecret) throw Error('auth_key_not_found');
 
   const template = uploadTemplates[templateId];
+  const publicBucket = isPublicUploadTemplate(templateId);
 
   return {
     auth: {

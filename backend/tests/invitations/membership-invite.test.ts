@@ -6,7 +6,13 @@ import { baseDb as db } from '#/db/db';
 import { addProvenEmail } from '#/modules/auth/general/helpers/mark-email-verified';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { defaultHeaders } from '../fixtures';
-import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser } from '../helpers';
+import {
+  createOrganizationAdminUser,
+  createSystemAdminUser,
+  createTestOrganization,
+  createTestSession,
+  createTestUser,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -261,5 +267,23 @@ describe('Membership Invitation', async () => {
 
     const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
     expect(response.invitesSentCount).toBe(0);
+  });
+
+  it('returns the membership a system admin joins by inviting themself, archive, mute and order included', async () => {
+    const organization = await createTestOrganization();
+    const sysAdmin = await createSystemAdminUser('sysadmin@example.com');
+
+    const { response: res, data } = await makeInviteRequest(
+      organization.tenantId,
+      organization.id,
+      { emails: [sysAdmin.email], role: memberRole },
+      await createTestSession(sysAdmin),
+    );
+
+    expect(res.status).toBe(200);
+    // Their own membership: the client files it with their other memberships, menu order included.
+    const [joined] = (data as { data: Record<string, unknown>[] }).data;
+    expect(joined).toMatchObject({ userId: sysAdmin.id, role: memberRole, archived: false, muted: false });
+    expect(joined.displayOrder).toEqual(expect.any(Number));
   });
 });

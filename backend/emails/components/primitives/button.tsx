@@ -1,3 +1,4 @@
+import { escapeString } from '../../renderer/escape-string.js';
 import type { BaseProps, JsxEmailComponent } from '../../renderer/types.js';
 
 export interface ButtonProps extends BaseProps<'a'> {
@@ -69,19 +70,19 @@ export const Button: JsxEmailComponent<ButtonProps> = ({
     >
       <tr>
         <td align={align}>
-          {/* VML Fallback for mso clients */}
+          {/* VML Fallback for mso clients; raw HTML, so the link and text are escaped here */}
           {!withBackground && (
             <span
               dangerouslySetInnerHTML={{
                 __html: `<!--[if mso]>
-            <v:roundrect href="${href}" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" style="height:${height}px;v-text-anchor:middle;width:${width}px;" arcsize="${arcsize}%" ${
+            <v:roundrect href="${escapeString(href ?? '')}" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" style="height:${height}px;v-text-anchor:middle;width:${width}px;" arcsize="${arcsize}%" ${
               borderColor ? `strokecolor=${borderColor}` : ''
             } ${borderSize ? `strokeweight="${borderSize}px"` : `stroke="false"`} ${
               backgroundColor ? `fillcolor=${backgroundColor}` : `fill="false"`
             }>
             <w:anchorlock/>
             <center style="font-size:${fontSize}px;${textColor ? `color:${textColor};` : ''}">
-            ${children}
+            ${escapeString(String(children ?? ''))}
             </center></v:roundrect>
             <![endif]-->`,
               }}

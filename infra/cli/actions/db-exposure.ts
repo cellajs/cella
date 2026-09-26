@@ -4,12 +4,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { confirm, input } from '@inquirer/prompts';
 import { appStores } from '../../config/stores.config';
+import { parseAclInput } from '../../lib/db-exposure-acl';
 import { pulumiConfigRm, pulumiConfigSet } from '../../lib/stack/pulumi-up';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
 import { hardenPublicDsn } from '../../lib/utils/public-dsn';
 import type { InfraContext } from '../shared';
-import { parseAclInput } from './db-exposure-acl';
 import { printRevokeReminder } from './owner-key';
 import { runPrivilegedConverge } from './privileged-converge';
 

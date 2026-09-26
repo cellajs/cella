@@ -31,7 +31,6 @@ export function useUploadUppy() {
     let localUppy: CustomUppy | null = null;
 
     const {
-      publicBucket,
       templateId = 'attachment',
       organizationId,
       restrictions,
@@ -55,7 +54,7 @@ export function useUploadUppy() {
 
     const initializeUppy = async () => {
       try {
-        localUppy = await createBaseTransloaditUppy(uppyOptions, { publicBucket, templateId, organizationId });
+        localUppy = await createBaseTransloaditUppy(uppyOptions, { templateId, organizationId });
 
         localUppy
           .on('file-editor:complete', (file) => {

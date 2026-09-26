@@ -1,0 +1,272 @@
+import { createServer } from 'node:http';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
+import type { DocScope } from '../constants';
+import {
+  awarenessUpdate,
+  buildAwarenessMessage,
+  buildSyncUpdate,
+  createSignedToken,
+  deferred,
+  fakeStorage,
+  mapUpdate,
+  storageKey,
+} from './helpers';
+
+// The real upgrade handler, relay and session manager over in-memory storage. Entity access is decided per user;
+// every entity row sits in tenant-1 / org-1, and authorization returns the row's scope, never the token's.
+const gates = new Map<string, { delayMs: number; allowed: boolean }>();
+vi.mock('../data/permissions', () => ({
+  authorizeDoc: vi.fn(async (userId: string, requested: DocScope) => {
+    const gate = gates.get(userId) ?? { delayMs: 0, allowed: true };
+    if (gate.delayMs) await new Promise((resolve) => setTimeout(resolve, gate.delayMs));
+    if (!gate.allowed || requested.tenantId !== 'tenant-1') return null;
+    return {
+      entityType: requested.entityType,
+      entityId: requested.entityId,
+      tenantId: 'tenant-1',
+      organizationId: 'org-1',
+    };
+  }),
+}));
+// A test holds appends open to leave frames waiting in a socket's queue.
+let appendHold: ReturnType<typeof deferred> | null = null;
+const storage = fakeStorage((call) => (call === 'appendUpdate' ? appendHold?.promise : undefined));
+vi.mock('../data/storage', () => storage);
+vi.mock('../data/entity-content', () => ({ loadEntityDescription: vi.fn(async () => null) }));
+vi.mock('../sync/materialize', () => ({
+  postMaterialize: vi.fn(async () => 'ok'),
+  stateToBlocksJson: vi.fn(() => '[]'),
+}));
+vi.mock('../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
+
+const { setupConnectionHandler, setupUpgradeHandler } = await import('../server/upgrade');
+const { getCollab } = await import('../sync/session-manager');
+
+const entityType = 'task';
+/** A document of tenant-1, as the relay keys its session and rows. */
+const docOf = (entityId: string) => ({ entityType, entityId, tenantId: 'tenant-1' });
+let baseUrl: string;
+let httpServer: ReturnType<typeof createServer>;
+let wss: WebSocketServer;
+const usedDocs = new Set<string>();
+
+beforeAll(async () => {
+  httpServer = createServer((_req, res) => {
+    res.writeHead(404);
+    res.end();
+  });
+  wss = new WebSocketServer({ noServer: true });
+  httpServer.on('upgrade', setupUpgradeHandler(wss));
+  setupConnectionHandler(wss);
+  await new Promise<void>((resolve) => {
+    httpServer.listen(0, '127.0.0.1', () => {
+      const addr = httpServer.address();
+      baseUrl = `ws://127.0.0.1:${typeof addr === 'object' && addr ? addr.port : 0}`;
+      resolve();
+    });
+  });
+});
+
+afterEach(() => {
+  for (const client of wss.clients) client.terminate();
+  gates.clear();
+});
+
+afterAll(() => {
+  // The relay arms compaction and cleanup timers per document; none may outlive the file.
+  for (const entityId of usedDocs) {
+    const collab = getCollab(docOf(entityId));
+    if (collab?.compactTimer) clearTimeout(collab.compactTimer);
+    if (collab?.cleanupTimer) clearTimeout(collab.cleanupTimer);
+  }
+  wss.close();
+  httpServer.close();
+});
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function until(check: () => boolean, ms = 2000): Promise<void> {
+  const deadline = Date.now() + ms;
+  while (!check()) {
+    if (Date.now() > deadline) throw new Error('condition not met in time');
+    await wait(10);
+  }
+}
+
+const clientCount = (entityId: string) => getCollab(docOf(entityId))?.clients.size ?? 0;
+
+/** An open client socket on the document; `received` collects every frame the relay sends it. */
+async function open(userId: string, entityId: string, tenantId = 'tenant-1') {
+  usedDocs.add(entityId);
+  const token = createSignedToken({ userId, entityType, entityId, tenantId });
+  const ws = new WsWebSocket(`${baseUrl}/${entityId}?token=${token}&entityType=${entityType}&tenantId=${tenantId}`);
+  const received: Uint8Array[] = [];
+  ws.on('message', (data: Buffer) => received.push(new Uint8Array(data)));
+  const closed = new Promise<number>((resolve) => ws.on('close', (code) => resolve(code)));
+  await new Promise<void>((resolve, reject) => {
+    ws.once('open', () => resolve());
+    ws.once('error', reject);
+  });
+  return { ws, received, closed };
+}
+
+describe('upgrade: a closing socket', () => {
+  it('must not drop the updates a socket sent just before it closed', async () => {
+    const doc = 'doc-drain';
+    const editor = await open('user-a', doc);
+    await until(() => clientCount(doc) === 1);
+
+    // The first append is held, so the next two updates wait in the socket's queue when the client closes.
+    appendHold = deferred();
+    const appends = storage.appendUpdate.mock.calls.length;
+    for (const key of ['a', 'b', 'c']) editor.ws.send(buildSyncUpdate(mapUpdate(key, 1)));
+    await until(() => storage.appendUpdate.mock.calls.length === appends + 1);
+    editor.ws.close(1000);
+    await editor.closed;
+    await wait(20);
+    appendHold.release();
+    appendHold = null;
+
+    await until(() => storage.logs.get(storageKey(docOf(doc)))?.length === 3);
+    // The socket left its session once its updates were logged.
+    await until(() => clientCount(doc) === 0);
+  });
+});
+
+describe('upgrade: a frame no decoder accepts', () => {
+  // A listener that throws is an uncaught exception: it ends the relay, and under singleVM the whole API.
+  const crashes: unknown[] = [];
+  const record = (err: unknown) => void crashes.push(err);
+
+  beforeAll(() => {
+    process.on('uncaughtException', record);
+  });
+
+  afterAll(() => {
+    process.off('uncaughtException', record);
+  });
+
+  it('must not crash the relay via a frame whose message type is cut short', async () => {
+    const doc = 'doc-malformed-frame';
+    const peer = await open('user-a', doc);
+    const sender = await open('user-b', doc);
+    await until(() => clientCount(doc) === 2);
+
+    sender.ws.send(Buffer.from([0x80, 0x80]));
+    const outcome = await Promise.race([sender.closed, wait(1000).then(() => 'still open')]);
+
+    expect(outcome).toBe(4400);
+    expect(crashes).toEqual([]);
+    // Positive control: only the sender's socket closed, and the peer's next update is logged.
+    peer.ws.send(buildSyncUpdate(mapUpdate('k', 1)));
+    await until(() => storage.logs.get(storageKey(docOf(doc)))?.length === 1);
+    expect(peer.ws.readyState).toBe(WsWebSocket.OPEN);
+  });
+});
+
+describe('upgrade: a socket joins its document only once verified', () => {
+  it("must not relay a peer's edits to a socket still pending verification", async () => {
+    const doc = 'doc-pending-edits';
+    const editor = await open('user-a', doc);
+    await until(() => clientCount(doc) === 1);
+
+    gates.set('user-b', { delayMs: 250, allowed: true });
+    const pending = await open('user-b', doc);
+    editor.ws.send(buildSyncUpdate(mapUpdate('k', 1)));
+    await until(() => storage.logs.get(storageKey(docOf(doc)))?.length === 1);
+    await wait(50);
+    expect(pending.received).toHaveLength(0);
+
+    // Positive control: once verified, the socket receives the next edit.
+    await until(() => clientCount(doc) === 2);
+    const next = buildSyncUpdate(mapUpdate('k', 2));
+    editor.ws.send(next);
+    await until(() => pending.received.length === 1);
+    expect(pending.received[0]).toEqual(next);
+  });
+
+  it('must not relay presence from a socket pending verification, nor ever from a denied one', async () => {
+    const doc = 'doc-pending-presence';
+    const peer = await open('user-a', doc);
+    await until(() => clientCount(doc) === 1);
+
+    gates.set('user-c', { delayMs: 250, allowed: true });
+    gates.set('user-x', { delayMs: 60, allowed: false });
+    const pending = await open('user-c', doc);
+    const denied = await open('user-x', doc);
+    pending.ws.send(buildAwarenessMessage(awarenessUpdate({ clientId: 1 })));
+    const latest = buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 2 }));
+    pending.ws.send(latest);
+    denied.ws.send(buildAwarenessMessage(awarenessUpdate({ clientId: 9 })));
+    expect(await denied.closed).toBe(4003);
+    await wait(50);
+    expect(peer.received).toHaveLength(0);
+
+    // Positive control: once verified, the socket's latest presence reaches its peer, the denied socket's never.
+    await until(() => clientCount(doc) === 2);
+    await until(() => peer.received.length === 1);
+    await wait(50);
+    expect(peer.received).toEqual([latest]);
+  });
+
+  it('must not relay presence from a socket the server is closing', async () => {
+    const doc = 'doc-closing-presence';
+    const peer = await open('user-a', doc);
+    await until(() => clientCount(doc) === 1);
+    await open('user-f', doc);
+    await until(() => clientCount(doc) === 2);
+
+    // ws still emits frames that arrive after the server started closing; one is replayed on the closing socket.
+    const [, closing] = [...(getCollab(docOf(doc))?.clients ?? [])];
+    closing.close(1000);
+    expect(closing.readyState).toBe(WsWebSocket.CLOSING);
+    closing.emit('message', Buffer.from(buildAwarenessMessage(awarenessUpdate({ clientId: 3 }))), false);
+    await wait(50);
+    expect(peer.received).toHaveLength(0);
+  });
+
+  it('must not take the session context from a denied first joiner', async () => {
+    const doc = 'doc-denied-first';
+    gates.set('user-d', { delayMs: 120, allowed: false });
+    const denied = await open('user-d', doc);
+    // The rightful editor arrives second and is verified first.
+    await open('user-v', doc);
+    await until(() => clientCount(doc) === 1);
+
+    expect(await denied.closed).toBe(4003);
+    const collab = getCollab(docOf(doc));
+    // The session's scope is the entity row's, with no joiner in it: compaction and materialize act as the system.
+    expect(collab?.scope).toEqual({ entityType, entityId: doc, tenantId: 'tenant-1', organizationId: 'org-1' });
+    expect(collab?.clients.size).toBe(1);
+  });
+
+  it("must not open a session in another tenant's scope via a token naming that tenant", async () => {
+    const doc = 'doc-forged-tenant';
+    // The token names tenant-x, but the entity row is in tenant-1: authorization reads no such row there.
+    const forged = await open('user-g', doc, 'tenant-x');
+    forged.ws.send(buildSyncUpdate(mapUpdate('k', 1)));
+
+    expect(await forged.closed).toBe(4003);
+    await wait(30);
+    expect(getCollab({ entityType, entityId: doc, tenantId: 'tenant-x' })).toBeUndefined();
+    expect(storage.logs.get(storageKey({ entityType, entityId: doc, tenantId: 'tenant-x' }))).toBeUndefined();
+
+    // Positive control: the row's own tenant opens it, with a session keyed by that tenant.
+    await open('user-h', doc);
+    await until(() => clientCount(doc) === 1);
+    expect(getCollab(docOf(doc))?.scope.tenantId).toBe('tenant-1');
+  });
+
+  it('must not open a document session for a denied socket', async () => {
+    const doc = 'doc-denied-alone';
+    gates.set('user-e', { delayMs: 0, allowed: false });
+    const denied = await open('user-e', doc);
+    denied.ws.send(buildSyncUpdate(mapUpdate('k', 1)));
+
+    expect(await denied.closed).toBe(4003);
+    await wait(30);
+    expect(getCollab(docOf(doc))).toBeUndefined();
+    expect(storage.logs.get(storageKey(docOf(doc)))).toBeUndefined();
+  });
+});

@@ -1,4 +1,5 @@
 import { TTLCache } from '#/lib/ttl-cache';
+import { invalidateTokenGrantsByActor } from '#/middlewares/guard/token-grant-cache';
 import type { ApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
 
@@ -35,10 +36,14 @@ export const setApiKeyCache = (hash: string, entry: ApiKeyCacheEntry): void => {
   hashes.add(hash);
 };
 
-/** After a revoke, roll, or account status change: every cached key of the account is dropped. */
+/**
+ * After a revoke, roll, or account status change: every cached key of the account is dropped, and so are the verdicts
+ * on its access tokens.
+ */
 export const invalidateApiKeyCacheByAccount = (accountId: string): void => {
   for (const hash of accountIndex.get(accountId) ?? []) apiKeyCache.delete(hash);
   accountIndex.delete(accountId);
+  invalidateTokenGrantsByActor(accountId);
 };
 export const clearApiKeyCache = (): void => {
   apiKeyCache.clear();

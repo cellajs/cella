@@ -1,13 +1,17 @@
 import { z } from '@hono/zod-openapi';
+import type { StrategyGate } from '#/core/openapi-extensions';
 import { createXRoute } from '#/core/x-routes';
 import { crossTenantGuard, publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
 import { emailBodySchema, invokableTokenTypes, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
-import { cookieSchema, emailOrTokenIdQuerySchema, errorResponseRefs, locationSchema, validIdSchema } from '#/schemas';
+import { cookieSchema, errorResponseRefs, locationSchema, validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { mockChannelBase } from '#/schemas/entity-base-mocks';
+
+/** A magic link belongs to the magic-link method; the other invokable tokens (invitations, verification) to none. */
+const magicLinkStrategy: StrategyGate = (ctx) => (ctx.req.param('type') === 'magic' ? 'magic' : null);
 
 const authGeneralRoutes = {
   health: createXRoute({
@@ -75,8 +79,9 @@ const authGeneralRoutes = {
     xRateLimiter: [emailEnumLimiter],
     middleware: isNoBot,
     tags: ['auth', 'cella'],
-    summary: 'Check if email exists',
-    description: 'Checks if a user with the specified email address exists in the system.',
+    summary: 'Check email',
+    description:
+      'Tells whether this browser has signed in to the account with this email address before, by its device cookie. Any other browser gets `recognized: false`, whether or not the address has an account.',
     request: {
       body: {
         required: true,
@@ -84,12 +89,16 @@ const authGeneralRoutes = {
       },
     },
     responses: {
-      204: { description: 'Email exists' },
+      200: {
+        description: 'Whether this browser is recognized for the address',
+        content: { 'application/json': { schema: z.object({ recognized: z.boolean() }) } },
+      },
       ...errorResponseRefs,
     },
   }),
   invokeToken: createXRoute({
     operationId: 'invokeToken',
+    'x-strategy': magicLinkStrategy,
     method: 'get',
     path: '/invoke-token/{type}/{token}',
     xGuard: [publicGuard],
@@ -160,13 +169,14 @@ const authGeneralRoutes = {
     xRateLimiter: [spamLimiter],
     tags: ['auth', 'cella'],
     summary: 'Resend invitation',
-    description: 'Resends an invitation email with token to a new user using the provided email address and token ID.',
+    description:
+      'Re-sends a pending invitation, named by the id of one of its tokens, to the address it went to. The fresh link replaces the older ones. Answers 204 whether or not an email went out.',
     request: {
-      body: { required: true, content: { 'application/json': { schema: emailOrTokenIdQuerySchema } } },
+      body: { required: true, content: { 'application/json': { schema: z.object({ tokenId: validUuidSchema }) } } },
     },
     responses: {
       204: {
-        description: 'Invitation email sent',
+        description: 'Invitation email sent when the invitation is pending',
       },
       ...errorResponseRefs,
     },

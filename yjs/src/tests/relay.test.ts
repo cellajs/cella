@@ -1,7 +1,9 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import type { DocContext } from '../constants';
+import type { DocScope } from '../constants';
 import {
+  awarenessClientIds,
+  awarenessUpdate,
   buildAwarenessMessage,
   buildSyncStep1,
   buildSyncUpdate,
@@ -11,9 +13,11 @@ import {
   fakeStorage,
   flushMicrotasks,
   mapUpdate,
-  mockDocContext,
+  mockScope,
+  mockSocketContext,
   mockWebSocket,
   readMap,
+  storageKey,
 } from './helpers';
 
 // Real append/read/compact semantics in memory, with per-call gates so tests can interleave.
@@ -31,14 +35,14 @@ vi.mock('../sync/materialize', () => ({
   stateToBlocksJson: vi.fn(() => '[]'),
 }));
 
-const { handleMessage, runCompaction } = await import('../sync/relay');
+const { handleMessage, peekMessageType, runCompaction } = await import('../sync/relay');
 const { loadEntityDescription } = await import('../data/entity-content');
 const { postMaterialize, stateToBlocksJson } = await import('../sync/materialize');
 const { yUpdateToBlocks } = await import('../lib/blocknote-seed');
 const { getCollab, joinCollab, leaveCollab } = await import('../sync/session-manager');
 
-const unverifiedCtx = mockDocContext();
-const ctx = mockDocContext({ verified: true });
+const unverifiedCtx = mockSocketContext({ scope: null });
+const ctx = mockSocketContext();
 
 /** Decodes the frames a socket received: [Step2 update, Step1 state vector, ...]. */
 function decodeFrames(sent: Uint8Array[]) {
@@ -47,11 +51,12 @@ function decodeFrames(sent: Uint8Array[]) {
 
 let counter = 0;
 /** A session for a fresh document so the module-level session map never leaks between tests. */
-function session(overrides: Partial<ReturnType<typeof mockDocContext>> = {}) {
-  const c = mockDocContext({ verified: true, entityId: `entity-${++counter}`, ...overrides });
+function session(overrides: Partial<DocScope> = {}) {
+  const scope = mockScope({ entityId: `entity-${++counter}`, ...overrides });
+  const c = mockSocketContext({ requested: scope });
   const ws = mockWebSocket();
-  joinCollab(c, ws as never);
-  return { ctx: c, ws, collab: getCollab(c.entityType, c.entityId)! };
+  joinCollab(scope, ws as never);
+  return { ctx: c, scope, key: storageKey(scope), ws, collab: getCollab(scope)! };
 }
 
 beforeEach(() => {
@@ -82,14 +87,34 @@ describe('handleMessage: gating and validation', () => {
     expect(ws.sent).toHaveLength(0);
     expect(storage.appendUpdate).not.toHaveBeenCalled();
   });
+
+  it('must not throw on a frame whose message type is cut short, and closes its sender with 4400', async () => {
+    const { ctx: c, scope, key, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+    // Two continuation bytes: a varint that never ends.
+    const frame = new Uint8Array([0x80, 0x80]);
+
+    expect(peekMessageType(frame)).toBeNull();
+    await expect(handleMessage(c, ws as never, frame)).resolves.toBeUndefined();
+    expect(ws.closed).toEqual({ code: 4400, reason: 'Malformed frame' });
+    expect(peer.sent).toHaveLength(0);
+
+    // Positive control: a well-formed frame reads its type and applies.
+    const update = buildSyncUpdate(mapUpdate('k', 1));
+    expect(peekMessageType(update)).toBe(0);
+    await handleMessage(c, peer as never, update);
+    expect(storage.logs.get(key)).toHaveLength(1);
+    leaveCollab(collab.scope, peer as never);
+  });
 });
 
 describe('handleMessage: sync step 1', () => {
   it('first connection without entity content: seeds an empty doc and answers with an empty Step2 plus a Step1', async () => {
-    const { ctx: c, ws } = session();
+    const { ctx: c, scope, ws } = session();
     await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
 
-    expect(storage.ensureDoc).toHaveBeenCalledWith(c, null);
+    expect(storage.ensureDoc).toHaveBeenCalledWith(scope, null);
     const frames = decodeFrames(ws.sent);
     expect(frames.map((f) => f.sync)).toEqual([1, 0]);
     expect(readMap(decodeSyncStep2(ws.sent[0]))).toEqual({});
@@ -115,9 +140,9 @@ describe('handleMessage: sync step 1', () => {
   it('concurrent Step1s from two sockets seed once, through the document lock', async () => {
     const gate = deferred();
     gates.set('ensureDoc', gate.promise);
-    const { ctx: c, ws: ws1, collab } = session();
+    const { ctx: c, scope, ws: ws1, collab } = session();
     const ws2 = mockWebSocket();
-    joinCollab(c, ws2 as never);
+    joinCollab(scope, ws2 as never);
 
     const first = handleMessage(c, ws1 as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
     const second = handleMessage(c, ws2 as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
@@ -131,13 +156,13 @@ describe('handleMessage: sync step 1', () => {
     expect(storage.loadBase).toHaveBeenCalledTimes(2);
     expect(ws1.sent).toHaveLength(2);
     expect(ws2.sent).toHaveLength(2);
-    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, ws2 as never);
+    leaveCollab(collab.scope, ws2 as never);
   });
 
   it('existing base plus log: answers with the diff of the merged document and asks for the rest', async () => {
-    const { ctx: c, ws } = session();
-    storage.bases.set(`${c.entityType}:${c.entityId}`, mapUpdate('base', true));
-    await storage.appendUpdate(c, mapUpdate('logged', 1));
+    const { ctx: c, scope, key, ws } = session();
+    storage.bases.set(key, mapUpdate('base', true));
+    await storage.appendUpdate(scope, 'user-1', mapUpdate('logged', 1));
 
     const client = new Y.Doc();
     client.getMap('data').set('mine', 'x');
@@ -152,9 +177,22 @@ describe('handleMessage: sync step 1', () => {
     expect(serverVector.size).toBe(2);
   });
 
+  it('must not lose the document to a logged row that will not merge: a joining client still gets the rest', async () => {
+    const { ctx: c, scope, key, ws } = session();
+    storage.bases.set(key, mapUpdate('base', true));
+    await storage.appendUpdate(scope, 'user-1', mapUpdate('logged', 1));
+    // Logged before the relay refused undecodable updates.
+    await storage.appendUpdate(scope, 'user-x', new Uint8Array([1, 2, 3]));
+
+    await expect(
+      handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc()))),
+    ).resolves.toBeUndefined();
+    expect(readMap(decodeSyncStep2(ws.sent[0]))).toEqual({ base: true, logged: 1 });
+  });
+
   it('corrupted stored state: falls back to sending the full state without a pull', async () => {
-    const { ctx: c, ws } = session();
-    storage.bases.set(`${c.entityType}:${c.entityId}`, new Uint8Array([1, 2, 3]));
+    const { ctx: c, key, ws } = session();
+    storage.bases.set(key, new Uint8Array([1, 2, 3]));
     await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
     expect(ws.sent).toHaveLength(1);
     expect(decodeSyncStep2(ws.sent[0])).toEqual(new Uint8Array([1, 2, 3]));
@@ -163,9 +201,9 @@ describe('handleMessage: sync step 1', () => {
 
 describe('handleMessage: sync update', () => {
   it('appends the update to the log before broadcasting it to peers', async () => {
-    const { ctx: c, ws, collab } = session();
+    const { ctx: c, scope, key, ws, collab } = session();
     const peer = mockWebSocket();
-    joinCollab(c, peer as never);
+    joinCollab(scope, peer as never);
     const gate = deferred();
     gates.set('appendUpdate', gate.promise);
 
@@ -176,10 +214,11 @@ describe('handleMessage: sync update', () => {
     gate.release();
     await done;
 
-    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(1);
+    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(storage.logs.get(key)?.[0].userId).toBe(c.userId);
     expect(peer.sent[0]).toEqual(raw);
     expect(ws.sent).toHaveLength(0);
-    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, peer as never);
+    leaveCollab(collab.scope, peer as never);
   });
 
   it('accepts a client Step2 as an update and skips an empty one', async () => {
@@ -194,19 +233,58 @@ describe('handleMessage: sync update', () => {
     expect(storage.appendUpdate).toHaveBeenCalledTimes(1);
   });
 
+  it('must not log or relay an update Yjs cannot decode, and closes its sender with 4400', async () => {
+    const { ctx: c, scope, key, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+
+    await handleMessage(c, ws as never, buildSyncUpdate(new Uint8Array([1, 2, 3])));
+
+    expect(storage.appendUpdate).not.toHaveBeenCalled();
+    expect(storage.logs.get(key)).toBeUndefined();
+    expect(peer.sent).toHaveLength(0);
+    expect(ws.closed).toEqual({ code: 4400, reason: 'Malformed update' });
+
+    // Positive control: a decodable update from a peer is logged.
+    await handleMessage(c, peer as never, buildSyncUpdate(mapUpdate('k', 1)));
+    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(peer.closed).toBeNull();
+    leaveCollab(collab.scope, peer as never);
+  });
+
+  it('must not drop an update silently when its socket has no live session: it is logged and the socket reconnects', async () => {
+    // Authorized, but its session is gone: the socket was never joined to one.
+    const scope = mockScope({ entityId: `entity-${++counter}` });
+    const c = mockSocketContext({ requested: scope });
+    const ws = mockWebSocket();
+
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+
+    expect(storage.logs.get(storageKey(scope))).toHaveLength(1);
+    expect(ws.closed).toEqual({ code: 1013, reason: 'Session ended' });
+  });
+
+  it('must not fail on a sync frame whose payload is cut short, and closes its sender with 4400', async () => {
+    const { ctx: c, ws } = session();
+    // A payload length whose continuation byte never arrives.
+    await expect(handleMessage(c, ws as never, new Uint8Array([0, 2, 0x85]))).resolves.toBeUndefined();
+    expect(storage.appendUpdate).not.toHaveBeenCalled();
+    expect(ws.closed).toEqual({ code: 4400, reason: 'Malformed update' });
+  });
+
   it('a burst of dependent updates dispatched without awaiting all reach the log, and one compaction merges them', async () => {
-    const { ctx: c, ws, collab } = session();
+    const { ctx: c, key, ws, collab } = session();
     // The first append is slow; the others overtake it.
     const gate = deferred();
     let slowed = false;
     gates.set('appendUpdate', gate.promise);
-    storage.appendUpdate.mockImplementationOnce(async (_ctx: DocContext, payload: Uint8Array) => {
+    storage.appendUpdate.mockImplementationOnce(async (_scope: DocScope, userId: string, payload: Uint8Array) => {
       slowed = true;
       await gate.promise;
       gates.delete('appendUpdate');
-      const list = storage.logs.get(`${c.entityType}:${c.entityId}`) ?? [];
-      list.push({ id: 1000, payload, userId: c.userId });
-      storage.logs.set(`${c.entityType}:${c.entityId}`, list);
+      const list = storage.logs.get(key) ?? [];
+      list.push({ id: 1000, payload, userId });
+      storage.logs.set(key, list);
     });
 
     const doc = new Y.Doc();
@@ -222,10 +300,10 @@ describe('handleMessage: sync update', () => {
     gate.release();
     await Promise.all(dispatched);
 
-    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(3);
+    expect(storage.logs.get(key)).toHaveLength(3);
     await vi.advanceTimersByTimeAsync(3000);
     expect(storage.compactState).toHaveBeenCalledTimes(1);
-    const merged = storage.bases.get(`${c.entityType}:${c.entityId}`)!;
+    const merged = storage.bases.get(key)!;
     const verify = new Y.Doc();
     Y.applyUpdate(verify, merged);
     expect(verify.getText('t').toString()).toBe('abc');
@@ -234,32 +312,221 @@ describe('handleMessage: sync update', () => {
 });
 
 describe('handleMessage: awareness', () => {
-  it('is broadcast to peers, allowed before verification, and rate limited per client', async () => {
-    const { ctx: c, ws, collab } = session({ verified: false });
+  it('is broadcast to peers from a verified socket and rate limited per client', async () => {
+    const { ctx: c, scope, ws, collab } = session();
     const peer = mockWebSocket();
-    joinCollab(c, peer as never);
+    joinCollab(scope, peer as never);
 
-    await handleMessage(c, ws as never, buildAwarenessMessage(new Uint8Array([1])));
-    await handleMessage(c, ws as never, buildAwarenessMessage(new Uint8Array([2])));
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1 })));
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 2 })));
     expect(peer.sent).toHaveLength(1);
 
     const other = mockWebSocket();
-    joinCollab(c, other as never);
-    await handleMessage(c, other as never, buildAwarenessMessage(new Uint8Array([3])));
+    joinCollab(scope, other as never);
+    await handleMessage(c, other as never, buildAwarenessMessage(awarenessUpdate({ clientId: 3 })));
     expect(peer.sent).toHaveLength(2);
 
     vi.advanceTimersByTime(600);
-    await handleMessage(c, ws as never, buildAwarenessMessage(new Uint8Array([4])));
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 3 })));
     expect(peer.sent).toHaveLength(3);
-    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, peer as never);
-    leaveCollab(collab.ctx.entityType, collab.ctx.entityId, other as never);
+    leaveCollab(collab.scope, peer as never);
+    leaveCollab(collab.scope, other as never);
+  });
+
+  it('must not relay presence from an unverified or closing socket', async () => {
+    const { ctx: c, scope, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+
+    const pending = mockSocketContext({ requested: scope, scope: null });
+    await handleMessage(pending, mockWebSocket() as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1 })));
+    await handleMessage(
+      c,
+      mockWebSocket({ readyState: 2 }) as never,
+      buildAwarenessMessage(awarenessUpdate({ clientId: 2 })),
+    );
+    expect(peer.sent).toHaveLength(0);
+
+    // Positive control: an open verified socket reaches the peer.
+    await handleMessage(c, mockWebSocket() as never, buildAwarenessMessage(awarenessUpdate({ clientId: 3 })));
+    expect(peer.sent).toHaveLength(1);
+    leaveCollab(collab.scope, peer as never);
+  });
+});
+
+describe('handleMessage: awareness ownership', () => {
+  /** A socket joined to the session under its own user. */
+  const joined = (scope: DocScope, userId: string) => {
+    const ws = mockWebSocket();
+    joinCollab(scope, ws as never);
+    return { ws, ctx: mockSocketContext({ userId, requested: scope }) };
+  };
+
+  it("must not relay a presence state for another user's client", async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const victim = joined(scope, 'user-victim');
+    const attacker = joined(scope, 'user-attacker');
+
+    await handleMessage(victim.ctx, victim.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 10 })));
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[10]]);
+
+    // A newer clock would win at every peer: a fake cursor under the victim's name, or its removal.
+    await handleMessage(
+      attacker.ctx,
+      attacker.ws as never,
+      buildAwarenessMessage(awarenessUpdate({ clientId: 10, clock: 99, state: null })),
+    );
+    expect(peer.ws.sent).toHaveLength(1);
+
+    // Positive control: the attacker's own client is relayed.
+    vi.advanceTimersByTime(600);
+    await handleMessage(attacker.ctx, attacker.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 20 })));
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[10], [20]]);
+    for (const ws of [peer.ws, victim.ws, attacker.ws]) leaveCollab(collab.scope, ws as never);
+  });
+
+  it("drops another user's entry from a frame and relays the sender's own", async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const other = joined(scope, 'user-other');
+    const sender = joined(scope, 'user-sender');
+    await handleMessage(other.ctx, other.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 30 })));
+
+    await handleMessage(
+      sender.ctx,
+      sender.ws as never,
+      buildAwarenessMessage(awarenessUpdate({ clientId: 40 }, { clientId: 30, clock: 5 })),
+    );
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[30], [40]]);
+    for (const ws of [peer.ws, other.ws, sender.ws]) leaveCollab(collab.scope, ws as never);
+  });
+
+  it("lets a user's new socket take over its client, and frees a client whose socket left", async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const first = joined(scope, 'user-a');
+    await handleMessage(first.ctx, first.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 50 })));
+
+    // A reconnect of the same user announces the same client before the old socket's close is processed.
+    const reconnect = joined(scope, 'user-a');
+    await handleMessage(
+      reconnect.ctx,
+      reconnect.ws as never,
+      buildAwarenessMessage(awarenessUpdate({ clientId: 50, clock: 2 })),
+    );
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[50], [50]]);
+
+    leaveCollab(collab.scope, reconnect.ws as never);
+    const later = joined(scope, 'user-b');
+    await handleMessage(
+      later.ctx,
+      later.ws as never,
+      buildAwarenessMessage(awarenessUpdate({ clientId: 50, clock: 3 })),
+    );
+    expect(peer.ws.sent).toHaveLength(3);
+    for (const ws of [peer.ws, first.ws, later.ws]) leaveCollab(collab.scope, ws as never);
+  });
+
+  /** The awareness client ids a socket holds in its session. */
+  const heldBy = (collab: ReturnType<typeof session>['collab'], ws: unknown) =>
+    [...collab.awarenessOwners].filter(([, owner]) => owner.ws === ws).map(([clientId]) => clientId);
+
+  it('must not grow the session via a frame announcing thousands of clients', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const attacker = joined(scope, 'user-attacker');
+    const many = Array.from({ length: 10_000 }, (_, i) => ({ clientId: 1_000 + i, state: {} }));
+
+    await handleMessage(attacker.ctx, attacker.ws as never, buildAwarenessMessage(awarenessUpdate(...many)));
+
+    // Dropped whole, undecoded: nothing held, nothing relayed.
+    expect(collab.awarenessOwners.size).toBe(0);
+    expect(peer.ws.sent).toHaveLength(0);
+    // Positive control: the socket's next frame, its own client alone, is relayed.
+    vi.advanceTimersByTime(600);
+    await handleMessage(attacker.ctx, attacker.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 7 })));
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[7]]);
+    for (const ws of [peer.ws, attacker.ws]) leaveCollab(collab.scope, ws as never);
+  });
+
+  it('must not let one socket hold more than four awareness clients: the fifth closes it with 4400', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const attacker = joined(scope, 'user-attacker');
+
+    for (let i = 0; i < 5; i++) {
+      vi.advanceTimersByTime(600);
+      await handleMessage(
+        attacker.ctx,
+        attacker.ws as never,
+        buildAwarenessMessage(awarenessUpdate({ clientId: 2_000 + i })),
+      );
+    }
+
+    expect(attacker.ws.closed).toEqual({ code: 4400, reason: 'Too many awareness clients' });
+    expect(heldBy(collab, attacker.ws)).toEqual([2000, 2001, 2002, 2003]);
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[2000], [2001], [2002], [2003]]);
+    // The clients a socket held go with it.
+    leaveCollab(collab.scope, attacker.ws as never);
+    expect(collab.awarenessOwners.size).toBe(0);
+    leaveCollab(collab.scope, peer.ws as never);
+  });
+
+  it('never closes a socket for the changes y-websocket re-sends: removals take no client (positive control)', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const editor = joined(scope, 'user-editor');
+    await handleMessage(editor.ctx, editor.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 60 })));
+
+    // It times out ten clients whose socket left, and re-sends their removal.
+    for (let i = 0; i < 10; i++) {
+      vi.advanceTimersByTime(600);
+      const removal = awarenessUpdate({ clientId: 3_000 + i, clock: 2, state: null });
+      await handleMessage(editor.ctx, editor.ws as never, buildAwarenessMessage(removal));
+    }
+    expect(editor.ws.closed).toBeNull();
+    expect(heldBy(collab, editor.ws)).toEqual([60]);
+    expect(peer.ws.sent).toHaveLength(11);
+
+    // Five more sockets of the same user, whose clients it re-sends: it keeps its own and never closes.
+    const tabs = Array.from({ length: 5 }, () => joined(scope, 'user-editor'));
+    for (const [i, tab] of tabs.entries()) {
+      await handleMessage(tab.ctx, tab.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 70 + i })));
+      vi.advanceTimersByTime(600);
+      await handleMessage(
+        editor.ctx,
+        editor.ws as never,
+        buildAwarenessMessage(awarenessUpdate({ clientId: 70 + i, clock: 2 })),
+      );
+    }
+    expect(editor.ws.closed).toBeNull();
+    expect(heldBy(collab, editor.ws)).toContain(60);
+
+    // Its own removal frees its client.
+    vi.advanceTimersByTime(600);
+    const own = awarenessUpdate({ clientId: 60, clock: 3, state: null });
+    await handleMessage(editor.ctx, editor.ws as never, buildAwarenessMessage(own));
+    expect(collab.awarenessOwners.has(60)).toBe(false);
+    for (const ws of [peer.ws, editor.ws, ...tabs.map((tab) => tab.ws)]) leaveCollab(collab.scope, ws as never);
+  });
+
+  it('must not relay an awareness frame no decoder accepts, and closes its sender with 4400', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const sender = joined(scope, 'user-sender');
+
+    await handleMessage(sender.ctx, sender.ws as never, buildAwarenessMessage(new Uint8Array([5, 1])));
+    expect(peer.ws.sent).toHaveLength(0);
+    expect(sender.ws.closed).toEqual({ code: 4400, reason: 'Malformed awareness' });
+    for (const ws of [peer.ws, sender.ws]) leaveCollab(collab.scope, ws as never);
   });
 });
 
 describe('compaction', () => {
-  it('runs once after the debounce, credits the last editor, and deletes exactly the rows it read', async () => {
-    const { ctx: c, ws, collab } = session();
-    const editor2 = mockDocContext({ verified: true, entityId: c.entityId, userId: 'user-2' });
+  it('runs once after the debounce, names the editors newest first, and deletes exactly the rows it read', async () => {
+    const { ctx: c, scope, key, ws } = session();
+    const editor2 = mockSocketContext({ userId: 'user-2', requested: scope });
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
     vi.advanceTimersByTime(2000);
     await handleMessage(editor2, ws as never, buildSyncUpdate(mapUpdate('b', 2)));
@@ -269,15 +536,16 @@ describe('compaction', () => {
     await vi.advanceTimersByTimeAsync(1000);
 
     expect(postMaterialize).toHaveBeenCalledTimes(1);
-    expect(postMaterialize).toHaveBeenCalledWith(collab.ctx, 'user-2', '[]');
+    // As the system, in the document's scope: no joiner's context rides along.
+    expect(postMaterialize).toHaveBeenCalledWith(scope, ['user-2', 'user-1'], '[]');
     const [, merged, ids] = storage.compactState.mock.calls[0] as [never, Uint8Array, number[]];
     expect(readMap(merged)).toEqual({ a: 1, b: 2 });
     expect(ids).toHaveLength(2);
-    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(0);
+    expect(storage.logs.get(key)).toHaveLength(0);
   });
 
   it('an update appended during an in-flight materialize survives compaction', async () => {
-    const { ctx: c, ws, collab } = session();
+    const { ctx: c, key, ws, collab } = session();
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
 
     const gate = deferred();
@@ -291,31 +559,33 @@ describe('compaction', () => {
     gate.release();
     expect(await compaction).toBe('ok');
 
-    const remaining = storage.logs.get(`${c.entityType}:${c.entityId}`)!;
+    const remaining = storage.logs.get(key)!;
     expect(remaining).toHaveLength(1);
     expect(readMap(remaining[0].payload)).toEqual({ late: true });
-    expect(readMap(storage.bases.get(`${c.entityType}:${c.entityId}`)!)).toEqual({ a: 1 });
+    expect(readMap(storage.bases.get(key)!)).toEqual({ a: 1 });
   });
 
-  it('retry keeps the log for the next window; permanent and unparseable compact without a re-post', async () => {
-    const { ctx: c, ws, collab } = session();
+  it('only a written window compacts: retry, permanent and unparseable all keep the log for the next one', async () => {
+    const { ctx: c, key, ws, collab } = session();
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
 
     vi.mocked(postMaterialize).mockResolvedValueOnce('retry');
     expect(await runCompaction(collab)).toBe('retry');
-    expect(storage.compactState).not.toHaveBeenCalled();
-    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(1);
-
     vi.mocked(postMaterialize).mockResolvedValueOnce('permanent');
     expect(await runCompaction(collab)).toBe('permanent');
-    expect(storage.compactState).toHaveBeenCalledTimes(1);
-    expect(storage.logs.get(`${c.entityType}:${c.entityId}`)).toHaveLength(0);
+    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.logs.get(key)).toHaveLength(1);
 
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('b', 2)));
     vi.mocked(stateToBlocksJson).mockReturnValueOnce(null);
     expect(await runCompaction(collab)).toBe('permanent');
     expect(postMaterialize).toHaveBeenCalledTimes(2);
-    expect(storage.compactState).toHaveBeenCalledTimes(2);
+    expect(storage.compactState).not.toHaveBeenCalled();
+
+    // The next written window carries every edit the earlier ones kept.
+    expect(await runCompaction(collab)).toBe('ok');
+    expect(storage.logs.get(key)).toHaveLength(0);
+    expect(readMap(storage.bases.get(key)!)).toEqual({ a: 1, b: 2 });
   });
 
   it('nothing logged means nothing written, and a thrown storage error counts as retry', async () => {

@@ -135,6 +135,9 @@ export const clearCookieStore = () => mockCookieStore.clear();
 export const cookieMock = () => ({
   // Test mode is secure, so the __Host- prefix applies.
   authCookieName: (name: string) => `__Host-${appConfig.slug}-${name}-${appConfig.cookieVersion}`,
+  // The store keeps plain values, so a sealed value is its content.
+  sealAuthCookie: (_name: string, content: string) => content,
+  cookieSecrets: ['test-cookie-secret-for-unit-tests'],
   setAuthCookie: vi.fn().mockImplementation(async (ctx, name, value, _maxAge) => {
     const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
     mockCookieStore.set(name, stringValue);
@@ -164,6 +167,6 @@ export const sessionMock = () => ({
     ctx.res.headers.set('set-cookie', existingCookies ? `${existingCookies}, ${sessionCookie}` : sessionCookie);
     return sessionToken;
   }),
-  getParsedSessionCookie: vi.fn().mockResolvedValue({ sessionToken: 'mock-session-token' }),
-  validateSession: vi.fn().mockResolvedValue({ user: { id: 'test-user-id' }, session: { id: 'test-session-id' } }),
+  resolveSession: vi.fn().mockResolvedValue({ user: { id: 'test-user-id' }, session: { id: 'test-session-id' } }),
+  readSession: vi.fn().mockResolvedValue({ user: { id: 'test-user-id' }, session: { id: 'test-session-id' } }),
 });

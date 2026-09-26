@@ -95,7 +95,7 @@ export interface BackendModule extends ModuleConfig {
   yjsMaterializer?: YjsMaterializer;
   /** In-request reactions keyed by `<type>.<verb>`; a module may react to any tracked type, several to one event. */
   onMutation?: Partial<Record<TrackedEventType, MutationHandler>>;
-  /** Scheduled jobs; the API entrypoint starts them on the migration-owning instance only, so exactly one process runs each. */
+  /** Scheduled jobs; one API instance at a time runs them all, chosen by an advisory lock (lib/job-ownership.ts). */
   jobs?: BackendJob[];
   /** Notification source for `productEntity`: `true` for the table-derived defaults, or overrides (indexed by the notification module). */
   notifications?: true | ModuleNotifications;

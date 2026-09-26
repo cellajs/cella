@@ -1,7 +1,6 @@
-import { and, eq, inArray, isNull } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import type { EntityRole } from 'shared';
 import type { DbContext } from '#/core/context';
-import { tokensTable } from '#/modules/auth/tokens-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { emailsTable } from '#/modules/user/emails-db';
@@ -18,39 +17,6 @@ export const findVerifiedEmails = async (ctx: DbContext, { emails }: FindVerifie
     .select({ email: emailsTable.email })
     .from(emailsTable)
     .where(and(inArray(emailsTable.email, emails), eq(emailsTable.verified, true)));
-};
-
-interface FindPendingInvitationTokensOpts {
-  emails: string[];
-}
-
-export const findPendingInvitationTokens = async (ctx: DbContext, { emails }: FindPendingInvitationTokensOpts) => {
-  const { db } = ctx.var;
-  return db
-    .select({
-      id: tokensTable.id,
-      email: tokensTable.email,
-      expiresAt: tokensTable.expiresAt,
-      invokedAt: tokensTable.invokedAt,
-    })
-    .from(tokensTable)
-    .where(
-      and(
-        inArray(tokensTable.email, emails),
-        eq(tokensTable.type, 'invitation'),
-        isNull(tokensTable.inactiveMembershipId),
-        isNull(tokensTable.invokedAt),
-      ),
-    );
-};
-
-interface InsertTokensOpts {
-  tokens: (typeof tokensTable.$inferInsert)[];
-}
-
-export const insertTokens = async (ctx: DbContext, { tokens }: InsertTokensOpts) => {
-  const { db } = ctx.var;
-  return db.insert(tokensTable).values(tokens).returning();
 };
 
 interface FindUsersByIdsOpts {
@@ -88,24 +54,26 @@ export const findNewsletterRecipients = async (
   { organizationIds, roles }: FindNewsletterRecipientsOpts,
 ) => {
   const { db } = ctx.var;
-  return db
-    .selectDistinct({
-      email: usersTable.email,
-      name: usersTable.name,
-      unsubscribeToken: unsubscribeTokensTable.secret,
-      newsletter: usersTable.newsletter,
-      orgName: organizationsTable.name,
-    })
-    .from(membershipsTable)
-    .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
-    .innerJoin(unsubscribeTokensTable, eq(usersTable.id, unsubscribeTokensTable.userId))
-    .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
-    .where(
-      and(
-        eq(membershipsTable.channelType, 'organization'),
-        inArray(membershipsTable.organizationId, organizationIds),
-        inArray(membershipsTable.role, roles),
-        eq(usersTable.newsletter, true),
-      ),
-    );
+  return (
+    db
+      .selectDistinct({
+        email: usersTable.email,
+        name: usersTable.name,
+        newsletter: usersTable.newsletter,
+        orgName: organizationsTable.name,
+      })
+      .from(membershipsTable)
+      .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
+      // Only users holding an unsubscribe token row: their link finds it.
+      .innerJoin(unsubscribeTokensTable, eq(usersTable.id, unsubscribeTokensTable.userId))
+      .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))
+      .where(
+        and(
+          eq(membershipsTable.channelType, 'organization'),
+          inArray(membershipsTable.organizationId, organizationIds),
+          inArray(membershipsTable.role, roles),
+          eq(usersTable.newsletter, true),
+        ),
+      )
+  );
 };

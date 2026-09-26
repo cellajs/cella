@@ -1,0 +1,195 @@
+// @vitest-environment jsdom
+import { act } from 'react';
+import { createRoot } from 'react-dom/client';
+import { appConfig } from 'shared';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+
+// Presigning waits for the test, so the first pass (unresolved refs) is committed and observed on its own.
+let releasePresign = () => {};
+const presignGate = new Promise<void>((resolve) => {
+  releasePresign = resolve;
+});
+const getPresignedUrlBatched = vi.fn(async (attachmentId: string) => {
+  await presignGate;
+  return `https://signed.example.test/${attachmentId}`;
+});
+vi.mock('~/modules/attachment/presign-batch', () => ({
+  getPresignedUrlBatched: (attachmentId: string) => getPresignedUrlBatched(attachmentId),
+}));
+vi.mock('~/modules/attachment/offline/storage-service', () => ({
+  attachmentStorage: { getSharedBlobUrl: async () => null, createBlobUrlWithVariant: async () => null },
+}));
+vi.mock('~/modules/attachment/offline/download-service', () => ({ downloadService: { queueForDownload: vi.fn() } }));
+vi.mock('~/modules/attachment/query', () => ({ findAttachmentInCache: () => undefined }));
+vi.mock('~/modules/attachment/dialog/open-attachment-dialog', () => ({ openAttachmentDialog: vi.fn() }));
+
+const { BlockNoteFullHtml } = await import('~/modules/common/blocknote/full-html');
+const { useStaticDocumentsReady } = await import('~/modules/common/blocknote/lazy-full-html');
+
+(globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
+
+const organizationId = '0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2b';
+const otherOrganizationId = '0199a1b2-c3d4-7e5f-8a6b-000000000000';
+const attachmentId = '0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c';
+const cdn = appConfig.s3.publicCDNUrl;
+const ownKey = `${organizationId}/user-1/photo.webp`;
+
+const image = (url: string, id: string) => ({ id, type: 'image', props: { url, name: 'image.png' }, children: [] });
+const paragraph = (text: string) => ({
+  id: 'text',
+  type: 'paragraph',
+  props: {},
+  content: [{ type: 'text', text, styles: {} }],
+  children: [],
+});
+
+/** Every `<img>` src the render ever placed in the DOM, first pass included. */
+const watchImageSources = (root: HTMLElement) => {
+  const sources: (string | null)[] = [];
+  const collect = (node: Node) => {
+    if (!(node instanceof Element)) return;
+    const images = node.matches('img') ? [node] : [...node.querySelectorAll('img')];
+    for (const img of images) sources.push(img.getAttribute('src'));
+  };
+  const observer = new MutationObserver((records) => {
+    for (const record of records) record.addedNodes.forEach(collect);
+  });
+  observer.observe(root, { childList: true, subtree: true });
+  return { sources, stop: () => observer.disconnect() };
+};
+
+describe('BlockNoteFullHtml media', () => {
+  const container = document.createElement('div');
+  const root = createRoot(container);
+
+  afterEach(() => act(() => root.render(null)));
+
+  it('must not load media from outside the organization via a static document', async () => {
+    const bypasses = [
+      '//evil.example/pixel.png',
+      'https://i.imgur.com/abc123.png',
+      `${otherOrganizationId}/user-2/contract.png`,
+      `${organizationId}/../${otherOrganizationId}/user-2/contract.png`,
+    ];
+    const document = JSON.stringify([
+      ...bypasses.map((url, i) => image(url, `bypass-${i}`)),
+      image(ownKey, 'own-key'),
+      image(attachmentId, 'attachment'),
+      paragraph('text survives'),
+    ]);
+    const watcher = watchImageSources(container);
+
+    const sourcesNow = () => [...container.querySelectorAll('img')].map((img) => img.getAttribute('src'));
+    // A refused reference renders nothing at all: no image, no empty file placeholder.
+    const imageBlockCount = () => container.querySelectorAll('[data-content-type="image"]').length;
+
+    await act(async () =>
+      root.render(
+        <BlockNoteFullHtml id="doc" defaultValue={document} tenantId="tenant-1" organizationId={organizationId} />,
+      ),
+    );
+    // First pass: the unresolved blocks, painted while the presign is pending.
+    await vi.waitFor(() => expect(container.textContent).toContain('text survives'));
+    expect(sourcesNow()).toEqual([ownKey, attachmentId]);
+    expect(imageBlockCount()).toBe(2);
+
+    // The resolved pass swaps in the presigned URL, the last source to arrive.
+    await act(async () => releasePresign());
+    await vi.waitFor(() => expect(sourcesNow()).toContain(`https://signed.example.test/${attachmentId}`));
+    watcher.stop();
+
+    expect(sourcesNow()).toEqual([`${cdn}/${ownKey}`, `https://signed.example.test/${attachmentId}`]);
+    expect(imageBlockCount()).toBe(2);
+    // No render pass, first or resolved, ever held an <img> for a refused reference.
+    expect(watcher.sources.filter((src) => bypasses.some((ref) => src?.includes(ref)))).toEqual([]);
+  });
+
+  it('must not crash on, or load media from, a malformed stored document', async () => {
+    const hidden = '//evil.example/hidden.png';
+    const document = JSON.stringify([
+      { id: 'string-props', type: 'image', props: 'https://evil.example/pixel.png', children: [] },
+      { id: 'null-props', type: 'image', props: null, children: [] },
+      { id: 'untyped', type: 123, props: {}, children: [image(hidden, 'hidden')] },
+      null,
+      { ...paragraph('children not a list'), id: 'odd-children', children: 'not a list' },
+      paragraph('text survives'),
+    ]);
+    const watcher = watchImageSources(container);
+
+    await act(async () =>
+      root.render(
+        <BlockNoteFullHtml id="doc" defaultValue={document} tenantId="tenant-1" organizationId={organizationId} />,
+      ),
+    );
+    await vi.waitFor(() => expect(container.textContent).toContain('text survives'));
+    watcher.stop();
+
+    expect(container.textContent).toContain('children not a list');
+    expect(watcher.sources.filter((src) => src?.includes('evil.example'))).toEqual([]);
+  });
+});
+
+describe('BlockNoteFullHtml: documents BlockNote cannot render', () => {
+  const container = document.createElement('div');
+  const root = createRoot(container);
+  // A render error thrown outside React (a microtask, a promise) is uncaught: no boundary sees it.
+  const crashes: unknown[] = [];
+  const record = (err: unknown) => void crashes.push(err);
+
+  beforeAll(() => {
+    process.on('uncaughtException', record);
+    process.on('unhandledRejection', record);
+  });
+
+  afterAll(() => {
+    process.off('uncaughtException', record);
+    process.off('unhandledRejection', record);
+  });
+
+  afterEach(() => act(() => root.render(null)));
+
+  const unknownType = JSON.stringify([
+    { id: 'unknown', type: 'x', props: {}, content: [], children: [{ ...paragraph('nested survives'), id: 'nested' }] },
+    { id: 'inherited', type: 'toString', props: {}, content: [], children: [] },
+    paragraph('text survives'),
+  ]);
+  // Passes the block schema check: a paragraph whose inline node BlockNote does not know.
+  const unknownInline = JSON.stringify([
+    { id: 'inline', type: 'paragraph', props: {}, content: [{ type: 'x' }], children: [] },
+  ]);
+
+  it('must not blank a document via a block type outside the schema: its nested blocks and the rest render', async () => {
+    await act(async () =>
+      root.render(<BlockNoteFullHtml id="doc" defaultValue={unknownType} organizationId={organizationId} />),
+    );
+
+    await vi.waitFor(() => expect(container.textContent).toContain('text survives'));
+    expect(container.textContent).toContain('nested survives');
+    expect(crashes).toEqual([]);
+  });
+
+  it('must not fail other documents via one BlockNote cannot render', async () => {
+    let ready = false;
+    const documents = [unknownInline, '{"type":"x"}', unknownType, JSON.stringify([paragraph('warm document')])];
+    const Harness = () => {
+      ready = useStaticDocumentsReady(documents, organizationId);
+      return null;
+    };
+
+    await act(async () => root.render(<Harness />));
+    await vi.waitFor(() => expect(ready).toBe(true));
+
+    // The broken document renders nothing, and a warmed one paints from the first pass.
+    await act(async () =>
+      root.render(
+        <>
+          <BlockNoteFullHtml id="broken" defaultValue={unknownInline} organizationId={organizationId} />
+          <BlockNoteFullHtml id="warm" defaultValue={documents[3]} organizationId={organizationId} />
+        </>,
+      ),
+    );
+    expect(container.textContent).toContain('warm document');
+    await vi.waitFor(() => expect(container.querySelector('#broken')?.textContent).toBe(''));
+    expect(crashes).toEqual([]);
+  });
+});

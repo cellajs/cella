@@ -8,7 +8,7 @@
   {
     "name": "auth",
     "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth\n    (Google, Microsoft, GitHub) and passkeys (WebAuthn). They cover sign-up, sign-in, email verification,\n    account linking, and impersonation for system admins.",
-    "count": 24,
+    "count": 31,
     "kind": "module"
   },
   {
@@ -103,7 +103,7 @@
   },
   {
     "name": "yjs",
-    "description": "Endpoints for Yjs collaborative editing support: auth tokens for the Yjs relay worker, and the\n    relay's secret-gated materialize route that writes a compacted collaborative document to its entity.",
+    "description": "Endpoints for Yjs collaborative editing support: a short-lived token per entity for the Yjs relay\n    worker. The relay's materialize route, which writes a compacted collaborative document to its entity, is served\n    on the internal listener only.",
     "count": 1,
     "kind": "module"
   }

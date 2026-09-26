@@ -2,6 +2,7 @@ import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { CheckIcon, RotateCcwKeyIcon, TrashIcon } from 'lucide-react';
 import { Suspense, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ensureStepUp } from '~/modules/auth/step-up';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions, useDeleteTotpMutation } from '~/modules/me/query';
@@ -20,7 +21,14 @@ export function Totp() {
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-  const openSetupTotp = () => {
+  const openSetupTotp = async () => {
+    // The key request and the code check need a stepped-up session: the user proves it before the setup opens.
+    const steppedUp = await ensureStepUp().then(
+      () => true,
+      () => false,
+    );
+    if (!steppedUp) return;
+
     useDialoger.getState().create(
       <Suspense fallback={<Skeleton className="mx-auto my-3 h-72.75 w-72.75" />}>
         <SetupTotp />

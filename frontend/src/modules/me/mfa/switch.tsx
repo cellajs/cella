@@ -3,7 +3,7 @@ import { CircleAlertIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { ConfirmDisableMfa, ConfirmMfaOptions } from '~/modules/me/mfa/confirmation';
+import { ConfirmMfaToggle } from '~/modules/me/mfa/confirmation';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { Switch } from '~/modules/ui/switch';
 import { useCurrentUser } from '~/modules/user/user-store';
@@ -20,12 +20,9 @@ export function MfaSwitch() {
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const handleToggleMfa = (mfaRequired: boolean) => {
-    const isEnabling = mfaRequired;
+    const action = mfaRequired ? 'enable' : 'disable';
 
-    const Dialog = isEnabling ? ConfirmMfaOptions : ConfirmDisableMfa;
-    const action = isEnabling ? 'enable' : 'disable';
-
-    createDialog(<Dialog mfaRequired={isEnabling} />, {
+    createDialog(<ConfirmMfaToggle mfaRequired={mfaRequired} />, {
       id: 'mfa-confirmation',
       triggerRef,
       className: 'max-w-xl',

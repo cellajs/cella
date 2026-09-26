@@ -1,18 +1,15 @@
 import { appConfig, type ChannelEntityType } from 'shared';
-import { nanoid } from 'shared/utils/nanoid';
 import type { UserContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
+import { issueToken } from '#/modules/auth/tokens/token-lifecycle';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import {
   findPendingInactiveMembershipsByChannels,
-  insertTokens,
   stampInactiveMembershipsReminded,
   updateInactiveMembershipToken,
 } from '#/modules/memberships/memberships-queries';
-import { hashToken } from '#/utils/hash-token';
 import { log } from '#/utils/logger';
 import { slugFromEmail } from '#/utils/slug-from-email';
-import { createDate, TimeSpan } from '#/utils/time-span';
 import { memberInviteEmail, memberInviteWithTokenEmail } from '../../../../emails';
 
 interface DispatchDeferredInvitesOpts {
@@ -66,18 +63,11 @@ export async function dispatchDeferredInvites(ctx: UserContext, { channelIds }: 
     for (const row of group) {
       if (row.tokenId) {
         // Rotate the invitation token: fresh secret + expiry, re-pointed from the invite row
-        const raw = nanoid(40);
-        const [token] = await insertTokens(ctx, {
-          tokens: [
-            {
-              secret: hashToken(raw),
-              type: 'invitation' as const,
-              email: row.email,
-              createdBy: row.createdBy,
-              expiresAt: createDate(new TimeSpan(7, 'd')),
-              inactiveMembershipId: row.id,
-            },
-          ],
+        const { token, rawToken } = await issueToken(ctx, {
+          type: 'invitation',
+          email: row.email,
+          createdBy: row.createdBy,
+          inactiveMembershipId: row.id,
         });
         await updateInactiveMembershipToken(ctx, { id: row.id, tokenId: token.id });
 
@@ -85,7 +75,7 @@ export async function dispatchDeferredInvites(ctx: UserContext, { channelIds }: 
           email: row.email,
           lng,
           name: slugFromEmail(row.email),
-          inviteLink: `${appConfig.backendAuthUrl}/invoke-token/invitation/${raw}`,
+          inviteLink: `${appConfig.backendAuthUrl}/invoke-token/invitation/${rawToken}`,
         });
       } else {
         noTokenRecipients.push({

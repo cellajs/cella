@@ -39,17 +39,15 @@ type ToolResult = {
 
 const REDIRECT_URI = 'http://localhost:9999/callback';
 
-/** A create item as the route's body schema reads it (the sync transaction is added server-side). */
-const buildItem = (name: string, filename: string, home: Record<string, string>) => ({
-  ...home,
+/** A create item as the route's body schema reads it (the sync transaction is added server-side), keyed under the org's upload prefix. */
+const buildItem = (name: string, filename: string, ctx: { home: Record<string, string>; org: { id: string } }) => ({
+  ...ctx.home,
   id: crypto.randomUUID(),
   name,
   filename,
   contentType: 'application/octet-stream',
   size: '1234',
-  keys: { original: `uploads/${filename}` },
-  bucketName: 'attachments',
-  publicBucket: false,
+  keys: { original: `${ctx.org.id}/uploads/${filename}` },
 });
 const CLIENT_ID = 'test-portfolio';
 
@@ -214,7 +212,7 @@ describe('MCP on the substrate (Phase E)', async () => {
   it('showcase 3: a service account creates, reads, renames and deletes through the same tools', async () => {
     const ctx = await serviceToken('attachment:write');
     const created = await toolCall(ctx, 'createAttachments', {
-      items: [buildItem('Build log', 'build.log', ctx.home)],
+      items: [buildItem('Build log', 'build.log', ctx)],
     });
     expect(created.rpc.error).toBeUndefined();
     expect(created.response.status).toBe(200);
@@ -252,7 +250,7 @@ describe('MCP on the substrate (Phase E)', async () => {
 
     const seed = await serviceToken('attachment:write');
     const created = await toolCall(seed, 'createAttachments', {
-      items: [buildItem('Thesis', 'thesis.pdf', seed.home)],
+      items: [buildItem('Thesis', 'thesis.pdf', seed)],
     });
     expect(created.rpc.error).toBeUndefined();
     const { data: items } = toolResult(created).structuredContent as { data: { id: string }[] };
@@ -273,7 +271,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     const moved = await toolCall({ org: seed.org, jwt: seed.jwt }, 'getAttachment', { id: items[0].id });
     expect(moved.response.status).toBe(200);
     const own = await toolCall(writer, 'createAttachments', {
-      items: [buildItem('Draft', 'draft.pdf', writer.home)],
+      items: [buildItem('Draft', 'draft.pdf', writer)],
     });
     expect(own.rpc.error).toBeUndefined();
     expect(toolResult(own).isError).toBeUndefined();

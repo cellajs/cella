@@ -1,4 +1,5 @@
 const avatar = {
+  publicBucket: true,
   steps: {
     converted: {
       use: ':original',
@@ -19,6 +20,7 @@ const avatar = {
 };
 
 const cover = {
+  publicBucket: true,
   steps: {
     converted: {
       use: ':original',
@@ -40,6 +42,7 @@ const cover = {
 
 // @link https://transloadit.com/docs/transcoding/file-filtering/file-filter/
 const attachment = {
+  publicBucket: false,
   steps: {
     filter_images: {
       use: ':original',
@@ -146,8 +149,36 @@ const attachment = {
   ] as const,
 };
 
+/**
+ * Newsletter images: email clients load them from the public bucket. JPEG for mail clients, never enlarged, and only a
+ * system admin gets a token for them.
+ */
+const newsletter = {
+  publicBucket: true,
+  systemAdminOnly: true,
+  steps: {
+    image: {
+      use: ':original',
+      robot: '/image/resize',
+      resize_strategy: 'fit',
+      width: 1200,
+      height: 1200,
+      zoom: false,
+      format: 'jpg',
+    },
+  },
+  use: ['image'] as const,
+};
+
+/**
+ * Transloadit pipelines per upload template. `publicBucket` decides where the backend lets a template store: `true`
+ * writes public-read objects to the public bucket, for what the app shows publicly by design (avatars, logos,
+ * banners, newsletter images); anything else stays private. A public template exports only images it re-encoded,
+ * never `:original`. `systemAdminOnly` templates store under the system prefix, outside every organization.
+ */
 export const uploadTemplates = {
   avatar,
   cover,
   attachment,
+  newsletter,
 };

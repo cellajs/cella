@@ -39,6 +39,7 @@ Route-level guards in `backend/src/middlewares/guard/`:
 - `orgGuard`: resolves the organization and verifies membership.
 - `publicGuard`: unauthenticated routes. Sets `ctx.var.db` to baseDb.
 - `crossTenantGuard`: authenticated cross-tenant routes. Sets `ctx.var.db = baseDb`. Handlers use `tenantRead()` for product entity queries.
+- `stepUpGuard`: after `userGuard` on account-security routes (factors, MFA, provider connect, account deletion, minting an API key): the session must have proven its user's presence again within ten minutes (a factor the user holds, else a fresh sign-in or an emailed link), never an impersonation; else 403 `step_up_required` naming the methods.
 - Also: `sysAdminGuard`, `relatableGuard`.
 
 ### Database access patterns
@@ -55,7 +56,7 @@ Secret columns (a hash, a session or token secret, a private key) are declared o
 
 ## Auth
 
-Five sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA, token invocation), `magic/`, `oauth/` (signing in with a provider), `passkeys/` (WebAuthn), `totps/` (TOTP 2FA). Sessions: `general/helpers/session.ts`. Cookies: `general/helpers/cookie.ts`.
+Seven sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA), `magic/`, `oauth/` (signing in with a provider), `passkeys/` (WebAuthn), `totps/` (TOTP 2FA), `step-up/` (proving presence again before account-security actions), `tokens/` (the token lifecycle: issue, redeem, read and spend, with one policy per token type; the only importer of `tokens-db`, enforced by Biome; a link type also has its handler in `general/helpers/link-handlers.ts`). Sessions: `general/helpers/session.ts` (`resolveSession` reads the app session from any request context). Cookies: `general/helpers/cookie.ts`.
 
 Machine access ([Interoperability](/docs/page/architecture/interoperability)): `actors/` (the supertype that `createdBy`/`updatedBy`/`deletedBy` on channel and product tables reference), `service-accounts/` (accounts, role `bindings`, API keys in `api_keys`), `oauth-server/` (the app's authorization server; process entry in `oauth/`, tokens verified by the guards), `mcp/` (tokens-only endpoint; process entry in `mcp/`). Names: API key, access scope (`accessScopes` derived from the policy matrix), binding, OAuth client. Name the proof: session, API key or access token; `credential` is the WebAuthn word (passkeys) and nothing else.
 
@@ -107,7 +108,7 @@ Every check takes an `Access` from `accessFrom(ctx)`. Never assemble one by hand
 Model: [Sync engine](./SYNC_ENGINE.md).
 
 - **Stx helpers** (`frontend/src/query/offline/`): `createStxForCreate()`, `createStxForUpdate()`, `createStxForDelete()` build sync transaction metadata from the cached entity version. Idempotency runs through `isTransactionProcessed()` (`backend/src/utils/idempotency.ts`) against the `activities` table.
-- **Realtime backend**: `activityBus` (`backend/src/lib/activity-bus.ts`) → `createStreamDispatcher()` → `streamSubscriberManager` (`backend/src/modules/entities/stream/`, SSE fan-out). `CdcWebSocketServer` (`backend/src/lib/cdc-websocket.ts`) accepts the CDC worker on `/internal/cdc`.
+- **Realtime backend**: `activityBus` (`backend/src/lib/activity-bus.ts`) → `createStreamDispatcher()` → `streamSubscriberManager` (`backend/src/modules/entities/stream/`, SSE fan-out). `CdcWebSocketServer` (`backend/src/lib/cdc-websocket.ts`) accepts the CDC worker on `/internal/cdc` of the internal listener (`backend/src/lib/listeners.ts`), which serves the server-to-server routes apart from the public API.
 - **Seen-by tracking**: `IntersectionObserver` marks entities seen. A Zustand store batches IDs, flushes on timer + `sendBeacon` on unload, persists flushed IDs in `localUserDb` (`kv` table). Unseen badges decrement optimistically in the query cache. Backend: `seen_by` (one row per user+product), `product_counters` (denormalized counts).
 - **Product cache** (`backend/src/middlewares/product-cache/`): [Sync engine](./SYNC_ENGINE.md#detail-cache).
 - **Sync signals** (`frontend/src/query/realtime/sync-signals.ts`): the only extension point for sync-derived per-user state. Never import module logic into the prioritizer. Contract: [Sync engine](./SYNC_ENGINE.md#fetch-prioritization).

@@ -6,21 +6,23 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
-import type { DocContext } from '../../constants';
+import type { DocScope } from '../../constants';
 import { createSignedToken } from '../helpers';
 
 // The real relay end to end over real sockets and the real database (runtime_role). The backend
-// round trips are stubbed: access is granted, the description seeds from a fixed document, and
-// the materialize POST is recorded.
-vi.mock('../../data/permissions', () => ({ canEditEntity: vi.fn(async () => true) }));
+// round trips are stubbed: access is granted in the requested scope, the description seeds from a
+// fixed document, and the materialize POST is recorded.
+vi.mock('../../data/permissions', () => ({
+  authorizeDoc: vi.fn(async (_userId: string, requested: DocScope) => requested),
+}));
 vi.mock('../../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
 const materialized: { editedBy: string; description: string }[] = [];
 vi.mock('../../sync/materialize', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../sync/materialize')>();
   return {
     ...actual,
-    postMaterialize: vi.fn(async (_ctx: DocContext, editedBy: string, description: string) => {
-      materialized.push({ editedBy, description });
+    postMaterialize: vi.fn(async (_scope: DocScope, editors: string[], description: string) => {
+      materialized.push({ editedBy: editors[0], description });
       return 'ok';
     }),
   };
@@ -52,8 +54,8 @@ const ids = {
   pull: '40000000-0000-4000-a000-000000000002',
 };
 
-function ctx(entityId: string): DocContext {
-  return { entityType, entityId, tenantId, userId, organizationId, verified: true };
+function ctx(entityId: string): DocScope {
+  return { entityType, entityId, tenantId, organizationId };
 }
 
 /** Text of block 0 in a stored state. */
@@ -80,7 +82,7 @@ async function seedTenant() {
 
 async function cleanup() {
   for (const entityId of Object.values(ids)) {
-    const collab = getCollab(entityType, entityId);
+    const collab = getCollab(ctx(entityId));
     if (collab?.compactTimer) clearTimeout(collab.compactTimer);
     if (collab?.cleanupTimer) clearTimeout(collab.cleanupTimer);
     await deleteDoc(ctx(entityId));
@@ -122,7 +124,7 @@ afterAll(async () => {
 
 /** A synced y-websocket client on the document. */
 async function connectClient(entityId: string, doc = new Y.Doc()) {
-  const token = createSignedToken({ userId, entityType, tenantId, organizationId });
+  const token = createSignedToken({ userId, entityType, entityId, tenantId, organizationId });
   const provider = new WebsocketProvider(baseUrl, entityId, doc, {
     params: { token, entityType, tenantId },
     WebSocketPolyfill: WsWebSocket as never,
@@ -169,11 +171,12 @@ describe('relay end to end', () => {
 
     // Three separate transactions dispatched back to back: three frames in one burst.
     for (const ch of ['c', 'b', 'a']) doc.transact(() => text.insert(0, ch));
-    await until(async () => (await readLog(ctx(ids.burst))).length === 3);
+    // The client's own sync reply can land as a fourth row; what matters is that all three keystrokes are logged.
+    await until(async () => (await readLog(ctx(ids.burst))).length >= 3);
     provider.destroy();
     doc.destroy();
 
-    const collab = getCollab(entityType, ids.burst)!;
+    const collab = getCollab(ctx(ids.burst))!;
     expect(await runCompaction(collab)).toBe('ok');
 
     expect(textOf((await loadBase(ctx(ids.burst)))!)).toBe('abc could you have a look?');

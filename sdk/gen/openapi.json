@@ -44,6 +44,14 @@
             "name": "relatable",
             "description": "Checks that the requesting user shares at least one organization with the target user"
           },
+          "stepUpGuard": {
+            "name": "stepUp",
+            "description": "Requires a recent proof of presence on this session: the enrolled passkey or TOTP, else a fresh sign-in or a confirmed email link. Refuses impersonation."
+          },
+          "stepUpOrFactorProofGuard": {
+            "name": "stepUpOrFactorProof",
+            "description": "Requires a recent proof of presence on this session, or a passkey or TOTP proof on the request itself. Refuses impersonation."
+          },
           "sysAdminGuard": {
             "name": "sysAdmin",
             "description": "Requires system admin + IP whitelist"
@@ -71,7 +79,7 @@
           },
           "emailEnumLimiter": {
             "name": "emailEnum",
-            "description": "Blocks IP for 30 min after 5 consecutive failures"
+            "description": "Max 30 address lookups/hour per IP, then blocks the IP for 30 min"
           },
           "presignedUrlLimiter": {
             "name": "presignedUrl",
@@ -81,6 +89,14 @@
             "name": "totpVerification",
             "description": "Blocks IP for 30 min after 5 failed TOTP attempts"
           },
+          "mfaToggleLimiter": {
+            "name": "mfaToggle",
+            "description": "Blocks the account for 30 min after 5 failed second-factor checks on the MFA toggle"
+          },
+          "stepUpLimiter": {
+            "name": "stepUp",
+            "description": "Blocks the account for 30 min after 5 failed second-factor checks on step-up"
+          },
           "magicLinkLimiter": {
             "name": "magicLink",
             "description": "Max 2 magic link emails per 30 min per email address"
@@ -88,6 +104,10 @@
           "passkeyChallengeLimiter": {
             "name": "passkeyChallenge",
             "description": "Max 30 passkey challenges/hour per IP"
+          },
+          "clientMetadataFetchLimiter": {
+            "name": "clientMetadataFetch",
+            "description": "Max 60 client metadata document fetches per minute per IP"
           },
           "serviceBurstLimiter": {
             "name": "serviceBurst",
@@ -139,6 +159,13 @@
         "key": "x-service",
         "id": "x-service",
         "description": "Service gating the endpoint; route returns 404 when the service is disabled",
+        "required": false,
+        "kind": "metadata"
+      },
+      {
+        "key": "x-strategy",
+        "id": "x-strategy",
+        "description": "Sign-in method the endpoint belongs to; refused while that method is switched off",
         "required": false,
         "kind": "metadata"
       }
@@ -303,7 +330,7 @@
     },
     {
       "name": "yjs",
-      "description": "Endpoints for Yjs collaborative editing support: auth tokens for the Yjs relay worker, and the\n    relay's secret-gated materialize route that writes a compacted collaborative document to its entity.",
+      "description": "Endpoints for Yjs collaborative editing support: a short-lived token per entity for the Yjs relay\n    worker. The relay's materialize route, which writes a compacted collaborative document to its entity, is served\n    on the internal listener only.",
       "parent": "cella",
       "kind": "module"
     }
@@ -313,7 +340,7 @@
       "cookieAuth": {
         "type": "apiKey",
         "in": "cookie",
-        "name": "cella-development-session-v2",
+        "name": "cella-development-session-v3",
         "description": "Authentication cookie. Copy cookie from your network tab and paste it here. If you don't have it, you need to sign in or sign up first."
       },
       "apiKey": {
@@ -1450,7 +1477,26 @@
                 },
                 "revocationReason": {
                   "type": ["string", "null"],
-                  "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                  "enum": [
+                    "sign_out",
+                    "other_session",
+                    "mfa_enabled",
+                    "session_cap",
+                    "replaced",
+                    "impersonation_stopped",
+                    null
+                  ]
+                },
+                "impersonatorSessionId": {
+                  "type": ["string", "null"],
+                  "format": "uuid"
+                },
+                "steppedUpAt": {
+                  "type": ["string", "null"]
+                },
+                "steppedUpVia": {
+                  "type": ["string", "null"],
+                  "enum": ["passkey", "totp", "email", null]
                 },
                 "isCurrent": {
                   "type": "boolean"
@@ -1479,6 +1525,9 @@
                 "revokedAt",
                 "revokedBy",
                 "revocationReason",
+                "impersonatorSessionId",
+                "steppedUpAt",
+                "steppedUpVia",
                 "isCurrent",
                 "isNewDevice"
               ]
@@ -1559,6 +1608,9 @@
               "revokedAt": null,
               "revokedBy": null,
               "revocationReason": null,
+              "impersonatorSessionId": null,
+              "steppedUpAt": null,
+              "steppedUpVia": null,
               "isCurrent": true,
               "isNewDevice": false
             }
@@ -1669,7 +1721,8 @@
         "type": "object",
         "properties": {
           "publicBucket": {
-            "type": "boolean"
+            "type": "boolean",
+            "description": "Whether the upload is stored public-read in the public bucket; the template decides."
           },
           "sub": {
             "type": "string"
@@ -2463,98 +2516,6 @@
         },
         "x-tags": ["data", "attachments", "cella"]
       },
-      "Membership": {
-        "type": "object",
-        "properties": {
-          "createdAt": {
-            "type": "string"
-          },
-          "id": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "tenantId": {
-            "type": "string",
-            "maxLength": 24
-          },
-          "channelType": {
-            "type": "string",
-            "enum": ["organization"]
-          },
-          "channelId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "userId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "role": {
-            "type": "string",
-            "enum": ["admin", "member"]
-          },
-          "createdBy": {
-            "type": ["string", "null"],
-            "format": "uuid"
-          },
-          "updatedAt": {
-            "type": ["string", "null"]
-          },
-          "updatedBy": {
-            "type": ["string", "null"],
-            "format": "uuid"
-          },
-          "archived": {
-            "type": "boolean"
-          },
-          "muted": {
-            "type": "boolean"
-          },
-          "displayOrder": {
-            "type": "number",
-            "minimum": -140737488355328,
-            "maximum": 140737488355327
-          },
-          "organizationId": {
-            "type": "string",
-            "format": "uuid"
-          }
-        },
-        "required": [
-          "createdAt",
-          "id",
-          "tenantId",
-          "channelType",
-          "channelId",
-          "userId",
-          "role",
-          "createdBy",
-          "updatedAt",
-          "updatedBy",
-          "archived",
-          "muted",
-          "displayOrder",
-          "organizationId"
-        ],
-        "description": "A user's membership in a channel entity, including role and activity data.",
-        "example": {
-          "id": "14e27393-e22a-45d1-8c22-3250dc6fc109",
-          "tenantId": "k4z795",
-          "channelType": "organization",
-          "channelId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
-          "userId": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
-          "organizationId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
-          "role": "member",
-          "displayOrder": 93,
-          "muted": false,
-          "archived": false,
-          "createdAt": "2024-10-28T10:38:59.996Z",
-          "createdBy": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
-          "updatedAt": "2024-10-28T10:38:59.996Z",
-          "updatedBy": null
-        },
-        "x-tags": ["data", "memberships", "cella"]
-      },
       "ServiceAccount": {
         "type": "object",
         "properties": {
@@ -2829,8 +2790,8 @@
         "security": [],
         "operationId": "checkEmail",
         "tags": ["auth", "cella"],
-        "summary": "Check if email exists",
-        "description": "Checks if a user with the specified email address exists in the system.",
+        "summary": "Check email",
+        "description": "Tells whether this browser has signed in to the account with this email address before, by its device cookie. Any other browser gets `recognized: false`, whether or not the address has an account.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["emailEnumLimiter"],
         "x-cache": [],
@@ -2854,8 +2815,21 @@
           }
         },
         "responses": {
-          "204": {
-            "description": "Email exists"
+          "200": {
+            "description": "Whether this browser is recognized for the address",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "recognized": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": ["recognized"]
+                }
+              }
+            }
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -2882,6 +2856,7 @@
       "get": {
         "security": [],
         "operationId": "invokeToken",
+        "x-strategy": "per-request",
         "tags": ["auth", "cella"],
         "summary": "Invoke token session",
         "description": "Validates and invokes a token (for email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.",
@@ -2892,7 +2867,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["oauth-verification", "invitation", "magic"]
+              "enum": ["oauth-verification", "invitation", "magic", "step-up"]
             },
             "required": true,
             "name": "type",
@@ -2954,7 +2929,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["oauth-verification", "invitation", "magic"]
+              "enum": ["oauth-verification", "invitation", "magic", "step-up"]
             },
             "required": true,
             "name": "type",
@@ -3206,7 +3181,7 @@
         "operationId": "resendInvitationWithToken",
         "tags": ["auth", "cella"],
         "summary": "Resend invitation",
-        "description": "Resends an invitation email with token to a new user using the provided email address and token ID.",
+        "description": "Re-sends a pending invitation, named by the id of one of its tokens, to the address it went to. The fresh link replaces the older ones. Answers 204 whether or not an email went out.",
         "x-guard": ["publicGuard"],
         "x-rate-limiter": ["spamLimiter"],
         "x-cache": [],
@@ -3215,41 +3190,21 @@
           "content": {
             "application/json": {
               "schema": {
-                "anyOf": [
-                  {
-                    "type": "object",
-                    "properties": {
-                      "email": {
-                        "type": "string",
-                        "format": "email"
-                      },
-                      "tokenId": {
-                        "type": "string"
-                      }
-                    },
-                    "required": ["email"]
-                  },
-                  {
-                    "type": "object",
-                    "properties": {
-                      "email": {
-                        "type": "string",
-                        "format": "email"
-                      },
-                      "tokenId": {
-                        "type": "string"
-                      }
-                    },
-                    "required": ["tokenId"]
+                "type": "object",
+                "properties": {
+                  "tokenId": {
+                    "type": "string",
+                    "format": "uuid"
                   }
-                ]
+                },
+                "required": ["tokenId"]
               }
             }
           }
         },
         "responses": {
           "204": {
-            "description": "Invitation email sent"
+            "description": "Invitation email sent when the invitation is pending"
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -3311,6 +3266,7 @@
       "post": {
         "security": [],
         "operationId": "sendMagicLink",
+        "x-strategy": "magic",
         "tags": ["auth", "cella"],
         "summary": "Send magic link",
         "description": "Sends a magic link sign-in email to the specified address. Always returns 204 to prevent email enumeration.",
@@ -3364,6 +3320,99 @@
         }
       }
     },
+    "/auth/magic/pending": {
+      "get": {
+        "security": [],
+        "operationId": "getPendingMagicLink",
+        "x-strategy": "magic",
+        "tags": ["auth", "cella"],
+        "summary": "Get pending magic link",
+        "description": "For a magic link opened in a browser that did not request it: the address it signs in, so the holder can recognize the account before confirming.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "Masked address of the held link",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["email"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/magic/confirm": {
+      "post": {
+        "security": [],
+        "operationId": "confirmMagicLink",
+        "x-strategy": "magic",
+        "tags": ["auth", "cella"],
+        "summary": "Confirm magic link",
+        "description": "Signs in with the magic link this browser holds, confirmed from the app page. A form post from the app origin; redirects like opening the link.",
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
+        "x-cache": [],
+        "responses": {
+          "302": {
+            "description": "Signed in, redirect to the app",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/auth/totp/generate-key": {
       "post": {
         "security": [
@@ -3372,10 +3421,11 @@
           }
         ],
         "operationId": "generateTotpKey",
+        "x-strategy": "totp",
         "tags": ["auth", "cella"],
         "summary": "Generate TOTP key",
         "description": "Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
-        "x-guard": ["userGuard"],
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -3431,10 +3481,11 @@
           }
         ],
         "operationId": "createTotp",
+        "x-strategy": "totp",
         "tags": ["auth", "cella"],
         "summary": "Set TOTP",
         "description": "Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
-        "x-guard": ["userGuard"],
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3485,10 +3536,11 @@
           }
         ],
         "operationId": "deleteTotp",
+        "x-strategy": "none",
         "tags": ["auth", "cella"],
         "summary": "Delete TOTP",
         "description": "Delete TOTP credential for current user.",
-        "x-guard": ["userGuard"],
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -3520,6 +3572,7 @@
       "post": {
         "security": [],
         "operationId": "signInWithTotp",
+        "x-strategy": "totp",
         "tags": ["auth", "cella"],
         "summary": "Verify TOTP",
         "description": "Validates the TOTP code and completes TOTP based authentication.",
@@ -3585,10 +3638,11 @@
           }
         ],
         "operationId": "createPasskey",
+        "x-strategy": "passkey",
         "tags": ["auth", "cella"],
         "summary": "Create passkey",
         "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the current user. Multiple passkeys can be created for different devices/browsers.",
-        "x-guard": ["userGuard"],
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3749,10 +3803,11 @@
           }
         ],
         "operationId": "deletePasskey",
+        "x-strategy": "none",
         "tags": ["auth", "cella"],
         "summary": "Delete passkey",
         "description": "Delete a passkey by id from the current user.",
-        "x-guard": ["userGuard"],
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -3795,6 +3850,7 @@
       "post": {
         "security": [],
         "operationId": "generatePasskeyChallenge",
+        "x-strategy": "passkey",
         "tags": ["auth", "cella"],
         "summary": "Generate passkey challenge",
         "description": "Initiates the passkey registration or authentication flow by generating a device bound challenge.",
@@ -3811,12 +3867,6 @@
                   "type": {
                     "type": "string",
                     "enum": ["authentication", "mfa", "registration"]
-                  },
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "minLength": 4,
-                    "maxLength": 255
                   }
                 },
                 "required": ["type"]
@@ -3876,6 +3926,7 @@
       "post": {
         "security": [],
         "operationId": "signInWithPasskey",
+        "x-strategy": "passkey",
         "tags": ["auth", "cella"],
         "summary": "Verify passkey",
         "description": "Validates the signed challenge and completes passkey based authentication.",
@@ -3931,12 +3982,6 @@
                   "type": {
                     "type": "string",
                     "enum": ["authentication", "mfa"]
-                  },
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "minLength": 4,
-                    "maxLength": 255
                   }
                 },
                 "required": ["assertion", "type"]
@@ -3978,10 +4023,60 @@
         }
       }
     },
+    "/auth/oauth-connect": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "startOAuthConnect",
+        "x-strategy": "oauth",
+        "tags": ["auth", "cella"],
+        "summary": "Start connecting a provider",
+        "description": "Pins this browser's next provider sign-in with `type=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
+        "x-guard": ["userGuard", "stepUpGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "responses": {
+          "204": {
+            "description": "Connect pinned",
+            "headers": {
+              "Set-Cookie": {
+                "schema": {
+                  "type": "string",
+                  "maxLength": 255
+                },
+                "required": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/auth/github": {
       "get": {
         "security": [],
         "operationId": "github",
+        "x-strategy": "oauth:github",
         "tags": ["auth", "cella"],
         "summary": "Authenticate with GitHub",
         "description": "Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.",
@@ -4045,6 +4140,7 @@
       "get": {
         "security": [],
         "operationId": "google",
+        "x-strategy": "oauth:google",
         "tags": ["auth", "cella"],
         "summary": "Authenticate with Google",
         "description": "Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.",
@@ -4108,6 +4204,7 @@
       "get": {
         "security": [],
         "operationId": "microsoft",
+        "x-strategy": "oauth:microsoft",
         "tags": ["auth", "cella"],
         "summary": "Authenticate with Microsoft",
         "description": "Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.",
@@ -4171,6 +4268,7 @@
       "get": {
         "security": [],
         "operationId": "githubCallback",
+        "x-strategy": "oauth:github",
         "tags": ["auth", "cella"],
         "summary": "Callback for GitHub",
         "description": "Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.",
@@ -4256,6 +4354,7 @@
       "get": {
         "security": [],
         "operationId": "googleCallback",
+        "x-strategy": "oauth:google",
         "tags": ["auth", "cella"],
         "summary": "Callback for Google",
         "description": "Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.",
@@ -4317,6 +4416,7 @@
       "get": {
         "security": [],
         "operationId": "microsoftCallback",
+        "x-strategy": "oauth:microsoft",
         "tags": ["auth", "cella"],
         "summary": "Callback for Microsoft",
         "description": "Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.",
@@ -4352,6 +4452,271 @@
                 "required": true
               }
             }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/step-up": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getStepUp",
+        "tags": ["auth", "cella"],
+        "summary": "Get step-up state",
+        "description": "Whether this session stands stepped up for account-security actions, and what the user can offer to step up: a passkey or TOTP they hold, else an emailed confirmation link or a new sign-in.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "Step-up state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "steppedUp": {
+                      "type": "boolean",
+                      "description": "The session proved its user presence recently enough for account-security actions."
+                    },
+                    "methods": {
+                      "type": "array",
+                      "items": {
+                        "type": "string",
+                        "enum": ["passkey", "totp", "email", "sign_in"]
+                      },
+                      "description": "What the user can offer to step up; empty while impersonating."
+                    }
+                  },
+                  "required": ["steppedUp", "methods"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "stepUp",
+        "tags": ["auth", "cella"],
+        "summary": "Step up with a second factor",
+        "description": "Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes. Refused while impersonating.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["stepUpLimiter"],
+        "x-cache": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "passkeyData": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "rawId": {
+                        "type": "string"
+                      },
+                      "response": {
+                        "type": "object",
+                        "properties": {
+                          "clientDataJSON": {
+                            "type": "string"
+                          },
+                          "authenticatorData": {
+                            "type": "string"
+                          },
+                          "signature": {
+                            "type": "string"
+                          },
+                          "userHandle": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["clientDataJSON", "authenticatorData", "signature"]
+                      },
+                      "authenticatorAttachment": {
+                        "type": "string",
+                        "enum": ["cross-platform", "platform"]
+                      },
+                      "clientExtensionResults": {},
+                      "type": {
+                        "type": "string",
+                        "enum": ["public-key"]
+                      }
+                    },
+                    "required": ["id", "rawId", "response", "type"]
+                  },
+                  "totpCode": {
+                    "type": "string",
+                    "pattern": "^\\d{6}$"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Session stepped up"
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/step-up/passkey-challenge": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getStepUpPasskeyChallenge",
+        "x-strategy": "passkey",
+        "tags": ["auth", "cella"],
+        "summary": "Get a step-up passkey challenge",
+        "description": "Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it. Refused while impersonating.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["passkeyChallengeLimiter"],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "Challenge issued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "challenge": {
+                      "type": "string"
+                    },
+                    "credentialIds": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": ["challenge", "credentialIds"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/step-up/link": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "sendStepUpLink",
+        "tags": ["auth", "cella"],
+        "summary": "Email a step-up link",
+        "description": "For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in. Refused while impersonating.",
+        "x-guard": ["userGuard"],
+        "x-rate-limiter": ["spamLimiter"],
+        "x-cache": [],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "redirect": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Link sent"
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -5438,7 +5803,7 @@
         "tags": ["me", "cella"],
         "summary": "Delete self",
         "description": "Deletes the current user. This also removes the user's memberships (cascade) and sets references to the user to null where applicable.",
-        "x-guard": ["userGuard"],
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -5476,9 +5841,9 @@
         "operationId": "toggleMfa",
         "tags": ["me", "cella"],
         "summary": "Toggle MFA",
-        "description": "Enable or disable multifactor authentication for the current user. Always requires passkey or TOTP reauthentication.",
-        "x-guard": ["userGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
+        "description": "Enable or disable multifactor authentication for the current user. Needs a passkey or TOTP proof on the request, or a session stepped up with one.",
+        "x-guard": ["userGuard", "stepUpOrFactorProofGuard"],
+        "x-rate-limiter": ["pointsLimiter", "mfaToggleLimiter"],
         "x-cache": [],
         "requestBody": {
           "content": {
@@ -5636,6 +6001,9 @@
                       "revokedAt": null,
                       "revokedBy": null,
                       "revocationReason": null,
+                      "impersonatorSessionId": null,
+                      "steppedUpAt": null,
+                      "steppedUpVia": null,
                       "isCurrent": true,
                       "isNewDevice": false
                     }
@@ -5819,7 +6187,7 @@
         "operationId": "revokeMySessions",
         "tags": ["me", "cella"],
         "summary": "Revoke sessions",
-        "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.",
+        "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out. An impersonation session is refused.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -5924,7 +6292,26 @@
                           },
                           "revocationReason": {
                             "type": ["string", "null"],
-                            "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                            "enum": [
+                              "sign_out",
+                              "other_session",
+                              "mfa_enabled",
+                              "session_cap",
+                              "replaced",
+                              "impersonation_stopped",
+                              null
+                            ]
+                          },
+                          "impersonatorSessionId": {
+                            "type": ["string", "null"],
+                            "format": "uuid"
+                          },
+                          "steppedUpAt": {
+                            "type": ["string", "null"]
+                          },
+                          "steppedUpVia": {
+                            "type": ["string", "null"],
+                            "enum": ["passkey", "totp", "email", null]
                           }
                         },
                         "required": [
@@ -5945,7 +6332,10 @@
                           "expiresAt",
                           "revokedAt",
                           "revokedBy",
-                          "revocationReason"
+                          "revocationReason",
+                          "impersonatorSessionId",
+                          "steppedUpAt",
+                          "steppedUpVia"
                         ]
                       }
                     },
@@ -6062,20 +6452,11 @@
         "operationId": "getUploadToken",
         "tags": ["me", "cella"],
         "summary": "Get upload token",
-        "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the current user and organization",
+        "description": "Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. Only a system admin gets a newsletter image token.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
-          {
-            "schema": {
-              "$ref": "#/components/schemas/BooleanQueryValue"
-            },
-            "required": false,
-            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
-            "name": "publicBucket",
-            "in": "query"
-          },
           {
             "schema": {
               "type": "string",
@@ -6088,7 +6469,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["avatar", "cover", "attachment"]
+              "enum": ["avatar", "cover", "attachment", "newsletter"]
             },
             "required": true,
             "name": "templateId",
@@ -7122,9 +7503,9 @@
         "operationId": "createRequest",
         "tags": ["requests", "cella"],
         "summary": "Create request",
-        "description": "Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
+        "description": "Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.",
         "x-guard": ["publicGuard"],
-        "x-rate-limiter": ["emailEnumLimiter", "spamLimiter"],
+        "x-rate-limiter": ["spamLimiter"],
         "x-cache": [],
         "requestBody": {
           "required": true,
@@ -7154,23 +7535,8 @@
           }
         },
         "responses": {
-          "201": {
-            "description": "Requests",
-            "content": {
-              "application/json": {
-                "example": {
-                  "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
-                  "email": "al.braun57@gmail.com",
-                  "type": "contact",
-                  "message": "Amitto sapiente antiquus temptatio verus mollitia.",
-                  "createdAt": "2024-03-17T12:06:02.574Z",
-                  "wasInvited": false
-                },
-                "schema": {
-                  "$ref": "#/components/schemas/Request"
-                }
-              }
-            }
+          "204": {
+            "description": "Request received"
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -8206,7 +8572,7 @@
         "operationId": "getUsers",
         "tags": ["users", "cella"],
         "summary": "Get list of users",
-        "description": "Returns a list of users.",
+        "description": "Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.",
         "x-guard": ["userGuard", "crossTenantGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -8525,88 +8891,6 @@
                     "email": "roslyn_bayer@hotmail.com"
                   },
                   "x-tags": ["base", "users", "cella"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/yjs/token": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "x-service": "yjs",
-        "tags": ["yjs", "cella"],
-        "operationId": "getYjsToken",
-        "summary": "Get Yjs token",
-        "description": "Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.",
-        "x-guard": ["userGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "enum": ["attachment"]
-            },
-            "required": true,
-            "name": "entityType",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "query"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "organizationId",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Yjs auth token",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "token": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["token"]
                 }
               }
             }
@@ -9261,7 +9545,7 @@
           {
             "schema": {
               "type": "string",
-              "maxLength": 50
+              "format": "uuid"
             },
             "required": false,
             "name": "relatableUserId",
@@ -10210,14 +10494,6 @@
                       },
                       "required": ["original"]
                     },
-                    "bucketName": {
-                      "type": "string",
-                      "maxLength": 255
-                    },
-                    "publicBucket": {
-                      "type": "boolean",
-                      "description": "When true, the file is stored in the public bucket and served from the CDN without a presigned URL."
-                    },
                     "groupId": {
                       "type": ["string", "null"],
                       "format": "uuid"
@@ -10234,7 +10510,7 @@
                       "$ref": "#/components/schemas/StxBase"
                     }
                   },
-                  "required": ["id", "filename", "contentType", "size", "keys", "bucketName", "stx"]
+                  "required": ["id", "filename", "contentType", "size", "keys", "stx"]
                 },
                 "minItems": 1,
                 "maxItems": 50
@@ -11263,7 +11539,7 @@
         "operationId": "membershipInvite",
         "tags": ["memberships", "cella"],
         "summary": "Create memberships",
-        "description": "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization.",
+        "description": "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization. A created membership carries muted, archived and display order only when it is the caller's own.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
@@ -11362,7 +11638,49 @@
                     "data": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/MembershipBase"
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "tenantId": {
+                            "type": "string",
+                            "maxLength": 24
+                          },
+                          "channelType": {
+                            "type": "string",
+                            "enum": ["organization"]
+                          },
+                          "channelId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "userId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "role": {
+                            "type": "string",
+                            "enum": ["admin", "member"]
+                          },
+                          "organizationId": {
+                            "type": "string",
+                            "format": "uuid"
+                          },
+                          "archived": {
+                            "type": "boolean"
+                          },
+                          "muted": {
+                            "type": "boolean"
+                          },
+                          "displayOrder": {
+                            "type": "number",
+                            "minimum": -140737488355328,
+                            "maximum": 140737488355327
+                          }
+                        },
+                        "required": ["id", "tenantId", "channelType", "channelId", "userId", "role", "organizationId"]
                       }
                     },
                     "rejectedIds": {
@@ -11549,7 +11867,7 @@
         "operationId": "updateMembership",
         "tags": ["memberships", "cella"],
         "summary": "Update membership",
-        "description": "Updates the membership metadata, such as role, muted, or archived status.",
+        "description": "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. A role change, and any change to another member's membership, requires update permission on the channel.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
@@ -11628,7 +11946,75 @@
                   "updatedBy": null
                 },
                 "schema": {
-                  "$ref": "#/components/schemas/Membership"
+                  "type": "object",
+                  "properties": {
+                    "createdAt": {
+                      "type": "string"
+                    },
+                    "id": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "tenantId": {
+                      "type": "string",
+                      "maxLength": 24
+                    },
+                    "channelType": {
+                      "type": "string",
+                      "enum": ["organization"]
+                    },
+                    "channelId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "userId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "role": {
+                      "type": "string",
+                      "enum": ["admin", "member"]
+                    },
+                    "createdBy": {
+                      "type": ["string", "null"],
+                      "format": "uuid"
+                    },
+                    "updatedAt": {
+                      "type": ["string", "null"]
+                    },
+                    "updatedBy": {
+                      "type": ["string", "null"],
+                      "format": "uuid"
+                    },
+                    "organizationId": {
+                      "type": "string",
+                      "format": "uuid"
+                    },
+                    "archived": {
+                      "type": "boolean"
+                    },
+                    "muted": {
+                      "type": "boolean"
+                    },
+                    "displayOrder": {
+                      "type": "number",
+                      "minimum": -140737488355328,
+                      "maximum": 140737488355327
+                    }
+                  },
+                  "required": [
+                    "createdAt",
+                    "id",
+                    "tenantId",
+                    "channelType",
+                    "channelId",
+                    "userId",
+                    "role",
+                    "createdBy",
+                    "updatedAt",
+                    "updatedBy",
+                    "organizationId"
+                  ]
                 }
               }
             }
@@ -11941,7 +12327,57 @@
                                 "type": ["string", "null"]
                               },
                               "membership": {
-                                "$ref": "#/components/schemas/MembershipBase"
+                                "type": "object",
+                                "properties": {
+                                  "id": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "tenantId": {
+                                    "type": "string",
+                                    "maxLength": 24
+                                  },
+                                  "channelType": {
+                                    "type": "string",
+                                    "enum": ["organization"]
+                                  },
+                                  "channelId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "userId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "role": {
+                                    "type": "string",
+                                    "enum": ["admin", "member"]
+                                  },
+                                  "organizationId": {
+                                    "type": "string",
+                                    "format": "uuid"
+                                  },
+                                  "archived": {
+                                    "type": "boolean"
+                                  },
+                                  "muted": {
+                                    "type": "boolean"
+                                  },
+                                  "displayOrder": {
+                                    "type": "number",
+                                    "minimum": -140737488355328,
+                                    "maximum": 140737488355327
+                                  }
+                                },
+                                "required": [
+                                  "id",
+                                  "tenantId",
+                                  "channelType",
+                                  "channelId",
+                                  "userId",
+                                  "role",
+                                  "organizationId"
+                                ]
                               },
                               "counts": {
                                 "type": "object",
@@ -12031,7 +12467,7 @@
         "operationId": "getPendingMemberships",
         "tags": ["memberships", "cella"],
         "summary": "Get list of pending memberships",
-        "description": "Returns pending memberships for a channel entity, identified by ID. This does not include pending invitations for non-existing users.",
+        "description": "Returns the pending invitations of a channel entity, identified by ID: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -12138,14 +12574,8 @@
                   "items": [
                     {
                       "id": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
-                      "channelType": "organization",
-                      "channelId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
                       "email": "doug_larkin@hotmail.com",
-                      "userId": "50796fe8-5592-4b8e-9671-b17b41ee456f",
-                      "tokenId": "617f1449-7605-4cc9-8f52-1e3f100f6db2",
                       "role": "member",
-                      "rejectedAt": null,
-                      "remindedAt": null,
                       "createdAt": "2024-11-21T01:19:53.533Z",
                       "createdBy": {
                         "id": "8d10af2a-4b70-40b6-a3f2-0bc295d29966",
@@ -12153,20 +12583,12 @@
                         "slug": "agustin_kirlin",
                         "thumbnailUrl": null,
                         "entityType": "user"
-                      },
-                      "organizationId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
-                      "tenantId": "yx645y"
+                      }
                     },
                     {
                       "id": "ffcd93da-6f47-457f-bd00-cc2dc65b1a01",
-                      "channelType": "organization",
-                      "channelId": "772a771f-c150-465e-9635-46594859fc3d",
                       "email": "santos.jacobi12@gmail.com",
-                      "userId": "6339b813-cf84-4d75-823c-2ac3827d82be",
-                      "tokenId": "ba7cf4de-5ede-48cc-9fef-453bf074c2ef",
                       "role": "member",
-                      "rejectedAt": null,
-                      "remindedAt": null,
                       "createdAt": "2024-10-29T04:35:17.725Z",
                       "createdBy": {
                         "id": "7d580cc1-edd9-4017-be5b-49fb1c3cc0f3",
@@ -12174,9 +12596,7 @@
                         "slug": "nya_nikolaus",
                         "thumbnailUrl": null,
                         "entityType": "user"
-                      },
-                      "organizationId": "772a771f-c150-465e-9635-46594859fc3d",
-                      "tenantId": "pa56tp"
+                      }
                     }
                   ],
                   "total": 2
@@ -12192,15 +12612,9 @@
                           "id": {
                             "type": "string"
                           },
-                          "tokenId": {
-                            "type": ["string", "null"]
-                          },
                           "email": {
                             "type": "string",
                             "format": "email"
-                          },
-                          "thumbnailUrl": {
-                            "type": ["string", "null"]
                           },
                           "role": {
                             "type": ["string", "null"],
@@ -12220,7 +12634,7 @@
                             ]
                           }
                         },
-                        "required": ["id", "tokenId", "email", "thumbnailUrl", "role", "createdAt", "createdBy"]
+                        "required": ["id", "email", "role", "createdAt", "createdBy"]
                       }
                     },
                     "total": {
@@ -12263,7 +12677,7 @@
         "operationId": "resendPendingInvitation",
         "tags": ["memberships", "cella"],
         "summary": "Resend pending invitation",
-        "description": "Re-sends the invitation email for a pending membership, minting a fresh token for its own invite. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
+        "description": "Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["spamLimiter", "pointsLimiter"],
         "x-cache": [],
@@ -12434,7 +12848,7 @@
         "tags": ["service-accounts", "cella"],
         "summary": "Create service account",
         "description": "Creates a machine actor bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.",
-        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -12954,7 +13368,7 @@
         "tags": ["service-accounts", "cella"],
         "summary": "Create API key",
         "description": "Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.",
-        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -13147,6 +13561,97 @@
                 },
                 "schema": {
                   "$ref": "#/components/schemas/ApiKey"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/{organizationId}/yjs/token": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "x-service": "yjs",
+        "tags": ["yjs", "cella"],
+        "operationId": "getYjsToken",
+        "summary": "Get Yjs token",
+        "description": "Returns an Ed25519-signed token for collaboratively editing one product entity the caller may update. It names the entity, its tenant and organization, and expires after five minutes; the Yjs relay worker verifies it with the public key alone, without a backend callback, and closes the socket when it expires.",
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["attachment"]
+            },
+            "required": true,
+            "name": "entityType",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "entityId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Yjs auth token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "token": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["token"]
                 }
               }
             }

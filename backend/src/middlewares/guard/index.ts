@@ -5,6 +5,7 @@ export * from './org-guard';
 export * from './public-guard';
 export * from './relatable-guard';
 export * from './service-guard';
+export * from './step-up-guard';
 export * from './sys-admin-guard';
 export * from './tenant-guard';
 export * from './token-guard';

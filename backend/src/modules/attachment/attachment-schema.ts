@@ -62,9 +62,8 @@ const attachmentCreateBodySchema = attachmentInsertSchema
     filename: true,
     contentType: true,
     size: true,
+    // `bucketName` and `publicBucket` are left out: the server stamps them from the attachment upload template.
     keys: true,
-    bucketName: true,
-    publicBucket: true,
     groupId: true,
     convertedContentType: true,
     // Row-local public read: client-sent, the template client stamps the home channel's value.

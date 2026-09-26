@@ -34,8 +34,10 @@ async function readSecret(
   return Buffer.from(data ?? '', 'base64').toString('utf-8');
 }
 
-export async function hydrateRuntimeSecrets(opts: HydrateRuntimeSecretsOptions): Promise<void> {
+/** Write the manifest's secrets to the runtime env file and return the delivered values, so boot can redact them by value. */
+export async function hydrateRuntimeSecrets(opts: HydrateRuntimeSecretsOptions): Promise<string[]> {
   const lines: string[] = [];
+  const values: string[] = [];
   const errors: string[] = [];
 
   for (const entry of opts.manifest) {
@@ -50,9 +52,11 @@ export async function hydrateRuntimeSecrets(opts: HydrateRuntimeSecretsOptions):
       continue;
     }
     lines.push(`${entry.envVar}=${value}`);
+    values.push(value);
   }
 
   if (errors.length > 0) throw new Error(`runtime-secret-sync failed: ${errors.join(', ')}`);
   const allLines = [...lines, ...(opts.extraLines ?? [])];
   await writeFileMode(opts.outputPath, allLines.length > 0 ? `${allLines.join('\n')}\n` : '', 0o600);
+  return values;
 }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { parseBootPlanJson } from '../boot/src/plan';
 import { type CloudInitParams, renderCloudInit } from './cloud-init';
 
 function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
@@ -98,6 +99,19 @@ describe('renderCloudInit', () => {
       '"env": "APP_MODE=production\\nBACKEND_TAG=abc123def\\nBACKEND_URL=https://api.example.test"',
     );
     expect(out).toContain('"envVar": "COOKIE_SECRET"');
+  });
+
+  it('writes a boot plan the boot runner accepts, whose paths sit under the allowed prefixes', () => {
+    const out = renderCloudInit(params({ slug: 'acme', handoffSecretId: 'handoff-secret' }));
+    const planJson =
+      out.split("cat > /etc/acme/boot-plan.json <<'BOOT_PLAN_EOF'\n")[1]?.split('\nBOOT_PLAN_EOF')[0] ?? '';
+
+    const plan = parseBootPlanJson(planJson, '/etc/acme/boot-plan.json');
+    expect(plan.credentials).toEqual({
+      scwAccessKeyFile: '/etc/acme/scw-access-key',
+      scwSecretKeyFile: '/etc/acme/scw-secret-key',
+    });
+    expect(plan.serviceKeyHandoff?.cacheFile).toBe('/etc/acme/service-key.json');
   });
 
   it('gates the release companion through the boot plan', () => {

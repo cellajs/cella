@@ -1,8 +1,8 @@
 import { z } from '@hono/zod-openapi';
 import { accessScopes, appConfig } from 'shared';
 import type { OrgContext } from '#/core/context';
-import { AppError } from '#/core/error';
 import { getMcpTools } from '#/core/mcp-tool-registry';
+import { toClientError } from '#/lib/error';
 import { describeMcpTools } from '#/modules/mcp/tool-source';
 
 const PROTOCOL_VERSION = '2026-07-28';
@@ -92,9 +92,14 @@ export async function handleMcpMessage(ctx: OrgContext, message: JsonRpcMessage)
       } catch (error) {
         // The route's schemas refused the arguments: a JSON-RPC params error with the issues.
         if (error instanceof z.ZodError) return fail(-32602, 'Invalid params', error.issues);
-        // Permission and domain failures are answers the model can act on, not transport errors.
-        const text = error instanceof AppError ? `${error.type}: ${error.message}` : String(error);
-        return respond({ content: [{ type: 'text', text }], isError: true });
+        // Permission and domain failures are answers the model can act on, not transport errors. The model belongs to
+        // a third-party client, so a server error reaches it without its internals, in every mode.
+        const { type, message } = toClientError(
+          error,
+          { tool: name, organizationId: ctx.var.organizationId },
+          { exposeServerMessage: false },
+        );
+        return respond({ content: [{ type: 'text', text: `${type}: ${message}` }], isError: true });
       }
     }
 

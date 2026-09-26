@@ -9,7 +9,7 @@ import { insertUsers } from '#/modules/user/helpers/insert-users';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
-import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
+import { unsubscribeTokenRow } from '#/utils/unsubscribe-token';
 
 /**
  * A unique violation on a user's address, on `users.email` or `emails.email`. Matched on the table and column part of
@@ -48,9 +48,7 @@ export const handleCreateUser = async (
       },
     ]);
 
-    await db
-      .insert(unsubscribeTokensTable)
-      .values({ secret: generateUnsubscribeToken(normalizedEmail), userId: user.id });
+    await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRow(user.id, normalizedEmail));
 
     // The account's one email row, with verification state from the sign-up strategy. A taken address never gets here:
     // the users insert above already failed on its unique email.

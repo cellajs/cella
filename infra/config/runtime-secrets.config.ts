@@ -1,7 +1,25 @@
+import { createPrivateKey, createPublicKey, hkdfSync } from 'node:crypto';
 import { defineRuntimeSecrets } from '../lib/runtime-secrets';
 
 /**
+ * The Yjs relay's public key for the backend's token key material: the Ed25519 seed is HKDF-SHA256 of the material,
+ * as `yjsTokenSigningKey` in shared/src/utils/yjs-token.ts derives it (infra never imports the app's packages; the
+ * runtime-secrets test pins the two together). Returned as base64url of the raw 32-byte key.
+ */
+function yjsTokenPublicKey(material: string): string {
+  const seed = Buffer.from(hkdfSync('sha256', material, '', 'yjs-token-ed25519', 32));
+  const pkcs8 = Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), seed]);
+  const { x } = createPublicKey(createPrivateKey({ key: pkcs8, format: 'der', type: 'pkcs8' })).export({
+    format: 'jwk',
+  });
+  if (!x) throw new Error('runtime-secrets.config: Ed25519 public key export carried no key bytes');
+  return x;
+}
+
+/**
  * App-owned mapping from runtime secrets to their consuming services; per-service manifests restrict each VM to the values it needs.
+ * The consumer list also places the secret: one folder per consumer set, which only those services' keys read. The
+ * backend image checks the same assignment per process mode (backend/src/env-mode-secrets.ts, pinned by the tests).
  * Database DSN and CA secrets are declared by the primary store in config/stores.config.ts and merge ahead of these entries.
  */
 export const runtimeSecretsConfig = defineRuntimeSecrets({
@@ -30,16 +48,37 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'cdc', 'mcp'],
+    // The CDC socket is served by the API process's internal listener only.
+    services: ['backend', 'cdc'],
   },
-  yjsSecret: {
-    secretName: 'yjs-secret',
-    description: 'Yjs WebSocket authentication secret',
-    envVar: 'YJS_SECRET',
+  yjsTokenPrivateKey: {
+    secretName: 'yjs-token-private-key',
+    description: 'Key material of the Ed25519 key that signs Yjs editor tokens',
+    envVar: 'YJS_TOKEN_PRIVATE_KEY',
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'yjs', 'mcp'],
+    // Only the API process's token route signs; the relay verifies with the public half.
+    services: ['backend'],
+  },
+  yjsTokenPublicKey: {
+    secretName: 'yjs-token-public-key',
+    description: 'Public key the Yjs relay verifies editor tokens with; it cannot sign one',
+    envVar: 'YJS_TOKEN_PUBLIC_KEY',
+    required: true,
+    valueSource: 'pulumi',
+    generation: 'manual',
+    services: ['yjs'],
+    derivedFrom: { secretId: 'yjsTokenPrivateKey', derive: yjsTokenPublicKey },
+  },
+  yjsRelaySecret: {
+    secretName: 'yjs-relay-secret',
+    description: "Authenticates the Yjs relay on the backend's internal materialize route",
+    envVar: 'YJS_RELAY_SECRET',
+    required: true,
+    valueSource: 'pulumi',
+    generation: 'random',
+    services: ['backend', 'yjs'],
   },
   piiHashSecret: {
     secretName: 'pii-hash-secret',
@@ -66,7 +105,8 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'operator',
     generation: 'manual',
-    services: ['backend', 'mcp'],
+    // Read by the admin seed, which the backend's release companion runs.
+    services: ['backend'],
   },
   brevoApiKey: {
     secretName: 'brevo-api-key',

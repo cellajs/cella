@@ -1,10 +1,10 @@
 import { createXRoute } from '#/core/x-routes';
 import { publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
-import { bulkPointsLimiter, emailEnumLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
+import { bulkPointsLimiter, spamLimiter } from '#/middlewares/rate-limiter/limiters';
 import { requestCreateBodySchema, requestListQuerySchema, requestSchema } from '#/modules/requests/requests-schema';
 import { batchResponseSchema, errorResponseRefs, idsBodySchema, paginationSchema } from '#/schemas';
-import { mockPaginatedRequestsResponse, mockRequestResponse } from './requests-mocks';
+import { mockPaginatedRequestsResponse } from './requests-mocks';
 
 const requestRoutes = {
   createRequest: createXRoute({
@@ -12,12 +12,12 @@ const requestRoutes = {
     method: 'post',
     path: '/',
     xGuard: [publicGuard],
-    xRateLimiter: [emailEnumLimiter, spamLimiter],
+    xRateLimiter: [spamLimiter],
     middleware: [isNoBot],
     tags: ['requests', 'cella'],
     summary: 'Create request',
     description:
-      'Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.',
+      'Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.',
     request: {
       body: {
         required: true,
@@ -25,10 +25,7 @@ const requestRoutes = {
       },
     },
     responses: {
-      201: {
-        description: 'Requests',
-        content: { 'application/json': { schema: requestSchema, example: mockRequestResponse() } },
-      },
+      204: { description: 'Request received' },
       ...errorResponseRefs,
     },
   }),

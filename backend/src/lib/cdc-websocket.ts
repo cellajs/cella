@@ -3,6 +3,7 @@ import type { Duplex } from 'node:stream';
 import type { ServerType } from '@hono/node-server';
 import { z } from '@hono/zod-openapi';
 import { isValidEventType } from 'shared';
+import { safeEqual } from 'shared/utils/safe-equal';
 import { type WebSocket, WebSocketServer } from 'ws';
 import { env } from '#/env';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
@@ -90,7 +91,19 @@ function isAllowedCdcSource(remoteIp: string | undefined, forwardedFor: string |
   return false;
 }
 
-/** Self-reported CDC worker health payload pushed over the WS control channel. */
+const cdcPath = '/internal/cdc';
+
+/**
+ * Whether an upgrade targets the CDC endpoint, by its raw request target up to the query string. A
+ * WHATWG-normalized pathname would also match `/api/../internal/cdc` and `/api/%2e%2e/internal/cdc`,
+ * so a prefix-routing proxy in front of the listener could alias another route to the socket.
+ */
+export function isCdcUpgradePath(rawUrl: string | undefined): boolean {
+  if (!rawUrl) return false;
+  const queryStart = rawUrl.indexOf('?');
+  return (queryStart === -1 ? rawUrl : rawUrl.slice(0, queryStart)) === cdcPath;
+}
+
 /** WAL lag alert from the worker's `wal_lag_alert` control message. */
 export interface CdcLagAlert {
   severity: 'wal_lag_warn' | 'wal_lag_unhealthy';
@@ -101,6 +114,7 @@ export interface CdcLagAlert {
   receivedAt: string;
 }
 
+/** Self-reported CDC worker health payload pushed over the WS control channel. */
 export interface CdcWorkerHealth {
   replicationStatus: string;
   lastLsn: string | null;
@@ -134,14 +148,13 @@ class CdcWebSocketServer {
   private _workerHealth: { payload: CdcWorkerHealth; receivedAt: Date } | null = null;
   private _lastLagAlert: CdcLagAlert | null = null;
 
-  /** Attach to an existing HTTP server and authenticate upgrade requests to /internal/cdc. */
+  /** Attach to the internal listener's HTTP server and authenticate upgrade requests to /internal/cdc. */
   attachToServer(server: ServerType): void {
     this.wss = new WebSocketServer({ noServer: true });
 
     // Type assertion needed because ServerType is broader than HTTP1 Server
     (server as NodeJS.EventEmitter).on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
-      const url = new URL(request.url ?? '', `http://${request.headers.host}`);
-      if (url.pathname !== '/internal/cdc') {
+      if (!isCdcUpgradePath(request.url)) {
         socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
         socket.destroy();
         return;
@@ -161,7 +174,7 @@ class CdcWebSocketServer {
 
       // Validate shared secret for every environment.
       const secret = request.headers['x-cdc-secret'];
-      if (!env.CDC_SECRET || secret !== env.CDC_SECRET) {
+      if (!env.CDC_SECRET || typeof secret !== 'string' || !safeEqual(secret, env.CDC_SECRET)) {
         log.warn('CDC WebSocket auth failed', {
           ip: request.socket.remoteAddress,
           reason: !env.CDC_SECRET ? 'CDC_SECRET not configured' : 'invalid secret',

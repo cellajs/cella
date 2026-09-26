@@ -326,7 +326,17 @@ export type MeAuthData = {
     expiresAt: string;
     revokedAt: string | null;
     revokedBy: string | null;
-    revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
+    revocationReason:
+      | 'sign_out'
+      | 'other_session'
+      | 'mfa_enabled'
+      | 'session_cap'
+      | 'replaced'
+      | 'impersonation_stopped'
+      | null;
+    impersonatorSessionId: string | null;
+    steppedUpAt: string | null;
+    steppedUpVia: 'passkey' | 'totp' | 'email' | null;
     isCurrent: boolean;
     /**
      * The browser was first seen recently and is not the first one known.
@@ -368,6 +378,9 @@ export type InactiveMembership = {
  * A signed token authorizing file uploads to the configured storage provider.
  */
 export type UploadToken = {
+  /**
+   * Whether the upload is stored public-read in the public bucket; the template decides.
+   */
   publicBucket: boolean;
   sub: string;
   s3: boolean;
@@ -578,26 +591,6 @@ export type Attachment = {
 };
 
 /**
- * A user's membership in a channel entity, including role and activity data.
- */
-export type Membership = {
-  createdAt: string;
-  id: string;
-  tenantId: string;
-  channelType: 'organization';
-  channelId: string;
-  userId: string;
-  role: 'admin' | 'member';
-  createdBy: string | null;
-  updatedAt: string | null;
-  updatedBy: string | null;
-  archived: boolean;
-  muted: boolean;
-  displayOrder: number;
-  organizationId: string;
-};
-
-/**
  * The actor an API key runs as, with its role bindings.
  */
 export type ServiceAccount = {
@@ -734,9 +727,11 @@ export type CheckEmailError = CheckEmailErrors[keyof CheckEmailErrors];
 
 export type CheckEmailResponses = {
   /**
-   * Email exists
+   * Whether this browser is recognized for the address
    */
-  204: void;
+  200: {
+    recognized: boolean;
+  };
 };
 
 export type CheckEmailResponse = CheckEmailResponses[keyof CheckEmailResponses];
@@ -744,7 +739,7 @@ export type CheckEmailResponse = CheckEmailResponses[keyof CheckEmailResponses];
 export type InvokeTokenData = {
   body?: never;
   path: {
-    type: 'oauth-verification' | 'invitation' | 'magic';
+    type: 'oauth-verification' | 'invitation' | 'magic' | 'step-up';
     token: string;
   };
   query?: never;
@@ -783,7 +778,7 @@ export type InvokeTokenError = InvokeTokenErrors[keyof InvokeTokenErrors];
 export type GetTokenDataData = {
   body?: never;
   path: {
-    type: 'oauth-verification' | 'invitation' | 'magic';
+    type: 'oauth-verification' | 'invitation' | 'magic' | 'step-up';
     id: string;
   };
   query?: never;
@@ -976,15 +971,9 @@ export type StopImpersonationResponses = {
 export type StopImpersonationResponse = StopImpersonationResponses[keyof StopImpersonationResponses];
 
 export type ResendInvitationWithTokenData = {
-  body:
-    | {
-        email: string;
-        tokenId?: string;
-      }
-    | {
-        email?: string;
-        tokenId: string;
-      };
+  body: {
+    tokenId: string;
+  };
   path?: never;
   query?: never;
   url: '/auth/resend-invitation';
@@ -1021,7 +1010,7 @@ export type ResendInvitationWithTokenError = ResendInvitationWithTokenErrors[key
 
 export type ResendInvitationWithTokenResponses = {
   /**
-   * Invitation email sent
+   * Invitation email sent when the invitation is pending
    */
   204: void;
 };
@@ -1121,6 +1110,89 @@ export type SendMagicLinkResponses = {
 };
 
 export type SendMagicLinkResponse = SendMagicLinkResponses[keyof SendMagicLinkResponses];
+
+export type GetPendingMagicLinkData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/magic/pending';
+};
+
+export type GetPendingMagicLinkErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetPendingMagicLinkError = GetPendingMagicLinkErrors[keyof GetPendingMagicLinkErrors];
+
+export type GetPendingMagicLinkResponses = {
+  /**
+   * Masked address of the held link
+   */
+  200: {
+    email: string;
+  };
+};
+
+export type GetPendingMagicLinkResponse = GetPendingMagicLinkResponses[keyof GetPendingMagicLinkResponses];
+
+export type ConfirmMagicLinkData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/magic/confirm';
+};
+
+export type ConfirmMagicLinkErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type ConfirmMagicLinkError = ConfirmMagicLinkErrors[keyof ConfirmMagicLinkErrors];
 
 export type GenerateTotpKeyData = {
   body?: never;
@@ -1428,7 +1500,6 @@ export type DeletePasskeyResponse = DeletePasskeyResponses[keyof DeletePasskeyRe
 export type GeneratePasskeyChallengeData = {
   body: {
     type: 'authentication' | 'mfa' | 'registration';
-    email?: string;
   };
   path?: never;
   query?: never;
@@ -1493,7 +1564,6 @@ export type SignInWithPasskeyData = {
       type: 'public-key';
     };
     type: 'authentication' | 'mfa';
-    email?: string;
   };
   path?: never;
   query?: never;
@@ -1537,6 +1607,51 @@ export type SignInWithPasskeyResponses = {
 };
 
 export type SignInWithPasskeyResponse = SignInWithPasskeyResponses[keyof SignInWithPasskeyResponses];
+
+export type StartOAuthConnectData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/oauth-connect';
+};
+
+export type StartOAuthConnectErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type StartOAuthConnectError = StartOAuthConnectErrors[keyof StartOAuthConnectErrors];
+
+export type StartOAuthConnectResponses = {
+  /**
+   * Connect pinned
+   */
+  204: void;
+};
+
+export type StartOAuthConnectResponse = StartOAuthConnectResponses[keyof StartOAuthConnectResponses];
 
 export type GithubData = {
   body?: never;
@@ -1774,6 +1889,216 @@ export type MicrosoftCallbackErrors = {
 };
 
 export type MicrosoftCallbackError = MicrosoftCallbackErrors[keyof MicrosoftCallbackErrors];
+
+export type GetStepUpData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/step-up';
+};
+
+export type GetStepUpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetStepUpError = GetStepUpErrors[keyof GetStepUpErrors];
+
+export type GetStepUpResponses = {
+  /**
+   * Step-up state
+   */
+  200: {
+    /**
+     * The session proved its user presence recently enough for account-security actions.
+     */
+    steppedUp: boolean;
+    /**
+     * What the user can offer to step up; empty while impersonating.
+     */
+    methods: Array<'passkey' | 'totp' | 'email' | 'sign_in'>;
+  };
+};
+
+export type GetStepUpResponse = GetStepUpResponses[keyof GetStepUpResponses];
+
+export type StepUpData = {
+  body: {
+    passkeyData?: {
+      id: string;
+      rawId: string;
+      response: {
+        clientDataJSON: string;
+        authenticatorData: string;
+        signature: string;
+        userHandle?: string;
+      };
+      authenticatorAttachment?: 'cross-platform' | 'platform';
+      clientExtensionResults?: unknown;
+      type: 'public-key';
+    };
+    totpCode?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/step-up';
+};
+
+export type StepUpErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type StepUpError = StepUpErrors[keyof StepUpErrors];
+
+export type StepUpResponses = {
+  /**
+   * Session stepped up
+   */
+  204: void;
+};
+
+export type StepUpResponse = StepUpResponses[keyof StepUpResponses];
+
+export type GetStepUpPasskeyChallengeData = {
+  body?: never;
+  path?: never;
+  query?: never;
+  url: '/auth/step-up/passkey-challenge';
+};
+
+export type GetStepUpPasskeyChallengeErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetStepUpPasskeyChallengeError = GetStepUpPasskeyChallengeErrors[keyof GetStepUpPasskeyChallengeErrors];
+
+export type GetStepUpPasskeyChallengeResponses = {
+  /**
+   * Challenge issued
+   */
+  200: {
+    challenge: string;
+    credentialIds: Array<string>;
+  };
+};
+
+export type GetStepUpPasskeyChallengeResponse =
+  GetStepUpPasskeyChallengeResponses[keyof GetStepUpPasskeyChallengeResponses];
+
+export type SendStepUpLinkData = {
+  body?: {
+    redirect?: string;
+  };
+  path?: never;
+  query?: never;
+  url: '/auth/step-up/link';
+};
+
+export type SendStepUpLinkErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type SendStepUpLinkError = SendStepUpLinkErrors[keyof SendStepUpLinkErrors];
+
+export type SendStepUpLinkResponses = {
+  /**
+   * Link sent
+   */
+  204: void;
+};
+
+export type SendStepUpLinkResponse = SendStepUpLinkResponses[keyof SendStepUpLinkResponses];
 
 export type GetDomainsData = {
   body?: never;
@@ -2655,7 +2980,17 @@ export type RevokeMySessionsResponses = {
       expiresAt: string;
       revokedAt: string | null;
       revokedBy: string | null;
-      revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | null;
+      revocationReason:
+        | 'sign_out'
+        | 'other_session'
+        | 'mfa_enabled'
+        | 'session_cap'
+        | 'replaced'
+        | 'impersonation_stopped'
+        | null;
+      impersonatorSessionId: string | null;
+      steppedUpAt: string | null;
+      steppedUpVia: 'passkey' | 'totp' | 'email' | null;
     }>;
     /**
      * Identifiers of items that could not be processed
@@ -2724,12 +3059,8 @@ export type GetUploadTokenData = {
   body?: never;
   path?: never;
   query: {
-    /**
-     * Boolean query value accepted as a boolean or its lowercase string representation.
-     */
-    publicBucket?: BooleanQueryValue;
     organizationId?: string;
-    templateId: 'avatar' | 'cover' | 'attachment';
+    templateId: 'avatar' | 'cover' | 'attachment' | 'newsletter';
   };
   url: '/me/upload-token';
 };
@@ -3591,9 +3922,9 @@ export type CreateRequestError = CreateRequestErrors[keyof CreateRequestErrors];
 
 export type CreateRequestResponses = {
   /**
-   * Requests
+   * Request received
    */
-  201: Request;
+  204: void;
 };
 
 export type CreateRequestResponse = CreateRequestResponses[keyof CreateRequestResponses];
@@ -4170,57 +4501,6 @@ export type GetUserResponses = {
 
 export type GetUserResponse = GetUserResponses[keyof GetUserResponses];
 
-export type GetYjsTokenData = {
-  body?: never;
-  path?: never;
-  query: {
-    entityType: 'attachment';
-    tenantId: string;
-    organizationId: string;
-  };
-  url: '/yjs/token';
-};
-
-export type GetYjsTokenErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetYjsTokenError = GetYjsTokenErrors[keyof GetYjsTokenErrors];
-
-export type GetYjsTokenResponses = {
-  /**
-   * Yjs auth token
-   */
-  200: {
-    token: string;
-  };
-};
-
-export type GetYjsTokenResponse = GetYjsTokenResponses[keyof GetYjsTokenResponses];
-
 export type GetApiProtectedResourceMetadataData = {
   body?: never;
   path: {
@@ -4754,11 +5034,6 @@ export type CreateAttachmentsData = {
       thumbnail?: string;
       converted?: string;
     };
-    bucketName: string;
-    /**
-     * When true, the file is stored in the public bucket and served from the CDN without a presigned URL.
-     */
-    publicBucket?: boolean;
     groupId?: string | null;
     /**
      * MIME type of the server-converted variant; null when none.
@@ -5230,7 +5505,18 @@ export type MembershipInviteResponses = {
    * Created memberships and invite count
    */
   200: {
-    data: Array<MembershipBase>;
+    data: Array<{
+      id: string;
+      tenantId: string;
+      channelType: 'organization';
+      channelId: string;
+      userId: string;
+      role: 'admin' | 'member';
+      organizationId: string;
+      archived?: boolean;
+      muted?: boolean;
+      displayOrder?: number;
+    }>;
     /**
      * Identifiers of items that could not be processed
      */
@@ -5296,7 +5582,22 @@ export type UpdateMembershipResponses = {
   /**
    * Membership updated
    */
-  200: Membership;
+  200: {
+    createdAt: string;
+    id: string;
+    tenantId: string;
+    channelType: 'organization';
+    channelId: string;
+    userId: string;
+    role: 'admin' | 'member';
+    createdBy: string | null;
+    updatedAt: string | null;
+    updatedBy: string | null;
+    organizationId: string;
+    archived?: boolean;
+    muted?: boolean;
+    displayOrder?: number;
+  };
 };
 
 export type UpdateMembershipResponse = UpdateMembershipResponses[keyof UpdateMembershipResponses];
@@ -5412,7 +5713,18 @@ export type GetMembersResponses = {
     items: Array<
       UserBase & {
         lastSeenAt: string | null;
-        membership: MembershipBase;
+        membership: {
+          id: string;
+          tenantId: string;
+          channelType: 'organization';
+          channelId: string;
+          userId: string;
+          role: 'admin' | 'member';
+          organizationId: string;
+          archived?: boolean;
+          muted?: boolean;
+          displayOrder?: number;
+        };
         counts?: {
           memberships: {
             [key: string]: unknown;
@@ -5487,9 +5799,7 @@ export type GetPendingMembershipsResponses = {
   200: {
     items: Array<{
       id: string;
-      tokenId: string | null;
       email: string;
-      thumbnailUrl: string | null;
       role: 'admin' | 'member' | null;
       createdAt: string;
       createdBy: UserMinimalBase | null;
@@ -5932,3 +6242,56 @@ export type RevokeApiKeyResponses = {
 };
 
 export type RevokeApiKeyResponse = RevokeApiKeyResponses[keyof RevokeApiKeyResponses];
+
+export type GetYjsTokenData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query: {
+    entityType: 'attachment';
+    entityId: string;
+  };
+  url: '/{tenantId}/{organizationId}/yjs/token';
+};
+
+export type GetYjsTokenErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetYjsTokenError = GetYjsTokenErrors[keyof GetYjsTokenErrors];
+
+export type GetYjsTokenResponses = {
+  /**
+   * Yjs auth token
+   */
+  200: {
+    token: string;
+  };
+};
+
+export type GetYjsTokenResponse = GetYjsTokenResponses[keyof GetYjsTokenResponses];

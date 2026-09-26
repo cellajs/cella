@@ -2,7 +2,6 @@ import type { MiddlewareHandler } from 'hono';
 import type { Env } from '#/core/context';
 import { rateLimiter } from '#/middlewares/rate-limiter/core';
 import { bulkBodyLength } from '#/middlewares/rate-limiter/helpers';
-import { sendLockoutEmail } from '#/middlewares/rate-limiter/send-lockout-email';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 
 /** Keyed per user when authenticated, so invite flows behind a shared NAT IP get their own budget. */
@@ -12,9 +11,13 @@ export const spamLimiter = rateLimiter('success', 'spam', [['userId', 'ip']], {
   description: 'Max 10 requests/hour per user (per IP when anonymous) for email-sending endpoints',
 });
 
-export const emailEnumLimiter = rateLimiter('failseries', 'emailEnum', ['ip'], {
-  limits: { points: 5 },
-  description: 'Blocks IP for 30 min after 5 consecutive failures',
+/**
+ * Address lookups per IP. check-email answers truthfully only a browser that signed in to the address before, so every
+ * lookup counts, hits included: this bounds guessing on a shared browser. Past it, sign-in goes on without lookups.
+ */
+export const emailEnumLimiter = rateLimiter('limit', 'emailEnum', ['ip'], {
+  limits: { points: 30, duration: 60 * 60, blockDuration: 60 * 30 },
+  description: 'Max 30 address lookups/hour per IP, then blocks the IP for 30 min',
 });
 
 export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
@@ -29,12 +32,22 @@ export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', [['userI
   description: 'Max 2000 requests/hour per user for presigned URLs',
 });
 
-/** Keyed by IP only, since the body carries just the code; the lockout email reads the `confirm-mfa` cookie. */
-const totpLimits = { points: 5, duration: 60 * 60, blockDuration: 60 * 30 };
+/** Keyed by IP, across accounts. Each account also has its own budget, with a lockout mail, in `verifyTotp`. */
 export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerification', ['ip'], {
-  limits: totpLimits,
+  limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30 },
   description: 'Blocks IP for 30 min after 5 failed TOTP attempts',
-  onBlock: (key, ctx) => sendLockoutEmail(key, 'totp-lockout', ctx, totpLimits),
+});
+
+/** Keyed per account: a session guessing authenticator codes on the MFA toggle is blocked whatever IP it uses. */
+export const mfaToggleLimiter = rateLimiter('failseries', 'mfaToggle', ['userId'], {
+  limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30 },
+  description: 'Blocks the account for 30 min after 5 failed second-factor checks on the MFA toggle',
+});
+
+/** Keyed per account like the MFA toggle's; a proof that verifies clears the series. */
+export const stepUpLimiter = rateLimiter('failseries', 'stepUp', ['userId'], {
+  limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30, successStatusCodes: [200, 201, 204] },
+  description: 'Blocks the account for 30 min after 5 failed second-factor checks on step-up',
 });
 
 export const magicLinkLimiter = rateLimiter('limit', 'magicLink', ['email'], {
@@ -69,6 +82,16 @@ export const pointsLimiter = (cost = 1) =>
       return budget ?? defaultRestrictions().rateLimits.apiPointsPerHour;
     },
   });
+
+/**
+ * Client metadata documents the authorization server fetches per IP: a client id it has not cached may be the URL of a
+ * document on a host the requester picks. Charged by the provider's fetch hook (`chargeLimiter`), so requests that fetch
+ * nothing, such as a known client's refresh, never count.
+ */
+export const clientMetadataFetchLimiter = rateLimiter('limit', 'clientMetadataFetch', ['ip'], {
+  limits: { points: 60, duration: 60, blockDuration: 60 },
+  description: 'Max 60 client metadata document fetches per minute per IP',
+});
 
 /** Per-second ceiling for API keys: a runaway integration hits this long before the hourly points budget. */
 export const serviceBurstLimiter = rateLimiter('limit', 'serviceBurst', ['actorId'], {

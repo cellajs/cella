@@ -225,7 +225,6 @@ jobs:
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 26
-          cache: "pnpm"
 
       - name: Install dependencies
         if: env.SCW_ACCESS_KEY != ''
@@ -282,7 +281,8 @@ jobs:
 
   # Schema cache-bust gate: a breaking OpenAPI change to cached entity shapes
   # must be accompanied by a `clientCacheVersion` bump (shared/config/config.default.ts)
-  # so offline clients wipe stale persisted query data. 
+  # so offline clients wipe stale persisted query data. It compares the committed
+  # spec (sdk/gen/openapi.json, which the commit hook regenerates) of base and head.
   schema-bust-gate:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -295,17 +295,16 @@ jobs:
           fetch-depth: 0 # need base-branch blobs to diff
 
       - name: Breaking-change gate
-        # pull_request always supplies github.base_ref; keep a main fallback for safety.
-        env:
-          BASE_REF: ${{ github.base_ref || 'main' }}
+        # The checkout is the PR's merge commit: its first parent is the base the PR merges into, whatever the base
+        # branch did since.
         run: |
           set -euo pipefail
-          git fetch --no-tags --depth=1 origin "$BASE_REF"
-          SPEC=backend/openapi.cache.json
+          BASE=HEAD^1
+          SPEC=sdk/gen/openapi.json
           CFG=shared/config/config.default.ts
 
           # No base spec (first introduction) → nothing to compare.
-          if ! git show "origin/$BASE_REF:$SPEC" > /tmp/base-openapi.json 2>/dev/null; then
+          if ! git show "$BASE:$SPEC" > /tmp/base-openapi.json 2>/dev/null; then
             echo "No base OpenAPI spec; skipping gate."
             exit 0
           fi
@@ -325,7 +324,7 @@ jobs:
           fi
 
           # Breaking change present → require a clientCacheVersion bump in the same PR.
-          BASE_BUSTER=$(git show "origin/$BASE_REF:$CFG" | grep -oE "clientCacheVersion: '[^']+'" || true)
+          BASE_BUSTER=$(git show "$BASE:$CFG" | grep -oE "clientCacheVersion: '[^']+'" || true)
           HEAD_BUSTER=$(grep -oE "clientCacheVersion: '[^']+'" "$CFG" || true)
           echo "clientCacheVersion base=[$BASE_BUSTER] head=[$HEAD_BUSTER]"
           if [ -n "$HEAD_BUSTER" ] && [ "$BASE_BUSTER" != "$HEAD_BUSTER" ]; then

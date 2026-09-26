@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import type { ApiError, CreateTotpData, CreateTotpResponses, MeAuthData } from 'sdk';
 import { createTotp, generateTotpKey } from 'sdk';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
+import { withStepUp } from '~/modules/auth/step-up';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -30,7 +31,7 @@ export function SetupTotp() {
     ApiError | Error,
     NonNullable<CreateTotpData['body']>
   >({
-    mutationFn: async (body) => await createTotp({ body }),
+    mutationFn: (body) => withStepUp(() => createTotp({ body })),
     onSuccess: () => {
       useDialoger.getState().remove('setup-totp');
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
@@ -57,9 +58,10 @@ export function SetupTotp() {
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
+  // A new key once the QR code expired may come after the step-up window: the re-auth dialog opens, then it loads.
   const { data } = useSuspenseQuery({
     queryKey: ['totp', 'uri'],
-    queryFn: async () => await generateTotpKey(),
+    queryFn: () => withStepUp(() => generateTotpKey()),
     staleTime: 0,
   });
 

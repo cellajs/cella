@@ -34,13 +34,12 @@ export const mockTokenDataResponse = (key = 'token-data:default') =>
     inactiveMembershipId: undefined,
   }));
 
-export const mockPasskeyRecord = (userId: string, nameOnDevice = 'Test Device', key = 'passkey-record:default') =>
-  withFakerSeed(key, () => ({
-    userId,
-    credentialId: mockNanoid(32),
-    publicKey: mockNanoid(40),
-    counter: 0,
-    nameOnDevice,
-    deviceType: 'desktop' as const,
-    createdAt: mockPastIsoDate(),
-  }));
+/** A passkey row to insert. The credential id is fresh on every call: a credential id names one account. */
+export const mockPasskeyRecord = (userId: string, nameOnDevice = 'Test Device', key = 'passkey-record:default') => ({
+  ...withFakerSeed(key, () => ({ publicKey: mockNanoid(40), createdAt: mockPastIsoDate() })),
+  userId,
+  credentialId: mockNanoid(32),
+  counter: 0,
+  nameOnDevice,
+  deviceType: 'desktop' as const,
+});

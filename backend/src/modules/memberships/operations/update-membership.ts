@@ -3,6 +3,7 @@ import { getEdgeOrder } from 'shared/utils/display-order';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { getIsoDate } from '#/utils/iso-date';
@@ -23,12 +24,24 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
 
   const { role, archived, muted, displayOrder } = input;
 
+  const setsPersonalView = archived !== undefined || muted !== undefined || displayOrder !== undefined;
+  // With no field to change, the write would only stamp the caller on the row.
+  if (role === undefined && !setsPersonalView) {
+    throw new AppError(400, 'invalid_request', 'warn', { meta: { membership: membershipId, reason: 'no_fields' } });
+  }
+
   let orderToUpdate = displayOrder;
 
   const membershipToUpdate = await findMembershipByIdInOrg(ctx, { membershipId });
 
   if (!membershipToUpdate) {
     throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { membership: membershipId } });
+  }
+
+  // Archive, mute and order are the member's own view of the channel: nobody sets them for someone else.
+  const isOwnMembership = membershipToUpdate.userId === actorId;
+  if (setsPersonalView && !isOwnMembership) {
+    throw new AppError(403, 'forbidden', 'warn', { entityType: 'user', meta: { membership: membershipId } });
   }
 
   const updatedType = membershipToUpdate.channelType;
@@ -38,7 +51,9 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
     throw new AppError(400, 'invalid_role', 'warn', { entityType: updatedType });
   }
 
-  await getValidChannel(ctx, membershipToUpdate.channelId, updatedType, role ? 'update' : 'read');
+  // A role change, and any change to someone else's membership, is an act on the channel.
+  const action = role !== undefined || !isOwnMembership ? 'update' : 'read';
+  await getValidChannel(ctx, membershipToUpdate.channelId, updatedType, action);
 
   if (archived !== undefined && archived !== membershipToUpdate.archived) {
     const relevantOrders = memberships
@@ -64,5 +79,5 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
 
   log.info('Membership updated', { userId: updatedMembership.userId, membershipId: updatedMembership.id });
 
-  return updatedMembership;
+  return membershipAsSeenBy(updatedMembership, actorId);
 }

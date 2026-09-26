@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   applyHint,
   classifyPreviewSteps,
   formatPending,
   isPrivilegedUrn,
+  main,
+  type PreviewStep,
   readPath,
   splitUrn,
 } from './preflight-privileged';
@@ -87,5 +89,34 @@ describe('classifyPreviewSteps', () => {
     expect(text).toContain('1 privileged change(s) pending');
     expect(text).toContain(applyHint('production'));
     expect(applyHint('staging')).toBe('pnpm infra --mode staging  →  Stack setup  →  Apply infra change');
+  });
+});
+
+describe('main', () => {
+  const env = { ...process.env };
+  afterEach(() => {
+    process.env = { ...env };
+  });
+
+  const run = (steps: PreviewStep[]) =>
+    main(['--mode', 'production'], { stackIsSetUp: () => true, preview: async () => steps });
+
+  it('throws exit code 2 with the operator command when a privileged change is pending', async () => {
+    const pending = run([{ op: 'create', urn: urn('scaleway:databases/privilege:Privilege', 'admin-cron-privilege') }]);
+    await expect(pending).rejects.toMatchObject({ name: 'ExitCodeError', exitCode: 2 });
+    await expect(pending).rejects.toThrow(applyHint('production'));
+  });
+
+  it('passes when every change is one a CI deploy applies', async () => {
+    await expect(run([{ op: 'create', urn: urn('scaleway:instance/server:Server', 'vm-backend-abc') }])).resolves.toBe(
+      undefined,
+    );
+  });
+
+  it('skips a mode without a set-up stack', async () => {
+    const preview = async (): Promise<PreviewStep[]> => {
+      throw new Error('must not preview');
+    };
+    await expect(main(['--mode', 'staging'], { stackIsSetUp: () => false, preview })).resolves.toBe(undefined);
   });
 });

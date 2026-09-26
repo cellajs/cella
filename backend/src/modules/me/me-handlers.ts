@@ -5,11 +5,14 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
+import { mfaFactorRules } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
+import { verifyPasskeyAssertion } from '#/modules/auth/passkeys/helpers/passkey';
 import type { AuthStrategy } from '#/modules/auth/sessions-db';
-import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
+import { requireStepUp } from '#/modules/auth/step-up/helpers/step-up';
+import { verifyTotp } from '#/modules/auth/totps/helpers/totps';
 import { getUserSessions } from '#/modules/me/helpers/get-user-info';
 import { deleteUser, findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 import { meRoutes } from '#/modules/me/me-routes';
@@ -23,6 +26,7 @@ import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-a
 import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
 import { unsubscribeMeOp } from '#/modules/me/operations/unsubscribe-me';
 import { updateMeOp } from '#/modules/me/operations/update-me';
+import { deleteConsentsOfUsers } from '#/modules/oauth-server/oauth-server-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 
@@ -34,17 +38,33 @@ app.openapi(meRoutes.getMe, async (ctx) => {
 });
 
 app.openapi(meRoutes.toggleMfa, async (ctx) => {
-  const user = ctx.var.user;
+  const { user, session } = ctx.var;
 
   const { mfaRequired, passkeyData, totpCode } = ctx.req.valid('json');
 
-  const strategy: Extract<AuthStrategy, 'passkey' | 'totp'> = passkeyData ? 'passkey' : 'totp';
+  // Refused before a proof is spent; the transaction below checks again under the lock, and that check decides.
+  if (mfaRequired) await mfaFactorRules.assertCanEnable(baseDb, user.id);
+
+  // A session alone never changes how the account is protected: a second factor on the request, checked here behind
+  // the failure limiter, or a session stepped up with one (the guard let nothing else through).
+  const onRequest: Extract<AuthStrategy, 'passkey' | 'totp'> | null = passkeyData
+    ? 'passkey'
+    : totpCode
+      ? 'totp'
+      : null;
+  const strategy = onRequest ?? (await requireStepUp(session)).factor;
+  if (mfaRequired && !strategy) {
+    throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'second_factor_required' } });
+  }
 
   try {
-    if (passkeyData)
-      await validatePasskey(ctx, { assertion: passkeyData as AuthenticationResponseJSON, userId: user.id });
+    if (passkeyData) {
+      const assertion = passkeyData as AuthenticationResponseJSON;
+      // A step-up challenge only, as for POST /auth/step-up: a sign-in or MFA challenge never proves presence here.
+      await verifyPasskeyAssertion(ctx, { assertion, purpose: 'step-up', userId: user.id });
+    }
 
-    if (totpCode) await validateTOTP({ code: totpCode, userId: user.id });
+    if (totpCode) await verifyTotp(ctx, { user, code: totpCode });
   } catch (error) {
     if (error instanceof AppError) throw error;
 
@@ -53,14 +73,22 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
     });
   }
 
-  // Update MFA flag and invalidate sessions atomically
-  const updatedUser = await baseDb.transaction(async (tx) => {
-    return updateUserMfa({ var: { ...ctx.var, db: tx } }, { mfaRequired });
+  // The flag and the sessions it ends change together, after a factor delete that got the lock first.
+  const updatedUser = await mfaFactorRules.locked(user.id, async (tx) => {
+    if (mfaRequired) await mfaFactorRules.assertCanEnable(tx, user.id);
+    const txCtx = { var: { ...ctx.var, db: tx } };
+    const updated = await updateUserMfa(txCtx, { mfaRequired });
+    if (updated.mfaRequired) {
+      // This browser's session gives way to the mfa session minted below; every other regular session ends.
+      await endSessions(txCtx, { userId: user.id, sessionIds: [ctx.var.sessionId], reason: 'replaced', by: user.id });
+      await endSessions(txCtx, { userId: user.id, all: true, type: 'regular', reason: 'mfa_enabled', by: user.id });
+    }
+    return updated;
   });
 
   invalidateCache.user(user.id);
 
-  if (updatedUser.mfaRequired) {
+  if (updatedUser.mfaRequired && strategy) {
     // Clear session cookie to enforce fresh login
     deleteAuthCookie(ctx, 'session');
 
@@ -105,8 +133,9 @@ app.openapi(meRoutes.deleteMe, async (ctx) => {
 
   // CASCADE SET NULL on createdBy/updatedBy propagates to product entities.
   await deleteUser(ctx);
+  await deleteConsentsOfUsers(ctx, { userIds: [user.id] });
 
-  invalidateCache.user(user.id);
+  await endSessions(ctx, { userId: user.id, all: true, reason: 'user_deleted', by: user.id });
   deleteAuthCookie(ctx, 'session');
   log.info('User deleted');
 
@@ -120,8 +149,8 @@ app.openapi(meRoutes.deleteMyMembership, async (ctx) => {
 });
 
 app.openapi(meRoutes.getUploadToken, async (ctx) => {
-  const { publicBucket, organizationId, templateId } = ctx.req.valid('query');
-  const data = getUploadTokenOp(ctx, { publicBucket, organizationId, templateId });
+  const { organizationId, templateId } = ctx.req.valid('query');
+  const data = getUploadTokenOp(ctx, { organizationId, templateId });
   return ctx.json(data, 200);
 });
 

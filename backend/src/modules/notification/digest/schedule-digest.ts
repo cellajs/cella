@@ -4,8 +4,8 @@ import { runDigest } from './run-digest';
 const ONE_HOUR_MS = 60 * 60 * 1000;
 
 /**
- * Hourly in-process scheduler for {@link runDigest}, gated by the caller to the migration-owning
- * instance so exactly one process runs it (the same guard `scheduleDbMaintenance` uses).
+ * Hourly in-process scheduler for {@link runDigest}, started only on the instance that owns the
+ * backend jobs (lib/job-ownership.ts), so exactly one process runs it.
  *
  * Hourly because the run decides per user whether their digest is due: an hourly tick with a
  * stored watermark survives restarts and deploys, while a fixed-time cron silently loses a day

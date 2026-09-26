@@ -1,7 +1,23 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import { isEmptyUpdate, isIntegrable, mergeState } from '../sync/document-state';
 import { mapUpdate, readMap } from './helpers';
+
+// Yjs merges nearly any update that decodes; a test marks a payload whose merge throws to reach the one-at-a-time path.
+const unmergeable = new Set<Uint8Array>();
+vi.mock('yjs', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('yjs')>();
+  return {
+    ...actual,
+    mergeUpdates: (parts: Uint8Array[]) => {
+      if (parts.some((part) => unmergeable.has(part))) throw new Error('does not merge');
+      return actual.mergeUpdates(parts);
+    },
+  };
+});
+
+const { classifyUpdate, isIntegrable, mergeLog, mergeState } = await import('../sync/document-state');
+
+const row = (id: number, payload: Uint8Array) => ({ id, payload, userId: `user-${id}` });
 
 describe('mergeState', () => {
   it('returns null with nothing to merge and the single part unchanged', () => {
@@ -36,19 +52,60 @@ describe('mergeState', () => {
   });
 });
 
-describe('isEmptyUpdate', () => {
-  it('is true for the empty state of a fresh doc and false for content or deletions', () => {
-    expect(isEmptyUpdate(Y.encodeStateAsUpdate(new Y.Doc()))).toBe(true);
-    expect(isEmptyUpdate(mapUpdate('k', 1))).toBe(false);
+describe('classifyUpdate', () => {
+  it('is empty for the empty state of a fresh doc, an update for content or deletions', () => {
+    expect(classifyUpdate(Y.encodeStateAsUpdate(new Y.Doc()))).toBe('empty');
+    expect(classifyUpdate(mapUpdate('k', 1))).toBe('update');
     const doc = new Y.Doc();
     doc.getMap('data').set('k', 1);
     const before = Y.encodeStateVector(doc);
     doc.getMap('data').delete('k');
-    expect(isEmptyUpdate(Y.encodeStateAsUpdate(doc, before))).toBe(false);
+    expect(classifyUpdate(Y.encodeStateAsUpdate(doc, before))).toBe('update');
   });
 
-  it('treats unparseable bytes as non-empty so they still reach the log', () => {
-    expect(isEmptyUpdate(new Uint8Array([255, 255, 255]))).toBe(false);
+  it('calls bytes Yjs cannot decode malformed, so they never reach the log', () => {
+    expect(classifyUpdate(new Uint8Array([255, 255, 255]))).toBe('malformed');
+    expect(classifyUpdate(new Uint8Array([1, 2, 3]))).toBe('malformed');
+  });
+});
+
+describe('mergeLog', () => {
+  it('must not let a row Yjs cannot decode block the rows around it', () => {
+    const bad = row(2, new Uint8Array([1, 2, 3]));
+    const { state, rejected } = mergeLog(mapUpdate('base', true), [
+      row(1, mapUpdate('a', 1)),
+      bad,
+      row(3, mapUpdate('b', 2)),
+    ]);
+    expect(rejected).toEqual([bad]);
+    expect(readMap(state!)).toEqual({ base: true, a: 1, b: 2 });
+  });
+
+  it('must not return a lone undecodable row as the document', () => {
+    const bad = row(1, new Uint8Array([1, 2, 3]));
+    expect(mergeLog(null, [bad])).toEqual({ state: null, rejected: [bad] });
+  });
+
+  it('must not let a row that decodes but will not merge block the rows around it', () => {
+    const poison = row(2, mapUpdate('poison', true));
+    unmergeable.add(poison.payload);
+    try {
+      const { state, rejected } = mergeLog(mapUpdate('base', true), [
+        row(1, mapUpdate('a', 1)),
+        poison,
+        row(3, mapUpdate('b', 2)),
+      ]);
+      expect(rejected).toEqual([poison]);
+      expect(readMap(state!)).toEqual({ base: true, a: 1, b: 2 });
+    } finally {
+      unmergeable.delete(poison.payload);
+    }
+  });
+
+  it('merges every row in one call when all merge (positive control)', () => {
+    const { state, rejected } = mergeLog(null, [row(1, mapUpdate('a', 1)), row(2, mapUpdate('b', 2))]);
+    expect(rejected).toEqual([]);
+    expect(readMap(state!)).toEqual({ a: 1, b: 2 });
   });
 });
 

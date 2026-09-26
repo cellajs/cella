@@ -9,7 +9,6 @@ import { appConfig } from 'shared';
 import type { z } from 'zod';
 import type { ApiError } from '~/lib/api';
 import { useAuthStore } from '~/modules/auth/auth-store';
-import type { AuthStep } from '~/modules/auth/types';
 import { SubmitButton } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
@@ -34,22 +33,17 @@ export function CheckEmailStep() {
     defaultValues: { email: '' },
   });
 
+  // A browser that never signed in to the address gets the step that does not say whether it has an account.
   const { mutate: _checkEmail, isPending } = useMutation<CheckEmailResponse, ApiError, CheckEmailData['body']>({
     mutationFn: (body) => checkEmail({ body }),
-    onSuccess: () => setStep('signIn', form.getValues('email')),
+    onSuccess: ({ recognized }) => {
+      if (!recognized) setRestrictedMode(true);
+      setStep('signIn', form.getValues('email'));
+    },
     onError: (error: ApiError) => {
-      if (error.status === 429) {
-        setRestrictedMode(true);
-        return setStep('signIn', form.getValues('email'));
-      }
-
-      let nextStep: AuthStep = 'inviteOnly';
-
-      if (appConfig.has.selfRegistration) nextStep = 'signUp';
-      else if (appConfig.has.waitlist) nextStep = 'waitlist';
-
-      if (error.status === 404) return setStep(nextStep, form.getValues('email'));
-      return null;
+      if (error.status !== 429) return;
+      setRestrictedMode(true);
+      setStep('signIn', form.getValues('email'));
     },
   });
 

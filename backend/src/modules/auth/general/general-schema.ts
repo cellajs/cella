@@ -1,13 +1,10 @@
 import { z } from '@hono/zod-openapi';
-import { appConfig, roles, type TokenType } from 'shared';
+import { appConfig, roles } from 'shared';
+import { linkTokenTypes } from '#/modules/auth/tokens/token-policies';
 import { validEmailSchema } from '#/schemas';
 
-/** Token types invokable via a link. `confirm-mfa` is excluded: it lives only in a cookie during an MFA challenge and invoking it would clobber that cookie. */
-export const invokableTokenTypes = [
-  'oauth-verification',
-  'invitation',
-  'magic',
-] as const satisfies readonly TokenType[];
+/** Token types invokable via a link: the link-carried ones. A cookie-carried token is never opened as a link. */
+export const invokableTokenTypes = linkTokenTypes;
 
 export const emailBodySchema = z.object({
   email: validEmailSchema,

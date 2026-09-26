@@ -1,9 +1,14 @@
 import { z } from 'zod';
+import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import { errorSearchSchema } from '~/modules/common/search-params-schemas';
 
 export const authenticateRouteSearchParamsSchema = z.object({
   tokenId: z.string().optional(),
-  redirect: z.string().optional(),
+  /** An unsafe redirect reads as absent. */
+  redirect: z
+    .string()
+    .optional()
+    .transform((redirect) => safeRedirectPath(redirect)),
   fromRoot: z.boolean().optional(),
 });
 

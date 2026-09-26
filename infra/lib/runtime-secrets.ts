@@ -1,7 +1,8 @@
 import type { ServiceName } from '../compose/compose';
 import { runtimeSecretsConfig } from '../config/runtime-secrets.config';
 import { appStores } from '../config/stores.config';
-import { serviceNames } from './services';
+import { serviceKeyCondition } from './scaleway/secret-paths';
+import { principalSecretScopeSlugs, serviceNames } from './services';
 import type { StoreProvisioner } from './stores';
 
 export const runtimeSecretConsumers = serviceNames;
@@ -27,6 +28,14 @@ export interface RuntimeSecretConfig {
   generation: RuntimeSecretGeneration;
   /** Services that receive the secret in their per-VM `.env.runtime`. */
   services: readonly RuntimeSecretConsumer[];
+  /** A pulumi-owned value computed from another pulumi-owned secret's value (a public key from its private key), so the two change together. */
+  derivedFrom?: RuntimeSecretDerivation;
+}
+
+/** How a derived secret's value follows its source: the source secret's id and a pure function of the source value. */
+export interface RuntimeSecretDerivation {
+  secretId: string;
+  derive: (sourceValue: string) => string;
 }
 
 /** A runtime-secret id. Store contributions register ids outside the app-config key union, so this stays a plain string and load-time validation rejects duplicates. */
@@ -43,6 +52,7 @@ export interface RuntimeSecretDefinition {
   generation: RuntimeSecretGeneration;
   /** Consuming services; store contributions are runtime-validated against the registry. */
   services: readonly string[];
+  derivedFrom?: RuntimeSecretDerivation;
 }
 
 /** Helper for `runtime-secrets.config.ts`: typed identity preserving literal keys. */
@@ -106,6 +116,16 @@ export function validateRuntimeSecrets(
     }
     seenSecretNames.add(secret.secretName);
   }
+  for (const secret of secrets) {
+    if (!secret.derivedFrom) continue;
+    const source = secrets.find((candidate) => candidate.id === secret.derivedFrom?.secretId);
+    // Only Pulumi writes both values, so the derived one can never drift from an out-of-band rotation of its source.
+    if (source?.valueSource !== 'pulumi' || source.derivedFrom || secret.valueSource !== 'pulumi') {
+      throw new Error(
+        `runtime-secrets.config: secret '${secret.id}' must be pulumi-owned and derive from a pulumi-owned, non-derived secret.`,
+      );
+    }
+  }
 }
 
 /** Flattened runtime secret definitions for this app: store contributions then `runtime-secrets.config.ts` entries, validated at load time. */
@@ -130,4 +150,18 @@ export function unionRuntimeSecrets(consumers: readonly RuntimeSecretConsumer[])
       seen.add(definition.id);
       return true;
     });
+}
+
+/**
+ * The secret-read condition of a service principal: its scope's own folders plus the shared folder of every runtime
+ * secret its scope consumes, and nothing else. The Pulumi program (resources/vm-iam.ts) and the deploy's grant
+ * assertion both build it here, so they compare equal as strings.
+ */
+export function principalSecretCondition(slug: string, mode: string, singleVM: boolean, service: ServiceName): string {
+  return serviceKeyCondition(
+    slug,
+    mode,
+    principalSecretScopeSlugs(singleVM, service),
+    runtimeSecrets.map((secret) => secret.services),
+  );
 }

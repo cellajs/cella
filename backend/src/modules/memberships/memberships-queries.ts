@@ -3,14 +3,13 @@ import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { DbContext, OrgContext, UserContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
-import { tokensTable } from '#/modules/auth/tokens-db';
 import { lastPostedAtOrder, memberCountsSelect } from '#/modules/memberships/helpers/member-counts';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import type { UserMinimalBase } from '#/modules/user/helpers/audit-user';
-import { memberSelect, userBaseSelect } from '#/modules/user/helpers/select';
+import { memberSelect } from '#/modules/user/helpers/select';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
 import { getOrderColumns } from '#/utils/order-column';
@@ -38,6 +37,7 @@ interface CountPendingInvitesByChannelOpts {
   channelId: string;
 }
 
+/** Invitations still waiting for an answer; a rejected one is answered. */
 export const countPendingInvitesByChannel = async (
   ctx: DbContext,
   { channelType, channelId }: CountPendingInvitesByChannelOpts,
@@ -47,20 +47,28 @@ export const countPendingInvitesByChannel = async (
     .select({ pendingInvites: count() })
     .from(inactiveMembershipsTable)
     .where(
-      and(eq(inactiveMembershipsTable.channelType, channelType), eq(inactiveMembershipsTable.channelId, channelId)),
+      and(
+        eq(inactiveMembershipsTable.channelType, channelType),
+        eq(inactiveMembershipsTable.channelId, channelId),
+        isNull(inactiveMembershipsTable.rejectedAt),
+      ),
     );
   return pendingInvites;
 };
 
-interface FindMembershipAwareRowsOpts {
+interface FindInvitationAccountsOpts {
   emails: string[];
   entityType: ChannelEntityType;
   entityId: string;
 }
 
-export const findMembershipAwareRows = async (
+/**
+ * The accounts behind invited addresses, one row per address an account holds: its primary address, and whether it is
+ * a member of the channel and of the organization. Addresses no account holds have no row.
+ */
+export const findInvitationAccounts = async (
   ctx: OrgContext,
-  { emails, entityType, entityId }: FindMembershipAwareRowsOpts,
+  { emails, entityType, entityId }: FindInvitationAccountsOpts,
 ) => {
   const { db, organizationId } = ctx.var;
   const orgMemberships = alias(membershipsTable, 'org_memberships');
@@ -69,17 +77,12 @@ export const findMembershipAwareRows = async (
     .select({
       email: emailsTable.email,
       userId: usersTable.id,
-      language: usersTable.language,
+      primaryEmail: usersTable.email,
       membershipId: membershipsTable.id,
-      inactiveMembershipId: inactiveMembershipsTable.id,
-      // Last dispatch timestamps for the reminder throttle (remindedAt ?? createdAt)
-      inactiveMembershipCreatedAt: inactiveMembershipsTable.createdAt,
-      inactiveMembershipRemindedAt: inactiveMembershipsTable.remindedAt,
       orgMembershipId: orgMemberships.id,
-      tokenId: tokensTable.id,
     })
     .from(emailsTable)
-    .leftJoin(usersTable, eq(usersTable.id, emailsTable.userId))
+    .innerJoin(usersTable, eq(usersTable.id, emailsTable.userId))
     .leftJoin(
       membershipsTable,
       and(
@@ -89,18 +92,6 @@ export const findMembershipAwareRows = async (
       ),
     )
     .leftJoin(
-      inactiveMembershipsTable,
-      and(
-        eq(inactiveMembershipsTable.channelType, entityType),
-        eq(inactiveMembershipsTable.channelId, entityId),
-        or(eq(inactiveMembershipsTable.userId, usersTable.id), eq(inactiveMembershipsTable.email, emailsTable.email)),
-      ),
-    )
-    .leftJoin(
-      tokensTable,
-      and(eq(tokensTable.id, inactiveMembershipsTable.tokenId), eq(tokensTable.type, 'invitation')),
-    )
-    .leftJoin(
       orgMemberships,
       and(
         eq(orgMemberships.userId, usersTable.id),
@@ -108,7 +99,32 @@ export const findMembershipAwareRows = async (
         eq(orgMemberships.channelId, organizationId),
       ),
     )
-    .where(and(inArray(emailsTable.email, emails)));
+    .where(inArray(emailsTable.email, emails));
+};
+
+interface FindInvitationsToAddressesOpts {
+  emails: string[];
+  channelId: string;
+}
+
+/** The channel's invitations addressed to exactly these addresses, pending or rejected. */
+export const findInvitationsToAddresses = async (
+  ctx: DbContext,
+  { emails, channelId }: FindInvitationsToAddressesOpts,
+) => {
+  const { db } = ctx.var;
+  if (!emails.length) return [];
+  return db
+    .select({
+      id: inactiveMembershipsTable.id,
+      email: inactiveMembershipsTable.email,
+      rejectedAt: inactiveMembershipsTable.rejectedAt,
+      // Last dispatch timestamps for the reminder throttle (remindedAt ?? createdAt)
+      createdAt: inactiveMembershipsTable.createdAt,
+      remindedAt: inactiveMembershipsTable.remindedAt,
+    })
+    .from(inactiveMembershipsTable)
+    .where(and(eq(inactiveMembershipsTable.channelId, channelId), inArray(inactiveMembershipsTable.email, emails)));
 };
 
 interface FindPendingInactiveMembershipsByChannelsOpts {
@@ -213,20 +229,6 @@ export const updateMembership = async (ctx: OrgContext, { id, values }: UpdateMe
   return updated;
 };
 
-interface InsertTokensOpts {
-  tokens: (typeof tokensTable.$inferInsert)[];
-}
-
-export const insertTokens = async (ctx: DbContext, { tokens }: InsertTokensOpts) => {
-  const { db } = ctx.var;
-  return db.insert(tokensTable).values(tokens).returning({
-    id: tokensTable.id,
-    email: tokensTable.email,
-    secret: tokensTable.secret,
-    type: tokensTable.type,
-  });
-};
-
 interface InsertInactiveMembershipsOpts {
   memberships: (typeof inactiveMembershipsTable.$inferInsert)[];
 }
@@ -254,22 +256,33 @@ interface FindInactiveMembershipForUserOpts {
   id: string;
 }
 
+/** Id path: a pending invitation bound to this user; a rejected one is answered and stays so. */
 export const findInactiveMembershipForUser = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
   const { db, userId } = ctx.var;
   const [membership] = await db
     .select()
     .from(inactiveMembershipsTable)
-    .where(and(eq(inactiveMembershipsTable.id, id), eq(inactiveMembershipsTable.userId, userId)))
+    .where(
+      and(
+        eq(inactiveMembershipsTable.id, id),
+        eq(inactiveMembershipsTable.userId, userId),
+        isNull(inactiveMembershipsTable.rejectedAt),
+      ),
+    )
     .limit(1);
   return membership;
 };
 
 /**
- * An invitation is claimable by a user while it is unbound, or already bound to that same user. Every write that
- * binds an invitation goes through this condition, so a row bound to someone else is never re-bound (GHSA-fmh4-wcc4-5jm3).
+ * An invitation is claimable by a user while it is pending and unbound, or bound to that same user. Every write that
+ * binds an invitation goes through this condition, so a row bound to someone else is never re-bound (GHSA-fmh4-wcc4-5jm3)
+ * and a rejected one is never revived.
  */
 const claimableBy = (userId: string) =>
-  or(isNull(inactiveMembershipsTable.userId), eq(inactiveMembershipsTable.userId, userId));
+  and(
+    isNull(inactiveMembershipsTable.rejectedAt),
+    or(isNull(inactiveMembershipsTable.userId), eq(inactiveMembershipsTable.userId, userId)),
+  );
 
 /** Token path: the invitation is answerable by this user when {@link claimableBy} holds. */
 export const findClaimableInactiveMembership = async (ctx: UserContext, { id }: FindInactiveMembershipForUserOpts) => {
@@ -304,7 +317,11 @@ interface BindInactiveMembershipsByEmailOpts {
   userId: string;
 }
 
-/** Binds every unbound invitation addressed to `email` and returns the ids it bound. The caller has proven that inbox. */
+/**
+ * Binds every unbound, {@link claimableBy claimable} invitation addressed to `email` and returns the ids it bound. The
+ * caller has proven that inbox. An invitation already bound to the user is left out, so the link flow that bound it
+ * keeps its token.
+ */
 export const bindInactiveMembershipsByEmail = async (
   ctx: DbContext,
   { email, userId }: BindInactiveMembershipsByEmailOpts,
@@ -313,7 +330,7 @@ export const bindInactiveMembershipsByEmail = async (
   const bound = await db
     .update(inactiveMembershipsTable)
     .set({ userId })
-    .where(and(eq(inactiveMembershipsTable.email, email), isNull(inactiveMembershipsTable.userId)))
+    .where(and(eq(inactiveMembershipsTable.email, email), isNull(inactiveMembershipsTable.userId), claimableBy(userId)))
     .returning({ id: inactiveMembershipsTable.id });
   return bound.map((row) => row.id);
 };
@@ -330,17 +347,6 @@ export const unbindInactiveMemberships = async (ctx: DbContext, { userIds }: Unb
     .update(inactiveMembershipsTable)
     .set({ userId: null })
     .where(inArray(inactiveMembershipsTable.userId, userIds));
-};
-
-interface DeleteInvitationTokensOpts {
-  inactiveMembershipIds: string[];
-}
-
-/** An answered or bound invitation is handled in-app, so its emailed links have no further use. */
-export const deleteInvitationTokens = async (ctx: DbContext, { inactiveMembershipIds }: DeleteInvitationTokensOpts) => {
-  if (!inactiveMembershipIds.length) return;
-  const { db } = ctx.var;
-  await db.delete(tokensTable).where(inArray(tokensTable.inactiveMembershipId, inactiveMembershipIds));
 };
 
 interface FindMembersPaginatedOpts {
@@ -500,6 +506,10 @@ interface FindPendingMembershipsPaginatedOpts {
   limit: number;
 }
 
+/**
+ * A channel's pending invitations as the inviter sees them: the address each went to, never the account that may hold
+ * it, so a row looks the same whether the invitee already has an account or not.
+ */
 export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: FindPendingMembershipsPaginatedOpts) => {
   const { db } = ctx.var;
   const { organizationId, entityId, sort, order, offset, limit } = opts;
@@ -517,21 +527,12 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
     .select({
       id: table.id,
       role: table.role,
-      userId: table.userId,
-      email: sql<string>`coalesce(
-        ${userBaseSelect.email},
-        ${tokensTable.email}
-        )`.as('email'),
-      thumbnailUrl: sql<string | null>`${userBaseSelect.thumbnailUrl}`.as('thumbnailUrl'),
+      email: table.email,
       createdAt: table.createdAt,
       createdBy: table.createdBy,
-      // The row's own invitation token: resends target it by id, never by email, which would resolve the address's newest token across orgs.
-      tokenId: tokensTable.id,
     })
     .from(table)
-    .leftJoin(usersTable, eq(usersTable.id, table.userId))
-    .leftJoin(tokensTable, and(eq(tokensTable.inactiveMembershipId, table.id), eq(tokensTable.type, 'invitation')))
-    .where(and(eq(table.channelId, entityId), eq(table.organizationId, organizationId)));
+    .where(and(eq(table.channelId, entityId), eq(table.organizationId, organizationId), isNull(table.rejectedAt)));
 
   const itemsQuery = pendingMembershipsQuery
     .orderBy(...orderBy)

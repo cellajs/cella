@@ -100,6 +100,32 @@ describe('createTelemetry', () => {
     expect(lines).toHaveLength(1);
     expect(JSON.parse(lines[0] ?? '').eventName).toBe('boot.failed');
   });
+
+  it('must not export a secret learned after its record was buffered', async () => {
+    const fetchImpl = fetchOk();
+    const known = new Set<string>();
+    const t = createTelemetry({
+      resource: {},
+      endpoint: 'https://ingest.example/v1',
+      fetchImpl,
+      redact: (text) => [...known].reduce((out, secret) => out.split(secret).join('[REDACTED]'), text),
+    });
+    const span = t.startSpan('boot backend');
+    t.event('boot.step.failed', { error: 'dial postgres://app:late-secret@db' }, { body: 'late-secret in body' });
+    span.end('error', { message: 'late-secret in status' });
+    known.add('late-secret');
+    await t.flush();
+
+    const bodies = (fetchImpl.mock.calls as unknown as Array<[string, RequestInit]>).map(([, init]) =>
+      String(init.body),
+    );
+    expect(bodies).toHaveLength(2);
+    for (const text of [...bodies, t.eventsJsonl()]) {
+      expect(text).not.toContain('late-secret');
+      // Positive control: the record itself is exported, only the value is gone.
+      expect(text).toContain('[REDACTED]');
+    }
+  });
 });
 
 describe('otlpConfigFromEnv', () => {

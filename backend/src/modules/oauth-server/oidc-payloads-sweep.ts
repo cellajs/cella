@@ -25,7 +25,7 @@ export async function sweepOidcPayloads(): Promise<number> {
   return deleted.length;
 }
 
-/** Hourly, on the migration-owning instance like every backend job; the first run waits so boot stays quiet. */
+/** Hourly, on the instance that owns the backend jobs; the first run waits so boot stays quiet. */
 export const oidcPayloadsSweepJob: BackendJob = {
   name: 'oidc-payloads-sweep',
   start: () => {

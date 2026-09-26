@@ -52,11 +52,11 @@ Three rules:
 - **The admin application** is the day-2 human principal: `s3:*` via bucket policies plus read-only on every infra surface, no IAM write; its key lives in the operator's `infra/.env.<mode>` (`SCW_ADMIN_*`) and, as the custody copy, in the `admin-key` secret, never in git or GitHub.
 - **VM keys are per service and per deploy**, path-conditioned (`resource.name.startsWith`). Cloud-init carries only the **boot key**; the service key arrives in a **single-access** Secret Manager bundle. A consumed bundle on first boot halts the VM as an interception signal; reboots reuse the on-disk pair.
 - **Bucket policies are deny-by-default** for everyone not listed, org admins included (the Owner can always edit a policy). Uploads buckets are versioned and CI statements exclude `s3:DeleteObjectVersion`, so a leaked CI key cannot destroy state history or user data.
-- **Secret folders are the boundary:** `/<slug>-<mode>/<service>/`, `/shared/`, `/handoff/`, `/engine/` (unreadable from VMs).
+- **Secret folders are the boundary:** `/<slug>-<mode>/<service>/` for a secret one service consumes, `/shared/<consumers>/` for each set of consumers (so a VM key reads exactly the secrets its services consume), `/handoff/`, `/engine/` (unreadable from VMs).
 
 ## Observability
 
-The deploy command opens an OTel trace: every pipeline step is a span, and audit events (`deploy.started`, `<service> promoted to generation <id>`, `deploy.failed`, ...) stream to the OTLP endpoint. Each VM's **boot runner** joins the trace through the boot plan's `traceparent` and reports boot phases, failures and a crash-log tail. Every VM also uploads **boot diagnostics** (logs and JSONL events) to a dedicated bucket: `pnpm --filter infra diag` reads them, `--replay` re-ships them. Set the destination with `OTEL_EXPORTER_OTLP_ENDPOINT`/`OTEL_EXPORTER_OTLP_HEADERS`, or seed the `maple-secret-ingest-key` secret.
+The deploy command opens an OTel trace: every pipeline step is a span, and audit events (`deploy.started`, `<service> promoted to generation <id>`, `deploy.failed`, ...) stream to the OTLP endpoint. Each VM's **boot runner** joins the trace through the boot plan's `traceparent` and reports boot phases, failures and a crash-log tail. Every VM also uploads **boot diagnostics** (logs and JSONL events) to a dedicated bucket: `pnpm --filter infra diag` reads them, `--replay` re-ships them. The boot runner redacts by value: each secret it handled (the boot and service keys, every hydrated runtime secret) and any URL userinfo is replaced in its console output, its telemetry and every uploaded object, whatever name printed it. Set the destination with `OTEL_EXPORTER_OTLP_ENDPOINT`/`OTEL_EXPORTER_OTLP_HEADERS`, or seed the `maple-secret-ingest-key` secret.
 
 ## Status command
 
@@ -125,5 +125,5 @@ One name per concept across code and docs:
 | **boot plan** | JSON cloud-init writes for the boot runner: service, compose/env files, secrets, trace context. |
 | **hydrate** | Write Secret Manager secrets to `/opt/app/.env.runtime` before the app starts. |
 | **boot diagnostics** | Logs and JSONL events a VM uploads at boot. |
-| **internal route** | Private, ACL-guarded LB frontend: a stable in-network address across cutovers. |
+| **internal route** | Private, ACL-guarded LB frontend forwarding to a service's `internalPort` listener: a stable in-network address across cutovers, which no public pool reaches. |
 | **engine config** | The injected app description ([config/engine-config.ts](config/engine-config.ts)); defaults to `appConfig`. |

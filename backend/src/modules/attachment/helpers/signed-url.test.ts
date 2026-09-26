@@ -35,9 +35,21 @@ describe('getSignedUrlFromKey', () => {
     expect(url).toBe('https://public-bucket.s3.nl-ams.scw.cloud/avatars/a.png');
   });
 
-  it('passes local blob URLs through untouched', async () => {
-    const blobUrl = 'blob:http://localhost:3000/1234';
-    await expect(getSignedUrlFromKey(blobUrl, { publicBucket: false, bucketName: 'x' })).resolves.toBe(blobUrl);
+  it('must not sign a blob: key, a local blob URL included', async () => {
+    for (const key of [
+      'blob:http://localhost:3000/0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c',
+      'blob:/../org/contract.pdf',
+    ]) {
+      for (const publicBucket of [false, true]) {
+        await expect(
+          getSignedUrlFromKey(key, { publicBucket, bucketName: 'private-bucket' }),
+          key,
+        ).rejects.toMatchObject({
+          status: 500,
+          type: 'server_error',
+        });
+      }
+    }
   });
 
   // Runs last: it swaps the env mock for the whole module registry.

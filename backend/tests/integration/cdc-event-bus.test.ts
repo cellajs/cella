@@ -130,6 +130,18 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     });
   });
 
+  it("must not leave a runtime-created organization's counters row without its path", async () => {
+    // The generated `path` column never reaches the row image, so the worker computes it: catchup verifies prefixes with it.
+    const readPath = async () => {
+      const [row] = await db
+        .select({ path: channelCountersTable.path })
+        .from(channelCountersTable)
+        .where(eq(channelCountersTable.channelKey, testOrg.id));
+      return row?.path ?? null;
+    };
+    await waitFor(async () => (await readPath()) === testOrg.id, 15_000, 'organization path on channel_counters');
+  });
+
   it('should stamp attachments.seq and bump channel_counters.f:attachment on UPDATE', async () => {
     const attachmentId = crypto.randomUUID();
     const attachment = buildInsertableProduct(

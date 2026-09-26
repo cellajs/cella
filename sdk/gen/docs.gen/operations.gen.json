@@ -28,12 +28,12 @@
     "method": "post",
     "path": "/auth/check-email",
     "tags": ["auth"],
-    "summary": "Check if email exists",
-    "description": "Checks if a user with the specified email address exists in the system.",
+    "summary": "Check email",
+    "description": "Tells whether this browser has signed in to the account with this email address before, by its device cookie. Any other browser gets `recognized: false`, whether or not the address has an account.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "hasResponseBody": false,
+    "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
       "xGuard": ["publicGuard"],
@@ -167,7 +167,7 @@
     "path": "/auth/resend-invitation",
     "tags": ["auth"],
     "summary": "Resend invitation",
-    "description": "Resends an invitation email with token to a new user using the provided email address and token ID.",
+    "description": "Re-sends a pending invitation, named by the id of one of its tokens, to the address it went to. The fresh link replaces the older ones. Answers 204 whether or not an email went out.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
@@ -230,6 +230,52 @@
     }
   },
   {
+    "id": "getPendingMagicLink",
+    "hash": "tag/auth/GET/auth/magic/pending",
+    "method": "get",
+    "path": "/auth/magic/pending",
+    "tags": ["auth"],
+    "summary": "Get pending magic link",
+    "description": "For a magic link opened in a browser that did not request it: the address it signs in, so the holder can recognize the account before confirming.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "confirmMagicLink",
+    "hash": "tag/auth/POST/auth/magic/confirm",
+    "method": "post",
+    "path": "/auth/magic/confirm",
+    "tags": ["auth"],
+    "summary": "Confirm magic link",
+    "description": "Signs in with the magic link this browser holds, confirmed from the app page. A form post from the app origin; redirects like opening the link.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
     "id": "generateTotpKey",
     "hash": "tag/auth/POST/auth/totp/generate-key",
     "method": "post",
@@ -243,7 +289,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["userGuard"],
+      "xGuard": ["userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -266,7 +312,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["userGuard"],
+      "xGuard": ["userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -289,7 +335,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["userGuard"],
+      "xGuard": ["userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -335,7 +381,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["userGuard"],
+      "xGuard": ["userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -358,7 +404,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["userGuard"],
+      "xGuard": ["userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -406,6 +452,29 @@
     "extensions": {
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "startOAuthConnect",
+    "hash": "tag/auth/POST/auth/oauth-connect",
+    "method": "post",
+    "path": "/auth/oauth-connect",
+    "tags": ["auth"],
+    "summary": "Start connecting a provider",
+    "description": "Pins this browser's next provider sign-in with `type=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard", "stepUpGuard"],
+      "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
     "tagsByKind": {
@@ -544,6 +613,98 @@
     "extensions": {
       "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "getStepUp",
+    "hash": "tag/auth/GET/auth/step-up",
+    "method": "get",
+    "path": "/auth/step-up",
+    "tags": ["auth"],
+    "summary": "Get step-up state",
+    "description": "Whether this session stands stepped up for account-security actions, and what the user can offer to step up: a passkey or TOTP they hold, else an emailed confirmation link or a new sign-in.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "stepUp",
+    "hash": "tag/auth/POST/auth/step-up",
+    "method": "post",
+    "path": "/auth/step-up",
+    "tags": ["auth"],
+    "summary": "Step up with a second factor",
+    "description": "Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes. Refused while impersonating.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard"],
+      "xRateLimiter": ["stepUpLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "getStepUpPasskeyChallenge",
+    "hash": "tag/auth/POST/auth/step-up/passkey-challenge",
+    "method": "post",
+    "path": "/auth/step-up/passkey-challenge",
+    "tags": ["auth"],
+    "summary": "Get a step-up passkey challenge",
+    "description": "Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it. Refused while impersonating.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard"],
+      "xRateLimiter": ["passkeyChallengeLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "sendStepUpLink",
+    "hash": "tag/auth/POST/auth/step-up/link",
+    "method": "post",
+    "path": "/auth/step-up/link",
+    "tags": ["auth"],
+    "summary": "Email a step-up link",
+    "description": "For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in. Refused while impersonating.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": true,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard"],
+      "xRateLimiter": ["spamLimiter"],
       "xCache": []
     },
     "tagsByKind": {
@@ -795,7 +956,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["userGuard"],
+      "xGuard": ["userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -811,15 +972,15 @@
     "path": "/me/mfa",
     "tags": ["me"],
     "summary": "Toggle MFA",
-    "description": "Enable or disable multifactor authentication for the current user. Always requires passkey or TOTP reauthentication.",
+    "description": "Enable or disable multifactor authentication for the current user. Needs a passkey or TOTP proof on the request, or a session stepped up with one.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["userGuard"],
-      "xRateLimiter": ["pointsLimiter"],
+      "xGuard": ["userGuard", "stepUpOrFactorProofGuard"],
+      "xRateLimiter": ["pointsLimiter", "mfaToggleLimiter"],
       "xCache": []
     },
     "tagsByKind": {
@@ -880,7 +1041,7 @@
     "path": "/me/sessions",
     "tags": ["me"],
     "summary": "Revoke sessions",
-    "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.",
+    "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out. An impersonation session is refused.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
@@ -926,7 +1087,7 @@
     "path": "/me/upload-token",
     "tags": ["me"],
     "summary": "Get upload token",
-    "description": "Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the current user and organization",
+    "description": "Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. Only a system admin gets a newsletter image token.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
@@ -1263,15 +1424,15 @@
     "path": "/requests",
     "tags": ["requests"],
     "summary": "Create request",
-    "description": "Submits a new request to the system. Supported types include contact form, newsletter signup, and waitlist entry.",
+    "description": "Submits a request: a contact form message, a newsletter signup or a waitlist entry. Every submission gets the same answer: an address that has an account gets an email pointing to sign-in, and a repeat of a waitlist or newsletter signup is dropped.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": true,
+    "hasResponseBody": false,
+    "hasExample": false,
     "extensions": {
       "xGuard": ["publicGuard"],
-      "xRateLimiter": ["emailEnumLimiter", "spamLimiter"],
+      "xRateLimiter": ["spamLimiter"],
       "xCache": []
     },
     "tagsByKind": {
@@ -1493,7 +1654,7 @@
     "path": "/users/users",
     "tags": ["users"],
     "summary": "Get list of users",
-    "description": "Returns a list of users.",
+    "description": "Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
@@ -1533,29 +1694,6 @@
       "owner": ["cella"]
     },
     "entityType": "user"
-  },
-  {
-    "id": "getYjsToken",
-    "hash": "tag/yjs/GET/yjs/token",
-    "method": "get",
-    "path": "/yjs/token",
-    "tags": ["yjs"],
-    "summary": "Get Yjs token",
-    "description": "Returns a context-scoped HMAC-signed token for a specific entity type. The token proves the user has update permission and can be verified by the Yjs relay worker without a backend callback.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["userGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
-    },
-    "tagsByKind": {
-      "module": ["yjs"],
-      "owner": ["cella"]
-    }
   },
   {
     "id": "getApiProtectedResourceMetadata",
@@ -1908,7 +2046,7 @@
     "path": "/{tenantId}/{organizationId}/memberships",
     "tags": ["memberships"],
     "summary": "Create memberships",
-    "description": "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization.",
+    "description": "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization. A created membership carries muted, archived and display order only when it is the caller's own.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
@@ -1954,7 +2092,7 @@
     "path": "/{tenantId}/{organizationId}/memberships/{id}",
     "tags": ["memberships"],
     "summary": "Update membership",
-    "description": "Updates the membership metadata, such as role, muted, or archived status.",
+    "description": "Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only, and the response carries them only on the caller's own membership. A role change, and any change to another member's membership, requires update permission on the channel.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": true,
@@ -2023,7 +2161,7 @@
     "path": "/{tenantId}/{organizationId}/memberships/pending",
     "tags": ["memberships"],
     "summary": "Get list of pending memberships",
-    "description": "Returns pending memberships for a channel entity, identified by ID. This does not include pending invitations for non-existing users.",
+    "description": "Returns the pending invitations of a channel entity, identified by ID: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
@@ -2046,7 +2184,7 @@
     "path": "/{tenantId}/{organizationId}/memberships/pending/{id}/resend",
     "tags": ["memberships"],
     "summary": "Resend pending invitation",
-    "description": "Re-sends the invitation email for a pending membership, minting a fresh token for its own invite. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
+    "description": "Re-sends the invitation email for a pending membership, named by its own id; an invitation holding a token gets a fresh one. Answers 204 alike for every pending invitation. Requires update permission on the invited channel; the public auth resend endpoint stays for invitees holding an expired token.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,
@@ -2122,7 +2260,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -2191,7 +2329,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -2220,6 +2358,29 @@
     },
     "tagsByKind": {
       "module": ["service-accounts"],
+      "owner": ["cella"]
+    }
+  },
+  {
+    "id": "getYjsToken",
+    "hash": "tag/yjs/GET/{tenantId}/{organizationId}/yjs/token",
+    "method": "get",
+    "path": "/{tenantId}/{organizationId}/yjs/token",
+    "tags": ["yjs"],
+    "summary": "Get Yjs token",
+    "description": "Returns an Ed25519-signed token for collaboratively editing one product entity the caller may update. It names the entity, its tenant and organization, and expires after five minutes; the Yjs relay worker verifies it with the public key alone, without a backend callback, and closes the socket when it expires.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["yjs"],
       "owner": ["cella"]
     }
   }

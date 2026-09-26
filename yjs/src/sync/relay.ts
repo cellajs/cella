@@ -2,25 +2,33 @@ import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
-import type { DocContext } from '../constants';
-import { YJS_AWARENESS_RATE_LIMIT, YJS_COMPACT_DEBOUNCE_MS } from '../constants';
+import type { DocKey, DocScope, SocketContext } from '../constants';
+import { YJS_AWARENESS_MAX_ENTRIES, YJS_AWARENESS_RATE_LIMIT, YJS_COMPACT_DEBOUNCE_MS } from '../constants';
 import { loadEntityDescription } from '../data/entity-content';
 import { appendUpdate, ensureDoc, loadBase, readLog } from '../data/storage';
 import { descriptionToYUpdate } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
-import { isEmptyUpdate, mergeState } from './document-state';
-import { broadcastToCollab, type CollabSession, getCollab, withDocLock } from './session-manager';
+import { classifyUpdate, mergeLog } from './document-state';
+import { broadcastToCollab, type CollabSession, claimAwarenessClient, getCollab, withDocLock } from './session-manager';
 
 export const YMessage = { Sync: 0, Awareness: 1 } as const;
 const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
 
 const awarenessTimestamps = new WeakMap<WebSocket, number>();
 
-/** Message type of a raw frame, without decoding the rest; null for a frame too short to carry one. */
+/** The frame's leading varint; null when it is cut short or out of range, on which lib0 throws. */
+function readMessageType(decoder: decoding.Decoder): number | null {
+  try {
+    return decoding.readVarUint(decoder);
+  } catch {
+    return null;
+  }
+}
+
+/** Message type of a raw frame, without decoding the rest; null for a frame that carries none a decoder accepts. */
 export function peekMessageType(data: Uint8Array): number | null {
-  if (data.length < 2) return null;
-  return decoding.readVarUint(decoding.createDecoder(data));
+  return readMessageType(decoding.createDecoder(data));
 }
 
 function encodeSyncStep2(update: Uint8Array): Uint8Array {
@@ -39,52 +47,122 @@ function encodeSyncStep1(stateVector: Uint8Array): Uint8Array {
   return encoding.toUint8Array(encoder);
 }
 
+/** Closes a socket whose frame the relay refuses: its client is broken or hostile, and nothing it sent reaches the log or a peer. */
+export function refuseFrame(doc: DocKey, userId: string, ws: WebSocket, reason = 'Malformed update'): void {
+  log.warn(`${reason} refused for ${doc.entityType}:${doc.entityId}`, { userId });
+  ws.close(4400, reason);
+}
+
+/** One entry of an awareness update, as y-protocols encodes it; `state` is its JSON text. */
+interface AwarenessEntry {
+  clientId: number;
+  clock: number;
+  state: string;
+}
+
+/** The entries of an awareness update; null, before any is decoded, for one with more than YJS_AWARENESS_MAX_ENTRIES. */
+function decodeAwarenessEntries(update: Uint8Array): AwarenessEntry[] | null {
+  const decoder = decoding.createDecoder(update);
+  const count = decoding.readVarUint(decoder);
+  if (count > YJS_AWARENESS_MAX_ENTRIES) return null;
+  const entries: AwarenessEntry[] = [];
+  for (let i = 0; i < count; i++) {
+    entries.push({
+      clientId: decoding.readVarUint(decoder),
+      clock: decoding.readVarUint(decoder),
+      state: decoding.readVarString(decoder),
+    });
+  }
+  return entries;
+}
+
+function encodeAwarenessMessage(entries: AwarenessEntry[]): Uint8Array {
+  const update = encoding.createEncoder();
+  encoding.writeVarUint(update, entries.length);
+  for (const { clientId, clock, state } of entries) {
+    encoding.writeVarUint(update, clientId);
+    encoding.writeVarUint(update, clock);
+    encoding.writeVarString(update, state);
+  }
+  const encoder = encoding.createEncoder();
+  encoding.writeVarUint(encoder, YMessage.Awareness);
+  encoding.writeVarUint8Array(encoder, encoding.toUint8Array(update));
+  return encoding.toUint8Array(encoder);
+}
+
 /**
  * Applies one frame. Sync frames reach this only through the socket's serial queue, after entity
- * verification, so they run in arrival order; awareness is ephemeral, allowed before verification
- * and rate limited per client.
+ * authorization, so they run in arrival order; awareness is ephemeral, relayed only from an
+ * authorized open socket and rate limited per client. Both act in the socket's authorized scope.
  */
-export async function handleMessage(ctx: DocContext, ws: WebSocket, data: Uint8Array): Promise<void> {
+export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uint8Array): Promise<void> {
   if (data.length < 2) return;
+  const { scope } = ctx;
 
   const decoder = decoding.createDecoder(data);
-  const messageType = decoding.readVarUint(decoder);
+  const messageType = readMessageType(decoder);
+  if (messageType === null) return refuseFrame(scope ?? ctx.requested, ctx.userId, ws, 'Malformed frame');
 
   if (messageType === YMessage.Sync) {
-    if (!ctx.verified) return;
+    if (!scope) return;
 
-    const syncType = decoding.readVarUint(decoder);
+    let syncType: number;
+    let payload: Uint8Array;
+    try {
+      syncType = decoding.readVarUint(decoder);
+      payload = decoding.readVarUint8Array(decoder);
+    } catch {
+      refuseFrame(scope, ctx.userId, ws);
+      return;
+    }
 
     if (syncType === YSync.Step1) {
-      log.trace(`Sync step 1 from ${ctx.entityType}:${ctx.entityId}`, { bytes: data.length });
-      const clientStateVector = decoding.readVarUint8Array(decoder);
-      await handleSyncStep1(ctx, ws, clientStateVector);
+      log.trace(`Sync step 1 from ${scope.entityType}:${scope.entityId}`, { bytes: data.length });
+      await handleSyncStep1(scope, ws, payload);
     } else if (syncType === YSync.Step2 || syncType === YSync.Update) {
-      const update = decoding.readVarUint8Array(decoder);
-      await handleSyncUpdate(ctx, ws, update, data);
+      await handleSyncUpdate(scope, ctx.userId, ws, payload, data);
     }
   } else if (messageType === YMessage.Awareness) {
+    if (!scope || ws.readyState !== ws.OPEN) return;
+    const collab = getCollab(scope);
+    if (!collab) return;
     const now = Date.now();
     const lastTime = awarenessTimestamps.get(ws) ?? 0;
     if (now - lastTime < 1000 / YJS_AWARENESS_RATE_LIMIT) return;
     awarenessTimestamps.set(ws, now);
 
-    broadcastToCollab(ctx.entityType, ctx.entityId, data, ws);
+    let entries: AwarenessEntry[] | null;
+    try {
+      entries = decodeAwarenessEntries(decoding.readVarUint8Array(decoder));
+    } catch {
+      refuseFrame(scope, ctx.userId, ws, 'Malformed awareness');
+      return;
+    }
+    // A frame with more entries than a client announces reaches no peer and holds no client.
+    if (!entries) return;
+    // Presence for another user's client would move or remove their cursor.
+    const relayed: AwarenessEntry[] = [];
+    for (const entry of entries) {
+      const verdict = claimAwarenessClient(collab, ws, ctx.userId, {
+        clientId: entry.clientId,
+        removes: entry.state === 'null',
+      });
+      if (verdict === 'refuse') return refuseFrame(scope, ctx.userId, ws, 'Too many awareness clients');
+      if (verdict === 'relay') relayed.push(entry);
+    }
+    if (relayed.length === 0) return;
+    broadcastToCollab(scope, relayed.length === entries.length ? data : encodeAwarenessMessage(relayed), ws);
   }
 }
 
-/** The document as the relay knows it: the session row (seeded on first sight) plus every logged update, merged once. */
-async function loadDocumentState(ctx: DocContext): Promise<Uint8Array | null> {
-  let base = await loadBase(ctx);
+/** The document as the relay knows it: the session row (seeded on first sight) plus every logged update that merges; compaction discards the rest. */
+async function loadDocumentState(scope: DocScope): Promise<Uint8Array | null> {
+  let base = await loadBase(scope);
   if (base === null) {
     // Fresh session: the server seeds from the stored description, so clients never seed it.
-    base = await ensureDoc(ctx, descriptionToYUpdate(await loadEntityDescription(ctx)));
+    base = await ensureDoc(scope, descriptionToYUpdate(await loadEntityDescription(scope)));
   }
-  const rows = await readLog(ctx);
-  return mergeState(
-    base,
-    rows.map((row) => row.payload),
-  );
+  return mergeLog(base, await readLog(scope)).state;
 }
 
 /**
@@ -92,9 +170,11 @@ async function loadDocumentState(ctx: DocContext): Promise<Uint8Array | null> {
  * answers a Step1 with a Step2 on its own, so structs the client holds and the relay never received
  * (a lost frame, a reconnect) are uploaded and logged like any update.
  */
-async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector: Uint8Array): Promise<void> {
-  const collab = getCollab(ctx.entityType, ctx.entityId);
-  const state = collab ? await withDocLock(collab, () => loadDocumentState(ctx)) : await loadDocumentState(ctx);
+async function handleSyncStep1(scope: DocScope, ws: WebSocket, clientStateVector: Uint8Array): Promise<void> {
+  // A socket that closed while this frame waited has no one to answer.
+  if (ws.readyState !== ws.OPEN) return;
+  const collab = getCollab(scope);
+  const state = collab ? await withDocLock(collab, () => loadDocumentState(scope)) : await loadDocumentState(scope);
 
   if (!state) {
     ws.send(encodeSyncStep2(Y.encodeStateAsUpdate(new Y.Doc())));
@@ -111,21 +191,32 @@ async function handleSyncStep1(ctx: DocContext, ws: WebSocket, clientStateVector
   }
 }
 
-/** Logs the update durably, then broadcasts it to peers and schedules compaction. */
+/** Logs the update durably under its sender, then broadcasts it to peers and schedules compaction; one Yjs cannot decode closes its sender. */
 async function handleSyncUpdate(
-  ctx: DocContext,
+  scope: DocScope,
+  userId: string,
   ws: WebSocket,
   update: Uint8Array,
   rawMessage: Uint8Array,
 ): Promise<void> {
+  const kind = classifyUpdate(update);
   // A client's Step2 reply carries nothing when it holds nothing the relay lacks.
-  if (isEmptyUpdate(update)) return;
+  if (kind === 'empty') return;
+  // Logged, it would break every later merge of the document.
+  if (kind === 'malformed') return refuseFrame(scope, userId, ws);
 
-  const collab = getCollab(ctx.entityType, ctx.entityId);
-  if (!collab) return;
+  const collab = getCollab(scope);
+  if (!collab) {
+    // A joined socket always finds its session. Should it not, the update is still logged, and the socket reconnects
+    // into a live session, where its handshake uploads anything else it holds.
+    await appendUpdate(scope, userId, update);
+    log.warn(`No session for ${scope.entityType}:${scope.entityId}: update logged, socket asked to reconnect`);
+    ws.close(1013, 'Session ended');
+    return;
+  }
 
-  await appendUpdate(ctx, update);
-  broadcastToCollab(ctx.entityType, ctx.entityId, rawMessage, ws);
+  await appendUpdate(scope, userId, update);
+  broadcastToCollab(scope, rawMessage, ws);
   scheduleCompaction(collab);
 }
 
@@ -142,9 +233,9 @@ export function scheduleCompaction(collab: CollabSession): void {
 export async function runCompaction(collab: CollabSession): Promise<CompactionResult> {
   return withDocLock(collab, async () => {
     try {
-      return await compactDocument(collab.ctx);
+      return await compactDocument(collab.scope);
     } catch (err) {
-      log.error(`Compaction failed for ${collab.ctx.entityType}:${collab.ctx.entityId}`, { err });
+      log.error(`Compaction failed for ${collab.scope.entityType}:${collab.scope.entityId}`, { err });
       return 'retry';
     }
   });

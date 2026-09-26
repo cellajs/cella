@@ -1,4 +1,5 @@
 import {
+  accountExistsEmail,
   accountSecurityEmail,
   magicLinkEmail,
   memberAddedEmail,
@@ -8,6 +9,7 @@ import {
   oauthVerificationEmail,
   requestInfoEmail,
   requestResponseEmail,
+  stepUpEmail,
   systemInviteEmail,
   welcomeEmailTemplate,
 } from './index';
@@ -25,6 +27,7 @@ export interface EmailPreviewFixture {
 const previewTemplates = {
   welcome: welcomeEmailTemplate,
   'account-security': accountSecurityEmail,
+  'account-exists': accountExistsEmail,
   'oauth-verification': oauthVerificationEmail,
   'magic-link': magicLinkEmail,
   'system-invite': systemInviteEmail,
@@ -34,6 +37,7 @@ const previewTemplates = {
   newsletter: newsletterEmail,
   'request-was-sent': requestResponseEmail,
   'request-was-sent-admin': requestInfoEmail,
+  'step-up': stepUpEmail,
   // biome-ignore lint/suspicious/noExplicitAny: registry holds defs with differing generic params
 } satisfies Record<string, EmailTemplateDef<any, any>>;
 

@@ -1,12 +1,14 @@
 import type { DrizzleConfig } from 'drizzle-orm';
+import { appConfig } from 'shared';
 import { resolvePostgresSslCa } from 'shared/utils/postgres-tls';
 import { env } from '../env';
-import { createPgConnection, type DB, type PgDB } from './create-connection';
+import { createPgConnection, type DB, type PgDB, queryLoggerEnabled } from './create-connection';
 
 export type { DB, DbOrTx, PgDB, Tx } from './create-connection';
 
 export const dbConfig = {
-  logger: !!env.DEBUG,
+  // Compared with true: under Vitest `env` holds the unparsed string.
+  logger: queryLoggerEnabled(env.DEBUG === true, appConfig.mode),
 } satisfies DrizzleConfig;
 
 export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' };

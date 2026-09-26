@@ -3,12 +3,12 @@ import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
+import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { singleUseWindow } from '#/utils/get-valid-token';
 import { hashToken } from '#/utils/hash-token';
 import { createDate } from '#/utils/time-span';
+import { authCookie } from '../helpers';
 
 interface CreateInvitationOpts {
   organization: { id: string; tenantId: string };
@@ -69,14 +69,14 @@ export async function createInvitation({
         ? {
             singleUseToken: hashToken(rawSingleUseToken),
             invokedAt: new Date().toISOString(),
-            expiresAt: createDate(singleUseWindow('invitation')),
+            expiresAt: createDate(tokenPolicies.invitation.singleUseWindow),
           }
         : { expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() }),
     })
     .returning();
 
   /** Cookie header value for the single-use token; only meaningful for an invoked token. */
-  const invitationCookie = `${authCookieName('invitation')}=${rawSingleUseToken}`;
+  const invitationCookie = authCookie('invitation', rawSingleUseToken);
 
-  return { inactiveMembership, token, rawToken, invitationCookie };
+  return { inactiveMembership, token, rawToken, rawSingleUseToken, invitationCookie };
 }

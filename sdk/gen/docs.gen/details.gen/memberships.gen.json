@@ -13,10 +13,8 @@
               "type": "array",
               "required": true,
               "itemType": "object",
-              "ref": "#/components/schemas/MembershipBase",
               "items": {
                 "type": "object",
-                "description": "Core membership fields shared across active and inactive memberships.",
                 "properties": {
                   "id": { "type": "string", "required": true, "format": "uuid" },
                   "tenantId": { "type": "string", "required": true, "maxLength": 24 },
@@ -32,17 +30,16 @@
                     "required": true,
                     "enum": ["admin", "member"]
                   },
-                  "archived": { "type": "boolean", "required": true },
-                  "muted": { "type": "boolean", "required": true },
+                  "organizationId": { "type": "string", "required": true, "format": "uuid" },
+                  "archived": { "type": "boolean", "required": false },
+                  "muted": { "type": "boolean", "required": false },
                   "displayOrder": {
                     "type": "number",
-                    "required": true,
+                    "required": false,
                     "minimum": -140737488355328,
                     "maximum": 140737488355327
-                  },
-                  "organizationId": { "type": "string", "required": true, "format": "uuid" }
-                },
-                "ref": "#/components/schemas/MembershipBase"
+                  }
+                }
               }
             },
             "rejectedIds": {
@@ -273,12 +270,9 @@
       {
         "status": 200,
         "description": "Membership updated",
-        "name": "Membership",
-        "ref": "#/components/schemas/Membership",
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A user's membership in a channel entity, including role and activity data.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },
@@ -309,17 +303,16 @@
               "required": true,
               "format": "uuid"
             },
-            "archived": { "type": "boolean", "required": true },
-            "muted": { "type": "boolean", "required": true },
+            "organizationId": { "type": "string", "required": true, "format": "uuid" },
+            "archived": { "type": "boolean", "required": false },
+            "muted": { "type": "boolean", "required": false },
             "displayOrder": {
               "type": "number",
-              "required": true,
+              "required": false,
               "minimum": -140737488355328,
               "maximum": 140737488355327
-            },
-            "organizationId": { "type": "string", "required": true, "format": "uuid" }
+            }
           },
-          "ref": "#/components/schemas/Membership",
           "contentType": "application/json"
         },
         "example": {
@@ -565,7 +558,6 @@
                   "membership": {
                     "type": "object",
                     "required": true,
-                    "description": "Core membership fields shared across active and inactive memberships.",
                     "properties": {
                       "id": { "type": "string", "required": true, "format": "uuid" },
                       "tenantId": { "type": "string", "required": true, "maxLength": 24 },
@@ -581,17 +573,16 @@
                         "required": true,
                         "enum": ["admin", "member"]
                       },
-                      "archived": { "type": "boolean", "required": true },
-                      "muted": { "type": "boolean", "required": true },
+                      "organizationId": { "type": "string", "required": true, "format": "uuid" },
+                      "archived": { "type": "boolean", "required": false },
+                      "muted": { "type": "boolean", "required": false },
                       "displayOrder": {
                         "type": "number",
-                        "required": true,
+                        "required": false,
                         "minimum": -140737488355328,
                         "maximum": 140737488355327
-                      },
-                      "organizationId": { "type": "string", "required": true, "format": "uuid" }
-                    },
-                    "ref": "#/components/schemas/MembershipBase"
+                      }
+                    }
                   },
                   "counts": {
                     "type": "object",
@@ -786,15 +777,7 @@
                 "type": "object",
                 "properties": {
                   "id": { "type": "string", "required": true },
-                  "tokenId": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
                   "email": { "type": "string", "required": true, "format": "email" },
-                  "thumbnailUrl": {
-                    "type": ["string", "null"],
-                    "required": true
-                  },
                   "role": {
                     "type": ["string", "null"],
                     "required": true,
@@ -818,14 +801,8 @@
           "items": [
             {
               "id": "36a3f30f-2043-4315-8ebe-d4a4eacb4a6c",
-              "channelType": "organization",
-              "channelId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
               "email": "doug_larkin@hotmail.com",
-              "userId": "50796fe8-5592-4b8e-9671-b17b41ee456f",
-              "tokenId": "617f1449-7605-4cc9-8f52-1e3f100f6db2",
               "role": "member",
-              "rejectedAt": null,
-              "remindedAt": null,
               "createdAt": "2024-11-21T01:19:53.533Z",
               "createdBy": {
                 "id": "8d10af2a-4b70-40b6-a3f2-0bc295d29966",
@@ -833,20 +810,12 @@
                 "slug": "agustin_kirlin",
                 "thumbnailUrl": null,
                 "entityType": "user"
-              },
-              "organizationId": "bbb36038-9ce8-45db-8d91-cd87f54ea01d",
-              "tenantId": "yx645y"
+              }
             },
             {
               "id": "ffcd93da-6f47-457f-bd00-cc2dc65b1a01",
-              "channelType": "organization",
-              "channelId": "772a771f-c150-465e-9635-46594859fc3d",
               "email": "santos.jacobi12@gmail.com",
-              "userId": "6339b813-cf84-4d75-823c-2ac3827d82be",
-              "tokenId": "ba7cf4de-5ede-48cc-9fef-453bf074c2ef",
               "role": "member",
-              "rejectedAt": null,
-              "remindedAt": null,
               "createdAt": "2024-10-29T04:35:17.725Z",
               "createdBy": {
                 "id": "7d580cc1-edd9-4017-be5b-49fb1c3cc0f3",
@@ -854,9 +823,7 @@
                 "slug": "nya_nikolaus",
                 "thumbnailUrl": null,
                 "entityType": "user"
-              },
-              "organizationId": "772a771f-c150-465e-9635-46594859fc3d",
-              "tenantId": "pa56tp"
+              }
             }
           ],
           "total": 2

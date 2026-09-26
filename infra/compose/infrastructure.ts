@@ -3,6 +3,7 @@ import type { AppServiceConfig, AppServices, ComposeFile, ComposeService, Health
 
 /** Helper for `services.config.ts`: typed identity that preserves literal keys. */
 export function defineServices<const T extends AppServices>(services: T): T {
+  validateInternalPorts(services);
   const seenPrefixes = new Map<string, string>();
   for (const [slug, cfg] of Object.entries(services)) {
     const prefix = cfg.pathPrefix;
@@ -29,6 +30,27 @@ export function defineServices<const T extends AppServices>(services: T): T {
     seenPrefixes.set(prefix, slug);
   }
   return services;
+}
+
+/**
+ * An internal listener must be a port of its own: sharing one with a public listener would let the public LB pool
+ * reach the server-to-server routes, and a singleVM host publishes every service's ports side by side.
+ */
+function validateInternalPorts(services: AppServices): void {
+  const owners = new Map<number, string>();
+  for (const [slug, cfg] of Object.entries(services)) owners.set(cfg.port, slug);
+  for (const [slug, cfg] of Object.entries(services)) {
+    const port = cfg.internalPort;
+    if (port === undefined) continue;
+    if (!Number.isInteger(port) || port < 1 || port > 65535)
+      throw new Error(`services config: '${slug}' internalPort ${port} is not a valid port.`);
+    const owner = owners.get(port);
+    if (owner)
+      throw new Error(
+        `services config: '${slug}' internalPort ${port} is also the port of '${owner}': an internal listener needs a port of its own.`,
+      );
+    owners.set(port, slug);
+  }
 }
 
 /** Standard environment injected into every app service unless opted out. */
@@ -66,7 +88,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
   if (cfg.lbRoute) meta.lbRoute = cfg.lbRoute;
   if (cfg.pathPrefix) meta.pathPrefix = cfg.pathPrefix;
   if (cfg.lbWebsockets) meta.lbWebsockets = true;
-  if (cfg.internalRoute) meta.internalRoute = true;
+  if (cfg.internalPort !== undefined) meta.internalPort = cfg.internalPort;
   if (cfg.reusesImageOf) meta.reusesImageOf = cfg.reusesImageOf;
   if (cfg.dockerfile) meta.dockerfile = cfg.dockerfile;
   if (cfg.target) meta.target = cfg.target;
@@ -95,8 +117,8 @@ function appBlock(
     image: cfg.image,
     profiles: [slug],
     restart: 'unless-stopped',
-    // The LB targets the host port directly and health-checks the app's own health path; there is no per-VM ingress hop.
-    ports: [`${cfg.port}:${cfg.port}`],
+    // The LB targets the host ports directly and health-checks the app's own health path; there is no per-VM ingress hop.
+    ports: [cfg.port, ...(cfg.internalPort === undefined ? [] : [cfg.internalPort])].map((port) => `${port}:${port}`),
     stop_grace_period: cfg.stopGracePeriod ?? '30s',
     ...(cfg.includeEnvFile === false ? {} : { env_file: ['.env', '.env.runtime'] }),
     environment,
@@ -191,7 +213,8 @@ function publishCoHostedPorts(appServices: AppServices, blocks: Record<string, C
   if (!hostBlock) return;
   const coHostedPorts = Object.values(appServices)
     .filter((cfg) => cfg.coHosted)
-    .map((cfg) => `${cfg.port}:${cfg.port}`);
+    .flatMap((cfg) => [cfg.port, ...(cfg.internalPort === undefined ? [] : [cfg.internalPort])])
+    .map((port) => `${port}:${port}`);
   if (coHostedPorts.length === 0) return;
   const existing = new Set(hostBlock.ports ?? []);
   hostBlock.ports = [...(hostBlock.ports ?? []), ...coHostedPorts.filter((p) => !existing.has(p))];

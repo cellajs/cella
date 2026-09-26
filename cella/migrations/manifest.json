@@ -1345,6 +1345,366 @@
    ],
    "requires": [],
    "summary": "Keys are named after their Scaleway bearer: the Owner API key (SCW_OWNER_*, your own key as organization Owner; a durable one mints a 30-minute key per privileged run) and the admin application key (SCW_ADMIN_* in infra/.env.<mode>; setup writes it, Fetch admin application key does elsewhere). SCW_BOOTSTRAP_* and SCW_STATE_* are read for one release with rename warnings. Apply validates the key, previews and confirms once, and verifies live grants and database privileges afterwards. Stack locks are renewed leases released on Ctrl-C. A preflight names owed Applies in the deploy and in the infra-preflight job on release PRs. keychain: and op: references resolve when the env file loads. Synced files arrive migrated; operators update their infra/.env.<mode> once."
+  },
+  {
+   "id": "20260925T1530-attachment-storage-keys",
+   "version": "next",
+   "title": "Attachment storage keys must name the organization's own storage",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests"
+   ],
+   "requires": [],
+   "summary": "createAttachments refuses a key outside the organization's upload prefix (<organizationId>/…) or a bucket other than the app's own for the row's visibility, getPresignedUrls rejects stored rows that fail the same check, and getUploadToken refuses an organization the user is not a member of. Apps on the template upload flow are unaffected; apps with a custom Transloadit path, older rows or tests that create attachments with made-up buckets adapt them."
+  },
+  {
+   "id": "20260925T1750-signed-cookies",
+   "version": "next",
+   "title": "Auth cookies are signed in every mode",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "backend/scripts",
+    "bench/src"
+   ],
+   "requires": [],
+   "summary": "Every auth cookie is sealed as <content>.<expiresAt>.<mac> with the MAC over the versioned name and expiry, in every mode; COOKIE_SECRET may be a comma-separated list (first signs, any verifies); cookieVersion is v3. Tests build cookies with authCookie() from backend/tests/helpers.ts, and pnpm --filter backend session:mint <email> replaces hand-built dev cookies."
+  },
+  {
+   "id": "20260925T1750-auth-flow-rules",
+   "version": "next",
+   "title": "Magic-link confirmation, MFA factor rules and strategy gating",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "A magic link opened outside the browser that asked for it signs in only after a click on /auth/confirm-sign-in. Auth routes declare x-strategy and a switched-off method is refused before guards. MFA needs both a passkey and TOTP, and neither can be deleted while it is on. POST /auth/resend-invitation takes { tokenId } only and always answers 204."
+  },
+  {
+   "id": "20260925T1750-organization-keeps-admin",
+   "version": "next",
+   "title": "An organization always keeps an admin",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/scripts",
+    "backend/tests"
+   ],
+   "requires": [],
+   "summary": "A deferred constraint trigger (side-effect producer 10-membership-rules) refuses demoting, removing, leaving or deleting the account of an organization's last admin with 409 last_admin. Apps run pnpm --filter backend generate to get it, and test cleanups delete memberships and organizations in one transaction."
+  },
+  {
+   "id": "20260925T1750-input-and-infra-checks",
+   "version": "next",
+   "title": "Stricter URL, redirect and email checks; infra helpers moved",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/emails",
+    "frontend/src",
+    "infra",
+    "shared/src"
+   ],
+   "requires": [],
+   "summary": "Profile image URLs must be on the CDN origin exactly, redirect paths are validated after normalizing, email interpolations are HTML-escaped (plainText option for text parts), StaticDocumentBody, BlockNoteMinimalHtml and sanitizeUrl are removed, db-exposure-acl moved to infra/lib, parseBootPlanJson takes the plan path, and in-process infra tasks throw ExitCodeError."
+  },
+  {
+   "id": "20260925T2031-token-lifecycle",
+   "version": "next",
+   "title": "One token lifecycle module; sign-ups create accounts after the inbox is proven",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/emails",
+    "backend/tests",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "backend/src/modules/auth/tokens is the only importer of tokens-db: per-type tokenPolicies, issueToken, invokeToken, readBoundToken and spendCookieToken replace getValidToken and getValidSingleUseToken. A magic-link or OAuth sign-up creates its account only when the emailed link is clicked; tokens.pending_sign_up holds a pending OAuth sign-up. Rejected invitations lose their links and the expired-invitation page can resend."
+  },
+  {
+   "id": "20260925T2031-session-endings",
+   "version": "next",
+   "title": "Every session ends through endSessions",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "endSessions stamps the revocation, drops the auth cache and closes the session's event stream at every ending (sign-out, eviction, MFA toggle, impersonation stop, account deletion); revokeSessions is removed. A 60 s sweep closes streams of sessions ended elsewhere, and auth_invalidate (pg_notify) drops cached entries in every process."
+  },
+  {
+   "id": "20260925T2031-oauth-grant-policy",
+   "version": "next",
+   "title": "One grant policy for the app's authorization server",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests"
+   ],
+   "requires": [],
+   "summary": "grantRefusal decides whether an OAuth grant still holds, at consent, in findAccount and in the token guard. Codes and refresh tokens are stored hashed and spent once, a replay revokes the grant, only a service account's API key mints client_credentials tokens, and access tokens carry gid or key_id. Unregistered clients show their host on consent, never their own logo."
+  },
+  {
+   "id": "20260925T2031-telemetry-and-jobs",
+   "version": "next",
+   "title": "Scrubbed logs and traces, secretless frontend builds, one job owner",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "shared/src",
+    "infra",
+    ".github/workflows"
+   ],
+   "requires": [],
+   "summary": "scrubUrl moves to shared and a redacting span processor runs before export; traces now export. createLogger requires redactPaths. Boot redacts secrets by value, the deploy pipeline builds the frontend in a job without secrets, and scheduled jobs run on RUN_JOBS instances, one at a time through a Postgres advisory lock."
+  },
+  {
+   "id": "20260925T2031-internal-listener-yjs-tokens",
+   "version": "next",
+   "title": "Internal listener and per-entity Yjs tokens",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "yjs/src",
+    "cdc/src",
+    "frontend/src",
+    "infra",
+    "shared/config"
+   ],
+   "requires": [],
+   "summary": "The CDC socket and Yjs materialize answer only on INTERNAL_PORT behind the private load balancer pool. Yjs tokens are Ed25519-signed per entity for five minutes and the relay can only verify them: YJS_SECRET becomes YJS_TOKEN_PRIVATE_KEY, YJS_TOKEN_PUBLIC_KEY and YJS_RELAY_SECRET. Materialize credits the newest editor who may still update. Needs an infra Apply."
+  },
+  {
+   "id": "20260925T2031-scoped-responses",
+   "version": "next",
+   "title": "Narrower responses outside the caller's scope; email params escaped once",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/emails",
+    "frontend/src",
+    "shared/src"
+   ],
+   "requires": [],
+   "summary": "getUsers shows the system role only to system admins, pending invitations drop userId and give tokenId only to callers who may update, markSeen uses the read scope, idempotent replays return the caller's rows only and relatableUserId must be a uuid. Email params are escaped once by Brevo, declared HTML params use |safe, and schema messages translate lazily."
+  },
+  {
+   "id": "20260925T2031-media-refs-upload-visibility",
+   "version": "next",
+   "title": "One media reference grammar; the server decides upload visibility",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src",
+    "shared/src",
+    "shared/config"
+   ],
+   "requires": [],
+   "summary": "parseMediaRef accepts an attachment id, a key under the document's organization or an eux asset, and everything else renders nothing; trusted-media-domains.json is removed. Upload templates declare publicBucket, the client flag is gone, attachment rows are stamped private, and newsletter images use a system-admin template."
+  },
+  {
+   "id": "20260925T2144-second-factors-check-email",
+   "version": "next",
+   "title": "Single-use second factors; check-email answers only a recognized browser",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/emails",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "verifyTotp accepts each code once (totps.last_used_step) and draws on a per-account failure budget; completeMfaChallenge is the only way out of an MFA challenge. Passkey challenges are single-use rows, credential ids are unique, and sign-in challenges carry no email. check-email answers { recognized }, true only for a browser that signed in to that address before, and POST /requests answers 204 to everyone."
+  },
+  {
+   "id": "20260925T2234-session-model-step-up",
+   "version": "next",
+   "title": "Session tokens stored hashed, impersonation on its own cookie, step-up for account security",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "frontend/src",
+    "bench/src"
+   ],
+   "requires": [],
+   "summary": "The session cookie carries a random token and the database stores its hash; impersonation has its own cookie and sessions.impersonator_session_id, and ends with the admin's session or role. OAuth connect is pinned by a single-use oauth-connect token. Account-security routes need a stepped-up session (second factor, fresh sign-in or emailed link), and token policies declare replacement rules with a handler per link type."
+  },
+  {
+   "id": "20260925T2234-secret-scopes-relay",
+   "version": "next",
+   "title": "Secrets scoped to their consumers; a sturdier Yjs relay",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "yjs/src",
+    "frontend/src",
+    "infra"
+   ],
+   "requires": [],
+   "summary": "Runtime secrets live in folders named by their consumer set and VM principals read only their own; mode-bound secrets are optional in the env schema and read through modeSecret(). The relay refuses undecodable updates, survives resets during the upgrade, keeps updates through cleanup and relays presence only for a socket's own clients; the editor turns read-only when collaboration stops for good. Needs an infra Apply."
+  },
+  {
+   "id": "20260925T2234-uniform-refusals",
+   "version": "next",
+   "title": "One refusal for what the caller may not see; invitations reveal no accounts",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "tenantGuard answers one 403 for missing, inactive or inaccessible tenants and admits a creator only until the tenant has an organization; an unreadable product answers 404. Pending invitations show the invited address only, resend works by row id and rejections are final; notifications and digests follow current access; personal membership fields show on the caller's own row only; blob: keys are never signed."
+  },
+  {
+   "id": "20260925T2234-limits-logs-email-params",
+   "version": "next",
+   "title": "Burst-proof limits, query-free logs, hashed unsubscribe tokens, email param keys",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": true,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/emails",
+    "shared/src",
+    "infra",
+    ".github/workflows"
+   ],
+   "requires": [],
+   "summary": "Rate-limit budgets reserve before the handler without blocking and only a failure counted at a spent budget blocks, in the database only; logs and spans keep a failed query's reason but never its SQL or parameters, and server messages show in development and test only. Unsubscribe tokens are stored hashed, email templates name params through param() with a per-send nonce, COOKIE_SECRET entries need 16 characters outside development, and clientCacheVersion is bumped."
+  },
+  {
+   "id": "20260926T0537-sign-out-sign-up-streams",
+   "version": "next",
+   "title": "Sign-out spends magic links, sign-up gated at completion, streams never stall",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "locales"
+   ],
+   "requires": [],
+   "summary": "Sign-out spends the magic link its browser opened and a second click on an opened link says so. maySignUp is the one sign-up gate, checked again when a pending OAuth sign-up completes, and an invitee's provider sign-up needs no second mail. An inbox proof and the cleanup it triggers commit together. Closing streams never waits on a client that stopped reading, the sweep leaves sessionless subscribers alone and follows a gained system role, the auth_invalidate listener notices a silent connection loss, and the digest overflow line is translated."
+  },
+  {
+   "id": "20260926T0537-oauth-sessions-revocations",
+   "version": "next",
+   "title": "Authorization server sessions follow the app session, revocations reach every process",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src",
+    "locales"
+   ],
+   "requires": [],
+   "summary": "The authorization server's session holds only while the same person keeps a live app session, and ending app sessions deletes the provider sessions; codes and refresh tokens outlive them. Every grant, API-key, installation and tenant-policy revocation reaches every process through auth_invalidate. A code naming no resource leaves its grant alone, service accounts mint only for their own tenant's resource, /oauth budgets client metadata fetches per IP, and the consent page names the tenant and organization a grant reaches."
+  },
+  {
+   "id": "20260926T0706-outages-api-keys-sign-out",
+   "version": "next",
+   "title": "Session lookups survive outages, API keys need a step-up, sign-out ends half-finished flows",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src",
+    "shared/src",
+    ".github/workflows"
+   ],
+   "requires": [],
+   "summary": "A failed session lookup keeps the cookie, since it holds the only copy of the token; only a 401 clears it. Minting an API key needs a stepped-up session. The oauth-connect pin serves only the session that started it, and sign-out spends it and withdraws a magic link held for confirmation. An impersonation cannot revoke the user's sessions or skip their consent. A provider sign-up starts behind maySignUp, prompt=none hears login_required, and a lost interaction answers 400. Logs drop a database error's detail; the schema-bust gate compares against the merge commit's first parent."
+  },
+  {
+   "id": "20260926T0706-membership-updates",
+   "version": "next",
+   "title": "A membership update names a field, and personal fields show on the caller's own row",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "An empty membership update answers 400 and any change to another member's membership needs update on the channel. Update and invite responses carry archive, mute and order on the caller's own membership only, through membershipAsSeenBy; the SDK drops the Membership type. Verifying an address never binds a rejected invitation."
+  },
+  {
+   "id": "20260926T0711-relay-frames-renderer",
+   "version": "next",
+   "title": "The relay survives unreadable frames and bounds presence; one bad document never blanks the rest",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "yjs/src",
+    "cdc/src",
+    "backend/src",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "A frame the relay cannot read closes only its socket (4400) and a relay failure closes it with 1011, so no frame can crash the process. A socket holds at most four awareness clients, a cleanup never reaches a newer session of the document, and the editor stops only after five different refused tokens. The relay and CDC query loggers run in development only. The static renderer drops unknown block types and one failing document never fails the others."
   }
  ]
 }

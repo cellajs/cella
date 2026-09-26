@@ -3,7 +3,6 @@ import { requestId } from 'hono/request-id';
 import { appConfig } from 'shared';
 import { requestLogger } from '#/lib/pino';
 import { isBenchTraffic } from '#/utils/logger';
-import { scrubUrl } from '#/utils/scrub-url';
 
 // Instantiate requestId middleware once at module scope to reuse it across requests.
 const requestIdMiddleware = requestId();
@@ -14,7 +13,8 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
 
   const start = Date.now();
   const { url, method } = ctx.req;
-  const cleanUrl = scrubUrl(url.replace(appConfig.backendUrl, ''));
+  // The logger's `url` serializer scrubs tokens out of the path and query.
+  const path = url.replace(appConfig.backendUrl, '');
   const reqId = ctx.get('requestId');
 
   await next();
@@ -26,7 +26,7 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   // Suppress bench traffic logs in development (only log errors)
   if (isBenchTraffic(userId, ctx.get('tenantId')) && status < 500) return;
 
-  const logData = { requestId: reqId, method, url: cleanUrl, status, responseTime, userId };
+  const logData = { requestId: reqId, method, url: path, status, responseTime, userId };
 
   if (status >= 500) requestLogger.error(logData);
   else if (status >= 400) requestLogger.warn(logData);

@@ -1,7 +1,15 @@
 import { RateLimiterRes } from 'rate-limiter-flexible';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
-import { extractIdentifiers, getRateLimiterInstance, rateLimitError } from '#/middlewares/rate-limiter/helpers';
+import {
+  blockSpentBucket,
+  extractIdentifiers,
+  getRateLimiterInstance,
+  openBucket,
+  rateLimitError,
+  refundAttempt,
+  reserveAttempt,
+} from '#/middlewares/rate-limiter/helpers';
 import { restoreDebt, syncFromDb, takeDebt, tryFastConsume } from '#/middlewares/rate-limiter/points-cache';
 import type {
   RateLimiterHandler,
@@ -30,9 +38,71 @@ export const slowOptions = {
   blockDuration: 60 * 60 * 3,
 };
 
+type FailureStore = ReturnType<typeof getRateLimiterInstance>;
+type BucketLimits = { points: number; duration: number; blockDuration: number };
+
+/** A zero block duration would block forever in the store; fall back to the counting window. */
+const blockSecondsOf = ({ duration, blockDuration }: BucketLimits) => (blockDuration > 0 ? blockDuration : duration);
+
+/**
+ * Records one failure against a fail-mode bucket after the handler ran (the 24-hour bucket). Blocking the key in the
+ * database when the budget is spent is what makes the next request's pre-check (`consumedPoints > points`) refuse it,
+ * for `blockDuration`, in every process.
+ */
+async function recordFailure(store: FailureStore, rateLimitKey: string, limits: BucketLimits) {
+  try {
+    const result = await store.consume(rateLimitKey);
+    if (result.consumedPoints >= limits.points) await store.block(rateLimitKey, blockSecondsOf(limits));
+  } catch (err) {
+    if (!(err instanceof RateLimiterRes)) {
+      log.warn('Rate limit consume failed', { rateLimitKey, err });
+      return;
+    }
+    await store.block(rateLimitKey, blockSecondsOf(limits));
+  }
+}
+
+/** Opens a bucket before its first consume; the store falls back to its in-memory insurance while the database is unreachable. */
+async function openBucketSafely(store: FailureStore, rateLimitKey: string, durationSeconds: number) {
+  try {
+    await openBucket(store, rateLimitKey, durationSeconds);
+  } catch (err) {
+    log.warn('Rate limit bucket could not be opened', { rateLimitKey, err });
+  }
+}
+
+type Outcome = 'fail' | 'success' | 'other';
+
+/**
+ * Settles a reserved attempt once the handler answered. The outcome the bucket counts keeps it, and a counted failure
+ * answered while the whole budget is taken blocks the key; a success of a failure series resets the series; any other
+ * outcome gives it back, so nothing but counted outcomes ever blocks a key.
+ */
+async function settleAttempt(
+  store: FailureStore,
+  rateLimitKey: string,
+  limits: BucketLimits,
+  { outcome, counted, resetsSeries }: { outcome: Outcome; counted: Exclude<Outcome, 'other'>; resetsSeries: boolean },
+) {
+  try {
+    if (outcome === counted) {
+      if (counted === 'fail') await blockSpentBucket(store, rateLimitKey, limits.points, blockSecondsOf(limits));
+    } else if (outcome === 'success' && resetsSeries) {
+      await store.delete(rateLimitKey);
+    } else {
+      await refundAttempt(store, rateLimitKey);
+    }
+  } catch (err) {
+    log.warn('Rate limit attempt could not be settled', { rateLimitKey, err });
+  }
+}
+
 /**
  * Builds a route rate limiter. `limit` consumes every result, `success` and `fail` only matching ones, `failseries`
- * resets after a success. Failure modes also consume a 24-hour bucket that catches slow brute-force attempts.
+ * resets after a success. `success` and the fail modes count an attempt before the handler runs and give it back unless
+ * it had the counted outcome, so a parallel burst reaches the handler at most `points` times. A spent `success` budget
+ * holds until its window ends, as a limit does; a fail mode blocks for `blockDuration` from the failure that spent it.
+ * Fail modes also count failures in a 24-hour bucket that catches slow brute-force attempts.
  * @param mode - Result mode that controls point consumption.
  * @param key - Rate-limit namespace.
  * @param identifiers - Key parts or fallback chains composing the subject identifier.
@@ -47,9 +117,11 @@ export const rateLimiter = (
   const { limits, functionName, name, description, onBlock, getConsumePoints, getPointsBudget } = opts ?? {};
   const config = { ...defaultOptions, ...limits };
   const keyPrefix = `${key}_${mode}`;
-  const limiter = getRateLimiterInstance({ ...config, keyPrefix });
   const isFailMode = mode === 'fail' || mode === 'failseries';
-  const slowLimiter = isFailMode ? getRateLimiterInstance({ ...slowOptions, keyPrefix: `${keyPrefix}:slow` }) : null;
+  const limiter = getRateLimiterInstance({ ...config, keyPrefix, inMemoryBlock: mode === 'limit' });
+  const slowLimiter = isFailMode
+    ? getRateLimiterInstance({ ...slowOptions, keyPrefix: `${keyPrefix}:slow`, inMemoryBlock: false })
+    : null;
 
   const handler = xMiddleware(
     { functionName: functionName ?? `${key}Limiter`, type: 'x-rate-limiter', name: name ?? key, description },
@@ -98,30 +170,21 @@ export const rateLimiter = (
         // 'check-db' falls through to the standard DB path below
       }
 
-      const limitState = await limiter.get(rateLimitKey);
-
-      if (limitState !== null && limitState.consumedPoints > effectiveBudget) {
+      const refuse = (state: RateLimiterRes) => {
         try {
           onBlock?.(rateLimitKey, ctx);
         } catch (err) {
           log.warn('Rate limit onBlock callback failed', { rateLimitKey, err });
         }
-        return rateLimitError(ctx, limitState, rateLimitKey);
-      }
-
-      if (slowLimiter) {
-        const slowLimitState = await slowLimiter.get(rateLimitKey);
-        if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points) {
-          try {
-            onBlock?.(rateLimitKey, ctx);
-          } catch (err) {
-            log.warn('Rate limit onBlock callback failed', { rateLimitKey, err });
-          }
-          return rateLimitError(ctx, slowLimitState, rateLimitKey);
-        }
-      }
+        return rateLimitError(ctx, state, rateLimitKey);
+      };
 
       if (mode === 'limit') {
+        const limitState = await limiter.get(rateLimitKey);
+        if (limitState !== null && limitState.consumedPoints > effectiveBudget) return refuse(limitState);
+        // No live row yet: create it first, or the first requests of a parallel burst each start the count at one.
+        if (limitState === null) await openBucketSafely(limiter, rateLimitKey, config.duration);
+
         // Settle unflushed fast-path consumes with this request's cost, or `syncFromDb` resets the counter to an undercount
         const debt = getPointsBudget ? takeDebt(rateLimitKey) : 0;
 
@@ -141,39 +204,41 @@ export const rateLimiter = (
           restoreDebt(rateLimitKey, debt);
           throw rlRejected;
         }
+
+        await next();
+        return;
       }
 
+      if (slowLimiter) {
+        const slowLimitState = await slowLimiter.get(rateLimitKey);
+        if (slowLimitState !== null && slowLimitState.consumedPoints > slowLimiter.points) {
+          return refuse(slowLimitState);
+        }
+      }
+
+      const reservation = await reserveAttempt(limiter, rateLimitKey, config);
+      if (!reservation.granted) return refuse(reservation.state);
+
+      // A handler that throws past the error handler leaves the attempt counted.
       await next();
 
-      const isSuccess = config.successStatusCodes?.includes(ctx.res.status) ?? false;
-      const isFail = config.failStatusCodes?.includes(ctx.res.status) ?? false;
-      const isIgnored = config.ignoredStatusCodes?.includes(ctx.res.status) ?? false;
+      // An error answered with a redirect (token links, OAuth callbacks) responds 302; its own status is the outcome.
+      const status = ctx.var.errorStatus ?? ctx.res.status;
+      const outcome: Outcome = config.ignoredStatusCodes?.includes(status)
+        ? 'other'
+        : config.failStatusCodes?.includes(status)
+          ? 'fail'
+          : config.successStatusCodes?.includes(status)
+            ? 'success'
+            : 'other';
 
-      if (isSuccess && !isIgnored) {
-        if (mode === 'success') {
-          try {
-            await limiter.consume(rateLimitKey);
-          } catch (err) {
-            log.warn('Rate limit consume failed', { rateLimitKey, err });
-          }
-        } else if (mode === 'failseries') {
-          await limiter.delete(rateLimitKey);
-        }
-      } else if (isFail && !isIgnored && slowLimiter) {
-        // Must use the same normalized key as the slow-bucket lookup, or the 24-hour bucket never blocks
-        try {
-          await slowLimiter.consume(rateLimitKey);
-        } catch (rlRejected) {
-          if (rlRejected instanceof RateLimiterRes) return rateLimitError(ctx, rlRejected, rateLimitKey);
-          throw rlRejected;
-        }
-
-        try {
-          await limiter.consume(rateLimitKey);
-        } catch (err) {
-          log.warn('Rate limit consume failed', { rateLimitKey, err });
-        }
-      }
+      // Must use the same normalized key as the slow-bucket lookup, or the 24-hour bucket never blocks
+      if (slowLimiter && outcome === 'fail') await recordFailure(slowLimiter, rateLimitKey, slowOptions);
+      await settleAttempt(reservation.store, rateLimitKey, config, {
+        outcome,
+        counted: isFailMode ? 'fail' : 'success',
+        resetsSeries: mode === 'failseries',
+      });
     },
   );
 

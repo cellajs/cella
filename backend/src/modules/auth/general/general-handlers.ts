@@ -3,29 +3,26 @@ import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
-import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { baseDb } from '#/db/db';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
-import { authEvents } from '#/modules/auth/auth-events';
-import { findInvitationToken, findLatestSessionByUser, revokeSessions } from '#/modules/auth/auth-queries';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
+import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
+import { linkHandlers } from '#/modules/auth/general/helpers/link-handlers';
+import { isRecognizedBrowser } from '#/modules/auth/general/helpers/recognized-browser';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
-import { getParsedSessionCookie, setUserSession, validateSession } from '#/modules/auth/general/helpers/session';
+import { readSession, setUserSession } from '#/modules/auth/general/helpers/session';
 import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accept-invitation-token';
 import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
-import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
+import { dropHeldMagicLink } from '#/modules/auth/magic/helpers/magic-link-browser';
 import { sessionsTable } from '#/modules/auth/sessions-db';
-import { tokensTable } from '#/modules/auth/tokens-db';
-import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
+import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
+import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
+import { findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
-import { getValidSingleUseToken } from '#/utils/get-valid-single-use-token';
-import { getValidToken, singleUseWindow } from '#/utils/get-valid-token';
-import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
-import { TimeSpan } from '#/utils/time-span';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -39,45 +36,17 @@ app.openapi(authGeneralRoutes.health, async (ctx) => {
 app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {
   const { email } = ctx.req.valid('json');
 
-  const { isLimited: restrictedMode } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
+  // True only for a browser that signed in to the address before; any other browser gets false, account or not.
+  const recognized = await isRecognizedBrowser(ctx, email.toLowerCase().trim());
 
-  // In restricted mode, always return 204 to prevent email enumeration
-  if (restrictedMode) return ctx.body(null, 204);
-
-  const normalizedEmail = email.toLowerCase().trim();
-
-  const user = await findUserByEmail(ctx, { email: normalizedEmail });
-
-  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
-
-  return ctx.body(null, 204);
+  return ctx.json({ recognized }, 200);
 });
 
 app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
   const { token, type: tokenType } = ctx.req.valid('param');
 
   try {
-    const tokenRecord = await getValidToken({ ctx, token, tokenType, invokeToken: true });
-
-    // A raw singleUseToken comes back only on a fresh mint (won the CAS); a tolerated re-click returns null and the existing cookie stays valid.
-    if (tokenRecord.singleUseToken) {
-      // Cookie named by token type, holding the single use token, expiring with the token's single-use window or on use.
-      await setAuthCookie(ctx, tokenRecord.type, tokenRecord.singleUseToken, singleUseWindow(tokenRecord.type));
-    }
-
-    if (tokenRecord.type === 'magic') return handleMagicLink(ctx, tokenRecord);
-
-    if (tokenRecord.type === 'oauth-verification') return handleOAuthVerification(ctx, tokenRecord);
-
-    // Only invitation remains: the param schema is limited to invokable types.
-    const redirectUrl = `${appConfig.frontendUrl}/auth/authenticate?tokenId=${tokenRecord.id}`;
-
-    log.info('Token invoked, redirecting with single use token in cookie', {
-      tokenId: tokenRecord.id,
-      userId: tokenRecord.userId,
-    });
-
-    return ctx.redirect(redirectUrl, 302);
+    return await linkHandlers[tokenType](ctx, token);
   } catch (err) {
     if (err instanceof AppError) {
       throw new AppError(err.status, err.type as ErrorKey, err.severity, {
@@ -92,23 +61,27 @@ app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
 app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
   const { type: tokenType, id: tokenId } = ctx.req.valid('param');
 
-  const tokenRecord = await getValidSingleUseToken({ ctx, tokenType });
+  const tokenRecord = await readBoundToken(ctx, tokenType);
   if (tokenRecord.id !== tokenId) throw new AppError(400, 'invalid_request', 'warn');
 
   return ctx.json(await getTokenDataOp(ctx, tokenRecord), 200);
 });
 
 app.openapi(authGeneralRoutes.acceptInvitationToken, async (ctx) => {
-  const tokenRecord = await getValidSingleUseToken({ ctx, tokenType: 'invitation' });
+  const tokenRecord = await readBoundToken(ctx, 'invitation');
 
+  // The answer deletes the invitation's tokens; the spend also clears this browser's cookie.
   const entity = await acceptInvitationTokenOp(ctx, tokenRecord);
-  deleteAuthCookie(ctx, 'invitation');
+  await spendCookieToken(ctx, 'invitation');
 
   return ctx.json(entity, 200);
 });
 
 app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
   const { targetUserId } = ctx.req.valid('json');
+
+  // An impersonation is layered on the admin's own session, never on another impersonation.
+  if (ctx.var.session.type === 'impersonation') throw new AppError(400, 'invalid_request', 'warn');
 
   const user = await findUserById(ctx, { id: targetUserId });
 
@@ -124,68 +97,77 @@ app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
 });
 
 app.openapi(authGeneralRoutes.stopImpersonation, async (ctx) => {
-  const { sessionToken, adminUserId } = await getParsedSessionCookie(ctx, { deleteAfterAttempt: true });
-  const { session } = await validateSession(sessionToken);
+  // userGuard read an impersonation only from its own cookie, on top of the admin session this browser holds.
+  const { session } = ctx.var;
+  if (session.type !== 'impersonation' || !session.impersonatorSessionId) {
+    throw new AppError(400, 'invalid_request', 'warn');
+  }
 
-  // Only continue if session is impersonation
-  if (!adminUserId) throw new AppError(400, 'invalid_request', 'error');
+  const [admin] = await baseDb
+    .select({ userId: sessionsTable.userId })
+    .from(sessionsTable)
+    .where(eq(sessionsTable.id, session.impersonatorSessionId));
+  if (!admin) throw new AppError(401, 'unauthorized', 'warn');
 
-  const adminsLastSession = await findLatestSessionByUser(ctx, { userId: adminUserId });
+  await endSessions(ctx, {
+    userId: session.userId,
+    sessionIds: [session.id],
+    reason: 'impersonation_stopped',
+    by: admin.userId,
+  });
 
-  if (isExpiredDate(adminsLastSession.expiresAt)) throw new AppError(401, 'unauthorized', 'warn');
+  // The admin's session cookie never left this browser: without the impersonation cookie it authenticates again.
+  deleteAuthCookie(ctx, 'impersonation');
 
-  const expireTimeSpan = new TimeSpan(new Date(adminsLastSession.expiresAt).getTime() - Date.now(), 'ms');
-  const cookieContent = `${adminsLastSession.secret}.${adminsLastSession.userId ?? ''}`;
-
-  await setAuthCookie(ctx, 'session', cookieContent, expireTimeSpan);
-
-  log.info('Stopped impersonation', { adminId: adminUserId, targetUserId: session.userId });
+  log.info('Stopped impersonation', { adminId: admin.userId, targetUserId: session.userId });
 
   return ctx.body(null, 204);
 });
 
 app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
-  const { email, tokenId } = ctx.req.valid('json');
+  const { tokenId } = ctx.req.valid('json');
 
-  const normalizedEmail = email?.toLowerCase().trim();
-
-  const filters = [eq(tokensTable.type, 'invitation')];
-
-  if (normalizedEmail) filters.push(eq(tokensTable.email, normalizedEmail));
-  else if (tokenId) filters.push(eq(tokensTable.id, tokenId));
-  else throw new AppError(400, 'invalid_request', 'error');
-
-  const oldToken = await findInvitationToken(ctx, { filters });
-
-  if (!oldToken) throw new AppError(404, 'token_not_found', 'error');
-
-  await resendInvitationEmail(ctx, oldToken);
+  // One answer whether the id names a pending invitation or not, so the route tells nobody which invitations exist.
+  const oldToken = await findInvitationToken(ctx, { id: tokenId });
+  if (oldToken) await resendInvitationEmail(ctx, oldToken);
 
   return ctx.body(null, 204);
 });
 
 app.openapi(authGeneralRoutes.signOut, async (ctx) => {
-  const confirmMfa = await getAuthCookie(ctx, 'confirm-mfa');
+  // A magic link this browser opened lets it back in, with no other proof, until its single-use window closes: spent
+  // first, so it goes whatever becomes of the session below and the next person at a shared computer cannot reopen it.
+  if (await getAuthCookie(ctx, 'magic')) await spendCookieToken(ctx, 'magic');
+  // A link held here for confirmation, never confirmed, goes as well.
+  await dropHeldMagicLink(ctx);
 
-  if (confirmMfa) {
-    deleteAuthCookie(ctx, 'confirm-mfa');
+  // Likewise a provider connect started here and never finished: the next person must not finish it on this account.
+  if (await getAuthCookie(ctx, 'oauth-connect')) await spendCookieToken(ctx, 'oauth-connect');
 
+  // A second-factor challenge this browser holds ends too: its cookie goes and its token row is spent.
+  if (await getAuthCookie(ctx, 'confirm-mfa')) {
+    await spendCookieToken(ctx, 'confirm-mfa');
     log.info('User mfa canceled');
 
-    return ctx.body(null, 204);
+    // Canceling from the MFA page carries no session cookie: ending the challenge is then the whole sign-out.
+    if (!(await getAuthCookie(ctx, 'session'))) return ctx.body(null, 204);
   }
 
-  const { sessionToken } = await getParsedSessionCookie(ctx, { deleteOnError: true, deleteAfterAttempt: true });
-  const { session: currentSession } = await validateSession(sessionToken);
+  // The browser's session cookie goes, and an impersonation layered on it, which `endSessions` ends with it.
+  const sessionToken = await getAuthCookie(ctx, 'session');
+  deleteAuthCookie(ctx, 'session');
+  if (await getAuthCookie(ctx, 'impersonation')) deleteAuthCookie(ctx, 'impersonation');
+  if (!sessionToken) throw new AppError(401, 'unauthorized', 'warn');
 
-  await revokeSessions(ctx, {
-    filters: [eq(sessionsTable.id, currentSession.id), eq(sessionsTable.userId, currentSession.userId)],
+  const { session: currentSession } = await readSession(sessionToken);
+  if (currentSession.type === 'impersonation') throw new AppError(401, 'unauthorized', 'warn');
+
+  await endSessions(ctx, {
+    userId: currentSession.userId,
+    sessionIds: [currentSession.id],
     reason: 'sign_out',
-    revokedBy: currentSession.userId,
+    by: currentSession.userId,
   });
-
-  invalidateCache.user(currentSession.userId);
-  authEvents.emit('session.revoked', { userId: currentSession.userId, sessionIds: [currentSession.id] });
   log.info('User signed out', { userId: currentSession.userId });
 
   return ctx.body(null, 204);
