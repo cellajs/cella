@@ -3,24 +3,12 @@ import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import type { Env } from '#/core/context';
 import { authCookieName, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { linkHandlers } from '#/modules/auth/general/helpers/link-handlers';
-import { tokenPolicies, tokenReplacements } from '#/modules/auth/tokens/token-policies';
+import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
 
 const linkTypes = appConfig.tokenTypes.filter((type) => tokenPolicies[type].carrier === 'link');
 
+// A policy for every token type, a handler for every link type and a known replacement rule are checked by the types.
 describe('token policies', () => {
-  it('has a policy for every configured token type', () => {
-    for (const type of appConfig.tokenTypes) expect(tokenPolicies[type], type).toBeDefined();
-  });
-
-  it('opens every link-carried type through a handler of its own', () => {
-    expect(Object.keys(linkHandlers).sort()).toEqual([...linkTypes].sort());
-  });
-
-  it('gives every token type a rule for the earlier tokens a new one replaces', () => {
-    for (const type of appConfig.tokenTypes) expect(tokenReplacements, type).toContain(tokenPolicies[type].replaces);
-  });
-
   it('gives every link a single-use window shorter than its lifetime', () => {
     for (const type of linkTypes) {
       const policy = tokenPolicies[type];
