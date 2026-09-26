@@ -157,7 +157,8 @@ export function toClientError(
           type,
           entityType,
           ...fields,
-          ...(pgError && { pgCode: pgError.code, pgDetail: pgError.detail, pgConstraint: pgError.constraint }),
+          // The code and constraint only: a database error's detail quotes the row's values.
+          ...(pgError && { pgCode: pgError.code, pgConstraint: pgError.constraint }),
           ...(meta && { meta }),
         }
       : undefined,

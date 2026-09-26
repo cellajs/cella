@@ -122,6 +122,31 @@ describe('failed queries in log lines', () => {
     expect(err).not.toHaveProperty('query');
   });
 
+  it("must not log the values of a failed query via the database's detail", () => {
+    const { logger, lines, parsed } = collectingLogger([]);
+    // Built at run time: the test proves this value never reaches a log line.
+    const secret = `secret_${randomUUID()}@example.test`;
+    const reason = 'duplicate key value violates unique constraint "emails_email_unique"';
+    const cause = Object.assign(new Error(reason), {
+      code: '23505',
+      constraint: 'emails_email_unique',
+      detail: `Key (email)=(${secret}) already exists.`,
+      where: `SQL statement "insert into emails values ('${secret}')"`,
+      internalQuery: `insert into emails values ('${secret}')`,
+    });
+    const error = new DrizzleQueryError('insert into "emails" ("email") values ($1)', [secret], cause);
+
+    createLog(logger).error('Sign-up failed', { err: error });
+
+    expect(lines.join('\n')).not.toContain(secret);
+    // Positive control: the reason, the code and the constraint stay.
+    const err = parsed()[0]?.err as LoggedError;
+    expect(err).toMatchObject({
+      message: reason,
+      cause: { message: reason, code: '23505', constraint: 'emails_email_unique' },
+    });
+  });
+
   it('must not log the values of a failed query via a wrapping error that took over its stack', () => {
     const { logger, lines, parsed } = collectingLogger([]);
     const { secret, reason, error } = failedLookup();

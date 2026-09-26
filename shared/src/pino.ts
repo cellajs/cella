@@ -34,11 +34,14 @@ const maxCauseDepth = 8;
 /** A message or stack without the values of a failed query or the secrets of a URL it quotes. */
 const scrubErrorText = (text: string) => scrubUrl(redactFailedQuery(text));
 
+/** The fields of a database error that quote the row or statement: a unique violation's `detail` names the value. */
+const valueQuotingFields = ['detail', 'where', 'internalQuery'] as const;
+
 /**
  * Removes failed queries and URL secrets from a serialized error and its causes, in place. A failed query's own node
  * takes the database's reason as its message and loses its `query` and `params`; every message and stack goes through
- * `redactFailedQuery` and `scrubUrl`. Only error-like nodes (a string `message`) are touched: the serializer built
- * those, the caller did not.
+ * `redactFailedQuery` and `scrubUrl`, and the fields a database error quotes values in go. Only error-like nodes (a
+ * string `message`) are touched: the serializer built those, the caller did not.
  */
 const redactSerializedError = (node: unknown, depth = 0): void => {
   if (typeof node !== 'object' || node === null || depth > maxCauseDepth) return;
@@ -56,6 +59,7 @@ const redactSerializedError = (node: unknown, depth = 0): void => {
     error.message = scrubErrorText(message);
   }
   if (typeof error.stack === 'string') error.stack = scrubErrorText(error.stack);
+  for (const field of valueQuotingFields) delete error[field];
 
   redactSerializedError(error.cause, depth + 1);
   if (Array.isArray(error.aggregateErrors)) {
