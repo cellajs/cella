@@ -305,6 +305,19 @@ describe('OAuth grants', async () => {
       expect(await grantRowsOf(ctx.member.id)).toEqual([]);
     });
 
+    it("must not keep a deleted registered app acting via a grant that passes for an unregistered client's", async () => {
+      const ctx = await tenantWithApp();
+      const grant = await consent(ctx);
+
+      // No route deletes a registered app: an operator deletes its row, which takes its installations along. The tenant
+      // still allows unregistered clients, and a registered app's grant must not pass for one.
+      await db.delete(oauthClientsTable).where(eq(oauthClientsTable.id, APP_ID));
+
+      const read = await readAttachments(ctx, grant.access);
+      expect(read.response.status).toBe(401);
+      expect(reasonOf(read.error)).toBe('app_not_installed');
+    });
+
     it("must not delete a person's grant via a code that names no resource", async () => {
       const ctx = await tenantWithApp();
       // One browser: the member consents, then the client asks again without a resource and gets a code at once.
