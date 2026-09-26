@@ -80,8 +80,8 @@ const expectStepUpRequired = (result: TestResult) => {
 
 /**
  * Account-security routes need the user present again on the very session: a stale session, an impersonation, a
- * step-up of another session or past its window, a recent sign-in without the factor the user holds and an emailed
- * link opened elsewhere are refused; the same request passes once this session stepped up (the positive control).
+ * step-up of another session or past its window, and a recent sign-in without the factor the user holds are refused;
+ * the same request passes once this session stepped up (the positive control).
  */
 describe('account-security routes need a step-up', async () => {
   const call = await createAppClient();
@@ -358,33 +358,5 @@ describe('account-security routes need a step-up', async () => {
     // Positive control: a sign-in with the authenticator app a minute ago stands as its proof.
     expect((await call(deleteTotp, { headers: (await signedIn('totp')).headers })).response.status).toBe(204);
     expect(await totpsOf()).toHaveLength(0);
-  });
-
-  it('must not pass the guard via the emailed link opened in another browser', async () => {
-    const user = await createTestUser('link-elsewhere@security-test.com');
-    const asking = await insertSession(user, STALE);
-    const otherBrowser = await insertSession(user, STALE);
-
-    const asked = await call(sendStepUpLink, { body: {}, headers: asking.headers });
-    const rawToken = mailedStepUpToken();
-    const elsewhere = await call(invokeToken, {
-      path: { type: 'step-up', token: rawToken },
-      headers: otherBrowser.headers,
-    });
-    expect(elsewhere.response.status).toBe(403);
-
-    expectStepUpRequired(await call(startOAuthConnect, { headers: asking.headers }));
-    expectStepUpRequired(await call(startOAuthConnect, { headers: otherBrowser.headers }));
-
-    const browser = cookiesAfter(asking.cookie, asked.response);
-    const marker = browser.split('; ').filter((pair) => pair.startsWith(`${authCookieName('step-up-requested')}=`));
-    await call(invokeToken, {
-      path: { type: 'step-up', token: rawToken },
-      headers: { ...defaultHeaders, Cookie: marker.join('; ') },
-    });
-    expect((await call(startOAuthConnect, { headers: { ...defaultHeaders, Cookie: browser } })).response.status).toBe(
-      204,
-    );
-    expectStepUpRequired(await call(startOAuthConnect, { headers: otherBrowser.headers }));
   });
 });

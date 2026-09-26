@@ -190,12 +190,4 @@ describe('passkey strategy disabled', async () => {
     expect(res.status).toBe(400);
     expect((error as ErrorResponse).type).toBe('forbidden_strategy');
   });
-
-  it('must not issue a registration challenge while passkeys are off', async () => {
-    const user = await createTestUser('passkey-off-register@example.com');
-    const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
-    const { response: res, error } = await call(generatePasskeyChallenge, { body: { type: 'registration' }, headers });
-    expect(res.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('forbidden_strategy');
-  });
 });

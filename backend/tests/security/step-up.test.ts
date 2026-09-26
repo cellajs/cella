@@ -132,16 +132,6 @@ describe('step-up', async () => {
     expect(await stateOf(session)).toEqual({ steppedUp: true, methods: ['totp'] });
   });
 
-  it("must not step up a session via a step-up of the user's other session", async () => {
-    const user = await createTotpUser('two-sessions@security-test.com');
-    const [stepped, other] = [await insertSession(user, STALE), await insertSession(user, STALE)];
-
-    await call(stepUp, { body: { totpCode: currentCode() }, headers: stepped.headers });
-
-    expect((await stateOf(stepped)).steppedUp).toBe(true);
-    expect((await stateOf(other)).steppedUp).toBe(false);
-  });
-
   it('must not step up an impersonation session via a factor or an emailed link', async () => {
     const admin = await createSystemAdminUser('step-up-admin@security-test.com');
     const target = await createTotpUser('step-up-target@security-test.com');

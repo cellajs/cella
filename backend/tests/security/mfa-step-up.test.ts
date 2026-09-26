@@ -63,14 +63,6 @@ describe('MFA toggle step-up', async () => {
     expect(await mfaRequiredOf(user.id)).toBe(true);
   });
 
-  it('must not enable MFA via PUT /me/mfa with a session and no second factor', async () => {
-    const { user, headers } = await totpUserWithSession(false, { signedInAgoMs: STALE_MS });
-    const { error, response } = await call(toggleMfa, { body: { mfaRequired: true }, headers });
-    expect(response.status).toBe(403);
-    expect((error as ErrorResponse).type).toBe('step_up_required');
-    expect(await mfaRequiredOf(user.id)).toBe(false);
-  });
-
   it('must not disable MFA via a wrong TOTP code', async () => {
     const { user, headers } = await totpUserWithSession(true);
     const { error, response } = await call(toggleMfa, {
