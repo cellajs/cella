@@ -1,7 +1,9 @@
 import { decodeBase32, encodeBase32UpperCase } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
 import {
+  createApiKey,
   createPasskey,
+  createServiceAccount,
   createTotp,
   deleteMe,
   deletePasskey,
@@ -24,13 +26,22 @@ import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
+import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
+import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createSystemAdminUser, createTestUser, createTotpUser, type ErrorResponse } from '../helpers';
+import {
+  authCookie,
+  createSystemAdminUser,
+  createTestOrganization,
+  createTestUser,
+  createTotpUser,
+  type ErrorResponse,
+} from '../helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient, type TestResult } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
-import { clearSecurityTestData } from './helpers';
+import { clearSecurityTestData, createOrgUser } from './helpers';
 import { asSession, cookiesAfter, insertImpersonation, insertSession, type TestSession } from './session-helpers';
 
 vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
@@ -246,6 +257,65 @@ describe('account-security routes need a step-up', async () => {
     const own = await insertSession(target, STALE);
     await stepUpWithTotp(own);
     expect((await call(deletePasskey, { path: { id: passkey.id }, headers: own.headers })).response.status).toBe(204);
+  });
+
+  /** An organization with an admin who has no second factor, and the calls that mint an API key in it. */
+  const keyMinting = async (label: string) => {
+    const org = await createTestOrganization();
+    const admin = await createOrgUser(call, org.tenantId, org.id, label, 'admin');
+    const path = { tenantId: org.tenantId, organizationId: org.id };
+    return {
+      admin,
+      createAccount: (session: TestSession) =>
+        call(createServiceAccount, {
+          path,
+          body: { name: 'CI bot', role: 'member', key: { name: 'deploy', scopes: null } },
+          headers: session.headers,
+        }),
+      createKey: (session: TestSession, id: string) =>
+        call(createApiKey, { path: { ...path, id }, body: { name: 'second' }, headers: session.headers }),
+      accounts: () => db.select().from(serviceAccountsTable).where(eq(serviceAccountsTable.tenantId, org.tenantId)),
+      keys: () => db.select().from(apiKeysTable).where(eq(apiKeysTable.tenantId, org.tenantId)),
+    };
+  };
+
+  it('must not mint an API key via a stale session', async () => {
+    const minting = await keyMinting('key-minter');
+    const stale = await insertSession(minting.admin, STALE);
+
+    expectStepUpRequired(await minting.createAccount(stale));
+    expect(await minting.accounts()).toHaveLength(0);
+
+    const steppedUp = await stepUpByEmail(stale);
+    const created = await minting.createAccount(steppedUp);
+    expect(created.response.status).toBe(201);
+    const accountId = (created.data as { serviceAccount: { id: string } }).serviceAccount.id;
+
+    // A further key for the account needs the step-up as well.
+    expectStepUpRequired(await minting.createKey(await insertSession(minting.admin, STALE), accountId));
+    expect(await minting.keys()).toHaveLength(1);
+    expect((await minting.createKey(steppedUp, accountId)).response.status).toBe(201);
+    expect(await minting.keys()).toHaveLength(2);
+  });
+
+  it('must not mint an API key via an impersonation session, however fresh', async () => {
+    const minting = await keyMinting('impersonated-key-minter');
+    const own = await insertSession(minting.admin);
+    const created = await minting.createAccount(own);
+    expect(created.response.status).toBe(201);
+    const accountId = (created.data as { serviceAccount: { id: string } }).serviceAccount.id;
+
+    const admin = await createSystemAdminUser('key-impersonator@security-test.com');
+    const impersonation = await insertImpersonation(await insertSession(admin), minting.admin);
+    for (const attempt of [
+      await minting.createAccount(impersonation),
+      await minting.createKey(impersonation, accountId),
+    ]) {
+      expect(attempt.response.status).toBe(403);
+      expect((attempt.error as ErrorResponse).type).toBe('impersonation_forbidden');
+    }
+    expect(await minting.accounts()).toHaveLength(1);
+    expect(await minting.keys()).toHaveLength(1);
   });
 
   it("must not pass the guard via a step-up of the user's other session", async () => {

@@ -39,7 +39,7 @@ Route-level guards in `backend/src/middlewares/guard/`:
 - `orgGuard`: resolves the organization and verifies membership.
 - `publicGuard`: unauthenticated routes. Sets `ctx.var.db` to baseDb.
 - `crossTenantGuard`: authenticated cross-tenant routes. Sets `ctx.var.db = baseDb`. Handlers use `tenantRead()` for product entity queries.
-- `stepUpGuard`: after `userGuard` on account-security routes (factors, MFA, provider connect, account deletion): the session must have proven its user's presence again within ten minutes (a factor the user holds, else a fresh sign-in or an emailed link), never an impersonation; else 403 `step_up_required` naming the methods.
+- `stepUpGuard`: after `userGuard` on account-security routes (factors, MFA, provider connect, account deletion, minting an API key): the session must have proven its user's presence again within ten minutes (a factor the user holds, else a fresh sign-in or an emailed link), never an impersonation; else 403 `step_up_required` naming the methods.
 - Also: `sysAdminGuard`, `relatableGuard`.
 
 ### Database access patterns

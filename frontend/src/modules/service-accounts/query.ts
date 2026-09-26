@@ -14,6 +14,8 @@ import {
 } from 'sdk';
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
+import { withStepUp } from '~/modules/auth/step-up';
+import { StepUpDismissed } from '~/modules/auth/step-up-retry';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { queryClient } from '~/query/query-client';
 import type { MutationData, QueryOrgContext } from '~/query/types';
@@ -43,7 +45,8 @@ export const apiKeysQueryOptions = (path: QueryOrgContext, id: string) =>
 export const useCreateServiceAccountMutation = () => {
   return useMutation<CreateServiceAccountResponse, ApiError, MutationData<CreateServiceAccountData>>({
     mutationKey: serviceAccountKeys.create,
-    mutationFn: ({ path, body }) => createServiceAccount({ path, body }),
+    // Minting a key is an account-security action: the server may ask the user to prove it's them first.
+    mutationFn: ({ path, body }) => withStepUp(() => createServiceAccount({ path, body })),
     onSuccess: ({ serviceAccount, apiKey }, { path }) => {
       queryClient.setQueryData<GetServiceAccountsResponse>(serviceAccountKeys.list(path), (oldData) => {
         if (!oldData) return oldData;
@@ -59,6 +62,7 @@ export const useCreateServiceAccountMutation = () => {
       toaster.success(t('c:success.create_resource', { resource: t('c:api_key') }));
     },
     onError(error) {
+      if (error instanceof StepUpDismissed) return;
       console.error('Error creating API key:', error);
     },
   });

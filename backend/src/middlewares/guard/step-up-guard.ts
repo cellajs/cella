@@ -4,9 +4,9 @@ import { xMiddleware } from '#/core/x-middleware';
 import { requireStepUp } from '#/modules/auth/step-up/helpers/step-up';
 
 /**
- * Account-security actions (factors, MFA, provider connect, OAuth consent, account deletion) need more than a
- * session: a recent proof of the user's presence on this very session, and never an impersonation. Runs after
- * `userGuard`; a refusal is 403 `step_up_required` naming what the user can offer.
+ * Account-security actions (factors, MFA, provider connect, OAuth consent, account deletion, minting an API key) need
+ * more than a session: a recent proof of the user's presence on this very session, and never an impersonation. Runs
+ * after `userGuard`; a refusal is 403 `step_up_required` naming what the user can offer.
  */
 export const stepUpGuard = xMiddleware(
   {

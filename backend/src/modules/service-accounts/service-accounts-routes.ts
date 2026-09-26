@@ -1,5 +1,5 @@
 import { createXRoute } from '#/core/x-routes';
-import { orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
+import { orgGuard, stepUpGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { errorResponseRefs, idInTenantOrgParamSchema, paginationSchema, tenantOrgParamSchema } from '#/schemas';
 import {
@@ -27,7 +27,7 @@ export const serviceAccountRoutes = {
     operationId: 'createServiceAccount',
     method: 'post',
     path: '/',
-    xGuard: [userGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['service-accounts', 'cella'],
     summary: 'Create service account',
@@ -116,7 +116,7 @@ export const serviceAccountRoutes = {
     operationId: 'createApiKey',
     method: 'post',
     path: '/{id}/keys',
-    xGuard: [userGuard, tenantGuard, orgGuard],
+    xGuard: [userGuard, tenantGuard, orgGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['service-accounts', 'cella'],
     summary: 'Create API key',

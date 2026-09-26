@@ -12830,7 +12830,7 @@
         "tags": ["service-accounts", "cella"],
         "summary": "Create service account",
         "description": "Creates a machine actor bound to this organization at the given role (capped at your own), optionally issuing its first API key in the same call.",
-        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -13350,7 +13350,7 @@
         "tags": ["service-accounts", "cella"],
         "summary": "Create API key",
         "description": "Issues an API key for a service account; the plaintext is returned once. With `rollFrom`, the previous key keeps working for the overlap window.",
-        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [

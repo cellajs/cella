@@ -2260,7 +2260,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -2329,7 +2329,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
