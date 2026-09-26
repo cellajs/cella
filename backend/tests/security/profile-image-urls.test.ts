@@ -23,6 +23,7 @@ const imageUrlsOf = async (userId: string) =>
 /**
  * Avatars and banners render as `<img src>` in every viewer's browser. Only the app's own CDN may serve them, so a
  * user cannot make each viewer's browser call a server of the user's choosing (a tracking pixel that logs who looked).
+ * The origin check and its bypass forms are covered in shared/src/utils/is-cdn-url.test.ts and url-origin.test.ts.
  */
 describe('Profile image URLs', async () => {
   const call = await createAppClient();
@@ -35,29 +36,17 @@ describe('Profile image URLs', async () => {
     return { user, headers: { ...defaultHeaders, Cookie: sessionCookie } };
   }
 
-  const bypasses = [
-    `${cdn}@evil.example/pixel.png`,
-    `${cdn}.evil.example/pixel.png`,
-    `${cdn}evil.example/pixel.png`,
-    `${cdn}:8443/pixel.png`,
-  ];
-
-  for (const url of bypasses) {
-    it(`must not point an avatar at another host via ${url.slice(cdn.length) || url}`, async () => {
-      const { user, headers } = await userWithSession();
-
-      const { error, response } = await call(updateMe, { body: { thumbnailUrl: url }, headers });
-      expect(response.status).toBe(400);
-      expect((error as ErrorResponse).type).toBe('invalid_cdn_url');
-      expect(await imageUrlsOf(user.id)).toEqual({ thumbnailUrl: null, bannerUrl: null });
-    });
-  }
-
-  it('must not point a banner at another host via a CDN-prefixed userinfo URL', async () => {
+  it('must not point an avatar or a banner at another host via a CDN-prefixed URL', async () => {
     const { user, headers } = await userWithSession();
 
-    const { response } = await call(updateMe, { body: { bannerUrl: `${cdn}@evil.example/banner.png` }, headers });
-    expect(response.status).toBe(400);
+    for (const body of [
+      { thumbnailUrl: `${cdn}@evil.example/pixel.png` },
+      { bannerUrl: `${cdn}.evil.example/banner.png` },
+    ]) {
+      const { error, response } = await call(updateMe, { body, headers });
+      expect(response.status, JSON.stringify(body)).toBe(400);
+      expect((error as ErrorResponse).type).toBe('invalid_cdn_url');
+    }
     expect(await imageUrlsOf(user.id)).toEqual({ thumbnailUrl: null, bannerUrl: null });
   });
 
