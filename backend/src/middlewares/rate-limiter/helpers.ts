@@ -1,6 +1,6 @@
-import { and, between, eq, gt, lte, sql } from 'drizzle-orm';
+import { and, eq, gt, gte, lt, lte, or, sql } from 'drizzle-orm';
 import type { Context } from 'hono';
-import { RateLimiterDrizzle, RateLimiterMemory, type RateLimiterRes } from 'rate-limiter-flexible';
+import { RateLimiterDrizzle, RateLimiterMemory, RateLimiterRes } from 'rate-limiter-flexible';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
@@ -24,11 +24,16 @@ type RateLimiterOptions = {
   inMemoryBlock?: boolean;
 };
 
+type LimiterStore = RateLimiterDrizzle | RateLimiterMemory;
+
 // Singleton registry: reuse limiter instances with the same keyPrefix to share internal caches and reduce DB round-trips
-const limiterRegistry = new Map<string, RateLimiterDrizzle | RateLimiterMemory>();
+const limiterRegistry = new Map<string, LimiterStore>();
+
+/** Each database store's in-memory insurance, for the statements this module runs on the store's table itself. */
+const insurances = new WeakMap<RateLimiterDrizzle, RateLimiterMemory>();
 
 /** Prefix-memoized Drizzle limiter; an in-memory insurance limiter covers DB outages and blocks stay local. */
-export const getRateLimiterInstance = ({ inMemoryBlock = true, ...options }: RateLimiterOptions) => {
+export const getRateLimiterInstance = ({ inMemoryBlock = true, ...options }: RateLimiterOptions): LimiterStore => {
   const keyPrefix = options.keyPrefix ?? '';
   const existing = limiterRegistry.get(keyPrefix);
   if (existing) return existing;
@@ -38,27 +43,33 @@ export const getRateLimiterInstance = ({ inMemoryBlock = true, ...options }: Rat
     tableName: defaultOptions.tableName,
   };
 
-  let instance: RateLimiterDrizzle | RateLimiterMemory;
+  let instance: LimiterStore;
 
   if (env.NODB) {
     instance = new RateLimiterMemory(enforcedOptions);
   } else {
+    // Fail-open: an unreachable DB falls back to the in-memory limiter so the request survives without a 500
+    const insurance = new RateLimiterMemory(enforcedOptions);
     instance = new RateLimiterDrizzle({
       ...enforcedOptions,
       storeClient: db,
       schema: rateLimitsTable,
-      // Fail-open: an unreachable DB falls back to the in-memory limiter so the request survives without a 500
-      insuranceLimiter: new RateLimiterMemory(enforcedOptions),
+      insuranceLimiter: insurance,
       // Block over-limit keys in-memory so repeat offenders miss the DB; blockDuration=0 uses the remaining window
       ...(inMemoryBlock && { inMemoryBlockOnConsumed: enforcedOptions.points }),
     });
+    insurances.set(instance, insurance);
   }
 
   limiterRegistry.set(keyPrefix, instance);
   return instance;
 };
 
-type LimiterStore = ReturnType<typeof getRateLimiterInstance>;
+/** The in-memory store a database store falls back to while the database is unreachable; none for a memory store. */
+export const insuranceOf = (store: LimiterStore) =>
+  store instanceof RateLimiterDrizzle ? insurances.get(store) : undefined;
+
+const msUntil = (expire: Date | null) => (expire ? Math.max(expire.getTime() - Date.now(), 0) : -1);
 
 /**
  * Creates a bucket's row, or restarts an expired one, in one statement, leaving a live count alone. The database
@@ -83,8 +94,46 @@ export const openBucket = async (store: LimiterStore, rateLimitKey: string, dura
 };
 
 /**
- * Gives back an attempt counted before the handler ran whose outcome was not a failure. A bucket past its budget keeps
- * its block, and an expired one stays as it is.
+ * Takes one attempt from a bucket while its budget lasts, in one statement: a new or expired bucket starts at one, a
+ * live one below `points` gains one. A spent bucket stays as it is, so a refused request neither counts nor blocks.
+ * @param store - The bucket's limiter.
+ * @param rateLimitKey - The key as the middleware passes it to the store.
+ * @param limits - The budget and the counting window a new or restarted bucket gets.
+ * @returns The bucket with this attempt, or null when its budget is spent.
+ */
+export const takeAttempt = async (
+  store: LimiterStore,
+  rateLimitKey: string,
+  { points, duration }: { points: number; duration: number },
+): Promise<RateLimiterRes | null> => {
+  if (store instanceof RateLimiterDrizzle) {
+    const now = new Date();
+    const expired = lte(rateLimitsTable.expire, now);
+    const [bucket] = await db
+      .insert(rateLimitsTable)
+      .values({ key: store.getKey(rateLimitKey), points: 1, expire: new Date(now.getTime() + duration * 1000) })
+      .onConflictDoUpdate({
+        target: rateLimitsTable.key,
+        set: {
+          points: sql`case when ${expired} then 1 else ${rateLimitsTable.points} + 1 end`,
+          expire: sql`case when ${expired} then excluded.expire else ${rateLimitsTable.expire} end`,
+        },
+        setWhere: or(expired, lt(rateLimitsTable.points, points)),
+      })
+      .returning({ points: rateLimitsTable.points, expire: rateLimitsTable.expire });
+    if (!bucket) return null;
+    return new RateLimiterRes(Math.max(points - bucket.points, 0), msUntil(bucket.expire), bucket.points);
+  }
+  // In memory the count this attempt reads back is its own, so a parallel burst takes the budget one by one here too.
+  const taken = await store.penalty(rateLimitKey, 1);
+  if (taken.consumedPoints <= points) return taken;
+  await store.reward(rateLimitKey, 1);
+  return null;
+};
+
+/**
+ * Gives back an attempt counted before the handler ran whose outcome the bucket does not count. A bucket that expired
+ * or was reset since holds no attempt to give back.
  * @param store - The bucket's limiter.
  * @param rateLimitKey - The key as the middleware passes it to the store.
  */
@@ -96,14 +145,48 @@ export const refundAttempt = async (store: LimiterStore, rateLimitKey: string) =
       .where(
         and(
           eq(rateLimitsTable.key, store.getKey(rateLimitKey)),
-          between(rateLimitsTable.points, 1, store.points),
+          gt(rateLimitsTable.points, 0),
           gt(rateLimitsTable.expire, new Date()),
         ),
       );
     return;
   }
+  // In memory a bucket reset or expired since reads back below zero: the point goes back where it came from.
+  const refunded = await store.reward(rateLimitKey, 1);
+  if (refunded.consumedPoints < 0) await store.penalty(rateLimitKey, 1);
+};
+
+/**
+ * Blocks a bucket whose whole budget is taken, for `blockSeconds` from now: what a failure answered at that point does.
+ * The block keeps the bucket's points, so attempts still in flight that the bucket does not count give theirs back and
+ * reopen it.
+ * @param store - The bucket's limiter.
+ * @param rateLimitKey - The key as the middleware passes it to the store.
+ * @param points - The bucket's budget.
+ * @param blockSeconds - How long the block lasts, the same in every process.
+ */
+export const blockSpentBucket = async (
+  store: LimiterStore,
+  rateLimitKey: string,
+  points: number,
+  blockSeconds: number,
+) => {
+  const now = new Date();
+  if (store instanceof RateLimiterDrizzle) {
+    await db
+      .update(rateLimitsTable)
+      .set({ expire: new Date(now.getTime() + blockSeconds * 1000) })
+      .where(
+        and(
+          eq(rateLimitsTable.key, store.getKey(rateLimitKey)),
+          gte(rateLimitsTable.points, points),
+          gt(rateLimitsTable.expire, now),
+        ),
+      );
+    return;
+  }
   const state = await store.get(rateLimitKey);
-  if (state && state.consumedPoints >= 1 && state.consumedPoints <= store.points) await store.reward(rateLimitKey);
+  if (state && state.consumedPoints >= points) await store.set(rateLimitKey, state.consumedPoints, blockSeconds);
 };
 
 export const rateLimitError = (ctx: Context<Env>, limitState: RateLimiterRes, rateLimitKey: string) => {

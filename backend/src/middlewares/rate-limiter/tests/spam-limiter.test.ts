@@ -5,8 +5,9 @@ import type { Env } from '#/core/context';
 // Undo setup.ts mock: this test drives the REAL spamLimiter export end to end.
 vi.unmock('#/middlewares/rate-limiter/core');
 
-const { consumeSpy, rewardSpy } = vi.hoisted(() => ({
-  consumeSpy: vi.fn().mockResolvedValue({ consumedPoints: 1, remainingPoints: 9, msBeforeNext: 0 }),
+const { penaltySpy, rewardSpy } = vi.hoisted(() => ({
+  // The attempt reserved before the handler, as the store reports it back.
+  penaltySpy: vi.fn().mockResolvedValue({ consumedPoints: 1, remainingPoints: 9, msBeforeNext: 0 }),
   rewardSpy: vi.fn().mockResolvedValue({ consumedPoints: 0, remainingPoints: 10, msBeforeNext: 0 }),
 }));
 
@@ -16,9 +17,8 @@ vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => {
     ...original,
     getRateLimiterInstance: () => ({
       points: 10,
-      // The attempt reserved before the handler, as the store reports it back.
       get: vi.fn(async () => ({ consumedPoints: 1, remainingPoints: 9, msBeforeNext: 0 })),
-      consume: consumeSpy,
+      penalty: penaltySpy,
       reward: rewardSpy,
       delete: vi.fn(async () => {}),
     }),
@@ -39,7 +39,7 @@ const request = (app: Hono<Env>) =>
 
 describe('spamLimiter status handling', () => {
   beforeEach(() => {
-    consumeSpy.mockClear();
+    penaltySpy.mockClear();
     rewardSpy.mockClear();
   });
 
@@ -47,20 +47,20 @@ describe('spamLimiter status handling', () => {
     // sendMagicLink and resendInvitationWithToken return 204, which the default successStatusCodes do not cover
     const res = await request(appReturning(204));
     expect(res.status).toBe(204);
-    expect(consumeSpy).toHaveBeenCalledWith('ip:1.2.3.4');
+    expect(penaltySpy).toHaveBeenCalledWith('ip:1.2.3.4', 1);
     expect(rewardSpy).not.toHaveBeenCalled();
   });
 
   it('consumes a point on 200 responses', async () => {
     await request(appReturning(200));
-    expect(consumeSpy).toHaveBeenCalledWith('ip:1.2.3.4');
+    expect(penaltySpy).toHaveBeenCalledWith('ip:1.2.3.4', 1);
     expect(rewardSpy).not.toHaveBeenCalled();
   });
 
   it('does not count failed requests', async () => {
     await request(appReturning(401));
     // The point reserved before the handler goes back.
-    expect(consumeSpy).toHaveBeenCalledTimes(1);
-    expect(rewardSpy).toHaveBeenCalledExactlyOnceWith('ip:1.2.3.4');
+    expect(penaltySpy).toHaveBeenCalledTimes(1);
+    expect(rewardSpy).toHaveBeenCalledExactlyOnceWith('ip:1.2.3.4', 1);
   });
 });

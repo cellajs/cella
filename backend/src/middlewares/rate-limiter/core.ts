@@ -2,11 +2,14 @@ import { RateLimiterRes } from 'rate-limiter-flexible';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import {
+  blockSpentBucket,
   extractIdentifiers,
   getRateLimiterInstance,
+  insuranceOf,
   openBucket,
   rateLimitError,
   refundAttempt,
+  takeAttempt,
 } from '#/middlewares/rate-limiter/helpers';
 import { restoreDebt, syncFromDb, takeDebt, tryFastConsume } from '#/middlewares/rate-limiter/points-cache';
 import type {
@@ -71,46 +74,50 @@ async function openBucketSafely(store: FailureStore, rateLimitKey: string, durat
 
 /**
  * Counts an attempt before the handler runs, so a parallel burst takes the budget one point at a time and at most
- * `points` requests reach the handler. The attempt stands for the outcome the bucket counts; any other outcome gives it
- * back (`settleAttempt`).
- * @returns The bucket after this attempt, or the store's refusal once the budget is spent.
+ * `points` requests reach the handler. A spent budget refuses without counting or blocking; the outcome settles the
+ * attempt (`settleAttempt`).
+ * @returns The store holding the attempt (process memory while the database is unreachable) and the bucket with it,
+ *   or the spent bucket that refused it.
  */
 async function reserveAttempt(
   store: FailureStore,
   rateLimitKey: string,
   limits: BucketLimits,
-): Promise<{ granted: boolean; state: RateLimiterRes }> {
-  await openBucketSafely(store, rateLimitKey, limits.duration);
+): Promise<{ granted: true; store: FailureStore; state: RateLimiterRes } | { granted: false; state: RateLimiterRes }> {
+  let holder = store;
+  let taken: RateLimiterRes | null;
   try {
-    return { granted: true, state: await store.consume(rateLimitKey) };
+    taken = await takeAttempt(holder, rateLimitKey, limits);
   } catch (err) {
-    if (err instanceof RateLimiterRes) return { granted: false, state: err };
-    throw err;
+    const insurance = insuranceOf(store);
+    if (!insurance) throw err;
+    log.warn('Rate limit attempt counted in process memory', { rateLimitKey, err });
+    holder = insurance;
+    taken = await takeAttempt(holder, rateLimitKey, limits);
   }
+  if (taken) return { granted: true, store: holder, state: taken };
+  // Read for Retry-After; a bucket reset, expired or given back since the refusal lets the client retry at once.
+  const state = await holder.get(rateLimitKey);
+  const spent = state !== null && state.consumedPoints >= limits.points;
+  return { granted: false, state: spent ? state : new RateLimiterRes(0, 1000, limits.points) };
 }
 
 type Outcome = 'fail' | 'success' | 'other';
 
 /**
- * Settles a reserved attempt once the handler answered. The outcome the bucket counts keeps it, and a failure that
- * spent the budget blocks the key; a success of a failure series resets the series; any other outcome gives it back.
+ * Settles a reserved attempt once the handler answered. The outcome the bucket counts keeps it, and a counted failure
+ * answered while the whole budget is taken blocks the key; a success of a failure series resets the series; any other
+ * outcome gives it back, so nothing but counted outcomes ever blocks a key.
  */
 async function settleAttempt(
   store: FailureStore,
   rateLimitKey: string,
   limits: BucketLimits,
-  {
-    reserved,
-    outcome,
-    counted,
-    resetsSeries,
-  }: { reserved: RateLimiterRes; outcome: Outcome; counted: Exclude<Outcome, 'other'>; resetsSeries: boolean },
+  { outcome, counted, resetsSeries }: { outcome: Outcome; counted: Exclude<Outcome, 'other'>; resetsSeries: boolean },
 ) {
   try {
     if (outcome === counted) {
-      if (counted === 'fail' && reserved.consumedPoints >= limits.points) {
-        await store.block(rateLimitKey, blockSecondsOf(limits));
-      }
+      if (counted === 'fail') await blockSpentBucket(store, rateLimitKey, limits.points, blockSecondsOf(limits));
     } else if (outcome === 'success' && resetsSeries) {
       await store.delete(rateLimitKey);
     } else {
@@ -124,8 +131,9 @@ async function settleAttempt(
 /**
  * Builds a route rate limiter. `limit` consumes every result, `success` and `fail` only matching ones, `failseries`
  * resets after a success. `success` and the fail modes count an attempt before the handler runs and give it back unless
- * it had the counted outcome, so a parallel burst reaches the handler at most `points` times. Fail modes also count
- * failures in a 24-hour bucket that catches slow brute-force attempts.
+ * it had the counted outcome, so a parallel burst reaches the handler at most `points` times. A spent `success` budget
+ * holds until its window ends, as a limit does; a fail mode blocks for `blockDuration` from the failure that spent it.
+ * Fail modes also count failures in a 24-hour bucket that catches slow brute-force attempts.
  * @param mode - Result mode that controls point consumption.
  * @param key - Rate-limit namespace.
  * @param identifiers - Key parts or fallback chains composing the subject identifier.
@@ -141,13 +149,7 @@ export const rateLimiter = (
   const config = { ...defaultOptions, ...limits };
   const keyPrefix = `${key}_${mode}`;
   const isFailMode = mode === 'fail' || mode === 'failseries';
-  const limiter = getRateLimiterInstance({
-    ...config,
-    keyPrefix,
-    inMemoryBlock: mode === 'limit',
-    // A success budget holds until its window ends, as a limit does; a fail mode blocks for `blockDuration`.
-    ...(mode === 'success' && { blockDuration: 0 }),
-  });
+  const limiter = getRateLimiterInstance({ ...config, keyPrefix, inMemoryBlock: mode === 'limit' });
   const slowLimiter = isFailMode
     ? getRateLimiterInstance({ ...slowOptions, keyPrefix: `${keyPrefix}:slow`, inMemoryBlock: false })
     : null;
@@ -263,8 +265,7 @@ export const rateLimiter = (
 
       // Must use the same normalized key as the slow-bucket lookup, or the 24-hour bucket never blocks
       if (slowLimiter && outcome === 'fail') await recordFailure(slowLimiter, rateLimitKey, slowOptions);
-      await settleAttempt(limiter, rateLimitKey, config, {
-        reserved: reservation.state,
+      await settleAttempt(reservation.store, rateLimitKey, config, {
         outcome,
         counted: isFailMode ? 'fail' : 'success',
         resetsSeries: mode === 'failseries',

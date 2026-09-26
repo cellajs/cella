@@ -27,6 +27,8 @@ vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => {
           bucket.consume.push(key);
           return { consumedPoints: 1, remainingPoints: 99, msBeforeNext: 0 };
         }),
+        // The attempt a fail or success mode reserves before the handler.
+        penalty: vi.fn(async () => ({ consumedPoints: 1, remainingPoints: 9, msBeforeNext: 0 })),
         delete: vi.fn(async () => {}),
       };
     },
