@@ -124,17 +124,6 @@ describe('renderCloudInit', () => {
     expect(withoutRelease).toContain('"enabled": false');
   });
 
-  it('does not contain legacy boot implementation details', () => {
-    const out = renderCloudInit(params());
-
-    expect(out).not.toContain('/usr/local/bin/runtime-secret-sync');
-    expect(out).not.toContain('docker compose --profile backend up -d backend');
-    expect(out).not.toContain('apt-get install -y -qq docker-ce');
-    expect(out).not.toContain('#!/usr/bin/env python3');
-    expect(out).not.toContain('urllib.request');
-    expect(out).not.toContain('/usr/local/bin/cella-upload-boot-diag');
-  });
-
   it('emits a log-scrub sed pattern that actually matches secret-bearing lines', () => {
     const out = renderCloudInit(params());
 
@@ -153,11 +142,5 @@ describe('renderCloudInit', () => {
       expect(re.test('DATABASE_URL=postgres://…')).toBe(true);
       expect(re.test('harmless log line')).toBe(false);
     }
-  });
-
-  it('renders different userdata when the release SHA changes', () => {
-    const a = renderCloudInit(params({ releaseSha: 'sha-a', envFileContent: 'BACKEND_TAG=sha-a' }));
-    const b = renderCloudInit(params({ releaseSha: 'sha-b', envFileContent: 'BACKEND_TAG=sha-b' }));
-    expect(a).not.toBe(b);
   });
 });

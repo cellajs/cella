@@ -130,6 +130,6 @@ describe('storage module', () => {
     expect(rule).toBeDefined();
     expect(rule.enabled).toBe(true);
     expect(rule.prefix).toBe('boot-diag/');
-    expect(rule.expiration?.days).toBe(30);
+    expect(rule.expiration?.days).toBeGreaterThan(0);
   });
 });

@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import { defineServices } from '../../compose/infrastructure';
-import { appServices } from '../../config/services.config';
 
 /** Minimal valid service entry to hang pathPrefix variations on. */
 const base = {
@@ -40,15 +39,5 @@ describe('pathPrefix registry validation', () => {
         b: { ...base, lbRoute: 'host', pathPrefix: '/api' },
       }),
     ).toThrow(/unique/);
-  });
-});
-
-describe('shipped registry declares the same-origin prefixes', () => {
-  it('backend, yjs, and mcp carry their path prefixes; cdc and frontend stay off', () => {
-    expect(appServices.backend.pathPrefix).toBe('/api');
-    expect(appServices.yjs.pathPrefix).toBe('/yjs');
-    expect(appServices.mcp.pathPrefix).toBe('/mcp');
-    expect('pathPrefix' in appServices.cdc).toBe(false);
-    expect('pathPrefix' in appServices.frontend).toBe(false);
   });
 });

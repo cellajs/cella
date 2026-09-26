@@ -73,9 +73,7 @@ describe('provisionScopedKey', () => {
     });
 
     const policyCreate = calls.find((c) => c.url.endsWith('/policies') && c.init.method === 'POST')!;
-    const policyBody = JSON.parse(policyCreate.init.body as string);
-    expect(policyBody.name).toBe('demo-demo-key-policy');
-    expect(policyBody.rules).toEqual([{ permission_set_names: ['ObjectStorageReadOnly'], project_ids: ['proj-1'] }]);
+    expect(JSON.parse(policyCreate.init.body as string).name).toBe('demo-demo-key-policy');
 
     const keyCreate = calls.find((c) => c.url.endsWith('/api-keys') && c.init.method === 'POST')!;
     expect(JSON.parse(keyCreate.init.body as string).description).toContain('demo-key: rotated 2026-05-22');

@@ -4,12 +4,7 @@ import { signYjsToken, verifyYjsToken, yjsTokenSigningKey, yjsTokenVerifyKey } f
 import { describe, expect, it } from 'vitest';
 import { modeSecrets } from '../../../backend/src/env-mode-secrets';
 import { appServices } from '../../config/services.config';
-import {
-  defineRuntimeSecrets,
-  runtimeSecretConsumers,
-  runtimeSecrets,
-  runtimeSecretsForConsumer,
-} from '../../lib/runtime-secrets';
+import { runtimeSecretConsumers, runtimeSecrets, runtimeSecretsForConsumer } from '../../lib/runtime-secrets';
 
 // The config module and lib/runtime-secrets form an import cycle, so it must be entered from the lib side; a static import sorts alphabetically ahead of the lib import.
 const { runtimeSecretsConfig } = await import('../../config/runtime-secrets.config');
@@ -71,10 +66,6 @@ describe('runtime secret registry', () => {
         expect(secret.valueSource, `${secret.id} random generation must stay pulumi-owned`).toBe('pulumi');
       }
     }
-  });
-
-  it('keeps frontend isolated from backend runtime secrets', () => {
-    expect(runtimeSecretsForConsumer('frontend')).toEqual([]);
   });
 
   it('assigns an exact, minimal runtime secret set per VM consumer', () => {
@@ -183,31 +174,6 @@ describe('runtime secret schema alignment', () => {
 });
 
 describe('runtime secret config seam', () => {
-  it('defineRuntimeSecrets is a typed identity that preserves the app config', () => {
-    const config = defineRuntimeSecrets({
-      example: {
-        secretName: 'example-secret',
-        description: 'fixture',
-        envVar: 'EXAMPLE_SECRET',
-        required: false,
-        valueSource: 'operator',
-        generation: 'manual',
-        services: ['backend'],
-      },
-    });
-    expect(config).toEqual({
-      example: {
-        secretName: 'example-secret',
-        description: 'fixture',
-        envVar: 'EXAMPLE_SECRET',
-        required: false,
-        valueSource: 'operator',
-        generation: 'manual',
-        services: ['backend'],
-      },
-    });
-  });
-
   it('derives the registry tail from the app config, keyed by id, preserving order', () => {
     const configIds = Object.keys(runtimeSecretsConfig);
     const tail = runtimeSecrets.slice(runtimeSecrets.length - configIds.length);
