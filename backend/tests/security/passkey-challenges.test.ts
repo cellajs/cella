@@ -147,6 +147,24 @@ describe('Passkey challenges', async () => {
     expect(await confirmMfaRow()).toBeUndefined();
   });
 
+  it("must not answer an MFA challenge via another account's passkey", async () => {
+    const { user } = await userWithPasskey({ mfaRequired: true });
+    const { passkey: attackerPasskey } = await userWithPasskey();
+    const mfaCookie = authCookie('confirm-mfa', await createMfaToken(user));
+
+    // The first factor is taken; the passkey that answers is registered to the attacker's own account.
+    const mfaChallenge = await challenge('mfa', mfaCookie);
+    const answered = await signIn(
+      attackerPasskey.assert(mfaChallenge.challenge, { counter: 1 }),
+      `${mfaCookie}; ${mfaChallenge.challengeCookie}`,
+      'mfa',
+    );
+    expect(answered.response.status).toBe(404);
+    expect((answered.error as ErrorResponse).type).toBe('passkey_not_found');
+    expect(answered.response.headers.get('set-cookie') ?? '').not.toContain(authCookieName('session'));
+    expect(await sessionsOf(user.id)).toHaveLength(0);
+  });
+
   it('must not sign in via a stale signature counter', async () => {
     const { user, passkey } = await userWithPasskey({ counter: 5 });
 
