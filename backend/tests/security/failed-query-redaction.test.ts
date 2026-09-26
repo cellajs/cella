@@ -1,6 +1,8 @@
+import { DrizzleQueryError } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createOtelSDK, type OtelSDKOptions } from 'shared/otel';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { toClientError } from '#/lib/error';
 import { defaultHeaders } from '../fixtures';
 
 type Exporter = NonNullable<OtelSDKOptions['traceExporter']>;
@@ -89,5 +91,29 @@ describe('failed queries in telemetry', () => {
       .find((event) => event.attributes?.['exception.type'] === 'DrizzleQueryError');
     expect(exception?.attributes?.['exception.message']).toBe(reason);
     expect(exception?.attributes?.['exception.stacktrace']).toMatch(/^DrizzleQueryError: invalid byte sequence/);
+  });
+});
+
+/**
+ * A constraint violation answers 409 without a query to redact, and its `detail` quotes the row it refused: a unique
+ * violation names the value that collided. The error log line keeps the database's code and constraint only.
+ */
+describe('refused writes in the error log', () => {
+  it("must not log a colliding value via a database error's detail", () => {
+    // Built at run time: the test proves this value never reaches a log line.
+    const taken = `taken_${nanoid(16)}@example.test`;
+    const cause = Object.assign(new Error('duplicate key value violates unique constraint "emails_email_unique"'), {
+      code: '23505',
+      constraint: 'emails_email_unique',
+      detail: `Key (email)=(${taken}) already exists.`,
+    });
+    const refused = new DrizzleQueryError('insert into "emails" ("email") values ($1)', [taken], cause);
+
+    expect(toClientError(refused)).toMatchObject({ status: 409, type: 'resource_already_exists' });
+    const lines = logged.lines.filter((line) => line.includes('resource_already_exists'));
+    expect(lines).toHaveLength(1);
+    expect(lines.join('\n')).not.toContain(taken);
+    // Positive control: the line names the database's code and constraint.
+    expect(JSON.parse(lines[0] ?? '{}')).toMatchObject({ pgCode: '23505', pgConstraint: 'emails_email_unique' });
   });
 });
