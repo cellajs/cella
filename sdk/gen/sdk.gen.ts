@@ -4003,7 +4003,7 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
 /**
  * Update membership
  *
- * Updates the membership metadata, such as role, muted, or archived status.
+ * Updates a membership: its role, or the muted, archived or display order status. Send at least one field. Muted, archived and display order are set by the member only. A role change, and any change to another member's membership, requires update permission on the channel.
  *
  * **PUT /{tenantId}/{organizationId}/memberships/{id}** ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=memberships#tag/memberships/PUT/{tenantId}/{organizationId}/memberships/{id}) ·· [updateMembership](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/{tenantId}/{organizationId}/memberships/{id}) ·· _memberships_cella_
  *

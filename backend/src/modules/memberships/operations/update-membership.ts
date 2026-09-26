@@ -23,6 +23,12 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
 
   const { role, archived, muted, displayOrder } = input;
 
+  const setsPersonalView = archived !== undefined || muted !== undefined || displayOrder !== undefined;
+  // With no field to change, the write would only stamp the caller on the row.
+  if (role === undefined && !setsPersonalView) {
+    throw new AppError(400, 'invalid_request', 'warn', { meta: { membership: membershipId, reason: 'no_fields' } });
+  }
+
   let orderToUpdate = displayOrder;
 
   const membershipToUpdate = await findMembershipByIdInOrg(ctx, { membershipId });
@@ -32,8 +38,8 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
   }
 
   // Archive, mute and order are the member's own view of the channel: nobody sets them for someone else.
-  const setsPersonalView = archived !== undefined || muted !== undefined || displayOrder !== undefined;
-  if (setsPersonalView && membershipToUpdate.userId !== actorId) {
+  const isOwnMembership = membershipToUpdate.userId === actorId;
+  if (setsPersonalView && !isOwnMembership) {
     throw new AppError(403, 'forbidden', 'warn', { entityType: 'user', meta: { membership: membershipId } });
   }
 
@@ -44,7 +50,9 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
     throw new AppError(400, 'invalid_role', 'warn', { entityType: updatedType });
   }
 
-  await getValidChannel(ctx, membershipToUpdate.channelId, updatedType, role ? 'update' : 'read');
+  // A role change, and any change to someone else's membership, is an act on the channel.
+  const action = role !== undefined || !isOwnMembership ? 'update' : 'read';
+  await getValidChannel(ctx, membershipToUpdate.channelId, updatedType, action);
 
   if (archived !== undefined && archived !== membershipToUpdate.archived) {
     const relevantOrders = memberships

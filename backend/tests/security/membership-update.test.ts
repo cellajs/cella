@@ -43,6 +43,26 @@ describe('Membership updates', async () => {
     return { org, admin, member, membershipOf, update };
   }
 
+  it("must not touch another member's membership via an empty update", async () => {
+    const { admin, member, membershipOf, update } = await orgWithAdminAndMember();
+    const target = await membershipOf(admin.id);
+
+    const { error, response } = await update(member, target.id, {});
+    expect(response.status).toBe(400);
+    expect((error as ErrorResponse).type).toBe('invalid_request');
+    // Nothing is written: the row carries no stamp of the caller.
+    expect(await membershipOf(admin.id)).toEqual(target);
+  });
+
+  it("refuses an empty update from an admin and on the caller's own membership too", async () => {
+    const { admin, member, membershipOf, update } = await orgWithAdminAndMember();
+    const target = await membershipOf(member.id);
+
+    expect((await update(admin, target.id, {})).response.status).toBe(400);
+    expect((await update(member, target.id, {})).response.status).toBe(400);
+    expect(await membershipOf(member.id)).toEqual(target);
+  });
+
   it("must not mute or archive another member's membership via updateMembership", async () => {
     const { admin, member, membershipOf, update } = await orgWithAdminAndMember();
     const target = await membershipOf(admin.id);
