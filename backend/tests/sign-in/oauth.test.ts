@@ -947,6 +947,24 @@ describe('OAuth Authentication', async () => {
       expect(await verificationTokens()).toHaveLength(0);
     });
 
+    it('starts the sign-up of an invited address while registration is closed', async () => {
+      closeRegistration();
+      const refused = await signUpCallback();
+      expect(refused.response.status).toBe(403);
+      expect((refused.error as { type: string }).type).toBe('sign_up_restricted');
+      expect(await verificationTokens()).toHaveLength(0);
+
+      // The same gate as the sign-up's completion: an invitation to the address lets it start.
+      const organization = await createTestOrganization();
+      const inviter = await createUser('inviter@example.com');
+      await createInvitation({ organization, email: providerEmail, createdBy: inviter.id });
+      const started = await signUpCallback();
+      expect(started.response.status).toBe(302);
+      expect(started.response.headers.get('location')).toContain('/auth/email-verification');
+      expect(await verificationTokens()).toHaveLength(1);
+      expect(await accountsFor(providerEmail)).toHaveLength(0);
+    });
+
     it('keeps one live sign-up per provider account', async () => {
       await signUpCallback();
       await signUpCallback();

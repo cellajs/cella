@@ -127,7 +127,8 @@ const authCallbackFlow = async ({
   const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
   if (holder) throw new AppError(409, 'oauth_email_exists', 'warn');
 
-  if (!appConfig.has.selfRegistration) {
+  // The gate the sign-up's completion checks again: open registration, or an invitation to the address.
+  if (!(await maySignUp({ var: { db } }, { email: providerUser.email }))) {
     throw new AppError(403, 'sign_up_restricted', 'info');
   }
 
