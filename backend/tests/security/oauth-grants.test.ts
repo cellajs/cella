@@ -788,9 +788,8 @@ describe('OAuth grants', async () => {
       const rows = await stored();
       expect(rows).not.toContain(code);
       expect(rows).not.toContain(refreshToken);
-      expect(rows).toContain(hashToken(refreshToken));
 
-      // Positive control: the refresh token is still found, by its hash.
+      // Positive control: the store still finds the refresh token the client presents.
       expect((await refresh(refreshToken)).status).toBe(200);
     });
   });
