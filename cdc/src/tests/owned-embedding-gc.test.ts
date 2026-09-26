@@ -131,7 +131,11 @@ describe('gcOwnedEmbeddedRows', () => {
     ]);
 
     expect(updates).toHaveLength(2);
-    expect(updates.flatMap((update) => update.params)).toEqual(expect.arrayContaining(['o1', 'i1', 'o2', 'i2']));
+    // Each organization's write names its own scope and only the ids that left its own hosts.
+    expect(updates.map((update) => [...update.params].sort())).toEqual([
+      ['i1', 'o1'],
+      ['i2', 'o2'],
+    ]);
   });
 
   it('no-ops without an old image, without removals, or for a non-host product', async () => {

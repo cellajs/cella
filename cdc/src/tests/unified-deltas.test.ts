@@ -193,7 +193,7 @@ describe('computeBatchUnifiedDeltas', () => {
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:c:attachment': -2, 'e:c:h:attachment': -2 });
   });
 
-  it('one sequence group per organization, never duplicated', () => {
+  it("one sequence group per organization, holding that organization's events alone", () => {
     const events = Array.from({ length: 3 }, (_, i) =>
       mockEvent({
         tableMeta: attachmentEntry(),
@@ -204,9 +204,11 @@ describe('computeBatchUnifiedDeltas', () => {
 
     const plan = computeBatchUnifiedDeltas(events);
 
-    const orgKeys = plan.orgSequenceGroups.map((g) => g.orgKey);
-    expect(new Set(orgKeys).size).toBe(orgKeys.length);
-    expect(orgKeys).toHaveLength(3);
+    expect(plan.orgSequenceGroups.map((g) => [g.orgKey, g.count, g.events.map((e) => e.result.rowData.id)])).toEqual([
+      ['org-0', 1, ['att-0']],
+      ['org-1', 1, ['att-1']],
+      ['org-2', 1, ['att-2']],
+    ]);
   });
 });
 
