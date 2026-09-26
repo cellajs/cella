@@ -43,6 +43,9 @@ describe('matchTOTPStep', () => {
 
     // Code for t=59 is decades away from the fake clock
     expect(matchTOTPStep(rfcKey, 30, 8, '94287082', 60)).toBeNull();
+    // Three steps (90s) either side is past a 60s grace period: the window is five codes, never more.
+    expect(matchTOTPStep(rfcKey, 30, 8, generateTOTP(rfcKey, 30, 8, 1111111111 - 90), 60)).toBeNull();
+    expect(matchTOTPStep(rfcKey, 30, 8, generateTOTP(rfcKey, 30, 8, 1111111111 + 90), 60)).toBeNull();
   });
 
   it('rejects codes with the wrong length without throwing', () => {
