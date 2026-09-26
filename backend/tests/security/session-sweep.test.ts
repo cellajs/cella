@@ -177,15 +177,22 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
     vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
 
     await expectClosedWith(otherStream, 'unauthorized');
-    await expectReleased(stalled.id, stalledStream);
 
-    // Later sweeps still run: a session revoked after the stalled close is swept on the next tick.
+    // Later sweeps still run while the stalled client still reads nothing (reading it would release its write): a
+    // session revoked after the stalled close is swept on a later tick.
     const late = await insertSession(other);
     const lateStream = await openStream(other.id, late);
     await stamp(late.id, { revokedAt: new Date().toISOString(), revocationReason: 'other_session' });
-    await new Promise((resolve) => setTimeout(resolve, 50));
-    vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+    await vi.waitFor(
+      () => {
+        vi.advanceTimersByTime(SWEEP_INTERVAL_MS);
+        expect(lateStream.ended()).toBe(true);
+      },
+      { timeout: 5000, interval: 250 },
+    );
     await expectClosedWith(lateStream, 'unauthorized');
+
+    await expectReleased(stalled.id, stalledStream);
   });
 
   it('must not close a stream without a session, such as a public stream an app registers, via the session sweep', async () => {
