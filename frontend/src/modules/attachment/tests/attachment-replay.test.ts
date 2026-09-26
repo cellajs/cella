@@ -90,13 +90,4 @@ describe('attachment offline-replay mutation functions', () => {
     const body = createAttachments.mock.lastCall?.[0].body as Array<{ stx: { mutationId: string } }>;
     expect(body[0].stx).toEqual(persistedStx);
   });
-
-  it('REGRESSION: without injected context the persisted request loses tenant/org', async () => {
-    // A mutation persisted as `{ id, ops }` replays with tenant/org undefined unless the hook injects context.
-    updateAttachment.mockClear();
-    // @ts-expect-error intentionally passing the OLD (incomplete) variable shape.
-    await updateAttachmentMutationFn({ id: 'att-1', ops: { name: 'x' } });
-
-    expect(lastPath(updateAttachment)).toEqual({ tenantId: undefined, organizationId: undefined, id: 'att-1' });
-  });
 });

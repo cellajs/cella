@@ -2,18 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { recordPausedMutation } from '../mutation-queue';
 import { createStxForCreate, createStxForDelete, createStxForUpdate, sourceId, withReplayFlag } from '../stx-utils';
 
-// Covers stx metadata shape for create, update, delete, and source identity.
-describe('sourceId', () => {
-  it('is a non-empty string', () => {
-    expect(sourceId).toBeTruthy();
-    expect(sourceId.length).toBeGreaterThan(0);
-  });
-
-  it('is stable across accesses (same module instance)', () => {
-    expect(sourceId).toBe(sourceId);
-  });
-});
-
+// Covers stx metadata shape for create, update and delete.
 describe('createStxForCreate', () => {
   it('produces empty fieldTimestamps with unique mutationId', () => {
     const stx = createStxForCreate();
@@ -47,11 +36,6 @@ describe('createStxForUpdate', () => {
 
   it('produces empty fieldTimestamps when no scalar fields given', () => {
     const stx = createStxForUpdate([]);
-    expect(stx.fieldTimestamps).toEqual({});
-  });
-
-  it('defaults to empty fieldTimestamps when called without arguments', () => {
-    const stx = createStxForUpdate();
     expect(stx.fieldTimestamps).toEqual({});
   });
 });

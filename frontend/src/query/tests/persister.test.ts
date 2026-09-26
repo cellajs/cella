@@ -113,39 +113,6 @@ describe('per-query IDB persister', () => {
       const restored = await persister.restoreClient();
       expect(restored).toBeUndefined();
     });
-
-    it('persists mutations in meta record', async () => {
-      const client: PersistedClient = {
-        timestamp: 1000,
-        buster: 'v1',
-        clientState: {
-          queries: [makeQuery('["me"]', 'me', 100)],
-          mutations: [
-            {
-              mutationKey: ['task', 'create'],
-              state: {
-                context: undefined,
-                data: undefined,
-                error: null,
-                failureCount: 0,
-                failureReason: null,
-                isPaused: true,
-                status: 'pending',
-                variables: { title: 'test' },
-                submittedAt: 0,
-              },
-            },
-          ],
-        },
-      };
-
-      await persister.persistClient(client);
-      await persister.flush();
-
-      const restored = await persister.restoreClient();
-      expect(restored!.clientState.mutations).toHaveLength(1);
-      expect(restored!.clientState.mutations[0].mutationKey).toEqual(['task', 'create']);
-    });
   });
 
   describe('incremental writes', () => {

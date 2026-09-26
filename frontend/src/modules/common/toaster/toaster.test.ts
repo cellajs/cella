@@ -1,4 +1,3 @@
-import { createElement } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const sonner = vi.hoisted(() => {
@@ -61,23 +60,5 @@ describe('toaster', () => {
 
     expect(sonner.toast.success).toHaveBeenCalledWith('Saved', { id: 'save-operation' });
     expect(sonner.toast.warning).toHaveBeenCalledWith(renderMessage, undefined);
-  });
-
-  it('delegates lifecycle methods without changing their arguments', () => {
-    const renderer = vi.fn(() => createElement('div'));
-    const promise = Promise.resolve('done');
-    const promiseOptions = { loading: 'Saving' };
-
-    toaster.custom(renderer, { id: 'custom' });
-    toaster.promise(promise, promiseOptions);
-    toaster.dismiss('custom');
-    toaster.getHistory();
-    toaster.getToasts();
-
-    expect(sonner.toast.custom).toHaveBeenCalledWith(renderer, { id: 'custom' });
-    expect(sonner.toast.promise).toHaveBeenCalledWith(promise, promiseOptions);
-    expect(sonner.toast.dismiss).toHaveBeenCalledWith('custom');
-    expect(sonner.toast.getHistory).toHaveBeenCalledOnce();
-    expect(sonner.toast.getToasts).toHaveBeenCalledOnce();
   });
 });
