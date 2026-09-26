@@ -2116,7 +2116,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
 /**
  * Revoke sessions
  *
- * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.
+ * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out. An impersonation session is refused.
  *
  * **DELETE /me/sessions** ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/sessions) ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/me/sessions) ·· _me_cella_
  *

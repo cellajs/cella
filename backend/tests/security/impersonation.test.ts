@@ -3,6 +3,7 @@ import { deleteUsers, getMe, revokeMySessions, signOut, startImpersonation } fro
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders } from '../fixtures';
 import { createSystemAdminUser, createTestUser, type ErrorResponse } from '../helpers';
@@ -92,6 +93,30 @@ describe('impersonation lives on its admin', async () => {
 
     expectStillOpen(kept.target.id, keptStream);
     expect(await meAs(kept.impersonation)).toMatchObject({ status: 200, userId: kept.target.id });
+  });
+
+  it("must not end the impersonated user's sessions via the impersonation", async () => {
+    const { target, impersonation } = await impersonating('revoking');
+    const targetsOwn = await insertSession(target);
+
+    const attempt = await call(revokeMySessions, {
+      body: { ids: [targetsOwn.id, impersonation.id] },
+      headers: impersonation.headers,
+    });
+    expect(attempt.response.status).toBe(403);
+    expect((attempt.error as ErrorResponse).type).toBe('impersonation_forbidden');
+    const cookieNames = [authCookieName('session'), authCookieName('impersonation')];
+    expect(
+      attempt.response.headers.getSetCookie().some((line) => cookieNames.some((n) => line.startsWith(`${n}=`))),
+    ).toBe(false);
+    expect((await sessionRow(targetsOwn.id)).revokedAt).toBeNull();
+    expect(await meAs(impersonation)).toMatchObject({ status: 200, userId: target.id });
+
+    // The user's own session ends their other sessions (positive control).
+    const other = await insertSession(target);
+    const own = await call(revokeMySessions, { body: { ids: [other.id] }, headers: targetsOwn.headers });
+    expect(own.response.status).toBe(200);
+    expect((await sessionRow(other.id)).revocationReason).toBe('other_session');
   });
 
   it('must not keep an impersonation live once its admin signs out', async () => {

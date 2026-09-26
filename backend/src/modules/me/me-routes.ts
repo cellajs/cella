@@ -148,7 +148,7 @@ const meRoutes = {
     tags: ['me', 'cella'],
     summary: 'Revoke sessions',
     description:
-      'Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.',
+      'Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out. An impersonation session is refused.',
     request: {
       required: true,
       body: {
