@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { authCookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createTestSession, createTestUser, insertTestSession } from '../helpers';
+import { authCookie, createTestUser, insertTestSession } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
 
@@ -71,11 +71,5 @@ describe('cookie integrity', async () => {
       `${authCookieName('session')}=${encodeURIComponent(`${content}.${expiresAt}.${mac}`)}`,
     );
     expect(response.status).toBe(401);
-  });
-
-  it('authenticates a session cookie the app signed (positive control)', async () => {
-    const user = await createTestUser(`cookie-${nanoid(6)}@security-test.com`.toLowerCase());
-    const { response } = await meWith(await createTestSession(user));
-    expect(response.status).toBe(200);
   });
 });

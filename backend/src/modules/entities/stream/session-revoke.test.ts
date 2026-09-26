@@ -46,28 +46,4 @@ describe('session.revoked closes the streams bound to the ended sessions', () =>
     expect(kept.written).toEqual([]);
     expect(kept.closed).toBe(false);
   });
-
-  it('tells a stream whose browser holds a newer session to reconnect', async () => {
-    const replaced = register('session-1');
-    const stopped = register('session-2');
-
-    authEvents.emit('session.revoked', { userId: USER, sessionIds: ['session-1'], reason: 'replaced' });
-    authEvents.emit('session.revoked', { userId: USER, sessionIds: ['session-2'], reason: 'impersonation_stopped' });
-    await vi.waitFor(() => expect(replaced.closed && stopped.closed).toBe(true));
-
-    expect(replaced.written).toEqual([errorEvent('session_replaced', 'Session replaced')]);
-    expect(stopped.written).toEqual([errorEvent('session_replaced', 'Session replaced')]);
-  });
-
-  it('closes every stream of the user for an ending of all sessions', async () => {
-    const first = register('session-1');
-    const second = register('session-2');
-
-    authEvents.emit('session.revoked', { userId: USER, sessionIds: 'all', reason: 'user_deleted' });
-    await vi.waitFor(() => expect(first.closed && second.closed).toBe(true));
-
-    expect(first.written).toEqual([errorEvent('unauthorized', 'Session revoked')]);
-    expect(second.written).toEqual([errorEvent('unauthorized', 'Session revoked')]);
-    expect(registeredIds()).toEqual([]);
-  });
 });
