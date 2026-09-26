@@ -100,18 +100,25 @@ describe('brute-force budgets', async () => {
     expect(other.response.status).toBe(200);
   });
 
-  it('must not keep guessing the second factor at sign-in via totp-verification', async () => {
-    const user = await createTotpUser(`totp-limit-${nanoid(8)}@security-test.com`);
-    const mfaToken = await createMfaToken(user);
-    const headers = { ...fromIp(randomIp()), Cookie: authCookie('confirm-mfa', mfaToken) };
+  it("must not keep guessing many accounts' second factors from one IP via totp-verification", async () => {
+    const ip = randomIp();
+    /** A second-factor challenge of an account of its own, answered with `code` from `from`. */
+    const answerFrom = async (from: string, code: string) => {
+      const user = await createTotpUser(`totp-ip-${nanoid(8)}@security-test.com`);
+      const Cookie = authCookie('confirm-mfa', await createMfaToken(user));
+      return (await call(signInWithTotp, { body: { code }, headers: { ...fromIp(from), Cookie } })).response;
+    };
 
-    for (let attempt = 0; attempt < 5; attempt++) {
-      const { response } = await call(signInWithTotp, { body: { code: wrongCode() }, headers });
-      expect(response.status).toBe(401);
-    }
-    const { response } = await call(signInWithTotp, { body: { code: currentCode() }, headers });
-    expect(response.status).toBe(429);
-    expect(response.headers.get('set-cookie') ?? '').not.toContain('-session-');
+    // One wrong code for each of five accounts: every account's own budget stays far from its limit.
+    for (let account = 0; account < 5; account++) expect((await answerFrom(ip, wrongCode())).status).toBe(401);
+
+    // The address is spent: refused even with the right code of yet another account.
+    const blocked = await answerFrom(ip, currentCode());
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get('set-cookie') ?? '').not.toContain('-session-');
+
+    // Another address is unaffected (positive control).
+    expect((await answerFrom(randomIp(), currentCode())).status).toBe(204);
   });
 
   it("must not keep guessing one account's authenticator codes from many IPs via totp-verification", async () => {
