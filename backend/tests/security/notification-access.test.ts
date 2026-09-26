@@ -1,8 +1,8 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { createAttachments, type GetNotificationsResponse, getNotifications } from 'sdk';
-import { hierarchy } from 'shared';
+import { getEntityPolicies, getPolicyPermissions, hierarchy, policyMatrix } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db, getSeedDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
@@ -38,9 +38,9 @@ const mailsTo = (email: string) =>
     );
 
 /**
- * Notifications were fanned out to readers, but access changes afterwards: a member who leaves the organization must
- * not keep reading its current titles and channel names through the inbox, the digest or a mention mail, and a first
- * digest must not reach back through the whole inbox.
+ * Notifications were fanned out to readers, but access changes afterwards: a member who leaves the organization, or
+ * stays but may no longer read an item, must not keep reading its current title and channel name through the inbox,
+ * the digest or a mention mail, and a first digest must not reach back through the whole inbox.
  */
 describe('Notification access', async () => {
   const call = await createAppClient();
@@ -187,5 +187,36 @@ describe('Notification access', async () => {
     const sectionsHtml = digest && 'sectionsHtml' in digest.recipient ? String(digest.recipient.sectionsHtml) : '';
     expect(sectionsHtml).toContain('Fresh item');
     expect(sectionsHtml).not.toContain('Old item');
+  });
+
+  describe('with a member role that reads only its own attachments', () => {
+    const memberPolicy = getPolicyPermissions(
+      getEntityPolicies('attachment', policyMatrix),
+      'organization',
+      memberRole,
+    );
+    const configuredRead = memberPolicy?.read;
+
+    // An app configuration the engine supports: `read: 'own'` hides the admin's items from the stayer, who stays in
+    // the organization, as leaving a channel below it does in an app that has them.
+    beforeEach(() => {
+      if (memberPolicy) memberPolicy.read = 'own';
+    });
+    afterEach(() => {
+      if (memberPolicy && configuredRead !== undefined) memberPolicy.read = configuredRead;
+    });
+
+    it('must not name an item the member may no longer read via the inbox, the mention mail or the digest', async () => {
+      // The stayer still belongs, so the rows stay, but none names its item or channel.
+      const { items, unreadCount } = await inbox(stayer);
+      expect(unreadCount).toBe(2);
+      for (const item of items) expect(item).toMatchObject({ subjectTitle: '', channelName: '' });
+
+      await sendPendingInstantEmails(tenant.organization.id);
+      expect(mailsTo(stayer.email)).toEqual([]);
+
+      await runDigest(noon());
+      expect(mailsTo(stayer.email)).toEqual([]);
+    });
   });
 });
