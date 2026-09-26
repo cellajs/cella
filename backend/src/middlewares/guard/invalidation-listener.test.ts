@@ -145,7 +145,8 @@ describe('auth_invalidate listener', () => {
     const inChangedTenant = userToken('member', 'grant-a', 'tenant-policy');
     const installedApp = userToken('member', 'grant-b', 'tenant-apps', 'portfolio');
     const otherClient = userToken('member', 'grant-c', 'tenant-apps', 'https://client.example/metadata.json');
-    const otherTenant = userToken('member', 'grant-d', 'tenant-other');
+    // The installed app's grant also reaches another tenant: its verdict there is its own.
+    const otherTenant = userToken('member', 'grant-b', 'tenant-other', 'portfolio');
     for (const token of [inChangedTenant, installedApp, otherClient, otherTenant]) cacheVerdict(token);
 
     await publishElsewhere({ tenant: 'tenant-policy' });
