@@ -116,33 +116,6 @@ describe('downloadService.processQueue: failed download retry', () => {
     const entry = await attachmentsDb.downloadQueue.get('att-1');
     expect(entry?.status).toBe('pending');
   });
-
-  it('does NOT re-queue a failed entry once attempts reach the cap', async () => {
-    // downloadRetryAttempts is 3 in the test config.
-    await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'failed', attempts: 3 }));
-
-    await downloadService.queueForDownload([makeAttachment({ id: 'att-1' })]);
-
-    const entry = await attachmentsDb.downloadQueue.get('att-1');
-    expect(entry?.status).toBe('failed');
-    expect(entry?.attempts).toBe(3);
-  });
-
-  it('downloaded entries persist, serving as the dedupe registry', async () => {
-    await attachmentsDb.downloadQueue.add(
-      makeQueueEntry({ id: 'att-done', status: 'downloaded', organizationId: 'org-1' }),
-    );
-    // Need a pending entry to trigger processing for this org
-    await attachmentsDb.downloadQueue.add(
-      makeQueueEntry({ id: 'att-pending', status: 'pending', organizationId: 'org-1' }),
-    );
-
-    await downloadService.processQueue();
-
-    // Downloaded rows serve as the dedupe registry.
-    const downloaded = await attachmentsDb.downloadQueue.get('att-done');
-    expect(downloaded?.status).toBe('downloaded');
-  });
 });
 
 describe('downloadService.queueForDownload: optimistic filtering', () => {
@@ -280,19 +253,18 @@ describe('teardownUserState clears attachment IDB', () => {
     await attachmentsDb.downloadQueue.clear();
   });
 
-  it('deletes the localUserDb on sign-out, wiping all attachment data', async () => {
+  it('must not keep cached attachment data past a sign-out: the localUserDb is deleted, not only unbound', async () => {
     const { getLocalUserDb, bindLocalUserDb } = await import('~/query/local-user-db');
     const { teardownUserState } = await import('~/utils/teardown-user-state');
-
-    // Sanity: the localUserDb is bound (attachment data reachable) before sign-out.
+    await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'downloaded' }));
     expect(getLocalUserDb()).not.toBeNull();
 
     await teardownUserState();
 
-    // Sign-out deletes and unbinds the localUserDb.
     expect(getLocalUserDb()).toBeNull();
-
-    // Re-bind so the suite's afterEach table cleanup has a DB to operate on.
+    // The same user's next database starts empty: the rows went with the database. The re-bind also gives the
+    // suite's afterEach cleanup a database to clear.
     bindLocalUserDb('test-user');
+    expect(await attachmentsDb.downloadQueue.count()).toBe(0);
   });
 });

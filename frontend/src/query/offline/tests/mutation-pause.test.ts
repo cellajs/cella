@@ -1,19 +1,19 @@
-import { MutationObserver, onlineManager, QueryClient } from '@tanstack/react-query';
+import { MutationObserver, onlineManager } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ApiError } from '~/lib/api';
-import { mutationRetry } from '~/query/offline/network-retry';
 
+// query-client.ts wires the online listeners and reads navigator.onLine at import time.
+vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
+vi.stubGlobal('navigator', { onLine: true });
+// The client's cache callbacks lazy-import these; neither is under test here.
+vi.mock('~/query/on-error', () => ({ onError: vi.fn() }));
+vi.mock('~/query/on-success', () => ({ onSuccess: vi.fn() }));
+
+const { queryClient } = await import('~/query/query-client');
+
+// The app's own client with its mutation defaults; only `retryDelay` is shortened so the retry budget runs out at once.
 describe('mutation pausing on connectivity failure', () => {
-  let queryClient: QueryClient;
-
-  beforeEach(() => {
-    onlineManager.setOnline(true);
-    queryClient = new QueryClient({
-      defaultOptions: {
-        mutations: { networkMode: 'offlineFirst', retry: mutationRetry, retryDelay: 0 },
-      },
-    });
-  });
+  beforeEach(() => onlineManager.setOnline(true));
 
   afterEach(() => {
     queryClient.clear();
@@ -26,6 +26,7 @@ describe('mutation pausing on connectivity failure', () => {
     // Throws like a real fetch would while offline; succeeds once back online.
     const observer = new MutationObserver(queryClient, {
       mutationKey: ['thing', 'update'],
+      retryDelay: 0,
       mutationFn: async (vars: { id: string }) => {
         if (!onlineManager.isOnline()) throw new TypeError('Failed to fetch');
         return { ok: vars.id };
@@ -55,6 +56,7 @@ describe('mutation pausing on connectivity failure', () => {
     // onlineManager stays online; the server responds with an error.
     const observer = new MutationObserver(queryClient, {
       mutationKey: ['thing', 'update'],
+      retryDelay: 0,
       mutationFn: async (_vars: { id: string }) => {
         throw new ApiError({ status: 409, type: 'conflict' });
       },
