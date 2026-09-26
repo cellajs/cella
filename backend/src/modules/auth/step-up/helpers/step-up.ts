@@ -41,12 +41,14 @@ export const readStepUp = async (session: SessionFacts): Promise<StepUpState> =>
 
   // Compared in SQL: `created_at` is a timestamp without zone, which JavaScript would parse as local time.
   const since = new Date(Date.now() - stepUpWindow.milliseconds()).toISOString();
+  // The factors are looked up by the session's user id as a parameter: a select field renders its columns without their
+  // table, so a `sessions` column in these subqueries would name the subquery's own `user_id`.
   const [row] = await baseDb
     .select({
       stampedVia: sql<StepUpProof | null>`case when ${sessionsTable.steppedUpAt} > ${since} then ${sessionsTable.steppedUpVia} end`,
       signedInRecently: sql<boolean>`${sessionsTable.createdAt} > ${since}`,
-      hasPasskey: sql<boolean>`exists (select 1 from ${passkeysTable} where ${passkeysTable.userId} = ${sessionsTable.userId})`,
-      hasTotp: sql<boolean>`exists (select 1 from ${totpsTable} where ${totpsTable.userId} = ${sessionsTable.userId})`,
+      hasPasskey: sql<boolean>`exists (select 1 from ${passkeysTable} where ${passkeysTable.userId} = ${session.userId})`,
+      hasTotp: sql<boolean>`exists (select 1 from ${totpsTable} where ${totpsTable.userId} = ${session.userId})`,
     })
     .from(sessionsTable)
     .where(eq(sessionsTable.id, session.id));

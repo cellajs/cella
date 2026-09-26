@@ -169,6 +169,18 @@ describe('step-up', async () => {
     expect(vi.mocked(mailer.prepareEmails)).not.toHaveBeenCalled();
   });
 
+  it('offers the emailed link to a user without a second factor while other accounts hold factors (positive control)', async () => {
+    await passkeyHolder('passkey-elsewhere');
+    await createTotpUser('totp-elsewhere@security-test.com');
+    const user = await createTestUser('no-factor@security-test.com');
+    const session = await insertSession(user, STALE);
+
+    // Only the user's own factors count: other accounts' passkeys and authenticator apps are not the user's to prove.
+    expect(await stateOf(session)).toEqual({ steppedUp: false, methods: ['email', 'sign_in'] });
+    expect((await call(sendStepUpLink, { body: {}, headers: session.headers })).response.status).toBe(204);
+    expect(vi.mocked(mailer.prepareEmails)).toHaveBeenCalledOnce();
+  });
+
   describe('emailed link', () => {
     /** Asks for a link from a signed-in browser; returns the browser's cookies afterwards and the mailed raw token. */
     const askForLink = async (session: TestSession) => {
