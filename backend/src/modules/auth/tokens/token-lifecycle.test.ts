@@ -1,10 +1,10 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import type { TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
@@ -142,14 +142,46 @@ describe('issueToken', () => {
   });
 });
 
+/**
+ * Runs `redeem` while another connection holds the token's row locked, and lets go once two updates of the tokens table
+ * wait on that lock: both redemptions have read the row unopened by then, so only the update itself decides.
+ */
+const racingOnRow = async <T>(tokenId: string, redeem: () => Promise<T>): Promise<T> => {
+  let release = () => {};
+  const released = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let rowLocked = () => {};
+  const locked = new Promise<void>((resolve) => {
+    rowLocked = resolve;
+  });
+  const holder = db.transaction(async (tx) => {
+    await tx.select({ id: tokensTable.id }).from(tokensTable).where(eq(tokensTable.id, tokenId)).for('update');
+    rowLocked();
+    await released;
+  });
+  await locked;
+
+  const redeeming = redeem();
+  await vi.waitFor(async () => {
+    const { rows } = await db.execute<{ waiting: number }>(
+      sql`select count(*)::int as waiting from pg_stat_activity where wait_event_type = 'Lock' and query ilike 'update "tokens"%'`,
+    );
+    expect(rows[0].waiting).toBe(2);
+  });
+  release();
+  await holder;
+  return redeeming;
+};
+
 describe('invokeToken', () => {
   it('binds a link to the one browser that redeems it first', async () => {
     const { token, rawToken } = await issueToken(ctx, { type: 'invitation', email: address() });
 
-    const [first, second] = await Promise.all([
-      request(`/invoke/invitation/${rawToken}`),
-      request(`/invoke/invitation/${rawToken}`),
-    ]);
+    // Two redemptions at the same moment: the compare-and-set alone decides which browser the link binds.
+    const [first, second] = await racingOnRow(token.id, () =>
+      Promise.all([request(`/invoke/invitation/${rawToken}`), request(`/invoke/invitation/${rawToken}`)]),
+    );
     const [winner, loser] = first.status === 200 ? [first, second] : [second, first];
     expect(winner.status).toBe(200);
     expect(loser.status).toBe(401);
