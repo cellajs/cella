@@ -1624,7 +1624,7 @@
     ".github/workflows"
    ],
    "requires": [],
-   "summary": "Rate-limit budgets reserve before the handler and block in the database only, logs and spans keep a failed query's reason but never its SQL or parameters, and server messages show in development and test only. Unsubscribe tokens are stored hashed, email templates name params through param() with a per-send nonce, COOKIE_SECRET entries need 16 characters outside development, and clientCacheVersion is bumped."
+   "summary": "Rate-limit budgets reserve before the handler without blocking and only a failure counted at a spent budget blocks, in the database only; logs and spans keep a failed query's reason but never its SQL or parameters, and server messages show in development and test only. Unsubscribe tokens are stored hashed, email templates name params through param() with a per-send nonce, COOKIE_SECRET entries need 16 characters outside development, and clientCacheVersion is bumped."
   },
   {
    "id": "20260926T0537-sign-out-sign-up-streams",
@@ -1655,7 +1655,7 @@
     "locales"
    ],
    "requires": [],
-   "summary": "The authorization server's session holds only while the same person keeps a live app session, and ending app sessions deletes the provider sessions; codes and refresh tokens outlive them. Every grant, API-key, installation and tenant-policy revocation reaches every process through auth_invalidate. A code naming no resource leaves its grant alone, service accounts mint only for their own tenant's resource, /oauth has a per-IP request budget, and the consent page names the tenant and organization a grant reaches."
+   "summary": "The authorization server's session holds only while the same person keeps a live app session, and ending app sessions deletes the provider sessions; codes and refresh tokens outlive them. Every grant, API-key, installation and tenant-policy revocation reaches every process through auth_invalidate. A code naming no resource leaves its grant alone, service accounts mint only for their own tenant's resource, /oauth budgets client metadata fetches per IP, and the consent page names the tenant and organization a grant reaches."
   },
   {
    "id": "20260926T0706-outages-api-keys-sign-out",
@@ -1688,6 +1688,23 @@
    ],
    "requires": [],
    "summary": "An empty membership update answers 400 and any change to another member's membership needs update on the channel. Update and invite responses carry archive, mute and order on the caller's own membership only, through membershipAsSeenBy; the SDK drops the Membership type. Verifying an address never binds a rejected invitation."
+  },
+  {
+   "id": "20260926T0711-relay-frames-renderer",
+   "version": "next",
+   "title": "The relay survives unreadable frames and bounds presence; one bad document never blanks the rest",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "yjs/src",
+    "cdc/src",
+    "backend/src",
+    "frontend/src"
+   ],
+   "requires": [],
+   "summary": "A frame the relay cannot read closes only its socket (4400) and a relay failure closes it with 1011, so no frame can crash the process. A socket holds at most four awareness clients, a cleanup never reaches a newer session of the document, and the editor stops only after five different refused tokens. The relay and CDC query loggers run in development only. The static renderer drops unknown block types and one failing document never fails the others."
   }
  ]
 }

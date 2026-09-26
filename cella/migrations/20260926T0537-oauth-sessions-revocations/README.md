@@ -5,8 +5,8 @@
 The provider's `appInteractionPolicy` asks for sign-in unless the same person has a live app session, and `endSessions`
 deletes their provider sessions. Codes and refresh tokens outlive that session. `revokeGrant` announces every grant
 deletion, and `auth_invalidate` gains `grant`, `serviceAccount` and `installation` messages, so revocations reach every
-process at once. Service accounts mint only for their own tenant's resource. `oauthRequestLimiter` budgets `/oauth`.
-Consent details carry `target: { tenant, organization }`.
+process at once. Service accounts mint only for their own tenant's resource. `clientMetadataFetchLimiter` budgets the
+metadata documents one address makes it fetch. Consent details carry `target: { tenant, organization }`.
 
 ## Blast radius
 
@@ -28,6 +28,6 @@ No script: manual.
 ## Verify
 
 ```sh
-pnpm vitest run --project=backend backend/tests/security/oauth-grants.test.ts backend/tests/security/oauth-request-limit.test.ts backend/src/middlewares/guard/invalidation-listener.test.ts
+pnpm vitest run --project=backend backend/tests/security/oauth-grants.test.ts backend/tests/security/oauth-metadata-fetch-limit.test.ts backend/src/middlewares/guard/invalidation-listener.test.ts
 pnpm check
 ```

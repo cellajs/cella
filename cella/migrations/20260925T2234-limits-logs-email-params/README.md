@@ -2,10 +2,11 @@
 
 ## What & why
 
-Rate-limit budgets reserve a point before the handler and block in the database only, so a burst cannot pass a spent
-budget. Logs and spans keep a failed query's reason, never its SQL or parameters; server messages show in development
-and test only. `unsubscribe_tokens.secret` stores a hash. Email templates name params with `param('<key>')`, which
-carries a per-send nonce. `COOKIE_SECRET` entries need 16 characters outside development. `clientCacheVersion` is bumped.
+Rate-limit budgets reserve a point before the handler without blocking; only a failure counted at a spent budget
+blocks, in the database. Logs and spans keep a failed query's reason, never its SQL or parameters; server messages
+show in development and test only. `unsubscribe_tokens.secret` stores a hash. Email templates name params with
+`param('<key>')`, which carries a per-send nonce. `COOKIE_SECRET` entries need 16 characters outside development.
+`clientCacheVersion` is bumped.
 
 ## Blast radius
 
@@ -22,6 +23,7 @@ No script: manual.
 2. Insert unsubscribe rows through `unsubscribeTokenRow`.
 3. Rotate any `COOKIE_SECRET` entry or `UNSUBSCRIBE_SECRET` shorter than 16 characters before deploying.
 4. `pnpm --filter backend generate` emits the unsubscribe hash backfill.
+5. Fake limiter stores in app tests need `penalty` (the reservation) and `reward` (the refund).
 
 ## Verify
 
