@@ -15,6 +15,7 @@ import { sendPendingInstantEmails } from '#/modules/notification/operations/send
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from './fixtures';
+import { createTestUser } from './helpers';
 import { cleanupEntityHierarchy, seedEntityHierarchy } from './hierarchy-helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -26,8 +27,6 @@ const db = getSeedDb();
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 const attachmentId = generateId();
-// UUID-shaped id with no user behind it (doctored mention node)
-const strangerId = generateId();
 
 const paragraphWithMentions = (ids: string[]) => ({
   id: generateId(),
@@ -63,6 +62,8 @@ describe('Attachment mentions (template notification source)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
   let member: { id: string; sessionCookie: string };
+  /** An account with no membership in the organization: a mention of it names someone who may not read the row. */
+  let stranger: { id: string };
   let plan: TestEntityHierarchyPlan;
 
   const putDescription = async (description: string) =>
@@ -121,7 +122,7 @@ describe('Attachment mentions (template notification source)', async () => {
   beforeAll(async () => {
     mockFetchRequest();
     tenant = await createTestTenant(call, 'attachment-mentions');
-    // The role that reads every attachment under any app's permission matrix; the stranger id covers the drop path.
+    // The role that reads every attachment under any app's permission matrix; the stranger covers the drop path.
     member = await createOrgUser(
       call,
       tenant.tenantId,
@@ -129,6 +130,7 @@ describe('Attachment mentions (template notification source)', async () => {
       'attachment-mentions-member',
       hierarchy.getMostPrivilegedRole('organization'),
     );
+    stranger = await createTestUser('attachment-mentions-stranger@security-test.com');
 
     plan = buildTestEntityHierarchyPlan({
       entityType: 'attachment',
@@ -164,8 +166,8 @@ describe('Attachment mentions (template notification source)', async () => {
     await clearSecurityTestData();
   });
 
-  it('stores readable mentioned users and drops ids without read access', async () => {
-    const result = await putDescription(JSON.stringify([paragraphWithMentions([member.id, strangerId])]));
+  it('stores readable mentioned users and drops an account without read access', async () => {
+    const result = await putDescription(JSON.stringify([paragraphWithMentions([member.id, stranger.id])]));
     expect(result.response.status).toBe(200);
     expect(await storedMentions()).toEqual([member.id]);
   });

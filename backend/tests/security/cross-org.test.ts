@@ -5,6 +5,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { generateMockEntityBodyChannelIdColumns } from '#/mocks';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultHeaders } from '../fixtures';
 import type { ErrorResponse } from '../helpers';
 import { seedEntityHierarchy } from '../hierarchy-helpers';
@@ -39,13 +40,18 @@ const attachmentBody = (id: string, organizationId: string) => ({
   stx: { mutationId: id, sourceId: 'cross-org', fieldTimestamps: {} },
 });
 
-// One tenant = one organization, so the other org is reached at its own tenantId and tenantGuard
-// rejects the access at the tenant boundary.
+/**
+ * One tenant holds one organization, so another organization's id is tried on the caller's OWN tenant path: that
+ * passes tenantGuard and leaves orgGuard and the handlers' scope check as the barrier. The tenant boundary itself is
+ * cross-tenant.test.ts.
+ */
 describe('Cross-organization API isolation', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
   let orgB: { id: string; slug: string; tenantId: string };
   let userB: { id: string; email: string; sessionCookie: string };
+  /** A member of org A and of org B, whose org B membership must not carry over to tenant A's path. */
+  let insider: { id: string; email: string; sessionCookie: string };
 
   beforeAll(async () => {
     mockFetchRequest();
@@ -65,93 +71,68 @@ describe('Cross-organization API isolation', async () => {
     const secondOrg = await createSecondOrg();
     orgB = { id: secondOrg.id, slug: secondOrg.slug, tenantId: secondOrg.tenantId };
     userB = await createOrgUser(call, secondOrg.tenantId, orgB.id, 'org-b');
+
+    insider = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'org-both');
+    await db.insert(membershipsTable).values({
+      id: generateId(),
+      userId: insider.id,
+      channelId: orgB.id,
+      organizationId: orgB.id,
+      tenantId: orgB.tenantId,
+      channelType: 'organization',
+      role: hierarchy.getLeastPrivilegedRole('organization'),
+      displayOrder: 2,
+      createdBy: insider.id,
+    });
   });
 
   afterAll(async () => {
     await clearSecurityTestData();
   });
 
-  // ---- Read isolation: User A (org A) cannot read org B resources ----
+  /** Org B's id on the given tenant path: a list, a create and an organization update, as the caller sees them. */
+  const reachOrgB = async (tenantId: string, cookie: string) => {
+    const headers = { ...defaultHeaders, Cookie: cookie };
+    const answers = await Promise.all([
+      call(getAttachments, { path: { tenantId, organizationId: orgB.id }, headers }),
+      call(createAttachments, {
+        path: { tenantId, organizationId: orgB.id },
+        body: [attachmentBody(generateId(), orgB.id)],
+        headers,
+      }),
+      call(updateOrganization, { path: { tenantId, id: orgB.id }, body: { name: 'Hijacked' }, headers }),
+    ]);
+    return answers.map(({ response, error }) => ({
+      status: response.status,
+      type: (error as ErrorResponse | undefined)?.type,
+    }));
+  };
 
-  describe('User A (org A) cannot read org B resources', () => {
-    it('should reject GET attachments in another org with 403', async () => {
-      const { error, response } = await call(getAttachments, {
-        path: { tenantId: orgB.tenantId, organizationId: orgB.id },
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-      });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+  describe("Org B's id on tenant A's path", () => {
+    it('must not reach org B via the tenant A path of a user who is in org A only', async () => {
+      for (const answer of await reachOrgB(tenant.tenantId, tenant.sessionCookie)) {
+        expect(answer).toEqual({ status: 404, type: 'not_found' });
+      }
+    });
+
+    it('must not reach org B via the tenant A path of a member of both organizations', async () => {
+      // The organization is resolved inside the URL's tenant: a membership in org B does not carry it over.
+      for (const answer of await reachOrgB(tenant.tenantId, insider.sessionCookie)) {
+        expect(answer).toEqual({ status: 404, type: 'not_found' });
+      }
+
+      // Positive control: the same member reaches each organization on its own tenant's path.
+      const headers = { ...defaultHeaders, Cookie: insider.sessionCookie };
+      for (const path of [
+        { tenantId: orgB.tenantId, organizationId: orgB.id },
+        { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+      ]) {
+        expect((await call(getAttachments, { path, headers })).response.status).toBe(200);
+      }
     });
   });
-
-  // ---- Read isolation: User B (org B) cannot read org A resources ----
-
-  describe('User B (org B) cannot read org A resources', () => {
-    it('should reject GET attachments in another org with 403', async () => {
-      const { error, response } = await call(getAttachments, {
-        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        headers: { ...defaultHeaders, Cookie: userB.sessionCookie },
-      });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
-    });
-  });
-
-  // ---- Write isolation: cross-org write attempts ----
-
-  describe('Write isolation across organizations', () => {
-    it('should reject User B updating org A with 403', async () => {
-      const { error, response } = await call(updateOrganization, {
-        path: { tenantId: tenant.tenantId, id: tenant.organization.id },
-        body: { name: 'Hijacked by User B' },
-        headers: { ...defaultHeaders, Cookie: userB.sessionCookie },
-      });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
-    });
-
-    it('should reject User A updating org B with 403', async () => {
-      const { error, response } = await call(updateOrganization, {
-        path: { tenantId: orgB.tenantId, id: orgB.id },
-        body: { name: 'Hijacked by User A' },
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-      });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
-    });
-
-    it('should reject User A creating attachment in org B with 403', async () => {
-      const { error, response } = await call(createAttachments, {
-        path: { tenantId: orgB.tenantId, organizationId: orgB.id },
-        body: [attachmentBody('00000000-0000-4000-a000-000000000001', orgB.id)],
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-      });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
-    });
-
-    it('should reject User B creating attachment in org A with 403', async () => {
-      const { error, response } = await call(createAttachments, {
-        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        body: [attachmentBody('00000000-0000-4000-a000-000000000002', tenant.organization.id)],
-        headers: { ...defaultHeaders, Cookie: userB.sessionCookie },
-      });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
-    });
-  });
-
-  // ---- Positive: users can access their own organization ----
 
   describe('Users can access their own organization', () => {
-    it('should allow User A to GET attachments in org A', async () => {
-      const { response } = await call(getAttachments, {
-        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-      });
-      expect(response.status).toBe(200);
-    });
-
     it('should allow User B to GET attachments in org B', async () => {
       const { response } = await call(getAttachments, {
         path: { tenantId: orgB.tenantId, organizationId: orgB.id },

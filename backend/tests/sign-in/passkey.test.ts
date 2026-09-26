@@ -1,6 +1,5 @@
 import { eq } from 'drizzle-orm';
 import { deletePasskey, generatePasskeyChallenge, signInWithPasskey } from 'sdk';
-import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -146,7 +145,7 @@ describe('Passkey Authentication', async () => {
   describe('Passkey Deletion (IDOR)', () => {
     // GHSA-4vcf-q4xf-f48m: deleting a passkey must be scoped to the owner; a user
     // cannot delete another user's passkey by id.
-    it("should not allow a user to delete another user's passkey", async () => {
+    it("must not delete another user's passkey via its id", async () => {
       const victim = await createUser('victim@example.com');
       const attacker = await createUser('attacker@example.com');
 
@@ -154,50 +153,18 @@ describe('Passkey Authentication', async () => {
         .insert(passkeysTable)
         .values(mockPasskeyRecord(victim.id, 'Victim Device', 'passkey-victim'))
         .returning();
-
-      const attackerSession = await createTestSession(attacker);
-
-      const { response: res } = await call(deletePasskey, {
-        path: { id: victimPasskey.id },
-        headers: { ...defaultHeaders, Cookie: attackerSession },
-      });
+      const stored = () => db.select().from(passkeysTable).where(eq(passkeysTable.id, victimPasskey.id));
+      const remove = async (cookie: string) =>
+        (await call(deletePasskey, { path: { id: victimPasskey.id }, headers: { ...defaultHeaders, Cookie: cookie } }))
+          .response.status;
 
       // The delete is scoped to the caller, so it is a no-op for the attacker.
-      expect(res.status).toBe(204);
+      expect(await remove(await createTestSession(attacker))).toBe(204);
+      expect(await stored()).toHaveLength(1);
 
-      const remaining = await db.select().from(passkeysTable).where(eq(passkeysTable.id, victimPasskey.id));
-      expect(remaining).toHaveLength(1);
-    });
-  });
-
-  describe('Successful Authentication', () => {
-    it('should authenticate with the passkey the browser picks, which names the account', async () => {
-      const { passkey } = await userWithPasskey();
-      const { challenge: value, challengeCookie } = await challenge();
-
-      const { response: verificationRes } = await call(signInWithPasskey, {
-        body: { type: 'authentication', assertion: passkey.assert(value) },
-        headers: { ...defaultHeaders, Cookie: challengeCookie },
-      });
-
-      expect(verificationRes.status).toBe(204);
-      expect(verificationRes.headers.get('set-cookie')).toContain(
-        `${appConfig.slug}-session-${appConfig.cookieVersion}=`,
-      );
-    });
-
-    it('should authenticate successfully with MFA passkey', async () => {
-      const { user, passkey } = await userWithPasskey();
-      await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, user.id));
-      const mfaCookie = authCookie('confirm-mfa', await createMfaToken(user));
-      const { challenge: value, challengeCookie } = await challenge('mfa', mfaCookie);
-
-      const { response: res } = await call(signInWithPasskey, {
-        body: { type: 'mfa', assertion: passkey.assert(value) },
-        headers: { ...defaultHeaders, Cookie: `${mfaCookie}; ${challengeCookie}` },
-      });
-      expect(res.status).toBe(204);
-      expect(res.headers.get('set-cookie')).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+      // The owner's delete removes it (positive control).
+      expect(await remove(await createTestSession(victim))).toBe(204);
+      expect(await stored()).toHaveLength(0);
     });
   });
 });

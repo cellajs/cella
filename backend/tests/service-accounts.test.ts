@@ -21,7 +21,7 @@ import { serviceAccountsTable } from '#/modules/service-accounts/service-account
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from './fixtures';
-import { createTestOrganization } from './helpers';
+import { createTestOrganization, type ErrorResponse } from './helpers';
 import { clearSecurityTestData, createOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
@@ -69,14 +69,22 @@ describe('Service accounts and API keys', async () => {
     expect(JSON.stringify(row)).not.toContain(key);
   });
 
-  it('refuses a member creating an account, and caps the role at the creator', async () => {
+  // The role cap at the creator's own rank is unreachable with two organization roles: only an admin gets past the
+  // update check, and an admin may bind either role.
+  it('refuses a member creating an account', async () => {
     const member = await orgWithAdmin('member');
-    const { response } = await call(createServiceAccount, {
+    const { response, error } = await call(createServiceAccount, {
       path: { tenantId: member.org.tenantId, organizationId: member.org.id },
       body: { name: 'bot', role: 'member' },
       headers: member.headers,
     });
     expect(response.status).toBe(403);
+    expect((error as ErrorResponse).type).toBe('forbidden');
+    const accounts = await db
+      .select()
+      .from(serviceAccountsTable)
+      .where(eq(serviceAccountsTable.tenantId, member.org.tenantId));
+    expect(accounts).toHaveLength(0);
   });
 
   it('authenticates a key as the service account and reads inside its organization', async () => {
@@ -185,17 +193,22 @@ describe('Service accounts and API keys', async () => {
     expect(expiredCall.response.status).toBe(401);
 
     const disabled = await issueKey();
+    const readAsDisabled = () =>
+      call(getAttachments, {
+        path: { tenantId: disabled.org.tenantId, organizationId: disabled.org.id },
+        headers: machineHeaders(disabled.key),
+      });
+    // A read first, so the key and its account are cached at the guard when the account is disabled.
+    expect((await readAsDisabled()).response.status).toBe(200);
     const update = await call(updateServiceAccount, {
       path: { tenantId: disabled.org.tenantId, organizationId: disabled.org.id, id: disabled.account.id },
       body: { status: 'disabled' },
       headers: disabled.headers,
     });
     expect(update.response.status).toBe(200);
-    const disabledCall = await call(getAttachments, {
-      path: { tenantId: disabled.org.tenantId, organizationId: disabled.org.id },
-      headers: machineHeaders(disabled.key),
-    });
+    const disabledCall = await readAsDisabled();
     expect(disabledCall.response.status).toBe(401);
+    expect((disabledCall.error as ErrorResponse).meta?.reason).toBe('service_account_disabled');
   });
 
   it('enforces the tenant quota on accounts', async () => {
@@ -258,10 +271,12 @@ describe('Service accounts and API keys', async () => {
   it('refuses a service account without a grant at the tenant door', async () => {
     const { org, account, key } = await issueKey();
     await db.update(serviceAccountsTable).set({ bindings: [] }).where(eq(serviceAccountsTable.id, account.id));
-    const { response } = await call(getAttachments, {
+    const { response, error } = await call(getAttachments, {
       path: { tenantId: org.tenantId, organizationId: org.id },
       headers: machineHeaders(key),
     });
     expect(response.status).toBe(403);
+    // tenantGuard's refusal, before any organization is resolved; orgGuard's would name the organization.
+    expect((error as ErrorResponse).meta).toEqual({ resource: 'tenant' });
   });
 });

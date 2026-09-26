@@ -1,9 +1,13 @@
+import { importJWK, SignJWT } from 'jose';
+import { appConfig } from 'shared';
 import { describe, expect, it, vi } from 'vitest';
 import type { AppError } from '#/core/error';
-import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
+import { loadSigningJwks } from '#/modules/oauth-server/keystore';
+import { resourceMetadataUrl, resourceUri } from '#/modules/oauth-server/resources';
 import { tokenGuard } from './token-guard';
 
-// Verification runs against the keystore; a malformed JWT fails before any key is needed.
+// Verification runs against the keystore. The positive control is tests/mcp.test.ts: its showcases carry tokens the
+// authorization server minted for the route's own organization through this guard to the tools.
 const mockCtx = (authorization?: string) => ({
   req: {
     param: (name: string) => ({ tenantId: 'tenant1', organizationId: 'org1' })[name],
@@ -25,6 +29,25 @@ const runExpectingError = async (ctx: ReturnType<typeof mockCtx>) => {
 
 const metadata = resourceMetadataUrl({ face: 'mcp', tenantId: 'tenant1', organizationId: 'org1' });
 
+/** A token the server signed for another organization's MCP face: well-formed, wrong audience. */
+const tokenForAnotherOrganization = async () => {
+  const [signingJwk] = (await loadSigningJwks()).keys;
+  return new SignJWT({
+    tenant_id: 'tenant1',
+    scope: 'attachment:read',
+    actor_kind: 'user',
+    gid: 'grant1',
+    client_id: 'app',
+  })
+    .setProtectedHeader({ alg: 'RS256', kid: signingJwk.kid, typ: 'at+jwt' })
+    .setSubject('user1')
+    .setIssuer(appConfig.oauthUrl)
+    .setAudience(resourceUri({ face: 'mcp', tenantId: 'tenant1', organizationId: 'org2' }))
+    .setIssuedAt()
+    .setExpirationTime('1h')
+    .sign(await importJWK(signingJwk, 'RS256'));
+};
+
 describe('tokenGuard', () => {
   it('challenges a tokenless call with the resource metadata URL (RFC 9728)', async () => {
     const ctx = mockCtx();
@@ -39,11 +62,12 @@ describe('tokenGuard', () => {
     expect(ctx.header).toHaveBeenCalledWith('WWW-Authenticate', `Bearer resource_metadata="${metadata}"`);
   });
 
-  it('names invalid_token on a JWT it cannot verify', async () => {
-    const ctx = mockCtx('Bearer aaa.bbb.ccc');
+  it("names invalid_token on the server's own token for another organization", async () => {
+    const ctx = mockCtx(`Bearer ${await tokenForAnotherOrganization()}`);
     expect((await runExpectingError(ctx)).status).toBe(401);
     const [, value] = ctx.header.mock.calls[0];
-    expect(value).toContain('error="invalid_token"');
+    // The audience check refuses it: a grant lookup would name its own reason (grant_revoked, ...).
+    expect(value).toContain('error="invalid_token", error_description="invalid_token"');
     expect(value).toContain(`resource_metadata="${metadata}"`);
   });
 });

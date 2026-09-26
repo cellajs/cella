@@ -1,5 +1,4 @@
 import { and, eq } from 'drizzle-orm';
-import { generateRandomCodeVerifier, generateRandomState } from 'oauth4webapi';
 import { github, githubCallback, google, googleCallback, invokeToken, microsoft, microsoftCallback } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -86,39 +85,27 @@ describe('OAuth Authentication', async () => {
   const call = await createAppClient();
 
   describe('OAuth Flow Initiation', () => {
-    it('should initiate GitHub OAuth flow', async () => {
-      const { response: res } = await call(github, { query: { type: 'auth' }, headers: defaultHeaders });
-
-      const state = generateRandomState();
-      const url = await githubAuth.createAuthorizationURL(state, ['user:email']);
-
-      expect(res.status).toBe(302);
-      const location = res.headers.get('location');
-      expect(location).toBe(url.href);
-    });
-
-    it('should initiate Google OAuth flow', async () => {
-      const { response: res } = await call(google, { query: { type: 'auth' }, headers: defaultHeaders });
-
-      const state = generateRandomState();
-      const codeVerifier = generateRandomCodeVerifier();
-      const url = await googleAuth.createAuthorizationURL(state, ['profile', 'email'], { codeVerifier });
+    // The state cookie must hold what the provider URL was built with: the callback presents that verifier and
+    // nonce, so a mismatch would let a code minted for another challenge through, or fail every sign-in.
+    it.each([
+      { provider: 'github', fn: github, client: githubAuth, pkce: false },
+      { provider: 'google', fn: google, client: googleAuth, pkce: true },
+      { provider: 'microsoft', fn: microsoft, client: microsoftAuth, pkce: true },
+    ])('starts a $provider round trip whose state cookie matches the provider URL', async ({ fn, client, pkce }) => {
+      const { response: res } = await call(fn, { query: { type: 'auth' }, headers: defaultHeaders });
 
       expect(res.status).toBe(302);
-      const location = res.headers.get('location');
-      expect(location).toBe(url.href);
-    });
-
-    it('should initiate Microsoft OAuth flow', async () => {
-      const { response: res } = await call(microsoft, { query: { type: 'auth' }, headers: defaultHeaders });
-
-      const state = generateRandomState();
-      const codeVerifier = generateRandomCodeVerifier();
-      const url = await microsoftAuth.createAuthorizationURL(state, ['profile', 'email'], { codeVerifier });
-
-      expect(res.status).toBe(302);
-      const location = res.headers.get('location');
-      expect(location).toBe(url.href);
+      const [[state, , options]] = vi.mocked(client.createAuthorizationURL).mock.calls;
+      const payload = JSON.parse(mockCookieStore.get(`oauth-state-${state}`) ?? 'null');
+      expect(payload).toMatchObject({ type: 'auth' });
+      if (pkce) {
+        expect(options).toMatchObject({ codeVerifier: expect.any(String), nonce: expect.any(String) });
+        expect(payload.codeVerifier).toBe(options?.codeVerifier);
+        expect(payload.nonce).toBe(options?.nonce);
+      } else {
+        expect(options).toBeUndefined();
+        expect(payload.codeVerifier).toBeUndefined();
+      }
     });
 
     it('should handle OAuth flow with redirect parameter', async () => {
