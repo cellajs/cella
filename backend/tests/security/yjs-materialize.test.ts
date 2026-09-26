@@ -21,6 +21,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   let owner: TestTenant;
   let other: TestTenant;
   let member: Awaited<ReturnType<typeof createOrgUser>>;
+  let admin: Awaited<ReturnType<typeof createOrgUser>>;
   let attachment: Awaited<ReturnType<typeof seedAttachment>>;
 
   const materialize = async (body: Record<string, unknown>, secret: string | null = modeSecret('YJS_RELAY_SECRET')) => {
@@ -57,6 +58,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
     other = await createTestTenant(call, 'materialize-other');
     // Members update their own attachments only ('own' in the permission config), and this one is the owner's.
     member = await createOrgUser(call, owner.tenantId, owner.organization.id, 'materialize-member');
+    admin = await createOrgUser(call, owner.tenantId, owner.organization.id, 'materialize-admin', 'admin');
     attachment = await seedAttachment({
       tenantId: owner.tenantId,
       organizationId: owner.organization.id,
@@ -109,13 +111,15 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   });
 
   it('credits the newest editor who may still update the entity (positive control)', async () => {
-    // The member edited last but may not update the owner's attachment: the owner, who edited too, is credited.
-    const { status, body } = await materialize(bodyFor(ownScope(), 'written by the relay', [member.id, owner.user.id]));
+    // Newest first: the member edited last but may not update the owner's attachment; of the admin and the owner, who
+    // both may, the admin edited later and is credited.
+    const editors = [member.id, admin.id, owner.user.id];
+    const { status, body } = await materialize(bodyFor(ownScope(), 'written by the relay', editors));
     expect(status).toBe(200);
-    expect(body.editedBy).toBe(owner.user.id);
+    expect(body.editedBy).toBe(admin.id);
     const row = await stored();
     expect(row?.description).toContain('written by the relay');
-    expect(row?.updatedBy).toBe(owner.user.id);
+    expect(row?.updatedBy).toBe(admin.id);
   });
 
   it('answers 410 for an entity that no longer exists, so the relay can drop its rows', async () => {
