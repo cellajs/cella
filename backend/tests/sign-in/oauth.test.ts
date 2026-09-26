@@ -638,26 +638,29 @@ describe('OAuth Authentication', async () => {
       expect(res.headers.get('location')).toBe(`${appConfig.frontendUrl}/orgs/acme?tab=files`);
     });
 
-    // An attacker-controlled redirectAfter must never become the Location.
+    // An attacker-controlled redirectAfter must never become the Location. The start of the flow stores it unchecked,
+    // so the check at sign-in is the only one: dot segments collapse to a scheme-relative path once resolved.
     it('should redirect a verified OAuth sign-in to a frontend path, not an attacker redirectAfter', async () => {
       await linkVerifiedAccount();
 
-      const state = 'mock-state-test';
-      mockCookieStore.set(
-        `oauth-state-${state}`,
-        JSON.stringify({ type: 'auth', redirectAfter: '//evil.example', codeVerifier: undefined }),
-      );
+      for (const redirectAfter of ['//evil.example', '/..//evil.example']) {
+        const state = 'mock-state-test';
+        mockCookieStore.set(
+          `oauth-state-${state}`,
+          JSON.stringify({ type: 'auth', redirectAfter, codeVerifier: undefined }),
+        );
 
-      const { response: res } = await call(githubCallback, {
-        query: { state, code: 'mock-auth-code' },
-        headers: defaultHeaders,
-      });
+        const { response: res } = await call(githubCallback, {
+          query: { state, code: 'mock-auth-code' },
+          headers: defaultHeaders,
+        });
 
-      expect(res.status).toBe(302);
-      const location = res.headers.get('location');
-      expect(location).toBeTruthy();
-      expect(location).not.toContain('evil.example');
-      expect(location!.startsWith(appConfig.frontendUrl)).toBe(true);
+        expect(res.status, redirectAfter).toBe(302);
+        const location = res.headers.get('location');
+        expect(location, redirectAfter).toBeTruthy();
+        expect(location, redirectAfter).not.toContain('evil.example');
+        expect(location!.startsWith(appConfig.frontendUrl), redirectAfter).toBe(true);
+      }
     });
   });
 
