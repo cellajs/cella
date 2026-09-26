@@ -136,6 +136,6 @@ Environment, validated in `src/env.ts` (loads the backend's `.env`):
 | `YJS_DB_POOL_MAX` | PostgreSQL pool size, default 20 |
 | `MAPLE_SECRET_INGEST_KEY` | Optional telemetry ingest key |
 | `NODB` | In-memory connection limiter and no TLS CA requirement. Database reads still open lazily. |
-| `NODE_ENV`, `PINO_LOG_LEVEL`, `DEBUG` | Runtime mode and logging |
+| `NODE_ENV`, `PINO_LOG_LEVEL`, `DEBUG` | Runtime mode and logging. `DEBUG` also prints every query, with its values, in the `development` app mode only |
 
 The backend counterpart in `backend/src/modules/yjs/` issues tokens, serves `/internal/yjs/materialize` on the internal listener only (the public API has no path to it), sanitizes media URLs, and indexes the materializers modules register.

@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { dbConfig, queryLoggerEnabled } from '#/db/db';
+import { queryLoggerEnabled } from '#/db/create-connection';
+import { dbConfig } from '#/db/db';
 
 /** Drizzle's query logger prints every query with the values it bound (tokens, addresses) to stdout. */
 describe('query logger', () => {

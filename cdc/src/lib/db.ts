@@ -1,5 +1,6 @@
+import { appConfig } from 'shared';
 import { resolvePostgresSslCa, stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
-import { createPgConnection, type PgDB } from '#/db/create-connection';
+import { createPgConnection, type PgDB, queryLoggerEnabled } from '#/db/create-connection';
 import { env } from '../env';
 
 // Production requires the Pulumi-provisioned database CA and verified TLS.
@@ -13,4 +14,8 @@ export const buildVerifiedSsl = (connectionString: string) => verifiedPostgresSs
  * open a logical replication slot, to admin users only. Append-only behaviour on the activities table
  * comes from the immutability triggers, not from role privileges.
  */
-export const cdcDb: PgDB = createPgConnection(env.DATABASE_CDC_URL, { max: 20, sslCa, logger: env.DEBUG });
+export const cdcDb: PgDB = createPgConnection(env.DATABASE_CDC_URL, {
+  max: 20,
+  sslCa,
+  logger: queryLoggerEnabled(env.DEBUG, appConfig.mode),
+});
