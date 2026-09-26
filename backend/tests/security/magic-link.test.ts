@@ -192,6 +192,16 @@ describe('magic link opened in another browser', async () => {
     expect(sessionCookieSet(response)).toBe(false);
     expect(setCookiePair(response, 'magic-pending')).toBeDefined();
     expect(await openedAt(row.id)).toBeNull();
+
+    // A browser that asked for another link, such as its owner's own, did not ask for this one.
+    const own = await magicLink(await newUser());
+    const planted = await call(invokeToken, {
+      path: { type: 'magic', token: raw },
+      headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', own.row.id) },
+    });
+    expect(planted.response.headers.get('location')).toBe(confirmPage);
+    expect(sessionCookieSet(planted.response)).toBe(false);
+    expect(await openedAt(row.id)).toBeNull();
   });
 
   it("must not skip the confirmation via another link's single-use cookie", async () => {
