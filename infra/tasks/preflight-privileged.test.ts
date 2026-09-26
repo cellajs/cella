@@ -98,8 +98,15 @@ describe('main', () => {
     process.env = { ...env };
   });
 
-  const run = (steps: PreviewStep[]) =>
-    main(['--mode', 'production'], { stackIsSetUp: () => true, preview: async () => steps });
+  /** Effects that answer only for the production stack: the mode's stack file is set up and its preview returns `steps`. */
+  const production = (steps: PreviewStep[]) => ({
+    stackIsSetUp: (mode: string) => mode === 'production',
+    preview: async (stack: string) => {
+      if (stack !== 'organization/infra/production') throw new Error(`previewed the wrong stack: ${stack}`);
+      return steps;
+    },
+  });
+  const run = (steps: PreviewStep[]) => main(['--mode', 'production'], production(steps));
 
   it('throws exit code 2 with the operator command when a privileged change is pending', async () => {
     const pending = run([{ op: 'create', urn: urn('scaleway:databases/privilege:Privilege', 'admin-cron-privilege') }]);
@@ -114,9 +121,7 @@ describe('main', () => {
   });
 
   it('skips a mode without a set-up stack', async () => {
-    const preview = async (): Promise<PreviewStep[]> => {
-      throw new Error('must not preview');
-    };
-    await expect(main(['--mode', 'staging'], { stackIsSetUp: () => false, preview })).resolves.toBe(undefined);
+    const effects = production([{ op: 'create', urn: urn('scaleway:iam/policy:Policy', 'vm-backend-policy') }]);
+    await expect(main(['--mode', 'staging'], effects)).resolves.toBe(undefined);
   });
 });

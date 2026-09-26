@@ -4,6 +4,8 @@ export interface CapturedResource {
   type: string;
   name: string;
   inputs: Record<string, unknown>;
+  /** The provider-computed outputs the mock stubbed for this resource (see `newResource`). */
+  outputs: Record<string, unknown>;
   provider?: string;
 }
 
@@ -14,6 +16,8 @@ export interface MockHarness {
   byType: (prefix: string) => CapturedResource[];
   /** Single resource of an exact type; throws if zero or many. */
   oneOfType: (typeStr: string) => CapturedResource;
+  /** Waits until no new resource has registered for a run of event-loop turns: a VM registers only after its cloud-init's async output chain settles. */
+  settle: () => Promise<void>;
 }
 
 export interface InstallOpts {
@@ -46,20 +50,30 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
 
   const pulumi = await import('@pulumi/pulumi');
   const resources: CapturedResource[] = [];
+  let ipamAddresses = 0;
 
   pulumi.runtime.setMocks(
     {
       newResource(args) {
+        // Echo inputs as outputs so chained pulumi.all() applies resolve with the values downstream resource construction needs.
+        // Outputs only the provider computes get deterministic stubs: a managed database's CA certificate, a generated password, a reserved private IP, the LB's public address, the registry endpoint.
+        const computedByType: Record<string, () => Record<string, unknown>> = {
+          'scaleway:databases/instance:Instance': () => ({ certificate: 'mock-ca-certificate' }),
+          'random:index/randomPassword:RandomPassword': () => ({ result: `random-${args.name}` }),
+          'scaleway:ipam/ip:Ip': () => ({ address: `10.0.0.${++ipamAddresses}/24` }),
+          'scaleway:loadbalancers/loadBalancer:LoadBalancer': () => ({ ipAddress: '203.0.113.10' }),
+          'scaleway:registry/namespace:Namespace': () => ({
+            endpoint: `rg.nl-ams.scw.cloud/${String((args.inputs as { name?: string }).name)}`,
+          }),
+        };
+        const computed = computedByType[args.type]?.() ?? {};
         resources.push({
           type: args.type,
           name: args.name,
           inputs: args.inputs as Record<string, unknown>,
+          outputs: computed,
           provider: args.provider,
         });
-        // Echo inputs as outputs so chained pulumi.all() applies resolve with the values downstream resource construction needs.
-        // Outputs only the provider computes get deterministic stubs: a managed database's CA certificate.
-        const computed =
-          args.type === 'scaleway:databases/instance:Instance' ? { certificate: 'mock-ca-certificate' } : {};
         return {
           id: `${args.name}-id`,
           state: { ...args.inputs, ...computed, id: `${args.name}-id` },
@@ -104,11 +118,26 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
     }
     return match;
   };
+  const settle = async () => {
+    let quiet = 0;
+    for (let seen = resources.length; quiet < 25; quiet++) {
+      await flushPulumi();
+      if (resources.length !== seen) {
+        seen = resources.length;
+        quiet = 0;
+      }
+    }
+  };
 
-  return { pulumi, resources, byType, oneOfType };
+  return { pulumi, resources, byType, oneOfType, settle };
 }
 
 /** Wait for every captured resource's input Outputs to settle so tests can inspect string values synchronously. One microtask tick suffices because the mock newResource returns state synchronously. */
 export async function flushPulumi(): Promise<void> {
   await new Promise((resolve) => setImmediate(resolve));
+}
+
+/** A secret input arrives wrapped in Pulumi's secret envelope; the plain value sits under `value`. */
+export function unwrapSecret(input: unknown): unknown {
+  return input && typeof input === 'object' && 'value' in input ? (input as { value: unknown }).value : input;
 }

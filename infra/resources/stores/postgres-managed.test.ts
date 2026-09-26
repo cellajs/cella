@@ -1,4 +1,5 @@
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { POSTGRES_ROLE_NAMES } from '../../lib/scaleway/db-privileges';
 import type { ProvisionContext } from '../../lib/stores';
 import { flushPulumi, installPulumiMocks, type MockHarness } from '../../tests/helpers/pulumi-mock';
 
@@ -84,7 +85,17 @@ describe('postgresManaged public endpoint ACL', () => {
   it('keeps the database private by default: no public endpoint, no ACL', async () => {
     const { instance, rules } = await render({});
     expect(instance.inputs.loadBalancer).toBeUndefined();
+    expect(instance.inputs.privateNetwork).toEqual({ pnId: 'pn-id', enableIpam: true });
     expect(rules).toBeUndefined();
+  });
+
+  it('gives only the migration role Scaleway admin; the request-serving role stays subject to RLS', async () => {
+    await render({});
+    const users = harness.byType('scaleway:databases/user:User').map((user) => [user.inputs.name, user.inputs.isAdmin]);
+    expect(users.sort()).toEqual([
+      [POSTGRES_ROLE_NAMES.admin, true],
+      [POSTGRES_ROLE_NAMES.runtime, false],
+    ]);
   });
 
   it('must not expose the database to the internet via an all-internet ACL', async () => {

@@ -27,32 +27,38 @@ describe('storage module', () => {
     ]);
   });
 
-  it('public buckets (frontend, public-uploads) carry a Principal:* read policy', () => {
+  it('must not let anyone but a named application write or list: the public read only fetches objects of the two public buckets', () => {
+    type Statement = { Sid: string; Effect: string; Principal: unknown; Action: string[]; Resource: string[] };
     const policies = h.resources.filter((r) => /bucketPolicy/i.test(r.type));
-    const named = Object.fromEntries(policies.map((p) => [p.name, p]));
-
-    expect(named['frontend-policy']).toBeDefined();
-    expect(named['public-uploads-policy']).toBeDefined();
-
-    for (const name of ['frontend-policy', 'public-uploads-policy']) {
-      const policyJson = String(named[name]?.inputs.policy ?? '');
-      expect(policyJson, `${name} should reference Principal:*`).toMatch(/"Principal"\s*:\s*"\*"/);
-      expect(policyJson, `${name} should allow s3:GetObject`).toMatch(/s3:GetObject/);
+    expect(policies.map((p) => p.name).sort()).toEqual([
+      'boot-diag-policy',
+      'frontend-policy',
+      'private-uploads-policy',
+      'public-uploads-policy',
+    ]);
+    const publicReads: string[] = [];
+    for (const policy of policies) {
+      const bucket = String(
+        h.resources.find((r) => r.name === policy.name.replace(/-policy$/, '-bucket'))?.inputs.name,
+      );
+      const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
+      expect(Statement.length, policy.name).toBeGreaterThan(0);
+      for (const statement of Statement) {
+        expect(statement.Effect, `${policy.name} ${statement.Sid}`).toBe('Allow');
+        if (statement.Principal === '*') {
+          // Anonymous access: object reads on this bucket's objects, nothing else.
+          expect(statement.Action, `${policy.name} ${statement.Sid}`).toEqual(['s3:GetObject']);
+          expect(statement.Resource, `${policy.name} ${statement.Sid}`).toEqual([`${bucket}/*`]);
+          publicReads.push(policy.name);
+        } else {
+          expect(statement.Principal, `${policy.name} ${statement.Sid}`).toEqual({
+            SCW: expect.stringMatching(/^application_id:.+/),
+          });
+        }
+      }
     }
-  });
-
-  it('private uploads bucket policy admits signers only: never a public statement', () => {
-    const policies = h.resources.filter((r) => /bucketPolicy/i.test(r.type));
-    const privatePolicies = policies.filter((p) => /private/i.test(p.name));
-    // P3: the private bucket gained its first policy (deny-by-default), but
-    // access stays signed-URL only: no '*' principal may ever appear.
-    expect(privatePolicies).toHaveLength(1);
-    const doc = JSON.parse(String(privatePolicies[0]?.inputs.policy ?? '{}')) as {
-      Statement?: Array<{ Principal?: unknown }>;
-    };
-    for (const statement of doc.Statement ?? []) {
-      expect(statement.Principal).not.toBe('*');
-    }
+    // Positive control: the SPA bucket and the public uploads are readable; the private uploads and the boot diagnostics are not.
+    expect(publicReads.sort()).toEqual(['frontend-policy', 'public-uploads-policy']);
   });
 
   it('boot diagnostics bucket grants the boot app write to boot-diag/ only, never public read', () => {

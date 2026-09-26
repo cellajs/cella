@@ -26,11 +26,22 @@ describe('renderCloudInit', () => {
   it('renders the containerised boot-runner launcher', () => {
     const out = renderCloudInit(params());
 
-    expect(out).toContain('cat > /etc/cella/boot-plan.json');
     expect(out).toContain('"imageContract": "docker-node-boot-v1"');
-    expect(out).toContain('cat > /etc/cella/scw-access-key');
-    expect(out).toContain('cat > /etc/cella/scw-secret-key');
-    expect(out).toContain('cat > /etc/cella/run-boot.sh');
+    // Each file holding the key or the plan is closed to other users the moment its heredoc ends, before the runner starts.
+    for (const [file, marker] of [
+      ['boot-plan.json', 'BOOT_PLAN_EOF'],
+      ['scw-access-key', 'SCW_ACCESS_KEY_EOF'],
+      ['scw-secret-key', 'SCW_SECRET_KEY_EOF'],
+      ['boot.env', 'BOOT_ENV_EOF'],
+    ]) {
+      expect(out).toContain(`cat > /etc/cella/${file} <<'${marker}'`);
+      expect(out).toContain(`\n${marker}\nchmod 600 /etc/cella/${file}\n`);
+    }
+    expect(out).toContain("cat > /etc/cella/run-boot.sh <<'RUN_BOOT_EOF'");
+    expect(out).toContain('\nRUN_BOOT_EOF\nchmod 700 /etc/cella/run-boot.sh\n');
+    expect(out.indexOf('chmod 600 /etc/cella/scw-secret-key')).toBeLessThan(
+      out.indexOf('systemctl start infra-boot.service'),
+    );
     // Host logs into the registry to pull the boot runner image, then runs it. The
     // registry host + image ref arrive via the systemd EnvironmentFile, so the
     // launcher references them as env vars, never interpolated shell literals.
