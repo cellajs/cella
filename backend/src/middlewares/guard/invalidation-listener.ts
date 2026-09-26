@@ -106,7 +106,13 @@ export function listenForAuthInvalidation({
       next.on('notification', onNotification);
       next.on('error', onLost);
       next.on('end', onLost);
-      await next.query(listenStatement);
+      // An unanswered LISTEN fails the connect too: nothing else would start the heartbeat or schedule a retry.
+      let failure: unknown = new Error(`The LISTEN got no answer within ${heartbeatTimeoutMs} ms`);
+      const listening = next.query(listenStatement).catch((error: unknown) => {
+        failure = error;
+        throw error;
+      });
+      if (!(await withinTimeout(listening, heartbeatTimeoutMs))) throw failure;
       if (stopped) return drop(next);
       client = next;
       retryDelay = RETRY_MIN_MS;

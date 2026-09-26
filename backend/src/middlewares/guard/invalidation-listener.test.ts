@@ -257,6 +257,34 @@ describe('auth_invalidate listener on a connection that stops answering', () => 
     });
   });
 
+  it('must not stay deaf via a first LISTEN that never gets an answer', async () => {
+    const connections: PoolClient[] = [];
+    const connect = pool.connect.bind(pool);
+    const connectSpy = vi.spyOn(pool, 'connect').mockImplementation(async () => {
+      const connection = await connect();
+      // The first connection never answers, as when the database stalls right after accepting it.
+      if (connections.length === 0) vi.spyOn(connection, 'query').mockImplementation(() => new Promise(() => {}));
+      connections.push(connection);
+      return connection;
+    });
+    const stop = listenForAuthInvalidation({ heartbeatMs: 200, heartbeatTimeoutMs: 500 });
+    onTestFinished(async () => {
+      await stop();
+      connectSpy.mockRestore();
+    });
+
+    // Listening, on a second connection.
+    cacheUser('after-stalled-listen');
+    await vi.waitFor(
+      async () => {
+        await publishElsewhere({ user: 'after-stalled-listen' });
+        expect(cachedFor('after-stalled-listen').session).toBe(false);
+      },
+      { timeout: 8000, interval: 100 },
+    );
+    expect(connections.length).toBeGreaterThan(1);
+  });
+
   it('keeps TCP keepalive on the pooled connections it listens on', () => {
     expect(pool.options).toMatchObject({ keepAlive: true });
   });
