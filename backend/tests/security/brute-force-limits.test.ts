@@ -161,9 +161,10 @@ describe('brute-force budgets', async () => {
     const user = await createTotpUser(`totp-burst-${nanoid(8)}@security-test.com`);
     const cookie = authCookie('confirm-mfa', await createMfaToken(user));
 
-    // Ten wrong codes at once, each from its own address, against an account with its whole budget left.
+    // Twenty wrong codes at once, each from its own address, against an account with its whole budget left. A burst of
+    // this size overlaps the attempts closely enough that a budget counted by read-then-write lets more through.
     const statuses = await Promise.all(
-      Array.from({ length: 10 }, async () => {
+      Array.from({ length: 20 }, async () => {
         const { response } = await call(signInWithTotp, {
           body: { code: wrongCode() },
           headers: { ...fromIp(randomIp()), Cookie: cookie },
@@ -172,7 +173,7 @@ describe('brute-force budgets', async () => {
       }),
     );
     expect(statuses.filter((status) => status === 401)).toHaveLength(5);
-    expect(statuses.filter((status) => status === 429)).toHaveLength(5);
+    expect(statuses.filter((status) => status === 429)).toHaveLength(15);
     // One lockout, one mail.
     expect(lockoutMailsTo(user.email)).toHaveLength(1);
 
