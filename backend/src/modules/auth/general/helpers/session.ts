@@ -273,19 +273,27 @@ export const resolveSession = async (
   const sessionToken = await getAuthCookie(ctx, 'session');
   const impersonationToken = await getAuthCookie(ctx, 'impersonation');
 
+  // Only a refusal clears the cookie: it holds the only copy of the token, so a failed read (the database away) keeps it.
   const clearIfRefused = async (cookie: 'session' | 'impersonation', read: () => Promise<SessionCacheEntry>) => {
     try {
       return await read();
     } catch (err) {
-      if (clearOnError) deleteAuthCookie(ctx, cookie);
+      if (clearOnError && err instanceof AppError && err.status === 401) deleteAuthCookie(ctx, cookie);
       throw err;
     }
   };
 
+  /** The admin session behind an impersonation; a refusal means none, a failed read is the request's failure. */
+  const readAdminSession = (token: string) =>
+    readSession(token).catch((err) => {
+      if (err instanceof AppError) return null;
+      throw err;
+    });
+
   if (impersonationToken) {
     return clearIfRefused('impersonation', async () => {
       const impersonation = await readSession(impersonationToken);
-      const admin = sessionToken ? await readSession(sessionToken).catch(() => null) : null;
+      const admin = sessionToken ? await readAdminSession(sessionToken) : null;
       const { type, impersonatorSessionId } = impersonation.session;
       const backed = admin?.session.id === impersonatorSessionId && admin.hasSystemRole && isSystemAccessAllowed(ctx);
       if (type !== 'impersonation' || !backed) throw new AppError(401, 'unauthorized', 'warn');

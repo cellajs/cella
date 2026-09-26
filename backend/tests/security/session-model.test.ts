@@ -1,8 +1,9 @@
 import { and, eq } from 'drizzle-orm';
 import { getMe, startImpersonation, stopImpersonation } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
@@ -10,11 +11,33 @@ import { authCookie, createSystemAdminUser, createTestUser, type ErrorResponse }
 import { createAppClient } from '../test-client';
 import { mockFetchRequest } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
-import { cookiesAfter, insertSession, sessionRow, type TestSession } from './session-helpers';
+import { cookiesAfter, insertImpersonation, insertSession, sessionRow, type TestSession } from './session-helpers';
 
 beforeAll(() => mockFetchRequest());
 
-afterEach(async () => await clearSecurityTestData());
+afterEach(async () => {
+  vi.restoreAllMocks();
+  await clearSecurityTestData();
+});
+
+/**
+ * Fails the query that reads a session by its token's hash, as a database outage would: the first `skip` such lookups
+ * pass, the next one throws.
+ */
+const failSessionLookup = ({ skip = 0 } = {}) => {
+  const select = db.select.bind(db);
+  let seen = 0;
+  return vi.spyOn(db, 'select').mockImplementation(((fields?: Record<string, unknown>) => {
+    if (fields && 'revokedAt' in fields && 'systemRole' in fields && seen++ === skip) {
+      throw new Error('Connection terminated unexpectedly');
+    }
+    return select(fields as never);
+  }) as unknown as typeof db.select);
+};
+
+/** Whether a response deletes, or otherwise sets, the named auth cookie. */
+const touchesCookie = (response: Response, name: 'session' | 'impersonation') =>
+  response.headers.getSetCookie().some((line) => line.startsWith(`${authCookieName(name)}=`));
 
 /**
  * A session is its cookie's random token: the database keeps only the token's hash and the auth cache is keyed by that
@@ -69,6 +92,38 @@ describe('session model', async () => {
 
     await expectRefused(expiring.cookie, 'session_expired');
     await warm(live);
+  });
+
+  it('must not sign a user out for good via a failed session lookup', async () => {
+    const user = await createTestUser('outage@security-test.com');
+    const session = await insertSession(user);
+
+    // The cookie holds the only copy of the token: a lookup that fails must leave it in place.
+    const lookup = failSessionLookup();
+    const { response } = await me(session.cookie);
+    lookup.mockRestore();
+    expect(response.status).toBe(500);
+    expect(touchesCookie(response, 'session')).toBe(false);
+
+    // Once the database answers again, the same cookie signs in (positive control).
+    expect((await me(session.cookie)).response.status).toBe(200);
+  });
+
+  it('must not end an impersonation via a failed lookup of its admin session', async () => {
+    const admin = await createSystemAdminUser('outage-admin@security-test.com');
+    const target = await createTestUser('outage-target@security-test.com');
+    const impersonation = await insertImpersonation(await insertSession(admin), target);
+
+    // The impersonation's own lookup passes; the lookup of the admin session behind it fails.
+    const lookup = failSessionLookup({ skip: 1 });
+    const { response } = await me(impersonation.cookie);
+    lookup.mockRestore();
+    expect(response.status).toBe(500);
+    expect(touchesCookie(response, 'impersonation')).toBe(false);
+
+    const control = await me(impersonation.cookie);
+    expect(control.response.status).toBe(200);
+    expect((control.data as { user: { id: string } }).user.id).toBe(target.id);
   });
 
   it("must not hand out another admin's session via a forged adminUserId at stop-impersonation", async () => {
