@@ -20,18 +20,20 @@ type Answer = 200 | 204 | 302 | 400 | 401;
 
 /**
  * A route behind a fresh limiter whose handler counts its runs and answers with `status`, or 401 at once for a request
- * sent with `failFast`.
+ * sent with `failFast`. While held, a request stays in the handler until `release`.
  */
 function guardedRoute(mode: RateLimitMode, status: Answer, limits: typeof budget = budget) {
   const limiter = rateLimiter(mode, `burst_${nanoid(8)}`, ['ip'], { limits });
   const app = new Hono<Env>();
   app.onError(appErrorHandler);
   let reached = 0;
+  let held: Promise<void> | null = null;
+  let release = () => {};
   app.post('/attempt', limiter, async (ctx) => {
     reached++;
     if (ctx.req.header('x-fail-fast')) return ctx.json({}, 401);
     // The handler's own work (verifying a code, reading a token), which the rest of the burst overlaps.
-    await new Promise((resolve) => setTimeout(resolve, 25));
+    await (held ?? new Promise((resolve) => setTimeout(resolve, 25)));
     if (status === 302) return ctx.redirect('http://localhost/app', 302);
     if (status === 204) return ctx.body(null, 204);
     return ctx.json({}, status);
@@ -41,12 +43,39 @@ function guardedRoute(mode: RateLimitMode, status: Answer, limits: typeof budget
       method: 'POST',
       headers: { 'x-forwarded-for': ip, ...(failFast && { 'x-fail-fast': '1' }) },
     });
-  return { limiter, attempt, reached: () => reached };
+  const hold = () => {
+    held = new Promise((resolve) => {
+      release = () => {
+        held = null;
+        resolve();
+      };
+    });
+  };
+  return { limiter, attempt, reached: () => reached, hold, release: () => release() };
 }
 
 const randomIp = () => `203.0.${Math.floor(Math.random() * 256)}.${1 + Math.floor(Math.random() * 254)}`;
-const burst = async (attempt: (ip: string) => Response | Promise<Response>, ip: string, size: number) =>
-  (await Promise.all(Array.from({ length: size }, () => attempt(ip)))).map((response) => response.status);
+/**
+ * Sends `size` requests at once and holds each one that reaches the handler until every other one is refused or held
+ * too, so the whole burst is in flight together however slowly the database answers.
+ */
+async function burst(route: ReturnType<typeof guardedRoute>, ip: string, size: number) {
+  const reachedBefore = route.reached();
+  let answered = 0;
+  route.hold();
+  const statuses = Array.from({ length: size }, () =>
+    route.attempt(ip).then((response) => {
+      answered++;
+      return response.status;
+    }),
+  );
+  try {
+    await vi.waitFor(() => expect(answered + route.reached() - reachedBefore).toBe(size), { timeout: 10_000 });
+  } finally {
+    route.release();
+  }
+  return Promise.all(statuses);
+}
 
 /** The bucket's row for `ip`, read past RLS. */
 const bucketOf = async (limiter: { keyPrefix: string }, ip: string) => {
@@ -66,7 +95,7 @@ describe('fail-mode budgets under a parallel burst', () => {
     for (const mode of ['failseries', 'fail'] as const) {
       const route = guardedRoute(mode, 401);
 
-      const statuses = await burst(route.attempt, randomIp(), 20);
+      const statuses = await burst(route, randomIp(), 20);
 
       expect(route.reached(), mode).toBeLessThanOrEqual(budget.points);
       expect(statuses.filter((status) => status === 401).length, mode).toBe(route.reached());
@@ -114,7 +143,7 @@ describe('fail-mode budgets under a parallel burst', () => {
 
       // More successes than the budget, sent one after another, and a burst of successes within the budget.
       for (let attempt = 0; attempt < 12; attempt++) expect((await succeeding.attempt(ip)).status, mode).toBe(200);
-      expect(await burst(succeeding.attempt, ip, budget.points), mode).toEqual(Array(budget.points).fill(200));
+      expect(await burst(succeeding, ip, budget.points), mode).toEqual(Array(budget.points).fill(200));
       expect(succeeding.reached(), mode).toBe(12 + budget.points);
 
       // The failure budget is still whole on that key: a success resets a series, and gives its attempt back otherwise.
@@ -132,7 +161,7 @@ describe('send budgets under a parallel burst', () => {
     // The magic-link limiter's shape: two per address per window.
     const route = guardedRoute('limit', 200, { points: 2, duration: 60 * 30, blockDuration: 0 });
 
-    const statuses = await burst(route.attempt, randomIp(), 20);
+    const statuses = await burst(route, randomIp(), 20);
 
     expect(route.reached()).toBe(2);
     expect(statuses.filter((status) => status === 429)).toHaveLength(18);
@@ -142,7 +171,7 @@ describe('send budgets under a parallel burst', () => {
     // The email spam limiter's shape: ten successful sends per hour.
     const route = guardedRoute('success', 200, { points: 10, duration: 60 * 60, blockDuration: 60 * 30 });
 
-    const statuses = await burst(route.attempt, randomIp(), 20);
+    const statuses = await burst(route, randomIp(), 20);
 
     expect(route.reached()).toBe(10);
     expect(statuses.filter((status) => status === 429)).toHaveLength(10);
@@ -152,7 +181,7 @@ describe('send budgets under a parallel burst', () => {
     const failing = guardedRoute('success', 401, { points: 10, duration: 60 * 60, blockDuration: 60 * 30 });
     const ip = randomIp();
 
-    const statuses = await burst(failing.attempt, ip, 10);
+    const statuses = await burst(failing, ip, 10);
     for (let attempt = 0; attempt < 5; attempt++) statuses.push((await failing.attempt(ip)).status);
 
     expect(statuses).toEqual(Array(15).fill(401));
@@ -176,7 +205,7 @@ describe('a parallel burst past the budget', () => {
       const route = guardedRoute(mode, answer);
       const ip = randomIp();
 
-      const statuses = await burst(route.attempt, ip, budget.points + 5);
+      const statuses = await burst(route, ip, budget.points + 5);
       // The burst outran the budget while it was in flight...
       expect(statuses, `${mode} ${answer}`).toContain(429);
       expect(route.reached(), `${mode} ${answer}`).toBeLessThanOrEqual(budget.points);
@@ -192,7 +221,7 @@ describe('a parallel burst past the budget', () => {
     const route = guardedRoute('success', 400, { points: 10, duration: 60 * 60, blockDuration: 60 * 30 });
     const ip = randomIp();
 
-    const statuses = await burst(route.attempt, ip, 15);
+    const statuses = await burst(route, ip, 15);
     expect(statuses).toContain(429);
 
     expect((await route.attempt(ip)).status).toBe(400);
@@ -220,7 +249,7 @@ describe('a parallel burst past the budget', () => {
       const route = guardedRoute(mode, 401);
       const ip = randomIp();
 
-      const statuses = await burst(route.attempt, ip, budget.points + 5);
+      const statuses = await burst(route, ip, budget.points + 5);
       expect(statuses.filter((status) => status === 401).length, mode).toBe(budget.points);
       expect(statuses.filter((status) => status === 429).length, mode).toBe(5);
 
@@ -237,7 +266,7 @@ describe('a parallel burst past the budget', () => {
     const route = guardedRoute('success', 200, { points: 10, duration: 60 * 60, blockDuration: 60 * 30 });
     const ip = randomIp();
 
-    expect(await burst(route.attempt, ip, 15)).toContain(429);
+    expect(await burst(route, ip, 15)).toContain(429);
     expect((await route.attempt(ip)).status).toBe(429);
   });
 });
