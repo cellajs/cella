@@ -200,7 +200,7 @@ describe('Block media references', async () => {
         description: documentOf(...refused, ...valid),
       });
 
-      expect(result).toMatchObject({ outcome: 'written', sanitized: true });
+      expect(result).toEqual({ sanitized: true });
       // Refused references are blanked in place, so the document keeps its shape; valid ones survive unchanged.
       expect(urlsIn(await storedDescription())).toEqual([...refused.map(() => ''), ...valid]);
       await resetDescription();

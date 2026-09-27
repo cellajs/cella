@@ -22,15 +22,17 @@ export interface MaterializeDescriptionInput {
   editors: string[];
 }
 
-/** `written`: the description is stored, `sanitized` when media URLs were blanked. `gone`: the entity no longer exists in the document's tenant. */
-export type MaterializeDescriptionResult = { outcome: 'written'; sanitized: boolean } | { outcome: 'gone' };
+/** The description is stored; `sanitized` when media URLs were blanked. */
+export interface MaterializeDescriptionResult {
+  sanitized: boolean;
+}
 
 /**
  * Persists a Yjs collab description; called by the Yjs relay on the internal listener. The tenant and organization come
- * from the entity row: a row missing from the named tenant is `gone`, and another organization is refused (403). The
- * write is credited to the newest editor who may still update the entity, through the entity's materializer, which
- * runs the normal update operation and its permission check. When no editor may, the write is refused (403) and the
- * relay keeps the edits.
+ * from the entity row: a row missing from the named tenant is gone (410, so the relay deletes the document's rows),
+ * and another organization is refused (403). The write is credited to the newest editor who may still update the
+ * entity, through the entity's materializer, which runs the normal update operation and its permission check. When
+ * no editor may, the write is refused (403) and the relay keeps the edits.
  */
 export async function materializeDescriptionOp(
   input: MaterializeDescriptionInput,
@@ -52,7 +54,9 @@ export async function materializeDescriptionOp(
   const row = await tenantReadById(input.tenantId, (tx) =>
     resolveEntity({ var: { db: tx } }, { entityType, identifier: input.entityId }),
   );
-  if (!row || row.tenantId !== input.tenantId) return { outcome: 'gone' };
+  if (!row || row.tenantId !== input.tenantId) {
+    throw new AppError(410, 'not_found', 'warn', { entityType, meta: { reason: 'The entity is gone' } });
+  }
   if (row.organizationId !== input.organizationId) {
     throw new AppError(403, 'forbidden', 'warn', {
       entityType,
@@ -103,7 +107,7 @@ export async function materializeDescriptionOp(
         { ops: { description }, stx: { mutationId: uuidv7(), sourceId: 'yjs-relay', fieldTimestamps: {} } },
         { serverOrigin: true },
       );
-      return { outcome: 'written', sanitized };
+      return { sanitized };
     } catch (err) {
       // This editor may no longer update the row (or no longer see it, as with another author's draft): try the next.
       if (err instanceof AppError && (err.status === 403 || err.status === 404)) continue;
