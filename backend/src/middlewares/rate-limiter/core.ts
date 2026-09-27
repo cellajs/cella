@@ -101,7 +101,8 @@ async function settleAttempt(
  * Builds a route rate limiter. `limit` consumes every result, `success` and `fail` only matching ones, `failseries`
  * resets after a success. `success` and the fail modes count an attempt before the handler runs and give it back unless
  * it had the counted outcome, so a parallel burst reaches the handler at most `points` times. A spent `success` budget
- * holds until its window ends, as a limit does; a fail mode blocks for `blockDuration` from the failure that spent it.
+ * holds until its window ends. A `limit` blocks for `blockDuration` from the request past its budget (for the rest of
+ * the window when that is zero), a fail mode from the failure that spent it.
  * Fail modes also count failures in a 24-hour bucket that catches slow brute-force attempts.
  * @param mode - Result mode that controls point consumption.
  * @param key - Rate-limit namespace.

@@ -19,9 +19,8 @@ type RateLimiterOptions = {
   duration: number;
   blockDuration?: number;
   /**
-   * Also block an over-limit key in this process's memory, until its window ends (default true). Buckets that reserve
-   * attempts pass false: an attempt given back must free the budget, and a block lives in the database only, so every
-   * process holds it for the same time.
+   * Also block an over-limit key in this process's memory, as long as the database block (default true). Buckets that
+   * reserve attempts pass false: an attempt given back must free the budget, and a block lives in the database only.
    */
   inMemoryBlock?: boolean;
 };
@@ -57,8 +56,12 @@ export const getRateLimiterInstance = ({ inMemoryBlock = true, ...options }: Rat
       storeClient: db,
       schema: rateLimitsTable,
       insuranceLimiter: insurance,
-      // Block over-limit keys in-memory so repeat offenders miss the DB; blockDuration=0 uses the remaining window
-      ...(inMemoryBlock && { inMemoryBlockOnConsumed: enforcedOptions.points }),
+      // Both blocks last blockDuration: an in-memory block without a duration of its own ends with the window, and the
+      // library then skips the database block every process reads. A zero blockDuration blocks for the rest of the window.
+      ...(inMemoryBlock && {
+        inMemoryBlockOnConsumed: enforcedOptions.points,
+        inMemoryBlockDuration: enforcedOptions.blockDuration,
+      }),
     });
     insurances.set(instance, insurance);
   }

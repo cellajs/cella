@@ -129,6 +129,33 @@ describe('brute-force budgets', async () => {
     expect(other.response.status).toBe(200);
   });
 
+  it('must not resume looking up addresses via check-email when the window ends inside the block', async () => {
+    const ip = randomIp();
+    const known = await createTestUser(`blocked-${nanoid(6)}@security-test.com`.toLowerCase());
+    const lookup = async () =>
+      (await call(checkEmail, { body: { email: known.email }, headers: fromIp(ip) })).response.status;
+    const minutes = (count: number) => count * 60 * 1000;
+
+    // Only the clock moves: 30 lookups an hour, then a 30-minute block from the lookup past the budget.
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      const start = Date.now();
+      for (let attempt = 0; attempt < 30; attempt++) expect(await lookup()).toBe(200);
+
+      // Past the budget late in the window: the block runs from here, beyond the window's end.
+      vi.setSystemTime(start + minutes(50));
+      expect(await lookup()).toBe(429);
+      vi.setSystemTime(start + minutes(65));
+      expect(await lookup()).toBe(429);
+
+      // Lookups resume once the block ends (positive control).
+      vi.setSystemTime(start + minutes(81));
+      expect(await lookup()).toBe(200);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it("must not keep guessing many accounts' second factors from one IP via totp-verification", async () => {
     const ip = randomIp();
     /** A second-factor challenge of an account of its own, answered with `code` from `from`. */
