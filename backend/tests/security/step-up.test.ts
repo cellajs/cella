@@ -21,7 +21,15 @@ import {
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, issuedChallenge, passkeyChallenge } from './helpers';
-import { cookiesAfter, insertImpersonation, insertSession, type TestSession } from './session-helpers';
+import {
+  askStepUpLink,
+  cookiesAfter,
+  insertImpersonation,
+  insertSession,
+  insertStaleSession,
+  openStepUpLink,
+  type TestSession,
+} from './session-helpers';
 
 vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
 
@@ -40,9 +48,6 @@ const currentCode = () =>
   generateTOTP(decodeBase32(TOTP_SECRET), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 const wrongCode = () => currentCode().replace(/^./, (digit) => String((Number(digit) + 5) % 10));
 
-/** Signed in longer ago than the step-up window. */
-const STALE = { ageMs: 60 * 60 * 1000 };
-
 /**
  * A step-up proves the user is present on one session again: with a factor they hold, or, holding none, through an
  * emailed link opened in the browser that asked. It stamps that session only, never an impersonation, and signs
@@ -57,7 +62,7 @@ describe('step-up', async () => {
   /** A user holding a registered software passkey, with a session signed in before the window. */
   const passkeyHolder = async (label: string) => {
     const user = await createTestUser(`${label}@security-test.com`);
-    return { user, passkey: await insertPasskey(user), session: await insertSession(user, STALE) };
+    return { user, passkey: await insertPasskey(user), session: await insertStaleSession(user) };
   };
 
   it('must not step up a session via a passkey response to a sign-in or MFA challenge', async () => {
@@ -86,7 +91,7 @@ describe('step-up', async () => {
 
   it('must not step up a session via a wrong authenticator code', async () => {
     const user = await createTotpUser('totp-step-up@security-test.com');
-    const session = await insertSession(user, STALE);
+    const session = await insertStaleSession(user);
     expect(await stateOf(session)).toEqual({ steppedUp: false, methods: ['totp'] });
 
     const { error, response } = await call(stepUp, { body: { totpCode: wrongCode() }, headers: session.headers });
@@ -118,7 +123,7 @@ describe('step-up', async () => {
 
   it('must not step up via an emailed link a user with a second factor asks for', async () => {
     const user = await createTotpUser('factor-holder@security-test.com');
-    const session = await insertSession(user, STALE);
+    const session = await insertStaleSession(user);
 
     const { error, response } = await call(sendStepUpLink, { body: {}, headers: session.headers });
     await expectRefusal({ response, error }, 400, 'invalid_request');
@@ -129,7 +134,7 @@ describe('step-up', async () => {
     await passkeyHolder('passkey-elsewhere');
     await createTotpUser('totp-elsewhere@security-test.com');
     const user = await createTestUser('no-factor@security-test.com');
-    const session = await insertSession(user, STALE);
+    const session = await insertStaleSession(user);
 
     // Only the user's own factors count: other accounts' passkeys and authenticator apps are not the user's to prove.
     expect(await stateOf(session)).toEqual({ steppedUp: false, methods: ['email', 'sign_in'] });
@@ -138,28 +143,6 @@ describe('step-up', async () => {
   });
 
   describe('emailed link', () => {
-    /** Asks for a link from a signed-in browser; returns the browser's cookies afterwards and the mailed raw token. */
-    const askForLink = async (session: TestSession) => {
-      const asked = await call(sendStepUpLink, { body: { redirect: '/account' }, headers: session.headers });
-      expect(asked.response.status).toBe(204);
-      const statics = vi.mocked(mailer.prepareEmails).mock.lastCall?.[1] as { stepUpUrl?: string } | undefined;
-      const rawToken = statics?.stepUpUrl?.split('/').at(-1) ?? '';
-      expect(rawToken).not.toBe('');
-      return { browser: cookiesAfter(session.cookie, asked.response), rawToken };
-    };
-
-    /** A click on the mailed link: the mail app starts the navigation, so the Strict session cookie stays home. */
-    const openLink = (rawToken: string, cookie: string) => {
-      const laxOnly = cookie
-        .split('; ')
-        .filter((pair) => pair.startsWith(`${authCookieName('step-up-requested')}=`))
-        .join('; ');
-      return call(invokeToken, {
-        path: { type: 'step-up', token: rawToken },
-        headers: { ...defaultHeaders, Cookie: laxOnly },
-      });
-    };
-
     const stepUpTokens = (userId: string) =>
       db
         .select()
@@ -168,9 +151,9 @@ describe('step-up', async () => {
 
     it('must not stamp the session via the emailed link opened in another browser', async () => {
       const user = await createTestUser('link-elsewhere@security-test.com');
-      const asking = await insertSession(user, STALE);
-      const otherBrowser = await insertSession(user, STALE);
-      const { browser, rawToken } = await askForLink(asking);
+      const asking = await insertStaleSession(user);
+      const otherBrowser = await insertStaleSession(user);
+      const { browser, rawToken } = await askStepUpLink(asking, '/account');
 
       const elsewhere = await call(invokeToken, {
         path: { type: 'step-up', token: rawToken },
@@ -182,7 +165,7 @@ describe('step-up', async () => {
       // Refused before redemption, so the browser that asked can still open it.
       expect((await stepUpTokens(user.id))[0]?.invokedAt).toBeNull();
 
-      const opened = await openLink(rawToken, browser);
+      const opened = await openStepUpLink(rawToken, browser);
       expect(opened.response.status).toBe(302);
       expect(await sessionRow(asking.id)).toMatchObject({ steppedUpVia: 'email' });
       expect((await sessionRow(otherBrowser.id)).steppedUpAt).toBeNull();
@@ -190,10 +173,10 @@ describe('step-up', async () => {
 
     it('must not sign anybody in via the emailed link', async () => {
       const user = await createTestUser('link-no-sign-in@security-test.com');
-      const asking = await insertSession(user, STALE);
-      const { browser, rawToken } = await askForLink(asking);
+      const asking = await insertStaleSession(user);
+      const { browser, rawToken } = await askStepUpLink(asking, '/account');
 
-      const opened = await openLink(rawToken, browser);
+      const opened = await openStepUpLink(rawToken, browser);
 
       expect(opened.response.status).toBe(302);
       expect(new URL(opened.response.headers.get('location') ?? '').pathname).toBe('/account');
@@ -209,7 +192,7 @@ describe('step-up', async () => {
         methods: ['email', 'sign_in'],
       });
       expect((await call(getMe, { headers: { ...defaultHeaders, Cookie: browser } })).response.status).toBe(200);
-      expect((await openLink(rawToken, cookiesAfter(browser, opened.response))).response.status).toBe(403);
+      expect((await openStepUpLink(rawToken, cookiesAfter(browser, opened.response))).response.status).toBe(403);
     });
   });
 });

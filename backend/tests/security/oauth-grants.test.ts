@@ -16,7 +16,7 @@ import {
   updateOrganization,
   updateServiceAccount,
 } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
@@ -50,19 +50,25 @@ import {
 import {
   authorizationCode,
   authorizationCodeToken,
+  bearerHeaders,
   CookieJar,
   clientCredentialsToken,
   exchangeCode,
+  installApp,
   refreshAccessToken,
+  registerApp,
   serveClientMetadataDocuments,
+  serviceAccountWithKey,
   startAuthorization,
   startTestOauthServer,
   type TestOauthServer,
 } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser } from './helpers';
+import { insertStaleSession } from './session-helpers';
 
 const REDIRECT_URI = 'http://localhost:9999/callback';
+const adminRole = hierarchy.getMostPrivilegedRole('organization');
 const APP_ID = 'grant-policy-portfolio';
 const APP_LOGO = 'https://cdn.example/portfolio.png';
 const CIMD_ID = 'https://mcp-client.example/oauth/client.json';
@@ -77,8 +83,6 @@ const cimdDocument = {
   response_types: ['code'],
   client_kind: 'registered',
 };
-
-const bearer = (jwt: string) => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` });
 
 /**
  * The other processes (api, mcp, oauth): what they hear on `auth_invalidate`, through a listener on a connection of
@@ -131,26 +135,11 @@ describe('OAuth grants', async () => {
   /** A tenant with an admin and a member; the registered app is installed there unless `installed` is false. */
   async function tenantWithApp({ installed = true } = {}) {
     const org = await createTestOrganization();
-    const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
+    const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
     const member = await createOrgUser(call, org.tenantId, org.id, `member-${nanoid(8)}`);
     const adminHeaders = { ...defaultHeaders, Cookie: admin.sessionCookie };
-    await db
-      .insert(oauthClientsTable)
-      .values({ id: APP_ID, name: 'Portfolio', redirectUris: [REDIRECT_URI], logoUri: APP_LOGO })
-      .onConflictDoNothing();
-    let installationId = '';
-    if (installed) {
-      const { data } = await call(createServiceAccount, {
-        path: { tenantId: org.tenantId, organizationId: org.id },
-        body: { name: 'Portfolio installation', role: 'member' },
-        headers: adminHeaders,
-      });
-      installationId = (data as { serviceAccount: { id: string } }).serviceAccount.id;
-      await db
-        .update(serviceAccountsTable)
-        .set({ oauthClientId: APP_ID })
-        .where(eq(serviceAccountsTable.id, installationId));
-    }
+    await registerApp({ id: APP_ID, name: 'Portfolio', redirectUris: [REDIRECT_URI], logoUri: APP_LOGO });
+    const installationId = installed ? await installApp(org, admin.sessionCookie, APP_ID) : '';
     const resource = resourceUri({ face: 'mcp', tenantId: org.tenantId, organizationId: org.id });
     return { org, admin, member, adminHeaders, installationId, resource };
   }
@@ -175,7 +164,10 @@ describe('OAuth grants', async () => {
     refreshAccessToken(oauth.issuer, { clientId, refreshToken });
 
   const readAttachments = (ctx: Tenant, jwt: string) =>
-    call(getAttachments, { path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id }, headers: bearer(jwt) });
+    call(getAttachments, {
+      path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
+      headers: bearerHeaders(jwt),
+    });
 
   /** The grant a person's access token names, as the other processes hear of its revocation. */
   async function grantOf(ctx: Tenant, jwt: string) {
@@ -393,18 +385,12 @@ describe('OAuth grants', async () => {
 
   describe('a service token follows its API key and its account', () => {
     /** An admin service account with one live key, and what the key does at the token endpoint and at the API. */
-    async function serviceAccountWithKey() {
+    async function botWithKey() {
       const org = await createTestOrganization();
-      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
+      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
       const headers = { ...defaultHeaders, Cookie: admin.sessionCookie };
       const orgPath = { tenantId: org.tenantId, organizationId: org.id };
-      const { data } = await call(createServiceAccount, {
-        path: orgPath,
-        body: { name: 'Sync bot', role: 'admin', key: { name: 'first', scopes: null } },
-        headers,
-      });
-      const created = data as { serviceAccount: { id: string }; apiKey: { id: string; secret: string } };
-      const accountId = created.serviceAccount.id;
+      const { clientId: accountId, clientSecret, keyId } = await serviceAccountWithKey(org, admin.sessionCookie);
       const resource = resourceUri({ face: 'api', tenantId: org.tenantId });
       const mint = (clientSecret: string) =>
         clientCredentialsToken(
@@ -417,15 +403,16 @@ describe('OAuth grants', async () => {
         expect(minted.status).toBe(200);
         return String(minted.body.access_token);
       };
-      const read = (jwt: string) => call(getAttachments, { path: orgPath, headers: bearer(jwt) });
-      return { accountId, path: { ...orgPath, id: accountId }, headers, key: created.apiKey, mint, tokenFor, read };
+      const read = (jwt: string) => call(getAttachments, { path: orgPath, headers: bearerHeaders(jwt) });
+      const key = { id: keyId, secret: clientSecret };
+      return { accountId, path: { ...orgPath, id: accountId }, headers, key, mint, tokenFor, read };
     }
 
     /** The token endpoint's answer to a key that no longer authenticates its account: no token. */
     const noClient = { status: 401, body: { error: 'invalid_client' } };
 
     it('must not act or mint via a service token after its API key is revoked, even while its verdict is cached', async () => {
-      const bot = await serviceAccountWithKey();
+      const bot = await botWithKey();
       const second = await call(createApiKey, { path: bot.path, body: { name: 'second' }, headers: bot.headers });
       const secondKey = second.data as { secret: string };
 
@@ -445,7 +432,7 @@ describe('OAuth grants', async () => {
     });
 
     it('must not act via a service token after its account is disabled, even while its verdict is cached', async () => {
-      const bot = await serviceAccountWithKey();
+      const bot = await botWithKey();
       const jwt = await bot.tokenFor(bot.key.secret);
       expect((await bot.read(jwt)).response.status).toBe(200);
 
@@ -463,7 +450,7 @@ describe('OAuth grants', async () => {
     });
 
     it('must not mint a service token via a client cached before its account was disabled', async () => {
-      const bot = await serviceAccountWithKey();
+      const bot = await botWithKey();
       // Positive control, which also caches the client, as the authorization server's process holds it.
       await bot.tokenFor(bot.key.secret);
 
@@ -477,7 +464,7 @@ describe('OAuth grants', async () => {
     });
 
     it('must not act or mint via an API key past its expiry', async () => {
-      const bot = await serviceAccountWithKey();
+      const bot = await botWithKey();
       const jwt = await bot.tokenFor(bot.key.secret);
 
       // A rolled key's overlap ends by the clock alone: nothing announces it, and no verdict on the token is cached.
@@ -493,7 +480,7 @@ describe('OAuth grants', async () => {
     });
 
     it("must not act via a service token past its API key's expiry, even while its verdict is cached", async () => {
-      const bot = await serviceAccountWithKey();
+      const bot = await botWithKey();
       const [key] = await db
         .update(apiKeysTable)
         .set({ expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() })
@@ -526,7 +513,7 @@ describe('OAuth grants', async () => {
 
       const { data } = await call(createServiceAccount, {
         path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
-        body: { name: 'Sync bot', role: 'admin' },
+        body: { name: 'Sync bot', role: adminRole },
         headers: ctx.adminHeaders,
       });
       const accountId = (data as { serviceAccount: { id: string } }).serviceAccount.id;
@@ -861,37 +848,19 @@ describe('OAuth grants', async () => {
       expect(refused.body.error).toBe('invalid_request');
 
       // Positive control: a service account's key still mints one.
-      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
-      const { data } = await call(createServiceAccount, {
-        path: { tenantId: org.tenantId, organizationId: org.id },
-        body: { name: 'Sync bot', role: 'admin', key: { name: 'key', scopes: null } },
-        headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
-      });
-      const created = data as { serviceAccount: { id: string }; apiKey: { secret: string } };
-      const minted = await clientCredentialsToken(
-        oauth.issuer,
-        { clientId: created.serviceAccount.id, clientSecret: created.apiKey.secret },
-        { scope: 'organization:write', resource },
-      );
+      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
+      const client = await serviceAccountWithKey(org, admin.sessionCookie);
+      const minted = await clientCredentialsToken(oauth.issuer, client, { scope: 'organization:write', resource });
       expect(minted.status).toBe(200);
     });
 
     it("must not mint a service token via client_credentials for another tenant's resource", async () => {
       const org = await createTestOrganization();
       const other = await createTestOrganization();
-      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
-      const { data } = await call(createServiceAccount, {
-        path: { tenantId: org.tenantId, organizationId: org.id },
-        body: { name: 'Sync bot', role: 'admin', key: { name: 'key', scopes: null } },
-        headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
-      });
-      const created = data as { serviceAccount: { id: string }; apiKey: { secret: string } };
+      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
+      const client = await serviceAccountWithKey(org, admin.sessionCookie);
       const mint = (resource: string) =>
-        clientCredentialsToken(
-          oauth.issuer,
-          { clientId: created.serviceAccount.id, clientSecret: created.apiKey.secret },
-          { scope: 'attachment:read', resource },
-        );
+        clientCredentialsToken(oauth.issuer, client, { scope: 'attachment:read', resource });
 
       for (const resource of [
         resourceUri({ face: 'api', tenantId: other.tenantId }),
@@ -1028,7 +997,7 @@ describe('OAuth grants', async () => {
       expect(granted.status).toBe(200);
       const token = String(granted.body.access_token);
 
-      const refused = await rename(bearer(token));
+      const refused = await rename(bearerHeaders(token));
       expect(refused.response.status).toBe(403);
       // The token acts as the member it is.
       expect((await readAttachments(ctx, token)).response.status).toBe(200);
@@ -1038,8 +1007,7 @@ describe('OAuth grants', async () => {
 
     it('must not grant consent via a session that has not stepped up or an impersonation', async () => {
       const ctx = await tenantWithApp();
-      // Signed in longer ago than the step-up window.
-      const stale = await insertTestSession(ctx.member, { ageMs: 60 * 60 * 1000 });
+      const stale = await insertStaleSession(ctx.member);
       // A system admin's impersonation of the member, layered on the admin's own session.
       const admin = await createSystemAdminUser(`consent-admin-${nanoid(8)}@security-test.com`);
       const adminSession = await insertTestSession(admin);

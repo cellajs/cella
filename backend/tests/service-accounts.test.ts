@@ -22,15 +22,13 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from './fixtures';
 import { createTestOrganization, type ErrorResponse, expectRefusal } from './helpers';
+import { bearerHeaders } from './oauth-helpers';
 import { clearSecurityTestData, createOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
 afterEach(async () => await clearSecurityTestData());
 
 type Scope = NonNullable<NonNullable<NonNullable<CreateServiceAccountData['body']>['key']>['scopes']>[number];
-
-/** Machine requests carry no Origin and no cookie: a server, not a browser page. */
-const machineHeaders = (key: string) => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${key}` });
 
 describe('Service accounts and API keys', async () => {
   const call = await createAppClient();
@@ -94,7 +92,7 @@ describe('Service accounts and API keys', async () => {
     const { org, key } = await issueKey();
     const { response } = await call(getAttachments, {
       path: { tenantId: org.tenantId, organizationId: org.id },
-      headers: machineHeaders(key),
+      headers: bearerHeaders(key),
     });
     expect(response.status).toBe(200);
   });
@@ -104,7 +102,7 @@ describe('Service accounts and API keys', async () => {
     const { response } = await call(updateOrganization, {
       path: { tenantId: org.tenantId, id: org.id },
       body: { name: 'Renamed by bot' },
-      headers: machineHeaders(key),
+      headers: bearerHeaders(key),
     });
     expect(response.status).toBe(200);
     const [row] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, org.id));
@@ -116,7 +114,7 @@ describe('Service accounts and API keys', async () => {
     const { response } = await call(updateOrganization, {
       path: { tenantId: org.tenantId, id: org.id },
       body: { name: 'Should not happen' },
-      headers: machineHeaders(key),
+      headers: bearerHeaders(key),
     });
     // The mask covers no organization read, so the organization reads as missing.
     expect(response.status).toBe(404);
@@ -127,13 +125,13 @@ describe('Service accounts and API keys', async () => {
 
     const foreign = await call(getAttachments, {
       path: { tenantId: 'other01', organizationId: org.id },
-      headers: machineHeaders(key),
+      headers: bearerHeaders(key),
     });
     expect(foreign.response.status).toBe(403);
 
     const browser = await call(getAttachments, {
       path: { tenantId: org.tenantId, organizationId: org.id },
-      headers: { ...machineHeaders(key), Origin: appConfig.frontendUrl },
+      headers: { ...bearerHeaders(key), Origin: appConfig.frontendUrl },
     });
     expect(browser.response.status).toBe(403);
 
@@ -145,7 +143,7 @@ describe('Service accounts and API keys', async () => {
 
     const afterRevoke = await call(getAttachments, {
       path: { tenantId: org.tenantId, organizationId: org.id },
-      headers: machineHeaders(key),
+      headers: bearerHeaders(key),
     });
     expect(afterRevoke.response.status).toBe(401);
   });
@@ -191,7 +189,7 @@ describe('Service accounts and API keys', async () => {
     const read = async (issued: Awaited<ReturnType<typeof issueKey>>) =>
       call(getAttachments, {
         path: { tenantId: issued.org.tenantId, organizationId: issued.org.id },
-        headers: machineHeaders(issued.key),
+        headers: bearerHeaders(issued.key),
       });
 
     const expired = await read(await issueKey({ expiresAt: new Date(Date.now() - halfAnHour).toISOString() }));
@@ -207,7 +205,7 @@ describe('Service accounts and API keys', async () => {
     const readAsDisabled = () =>
       call(getAttachments, {
         path: { tenantId: disabled.org.tenantId, organizationId: disabled.org.id },
-        headers: machineHeaders(disabled.key),
+        headers: bearerHeaders(disabled.key),
       });
     // A read first, so the key and its account are cached at the guard when the account is disabled.
     expect((await readAsDisabled()).response.status).toBe(200);
@@ -284,7 +282,7 @@ describe('Service accounts and API keys', async () => {
     await db.update(serviceAccountsTable).set({ bindings: [] }).where(eq(serviceAccountsTable.id, account.id));
     const { response, error } = await call(getAttachments, {
       path: { tenantId: org.tenantId, organizationId: org.id },
-      headers: machineHeaders(key),
+      headers: bearerHeaders(key),
     });
     expect(response.status).toBe(403);
     // tenantGuard's refusal, before any organization is resolved; orgGuard's would name the organization.

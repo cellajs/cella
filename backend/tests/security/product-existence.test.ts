@@ -1,4 +1,4 @@
-import { createAttachments, createServiceAccount } from 'sdk';
+import { createAttachments } from 'sdk';
 import { hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -6,6 +6,7 @@ import { generateServerHLC } from '#/core/stx';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from '../fixtures';
 import { createTestOrganization, type ErrorResponse, expectRefusal } from '../helpers';
+import { bearerHeaders, serviceAccountWithKey } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -16,7 +17,6 @@ const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 const [adminRole] = hierarchy.getRoles('organization');
 
 /** Machine requests carry no Origin and no cookie: a server, not a browser page. */
-const machineHeaders = (key: string) => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${key}` });
 
 /** The parts of an error answer that come from the refusal itself, without the per-request path, id and time. */
 const refusalOf = ({ status, type, name, message, severity, entityType, meta }: ErrorResponse) => ({
@@ -61,23 +61,16 @@ describe('Product existence (getValidProduct)', async () => {
     return { status: response.status, body: (await response.json()) as ErrorResponse };
   };
 
-  const issueKey = async (name: string, scopes: ('organization:read' | 'attachment:read')[]) => {
-    const { data, response } = await call(createServiceAccount, {
-      path: { tenantId: organization.tenantId, organizationId: organization.id },
-      body: { name, role: adminRole, key: { name: 'key', scopes } },
-      headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
-    });
-    expect(response.status).toBe(201);
-    return (data as { apiKey: { secret: string } }).apiKey.secret;
-  };
+  const issueKey = async (scopes: ('organization:read' | 'attachment:read')[]) =>
+    (await serviceAccountWithKey(organization, admin.sessionCookie, { scopes })).clientSecret;
 
   beforeAll(async () => {
     mockFetchRequest();
     organization = await createTestOrganization();
     admin = await createOrgUser(call, organization.tenantId, organization.id, 'existence-admin', adminRole);
     member = await createOrgUser(call, organization.tenantId, organization.id, 'existence-member', memberRole);
-    unscopedKey = await issueKey('Organization bot', ['organization:read']);
-    readOnlyKey = await issueKey('Reader bot', ['attachment:read']);
+    unscopedKey = await issueKey(['organization:read']);
+    readOnlyKey = await issueKey(['attachment:read']);
 
     const { response } = await call(createAttachments, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
@@ -99,15 +92,15 @@ describe('Product existence (getValidProduct)', async () => {
   afterAll(async () => await clearSecurityTestData());
 
   it('must not confirm a product id via getAttachment to a caller who may not read it', async () => {
-    const existing = await read(attachmentId, machineHeaders(unscopedKey));
-    const missing = await read(generateId(), machineHeaders(unscopedKey));
+    const existing = await read(attachmentId, bearerHeaders(unscopedKey));
+    const missing = await read(generateId(), bearerHeaders(unscopedKey));
     expect(existing.status).toBe(404);
     expect(refusalOf(existing.body)).toEqual(refusalOf(missing.body));
   });
 
   it('must not confirm a product id via updateAttachment to a caller who may not read it', async () => {
-    const existing = await rename(attachmentId, machineHeaders(unscopedKey));
-    const missing = await rename(generateId(), machineHeaders(unscopedKey));
+    const existing = await rename(attachmentId, bearerHeaders(unscopedKey));
+    const missing = await rename(generateId(), bearerHeaders(unscopedKey));
     expect(existing.status).toBe(404);
     expect(refusalOf(existing.body)).toEqual(refusalOf(missing.body));
   });
@@ -119,8 +112,8 @@ describe('Product existence (getValidProduct)', async () => {
     await expectRefusal(byMember, 403, 'forbidden');
 
     // A read-only key reads the attachment, and its update is refused as an action on a readable row.
-    expect((await read(attachmentId, machineHeaders(readOnlyKey))).status).toBe(200);
-    const byReadOnlyKey = await rename(attachmentId, machineHeaders(readOnlyKey));
+    expect((await read(attachmentId, bearerHeaders(readOnlyKey))).status).toBe(200);
+    const byReadOnlyKey = await rename(attachmentId, bearerHeaders(readOnlyKey));
     await expectRefusal(byReadOnlyKey, 403, 'forbidden');
   });
 });

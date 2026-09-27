@@ -1,6 +1,9 @@
 import { eq } from 'drizzle-orm';
+import { invokeToken, sendStepUpLink } from 'sdk';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { mailer } from '#/lib/mailer';
+import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { type SessionTypes, type StepUpProof, sessionsTable } from '#/modules/auth/sessions-db';
 import { stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
@@ -8,6 +11,7 @@ import { streamSubscriberManager } from '#/modules/entities/stream';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import { insertTestSession, setCookiePair } from '../helpers';
+import { createAppClient } from '../test-client';
 
 export interface TestSession {
   id: string;
@@ -30,11 +34,42 @@ export async function insertSession(
   return asSession(id, cookie);
 }
 
-/** A session signed in before the step-up window that then stepped up with `via`: only its stamp proves presence. */
+/** A session signed in an hour ago, past the step-up window: its sign-in no longer proves the user present. */
+export const insertStaleSession = (user: { id: string }) => insertSession(user, { ageMs: 60 * 60 * 1000 });
+
+/** A stale session that then stepped up with `via`: only its stamp proves presence. */
 export async function insertSteppedUpSession(user: { id: string }, via: StepUpProof = 'totp'): Promise<TestSession> {
-  const session = await insertSession(user, { ageMs: 60 * 60 * 1000 });
+  const session = await insertStaleSession(user);
   await stampStepUp(session.id, user.id, via);
   return session;
+}
+
+/** Asks for the emailed step-up link from a session's browser; returns that browser's cookies after and the raw token. */
+export async function askStepUpLink(session: TestSession, redirect?: string) {
+  const call = await createAppClient();
+  const asked = await call(sendStepUpLink, { body: redirect ? { redirect } : {}, headers: session.headers });
+  expect(asked.response.status).toBe(204);
+  const statics = vi.mocked(mailer.prepareEmails).mock.lastCall?.[1] as { stepUpUrl?: string } | undefined;
+  const rawToken = statics?.stepUpUrl?.split('/').at(-1) ?? '';
+  expect(rawToken).not.toBe('');
+  return { browser: cookiesAfter(session.cookie, asked.response), rawToken };
+}
+
+/** A click on the mailed step-up link: the mail app starts the navigation, so the Strict session cookie stays home. */
+export async function openStepUpLink(rawToken: string, browser: string) {
+  const call = await createAppClient();
+  const marker = browser.split('; ').filter((pair) => pair.startsWith(`${authCookieName('step-up-requested')}=`));
+  return call(invokeToken, {
+    path: { type: 'step-up', token: rawToken },
+    headers: { ...defaultHeaders, Cookie: marker.join('; ') },
+  });
+}
+
+/** A step-up through the emailed link, opened in the browser that asked; returns that browser's session. */
+export async function stepUpByEmail(session: TestSession) {
+  const { browser, rawToken } = await askStepUpLink(session);
+  expect((await openStepUpLink(rawToken, browser)).response.status).toBe(302);
+  return asSession(session.id, browser);
 }
 
 /** An impersonation of `target` layered on an admin's session, presented as the admin's browser does. */

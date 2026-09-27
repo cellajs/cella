@@ -1,11 +1,75 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { eq } from 'drizzle-orm';
 import type Provider from 'oidc-provider';
-import { vi } from 'vitest';
+import { type CreateServiceAccountData, createServiceAccount } from 'sdk';
+import { hierarchy } from 'shared';
+import { expect, vi } from 'vitest';
+import { baseDb as db } from '#/db/db';
 import { ensureSigningKeys } from '#/modules/oauth-server/keystore';
+import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { createProvider } from '#/modules/oauth-server/provider';
 import { createOauthListener } from '#/modules/oauth-server/server';
+import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import { defaultHeaders } from './fixtures';
+import { createAppClient } from './test-client';
+
+type ServiceAccountBody = NonNullable<CreateServiceAccountData['body']>;
+type KeyScopes = NonNullable<ServiceAccountBody['key']>['scopes'];
+type OrgPath = { id: string; tenantId: string };
+
+/** A machine caller's headers: a bearer API key or access token, and neither Origin nor cookie, as a server sends. */
+export const bearerHeaders = (token: string) => ({
+  'Content-Type': 'application/json',
+  Authorization: `Bearer ${token}`,
+});
+
+/**
+ * A service account created in `org` by its admin through the route, with one live secret key; the key doubles as the
+ * account's client secret at the token endpoint. `role` defaults to the organization's most privileged role.
+ */
+export async function serviceAccountWithKey(
+  org: OrgPath,
+  adminCookie: string,
+  {
+    role = hierarchy.getMostPrivilegedRole('organization'),
+    scopes = null,
+  }: { role?: ServiceAccountBody['role']; scopes?: KeyScopes } = {},
+) {
+  const call = await createAppClient();
+  const { data, response } = await call(createServiceAccount, {
+    path: { tenantId: org.tenantId, organizationId: org.id },
+    body: { name: 'Sync bot', role, key: { name: 'key', scopes } },
+    headers: { ...defaultHeaders, Cookie: adminCookie },
+  });
+  expect(response.status).toBe(201);
+  const created = data as { serviceAccount: { id: string }; apiKey: { id: string; secret: string } };
+  return { clientId: created.serviceAccount.id, clientSecret: created.apiKey.secret, keyId: created.apiKey.id };
+}
+
+/** Registers an OAuth app deployment-wide; registering it again keeps the first row. */
+export const registerApp = (app: typeof oauthClientsTable.$inferInsert) =>
+  db.insert(oauthClientsTable).values(app).onConflictDoNothing();
+
+/**
+ * Installs a registered app in `org` as its admin does: a service account with the organization's least privileged
+ * role, bound to the app's client. Returns the installation's id.
+ */
+export async function installApp(org: OrgPath, adminCookie: string, clientId: string) {
+  const call = await createAppClient();
+  const { data } = await call(createServiceAccount, {
+    path: { tenantId: org.tenantId, organizationId: org.id },
+    body: { name: 'Portfolio installation', role: hierarchy.getLeastPrivilegedRole('organization') },
+    headers: { ...defaultHeaders, Cookie: adminCookie },
+  });
+  const installationId = (data as { serviceAccount: { id: string } }).serviceAccount.id;
+  await db
+    .update(serviceAccountsTable)
+    .set({ oauthClientId: clientId })
+    .where(eq(serviceAccountsTable.id, installationId));
+  return installationId;
+}
 
 export interface TestOauthServer {
   provider: Provider;

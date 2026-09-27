@@ -1,77 +1,57 @@
-import { createServer, type Server } from 'node:http';
-import type { AddressInfo } from 'node:net';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import type Provider from 'oidc-provider';
-import { createServiceAccount, getAttachments, getConnectedApps, revokeConnectedApp, updateOrganization } from 'sdk';
+import { getAttachments, getConnectedApps, revokeConnectedApp, updateOrganization } from 'sdk';
+import { hierarchy } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { ensureSigningKeys } from '#/modules/oauth-server/keystore';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
-import { createProvider } from '#/modules/oauth-server/provider';
 import { resourceUri } from '#/modules/oauth-server/resources';
-import { createOauthListener } from '#/modules/oauth-server/server';
 import { verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { defaultHeaders } from './fixtures';
 import { createTestOrganization } from './helpers';
-import { authorizationCodeToken, serveClientMetadataDocuments } from './oauth-helpers';
+import {
+  authorizationCodeToken,
+  bearerHeaders,
+  clientCredentialsToken,
+  serveClientMetadataDocuments,
+  serviceAccountWithKey,
+  startTestOauthServer,
+  type TestOauthServer,
+} from './oauth-helpers';
 import { clearSecurityTestData, createOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
-/** A bearer JWT from the authorization server: no Origin, no cookie, like any machine caller. */
-const tokenHeaders = (jwt: string) => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` });
+const adminRole = hierarchy.getMostPrivilegedRole('organization');
 
 describe('OAuth authorization server', async () => {
   const call = await createAppClient();
-  let provider: Provider;
-  let server: Server;
-  let issuer: string;
+  let oauth: TestOauthServer;
 
   beforeAll(async () => {
-    await ensureSigningKeys();
-    provider = await createProvider();
-    server = createServer(createOauthListener(provider)).listen(0, '127.0.0.1');
-    await new Promise<void>((resolve) => server.once('listening', resolve));
-    issuer = `http://127.0.0.1:${(server.address() as AddressInfo).port}/oauth`;
+    oauth = await startTestOauthServer();
   });
 
-  afterAll(async () => {
-    await new Promise<void>((resolve) => server.close(() => resolve()));
-  });
+  afterAll(async () => await oauth.close());
 
   afterEach(async () => await clearSecurityTestData());
 
   async function orgWithAdmin() {
     const org = await createTestOrganization();
-    const user = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
+    const user = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
     return { org, user, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 
-  /** A service account with a live secret key: the key doubles as the account's client secret (D12). */
-  async function serviceAccountClient(scopes: Array<'attachment:read' | 'attachment:write'> | null = null) {
+  /** An organization with its admin, and a service account there whose key is its client secret (D12). */
+  async function serviceAccountClient() {
     const ctx = await orgWithAdmin();
-    const { data, response } = await call(createServiceAccount, {
-      path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
-      body: { name: 'Sync bot', role: 'admin', key: { name: 'oauth', scopes } },
-      headers: ctx.headers,
-    });
-    expect(response.status).toBe(201);
-    const created = data as { serviceAccount: { id: string }; apiKey: { secret: string } };
-    return { ...ctx, clientId: created.serviceAccount.id, clientSecret: created.apiKey.secret };
+    return { ...ctx, ...(await serviceAccountWithKey(ctx.org, ctx.user.sessionCookie)) };
   }
 
-  async function clientCredentials(client: { clientId: string; clientSecret: string }, params: Record<string, string>) {
-    const basic = Buffer.from(`${client.clientId}:${client.clientSecret}`).toString('base64');
-    const response = await fetch(`${issuer}/token`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Authorization: `Basic ${basic}` },
-      body: new URLSearchParams({ grant_type: 'client_credentials', ...params }),
-    });
-    return { status: response.status, body: (await response.json()) as Record<string, unknown> };
-  }
+  const clientCredentials = (client: { clientId: string; clientSecret: string }, params: Record<string, string>) =>
+    clientCredentialsToken(oauth.issuer, client, params);
 
   it('publishes discovery metadata with the configured issuer and JWKS', async () => {
-    const response = await fetch(`${issuer}/.well-known/oauth-authorization-server`);
+    const response = await fetch(`${oauth.issuer}/.well-known/oauth-authorization-server`);
     expect(response.status).toBe(200);
     const metadata = (await response.json()) as Record<string, unknown>;
     expect(metadata.grant_types_supported).toEqual(
@@ -80,7 +60,7 @@ describe('OAuth authorization server', async () => {
     expect(metadata.code_challenge_methods_supported).toEqual(['S256']);
     expect(metadata.client_id_metadata_document_supported).toBe(true);
 
-    const jwks = await fetch(`${issuer}/jwks`).then(
+    const jwks = await fetch(`${oauth.issuer}/jwks`).then(
       (r) => r.json() as Promise<{ keys: { kid: string; d?: string }[] }>,
     );
     expect(jwks.keys.length).toBeGreaterThanOrEqual(2);
@@ -124,7 +104,7 @@ describe('OAuth authorization server', async () => {
 
     const read = await call(getAttachments, {
       path: { tenantId: client.org.tenantId, organizationId: client.org.id },
-      headers: tokenHeaders(jwt),
+      headers: bearerHeaders(jwt),
     });
     expect(read.response.status).toBe(200);
 
@@ -133,13 +113,13 @@ describe('OAuth authorization server', async () => {
     const write = await call(updateOrganization, {
       path: { tenantId: client.org.tenantId, id: client.org.id },
       body: { name: 'Should not happen' },
-      headers: tokenHeaders(jwt),
+      headers: bearerHeaders(jwt),
     });
     expect(write.response.status).toBe(404);
 
     const otherTenant = await call(getAttachments, {
       path: { tenantId: 'other01', organizationId: client.org.id },
-      headers: tokenHeaders(jwt),
+      headers: bearerHeaders(jwt),
     });
     expect(otherTenant.response.status).toBe(401);
   });
@@ -159,7 +139,7 @@ describe('OAuth authorization server', async () => {
     try {
       const { org, user } = await orgWithAdmin();
       const resource = resourceUri({ face: 'mcp', tenantId: org.tenantId, organizationId: org.id });
-      const result = await authorizationCodeToken(issuer, {
+      const result = await authorizationCodeToken(oauth.issuer, {
         clientId,
         redirectUri,
         scope: 'attachment:read',
@@ -181,10 +161,10 @@ describe('OAuth authorization server', async () => {
   it('lists a consent as a connected app and revokes it with its tokens', async () => {
     const { org, user, headers } = await orgWithAdmin();
     const resource = resourceUri({ face: 'mcp', tenantId: org.tenantId, organizationId: org.id });
-    const grant = new provider.Grant({ accountId: user.id, clientId: 'https://client.example/metadata.json' });
+    const grant = new oauth.provider.Grant({ accountId: user.id, clientId: 'https://client.example/metadata.json' });
     grant.addResourceScope(resource, 'attachment:read attachment:write');
     const grantId = await grant.save();
-    const refresh = new provider.RefreshToken({
+    const refresh = new oauth.provider.RefreshToken({
       accountId: user.id,
       // The provider's Client class is not constructible outside its own lifecycle; the model reads only clientId.
       client: { clientId: grant.clientId } as never,
@@ -206,6 +186,6 @@ describe('OAuth authorization server', async () => {
 
     const rows = await db.select().from(oidcPayloadsTable).where(eq(oidcPayloadsTable.grantId, grantId));
     expect(rows).toHaveLength(0);
-    expect(await provider.Grant.find(grantId)).toBeUndefined();
+    expect(await oauth.provider.Grant.find(grantId)).toBeUndefined();
   });
 });

@@ -9,10 +9,7 @@ import { usersTable } from '#/modules/user/user-db';
 import { createTotpUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, insertPasskey, passkeysOf } from './helpers';
-import { insertSession, insertSteppedUpSession } from './session-helpers';
-
-/** Past the step-up window. */
-const STALE = { ageMs: 60 * 60 * 1000 };
+import { insertStaleSession, insertSteppedUpSession } from './session-helpers';
 
 const mfaRequiredOf = async (userId: string) =>
   (await db.select({ mfaRequired: usersTable.mfaRequired }).from(usersTable).where(eq(usersTable.id, userId)))[0]
@@ -36,7 +33,7 @@ describe('MFA toggle step-up', async () => {
     const user = await createTotpUser(`mfa-${nanoid(8)}@security-test.com`);
     if (!mfaRequired) await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
     const passkey = withPasskey ? await insertPasskey(user) : undefined;
-    const session = steppedUp ? await insertSteppedUpSession(user, via) : await insertSession(user, STALE);
+    const session = steppedUp ? await insertSteppedUpSession(user, via) : await insertStaleSession(user);
     return { user, passkey, headers: session.headers };
   }
 

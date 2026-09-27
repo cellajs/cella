@@ -1,24 +1,29 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { createServiceAccount, updateOrganization } from 'sdk';
-import type { AccessScope } from 'shared';
+import { updateOrganization } from 'sdk';
+import { type AccessScope, hierarchy } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { defaultHeaders } from '../fixtures';
 import { createTestOrganization } from '../helpers';
-import { clientCredentialsToken, startTestOauthServer, type TestOauthServer } from '../oauth-helpers';
+import {
+  bearerHeaders,
+  clientCredentialsToken,
+  serviceAccountWithKey,
+  startTestOauthServer,
+  type TestOauthServer,
+} from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser } from './helpers';
-
-const bearer = (jwt: string) => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${jwt}` });
 
 /**
  * A secret key may narrow what its service account can do, never widen it. The key doubles as the account's client
  * secret at the token endpoint, so the token minted with it must stay within the key's scopes.
  */
+const adminRole = hierarchy.getMostPrivilegedRole('organization');
+
 describe('API key scopes at the token endpoint', async () => {
   const call = await createAppClient();
   let oauth: TestOauthServer;
@@ -32,15 +37,8 @@ describe('API key scopes at the token endpoint', async () => {
   /** An admin service account whose one key carries `scopes` (null: unscoped). */
   async function adminAccountWithKey(scopes: AccessScope[] | null) {
     const org = await createTestOrganization();
-    const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
-    const { data, response } = await call(createServiceAccount, {
-      path: { tenantId: org.tenantId, organizationId: org.id },
-      body: { name: 'Bot', role: 'admin', key: { name: 'key', scopes } },
-      headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
-    });
-    expect(response.status).toBe(201);
-    const created = data as { serviceAccount: { id: string }; apiKey: { secret: string } };
-    return { org, client: { clientId: created.serviceAccount.id, clientSecret: created.apiKey.secret } };
+    const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
+    return { org, client: await serviceAccountWithKey(org, admin.sessionCookie, { scopes }) };
   }
 
   async function tokenFor(account: Awaited<ReturnType<typeof adminAccountWithKey>>, scope: string) {
@@ -60,7 +58,7 @@ describe('API key scopes at the token endpoint', async () => {
     const write = await call(updateOrganization, {
       path: { tenantId: account.org.tenantId, id: account.org.id },
       body: { name: 'Taken over' },
-      headers: bearer(jwt),
+      headers: bearerHeaders(jwt),
     });
     // Without the organization's scope the key reads it as missing (PERMISSIONS.md, Refusals).
     expect(write.response.status).toBe(404);
@@ -87,7 +85,7 @@ describe('API key scopes at the token endpoint', async () => {
     const write = await call(updateOrganization, {
       path: { tenantId: account.org.tenantId, id: account.org.id },
       body: { name: 'Renamed' },
-      headers: bearer(jwt),
+      headers: bearerHeaders(jwt),
     });
     expect(write.response.status).toBe(200);
   });

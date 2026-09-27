@@ -1,21 +1,23 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { createServiceAccount, getMcpProtectedResourceMetadata, handleMcp } from 'sdk';
+import { getMcpProtectedResourceMetadata, handleMcp } from 'sdk';
 import { appConfig, hierarchy } from 'shared';
 import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
-import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { defaultHeaders } from './fixtures';
 import { createTestOrganization } from './helpers';
 import { seedEntityHierarchy } from './hierarchy-helpers';
 import {
   authorizationCodeToken,
+  bearerHeaders,
   clientCredentialsToken,
+  installApp,
+  registerApp,
+  serviceAccountWithKey,
   startTestOauthServer,
   type TestOauthServer,
 } from './oauth-helpers';
@@ -50,6 +52,7 @@ const buildItem = (name: string, filename: string, ctx: { home: Record<string, s
   keys: { original: `${ctx.org.id}/uploads/${filename}` },
 });
 const CLIENT_ID = 'test-portfolio';
+const adminRole = hierarchy.getMostPrivilegedRole('organization');
 
 describe('MCP on the substrate (Phase E)', async () => {
   const call = await createAppClient();
@@ -86,7 +89,7 @@ describe('MCP on the substrate (Phase E)', async () => {
 
   async function orgWithAdmin() {
     const org = await createTestOrganization();
-    const user = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
+    const user = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
     const home = await seedAttachmentHome(org, user.id);
     return { org, user, home, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
@@ -94,39 +97,18 @@ describe('MCP on the substrate (Phase E)', async () => {
   /** A service account plus a token for the organization's MCP resource, scoped as asked. */
   async function serviceToken(scope: string) {
     const ctx = await orgWithAdmin();
-    const { data } = await call(createServiceAccount, {
-      path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
-      body: { name: 'CI bot', role: 'admin', key: { name: 'ci', scopes: null } },
-      headers: ctx.headers,
-    });
-    const created = data as { serviceAccount: { id: string }; apiKey: { secret: string } };
+    const client = await serviceAccountWithKey(ctx.org, ctx.user.sessionCookie);
     const resource = resourceUri({ face: 'mcp', tenantId: ctx.org.tenantId, organizationId: ctx.org.id });
-    const { status, body } = await clientCredentialsToken(
-      as.issuer,
-      { clientId: created.serviceAccount.id, clientSecret: created.apiKey.secret },
-      { scope, resource },
-    );
+    const { status, body } = await clientCredentialsToken(as.issuer, client, { scope, resource });
     expect(status).toBe(200);
-    return { ...ctx, accountId: created.serviceAccount.id, jwt: String(body.access_token), resource };
+    return { ...ctx, accountId: client.clientId, jwt: String(body.access_token), resource };
   }
 
   /** A registered public app, installed in the tenant, and a user token obtained through consent. */
   async function userToken(scope: string, ctx?: Awaited<ReturnType<typeof orgWithAdmin>>) {
     const owner = ctx ?? (await orgWithAdmin());
-    await db
-      .insert(oauthClientsTable)
-      .values({ id: CLIENT_ID, name: 'Portfolio', redirectUris: [REDIRECT_URI] })
-      .onConflictDoNothing();
-    const { data } = await call(createServiceAccount, {
-      path: { tenantId: owner.org.tenantId, organizationId: owner.org.id },
-      body: { name: 'Portfolio installation', role: 'member' },
-      headers: owner.headers,
-    });
-    const installation = (data as { serviceAccount: { id: string } }).serviceAccount;
-    await db
-      .update(serviceAccountsTable)
-      .set({ oauthClientId: CLIENT_ID })
-      .where(eq(serviceAccountsTable.id, installation.id));
+    await registerApp({ id: CLIENT_ID, name: 'Portfolio', redirectUris: [REDIRECT_URI] });
+    await installApp(owner.org, owner.user.sessionCookie, CLIENT_ID);
 
     const resource = resourceUri({ face: 'mcp', tenantId: owner.org.tenantId, organizationId: owner.org.id });
     const result = await authorizationCodeToken(as.issuer, {
@@ -145,7 +127,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     const { response, data, error } = await call(handleMcp, {
       path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
       body: { jsonrpc: '2.0', id, method, params },
-      headers: { 'Content-Type': 'application/json', ...(ctx.jwt && { Authorization: `Bearer ${ctx.jwt}` }) },
+      headers: ctx.jwt ? bearerHeaders(ctx.jwt) : { 'Content-Type': 'application/json' },
     });
     // Non-2xx bodies land in `error`; a 403 still carries a JSON-RPC body.
     return { response, rpc: (data ?? error) as Rpc };

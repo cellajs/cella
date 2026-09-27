@@ -9,8 +9,6 @@ import {
   deletePasskey,
   deleteTotp,
   generateTotpKey,
-  invokeToken,
-  sendStepUpLink,
   startOAuthConnect,
   stepUp,
   toggleMfa,
@@ -18,8 +16,6 @@ import {
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { mailer } from '#/lib/mailer';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { type AuthStrategy, sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
@@ -41,7 +37,14 @@ import { softwarePasskey } from '../software-passkey';
 import { createAppClient, type TestResult } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, insertPasskey, passkeyChallenge, passkeysOf } from './helpers';
-import { asSession, cookiesAfter, insertImpersonation, insertSession, type TestSession } from './session-helpers';
+import {
+  asSession,
+  insertImpersonation,
+  insertSession,
+  insertStaleSession,
+  stepUpByEmail,
+  type TestSession,
+} from './session-helpers';
 
 vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
 
@@ -58,17 +61,6 @@ afterEach(async () => {
 const TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
 const codeFor = (secret: string) =>
   generateTOTP(decodeBase32(secret), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
-
-/** Signed in longer ago than the step-up window, so the sign-in no longer proves anything. */
-const STALE = { ageMs: 60 * 60 * 1000 };
-
-/** The raw token at the end of the step-up link in the last mail handed to the mailer. */
-const mailedStepUpToken = () => {
-  const statics = vi.mocked(mailer.prepareEmails).mock.lastCall?.[1] as { stepUpUrl?: string } | undefined;
-  const rawToken = statics?.stepUpUrl?.split('/').at(-1) ?? '';
-  expect(rawToken).not.toBe('');
-  return rawToken;
-};
 
 const expectStepUpRequired = (result: TestResult) => expectRefusal(result, 403, 'step_up_required');
 
@@ -92,23 +84,9 @@ describe('account-security routes need a step-up', async () => {
       (await call(stepUp, { body: { totpCode: codeFor(TOTP_SECRET) }, headers: session.headers })).response.status,
     ).toBe(204);
 
-  /** A step-up through the emailed link, opened in the browser that asked; returns that browser's session. */
-  const stepUpByEmail = async (session: TestSession) => {
-    const asked = await call(sendStepUpLink, { body: {}, headers: session.headers });
-    expect(asked.response.status).toBe(204);
-    const browser = cookiesAfter(session.cookie, asked.response);
-    const marker = browser.split('; ').filter((pair) => pair.startsWith(`${authCookieName('step-up-requested')}=`));
-    const opened = await call(invokeToken, {
-      path: { type: 'step-up', token: mailedStepUpToken() },
-      headers: { ...defaultHeaders, Cookie: marker.join('; ') },
-    });
-    expect(opened.response.status).toBe(302);
-    return asSession(session.id, browser);
-  };
-
   it('must not add a passkey via a stale session', async () => {
     const user = await totpHolder('add-passkey');
-    const session = await insertSession(user, STALE);
+    const session = await insertStaleSession(user);
     const authenticator = softwarePasskey();
 
     /** A registration ceremony in this browser: a registration challenge, and the authenticator's answer to it. */
@@ -131,7 +109,7 @@ describe('account-security routes need a step-up', async () => {
   it('must not delete a passkey via a stale session', async () => {
     const user = await totpHolder('delete-passkey');
     const passkey = await insertPasskey(user);
-    const session = await insertSession(user, STALE);
+    const session = await insertStaleSession(user);
 
     await expectStepUpRequired(await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers }));
     expect(await passkeysOf(user.id)).toHaveLength(1);
@@ -145,7 +123,7 @@ describe('account-security routes need a step-up', async () => {
 
   it('must not set up an authenticator app via a stale session', async () => {
     const user = await createTestUser('setup-totp@security-test.com');
-    const session = await insertSession(user, STALE);
+    const session = await insertStaleSession(user);
     const secret = encodeBase32UpperCase(crypto.getRandomValues(new Uint8Array(20)));
     const withChallenge = { ...defaultHeaders, Cookie: `${session.cookie}; ${authCookie('totp-challenge', secret)}` };
     const totpsOf = () => db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
@@ -166,7 +144,7 @@ describe('account-security routes need a step-up', async () => {
 
   it('must not delete the authenticator app via a stale session', async () => {
     const user = await totpHolder('delete-totp');
-    const session = await insertSession(user, STALE);
+    const session = await insertStaleSession(user);
     const totpsOf = () => db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
 
     await expectStepUpRequired(await call(deleteTotp, { headers: session.headers }));
@@ -180,7 +158,7 @@ describe('account-security routes need a step-up', async () => {
   it('must not turn MFA on via a stale session', async () => {
     const user = await totpHolder('mfa-on');
     await insertPasskey(user);
-    const session = await insertSession(user, STALE);
+    const session = await insertStaleSession(user);
     const mfaOf = async () => (await db.select().from(usersTable).where(eq(usersTable.id, user.id)))[0].mfaRequired;
 
     await expectStepUpRequired(await call(toggleMfa, { body: { mfaRequired: true }, headers: session.headers }));
@@ -195,7 +173,7 @@ describe('account-security routes need a step-up', async () => {
 
   it('must not connect a provider via a stale session', async () => {
     const user = await createTestUser('connect@security-test.com');
-    const session = await insertSession(user, STALE);
+    const session = await insertStaleSession(user);
     const pins = () => db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-connect'));
 
     await expectStepUpRequired(await call(startOAuthConnect, { headers: session.headers }));
@@ -208,7 +186,7 @@ describe('account-security routes need a step-up', async () => {
 
   it('must not delete the account via a stale session', async () => {
     const user = await createTestUser('delete-account@security-test.com');
-    const session = await insertSession(user, STALE);
+    const session = await insertStaleSession(user);
     const accounts = () => db.select().from(usersTable).where(eq(usersTable.id, user.id));
 
     await expectStepUpRequired(await call(deleteMe, { headers: session.headers }));
@@ -241,7 +219,7 @@ describe('account-security routes need a step-up', async () => {
     expect(await db.select().from(totpsTable).where(eq(totpsTable.userId, target.id))).toHaveLength(1);
 
     // The impersonated user's own stepped-up session passes.
-    const own = await insertSession(target, STALE);
+    const own = await insertStaleSession(target);
     await stepUpWithTotp(own);
     expect((await call(deletePasskey, { path: { id: passkey.id }, headers: own.headers })).response.status).toBe(204);
   });
@@ -268,7 +246,7 @@ describe('account-security routes need a step-up', async () => {
 
   it('must not mint an API key via a stale session', async () => {
     const minting = await keyMinting('key-minter');
-    const stale = await insertSession(minting.admin, STALE);
+    const stale = await insertStaleSession(minting.admin);
 
     await expectStepUpRequired(await minting.createAccount(stale));
     expect(await minting.accounts()).toHaveLength(0);
@@ -279,7 +257,7 @@ describe('account-security routes need a step-up', async () => {
     const accountId = (created.data as { serviceAccount: { id: string } }).serviceAccount.id;
 
     // A further key for the account needs the step-up as well.
-    await expectStepUpRequired(await minting.createKey(await insertSession(minting.admin, STALE), accountId));
+    await expectStepUpRequired(await minting.createKey(await insertStaleSession(minting.admin), accountId));
     expect(await minting.keys()).toHaveLength(1);
     expect((await minting.createKey(steppedUp, accountId)).response.status).toBe(201);
     expect(await minting.keys()).toHaveLength(2);
@@ -306,7 +284,7 @@ describe('account-security routes need a step-up', async () => {
 
   it("must not pass the guard via a step-up of the user's other session", async () => {
     const user = await totpHolder('two-browsers');
-    const [stepped, other] = [await insertSession(user, STALE), await insertSession(user, STALE)];
+    const [stepped, other] = [await insertStaleSession(user), await insertStaleSession(user)];
     await stepUpWithTotp(stepped);
 
     await expectStepUpRequired(await call(deleteTotp, { headers: other.headers }));
@@ -315,7 +293,7 @@ describe('account-security routes need a step-up', async () => {
 
   it('must not pass the guard via a step-up older than ten minutes', async () => {
     const user = await totpHolder('old-step-up');
-    const session = await insertSession(user, STALE);
+    const session = await insertStaleSession(user);
     await stepUpWithTotp(session);
     await db
       .update(sessionsTable)

@@ -7,7 +7,7 @@ import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { createTotpUser, expectRefusal, sessionRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
-import { insertSession } from './session-helpers';
+import { insertStaleSession } from './session-helpers';
 
 /** The error the next TOTP check throws, as the database driver would; null checks the code as usual. */
 const nextCheck = vi.hoisted(() => ({ failure: null as Error | null }));
@@ -29,9 +29,6 @@ const TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
 const currentCode = () =>
   generateTOTP(decodeBase32(TOTP_SECRET), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 
-/** Signed in longer ago than the step-up window, so only the step-up itself stamps the session. */
-const STALE = { ageMs: 60 * 60 * 1000 };
-
 /** What the pool throws when it hands out no connection in time, and a deadlock as the driver reports it. */
 const failures = [
   { name: 'an exhausted pool', error: () => new Error('timeout exceeded when trying to connect'), status: 503 },
@@ -52,7 +49,7 @@ describe('a database failure while a second factor is checked', async () => {
 
   it.each(failures)('answers a step-up with $status on $name', async ({ error, status }) => {
     const user = await createTotpUser(`step-up-${nanoid(8)}@security-test.com`);
-    const session = await insertSession(user, STALE);
+    const session = await insertStaleSession(user);
 
     nextCheck.failure = error();
     const failed = await call(stepUp, { body: { totpCode: currentCode() }, headers: session.headers });

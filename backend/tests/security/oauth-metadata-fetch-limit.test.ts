@@ -1,15 +1,17 @@
-import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { createServiceAccount } from 'sdk';
+import { hierarchy } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { baseDb as db } from '#/db/db';
 import { clientMetadataFetchLimiter } from '#/middlewares/rate-limiter/limiters';
-import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
-import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
-import { defaultHeaders } from '../fixtures';
 import { createTestOrganization, expectRefusal } from '../helpers';
-import { authorizationCodeToken, CookieJar, startTestOauthServer, type TestOauthServer } from '../oauth-helpers';
+import {
+  authorizationCodeToken,
+  CookieJar,
+  installApp,
+  registerApp,
+  startTestOauthServer,
+  type TestOauthServer,
+} from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
@@ -23,6 +25,7 @@ const SECTOR_CLIENT_ID = 'https://sector-client.example/oauth/client.json';
 const SECTOR_URI = 'https://sector-target.example/sector.json';
 const APP_ID = 'fetch-budget-portfolio';
 const REDIRECT_URI = 'http://localhost:9999/callback';
+const adminRole = hierarchy.getMostPrivilegedRole('organization');
 
 /** The MCP client's own metadata document, served at `CIMD_ID` without cache headers. */
 const cimdDocument = {
@@ -116,21 +119,9 @@ describe('authorization server fetch budget', async () => {
     const member = await createOrgUser(call, org.tenantId, org.id, `member-${nanoid(8)}`);
     if (clientId === APP_ID) {
       // A registered app acts in a tenant only where an admin installed it.
-      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, 'admin');
-      await db
-        .insert(oauthClientsTable)
-        .values({ id: APP_ID, name: 'Portfolio', redirectUris: [REDIRECT_URI] })
-        .onConflictDoNothing();
-      const { data } = await call(createServiceAccount, {
-        path: { tenantId: org.tenantId, organizationId: org.id },
-        body: { name: 'Portfolio installation', role: 'member' },
-        headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
-      });
-      const installationId = (data as { serviceAccount: { id: string } }).serviceAccount.id;
-      await db
-        .update(serviceAccountsTable)
-        .set({ oauthClientId: APP_ID })
-        .where(eq(serviceAccountsTable.id, installationId));
+      const admin = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
+      await registerApp({ id: APP_ID, name: 'Portfolio', redirectUris: [REDIRECT_URI] });
+      await installApp(org, admin.sessionCookie, APP_ID);
     }
     const granted = await authorizationCodeToken(oauth.issuer, {
       clientId,
