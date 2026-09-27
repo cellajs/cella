@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { index, jsonb, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
@@ -54,6 +55,8 @@ export const tokensTable = snakeCase.table(
     index('tokens_user_id_idx').on(table.userId),
     index('tokens_created_by_idx').on(table.createdBy),
     index('tokens_single_use_token_idx').on(table.type, table.singleUseToken),
+    // Tokens are found by session when it is deleted or a session-bound token is replaced; most hold null.
+    index('tokens_session_id_idx').on(table.sessionId).where(sql`${table.sessionId} is not null`),
   ],
 );
 

@@ -1,4 +1,4 @@
-import { getTableColumns } from 'drizzle-orm';
+import { getTableColumns, sql } from 'drizzle-orm';
 import { type AnyPgColumn, index, integer, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
@@ -83,6 +83,10 @@ export const sessionsTable = snakeCase.table(
     index('sessions_user_id_ip_hash_idx').on(table.userId, table.ipHash),
     index('sessions_ip_subnet_hash_idx').on(table.ipSubnetHash),
     index('sessions_user_id_device_id_hash_idx').on(table.userId, table.deviceIdHash),
+    // Impersonations are found by their admin's session when it ends or is deleted; other rows hold null.
+    index('sessions_impersonator_session_id_idx')
+      .on(table.impersonatorSessionId)
+      .where(sql`${table.impersonatorSessionId} is not null`),
   ],
 );
 
