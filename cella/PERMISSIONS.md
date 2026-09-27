@@ -173,11 +173,11 @@ Two row columns sit beside the engine: drafts (`publishedAt`) are visible to the
 
 | Path | Guard or helper | What it checks | On failure |
 | --- | --- | --- | --- |
-| Guard chain | `userGuard` → `tenantGuard` → `orgGuard` | Authenticated, in-tenant (member, system admin, or the tenant's creator while it has no organization), org member or system admin. Never consults the policy matrix. | 401, 403, or 404 before the handler. A missing tenant, an inactive one and one without access get the same 403 |
-| Single row | `getValidProduct`, `getValidChannel` via `buildSubjectFromEntity` | Loads the row, rejects it outside the request tenant or organization, passes it as `subject.row`, runs the engine | 403, or 404 for an out-of-scope row or a non-author on a draft. `getValidProduct` answers 404 for a row the caller may not read, and 403 only for an action denied on a readable row |
+| Guard chain | `userGuard` → `tenantGuard` → `orgGuard` | Authenticated, in-tenant (member, system admin, or the tenant's creator while it has no organization), org member or system admin. Never consults the policy matrix. | 401 or 403 before the handler; the tenant is one 403 whether missing, inactive or not the actor's, the organization one 404 whether missing or without a foothold ([Refusals](#refusals)) |
+| Single row | `getValidProduct`, `getValidChannel` via `buildSubjectFromEntity` | Loads the row, rejects it outside the request tenant or organization, passes it as `subject.row`, runs the engine | 404 for a row that is missing, out of scope, a draft of someone else or one the caller may not read; 403 only for an action denied on a row the caller reads |
 | Create | `canCreateEntity` | No row exists yet. The subject describes the would-be placement | 403 |
 | Bulk | `splitByPermission` | Splits allowed from denied | 403 only when nothing is allowed |
-| Collection read | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Compiles readable scope, row conditions, and the public grant into one Drizzle `SQL` predicate. Never materializes rows to reject them. | `{ kind: 'none' }` returns `[]` without querying |
+| Collection read | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Compiles readable scope, row conditions, and the public grant into one Drizzle `SQL` predicate. Never materializes rows to reject them. | `{ kind: 'none' }` returns `[]` without querying; a home channel named in the query outside the readable scope is 404 |
 | SSE dispatch | `rowReadDecisions` (`canReceiveProductEvent` is its batch-of-1) | One `checkAccessFanout` per event row over the channel's subscribers | Subscriber not notified. Over-notifying leaks data because notified rows are fetchable by seq |
 | Catchup views | `resolveViewReadStatus` | May the caller see the subtree's aggregate change signal (`e:f:`/counts)? `ok` needs a grant on the node or a verified ancestor. Claimed prefixes must equal the counters row's canonical path ([Access](./SYNC_ENGINE.md#access)) | `opaque` or `forbidden` |
 
@@ -189,6 +189,23 @@ export type CollectionReadWhere =
   | { kind: "none" } // no readable scope: return [] without querying
   | { kind: "where"; where: SQL };
 ```
+
+## Refusals
+
+One answer per situation, so no route, app or test meets two shapes for one cause. A refusal the caller's request or state brings about carries severity `warn` (a warning toast, no log id); `error` is kept for the app's own faults, such as a row that must exist and is gone.
+
+| Situation | Answer | Why |
+| --- | --- | --- |
+| The tenant: missing, inactive, none of the actor's, or not the tenant an API key belongs to | 403 `forbidden`, `meta.resource: 'tenant'` | The tenant is the URL segment every member knows, so the answer only says "not yours"; one answer for every case keeps the six-character ids from being enumerated |
+| Anything under a tenant the caller may not read, missing and unreadable alike: an organization (`orgGuard`), a channel or product (`getValidChannel`, `getValidProduct`: out of scope, soft-deleted, someone else's draft, read denied), a home channel named in a list query, an invitation | 404 `not_found` with `entityType`; an invitation carries `meta.resource: 'invitation'` | A 403 would confirm the id. The access is the actor masked by its scopes, so an API key or access token without the entity's scope reads it as missing too |
+| An action denied on a row the caller reads; a create the placement denies; a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, and `meta.action` for a single row | The caller already knows the row |
+| A list option the caller may not use: the system role as filter or sort of `getUsers` for anyone but a system admin; another user's `role` or `excludeArchived` in `getOrganizations` | 403 `forbidden`, `meta.reason` | Refused, never dropped: a dropped option answers a narrower question with the wider list. A sort is never refused; the `displayOrder` default names the caller's own menu, so another user's list comes by name |
+| Another user the caller shares no organization with (`relatableGuard`, `getUser`), missing and unshared alike | 403 `forbidden`, `entityType: 'user'` | The guard answers before validation and never loads the user; one answer hides existence as a 404 would |
+| A token this browser does not hold: no cookie, an unknown or spent value, a URL that names another token | 401 `<type>_not_found`; expired, 401 `<type>_expired` with `meta.tokenId` so the error page can offer a new link | The proof is the cookie, for a link and a cookie-carried type alike. These keys are spelled after the token type (`confirm-mfa_not_found`, `step-up_expired`); the step-up feature's own keys are snake_case (`step_up_required`) |
+| A link or invitation of another account: opened while signed in as someone else, bound to another user, or the race that binds it lost | 409 `user_mismatch` | The request conflicts with the signed-in account, not with its own shape |
+| An address or provider account another account holds (`oauth_email_exists`, `oauth_conflict`, `oauth_wrong_email`) | 409, severity `warn` | The caller's state, not a fault of the app |
+| Not signed in, or a session that ended | 401 `unauthorized`, `no_session`, `session_expired` or `session_revoked` | The frontend redirects to sign-in on these types alone; any other 401 refuses a proof while signed in |
+| An account-security route without a recent proof of presence | 403 `step_up_required` naming the methods | [Interoperability](./INTEROPERABILITY.md#guards) |
 
 ## Behavior
 
