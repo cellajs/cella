@@ -1,5 +1,5 @@
-import type { Notification, Pool, PoolClient } from 'pg';
-import { baseDb } from '#/db/db';
+import type { Notification, PoolClient } from 'pg';
+import { openDedicatedConnection } from '#/db/db';
 import { env } from '#/env';
 import { log } from '#/utils/logger';
 import { withinTimeout } from '#/utils/within-timeout';
@@ -22,9 +22,6 @@ interface ListenOptions {
   heartbeatTimeoutMs?: number;
 }
 
-/** Only a pool hands out a connection of its own; drizzle builds `baseDb` on one. */
-const isPool = (client: typeof baseDb.$client): client is Pool => 'totalCount' in client;
-
 /**
  * LISTENs on `auth_invalidate` over one connection taken from the pool and drops what each message names from this
  * process's guard caches, so a session ending or a membership change in one process reaches the api, mcp and oauth
@@ -40,10 +37,6 @@ export function listenForAuthInvalidation({
 }: ListenOptions = {}): () => Promise<void> {
   if (stopListening) return stopListening;
   if (env.NODB) return async () => {};
-
-  const dbClient = baseDb.$client;
-  if (!isPool(dbClient)) throw new Error('The auth invalidation listener needs the pooled database client');
-  const pool: Pool = dbClient;
 
   let client: PoolClient | null = null;
   let stopped = false;
@@ -102,9 +95,8 @@ export function listenForAuthInvalidation({
   async function connect() {
     let next: PoolClient | undefined;
     try {
-      next = await pool.connect();
+      next = await openDedicatedConnection(onLost);
       next.on('notification', onNotification);
-      next.on('error', onLost);
       next.on('end', onLost);
       // An unanswered LISTEN fails the connect too: nothing else would start the heartbeat or schedule a retry.
       let failure: unknown = new Error(`The LISTEN got no answer within ${heartbeatTimeoutMs} ms`);

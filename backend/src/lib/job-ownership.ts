@@ -1,5 +1,4 @@
-import type pg from 'pg';
-import { baseDb } from '#/db/db';
+import { openDedicatedConnection } from '#/db/db';
 import type { BackendJob } from '#/lib/module';
 import { baseLog } from '#/lib/pino';
 import { withinTimeout } from '#/utils/within-timeout';
@@ -28,17 +27,10 @@ export interface LockSession {
   onError(listener: (error: Error) => void): void;
 }
 
-const isPool = (client: unknown): client is pg.Pool =>
-  typeof client === 'object' && client !== null && 'connect' in client && 'idleCount' in client;
-
 /** A dedicated connection from the runtime pool, destroyed on close so no lock-holding session returns to the pool. */
 async function openPoolSession(): Promise<LockSession> {
-  const pool = baseDb.$client;
-  if (!isPool(pool)) throw new Error('job ownership needs the runtime pg pool');
-  const client = await pool.connect();
   const listeners: ((error: Error) => void)[] = [];
-  // Attached before the first query: a checked-out client has no error listener, and an unhandled one ends the process.
-  client.on('error', (error) => {
+  const client = await openDedicatedConnection((error) => {
     for (const listener of listeners) listener(error);
   });
   return {
