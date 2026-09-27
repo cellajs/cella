@@ -1,3 +1,5 @@
+import { redactFailedQuery } from './failed-query.ts';
+
 const REDACTED = '[REDACTED]';
 
 /**
@@ -61,3 +63,10 @@ export const scrubUrl = (input: string): string => {
   for (const pattern of secretPathPatterns) scrubbed = scrubbed.replace(pattern, `$1${REDACTED}`);
   return scrubbed.replace(sensitiveQueryPattern, `$1$2=${REDACTED}`);
 };
+
+/**
+ * Any text an error or a span carries (a message, a stack, an attribute) without the secrets of a URL or the values of
+ * a failed query it quotes: what the loggers and the redacting span processor write.
+ * @param text - Any text.
+ */
+export const scrubText = (text: string): string => scrubUrl(redactFailedQuery(text));

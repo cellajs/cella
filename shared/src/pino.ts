@@ -2,8 +2,8 @@ import { trace } from '@opentelemetry/api';
 import pino from 'pino';
 import type { Severity } from '../types.ts';
 import { appConfig } from './config-builder/app-config.ts';
-import { failedQueryReason, isFailedQueryMessage, redactFailedQuery } from './utils/failed-query.ts';
-import { scrubUrl } from './utils/scrub-url.ts';
+import { failedQueryReason, isFailedQueryMessage, replaceInStack } from './utils/failed-query.ts';
+import { scrubText, scrubUrl } from './utils/scrub-url.ts';
 
 export type { Logger } from 'pino';
 
@@ -31,9 +31,6 @@ interface CreateLoggerOptions {
 /** Nested causes a serialized error is searched to; deeper ones are left as the serializer wrote them. */
 const maxCauseDepth = 8;
 
-/** A message or stack without the values of a failed query or the secrets of a URL it quotes. */
-const scrubErrorText = (text: string) => scrubUrl(redactFailedQuery(text));
-
 /** The fields of a database error that quote the row or statement: a unique violation's `detail` names the value. */
 const valueQuotingFields = ['detail', 'where', 'internalQuery'] as const;
 
@@ -52,13 +49,13 @@ const redactSerializedError = (node: unknown, depth = 0): void => {
   if (isFailedQueryMessage(message)) {
     const reason = failedQueryReason(error.cause);
     error.message = scrubUrl(reason);
-    if (typeof stack === 'string') error.stack = stack.split(message).join(reason);
+    if (typeof stack === 'string') error.stack = replaceInStack(stack, message, reason);
     delete error.query;
     delete error.params;
   } else {
-    error.message = scrubErrorText(message);
+    error.message = scrubText(message);
   }
-  if (typeof error.stack === 'string') error.stack = scrubErrorText(error.stack);
+  if (typeof error.stack === 'string') error.stack = scrubText(error.stack);
   for (const field of valueQuotingFields) delete error[field];
 
   redactSerializedError(error.cause, depth + 1);

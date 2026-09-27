@@ -31,6 +31,16 @@ export const failedQueryReason = (cause: unknown): string => {
 };
 
 /**
+ * A stack with `replacement` wherever it quotes `message`: a stack opens with its error's message, so the SQL and
+ * values of a failed query sit in both.
+ * @param stack - The error's stack.
+ * @param message - The error's message; an empty one leaves the stack as it is.
+ * @param replacement - What the stack says in its place.
+ */
+export const replaceInStack = (stack: string, message: string, replacement: string): string =>
+  message ? stack.split(message).join(replacement) : stack;
+
+/**
  * A failed query as it may be logged or traced: the same name and cause, the database's reason as its message, and
  * its stack with that reason in place of the query. Any other value is returned as it is.
  * @param err - A thrown value.
@@ -40,6 +50,6 @@ export const withoutFailedQuery = (err: unknown): unknown => {
   const reason = failedQueryReason(err.cause);
   const safe = new Error(reason, { cause: err.cause });
   safe.name = err.name;
-  safe.stack = err.stack?.split(err.message).join(reason);
+  safe.stack = err.stack && replaceInStack(err.stack, err.message, reason);
   return safe;
 };

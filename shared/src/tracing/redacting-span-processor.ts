@@ -1,13 +1,10 @@
 import type { Attributes, AttributeValue } from '@opentelemetry/api';
 import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base';
-import { isFailedQueryMessage, redactedFailedQuery, redactFailedQuery } from '../utils/failed-query.ts';
-import { scrubUrl } from '../utils/scrub-url.ts';
+import { isFailedQueryMessage, redactedFailedQuery, replaceInStack } from '../utils/failed-query.ts';
+import { scrubText, scrubUrl } from '../utils/scrub-url.ts';
 
 const isStringArray = (value: AttributeValue): value is (string | null | undefined)[] =>
   Array.isArray(value) && value.some((item: unknown) => typeof item === 'string');
-
-/** One span string without URL secrets or failed-query values. */
-const scrubText = (text: string): string => scrubUrl(redactFailedQuery(text));
 
 /** An error message: a failed query's whole message goes, since its values may span any number of lines. */
 const scrubMessage = (message: string): string =>
@@ -30,7 +27,7 @@ function scrubException(attributes: Attributes): void {
   const scrubbed = scrubMessage(message);
   attributes['exception.message'] = scrubbed;
   const stack = attributes['exception.stacktrace'];
-  if (typeof stack === 'string' && message) attributes['exception.stacktrace'] = stack.split(message).join(scrubbed);
+  if (typeof stack === 'string') attributes['exception.stacktrace'] = replaceInStack(stack, message, scrubbed);
 }
 
 /**
