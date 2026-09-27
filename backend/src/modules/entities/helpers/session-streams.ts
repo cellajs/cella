@@ -110,12 +110,10 @@ const readSessionStates = (ids: string[]) =>
  * was revoked where no event reached this process (another instance) or went with its user, an impersonation's admin
  * lost their session or system role, or the system role was removed or granted since the stream connected (the
  * client reconnects on `access_changed`). Streams without a session, which an app may register, are left alone.
- *
- * @returns How many streams it closed.
  */
-export async function sweepAppStreamSessions(): Promise<number> {
+export async function sweepAppStreamSessions(): Promise<void> {
   const subscribers = streamSubscriberManager.all().filter(isAppStream);
-  if (subscribers.length === 0) return 0;
+  if (subscribers.length === 0) return;
 
   const sessions = await readSessionStates([...new Set(subscribers.map((subscriber) => subscriber.sessionId))]);
   const impersonatorIds = [
@@ -144,11 +142,10 @@ export async function sweepAppStreamSessions(): Promise<number> {
     const payload = staleStreamError(subscriber, sessionsById, systemAdmins);
     return payload ? [{ subscriber, payload }] : [];
   });
-  if (stale.length === 0) return 0;
+  if (stale.length === 0) return;
 
   await closeAppStreams(stale, 'Failed to close a stale stream');
   log.info('Closed streams whose session no longer holds', { closed: stale.length });
-  return stale.length;
 }
 
 /** Starts the sweep with the first open stream; it stops once no stream is open. Idempotent. */

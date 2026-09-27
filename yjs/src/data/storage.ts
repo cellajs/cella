@@ -125,13 +125,10 @@ export async function touchDoc(doc: DocKey): Promise<void> {
   });
 }
 
-/** A stale session row's document, as the row stored it when a verified session opened it. */
-export type StaleDocRow = DocScope;
-
 /** Tenants swept concurrently by the startup sweep; bounds the startup query fan-out on large installs. */
 export const SWEEP_TENANT_CONCURRENCY = 4;
 
-async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Promise<StaleDocRow[]> {
+async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Promise<DocScope[]> {
   const cutoff = sql`now() - (${olderThanMs}::bigint * interval '1 millisecond')`;
   return withRlsTx(tenantId, '', async (tx) => {
     return tx
@@ -165,10 +162,10 @@ async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Pr
  * the sweep visits every tenant through its own tenant-scoped transaction, a bounded number at a time;
  * a contextless query on the fail-closed policy returns nothing.
  */
-export async function listStaleDocs(olderThanMs: number): Promise<StaleDocRow[]> {
+export async function listStaleDocs(olderThanMs: number): Promise<DocScope[]> {
   // `tenants` sits outside RLS, so the runtime role lists it without context.
   const tenantIds = (await db.select({ id: tenantsTable.id }).from(tenantsTable)).map((row) => row.id);
-  const stale: StaleDocRow[] = [];
+  const stale: DocScope[] = [];
   for (let i = 0; i < tenantIds.length; i += SWEEP_TENANT_CONCURRENCY) {
     const batch = tenantIds.slice(i, i + SWEEP_TENANT_CONCURRENCY);
     const perTenant = await Promise.all(batch.map((tenantId) => listStaleDocsForTenant(tenantId, olderThanMs)));

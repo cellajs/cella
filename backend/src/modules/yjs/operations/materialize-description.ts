@@ -22,10 +22,8 @@ export interface MaterializeDescriptionInput {
   editors: string[];
 }
 
-/** `written` names the editor credited; `gone` means the entity no longer exists in the document's tenant. */
-export type MaterializeDescriptionResult =
-  | { outcome: 'written'; sanitized: boolean; editedBy: string }
-  | { outcome: 'gone' };
+/** `written`: the description is stored, `sanitized` when media URLs were blanked. `gone`: the entity no longer exists in the document's tenant. */
+export type MaterializeDescriptionResult = { outcome: 'written'; sanitized: boolean } | { outcome: 'gone' };
 
 /**
  * Persists a Yjs collab description; called by the Yjs relay on the internal listener. The tenant and organization come
@@ -105,7 +103,7 @@ export async function materializeDescriptionOp(
         { ops: { description }, stx: { mutationId: uuidv7(), sourceId: 'yjs-relay', fieldTimestamps: {} } },
         { serverOrigin: true },
       );
-      return { outcome: 'written', sanitized, editedBy: user.id };
+      return { outcome: 'written', sanitized };
     } catch (err) {
       // This editor may no longer update the row (or no longer see it, as with another author's draft): try the next.
       if (err instanceof AppError && (err.status === 403 || err.status === 404)) continue;

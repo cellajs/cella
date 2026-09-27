@@ -114,9 +114,8 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
     // Newest first: the member edited last but may not update the owner's attachment; of the admin and the owner, who
     // both may, the admin edited later and is credited.
     const editors = [member.id, admin.id, owner.user.id];
-    const { status, body } = await materialize(bodyFor(ownScope(), 'written by the relay', editors));
+    const { status } = await materialize(bodyFor(ownScope(), 'written by the relay', editors));
     expect(status).toBe(200);
-    expect(body.editedBy).toBe(admin.id);
     const row = await stored();
     expect(row?.description).toContain('written by the relay');
     expect(row?.updatedBy).toBe(admin.id);

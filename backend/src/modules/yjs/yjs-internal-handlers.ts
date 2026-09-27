@@ -36,7 +36,7 @@ app.post('/materialize', async (ctx) => {
 
   const result = await materializeDescriptionOp(parsed.data);
   if (result.outcome === 'gone') return ctx.json({ error: 'gone' }, 410);
-  return ctx.json({ success: true, sanitized: result.sanitized, editedBy: result.editedBy }, 200);
+  return ctx.json({ success: true, sanitized: result.sanitized }, 200);
 });
 
 export const yjsInternalHandlers = app;

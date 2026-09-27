@@ -6,7 +6,6 @@ import { yjsTokenSigningKey } from 'shared/utils/yjs-token';
 import { vi } from 'vitest';
 import * as Y from 'yjs';
 import type { DocKey, DocScope, SocketContext } from '../constants';
-import type { StaleDocRow } from '../data/storage';
 
 interface TokenOptions {
   userId: string;
@@ -233,7 +232,7 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
     touchDoc: vi.fn(async (_doc: DocKey) => {
       await wait('touchDoc');
     }),
-    listStaleDocs: vi.fn(async (): Promise<StaleDocRow[]> => []),
+    listStaleDocs: vi.fn(async (): Promise<DocScope[]> => []),
   };
   return store;
 }
