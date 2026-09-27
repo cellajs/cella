@@ -4,6 +4,8 @@ import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb, getAdminDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
+import { buildUnsubscribeLink } from '#/modules/notification/helpers/category-token';
+import { notificationPreferencesTable } from '#/modules/notification/notification-db';
 import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { usersTable } from '#/modules/user/user-db';
 import { mockUser } from '#/modules/user/user-mocks';
@@ -96,6 +98,22 @@ describe('Unsubscribe tokens', () => {
     expect(await isSubscribed(user.id)).toBe(false);
   });
 
+  it('must not unsubscribe a user via a link sent to an address the account no longer has', async () => {
+    const user = await signUp('moved-address');
+    const oldLink = `/me/unsubscribe?token=${generateUnsubscribeToken(user.email)}`;
+    await adminDb()
+      .update(usersTable)
+      .set({ email: 'moved-address-new@example.test' })
+      .where(eq(usersTable.id, user.id));
+
+    const { status, location } = await openLink(oldLink);
+
+    expect(status).toBe(302);
+    expect(location.pathname).toBe('/auth/error');
+    expect(location.searchParams.get('error')).toBe('unsubscribe_failed');
+    expect(await isSubscribed(user.id)).toBe(true);
+  });
+
   describe('rows stored before hashing', () => {
     /** Runs the side-effect block as a migration would, on a database where it has not run yet. */
     const runHashingBlock = async () => {
@@ -167,5 +185,54 @@ describe('Unsubscribe tokens', () => {
     expect(status).toBe(302);
     expect(location.pathname).toBe('/auth/unsubscribed');
     expect(await isSubscribed(member.id)).toBe(false);
+  });
+});
+
+/**
+ * A notification email's unsubscribe link turns off one category for one user, without a session: its token is an HMAC
+ * over both, so a link made for one user or one category opens nothing else.
+ */
+describe('Category unsubscribe links', () => {
+  afterEach(async () => {
+    await clearSecurityTestData();
+  });
+
+  /** The user's email preferences, read past RLS; undefined while none are stored. */
+  const preferencesOf = async (userId: string) => {
+    const [row] = await adminDb()
+      .select({ digest: notificationPreferencesTable.digest, mentionEmail: notificationPreferencesTable.mentionEmail })
+      .from(notificationPreferencesTable)
+      .where(eq(notificationPreferencesTable.userId, userId));
+    return row;
+  };
+
+  it("must not turn off another user's or another category's email via a link made for one", async () => {
+    const [owner, other] = [await signUp('category-owner'), await signUp('category-other')];
+    const before = [await preferencesOf(owner.id), await preferencesOf(other.id)];
+    const token = new URL(buildUnsubscribeLink(owner.id, 'digest')).searchParams.get('token') ?? '';
+
+    for (const target of [
+      `/notifications/unsubscribe?user=${other.id}&category=digest&token=${token}`,
+      `/notifications/unsubscribe?user=${owner.id}&category=mention&token=${token}`,
+      `/notifications/unsubscribe?user=${owner.id}&category=digest&token=${token.slice(0, -1)}`,
+    ]) {
+      const { status, location } = await openLink(target);
+      expect(status, target).toBe(302);
+      expect(location.pathname, target).toBe('/auth/error');
+      expect(location.searchParams.get('error'), target).toBe('unsubscribe_failed');
+    }
+    expect([await preferencesOf(owner.id), await preferencesOf(other.id)]).toEqual(before);
+  });
+
+  it('turns off the one category its link names (positive control)', async () => {
+    const owner = await signUp('category-reader');
+
+    const { status, location } = await openLink(
+      buildUnsubscribeLink(owner.id, 'digest').replace(appConfig.backendUrl, ''),
+    );
+
+    expect(status).toBe(302);
+    expect(location.pathname).toBe('/auth/unsubscribed');
+    expect(await preferencesOf(owner.id)).toEqual({ digest: 'off', mentionEmail: true });
   });
 });
