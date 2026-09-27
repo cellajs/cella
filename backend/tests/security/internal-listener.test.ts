@@ -3,7 +3,7 @@ import { request } from 'node:http';
 import { connect } from 'node:net';
 import type { ServerType } from '@hono/node-server';
 import { appConfig } from 'shared';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { modeSecret } from '#/env';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -81,14 +81,30 @@ function post(
 }
 
 /**
+ * An upgrade as the listener's server emits it, from a peer address no test socket can have; the handler answers a
+ * refusal on the socket at once, so the status line is read back synchronously.
+ */
+function emittedUpgradeStatus(server: ServerType, remoteAddress: string, headers: Headers): number {
+  let statusLine = '';
+  const socket = {
+    write: (data: string) => {
+      statusLine = data;
+    },
+    destroy: () => {},
+  };
+  server.emit('upgrade', { url: '/internal/cdc', headers, socket: { remoteAddress } }, socket, Buffer.alloc(0));
+  return Number(statusLine.split(' ')[1]);
+}
+
+/**
  * Server-to-server routes live on their own listener, which the infra routes only from the private network: the CDC
- * worker's socket and the Yjs relay's materialize route. The public listener serves neither under any path, so a
- * leaked or guessed secret is useless from outside, and each route still checks its own secret.
+ * worker's socket and the Yjs relay's materialize route. The public listener serves neither under any path, the
+ * internal one admits private-network and loopback peers only, and each route still checks its own secret.
  */
 describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', async () => {
   const call = await createAppClient();
   const { baseApp } = await import('#/routes');
-  const { serveApi, serveInternal } = await import('#/lib/listeners');
+  const { internalApp, isCdcUpgradePath, serveApi, serveInternal } = await import('#/lib/listeners');
   const original = paragraph('original');
   let owner: TestTenant;
   let attachment: Awaited<ReturnType<typeof seedAttachment>>;
@@ -164,6 +180,41 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
     expect((await attachment.read())?.description).toBe(original);
   });
 
+  it('matches the CDC upgrade path on the raw request target exactly, query aside', () => {
+    expect(isCdcUpgradePath('/internal/cdc')).toBe(true);
+    expect(isCdcUpgradePath('/internal/cdc?attempt=2')).toBe(true);
+    for (const target of [
+      '/api/%2e%2e/internal/cdc',
+      '/api/%2E%2E/internal/cdc',
+      '/api/../internal/cdc',
+      '/internal/./cdc',
+      '/internal/cdc/',
+      '/INTERNAL/CDC',
+      'http://backend/internal/cdc',
+      '',
+      undefined,
+    ]) {
+      expect(isCdcUpgradePath(target), String(target)).toBe(false);
+    }
+  });
+
+  it('must not reach the CDC socket on the internal listener via a dot-segment path', async () => {
+    const secret = { 'x-cdc-secret': modeSecret('CDC_SECRET') };
+    for (const target of ['/api/%2e%2e/internal/cdc', '/api/../internal/cdc', '/internal/./cdc']) {
+      expect(await upgradeStatus(internalPort, target, secret), target).toBe(404);
+    }
+  });
+
+  it('must not accept the CDC socket via an empty secret in a process that holds none', async () => {
+    vi.stubEnv('CDC_SECRET', '');
+    try {
+      expect(await upgradeStatus(internalPort, '/internal/cdc', { 'x-cdc-secret': '' })).toBe(401);
+      expect(await upgradeStatus(internalPort, '/internal/cdc', {})).toBe(401);
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
   it('must not accept the CDC socket on the internal listener without its own secret', async () => {
     const attempts: Headers[] = [
       {},
@@ -185,6 +236,25 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
       const { status } = await post(internalPort, '/internal/yjs/materialize', materializeBody('forged'), headers);
       expect(status, JSON.stringify(headers)).toBe(401);
     }
+    expect((await attachment.read())?.description).toBe(original);
+  });
+
+  it('must not serve a peer outside the private network on any route of the internal listener, secret or not', async () => {
+    // The peer address is read from the socket alone; a test cannot connect from a public one, so it is injected there.
+    const publicPeer = { incoming: { socket: { remoteAddress: '203.0.113.9' } } } as never;
+    const materialize = await internalApp.request(
+      '/internal/yjs/materialize',
+      {
+        method: 'POST',
+        headers: { 'content-type': 'application/json', 'x-yjs-relay-secret': modeSecret('YJS_RELAY_SECRET') },
+        body: JSON.stringify(materializeBody('from a public address')),
+      },
+      publicPeer,
+    );
+    expect(materialize.status).toBe(403);
+    expect((await internalApp.request('/health', {}, publicPeer)).status).toBe(403);
+    const upgrade = emittedUpgradeStatus(internal.server, '203.0.113.9', { 'x-cdc-secret': modeSecret('CDC_SECRET') });
+    expect(upgrade).toBe(403);
     expect((await attachment.read())?.description).toBe(original);
   });
 
