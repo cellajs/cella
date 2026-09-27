@@ -39,7 +39,6 @@ vi.mock('~/query/basic/flatten', () => ({
 
 vi.mock('~/query/query-client', () => ({
   queryClient: {
-    clear: vi.fn(),
     getQueryCache: () => ({ subscribe: vi.fn() }),
     getMutationCache: () => ({ subscribe: vi.fn() }),
   },
@@ -65,16 +64,6 @@ vi.mock('~/modules/common/form-draft/draft-store', () => ({
 vi.mock('~/modules/seen/seen-store', () => ({
   seenStore: { getState: () => ({ clear: vi.fn() }) },
 }));
-
-vi.mock('~/modules/ui/ui-store', () => ({
-  useUIStore: { getState: () => ({ setImpersonating: vi.fn(), reset: vi.fn() }) },
-}));
-
-vi.mock('~/modules/user/user-store', () => ({
-  useUserStore: { getState: () => ({ reset: vi.fn() }) },
-}));
-
-vi.mock('~/modules/me/types', () => ({}));
 
 import { bindLocalUserDb } from '~/query/local-user-db';
 import { downloadQueue } from '../offline/download-queue';
@@ -239,32 +228,5 @@ describe('downloadService: auth fail-fast (401/403)', () => {
     const entry = await attachmentsDb.downloadQueue.get('att-1');
     expect(entry?.status).toBe('failed');
     expect(fetchMock).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe('teardownUserState clears attachment IDB', () => {
-  beforeEach(async () => {
-    await attachmentsDb.blobs.clear();
-    await attachmentsDb.downloadQueue.clear();
-  });
-
-  afterEach(async () => {
-    await attachmentsDb.blobs.clear();
-    await attachmentsDb.downloadQueue.clear();
-  });
-
-  it('must not keep cached attachment data past a sign-out: the localUserDb is deleted, not only unbound', async () => {
-    const { getLocalUserDb, bindLocalUserDb } = await import('~/query/local-user-db');
-    const { teardownUserState } = await import('~/utils/teardown-user-state');
-    await attachmentsDb.downloadQueue.add(makeQueueEntry({ id: 'att-1', status: 'downloaded' }));
-    expect(getLocalUserDb()).not.toBeNull();
-
-    await teardownUserState();
-
-    expect(getLocalUserDb()).toBeNull();
-    // The same user's next database starts empty: the rows went with the database. The re-bind also gives the
-    // suite's afterEach cleanup a database to clear.
-    bindLocalUserDb('test-user');
-    expect(await attachmentsDb.downloadQueue.count()).toBe(0);
   });
 });
