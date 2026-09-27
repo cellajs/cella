@@ -5,7 +5,7 @@ import { z } from '@hono/zod-openapi';
 import { isValidEventType } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { type WebSocket, WebSocketServer } from 'ws';
-import { env } from '#/env';
+import { env, modeSecret } from '#/env';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import { productCache } from '#/middlewares/product-cache/app-product-cache';
 import { activityActionSchema, activitySchema } from '#/modules/activities/activities-schema';
@@ -91,6 +91,20 @@ function isAllowedCdcSource(remoteIp: string | undefined, forwardedFor: string |
   return false;
 }
 
+/**
+ * Why an upgrade's `x-cdc-secret` is refused, or undefined for the worker's own secret. A process that does not hold
+ * the secret refuses every upgrade.
+ */
+function cdcSecretRefusal(presented: string | string[] | undefined): string | undefined {
+  let expected: string;
+  try {
+    expected = modeSecret('CDC_SECRET');
+  } catch {
+    return 'CDC_SECRET not configured';
+  }
+  return typeof presented === 'string' && safeEqual(presented, expected) ? undefined : 'invalid secret';
+}
+
 const cdcPath = '/internal/cdc';
 
 /**
@@ -173,12 +187,9 @@ class CdcWebSocketServer {
       }
 
       // Validate shared secret for every environment.
-      const secret = request.headers['x-cdc-secret'];
-      if (!env.CDC_SECRET || typeof secret !== 'string' || !safeEqual(secret, env.CDC_SECRET)) {
-        log.warn('CDC WebSocket auth failed', {
-          ip: request.socket.remoteAddress,
-          reason: !env.CDC_SECRET ? 'CDC_SECRET not configured' : 'invalid secret',
-        });
+      const refusal = cdcSecretRefusal(request.headers['x-cdc-secret']);
+      if (refusal) {
+        log.warn('CDC WebSocket auth failed', { ip: request.socket.remoteAddress, reason: refusal });
         socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
         socket.destroy();
         return;

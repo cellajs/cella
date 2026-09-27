@@ -1,7 +1,7 @@
 import { createServer, type Server } from 'node:http';
 import { connect } from 'node:net';
 import type { ServerType } from '@hono/node-server';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { cdcWebSocketServer, isCdcUpgradePath } from '#/lib/cdc-websocket';
 
 const secret = 'test-cdc-secret-min16chars';
@@ -83,6 +83,16 @@ describe('CDC upgrade path', () => {
   it('must not accept an upgrade without the secret or with a wrong one', async () => {
     expect(await upgradeStatus('/internal/cdc', {})).toBe(401);
     expect(await upgradeStatus('/internal/cdc', { 'x-cdc-secret': `${secret}x` })).toBe(401);
+  });
+
+  it('must not accept an upgrade via an empty secret in a process that holds none', async () => {
+    vi.stubEnv('CDC_SECRET', '');
+    try {
+      expect(await upgradeStatus('/internal/cdc', { 'x-cdc-secret': '' })).toBe(401);
+      expect(await upgradeStatus('/internal/cdc')).toBe(401);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
 
   it('accepts the worker on the exact path with the secret (positive control)', async () => {
