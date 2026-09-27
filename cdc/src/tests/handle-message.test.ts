@@ -40,21 +40,14 @@ vi.mock('../network/websocket-client', () => ({
   },
 }));
 
-import type { Pgoutput } from 'pg-logical-replication';
 import { handleDataMessage } from '../pipeline/handle-message';
 import { replicationState } from '../services/replication-state';
+import { dmlMessage } from './factories';
 
 const { parseMessage } = await import('../pipeline/parse-message');
 const mocked = vi.mocked(parseMessage);
 
-/** Minimal DML message. */
-function mockDmlMessage(tag: 'insert' | 'update' | 'delete', id: string): Pgoutput.Message {
-  const row = { id };
-  if (tag === 'delete') {
-    return { tag, relation: { name: 'tasks' }, old: row } as unknown as Pgoutput.Message;
-  }
-  return { tag, relation: { name: 'tasks' }, new: row } as unknown as Pgoutput.Message;
-}
+const mockDmlMessage = (tag: 'insert' | 'update' | 'delete', id: string) => dmlMessage(tag, 'tasks', { id });
 
 describe('handleDataMessage: seeded entity filtering', () => {
   beforeEach(() => {

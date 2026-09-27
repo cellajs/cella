@@ -2,19 +2,17 @@ import { makeDeepHierarchy } from 'shared/testing/deep-fixture';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
 import { log } from '../lib/pino';
-import type { ActivityWithoutId } from '../pipeline/parse-message';
-import type { EntityTableMeta } from '../types';
 import { computeBatchUnifiedDeltas, frontierNodeKeys, resolveChannelKey } from '../utils/compute-unified-deltas';
 import { getCountDeltas } from '../utils/update-counts';
+import { changeEvent, mockCdcActivity, tableMetaOf } from './factories';
 
 // `course` stays non-nullable so the warning suite below can prove a null non-nullable ancestor warns.
 const h = makeDeepHierarchy(['project', 'courseSection']);
 
-const itemMeta = (): EntityTableMeta =>
-  ({ kind: 'entity', type: 'item', table: { [Symbol.for('drizzle:Name')]: 'items' } }) as unknown as EntityTableMeta;
+const itemMeta = () => tableMetaOf('entity', 'item');
 
-const itemActivity = (action: string, organizationId: string | null = 'o1'): InsertActivityModel =>
-  ({ action, entityType: 'item', organizationId }) as unknown as InsertActivityModel;
+const itemActivity = (action: InsertActivityModel['action'], organizationId: string | null = 'o1') =>
+  mockCdcActivity({ action, organizationId });
 
 const fullDepthRow = {
   id: 'i1',
@@ -30,19 +28,11 @@ const sectionRow = { ...fullDepthRow, projectId: null };
 const courseStreamRow = { ...fullDepthRow, projectId: null, courseSectionId: null };
 
 const mockEvent = (
-  action: string,
+  action: InsertActivityModel['action'],
   rowData: Record<string, unknown> & { id: string },
   oldRowData: (Record<string, unknown> & { id: string }) | null = null,
   organizationId: string | null = 'o1',
-) => ({
-  lsn: `0/${rowData.id}`,
-  result: {
-    activity: itemActivity(action, organizationId),
-    rowData,
-    oldRowData,
-    tableMeta: itemMeta(),
-  },
-});
+) => changeEvent({ tableMeta: itemMeta(), action, rowData, oldRowData, organizationId });
 
 beforeEach(() => {
   vi.mocked(log.warn).mockClear();
@@ -54,7 +44,7 @@ beforeEach(() => {
 // ── Seq scope ────────────────────────────────────────────────────────────────
 
 describe('home channel: deepest non-null ancestor (resolveChannelKey)', () => {
-  const activity = (organizationId: string | null = 'o1') => ({ organizationId }) as unknown as ActivityWithoutId;
+  const activity = (organizationId: string | null = 'o1') => mockCdcActivity({ organizationId });
 
   it('full-depth row scopes to its project', () => {
     expect(resolveChannelKey('item', fullDepthRow, activity(), h)).toBe('p1');

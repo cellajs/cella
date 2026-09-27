@@ -9,10 +9,6 @@ vi.mock('../lib/db', () => ({
   stripSslParams: (url: string) => url,
 }));
 
-vi.mock('../lib/pino', () => ({
-  log: { info: vi.fn(), warn: vi.fn(), error: vi.fn(), trace: vi.fn(), debug: vi.fn() },
-}));
-
 vi.mock('../network/websocket-client', () => ({
   wsClient: {
     isConnected: () => true,

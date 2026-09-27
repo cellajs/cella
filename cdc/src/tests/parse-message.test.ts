@@ -1,13 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-
-vi.mock('../lib/pino', () => ({
-  log: { warn: vi.fn(), info: vi.fn(), debug: vi.fn(), trace: vi.fn(), error: vi.fn() },
-}));
-
-import type { Pgoutput } from 'pg-logical-replication';
 import { entityIdColumnKey, hierarchy } from 'shared';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { log } from '../lib/pino';
 import { parseMessage } from '../pipeline/parse-message';
+import { dmlMessage } from './factories';
 
 const warn = vi.mocked(log.warn);
 
@@ -29,16 +24,6 @@ const ancestorIdColumns = Object.fromEntries(
  */
 function attachmentRow(overrides: Record<string, unknown> = {}): Record<string, unknown> {
   return { id: 'att-1', ...ancestorIdColumns, created_at: '2026-07-01T10:00:00.000Z', ...overrides };
-}
-
-function dmlMessage(
-  tag: 'insert' | 'update' | 'delete',
-  table: string,
-  row: Record<string, unknown>,
-  oldRow?: Record<string, unknown>,
-): Pgoutput.Message {
-  if (tag === 'delete') return { tag, relation: { name: table }, old: row } as unknown as Pgoutput.Message;
-  return { tag, relation: { name: table }, new: row, old: oldRow ?? null } as unknown as Pgoutput.Message;
 }
 
 describe('parseMessage: draft entrance guard', () => {

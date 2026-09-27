@@ -1,17 +1,6 @@
-import type { Pgoutput } from 'pg-logical-replication';
 import { describe, expect, it } from 'vitest';
 import { parseMessage } from '../pipeline/parse-message';
-
-/** A DML message as the pgoutput plugin delivers it: snake_case columns, the old image on updates and deletes. */
-function dml(
-  tag: 'insert' | 'update' | 'delete',
-  table: string,
-  row: Record<string, unknown>,
-  oldRow?: Record<string, unknown>,
-): Pgoutput.Message {
-  if (tag === 'delete') return { tag, relation: { name: table }, old: row } as unknown as Pgoutput.Message;
-  return { tag, relation: { name: table }, new: row, old: oldRow ?? null } as unknown as Pgoutput.Message;
-}
+import { dmlMessage } from './factories';
 
 const apiKey = {
   id: 'k1',
@@ -35,7 +24,7 @@ const apiKeyOnTheWire = {
 // never reaches the backend or the worker's log.
 describe('parseMessage strips secret columns from the row images the handlers emit', () => {
   it('an api_key update carries the hash in neither image, and keeps the other columns', () => {
-    const result = parseMessage(dml('update', 'api_keys', { ...apiKey, name: 'ci renamed' }, apiKey));
+    const result = parseMessage(dmlMessage('update', 'api_keys', { ...apiKey, name: 'ci renamed' }, apiKey));
 
     expect(result?.rowData).toEqual({ ...apiKeyOnTheWire, name: 'ci renamed' });
     expect(result?.oldRowData).toEqual(apiKeyOnTheWire);
@@ -43,17 +32,22 @@ describe('parseMessage strips secret columns from the row images the handlers em
 
   it('an oauth_client insert and an api_key delete drop the secret column', () => {
     const insert = parseMessage(
-      dml('insert', 'oauth_clients', { id: 'c1', name: 'Portfolio', created_by: 'p-admin', secret_hash: 'sha256' }),
+      dmlMessage('insert', 'oauth_clients', {
+        id: 'c1',
+        name: 'Portfolio',
+        created_by: 'p-admin',
+        secret_hash: 'sha256',
+      }),
     );
     expect(insert?.rowData).toEqual({ id: 'c1', name: 'Portfolio', createdBy: 'p-admin' });
 
-    const deletion = parseMessage(dml('delete', 'api_keys', apiKey));
+    const deletion = parseMessage(dmlMessage('delete', 'api_keys', apiKey));
     expect(deletion?.rowData).toEqual(apiKeyOnTheWire);
   });
 
   it('keeps a column named like a secret on a table that declares none', () => {
     const row = { id: 'm1', organization_id: 'org-1', role: 'admin', hash: 'not a secret column here' };
-    const result = parseMessage(dml('insert', 'memberships', row));
+    const result = parseMessage(dmlMessage('insert', 'memberships', row));
     expect(result?.rowData).toEqual({
       id: 'm1',
       organizationId: 'org-1',

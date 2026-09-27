@@ -1,63 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import type { InsertActivityModel } from '#/modules/activities/activities-db';
-import type { ParseMessageResult } from '../pipeline/parse-message';
-import type { EntityTableMeta, ResourceTableMeta } from '../types';
 import { computeBatchUnifiedDeltas } from '../utils/compute-unified-deltas';
-
-// ── Test helpers ─────────────────────────────────────────────────────────────
+import { changeEvent, tableMetaOf } from './factories';
 
 // `attachment` parents on organization, so resolveChannelKey returns organizationId and seq plus
 // entity-count deltas collapse onto a single channelKey.
-function attachmentEntry(): EntityTableMeta {
-  return {
-    kind: 'entity',
-    type: 'attachment',
-    table: { [Symbol.for('drizzle:Name')]: 'attachments' },
-  } as unknown as EntityTableMeta;
-}
-
-function membershipEntry(): ResourceTableMeta {
-  return {
-    kind: 'resource',
-    type: 'membership',
-    table: { [Symbol.for('drizzle:Name')]: 'memberships' },
-  } as unknown as ResourceTableMeta;
-}
-
-function inactiveMembershipEntry(): ResourceTableMeta {
-  return {
-    kind: 'resource',
-    type: 'inactive_membership',
-    table: { [Symbol.for('drizzle:Name')]: 'inactive_memberships' },
-  } as unknown as ResourceTableMeta;
-}
-
-function mockEvent(overrides: {
-  tableMeta: EntityTableMeta | ResourceTableMeta;
-  action: string;
-  rowData: Record<string, unknown> & { id: string };
-  oldRowData?: Record<string, unknown> & { id: string };
-  organizationId?: string | null;
-}): { lsn: string; result: ParseMessageResult } {
-  return {
-    lsn: `0/${Math.random().toString(36).slice(2, 6)}`,
-    result: {
-      activity: {
-        action: overrides.action,
-        entityType: overrides.tableMeta.type,
-        organizationId: overrides.organizationId ?? (overrides.rowData.organizationId as string) ?? null,
-      } as unknown as InsertActivityModel,
-      rowData: overrides.rowData,
-      oldRowData: overrides.oldRowData ?? null,
-      tableMeta: overrides.tableMeta,
-    },
-  };
-}
+const attachmentEntry = () => tableMetaOf('entity', 'attachment');
+const membershipEntry = () => tableMetaOf('resource', 'membership');
+const inactiveMembershipEntry = () => tableMetaOf('resource', 'inactive_membership');
 
 describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
   it('membership create: role + total count, plus org membership seq signal', () => {
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: membershipEntry(),
         action: 'create',
         rowData: { id: 'mem-1', organizationId: 'org-1', channelId: 'org-1', role: 'admin' },
@@ -70,7 +24,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
 
   it('membership delete: decrements role + total', () => {
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: membershipEntry(),
         action: 'delete',
         rowData: { id: 'mem-1', organizationId: 'org-1', channelId: 'org-1', role: 'member' },
@@ -82,7 +36,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
 
   it('membership update (role change): swaps role counts', () => {
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: membershipEntry(),
         action: 'update',
         rowData: { id: 'mem-1', organizationId: 'org-1', channelId: 'org-1', role: 'admin' },
@@ -95,7 +49,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
 
   it('inactive membership create (pending): increments pending count', () => {
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: inactiveMembershipEntry(),
         action: 'create',
         rowData: { id: 'imem-1', organizationId: 'org-1', channelId: 'org-1', rejectedAt: null },
@@ -107,7 +61,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
 
   it('inactive membership update (rejected): decrements pending', () => {
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: inactiveMembershipEntry(),
         action: 'update',
         rowData: { id: 'imem-1', organizationId: 'org-1', channelId: 'org-1', rejectedAt: '2026-01-01' },
@@ -124,7 +78,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
 describe('computeBatchUnifiedDeltas', () => {
   it('batch of 5 attachment creates in same org: accumulates deltas', () => {
     const events = Array.from({ length: 5 }, (_, i) =>
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
         rowData: { id: `att-${i}`, organizationId: 'org-1' },
@@ -149,13 +103,13 @@ describe('computeBatchUnifiedDeltas', () => {
 
   it('batch with non-stampable events (deletes): no seq groups, count deltas accumulated', () => {
     const events = [
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'delete',
         rowData: { id: 'att-1', organizationId: 'org-1' },
         oldRowData: { id: 'att-1', organizationId: 'org-1' },
       }),
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'delete',
         rowData: { id: 'att-2', organizationId: 'org-1' },
@@ -171,13 +125,13 @@ describe('computeBatchUnifiedDeltas', () => {
 
   it('batch of attachment soft deletes: sequence group and count deltas accumulated', () => {
     const events = [
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'update',
         rowData: { id: 'att-1', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' },
         oldRowData: { id: 'att-1', organizationId: 'org-1', deletedAt: null },
       }),
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'update',
         rowData: { id: 'att-2', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' },
@@ -195,7 +149,7 @@ describe('computeBatchUnifiedDeltas', () => {
 
   it("one sequence group per organization, holding that organization's events alone", () => {
     const events = Array.from({ length: 3 }, (_, i) =>
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
         rowData: { id: `att-${i}`, organizationId: `org-${i}` },
@@ -218,7 +172,7 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
 
   it('attachment create stamps e:li:h:attachment with the row createdAt at the home key', () => {
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt },
@@ -235,12 +189,12 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
   it('two creates in one batch max-merge the stamp (timestamps must not sum)', () => {
     const laterCreatedAt = '2026-07-02T10:00:00.000Z';
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt: laterCreatedAt },
       }),
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
         rowData: { id: 'att-2', organizationId: 'org-1', createdAt },
@@ -257,7 +211,7 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
   it('missing createdAt falls back to Date.now()', () => {
     const before = Date.now();
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
         rowData: { id: 'att-1', organizationId: 'org-1' },
@@ -273,7 +227,7 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
   it('a row created directly published stamps li: from publishedAt', () => {
     const publishedAt = '2026-07-01T10:00:00.500Z';
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt },
@@ -290,7 +244,7 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
   it('genuine update stamps e:lu:h:attachment with the row updatedAt, not e:li:h:', () => {
     const updatedAt = '2026-07-05T10:00:00.000Z';
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'update',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, updatedAt, deletedAt: null },
@@ -306,7 +260,7 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
   it('update with missing updatedAt falls back to Date.now()', () => {
     const before = Date.now();
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'update',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, deletedAt: null },
@@ -322,7 +276,7 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
 
   it('soft-deletes never stamp (remapped to a delete internally)', () => {
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'update',
         rowData: { id: 'att-2', organizationId: 'org-1', createdAt, deletedAt: '2026-07-03T10:00:00.000Z' },
@@ -335,7 +289,7 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
 
   it('restore does not stamp either (remapped create is not a new post)', () => {
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'update',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, deletedAt: null },
@@ -355,7 +309,7 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
 
   it('a publish edge arrives as INSERT: counts as a create and stamps li: from publishedAt', () => {
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
         rowData: {
@@ -380,7 +334,7 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
   it('an unpublish arrives as DELETE with the old published row: counts as a delete, stamps nothing', () => {
     // CDC deletes snapshot the old row into rowData; oldRowData is null.
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'delete',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
@@ -392,7 +346,7 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
 
   it('publishing a trashed row arrives as INSERT with deletedAt set: counts nothing', () => {
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
         rowData: {
@@ -411,7 +365,7 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
 
   it('soft-deleting a PUBLISHED row stays an UPDATE and still decrements (the two dimensions compose)', () => {
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'update',
         rowData: {
@@ -430,7 +384,7 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
 
   it('restoring a PUBLISHED row from trash re-counts it but does not stamp li: (old content)', () => {
     const plan = computeBatchUnifiedDeltas([
-      mockEvent({
+      changeEvent({
         tableMeta: attachmentEntry(),
         action: 'update',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },

@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { InsertActivityModel } from '#/modules/activities/activities-db';
-import type { ParseMessageResult } from '../pipeline/parse-message';
-import type { EntityTableMeta } from '../types';
+import { changeEvent, tableMetaOf } from './factories';
 
 const upserts: Array<{ params: unknown[] }> = [];
 
@@ -19,19 +18,8 @@ vi.mock('../lib/db', () => ({
 const { syncChannelPaths } = await import('../utils/channel-path-sync');
 
 // Base cella: 'organization' is the only channel type; 'attachment' is a product.
-const event = (
-  type: string,
-  action: string,
-  rowData: Record<string, unknown>,
-): { lsn: string; result: ParseMessageResult } => ({
-  lsn: '0/1',
-  result: {
-    activity: { action, entityType: type, organizationId: 'org-1' } as unknown as InsertActivityModel,
-    rowData: rowData as ParseMessageResult['rowData'],
-    oldRowData: null,
-    tableMeta: { kind: 'entity', type, table: {} } as unknown as EntityTableMeta,
-  },
-});
+const event = (type: string, action: InsertActivityModel['action'], rowData: Record<string, unknown>) =>
+  changeEvent({ tableMeta: tableMetaOf('entity', type), action, rowData, organizationId: 'org-1', lsn: '0/1' });
 
 beforeEach(() => {
   upserts.length = 0;

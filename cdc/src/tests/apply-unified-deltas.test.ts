@@ -1,9 +1,7 @@
 import { createEntityHierarchy, createRoleRegistry } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import type { InsertActivityModel } from '#/modules/activities/activities-db';
-import type { ParseMessageResult } from '../pipeline/parse-message';
-import type { EntityTableMeta } from '../types';
 import type { BatchUnifiedDeltaPlan } from '../utils/compute-unified-deltas';
+import { changeEvent, tableMetaOf } from './factories';
 
 interface DbOp {
   type: 'upsert' | 'execute';
@@ -53,21 +51,12 @@ beforeEach(() => {
 });
 
 describe('applyBatchUnifiedDeltas', () => {
-  function mockEvent(id: string): { lsn: string; result: ParseMessageResult } {
-    return {
-      lsn: `0/${id}`,
-      result: {
-        activity: { action: 'create', entityType: 'task', organizationId: 'org-1' } as unknown as InsertActivityModel,
-        rowData: { id, projectId: 'proj-1', organizationId: 'org-1' },
-        oldRowData: null,
-        tableMeta: {
-          kind: 'entity',
-          type: 'task',
-          table: { [Symbol.for('drizzle:Name')]: 'tasks' },
-        } as unknown as EntityTableMeta,
-      },
-    };
-  }
+  const mockEvent = (id: string) =>
+    changeEvent({
+      tableMeta: tableMetaOf('entity', 'task'),
+      action: 'create',
+      rowData: { id, projectId: 'proj-1', organizationId: 'org-1' },
+    });
 
   it('assigns sequential org-sequence values to events from the reserved range', async () => {
     upsertReturnValue = { sequence: 5 }; // highSeq = 5, count = 3, baseSeq = 2
