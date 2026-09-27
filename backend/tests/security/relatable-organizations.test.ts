@@ -5,7 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { defaultHeaders } from '../fixtures';
+import { defaultHeaders, memberRole } from '../fixtures';
 import {
   createSystemAdminUser,
   createTestOrganization,
@@ -19,7 +19,6 @@ import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 // Member previews list the organization's top role, so the viewer holds it to appear in one.
 const [previewedRole] = hierarchy.getRoles('organization');
 

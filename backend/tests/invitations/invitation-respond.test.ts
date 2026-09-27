@@ -1,19 +1,15 @@
 import { eq } from 'drizzle-orm';
-import { getMembers, handleMembershipInvitation, invokeToken } from 'sdk';
-import { hierarchy } from 'shared';
+import { handleMembershipInvitation, invokeToken } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
-import { createInvitation } from './helpers';
-
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
+import { createInvitation, readMembersAs } from './helpers';
 
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
@@ -79,14 +75,7 @@ describe('Invitation response', async () => {
       role: memberRole,
     });
     const sessionCookie = await createTestSession(invitedUser);
-    const readMembers = () =>
-      call(getMembers, {
-        path: { tenantId: organization.tenantId, organizationId: organization.id },
-        query: { entityId: organization.id, entityType: 'organization' },
-        headers: { ...defaultHeaders, Cookie: sessionCookie },
-      });
-
-    // The tenant refuses while invited only: the user holds no membership in it yet, so the tenant guard answers.
+    const readMembers = () => readMembersAs(organization, sessionCookie);
     expect((await readMembers()).response.status).toBe(403);
 
     const { response: res } = await respondToInvitation(inactiveMembership.id, 'accept', sessionCookie);
@@ -104,7 +93,7 @@ describe('Invitation response', async () => {
       email: invitedUser.email,
       createdBy: invitedUser.id,
       boundTo: invitedUser.id,
-      role: 'admin',
+      role: adminRole,
     });
     const sessionCookie = await createTestSession(invitedUser);
 
@@ -114,7 +103,7 @@ describe('Invitation response', async () => {
 
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, invitedUser.id));
     expect(memberships).toHaveLength(1);
-    expect(memberships[0].role).toBe('admin');
+    expect(memberships[0].role).toBe(adminRole);
   });
 
   it('should reject invitation', async () => {

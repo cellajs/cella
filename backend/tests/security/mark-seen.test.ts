@@ -1,25 +1,21 @@
 import { and, eq } from 'drizzle-orm';
 import { markSeen } from 'sdk';
-import { getEntityPolicies, getPolicyPermissions, hierarchy, policyMatrix } from 'shared';
+import { getEntityPolicies, getPolicyPermissions, policyMatrix } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { getAdminDb } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { seenByTable } from '#/modules/seen/seen-by-db';
-import { defaultHeaders } from '../fixtures';
-import { createTestOrganization } from '../helpers';
-import { cleanupEntityHierarchy, seedAttachmentHome } from '../hierarchy-helpers';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
+import { adminDb, createTestOrganization } from '../helpers';
+import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
-
-const [adminRole] = hierarchy.getRoles('organization');
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 /**
  * markSeen answers how many of the posted ids it newly recorded as seen, and bumps their view counts. It counts only
@@ -27,8 +23,6 @@ const memberRole = hierarchy.getLeastPrivilegedRole('organization');
  */
 describe('markSeen and rows the caller cannot read', async () => {
   const call = await createAppClient();
-  // Attachments and seen_by sit under RLS: arrange and assert as admin, so a runtime_role run sees every row.
-  const adminDb = getAdminDb('mark-seen test');
   let organization: { id: string; tenantId: string };
   let plan: TestEntityHierarchyPlan;
   let admin: { id: string; sessionCookie: string };
@@ -50,8 +44,7 @@ describe('markSeen and rows the caller cannot read', async () => {
       },
       id,
     );
-    // buildInsertableProduct returns a config-derived Record, so the insert type needs a cast.
-    await adminDb.insert(attachmentsTable).values(row as typeof attachmentsTable.$inferInsert);
+    await insertAttachmentRow(row);
     return id;
   };
 

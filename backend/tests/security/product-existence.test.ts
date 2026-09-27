@@ -1,11 +1,10 @@
 import { createAttachments } from 'sdk';
-import { hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateServerHLC } from '#/core/stx';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
-import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, type ErrorResponse, expectRefusal } from '../helpers';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
+import { createTestOrganization, type ErrorResponse, expectRefusal, refusalOf } from '../helpers';
 import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { bearerHeaders, serviceAccountWithKey } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
@@ -14,21 +13,7 @@ import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
-const [adminRole] = hierarchy.getRoles('organization');
-
 /** Machine requests carry no Origin and no cookie: a server, not a browser page. */
-
-/** The parts of an error answer that come from the refusal itself, without the per-request path, id and time. */
-const refusalOf = ({ status, type, name, message, severity, entityType, meta }: ErrorResponse) => ({
-  status,
-  type,
-  name,
-  message,
-  severity,
-  entityType,
-  meta,
-});
 
 /**
  * A product the caller may not read answers like one that does not exist: a 403 there would confirm the id. A 403 is

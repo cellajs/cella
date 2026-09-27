@@ -21,7 +21,7 @@ import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { usersTable } from '#/modules/user/user-db';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import {
   authCookie,
   createSystemAdminUser,
@@ -214,14 +214,14 @@ describe('account-security routes need a step-up', async () => {
   /** An organization with an admin who has no second factor, and the calls that mint an API key in it. */
   const keyMinting = async (label: string) => {
     const org = await createTestOrganization();
-    const admin = await createOrgUser(call, org.tenantId, org.id, label, 'admin');
+    const admin = await createOrgUser(call, org.tenantId, org.id, label, adminRole);
     const path = { tenantId: org.tenantId, organizationId: org.id };
     return {
       admin,
       createAccount: (session: TestSession) =>
         call(createServiceAccount, {
           path,
-          body: { name: 'CI bot', role: 'member', key: { name: 'deploy', scopes: null } },
+          body: { name: 'CI bot', role: memberRole, key: { name: 'deploy', scopes: null } },
           headers: session.headers,
         }),
       createKey: (session: TestSession, id: string) =>

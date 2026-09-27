@@ -37,7 +37,7 @@ describe('Cross-tenant API isolation', async () => {
   });
 
   describe('User A cannot access Tenant B resources', () => {
-    it('should reject GET attachments in another tenant with 403', async () => {
+    it("must not list Tenant B's attachments via User A's session", async () => {
       const { error, response } = await call(getAttachments, {
         path: { tenantId: tenantB.tenantId, organizationId: tenantB.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
@@ -45,7 +45,7 @@ describe('Cross-tenant API isolation', async () => {
       await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
-    it('should reject GET organization in another tenant with 403', async () => {
+    it("must not read Tenant B's organization via User A's session", async () => {
       const { error, response } = await call(getOrganization, {
         path: { tenantId: tenantB.tenantId, id: tenantB.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
@@ -55,7 +55,7 @@ describe('Cross-tenant API isolation', async () => {
   });
 
   describe('User B cannot access Tenant A resources', () => {
-    it('should reject GET attachments in another tenant with 403', async () => {
+    it("must not list Tenant A's attachments via User B's session", async () => {
       const { error, response } = await call(getAttachments, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
@@ -63,7 +63,7 @@ describe('Cross-tenant API isolation', async () => {
       await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
-    it('should reject GET organization in another tenant with 403', async () => {
+    it("must not read Tenant A's organization via User B's session", async () => {
       const { error, response } = await call(getOrganization, {
         path: { tenantId: tenantA.tenantId, id: tenantA.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
@@ -73,7 +73,7 @@ describe('Cross-tenant API isolation', async () => {
   });
 
   describe('Users can access their own tenant', () => {
-    it('should allow User A to GET attachments in Tenant A', async () => {
+    it("lists Tenant A's attachments for User A (positive control)", async () => {
       const { response } = await call(getAttachments, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
@@ -81,7 +81,7 @@ describe('Cross-tenant API isolation', async () => {
       expect(response.status).toBe(200);
     });
 
-    it('should allow User B to GET attachments in Tenant B', async () => {
+    it("lists Tenant B's attachments for User B (positive control)", async () => {
       const { response } = await call(getAttachments, {
         path: { tenantId: tenantB.tenantId, organizationId: tenantB.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
@@ -93,7 +93,7 @@ describe('Cross-tenant API isolation', async () => {
   // ---- Write isolation: cross-tenant write attempts ----
 
   describe('Cross-tenant write denial', () => {
-    it('should reject User A creating attachment in Tenant B with 403', async () => {
+    it("must not create an attachment in Tenant B via User A's session", async () => {
       const { error, response } = await call(createAttachments, {
         path: { tenantId: tenantB.tenantId, organizationId: tenantB.organization.id },
         body: [attachmentBody('00000000-0000-4000-a000-000000000001', homeB)],
@@ -102,7 +102,7 @@ describe('Cross-tenant API isolation', async () => {
       await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
-    it('should reject User A updating Tenant B organization with 403', async () => {
+    it("must not rename Tenant B's organization via User A's session", async () => {
       const { error, response } = await call(updateOrganization, {
         path: { tenantId: tenantB.tenantId, id: tenantB.organization.id },
         body: { name: 'Hijacked by A' },
@@ -111,7 +111,7 @@ describe('Cross-tenant API isolation', async () => {
       await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
-    it('should reject User B creating attachment in Tenant A with 403', async () => {
+    it("must not create an attachment in Tenant A via User B's session", async () => {
       const { error, response } = await call(createAttachments, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
         body: [attachmentBody('00000000-0000-4000-a000-000000000002', homeA)],
@@ -120,7 +120,7 @@ describe('Cross-tenant API isolation', async () => {
       await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
-    it('should reject User B updating Tenant A organization with 403', async () => {
+    it("must not rename Tenant A's organization via User B's session", async () => {
       const { error, response } = await call(updateOrganization, {
         path: { tenantId: tenantA.tenantId, id: tenantA.organization.id },
         body: { name: 'Hijacked by B' },
@@ -161,7 +161,7 @@ describe('Cross-tenant API isolation', async () => {
       expect(await listedIds(tenantA)).toContain(presignAttachmentId);
     });
 
-    it('should sign for the owning tenant user', async () => {
+    it("signs Tenant A's attachment for User A (positive control)", async () => {
       const { data, response } = await call(getPresignedUrls, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
         body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },
@@ -174,7 +174,7 @@ describe('Cross-tenant API isolation', async () => {
       expect(result.data[0]?.url).toContain(storedKey);
     });
 
-    it("should reject User B calling Tenant A's presign endpoint with 403", async () => {
+    it("must not sign Tenant A's attachment via User B's session on Tenant A's path", async () => {
       const { error, response } = await call(getPresignedUrls, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
         body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },
@@ -183,7 +183,7 @@ describe('Cross-tenant API isolation', async () => {
       await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
-    it("should reject Tenant A's attachment id in User B's own tenant uniformly, never signing it", async () => {
+    it("must not sign Tenant A's attachment via its id on User B's own tenant path", async () => {
       const { data, response } = await call(getPresignedUrls, {
         path: { tenantId: tenantB.tenantId, organizationId: tenantB.organization.id },
         body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },

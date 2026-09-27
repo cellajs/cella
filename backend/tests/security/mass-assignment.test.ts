@@ -1,20 +1,17 @@
 import { eq } from 'drizzle-orm';
 import { updateMe, updateOrganization } from 'sdk';
-import { hierarchy } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders } from '../fixtures';
 import { createTestOrganization } from '../helpers';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
-
-const [adminRole] = hierarchy.getRoles('organization');
 
 interface Row {
   route: string;

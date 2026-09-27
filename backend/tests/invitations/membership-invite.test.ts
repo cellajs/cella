@@ -1,11 +1,10 @@
 import { eq } from 'drizzle-orm';
 import { membershipInvite } from 'sdk';
-import { hierarchy } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { addProvenEmail } from '#/modules/auth/general/helpers/mark-email-verified';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import {
   createOrganizationAdminUser,
   createSystemAdminUser,
@@ -15,9 +14,6 @@ import {
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
-
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
@@ -34,7 +30,7 @@ describe('Membership Invitation', async () => {
     const user = await createOrganizationAdminUser(
       'admin@example.com',
       organization.id,
-      'admin',
+      adminRole,
       true,
       organization.tenantId,
     );
@@ -98,7 +94,7 @@ describe('Membership Invitation', async () => {
     const { response: res, data } = await makeInviteRequest(
       organization.tenantId,
       organization.id,
-      { emails: ['existing@example.com'], role: 'admin' },
+      { emails: ['existing@example.com'], role: adminRole },
       sessionCookie,
     );
 
@@ -110,7 +106,7 @@ describe('Membership Invitation', async () => {
     const inactiveMemberships = await getInactiveMemberships(organization.id);
     expect(inactiveMemberships).toHaveLength(1);
     expect(inactiveMemberships[0].userId).toBe(existingUser.id);
-    expect(inactiveMemberships[0].role).toBe('admin');
+    expect(inactiveMemberships[0].role).toBe(adminRole);
   });
 
   it('binds an invitation sent to a proven secondary address of an existing user', async () => {

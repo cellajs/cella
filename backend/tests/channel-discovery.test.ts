@@ -130,6 +130,7 @@ const listChannels = async (userId: string, opts: ListOpts = {}): Promise<Listed
     channelType: CHANNEL_TYPE,
     organizationId: ORG_ID,
     actor,
+    // The deep fixture's hierarchy has channel types the app's `EntityHierarchy` type does not name.
     hierarchy: deepHierarchy as unknown as EntityHierarchy,
   });
   const scopeWhere = buildChannelListReadWhere(discoveryScope, readColumns);

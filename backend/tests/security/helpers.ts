@@ -1,10 +1,10 @@
 import { eq, sql } from 'drizzle-orm';
 import { generatePasskeyChallenge, signInWithPasskey } from 'sdk';
-import { type EntityRole, hierarchy } from 'shared';
+import type { EntityRole } from 'shared';
 import { expect } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession, setCookiePair } from '../helpers';
 import { type PasskeyAssertion, softwarePasskey } from '../software-passkey';
 import { createAppClient, type TestResult } from '../test-client';
@@ -25,7 +25,7 @@ export async function createTestTenant(_call: Call, label: string): Promise<Test
   // Seeded via the DB as superuser, which bypasses RLS.
   const organization = await createTestOrganization();
 
-  const user = await createOrganizationAdminUser(email, organization.id, 'admin', true, organization.tenantId);
+  const user = await createOrganizationAdminUser(email, organization.id, adminRole, true, organization.tenantId);
 
   const sessionCookie = await createTestSession(user);
 
@@ -47,7 +47,7 @@ export async function createOrgUser(
   tenantId: string,
   organizationId: string,
   label: string,
-  role: EntityRole = hierarchy.getLeastPrivilegedRole('organization'),
+  role: EntityRole = memberRole,
 ) {
   const email = `${label}-user@security-test.com`;
 

@@ -1,12 +1,9 @@
 import { DrizzleQueryError } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { createOtelSDK, type OtelSDKOptions } from 'shared/otel';
+import { createOtelSDK } from 'shared/otel';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { toClientError } from '#/lib/error';
-import { defaultHeaders } from '../fixtures';
-
-type Exporter = NonNullable<OtelSDKOptions['traceExporter']>;
-type ExportedSpan = Parameters<Exporter['export']>[0][number];
+import { collectingExporter, defaultHeaders, type ExportedSpan } from '../fixtures';
 
 // The backend's event log (`baseLog`, which `log` and `toClientError` write through), built the way the app builds it
 // but writing its lines here.
@@ -22,16 +19,6 @@ vi.mock('#/lib/pino', async (importOriginal) => {
     destination: { write: (line: string) => logged.lines.push(line) },
   });
   return { ...actual, baseLog: createLog(logger) };
-});
-
-/** Keeps every exported span; shutting the SDK down flushes into it. */
-const collectingExporter = (spans: ExportedSpan[]): Exporter => ({
-  export: (batch, done) => {
-    spans.push(...batch);
-    done({ code: 0 });
-  },
-  shutdown: async () => {},
-  forceFlush: async () => {},
 });
 
 /**

@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { getMyInvitations, getPendingMemberships, membershipInvite } from 'sdk';
-import { type EntityRole, hierarchy } from 'shared';
+import type { EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { UserContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
@@ -10,13 +10,10 @@ import { dispatchDeferredInvites } from '#/modules/memberships/helpers/deferred-
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
-
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 // Whether an invite left as mail is the observable difference between a held and a dispatched invite.
 setTestConfig({
@@ -31,12 +28,15 @@ afterEach(async () => await clearDatabase());
 describe('Draft context invite deferral', async () => {
   const call = await createAppClient();
 
+  // The publish flow's operation reads only `db` and `user` from its context, so a partial one stands in.
+  const publisherContext = (user: { id: string }) => ({ var: { db, user } }) as unknown as UserContext;
+
   const createDraftOrgWorld = async () => {
     const organization = await createTestOrganization();
     const admin = await createOrganizationAdminUser(
       'admin@example.com',
       organization.id,
-      'admin',
+      adminRole,
       true,
       organization.tenantId,
     );
@@ -84,7 +84,7 @@ describe('Draft context invite deferral', async () => {
   it('keeps the most-privileged role live: admin invites dispatch on a draft context', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
 
-    const { response } = await invite(organization, ['co-admin@example.com'], 'admin', sessionCookie);
+    const { response } = await invite(organization, ['co-admin@example.com'], adminRole, sessionCookie);
     expect(response.status).toBe(200);
 
     const [row] = await getInactiveRows(organization.id);
@@ -112,7 +112,7 @@ describe('Draft context invite deferral', async () => {
       .update(organizationsTable)
       .set({ publishedAt: new Date().toISOString() })
       .where(eq(organizationsTable.id, organization.id));
-    await dispatchDeferredInvites({ var: { db, user: admin } } as unknown as UserContext, {
+    await dispatchDeferredInvites(publisherContext(admin), {
       channelIds: [organization.id],
     });
 
@@ -128,7 +128,7 @@ describe('Draft context invite deferral', async () => {
     const originalTokenId = beforeRow.tokenId;
     expect(beforeRow.remindedAt).toBeNull();
 
-    const ctx = { var: { db, user: admin } } as unknown as UserContext;
+    const ctx = publisherContext(admin);
     const first = await dispatchDeferredInvites(ctx, { channelIds: [organization.id] });
     expect(first.dispatched).toBe(1);
 
@@ -154,7 +154,7 @@ describe('Draft context invite deferral', async () => {
       .update(organizationsTable)
       .set({ publishedAt: new Date().toISOString() })
       .where(eq(organizationsTable.id, organization.id));
-    await dispatchDeferredInvites({ var: { db, user: admin } } as unknown as UserContext, {
+    await dispatchDeferredInvites(publisherContext(admin), {
       channelIds: [organization.id],
     });
 
@@ -178,7 +178,7 @@ describe('Draft context invite deferral', async () => {
     const admin = await createOrganizationAdminUser(
       'admin@example.com',
       organization.id,
-      'admin',
+      adminRole,
       true,
       organization.tenantId,
     );
@@ -214,7 +214,7 @@ describe('Draft context invite deferral', async () => {
     const admin = await createOrganizationAdminUser(
       'admin@example.com',
       organization.id,
-      'admin',
+      adminRole,
       true,
       organization.tenantId,
     );

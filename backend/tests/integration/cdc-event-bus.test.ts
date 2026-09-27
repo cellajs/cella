@@ -21,7 +21,6 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
   let cdcHarness: Awaited<ReturnType<typeof startInProcessCdcWorker>>;
   let testOrg: { id: string; slug: string; tenantId: string };
   let testUser: { id: string; email: string };
-  // Ancestor chain derived from the app hierarchy; an org-only app seeds nothing.
   let plan: TestEntityHierarchyPlan;
 
   beforeAll(async () => {

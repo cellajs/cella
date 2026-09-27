@@ -2,6 +2,7 @@ import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { modeSecret } from '#/env';
+import { adminRole } from '../fixtures';
 import { expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -60,7 +61,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
     other = await createTestTenant(call, 'materialize-other');
     // Members update their own attachments only ('own' in the permission config), and this one is the owner's.
     member = await createOrgUser(call, owner.tenantId, owner.organization.id, 'materialize-member');
-    admin = await createOrgUser(call, owner.tenantId, owner.organization.id, 'materialize-admin', 'admin');
+    admin = await createOrgUser(call, owner.tenantId, owner.organization.id, 'materialize-admin', adminRole);
     attachment = await seedAttachment({
       tenantId: owner.tenantId,
       organizationId: owner.organization.id,

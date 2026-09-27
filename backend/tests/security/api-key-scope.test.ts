@@ -1,12 +1,13 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { updateOrganization } from 'sdk';
-import { type AccessScope, hierarchy } from 'shared';
+import type { AccessScope } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { organizationsTable } from '#/modules/organization/organization-db';
+import { adminRole } from '../fixtures';
 import { createTestOrganization } from '../helpers';
 import {
   bearerHeaders,
@@ -22,7 +23,6 @@ import { clearSecurityTestData, createOrgUser } from './helpers';
  * A secret key may narrow what its service account can do, never widen it. The key doubles as the account's client
  * secret at the token endpoint, so the token minted with it must stay within the key's scopes.
  */
-const adminRole = hierarchy.getMostPrivilegedRole('organization');
 
 describe('API key scopes at the token endpoint', async () => {
   const call = await createAppClient();

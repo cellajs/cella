@@ -21,7 +21,6 @@ import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
 import { insertSession } from './session-helpers';
 
-// The suite mocks every limiter as a pass-through (tests/setup.ts); this file needs the real one.
 vi.unmock('#/middlewares/rate-limiter/core');
 /** A fresh client IP per test: limiter rows outlive a run, and the IP-keyed budgets must start empty. */
 const randomIp = () => `198.51.${Math.floor(Math.random() * 256)}.${1 + Math.floor(Math.random() * 254)}`;

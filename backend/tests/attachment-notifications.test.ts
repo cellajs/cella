@@ -1,6 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { type GetNotificationsResponse, getNotifications, updateAttachment } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -14,9 +14,9 @@ import { fanOutNotifications } from '#/modules/notification/operations/fan-out';
 import { sendPendingInstantEmails } from '#/modules/notification/operations/send-instant-emails';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
-import { defaultHeaders } from './fixtures';
+import { adminRole, defaultHeaders } from './fixtures';
 import { createTestUser } from './helpers';
-import { cleanupEntityHierarchy, seedAttachmentHome } from './hierarchy-helpers';
+import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -127,7 +127,7 @@ describe('Attachment mentions (template notification source)', async () => {
       tenant.tenantId,
       tenant.organization.id,
       'attachment-mentions-member',
-      hierarchy.getMostPrivilegedRole('organization'),
+      adminRole,
     );
     stranger = await createTestUser('attachment-mentions-stranger@security-test.com');
 
@@ -145,8 +145,7 @@ describe('Attachment mentions (template notification source)', async () => {
       },
       attachmentId,
     );
-    // buildInsertableProduct returns a config-derived Record, so the insert type needs a cast.
-    await db.insert(attachmentsTable).values(row as typeof attachmentsTable.$inferInsert);
+    await insertAttachmentRow(row);
   });
 
   afterAll(async () => {

@@ -2,7 +2,6 @@ import { eq } from 'drizzle-orm';
 import {
   deleteMe,
   deleteUsers,
-  getMe,
   revokeMySessions,
   signOut,
   startImpersonation,
@@ -15,7 +14,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { createSession, type SignInContext } from '#/modules/auth/general/helpers/session';
 import { usersTable } from '#/modules/user/user-db';
-import { overrideConfig } from '../fixtures';
+import { adminRole, overrideConfig } from '../fixtures';
 import {
   authCookie,
   createOrganizationAdminUser,
@@ -34,6 +33,7 @@ import {
   cancelOpenStreams,
   expectClosedWith,
   expectReleased,
+  expectSignedOut,
   expectStillOpen,
   impersonationSetBy,
   insertSession,
@@ -41,7 +41,7 @@ import {
   openStream,
   openUnreadStream,
   sessionSetBy,
-  type TestSession,
+  warmSession,
 } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
@@ -59,48 +59,39 @@ afterEach(async () => {
 describe('Ending a session closes its stream and its cached entry', async () => {
   const call = await createAppClient();
 
-  /** Warms the auth cache for a session: the next request hits the cached entry, not the database. */
-  const warm = async (session: TestSession) =>
-    expect((await call(getMe, { headers: session.headers })).response.status).toBe(200);
-
-  const expectRefused = async (session: TestSession, type: string) => {
-    const { error, response } = await call(getMe, { headers: session.headers });
-    await expectRefusal({ response, error }, 401, type);
-  };
-
   it('must not keep a signed-out session live via its open stream or the auth cache', async () => {
     const user = await createTestUser('sign-out@security-test.com');
     const [ending, other] = [await insertSession(user), await insertSession(user)];
-    await warm(ending);
-    await warm(other);
+    await warmSession(ending);
+    await warmSession(other);
     const [endingStream, otherStream] = [await openStream(user.id, ending), await openStream(user.id, other)];
 
     expect((await call(signOut, { headers: ending.headers })).response.status).toBe(204);
 
     await expectClosedWith(endingStream, 'unauthorized');
-    await expectRefused(ending, 'session_revoked');
+    await expectSignedOut(ending.cookie, 'session_revoked');
     expect(await sessionRow(ending.id)).toMatchObject({ revocationReason: 'sign_out', revokedBy: user.id });
 
     expectStillOpen(user.id, otherStream);
-    await warm(other);
+    await warmSession(other);
   });
 
   it('must not keep a session revoked from another device live via its open stream or the auth cache', async () => {
     const user = await createTestUser('revoke-other@security-test.com');
     const [current, revoked] = [await insertSession(user), await insertSession(user)];
-    await warm(current);
-    await warm(revoked);
+    await warmSession(current);
+    await warmSession(revoked);
     const [currentStream, revokedStream] = [await openStream(user.id, current), await openStream(user.id, revoked)];
 
     const { response } = await call(revokeMySessions, { body: { ids: [revoked.id] }, headers: current.headers });
     expect(response.status).toBe(200);
 
     await expectClosedWith(revokedStream, 'unauthorized');
-    await expectRefused(revoked, 'session_revoked');
+    await expectSignedOut(revoked.cookie, 'session_revoked');
     expect(await sessionRow(revoked.id)).toMatchObject({ revocationReason: 'other_session', revokedBy: user.id });
 
     expectStillOpen(user.id, currentStream);
-    await warm(current);
+    await warmSession(current);
   });
 
   it("must not keep an ended session's stream live via another stream of the user that stopped reading", async () => {
@@ -131,7 +122,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     const otherRegular = await insertSession(user);
     // Proven with a second factor while MFA was on before: enabling MFA again leaves it standing.
     const earlierMfa = await insertSession(user, { type: 'mfa' });
-    for (const session of [current, otherRegular, earlierMfa]) await warm(session);
+    for (const session of [current, otherRegular, earlierMfa]) await warmSession(session);
     const currentStream = await openStream(user.id, current);
     const otherStream = await openStream(user.id, otherRegular);
     const mfaStream = await openStream(user.id, earlierMfa);
@@ -143,14 +134,14 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     // reconnects on; the other browser lost its session for good.
     await expectClosedWith(currentStream, 'session_replaced');
     await expectClosedWith(otherStream, 'unauthorized');
-    await expectRefused(current, 'session_revoked');
-    await expectRefused(otherRegular, 'session_revoked');
+    await expectSignedOut(current.cookie, 'session_revoked');
+    await expectSignedOut(otherRegular.cookie, 'session_revoked');
     expect(await sessionRow(current.id)).toMatchObject({ revocationReason: 'replaced', revokedBy: user.id });
     expect(await sessionRow(otherRegular.id)).toMatchObject({ revocationReason: 'mfa_enabled', revokedBy: user.id });
 
-    await warm(await sessionSetBy(response));
+    await warmSession(await sessionSetBy(response));
     expectStillOpen(user.id, mfaStream);
-    await warm(earlierMfa);
+    await warmSession(earlierMfa);
   });
 
   describe('sign-in housekeeping', () => {
@@ -179,19 +170,19 @@ describe('Ending a session closes its stream and its cached entry', async () => 
       const user = await createTestUser('cap@security-test.com');
       const oldest = await insertSession(user, { ageMs: 120_000 });
       const newer = await insertSession(user, { ageMs: 60_000 });
-      await warm(oldest);
-      await warm(newer);
+      await warmSession(oldest);
+      await warmSession(newer);
       const [oldestStream, newerStream] = [await openStream(user.id, oldest), await openStream(user.id, newer)];
 
       const newest = await signIn(user, null);
 
       await expectClosedWith(oldestStream, 'unauthorized');
-      await expectRefused(oldest, 'session_revoked');
+      await expectSignedOut(oldest.cookie, 'session_revoked');
       expect(await sessionRow(oldest.id)).toMatchObject({ revocationReason: 'session_cap', revokedBy: null });
 
       expectStillOpen(user.id, newerStream);
-      await warm(newer);
-      await warm(newest);
+      await warmSession(newer);
+      await warmSession(newest);
     });
 
     it('must not keep a session replaced in the same browser live via its open stream or the auth cache', async () => {
@@ -199,8 +190,8 @@ describe('Ending a session closes its stream and its cached entry', async () => 
       const deviceId = nanoid(24);
       const earlier = await signIn(user, deviceId);
       const elsewhere = await signIn(user, nanoid(24));
-      await warm(earlier);
-      await warm(elsewhere);
+      await warmSession(earlier);
+      await warmSession(elsewhere);
       const [earlierStream, elsewhereStream] = [
         await openStream(user.id, earlier),
         await openStream(user.id, elsewhere),
@@ -210,12 +201,12 @@ describe('Ending a session closes its stream and its cached entry', async () => 
 
       // The browser now holds the later session, so the client reconnects with it.
       await expectClosedWith(earlierStream, 'session_replaced');
-      await expectRefused(earlier, 'session_revoked');
+      await expectSignedOut(earlier.cookie, 'session_revoked');
       expect(await sessionRow(earlier.id)).toMatchObject({ revocationReason: 'replaced', revokedBy: null });
 
       expectStillOpen(user.id, elsewhereStream);
-      await warm(elsewhere);
-      await warm(later);
+      await warmSession(elsewhere);
+      await warmSession(later);
     });
   });
 
@@ -231,8 +222,8 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     });
     expect(started.response.status).toBe(204);
     const impersonation = await impersonationSetBy(started.response, adminSession);
-    await warm(impersonation);
-    await warm(targetOwn);
+    await warmSession(impersonation);
+    await warmSession(targetOwn);
     const impersonationStream = await openStream(target.id, impersonation);
     const targetOwnStream = await openStream(target.id, targetOwn);
 
@@ -241,16 +232,16 @@ describe('Ending a session closes its stream and its cached entry', async () => 
 
     // The browser returns to the admin's own session, so the client reconnects with it.
     await expectClosedWith(impersonationStream, 'session_replaced');
-    await expectRefused(impersonation, 'session_revoked');
+    await expectSignedOut(impersonation.cookie, 'session_revoked');
     expect(await sessionRow(impersonation.id)).toMatchObject({
       type: 'impersonation',
       revocationReason: 'impersonation_stopped',
       revokedBy: admin.id,
     });
 
-    await warm(adminSession);
+    await warmSession(adminSession);
     expectStillOpen(target.id, targetOwnStream);
-    await warm(targetOwn);
+    await warmSession(targetOwn);
   });
 
   it('must not keep a deleted account live via its open streams or the auth cache', async () => {
@@ -258,7 +249,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     const bystander = await createTestUser('bystander@security-test.com');
     const [current, other] = [await insertSession(user), await insertSession(user)];
     const bystanderSession = await insertSession(bystander);
-    for (const session of [current, other, bystanderSession]) await warm(session);
+    for (const session of [current, other, bystanderSession]) await warmSession(session);
     const currentStream = await openStream(user.id, current);
     const otherStream = await openStream(user.id, other);
     const bystanderStream = await openStream(bystander.id, bystanderSession);
@@ -267,11 +258,11 @@ describe('Ending a session closes its stream and its cached entry', async () => 
 
     await expectClosedWith(currentStream, 'unauthorized');
     await expectClosedWith(otherStream, 'unauthorized');
-    await expectRefused(current, 'no_session');
-    await expectRefused(other, 'no_session');
+    await expectSignedOut(current.cookie, 'no_session');
+    await expectSignedOut(other.cookie, 'no_session');
 
     expectStillOpen(bystander.id, bystanderStream);
-    await warm(bystanderSession);
+    await warmSession(bystanderSession);
   });
 
   it('keeps the sessions of an account whose deletion was refused (positive control)', async () => {
@@ -280,19 +271,19 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     const soleAdmin = await createOrganizationAdminUser(
       'sole-admin@security-test.com',
       org.id,
-      'admin',
+      adminRole,
       true,
       org.tenantId,
     );
     const session = await insertSession(soleAdmin);
-    await warm(session);
+    await warmSession(session);
     const stream = await openStream(soleAdmin.id, session);
 
     const { error, response } = await call(deleteMe, { headers: session.headers });
     await expectRefusal({ response, error }, 409, 'last_admin');
 
     expectStillOpen(soleAdmin.id, stream);
-    await warm(session);
+    await warmSession(session);
   });
 
   it("must not keep a user a system admin deleted live via the user's open streams or the auth cache", async () => {
@@ -302,7 +293,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     const bystander = await createTestUser('bystander@security-test.com');
     const [first, second] = [await insertSession(user), await insertSession(user)];
     const bystanderSession = await insertSession(bystander);
-    for (const session of [first, second, bystanderSession]) await warm(session);
+    for (const session of [first, second, bystanderSession]) await warmSession(session);
     const firstStream = await openStream(user.id, first);
     const secondStream = await openStream(user.id, second);
     const bystanderStream = await openStream(bystander.id, bystanderSession);
@@ -312,11 +303,11 @@ describe('Ending a session closes its stream and its cached entry', async () => 
 
     await expectClosedWith(firstStream, 'unauthorized');
     await expectClosedWith(secondStream, 'unauthorized');
-    await expectRefused(first, 'no_session');
-    await expectRefused(second, 'no_session');
+    await expectSignedOut(first.cookie, 'no_session');
+    await expectSignedOut(second.cookie, 'no_session');
 
     expectStillOpen(bystander.id, bystanderStream);
-    await warm(bystanderSession);
-    await warm(adminSession);
+    await warmSession(bystanderSession);
+    await warmSession(adminSession);
   });
 });

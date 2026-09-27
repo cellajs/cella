@@ -14,7 +14,7 @@ describe('Account deletion invalidates sessions', async () => {
   const call = await createAppClient();
 
   // GHSA-2vg6-77g8-24mp: deleting a user must not leave stale sessions behind.
-  it('should remove all sessions and passkeys when a user deletes their account', async () => {
+  it("must not keep a deleted account's sessions or passkeys via its session cookie", async () => {
     const user = await createTestUser('deleter@example.com');
     const sessionCookie = await createTestSession(user);
     const headers = { ...defaultHeaders, Cookie: sessionCookie };

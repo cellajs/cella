@@ -1,13 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { getAttachments, getConnectedApps, revokeConnectedApp, updateOrganization } from 'sdk';
-import { hierarchy } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
-import { defaultHeaders } from './fixtures';
+import { adminRole, defaultHeaders } from './fixtures';
 import { createTestOrganization } from './helpers';
 import {
   authorizationCodeToken,
@@ -20,8 +19,6 @@ import {
 } from './oauth-helpers';
 import { clearSecurityTestData, createOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
-
-const adminRole = hierarchy.getMostPrivilegedRole('organization');
 
 describe('OAuth authorization server', async () => {
   const call = await createAppClient();

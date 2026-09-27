@@ -1,4 +1,5 @@
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
+import type { OtelSDKOptions } from 'shared/otel';
 
 export const defaultHeaders = {
   'Content-Type': 'application/json',
@@ -9,6 +10,13 @@ export const defaultHeaders = {
 export const signUpUser = {
   email: 'test-user@example.com',
 };
+
+/**
+ * The organization's most and least privileged roles, read from the hierarchy: `admin` and `member` in the template,
+ * so an app with other role names runs every test unchanged.
+ */
+export const adminRole = hierarchy.getMostPrivilegedRole('organization');
+export const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 /** A config value as a test may set it: the literal types `satisfies` gives the defaults are widened. */
 type Settable<T> = T extends string
@@ -36,3 +44,16 @@ export function overrideConfig<T extends object>(target: T, overrides: { [K in k
     }
   };
 }
+
+export type TraceExporter = NonNullable<OtelSDKOptions['traceExporter']>;
+export type ExportedSpan = Parameters<TraceExporter['export']>[0][number];
+
+/** A trace exporter that keeps every span it gets in `spans`; shutting the SDK down flushes into it. */
+export const collectingExporter = (spans: ExportedSpan[]): TraceExporter => ({
+  export: (batch, done) => {
+    spans.push(...batch);
+    done({ code: 0 });
+  },
+  shutdown: async () => {},
+  forceFlush: async () => {},
+});

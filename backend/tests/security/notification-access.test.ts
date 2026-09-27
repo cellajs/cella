@@ -1,17 +1,17 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { createAttachments, type GetNotificationsResponse, getNotifications } from 'sdk';
-import { getEntityPolicies, getPolicyPermissions, hierarchy, policyMatrix } from 'shared';
+import { getEntityPolicies, getPolicyPermissions, policyMatrix } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
-import { baseDb as db, getSeedDb } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { runDigest } from '#/modules/notification/digest/run-digest';
 import { notificationPreferencesTable, notificationsTable } from '#/modules/notification/notification-db';
 import { sendPendingInstantEmails } from '#/modules/notification/operations/send-instant-emails';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { defaultHeaders } from '../fixtures';
-import { mailsTo } from '../helpers';
+import { defaultHeaders, memberRole } from '../fixtures';
+import { adminDb, mailsTo } from '../helpers';
 import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -19,12 +19,8 @@ import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 const HOUR = 60 * 60 * 1000;
 const DAY = 24 * HOUR;
-
-// Attachments sit under RLS: rename them on the admin connection.
-const adminDb = getSeedDb();
 
 /**
  * Notifications were fanned out to readers, but access changes afterwards: a member who leaves the organization, or

@@ -1,6 +1,5 @@
 import { eq } from 'drizzle-orm';
 import { createOrganizations } from 'sdk';
-import { hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoidTenant } from 'shared/utils/nanoid';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -9,32 +8,20 @@ import { clearTenantCache } from '#/middlewares/guard/tenant-cache';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
-import { defaultHeaders } from '../fixtures';
+import { defaultHeaders, memberRole } from '../fixtures';
 import {
   createTestOrganization,
   createTestSession,
   createTestUser,
   type ErrorResponse,
   expectRefusal,
+  refusalOf,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
-
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
-
-/** The parts of an error answer that come from the refusal itself, without the per-request path, id and time. */
-const refusalOf = ({ status, type, name, message, severity, entityType, meta }: ErrorResponse) => ({
-  status,
-  type,
-  name,
-  message,
-  severity,
-  entityType,
-  meta,
-});
 
 /**
  * Tenant ids are six characters, so an answer that differs for a missing, an inactive and a foreign tenant lets anyone

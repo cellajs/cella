@@ -10,7 +10,7 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
 import { memberInviteWithTokenEmail, systemInviteEmail } from '../../emails';
-import { defaultHeaders, overrideConfig } from '../fixtures';
+import { adminRole, defaultHeaders, overrideConfig } from '../fixtures';
 import {
   createOrganizationAdminUser,
   createTestOrganization,
@@ -230,7 +230,7 @@ describe('Resend a pending invitation from the pending list', async () => {
     const admin = await createOrganizationAdminUser(
       'org-admin@example.com',
       organization.id,
-      'admin',
+      adminRole,
       true,
       organization.tenantId,
     );

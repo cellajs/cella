@@ -1,22 +1,9 @@
 import { nanoid } from 'nanoid';
 import pino from 'pino';
-import { createOtelSDK, type OtelSDKOptions } from 'shared/otel';
+import { createOtelSDK } from 'shared/otel';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { requestLogger } from '#/lib/pino';
-import { defaultHeaders } from '../fixtures';
-
-type Exporter = NonNullable<OtelSDKOptions['traceExporter']>;
-type ExportedSpan = Parameters<Exporter['export']>[0][number];
-
-/** Keeps every exported span; shutting the SDK down flushes into it. */
-const collectingExporter = (spans: ExportedSpan[]): Exporter => ({
-  export: (batch, done) => {
-    spans.push(...batch);
-    done({ code: 0 });
-  },
-  shutdown: async () => {},
-  forceFlush: async () => {},
-});
+import { collectingExporter, defaultHeaders, type ExportedSpan } from '../fixtures';
 
 /** One secret per carrier the app puts in a URL: a token path segment, token and OAuth query keys. */
 const secrets = {

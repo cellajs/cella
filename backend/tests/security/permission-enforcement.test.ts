@@ -8,17 +8,16 @@ import {
   resendPendingInvitation,
   updateOrganization,
 } from 'sdk';
-import { hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db, getAdminDb } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, expectRefusal } from '../helpers';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
+import { adminDb, createTestOrganization, expectRefusal } from '../helpers';
 import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
@@ -26,9 +25,6 @@ import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
-
-const [adminRole] = hierarchy.getRoles('organization');
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 type User = { id: string; email: string; sessionCookie: string };
 
@@ -61,8 +57,6 @@ interface Row {
  */
 describe('Member escalation over HTTP', async () => {
   const call = await createAppClient();
-  // Attachments sit under RLS: assert on the admin connection so a runtime_role run sees every row.
-  const adminDb = getAdminDb('permission-enforcement test');
   let shared: Fixture;
 
   const headers = (as: User) => ({ ...defaultHeaders, Cookie: as.sessionCookie });

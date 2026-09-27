@@ -16,7 +16,7 @@ import {
   updateOrganization,
   updateServiceAccount,
 } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
@@ -37,7 +37,7 @@ import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders } from '../fixtures';
 import {
   CookieJar,
   createSystemAdminUser,
@@ -68,7 +68,6 @@ import { clearSecurityTestData, createOrgUser } from './helpers';
 import { insertStaleSession } from './session-helpers';
 
 const REDIRECT_URI = 'http://localhost:9999/callback';
-const adminRole = hierarchy.getMostPrivilegedRole('organization');
 const APP_ID = 'grant-policy-portfolio';
 const APP_LOGO = 'https://cdn.example/portfolio.png';
 const CIMD_ID = 'https://mcp-client.example/oauth/client.json';

@@ -1,19 +1,17 @@
 import { eq } from 'drizzle-orm';
 import { membershipInvite } from 'sdk';
-import { hierarchy } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { markEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 import { createInvitation } from './helpers';
 
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 const invitedEmail = 'newcomer@example.com';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
@@ -29,7 +27,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
     const admin = await createOrganizationAdminUser(
       `admin${index}@example.com`,
       organization.id,
-      'admin',
+      adminRole,
       true,
       organization.tenantId,
     );

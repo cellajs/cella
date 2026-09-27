@@ -7,7 +7,7 @@ import { baseDb as db } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { defaultHeaders } from './fixtures';
-import { cleanupEntityHierarchy, seedAttachmentHome } from './hierarchy-helpers';
+import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -27,7 +27,6 @@ const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 10
 describe('Attachment seq reads', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
-  // Ancestor chain derived from the app hierarchy; an org-only app seeds nothing.
   let plan: TestEntityHierarchyPlan;
 
   const listAttachments = async (query: Record<string, string | number>) => {
@@ -70,8 +69,7 @@ describe('Attachment seq reads', async () => {
       makeRow(attachmentIds.seq10, 10, 'seq10'),
     ];
     for (const row of rows) {
-      // buildInsertableProduct returns a config-derived Record, so the insert type needs a cast.
-      await db.insert(attachmentsTable).values(row as typeof attachmentsTable.$inferInsert);
+      await insertAttachmentRow(row);
     }
   });
 

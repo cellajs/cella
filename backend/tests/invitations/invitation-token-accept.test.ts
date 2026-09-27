@@ -1,13 +1,13 @@
 import { eq } from 'drizzle-orm';
-import { acceptInvitationToken, getMembers, invokeToken } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
+import { acceptInvitationToken, invokeToken } from 'sdk';
+import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import {
   authCookie,
   createOrganizationAdminUser,
@@ -19,9 +19,8 @@ import {
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
-import { createInvitation } from './helpers';
+import { createInvitation, readMembersAs } from './helpers';
 
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 const invitedEmail = 'invited-address@example.com';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'magic'], selfRegistration: true });
@@ -85,14 +84,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     const { organization, invitationCookie } = await setup();
     const me = await createTestUser('my-account@example.com');
     const sessionCookie = await createTestSession(me);
-    const readMembers = () =>
-      call(getMembers, {
-        path: { tenantId: organization.tenantId, organizationId: organization.id },
-        query: { entityId: organization.id, entityType: 'organization' },
-        headers: { ...defaultHeaders, Cookie: sessionCookie },
-      });
-
-    // The tenant refuses while invited only: the user holds no membership in it yet, so the tenant guard answers.
+    const readMembers = () => readMembersAs(organization, sessionCookie);
     expect((await readMembers()).response.status).toBe(403);
 
     const { response } = await accept([sessionCookie, invitationCookie]);
@@ -208,7 +200,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     const me = await createOrganizationAdminUser(
       'my-account@example.com',
       organization.id,
-      'admin',
+      adminRole,
       true,
       organization.tenantId,
     );
@@ -224,7 +216,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     expect(response.status).toBe(200);
     const memberships = await membershipsOf(me.id);
     expect(memberships).toHaveLength(1);
-    expect(memberships[0].role).toBe('admin');
+    expect(memberships[0].role).toBe(adminRole);
     expect(
       await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id)),
     ).toHaveLength(0);

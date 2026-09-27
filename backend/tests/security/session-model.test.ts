@@ -6,18 +6,10 @@ import { baseDb as db } from '#/db/db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import {
-  authCookie,
-  cookieChange,
-  cookiesAfter,
-  createSystemAdminUser,
-  createTestUser,
-  expectRefusal,
-  sessionRow,
-} from '../helpers';
+import { authCookie, cookieChange, cookiesAfter, createSystemAdminUser, createTestUser, sessionRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
-import { insertImpersonation, insertSession, type TestSession } from './session-helpers';
+import { expectSignedOut, insertImpersonation, insertSession, warmSession } from './session-helpers';
 
 afterEach(async () => {
   vi.restoreAllMocks();
@@ -31,6 +23,7 @@ afterEach(async () => {
 const failSessionLookup = ({ skip = 0 } = {}) => {
   const select = db.select.bind(db);
   let seen = 0;
+  // One implementation stands in for every overload of `select`, which no single function signature matches.
   return vi.spyOn(db, 'select').mockImplementation(((fields?: Record<string, unknown>) => {
     if (fields && 'revokedAt' in fields && 'systemRole' in fields && seen++ === skip) {
       throw new Error('Connection terminated unexpectedly');
@@ -49,24 +42,16 @@ describe('session model', async () => {
 
   const me = (cookie: string) => call(getMe, { headers: { ...defaultHeaders, Cookie: cookie } });
 
-  /** Warms the auth cache for a session: the next request hits the cached entry, not the database. */
-  const warm = async (session: TestSession) => expect((await me(session.cookie)).response.status).toBe(200);
-
-  const expectRefused = async (cookie: string, type: string) => {
-    const { error, response } = await me(cookie);
-    await expectRefusal({ response, error }, 401, type);
-  };
-
   it('must not authenticate a forged secret via a cached session id', async () => {
     const user = await createTestUser('cached@security-test.com');
     const session = await insertSession(user);
-    await warm(session);
+    await warmSession(session);
 
     // The attacker signs cookies and knows the session id, not the session's token.
-    await expectRefused(authCookie('session', `${hashToken(nanoid(40))}.${session.id}.`), 'no_session');
-    await expectRefused(authCookie('session', nanoid(40)), 'no_session');
+    await expectSignedOut(authCookie('session', `${hashToken(nanoid(40))}.${session.id}.`), 'no_session');
+    await expectSignedOut(authCookie('session', nanoid(40)), 'no_session');
 
-    await warm(session);
+    await warmSession(session);
   });
 
   it("must not authenticate via a sessions row's stored hash replayed as a cookie", async () => {
@@ -74,23 +59,23 @@ describe('session model', async () => {
     const session = await insertSession(user);
     const { secret, id } = await sessionRow(session.id);
 
-    await expectRefused(authCookie('session', `${secret}.${id}.`), 'no_session');
-    await expectRefused(authCookie('session', secret), 'no_session');
+    await expectSignedOut(authCookie('session', `${secret}.${id}.`), 'no_session');
+    await expectSignedOut(authCookie('session', secret), 'no_session');
 
-    await warm(session);
+    await warmSession(session);
   });
 
   it('must not authenticate an expired session via a warm cache', async () => {
     const user = await createTestUser('expiring@security-test.com');
     const expiring = await insertSession(user, { expiresInMs: 1500 });
     const live = await insertSession(user);
-    await warm(expiring);
-    await warm(live);
+    await warmSession(expiring);
+    await warmSession(live);
 
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
-    await expectRefused(expiring.cookie, 'session_expired');
-    await warm(live);
+    await expectSignedOut(expiring.cookie, 'session_expired');
+    await warmSession(live);
   });
 
   it('must not sign a user out for good via a failed session lookup', async () => {
@@ -163,6 +148,6 @@ describe('session model', async () => {
     });
     const back = await me(cookiesAfter(browser, genuine.response));
     expect((back.data as { user: { id: string } }).user.id).toBe(admin.id);
-    await warm(victimSession);
+    await warmSession(victimSession);
   });
 });

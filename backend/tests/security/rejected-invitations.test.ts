@@ -1,6 +1,5 @@
 import { and, eq } from 'drizzle-orm';
 import { acceptInvitationToken, handleMembershipInvitation, membershipInvite } from 'sdk';
-import { hierarchy } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { markEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
@@ -9,7 +8,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { getIsoDate } from '#/utils/iso-date';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
@@ -17,9 +16,6 @@ import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
-
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
-const [adminRole] = hierarchy.getRoles('organization');
 
 type PendingList = { items: { id: string; email: string }[]; total: number };
 

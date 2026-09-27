@@ -1,15 +1,15 @@
 import { eq } from 'drizzle-orm';
 import { createAttachments } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db, getAdminDb } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { defaultHeaders } from '../fixtures';
-import { createTestOrganization } from '../helpers';
+import { defaultHeaders, memberRole } from '../fixtures';
+import { adminDb, createTestOrganization } from '../helpers';
 import { attachmentBody, cleanupEntityHierarchy, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -26,8 +26,6 @@ type Created = { data: { id: string; createdBy: { id: string } | null }[] };
  */
 describe('Idempotent attachment creates', async () => {
   const call = await createAppClient();
-  // Attachments sit under RLS and activities are read-only for runtime_role: arrange and assert as admin.
-  const adminDb = getAdminDb('attachment-idempotency test');
   let organization: { id: string; tenantId: string };
   let plan: TestEntityHierarchyPlan;
   /** An organization in another tenant that the owner is a member of too. */
@@ -90,7 +88,7 @@ describe('Idempotent attachment creates', async () => {
       organizationId: elsewhere.id,
       tenantId: elsewhere.tenantId,
       channelType: 'organization',
-      role: hierarchy.getLeastPrivilegedRole('organization'),
+      role: memberRole,
       displayOrder: 2,
       createdBy: owner.id,
     });

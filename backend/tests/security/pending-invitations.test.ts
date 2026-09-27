@@ -1,13 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { membershipInvite, resendPendingInvitation } from 'sdk';
-import { hierarchy } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
-import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, createTestUser, sentMails } from '../helpers';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
+import { createTestOrganization, createTestUser, rawJsonRequest, sentMails } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -15,9 +14,6 @@ import { clearSecurityTestData, createOrgUser } from './helpers';
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 type PendingRow = Record<string, unknown> & { id: string; email: string };
-
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
-const [adminRole] = hierarchy.getRoles('organization');
 
 /** An account's sign-up address, the second address it proved, and its avatar: what an inviter must not learn. */
 const accountPrimary = 'pending-account-primary@security-test.com';
@@ -33,19 +29,15 @@ const newcomer = 'pending-newcomer@security-test.com';
  */
 describe('Pending invitations list', async () => {
   const call = await createAppClient();
-  const { baseApp } = await import('#/routes');
   let organization: { id: string; tenantId: string };
   let inviter: { id: string; sessionCookie: string };
   let member: { id: string; email: string; sessionCookie: string };
 
-  /** Raw JSON: the SDK's response parsing would hide a field the schema does not declare. */
   const listPending = async (as: { sessionCookie: string }) => {
     const query = new URLSearchParams({ entityId: organization.id, entityType: 'organization' });
-    const response = await baseApp.request(
-      `/${organization.tenantId}/${organization.id}/memberships/pending?${query}`,
-      { headers: { ...defaultHeaders, Cookie: as.sessionCookie } },
-    );
-    return { status: response.status, items: ((await response.json()) as { items: PendingRow[] }).items };
+    const path = `/${organization.tenantId}/${organization.id}/memberships/pending?${query}`;
+    const { status, body } = await rawJsonRequest(path, as.sessionCookie);
+    return { status, items: (body as { items: PendingRow[] }).items };
   };
 
   const invite = (emails: string[]) =>

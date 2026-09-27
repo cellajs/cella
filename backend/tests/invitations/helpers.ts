@@ -1,4 +1,5 @@
-import { type EntityRole, hierarchy } from 'shared';
+import { getMembers } from 'sdk';
+import type { EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { baseDb as db } from '#/db/db';
@@ -6,7 +7,9 @@ import { mockPastIsoDate } from '#/mocks';
 import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { createDate } from '#/utils/time-span';
+import { defaultHeaders, memberRole } from '../fixtures';
 import { authCookie, insertTestToken } from '../helpers';
+import { createAppClient } from '../test-client';
 
 interface CreateInvitationOpts {
   organization: { id: string; tenantId: string };
@@ -24,7 +27,7 @@ export async function createInvitation({
   organization,
   email,
   createdBy,
-  role = hierarchy.getLeastPrivilegedRole('organization'),
+  role = memberRole,
   boundTo = null,
   token: tokenState = 'fresh',
 }: CreateInvitationOpts) {
@@ -68,4 +71,17 @@ export async function createInvitation({
   const invitationCookie = authCookie('invitation', rawSingleUseToken);
 
   return { inactiveMembership, token, rawToken, rawSingleUseToken, invitationCookie };
+}
+
+/**
+ * The organization's members, as the browser holding `cookie` asks for them. A user who is invited only holds no
+ * membership in the tenant yet, so the tenant guard refuses them.
+ */
+export async function readMembersAs(organization: { id: string; tenantId: string }, cookie: string) {
+  const call = await createAppClient();
+  return call(getMembers, {
+    path: { tenantId: organization.tenantId, organizationId: organization.id },
+    query: { entityId: organization.id, entityType: 'organization' },
+    headers: { ...defaultHeaders, Cookie: cookie },
+  });
 }

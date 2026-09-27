@@ -1,15 +1,13 @@
 import type { SSEStreamingApi } from 'hono/streaming';
-import { appConfig, type EntityRole, hierarchy } from 'shared';
+import { appConfig, type EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { dispatchMoveOuts } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { StreamNotification } from '#/schemas';
+import { memberRole } from '../../../../tests/fixtures';
 import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamProductEvent } from './types';
-
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 /**
  * Only subscribers losing read access receive `moveOut` with the old path. The draft veto creates

@@ -3,10 +3,9 @@ import { join } from 'node:path';
 import { eq, inArray, sql } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { getAdminDb } from '#/db/db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { sideEffect } from '../scripts/migrations/20-channel-path-backfill.migration';
-import { createTestOrganization } from './helpers';
+import { adminDb, createTestOrganization } from './helpers';
 import { clearSecurityTestData } from './security/helpers';
 
 const drizzleDir = join(import.meta.dirname, '../drizzle');
@@ -17,7 +16,6 @@ const drizzleDir = join(import.meta.dirname, '../drizzle');
  * rewrote them: a side-effect migration backfills every channel's path at deploy.
  */
 describe('channel path backfill', () => {
-  const adminDb = getAdminDb('channel path backfill test');
   const stray = generateId();
   let organization: Awaited<ReturnType<typeof createTestOrganization>>;
 

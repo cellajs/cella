@@ -1,13 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { getMcpProtectedResourceMetadata, handleMcp } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { getAdminDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
-import { defaultHeaders } from './fixtures';
-import { createTestOrganization } from './helpers';
+import { adminRole, defaultHeaders } from './fixtures';
+import { adminDb, createTestOrganization } from './helpers';
 import { homeColumns, seedAttachmentHome } from './hierarchy-helpers';
 import {
   authorizationCodeToken,
@@ -21,9 +20,6 @@ import {
 } from './oauth-helpers';
 import { clearSecurityTestData, createOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
-
-// Attachments sit behind tenant RLS, so assertions read them as admin; under TEST_DB_ROLE=runtime `db` sees none.
-const adminDb = getAdminDb('test assertions');
 
 type Rpc = {
   jsonrpc: '2.0';
@@ -50,7 +46,6 @@ const buildItem = (name: string, filename: string, ctx: { home: Record<string, s
   keys: { original: `${ctx.org.id}/uploads/${filename}` },
 });
 const CLIENT_ID = 'test-portfolio';
-const adminRole = hierarchy.getMostPrivilegedRole('organization');
 
 describe('MCP on the substrate (Phase E)', async () => {
   const call = await createAppClient();

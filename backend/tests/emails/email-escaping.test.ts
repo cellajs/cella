@@ -1,4 +1,3 @@
-import { hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { describeDigestRow } from '#/modules/notification/digest/build-digest';
 import { mentionEmail } from '#/modules/notification/emails/mention-email';
@@ -11,18 +10,18 @@ import {
 } from '../../emails';
 import { EmailButton } from '../../emails/components';
 import { render } from '../../emails/renderer/render';
+import { memberRole } from '../fixtures';
 
 /** A display name as OAuth sign-up can store it: user and organization names reach these mails unvalidated. */
 const hostile = '<a href="https://evil.example">x</a>';
 const anchorToEvil = /<a\b[^>]*evil\.example/i;
 const doubleEscaped = /&amp;(?:amp|lt|gt|quot|#)/;
 
-const role = hierarchy.getLeastPrivilegedRole('organization');
 const link = 'https://app.example.test/invite';
 
 describe('email templates escape names interpolated into HTML', () => {
   it('must not inject a link into a member invite via the sender or organization name', async () => {
-    const statics = { senderName: hostile, senderThumbnailUrl: null, entityName: hostile, role };
+    const statics = { senderName: hostile, senderThumbnailUrl: null, entityName: hostile, role: memberRole };
     const translated = memberInviteEmail.translate('en', statics);
     const html = await render(memberInviteEmail.component({ ...translated, name: 'Emily', memberInviteLink: link }));
 
@@ -33,7 +32,7 @@ describe('email templates escape names interpolated into HTML', () => {
   });
 
   it('must not inject a link into an invite with token, a member-added or a system invite mail', async () => {
-    const statics = { senderName: hostile, senderThumbnailUrl: null, entityName: hostile, role };
+    const statics = { senderName: hostile, senderThumbnailUrl: null, entityName: hostile, role: memberRole };
     const withToken = memberInviteWithTokenEmail.translate('en', statics);
     const added = memberAddedEmail.translate('en', statics);
     const system = systemInviteEmail.translate('en', { senderName: hostile, senderThumbnailUrl: null });
@@ -85,7 +84,7 @@ describe('email button', () => {
 });
 
 describe('email plain-text parts keep names as typed', () => {
-  const statics = { senderName: 'Jane', senderThumbnailUrl: null, entityName: 'R&D <Lab>', role };
+  const statics = { senderName: 'Jane', senderThumbnailUrl: null, entityName: 'R&D <Lab>', role: memberRole };
 
   it('leaves the subject and preview unescaped, and the rendered mail escapes them once', async () => {
     const translated = memberInviteEmail.translate('en', statics);

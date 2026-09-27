@@ -1,15 +1,16 @@
 import { eq } from 'drizzle-orm';
-import { appConfig, hierarchy } from 'shared';
+import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import { baseDb, getAdminDb } from '#/db/db';
+import { baseDb } from '#/db/db';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { buildUnsubscribeLink, type UnsubscribeCategory } from '#/modules/notification/helpers/category-token';
 import { notificationPreferencesTable } from '#/modules/notification/notification-db';
 import { findOrCreatePreferences } from '#/modules/notification/notification-queries';
 import { usersTable } from '#/modules/user/user-db';
 import { mockUser } from '#/modules/user/user-mocks';
-import { defaultHeaders } from '../fixtures';
+import { defaultHeaders, memberRole } from '../fixtures';
 import {
+  adminDb,
   createOrganizationAdminUser,
   createSystemAdminUser,
   createTestOrganization,
@@ -19,25 +20,23 @@ import {
 } from '../helpers';
 import { clearSecurityTestData } from './helpers';
 
-const adminDb = () => getAdminDb('unsubscribe link test');
-
 /** A user created the way sign-up creates one, subscribed to the newsletter. */
 const signUp = async (label: string) => {
   const user = await handleCreateUser(
     { var: { db: baseDb } },
     { newUser: mockUser({ email: `${label}@example.test` }) },
   );
-  await adminDb().update(usersTable).set({ newsletter: true }).where(eq(usersTable.id, user.id));
+  await adminDb.update(usersTable).set({ newsletter: true }).where(eq(usersTable.id, user.id));
   return user;
 };
 
 /** Everything an unsubscribe link may switch, read past RLS: the newsletter flag on the user and the email preferences. */
 const emailSettings = async (userId: string) => {
-  const [user] = await adminDb()
+  const [user] = await adminDb
     .select({ newsletter: usersTable.newsletter })
     .from(usersTable)
     .where(eq(usersTable.id, userId));
-  const [preferences] = await adminDb()
+  const [preferences] = await adminDb
     .select({ digest: notificationPreferencesTable.digest, mentionEmail: notificationPreferencesTable.mentionEmail })
     .from(notificationPreferencesTable)
     .where(eq(notificationPreferencesTable.userId, userId));
@@ -105,16 +104,15 @@ describe('Unsubscribe links', () => {
 
   it('must not skip a member who signed up long ago, and must not mail one who unsubscribed', async () => {
     const organization = await createTestOrganization();
-    const role = hierarchy.getLeastPrivilegedRole('organization');
     const member = async (label: string, newsletter: boolean) => {
       const user = await createOrganizationAdminUser(
         `${label}@example.test`,
         organization.id,
-        role,
+        memberRole,
         true,
         organization.tenantId,
       );
-      await adminDb().update(usersTable).set({ newsletter }).where(eq(usersTable.id, user.id));
+      await adminDb.update(usersTable).set({ newsletter }).where(eq(usersTable.id, user.id));
       return user;
     };
     const reader = await member('newsletter-reader', true);
@@ -127,7 +125,7 @@ describe('Unsubscribe links', () => {
       headers: { ...defaultHeaders, Cookie: await createTestSession(admin) },
       body: JSON.stringify({
         organizationIds: [organization.id],
-        roles: [role],
+        roles: [memberRole],
         subject: 'News',
         content: '<p>News</p>',
       }),

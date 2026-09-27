@@ -1,38 +1,30 @@
 import { and, eq } from 'drizzle-orm';
-import { hierarchy } from 'shared';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { defaultHeaders } from '../fixtures';
-import { createTestOrganization } from '../helpers';
+import { adminRole, memberRole } from '../fixtures';
+import { createTestOrganization, rawJsonRequest } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-const [adminRole] = hierarchy.getRoles('organization');
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
-
 type MemberRow = { id: string; membership: Record<string, unknown> };
 
 /** Archive, mute and menu order are each member's own view of a channel, so a members list shows them for the caller's row only. */
 describe("A member's personal view in the members list", async () => {
   const call = await createAppClient();
-  const { baseApp } = await import('#/routes');
   let organization: { id: string; tenantId: string };
   let viewer: { id: string; sessionCookie: string };
   let other: { id: string; sessionCookie: string };
 
-  /** Raw JSON: the SDK's response parsing would hide a field the schema does not declare. */
   const listMembers = async (as: { sessionCookie: string }) => {
     const query = new URLSearchParams({ entityId: organization.id, entityType: 'organization' });
-    const response = await baseApp.request(
-      `/${organization.tenantId}/${organization.id}/memberships/members?${query}`,
-      { headers: { ...defaultHeaders, Cookie: as.sessionCookie } },
-    );
-    expect(response.status).toBe(200);
-    return ((await response.json()) as { items: MemberRow[] }).items;
+    const path = `/${organization.tenantId}/${organization.id}/memberships/members?${query}`;
+    const { status, body } = await rawJsonRequest(path, as.sessionCookie);
+    expect(status).toBe(200);
+    return (body as { items: MemberRow[] }).items;
   };
 
   beforeAll(async () => {

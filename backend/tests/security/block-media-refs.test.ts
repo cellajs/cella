@@ -5,15 +5,14 @@ import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateServerHLC } from '#/core/stx';
-import { getAdminDb } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from '../fixtures';
-import { expectRefusal } from '../helpers';
-import { cleanupEntityHierarchy, seedAttachmentHome } from '../hierarchy-helpers';
+import { adminDb, expectRefusal } from '../helpers';
+import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
@@ -40,8 +39,6 @@ const urlsIn = (description: string | null) =>
  */
 describe('Block media references', async () => {
   const call = await createAppClient();
-  // Attachments sit under RLS: arrange and assert on the admin connection so a runtime_role run sees the row.
-  const adminDb = getAdminDb('block-media-refs test');
   const attachmentId = generateId();
   const original = documentOf();
   let owner: TestTenant;
@@ -119,8 +116,7 @@ describe('Block media references', async () => {
       },
       attachmentId,
     );
-    // buildInsertableProduct returns a config-derived Record, so the insert type needs a cast.
-    await adminDb.insert(attachmentsTable).values(row as typeof attachmentsTable.$inferInsert);
+    await insertAttachmentRow(row);
   });
 
   afterAll(async () => {

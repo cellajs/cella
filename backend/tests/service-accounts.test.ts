@@ -11,7 +11,7 @@ import {
   updateOrganization,
   updateServiceAccount,
 } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, type EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { actorsTable } from '#/modules/actors/actors-db';
@@ -20,7 +20,7 @@ import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { hashToken } from '#/utils/hash-token';
-import { defaultHeaders } from './fixtures';
+import { adminRole, defaultHeaders, memberRole } from './fixtures';
 import { createTestOrganization, type ErrorResponse, expectRefusal } from './helpers';
 import { bearerHeaders } from './oauth-helpers';
 import { clearSecurityTestData, createOrgUser } from './security/helpers';
@@ -33,19 +33,19 @@ type Scope = NonNullable<NonNullable<NonNullable<CreateServiceAccountData['body'
 describe('Service accounts and API keys', async () => {
   const call = await createAppClient();
 
-  async function orgWithAdmin(role: 'admin' | 'member' = 'admin') {
+  async function orgWithAdmin(role: EntityRole = adminRole) {
     const org = await createTestOrganization();
     const user = await createOrgUser(call, org.tenantId, org.id, `${role}-${nanoid(8)}`, role);
     return { org, user, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 
-  async function issueKey(opts: { role?: 'admin' | 'member'; scopes?: Scope[] | null; expiresAt?: string } = {}) {
+  async function issueKey(opts: { role?: EntityRole; scopes?: Scope[] | null; expiresAt?: string } = {}) {
     const ctx = await orgWithAdmin();
     const { data, response } = await call(createServiceAccount, {
       path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
       body: {
         name: 'CI bot',
-        role: opts.role ?? 'member',
+        role: opts.role ?? memberRole,
         key: { name: 'deploy', scopes: opts.scopes ?? null, expiresAt: opts.expiresAt },
       },
       headers: ctx.headers,
@@ -74,10 +74,10 @@ describe('Service accounts and API keys', async () => {
   // The role cap at the creator's own rank is unreachable with two organization roles: only an admin gets past the
   // update check, and an admin may bind either role.
   it('refuses a member creating an account', async () => {
-    const member = await orgWithAdmin('member');
+    const member = await orgWithAdmin(memberRole);
     const { response, error } = await call(createServiceAccount, {
       path: { tenantId: member.org.tenantId, organizationId: member.org.id },
-      body: { name: 'bot', role: 'member' },
+      body: { name: 'bot', role: memberRole },
       headers: member.headers,
     });
     await expectRefusal({ response, error }, 403, 'forbidden');
@@ -98,7 +98,7 @@ describe('Service accounts and API keys', async () => {
   });
 
   it('writes provenance as the service account', async () => {
-    const { org, key, account } = await issueKey({ role: 'admin' });
+    const { org, key, account } = await issueKey({ role: adminRole });
     const { response } = await call(updateOrganization, {
       path: { tenantId: org.tenantId, id: org.id },
       body: { name: 'Renamed by bot' },
@@ -110,7 +110,7 @@ describe('Service accounts and API keys', async () => {
   });
 
   it('masks the account grants with the key scopes', async () => {
-    const { org, key } = await issueKey({ role: 'admin', scopes: ['attachment:read'] });
+    const { org, key } = await issueKey({ role: adminRole, scopes: ['attachment:read'] });
     const { response } = await call(updateOrganization, {
       path: { tenantId: org.tenantId, id: org.id },
       body: { name: 'Should not happen' },
@@ -230,13 +230,13 @@ describe('Service accounts and API keys', async () => {
     const path = { tenantId: ctx.org.tenantId, organizationId: ctx.org.id };
     const first = await call(createServiceAccount, {
       path,
-      body: { name: 'one', role: 'member' },
+      body: { name: 'one', role: memberRole },
       headers: ctx.headers,
     });
     expect(first.response.status).toBe(201);
     const second = await call(createServiceAccount, {
       path,
-      body: { name: 'two', role: 'member' },
+      body: { name: 'two', role: memberRole },
       headers: ctx.headers,
     });
     expect(second.response.status).toBe(403);

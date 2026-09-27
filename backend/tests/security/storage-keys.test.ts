@@ -4,10 +4,9 @@ import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { getAdminDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { defaultHeaders } from '../fixtures';
-import { expectRefusal } from '../helpers';
+import { adminDb, expectRefusal } from '../helpers';
 import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -50,8 +49,6 @@ describe('Attachment storage keys', async () => {
       headers: { ...defaultHeaders, Cookie: attacker.sessionCookie },
     });
 
-  // Attachments sit under RLS: arrange and assert on the admin connection so a runtime_role run sees every row.
-  const adminDb = getAdminDb('storage-keys test');
   const rowExists = async (id: string) =>
     (await adminDb.select({ id: attachmentsTable.id }).from(attachmentsTable).where(eq(attachmentsTable.id, id)))
       .length > 0;

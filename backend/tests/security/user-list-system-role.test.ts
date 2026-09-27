@@ -2,8 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
-import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, type ErrorResponse, expectRefusal } from '../helpers';
+import { createTestOrganization, type ErrorResponse, expectRefusal, rawJsonRequest } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -18,16 +17,12 @@ type UserRow = { id: string; role?: string | null };
  */
 describe('System roles in the user list', async () => {
   const call = await createAppClient();
-  const { baseApp } = await import('#/routes');
   let member: { id: string; sessionCookie: string };
   let sysAdmin: { id: string; sessionCookie: string };
 
-  /** Raw JSON: the SDK's response parsing would hide a field the schema no longer declares. */
   const listUsers = async (as: { sessionCookie: string }, query: Record<string, string> = {}) => {
-    const response = await baseApp.request(`/users/users?${new URLSearchParams(query)}`, {
-      headers: { ...defaultHeaders, Cookie: as.sessionCookie },
-    });
-    return { status: response.status, body: (await response.json()) as { items: UserRow[] } & ErrorResponse };
+    const { status, body } = await rawJsonRequest(`/users/users?${new URLSearchParams(query)}`, as.sessionCookie);
+    return { status, body: body as { items: UserRow[] } & ErrorResponse };
   };
 
   beforeAll(async () => {

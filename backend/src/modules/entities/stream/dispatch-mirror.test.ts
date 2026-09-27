@@ -1,16 +1,14 @@
 import type { SSEStreamingApi } from 'hono/streaming';
-import { appConfig, type EntityRole, hierarchy } from 'shared';
+import { appConfig, type EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { dispatchToAppStream } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { StreamNotification } from '#/schemas';
+import { memberRole } from '../../../../tests/fixtures';
 import { streamSubscriberManager } from './subscriber-manager';
 import type { AppStreamEvent } from './types';
-
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 // The dispatcher must notify exactly the subscribers permitted to read each event row.
 const ORG_A = 'org-dispatch-a';

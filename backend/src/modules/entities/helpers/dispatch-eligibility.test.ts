@@ -1,4 +1,4 @@
-import { appConfig, type EntityRole, hierarchy } from 'shared';
+import { appConfig, type EntityRole } from 'shared';
 import { describe, expect, it } from 'vitest';
 import {
   canReceiveProductEvent,
@@ -8,9 +8,7 @@ import {
 } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
+import { memberRole } from '../../../../tests/fixtures';
 
 /**
  * `rowReadDecisions` must agree with `canReceiveProductEvent` on every (subscriber, row): veto

@@ -1,17 +1,13 @@
 import { and, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { updateMembership } from 'sdk';
-import { hierarchy } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, expectRefusal } from '../helpers';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
+import { createTestOrganization, expectRefusal, rawJsonRequest } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser } from './helpers';
-
-const [adminRole] = hierarchy.getRoles('organization');
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 const personalView = ['archived', 'muted', 'displayOrder'];
 
@@ -22,7 +18,6 @@ const personalView = ['archived', 'muted', 'displayOrder'];
  */
 describe('Membership updates', async () => {
   const call = await createAppClient();
-  const { baseApp } = await import('#/routes');
 
   afterEach(async () => await clearSecurityTestData());
 
@@ -43,15 +38,11 @@ describe('Membership updates', async () => {
         body: body as never,
         headers: { ...defaultHeaders, Cookie: as.sessionCookie },
       });
-    /** Raw JSON: the SDK's response parsing would hide a field the schema does not declare. */
-    const updateRaw = async (as: { sessionCookie: string }, membershipId: string, body: Record<string, unknown>) => {
-      const response = await baseApp.request(`/${org.tenantId}/${org.id}/memberships/${membershipId}`, {
+    const updateRaw = (as: { sessionCookie: string }, membershipId: string, body: Record<string, unknown>) =>
+      rawJsonRequest(`/${org.tenantId}/${org.id}/memberships/${membershipId}`, as.sessionCookie, {
         method: 'PUT',
-        headers: { ...defaultHeaders, Cookie: as.sessionCookie },
-        body: JSON.stringify(body),
+        body,
       });
-      return { status: response.status, body: (await response.json()) as Record<string, unknown> };
-    };
     return { org, admin, member, membershipOf, update, updateRaw };
   }
 

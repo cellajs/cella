@@ -1,11 +1,8 @@
-import { hierarchy } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { activityListQuerySchema } from '#/modules/activities/activities-schema';
 import { memberListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { sendNewsletterBodySchema } from '#/modules/system/system-schema';
-
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
+import { memberRole } from '../../tests/fixtures';
 
 const firstId = '00000000-0000-4000-8000-000000000001';
 const secondId = '00000000-0000-4000-8000-000000000002';

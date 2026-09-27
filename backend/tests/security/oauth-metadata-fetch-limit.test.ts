@@ -1,8 +1,8 @@
 import { nanoid } from 'nanoid';
-import { hierarchy } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { clientMetadataFetchLimiter } from '#/middlewares/rate-limiter/limiters';
 import { resourceUri } from '#/modules/oauth-server/resources';
+import { adminRole } from '../fixtures';
 import { CookieJar, createTestOrganization, expectRefusal } from '../helpers';
 import {
   authorizationCodeToken,
@@ -14,7 +14,6 @@ import {
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
-// The suite mocks every limiter as a pass-through (tests/setup.ts); this file needs the real one.
 vi.unmock('#/middlewares/rate-limiter/core');
 
 const FLOODED_HOST = 'metadata-flood.example';
@@ -24,7 +23,6 @@ const SECTOR_CLIENT_ID = 'https://sector-client.example/oauth/client.json';
 const SECTOR_URI = 'https://sector-target.example/sector.json';
 const APP_ID = 'fetch-budget-portfolio';
 const REDIRECT_URI = 'http://localhost:9999/callback';
-const adminRole = hierarchy.getMostPrivilegedRole('organization');
 
 /** The MCP client's own metadata document, served at `CIMD_ID` without cache headers. */
 const cimdDocument = {

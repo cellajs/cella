@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { invokeToken, sendStepUpLink } from 'sdk';
+import { getMe, invokeToken, sendStepUpLink } from 'sdk';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
@@ -9,7 +9,7 @@ import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to
 import { streamSubscriberManager } from '#/modules/entities/stream';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { cookiesAfter, insertTestSession, mailedLink, setCookiePair } from '../helpers';
+import { cookiesAfter, expectRefusal, insertTestSession, mailedLink, setCookiePair } from '../helpers';
 import { createAppClient } from '../test-client';
 
 export interface TestSession {
@@ -67,6 +67,17 @@ export async function stepUpByEmail(session: TestSession) {
   expect((await openStepUpLink(rawToken, browser)).response.status).toBe(302);
   return asSession(session.id, browser);
 }
+
+/** GET /me from a browser holding `cookie`. */
+const meWith = async (cookie: string) =>
+  (await createAppClient())(getMe, { headers: { ...defaultHeaders, Cookie: cookie } });
+
+/** Warms the auth cache for a session: the next request hits the cached entry, not the database. */
+export const warmSession = async ({ cookie }: { cookie: string }) =>
+  expect((await meWith(cookie)).response.status).toBe(200);
+
+/** A browser holding `cookie` is refused as signed out, with this error type. */
+export const expectSignedOut = async (cookie: string, type: string) => expectRefusal(await meWith(cookie), 401, type);
 
 /** An impersonation of `target` layered on an admin's session, presented as the admin's browser does. */
 export async function insertImpersonation(admin: TestSession, target: { id: string }): Promise<TestSession> {

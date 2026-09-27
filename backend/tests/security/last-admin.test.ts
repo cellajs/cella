@@ -1,19 +1,15 @@
 import { and, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { deleteMe, deleteMemberships, deleteMyMembership, deleteOrganizations, updateMembership } from 'sdk';
-import { hierarchy } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { usersTable } from '#/modules/user/user-db';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser } from './helpers';
-
-const [adminRole] = hierarchy.getRoles('organization');
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 /**
  * An organization always keeps an admin: the only role that can invite, change roles and manage settings. Demoting,

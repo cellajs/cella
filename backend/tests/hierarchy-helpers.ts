@@ -4,6 +4,7 @@ import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shar
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { getAdminDb } from '#/db/db';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
 
 const quoteIdent = (identifier: string) => `"${identifier.replaceAll('"', '""')}"`;
 
@@ -84,3 +85,10 @@ export const attachmentBody = (id: string, plan: TestEntityHierarchyPlan, fields
   stx: { mutationId: id, sourceId: 'test', fieldTimestamps: {} },
   ...fields,
 });
+
+/** Inserts an attachment row `buildInsertableProduct` built, on the admin connection. */
+export const insertAttachmentRow = (row: Record<string, unknown>) =>
+  // buildInsertableProduct returns a config-derived Record, so the insert type needs a cast.
+  getAdminDb('test setup')
+    .insert(attachmentsTable)
+    .values(row as typeof attachmentsTable.$inferInsert);

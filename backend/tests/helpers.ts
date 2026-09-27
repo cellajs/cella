@@ -26,8 +26,15 @@ import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import type { apiErrorSchema } from '#/schemas';
 import { hashToken } from '#/utils/hash-token';
+import { adminRole, defaultHeaders } from './fixtures';
 
 export type ErrorResponse = z.infer<typeof apiErrorSchema>;
+
+/**
+ * The admin connection, past RLS: tests arrange and assert rows under RLS on it, so a runtime_role run of the suite
+ * sees every row its own `db` would hide.
+ */
+export const adminDb = getAdminDb('test setup');
 
 /** What a request left the test: the raw response, an SDK result, or a local helper's status and parsed body. */
 type Answer = Response | { response: Response; error?: unknown } | { status: number; body?: unknown };
@@ -71,6 +78,31 @@ export function mailedLink(key: string) {
   const token = url.split('/').at(-1) ?? '';
   expect(token, url).not.toBe('');
   return { url, token };
+}
+
+/** The parts of an error answer that come from the refusal itself, without the per-request path, id and time. */
+export const refusalOf = ({ status, type, name, message, severity, entityType, meta }: ErrorResponse) => ({
+  status,
+  type,
+  name,
+  message,
+  severity,
+  entityType,
+  meta,
+});
+
+/**
+ * A request past the SDK from a browser holding `cookie`, its answer read as raw JSON: the SDK's response parsing would
+ * hide a field the schema does not declare.
+ */
+export async function rawJsonRequest(path: string, cookie: string, init: { method?: string; body?: unknown } = {}) {
+  const { baseApp } = await import('#/routes');
+  const response = await baseApp.request(path, {
+    method: init.method,
+    headers: { ...defaultHeaders, Cookie: cookie },
+    body: init.body === undefined ? undefined : JSON.stringify(init.body),
+  });
+  return { status: response.status, body: await response.json() };
 }
 
 /** User with a verified email, for OAuth/passkey tests. */
@@ -159,7 +191,7 @@ export async function createSystemAdminUser(email: string, verified = true) {
 export async function createOrganizationAdminUser(
   email: string,
   organizationId?: string,
-  role: EntityRole = 'admin',
+  role: EntityRole = adminRole,
   verified = true,
   tenantId = 'test01', // Default test tenant
 ) {

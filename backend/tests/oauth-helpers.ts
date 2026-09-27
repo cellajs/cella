@@ -4,7 +4,6 @@ import type { AddressInfo } from 'node:net';
 import { eq } from 'drizzle-orm';
 import type Provider from 'oidc-provider';
 import { type CreateServiceAccountData, createServiceAccount } from 'sdk';
-import { hierarchy } from 'shared';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { ensureSigningKeys } from '#/modules/oauth-server/keystore';
@@ -12,7 +11,7 @@ import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { createProvider } from '#/modules/oauth-server/provider';
 import { createOauthListener } from '#/modules/oauth-server/server';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
-import { defaultHeaders } from './fixtures';
+import { adminRole, defaultHeaders, memberRole } from './fixtures';
 import { CookieJar } from './helpers';
 import { createAppClient } from './test-client';
 
@@ -33,10 +32,7 @@ export const bearerHeaders = (token: string) => ({
 export async function serviceAccountWithKey(
   org: OrgPath,
   adminCookie: string,
-  {
-    role = hierarchy.getMostPrivilegedRole('organization'),
-    scopes = null,
-  }: { role?: ServiceAccountBody['role']; scopes?: KeyScopes } = {},
+  { role = adminRole, scopes = null }: { role?: ServiceAccountBody['role']; scopes?: KeyScopes } = {},
 ) {
   const call = await createAppClient();
   const { data, response } = await call(createServiceAccount, {
@@ -61,7 +57,7 @@ export async function installApp(org: OrgPath, adminCookie: string, clientId: st
   const call = await createAppClient();
   const { data } = await call(createServiceAccount, {
     path: { tenantId: org.tenantId, organizationId: org.id },
-    body: { name: 'Portfolio installation', role: hierarchy.getLeastPrivilegedRole('organization') },
+    body: { name: 'Portfolio installation', role: memberRole },
     headers: { ...defaultHeaders, Cookie: adminCookie },
   });
   const installationId = (data as { serviceAccount: { id: string } }).serviceAccount.id;

@@ -4,11 +4,11 @@ import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateServerHLC } from '#/core/stx';
-import { getAdminDb } from '#/db/db';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from './fixtures';
+import { adminDb } from './helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { paragraph, seedAttachment } from './security/yjs-helpers';
 import { createAppClient } from './test-client';
@@ -23,7 +23,6 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
  */
 describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs document retirement', async () => {
   const call = await createAppClient();
-  const adminDb = getAdminDb('yjs retire test');
   let tenant: TestTenant;
   let attachment: Awaited<ReturnType<typeof seedAttachment>>;
 

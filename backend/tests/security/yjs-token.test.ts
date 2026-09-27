@@ -6,7 +6,7 @@ import { verifyYjsToken, yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
-import { defaultHeaders } from '../fixtures';
+import { adminRole, defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -118,7 +118,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
     const member = await createOrganizationAdminUser(
       'yjs-token-sysadmin-member@security-test.com',
       owner.organization.id,
-      'admin',
+      adminRole,
       true,
       owner.tenantId,
     );
