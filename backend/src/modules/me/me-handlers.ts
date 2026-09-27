@@ -57,21 +57,13 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
     throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'second_factor_required' } });
   }
 
-  try {
-    if (passkeyData) {
-      const assertion = passkeyData as AuthenticationResponseJSON;
-      // A step-up challenge only, as for POST /auth/step-up: a sign-in or MFA challenge never proves presence here.
-      await verifyPasskeyAssertion(ctx, { assertion, purpose: 'step-up', userId: user.id });
-    }
-
-    if (totpCode) await verifyTotp(ctx, { user, code: totpCode });
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-
-    throw new AppError(500, 'invalid_credentials', 'error', {
-      ...(error instanceof Error ? { originalError: error } : {}),
-    });
+  if (passkeyData) {
+    const assertion = passkeyData as AuthenticationResponseJSON;
+    // A step-up challenge only, as for POST /auth/step-up: a sign-in or MFA challenge never proves presence here.
+    await verifyPasskeyAssertion(ctx, { assertion, purpose: 'step-up', userId: user.id });
   }
+
+  if (totpCode) await verifyTotp(ctx, { user, code: totpCode });
 
   // The flag and the sessions it ends change together, after a factor delete that got the lock first.
   const updatedUser = await mfaFactorRules.locked(user.id, async (tx) => {

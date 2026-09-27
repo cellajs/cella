@@ -48,19 +48,11 @@ app.openapi(authStepUpRoutes.stepUp, async (ctx) => {
     throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'second_factor_required' } });
   }
 
-  try {
-    if (passkeyData) {
-      const assertion = passkeyData as AuthenticationResponseJSON;
-      await verifyPasskeyAssertion(ctx, { assertion, purpose: 'step-up', userId: user.id });
-    }
-    if (totpCode) await verifyTotp(ctx, { user, code: totpCode });
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-
-    throw new AppError(500, 'invalid_credentials', 'error', {
-      ...(error instanceof Error ? { originalError: error } : {}),
-    });
+  if (passkeyData) {
+    const assertion = passkeyData as AuthenticationResponseJSON;
+    await verifyPasskeyAssertion(ctx, { assertion, purpose: 'step-up', userId: user.id });
   }
+  if (totpCode) await verifyTotp(ctx, { user, code: totpCode });
 
   if (!(await stampStepUp(session.id, user.id, via))) throw new AppError(401, 'session_expired', 'warn');
   log.info('Session stepped up', { via });
