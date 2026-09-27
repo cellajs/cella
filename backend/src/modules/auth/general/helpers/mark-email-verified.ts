@@ -78,7 +78,7 @@ export const addProvenEmail = async (db: DbOrTx, { userId, email, via }: EmailPr
     })
     .returning({ id: emailsTable.id });
 
-  if (!row) throw new AppError(409, 'oauth_conflict', 'error');
+  if (!row) throw new AppError(409, 'oauth_conflict', 'warn');
 
   await claimEmailForUser({ var: { db } }, { userId, email });
 };

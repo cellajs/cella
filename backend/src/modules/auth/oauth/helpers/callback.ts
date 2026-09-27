@@ -162,7 +162,7 @@ const connectCallbackFlow = async ({
 
   if (identity) {
     if (identity.userId !== connectUserId) {
-      throw new AppError(409, 'oauth_conflict', 'error');
+      throw new AppError(409, 'oauth_conflict', 'warn');
     }
 
     if (identity.verified) {
@@ -176,7 +176,7 @@ const connectCallbackFlow = async ({
 
   // New OAuth account connection → validate email isn't used by another user
   const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
-  if (holder && holder.id !== connectUserId) throw new AppError(409, 'oauth_conflict', 'error');
+  if (holder && holder.id !== connectUserId) throw new AppError(409, 'oauth_conflict', 'warn');
 
   const newIdentity = await createIdentity(db, {
     userId: connectUserId,
@@ -201,14 +201,14 @@ const inviteCallbackFlow = async ({
   const invitationToken = await readBoundToken(ctx, 'invitation');
 
   if (invitationToken.email !== providerUser.email) {
-    throw new AppError(409, 'oauth_wrong_email', 'error');
+    throw new AppError(409, 'oauth_wrong_email', 'warn');
   }
 
-  if (identity) throw new AppError(409, 'oauth_conflict', 'error');
+  if (identity) throw new AppError(409, 'oauth_conflict', 'warn');
 
   // Address already held by an account, verified or not: every sign-up writes its email row, so one lookup covers both.
   const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
-  if (holder) throw new AppError(409, 'oauth_email_exists', 'error');
+  if (holder) throw new AppError(409, 'oauth_email_exists', 'warn');
 
   const { email } = invitationToken;
   const created = await db.transaction(async (tx) => {
@@ -300,7 +300,7 @@ const completeSignUp = async ({
     throw new AppError(400, 'oauth_failed', 'error');
   }
 
-  if (identity) throw new AppError(409, 'oauth_conflict', 'error');
+  if (identity) throw new AppError(409, 'oauth_conflict', 'warn');
   if (await findUserByEmail({ var: { db } }, { email })) throw new AppError(409, 'oauth_email_exists', 'warn');
 
   const created = await db.transaction(async (tx) => {
