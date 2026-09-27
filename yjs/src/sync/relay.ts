@@ -10,9 +10,17 @@ import { descriptionToYUpdate } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
 import { classifyUpdate, mergeLog } from './document-state';
-import { broadcastToCollab, type CollabSession, claimAwarenessClient, getCollab, withDocLock } from './session-manager';
+import {
+  broadcastToCollab,
+  type CollabSession,
+  claimAwarenessClient,
+  endCollab,
+  getCollab,
+  withDocLock,
+} from './session-manager';
 
-export const YMessage = { Sync: 0, Awareness: 1 } as const;
+/** Message types on the socket: y-websocket's sync and awareness, and the relay's own `Generation`, which must match the frontend's yjs-connections.ts. */
+export const YMessage = { Sync: 0, Awareness: 1, Generation: 4 } as const;
 const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
 
 const awarenessTimestamps = new WeakMap<WebSocket, number>();
@@ -44,6 +52,14 @@ function encodeSyncStep1(stateVector: Uint8Array): Uint8Array {
   encoding.writeVarUint(encoder, YMessage.Sync);
   encoding.writeVarUint(encoder, YSync.Step1);
   encoding.writeVarUint8Array(encoder, stateVector);
+  return encoding.toUint8Array(encoder);
+}
+
+/** The document's generation, sent before every Step1 answer: a client holding a document of another generation drops it before it merges or replies. */
+function encodeGeneration(generation: string): Uint8Array {
+  const encoder = encoding.createEncoder();
+  encoding.writeVarUint(encoder, YMessage.Generation);
+  encoding.writeVarString(encoder, generation);
   return encoding.toUint8Array(encoder);
 }
 
@@ -118,14 +134,20 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
 
     if (syncType === YSync.Step1) {
       log.trace(`Sync step 1 from ${scope.entityType}:${scope.entityId}`, { bytes: data.length });
-      await handleSyncStep1(scope, ws, payload);
-    } else if (syncType === YSync.Step2 || syncType === YSync.Update) {
+      await handleSyncStep1(ctx, scope, ws, payload);
+    } else if (syncType === YSync.Step2) {
+      ctx.awaitingReply = false;
+      await handleSyncUpdate(scope, ctx.userId, ws, payload, data);
+    } else if (syncType === YSync.Update) {
+      // Sent before the client read the relay's answer: its reply carries what the relay lacks, and a client about to
+      // drop its document for another generation must log nothing of it.
+      if (ctx.awaitingReply) return;
       await handleSyncUpdate(scope, ctx.userId, ws, payload, data);
     }
   } else if (messageType === YMessage.Awareness) {
     if (!scope || ws.readyState !== ws.OPEN) return;
     const collab = getCollab(scope);
-    if (!collab) return;
+    if (!collab?.clients.has(ws)) return;
     const now = Date.now();
     const lastTime = awarenessTimestamps.get(ws) ?? 0;
     if (now - lastTime < 1000 / YJS_AWARENESS_RATE_LIMIT) return;
@@ -155,40 +177,67 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
   }
 }
 
-/** The document as the relay knows it: the session row (seeded on first sight) plus every logged update that merges; compaction discards the rest. */
-async function loadDocumentState(scope: DocScope): Promise<Uint8Array | null> {
+/**
+ * The document as the session knows it: the document row (seeded on first sight, under a new generation) plus every
+ * logged update that merges; compaction discards the rest. Null once the document was retired under the session (its
+ * row gone, or reseeded by another relay): the session ends, and its sockets reconnect into one that seeds afresh.
+ */
+async function loadDocumentState(
+  collab: CollabSession,
+): Promise<{ state: Uint8Array | null; generation: string } | null> {
+  const { scope } = collab;
   let base = await loadBase(scope);
-  if (base === null) {
-    // Fresh session: the server seeds from the stored description, so clients never seed it.
-    base = await ensureDoc(scope, descriptionToYUpdate(await loadEntityDescription(scope)));
+  if (collab.generation !== null && base?.generation !== collab.generation) {
+    endCollab(collab);
+    return null;
   }
-  return mergeLog(base, await readLog(scope)).state;
+  // Fresh document: the server seeds from the stored description, so clients never seed it.
+  base ??= await ensureDoc(scope, descriptionToYUpdate(await loadEntityDescription(scope)));
+  collab.generation = base.generation;
+  return { state: mergeLog(base.state, await readLog(scope)).state, generation: base.generation };
 }
 
 /**
- * Answers a client state vector with what it lacks, then asks for what the relay lacks: y-websocket
- * answers a Step1 with a Step2 on its own, so structs the client holds and the relay never received
- * (a lost frame, a reconnect) are uploaded and logged like any update.
+ * Tells the client the document's generation, answers its state vector with what it lacks, then asks for what the
+ * relay lacks: y-websocket answers a Step1 with a Step2 on its own, so structs the client holds and the relay never
+ * received (a lost frame, a reconnect) are uploaded and logged like any update. Until that reply, the socket's
+ * updates are dropped.
  */
-async function handleSyncStep1(scope: DocScope, ws: WebSocket, clientStateVector: Uint8Array): Promise<void> {
+async function handleSyncStep1(
+  ctx: SocketContext,
+  scope: DocScope,
+  ws: WebSocket,
+  clientStateVector: Uint8Array,
+): Promise<void> {
   // A socket that closed while this frame waited has no one to answer.
   if (ws.readyState !== ws.OPEN) return;
   const collab = getCollab(scope);
-  const state = collab ? await withDocLock(collab, () => loadDocumentState(scope)) : await loadDocumentState(scope);
+  if (!collab?.clients.has(ws)) return endSocket(scope, ws);
+  const doc = await withDocLock(collab, () => loadDocumentState(collab));
+  if (!doc || ws.readyState !== ws.OPEN) return;
 
-  if (!state) {
+  ws.send(encodeGeneration(doc.generation));
+  ctx.awaitingReply = true;
+  if (!doc.state) {
     ws.send(encodeSyncStep2(Y.encodeStateAsUpdate(new Y.Doc())));
     ws.send(encodeSyncStep1(Y.encodeStateVector(new Y.Doc())));
     return;
   }
 
   try {
-    ws.send(encodeSyncStep2(Y.diffUpdate(state, clientStateVector)));
-    ws.send(encodeSyncStep1(Y.encodeStateVectorFromUpdate(state)));
+    ws.send(encodeSyncStep2(Y.diffUpdate(doc.state, clientStateVector)));
+    ws.send(encodeSyncStep1(Y.encodeStateVectorFromUpdate(doc.state)));
   } catch {
     // Corrupted state: fall back to the full state and skip the pull.
-    ws.send(encodeSyncStep2(state));
+    ws.send(encodeSyncStep2(doc.state));
+    ctx.awaitingReply = false;
   }
+}
+
+/** Closes a socket whose session ended under it (its document retired): it reconnects and handshakes again, and what it holds that is still valid comes with its reply. */
+function endSocket(scope: DocScope, ws: WebSocket): void {
+  log.warn(`No session for ${scope.entityType}:${scope.entityId}: socket asked to reconnect`);
+  ws.close(1013, 'Session ended');
 }
 
 /** Logs the update durably under its sender, then broadcasts it to peers and schedules compaction; one Yjs cannot decode closes its sender. */
@@ -206,14 +255,9 @@ async function handleSyncUpdate(
   if (kind === 'malformed') return refuseFrame(scope, userId, ws);
 
   const collab = getCollab(scope);
-  if (!collab) {
-    // A joined socket always finds its session. Should it not, the update is still logged, and the socket reconnects
-    // into a live session, where its handshake uploads anything else it holds.
-    await appendUpdate(scope, userId, update);
-    log.warn(`No session for ${scope.entityType}:${scope.entityId}: update logged, socket asked to reconnect`);
-    ws.close(1013, 'Session ended');
-    return;
-  }
+  // A socket of an ended session must not log into a newer session of its document: the update may be of a retired
+  // generation, and one still valid comes with the reply of its next handshake.
+  if (!collab?.clients.has(ws)) return endSocket(scope, ws);
 
   await appendUpdate(scope, userId, update);
   broadcastToCollab(scope, rawMessage, ws);
@@ -229,11 +273,13 @@ export function scheduleCompaction(collab: CollabSession): void {
   }, YJS_COMPACT_DEBOUNCE_MS);
 }
 
-/** Compacts under the document lock; a thrown error counts as retryable and leaves the log in place. */
+/** Compacts under the document lock; a thrown error counts as retryable and leaves the log in place. A retired document ends the session. */
 export async function runCompaction(collab: CollabSession): Promise<CompactionResult> {
   return withDocLock(collab, async () => {
     try {
-      return await compactDocument(collab.scope);
+      const result = await compactDocument(collab.scope);
+      if (result === 'retired') endCollab(collab);
+      return result;
     } catch (err) {
       log.error(`Compaction failed for ${collab.scope.entityType}:${collab.scope.entityId}`, { err });
       return 'retry';

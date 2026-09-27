@@ -57,6 +57,7 @@ interface DeleteAttachmentsByIdsOpts {
   deletedAt: string;
 }
 
+/** Soft-deletes the rows and returns them, for the `attachment.deleted` event. */
 export const deleteAttachmentsByIds = async (
   ctx: ActorContext,
   { ids, deletedAt, deletedBy }: DeleteAttachmentsByIdsOpts,
@@ -71,7 +72,8 @@ export const deleteAttachmentsByIds = async (
         requestScopeWhere(ctx, attachmentsTable),
         isNull(attachmentsTable.deletedAt),
       ),
-    );
+    )
+    .returning();
 };
 
 interface FindAttachmentsByIdsOpts {

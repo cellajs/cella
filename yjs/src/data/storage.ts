@@ -33,17 +33,29 @@ export interface LogRow {
   userId: string | null;
 }
 
-/** Compacted base state, or null when no session row exists. An empty array is a row seeded from a null description. */
-export async function loadBase(doc: DocKey): Promise<Uint8Array | null> {
+/** The document row: its compacted base state (empty when seeded from a null description) and the generation of its seed. */
+export interface BaseRow {
+  state: Uint8Array;
+  generation: string;
+}
+
+const baseColumns = { state: yjsDocumentsTable.state, generation: yjsDocumentsTable.generation };
+
+const toBaseRow = (row: { state: Buffer; generation: string }): BaseRow => ({
+  state: new Uint8Array(row.state),
+  generation: row.generation,
+});
+
+/** The document row, or null when none exists: never seeded, or retired since. */
+export async function loadBase(doc: DocKey): Promise<BaseRow | null> {
   return asSystem(doc, async (tx) => {
-    const rows = await tx.select({ state: yjsDocumentsTable.state }).from(yjsDocumentsTable).where(docWhere(doc));
-    if (rows.length === 0) return null;
-    return new Uint8Array(rows[0].state);
+    const rows = await tx.select(baseColumns).from(yjsDocumentsTable).where(docWhere(doc));
+    return rows.length === 0 ? null : toBaseRow(rows[0]);
   });
 }
 
-/** Inserts the session row with the server-side seed unless it exists, then returns the row's state: concurrent connectors converge on one seed. */
-export async function ensureDoc(scope: DocScope, seed: Uint8Array | null): Promise<Uint8Array> {
+/** Inserts the document row with the server-side seed, under a new generation, unless it exists, then returns the row: concurrent connectors converge on one seed. */
+export async function ensureDoc(scope: DocScope, seed: Uint8Array | null): Promise<BaseRow> {
   const { entityType, entityId, tenantId, organizationId } = scope;
   return asSystem(scope, async (tx) => {
     await tx
@@ -57,8 +69,8 @@ export async function ensureDoc(scope: DocScope, seed: Uint8Array | null): Promi
         updatedAt: sql`now()`,
       })
       .onConflictDoNothing({ target: [yjsDocumentsTable.entityType, yjsDocumentsTable.entityId] });
-    const rows = await tx.select({ state: yjsDocumentsTable.state }).from(yjsDocumentsTable).where(docWhere(scope));
-    return new Uint8Array(rows[0]?.state ?? Buffer.alloc(0));
+    const rows = await tx.select(baseColumns).from(yjsDocumentsTable).where(docWhere(scope));
+    return toBaseRow(rows[0]);
   });
 }
 
@@ -110,7 +122,7 @@ export async function discardLogRows(doc: DocKey, logIds: number[]): Promise<voi
   });
 }
 
-/** Removes the session row and any log rows once the session is over. */
+/** Removes the document row and any log rows: the entity is gone, so nothing can receive them. */
 export async function deleteDoc(doc: DocKey): Promise<void> {
   await asSystem(doc, async (tx) => {
     await tx.delete(yjsUpdatesTable).where(logWhere(doc));
@@ -118,10 +130,15 @@ export async function deleteDoc(doc: DocKey): Promise<void> {
   });
 }
 
-/** Stamps the document's session row, when there is one, as live: the startup sweep takes a row unstamped past its cutoff for an orphan. Creates no row. */
-export async function touchDoc(doc: DocKey): Promise<void> {
-  await asSystem(doc, async (tx) => {
-    await tx.update(yjsDocumentsTable).set({ updatedAt: sql`now()` }).where(docWhere(doc));
+/** Stamps the document row live, so no startup sweep takes it for an orphan, and reports whether the row exists: a retired document has none. Creates no row. */
+export async function touchDoc(doc: DocKey): Promise<boolean> {
+  return asSystem(doc, async (tx) => {
+    const rows = await tx
+      .update(yjsDocumentsTable)
+      .set({ updatedAt: sql`now()` })
+      .where(docWhere(doc))
+      .returning({ entityId: yjsDocumentsTable.entityId });
+    return rows.length > 0;
   });
 }
 
@@ -143,8 +160,14 @@ async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Pr
         and(
           eq(yjsDocumentsTable.tenantId, tenantId),
           lt(yjsDocumentsTable.updatedAt, cutoff),
-          // A log row younger than the grace period means the session is live on another relay generation.
-          sql`NOT EXISTS (
+          // An uncompacted log, none of it younger than the grace period: a younger row means the session is live on
+          // another relay generation.
+          sql`EXISTS (
+            SELECT 1 FROM ${yjsUpdatesTable}
+            WHERE ${yjsUpdatesTable.entityType} = ${yjsDocumentsTable.entityType}
+              AND ${yjsUpdatesTable.entityId} = ${yjsDocumentsTable.entityId}
+              AND ${yjsUpdatesTable.tenantId} = ${yjsDocumentsTable.tenantId}
+          ) AND NOT EXISTS (
             SELECT 1 FROM ${yjsUpdatesTable}
             WHERE ${yjsUpdatesTable.entityType} = ${yjsDocumentsTable.entityType}
               AND ${yjsUpdatesTable.entityId} = ${yjsDocumentsTable.entityId}
@@ -157,10 +180,11 @@ async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Pr
 }
 
 /**
- * Session rows no session stamped for longer than the cleanup grace (a session stamps its row every
- * YJS_LIVE_TOUCH_MS), with no younger log row: orphans from a relay crash. Cross-tenant by design, so
- * the sweep visits every tenant through its own tenant-scoped transaction, a bounded number at a time;
- * a contextless query on the fail-closed policy returns nothing.
+ * Documents with an uncompacted log that no session stamped for longer than the cleanup grace (a session stamps its
+ * row every YJS_LIVE_TOUCH_MS), with no younger log row: the log a relay crash left unwritten. An idle document with
+ * nothing logged is not listed, its row is at rest. Cross-tenant by design, so the sweep visits every tenant through
+ * its own tenant-scoped transaction, a bounded number at a time; a contextless query on the fail-closed policy returns
+ * nothing.
  */
 export async function listStaleDocs(olderThanMs: number): Promise<DocScope[]> {
   // `tenants` sits outside RLS, so the runtime role lists it without context.

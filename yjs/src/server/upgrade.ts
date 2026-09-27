@@ -186,6 +186,7 @@ async function admitUpgrade(
       organizationId: payload.organizationId,
     },
     scope: null,
+    awaitingReply: false,
   };
 
   // A peer that reset the connection while the limiter answered is already gone.

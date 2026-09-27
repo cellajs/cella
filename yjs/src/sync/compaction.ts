@@ -17,8 +17,8 @@ function editorsNewestFirst(rows: LogRow[]): string[] {
   return editors;
 }
 
-/** `empty`: nothing was logged since the last compaction, so nothing was written. The other values are the materialize outcome. */
-export type CompactionResult = 'empty' | 'ok' | 'gone' | 'permanent' | 'retry';
+/** `empty`: nothing was logged since the last compaction, so nothing was written. `retired`: the document row is gone, and the log with it. The other values are the materialize outcome. */
+export type CompactionResult = 'empty' | 'ok' | 'gone' | 'permanent' | 'retry' | 'retired';
 
 /**
  * Writes the merged document to the entity through the backend, then folds the update log into
@@ -27,23 +27,26 @@ export type CompactionResult = 'empty' | 'ok' | 'gone' | 'permanent' | 'retry';
  * exactly the rows that were read are deleted, so an update appended during the POST survives for
  * the next round. Every other outcome leaves base and log untouched, so the base only ever holds
  * written state and the log every edit the entity has not received; cleanup and sweep rely on
- * this to delete a document only after `ok`, `empty` or `gone` (the entity no longer exists).
- * Unparseable state, a log crediting no editor, or a log whose session row is gone is never posted and counts as
- * `permanent`. A row no merge accepts (logged before the relay refused undecodable updates, or one that decodes but
- * will not merge) is discarded first, with its sender logged: it carries no edit anyone can apply, and kept it would
- * fail every window.
+ * this to forget a document only after `ok`, `empty` or `gone` (the entity no longer exists).
+ * Unparseable state or a log crediting no editor is never posted and counts as `permanent`. A row no merge accepts
+ * (logged before the relay refused undecodable updates, or one that decodes but will not merge) is discarded first,
+ * with its sender logged: it carries no edit anyone can apply, and kept it would fail every window. A log without its
+ * document row is discarded whole, `retired`: the row went with an outside write of the description or with the
+ * entity, the rows extend a history the next seed does not share, and merged alone they are a partial document.
  */
 export async function compactDocument(scope: DocScope): Promise<CompactionResult> {
   const [base, logged] = await Promise.all([loadBase(scope), readLog(scope)]);
   if (logged.length === 0) return 'empty';
-  // Another relay finished the document and deleted its session row: the log extends a base that no longer exists,
-  // and merged alone it is a partial document that would overwrite the entity's description.
   if (base === null) {
-    log.error(`Compaction: no session row for ${scope.entityType}:${scope.entityId}, keeping the log unwritten`);
-    return 'permanent';
+    log.warn(`Compaction: ${scope.entityType}:${scope.entityId} was retired, discarding ${logged.length} log row(s)`);
+    await discardLogRows(
+      scope,
+      logged.map((row) => row.id),
+    );
+    return 'retired';
   }
 
-  const { state, rejected } = mergeLog(base, logged);
+  const { state, rejected } = mergeLog(base.state, logged);
   if (rejected.length > 0) {
     for (const row of rejected) {
       log.error(

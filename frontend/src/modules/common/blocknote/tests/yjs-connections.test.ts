@@ -7,10 +7,20 @@ class MockProvider {
   params: Record<string, string>;
   shouldConnect = true;
   synced = false;
+  doc: MockDoc;
+  /** Message type → handler, as y-websocket keeps them per provider; the relay's generation frame is type 4. */
+  messageHandlers: ((
+    encoder: unknown,
+    decoder: unknown,
+    provider: unknown,
+    emitSynced: boolean,
+    type: number,
+  ) => void)[] = [];
   private listeners = new Map<string, Set<(...args: unknown[]) => void>>();
 
-  constructor(_url: string, _room: string, _doc: unknown, opts: { params: Record<string, string> }) {
+  constructor(_url: string, _room: string, doc: MockDoc, opts: { params: Record<string, string> }) {
     this.params = { ...opts.params };
+    this.doc = doc;
     providers.push(this);
   }
 
@@ -39,14 +49,20 @@ let onlineListener: ((online: boolean) => void) | undefined;
 const warning = vi.fn();
 const invalidateQueries = vi.fn();
 
+/** A document that records its `update` listener, so a test can make a local edit. */
+class MockDoc {
+  onUpdate: ((update: Uint8Array, origin: unknown) => void) | undefined;
+  getXmlFragment = () => ({});
+  on = (_event: string, cb: (update: Uint8Array, origin: unknown) => void) => {
+    this.onUpdate = cb;
+  };
+  destroy = vi.fn();
+}
+
 vi.mock('y-websocket', () => ({ WebsocketProvider: MockProvider }));
-vi.mock('yjs', () => {
-  class Doc {
-    getXmlFragment = () => ({});
-    destroy = vi.fn();
-  }
-  return { Doc, default: { Doc } };
-});
+vi.mock('yjs', () => ({ Doc: MockDoc, default: { Doc: MockDoc } }));
+// The generation frame's decoder stands in for the string it carries.
+vi.mock('lib0/decoding', () => ({ readVarString: (decoder: unknown) => decoder }));
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { warning: (...args: unknown[]) => warning(...args) } }));
 vi.mock('i18next', () => ({ default: { t: (k: string) => k }, t: (k: string) => k }));
 vi.mock('shared', () => ({ appConfig: { yjsUrl: 'http://localhost:1234' } }));
@@ -96,6 +112,11 @@ async function mountConnection() {
 
 const close = async (provider: MockProvider, code: number) => {
   await act(async () => provider.emit('connection-close', { code, reason: '' }, provider));
+};
+
+/** The relay announces the document's generation, as it does before every handshake answer. */
+const announce = async (provider: MockProvider, generation: string) => {
+  await act(async () => provider.messageHandlers[4]?.(undefined, generation, provider, true, 4));
 };
 
 beforeEach(() => {
@@ -165,6 +186,48 @@ describe('yjs connection: final closes', () => {
 
     await act(async () => onlineListener?.(true));
     expect(provider.connect).not.toHaveBeenCalled();
+  });
+});
+
+describe('yjs connection: a reseeded document', () => {
+  it('must not merge a surviving document into a reseeded one: another generation rebuilds the connection and reports the discarded edits', async () => {
+    const { provider, state } = await mountConnection();
+    await announce(provider, 'gen-1');
+    await act(async () => provider.emit('sync', true));
+    expect(state()?.synced).toBe(true);
+
+    // A local edit; a reconnect announces the same generation, and nothing happens.
+    provider.doc.onUpdate?.(new Uint8Array(), 'editor');
+    await announce(provider, 'gen-1');
+    expect(provider.destroy).not.toHaveBeenCalled();
+
+    // The description was written elsewhere and the relay reseeded: this document shares no history with the new one.
+    const opened = providers.length;
+    await announce(provider, 'gen-2');
+    expect(provider.destroy).toHaveBeenCalledTimes(1);
+    expect(provider.doc.destroy).toHaveBeenCalledTimes(1);
+    expect(providers).toHaveLength(opened + 1);
+    const next = providers.at(-1)!;
+    expect(state()?.provider).toBe(next);
+    expect(state()?.synced).toBe(false);
+    expect(state()?.rebuilds).toBe(1);
+    expect(state()?.stopped).toBe(false);
+    expect(warning).toHaveBeenCalledWith('error:sync_document_replaced.text');
+
+    // The fresh document takes the new generation as its own and syncs.
+    await announce(next, 'gen-2');
+    await act(async () => next.emit('sync', true));
+    expect(next.destroy).not.toHaveBeenCalled();
+    expect(state()?.synced).toBe(true);
+  });
+
+  it('reloads a document never edited here without a notice (positive control)', async () => {
+    const { provider, state } = await mountConnection();
+    await announce(provider, 'gen-1');
+    await announce(provider, 'gen-2');
+    expect(provider.destroy).toHaveBeenCalledTimes(1);
+    expect(state()?.rebuilds).toBe(1);
+    expect(warning).not.toHaveBeenCalled();
   });
 });
 

@@ -55,11 +55,13 @@ describe('a refused materialize keeps the edits', () => {
     expect(storage.logs.get(key)).toHaveLength(2);
     expect(getCollab(ctx)).toBeDefined();
 
-    // Positive control: once the backend accepts, the edits are written and the session ends.
+    // Positive control: once the backend accepts, the edits are written, the row stays and the session ends.
     fetchMock.mockResolvedValue({ ok: true, status: 200 });
     await vi.advanceTimersByTimeAsync(GRACE);
     expect(fetchMock).toHaveBeenCalledTimes(2);
-    expect(storage.deleteDoc).toHaveBeenCalledTimes(1);
+    expect(storage.deleteDoc).not.toHaveBeenCalled();
+    expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, a: 1, b: 2 });
+    expect(storage.logs.get(key)).toHaveLength(0);
     expect(getCollab(ctx)).toBeUndefined();
   });
 

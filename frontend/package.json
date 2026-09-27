@@ -81,6 +81,7 @@
     "input-otp": "^1.5.0",
     "jspdf": "^4.2.1",
     "jspdf-autotable": "^5.0.8",
+    "lib0": "^0.2.117",
     "lucide-react": "^1.47.0",
     "motion": "^13.4.1",
     "onedollarstats": "^0.0.23",

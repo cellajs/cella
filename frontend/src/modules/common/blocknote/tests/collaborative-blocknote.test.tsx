@@ -4,14 +4,14 @@ import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // The editor records the props it was rendered with; everything around the host is inert.
-const editors: { editable?: boolean; collaboration?: unknown }[] = [];
+const editors: { editable?: boolean; collaboration?: { fragment: unknown } }[] = [];
 vi.mock('~/modules/common/blocknote/blocknote-editor', () => ({
-  BlockNote: (props: { editable?: boolean; collaboration?: unknown }) => {
+  BlockNote: (props: { editable?: boolean; collaboration?: { fragment: unknown } }) => {
     editors.push(props);
     return null;
   },
 }));
-const connection = { provider: {}, fragment: {}, synced: true, stopped: false };
+const connection = { provider: {}, fragment: {}, synced: true, stopped: false, rebuilds: 0 };
 vi.mock('~/modules/common/blocknote/yjs-connections', () => ({
   useYjsConnection: (editSessionId: string | undefined) => (editSessionId ? { ...connection } : null),
 }));
@@ -48,6 +48,7 @@ async function render() {
         canEdit
         description={null}
         updateData={() => {}}
+        waitingFallback={<p>waiting</p>}
       />,
     ),
   );
@@ -56,7 +57,30 @@ async function render() {
 afterEach(async () => {
   await act(async () => root?.unmount());
   editors.length = 0;
-  connection.stopped = false;
+  Object.assign(connection, { fragment: {}, synced: true, stopped: false, rebuilds: 0 });
+});
+
+describe('CollaborativeBlockNote after the relay reseeded the document', () => {
+  it('must not keep an editor on a dropped document: it waits while the fresh one syncs, then mounts on the new fragment', async () => {
+    container = document.createElement('div');
+    root = createRoot(container);
+    await render();
+    const dropped = editors.at(-1)?.collaboration?.fragment;
+    expect(dropped).toBe(connection.fragment);
+
+    // The connection replaced its document; the new one has not synced yet.
+    Object.assign(connection, { fragment: {}, synced: false, rebuilds: 1 });
+    const rendered = editors.length;
+    await render();
+    expect(editors).toHaveLength(rendered);
+    expect(container.textContent).toContain('waiting');
+
+    connection.synced = true;
+    await render();
+    expect(container.textContent).not.toContain('waiting');
+    expect(editors.at(-1)?.collaboration?.fragment).toBe(connection.fragment);
+    expect(editors.at(-1)?.collaboration?.fragment).not.toBe(dropped);
+  });
 });
 
 describe('CollaborativeBlockNote after the relay ends the session', () => {

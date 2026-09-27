@@ -1,5 +1,6 @@
 import type { ActorContext } from '#/core/context';
 import { tenantContextIncludingDeleted } from '#/db/tenant-context';
+import { dispatchMutation } from '#/lib/mutation-bus';
 import { deleteAttachmentsByIds } from '#/modules/attachment/attachment-queries';
 import { splitByPermission } from '#/permissions/split-by-permission';
 import { getIsoDate } from '#/utils/iso-date';
@@ -13,9 +14,11 @@ export async function deleteAttachmentsOp(
   const deletedAt = getIsoDate();
   const deletedBy = ctx.var.actor.id;
 
-  await tenantContextIncludingDeleted(ctx, (txCtx) =>
-    deleteAttachmentsByIds(txCtx, { ids: allowedIds, deletedAt, deletedBy }),
-  );
+  await tenantContextIncludingDeleted(ctx, async (txCtx) => {
+    const deleted = await deleteAttachmentsByIds(txCtx, { ids: allowedIds, deletedAt, deletedBy });
+    // Inside the transaction: the collaborative documents of the rows go with them.
+    await dispatchMutation(txCtx, 'attachment.deleted', { before: deleted });
+  });
 
   log.info('Attachments deleted', { ids: allowedIds });
 

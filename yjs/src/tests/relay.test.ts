@@ -6,7 +6,9 @@ import {
   awarenessUpdate,
   buildAwarenessMessage,
   buildSyncStep1,
+  buildSyncStep2,
   buildSyncUpdate,
+  decodeGeneration,
   decodeSyncStep1,
   decodeSyncStep2,
   deferred,
@@ -43,9 +45,9 @@ const { getCollab, joinCollab, leaveCollab } = await import('../sync/session-man
 
 const ctx = mockSocketContext();
 
-/** Decodes the frames a socket received: [Step2 update, Step1 state vector, ...]. */
+/** Decodes the sync frames a socket received, after the generation frame: [Step2 update, Step1 state vector, ...]. */
 function decodeFrames(sent: Uint8Array[]) {
-  return sent.map((frame) => ({ sync: frame[1], payload: frame.subarray(3) }));
+  return sent.filter((frame) => frame[0] === 0).map((frame) => ({ sync: frame[1], payload: frame.subarray(3) }));
 }
 
 let counter = 0;
@@ -80,7 +82,7 @@ afterEach(() => {
 describe('handleMessage: gating and validation', () => {
   it('must not answer, log or relay sync frames from a socket pending verification, even into a live session of its document', async () => {
     // The document is open with a peer in it: the pending socket's frames reach neither the log nor the peer.
-    const { scope, key, collab } = session();
+    const { ctx: editor, scope, key, ws: editorWs, collab } = session();
     const peer = mockWebSocket();
     joinCollab(scope, peer as never);
     const pending = mockSocketContext({ requested: scope, scope: null });
@@ -93,7 +95,7 @@ describe('handleMessage: gating and validation', () => {
     expect(storage.logs.get(key)).toBeUndefined();
     expect(peer.sent).toHaveLength(0);
     // Positive control: the same update from a verified socket of the session is logged and reaches the peer.
-    await handleMessage(mockSocketContext({ requested: scope }), ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+    await handleMessage(editor, editorWs as never, buildSyncUpdate(mapUpdate('k', 1)));
     expect(storage.logs.get(key)).toHaveLength(1);
     expect(peer.sent).toHaveLength(1);
     leaveCollab(collab.scope, peer as never);
@@ -134,9 +136,55 @@ describe('handleMessage: sync step 1', () => {
     await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
 
     expect(storage.ensureDoc).toHaveBeenCalledWith(scope, null);
+    // The generation comes first, so a client of another one drops its document before it merges the state.
+    expect(decodeGeneration(ws.sent[0])).toBe(storage.generations.get(storageKey(scope)));
     const frames = decodeFrames(ws.sent);
     expect(frames.map((f) => f.sync)).toEqual([1, 0]);
-    expect(readMap(decodeSyncStep2(ws.sent[0]))).toEqual({});
+    expect(readMap(decodeSyncStep2(ws.sent[1]))).toEqual({});
+  });
+
+  it('announces the same generation at every handshake of a document, and a new one once it was retired and reseeded', async () => {
+    const { ctx: c, scope, key, ws } = session();
+    await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    const [first, , , second] = ws.sent.map(decodeGeneration);
+    expect(first).toBe(second);
+
+    // Retired: the next handshake ends the session, and the reconnect's fresh session seeds a new generation.
+    storage.bases.delete(key);
+    storage.generations.delete(key);
+    await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    expect(ws.closed?.code).toBe(1013);
+    const next = session({ entityId: scope.entityId });
+    await handleMessage(next.ctx, next.ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    expect(decodeGeneration(next.ws.sent[0])).not.toBe(first);
+    expect(storage.ensureDoc).toHaveBeenCalledTimes(2);
+  });
+
+  it('must not seed a new generation under a session that loaded another: the session ends with 1013 and a fresh one reseeds', async () => {
+    const { ctx: c, scope, key, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+    await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    expect(collab.generation).toBe(storage.generations.get(key));
+
+    // The description was written outside the relay, which retired the document; a socket handshakes before the
+    // live stamp notices.
+    storage.bases.delete(key);
+    storage.generations.delete(key);
+    await handleMessage(c, peer as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+
+    expect(storage.ensureDoc).toHaveBeenCalledTimes(1);
+    expect(peer.sent).toHaveLength(0);
+    expect(peer.closed).toEqual({ code: 1013, reason: 'Document retired' });
+    expect(ws.closed).toEqual({ code: 1013, reason: 'Document retired' });
+    expect(getCollab(scope)).toBeUndefined();
+
+    // Positive control: the reconnect opens a fresh session, which seeds the document anew.
+    const next = session({ entityId: scope.entityId });
+    await handleMessage(next.ctx, next.ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    expect(storage.ensureDoc).toHaveBeenCalledTimes(2);
+    expect(decodeGeneration(next.ws.sent[0])).toBe(storage.generations.get(key));
   });
 
   it('first connection with entity content: seeds the doc server-side from the stored description', async () => {
@@ -150,7 +198,7 @@ describe('handleMessage: sync step 1', () => {
 
     const seed = storage.ensureDoc.mock.calls[0][1] as Uint8Array;
     expect(seed).not.toBeNull();
-    const blocks = yUpdateToBlocks(decodeSyncStep2(ws.sent[0])) as { content: { text: string }[] }[];
+    const blocks = yUpdateToBlocks(decodeSyncStep2(ws.sent[1])) as { content: { text: string }[] }[];
     expect(blocks[0].content[0].text).toBe('seeded');
     // Seeding writes nothing to the log, so a session that only opened the document never materializes.
     expect(storage.appendUpdate).not.toHaveBeenCalled();
@@ -173,8 +221,8 @@ describe('handleMessage: sync step 1', () => {
     // The second Step1 saw the row the first one created.
     expect(storage.ensureDoc).toHaveBeenCalledTimes(1);
     expect(storage.loadBase).toHaveBeenCalledTimes(2);
-    expect(ws1.sent).toHaveLength(2);
-    expect(ws2.sent).toHaveLength(2);
+    expect(ws1.sent).toHaveLength(3);
+    expect(ws2.sent).toHaveLength(3);
     leaveCollab(collab.scope, ws2 as never);
   });
 
@@ -188,11 +236,11 @@ describe('handleMessage: sync step 1', () => {
     await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(client)));
 
     expect(storage.ensureDoc).not.toHaveBeenCalled();
-    Y.applyUpdate(client, decodeSyncStep2(ws.sent[0]));
+    Y.applyUpdate(client, decodeSyncStep2(ws.sent[1]));
     expect(client.getMap('data').toJSON()).toEqual({ base: true, logged: 1, mine: 'x' });
     // The Step1 carries the merged state vector, so the client's reply would contain only `mine`.
     expect(decodeFrames(ws.sent)[1].sync).toBe(0);
-    const serverVector = Y.decodeStateVector(decodeSyncStep1(ws.sent[1]));
+    const serverVector = Y.decodeStateVector(decodeSyncStep1(ws.sent[2]));
     expect(serverVector.size).toBe(2);
   });
 
@@ -206,15 +254,15 @@ describe('handleMessage: sync step 1', () => {
     await expect(
       handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc()))),
     ).resolves.toBeUndefined();
-    expect(readMap(decodeSyncStep2(ws.sent[0]))).toEqual({ base: true, logged: 1 });
+    expect(readMap(decodeSyncStep2(ws.sent[1]))).toEqual({ base: true, logged: 1 });
   });
 
   it('corrupted stored state: falls back to sending the full state without a pull', async () => {
     const { ctx: c, key, ws } = session();
     storage.bases.set(key, new Uint8Array([1, 2, 3]));
     await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
-    expect(ws.sent).toHaveLength(1);
-    expect(decodeSyncStep2(ws.sent[0])).toEqual(new Uint8Array([1, 2, 3]));
+    expect(ws.sent).toHaveLength(2);
+    expect(decodeSyncStep2(ws.sent[1])).toEqual(new Uint8Array([1, 2, 3]));
   });
 });
 
@@ -271,16 +319,37 @@ describe('handleMessage: sync update', () => {
     leaveCollab(collab.scope, peer as never);
   });
 
-  it('must not drop an update silently when its socket has no live session: it is logged and the socket reconnects', async () => {
-    // Authorized, but its session is gone: the socket was never joined to one.
+  it("must not log an update from a socket outside its document's session, into no session or a newer one: it closes with 1013", async () => {
+    // Authorized, but its session ended (its document was retired): the socket was never joined to the current one.
     const scope = mockScope({ entityId: `entity-${++counter}` });
     const c = mockSocketContext({ requested: scope });
     const ws = mockWebSocket();
-
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
-
-    expect(storage.logs.get(storageKey(scope))).toHaveLength(1);
+    expect(storage.logs.get(storageKey(scope))).toBeUndefined();
     expect(ws.closed).toEqual({ code: 1013, reason: 'Session ended' });
+
+    // A newer session of the document, opened by a reconnecting socket, takes nothing from the old socket either.
+    const next = session({ entityId: scope.entityId });
+    const stale = mockWebSocket();
+    await handleMessage(c, stale as never, buildSyncUpdate(mapUpdate('k', 2)));
+    expect(storage.logs.get(next.key)).toBeUndefined();
+    expect(stale.closed).toEqual({ code: 1013, reason: 'Session ended' });
+    expect(next.ws.sent).toHaveLength(0);
+  });
+
+  it("must not log an update sent between the relay's Step1 and the socket's reply: the reply carries it", async () => {
+    const { ctx: c, key, ws } = session();
+    await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    expect(c.awaitingReply).toBe(true);
+
+    // Typed before the client read the relay's answer, which may tell it to drop its document.
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('early', 1)));
+    expect(storage.appendUpdate).not.toHaveBeenCalled();
+
+    // The reply carries what the relay lacks, `early` included, and updates after it are logged again.
+    await handleMessage(c, ws as never, buildSyncStep2(mapUpdate('early', 1)));
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('late', 2)));
+    expect(storage.logs.get(key)?.map((row) => readMap(row.payload))).toEqual([{ early: 1 }, { late: 2 }]);
   });
 
   it('must not fail on a sync frame whose payload is cut short, and closes its sender with 4400', async () => {
@@ -352,24 +421,25 @@ describe('handleMessage: awareness', () => {
     leaveCollab(collab.scope, other as never);
   });
 
-  it('must not relay presence from an unverified or closing socket', async () => {
-    const { ctx: c, scope, collab } = session();
+  it('must not relay presence from an unverified, closing or unjoined socket', async () => {
+    const { ctx: c, scope, ws, collab } = session();
     const peer = mockWebSocket();
     joinCollab(scope, peer as never);
 
     const pending = mockSocketContext({ requested: scope, scope: null });
     await handleMessage(pending, mockWebSocket() as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1 })));
-    await handleMessage(
-      c,
-      mockWebSocket({ readyState: 2 }) as never,
-      buildAwarenessMessage(awarenessUpdate({ clientId: 2 })),
-    );
+    const closing = mockWebSocket({ readyState: 2 });
+    joinCollab(scope, closing as never);
+    await handleMessage(c, closing as never, buildAwarenessMessage(awarenessUpdate({ clientId: 2 })));
+    // Verified, but of a session that ended: it holds no client in this one.
+    await handleMessage(c, mockWebSocket() as never, buildAwarenessMessage(awarenessUpdate({ clientId: 4 })));
     expect(peer.sent).toHaveLength(0);
 
-    // Positive control: an open verified socket reaches the peer.
-    await handleMessage(c, mockWebSocket() as never, buildAwarenessMessage(awarenessUpdate({ clientId: 3 })));
+    // Positive control: an open verified socket of the session reaches the peer.
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 3 })));
     expect(peer.sent).toHaveLength(1);
     leaveCollab(collab.scope, peer as never);
+    leaveCollab(collab.scope, closing as never);
   });
 });
 
@@ -588,6 +658,23 @@ describe('compaction', () => {
     const { collab } = session();
     storage.readLog.mockRejectedValueOnce(new Error('db down'));
     expect(await runCompaction(collab)).toBe('retry');
+  });
+
+  it('a compaction that finds the document retired discards its log and ends the session with 1013', async () => {
+    const { ctx: c, scope, key, ws, collab } = seededSession();
+    await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+    await handleMessage(c, ws as never, buildSyncStep2(mapUpdate('a', 1)));
+    // The description was written outside the relay, which retired the document, before the window closed.
+    storage.bases.delete(key);
+    storage.generations.delete(key);
+
+    await vi.advanceTimersByTimeAsync(3000);
+
+    expect(postMaterialize).not.toHaveBeenCalled();
+    expect(storage.logs.get(key)).toHaveLength(0);
+    expect(ws.closed).toEqual({ code: 1013, reason: 'Document retired' });
+    expect(getCollab(scope)).toBeUndefined();
+    expect(collab.compactTimer).toBeUndefined();
   });
 });
 

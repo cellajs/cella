@@ -43,6 +43,7 @@ Entity authorization runs after the socket opens, via an RLS-scoped read of the 
 | Close code | Meaning |
 | --- | --- |
 | `1011` | Handling a frame failed in the relay; the client reconnects |
+| `1013` | The socket's session ended: its document was retired, or the socket outlived its session. The client reconnects and handshakes again |
 | `4001` | Invalid or expired token, or the socket's token expired |
 | `4003` | Entity access denied |
 | `4400` | Missing or invalid entity scope, a frame no decoder accepts (its message type, a sync frame, an update or an awareness update), or a socket announcing a fifth awareness client |
@@ -64,18 +65,20 @@ Two tables, both under the same tenant-scoped RLS policies:
 
 | Table | Holds |
 | --- | --- |
-| `yjs_documents` | One session row per document: the compacted base state, seeded from the entity's description on first connect and replaced on compaction. |
-| `yjs_updates` | An append-only log of received updates, one row per frame in arrival order, with the sending user. |
+| `yjs_documents` | One row per document: the compacted base state, seeded from the entity's description on the first connect and replaced on compaction, with the generation of its seed. The row outlives the session, so it holds one merged state per collaboratively edited entity, about the size of its description's Yjs encoding. |
+| `yjs_updates` | An append-only log of received updates, one row per frame in arrival order, with the sending user; the window not compacted yet. |
 
 The document as the relay knows it is the base plus every logged update, merged in one call when it is read. Nothing merged is ever held in memory across an await, so concurrent frames cannot overwrite each other.
 
-### Seeding
+### Seeding and generations
 
-When no session row exists, the relay loads the entity's `description` with the same schema introspection as `permissions.ts`, converts the blocks to the `document-store` Yjs fragment, and inserts that state as the base. Seeding runs under a per-document lock, so concurrent first connections converge on one seed. Seeding writes no log row, so opening an untouched document never updates the entity.
+When no document row exists, the relay loads the entity's `description` with the same schema introspection as `permissions.ts`, converts the blocks to the `document-store` Yjs fragment, and inserts that state as the base under a new generation. Seeding runs under a per-document lock, so concurrent first connections converge on one seed. Seeding writes no log row, so opening an untouched document never updates the entity.
+
+Two seeds of one description are two Yjs histories: a client document that survived a session (an editor open while offline, a socket closed at token expiry, a relay restart) and met a reseed would merge into a second top-level block group, of which the editor shows one. So the row is kept across sessions and retired only when its history is void: the backend deletes both tables' rows, in the writing transaction, when a description is written by anything but the relay (a REST update; the yjs module's `<type>.updated` handler, skipping the relay's own `serverOrigin` writes) and when the entity is deleted (`<type>.deleted`), through `retireYjsDocuments`. A module that dispatches neither event calls it itself. A session whose document was retired ends at its next live stamp, compaction or handshake: its sockets close with `1013` and reconnect into a fresh session, which reseeds. Log rows appended after a retire are discarded at that compaction.
 
 ### Handshake
 
-A client's Step1 is answered with the diff of the merged document, followed by the relay's own Step1 carrying the merged state vector. y-websocket answers a Step1 with a Step2 on its own, so content the client holds and the relay never received (a frame lost on a bad connection, an edit made while reconnecting) is uploaded and logged like any update. The client, for its part, watches `store.pendingStructs`: structs parked for two seconds on a missing dependency trigger a fresh handshake, with a ten-second cooldown.
+The relay first tells the client the document's generation (its own message type `4`, a string after the type), then answers the client's Step1 with the diff of the merged document, followed by the relay's own Step1 carrying the merged state vector. y-websocket answers a Step1 with a Step2 on its own, so content the client holds and the relay never received (a frame lost on a bad connection, an edit made while reconnecting) is uploaded and logged like any update. An update the socket sends between the relay's Step1 and that reply is dropped: the reply carries it. A client whose document is of another generation than announced drops it before it merges or replies, connects afresh, and tells the user when the dropped document held edits. The client also watches `store.pendingStructs`: structs parked for two seconds on a missing dependency trigger a fresh handshake, with a ten-second cooldown.
 
 ### Ordering, append, broadcast, compaction
 
@@ -88,16 +91,16 @@ Three seconds after the last received update the log is compacted, under the doc
 | `2xx` | Compact: replace the base, delete the merged rows |
 | `410` | Gone: the entity no longer exists. Cleanup and sweep delete the document's rows |
 | `401`, `403`, `404`, `408`, `409`, `429`, `5xx` or network failure | Retry: the secret or the editors' access can change. Keep the log; the next window, cleanup or sweep retries |
-| Other `4xx` | Permanent: an invalid request or no materializer registered. Keep the log; cleanup keeps the rows without retrying |
+| Other `4xx` | Permanent: an invalid request or no materializer registered. Keep the log; cleanup keeps it without retrying |
 | Unparseable merged state | Permanent, never posted. Keep the log |
-| No session row (another relay deleted it) | Permanent, never posted: the log extends a base that no longer exists, and merged alone it would overwrite the entity with a partial document. Keep the log |
+| No document row (retired) | Never posted: the rows extend a history the next seed does not share, and merged alone they are a partial document. The log is discarded and the session ends with `1013` |
 | A log row no merge accepts | Discarded before the window is merged, with its sender logged, so it never blocks the document; a joining client gets the rest |
 
 ### Disconnect and recovery
 
-After the last client disconnects, the session stays warm for five minutes (a reconnect reuses it). Then cleanup compacts once more and deletes both tables' rows once the log is written or empty. A retryable failure reschedules cleanup, for up to an hour; after that, and after a permanent failure, the rows stay for the next session or the startup sweep. A client that joins while cleanup runs keeps the session and its rows; one that leaves again first hands over to the cleanup its own leave starts, so what it sent is compacted before the rows go. A session leaves memory with no timer left on it, so no later cleanup can reach a newer session of the same document.
+After the last client disconnects, the session stays warm for five minutes (a reconnect reuses it). Then cleanup compacts once more, which deletes the log rows it wrote, and forgets the session; the document row stays, so a client whose document survived merges into the same history when it returns, and the row goes only with the entity (`410`). A retryable failure reschedules cleanup, for up to an hour; after that, and after a permanent failure, the log stays for the next session or the startup sweep. A client that joins while cleanup runs keeps the session; one that leaves again first hands over to the cleanup its own leave starts, so what it sent is compacted too. A session leaves memory with no timer left on it, so no later cleanup can reach a newer session of the same document.
 
-A startup sweep finishes the sessions a crash orphaned through the same locked routine: session rows no session stamped within the grace period, with no younger log row. A session stamps its row when it opens and every minute while it lasts, so a relay generation started next to a running one, as a start-first rollout does, never takes that one's idle sessions for orphans. A client that joins while the sweep finishes a document waits for the document lock and keeps the session and its rows. Because every update was logged before it was broadcast, a crash loses nothing that a client had sent.
+A startup sweep writes the logs a crash left behind through the same locked routine: documents with an uncompacted log whose row no session stamped within the grace period, with no younger log row; a document at rest, with nothing logged, is not visited. A session stamps its row when it opens and every minute while it lasts, so a relay generation started next to a running one, as a start-first rollout does, never takes that one's idle sessions for orphans. A client that joins while the sweep writes a document waits for the document lock and keeps the session. Because every update was logged before it was broadcast, a crash loses nothing that a client had sent.
 
 ## Durability and failure
 
@@ -108,17 +111,18 @@ Clients need no unload handlers or final flush: an update is durable before peer
 | A client loses its connection | The client keeps editing and reconnects with backoff after any close but a final one. Everything it sent is logged; the next handshake uploads what it had not. |
 | The relay ends a session for good (`4003`, `4400`, a frame too big, or five different tokens refused with no sync between them) | The client stops reconnecting and its editor turns read-only with a notice, so nothing is typed that could not be saved. An expired token refused again, while no refetch reaches the API, does not count: the client keeps reconnecting with backoff and syncs once a fresh token arrives |
 | The backend is unavailable | Materialization is retried on the next window, at cleanup, or by the sweep; the log stays until the backend recovers |
-| The relay restarts | Clients reconnect with complete documents. The startup sweep compacts orphaned sessions. |
-| Access revoked | The socket closes when its token expires and cannot reconnect. Materialization credits the newest editor who may still update the entity; when none may, it is refused and retried, and the rows stay until a write succeeds. |
-| Entity deleted | Materialization answers `410` and the document's rows are deleted at cleanup or by the sweep. Cleanup does not resurrect the entity. |
+| The relay restarts | Clients reconnect with complete documents into the same history, since the document row outlived the session. The startup sweep writes the logs the crash left. |
+| Access revoked | The socket closes when its token expires and cannot reconnect. Materialization credits the newest editor who may still update the entity; when none may, it is refused and retried, and the log stays until a write succeeds. |
+| Entity deleted | Its deletion retires the document; a session that outlives it gets `410` from materialization and deletes the rows at cleanup or by the sweep. Cleanup does not resurrect the entity. |
+| Description written outside the relay | The write retires the document. Open sessions end with `1013` within a minute, sooner when someone types; clients reconnect, are told the new generation, drop their document, and show the written description, with a notice when they held edits. Edits logged after the write are discarded. |
 | SSE arrives during editing | Active editors suppress Yjs-owned fields, so an older materialized snapshot cannot overwrite the local document |
 
 ## Operational constraints
 
-- **Live collaboration is process-local.** Clients editing one entity must reach the same relay instance (single instance or entity-affinity routing), or updates are not shared between them; the log stays consistent either way.
+- **Live collaboration is process-local.** Clients editing one entity must reach the same relay instance (single instance or entity-affinity routing). Two relays holding one document share its log but not each other's live updates, and two compactions that overlap can each fold a different window, the later base write dropping rows the earlier one merged. A start-first rollout is safe: live sessions stamp their row, and the new relay's sweep visits only documents no session holds.
 - **No server-side edit history**: the base holds a merged snapshot and the log only what is not compacted yet. Undo, redo, and per-edit history live in clients.
 - **Fragment and schema must stay aligned.** The `document-store` fragment and React-free shared BlockNote schema must match the frontend binding (custom blocks have round-trip tests).
-- **Seeds are server-generated and never merged.**
+- **Seeds are server-generated and never merged.** A reseed is a new generation, and a client never merges two.
 - **RLS scope.** Storage reads and writes run under the document's tenant with no user context; authorization reads the row and memberships under the requesting user's. The startup sweep visits every tenant through its own tenant-scoped transaction.
 - **Materialization is eventual**: the entity row can lag the live document by the compaction window plus retry delay, and only product entities with a registered materializer persist collaborative content.
 

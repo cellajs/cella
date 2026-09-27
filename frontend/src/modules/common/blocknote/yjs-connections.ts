@@ -1,5 +1,6 @@
 import { onlineManager } from '@tanstack/react-query';
 import i18n from 'i18next';
+import * as decoding from 'lib0/decoding';
 import { useEffect, useState } from 'react';
 import { appConfig, type ProductEntityType } from 'shared';
 import { toWsUrl } from 'shared/utils/ws-url';
@@ -26,6 +27,9 @@ const YJS_CLOSE = {
   BAD_REQUEST: 4400,
 } as const;
 
+/** The relay's own message type next to y-websocket's sync (0) and awareness (1): the document's generation, sent before every handshake answer. Must match yjs/src/sync/relay.ts. */
+const YJS_MESSAGE_GENERATION = 4;
+
 /**
  * Closes after which no reconnect can succeed: access denied, a document or update the relay refuses, and a frame
  * too big for the relay, which a reconnect would send again. Every other close is transient: y-websocket backs off,
@@ -44,6 +48,10 @@ interface YjsConnection {
   refCount: number;
   /** Set once the relay ended the session for good; a stopped connection never reconnects and is not reused. */
   stopped: boolean;
+  /** The generation the relay announced for the document at its first handshake; another one later means the document was reseeded. */
+  generation: string | null;
+  /** True once a local edit was made on the document, so a rebuild can say that unsaved edits were discarded. */
+  edited: boolean;
   graceTimer?: ReturnType<typeof setTimeout>;
   unsubOnline?: () => void;
   unsubToken?: () => void;
@@ -55,15 +63,18 @@ interface YjsConnection {
 const connections = new Map<string, YjsConnection>();
 
 interface YjsSyncState {
-  /** editSessionId → synced boolean */
+  /** editSessionId → synced boolean; back to false while a reseeded document syncs afresh */
   synced: Record<string, boolean>;
   /** editSessionId → true once its connection stopped for good */
   stopped: Record<string, boolean>;
+  /** editSessionId → how often its document was rebuilt after a reseed; the editor remounts on the new fragment */
+  rebuilds: Record<string, number>;
 }
 
 const useYjsSyncStore = create<YjsSyncState>(() => ({
   synced: {},
   stopped: {},
+  rebuilds: {},
 }));
 
 /**
@@ -78,23 +89,12 @@ function stopConnection(editSessionId: string, conn: YjsConnection, message: TKe
   if (message) toaster.warning(i18n.t(message));
 }
 
-function acquireConnection(editSessionId: string, entityType: ProductEntityType, tenantId: string): YjsConnection {
-  const existing = connections.get(editSessionId);
-
-  if (existing) {
-    if (existing.graceTimer) {
-      clearTimeout(existing.graceTimer);
-      existing.graceTimer = undefined;
-    }
-    existing.refCount++;
-    return existing;
-  }
-
+/** A fresh document and its provider for the entity's session, connecting with the token held for it. */
+function openDoc(editSessionId: string, entityType: ProductEntityType, tenantId: string) {
   const serverUrl = toWsUrl(appConfig.yjsUrl!);
   // The session is the entity's document, and a token opens that one document only.
-  const tokenKey = yjsTokenKey(entityType, editSessionId);
-  const token = useUserStore.getState().yjsTokens[tokenKey];
-  if (!token) throw new Error(`[yjs] No token available for ${tokenKey}`);
+  const token = useUserStore.getState().yjsTokens[yjsTokenKey(entityType, editSessionId)];
+  if (!token) throw new Error(`[yjs] No token available for ${entityType}:${editSessionId}`);
 
   const yDoc = new Y.Doc();
   const provider = new WebsocketProvider(serverUrl, editSessionId, yDoc, {
@@ -102,8 +102,16 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
     connect: onlineManager.isOnline() !== false,
     maxBackoffTime: MAX_BACKOFF_MS,
   });
-  const fragment = yDoc.getXmlFragment('document-store');
-  const conn: YjsConnection = { yDoc, provider, fragment, refCount: 1, stopped: false };
+  return { yDoc, provider, fragment: yDoc.getXmlFragment('document-store') };
+}
+
+/**
+ * Listens on the connection's document and provider: keeps the token current, ends the connection for good on a
+ * final close, rebuilds it when the relay reseeded the document, and reports the first sync.
+ */
+function bindProvider(editSessionId: string, conn: YjsConnection, entityType: ProductEntityType, tenantId: string) {
+  const { provider, yDoc } = conn;
+  const tokenKey = yjsTokenKey(entityType, editSessionId);
 
   // A withdrawn token stays withdrawn across an offline blip: reconnect only while one is held.
   conn.unsubOnline = onlineManager.subscribe((isOnline) => {
@@ -125,7 +133,7 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   });
 
   // The token each attempt carries: y-websocket reads the params as it opens a socket, then reports 'connecting'.
-  let attemptToken = token;
+  let attemptToken = provider.params.token;
   provider.on('status', ({ status }) => {
     if (status === 'connecting') attemptToken = provider.params.token;
   });
@@ -157,8 +165,20 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
     if (message) stopConnection(editSessionId, conn, message);
   });
 
+  // The relay announces the document's generation before it answers a handshake. The first one is the document's;
+  // another one later means the relay reseeded it (its description was written outside the relay), and this document
+  // shares no history with the new one: it is dropped here, before y-websocket merges or uploads anything of it.
+  provider.messageHandlers[YJS_MESSAGE_GENERATION] = (_encoder, decoder) => {
+    const generation = decoding.readVarString(decoder);
+    if (conn.generation === null) conn.generation = generation;
+    else if (conn.generation !== generation) rebuildConnection(editSessionId, conn, entityType, tenantId);
+  };
+
+  yDoc.on('update', (_update: Uint8Array, origin: unknown) => {
+    if (origin !== provider) conn.edited = true;
+  });
+
   conn.stopResyncWatch = watchPendingStructs(yDoc, provider);
-  connections.set(editSessionId, conn);
 
   const handleSync = (isSynced: boolean) => {
     if (!isSynced) return;
@@ -171,21 +191,71 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   } else {
     provider.on('sync', handleSync);
   }
-
-  return conn;
 }
 
-function destroyConnection(editSessionId: string, conn: YjsConnection) {
+/** Ends the connection's provider and document. */
+function unbindProvider(conn: YjsConnection) {
   conn.unsubOnline?.();
   conn.unsubToken?.();
   conn.stopResyncWatch?.();
   conn.provider.destroy();
   conn.yDoc.destroy();
+}
+
+/**
+ * Replaces the connection's document with a fresh one that syncs the reseeded server state. The editor remounts on
+ * the new fragment once it synced (useYjsConnection reports `synced` false meanwhile), and the user is told when the
+ * dropped document held edits, since the description they see next is the one written elsewhere.
+ */
+function rebuildConnection(
+  editSessionId: string,
+  conn: YjsConnection,
+  entityType: ProductEntityType,
+  tenantId: string,
+) {
+  const { edited } = conn;
+  unbindProvider(conn);
+  Object.assign(conn, openDoc(editSessionId, entityType, tenantId), { generation: null, edited: false });
+  useYjsSyncStore.setState((s) => ({
+    synced: { ...s.synced, [editSessionId]: false },
+    rebuilds: { ...s.rebuilds, [editSessionId]: (s.rebuilds[editSessionId] ?? 0) + 1 },
+  }));
+  bindProvider(editSessionId, conn, entityType, tenantId);
+  if (edited) toaster.warning(i18n.t('error:sync_document_replaced.text'));
+}
+
+function acquireConnection(editSessionId: string, entityType: ProductEntityType, tenantId: string): YjsConnection {
+  const existing = connections.get(editSessionId);
+
+  if (existing) {
+    if (existing.graceTimer) {
+      clearTimeout(existing.graceTimer);
+      existing.graceTimer = undefined;
+    }
+    existing.refCount++;
+    return existing;
+  }
+
+  const conn: YjsConnection = {
+    ...openDoc(editSessionId, entityType, tenantId),
+    refCount: 1,
+    stopped: false,
+    generation: null,
+    edited: false,
+  };
+  bindProvider(editSessionId, conn, entityType, tenantId);
+  connections.set(editSessionId, conn);
+  return conn;
+}
+
+function destroyConnection(editSessionId: string, conn: YjsConnection) {
+  unbindProvider(conn);
   connections.delete(editSessionId);
   useYjsSyncStore.setState((s) => {
     const { [editSessionId]: _synced, ...synced } = s.synced;
     const { [editSessionId]: _stopped, ...stopped } = s.stopped;
-    return { synced, stopped };
+    const { [editSessionId]: _rebuilds, ...rebuilds } = s.rebuilds;
+    return { synced, stopped, rebuilds };
   });
 }
 
@@ -205,7 +275,9 @@ function releaseConnection(editSessionId: string) {
 
 /**
  * Ref-counted Yjs connection kept alive for a grace period after the last consumer unmounts, so a remount reuses it;
- * `undefined` disables it. `stopped` turns true once the relay ended the session for good: the editor must go read-only.
+ * `undefined` disables it. `stopped` turns true once the relay ended the session for good: the editor must go
+ * read-only. `synced` drops back to false while a reseeded document syncs afresh, and `rebuilds` counts those, so the
+ * editor remounts on the new fragment.
  */
 export function useYjsConnection(editSessionId: string | undefined, entityType: ProductEntityType, tenantId: string) {
   const [conn, setConn] = useState<YjsConnection | null>(() => {
@@ -227,7 +299,8 @@ export function useYjsConnection(editSessionId: string | undefined, entityType: 
 
   const synced = useYjsSyncStore((s) => s.synced[editSessionId ?? ''] ?? false);
   const stopped = useYjsSyncStore((s) => s.stopped[editSessionId ?? ''] ?? false);
+  const rebuilds = useYjsSyncStore((s) => s.rebuilds[editSessionId ?? ''] ?? 0);
 
   if (!conn) return null;
-  return { provider: conn.provider, fragment: conn.fragment, synced, stopped };
+  return { provider: conn.provider, fragment: conn.fragment, synced, stopped, rebuilds };
 }

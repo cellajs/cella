@@ -119,7 +119,9 @@ export function CollaborativeBlockNote({
         }
       : undefined;
 
-  if (waitingForSync) return waitingFallback ?? <Spinner className="my-8 h-6 w-6 opacity-50" />;
+  // A reseeded document syncs afresh: the editor comes back on the new fragment once it did.
+  const rebuilding = collaborative && !wsReady;
+  if (waitingForSync || rebuilding) return waitingFallback ?? <Spinner className="my-8 h-6 w-6 opacity-50" />;
 
   const uploadHostProps = blockNoteProps.baseFilePanelProps;
 
@@ -131,8 +133,9 @@ export function CollaborativeBlockNote({
         </p>
       )}
       <BlockNote
-        // Stable for this mount; the key still guards against reusing a standalone editor instance as collaborative.
-        key={collaborative ? 'collab' : 'solo'}
+        // Stable for this mount, and new per rebuilt document; the key also guards against reusing a standalone editor
+        // instance as collaborative.
+        key={collaborative ? `collab-${yjsConn?.rebuilds ?? 0}` : 'solo'}
         id={`blocknote-${entityId}`}
         defaultValue={description ?? undefined}
         updateData={(blocks) => void updateData(blocks, collaborative)}

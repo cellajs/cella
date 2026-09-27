@@ -76,17 +76,20 @@ describe('compactDocument', () => {
     expect(storage.logs.get(key)).toHaveLength(1);
   });
 
-  it('must not write a partial document over the entity via a log whose session row is gone', async () => {
-    // Another relay finished the document and deleted its session row: these rows extend a base that no longer exists.
+  it('must not write or keep a log whose document row is gone: retired, it is discarded whole', async () => {
+    // The document was retired (its description written outside the relay, or its entity deleted) and rows were
+    // appended since: they extend a history the next seed does not share, and merged alone they are a partial document.
     storage.bases.delete(key);
     await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
-    expect(await compactDocument(scope)).toBe('permanent');
+    await storage.appendUpdate(scope, 'user-2', mapUpdate('b', 2));
+    expect(await compactDocument(scope)).toBe('retired');
     expect(postMaterialize).not.toHaveBeenCalled();
     expect(storage.compactState).not.toHaveBeenCalled();
-    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(storage.logs.get(key)).toHaveLength(0);
 
-    // Positive control: under its session row, the same log is written.
+    // Positive control: under its document row, the same log is written.
     storage.bases.set(key, mapUpdate('seed', true));
+    await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
     expect(await compactDocument(scope)).toBe('ok');
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, a: 1 });
   });

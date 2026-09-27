@@ -190,6 +190,8 @@
   "step_up_other_browser.text": "This confirmation link works only in the browser where you asked for it.",
   "step_up_required": "Confirm it's you",
   "step_up_required.text": "Confirm it's you before you change how your account is protected.",
+  "sync_document_replaced": "Description replaced",
+  "sync_document_replaced.text": "This description was changed elsewhere and reloaded; your unsaved edits were discarded.",
   "sync_failed": "Sync failed",
   "sync_failed.text": "Connecting with sync service failed. Please try again later.",
   "sync_token_expired": "Sync session expired",

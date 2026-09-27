@@ -18,6 +18,8 @@ export interface CollabSession {
   awarenessOwners: Map<number, { ws: WebSocket; userId: string }>;
   /** Document lock: seeding, compaction and finishing (cleanup or the startup sweep) run one at a time through this chain. */
   chain: Promise<unknown>;
+  /** The generation of the document row the session loaded at its first handshake, null before. A row gone or of another generation since was retired: the session ends. */
+  generation: string | null;
   cleanupTimer?: ReturnType<typeof setTimeout>;
   compactTimer?: ReturnType<typeof setTimeout>;
   /** Stamps the session row live every YJS_LIVE_TOUCH_MS while the session lasts. */
@@ -57,9 +59,18 @@ export function withDocLock<T>(collab: CollabSession, fn: () => Promise<T>): Pro
   return run;
 }
 
-/** Stamps the document's session row live; a failed stamp is logged, and the next one comes a beat later. */
-function markLive(doc: DocKey): void {
-  touchDoc(doc).catch((err) => log.warn(`Marking ${collabKey(doc)} live failed`, { err }));
+/**
+ * Stamps the document row live; a failed stamp is logged, and the next one comes a beat later. A row that is gone once
+ * the session has loaded it was retired: the session ends, and its sockets reconnect into one that reseeds.
+ */
+function markLive(collab: CollabSession): void {
+  const loaded = collab.generation !== null;
+  touchDoc(collab.scope).then(
+    (exists) => {
+      if (!exists && loaded) endCollab(collab);
+    },
+    (err) => log.warn(`Marking ${collabKey(collab.scope)} live failed`, { err }),
+  );
 }
 
 /**
@@ -67,18 +78,17 @@ function markLive(doc: DocKey): void {
  * so the startup sweep of another relay generation never takes it for an orphan, however long it idles.
  */
 function openCollab(scope: DocScope, clients: WebSocket[]): CollabSession {
-  markLive(scope);
-  const liveTimer = setInterval(() => markLive(scope), YJS_LIVE_TOUCH_MS);
-  // A session never keeps the process alive at shutdown.
-  liveTimer.unref();
   const collab: CollabSession = {
     scope,
     clients: new Set(clients),
     awarenessOwners: new Map(),
     chain: Promise.resolve(),
-    liveTimer,
+    generation: null,
+    // A session never keeps the process alive at shutdown.
+    liveTimer: setInterval(() => markLive(collab), YJS_LIVE_TOUCH_MS).unref(),
   };
   collabSessions.set(collabKey(scope), collab);
+  markLive(collab);
   return collab;
 }
 
@@ -109,16 +119,30 @@ function dropCollab(key: string, collab: CollabSession): void {
   if (collabSessions.get(key) === collab) collabSessions.delete(key);
 }
 
-/** How finishing a session ended: a socket joined it, the backend did not take its log yet or refused it, or its rows are gone. */
+/**
+ * Ends a session whose document was retired (its description written by anything but the relay, or its entity
+ * deleted): every socket closes with 1013 and reconnects into a fresh session, which reseeds the document and tells
+ * each client the new generation. The session leaves the map at once, so no later task of it reaches the new one.
+ */
+export function endCollab(collab: CollabSession): void {
+  const key = collabKey(collab.scope);
+  if (collabSessions.get(key) !== collab) return;
+  dropCollab(key, collab);
+  log.info(`Document ${key} was retired: ending its session`);
+  for (const ws of collab.clients) ws.close(1013, 'Document retired');
+}
+
+/** How finishing a session ended: a socket joined it, the backend did not take its log yet or refused it, or its log is written or gone. */
 type FinishOutcome = 'joined' | 'retry' | 'kept' | 'done';
 
 /** A socket joined since the finish started: it is still in the session, or its leave armed a newer cleanup. */
 const joinedSince = (collab: CollabSession) => collab.clients.size > 0 || collab.cleanupTimer !== undefined;
 
 /**
- * Finishes a session no socket holds, under the document lock: compacts its log once more, then deletes both tables'
- * rows once the log is written or empty, or the entity is gone. An unwritten log keeps the rows: they hold edits the
- * entity has not received. A socket that joins before the rows go keeps the session and its rows.
+ * Finishes a session no socket holds, under the document lock: compacts its log once more, which deletes the log rows
+ * it wrote. The document row stays, so a client whose document survived the session merges into the same history when
+ * it returns; it goes only with the entity (`gone`). An unwritten log keeps its rows: they hold edits the entity has
+ * not received. A socket that joins meanwhile keeps the session.
  */
 async function finishCollab(key: string, collab: CollabSession): Promise<FinishOutcome> {
   const outcome = await withDocLock(collab, async (): Promise<FinishOutcome> => {
@@ -135,11 +159,12 @@ async function finishCollab(key: string, collab: CollabSession): Promise<FinishO
     if (joinedSince(collab)) return 'joined';
     if (result === 'retry') return 'retry';
     if (result === 'permanent') return 'kept';
-
-    try {
-      await deleteDoc(collab.scope);
-    } catch (err) {
-      log.error(`Failed to delete session rows for ${key}`, { err });
+    if (result === 'gone') {
+      try {
+        await deleteDoc(collab.scope);
+      } catch (err) {
+        log.error(`Failed to delete the rows of ${key}`, { err });
+      }
     }
     return 'done';
   });
@@ -147,10 +172,10 @@ async function finishCollab(key: string, collab: CollabSession): Promise<FinishO
 }
 
 /**
- * Finishes the rows of a session the startup sweep found orphaned, as a cleanup does. The session it opens for them has
+ * Finishes the log of a document the startup sweep found unwritten, as a cleanup does. The session it opens for it has
  * no socket but sits in the map, so a socket that joins meanwhile joins it: its handshake waits for the document lock,
- * and it keeps the session and its rows. The session is forgotten unless a socket joined; a document that already has
- * a session here is left to it.
+ * and it keeps the session. The session is forgotten unless a socket joined; a document that already has a session
+ * here is left to it.
  */
 export async function finishOrphan(scope: DocScope): Promise<FinishOutcome> {
   if (getCollab(scope)) return 'joined';
@@ -161,12 +186,12 @@ export async function finishOrphan(scope: DocScope): Promise<FinishOutcome> {
 }
 
 /**
- * When the last client leaves, a grace period runs before the session is finished: its log compacted and its rows
- * deleted. A retryable failure keeps the rows and retries, up to YJS_CLEANUP_MAX_ATTEMPTS, and a permanent refusal or
- * the last failed attempt keeps them for the next session or the startup sweep. A socket that joins while cleanup
- * runs keeps the session and its rows; when it leaves again first, the cleanup its leave arms takes over, so what it
- * logged is compacted before the rows go. A session leaves the map only while it has no client and no timer armed on
- * it, so the relay always finds a joined socket's session.
+ * When the last client leaves, a grace period runs before the session is finished: its log compacted and forgotten.
+ * A retryable failure keeps the log and retries, up to YJS_CLEANUP_MAX_ATTEMPTS, and a permanent refusal or the last
+ * failed attempt keeps it for the next session or the startup sweep. A socket that joins while cleanup runs keeps the
+ * session; when it leaves again first, the cleanup its leave arms takes over, so what it logged is compacted too. A
+ * session leaves the map only while it has no client and no timer armed on it, so the relay always finds a joined
+ * socket's session.
  */
 export function leaveCollab(doc: DocKey, ws: WebSocket): void {
   const key = collabKey(doc);
@@ -192,13 +217,13 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
     if (outcome === 'joined') return;
     if (outcome === 'retry') {
       if (attempts < YJS_CLEANUP_MAX_ATTEMPTS) {
-        log.warn(`Materialize unavailable for ${key}: keeping session rows, retrying cleanup`);
+        log.warn(`Materialize unavailable for ${key}: keeping the log, retrying cleanup`);
         collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
         return;
       }
-      log.error(`Materialize failed ${attempts} times for ${key}: keeping session rows for the next session or sweep`);
+      log.error(`Materialize failed ${attempts} times for ${key}: keeping the log for the next session or sweep`);
     }
-    if (outcome === 'kept') log.warn(`Materialize refused for ${key}: keeping session rows for the next session`);
+    if (outcome === 'kept') log.warn(`Materialize refused for ${key}: keeping the log for the next session`);
     dropCollab(key, collab);
   };
 

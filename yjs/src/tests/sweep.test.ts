@@ -22,7 +22,7 @@ beforeEach(() => {
 });
 
 describe('runStartupSweep', () => {
-  it('compacts every orphaned session through the shared routine, then deletes its rows', async () => {
+  it('must not delete the document rows it writes: every unwritten log goes through the shared routine, and the rows stay', async () => {
     vi.mocked(listStaleDocs).mockResolvedValueOnce([
       staleRow(),
       staleRow({ entityId: 'entity-2', organizationId: null }),
@@ -33,18 +33,19 @@ describe('runStartupSweep', () => {
     expect(compactDocument).toHaveBeenCalledTimes(2);
     // As the system, in the scope the row stored: no user context.
     expect(compactDocument).toHaveBeenCalledWith(staleRow());
-    expect(deleteDoc).toHaveBeenCalledTimes(2);
-    expect(deleteDoc).toHaveBeenCalledWith(staleRow({ entityId: 'entity-2', organizationId: null }));
+    expect(compactDocument).toHaveBeenCalledWith(staleRow({ entityId: 'entity-2', organizationId: null }));
+    expect(deleteDoc).not.toHaveBeenCalled();
+    expect(getCollab(staleRow())).toBeUndefined();
   });
 
-  it('deletes a row with nothing logged without a write (empty compaction)', async () => {
+  it('deletes the rows of a document whose entity is gone', async () => {
     vi.mocked(listStaleDocs).mockResolvedValueOnce([staleRow()]);
-    vi.mocked(compactDocument).mockResolvedValueOnce('empty');
+    vi.mocked(compactDocument).mockResolvedValueOnce('gone');
     await runStartupSweep();
-    expect(deleteDoc).toHaveBeenCalledTimes(1);
+    expect(deleteDoc).toHaveBeenCalledWith(staleRow());
   });
 
-  it('keeps the rows when the log was not written or compaction throws', async () => {
+  it('keeps the log when it was not written or compaction throws', async () => {
     vi.mocked(listStaleDocs).mockResolvedValueOnce([
       staleRow(),
       staleRow({ entityId: 'entity-2' }),
@@ -67,7 +68,7 @@ describe('runStartupSweep', () => {
     expect(deleteDoc).not.toHaveBeenCalled();
   });
 
-  it('must not delete the rows of a socket that joins while the sweep compacts: it keeps the session and its rows', async () => {
+  it('a socket that joins while the sweep writes keeps the session, and its handshake waits for the write', async () => {
     const doc = staleRow({ entityId: 'entity-joining' });
     vi.mocked(listStaleDocs).mockResolvedValueOnce([doc]);
     const compaction = deferred();
@@ -91,9 +92,8 @@ describe('runStartupSweep', () => {
     await sweep;
     await handshakeDone;
 
-    // The handshake reads the document once the compaction folded it, and the joiner's session keeps its rows.
+    // The handshake reads the document once the compaction folded it, and the joiner's session stays.
     expect(handshake).toHaveBeenCalledTimes(1);
-    expect(deleteDoc).not.toHaveBeenCalled();
     expect(getCollab(doc)).toBe(session);
     expect(session.clients.has(joiner as never)).toBe(true);
   });

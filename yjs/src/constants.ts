@@ -37,4 +37,6 @@ export interface SocketContext {
   userId: string;
   requested: DocScope;
   scope: DocScope | null;
+  /** True from the relay's Step1 until the socket's Step2 answers it: an update sent meanwhile is dropped, since the reply carries it and its document may be one the client is about to drop. */
+  awaitingReply: boolean;
 }

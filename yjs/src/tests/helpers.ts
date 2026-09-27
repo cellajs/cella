@@ -57,14 +57,15 @@ export function mockSocketContext(
     userId: overrides.userId ?? 'user-1',
     requested,
     scope: overrides.scope === undefined ? requested : overrides.scope,
+    awaitingReply: false,
   };
 }
 
 /** The fake storage's key for a document: its tenant, type and id. */
 export const storageKey = ({ tenantId, entityType, entityId }: DocKey) => `${tenantId}:${entityType}:${entityId}`;
 
-const YMessage = { Sync: 0, Awareness: 1 } as const;
-const YSync = { Step1: 0, Update: 2 } as const;
+const YMessage = { Sync: 0, Awareness: 1, Generation: 4 } as const;
+const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
 
 export function buildSyncStep1(stateVector: Uint8Array): Uint8Array {
   const encoder = encoding.createEncoder();
@@ -74,12 +75,23 @@ export function buildSyncStep1(stateVector: Uint8Array): Uint8Array {
   return encoding.toUint8Array(encoder);
 }
 
-export function buildSyncUpdate(update: Uint8Array): Uint8Array {
+export function buildSyncUpdate(update: Uint8Array, syncType: number = YSync.Update): Uint8Array {
   const encoder = encoding.createEncoder();
   encoding.writeVarUint(encoder, YMessage.Sync);
-  encoding.writeVarUint(encoder, YSync.Update);
+  encoding.writeVarUint(encoder, syncType);
   encoding.writeVarUint8Array(encoder, update);
   return encoding.toUint8Array(encoder);
+}
+
+/** A client's reply to the relay's Step1: the update it holds that the relay lacks (an empty one when nothing). */
+export const buildSyncStep2 = (update: Uint8Array = Y.encodeStateAsUpdate(new Y.Doc())) =>
+  buildSyncUpdate(update, YSync.Step2);
+
+/** The generation a relay frame announces; null for any other frame. */
+export function decodeGeneration(message: Uint8Array): string | null {
+  const decoder = decoding.createDecoder(message);
+  if (decoding.readVarUint(decoder) !== YMessage.Generation) return null;
+  return decoding.readVarString(decoder);
 }
 
 /** An awareness update as y-protocols encodes it: each entry's client id, clock and JSON state (null removes it). */
@@ -163,13 +175,13 @@ export interface MockWebSocket {
 /** Use at top level: vi.mock('../data/storage', () => storageMock()) */
 export const storageMock = () => ({
   loadBase: vi.fn().mockResolvedValue(null),
-  ensureDoc: vi.fn().mockResolvedValue(new Uint8Array()),
+  ensureDoc: vi.fn().mockResolvedValue({ state: new Uint8Array(), generation: 'gen-1' }),
   appendUpdate: vi.fn().mockResolvedValue(undefined),
   readLog: vi.fn().mockResolvedValue([]),
   compactState: vi.fn().mockResolvedValue(undefined),
   discardLogRows: vi.fn().mockResolvedValue(undefined),
   deleteDoc: vi.fn().mockResolvedValue(undefined),
-  touchDoc: vi.fn().mockResolvedValue(undefined),
+  touchDoc: vi.fn().mockResolvedValue(true),
   listStaleDocs: vi.fn().mockResolvedValue([]),
 });
 
@@ -180,24 +192,35 @@ export const storageMock = () => ({
  */
 export function fakeStorage(delay?: (call: string) => Promise<void> | undefined) {
   const bases = new Map<string, Uint8Array>();
+  /** The generation of each base; a base a test sets without one reads as `gen-0`. Every seed gets a new one. */
+  const generations = new Map<string, string>();
   const logs = new Map<string, { id: number; payload: Uint8Array; userId: string | null }[]>();
   let nextId = 1;
+  let seeds = 0;
   const key = storageKey;
   const wait = async (call: string) => {
     const p = delay?.(call);
     if (p) await p;
   };
+  const row = (k: string) => {
+    const state = bases.get(k);
+    return state ? { state, generation: generations.get(k) ?? 'gen-0' } : null;
+  };
   const store = {
     bases,
+    generations,
     logs,
     loadBase: vi.fn(async (doc: DocKey) => {
       await wait('loadBase');
-      return bases.get(key(doc)) ?? null;
+      return row(key(doc));
     }),
     ensureDoc: vi.fn(async (scope: DocScope, seed: Uint8Array | null) => {
       await wait('ensureDoc');
-      if (!bases.has(key(scope))) bases.set(key(scope), seed ?? new Uint8Array());
-      return bases.get(key(scope))!;
+      if (!bases.has(key(scope))) {
+        bases.set(key(scope), seed ?? new Uint8Array());
+        generations.set(key(scope), `gen-${++seeds}`);
+      }
+      return row(key(scope))!;
     }),
     appendUpdate: vi.fn(async (scope: DocScope, userId: string, payload: Uint8Array) => {
       await wait('appendUpdate');
@@ -227,10 +250,12 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
     deleteDoc: vi.fn(async (doc: DocKey) => {
       await wait('deleteDoc');
       bases.delete(key(doc));
+      generations.delete(key(doc));
       logs.delete(key(doc));
     }),
-    touchDoc: vi.fn(async (_doc: DocKey) => {
+    touchDoc: vi.fn(async (doc: DocKey) => {
       await wait('touchDoc');
+      return bases.has(key(doc));
     }),
     listStaleDocs: vi.fn(async (): Promise<DocScope[]> => []),
   };

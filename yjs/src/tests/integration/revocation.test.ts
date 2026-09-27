@@ -115,7 +115,7 @@ async function open(ttlMs: number) {
 async function stored(): Promise<Record<string, unknown>> {
   const rows = await readLog(scope);
   const merged = mergeState(
-    await loadBase(scope),
+    (await loadBase(scope))?.state ?? null,
     rows.map((row) => row.payload),
   );
   return merged ? readMap(merged) : {};

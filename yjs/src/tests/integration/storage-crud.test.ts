@@ -15,6 +15,7 @@ import {
   ensureDoc,
   loadBase,
   readLog,
+  touchDoc,
 } from '../../data/storage';
 import { mergeState } from '../../sync/document-state';
 import { mapUpdate, readMap } from '../helpers';
@@ -43,6 +44,7 @@ const ids = {
   nonexistent: '10000000-0000-4000-a000-000000000004',
   rls: '10000000-0000-4000-a000-000000000005',
   discard: '10000000-0000-4000-a000-000000000006',
+  retire: '10000000-0000-4000-a000-000000000007',
 };
 
 /** Seeds the rows the RLS context needs so `set_config` does not trigger FK violations; runs as the superuser, which bypasses RLS. */
@@ -83,7 +85,7 @@ describe('6.1 Storage: session row, update log, compaction', () => {
     const c = ctx(ids.lifecycle);
     const seed = mapUpdate('seed', true);
     expect(await loadBase(c)).toBeNull();
-    expect(await ensureDoc(c, seed)).toEqual(seed);
+    expect((await ensureDoc(c, seed)).state).toEqual(seed);
 
     await appendUpdate(c, testUserId, mapUpdate('a', 1));
     await appendUpdate(c, '00000000-0000-4000-a000-0000000000bb', mapUpdate('b', 2));
@@ -92,7 +94,7 @@ describe('6.1 Storage: session row, update log, compaction', () => {
     expect(rows[0].id).toBeLessThan(rows[1].id);
 
     const merged = mergeState(
-      await loadBase(c),
+      (await loadBase(c))!.state,
       rows.map((row) => row.payload),
     )!;
     await compactState(
@@ -100,20 +102,32 @@ describe('6.1 Storage: session row, update log, compaction', () => {
       merged,
       rows.map((row) => row.id),
     );
-    expect(readMap((await loadBase(c))!)).toEqual({ seed: true, a: 1, b: 2 });
+    expect(readMap((await loadBase(c))!.state)).toEqual({ seed: true, a: 1, b: 2 });
     expect(await readLog(c)).toEqual([]);
 
     await deleteDoc(c);
     expect(await loadBase(c)).toBeNull();
   });
 
-  it('ensureDoc keeps the first seed and returns it to a concurrent second connector', async () => {
+  it('ensureDoc keeps the first seed and its generation, and returns them to a concurrent second connector', async () => {
     const c = ctx(ids.idempotent);
     const first = mapUpdate('first', true);
     const [a, b] = await Promise.all([ensureDoc(c, first), ensureDoc(c, mapUpdate('second', true))]);
-    expect(readMap(a)).toEqual({ first: true });
-    expect(readMap(b)).toEqual({ first: true });
-    expect(readMap(await ensureDoc(c, null))).toEqual({ first: true });
+    expect(readMap(a.state)).toEqual({ first: true });
+    expect(b).toEqual(a);
+    expect(await ensureDoc(c, null)).toEqual(a);
+    await deleteDoc(c);
+  });
+
+  it('a retired document reseeds under a new generation, and touchDoc reports whether the row exists', async () => {
+    const c = ctx(ids.retire);
+    const first = await ensureDoc(c, mapUpdate('first', true));
+    expect(await touchDoc(c)).toBe(true);
+    await deleteDoc(c);
+    expect(await touchDoc(c)).toBe(false);
+    const second = await ensureDoc(c, mapUpdate('second', true));
+    expect(readMap(second.state)).toEqual({ second: true });
+    expect(second.generation).not.toBe(first.generation);
     await deleteDoc(c);
   });
 
@@ -128,7 +142,7 @@ describe('6.1 Storage: session row, update log, compaction', () => {
     const read = rows.slice(0, 20);
     await appendUpdate(c, testUserId, mapUpdate('late', true));
     const merged = mergeState(
-      await loadBase(c),
+      (await loadBase(c))!.state,
       read.map((row) => row.payload),
     )!;
     await compactState(
@@ -140,7 +154,7 @@ describe('6.1 Storage: session row, update log, compaction', () => {
     const remaining = await readLog(c);
     expect(remaining).toHaveLength(1);
     expect(readMap(remaining[0].payload)).toEqual({ late: true });
-    const base = readMap((await loadBase(c))!);
+    const base = readMap((await loadBase(c))!.state);
     expect(Object.keys(base)).toHaveLength(20);
     await deleteDoc(c);
   });
