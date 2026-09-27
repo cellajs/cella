@@ -43,13 +43,21 @@ describe('device id on sign-in', async () => {
 
   const sessionsOf = (userId: string) => db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
 
-  it('sets the device id SameSite=Lax so cross-site sign-in callbacks can read it, and keeps the session Strict', async () => {
+  it('sets the device id SameSite=Lax so cross-site sign-in callbacks can read it, and locks the session cookie to the host, https and the server', async () => {
     const user = await createTotpUser(signUpUser.email);
 
     const res = await signIn(user);
 
     expect(setCookieLine(res, 'device-id')).toContain('SameSite=Lax');
-    expect(setCookieLine(res, 'session')).toContain('SameSite=Strict');
+    // `__Host-`: Secure, Path=/ and no Domain, so no other host or subdomain can set or read it; HttpOnly keeps it from
+    // scripts; Strict keeps it off requests another site starts.
+    const session = setCookieLine(res, 'session');
+    expect(session).toMatch(/^__Host-/);
+    expect(session).toContain('Secure');
+    expect(session).toContain('Path=/');
+    expect(session).not.toContain('Domain=');
+    expect(session).toContain('HttpOnly');
+    expect(session).toContain('SameSite=Strict');
   });
 
   it('gives an mfa session a device id hash and replaces the same browser’s earlier session', async () => {
