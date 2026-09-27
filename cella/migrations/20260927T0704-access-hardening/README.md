@@ -39,53 +39,58 @@ No script: manual.
 12. Replace `revokeSessions` with `endSessions`; listeners of `session.revoked` handle its `reason` and `'all'`.
 13. Every process with guard caches calls `listenForAuthInvalidation()` on a session-mode connection.
 14. Custom stream clients reconnect on `session_replaced` and `access_changed`; app-registered `AppStreamSubscriber`s carry `systemAccessAllowed`, and callers of `closeAppStream` use `closeAppStreams`.
-15. Every route in an app's own auth modules declares `'x-strategy'`.
-16. Tests build cookies with `authCookie(name, content)` (`createTestSession` already signs); scripts sign with `sealAuthCookie` or use `pnpm --filter backend session:mint <email>`; a test that opens a magic link as the browser that asked sends `authCookie('magic-requested', tokenId)`.
-17. Expect 403 `impersonation_forbidden` from `revokeMySessions` during an impersonation.
+15. An app's own sign-out UI ends the session through `endSession({ wipe })` (`frontend/src/modules/auth/end-session.ts`), which flushes seen marks and drops the push subscription first.
+16. Every route in an app's own auth modules declares `'x-strategy'`.
+17. Tests build cookies with `authCookie(name, content)` (`createTestSession` already signs); scripts sign with `sealAuthCookie` or use `pnpm --filter backend session:mint <email>`; a test that opens a magic link as the browser that asked sends `authCookie('magic-requested', tokenId)`.
+18. Expect 403 `impersonation_forbidden` from `revokeMySessions` during an impersonation.
 
 **Tokens and sign-up**
 
-18. Move direct `tokensTable` reads and writes into `backend/src/modules/auth/tokens/`; replace `getValidToken` and `getValidSingleUseToken` with `invokeToken`, `readBoundToken` or `spendCookieToken`.
-19. Give every app token type a `tokenPolicies` entry with `replaces` (and `unboundOpener` for links), a `linkHandlers` entry per link type, and add `oauth-connect` and `step-up` to `tokenTypes`.
-20. Issue cookie tokens that serve one session with `sessionId`; a custom sign-out spends `oauth-connect` and calls `dropHeldMagicLink`.
-21. Route app sign-up checks through `maySignUp(ctx, { email })`; an unverified OAuth result has no `invite` reason.
-22. `findInvitationToken` takes `{ id } | { inactiveMembershipId }`; callers of `resendInvitationWithToken` send `{ tokenId }`.
+19. Move direct `tokensTable` reads and writes into `backend/src/modules/auth/tokens/`; replace `getValidToken` and `getValidSingleUseToken` with `invokeToken`, `readBoundToken` or `spendCookieToken`.
+20. Give every app token type a `tokenPolicies` entry with `replaces` (and `unboundOpener` for links), a `linkHandlers` entry per link type, and add `oauth-connect` and `step-up` to `tokenTypes`.
+21. Issue cookie tokens that serve one session with `sessionId`; a custom sign-out spends `oauth-connect` and calls `dropHeldMagicLink`.
+22. Route app sign-up checks through `maySignUp(ctx, { email })`; an unverified OAuth result has no `invite` reason.
+23. `findInvitationToken` takes `{ id } | { inactiveMembershipId }`; callers of `resendInvitationWithToken` send `{ tokenId }`.
 
 **Second factors and step-up**
 
-23. Replace `validateTOTP`, `verifyTOTPWithGracePeriod` and `validatePasskey` with `verifyTotp` and `verifyPasskeyAssertion`; drop `email` from passkey challenge and verification bodies.
-24. Read `check-email` as `{ recognized }` and treat `POST /requests` as 204.
-25. Add `stepUpGuard` to app-owned account-security routes and to routes that mint API keys or other lasting secrets, and wrap their frontend calls in `withStepUp`; call `startOAuthConnect` before an app's own connect UI.
+24. Replace `validateTOTP`, `verifyTOTPWithGracePeriod` and `validatePasskey` with `verifyTotp` and `verifyPasskeyAssertion`; drop `email` from passkey challenge and verification bodies.
+25. Read `check-email` as `{ recognized }` and treat `POST /requests` as 204.
+26. Add `stepUpGuard` to app-owned account-security routes and to routes that mint API keys or other lasting secrets, and wrap their frontend calls in `withStepUp`; call `startOAuthConnect` before an app's own connect UI.
 
 **Authorization server**
 
-26. Import `invalidateOauthClientCache` from `oauth-server/client-cache`; replace `refusalFor` with `grantRefusal` and `tokenUserCache` with the token grant cache.
-27. Revoke grants through `revokeGrant`; replace `invalidateApiKeyCacheByAccount` with `invalidateCache.serviceAccount` or `invalidateCache.installation`; pass the `VerifiedAccessToken` to the token-verdict cache functions.
-28. Show `target` from the consent details on an app-owned consent page (frontend `ConsentDetails`).
+27. Import `invalidateOauthClientCache` from `oauth-server/client-cache`; replace `refusalFor` with `grantRefusal` for users and `apiKeyRefusal` for a service's API key, and `tokenUserCache` with the token grant cache.
+28. Revoke grants through `revokeGrant`; replace `invalidateApiKeyCacheByAccount` with `invalidateCache.serviceAccount` or `invalidateCache.installation`; pass the `VerifiedAccessToken` to the token-verdict cache functions.
+29. Show `target` from the consent details on an app-owned consent page (frontend `ConsentDetails`).
 
 **Data access**
 
-29. Attachment keys start with `<organizationId>/` (a custom upload path keeps that first segment, or adapts `isOrganizationKey`); the server stamps the bucket, so drop `publicBucket` and `bucketName` from `getUploadToken` and `createAttachments` calls; rows outside the prefix no longer presign.
-30. Pass the entity's `organizationId` to `assertBlockMediaUrls` and `sanitizeBlockMediaUrls`; `validateBlockMediaUrls` takes `(json, ctx)`. `json/trusted-media-domains.json` and `trustedMediaDomains` are gone: stored blocks with external image URLs render nothing, and a save that contains one answers 400.
-31. App creates behind `checkIdempotency` filter on `createdBy`.
-32. Rename `loadActiveTenant` to `loadTenant`; treat an unknown tenant as 403 and an unreadable product as 404.
-33. Replace `findMembershipAwareRows` with `findInvitationAccounts` and `findInvitationsToAddresses`; pass `canResend` to the pending table's `useColumns`.
-34. Replace the SDK `Membership` type with `UpdateMembershipResponse`, merge or guard these responses before an own-membership cache (as `frontend/src/modules/memberships/query-mutations.ts` does), and pass other users' memberships from app routes through `membershipAsSeenBy`.
-35. Test cleanups that delete memberships before their organizations run in one transaction (the last-admin trigger).
+30. Attachment keys start with `<organizationId>/` (a custom upload path keeps that first segment, or adapts `isOrganizationKey`); the server stamps the bucket, so drop `publicBucket` and `bucketName` from `getUploadToken` and `createAttachments` calls; rows outside the prefix no longer presign.
+31. Pass the entity's `organizationId` to `assertBlockMediaUrls` and `sanitizeBlockMediaUrls`; `validateBlockMediaUrls` takes `(json, ctx)`. `json/trusted-media-domains.json` and `trustedMediaDomains` are gone: stored blocks with external image URLs render nothing, and a save that contains one answers 400.
+32. App creates behind `checkIdempotency` filter on `createdBy`.
+33. Rename `loadActiveTenant` to `loadTenant`; treat an unknown tenant as 403 and an unreadable product as 404.
+34. Replace `findMembershipAwareRows` with `findInvitationAccounts` and `findInvitationsToAddresses`; pass `canResend` to the pending table's `useColumns`.
+35. Replace the SDK `Membership` type with `UpdateMembershipResponse`, merge or guard these responses before an own-membership cache (as `frontend/src/modules/memberships/query-mutations.ts` does), and pass other users' memberships from app routes through `membershipAsSeenBy`.
+36. Test cleanups that delete memberships before their organizations run in one transaction (the last-admin trigger).
 
 **Realtime**
 
-36. Pass `organizationId` to `CollaborativeBlockNote`; drop `YjsTokenFetcher` and `collaborativeProduct`.
-37. App materializers refuse with a 403 or 404 `AppError`; custom Yjs clients treat close code 1011 as transient and 4400 as final.
-38. App worker pools import `queryLoggerEnabled` from `#/db/create-connection`.
+37. Pass `organizationId` to `CollaborativeBlockNote`; drop `YjsTokenFetcher` and `collaborativeProduct`.
+38. App materializers refuse with a 403 or 404 `AppError`; custom Yjs clients treat close code 1011 as transient and 4400 as final.
+39. App pools pass the parsed `DEBUG` flag to `createPgConnection(url, { debug })`, which decides the query logger; `dbConfig` is gone.
 
 **Telemetry, email and limits**
 
-39. Import `scrubUrl` from `shared/utils/scrub-url` and add app token routes to `secretPathTemplates` or `sensitiveQueryKeys`; pass `redactPaths` to every `createLogger`; log queries on `pgDetail` find nothing any more (use `pgCode` and `pgConstraint`).
-40. Email templates: keep markup in the translation string, spread `plainText` on text outputs, name params with `param('<key>')`, and declare HTML params in `htmlParams`; replace module-load `t()` calls in schemas with `translatedError(key)`.
-41. Insert unsubscribe rows through `unsubscribeTokenRow`; pass `since` to `buildDigestForUser` and `findUndigestedNotifications`, and the recipient's language to `renderSectionsHtml`; apps with extra languages translate the new locale keys.
-42. Replace imports of `StaticDocumentBody`, `BlockNoteMinimalHtml` and `sanitizeUrl`.
-43. Fake limiter stores in app tests need `penalty` (the reservation) and `reward` (the refund).
+40. Import `scrubUrl` from `shared/utils/scrub-url` and add app token routes to `secretPathTemplates` or `sensitiveQueryKeys`; pass `redactPaths` to every `createLogger`; log queries on `pgDetail` find nothing any more (use `pgCode` and `pgConstraint`).
+41. Email templates: keep markup in the translation string, spread `plainText` on text outputs, name params with `param('<key>')`, and declare HTML params in `htmlParams`; replace module-load `t()` calls in schemas with `translatedError(key)`.
+42. Insert unsubscribe rows through `unsubscribeTokenRow`; pass `since` to `buildDigestForUser` and `findUndigestedNotifications`, and the recipient's language to `renderSectionsHtml`; apps with extra languages translate the new locale keys.
+43. Replace imports of `StaticDocumentBody`, `BlockNoteMinimalHtml` and `sanitizeUrl`.
+44. Fake limiter stores in app tests need `penalty` (the reservation) and `reward` (the refund).
+
+**Removed**
+
+45. Replace `deleteUser` with `deleteAccounts` (`user/helpers/delete-accounts`), `getHealthResponse` with the exported `healthApp`, and `StaleDocRow` with `DocScope`; drop `findExistingRequest`, `getEntityByTransaction`, `findActivityRefByMutationId` and `verifyEmail`. An app that still throws `request_email_is_user`, `request_exists`, `token_not_found` or `sync_unavailable` adds the key to its own locale.
 
 ## Verify
 
