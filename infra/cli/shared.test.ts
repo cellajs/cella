@@ -3,19 +3,16 @@ import { failWithHint, withSpinner } from '../lib/utils/cli-output';
 import { autoAcceptDefaults, confirmOrDefault, inputOrDefault, stackNameFor } from './shared';
 
 const savedArgv = process.argv;
-const savedNonInteractive = process.env.INFRA_NON_INTERACTIVE;
 
 beforeEach(() => {
   process.argv = ['node', 'infra-cli.ts'];
-  delete process.env.INFRA_NON_INTERACTIVE;
+  vi.stubEnv('INFRA_NON_INTERACTIVE', undefined);
   vi.spyOn(console, 'info').mockImplementation(() => {});
 });
 
 afterEach(() => {
   process.argv = savedArgv;
-  if (savedNonInteractive === undefined) delete process.env.INFRA_NON_INTERACTIVE;
-  else process.env.INFRA_NON_INTERACTIVE = savedNonInteractive;
-  delete process.env.TEST_INPUT_VAR;
+  vi.unstubAllEnvs();
   vi.restoreAllMocks();
 });
 
@@ -30,7 +27,7 @@ describe('autoAcceptDefaults', () => {
   });
 
   it('is true under INFRA_NON_INTERACTIVE', () => {
-    process.env.INFRA_NON_INTERACTIVE = '1';
+    vi.stubEnv('INFRA_NON_INTERACTIVE', '1');
     expect(autoAcceptDefaults()).toBe(true);
   });
 });
@@ -43,7 +40,7 @@ describe('confirmOrDefault', () => {
   });
 
   it('resolves to the default without prompting under INFRA_NON_INTERACTIVE', async () => {
-    process.env.INFRA_NON_INTERACTIVE = '1';
+    vi.stubEnv('INFRA_NON_INTERACTIVE', '1');
     await expect(confirmOrDefault({ message: 'ok?', default: true })).resolves.toBe(true);
   });
 });
@@ -51,7 +48,7 @@ describe('confirmOrDefault', () => {
 describe('inputOrDefault', () => {
   it('prefers the env var under --defaults', async () => {
     process.argv = ['node', 'infra-cli.ts', '--defaults'];
-    process.env.TEST_INPUT_VAR = 'from-env';
+    vi.stubEnv('TEST_INPUT_VAR', 'from-env');
     await expect(inputOrDefault({ message: 'name', envName: 'TEST_INPUT_VAR', default: 'fallback' })).resolves.toBe(
       'from-env',
     );
@@ -113,12 +110,11 @@ describe('withSpinner', () => {
 
 describe('stackNameFor', () => {
   it('derives the DIY-backend stack name from the mode', () => {
-    delete process.env.INFRA_STACK_NAME;
+    vi.stubEnv('INFRA_STACK_NAME', undefined);
     expect(stackNameFor({ environment: 'production' })).toBe('organization/infra/production');
   });
   it('honours INFRA_STACK_NAME for unusual layouts', () => {
-    process.env.INFRA_STACK_NAME = 'org/other/prod';
+    vi.stubEnv('INFRA_STACK_NAME', 'org/other/prod');
     expect(stackNameFor({ environment: 'production' })).toBe('org/other/prod');
-    delete process.env.INFRA_STACK_NAME;
   });
 });

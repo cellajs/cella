@@ -128,7 +128,6 @@ describe('Local entity authorization (authorizeDoc)', () => {
   });
 
   it("must not let a member write another member's attachment through the relay", async () => {
-    // Members update their own attachments only ('own' in the permission config).
     await expect(authorizeDoc(memberA, requested({ entityId: attachmentA }))).resolves.toBeNull();
     // Positive control: the member's own attachment.
     await expect(authorizeDoc(memberA, requested({ entityId: attachmentM }))).resolves.toEqual({
