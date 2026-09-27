@@ -1,10 +1,7 @@
-import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
-import { sessionsTable } from '#/modules/auth/sessions-db';
-import { createUser, expectRefusal } from '../helpers';
+import { createUser, expectRefusal, sessionsOf } from '../helpers';
 import { type PasskeyAssertion, type SoftwarePasskey, softwarePasskey } from '../software-passkey';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, passkeyChallenge, passkeySignIn, passkeysOf } from './helpers';
@@ -22,8 +19,6 @@ describe('Passkey verification', () => {
     const user = await createUser(`passkey-${nanoid(8)}@security-test.com`);
     return { user, passkey: await insertPasskey(user) };
   }
-
-  const sessionsOf = (userId: string) => db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
 
   const forgeries: [string, (passkey: SoftwarePasskey, challenge: string) => PasskeyAssertion][] = [
     ['a response to another challenge', (passkey) => passkey.assert(nanoid(43))],

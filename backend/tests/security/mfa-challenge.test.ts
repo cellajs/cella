@@ -1,15 +1,10 @@
 import { decodeBase32 } from '@oslojs/encoding';
-import { and, eq } from 'drizzle-orm';
 import { signInWithTotp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
-import { sessionsTable } from '#/modules/auth/sessions-db';
-import { tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
-import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createMfaToken, createTotpUser, expectRefusal } from '../helpers';
+import { authCookie, createMfaToken, createTotpUser, expectRefusal, sessionsOf, tokenRowOf } from '../helpers';
 import { type PasskeyAssertion, softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -23,16 +18,6 @@ const currentCode = () =>
   generateTOTP(decodeBase32(totpSecret), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 
 const sessionCookieSet = (res: Response) => res.headers.getSetCookie().some((line) => line.includes('-session-'));
-
-const confirmMfaRowOf = async (rawToken: string) => {
-  const [row] = await db
-    .select()
-    .from(tokensTable)
-    .where(and(eq(tokensTable.type, 'confirm-mfa'), eq(tokensTable.secret, hashToken(rawToken))));
-  return row;
-};
-
-const sessionsOf = (userId: string) => db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
 
 beforeAll(() => mockFetchRequest());
 
@@ -62,7 +47,7 @@ describe('Second-factor challenge', async () => {
     await expectRefusal(replay, 401, 'confirm-mfa_not_found');
     expect(sessionCookieSet(replay.response)).toBe(false);
     expect(await sessionsOf(user.id)).toHaveLength(1);
-    expect(await confirmMfaRowOf(mfaToken)).toBeUndefined();
+    expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeUndefined();
   });
 
   it('keeps the challenge open after a wrong code, and completes it with the right one (positive control)', async () => {
@@ -74,12 +59,12 @@ describe('Second-factor challenge', async () => {
     const failed = await totpSignIn(wrongCode, mfaCookie);
     await expectRefusal(failed, 401, 'invalid_token');
     expect(sessionCookieSet(failed.response)).toBe(false);
-    expect(await confirmMfaRowOf(mfaToken)).toBeDefined();
+    expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeDefined();
 
     const completed = await totpSignIn(currentCode(), mfaCookie);
     expect(completed.response.status).toBe(204);
     expect(sessionCookieSet(completed.response)).toBe(true);
-    expect(await confirmMfaRowOf(mfaToken)).toBeUndefined();
+    expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeUndefined();
   });
 
   it("must not open a second session via a completed challenge's cookie and a passkey", async () => {
@@ -123,11 +108,11 @@ describe('Second-factor challenge', async () => {
     }));
     await expectRefusal(failed, 401, 'passkey_verification_failed');
     expect(sessionCookieSet(failed.response)).toBe(false);
-    expect(await confirmMfaRowOf(mfaToken)).toBeDefined();
+    expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeDefined();
 
     const completed = await answer((challenge) => passkey.assert(challenge));
     expect(completed.response.status).toBe(204);
     expect(sessionCookieSet(completed.response)).toBe(true);
-    expect(await confirmMfaRowOf(mfaToken)).toBeUndefined();
+    expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeUndefined();
   });
 });

@@ -1,15 +1,10 @@
 import { decodeBase32 } from '@oslojs/encoding';
-import { and, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createTotp, generateTotpKey, signInWithTotp, stepUp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
-import { sessionsTable } from '#/modules/auth/sessions-db';
-import { tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
-import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import {
   authCookie,
@@ -18,11 +13,14 @@ import {
   createTestUser,
   createTotpUser,
   expectRefusal,
+  sessionRow,
+  sessionsOf,
+  tokenRowOf,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
-import { insertSession, sessionRow } from './session-helpers';
+import { insertSession } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
@@ -40,14 +38,6 @@ const codeAt = (stepsAhead = 0, secret = totpSecret) =>
   );
 
 const sessionCookieSet = (res: Response) => res.headers.getSetCookie().some((line) => line.includes('-session-'));
-const sessionsOf = (userId: string) => db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
-const confirmMfaRowOf = async (rawToken: string) => {
-  const [row] = await db
-    .select()
-    .from(tokensTable)
-    .where(and(eq(tokensTable.type, 'confirm-mfa'), eq(tokensTable.secret, hashToken(rawToken))));
-  return row;
-};
 
 beforeAll(() => mockFetchRequest());
 
@@ -81,7 +71,7 @@ describe('TOTP replay', async () => {
     const replay = await answerChallenge(user, code);
     await expectRefusal(replay, 401, 'totp_code_used');
     expect(sessionCookieSet(replay.response)).toBe(false);
-    expect(await confirmMfaRowOf(replay.mfaToken)).toBeDefined();
+    expect(await tokenRowOf('confirm-mfa', replay.mfaToken)).toBeDefined();
     expect(await sessionsOf(user.id)).toHaveLength(1);
 
     // Positive control: the next code, a later step, answers the same challenge.

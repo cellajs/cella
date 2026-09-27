@@ -1,8 +1,7 @@
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createTestUser, expectRefusal, insertTestSession } from '../helpers';
+import { createTestUser, expectRefusal, insertTestSession, sessionRow } from '../helpers';
 import { clearSecurityTestData } from './helpers';
-import { sessionRow } from './session-helpers';
 
 /**
  * The browser sends the session cookie with every request to the app, a form another site posts included. The CSRF

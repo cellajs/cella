@@ -1,11 +1,8 @@
-import { eq } from 'drizzle-orm';
 import { signInWithTotp } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
-import { sessionsTable } from '#/modules/auth/sessions-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { authCookie, createMfaToken, createTotpUser } from '../helpers';
+import { authCookie, createMfaToken, createTotpUser, sessionsOf } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -40,8 +37,6 @@ describe('device id on sign-in', async () => {
     expect(response.status).toBe(204);
     return response;
   };
-
-  const sessionsOf = (userId: string) => db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
 
   it('sets the device id SameSite=Lax so cross-site sign-in callbacks can read it, and locks the session cookie to the host, https and the server', async () => {
     const user = await createTotpUser(signUpUser.email);

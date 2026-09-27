@@ -9,9 +9,8 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
-import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { authCookie, createTestOrganization, createUser, enableMFAForUser } from '../helpers';
+import { authCookie, createTestOrganization, createUser, enableMFAForUser, insertTestToken } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
@@ -41,20 +40,8 @@ async function markReturning(userId: string) {
  * opening the link signs in directly (elsewhere it waits for a confirmation, see tests/security/magic-link.test.ts).
  */
 async function createMagicToken(user: { id: string; email: string }, redirectPath: string | null = null) {
-  const rawToken = nanoid(40);
-  const [row] = await db
-    .insert(tokensTable)
-    .values({
-      secret: hashToken(rawToken),
-      type: 'magic',
-      userId: user.id,
-      email: user.email,
-      createdBy: user.id,
-      redirectPath,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-    })
-    .returning();
-  return { rawToken, requestedHere: authCookie('magic-requested', row.id) };
+  const { raw, row } = await insertTestToken('magic', user, { redirectPath });
+  return { rawToken: raw, requestedHere: authCookie('magic-requested', row.id) };
 }
 
 /** Fetch the single magic token row for a user. */

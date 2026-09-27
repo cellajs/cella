@@ -1,14 +1,10 @@
-import { eq } from 'drizzle-orm';
 import { confirmMagicLink, getPendingMagicLink, invokeToken, signOut } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
-import { tokensTable } from '#/modules/auth/tokens-db';
-import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createTestUser, expectRefusal } from '../helpers';
+import { authCookie, createTestUser, expectRefusal, insertTestToken, tokenRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -26,22 +22,9 @@ const sessionCookieSet = (res: Response) =>
 const magicCookieCleared = (res: Response) =>
   res.headers.getSetCookie().some((line) => line.startsWith(`${authCookieName('magic')}=;`));
 
-const tokenRow = async (id: string) => (await db.select().from(tokensTable).where(eq(tokensTable.id, id)))[0];
-
 /** An unopened magic link for `user`, and the marker cookie of the browser that asked for it. */
 const requestedMagicLink = async (user: { id: string; email: string }) => {
-  const raw = nanoid(40);
-  const [row] = await db
-    .insert(tokensTable)
-    .values({
-      secret: hashToken(raw),
-      type: 'magic',
-      userId: user.id,
-      email: user.email,
-      createdBy: user.id,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-    })
-    .returning();
+  const { raw, row } = await insertTestToken('magic', user);
   return { raw, row, requestedHere: authCookie('magic-requested', row.id) };
 };
 

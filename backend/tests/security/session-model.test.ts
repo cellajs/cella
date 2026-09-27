@@ -7,11 +7,11 @@ import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createSystemAdminUser, createTestUser, expectRefusal } from '../helpers';
+import { authCookie, createSystemAdminUser, createTestUser, expectRefusal, sessionRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
-import { cookiesAfter, insertImpersonation, insertSession, sessionRow, type TestSession } from './session-helpers';
+import { cookiesAfter, insertImpersonation, insertSession, type TestSession } from './session-helpers';
 
 beforeAll(() => mockFetchRequest());
 

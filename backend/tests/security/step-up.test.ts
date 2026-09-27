@@ -16,11 +16,12 @@ import {
   createTestUser,
   createTotpUser,
   expectRefusal,
+  sessionRow,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, issuedChallenge, passkeyChallenge } from './helpers';
-import { cookiesAfter, insertImpersonation, insertSession, sessionRow, type TestSession } from './session-helpers';
+import { cookiesAfter, insertImpersonation, insertSession, type TestSession } from './session-helpers';
 
 vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
 

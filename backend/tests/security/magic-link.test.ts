@@ -23,7 +23,9 @@ import {
   createTestUser,
   expectRefusal,
   insertTestSession,
+  insertTestToken,
   linkIdentity,
+  tokenRow,
 } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
@@ -52,22 +54,8 @@ const failNextDeleteOf = (table: PgTable) => {
 };
 
 /** A magic link row for `user`, optionally already opened with a single-use token (hash at rest). */
-async function magicLink(user: { id: string; email: string }, opened?: { singleUse: string }) {
-  const raw = nanoid(40);
-  const [row] = await db
-    .insert(tokensTable)
-    .values({
-      secret: hashToken(raw),
-      type: 'magic',
-      userId: user.id,
-      email: user.email,
-      createdBy: user.id,
-      expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-      ...(opened && { invokedAt: new Date().toISOString(), singleUseToken: hashToken(opened.singleUse) }),
-    })
-    .returning();
-  return { raw, row };
-}
+const magicLink = (user: { id: string; email: string }, opened?: { singleUse: string }) =>
+  insertTestToken('magic', user, { expiresInMs: 5 * 60 * 1000, openedWith: opened?.singleUse });
 
 /**
  * A magic link signs in whoever opens it, so it must not be replayable: an opened link stays usable only in the
@@ -153,8 +141,7 @@ describe('magic link replay', async () => {
     expect(response.status).toBe(302);
     expect(sessionCookieSet(response)).toBe(true);
     expect(response.headers.get('location')?.startsWith(appConfig.frontendUrl)).toBe(true);
-    const [after] = await db.select().from(tokensTable).where(eq(tokensTable.id, row.id));
-    expect(after.invokedAt).not.toBeNull();
+    expect((await tokenRow(row.id)).invokedAt).not.toBeNull();
   });
 });
 
@@ -177,8 +164,7 @@ describe('magic link opened in another browser', async () => {
   afterEach(async () => await clearSecurityTestData());
 
   const newUser = () => createTestUser(`magic-${nanoid(6)}@security-test.com`.toLowerCase());
-  const openedAt = async (id: string) =>
-    (await db.select().from(tokensTable).where(eq(tokensTable.id, id)))[0]?.invokedAt ?? null;
+  const openedAt = async (id: string) => (await tokenRow(id))?.invokedAt ?? null;
   const confirmPage = new URL('/auth/confirm-sign-in', appConfig.frontendUrl).toString();
 
   it('must not sign in via a magic link opened in a browser that did not ask for it', async () => {

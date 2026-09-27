@@ -4,10 +4,10 @@ import { stepUp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
-import { createTotpUser, expectRefusal } from '../helpers';
+import { createTotpUser, expectRefusal, sessionRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
-import { insertSession, sessionRow } from './session-helpers';
+import { insertSession } from './session-helpers';
 
 /** The error the next TOTP check throws, as the database driver would; null checks the code as usual. */
 const nextCheck = vi.hoisted(() => ({ failure: null as Error | null }));

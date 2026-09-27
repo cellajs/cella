@@ -7,7 +7,7 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createSystemAdminUser, createTestUser, expectRefusal } from '../helpers';
+import { authCookie, createSystemAdminUser, createTestUser, expectRefusal, sessionRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -18,7 +18,6 @@ import {
   impersonationSetBy,
   insertSession,
   openStream,
-  sessionRow,
   type TestSession,
 } from './session-helpers';
 

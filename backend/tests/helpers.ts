@@ -1,6 +1,6 @@
 import type { z } from '@hono/zod-openapi';
-import { eq } from 'drizzle-orm';
-import type { EntityRole } from 'shared';
+import { and, eq } from 'drizzle-orm';
+import type { EntityRole, TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { expect } from 'vitest';
@@ -9,7 +9,7 @@ import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/identities-db';
 import { type AuthStrategy, type SessionTypes, sessionsTable } from '#/modules/auth/sessions-db';
-import { tokensTable } from '#/modules/auth/tokens-db';
+import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens-db';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -53,19 +53,9 @@ export async function createUser(email: string) {
   return user;
 }
 
-/** Returns the raw token string, for use in cookies. */
+/** A second-factor challenge for `user`, as a first factor leaves it; returns the raw value its cookie carries. */
 export async function createMfaToken(user: { id: string; email: string }) {
-  const mfaToken = nanoid(40);
-  const hashedMfaToken = hashToken(mfaToken);
-  await db.insert(tokensTable).values({
-    secret: hashedMfaToken,
-    type: 'confirm-mfa',
-    userId: user.id,
-    email: user.email,
-    createdBy: user.id,
-    expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-  });
-  return mfaToken;
+  return (await insertTestToken('confirm-mfa', user, { expiresInMs: 10 * 60 * 1000 })).raw;
 }
 
 export async function createTotpUser(email: string) {
@@ -216,6 +206,56 @@ export async function insertTestSession(
 export async function createTestSession(user: { id: string }, opts?: TestSessionOpts) {
   return (await insertTestSession(user, opts)).cookie;
 }
+
+/** Every session row of a user, the ended ones included. */
+export const sessionsOf = (userId: string) => db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
+
+export const sessionRow = async (id: string) =>
+  (await db.select().from(sessionsTable).where(eq(sessionsTable.id, id)).limit(1))[0];
+
+interface TestTokenOpts extends Partial<InsertTokenModel> {
+  /** From now; negative for a token that already expired. Default 15 minutes, a magic link's lifetime. */
+  expiresInMs?: number;
+  /** Stamps the row as a link opened in a browser that holds this single-use value, as opening it does. */
+  openedWith?: string;
+}
+
+/**
+ * Inserts a token row as issuing stores it: the raw value goes in the link or cookie, the row keeps its hash. The row
+ * names `owner`'s address, and its account too when `owner` has an id. Returns the row and the raw value.
+ */
+export async function insertTestToken(
+  type: TokenType,
+  owner: { id?: string | null; email: string },
+  { expiresInMs = 15 * 60 * 1000, openedWith, ...columns }: TestTokenOpts = {},
+) {
+  const raw = nanoid(40);
+  const [row] = await db
+    .insert(tokensTable)
+    .values({
+      type,
+      secret: hashToken(raw),
+      email: owner.email,
+      userId: owner.id ?? null,
+      createdBy: owner.id ?? null,
+      expiresAt: new Date(Date.now() + expiresInMs).toISOString(),
+      ...(openedWith && { invokedAt: new Date().toISOString(), singleUseToken: hashToken(openedWith) }),
+      ...columns,
+    })
+    .returning();
+  return { raw, row };
+}
+
+export const tokenRow = async (id: string) => (await db.select().from(tokensTable).where(eq(tokensTable.id, id)))[0];
+
+/** The row of `type` a raw token value names, found by its hash as the server finds it; undefined once it is spent. */
+export const tokenRowOf = async (type: TokenType, raw: string) =>
+  (
+    await db
+      .select()
+      .from(tokensTable)
+      .where(and(eq(tokensTable.type, type), eq(tokensTable.secret, hashToken(raw))))
+  )[0];
 
 /** A `Cookie` header pair for an auth cookie, signed like the app signs it (every mode signs). */
 export function authCookie(name: CookieName, content: string, maxAgeSeconds = 60 * 60) {

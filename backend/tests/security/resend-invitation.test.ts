@@ -2,7 +2,6 @@ import { and, eq } from 'drizzle-orm';
 import { invokeToken, resendInvitationWithToken, resendPendingInvitation } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
@@ -18,6 +17,7 @@ import {
   createTestSession,
   createTestUser,
   expectRefusal,
+  insertTestToken,
 } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
@@ -58,20 +58,8 @@ const mailedRawToken = () => {
 };
 
 /** A system invitation (no membership row) for an address nobody has an account on, its week long since over. */
-const createSystemInvitation = async (email: string, createdBy: string) => {
-  const rawToken = nanoid(40);
-  const [token] = await db
-    .insert(tokensTable)
-    .values({
-      secret: hashToken(rawToken),
-      type: 'invitation',
-      email,
-      createdBy,
-      expiresAt: new Date(Date.now() - 60_000).toISOString(),
-    })
-    .returning();
-  return { token, rawToken };
-};
+const createSystemInvitation = async (email: string, createdBy: string) =>
+  (await insertTestToken('invitation', { email }, { createdBy, expiresInMs: -60_000 })).row;
 
 describe('Resend an invitation', async () => {
   const call = await createAppClient();
@@ -157,7 +145,7 @@ describe('Resend an invitation', async () => {
 
   it('re-sends a pending system invitation with one fresh link', async () => {
     const inviter = await createTestUser('inviter@example.com');
-    const { token } = await createSystemInvitation('newcomer@example.com', inviter.id);
+    const token = await createSystemInvitation('newcomer@example.com', inviter.id);
 
     const { response } = await resend({ tokenId: token.id });
     expect(response.status).toBe(204);
@@ -215,7 +203,7 @@ describe('Resend an invitation', async () => {
 
   it('must not re-mint a used system invitation via resend-invitation', async () => {
     const inviter = await createTestUser('inviter@example.com');
-    const { token } = await createSystemInvitation('newcomer@example.com', inviter.id);
+    const token = await createSystemInvitation('newcomer@example.com', inviter.id);
     // The invitee signed up and proved the address: the invitation did its job.
     await createTestUser('newcomer@example.com');
 

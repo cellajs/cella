@@ -88,9 +88,6 @@ export function cookiesAfter(cookieHeader: string, response: Response): string {
   return [...jar.values()].join('; ');
 }
 
-export const sessionRow = async (id: string) =>
-  (await db.select().from(sessionsTable).where(eq(sessionsTable.id, id)).limit(1))[0];
-
 export interface OpenStream {
   sessionId: string;
   /** The server-sent events so far, in arrival order; comment lines (pings) are left out. */

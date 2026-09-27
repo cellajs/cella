@@ -1,14 +1,12 @@
 import { eq } from 'drizzle-orm';
 import { acceptInvitationToken, getMembers, invokeToken } from 'sdk';
 import { appConfig, hierarchy } from 'shared';
-import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import {
   authCookie,
@@ -16,6 +14,7 @@ import {
   createTestOrganization,
   createTestSession,
   createTestUser,
+  insertTestToken,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
@@ -279,17 +278,7 @@ describe('Opening a token link while signed in', async () => {
 
   it('keeps the short window for other token types', async () => {
     const owner = await createTestUser('owner@example.com');
-    const raw = nanoid(40);
-    const [link] = await db
-      .insert(tokensTable)
-      .values({
-        secret: hashToken(raw),
-        type: 'magic',
-        email: owner.email,
-        userId: owner.id,
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      })
-      .returning();
+    const { raw, row: link } = await insertTestToken('magic', owner);
 
     // Opened in the browser that asked for it, so it is redeemed directly.
     await call(invokeToken, {
@@ -318,17 +307,7 @@ describe('Opening a token link while signed in', async () => {
   it("still refuses another user's magic link", async () => {
     const owner = await createTestUser('owner@example.com');
     const me = await createTestUser('my-account@example.com');
-    const raw = nanoid(40);
-    const [link] = await db
-      .insert(tokensTable)
-      .values({
-        secret: hashToken(raw),
-        type: 'magic',
-        email: owner.email,
-        userId: owner.id,
-        expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-      })
-      .returning();
+    const { raw, row: link } = await insertTestToken('magic', owner);
 
     const cookies = [await createTestSession(me), authCookie('magic-requested', link.id)].join('; ');
     const { response } = await call(invokeToken, {

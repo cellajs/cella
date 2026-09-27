@@ -10,10 +10,10 @@ import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { magicLinkEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createMfaToken, createTestUser, createTotpUser } from '../helpers';
+import { authCookie, createMfaToken, createTestUser, createTotpUser, sessionRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
-import { insertSession, sessionRow } from './session-helpers';
+import { insertSession } from './session-helpers';
 
 // The suite mocks every limiter as a pass-through (tests/setup.ts); this file needs the real one.
 vi.unmock('#/middlewares/rate-limiter/core');

@@ -4,11 +4,9 @@ import { nanoid } from 'shared/utils/nanoid';
 import { baseDb as db } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
-import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { hashToken } from '#/utils/hash-token';
 import { createDate } from '#/utils/time-span';
-import { authCookie } from '../helpers';
+import { authCookie, insertTestToken } from '../helpers';
 
 interface CreateInvitationOpts {
   organization: { id: string; tenantId: string };
@@ -32,9 +30,7 @@ export async function createInvitation({
 }: CreateInvitationOpts) {
   const inactiveMembershipId = generateId();
   const tokenId = generateId();
-  const rawToken = nanoid(40);
   const rawSingleUseToken = nanoid(40);
-  const invoked = tokenState === 'invoked';
 
   const [inactiveMembership] = await db
     .insert(inactiveMembershipsTable)
@@ -53,27 +49,20 @@ export async function createInvitation({
     })
     .returning();
 
-  const [token] = await db
-    .insert(tokensTable)
-    .values({
+  const { raw: rawToken, row: token } = await insertTestToken(
+    'invitation',
+    { id: boundTo, email },
+    {
       id: tokenId,
-      secret: hashToken(rawToken),
-      type: 'invitation' as const,
-      email,
-      userId: boundTo,
       createdBy,
       inactiveMembershipId,
       createdAt: mockPastIsoDate(),
       // Opening the link swaps the week-long lifetime for the single-use window.
-      ...(invoked
-        ? {
-            singleUseToken: hashToken(rawSingleUseToken),
-            invokedAt: new Date().toISOString(),
-            expiresAt: createDate(tokenPolicies.invitation.singleUseWindow),
-          }
-        : { expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString() }),
-    })
-    .returning();
+      ...(tokenState === 'invoked'
+        ? { openedWith: rawSingleUseToken, expiresAt: createDate(tokenPolicies.invitation.singleUseWindow) }
+        : { expiresInMs: 7 * 24 * 60 * 60 * 1000 }),
+    },
+  );
 
   /** Cookie header value for the single-use token; only meaningful for an invoked token. */
   const invitationCookie = authCookie('invitation', rawSingleUseToken);

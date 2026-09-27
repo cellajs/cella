@@ -1,10 +1,7 @@
-import { eq } from 'drizzle-orm';
 import { deleteMe, getMe } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
-import { sessionsTable } from '#/modules/auth/sessions-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestSession, createTestUser, expectRefusal } from '../helpers';
+import { createTestSession, createTestUser, expectRefusal, sessionsOf } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 import { insertPasskey, passkeysOf } from './helpers';
@@ -39,8 +36,7 @@ describe('Account deletion invalidates sessions', async () => {
     const afterwards = await call(getMe, { headers });
     await expectRefusal(afterwards, 401, 'no_session');
 
-    const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, user.id));
-    expect(sessions).toHaveLength(0);
+    expect(await sessionsOf(user.id)).toHaveLength(0);
 
     expect(await passkeysOf(user.id)).toHaveLength(0);
   });

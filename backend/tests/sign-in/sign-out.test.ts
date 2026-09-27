@@ -1,12 +1,9 @@
-import { eq } from 'drizzle-orm';
 import { getMe, getMyAuth, revokeMySessions, signOut } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
-import { sessionsTable } from '#/modules/auth/sessions-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createTestUser, expectRefusal, insertTestSession } from '../helpers';
+import { authCookie, createTestUser, expectRefusal, insertTestSession, sessionRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -17,11 +14,6 @@ beforeAll(async () => {
 });
 
 afterEach(async () => await clearDatabase());
-
-const findSession = async (id: string) => {
-  const [row] = await db.select().from(sessionsTable).where(eq(sessionsTable.id, id));
-  return row;
-};
 
 describe('Sign-out scoping', async () => {
   const call = await createAppClient();
@@ -48,7 +40,7 @@ describe('Sign-out scoping', async () => {
     // The forged secret matches no session row → fail closed.
     expect(res.status).toBe(401);
 
-    const remaining = await findSession(victimSessionId);
+    const remaining = await sessionRow(victimSessionId);
     expect(remaining.revokedAt).toBeNull();
     expect((await call(getMe, { headers: victimHeaders })).response.status).toBe(200);
   });
@@ -68,7 +60,7 @@ describe('Sign-out revokes the session', async () => {
     const { response } = await call(signOut, { headers });
     expect(response.status).toBe(204);
 
-    const row = await findSession(session.id);
+    const row = await sessionRow(session.id);
     expect(row).toMatchObject({ revokedBy: user.id, revocationReason: 'sign_out' });
     expect(row.revokedAt).not.toBeNull();
 
@@ -98,8 +90,8 @@ describe('Revoke my sessions', async () => {
       rejectedIds: [strangerSession.id],
     });
 
-    expect((await findSession(other.id)).revokedAt).not.toBeNull();
-    expect((await findSession(strangerSession.id)).revokedAt).toBeNull();
+    expect((await sessionRow(other.id)).revokedAt).not.toBeNull();
+    expect((await sessionRow(strangerSession.id)).revokedAt).toBeNull();
 
     // The revoked session stays in the list, and the current one still authenticates.
     const auth = await call(getMyAuth, { headers });
@@ -119,7 +111,7 @@ describe('Revoke my sessions', async () => {
 
     const { response } = await call(revokeMySessions, { body: { ids: [current.id] }, headers });
     expect(response.status).toBe(200);
-    expect((await findSession(current.id)).revocationReason).toBe('sign_out');
+    expect((await sessionRow(current.id)).revocationReason).toBe('sign_out');
 
     const afterwards = await call(getMe, { headers });
     expect(afterwards.response.status).toBe(401);

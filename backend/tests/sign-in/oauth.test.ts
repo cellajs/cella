@@ -1,7 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { github, githubCallback, google, googleCallback, invokeToken, microsoft, microsoftCallback } from 'sdk';
 import { appConfig } from 'shared';
-import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -14,9 +13,15 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
-import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, createUser, expectRefusal, linkIdentity } from '../helpers';
+import {
+  createTestOrganization,
+  createUser,
+  expectRefusal,
+  insertTestSession,
+  insertTestToken,
+  linkIdentity,
+} from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { clearCookieStore, clearDatabase, mockCookieStore, mockFetchRequest, setTestConfig } from '../test-utils';
@@ -328,26 +333,9 @@ describe('OAuth Authentication', async () => {
      * browser's cookie. Returns that session's id.
      */
     const pinConnect = async (user: { id: string; email: string }) => {
-      const sessionId = generateId();
-      await db.insert(sessionsTable).values({
-        id: sessionId,
-        secret: hashToken(nanoid(40)),
-        userId: user.id,
-        type: 'regular',
-        authStrategy: 'passkey',
-        expiresAt: new Date(Date.now() + 60 * 60 * 1000).toISOString(),
-      });
-      const rawPin = nanoid(40);
-      await db.insert(tokensTable).values({
-        secret: hashToken(rawPin),
-        type: 'oauth-connect',
-        email: user.email,
-        userId: user.id,
-        createdBy: user.id,
-        sessionId,
-        expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
-      });
-      mockCookieStore.set('oauth-connect', rawPin);
+      const { id: sessionId } = await insertTestSession(user, { expiresInMs: 60 * 60 * 1000 });
+      const pin = await insertTestToken('oauth-connect', user, { sessionId, expiresInMs: 10 * 60 * 1000 });
+      mockCookieStore.set('oauth-connect', pin.raw);
       return sessionId;
     };
 
@@ -483,20 +471,11 @@ describe('OAuth Authentication', async () => {
       const oauthAccount = await linkIdentity(user, { verified: false, email: providerEmail });
 
       const rawSingleUse = nanoid(40);
-      const [token] = await db
-        .insert(tokensTable)
-        .values({
-          secret: hashToken(nanoid(40)),
-          singleUseToken: hashToken(rawSingleUse),
-          type: 'oauth-verification',
-          email: providerEmail,
-          userId: user.id,
-          identityId: oauthAccount.id,
-          createdBy: user.id,
-          invokedAt: new Date().toISOString(),
-          expiresAt: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
-        })
-        .returning();
+      const { row: token } = await insertTestToken(
+        'oauth-verification',
+        { id: user.id, email: providerEmail },
+        { identityId: oauthAccount.id, openedWith: rawSingleUse, expiresInMs: 5 * 60 * 1000 },
+      );
       mockCookieStore.set('oauth-verification', rawSingleUse);
       mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'verify', tokenId: token.id }));
 

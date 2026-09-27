@@ -1,16 +1,21 @@
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createPasskey } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
-import { sessionsTable } from '#/modules/auth/sessions-db';
-import { tokensTable } from '#/modules/auth/tokens-db';
 import { usersTable } from '#/modules/user/user-db';
-import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createMfaToken, createTestSession, createUser, expectRefusal } from '../helpers';
+import {
+  authCookie,
+  createMfaToken,
+  createTestSession,
+  createUser,
+  expectRefusal,
+  sessionsOf,
+  tokenRowOf,
+} from '../helpers';
 import { type SoftwarePasskey, softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -33,7 +38,6 @@ vi.mock('@simplewebauthn/server', async (importOriginal) => {
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
-const sessionsOf = (userId: string) => db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
 const storedPasskey = async (credentialId: string) =>
   (await db.select().from(passkeysTable).where(eq(passkeysTable.credentialId, credentialId)))[0];
 
@@ -84,13 +88,6 @@ describe('Passkey challenges', async () => {
     const { user, passkey } = await userWithPasskey({ mfaRequired: true });
     const mfaToken = await createMfaToken(user);
     const mfaCookie = authCookie('confirm-mfa', mfaToken);
-    const confirmMfaRow = async () =>
-      (
-        await db
-          .select()
-          .from(tokensTable)
-          .where(and(eq(tokensTable.type, 'confirm-mfa'), eq(tokensTable.secret, hashToken(mfaToken))))
-      )[0];
 
     const signInChallenge = await passkeyChallenge('authentication');
     const wrongPurpose = await passkeySignIn(
@@ -100,7 +97,7 @@ describe('Passkey challenges', async () => {
     );
     await expectRefusal(wrongPurpose, 401, 'passkey_verification_failed');
     expect(await sessionsOf(user.id)).toHaveLength(0);
-    expect(await confirmMfaRow()).toBeDefined();
+    expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeDefined();
 
     // Positive control: a challenge issued for this MFA challenge completes it.
     const mfaChallenge = await passkeyChallenge('mfa', mfaCookie);
@@ -110,7 +107,7 @@ describe('Passkey challenges', async () => {
       'mfa',
     );
     expect(completed.response.status).toBe(204);
-    expect(await confirmMfaRow()).toBeUndefined();
+    expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeUndefined();
   });
 
   it("must not answer an MFA challenge via another account's passkey", async () => {

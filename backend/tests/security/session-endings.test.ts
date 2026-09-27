@@ -23,6 +23,7 @@ import {
   createTestUser,
   createTotpUser,
   expectRefusal,
+  sessionRow,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -38,7 +39,6 @@ import {
   insertSteppedUpSession,
   openStream,
   openUnreadStream,
-  sessionRow,
   sessionSetBy,
   type TestSession,
 } from './session-helpers';
