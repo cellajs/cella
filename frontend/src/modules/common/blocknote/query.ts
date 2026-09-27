@@ -34,6 +34,6 @@ export const yjsTokenQueryOptions = (params: {
     // Overrides the app-wide `false`: backgrounded tabs throttle the interval, so refetch on focus when stale.
     refetchOnWindowFocus: true,
     retry: (count, error) => !isYjsTokenRefusal(error) && count < 3,
-    // Suppress the global error toast; collaborative mode stays disabled on failure.
-    meta: { suppressGlobalErrorToast: true },
+    // A bearer token, never persisted; no global error toast, since collaborative mode stays disabled on failure.
+    meta: { persist: false, suppressGlobalErrorToast: true },
   });
