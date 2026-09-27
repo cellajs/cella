@@ -74,7 +74,7 @@ export const sessionsTable = snakeCase.table(
     /** An impersonation's admin session: where the admin's browser returns, and without which it never authenticates. */
     impersonatorSessionId: uuid().references((): AnyPgColumn => sessionsTable.id, { onDelete: 'cascade' }),
     /** When the session last proved its user's presence again (a step-up); account-security actions need it recent. */
-    steppedUpAt: timestamp({ withTimezone: true, mode: 'string' }),
+    steppedUpAt: timestamp({ mode: 'string' }),
     steppedUpVia: varchar({ enum: stepUpProofs }),
   },
   (table) => [
