@@ -1,6 +1,7 @@
 import process from 'node:process';
 import { sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
+import { createHealthApp } from 'shared/health-app';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
@@ -82,7 +83,7 @@ async function buildMcpSelfComponent(): Promise<HealthComponent> {
  * Aggregates every dependency and sibling worker into a uniform `component` keyed by name. The api process grades
  * itself, checks the database, reads the pushed CDC report, and probes yjs/mcp; the mcp worker reports its own queue.
  */
-export async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: number }> {
+async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: number }> {
   const components: Record<string, HealthComponent> = {};
 
   const dbCheck = await checkDatabase();
@@ -119,3 +120,15 @@ export async function getHealthResponse(): Promise<{ response: HealthResponse; h
   const httpStatus = status === 'unhealthy' ? 503 : 200;
   return { response, httpStatus };
 }
+
+/**
+ * The health routes of both listeners, built once: `GET /health` answers 204 and `?depth=full` the diagnostics above
+ * (503 when a critical component is unhealthy), both with the release SHA the load balancer contract requires.
+ */
+export const healthApp = createHealthApp({
+  version: env.RELEASE_SHA,
+  full: async () => {
+    const { response, httpStatus } = await getHealthResponse();
+    return { httpStatus, body: { ...response, version: env.RELEASE_SHA } };
+  },
+});

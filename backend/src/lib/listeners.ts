@@ -1,12 +1,10 @@
 import type { AddressInfo } from 'node:net';
 import { type ServerType, serve } from '@hono/node-server';
 import { Hono } from 'hono';
-import { createHealthApp } from 'shared/health-app';
 import type { Env } from '#/core/context';
-import { env } from '#/env';
 import { cdcWebSocketServer } from '#/lib/cdc-websocket';
 import { appErrorHandler } from '#/lib/error';
-import { getHealthResponse } from '#/lib/health';
+import { healthApp } from '#/lib/health';
 import { dynamicBodyLimit } from '#/middlewares/body-limit';
 import { yjsInternalHandlers } from '#/modules/yjs/yjs-internal-handlers';
 
@@ -47,16 +45,7 @@ export function serveApi(
  */
 export const internalApp = new Hono<Env>();
 internalApp.use('*', dynamicBodyLimit);
-internalApp.route(
-  '/',
-  createHealthApp({
-    version: env.RELEASE_SHA,
-    full: async () => {
-      const { response, httpStatus } = await getHealthResponse();
-      return { httpStatus, body: { ...response, version: env.RELEASE_SHA } };
-    },
-  }),
-);
+internalApp.route('/', healthApp);
 internalApp.route('/internal/yjs', yjsInternalHandlers);
 internalApp.onError(appErrorHandler);
 

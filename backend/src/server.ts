@@ -1,11 +1,9 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
-import { createHealthApp } from 'shared/health-app';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { env } from '#/env';
 import { appErrorHandler } from '#/lib/error';
-import { getHealthResponse } from '#/lib/health';
+import { healthApp } from '#/lib/health';
 import '#/lib/lens-telemetry'; // registers doba lens otel hooks
 import { app as middlewares } from '#/middlewares/app';
 
@@ -19,17 +17,7 @@ baseApp.get('/favicon.ico', (c) => c.redirect(`${appConfig.frontendUrl}/favicon.
 
 baseApp.route('/', middlewares);
 
-// Shallow health checks return 204, full checks 200 or 503; both carry the release SHA the LB contract requires.
-baseApp.route(
-  '/',
-  createHealthApp({
-    version: env.RELEASE_SHA,
-    full: async () => {
-      const { response, httpStatus } = await getHealthResponse();
-      return { httpStatus, body: { ...response, version: env.RELEASE_SHA } };
-    },
-  }),
-);
+baseApp.route('/', healthApp);
 
 baseApp.notFound(() => {
   throw new AppError(404, 'route_not_found', 'warn');
