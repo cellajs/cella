@@ -22,6 +22,7 @@ export const appServices = defineServices({
     pathPrefix: '/api',
     // The internal listener (the CDC socket, the Yjs relay's routes): only the private ACL-guarded LB frontend forwards
     // to it, so in-network consumers dial a stable address that follows every cutover and the public pool never can.
+    // The synth passes it to the container as INTERNAL_PORT.
     internalPort: 4005,
     // Attachment uploads and presigned URLs are signed with the backend's own per-deploy service key.
     s3Access: true,
@@ -32,7 +33,6 @@ export const appServices = defineServices({
       BACKEND_URL: '${BACKEND_URL}',
       // The primary rollout service owns the scheduled jobs; an advisory lock lets one of its generations run them at a time.
       RUN_JOBS: 'true',
-      INTERNAL_PORT: '4005',
     },
   },
 
@@ -50,13 +50,13 @@ export const appServices = defineServices({
     // singleVM folds it into the backend process, which then holds the same slot.
     coHosted: true,
     env: {
-      API_WS_URL: '${API_WS_URL}',
+      BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}',
       BACKEND_URL: '${BACKEND_URL}',
       CDC_HEALTH_PORT: '4001',
     },
-    // A server-to-server WebSocket on the backend's internal listener, dialed through the LB's private internal frontend: the address survives backend cutovers, the LB stays inside the VPC so the backend's source check passes, and mark-down kills sessions so cdc re-dials.
+    // The worker derives its socket's address from the backend's internal listener, dialed through the LB's private internal frontend: the address survives backend cutovers, the LB stays inside the private network the listener admits, and mark-down kills sessions so cdc re-dials.
     bindings: {
-      API_WS_URL: 'ws://@{backend.internalHost}:@{backend.internalPort}/internal/cdc',
+      BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}',
     },
   },
 

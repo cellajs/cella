@@ -90,7 +90,7 @@ Environment, validated in `src/env.ts` (loads the backend's `.env`):
 | --- | --- |
 | `DATABASE_CDC_URL` | Replication and write connection. The role needs `REPLICATION`. |
 | `DATABASE_SSL_CA` | Base64 PEM CA for PostgreSQL TLS, required in production |
-| `API_WS_URL` | The backend internal listener's `/internal/cdc` endpoint, default port `devPorts.internal` |
+| `BACKEND_INTERNAL_URL` | The backend's internal listener (an http base; the socket is its `/internal/cdc` route), default port `devPorts.internal` |
 | `CDC_SECRET` | Internal-channel shared secret, minimum 16 characters |
 | `CDC_HEALTH_PORT` | Health server port, default 4001 |
 | `MAPLE_SECRET_INGEST_KEY` | Optional telemetry ingest key |

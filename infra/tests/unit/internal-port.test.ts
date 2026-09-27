@@ -32,12 +32,11 @@ describe('internal listener routing', () => {
   });
 
   it('must not let the cdc or yjs worker reach the backend through its public URL', () => {
-    expect(appServices.cdc.bindings).toEqual({
-      API_WS_URL: 'ws://@{backend.internalHost}:@{backend.internalPort}/internal/cdc',
-    });
-    expect(appServices.yjs.bindings).toEqual({
-      BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}',
-    });
+    for (const worker of [appServices.cdc, appServices.yjs]) {
+      expect(worker.bindings).toEqual({
+        BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}',
+      });
+    }
   });
 
   it('must not accept an internal listener that shares a port with any service', () => {

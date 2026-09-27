@@ -7,8 +7,8 @@ loadBackendDotenv();
 const envSchema = workerEnvBase.extend({
   DATABASE_CDC_URL: z.url(),
 
-  // backendUrl is the public URL; the CDC socket targets the backend's internal listener.
-  API_WS_URL: z.url().default(`ws://localhost:${appConfig.devPorts.internal}/internal/cdc`),
+  // The backend's internal listener, an http base; the CDC socket is its `/internal/cdc` route.
+  BACKEND_INTERNAL_URL: z.url().default(`http://localhost:${appConfig.devPorts.internal}`),
   CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters'),
   CDC_HEALTH_PORT: z.coerce.number().default(appConfig.devPorts.cdcHealth),
 });

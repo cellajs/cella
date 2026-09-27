@@ -77,18 +77,18 @@ export async function waitFor(
   throw new Error(`Timeout waiting for: ${label}`);
 }
 
-/** Host the real internal listener on an ephemeral local port for the CDC worker to dial. */
-async function startInternalCdcWsServer(): Promise<{ url: string; close(): Promise<void> }> {
+/** Host the real internal listener on an ephemeral local port for the CDC worker to dial; `url` is its http base. */
+async function startInternalListener(): Promise<{ url: string; close(): Promise<void> }> {
   const listener = serveInternal({ port: 0, hostname: '127.0.0.1' });
   await once(listener.server, 'listening');
 
   const address = listener.server.address() as AddressInfo | null;
   if (!address) {
-    throw new Error('Failed to determine test CDC WebSocket server address');
+    throw new Error('Failed to determine the test internal listener address');
   }
 
   return {
-    url: `ws://127.0.0.1:${address.port}/internal/cdc`,
+    url: `http://127.0.0.1:${address.port}`,
     async close() {
       const closed = once(listener.server, 'close');
       listener.close();
@@ -103,8 +103,8 @@ export async function startInProcessCdcWorker(): Promise<CdcTestHarness> {
   process.env.CDC_SECRET = process.env.CDC_SECRET ?? 'test-cdc-secret-min16chars';
   process.env.CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? `cdc_slot_backend_${process.pid}_${Date.now()}`;
 
-  const wsServer = await startInternalCdcWsServer();
-  process.env.API_WS_URL = wsServer.url;
+  const wsServer = await startInternalListener();
+  process.env.BACKEND_INTERNAL_URL = wsServer.url;
 
   // Import after env is set: CDC modules parse env at load time.
   const { startCdcPipeline } = await import('../../../cdc/src/tests/integration/pipeline-harness');

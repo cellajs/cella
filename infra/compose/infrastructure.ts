@@ -110,6 +110,8 @@ function appBlock(
 ): ComposeService {
   const environment = {
     ...(cfg.includeStandardEnv === false ? {} : STANDARD_ENV),
+    // The registry entry declares the internal listener's port once; the process reads it from INTERNAL_PORT.
+    ...(cfg.internalPort === undefined ? {} : { INTERNAL_PORT: String(cfg.internalPort) }),
     ...(cfg.env ?? {}),
     ...(opts.extraEnv ?? {}),
   };

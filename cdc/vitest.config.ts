@@ -27,7 +27,7 @@ export default defineProject({
       DATABASE_CDC_URL: testDatabaseUrl,
       CDC_SECRET: 'test-cdc-secret-min16chars',
       // Backpressure integration test points the worker's WS client at a local stub server.
-      API_WS_URL: 'ws://127.0.0.1:4788/internal/cdc',
+      BACKEND_INTERNAL_URL: 'http://127.0.0.1:4788',
     },
   },
 });

@@ -156,7 +156,7 @@ describe('load balancer', () => {
     expect(named('https-frontend').inputs.backendId).toBe(id('frontend-lb-backend'));
     // In-network consumers dial the listener at the LB's private address on the internal frontend's port, never at a generation IP.
     const internalAddress = `10.0.0.200:${internal.inputs.inboundPort}`;
-    expect(vmEnv('cdc').API_WS_URL).toBe(`ws://${internalAddress}/internal/cdc`);
+    expect(vmEnv('cdc').BACKEND_INTERNAL_URL).toBe(`http://${internalAddress}`);
     expect(vmEnv('yjs').BACKEND_INTERNAL_URL).toBe(`http://${internalAddress}`);
   });
 

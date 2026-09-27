@@ -22,14 +22,13 @@ services:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
+      INTERNAL_PORT: '4005'
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
       RUN_JOBS: 'true'
-      INTERNAL_PORT: '4005'
       RUN_MIGRATIONS_ON_BOOT: 'false'
-      API_WS_URL: ${API_WS_URL}
-      CDC_HEALTH_PORT: '4001'
       BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL}
+      CDC_HEALTH_PORT: '4001'
       YJS_PORT: '4002'
       MCP_URL: ${MCP_URL}
       OAUTH_URL: ${OAUTH_URL}
@@ -73,7 +72,6 @@ services:
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
       RUN_JOBS: 'true'
-      INTERNAL_PORT: '4005'
   cdc:
     image: ${REGISTRY}/cdc:${CDC_TAG:-latest}
     profiles: [cdc]
@@ -88,7 +86,7 @@ services:
       NODE_ENV: production
       APP_MODE: ${APP_MODE:-production}
       TZ: UTC
-      API_WS_URL: ${API_WS_URL}
+      BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL}
       BACKEND_URL: ${BACKEND_URL}
       CDC_HEALTH_PORT: '4001'
     healthcheck:
@@ -110,7 +108,7 @@ services:
       target: cdc
       coHosted: true
       bindings:
-        API_WS_URL: ws://@{backend.internalHost}:@{backend.internalPort}/internal/cdc
+        BACKEND_INTERNAL_URL: http://@{backend.internalHost}:@{backend.internalPort}
   yjs:
     image: ${REGISTRY}/yjs:${YJS_TAG:-latest}
     profiles: [yjs]
