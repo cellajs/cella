@@ -17,11 +17,12 @@ import {
   rollupStatus,
 } from '#/lib/health-helpers';
 import { extractMcpDetails, extractYjsDetails, probeWorker, workerUrls } from '#/lib/health-probe';
+import { authInvalidationHealth } from '#/middlewares/guard/invalidation-listener';
 
 export type { HealthResponse, HealthStatus };
 
-/** Components that reflect the backend's own ability to serve; only these can drive an `unhealthy` rollup (503). */
-const CRITICAL_COMPONENTS = new Set(['api', 'database']);
+/** Components that reflect the process's own ability to serve; only these can drive an `unhealthy` rollup (503). */
+const CRITICAL_COMPONENTS = new Set(['api', 'database', 'authInvalidation']);
 
 /** Check database connectivity with a timed `SELECT 1`. */
 async function checkDatabase(): Promise<{ connected: boolean; latencyMs: number | null }> {
@@ -81,7 +82,8 @@ async function buildMcpSelfComponent(): Promise<HealthComponent> {
 
 /**
  * Aggregates every dependency and sibling worker into a uniform `component` keyed by name. The api process grades
- * itself, checks the database, reads the pushed CDC report, and probes yjs/mcp; the mcp worker reports its own queue.
+ * itself, checks the database and its auth invalidation listener, reads the pushed CDC report, and probes yjs/mcp;
+ * the mcp worker grades the same three and reports its own queue.
  */
 async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: number }> {
   const components: Record<string, HealthComponent> = {};
@@ -89,6 +91,7 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
   const dbCheck = await checkDatabase();
   components.api = { ...mapApiComponent(getEventLoopLagMs(), process.memoryUsage()), label: 'API' };
   components.database = { ...mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs), label: 'Database' };
+  components.authInvalidation = { ...authInvalidationHealth(), label: 'Auth invalidation' };
 
   if (env.MODE === 'mcp') {
     components.mcp = { ...(await buildMcpSelfComponent()), label: 'MCP' };

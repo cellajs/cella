@@ -1,6 +1,7 @@
 import type { Notification, PoolClient } from 'pg';
 import { openDedicatedConnection } from '#/db/db';
 import { env } from '#/env';
+import type { HealthComponent } from '#/lib/health-helpers';
 import { log } from '#/utils/logger';
 import { withinTimeout } from '#/utils/within-timeout';
 import { authInvalidateChannel, clearCachedAuth, dropCachedAuth, parseAuthInvalidation } from './invalidate-cache';
@@ -14,6 +15,21 @@ const HEARTBEAT_MS = 60_000;
 const HEARTBEAT_TIMEOUT_MS = 10_000;
 
 let stopListening: (() => Promise<void>) | null = null;
+
+/** What the listener is doing; only `listening` hears the other processes, `connecting` covers every (re)connect. */
+type ListenerState = 'never_started' | 'connecting' | 'listening' | 'stopped';
+let state: ListenerState = 'never_started';
+
+/**
+ * This process's listener as a health component: a process that hears no invalidations serves ended sessions and
+ * removed memberships from its caches, so only `listening` is healthy. Between connections it is degraded; before the
+ * first start or after stop it is unhealthy.
+ * @returns The component, with the state as the reason while not listening.
+ */
+export function authInvalidationHealth(): HealthComponent {
+  const status = state === 'listening' ? 'healthy' : state === 'connecting' ? 'degraded' : 'unhealthy';
+  return { status, checkedVia: 'local', ...(status === 'healthy' ? {} : { reason: state }) };
+}
 
 interface ListenOptions {
   /** How often the LISTEN is repeated to check the connection. */
@@ -77,6 +93,7 @@ export function listenForAuthInvalidation({
     if (heartbeat) clearInterval(heartbeat);
     heartbeat = null;
     if (!lost) return;
+    state = 'connecting';
     drop(lost);
     log.warn('Auth invalidation listener lost its connection, reconnecting', { error });
     scheduleConnect();
@@ -107,6 +124,7 @@ export function listenForAuthInvalidation({
       if (!(await withinTimeout(listening, heartbeatTimeoutMs))) throw failure;
       if (stopped) return drop(next);
       client = next;
+      state = 'listening';
       retryDelay = RETRY_MIN_MS;
       // Any entry cached while nothing listened may have missed its invalidation.
       clearCachedAuth();
@@ -121,10 +139,12 @@ export function listenForAuthInvalidation({
     }
   }
 
+  state = 'connecting';
   void connect();
 
   stopListening = async () => {
     stopped = true;
+    state = 'stopped';
     stopListening = null;
     if (retryTimer) clearTimeout(retryTimer);
     if (heartbeat) clearInterval(heartbeat);
