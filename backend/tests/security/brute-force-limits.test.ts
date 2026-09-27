@@ -1,7 +1,7 @@
 import { decodeBase32 } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { checkEmail, signInWithTotp, toggleMfa } from 'sdk';
+import { checkEmail, sendMagicLink, signInWithTotp, toggleMfa } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
@@ -11,6 +11,7 @@ import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { usersTable } from '#/modules/user/user-db';
+import { magicLinkEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, createMfaToken, createTestSession, createTestUser, createTotpUser } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -38,6 +39,16 @@ const lockoutMailsTo = (email: string) =>
         (recipients as { email: string }[]).some((recipient) => recipient.email === email),
     );
 
+/** The magic-link mails handed to the mailer for `email`. */
+const magicLinkMailsTo = (email: string) =>
+  vi
+    .mocked(mailer.prepareEmails)
+    .mock.calls.filter(
+      ([template, , recipients]) =>
+        template === magicLinkEmail &&
+        (recipients as { email: string }[]).some((recipient) => recipient.email === email),
+    );
+
 /**
  * Failure budgets end a guessing run: after the configured number of failures the next attempt is refused with 429,
  * even when it would succeed. Every other backend test mocks the limiters, so this file is where they are proven.
@@ -48,6 +59,24 @@ describe('brute-force budgets', async () => {
   afterEach(async () => {
     await clearSecurityTestData();
     vi.mocked(mailer.prepareEmails).mockClear();
+  });
+
+  it('must not keep mailing an address magic links via /auth/magic/send from ever new client addresses', async () => {
+    const owner = await createTestUser(`magic-limit-${nanoid(8)}@security-test.com`.toLowerCase());
+    const other = await createTestUser(`magic-other-${nanoid(8)}@security-test.com`.toLowerCase());
+    /** A request for a link to `email`, each from a client address of its own: the budget is the mailbox's. */
+    const request = async (email: string) =>
+      (await call(sendMagicLink, { body: { email }, headers: fromIp(randomIp()) })).response;
+
+    for (let attempt = 0; attempt < 2; attempt++) expect((await request(owner.email)).status).toBe(204);
+
+    const blocked = await request(owner.email);
+    expect(blocked.status).toBe(429);
+    expect(magicLinkMailsTo(owner.email)).toHaveLength(2);
+
+    // Another address is unaffected (positive control).
+    expect((await request(other.email)).status).toBe(204);
+    expect(magicLinkMailsTo(other.email)).toHaveLength(1);
   });
 
   it('must not keep guessing authenticator codes via PUT /me/mfa', async () => {
