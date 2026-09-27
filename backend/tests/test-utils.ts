@@ -61,29 +61,12 @@ export async function clearDatabase() {
 
 /** Vitest hoists vi.mock(), so call at top level: vi.mock('#/middlewares/rate-limiter/core', rateLimiterCoreMock) */
 export const rateLimiterCoreMock = () => ({
-  rateLimiter: vi
-    .fn()
-    .mockImplementation(
-      (mode: string, key: string, _identifiers: string[], opts?: { limits?: { points?: number } }) => {
-        const points = opts?.limits?.points ?? 10;
-        const handler = async (_: Context, next: Next) => {
-          await next();
-        };
-        return Object.assign(handler, { keyPrefix: `${key}_${mode}`, points });
-      },
-    ),
-  defaultOptions: {
-    tableName: 'rate_limits',
-    points: 10,
-    duration: 60 * 60,
-    blockDuration: 60 * 30,
-  },
-  slowOptions: {
-    tableName: 'rate_limits',
-    points: 100,
-    duration: 60 * 60 * 24,
-    blockDuration: 60 * 60 * 3,
-  },
+  rateLimiter: vi.fn().mockImplementation((mode: string, key: string) => {
+    const handler = async (_: Context, next: Next) => {
+      await next();
+    };
+    return Object.assign(handler, { keyPrefix: `${key}_${mode}`, buckets: [] });
+  }),
 });
 
 /** Use at top level: vi.mock('#/middlewares/rate-limiter/helpers', rateLimiterHelpersMock) */

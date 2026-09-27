@@ -1,28 +1,14 @@
 import { Hono } from 'hono';
-import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
+import { memoryStores } from './memory-stores';
 
-// Undo the setup.ts mock: these tests drive the real middleware against a real RateLimiterMemory, end to end
+// Undo the setup.ts mock: these tests drive the real middleware against in-memory stores, end to end
 vi.unmock('#/middlewares/rate-limiter/core');
-
-// Real in-memory limiter instances, memoized by keyPrefix exactly like production.
-const instances = new Map<string, RateLimiterMemory>();
-
-vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => {
-  const original = await importOriginal<typeof import('#/middlewares/rate-limiter/helpers')>();
-  return {
-    ...original,
-    getRateLimiterInstance: (options: { keyPrefix: string; points: number; duration: number }) => {
-      const existing = instances.get(options.keyPrefix);
-      if (existing) return existing;
-      const instance = new RateLimiterMemory(options);
-      instances.set(options.keyPrefix, instance);
-      return instance;
-    },
-  };
-});
+vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) =>
+  (await import('./memory-stores')).memoryStoresMock(importOriginal),
+);
 
 // Must import AFTER mocks are set up
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
@@ -63,7 +49,7 @@ async function hammer(app: Hono<Env>, n: number) {
 describe('points budget enforcement (end to end)', () => {
   beforeEach(() => {
     clearCache();
-    instances.clear();
+    memoryStores.clear();
   });
 
   it('enforces the tenant budget exactly, including requests served by the fast path', async () => {
@@ -79,7 +65,7 @@ describe('points budget enforcement (end to end)', () => {
     const app = buildApp('settle', 't1', 5000, () => 100);
     await hammer(app, 90);
 
-    const state = await instances.get('settle_limit')!.get('tenantId:t1');
+    const state = await memoryStores.get('settle_limit')!.get('tenantId:t1');
     // The DB must contain all 90 requests: 79 from the fast path and 11 from the DB path.
     expect(state?.consumedPoints).toBe(90);
   });
@@ -111,7 +97,7 @@ describe('points budget enforcement (end to end)', () => {
 
     await hammer(small, 12); // exhaust the small tenant's budget of 10
 
-    const instance = instances.get('shared_limit')!;
+    const instance = memoryStores.get('shared_limit')!;
     expect(instance.points).toBe(CEILING);
 
     // Big tenant's traffic must not unblock the small tenant...

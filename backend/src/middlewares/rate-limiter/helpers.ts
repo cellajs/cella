@@ -6,8 +6,12 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { env } from '#/env';
-import { defaultOptions, slowOptions } from '#/middlewares/rate-limiter/core';
-import type { Identifiers, RateLimiterHandler, RateLimitIdentifier } from '#/middlewares/rate-limiter/types';
+import type {
+  Identifiers,
+  LimiterStore,
+  RateLimiterHandler,
+  RateLimitIdentifier,
+} from '#/middlewares/rate-limiter/types';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { getIp } from '#/utils/get-ip';
 import { toRateLimitIp } from '#/utils/ip-subnet';
@@ -25,8 +29,6 @@ type RateLimiterOptions = {
   inMemoryBlock?: boolean;
 };
 
-type LimiterStore = RateLimiterDrizzle | RateLimiterMemory;
-
 // Singleton registry: reuse limiter instances with the same keyPrefix to share internal caches and reduce DB round-trips
 const limiterRegistry = new Map<string, LimiterStore>();
 
@@ -39,28 +41,23 @@ export const getRateLimiterInstance = ({ inMemoryBlock = true, ...options }: Rat
   const existing = limiterRegistry.get(keyPrefix);
   if (existing) return existing;
 
-  const enforcedOptions = {
-    ...options,
-    tableName: defaultOptions.tableName,
-  };
-
   let instance: LimiterStore;
 
   if (env.NODB) {
-    instance = new RateLimiterMemory(enforcedOptions);
+    instance = new RateLimiterMemory(options);
   } else {
     // Fail-open: an unreachable DB falls back to the in-memory limiter so the request survives without a 500
-    const insurance = new RateLimiterMemory(enforcedOptions);
+    const insurance = new RateLimiterMemory(options);
     instance = new RateLimiterDrizzle({
-      ...enforcedOptions,
+      ...options,
       storeClient: db,
       schema: rateLimitsTable,
       insuranceLimiter: insurance,
       // Both blocks last blockDuration: an in-memory block without a duration of its own ends with the window, and the
       // library then skips the database block every process reads. A zero blockDuration blocks for the rest of the window.
       ...(inMemoryBlock && {
-        inMemoryBlockOnConsumed: enforcedOptions.points,
-        inMemoryBlockDuration: enforcedOptions.blockDuration,
+        inMemoryBlockOnConsumed: options.points,
+        inMemoryBlockDuration: options.blockDuration,
       }),
     });
     insurances.set(instance, insurance);
@@ -134,11 +131,7 @@ const takeAttempt = async (
 
 /**
  * Counts an attempt before the work it bounds runs, so a parallel burst takes the budget one point at a time and at
- * most `points` attempts go through. A spent budget refuses without counting or blocking; the caller settles the
- * attempt once its outcome is known (`refundAttempt`, `blockSpentBucket`).
- * @param store - The bucket's limiter.
- * @param rateLimitKey - The key as the middleware passes it to the store.
- * @param limits - The budget and the counting window a new or restarted bucket gets.
+ * most `points` attempts go through. A spent budget refuses without counting or blocking.
  * @returns The store holding the attempt (process memory while the database is unreachable) and the bucket with it,
  *   or the spent bucket that refused it.
  */
@@ -170,8 +163,6 @@ export const reserveAttempt = async (
 /**
  * Gives back an attempt counted before the handler ran whose outcome the bucket does not count. A bucket that expired
  * or was reset since holds no attempt to give back.
- * @param store - The bucket's limiter.
- * @param rateLimitKey - The key as the middleware passes it to the store.
  */
 export const refundAttempt = async (store: LimiterStore, rateLimitKey: string) => {
   if (store instanceof RateLimiterDrizzle) {
@@ -196,10 +187,6 @@ export const refundAttempt = async (store: LimiterStore, rateLimitKey: string) =
  * Blocks a bucket whose whole budget is taken, for `blockSeconds` from now: what a failure answered at that point does.
  * The block keeps the bucket's points, so attempts still in flight that the bucket does not count give theirs back and
  * reopen it.
- * @param store - The bucket's limiter.
- * @param rateLimitKey - The key as the middleware passes it to the store.
- * @param points - The bucket's budget.
- * @param blockSeconds - How long the block lasts, the same in every process.
  * @returns Whether the bucket was spent and is blocked now.
  */
 export const blockSpentBucket = async (
@@ -293,25 +280,20 @@ export const checkIpRateLimitStatus = async (ctx: Context<Env>, rateLimiterHandl
   return checkRateLimitStatus(rateLimiterHandler, `ip:${toRateLimitIp(ip ?? '')}`);
 };
 
-/** Reports whether a key is blocked without consuming points. /auth/health uses it to detect restrictedMode. */
+/**
+ * Reports whether the limiter refuses `rateLimitKey`'s next request, without counting one: `/auth/health` reads it for
+ * `restrictedMode`. A bucket at its budget refuses, blocked or not.
+ */
 export const checkRateLimitStatus = async (
-  rateLimiterHandler: RateLimiterHandler,
+  { buckets }: RateLimiterHandler,
   rateLimitKey: string,
 ): Promise<{ isLimited: boolean; retryAfter?: number }> => {
-  const { keyPrefix, points: mainPoints } = rateLimiterHandler;
-  const limiter = getRateLimiterInstance({ ...defaultOptions, points: mainPoints, keyPrefix });
-  const slowLimiter = getRateLimiterInstance({ ...slowOptions, keyPrefix: `${keyPrefix}:slow` });
-
-  const [state, slowState] = await Promise.all([limiter.get(rateLimitKey), slowLimiter.get(rateLimitKey)]);
-
-  if (state && state.consumedPoints > mainPoints) {
-    return { isLimited: true, retryAfter: Math.round(state.msBeforeNext / 1000) };
+  for (const { store, limits } of buckets) {
+    const state = await store.get(rateLimitKey);
+    if (state && state.consumedPoints >= limits.points) {
+      return { isLimited: true, retryAfter: Number(getRetryAfter(state.msBeforeNext)) };
+    }
   }
-
-  if (slowState && slowState.consumedPoints > (slowOptions.points ?? 100)) {
-    return { isLimited: true, retryAfter: Math.round(slowState.msBeforeNext / 1000) };
-  }
-
   return { isLimited: false };
 };
 

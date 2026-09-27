@@ -36,6 +36,8 @@ const cimdDocument = {
 
 /** A fresh client address per test: limiter rows outlive a run, and the IP-keyed budgets must start empty. */
 const randomIp = () => `203.0.${Math.floor(Math.random() * 256)}.${1 + Math.floor(Math.random() * 254)}`;
+/** The fetches one address may cause per window. */
+const fetchBudget = clientMetadataFetchLimiter.buckets[0].limits.points;
 
 /**
  * A client id the authorization server has not cached may be the URL of a metadata document it fetches, so a request
@@ -101,7 +103,7 @@ describe('authorization server fetch budget', async () => {
   async function spendBudget(ip: string) {
     // An unknown client costs two fetches per authorization request (the client check and the error page's second
     // look), so the budget runs out within as many requests as it allows fetches.
-    for (let n = 0; n <= clientMetadataFetchLimiter.points; n++) {
+    for (let n = 0; n <= fetchBudget; n++) {
       const response = await authorize(ip, firstTimeClient(n));
       if (response.status === 429) return response;
     }
@@ -160,7 +162,7 @@ describe('authorization server fetch budget', async () => {
     expect(await refused.json()).toMatchObject({ error: 'too_many_requests' });
     const sentOut = fetched.length - before;
     expect(sentOut).toBeGreaterThan(0);
-    expect(sentOut).toBeLessThanOrEqual(clientMetadataFetchLimiter.points);
+    expect(sentOut).toBeLessThanOrEqual(fetchBudget);
 
     // Spent: first-time client ids fetch nothing more, at the authorization endpoint or at the token endpoint.
     expect((await authorize(ip, firstTimeClient(1000))).status).toBe(429);
@@ -232,7 +234,7 @@ describe('authorization server fetch budget', async () => {
       const ip = randomIp();
       const before = fetched.length;
 
-      for (let n = 0; n < clientMetadataFetchLimiter.points + 5; n++) {
+      for (let n = 0; n < fetchBudget + 5; n++) {
         const rotated = await refreshFrom(ip, clientId, refreshToken);
         expect(rotated.status, `${clientId}: refresh ${n + 1}`).toBe(200);
         refreshToken = String(rotated.body.refresh_token);

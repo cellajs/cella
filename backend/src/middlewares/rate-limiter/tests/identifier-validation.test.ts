@@ -1,31 +1,18 @@
 import { Hono } from 'hono';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { nanoid } from 'nanoid';
+import { describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
-import { AppError } from '#/core/error';
+import type { RateLimitKeyPart } from '#/middlewares/rate-limiter/types';
+import { memoryStores } from './memory-stores';
 
-// Undo setup.ts mock: this test needs the real rateLimiter to exercise identifier validation.
+// Undo the setup.ts mock: these tests need the real rateLimiter to derive the key.
 vi.unmock('#/middlewares/rate-limiter/core');
-
-// Shared consume spy so tests can observe the generated rate limit key
-const { consumeSpy } = vi.hoisted(() => ({
-  consumeSpy: vi.fn().mockResolvedValue({ consumedPoints: 1, remainingPoints: 9, msBeforeNext: 0 }),
-}));
-
-// Mock the helpers module to isolate identifier extraction from DB/limiter internals
-vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => {
-  const original = await importOriginal<typeof import('#/middlewares/rate-limiter/helpers')>();
-  return {
-    ...original,
-    // Return a no-op limiter that never blocks (we only care about key generation/validation)
-    getRateLimiterInstance: () => ({
-      get: vi.fn().mockResolvedValue(null),
-      consume: consumeSpy,
-      points: 10,
-    }),
-  };
-});
+vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) =>
+  (await import('./memory-stores')).memoryStoresMock(importOriginal),
+);
 
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
+const { appErrorHandler } = await import('#/lib/error');
 
 function jsonRequest(path: string, body: Record<string, unknown>) {
   const json = JSON.stringify(body);
@@ -36,23 +23,25 @@ function jsonRequest(path: string, body: Record<string, unknown>) {
   });
 }
 
-/** Minimal Hono app running the given limiter before a 200 handler. Pass `userId` for an authenticated request. */
-function createTestApp(middleware: ReturnType<typeof rateLimiter>, userId?: string) {
+/** A route behind a fresh `limit` limiter keyed on `identifiers`; `userId` signs its requests in. */
+function keyedRoute(identifiers: RateLimitKeyPart[], userId?: string) {
+  const limiter = rateLimiter('limit', `key_${nanoid(8)}`, identifiers, { limits: { points: 10, duration: 60 } });
   const app = new Hono<Env>();
-  app.onError((err, c) => {
-    if (err instanceof AppError) return c.json({ error: err.type }, err.status as 400);
-    return c.json({ error: 'internal' }, 500);
-  });
+  app.onError(appErrorHandler);
   if (userId) {
-    app.use(async (c, next) => {
-      // Mirror userGuard, which sets both `user` and `userId`
-      c.set('user', { id: userId } as Env['Variables']['user']);
-      c.set('userId', userId);
+    app.use(async (ctx, next) => {
+      ctx.set('user', { id: userId } as Env['Variables']['user']);
       await next();
     });
   }
-  app.post('/test', middleware, (c) => c.text('ok'));
-  return app;
+  app.post('/test', limiter, (ctx) => ctx.text('ok'));
+  const store = memoryStores.get(limiter.keyPrefix)!;
+  return {
+    app,
+    /** The keys the route counted requests under. */
+    keys: () => store.dump().storage.map(({ key }) => key),
+    counted: async (key: string) => (await store.get(key))?.consumedPoints ?? 0,
+  };
 }
 
 /** Fake node-server bindings so getIp's socket fallback resolves to null without crashing. */
@@ -60,100 +49,69 @@ const emptyBindings = { incoming: { socket: {} } } as Env['Bindings'];
 
 describe('rate limiter identifier validation', () => {
   describe('email identifier', () => {
-    const limiter = rateLimiter('limit', 'test', ['email'], {
-      limits: { points: 10, duration: 60 },
-    });
-    const app = createTestApp(limiter);
+    const route = keyedRoute(['email']);
 
-    it('should reject when email is missing from body', async () => {
-      const res = await app.request(jsonRequest('/test', { name: 'no-email' }));
-      expect(res.status).toBe(400);
+    it('rejects a body without an email', async () => {
+      expect((await route.app.request(jsonRequest('/test', { name: 'no-email' }))).status).toBe(400);
     });
 
-    it('should allow request when email is present in body', async () => {
-      const res = await app.request(jsonRequest('/test', { email: 'test@example.com' }));
-      expect(res.status).toBe(200);
+    it('lets a request with an email in the body through', async () => {
+      expect((await route.app.request(jsonRequest('/test', { email: 'test@example.com' }))).status).toBe(200);
     });
 
-    it('should normalize email case and whitespace into a single bucket', async () => {
+    it('normalizes case and whitespace into a single bucket', async () => {
       // Handlers lowercase and trim before delivering mail, so the limiter must too or one inbox gets three buckets
-      consumeSpy.mockClear();
       for (const email of ['Victim@Example.COM', 'victim@example.com', ' VICTIM@example.com ']) {
-        await app.request(jsonRequest('/test', { email }));
+        await route.app.request(jsonRequest('/test', { email }));
       }
-      expect(consumeSpy).toHaveBeenCalledTimes(3);
-      for (const call of consumeSpy.mock.calls) {
-        expect(call[0]).toBe('email:victim@example.com');
-      }
+      expect(await route.counted('email:victim@example.com')).toBe(3);
     });
 
-    it('should reject a non-string email instead of keying on it', async () => {
+    it('rejects a non-string email without keying on it', async () => {
       // Rate limiting runs before zod validation, so the body shape is untrusted here.
-      const res = await app.request(jsonRequest('/test', { email: 42 }));
-      expect(res.status).toBe(400);
+      expect((await route.app.request(jsonRequest('/test', { email: 42 }))).status).toBe(400);
     });
 
-    it('should reject when email is only in query (not body)', async () => {
-      const res = await app.request(new Request('http://localhost/test?email=test@example.com', { method: 'POST' }));
-      expect(res.status).toBe(400);
+    it('rejects an email given only in the query', async () => {
+      const req = new Request('http://localhost/test?email=test@example.com', { method: 'POST' });
+      expect((await route.app.request(req)).status).toBe(400);
     });
   });
 
   describe('fallback chain identifier', () => {
-    const limiter = () =>
-      rateLimiter('limit', 'chainTest', [['userId', 'ip']], {
-        limits: { points: 10, duration: 60 },
-      });
+    const fromIp = new Request('http://localhost/test', { method: 'POST', headers: { 'x-forwarded-for': '1.2.3.4' } });
 
-    beforeEach(() => consumeSpy.mockClear());
-
-    it('should key per user when authenticated, ignoring IP', async () => {
-      const app = createTestApp(limiter(), 'user-1');
-      const req = new Request('http://localhost/test', {
-        method: 'POST',
-        headers: { 'x-forwarded-for': '1.2.3.4' },
-      });
-      const res = await app.request(req, undefined, emptyBindings);
-      expect(res.status).toBe(200);
-      expect(consumeSpy).toHaveBeenCalledWith('userId:user-1', 1);
+    it('keys per user when authenticated, ignoring the IP', async () => {
+      const route = keyedRoute([['userId', 'ip']], 'user-1');
+      expect((await route.app.request(fromIp.clone(), undefined, emptyBindings)).status).toBe(200);
+      expect(route.keys()).toEqual(['userId:user-1']);
     });
 
-    it('should fall back to IP for anonymous requests', async () => {
-      const app = createTestApp(limiter());
-      const req = new Request('http://localhost/test', {
-        method: 'POST',
-        headers: { 'x-forwarded-for': '1.2.3.4' },
-      });
-      const res = await app.request(req, undefined, emptyBindings);
-      expect(res.status).toBe(200);
-      expect(consumeSpy).toHaveBeenCalledWith('ip:1.2.3.4', 1);
+    it('falls back to the IP for anonymous requests', async () => {
+      const route = keyedRoute([['userId', 'ip']]);
+      expect((await route.app.request(fromIp.clone(), undefined, emptyBindings)).status).toBe(200);
+      expect(route.keys()).toEqual(['ip:1.2.3.4']);
     });
 
-    it('should reject when no identifier in the chain resolves', async () => {
-      const app = createTestApp(limiter());
-      const res = await app.request(new Request('http://localhost/test', { method: 'POST' }), undefined, emptyBindings);
-      expect(res.status).toBe(400);
-      expect(consumeSpy).not.toHaveBeenCalled();
+    it('rejects when no identifier in the chain resolves, counting nothing', async () => {
+      const route = keyedRoute([['userId', 'ip']]);
+      const req = new Request('http://localhost/test', { method: 'POST' });
+      expect((await route.app.request(req, undefined, emptyBindings)).status).toBe(400);
+      expect(route.keys()).toEqual([]);
     });
   });
 
   describe('empty key guard', () => {
-    it('should reject when the key resolves empty (userId limiter on anonymous request)', async () => {
-      const limiter = rateLimiter('limit', 'emptyKeyTest', ['userId'], {
-        limits: { points: 10, duration: 60 },
-      });
-      const app = createTestApp(limiter);
-      const res = await app.request(new Request('http://localhost/test', { method: 'POST' }), undefined, emptyBindings);
-      expect(res.status).toBe(400);
+    it('rejects when the key resolves empty (userId limiter on an anonymous request)', async () => {
+      const route = keyedRoute(['userId']);
+      const req = new Request('http://localhost/test', { method: 'POST' });
+      expect((await route.app.request(req, undefined, emptyBindings)).status).toBe(400);
     });
 
-    it('should allow when the optional identifier resolves', async () => {
-      const limiter = rateLimiter('limit', 'emptyKeyTest2', ['userId'], {
-        limits: { points: 10, duration: 60 },
-      });
-      const app = createTestApp(limiter, 'user-2');
-      const res = await app.request(new Request('http://localhost/test', { method: 'POST' }), undefined, emptyBindings);
-      expect(res.status).toBe(200);
+    it('lets the request through when the optional identifier resolves', async () => {
+      const route = keyedRoute(['userId'], 'user-2');
+      const req = new Request('http://localhost/test', { method: 'POST' });
+      expect((await route.app.request(req, undefined, emptyBindings)).status).toBe(200);
     });
   });
 });
