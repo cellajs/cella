@@ -4,16 +4,7 @@ import { defineServices } from '../../compose/infrastructure';
 import { appServices } from '../../config/services.config';
 import { services } from '../../lib/services';
 import { internalLbPort } from '../../resources/lb-internal';
-
-/** Minimal valid service entry to hang port variations on. */
-const base = {
-  image: 'r/x:latest',
-  port: 4000,
-  healthTimeoutSeconds: 60,
-  startPeriod: '10s',
-  replacementStrategy: 'start-first',
-  instanceType: 'DEV1-S',
-} as const;
+import { fakeService as base } from '../helpers/fake-config';
 
 // The backend's server-to-server routes (the CDC socket, the Yjs relay's materialize) listen on a port of their own,
 // which only the private ACL-guarded LB pool forwards to; the public pools forward the app port alone.

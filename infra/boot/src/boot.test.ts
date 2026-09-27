@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { leakableDsn } from '../../tests/helpers/fake-secrets';
 import { boot, waitForPrivateNetwork } from './boot';
 import type { ExecFn, ExecResult } from './exec';
 
@@ -62,9 +63,7 @@ describe('boot', () => {
   it('must not upload, export or print a secret via a failed release command', async () => {
     const bootKey = { accessKey: 'SCWBOOTACCESSKEY0001', secretKey: 'boot-sk-1111-2222-3333' };
     const serviceKey = { accessKey: 'SCWSERVICEACCESSKEY2', secretKey: 'svc-sk-4444-5555-6666' };
-    // Built at run time: a literal here reads as a leaked password to secret scanners.
-    const dbPassword = ['pg', 'pw', '7777aaaa'].join('-');
-    const dsn = `postgresql://app:${dbPassword}@10.0.0.5:5432/app?sslmode=require`;
+    const { password: dbPassword, dsn } = leakableDsn();
     const cookieSecret = 'ck-8888bbbbdd';
     const sinkKey = 'ik-9999ccccee';
     const secretValues: Record<string, string> = {

@@ -1,17 +1,13 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { flushPulumi, installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
+import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
 let h: MockHarness;
 
 beforeAll(async () => {
-  h = await installPulumiMocks({
-    stack: 'production',
-    // Deferring compute skips image-pin validation because these tests render only storage.
-    // The mock IAM API supplies CI and VM application IDs normally absent from stack config.
-    config: { 'bootstrap:computeDeferred': 'test' },
-  });
+  // The mock IAM API supplies CI and VM application IDs normally absent from stack config.
+  h = await installPulumiMocks({ deferCompute: true });
   await import('./storage');
-  await flushPulumi();
+  await h.settle();
 });
 
 describe('storage module', () => {

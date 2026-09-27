@@ -1,15 +1,13 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { beforeAll, describe, expect, it, vi } from 'vitest';
-import { type BootPlan, parseBootPlanJson } from '../boot/src/plan';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { runtimeSecrets, runtimeSecretsForConsumer } from '../lib/runtime-secrets';
 import { fakeConfig } from '../tests/helpers/fake-config';
 import {
+  bootPlanIn,
   type CapturedResource,
   installPulumiMocks,
   type MockHarness,
   unwrapSecret,
+  writeGenerationKeys,
 } from '../tests/helpers/pulumi-mock';
 
 // A new generation refuses to plan without a pinnable boot image; the registry lookup is a network call, so it answers a fixed digest here.
@@ -28,26 +26,25 @@ let h: MockHarness;
 let servers: CapturedResource[];
 
 beforeAll(async () => {
-  const keysFile = join(mkdtempSync(join(tmpdir(), 'compute-test-')), 'keys.json');
-  writeFileSync(keysFile, JSON.stringify(keys));
-  process.env.INFRA_GENERATION_KEYS_FILE = keysFile;
+  writeGenerationKeys(keys);
   // Split-VM with the two services whose env needs no load balancer address: one VM each for the API and the SPA proxy.
   const { setEngineConfig } = await import('../config/engine-config');
   const { services } = fakeConfig();
   setEngineConfig(fakeConfig({ services: { ...services, cdc: { enabled: false } } }));
-  h = await installPulumiMocks({ stack: 'production' });
+  h = await installPulumiMocks();
   await import('./compute');
   await h.settle();
   servers = h.byType('scaleway:instance/server:Server');
 });
 
+afterAll(() => {
+  vi.unstubAllEnvs();
+});
+
 const cloudInitOf = (server: CapturedResource) => String(unwrapSecret(server.inputs.cloudInit));
 
-/** The boot plan a VM writes, parsed by the boot runner's own parser. */
-function bootPlanOf(server: CapturedResource): { plan: BootPlan; raw: Record<string, unknown> } {
-  const json = cloudInitOf(server).split("boot-plan.json <<'BOOT_PLAN_EOF'\n")[1]?.split('\nBOOT_PLAN_EOF')[0] ?? '';
-  return { plan: parseBootPlanJson(json, '/etc/cella/boot-plan.json'), raw: JSON.parse(json) };
-}
+/** The boot plan a VM writes. */
+const bootPlanOf = (server: CapturedResource) => bootPlanIn(cloudInitOf(server), '/etc/cella/boot-plan.json');
 
 const serviceOf = (server: CapturedResource) => server.name.split('-')[1] as keyof typeof keys.handoffSecretIds;
 

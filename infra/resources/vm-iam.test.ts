@@ -6,11 +6,7 @@ import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mo
 let h: MockHarness;
 
 beforeAll(async () => {
-  h = await installPulumiMocks({
-    stack: 'production',
-    // Deferring compute skips image-pin validation because these tests render only the IAM policies.
-    config: { 'bootstrap:computeDeferred': 'test' },
-  });
+  h = await installPulumiMocks({ deferCompute: true });
   await import('./vm-iam');
   await h.settle();
 });

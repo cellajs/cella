@@ -1,16 +1,15 @@
-import { mkdtempSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
 import type { ComponentResourceOptions } from '@pulumi/pulumi';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { parseBootPlanJson } from '../boot/src/plan';
 import { servicesByName } from '../lib/services';
 import { fakeConfig } from '../tests/helpers/fake-config';
+import { makeFetch } from '../tests/helpers/fake-fetch';
 import {
+  bootPlanIn,
   type CapturedResource,
   installPulumiMocks,
   type MockHarness,
   unwrapSecret,
+  writeGenerationKeys,
 } from '../tests/helpers/pulumi-mock';
 
 // The generation VMs the pools target need a pinnable boot image; the registry lookup answers a fixed digest here.
@@ -42,32 +41,25 @@ const id = (name: string) => `${name}-id`;
 const vmEnv = (slug: string): Record<string, string> => {
   const server = h.byType('scaleway:instance/server:Server').find((r) => r.name.startsWith(`vm-${slug}-`));
   if (!server) throw new Error(`no VM for ${slug}`);
-  const cloudInit = String(unwrapSecret(server.inputs.cloudInit));
-  const json = cloudInit.split("boot-plan.json <<'BOOT_PLAN_EOF'\n")[1]?.split('\nBOOT_PLAN_EOF')[0] ?? '';
-  const env = parseBootPlanJson(json, '/etc/cella/boot-plan.json').files.env;
+  const { env } = bootPlanIn(String(unwrapSecret(server.inputs.cloudInit)), '/etc/cella/boot-plan.json').plan.files;
   return Object.fromEntries(
     env.split('\n').map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]),
   );
 };
 
 beforeAll(async () => {
-  const keysFile = join(mkdtempSync(join(tmpdir(), 'lb-test-')), 'keys.json');
-  writeFileSync(keysFile, JSON.stringify({ bootAccessKey: 'ak', bootSecretKey: 'sk', handoffSecretIds: {} }));
-  process.env.INFRA_GENERATION_KEYS_FILE = keysFile;
+  writeGenerationKeys({ bootAccessKey: 'ak', bootSecretKey: 'sk', handoffSecretIds: {} });
   // The LB resolves its private-network address from IPAM over HTTPS.
-  process.env.SCW_SECRET_KEY = 'test-secret-key';
+  vi.stubEnv('SCW_SECRET_KEY', 'test-secret-key');
   vi.stubGlobal(
     'fetch',
-    vi.fn(async (url: string | URL) => {
-      if (String(url).includes('/ipam/v1/')) return Response.json({ ips: [{ address: '10.0.0.200/24' }] });
-      throw new Error(`unexpected fetch ${url}`);
-    }),
+    makeFetch([{ method: 'GET', match: '/ipam/v1/', body: { ips: [{ address: '10.0.0.200/24' }] } }]).fn,
   );
   // Split-VM with the path-routed WebSocket relay enabled, so a pool with WebSocket timeouts and an internal-listener consumer both render.
   const { setEngineConfig } = await import('../config/engine-config');
   const { services } = fakeConfig();
   setEngineConfig(fakeConfig({ services: { ...services, yjs: { ...services.yjs, enabled: true } } }));
-  h = await installPulumiMocks({ stack: 'production' });
+  h = await installPulumiMocks();
   await import('./loadbalancer');
   await import('./dns');
   await h.settle();
@@ -75,6 +67,7 @@ beforeAll(async () => {
 
 afterAll(() => {
   vi.unstubAllGlobals();
+  vi.unstubAllEnvs();
 });
 
 describe('load balancer', () => {

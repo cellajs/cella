@@ -1,15 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { defineServices } from '../../compose/infrastructure';
-
-/** Minimal valid service entry to hang pathPrefix variations on. */
-const base = {
-  image: 'r/x:latest',
-  port: 4000,
-  healthTimeoutSeconds: 60,
-  startPeriod: '10s',
-  replacementStrategy: 'start-first',
-  instanceType: 'DEV1-S',
-} as const;
+import { fakeService as base } from '../helpers/fake-config';
 
 // pathPrefix feeds the LB's raw matchPathBegin string, where a malformed or duplicated prefix misroutes traffic, so defineServices rejects it at synth/plan time.
 describe('pathPrefix registry validation', () => {

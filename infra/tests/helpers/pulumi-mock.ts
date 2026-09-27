@@ -1,4 +1,10 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type * as PulumiNS from '@pulumi/pulumi';
+import { vi } from 'vitest';
+import { type BootPlan, parseBootPlanJson } from '../../boot/src/plan';
+import type { GenerationKeys } from '../../tasks/mint-generation-keys';
 
 export interface CapturedResource {
   type: string;
@@ -24,7 +30,12 @@ export interface InstallOpts {
   project?: string;
   stack?: string;
   mode?: 'production' | 'staging' | 'development';
-  /** Stack config overrides, namespaced (e.g. `{ 'bootstrap:computeDeferred': '2026-01-01T00:00:00Z' }`). */
+  /**
+   * Marks compute deferred (`bootstrap:computeDeferred`), as a fresh provision does, so a module renders without the
+   * pinned image tags pulumi-context.ts asserts for compute. For a test that renders no VM.
+   */
+  deferCompute?: boolean;
+  /** Stack config overrides, namespaced (e.g. `{ 'infra:dbPublicEndpoint': 'true' }`). */
   config?: Record<string, string>;
 }
 
@@ -40,9 +51,8 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   process.env.SCW_DEFAULT_ORGANIZATION_ID = process.env.SCW_DEFAULT_ORGANIZATION_ID ?? 'mock-organization-id';
 
   // Pulumi reads stack config from PULUMI_CONFIG (JSON). Build it before import.
-  if (opts.config) {
-    process.env.PULUMI_CONFIG = JSON.stringify(opts.config);
-  }
+  const config = { ...(opts.deferCompute ? { 'bootstrap:computeDeferred': 'test' } : {}), ...opts.config };
+  if (Object.keys(config).length > 0) process.env.PULUMI_CONFIG = JSON.stringify(config);
 
   // Engine modules read config at evaluation, so load it before any resource module is imported, exactly like index.ts does.
   const { loadEngineConfig } = await import('../../config/engine-config');
@@ -132,12 +142,25 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   return { pulumi, resources, byType, oneOfType, settle };
 }
 
-/** Wait for every captured resource's input Outputs to settle so tests can inspect string values synchronously. One microtask tick suffices because the mock newResource returns state synchronously. */
-export async function flushPulumi(): Promise<void> {
+/** One event-loop turn: the mock's newResource answers synchronously, but a resource waiting on Outputs registers a turn later. */
+async function flushPulumi(): Promise<void> {
   await new Promise((resolve) => setImmediate(resolve));
 }
 
 /** A secret input arrives wrapped in Pulumi's secret envelope; the plain value sits under `value`. */
 export function unwrapSecret(input: unknown): unknown {
   return input && typeof input === 'object' && 'value' in input ? (input as { value: unknown }).value : input;
+}
+
+/** Hands the Pulumi program this deploy's minted keys, as tasks/deploy-run.ts does through INFRA_GENERATION_KEYS_FILE. */
+export function writeGenerationKeys(keys: GenerationKeys): void {
+  const file = join(mkdtempSync(join(tmpdir(), 'generation-keys-')), 'keys.json');
+  writeFileSync(file, JSON.stringify(keys));
+  vi.stubEnv('INFRA_GENERATION_KEYS_FILE', file);
+}
+
+/** The boot plan a cloud-init writes to `planPath`, read by the boot runner's own parser; throws when it writes none there. */
+export function bootPlanIn(cloudInit: string, planPath: string): { plan: BootPlan; raw: Record<string, unknown> } {
+  const json = cloudInit.split(`cat > ${planPath} <<'BOOT_PLAN_EOF'\n`)[1]?.split('\nBOOT_PLAN_EOF')[0] ?? '';
+  return { plan: parseBootPlanJson(json, planPath), raw: JSON.parse(json) };
 }

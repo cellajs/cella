@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { parseBootPlanJson } from '../boot/src/plan';
+import { bootPlanIn } from '../tests/helpers/pulumi-mock';
 import { type CloudInitParams, renderCloudInit } from './cloud-init';
 
 function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
@@ -114,10 +114,8 @@ describe('renderCloudInit', () => {
 
   it('writes a boot plan the boot runner accepts, whose paths sit under the allowed prefixes', () => {
     const out = renderCloudInit(params({ slug: 'acme', handoffSecretId: 'handoff-secret' }));
-    const planJson =
-      out.split("cat > /etc/acme/boot-plan.json <<'BOOT_PLAN_EOF'\n")[1]?.split('\nBOOT_PLAN_EOF')[0] ?? '';
 
-    const plan = parseBootPlanJson(planJson, '/etc/acme/boot-plan.json');
+    const { plan } = bootPlanIn(out, '/etc/acme/boot-plan.json');
     expect(plan.credentials).toEqual({
       scwAccessKeyFile: '/etc/acme/scw-access-key',
       scwSecretKeyFile: '/etc/acme/scw-secret-key',

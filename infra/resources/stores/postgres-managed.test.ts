@@ -1,7 +1,7 @@
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { POSTGRES_ROLE_NAMES } from '../../lib/scaleway/db-privileges';
 import type { ProvisionContext } from '../../lib/stores';
-import { flushPulumi, installPulumiMocks, type MockHarness } from '../../tests/helpers/pulumi-mock';
+import { installPulumiMocks, type MockHarness } from '../../tests/helpers/pulumi-mock';
 
 // Importing postgres-managed.ts pulls in the Pulumi resource graph (pulumi-context,
 // network) at module load, so prime the runtime mocks first. The provisioner's
@@ -12,9 +12,7 @@ let harness: MockHarness;
 let ctx: ProvisionContext;
 
 beforeAll(async () => {
-  // `bootstrap:computeDeferred` disables the compute pin-guard so the module
-  // imports without requiring pinned image tags.
-  harness = await installPulumiMocks({ stack: 'production', config: { 'bootstrap:computeDeferred': 'test' } });
+  harness = await installPulumiMocks({ deferCompute: true });
   ({ formatPostgresUrl, postgresManaged } = await import('./postgres-managed'));
   const { pulumi } = harness;
   ctx = {
@@ -70,7 +68,7 @@ describe('postgresManaged public endpoint ACL', () => {
     for (const [key, value] of Object.entries(config)) harness.pulumi.runtime.setConfig(key, value);
     harness.resources.length = 0;
     postgresManaged().provision(ctx);
-    await flushPulumi();
+    await harness.settle();
     const instance = harness.oneOfType('scaleway:databases/instance:Instance');
     const acls = harness.byType('scaleway:databases/acl:Acl');
     return { instance, rules: acls[0]?.inputs.aclRules as { ip: string }[] | undefined };

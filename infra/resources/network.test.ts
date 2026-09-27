@@ -1,15 +1,12 @@
 import { beforeAll, describe, expect, it } from 'vitest';
-import { flushPulumi, installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
+import { installPulumiMocks, type MockHarness } from '../tests/helpers/pulumi-mock';
 
 let h: MockHarness;
 
 beforeAll(async () => {
-  // bootstrap:computeDeferred gates compute off, which keeps the
-  // image-tag pin assertion in pulumi-context.ts from firing in unit tests that
-  // don't care about compute.
-  h = await installPulumiMocks({ stack: 'production', config: { 'bootstrap:computeDeferred': 'test' } });
+  h = await installPulumiMocks({ deferCompute: true });
   await import('./network');
-  await flushPulumi();
+  await h.settle();
 });
 
 describe('network module', () => {

@@ -2,19 +2,16 @@ import { signYjsToken, verifyYjsToken, yjsTokenSigningKey, yjsTokenVerifyKey } f
 import { beforeAll, describe, expect, it } from 'vitest';
 import { runtimeSecrets } from '../lib/runtime-secrets';
 import { secretPathFor } from '../lib/scaleway/secret-paths';
-import { flushPulumi, installPulumiMocks, type MockHarness, unwrapSecret } from '../tests/helpers/pulumi-mock';
+import { installPulumiMocks, type MockHarness, unwrapSecret } from '../tests/helpers/pulumi-mock';
 
 const material = 'known-yjs-token-key-material-of-32-chars';
 let h: MockHarness;
 
 beforeAll(async () => {
-  h = await installPulumiMocks({
-    stack: 'production',
-    // Deferring compute skips image-pin validation; the signing key comes from stack config so its public half is known.
-    config: { 'bootstrap:computeDeferred': 'test', 'infra:yjsTokenPrivateKey': material },
-  });
+  // The signing key comes from stack config, so its public half is known.
+  h = await installPulumiMocks({ deferCompute: true, config: { 'infra:yjsTokenPrivateKey': material } });
   await import('./secrets');
-  await flushPulumi();
+  await h.settle();
 });
 
 const containers = () => h.resources.filter((r) => r.type === 'scaleway:secrets/secret:Secret');

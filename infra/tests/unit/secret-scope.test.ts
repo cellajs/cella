@@ -1,31 +1,21 @@
 import { describe, expect, it } from 'vitest';
-import type { EngineConfig } from '../../config/engine-config';
 import { runtimeSecrets } from '../../lib/runtime-secrets';
 import { principalNames } from '../../lib/scaleway/principals';
 import { engineSecretPath, handoffFolderPath, secretPathFor } from '../../lib/scaleway/secret-paths';
 import { buildVmAssertRows } from '../../lib/scaleway/vm-assert-rows';
 import { principalSecretScopeSlugs, principalServices, serviceNames } from '../../lib/services';
+import { fakeConfig } from '../helpers/fake-config';
 
 const slug = 'app';
 const mode = 'production';
 
-const appConfigFor = (singleVM: boolean): EngineConfig => ({
-  slug,
-  mode,
-  domain: 'app.example',
-  frontendUrl: 'https://www.app.example',
-  backendUrl: 'https://www.app.example/api',
-  singleVM,
-  s3: {
-    region: 'nl-ams',
-    host: 's3.nl-ams.scw.cloud',
-    publicBucket: 'app-public',
-    privateBucket: 'app-private',
-    publicCDNUrl: '',
-    privateCDNUrl: '',
-  },
-  services: Object.fromEntries(serviceNames.map((service) => [service, { enabled: true }])),
-});
+const appConfigFor = (singleVM: boolean) =>
+  fakeConfig({
+    slug,
+    mode,
+    singleVM,
+    services: Object.fromEntries(serviceNames.map((name) => [name, { enabled: true }])),
+  });
 
 /** The folder prefixes a condition grants, from its `resource.name.startsWith("...")` clauses. */
 const grantedPrefixes = (condition: string) =>
