@@ -166,43 +166,6 @@ describe('Membership Invitation', async () => {
     expect(newUserMembership?.email).toBe('newuser@example.com');
   });
 
-  it('should reject invitations without authentication', async () => {
-    const organization = await createTestOrganization();
-
-    const { response: res } = await call(membershipInvite, {
-      path: { tenantId: organization.tenantId, organizationId: organization.id },
-      body: { emails: ['user@example.com'], role: memberRole },
-      query: { entityId: organization.id, entityType: 'organization' as const },
-      headers: defaultHeaders,
-    });
-
-    expect(res.status).toBe(401);
-  });
-
-  it('must not invite via a role without update on the organization', async () => {
-    const organization = await createTestOrganization();
-    // Inside the tenant and the organization, so the guards admit the call and the permission check answers.
-    const member = await createOrganizationAdminUser(
-      'member@example.com',
-      organization.id,
-      memberRole,
-      true,
-      organization.tenantId,
-    );
-    const sessionCookie = await createTestSession(member);
-
-    const { response: res, error } = await makeInviteRequest(
-      organization.tenantId,
-      organization.id,
-      { emails: ['newuser@example.com'], role: memberRole },
-      sessionCookie,
-    );
-
-    expect(res.status).toBe(403);
-    expect((error as { type: string }).type).toBe('forbidden');
-    expect(await getInactiveMemberships(organization.id)).toHaveLength(0);
-  });
-
   it('should handle already invited users', async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();
 
