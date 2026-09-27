@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "de6fbe50-2468-47fb-9805-c5130f25ae53",
+  "id": "79820708-4dc8-4722-b3d8-b584a15b056d",
   "prevIds": [
     "72a09d5e-9db0-4e3a-8e74-a33e6a9d20a5"
   ],
@@ -1491,7 +1491,7 @@
       "table": "sessions"
     },
     {
-      "type": "timestamp with time zone",
+      "type": "timestamp",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -5261,6 +5261,27 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "impersonator_session_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": "\"impersonator_session_id\" is not null",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "sessions_impersonator_session_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "secret",
           "isExpression": false,
           "asc": true,
@@ -5351,6 +5372,27 @@
       "method": "btree",
       "concurrently": false,
       "name": "tokens_single_use_token_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "session_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": "\"session_id\" is not null",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "tokens_session_id_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "tokens"

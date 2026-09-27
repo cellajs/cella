@@ -754,10 +754,12 @@ BEGIN
     missing := array_append(missing, 'function:append_only_immutable_row'); END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'admin_only_write_row') THEN
     missing := array_append(missing, 'function:admin_only_write_row'); END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'memberships_keep_org_admin') THEN
+    missing := array_append(missing, 'function:memberships_keep_org_admin'); END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'apply_count_deltas') THEN
     missing := array_append(missing, 'function:apply_count_deltas'); END IF;
 
-  -- Immutability triggers
+  -- Immutability, write-guard and membership rule triggers
   IF NOT EXISTS (
     SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
     WHERE c.relnamespace = 'public'::regnamespace AND c.relname = 'organizations'
@@ -788,6 +790,11 @@ BEGIN
     WHERE c.relnamespace = 'public'::regnamespace AND c.relname = 'system_roles'
       AND t.tgname = 'system_roles_admin_only_write_trigger' AND NOT t.tgisinternal
   ) THEN missing := array_append(missing, 'trigger:system_roles_admin_only_write_trigger'); END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid
+    WHERE c.relnamespace = 'public'::regnamespace AND c.relname = 'memberships'
+      AND t.tgname = 'memberships_keep_org_admin' AND NOT t.tgisinternal
+  ) THEN missing := array_append(missing, 'trigger:memberships_keep_org_admin'); END IF;
 
   -- Ownership and enabled (not forced) RLS
   IF (SELECT pg_get_userbyid(relowner) FROM pg_class WHERE relname = 'attachments' AND relnamespace = 'public'::regnamespace) IS DISTINCT FROM 'admin_role' THEN
