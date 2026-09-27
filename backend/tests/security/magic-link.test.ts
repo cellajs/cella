@@ -3,9 +3,8 @@ import { PgAsyncDatabase, type PgTable } from 'drizzle-orm/pg-core';
 import { nanoid } from 'nanoid';
 import { confirmMagicLink, getPendingMagicLink, invokeToken, sendMagicLink } from 'sdk';
 import { appConfig } from 'shared';
-import { afterEach, beforeAll, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { mailer } from '#/lib/mailer';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { identitiesTable } from '#/modules/auth/identities-db';
@@ -25,14 +24,13 @@ import {
   insertTestSession,
   insertTestToken,
   linkIdentity,
+  mailedLink,
   tokenRow,
 } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
-
-vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn() } }));
 
 setTestConfig({ enabledAuthStrategies: ['magic', 'passkey'] });
 
@@ -64,7 +62,6 @@ const magicLink = (user: { id: string; email: string }, opened?: { singleUse: st
 describe('magic link replay', async () => {
   const call = await createAppClient();
 
-  beforeAll(() => mockFetchRequest());
   afterEach(async () => await clearSecurityTestData());
 
   it("must not replay an opened magic link via another link's single-use cookie", async () => {
@@ -160,7 +157,6 @@ const setCookiePair = (res: Response, name: Parameters<typeof authCookieName>[0]
 describe('magic link opened in another browser', async () => {
   const call = await createAppClient();
 
-  beforeAll(() => mockFetchRequest());
   afterEach(async () => await clearSecurityTestData());
 
   const newUser = () => createTestUser(`magic-${nanoid(6)}@security-test.com`.toLowerCase());
@@ -279,10 +275,8 @@ describe('magic-link sign-up', async () => {
   const call = await createAppClient();
 
   beforeAll(() => {
-    mockFetchRequest();
     setTestConfig({ selfRegistration: true });
   });
-  beforeEach(() => vi.mocked(mailer.prepareEmails).mockClear());
   afterEach(async () => await clearSecurityTestData());
 
   const newcomer = () => `newcomer-${nanoid(6)}@security-test.com`.toLowerCase();
@@ -296,9 +290,7 @@ describe('magic-link sign-up', async () => {
   const requestLink = async (email: string) => {
     const { response } = await call(sendMagicLink, { body: { email }, headers: defaultHeaders });
     expect(response.status).toBe(204);
-    const statics = vi.mocked(mailer.prepareEmails).mock.lastCall?.[1] as { magicLinkUrl?: string } | undefined;
-    const rawToken = statics?.magicLinkUrl?.split('/').at(-1) ?? '';
-    expect(rawToken).not.toBe('');
+    const rawToken = mailedLink('magicLinkUrl').token;
     return { rawToken, requestedHere: setCookiePair(response, 'magic-requested') ?? '' };
   };
 
@@ -440,7 +432,6 @@ describe('magic-link sign-up', async () => {
 describe('magic link in a browser with a stale session cookie', async () => {
   const call = await createAppClient();
 
-  beforeAll(() => mockFetchRequest());
   afterEach(async () => await clearSecurityTestData());
 
   const staleCookies = async (owner: { id: string }) => {
@@ -493,7 +484,6 @@ describe('magic link in a browser with a stale session cookie', async () => {
 describe('adopting an unproven account', async () => {
   const call = await createAppClient();
 
-  beforeAll(() => mockFetchRequest());
   afterEach(async () => await clearSecurityTestData());
 
   const address = (label: string) => `${label}-${nanoid(6)}@security-test.com`.toLowerCase();

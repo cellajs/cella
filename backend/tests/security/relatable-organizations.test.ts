@@ -14,7 +14,7 @@ import {
   getUserByEmail,
 } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -46,7 +46,6 @@ describe('Organizations of another user (relatableUserId)', async () => {
     });
 
   beforeAll(async () => {
-    mockFetchRequest();
     shared = await createTestOrganization();
     foreign = await createTestOrganization();
     target = await createOrgUser(call, shared.tenantId, shared.id, 'relatable-target', memberRole);

@@ -3,7 +3,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { defaultHeaders } from '../fixtures';
 import { createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -47,7 +47,6 @@ describe('Upload visibility', async () => {
   };
 
   beforeAll(async () => {
-    mockFetchRequest();
     // Tokens carry signed store params only when Transloadit is configured.
     vi.stubEnv('TRANSLOADIT_KEY', 'test-transloadit-key');
     vi.stubEnv('TRANSLOADIT_SECRET', 'test-transloadit-secret');

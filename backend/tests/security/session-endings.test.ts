@@ -26,7 +26,7 @@ import {
   sessionRow,
 } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey } from './helpers';
 import {
   asSession,
@@ -44,8 +44,6 @@ import {
 } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
-
-beforeAll(() => mockFetchRequest());
 
 afterEach(async () => {
   await cancelOpenStreams();

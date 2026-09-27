@@ -4,7 +4,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { modeSecret } from '#/env';
 import { expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 import { paragraph, seedAttachment } from './yjs-helpers';
 
@@ -56,7 +56,6 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   const stored = async () => attachment.read();
 
   beforeAll(async () => {
-    mockFetchRequest();
     owner = await createTestTenant(call, 'materialize-owner');
     other = await createTestTenant(call, 'materialize-other');
     // Members update their own attachments only ('own' in the permission config), and this one is the owner's.

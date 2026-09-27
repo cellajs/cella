@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { invokeToken, sendMagicLink } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { addProvenEmail } from '#/modules/auth/general/helpers/mark-email-verified';
 import { tokensTable } from '#/modules/auth/tokens-db';
@@ -13,22 +13,11 @@ import { defaultHeaders, signUpUser } from '../fixtures';
 import { authCookie, createTestOrganization, createUser, enableMFAForUser, insertTestToken } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-
-vi.mock('#/lib/mailer', () => ({
-  mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) },
-}));
+import { clearDatabase, setTestConfig } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['magic'], selfRegistration: true });
 
-beforeAll(async () => {
-  mockFetchRequest();
-});
-
-afterEach(async () => {
-  await clearDatabase();
-  vi.clearAllMocks();
-});
+afterEach(async () => await clearDatabase());
 
 /** Mark a user as returning; without a counters row `lastSignInAt` resolves to null (new user). */
 async function markReturning(userId: string) {

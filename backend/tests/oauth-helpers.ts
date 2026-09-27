@@ -78,8 +78,12 @@ export interface TestOauthServer {
   close: () => Promise<void>;
 }
 
-/** The authorization server in-process on a random port; tokens verify against the same keystore the guards read. */
+/**
+ * The authorization server in-process on a random port; tokens verify against the same keystore the guards read. Tests
+ * reach it over real HTTP, so it lifts the fetch stub tests/setup.ts puts on every file.
+ */
 export async function startTestOauthServer(): Promise<TestOauthServer> {
+  vi.unstubAllGlobals();
   await ensureSigningKeys();
   const provider = await createProvider();
   const server: Server = createServer(createOauthListener(provider)).listen(0, '127.0.0.1');

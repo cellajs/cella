@@ -14,7 +14,7 @@ import {
   toggleMfa,
 } from 'sdk';
 import { appConfig } from 'shared';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { type AuthStrategy, sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
@@ -35,7 +35,7 @@ import {
 } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient, type TestResult } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, insertPasskey, passkeyChallenge, passkeysOf } from './helpers';
 import {
   asSession,
@@ -46,16 +46,9 @@ import {
   type TestSession,
 } from './session-helpers';
 
-vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
-
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'oauth', 'magic'], enabledOAuthProviders: ['github'] });
 
-beforeAll(() => mockFetchRequest());
-
-afterEach(async () => {
-  await clearSecurityTestData();
-  vi.clearAllMocks();
-});
+afterEach(async () => await clearSecurityTestData());
 
 /** The Base32 secret `createTotpUser` stores. */
 const TOTP_SECRET = 'JBSWY3DPEHPK3PXP';

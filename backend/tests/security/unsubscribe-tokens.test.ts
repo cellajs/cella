@@ -1,8 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { appConfig, hierarchy } from 'shared';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb, getAdminDb } from '#/db/db';
-import { mailer } from '#/lib/mailer';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { buildUnsubscribeLink, type UnsubscribeCategory } from '#/modules/notification/helpers/category-token';
 import { notificationPreferencesTable } from '#/modules/notification/notification-db';
@@ -15,10 +14,10 @@ import {
   createSystemAdminUser,
   createTestOrganization,
   createTestSession,
+  mailedLink,
+  sentMails,
 } from '../helpers';
 import { clearSecurityTestData } from './helpers';
-
-vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
 
 const adminDb = () => getAdminDb('unsubscribe link test');
 
@@ -64,10 +63,7 @@ const linkFor = (userId: string, category: UnsubscribeCategory, token: string) =
  * and a link made for one user or one category opens nothing else.
  */
 describe('Unsubscribe links', () => {
-  afterEach(async () => {
-    vi.mocked(mailer.prepareEmails).mockClear();
-    await clearSecurityTestData();
-  });
+  afterEach(async () => await clearSecurityTestData());
 
   it("must not turn off another user's or another category's email via a link made for one", async () => {
     const [owner, other] = [await signUp('link-owner'), await signUp('link-other')];
@@ -139,13 +135,10 @@ describe('Unsubscribe links', () => {
     expect(response.status).toBe(204);
 
     // The reader, who holds no row anywhere, is mailed; the member who unsubscribed is not.
-    const [, , recipients = []] = vi.mocked(mailer.prepareEmails).mock.calls[0] ?? [];
-    expect(recipients.map((recipient) => recipient.email)).toEqual([reader.email]);
+    expect(sentMails().map(({ recipient }) => recipient.email)).toEqual([reader.email]);
 
     // Positive control: the link in the mail turns the reader's newsletter off.
-    const [recipient] = recipients;
-    const link = recipient && 'unsubscribeLink' in recipient ? String(recipient.unsubscribeLink) : '';
-    const { status, location } = await openLink(link);
+    const { status, location } = await openLink(mailedLink('unsubscribeLink').url);
     expect(status).toBe(302);
     expect(location.pathname).toBe('/auth/unsubscribed');
     expect(await emailSettings(reader.id)).toEqual({ newsletter: false });

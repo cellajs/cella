@@ -10,7 +10,7 @@ import { defaultHeaders } from '../fixtures';
 import { expectRefusal } from '../helpers';
 import { seedEntityHierarchy } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -89,7 +89,6 @@ describe('Attachment storage keys', async () => {
   const privateStorage = { publicBucket: false, bucketName: appConfig.s3.privateBucket };
 
   beforeAll(async () => {
-    mockFetchRequest();
     victim = await createTestTenant(call, 'storage-victim');
     attacker = await createTestTenant(call, 'storage-attacker');
     attackerPlan = buildTestEntityHierarchyPlan({

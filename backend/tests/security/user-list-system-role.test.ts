@@ -5,7 +5,7 @@ import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders } from '../fixtures';
 import { createTestOrganization, type ErrorResponse, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -31,7 +31,6 @@ describe('System roles in the user list', async () => {
   };
 
   beforeAll(async () => {
-    mockFetchRequest();
     const organization = await createTestOrganization();
     member = await createOrgUser(call, organization.tenantId, organization.id, 'role-list-member');
     // A system admin who is also a member here, so the member's list includes them.

@@ -9,7 +9,7 @@ import { defaultHeaders } from './fixtures';
 import { createTestUser } from './helpers';
 import { clearSecurityTestData, createSecondOrg, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
-import { mockFetchRequest, setTestConfig } from './test-utils';
+import { setTestConfig } from './test-utils';
 
 /** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
 const memberRole = hierarchy.getLeastPrivilegedRole('organization');
@@ -61,7 +61,6 @@ describe('Organization member previews (include=members)', async () => {
   };
 
   beforeAll(async () => {
-    mockFetchRequest();
     tenant = await createTestTenant(call, 'org-member-previews');
 
     // Pin the caller's membership createdAt so preview ordering is deterministic

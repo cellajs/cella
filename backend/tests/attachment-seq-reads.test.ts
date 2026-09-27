@@ -10,7 +10,7 @@ import { defaultHeaders } from './fixtures';
 import { cleanupEntityHierarchy, seedEntityHierarchy } from './hierarchy-helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
-import { mockFetchRequest, setTestConfig } from './test-utils';
+import { setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -41,7 +41,6 @@ describe('Attachment seq reads', async () => {
   };
 
   beforeAll(async () => {
-    mockFetchRequest();
     tenant = await createTestTenant(call, 'attachment-seq-reads');
 
     plan = buildTestEntityHierarchyPlan({

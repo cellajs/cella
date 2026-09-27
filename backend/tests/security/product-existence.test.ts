@@ -8,7 +8,7 @@ import { defaultHeaders } from '../fixtures';
 import { createTestOrganization, type ErrorResponse, expectRefusal } from '../helpers';
 import { bearerHeaders, serviceAccountWithKey } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -65,7 +65,6 @@ describe('Product existence (getValidProduct)', async () => {
     (await serviceAccountWithKey(organization, admin.sessionCookie, { scopes })).clientSecret;
 
   beforeAll(async () => {
-    mockFetchRequest();
     organization = await createTestOrganization();
     admin = await createOrgUser(call, organization.tenantId, organization.id, 'existence-admin', adminRole);
     member = await createOrgUser(call, organization.tenantId, organization.id, 'existence-member', memberRole);

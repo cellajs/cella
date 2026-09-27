@@ -1,20 +1,16 @@
 import { eq } from 'drizzle-orm';
 import { systemInvite } from 'sdk';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { defaultHeaders } from '../fixtures';
 import { createSystemAdminUser, createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
   selfRegistration: true,
-});
-
-beforeAll(async () => {
-  mockFetchRequest();
 });
 
 afterEach(async () => await clearDatabase());

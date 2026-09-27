@@ -4,7 +4,7 @@ import { env } from '#/env';
 import { defaultHeaders } from '../fixtures';
 import { createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -14,7 +14,6 @@ const otherIp = '10.0.0.2';
 const allowlistBefore = env.SYSTEM_ADMIN_IP_ALLOWLIST;
 
 beforeAll(() => {
-  mockFetchRequest();
   // The suite allows every address; here only one may use system-admin rights.
   Object.assign(env, { SYSTEM_ADMIN_IP_ALLOWLIST: allowlistedIp });
 });

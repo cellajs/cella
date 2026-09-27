@@ -1,24 +1,17 @@
 import { signInWithTotp } from 'sdk';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { authCookie, createMfaToken, createTotpUser, sessionsOf } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 
 // The device id is under test, not the authenticator code: every TOTP check passes.
 vi.mock('#/modules/auth/totps/helpers/totps', () => ({ verifyTotp: vi.fn().mockResolvedValue(0) }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
-beforeAll(async () => {
-  mockFetchRequest();
-});
-
-afterEach(async () => {
-  await clearDatabase();
-  vi.clearAllMocks();
-});
+afterEach(async () => await clearDatabase());
 
 /** The Set-Cookie line of one auth cookie, or undefined. */
 const setCookieLine = (res: Response, name: Parameters<typeof authCookieName>[0]) =>

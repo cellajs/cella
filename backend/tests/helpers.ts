@@ -3,8 +3,9 @@ import { and, eq } from 'drizzle-orm';
 import type { EntityRole, TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
-import { expect } from 'vitest';
+import { expect, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
+import { mailer } from '#/lib/mailer';
 import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/identities-db';
@@ -43,6 +44,31 @@ export async function expectRefusal(answer: Answer, status: number, type: string
         ? [answer.status, await answer.clone().json().catch(unreadable)]
         : [answer.status, answer.body];
   expect({ status: actual, type: (body as { type?: unknown } | undefined)?.type }, label).toEqual({ status, type });
+}
+
+/** Every mail the app handed the mailer in this test, one per recipient, in the order sent. */
+export const sentMails = () =>
+  vi.mocked(mailer.prepareEmails).mock.calls.flatMap(([template, statics, recipients]) =>
+    recipients.map((recipient) => ({
+      template,
+      statics: statics as Record<string, unknown>,
+      recipient: recipient as Record<string, unknown> & { email: string },
+    })),
+  );
+
+export const mailsTo = (email: string) => sentMails().filter(({ recipient }) => recipient.email === email);
+
+/**
+ * The link `key` names in the last mail, a static prop (`stepUpUrl`) or a recipient field (`inviteLink`), and the raw
+ * token at its end.
+ */
+export function mailedLink(key: string) {
+  const last = sentMails().at(-1);
+  const url = last?.statics[key] ?? last?.recipient[key];
+  if (typeof url !== 'string') throw new Error(`The last mail carries no ${key}`);
+  const token = url.split('/').at(-1) ?? '';
+  expect(token, url).not.toBe('');
+  return { url, token };
 }
 
 /** User with a verified email, for OAuth/passkey tests. */

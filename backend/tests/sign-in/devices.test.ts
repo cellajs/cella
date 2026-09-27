@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { getMyAuth, type MeAuthData, signInWithTotp } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { devicesTable } from '#/modules/auth/devices-db';
@@ -14,27 +14,16 @@ import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { hashDeviceIdForUser } from '#/utils/hash-pii';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { authCookie, createMfaToken, createTestSession, createTestUser, createTotpUser } from '../helpers';
+import { authCookie, createMfaToken, createTestSession, createTestUser, createTotpUser, sentMails } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-
-vi.mock('#/lib/mailer', () => ({
-  mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) },
-}));
+import { clearDatabase, setTestConfig } from '../test-utils';
 
 // New-device notices are under test, not authenticator codes: every TOTP check passes.
 vi.mock('#/modules/auth/totps/helpers/totps', () => ({ verifyTotp: vi.fn().mockResolvedValue(0) }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
-beforeAll(async () => {
-  mockFetchRequest();
-});
-
-afterEach(async () => {
-  await clearDatabase();
-  vi.clearAllMocks();
-});
+afterEach(async () => await clearDatabase());
 
 const browser = (deviceId: string | null = nanoid(24)): SignInContext => ({
   rawIp: null,
@@ -52,9 +41,8 @@ const devicesOf = (userId: string) => db.select().from(devicesTable).where(eq(de
 
 /** Statics of every new sign-in notice handed to the mailer. */
 const notices = () =>
-  vi
-    .mocked(mailer.prepareEmails)
-    .mock.calls.map(([, statics]) => statics as { type: string; details: Record<string, string> })
+  sentMails()
+    .map(({ statics }) => statics as { type: string; details: Record<string, string> })
     .filter((statics) => statics.type === 'new-sign-in');
 
 /** A full sign-in without a request: the session, then the notice its new device calls for. */

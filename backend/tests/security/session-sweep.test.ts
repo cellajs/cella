@@ -7,7 +7,7 @@ import { streamSubscriberManager } from '#/modules/entities/stream';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { usersTable } from '#/modules/user/user-db';
 import { createSystemAdminUser, createTestUser } from '../helpers';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 import {
   cancelOpenStreams,
@@ -27,7 +27,6 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 const SWEEP_INTERVAL_MS = 60_000;
 
 beforeAll(() => {
-  mockFetchRequest();
   // Only interval timers are fake: the sweep runs when a test moves the clock, the stream and the database in real time.
   vi.useFakeTimers({ toFake: ['setInterval', 'clearInterval'] });
 });

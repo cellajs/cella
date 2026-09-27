@@ -15,40 +15,6 @@ type ConfigOverride = {
   selfRegistration?: boolean;
 };
 
-export function mockFetchRequest() {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn().mockImplementation((input) => {
-      if (input instanceof Request) {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: async () => {
-            try {
-              return await input.clone().json();
-            } catch {
-              return {};
-            }
-          },
-          text: async () => '',
-          clone: () => input.clone(),
-        });
-      }
-
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: async () => ({}),
-        text: async () => '',
-        clone: () => ({
-          json: async () => ({}),
-          text: async () => '',
-        }),
-      });
-    }),
-  );
-}
-
 /** TRUNCATE CASCADE on the admin connection (runtime_role holds no TRUNCATE), plus a mock-enforcer reset so unique values do not conflict across tests. */
 export async function clearDatabase() {
   resetUserMockEnforcers();

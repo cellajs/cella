@@ -2,7 +2,7 @@ import { decodeBase32 } from '@oslojs/encoding';
 import { and, eq } from 'drizzle-orm';
 import { getMe, getStepUp, getStepUpPasskeyChallenge, invokeToken, sendStepUpLink, stepUp } from 'sdk';
 import { appConfig } from 'shared';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
@@ -19,7 +19,7 @@ import {
   sessionRow,
 } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, issuedChallenge, passkeyChallenge } from './helpers';
 import {
   askStepUpLink,
@@ -31,16 +31,9 @@ import {
   type TestSession,
 } from './session-helpers';
 
-vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
-
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'magic'] });
 
-beforeAll(() => mockFetchRequest());
-
-afterEach(async () => {
-  await clearSecurityTestData();
-  vi.clearAllMocks();
-});
+afterEach(async () => await clearSecurityTestData());
 
 /** The Base32 secret `createTotpUser` stores. */
 const TOTP_SECRET = 'JBSWY3DPEHPK3PXP';

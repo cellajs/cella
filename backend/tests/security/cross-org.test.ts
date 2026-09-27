@@ -20,7 +20,7 @@ import {
 import { appConfig, hierarchy } from 'shared';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateServerHLC } from '#/core/stx';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
@@ -35,10 +35,8 @@ import { expectRefusal } from '../helpers';
 import { seedEntityHierarchy } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createSecondOrg, createTestTenant, type TestTenant } from './helpers';
-
-vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -118,8 +116,6 @@ describe('Cross-organization API isolation', async () => {
     (await db.select().from(membershipsTable).where(eq(membershipsTable.id, id)))[0];
 
   beforeAll(async () => {
-    mockFetchRequest();
-
     tenant = await createTestTenant(call, 'org-isolation');
     plan = buildTestEntityHierarchyPlan({
       entityType: 'attachment',

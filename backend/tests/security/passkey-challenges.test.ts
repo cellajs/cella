@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { createPasskey } from 'sdk';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
@@ -18,7 +18,7 @@ import {
 } from '../helpers';
 import { type SoftwarePasskey, softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, passkeyChallenge, passkeySignIn } from './helpers';
 
 /** Runs between a response's verification and the counter write: where a concurrent sign-in would land. */
@@ -40,8 +40,6 @@ setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
 const storedPasskey = async (credentialId: string) =>
   (await db.select().from(passkeysTable).where(eq(passkeysTable.credentialId, credentialId)))[0];
-
-beforeAll(() => mockFetchRequest());
 
 afterEach(async () => {
   hooks.afterVerify = undefined;

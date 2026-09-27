@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { acceptInvitationToken, getMembers, invokeToken } from 'sdk';
 import { appConfig, hierarchy } from 'shared';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens-db';
@@ -15,28 +15,18 @@ import {
   createTestSession,
   createTestUser,
   insertTestToken,
+  sentMails,
 } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 import { createInvitation } from './helpers';
-
-vi.mock('#/lib/mailer', () => ({
-  mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) },
-}));
 
 const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 const invitedEmail = 'invited-address@example.com';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'magic'], selfRegistration: true });
 
-beforeAll(async () => {
-  mockFetchRequest();
-});
-
-afterEach(async () => {
-  await clearDatabase();
-  vi.clearAllMocks();
-});
+afterEach(async () => await clearDatabase());
 
 describe('Accept an invitation token as the signed-in user', async () => {
   const call = await createAppClient();
@@ -83,12 +73,12 @@ describe('Accept an invitation token as the signed-in user', async () => {
 
     // The invited inbox may not belong to the accepting account, so it hears about the acceptance.
     expect(mailer.prepareEmails).toHaveBeenCalledTimes(1);
-    const [, statics, recipients] = vi.mocked(mailer.prepareEmails).mock.calls[0];
-    expect(statics).toMatchObject({
+    const mails = sentMails();
+    expect(mails.map(({ recipient }) => recipient.email)).toEqual([invitedEmail]);
+    expect(mails[0].statics).toMatchObject({
       type: 'invitation-accepted-elsewhere',
       details: { accountEmail: 'my-account@example.com' },
     });
-    expect(recipients).toEqual([expect.objectContaining({ email: invitedEmail })]);
   });
 
   it('lets the new member into the organization right after accepting', async () => {

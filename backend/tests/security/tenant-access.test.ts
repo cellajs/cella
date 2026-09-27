@@ -3,7 +3,7 @@ import { createOrganizations } from 'sdk';
 import { hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoidTenant } from 'shared/utils/nanoid';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { clearTenantCache } from '#/middlewares/guard/tenant-cache';
 import { organizationsTable } from '#/modules/organization/organization-db';
@@ -18,7 +18,7 @@ import {
   expectRefusal,
 } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -68,10 +68,6 @@ describe('Tenant access', async () => {
     if (withOrganization) await db.insert(organizationsTable).values({ ...mockOrganization(), tenantId: tenant.id });
     return tenant;
   };
-
-  beforeAll(() => {
-    mockFetchRequest();
-  });
 
   afterAll(async () => await clearSecurityTestData());
 

@@ -2,7 +2,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { defaultHeaders } from '../fixtures';
 import { createTestOrganization, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -23,7 +23,6 @@ describe('Malformed ids in a path', async () => {
   };
 
   beforeAll(async () => {
-    mockFetchRequest();
     organization = await createTestOrganization();
     member = await createOrgUser(call, organization.tenantId, organization.id, 'malformed-id-member');
   });

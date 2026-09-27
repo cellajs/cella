@@ -1,19 +1,17 @@
 import { eq } from 'drizzle-orm';
 import { signOut, startOAuthConnect } from 'sdk';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { defaultHeaders } from '../fixtures';
 import { createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 import { cookiesAfter, insertSession } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['oauth', 'magic'], enabledOAuthProviders: ['github'] });
-
-beforeAll(() => mockFetchRequest());
 
 afterEach(async () => await clearSecurityTestData());
 

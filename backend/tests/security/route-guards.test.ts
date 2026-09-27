@@ -2,7 +2,7 @@ import type { OpenAPIHono } from '@hono/zod-openapi';
 import { getMe } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Env } from '#/core/context';
 import { defaultHeaders } from '../fixtures';
 import {
@@ -13,10 +13,8 @@ import {
   expectRefusal,
 } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
-
-vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
 
 // Every sign-in method on, so a route's strategy gate lets the request through to the guard under test.
 setTestConfig({
@@ -91,7 +89,6 @@ describe('Route guards', async () => {
   const nameOf = ({ method, path, operationId }: Operation) => `${method} ${path} (${operationId})`;
 
   beforeAll(async () => {
-    mockFetchRequest();
     const organization = await createTestOrganization();
     tenant = { id: organization.tenantId, organizationId: organization.id };
     user = { sessionCookie: await createTestSession(await createTestUser('route-guards-user@security-test.com')) };

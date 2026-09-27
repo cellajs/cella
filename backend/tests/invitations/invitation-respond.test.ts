@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { getMembers, handleMembershipInvitation, invokeToken } from 'sdk';
 import { hierarchy } from 'shared';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -9,7 +9,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultHeaders } from '../fixtures';
 import { createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 import { createInvitation } from './helpers';
 
 /** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
@@ -18,10 +18,6 @@ const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
   selfRegistration: true,
-});
-
-beforeAll(async () => {
-  mockFetchRequest();
 });
 
 afterEach(async () => await clearDatabase());

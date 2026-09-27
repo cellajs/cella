@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { getMyInvitations, getPendingMemberships, membershipInvite } from 'sdk';
 import { type EntityRole, hierarchy } from 'shared';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import type { UserContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
@@ -13,27 +13,18 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 
 /** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
 const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 // Whether an invite left as mail is the observable difference between a held and a dispatched invite.
-vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
-
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
   selfRegistration: true,
 });
 
-beforeAll(async () => {
-  mockFetchRequest();
-});
-
-afterEach(async () => {
-  vi.clearAllMocks();
-  await clearDatabase();
-});
+afterEach(async () => await clearDatabase());
 
 // Unpublished contexts hold invites until the publish flow calls `dispatchDeferredInvites`.
 // The template creates published contexts, so these tests explicitly clear `publishedAt`.

@@ -5,20 +5,17 @@ import { checkEmail, sendMagicLink, signInWithTotp, stepUp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getAdminDb } from '#/db/db';
-import { mailer } from '#/lib/mailer';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { magicLinkEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createMfaToken, createTestUser, createTotpUser, sessionRow } from '../helpers';
+import { authCookie, createMfaToken, createTestUser, createTotpUser, mailsTo, sessionRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
 import { insertSession } from './session-helpers';
 
 // The suite mocks every limiter as a pass-through (tests/setup.ts); this file needs the real one.
 vi.unmock('#/middlewares/rate-limiter/core');
-vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
-
 const currentCode = () =>
   generateTOTP(decodeBase32('JBSWY3DPEHPK3PXP'), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 const wrongCode = () => currentCode().replace(/^./, (digit) => String((Number(digit) + 5) % 10));
@@ -27,25 +24,8 @@ const wrongCode = () => currentCode().replace(/^./, (digit) => String((Number(di
 const randomIp = () => `198.51.${Math.floor(Math.random() * 256)}.${1 + Math.floor(Math.random() * 254)}`;
 const fromIp = (ip: string) => ({ ...defaultHeaders, 'x-forwarded-for': ip });
 
-/** The TOTP lockout mails handed to the mailer for `email`. */
-const lockoutMailsTo = (email: string) =>
-  vi
-    .mocked(mailer.prepareEmails)
-    .mock.calls.filter(
-      ([, statics, recipients]) =>
-        (statics as { type?: string }).type === 'totp-lockout' &&
-        (recipients as { email: string }[]).some((recipient) => recipient.email === email),
-    );
-
-/** The magic-link mails handed to the mailer for `email`. */
-const magicLinkMailsTo = (email: string) =>
-  vi
-    .mocked(mailer.prepareEmails)
-    .mock.calls.filter(
-      ([template, , recipients]) =>
-        template === magicLinkEmail &&
-        (recipients as { email: string }[]).some((recipient) => recipient.email === email),
-    );
+const lockoutMailsTo = (email: string) => mailsTo(email).filter(({ statics }) => statics.type === 'totp-lockout');
+const magicLinkMailsTo = (email: string) => mailsTo(email).filter(({ template }) => template === magicLinkEmail);
 
 /**
  * Failure budgets end a guessing run: after the configured number of failures the next attempt is refused with 429,
@@ -54,10 +34,7 @@ const magicLinkMailsTo = (email: string) =>
 describe('brute-force budgets', async () => {
   const call = await createAppClient();
 
-  afterEach(async () => {
-    await clearSecurityTestData();
-    vi.mocked(mailer.prepareEmails).mockClear();
-  });
+  afterEach(async () => await clearSecurityTestData());
 
   it('must not keep mailing an address magic links via /auth/magic/send from ever new client addresses', async () => {
     const owner = await createTestUser(`magic-limit-${nanoid(8)}@security-test.com`.toLowerCase());

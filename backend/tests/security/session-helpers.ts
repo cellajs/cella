@@ -2,7 +2,6 @@ import { eq } from 'drizzle-orm';
 import { invokeToken, sendStepUpLink } from 'sdk';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { mailer } from '#/lib/mailer';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { type SessionTypes, type StepUpProof, sessionsTable } from '#/modules/auth/sessions-db';
 import { stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
@@ -10,7 +9,7 @@ import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to
 import { streamSubscriberManager } from '#/modules/entities/stream';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { insertTestSession, setCookiePair } from '../helpers';
+import { insertTestSession, mailedLink, setCookiePair } from '../helpers';
 import { createAppClient } from '../test-client';
 
 export interface TestSession {
@@ -49,10 +48,7 @@ export async function askStepUpLink(session: TestSession, redirect?: string) {
   const call = await createAppClient();
   const asked = await call(sendStepUpLink, { body: redirect ? { redirect } : {}, headers: session.headers });
   expect(asked.response.status).toBe(204);
-  const statics = vi.mocked(mailer.prepareEmails).mock.lastCall?.[1] as { stepUpUrl?: string } | undefined;
-  const rawToken = statics?.stepUpUrl?.split('/').at(-1) ?? '';
-  expect(rawToken).not.toBe('');
-  return { browser: cookiesAfter(session.cookie, asked.response), rawToken };
+  return { browser: cookiesAfter(session.cookie, asked.response), rawToken: mailedLink('stepUpUrl').token };
 }
 
 /** A click on the mailed step-up link: the mail app starts the navigation, so the Strict session cookie stays home. */

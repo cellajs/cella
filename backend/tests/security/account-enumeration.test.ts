@@ -1,37 +1,23 @@
 import { inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { mailer } from '#/lib/mailer';
 import { enrollDevice } from '#/modules/auth/general/helpers/enroll-device';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { accountExistsEmail, requestResponseEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createUser } from '../helpers';
+import { authCookie, createUser, mailsTo } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, passkeyChallenge } from './helpers';
 
-vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
 // The team notification a stored request sends never answers here: the form must not wait for it, or its latency would
 // tell a stored request from the one an account's address gets.
 vi.mock('#/lib/notifications/send-matrix-message', () => ({ sendMatrixMessage: () => new Promise(() => {}) }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'magic'] });
 
-/** The templates of the mails handed to the mailer for `email`. */
-const mailsTo = (email: string) =>
-  vi
-    .mocked(mailer.prepareEmails)
-    .mock.calls.filter(([, , recipients]) => (recipients as { email: string }[]).some((r) => r.email === email))
-    .map(([template]) => template);
-
-beforeAll(() => mockFetchRequest());
-
-afterEach(async () => {
-  await clearSecurityTestData();
-  vi.mocked(mailer.prepareEmails).mockClear();
-});
+afterEach(async () => await clearSecurityTestData());
 
 /**
  * Whether an address has an account is the owner's business. A visitor who types someone's address anywhere on the
@@ -154,7 +140,7 @@ describe('Account enumeration', async () => {
       .from(requestsTable)
       .where(inArray(requestsTable.email, [account.email, stranger]));
     expect(waitlisted).toEqual([{ email: stranger }]);
-    expect(mailsTo(stranger)).toEqual([requestResponseEmail]);
-    expect(mailsTo(account.email)).toEqual([accountExistsEmail]);
+    expect(mailsTo(stranger).map(({ template }) => template)).toEqual([requestResponseEmail]);
+    expect(mailsTo(account.email).map(({ template }) => template)).toEqual([accountExistsEmail]);
   });
 });

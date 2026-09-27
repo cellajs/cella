@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { invokeToken, resendInvitationWithToken, resendPendingInvitation } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens-db';
@@ -18,28 +18,19 @@ import {
   createTestUser,
   expectRefusal,
   insertTestToken,
+  mailedLink,
+  sentMails,
 } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
-
-vi.mock('#/lib/mailer', () => ({
-  mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) },
-}));
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 const invitedEmail = 'invitee@example.com';
 
-beforeAll(() => {
-  mockFetchRequest();
-});
-
-afterEach(async () => {
-  await clearSecurityTestData();
-  vi.clearAllMocks();
-});
+afterEach(async () => await clearSecurityTestData());
 
 /** Every invitation token row addressed to `email`, whatever invitation it belongs to. */
 const invitationTokensOf = (email: string) =>
@@ -50,11 +41,9 @@ const invitationTokensOf = (email: string) =>
 
 /** The raw token at the end of the invite link in the mail handed to the mailer. */
 const mailedRawToken = () => {
-  const [, , recipients] = vi.mocked(mailer.prepareEmails).mock.calls[0];
-  const [recipient] = recipients;
-  const inviteLink = 'inviteLink' in recipient && typeof recipient.inviteLink === 'string' ? recipient.inviteLink : '';
-  expect(inviteLink.startsWith(`${appConfig.backendAuthUrl}/invoke-token/invitation/`)).toBe(true);
-  return inviteLink.split('/').at(-1) ?? '';
+  const { url, token } = mailedLink('inviteLink');
+  expect(url.startsWith(`${appConfig.backendAuthUrl}/invoke-token/invitation/`)).toBe(true);
+  return token;
 };
 
 /** A system invitation (no membership row) for an address nobody has an account on, its week long since over. */
@@ -88,9 +77,8 @@ describe('Resend an invitation', async () => {
     expect(response.status).toBe(204);
 
     expect(mailer.prepareEmails).toHaveBeenCalledTimes(1);
-    const [template, , recipients] = vi.mocked(mailer.prepareEmails).mock.calls[0];
-    expect(template).toBe(memberInviteWithTokenEmail);
-    expect(recipients).toEqual([expect.objectContaining({ email: invitedEmail })]);
+    const recipient = expect.objectContaining({ email: invitedEmail });
+    expect(sentMails()).toEqual([expect.objectContaining({ template: memberInviteWithTokenEmail, recipient })]);
 
     // One live token under a new id, pointed at by its invitation, holding the mailed link's hash.
     const tokens = await invitationTokensOf(invitedEmail);
@@ -151,9 +139,8 @@ describe('Resend an invitation', async () => {
     expect(response.status).toBe(204);
 
     expect(mailer.prepareEmails).toHaveBeenCalledTimes(1);
-    const [template, , recipients] = vi.mocked(mailer.prepareEmails).mock.calls[0];
-    expect(template).toBe(systemInviteEmail);
-    expect(recipients).toEqual([expect.objectContaining({ email: 'newcomer@example.com' })]);
+    const recipient = expect.objectContaining({ email: 'newcomer@example.com' });
+    expect(sentMails()).toEqual([expect.objectContaining({ template: systemInviteEmail, recipient })]);
 
     const tokens = await invitationTokensOf('newcomer@example.com');
     expect(tokens).toHaveLength(1);

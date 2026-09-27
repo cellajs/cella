@@ -1,6 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { deleteUsers, getMe, revokeMySessions, signOut, startImpersonation } from 'sdk';
-import { afterEach, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { env } from '#/env';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
@@ -9,7 +9,6 @@ import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, createSystemAdminUser, createTestUser, expectRefusal, sessionRow } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 import {
   cancelOpenStreams,
@@ -20,8 +19,6 @@ import {
   openStream,
   type TestSession,
 } from './session-helpers';
-
-beforeAll(() => mockFetchRequest());
 
 afterEach(async () => {
   await cancelOpenStreams();

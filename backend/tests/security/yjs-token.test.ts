@@ -9,7 +9,7 @@ import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 import { paragraph, seedAttachment } from './yjs-helpers';
 
@@ -41,7 +41,6 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
   const ownScope = () => ({ tenantId: owner.tenantId, organizationId: owner.organization.id });
 
   beforeAll(async () => {
-    mockFetchRequest();
     owner = await createTestTenant(call, 'yjs-token-owner');
     other = await createTestTenant(call, 'yjs-token-other');
     member = await createOrgUser(call, owner.tenantId, owner.organization.id, 'yjs-token-member');

@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { acceptInvitationToken, handleMembershipInvitation, membershipInvite } from 'sdk';
 import { hierarchy } from 'shared';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { markEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -13,12 +13,8 @@ import { defaultHeaders } from '../fixtures';
 import { createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
-
-vi.mock('#/lib/mailer', () => ({
-  mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) },
-}));
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -31,10 +27,6 @@ type PendingList = { items: { id: string; email: string }[]; total: number };
 describe('Rejected invitations', async () => {
   const call = await createAppClient();
   const { baseApp } = await import('#/routes');
-
-  beforeAll(() => {
-    mockFetchRequest();
-  });
 
   afterEach(async () => await clearSecurityTestData());
 

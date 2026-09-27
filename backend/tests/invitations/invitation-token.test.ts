@@ -1,20 +1,16 @@
 import { eq } from 'drizzle-orm';
 import { getMyInvitations, getTokenData } from 'sdk';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { defaultHeaders } from '../fixtures';
 import { createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 import { createInvitation } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
-
-beforeAll(async () => {
-  mockFetchRequest();
-});
 
 afterEach(async () => await clearDatabase());
 

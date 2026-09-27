@@ -6,7 +6,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultHeaders } from '../fixtures';
 import { createTestOrganization } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -36,7 +36,6 @@ describe("A member's personal view in the members list", async () => {
   };
 
   beforeAll(async () => {
-    mockFetchRequest();
     organization = await createTestOrganization();
     viewer = await createOrgUser(call, organization.tenantId, organization.id, 'personal-view-viewer', adminRole);
     other = await createOrgUser(call, organization.tenantId, organization.id, 'personal-view-other', memberRole);

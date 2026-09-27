@@ -2,7 +2,7 @@ import { getOrganizations } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { defaultHeaders } from '../fixtures';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -14,7 +14,6 @@ describe('Defense-in-depth data isolation', async () => {
   let tenantB: TestTenant;
 
   beforeAll(async () => {
-    mockFetchRequest();
     tenantA = await createTestTenant(call, 'depth-a');
     tenantB = await createTestTenant(call, 'depth-b');
   });

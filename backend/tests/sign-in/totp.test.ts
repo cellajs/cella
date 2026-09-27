@@ -2,7 +2,7 @@ import { decodeBase32 } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
 import { createTotp, generateTotpKey, signInWithTotp } from 'sdk';
 import { appConfig } from 'shared';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { decryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
@@ -19,7 +19,7 @@ import {
   verifyUserEmail,
 } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
@@ -28,10 +28,6 @@ const currentCode = (secret = 'JBSWY3DPEHPK3PXP') =>
   generateTOTP(decodeBase32(secret), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 /** A well-formed code that is not the current one. */
 const wrongCode = () => currentCode().replace(/^./, (digit) => String((Number(digit) + 5) % 10));
-
-beforeAll(async () => {
-  mockFetchRequest();
-});
 
 afterEach(async () => {
   await clearDatabase();

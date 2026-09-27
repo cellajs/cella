@@ -1,13 +1,13 @@
 import { decodeBase32 } from '@oslojs/encoding';
 import { signInWithTotp } from 'sdk';
 import { appConfig } from 'shared';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, createMfaToken, createTotpUser, expectRefusal, sessionsOf, tokenRowOf } from '../helpers';
 import { type PasskeyAssertion, softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, passkeyChallenge, passkeySignIn } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
@@ -18,8 +18,6 @@ const currentCode = () =>
   generateTOTP(decodeBase32(totpSecret), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 
 const sessionCookieSet = (res: Response) => res.headers.getSetCookie().some((line) => line.includes('-session-'));
-
-beforeAll(() => mockFetchRequest());
 
 afterEach(async () => await clearSecurityTestData());
 

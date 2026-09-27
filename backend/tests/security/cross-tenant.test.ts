@@ -16,7 +16,7 @@ import { defaultHeaders } from '../fixtures';
 import { expectRefusal } from '../helpers';
 import { seedEntityHierarchy } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -53,7 +53,6 @@ describe('Cross-tenant API isolation', async () => {
   let tenantB: TestTenant;
 
   beforeAll(async () => {
-    mockFetchRequest();
     tenantA = await createTestTenant(call, 'tenant-a');
     tenantB = await createTestTenant(call, 'tenant-b');
     plan = buildTestEntityHierarchyPlan({

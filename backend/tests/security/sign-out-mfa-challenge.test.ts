@@ -1,7 +1,7 @@
 import { decodeBase32 } from '@oslojs/encoding';
 import { getMe, signInWithTotp, signOut } from 'sdk';
 import { appConfig } from 'shared';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { defaultHeaders } from '../fixtures';
 import {
@@ -14,7 +14,7 @@ import {
   tokenRowOf,
 } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
@@ -23,10 +23,6 @@ setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 const totpSecret = 'JBSWY3DPEHPK3PXP';
 const currentCode = () =>
   generateTOTP(decodeBase32(totpSecret), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
-
-beforeAll(() => {
-  mockFetchRequest();
-});
 
 afterEach(async () => await clearSecurityTestData());
 

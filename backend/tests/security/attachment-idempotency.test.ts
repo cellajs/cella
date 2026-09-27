@@ -12,7 +12,7 @@ import { defaultHeaders } from '../fixtures';
 import { createTestOrganization } from '../helpers';
 import { cleanupEntityHierarchy, seedEntityHierarchy } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -94,7 +94,6 @@ describe('Idempotent attachment creates', async () => {
     (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
 
   beforeAll(async () => {
-    mockFetchRequest();
     organization = await createTestOrganization();
     plan = buildTestEntityHierarchyPlan({
       entityType: 'attachment',

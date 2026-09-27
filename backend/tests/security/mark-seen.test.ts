@@ -13,7 +13,7 @@ import { defaultHeaders } from '../fixtures';
 import { createTestOrganization } from '../helpers';
 import { cleanupEntityHierarchy, seedEntityHierarchy } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -75,7 +75,6 @@ describe('markSeen and rows the caller cannot read', async () => {
     adminDb.select().from(productCountersTable).where(eq(productCountersTable.productId, productId));
 
   beforeAll(async () => {
-    mockFetchRequest();
     organization = await createTestOrganization();
     plan = buildTestEntityHierarchyPlan({
       entityType: 'attachment',

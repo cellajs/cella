@@ -9,7 +9,7 @@ import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
 import { createTestOrganization } from '../helpers';
 import { createAppClient, type TestResult } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -43,7 +43,6 @@ describe('Columns outside the body pick', async () => {
   const headers = () => ({ ...defaultHeaders, Cookie: admin.sessionCookie });
 
   beforeAll(async () => {
-    mockFetchRequest();
     organization = await createTestOrganization();
     admin = await createOrgUser(call, organization.tenantId, organization.id, 'mass-assignment-admin', adminRole);
     const [other] = await db.insert(tenantsTable).values({ name: 'Other Tenant', createdBy: admin.id }).returning();

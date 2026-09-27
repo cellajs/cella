@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import { github, githubCallback, google, googleCallback, invokeToken, microsoft, microsoftCallback } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { resolveSession } from '#/modules/auth/general/helpers/session';
@@ -21,10 +21,11 @@ import {
   insertTestSession,
   insertTestToken,
   linkIdentity,
+  mailedLink,
 } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
-import { clearCookieStore, clearDatabase, mockCookieStore, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearCookieStore, clearDatabase, mockCookieStore, setTestConfig } from '../test-utils';
 
 vi.mock('oauth4webapi', async () => (await import('../test-utils')).oauth4webapiMock());
 
@@ -74,15 +75,8 @@ vi.mock('#/modules/auth/oauth/helpers/transform-user-data', () => ({
 }));
 vi.mock('#/modules/auth/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock());
 vi.mock('#/modules/auth/general/helpers/session', async () => (await import('../test-utils')).sessionMock());
-vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
-
-beforeAll(async () => {
-  mockFetchRequest();
-});
-
 afterEach(async () => {
   await clearDatabase();
-  vi.clearAllMocks();
   clearCookieStore();
 });
 
@@ -684,14 +678,6 @@ describe('OAuth Authentication', async () => {
       return call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
     };
 
-    /** The raw token at the end of the verification link in the last mail handed to the mailer. */
-    const mailedVerificationToken = () => {
-      const statics = vi.mocked(mailer.prepareEmails).mock.lastCall?.[1] as { verificationLink?: string } | undefined;
-      const rawToken = statics?.verificationLink?.split('/').at(-1) ?? '';
-      expect(rawToken).not.toBe('');
-      return rawToken;
-    };
-
     /** Opens the verification link in a signed-out browser, which keeps its single-use cookie. */
     const openVerificationLink = async (rawToken: string) => {
       vi.mocked(resolveSession).mockRejectedValueOnce(new Error('no session'));
@@ -730,7 +716,7 @@ describe('OAuth Authentication', async () => {
 
     it('creates the account once the mailed link and the same provider account prove it (positive control)', async () => {
       await signUpCallback();
-      const opened = await openVerificationLink(mailedVerificationToken());
+      const opened = await openVerificationLink(mailedLink('verificationLink').token);
       expect(opened.response.status).toBe(302);
       const verifyStart = new URL(opened.response.headers.get('location') ?? '');
       expect(`${verifyStart.origin}${verifyStart.pathname}`).toBe(`${appConfig.backendAuthUrl}/github`);
@@ -765,7 +751,7 @@ describe('OAuth Authentication', async () => {
 
     it('must not complete an OAuth sign-up via another provider account', async () => {
       await signUpCallback();
-      await openVerificationLink(mailedVerificationToken());
+      await openVerificationLink(mailedLink('verificationLink').token);
 
       const { transformGithubUserData } = await import('#/modules/auth/oauth/helpers/transform-user-data');
       vi.mocked(transformGithubUserData).mockReturnValueOnce({
@@ -796,7 +782,7 @@ describe('OAuth Authentication', async () => {
 
     it('refuses to complete a sign-up when an account took the address meanwhile', async () => {
       await signUpCallback();
-      await openVerificationLink(mailedVerificationToken());
+      await openVerificationLink(mailedLink('verificationLink').token);
       const holder = await createUser(providerEmail);
 
       const { response: res, error } = await verifyCallback();
@@ -812,7 +798,7 @@ describe('OAuth Authentication', async () => {
 
     it('must not create an account via a pending OAuth sign-up once registration has closed', async () => {
       await signUpCallback();
-      await openVerificationLink(mailedVerificationToken());
+      await openVerificationLink(mailedLink('verificationLink').token);
       closeRegistration();
 
       const { response: res, error } = await verifyCallback();
@@ -828,7 +814,7 @@ describe('OAuth Authentication', async () => {
 
     it('completes the sign-up of an invited address after registration closed (positive control)', async () => {
       await signUpCallback();
-      await openVerificationLink(mailedVerificationToken());
+      await openVerificationLink(mailedLink('verificationLink').token);
       closeRegistration();
       const organization = await createTestOrganization();
       const inviter = await createUser('inviter@example.com');

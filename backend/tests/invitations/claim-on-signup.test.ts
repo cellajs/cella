@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { membershipInvite } from 'sdk';
 import { hierarchy } from 'shared';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { markEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
@@ -10,17 +10,13 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 import { createInvitation } from './helpers';
 
 const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 const invitedEmail = 'newcomer@example.com';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
-
-beforeAll(async () => {
-  mockFetchRequest();
-});
 
 afterEach(async () => await clearDatabase());
 

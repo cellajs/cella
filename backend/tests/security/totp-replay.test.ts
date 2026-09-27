@@ -2,7 +2,7 @@ import { decodeBase32 } from '@oslojs/encoding';
 import { nanoid } from 'nanoid';
 import { createTotp, generateTotpKey, signInWithTotp, stepUp } from 'sdk';
 import { appConfig } from 'shared';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { defaultHeaders } from '../fixtures';
@@ -18,7 +18,7 @@ import {
   tokenRowOf,
 } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 import { insertSession } from './session-helpers';
 
@@ -38,8 +38,6 @@ const codeAt = (stepsAhead = 0, secret = totpSecret) =>
   );
 
 const sessionCookieSet = (res: Response) => res.headers.getSetCookie().some((line) => line.includes('-session-'));
-
-beforeAll(() => mockFetchRequest());
 
 afterEach(async () => await clearSecurityTestData());
 

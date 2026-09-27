@@ -19,7 +19,7 @@ import { createTestUser } from './helpers';
 import { cleanupEntityHierarchy, seedEntityHierarchy } from './hierarchy-helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
-import { mockFetchRequest, setTestConfig } from './test-utils';
+import { setTestConfig } from './test-utils';
 
 // Direct table seeding and inspection run as admin: attachments are RLS-subject and the runtime role sees them only inside a tenant transaction.
 const db = getSeedDb();
@@ -120,7 +120,6 @@ describe('Attachment mentions (template notification source)', async () => {
     }) as unknown as ActivityEvent;
 
   beforeAll(async () => {
-    mockFetchRequest();
     tenant = await createTestTenant(call, 'attachment-mentions');
     // The role that reads every attachment under any app's permission matrix; the stranger covers the drop path.
     member = await createOrgUser(

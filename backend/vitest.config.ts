@@ -24,6 +24,7 @@ export default defineConfig({
     name: dbRole === 'runtime' ? 'backend-runtime' : 'backend',
     globalSetup: './tests/global-setup.ts',
     setupFiles: ['./tests/setup.ts'],
+    clearMocks: true,
     testTimeout: 30000,
     hookTimeout: 30000,
     fileParallelism: false,

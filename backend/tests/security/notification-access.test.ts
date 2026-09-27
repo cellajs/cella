@@ -2,9 +2,8 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { createAttachments, type GetNotificationsResponse, getNotifications } from 'sdk';
 import { getEntityPolicies, getPolicyPermissions, hierarchy, policyMatrix } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { baseDb as db, getSeedDb } from '#/db/db';
-import { mailer } from '#/lib/mailer';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { runDigest } from '#/modules/notification/digest/run-digest';
@@ -12,13 +11,10 @@ import { notificationPreferencesTable, notificationsTable } from '#/modules/noti
 import { sendPendingInstantEmails } from '#/modules/notification/operations/send-instant-emails';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { defaultHeaders } from '../fixtures';
+import { mailsTo } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
-
-vi.mock('#/lib/mailer', () => ({
-  mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) },
-}));
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -28,14 +24,6 @@ const DAY = 24 * HOUR;
 
 // Attachments sit under RLS: rename them on the admin connection.
 const adminDb = getSeedDb();
-
-/** Every recipient address the mocked mailer was handed, with the static props and recipient fields of its mail. */
-const mailsTo = (email: string) =>
-  vi
-    .mocked(mailer.prepareEmails)
-    .mock.calls.flatMap(([, statics, recipients]) =>
-      recipients.filter((recipient) => recipient.email === email).map((recipient) => ({ statics, recipient })),
-    );
 
 /**
  * Notifications were fanned out to readers, but access changes afterwards: a member who leaves the organization, or
@@ -87,7 +75,6 @@ describe('Notification access', async () => {
   };
 
   beforeAll(async () => {
-    mockFetchRequest();
     tenant = await createTestTenant(call, 'notification-access');
     leaver = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'notification-leaver', memberRole);
     stayer = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'notification-stayer', memberRole);
@@ -137,7 +124,6 @@ describe('Notification access', async () => {
 
   // Each test starts from unmailed, undigested rows and users who never had a digest.
   beforeEach(async () => {
-    vi.mocked(mailer.prepareEmails).mockClear();
     const users = [leaver.id, stayer.id];
     await db
       .update(notificationsTable)

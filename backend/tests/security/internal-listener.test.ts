@@ -124,6 +124,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
   });
 
   beforeAll(async () => {
+    vi.unstubAllGlobals();
     owner = await createTestTenant(call, 'internal-listener');
     attachment = await seedAttachment({
       tenantId: owner.tenantId,

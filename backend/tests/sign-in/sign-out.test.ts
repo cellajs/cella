@@ -1,17 +1,13 @@
 import { getMe, getMyAuth, revokeMySessions, signOut } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, createTestUser, expectRefusal, insertTestSession, sessionRow } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
-
-beforeAll(async () => {
-  mockFetchRequest();
-});
 
 afterEach(async () => await clearDatabase());
 

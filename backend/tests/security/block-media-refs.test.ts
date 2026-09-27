@@ -15,7 +15,7 @@ import { defaultHeaders } from '../fixtures';
 import { expectRefusal } from '../helpers';
 import { cleanupEntityHierarchy, seedEntityHierarchy } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -103,7 +103,6 @@ describe('Block media references', async () => {
     });
 
   beforeAll(async () => {
-    mockFetchRequest();
     owner = await createTestTenant(call, 'media-owner');
     victim = await createTestTenant(call, 'media-victim');
     plan = buildTestEntityHierarchyPlan({

@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { deletePasskey, generatePasskeyChallenge } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -10,13 +10,9 @@ import { authCookie, createMfaToken, createTestSession, createUser, expectRefusa
 import { insertPasskey, passkeyChallenge, passkeySignIn } from '../security/helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
-
-beforeAll(async () => {
-  mockFetchRequest();
-});
 
 afterEach(async () => {
   await clearDatabase();

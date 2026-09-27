@@ -1,18 +1,16 @@
 import { confirmMagicLink, getPendingMagicLink, invokeToken, signOut } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, createTestUser, expectRefusal, insertTestToken, tokenRow } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 import { cookiesAfter, insertSession } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['magic', 'passkey'] });
-
-beforeAll(() => mockFetchRequest());
 
 afterEach(async () => await clearSecurityTestData());
 

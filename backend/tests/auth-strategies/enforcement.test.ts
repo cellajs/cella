@@ -22,11 +22,7 @@ import {
 import { passkeySignIn } from '../security/helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-
-beforeAll(async () => {
-  mockFetchRequest();
-});
+import { clearDatabase, setTestConfig } from '../test-utils';
 
 afterEach(async () => {
   await clearDatabase();

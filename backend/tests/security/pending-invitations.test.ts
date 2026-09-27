@@ -1,21 +1,16 @@
 import { eq } from 'drizzle-orm';
 import { membershipInvite, resendPendingInvitation } from 'sdk';
 import { hierarchy } from 'shared';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { mailer } from '#/lib/mailer';
 import { mockPastIsoDate } from '#/mocks';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, createTestUser } from '../helpers';
+import { createTestOrganization, createTestUser, sentMails } from '../helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
-
-vi.mock('#/lib/mailer', () => ({
-  mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) },
-}));
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -68,7 +63,6 @@ describe('Pending invitations list', async () => {
     });
 
   beforeAll(async () => {
-    mockFetchRequest();
     organization = await createTestOrganization();
     inviter = await createOrgUser(call, organization.tenantId, organization.id, 'pending-inviter', adminRole);
     member = await createOrgUser(call, organization.tenantId, organization.id, 'pending-member', memberRole);
@@ -84,10 +78,6 @@ describe('Pending invitations list', async () => {
 
     const { response } = await invite([accountAlternate, newcomer]);
     expect(response.status).toBe(200);
-  });
-
-  beforeEach(() => {
-    vi.mocked(mailer.prepareEmails).mockClear();
   });
 
   afterAll(async () => await clearSecurityTestData());
@@ -121,8 +111,11 @@ describe('Pending invitations list', async () => {
     expect(toNewcomer.response.status).toBe(204);
 
     // Each resend mailed the invited address itself.
-    const mailed = vi.mocked(mailer.prepareEmails).mock.calls.flatMap(([, , recipients]) => recipients);
-    expect(mailed.map((recipient) => recipient.email).sort()).toEqual([accountAlternate, newcomer].sort());
+    expect(
+      sentMails()
+        .map(({ recipient }) => recipient.email)
+        .sort(),
+    ).toEqual([accountAlternate, newcomer].sort());
   });
 
   it('must not tell an account from a new address via the membershipInvite response', async () => {

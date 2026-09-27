@@ -8,7 +8,7 @@ import { defaultHeaders } from './fixtures';
 import { createTestOrganization } from './helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
-import { mockFetchRequest, setTestConfig } from './test-utils';
+import { setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -21,7 +21,6 @@ describe('Catchup (view-driven, sequence)', async () => {
   let otherOrgId: string;
 
   beforeAll(async () => {
-    mockFetchRequest();
     tenant = await createTestTenant(call, 'catchup-baseline');
     otherOrgId = (await createTestOrganization()).id;
     await db.insert(channelCountersTable).values({

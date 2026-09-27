@@ -1,16 +1,12 @@
 import { deleteMe, getMe } from 'sdk';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { defaultHeaders } from '../fixtures';
 import { createTestSession, createTestUser, expectRefusal, sessionsOf } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 import { insertPasskey, passkeysOf } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
-
-beforeAll(async () => {
-  mockFetchRequest();
-});
 
 afterEach(async () => await clearDatabase());
 

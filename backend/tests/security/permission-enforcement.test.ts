@@ -11,7 +11,7 @@ import {
 import { appConfig, hierarchy } from 'shared';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
@@ -23,10 +23,8 @@ import { createTestOrganization, expectRefusal } from '../helpers';
 import { seedEntityHierarchy } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
-
-vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -207,11 +205,8 @@ describe('Member escalation over HTTP', async () => {
   ];
 
   beforeAll(async () => {
-    mockFetchRequest();
     shared = await fixture('escalation');
   });
-
-  beforeEach(() => vi.mocked(mailer.prepareEmails).mockClear());
 
   afterAll(async () => await clearSecurityTestData());
 
