@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { mockNanoid, mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
+import { mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
 
 export const mockPasskeyChallengeResponse = (key = 'passkey-challenge:default') =>
   withFakerSeed(key, () => ({
@@ -33,13 +33,3 @@ export const mockTokenDataResponse = (key = 'token-data:default') =>
     userId: mockUuid(),
     inactiveMembershipId: undefined,
   }));
-
-/** A passkey row to insert. The credential id is fresh on every call: a credential id names one account. */
-export const mockPasskeyRecord = (userId: string, nameOnDevice = 'Test Device', key = 'passkey-record:default') => ({
-  ...withFakerSeed(key, () => ({ publicKey: mockNanoid(40), createdAt: mockPastIsoDate() })),
-  userId,
-  credentialId: mockNanoid(32),
-  counter: 0,
-  nameOnDevice,
-  deviceType: 'desktop' as const,
-});

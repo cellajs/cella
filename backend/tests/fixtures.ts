@@ -45,15 +45,5 @@ export function overrideConfig<T extends object>(target: T, overrides: { [K in k
   };
 }
 
-export type TraceExporter = NonNullable<OtelSDKOptions['traceExporter']>;
-export type ExportedSpan = Parameters<TraceExporter['export']>[0][number];
-
-/** A trace exporter that keeps every span it gets in `spans`; shutting the SDK down flushes into it. */
-export const collectingExporter = (spans: ExportedSpan[]): TraceExporter => ({
-  export: (batch, done) => {
-    spans.push(...batch);
-    done({ code: 0 });
-  },
-  shutdown: async () => {},
-  forceFlush: async () => {},
-});
+export type ExportedSpan = Parameters<NonNullable<OtelSDKOptions['traceExporter']>['export']>[0][number];
+export { collectingExporter } from 'shared/testing/telemetry';
