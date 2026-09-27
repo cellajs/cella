@@ -170,6 +170,7 @@ export const storageMock = () => ({
   compactState: vi.fn().mockResolvedValue(undefined),
   discardLogRows: vi.fn().mockResolvedValue(undefined),
   deleteDoc: vi.fn().mockResolvedValue(undefined),
+  touchDoc: vi.fn().mockResolvedValue(undefined),
   listStaleDocs: vi.fn().mockResolvedValue([]),
 });
 
@@ -228,6 +229,9 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
       await wait('deleteDoc');
       bases.delete(key(doc));
       logs.delete(key(doc));
+    }),
+    touchDoc: vi.fn(async (_doc: DocKey) => {
+      await wait('touchDoc');
     }),
     listStaleDocs: vi.fn(async (): Promise<StaleDocRow[]> => []),
   };

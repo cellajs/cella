@@ -118,6 +118,13 @@ export async function deleteDoc(doc: DocKey): Promise<void> {
   });
 }
 
+/** Stamps the document's session row, when there is one, as live: the startup sweep takes a row unstamped past its cutoff for an orphan. Creates no row. */
+export async function touchDoc(doc: DocKey): Promise<void> {
+  await asSystem(doc, async (tx) => {
+    await tx.update(yjsDocumentsTable).set({ updatedAt: sql`now()` }).where(docWhere(doc));
+  });
+}
+
 /** A stale session row's document, as the row stored it when a verified session opened it. */
 export type StaleDocRow = DocScope;
 
@@ -153,10 +160,10 @@ async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Pr
 }
 
 /**
- * Session rows untouched longer than the cleanup grace, with no younger log row: orphans from a
- * relay crash. Cross-tenant by design, so the sweep visits every tenant through its own
- * tenant-scoped transaction, a bounded number at a time; a contextless query on the fail-closed
- * policy returns nothing.
+ * Session rows no session stamped for longer than the cleanup grace (a session stamps its row every
+ * YJS_LIVE_TOUCH_MS), with no younger log row: orphans from a relay crash. Cross-tenant by design, so
+ * the sweep visits every tenant through its own tenant-scoped transaction, a bounded number at a time;
+ * a contextless query on the fail-closed policy returns nothing.
  */
 export async function listStaleDocs(olderThanMs: number): Promise<StaleDocRow[]> {
   // `tenants` sits outside RLS, so the runtime role lists it without context.

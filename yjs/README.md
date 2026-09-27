@@ -90,13 +90,14 @@ Three seconds after the last received update the log is compacted, under the doc
 | `401`, `403`, `404`, `408`, `409`, `429`, `5xx` or network failure | Retry: the secret or the editors' access can change. Keep the log; the next window, cleanup or sweep retries |
 | Other `4xx` | Permanent: an invalid request or no materializer registered. Keep the log; cleanup keeps the rows without retrying |
 | Unparseable merged state | Permanent, never posted. Keep the log |
+| No session row (another relay deleted it) | Permanent, never posted: the log extends a base that no longer exists, and merged alone it would overwrite the entity with a partial document. Keep the log |
 | A log row no merge accepts | Discarded before the window is merged, with its sender logged, so it never blocks the document; a joining client gets the rest |
 
 ### Disconnect and recovery
 
 After the last client disconnects, the session stays warm for five minutes (a reconnect reuses it). Then cleanup compacts once more and deletes both tables' rows once the log is written or empty. A retryable failure reschedules cleanup, for up to an hour; after that, and after a permanent failure, the rows stay for the next session or the startup sweep. A client that joins while cleanup runs keeps the session and its rows; one that leaves again first hands over to the cleanup its own leave starts, so what it sent is compacted before the rows go. A session leaves memory with no timer left on it, so no later cleanup can reach a newer session of the same document.
 
-A startup sweep runs the same compaction over sessions a crash orphaned: session rows older than the grace period with no younger log row. Because every update was logged before it was broadcast, a crash loses nothing that a client had sent.
+A startup sweep finishes the sessions a crash orphaned through the same locked routine: session rows no session stamped within the grace period, with no younger log row. A session stamps its row when it opens and every minute while it lasts, so a relay generation started next to a running one, as a start-first rollout does, never takes that one's idle sessions for orphans. A client that joins while the sweep finishes a document waits for the document lock and keeps the session and its rows. Because every update was logged before it was broadcast, a crash loses nothing that a client had sent.
 
 ## Durability and failure
 

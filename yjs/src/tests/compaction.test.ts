@@ -18,18 +18,18 @@ beforeEach(() => {
   vi.clearAllMocks();
   storage.bases.clear();
   storage.logs.clear();
+  // The session row a handshake seeded: every window extends it.
+  storage.bases.set(key, mapUpdate('seed', true));
 });
 
 describe('compactDocument', () => {
   it('returns empty and writes nothing when the log has no rows', async () => {
-    storage.bases.set(key, mapUpdate('seed', true));
     expect(await compactDocument(scope)).toBe('empty');
     expect(postMaterialize).not.toHaveBeenCalled();
     expect(storage.compactState).not.toHaveBeenCalled();
   });
 
   it('merges base and log, posts the blocks JSON for the last editor, then replaces the base and deletes the rows', async () => {
-    storage.bases.set(key, mapUpdate('seed', true));
     await storage.appendUpdate(scope, 'user-a', mapUpdate('a', 1));
     await storage.appendUpdate(scope, 'user-b', mapUpdate('b', 2));
     await storage.appendUpdate(scope, '', mapUpdate('server', 3));
@@ -44,7 +44,6 @@ describe('compactDocument', () => {
   });
 
   it('must not let one logged row that will not merge block the document: it is discarded and the rest is written', async () => {
-    storage.bases.set(key, mapUpdate('seed', true));
     await storage.appendUpdate(scope, 'user-a', mapUpdate('a', 1));
     // Logged before the relay refused undecodable updates.
     await storage.appendUpdate(scope, 'user-x', new Uint8Array([1, 2, 3]));
@@ -63,7 +62,6 @@ describe('compactDocument', () => {
   });
 
   it('a window whose only rows will not merge writes nothing and keeps nothing', async () => {
-    storage.bases.set(key, mapUpdate('seed', true));
     await storage.appendUpdate(scope, 'user-x', new Uint8Array([1, 2, 3]));
     expect(await compactDocument(scope)).toBe('empty');
     expect(postMaterialize).not.toHaveBeenCalled();
@@ -78,6 +76,21 @@ describe('compactDocument', () => {
     expect(storage.logs.get(key)).toHaveLength(1);
   });
 
+  it('must not write a partial document over the entity via a log whose session row is gone', async () => {
+    // Another relay finished the document and deleted its session row: these rows extend a base that no longer exists.
+    storage.bases.delete(key);
+    await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
+    expect(await compactDocument(scope)).toBe('permanent');
+    expect(postMaterialize).not.toHaveBeenCalled();
+    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(storage.logs.get(key)).toHaveLength(1);
+
+    // Positive control: under its session row, the same log is written.
+    storage.bases.set(key, mapUpdate('seed', true));
+    expect(await compactDocument(scope)).toBe('ok');
+    expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, a: 1 });
+  });
+
   it('names at most twenty editors, the most recent', async () => {
     for (let i = 0; i < 25; i++) await storage.appendUpdate(scope, `user-${i}`, mapUpdate(`k${i}`, i));
     expect(await compactDocument(scope)).toBe('ok');
@@ -88,7 +101,6 @@ describe('compactDocument', () => {
   });
 
   it('gone leaves the base and the log for the caller to delete, unfolded', async () => {
-    storage.bases.set(key, mapUpdate('seed', true));
     await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
     vi.mocked(postMaterialize).mockResolvedValueOnce('gone');
     expect(await compactDocument(scope)).toBe('gone');
@@ -104,7 +116,6 @@ describe('compactDocument', () => {
   });
 
   it('permanent leaves the base and the log untouched, so the base only holds written state', async () => {
-    storage.bases.set(key, mapUpdate('seed', true));
     await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
     vi.mocked(postMaterialize).mockResolvedValueOnce('permanent');
     expect(await compactDocument(scope)).toBe('permanent');

@@ -11,18 +11,22 @@ import { createSignedToken } from '../helpers';
 
 // The real relay end to end over real sockets and the real database (runtime_role). The backend
 // round trips are stubbed: access is granted in the requested scope, the description seeds from a
-// fixed document, and the materialize POST is recorded.
+// fixed document, and the materialize POST is recorded. Sessions stamp their rows live every 100 ms.
+vi.mock('../../constants', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../../constants')>()),
+  YJS_LIVE_TOUCH_MS: 100,
+}));
 vi.mock('../../data/permissions', () => ({
   authorizeDoc: vi.fn(async (_userId: string, requested: DocScope) => requested),
 }));
 vi.mock('../../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
-const materialized: { editedBy: string; description: string }[] = [];
+const materialized: { entityId: string; editedBy: string; description: string }[] = [];
 vi.mock('../../sync/materialize', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../../sync/materialize')>();
   return {
     ...actual,
-    postMaterialize: vi.fn(async (_scope: DocScope, editors: string[], description: string) => {
-      materialized.push({ editedBy: editors[0], description });
+    postMaterialize: vi.fn(async (scope: DocScope, editors: string[], description: string) => {
+      materialized.push({ entityId: scope.entityId, editedBy: editors[0], description });
       return 'ok';
     }),
   };
@@ -42,7 +46,7 @@ const { setupConnectionHandler, setupUpgradeHandler } = await import('../../serv
 const { runCompaction } = await import('../../sync/relay');
 const { getCollab } = await import('../../sync/session-manager');
 const { deleteDoc, loadBase, readLog } = await import('../../data/storage');
-const { yUpdateToBlocks } = await import('../../lib/blocknote-seed');
+const { descriptionToYUpdate, yUpdateToBlocks } = await import('../../lib/blocknote-seed');
 
 const DATABASE_URL = testDatabaseUrl;
 const tenantId = 'yjs-e2e-tenant';
@@ -52,6 +56,8 @@ const entityType = appConfig.productEntityTypes[0];
 const ids = {
   burst: '40000000-0000-4000-a000-000000000001',
   pull: '40000000-0000-4000-a000-000000000002',
+  idle: '40000000-0000-4000-a000-000000000003',
+  orphan: '40000000-0000-4000-a000-000000000004',
 };
 
 function ctx(entityId: string): DocScope {
@@ -85,6 +91,7 @@ async function cleanup() {
     const collab = getCollab(ctx(entityId));
     if (collab?.compactTimer) clearTimeout(collab.compactTimer);
     if (collab?.cleanupTimer) clearTimeout(collab.cleanupTimer);
+    if (collab?.liveTimer) clearInterval(collab.liveTimer);
     await deleteDoc(ctx(entityId));
   }
   await admin.query('DELETE FROM yjs_updates WHERE tenant_id = $1', [tenantId]);
@@ -154,6 +161,36 @@ function firstText(doc: Y.Doc): Y.XmlText {
   return text;
 }
 
+/** A relay generation started next to this one, as a start-first rollout does: its own sessions and pool, one database. */
+async function startNextGeneration() {
+  vi.resetModules();
+  const { runStartupSweep } = await import('../../sync/sweep');
+  const { closeDb } = await import('../../data/db');
+  return { runStartupSweep, closeDb };
+}
+
+/** A session a crashed relay left behind: its base seeded from the description, one unwritten edit, both a day old. */
+async function seedOrphan(entityId: string, edit: string) {
+  const base = descriptionToYUpdate(seedDescription)!;
+  const doc = new Y.Doc();
+  Y.applyUpdate(doc, base);
+  const before = Y.encodeStateVector(doc);
+  firstText(doc).insert(0, edit);
+  await admin.query(
+    `INSERT INTO yjs_documents (entity_type, entity_id, tenant_id, organization_id, state, updated_at)
+     VALUES ($1, $2, $3, $4, $5, now() - interval '1 day')`,
+    [entityType, entityId, tenantId, organizationId, Buffer.from(base)],
+  );
+  await admin.query(
+    `INSERT INTO yjs_updates (entity_type, entity_id, tenant_id, organization_id, user_id, payload, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, now() - interval '1 day')`,
+    [entityType, entityId, tenantId, organizationId, userId, Buffer.from(Y.encodeStateAsUpdate(doc, before))],
+  );
+}
+
+const sessionRows = async (entityId: string) =>
+  (await admin.query('SELECT 1 FROM yjs_documents WHERE entity_id = $1', [entityId])).rowCount;
+
 const until = async (check: () => Promise<boolean>, ms = 3000) => {
   const deadline = Date.now() + ms;
   while (Date.now() < deadline) {
@@ -183,6 +220,42 @@ describe('relay end to end', () => {
     expect(await readLog(ctx(ids.burst))).toEqual([]);
     expect(materialized.at(-1)?.editedBy).toBe(userId);
     expect(materialized.at(-1)?.description).toContain('abc could you have a look?');
+  });
+
+  it("must not delete an idle live session's rows via the startup sweep of another relay generation", async () => {
+    const { doc, provider } = await connectClient(ids.idle);
+    // A day passes with nothing logged, so the row and its log look stale; the live session stamps its row meanwhile.
+    await admin.query("UPDATE yjs_documents SET updated_at = now() - interval '1 day' WHERE entity_id = $1", [
+      ids.idle,
+    ]);
+    await admin.query("UPDATE yjs_updates SET created_at = now() - interval '1 day' WHERE entity_id = $1", [ids.idle]);
+    await seedOrphan(ids.orphan, 'orphaned');
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    const next = await startNextGeneration();
+    try {
+      await next.runStartupSweep();
+    } finally {
+      await next.closeDb();
+    }
+
+    // The live session keeps its rows, so its next edit is written over the whole document.
+    expect(await sessionRows(ids.idle)).toBe(1);
+    const text = firstText(doc);
+    text.insert(text.length, '!');
+    await until(async () => (await readLog(ctx(ids.idle))).length >= 1);
+    expect(await runCompaction(getCollab(ctx(ids.idle))!)).toBe('ok');
+    expect(textOf((await loadBase(ctx(ids.idle)))!)).toBe(' could you have a look?!');
+    const written = materialized.filter((entry) => entry.entityId === ids.idle).at(-1);
+    expect(written?.description).toContain(' could you have a look?!');
+    provider.destroy();
+    doc.destroy();
+
+    // Positive control: the orphan next to it, which no relay holds, is written and its rows go.
+    expect(materialized.find((entry) => entry.entityId === ids.orphan)?.description).toContain(
+      'orphaned could you have a look?',
+    );
+    expect(await sessionRows(ids.orphan)).toBe(0);
   });
 
   it('the relay pulls content a client already holds: an offline edit reaches the log on connect', async () => {

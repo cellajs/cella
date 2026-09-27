@@ -26,7 +26,7 @@ export const yjsDocumentsTable = snakeCase.table(
       .references(() => tenantsTable.id),
     organizationId: uuid(),
     state: bytea().notNull(),
-    /** Bumped on compaction only; the stale-session query also looks at the newest log row. */
+    /** Stamped on seeding, on compaction and every minute while a relay holds a session; the stale-session query also looks at the newest log row. */
     updatedAt: timestamp({ mode: 'string' }).defaultNow().notNull(),
   },
   (table) => [

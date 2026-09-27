@@ -58,6 +58,13 @@ function session(overrides: Partial<DocScope> = {}) {
   return { ctx: c, scope, key: storageKey(scope), ws, collab: getCollab(scope)! };
 }
 
+/** A session whose row its socket's handshake seeded, from a null description: compaction writes only under one. */
+function seededSession() {
+  const opened = session();
+  storage.bases.set(opened.key, new Uint8Array());
+  return opened;
+}
+
 beforeEach(() => {
   vi.useFakeTimers();
   vi.clearAllMocks();
@@ -285,7 +292,7 @@ describe('handleMessage: sync update', () => {
   });
 
   it('a burst of dependent updates dispatched without awaiting all reach the log, and one compaction merges them', async () => {
-    const { ctx: c, key, ws, collab } = session();
+    const { ctx: c, key, ws, collab } = seededSession();
     // The first append is slow; the others overtake it.
     const gate = deferred();
     let slowed = false;
@@ -537,7 +544,7 @@ describe('handleMessage: awareness ownership', () => {
 
 describe('compaction', () => {
   it('runs once after the debounce, names the editors newest first, and deletes exactly the rows it read', async () => {
-    const { ctx: c, scope, key, ws } = session();
+    const { ctx: c, scope, key, ws } = seededSession();
     const editor2 = mockSocketContext({ userId: 'user-2', requested: scope });
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
     vi.advanceTimersByTime(2000);
@@ -557,7 +564,7 @@ describe('compaction', () => {
   });
 
   it('an update appended during an in-flight materialize survives compaction', async () => {
-    const { ctx: c, key, ws, collab } = session();
+    const { ctx: c, key, ws, collab } = seededSession();
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
 
     const gate = deferred();

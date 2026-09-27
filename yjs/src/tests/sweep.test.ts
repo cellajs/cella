@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { mockScope, mockWebSocket, storageMock } from './helpers';
+import { deferred, flushMicrotasks, mockScope, mockWebSocket, storageMock } from './helpers';
 
 vi.mock('../data/storage', () => storageMock());
 vi.mock('../sync/compaction', () => ({ compactDocument: vi.fn().mockResolvedValue('ok') }));
@@ -7,7 +7,7 @@ vi.mock('../sync/compaction', () => ({ compactDocument: vi.fn().mockResolvedValu
 const { runStartupSweep } = await import('../sync/sweep');
 const { listStaleDocs, deleteDoc } = await import('../data/storage');
 const { compactDocument } = await import('../sync/compaction');
-const { joinCollab } = await import('../sync/session-manager');
+const { getCollab, joinCollab, withDocLock } = await import('../sync/session-manager');
 
 const staleRow = (overrides: Record<string, unknown> = {}) => ({
   entityType: 'task',
@@ -65,6 +65,37 @@ describe('runStartupSweep', () => {
     await runStartupSweep();
     expect(compactDocument).not.toHaveBeenCalled();
     expect(deleteDoc).not.toHaveBeenCalled();
+  });
+
+  it('must not delete the rows of a socket that joins while the sweep compacts: it keeps the session and its rows', async () => {
+    const doc = staleRow({ entityId: 'entity-joining' });
+    vi.mocked(listStaleDocs).mockResolvedValueOnce([doc]);
+    const compaction = deferred();
+    vi.mocked(compactDocument).mockImplementationOnce(async () => {
+      await compaction.promise;
+      return 'ok';
+    });
+    const sweep = runStartupSweep();
+    await flushMicrotasks();
+    expect(compactDocument).toHaveBeenCalledTimes(1);
+
+    // A socket joins after the listing, while the sweep's compaction writes; its handshake takes the document lock.
+    const joiner = mockWebSocket();
+    const session = joinCollab(mockScope({ entityId: 'entity-joining' }), joiner as never);
+    const handshake = vi.fn();
+    const handshakeDone = withDocLock(session, async () => handshake());
+    await flushMicrotasks();
+    expect(handshake).not.toHaveBeenCalled();
+
+    compaction.release();
+    await sweep;
+    await handshakeDone;
+
+    // The handshake reads the document once the compaction folded it, and the joiner's session keeps its rows.
+    expect(handshake).toHaveBeenCalledTimes(1);
+    expect(deleteDoc).not.toHaveBeenCalled();
+    expect(getCollab(doc)).toBe(session);
+    expect(session.clients.has(joiner as never)).toBe(true);
   });
 
   it('a listing failure is logged and the sweep returns', async () => {

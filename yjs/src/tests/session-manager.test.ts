@@ -5,10 +5,12 @@ vi.mock('../data/storage', () => storageMock());
 vi.mock('../sync/compaction', () => ({ compactDocument: vi.fn().mockResolvedValue('ok') }));
 
 const { getCollab, joinCollab, leaveCollab, broadcastToCollab, withDocLock } = await import('../sync/session-manager');
-const { deleteDoc } = await import('../data/storage');
+const { deleteDoc, touchDoc } = await import('../data/storage');
 const { compactDocument } = await import('../sync/compaction');
 
 const GRACE = 5 * 60 * 1000;
+/** How often a session stamps its row live: well inside GRACE, the startup sweep's cutoff. */
+const LIVE_STAMP = 60 * 1000;
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -279,6 +281,37 @@ describe('joinCollab / leaveCollab', () => {
 
   it('leave for an unknown session is a no-op', () => {
     expect(() => leaveCollab(mockScope({ entityId: 'nope' }), mockWebSocket() as never)).not.toThrow();
+  });
+});
+
+describe('live stamps', () => {
+  it('must not let a session look orphaned: it stamps its row live when it opens and every minute until it is forgotten', async () => {
+    const ctx = uniqueCtx();
+    const ws = mockWebSocket();
+    // A failed stamp neither fails the join nor stops the next one.
+    vi.mocked(touchDoc).mockRejectedValueOnce(new Error('db down'));
+    const collab = joinCollab(ctx, ws as never);
+    expect(touchDoc).toHaveBeenCalledTimes(1);
+    expect(touchDoc).toHaveBeenCalledWith(ctx);
+    // A socket joining the open session stamps nothing more.
+    const peer = mockWebSocket();
+    joinCollab(ctx, peer as never);
+    expect(touchDoc).toHaveBeenCalledTimes(1);
+
+    await vi.advanceTimersByTimeAsync(LIVE_STAMP);
+    expect(touchDoc).toHaveBeenCalledTimes(2);
+
+    // Idle through its grace period, the session stays live until cleanup forgets it.
+    await vi.advanceTimersByTimeAsync(LIVE_STAMP / 2);
+    leaveCollab(ctx, ws as never);
+    leaveCollab(ctx, peer as never);
+    await vi.advanceTimersByTimeAsync(GRACE);
+    expect(getCollab(ctx)).toBeUndefined();
+    expect(touchDoc).toHaveBeenCalledTimes(2 + GRACE / LIVE_STAMP);
+    expect(touchDoc).toHaveBeenLastCalledWith(collab.scope);
+
+    await vi.advanceTimersByTimeAsync(LIVE_STAMP * 3);
+    expect(touchDoc).toHaveBeenCalledTimes(2 + GRACE / LIVE_STAMP);
   });
 });
 
