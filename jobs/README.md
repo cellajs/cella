@@ -62,6 +62,14 @@ Tests use the schema `pgboss_test`, so a test run never touches a development st
 
 `pnpm jobs` prints the same for an operator without SQL, plus the schedules with their last job, the last failures with their error, pg-boss warnings and pending index rebuilds; `--json` for machines. Queues in the store that no module declares are marked, never deleted.
 
+### Connection budget
+
+The managed instance (DB-DEV-S, PostgreSQL 17) runs the engine default of 100 for `max_connections`; the Scaleway API shows no override (read 2026-09-26). Three slots are reserved for superusers, so the app roles share 97; the CDC replication connection is a WAL sender and does not count.
+
+Under `singleVM` the one backend process holds pool maxima of 20 (API) + 10 (cdc) + 10 (yjs) + 5 and one listener (jobs) = 46, and the migrate companion adds 7 while it runs. Pools open connections on demand and close idle ones after ten seconds, so these are ceilings, not footprints. Cockpit shows the real numbers: `rdb_instance_postgresql_pg_stat_database_numbackends` against `rdb_instance_postgresql_pg_settings_max_connection`; the `PostgreSQLTooManyConnections` alert fires at 80% for ten minutes.
+
+Raising `max_connections` (50 to 10000, through the instance `settings` in [postgres-managed.ts](../infra/resources/stores/postgres-managed.ts)) restarts the instance, which has no standby. Shrink pools first; raise the limit only when the measurement says so.
+
 ## Configuration
 
 | Key | Purpose |
