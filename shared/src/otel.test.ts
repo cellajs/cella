@@ -1,19 +1,10 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { context, propagation, SpanStatusCode, trace } from '@opentelemetry/api';
-import type { ReadableSpan, SpanExporter, SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import type { ReadableSpan, SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createOtelSDK } from './otel.ts';
-
-/** An exporter that keeps every span it receives; unlike InMemorySpanExporter, shutdown keeps them. */
-const collectingExporter = (spans: ReadableSpan[]): SpanExporter => ({
-  export: (batch, done) => {
-    spans.push(...batch);
-    done({ code: 0 });
-  },
-  shutdown: async () => {},
-  forceFlush: async () => {},
-});
+import { collectingExporter, failedLookup } from './testing/telemetry.ts';
 
 /** Everything a span carries to the backend that could hold a string. */
 const exportedText = (spans: ReadableSpan[]) =>
@@ -147,13 +138,7 @@ describe('createOtelSDK', () => {
     });
     otel.start();
 
-    // Built at run time: the test proves this value never reaches the exporter.
-    const secret = `secret_${crypto.randomUUID()}`;
-    const sql = 'select "id" from "sessions" where "sessions"."secret" = $1';
-    // Drizzle's DrizzleQueryError: the SQL and every bound value in the message, and so in the stack.
-    const failed = Object.assign(new Error(`Failed query: ${sql}\nparams: ${secret},\n${secret}`), {
-      name: 'DrizzleQueryError',
-    });
+    const { secret, sql, error: failed } = failedLookup();
     // An error that took over the failed query's stack, as an AppError built from `originalError` does.
     const wrapper = Object.assign(new Error('Could not sign in'), { stack: failed.stack });
     const span = trace.getTracer('test').startSpan('POST /auth/sign-in');

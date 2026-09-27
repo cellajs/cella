@@ -1,46 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import { createLog, createLogger } from './pino.ts';
-
-/** The error Drizzle throws for a failed query, as drizzle-orm builds it: the SQL and the values in the message. */
-class DrizzleQueryError extends Error {
-  query: string;
-  params: unknown[];
-  constructor(query: string, params: unknown[], cause?: Error) {
-    super(`Failed query: ${query}\nparams: ${params}`);
-    this.name = 'DrizzleQueryError';
-    this.query = query;
-    this.params = params;
-    this.cause = cause;
-  }
-}
-
-/** A failed lookup by a secret: what Postgres says about it, and the Drizzle error around it. */
-const failedLookup = () => {
-  // Built at run time: the tests prove this value never reaches a log line.
-  const secret = `secret_${randomUUID()}`;
-  const reason = 'invalid byte sequence for encoding "UTF8": 0x00';
-  const sql = 'select "id" from "unsubscribe_tokens" where "unsubscribe_tokens"."secret" = $1';
-  const error = new DrizzleQueryError(
-    sql,
-    [`${secret}\nsecond line`],
-    Object.assign(new Error(reason), { code: '22021' }),
-  );
-  return { secret, reason, sql, error };
-};
-
-/** A logger built through `createLogger` as the services build theirs, writing its lines to memory. */
-const collectingLogger = (redactPaths: readonly string[]) => {
-  const lines: string[] = [];
-  const logger = createLogger({
-    level: 'info',
-    isProduction: true,
-    isTest: false,
-    redactPaths,
-    destination: { write: (line: string) => lines.push(line) },
-  });
-  return { logger, lines, parsed: () => lines.map((line) => JSON.parse(line) as Record<string, unknown>) };
-};
+import { createLog } from './pino.ts';
+import { collectingLogger, failedLookup } from './testing/telemetry.ts';
 
 describe('createLogger', () => {
   it('must not leak a secret via a logged key or a logged url', () => {
@@ -124,17 +85,16 @@ describe('failed queries in log lines', () => {
 
   it("must not log the values of a failed query via the database's detail", () => {
     const { logger, lines, parsed } = collectingLogger([]);
-    // Built at run time: the test proves this value never reaches a log line.
-    const secret = `secret_${randomUUID()}@example.test`;
     const reason = 'duplicate key value violates unique constraint "emails_email_unique"';
-    const cause = Object.assign(new Error(reason), {
-      code: '23505',
-      constraint: 'emails_email_unique',
-      detail: `Key (email)=(${secret}) already exists.`,
-      where: `SQL statement "insert into emails values ('${secret}')"`,
-      internalQuery: `insert into emails values ('${secret}')`,
-    });
-    const error = new DrizzleQueryError('insert into "emails" ("email") values ($1)', [secret], cause);
+    const { secret, error } = failedLookup((value) =>
+      Object.assign(new Error(reason), {
+        code: '23505',
+        constraint: 'emails_email_unique',
+        detail: `Key (email)=(${value}) already exists.`,
+        where: `SQL statement "insert into emails values ('${value}')"`,
+        internalQuery: `insert into emails values ('${value}')`,
+      }),
+    );
 
     createLog(logger).error('Sign-up failed', { err: error });
 
