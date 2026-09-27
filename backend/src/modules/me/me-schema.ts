@@ -2,9 +2,8 @@ import { z } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
-import { passkeySchema, webAuthnAssertionSchema } from '#/modules/auth/passkeys/passkeys-schema';
+import { passkeySchema } from '#/modules/auth/passkeys/passkeys-schema';
 import { sessionsTable } from '#/modules/auth/sessions-db';
-import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
 import { inactiveMembershipSchema } from '#/modules/memberships/memberships-schema';
 import { enabledOAuthProvidersSchema, userSchema } from '#/modules/user/user-schema';
 import { validUuidSchema } from '#/schemas';
@@ -77,11 +76,7 @@ export const uploadTokenQuerySchema = z.object({
   templateId: z.enum(appConfig.uploadTemplateIds),
 });
 
-export const toggleMfaBodySchema = z.object({
-  passkeyData: webAuthnAssertionSchema.optional(),
-  totpCode: totpCreateBodySchema.shape.code.optional(),
-  mfaRequired: z.boolean(),
-});
+export const toggleMfaBodySchema = z.object({ mfaRequired: z.boolean() });
 
 export const mePendingInvitationSchema = z.object({
   entity: channelBaseSchema,

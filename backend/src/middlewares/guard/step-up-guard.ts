@@ -1,5 +1,3 @@
-import type { Context } from 'hono';
-import type { Env } from '#/core/context';
 import { xMiddleware } from '#/core/x-middleware';
 import { requireStepUp } from '#/modules/auth/step-up/helpers/step-up';
 
@@ -18,32 +16,6 @@ export const stepUpGuard = xMiddleware(
   },
   async (ctx, next) => {
     await requireStepUp(ctx.var.session);
-    await next();
-  },
-);
-
-/** A request body carrying its own second factor, as PUT /me/mfa takes one. */
-const carriesFactorProof = async (ctx: Context<Env>) => {
-  const body: unknown = await ctx.req.json().catch(() => null);
-  return !!body && typeof body === 'object' && ('passkeyData' in body || 'totpCode' in body);
-};
-
-/**
- * `stepUpGuard` for a route that verifies a second factor on the request itself (PUT /me/mfa): a request carrying one
- * goes on to the handler, which checks it behind the route's failure limiter, and counts as its step-up. Any other
- * request needs a stepped-up session. Impersonation is refused either way.
- */
-export const stepUpOrFactorProofGuard = xMiddleware(
-  {
-    functionName: 'stepUpOrFactorProofGuard',
-    type: 'x-guard',
-    name: 'stepUpOrFactorProof',
-    description:
-      'Requires a recent proof of presence on this session, or a passkey or TOTP proof on the request itself. Refuses impersonation.',
-  },
-  async (ctx, next) => {
-    const { session } = ctx.var;
-    if (session.type === 'impersonation' || !(await carriesFactorProof(ctx))) await requireStepUp(session);
     await next();
   },
 );

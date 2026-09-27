@@ -1076,25 +1076,6 @@ export const zUpdateMeBody = z.object({
 export const zUpdateMeResponse = zUser;
 
 export const zToggleMfaBody = z.object({
-  passkeyData: z
-    .object({
-      id: z.string(),
-      rawId: z.string(),
-      response: z.object({
-        clientDataJSON: z.string(),
-        authenticatorData: z.string(),
-        signature: z.string(),
-        userHandle: z.string().optional(),
-      }),
-      authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
-      clientExtensionResults: z.unknown().optional(),
-      type: z.enum(['public-key']),
-    })
-    .optional(),
-  totpCode: z
-    .string()
-    .regex(/^\d{6}$/)
-    .optional(),
   mfaRequired: z.boolean(),
 });
 

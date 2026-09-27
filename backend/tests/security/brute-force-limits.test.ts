@@ -1,21 +1,19 @@
 import { decodeBase32 } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { checkEmail, sendMagicLink, signInWithTotp, toggleMfa } from 'sdk';
+import { checkEmail, sendMagicLink, signInWithTotp, stepUp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { baseDb as db, getAdminDb } from '#/db/db';
+import { getAdminDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
-import { usersTable } from '#/modules/user/user-db';
 import { magicLinkEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createMfaToken, createTestSession, createTestUser, createTotpUser } from '../helpers';
+import { authCookie, createMfaToken, createTestUser, createTotpUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
+import { insertSession, sessionRow } from './session-helpers';
 
 // The suite mocks every limiter as a pass-through (tests/setup.ts); this file needs the real one.
 vi.unmock('#/middlewares/rate-limiter/core');
@@ -79,36 +77,30 @@ describe('brute-force budgets', async () => {
     expect(magicLinkMailsTo(other.email)).toHaveLength(1);
   });
 
-  it('must not keep guessing authenticator codes via PUT /me/mfa', async () => {
-    const user = await createTotpUser(`mfa-limit-${nanoid(8)}@security-test.com`);
-    await db.insert(passkeysTable).values(mockPasskeyRecord(user.id));
-    const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
+  it('must not keep guessing authenticator codes via /auth/step-up', async () => {
+    const user = await createTotpUser(`step-up-limit-${nanoid(8)}@security-test.com`);
+    const session = await insertSession(user);
 
     for (let attempt = 0; attempt < 5; attempt++) {
-      const { response } = await call(toggleMfa, { body: { mfaRequired: false, totpCode: wrongCode() }, headers });
+      const { response } = await call(stepUp, { body: { totpCode: wrongCode() }, headers: session.headers });
       expect(response.status).toBe(401);
     }
 
     // Blocked now, even with the right code.
-    const { response } = await call(toggleMfa, { body: { mfaRequired: false, totpCode: currentCode() }, headers });
+    const { response } = await call(stepUp, { body: { totpCode: currentCode() }, headers: session.headers });
     expect(response.status).toBe(429);
-    const [row] = await db
-      .select({ mfaRequired: usersTable.mfaRequired })
-      .from(usersTable)
-      .where(eq(usersTable.id, user.id));
-    expect(row.mfaRequired).toBe(true);
+    expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
   });
 
   it('lets the owner through with the right code before the budget runs out (positive control)', async () => {
-    const user = await createTotpUser(`mfa-limit-ok-${nanoid(8)}@security-test.com`);
-    await db.insert(passkeysTable).values(mockPasskeyRecord(user.id));
-    const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
+    const user = await createTotpUser(`step-up-limit-ok-${nanoid(8)}@security-test.com`);
+    const session = await insertSession(user);
 
-    expect(
-      (await call(toggleMfa, { body: { mfaRequired: false, totpCode: wrongCode() }, headers })).response.status,
-    ).toBe(401);
-    const { response } = await call(toggleMfa, { body: { mfaRequired: false, totpCode: currentCode() }, headers });
-    expect(response.status).toBe(200);
+    expect((await call(stepUp, { body: { totpCode: wrongCode() }, headers: session.headers })).response.status).toBe(
+      401,
+    );
+    const { response } = await call(stepUp, { body: { totpCode: currentCode() }, headers: session.headers });
+    expect(response.status).toBe(204);
   });
 
   it('must not keep looking up addresses via check-email', async () => {

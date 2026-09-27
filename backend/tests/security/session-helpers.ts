@@ -2,7 +2,8 @@ import { eq } from 'drizzle-orm';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { authCookieName, type CookieName } from '#/modules/auth/general/helpers/cookie';
-import { type SessionTypes, sessionsTable } from '#/modules/auth/sessions-db';
+import { type SessionTypes, type StepUpProof, sessionsTable } from '#/modules/auth/sessions-db';
+import { stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { streamSubscriberManager } from '#/modules/entities/stream';
 import { hashToken } from '#/utils/hash-token';
@@ -28,6 +29,13 @@ export async function insertSession(
 ): Promise<TestSession> {
   const { id, cookie } = await insertTestSession(user, opts);
   return asSession(id, cookie);
+}
+
+/** A session signed in before the step-up window that then stepped up with `via`: only its stamp proves presence. */
+export async function insertSteppedUpSession(user: { id: string }, via: StepUpProof = 'totp'): Promise<TestSession> {
+  const session = await insertSession(user, { ageMs: 60 * 60 * 1000 });
+  await stampStepUp(session.id, user.id, via);
+  return session;
 }
 
 /** An impersonation of `target` layered on an admin's session, presented as the admin's browser does. */

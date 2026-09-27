@@ -244,7 +244,6 @@ describe('account-security routes need a step-up', async () => {
       await call(generateTotpKey, { headers }),
       await call(deleteTotp, { headers }),
       await call(toggleMfa, { body: { mfaRequired: true }, headers }),
-      await call(toggleMfa, { body: { mfaRequired: true, totpCode: codeFor(TOTP_SECRET) }, headers }),
       await call(startOAuthConnect, { headers }),
       await call(deleteMe, { headers }),
     ];

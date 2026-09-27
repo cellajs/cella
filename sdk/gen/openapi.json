@@ -48,10 +48,6 @@
             "name": "stepUp",
             "description": "Requires a recent proof of presence on this session: the enrolled passkey or TOTP, else a fresh sign-in or a confirmed email link. Refuses impersonation."
           },
-          "stepUpOrFactorProofGuard": {
-            "name": "stepUpOrFactorProof",
-            "description": "Requires a recent proof of presence on this session, or a passkey or TOTP proof on the request itself. Refuses impersonation."
-          },
           "sysAdminGuard": {
             "name": "sysAdmin",
             "description": "Requires system admin + IP whitelist"
@@ -88,10 +84,6 @@
           "totpVerificationLimiter": {
             "name": "totpVerification",
             "description": "Blocks IP for 30 min after 5 failed TOTP attempts"
-          },
-          "mfaToggleLimiter": {
-            "name": "mfaToggle",
-            "description": "Blocks the account for 30 min after 5 failed second-factor checks on the MFA toggle"
           },
           "stepUpLimiter": {
             "name": "stepUp",
@@ -5841,9 +5833,9 @@
         "operationId": "toggleMfa",
         "tags": ["me", "cella"],
         "summary": "Toggle MFA",
-        "description": "Enable or disable multifactor authentication for the current user. Needs a passkey or TOTP proof on the request, or a session stepped up with one.",
-        "x-guard": ["userGuard", "stepUpOrFactorProofGuard"],
-        "x-rate-limiter": ["pointsLimiter", "mfaToggleLimiter"],
+        "description": "Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.",
+        "x-guard": ["userGuard", "stepUpGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
           "content": {
@@ -5851,49 +5843,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "passkeyData": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string"
-                      },
-                      "rawId": {
-                        "type": "string"
-                      },
-                      "response": {
-                        "type": "object",
-                        "properties": {
-                          "clientDataJSON": {
-                            "type": "string"
-                          },
-                          "authenticatorData": {
-                            "type": "string"
-                          },
-                          "signature": {
-                            "type": "string"
-                          },
-                          "userHandle": {
-                            "type": "string"
-                          }
-                        },
-                        "required": ["clientDataJSON", "authenticatorData", "signature"]
-                      },
-                      "authenticatorAttachment": {
-                        "type": "string",
-                        "enum": ["cross-platform", "platform"]
-                      },
-                      "clientExtensionResults": {},
-                      "type": {
-                        "type": "string",
-                        "enum": ["public-key"]
-                      }
-                    },
-                    "required": ["id", "rawId", "response", "type"]
-                  },
-                  "totpCode": {
-                    "type": "string",
-                    "pattern": "^\\d{6}$"
-                  },
                   "mfaRequired": {
                     "type": "boolean"
                   }

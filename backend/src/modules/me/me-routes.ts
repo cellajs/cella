@@ -1,12 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { crossTenantGuard, publicGuard, stepUpGuard, stepUpOrFactorProofGuard, userGuard } from '#/middlewares/guard';
-import {
-  bulkPointsLimiter,
-  mfaToggleLimiter,
-  singlePointsLimiter,
-  tokenLimiter,
-} from '#/middlewares/rate-limiter/limiters';
+import { crossTenantGuard, publicGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
+import { bulkPointsLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   connectedAppSchema,
   meAuthDataSchema,
@@ -222,12 +217,12 @@ const meRoutes = {
     operationId: 'toggleMfa',
     method: 'put',
     path: '/mfa',
-    xGuard: [userGuard, stepUpOrFactorProofGuard],
-    xRateLimiter: [singlePointsLimiter, mfaToggleLimiter],
+    xGuard: [userGuard, stepUpGuard],
+    xRateLimiter: [singlePointsLimiter],
     tags: ['me', 'cella'],
     summary: 'Toggle MFA',
     description:
-      'Enable or disable multifactor authentication for the current user. Needs a passkey or TOTP proof on the request, or a session stepped up with one.',
+      'Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.',
     request: {
       body: { content: { 'application/json': { schema: toggleMfaBodySchema } } },
     },

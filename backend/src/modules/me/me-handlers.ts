@@ -1,18 +1,13 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import { mfaFactorRules } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { verifyPasskeyAssertion } from '#/modules/auth/passkeys/helpers/passkey';
-import type { AuthStrategy } from '#/modules/auth/sessions-db';
-import { requireStepUp } from '#/modules/auth/step-up/helpers/step-up';
-import { verifyTotp } from '#/modules/auth/totps/helpers/totps';
+import { readStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { getUserSessions } from '#/modules/me/helpers/get-user-info';
 import { findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 import { meRoutes } from '#/modules/me/me-routes';
@@ -40,30 +35,11 @@ app.openapi(meRoutes.getMe, async (ctx) => {
 app.openapi(meRoutes.toggleMfa, async (ctx) => {
   const { user, session } = ctx.var;
 
-  const { mfaRequired, passkeyData, totpCode } = ctx.req.valid('json');
+  const { mfaRequired } = ctx.req.valid('json');
 
-  // Refused before a proof is spent; the transaction below checks again under the lock, and that check decides.
-  if (mfaRequired) await mfaFactorRules.assertCanEnable(baseDb, user.id);
-
-  // A session alone never changes how the account is protected: a second factor on the request, checked here behind
-  // the failure limiter, or a session stepped up with one (the guard let nothing else through).
-  const onRequest: Extract<AuthStrategy, 'passkey' | 'totp'> | null = passkeyData
-    ? 'passkey'
-    : totpCode
-      ? 'totp'
-      : null;
-  const strategy = onRequest ?? (await requireStepUp(session)).factor;
-  if (mfaRequired && !strategy) {
-    throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: 'second_factor_required' } });
-  }
-
-  if (passkeyData) {
-    const assertion = passkeyData as AuthenticationResponseJSON;
-    // A step-up challenge only, as for POST /auth/step-up: a sign-in or MFA challenge never proves presence here.
-    await verifyPasskeyAssertion(ctx, { assertion, purpose: 'step-up', userId: user.id });
-  }
-
-  if (totpCode) await verifyTotp(ctx, { user, code: totpCode });
+  // The guard refused a session that has not stepped up; the factor that proved this one signs the mfa session minted
+  // below in. Turning MFA on needs both factors enrolled, so a passing step-up always names one.
+  const { factor } = await readStepUp(session);
 
   // The flag and the sessions it ends change together, after a factor delete that got the lock first.
   const updatedUser = await mfaFactorRules.locked(user.id, async (tx) => {
@@ -80,11 +56,11 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
 
   invalidateCache.user(user.id);
 
-  if (updatedUser.mfaRequired && strategy) {
+  if (updatedUser.mfaRequired && factor) {
     // Clear session cookie to enforce fresh login
     deleteAuthCookie(ctx, 'session');
 
-    await setUserSession(ctx, user, strategy, 'mfa');
+    await setUserSession(ctx, user, factor, 'mfa');
   }
 
   sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');

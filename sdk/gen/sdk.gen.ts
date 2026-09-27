@@ -2004,13 +2004,11 @@ export const updateMe = <ThrowOnError extends boolean = true>(
 /**
  * Toggle MFA
  *
- * Enable or disable multifactor authentication for the current user. Needs a passkey or TOTP proof on the request, or a session stepped up with one.
+ * Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.
  *
  * **PUT /me/mfa** ·· [toggleMfa](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/PUT/me/mfa) ·· [toggleMfa](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/me/mfa) ·· _me_cella_
  *
  * @param {toggleMfaData} options
- * @param {object} options.body.passkeyData - `object`
- * @param {string=} options.body.totpCode - `string` (optional)
  * @param {boolean=} options.body.mfaRequired - `boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */

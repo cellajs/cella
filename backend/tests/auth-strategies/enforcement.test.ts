@@ -137,10 +137,7 @@ describe('totp strategy disabled', async () => {
   it('must not turn on MFA while TOTP is off', async () => {
     const user = await createTotpUser('totp-off-mfa@example.com');
     const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
-    const { response: res, error } = await call(toggleMfa, {
-      body: { mfaRequired: true, totpCode: '123456' },
-      headers,
-    });
+    const { response: res, error } = await call(toggleMfa, { body: { mfaRequired: true }, headers });
     expect(res.status).toBe(400);
     expect((error as ErrorResponse).type).toBe('forbidden_strategy');
   });

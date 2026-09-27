@@ -1,17 +1,14 @@
 import { decodeBase32 } from '@oslojs/encoding';
 import { and, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { createTotp, generateTotpKey, signInWithTotp, toggleMfa } from 'sdk';
+import { createTotp, generateTotpKey, signInWithTotp, stepUp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
-import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import {
@@ -25,6 +22,7 @@ import {
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
+import { insertSession, sessionRow } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
@@ -96,22 +94,17 @@ describe('TOTP replay', async () => {
     expect(await sessionsOf(user.id)).toHaveLength(2);
   });
 
-  it('must not turn MFA off via a TOTP code already used to sign in', async () => {
-    const user = await createTotpUser(`replay-toggle-${nanoid(8)}@security-test.com`);
-    await db.insert(passkeysTable).values(mockPasskeyRecord(user.id));
+  it('must not step up a session via a TOTP code already used to sign in', async () => {
+    const user = await createTotpUser(`replay-step-up-${nanoid(8)}@security-test.com`);
     const code = codeAt();
 
     expect((await answerChallenge(user, code)).response.status).toBe(204);
 
-    const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
-    const { error, response } = await call(toggleMfa, { body: { mfaRequired: false, totpCode: code }, headers });
+    const session = await insertSession(user);
+    const { error, response } = await call(stepUp, { body: { totpCode: code }, headers: session.headers });
     expect(response.status).toBe(401);
     expect((error as ErrorResponse).type).toBe('totp_code_used');
-    const [row] = await db
-      .select({ mfaRequired: usersTable.mfaRequired })
-      .from(usersTable)
-      .where(eq(usersTable.id, user.id));
-    expect(row.mfaRequired).toBe(true);
+    expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
   });
 
   it('must not answer a second-factor challenge via the code that confirmed TOTP setup', async () => {

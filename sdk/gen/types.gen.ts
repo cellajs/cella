@@ -2764,20 +2764,6 @@ export type UpdateMeResponse = UpdateMeResponses[keyof UpdateMeResponses];
 
 export type ToggleMfaData = {
   body?: {
-    passkeyData?: {
-      id: string;
-      rawId: string;
-      response: {
-        clientDataJSON: string;
-        authenticatorData: string;
-        signature: string;
-        userHandle?: string;
-      };
-      authenticatorAttachment?: 'cross-platform' | 'platform';
-      clientExtensionResults?: unknown;
-      type: 'public-key';
-    };
-    totpCode?: string;
     mfaRequired: boolean;
   };
   path?: never;

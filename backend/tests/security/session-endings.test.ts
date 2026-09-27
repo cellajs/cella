@@ -1,4 +1,3 @@
-import { decodeBase32 } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
 import {
   deleteMe,
@@ -17,7 +16,6 @@ import { baseDb as db } from '#/db/db';
 import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
 import { createSession, type SignInContext } from '#/modules/auth/general/helpers/session';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
-import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { usersTable } from '#/modules/user/user-db';
 import {
   authCookie,
@@ -39,6 +37,7 @@ import {
   expectStillOpen,
   impersonationSetBy,
   insertSession,
+  insertSteppedUpSession,
   openStream,
   openUnreadStream,
   sessionRow,
@@ -47,11 +46,6 @@ import {
 } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
-
-/** The Base32 secret `createTotpUser` stores. */
-const TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
-const currentCode = () =>
-  generateTOTP(decodeBase32(TOTP_SECRET), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 
 beforeAll(() => mockFetchRequest());
 
@@ -137,7 +131,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
     await db.insert(passkeysTable).values(mockPasskeyRecord(user.id));
 
-    const current = await insertSession(user);
+    const current = await insertSteppedUpSession(user);
     const otherRegular = await insertSession(user);
     // Proven with a second factor while MFA was on before: enabling MFA again leaves it standing.
     const earlierMfa = await insertSession(user, { type: 'mfa' });
@@ -146,10 +140,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     const otherStream = await openStream(user.id, otherRegular);
     const mfaStream = await openStream(user.id, earlierMfa);
 
-    const { response } = await call(toggleMfa, {
-      body: { mfaRequired: true, totpCode: currentCode() },
-      headers: current.headers,
-    });
+    const { response } = await call(toggleMfa, { body: { mfaRequired: true }, headers: current.headers });
     expect(response.status).toBe(200);
 
     // This browser carries on with the mfa session the response set, so its stream closes with a code the client

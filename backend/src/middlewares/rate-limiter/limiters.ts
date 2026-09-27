@@ -38,13 +38,10 @@ export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerificati
   description: 'Blocks IP for 30 min after 5 failed TOTP attempts',
 });
 
-/** Keyed per account: a session guessing authenticator codes on the MFA toggle is blocked whatever IP it uses. */
-export const mfaToggleLimiter = rateLimiter('failseries', 'mfaToggle', ['userId'], {
-  limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30 },
-  description: 'Blocks the account for 30 min after 5 failed second-factor checks on the MFA toggle',
-});
-
-/** Keyed per account like the MFA toggle's; a proof that verifies clears the series. */
+/**
+ * Keyed per account: a session guessing second factors is blocked whatever IP it uses; a proof that verifies clears
+ * the series.
+ */
 export const stepUpLimiter = rateLimiter('failseries', 'stepUp', ['userId'], {
   limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30, successStatusCodes: [200, 201, 204] },
   description: 'Blocks the account for 30 min after 5 failed second-factor checks on step-up',
