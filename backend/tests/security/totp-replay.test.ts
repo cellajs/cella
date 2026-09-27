@@ -1,9 +1,6 @@
-import { decodeBase32 } from '@oslojs/encoding';
 import { nanoid } from 'nanoid';
 import { createTotp, generateTotpKey, signInWithTotp, stepUp } from 'sdk';
-import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { defaultHeaders } from '../fixtures';
 import {
   authCookie,
@@ -16,7 +13,9 @@ import {
   sessionRow,
   sessionsOf,
   setCookiePair,
+  testTotpSecret,
   tokenRowOf,
+  totpCode,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -24,19 +23,6 @@ import { clearSecurityTestData } from './helpers';
 import { insertSession } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
-
-const { intervalInSeconds, digits } = appConfig.totp;
-
-/** The Base32 secret `createTotpUser` stores. */
-const totpSecret = 'JBSWY3DPEHPK3PXP';
-/** The code of the step `stepsAhead` steps from now: 0 is the current code, 1 the next one (inside the grace window). */
-const codeAt = (stepsAhead = 0, secret = totpSecret) =>
-  generateTOTP(
-    decodeBase32(secret),
-    intervalInSeconds,
-    digits,
-    Math.floor(Date.now() / 1000) + stepsAhead * intervalInSeconds,
-  );
 
 afterEach(async () => await clearSecurityTestData());
 
@@ -59,7 +45,7 @@ describe('TOTP replay', async () => {
 
   it('must not complete a second-factor challenge via a replayed TOTP code', async () => {
     const user = await createTotpUser(`replay-${nanoid(8)}@security-test.com`);
-    const code = codeAt();
+    const code = totpCode();
 
     const first = await answerChallenge(user, code);
     expect(first.response.status).toBe(204);
@@ -73,7 +59,7 @@ describe('TOTP replay', async () => {
 
     // Positive control: the next code, a later step, answers the same challenge.
     const next = await call(signInWithTotp, {
-      body: { code: codeAt(1) },
+      body: { code: totpCode(testTotpSecret, 1) },
       headers: { ...defaultHeaders, Cookie: authCookie('confirm-mfa', replay.mfaToken) },
     });
     expect(next.response.status).toBe(204);
@@ -82,7 +68,7 @@ describe('TOTP replay', async () => {
 
   it('must not step up a session via a TOTP code already used to sign in', async () => {
     const user = await createTotpUser(`replay-step-up-${nanoid(8)}@security-test.com`);
-    const code = codeAt();
+    const code = totpCode();
 
     expect((await answerChallenge(user, code)).response.status).toBe(204);
 
@@ -101,7 +87,7 @@ describe('TOTP replay', async () => {
     const { manualKey } = generated.data as { manualKey: string };
     const challengeCookie = setCookiePair(generated.response, 'totp-challenge');
 
-    const code = codeAt(0, manualKey);
+    const code = totpCode(manualKey);
     const created = await call(createTotp, {
       body: { code },
       headers: { ...defaultHeaders, Cookie: [sessionCookie, challengeCookie].join('; ') },
@@ -113,12 +99,12 @@ describe('TOTP replay', async () => {
     expect(cookieChange(replay.response, 'session')).toBeUndefined();
 
     // Positive control: the authenticator's next code signs in.
-    expect((await answerChallenge(user, codeAt(1, manualKey))).response.status).toBe(204);
+    expect((await answerChallenge(user, totpCode(manualKey, 1))).response.status).toBe(204);
   });
 
   it('must not open two sessions via one TOTP code sent twice at once', async () => {
     const user = await createTotpUser(`replay-race-${nanoid(8)}@security-test.com`);
-    const code = codeAt();
+    const code = totpCode();
 
     const results = await Promise.all([answerChallenge(user, code), answerChallenge(user, code)]);
     const statuses = results.map(({ response }) => response.status).sort();

@@ -3,8 +3,9 @@ import { request } from 'node:http';
 import { connect } from 'node:net';
 import type { ServerType } from '@hono/node-server';
 import { appConfig } from 'shared';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { modeSecret } from '#/env';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { env, modeSecret } from '#/env';
+import { overrideConfig } from '../fixtures';
 import { expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -207,13 +208,9 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
   });
 
   it('must not accept the CDC socket via an empty secret in a process that holds none', async () => {
-    vi.stubEnv('CDC_SECRET', '');
-    try {
-      expect(await upgradeStatus(internalPort, '/internal/cdc', { 'x-cdc-secret': '' })).toBe(401);
-      expect(await upgradeStatus(internalPort, '/internal/cdc', {})).toBe(401);
-    } finally {
-      vi.unstubAllEnvs();
-    }
+    onTestFinished(overrideConfig(env, { CDC_SECRET: '' }));
+    expect(await upgradeStatus(internalPort, '/internal/cdc', { 'x-cdc-secret': '' })).toBe(401);
+    expect(await upgradeStatus(internalPort, '/internal/cdc', {})).toBe(401);
   });
 
   it('must not accept the CDC socket on the internal listener without its own secret', async () => {

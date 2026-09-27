@@ -1,12 +1,9 @@
-import { decodeBase32 } from '@oslojs/encoding';
 import { and, eq } from 'drizzle-orm';
 import { getMe, getStepUp, getStepUpPasskeyChallenge, invokeToken, sendStepUpLink, stepUp } from 'sdk';
-import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens-db';
-import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { defaultHeaders } from '../fixtures';
 import {
   authCookie,
@@ -18,6 +15,8 @@ import {
   createTotpUser,
   expectRefusal,
   sessionRow,
+  totpCode,
+  wrongTotpCode,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -34,12 +33,6 @@ import {
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'magic'] });
 
 afterEach(async () => await clearSecurityTestData());
-
-/** The Base32 secret `createTotpUser` stores. */
-const TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
-const currentCode = () =>
-  generateTOTP(decodeBase32(TOTP_SECRET), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
-const wrongCode = () => currentCode().replace(/^./, (digit) => String((Number(digit) + 5) % 10));
 
 /**
  * A step-up proves the user is present on one session again: with a factor they hold, or, holding none, through an
@@ -87,11 +80,11 @@ describe('step-up', async () => {
     const session = await insertStaleSession(user);
     expect(await stateOf(session)).toEqual({ steppedUp: false, methods: ['totp'] });
 
-    const { error, response } = await call(stepUp, { body: { totpCode: wrongCode() }, headers: session.headers });
+    const { error, response } = await call(stepUp, { body: { totpCode: wrongTotpCode() }, headers: session.headers });
     await expectRefusal({ response, error }, 401, 'invalid_token');
     expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
 
-    expect((await call(stepUp, { body: { totpCode: currentCode() }, headers: session.headers })).response.status).toBe(
+    expect((await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers })).response.status).toBe(
       204,
     );
     expect(await sessionRow(session.id)).toMatchObject({ steppedUpVia: 'totp' });
@@ -103,7 +96,7 @@ describe('step-up', async () => {
     const target = await createTotpUser('step-up-target@security-test.com');
     const impersonation = await insertImpersonation(await insertSession(admin), target);
 
-    const viaFactor = await call(stepUp, { body: { totpCode: currentCode() }, headers: impersonation.headers });
+    const viaFactor = await call(stepUp, { body: { totpCode: totpCode() }, headers: impersonation.headers });
     await expectRefusal(viaFactor, 403, 'impersonation_forbidden');
     const viaLink = await call(sendStepUpLink, { body: {}, headers: impersonation.headers });
     expect(viaLink.response.status).toBe(403);

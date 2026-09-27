@@ -1,20 +1,16 @@
 import { and, eq, isNull } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { evictExcessSessions } from '#/modules/auth/general/helpers/session';
 import { type SessionTypes, sessionsTable } from '#/modules/auth/sessions-db';
+import { overrideConfig } from '../fixtures';
 import { createTestUser, insertTestSession, sessionRow } from '../helpers';
 import { clearDatabase } from '../test-utils';
 
-// A small cap keeps the test fast and the arithmetic obvious. Restore the default afterwards so the
-// override does not leak into other test files sharing the appConfig singleton.
+// A small cap keeps the test fast and the arithmetic obvious.
 const TEST_CAP = 3;
-const originalCap = appConfig.maxSessionsPerUser;
-(appConfig as unknown as { maxSessionsPerUser: number }).maxSessionsPerUser = TEST_CAP;
-afterAll(() => {
-  (appConfig as unknown as { maxSessionsPerUser: number }).maxSessionsPerUser = originalCap;
-});
+overrideConfig(appConfig, { maxSessionsPerUser: TEST_CAP });
 
 afterEach(async () => await clearDatabase());
 

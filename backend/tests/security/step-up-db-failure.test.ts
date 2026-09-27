@@ -1,10 +1,7 @@
-import { decodeBase32 } from '@oslojs/encoding';
 import { nanoid } from 'nanoid';
 import { stepUp } from 'sdk';
-import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
-import { createTotpUser, expectRefusal, sessionRow } from '../helpers';
+import { createTotpUser, expectRefusal, sessionRow, totpCode } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
 import { insertStaleSession } from './session-helpers';
@@ -23,11 +20,6 @@ vi.mock('#/modules/auth/totps/helpers/totps', async (importOriginal) => {
     },
   };
 });
-
-/** The Base32 secret `createTotpUser` stores. */
-const TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
-const currentCode = () =>
-  generateTOTP(decodeBase32(TOTP_SECRET), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 
 /** What the pool throws when it hands out no connection in time, and a deadlock as the driver reports it. */
 const failures = [
@@ -52,12 +44,12 @@ describe('a database failure while a second factor is checked', async () => {
     const session = await insertStaleSession(user);
 
     nextCheck.failure = error();
-    const failed = await call(stepUp, { body: { totpCode: currentCode() }, headers: session.headers });
+    const failed = await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers });
     await expectRefusal(failed, status, 'server_error');
     expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
 
     // Positive control: the same proof steps the session up once the database answers.
-    const retried = await call(stepUp, { body: { totpCode: currentCode() }, headers: session.headers });
+    const retried = await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers });
     expect(retried.response.status).toBe(204);
   });
 });

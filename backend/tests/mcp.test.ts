@@ -2,15 +2,13 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { getMcpProtectedResourceMetadata, handleMcp } from 'sdk';
 import { appConfig, hierarchy } from 'shared';
-import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
-import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db, getAdminDb } from '#/db/db';
+import { getAdminDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { defaultHeaders } from './fixtures';
 import { createTestOrganization } from './helpers';
-import { seedEntityHierarchy } from './hierarchy-helpers';
+import { homeColumns, seedAttachmentHome } from './hierarchy-helpers';
 import {
   authorizationCodeToken,
   bearerHeaders,
@@ -65,32 +63,11 @@ describe('MCP on the substrate (Phase E)', async () => {
   afterAll(async () => await as.close());
   afterEach(async () => await clearSecurityTestData());
 
-  /**
-   * The create body's home: the deepest seeded ancestor id below the organization; empty in the
-   * template's org-homed default. A write token needs no `<home>:read`: placement only looks the home up.
-   */
-  async function seedAttachmentHome(
-    org: { id: string; tenantId: string },
-    createdBy: string,
-  ): Promise<Record<string, string>> {
-    const plan = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: org.id,
-      makeChannelId: () => generateId(),
-    });
-    await seedEntityHierarchy(db, plan, { tenantId: org.tenantId, createdBy, slugPrefix: `mcp-${nanoid(6)}` });
-    const deepest = hierarchy
-      .getOrderedAncestors('attachment')
-      .find((type) => type !== 'organization' && plan.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
-    if (!deepest) return {};
-    const key = appConfig.entityIdColumnKeys[deepest];
-    return { [key]: plan.channelIdColumns[key] };
-  }
-
+  /** An organization with its admin; `home` is where attachments live, which a write token needs no read scope on. */
   async function orgWithAdmin() {
     const org = await createTestOrganization();
     const user = await createOrgUser(call, org.tenantId, org.id, `admin-${nanoid(8)}`, adminRole);
-    const home = await seedAttachmentHome(org, user.id);
+    const home = homeColumns(await seedAttachmentHome(org, user.id));
     return { org, user, home, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 

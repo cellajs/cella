@@ -1,8 +1,5 @@
-import { decodeBase32 } from '@oslojs/encoding';
 import { getMe, signInWithTotp, signOut } from 'sdk';
-import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { defaultHeaders } from '../fixtures';
 import {
   authCookie,
@@ -12,17 +9,13 @@ import {
   expectRefusal,
   sessionsOf,
   tokenRowOf,
+  totpCode,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
-
-/** The Base32 secret `createTotpUser` stores. */
-const totpSecret = 'JBSWY3DPEHPK3PXP';
-const currentCode = () =>
-  generateTOTP(decodeBase32(totpSecret), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 
 afterEach(async () => await clearSecurityTestData());
 
@@ -52,7 +45,7 @@ describe('Sign-out with a pending MFA challenge', async () => {
     // The challenge is spent: its row is gone, and even the right code no longer completes it.
     expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeUndefined();
     const completed = await call(signInWithTotp, {
-      body: { code: currentCode() },
+      body: { code: totpCode() },
       headers: { ...defaultHeaders, Cookie: mfaCookie },
     });
     await expectRefusal(completed, 401, 'confirm-mfa_not_found');

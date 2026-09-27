@@ -5,7 +5,7 @@ import { getAdminDb } from '#/db/db';
 import { env } from '#/env';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
-import { defaultHeaders } from '../fixtures';
+import { defaultHeaders, overrideConfig } from '../fixtures';
 import { authCookie, cookieChange, createSystemAdminUser, createTestUser, expectRefusal, sessionRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
@@ -78,9 +78,7 @@ describe('impersonation lives on its admin', async () => {
 
   it('must not act as the impersonated user via an address the system role may not be used from', async () => {
     const { target, impersonation } = await impersonating('remote');
-    const allowlistBefore = env.SYSTEM_ADMIN_IP_ALLOWLIST;
-    Object.assign(env, { SYSTEM_ADMIN_IP_ALLOWLIST: '10.0.0.1' });
-    onTestFinished(() => void Object.assign(env, { SYSTEM_ADMIN_IP_ALLOWLIST: allowlistBefore }));
+    onTestFinished(overrideConfig(env, { SYSTEM_ADMIN_IP_ALLOWLIST: '10.0.0.1' }));
     const from = (ip: string) => ({ ...impersonation, headers: { ...impersonation.headers, 'x-forwarded-for': ip } });
 
     const refused = await meAs(from('10.0.0.2'));

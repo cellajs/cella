@@ -10,7 +10,7 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
 import { memberInviteWithTokenEmail, systemInviteEmail } from '../../emails';
-import { defaultHeaders } from '../fixtures';
+import { defaultHeaders, overrideConfig } from '../fixtures';
 import {
   createOrganizationAdminUser,
   createTestOrganization,
@@ -109,15 +109,11 @@ describe('Resend an invitation', async () => {
     const { token, rawToken } = await expiredInvitation();
 
     // Outside test mode the refusal is the redirect a browser opening the link sees.
-    const { mode } = appConfig;
-    const setMode = (value: string) => {
-      Object.assign(appConfig, { mode: value });
-    };
-    setMode('development');
-    onTestFinished(() => setMode(mode));
+    const restoreMode = overrideConfig(appConfig, { mode: 'development' });
+    onTestFinished(restoreMode);
 
     const opened = await invoke(rawToken);
-    setMode(mode);
+    restoreMode();
     expect(opened.response.status).toBe(302);
     const errorPage = new URL(opened.response.headers.get('location') ?? '');
     expect(`${errorPage.origin}${errorPage.pathname}`).toBe(`${appConfig.frontendUrl}/auth/error`);

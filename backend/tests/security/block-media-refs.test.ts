@@ -1,7 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { updateAttachment, updateOrganization } from 'sdk';
 import { appConfig } from 'shared';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateServerHLC } from '#/core/stx';
@@ -13,7 +13,7 @@ import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-d
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from '../fixtures';
 import { expectRefusal } from '../helpers';
-import { cleanupEntityHierarchy, seedEntityHierarchy } from '../hierarchy-helpers';
+import { cleanupEntityHierarchy, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
@@ -105,16 +105,7 @@ describe('Block media references', async () => {
   beforeAll(async () => {
     owner = await createTestTenant(call, 'media-owner');
     victim = await createTestTenant(call, 'media-victim');
-    plan = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: owner.organization.id,
-      makeChannelId: () => generateId(),
-    });
-    await seedEntityHierarchy(adminDb, plan, {
-      tenantId: owner.tenantId,
-      createdBy: owner.user.id,
-      slugPrefix: 'block-media-refs',
-    });
+    plan = await seedAttachmentHome({ id: owner.organization.id, tenantId: owner.tenantId }, owner.user.id);
     const row = buildInsertableProduct(
       'attachment',
       {

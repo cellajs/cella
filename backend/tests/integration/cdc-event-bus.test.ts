@@ -1,5 +1,5 @@
 import { eq, sql } from 'drizzle-orm';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
@@ -13,7 +13,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { insertUsers } from '#/modules/user/helpers/insert-users';
 import { mockUser } from '#/modules/user/user-mocks';
-import { cleanupEntityHierarchy, seedEntityHierarchy } from '../hierarchy-helpers';
+import { cleanupEntityHierarchy, seedAttachmentHome } from '../hierarchy-helpers';
 import { clearDatabase, startInProcessCdcWorker, waitFor, waitForEvent } from './test-utils';
 
 /** The full DB change to CDC worker to WebSocket path, with the worker pipeline in-process so `pnpm test` needs no separate worker. */
@@ -43,12 +43,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     await db.insert(emailsTable).values({ email: testUser.email, userId: testUser.id, verified: true });
 
     // Strict sub-organization ancestor columns carry foreign keys, so their rows must exist.
-    plan = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: testOrg.id,
-      makeChannelId: () => crypto.randomUUID(),
-    });
-    await seedEntityHierarchy(db, plan, { tenantId: testOrg.tenantId, createdBy: testUser.id, slugPrefix: 'cdc-seq' });
+    plan = await seedAttachmentHome(testOrg, testUser.id);
   });
 
   afterAll(async () => {

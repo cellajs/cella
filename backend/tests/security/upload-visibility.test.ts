@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { defaultHeaders } from '../fixtures';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { env } from '#/env';
+import { defaultHeaders, overrideConfig } from '../fixtures';
 import { createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -48,13 +49,11 @@ describe('Upload visibility', async () => {
 
   beforeAll(async () => {
     // Tokens carry signed store params only when Transloadit is configured.
-    vi.stubEnv('TRANSLOADIT_KEY', 'test-transloadit-key');
-    vi.stubEnv('TRANSLOADIT_SECRET', 'test-transloadit-secret');
+    overrideConfig(env, { TRANSLOADIT_KEY: 'test-transloadit-key', TRANSLOADIT_SECRET: 'test-transloadit-secret' });
     tenant = await createTestTenant(call, 'upload-visibility');
   });
 
   afterAll(async () => {
-    vi.unstubAllEnvs();
     await clearSecurityTestData();
   });
 

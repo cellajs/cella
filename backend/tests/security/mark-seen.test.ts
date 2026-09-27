@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import { markSeen } from 'sdk';
 import { getEntityPolicies, getPolicyPermissions, hierarchy, policyMatrix } from 'shared';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { getAdminDb } from '#/db/db';
@@ -11,7 +11,7 @@ import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { seenByTable } from '#/modules/seen/seen-by-db';
 import { defaultHeaders } from '../fixtures';
 import { createTestOrganization } from '../helpers';
-import { cleanupEntityHierarchy, seedEntityHierarchy } from '../hierarchy-helpers';
+import { cleanupEntityHierarchy, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -76,18 +76,9 @@ describe('markSeen and rows the caller cannot read', async () => {
 
   beforeAll(async () => {
     organization = await createTestOrganization();
-    plan = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: organization.id,
-      makeChannelId: () => generateId(),
-    });
     admin = await createOrgUser(call, organization.tenantId, organization.id, 'seen-admin', adminRole);
     member = await createOrgUser(call, organization.tenantId, organization.id, 'seen-member', memberRole);
-    await seedEntityHierarchy(adminDb, plan, {
-      tenantId: organization.tenantId,
-      createdBy: admin.id,
-      slugPrefix: 'mark-seen',
-    });
+    plan = await seedAttachmentHome(organization, admin.id);
   });
 
   afterAll(async () => {

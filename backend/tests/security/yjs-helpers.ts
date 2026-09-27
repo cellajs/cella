@@ -1,10 +1,9 @@
 import { eq } from 'drizzle-orm';
-import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { getAdminDb } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { cleanupEntityHierarchy, seedEntityHierarchy } from '../hierarchy-helpers';
+import { cleanupEntityHierarchy, seedAttachmentHome } from '../hierarchy-helpers';
 
 /** A BlockNote document of one paragraph, as the relay materializes it. */
 export const paragraph = (text: string) =>
@@ -24,16 +23,7 @@ export async function seedAttachment(opts: {
 }) {
   const adminDb = getAdminDb('yjs security test');
   const id = generateId();
-  const plan = buildTestEntityHierarchyPlan({
-    entityType: 'attachment',
-    organizationId: opts.organizationId,
-    makeChannelId: () => generateId(),
-  });
-  await seedEntityHierarchy(adminDb, plan, {
-    tenantId: opts.tenantId,
-    createdBy: opts.createdBy,
-    slugPrefix: `yjs-${id.slice(0, 8)}`,
-  });
+  const plan = await seedAttachmentHome({ id: opts.organizationId, tenantId: opts.tenantId }, opts.createdBy);
   const row = buildInsertableProduct(
     'attachment',
     {

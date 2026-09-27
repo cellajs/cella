@@ -12,6 +12,7 @@ import { sendPendingInstantEmails } from '#/modules/notification/operations/send
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { defaultHeaders } from '../fixtures';
 import { mailsTo } from '../helpers';
+import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
@@ -79,16 +80,10 @@ describe('Notification access', async () => {
     leaver = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'notification-leaver', memberRole);
     stayer = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'notification-stayer', memberRole);
 
+    const home = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
     const { response } = await call(createAttachments, {
       path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-      body: Object.values(attachmentIds).map((id) => ({
-        id,
-        filename: 'notification-access.pdf',
-        contentType: 'application/pdf',
-        size: '1024',
-        keys: { original: `${tenant.organization.id}/${tenant.user.id}/${id}.pdf` },
-        stx: { mutationId: id, sourceId: 'notification-access', fieldTimestamps: {} },
-      })),
+      body: Object.values(attachmentIds).map((id) => attachmentBody(id, home)),
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
     expect(response.status).toBe(201);

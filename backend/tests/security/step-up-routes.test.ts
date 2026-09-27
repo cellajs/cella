@@ -1,4 +1,4 @@
-import { decodeBase32, encodeBase32UpperCase } from '@oslojs/encoding';
+import { encodeBase32UpperCase } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
 import {
   createApiKey,
@@ -13,12 +13,10 @@ import {
   stepUp,
   toggleMfa,
 } from 'sdk';
-import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { type AuthStrategy, sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
-import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
@@ -32,6 +30,7 @@ import {
   createTotpUser,
   expectRefusal,
   insertTestSession,
+  totpCode,
 } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient, type TestResult } from '../test-client';
@@ -49,11 +48,6 @@ import {
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'oauth', 'magic'], enabledOAuthProviders: ['github'] });
 
 afterEach(async () => await clearSecurityTestData());
-
-/** The Base32 secret `createTotpUser` stores. */
-const TOTP_SECRET = 'JBSWY3DPEHPK3PXP';
-const codeFor = (secret: string) =>
-  generateTOTP(decodeBase32(secret), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 
 const expectStepUpRequired = (result: TestResult) => expectRefusal(result, 403, 'step_up_required');
 
@@ -73,9 +67,9 @@ describe('account-security routes need a step-up', async () => {
   };
 
   const stepUpWithTotp = async (session: TestSession) =>
-    expect(
-      (await call(stepUp, { body: { totpCode: codeFor(TOTP_SECRET) }, headers: session.headers })).response.status,
-    ).toBe(204);
+    expect((await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers })).response.status).toBe(
+      204,
+    );
 
   it('must not add a passkey via a stale session', async () => {
     const user = await totpHolder('add-passkey');
@@ -122,13 +116,13 @@ describe('account-security routes need a step-up', async () => {
     const totpsOf = () => db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
 
     await expectStepUpRequired(await call(generateTotpKey, { headers: session.headers }));
-    await expectStepUpRequired(await call(createTotp, { body: { code: codeFor(secret) }, headers: withChallenge }));
+    await expectStepUpRequired(await call(createTotp, { body: { code: totpCode(secret) }, headers: withChallenge }));
     expect(await totpsOf()).toHaveLength(0);
 
     const steppedUp = await stepUpByEmail(session);
     expect((await call(generateTotpKey, { headers: steppedUp.headers })).response.status).toBe(200);
     const created = await call(createTotp, {
-      body: { code: codeFor(secret) },
+      body: { code: totpCode(secret) },
       headers: { ...defaultHeaders, Cookie: `${steppedUp.cookie}; ${authCookie('totp-challenge', secret)}` },
     });
     expect(created.response.status).toBe(201);

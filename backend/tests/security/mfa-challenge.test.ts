@@ -1,8 +1,5 @@
-import { decodeBase32 } from '@oslojs/encoding';
 import { signInWithTotp } from 'sdk';
-import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { defaultHeaders } from '../fixtures';
 import {
   authCookie,
@@ -12,6 +9,8 @@ import {
   expectRefusal,
   sessionsOf,
   tokenRowOf,
+  totpCode,
+  wrongTotpCode,
 } from '../helpers';
 import { type PasskeyAssertion, softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
@@ -19,11 +18,6 @@ import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, passkeyChallenge, passkeySignIn } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
-
-/** The Base32 secret `createTotpUser` stores. */
-const totpSecret = 'JBSWY3DPEHPK3PXP';
-const currentCode = () =>
-  generateTOTP(decodeBase32(totpSecret), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 
 afterEach(async () => await clearSecurityTestData());
 
@@ -42,12 +36,12 @@ describe('Second-factor challenge', async () => {
     const mfaToken = await createMfaToken(user);
     const mfaCookie = authCookie('confirm-mfa', mfaToken);
 
-    const first = await totpSignIn(currentCode(), mfaCookie);
+    const first = await totpSignIn(totpCode(), mfaCookie);
     expect(first.response.status).toBe(204);
     expect(cookieChange(first.response, 'session')).toBe('set');
 
     // The cookie the browser held, sent again with a right code: the challenge is spent.
-    const replay = await totpSignIn(currentCode(), mfaCookie);
+    const replay = await totpSignIn(totpCode(), mfaCookie);
     await expectRefusal(replay, 401, 'confirm-mfa_not_found');
     expect(cookieChange(replay.response, 'session')).toBeUndefined();
     expect(await sessionsOf(user.id)).toHaveLength(1);
@@ -58,14 +52,13 @@ describe('Second-factor challenge', async () => {
     const user = await createTotpUser('owner@security-test.com');
     const mfaToken = await createMfaToken(user);
     const mfaCookie = authCookie('confirm-mfa', mfaToken);
-    const wrongCode = currentCode() === '000000' ? '111111' : '000000';
 
-    const failed = await totpSignIn(wrongCode, mfaCookie);
+    const failed = await totpSignIn(wrongTotpCode(), mfaCookie);
     await expectRefusal(failed, 401, 'invalid_token');
     expect(cookieChange(failed.response, 'session')).toBeUndefined();
     expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeDefined();
 
-    const completed = await totpSignIn(currentCode(), mfaCookie);
+    const completed = await totpSignIn(totpCode(), mfaCookie);
     expect(completed.response.status).toBe(204);
     expect(cookieChange(completed.response, 'session')).toBe('set');
     expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeUndefined();

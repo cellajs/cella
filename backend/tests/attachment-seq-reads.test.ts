@@ -1,13 +1,13 @@
 import { inArray } from 'drizzle-orm';
 import { getAttachments } from 'sdk';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { defaultHeaders } from './fixtures';
-import { cleanupEntityHierarchy, seedEntityHierarchy } from './hierarchy-helpers';
+import { cleanupEntityHierarchy, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
@@ -43,16 +43,7 @@ describe('Attachment seq reads', async () => {
   beforeAll(async () => {
     tenant = await createTestTenant(call, 'attachment-seq-reads');
 
-    plan = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: tenant.organization.id,
-      makeChannelId: () => generateId(),
-    });
-    await seedEntityHierarchy(db, plan, {
-      tenantId: tenant.tenantId,
-      createdBy: tenant.user.id,
-      slugPrefix: 'attachment-seq',
-    });
+    plan = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
 
     // Insert order is descending seq, so a createdAt sort would not match seq order.
     const makeRow = (id: string, seq: number, key: string, extra: Record<string, unknown> = {}) =>

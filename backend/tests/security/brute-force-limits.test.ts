@@ -1,12 +1,9 @@
-import { decodeBase32 } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { checkEmail, sendMagicLink, signInWithTotp, stepUp } from 'sdk';
-import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
-import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { magicLinkEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
 import {
@@ -17,6 +14,8 @@ import {
   createTotpUser,
   mailsTo,
   sessionRow,
+  totpCode,
+  wrongTotpCode,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
@@ -24,10 +23,6 @@ import { insertSession } from './session-helpers';
 
 // The suite mocks every limiter as a pass-through (tests/setup.ts); this file needs the real one.
 vi.unmock('#/middlewares/rate-limiter/core');
-const currentCode = () =>
-  generateTOTP(decodeBase32('JBSWY3DPEHPK3PXP'), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
-const wrongCode = () => currentCode().replace(/^./, (digit) => String((Number(digit) + 5) % 10));
-
 /** A fresh client IP per test: limiter rows outlive a run, and the IP-keyed budgets must start empty. */
 const randomIp = () => `198.51.${Math.floor(Math.random() * 256)}.${1 + Math.floor(Math.random() * 254)}`;
 const fromIp = (ip: string) => ({ ...defaultHeaders, 'x-forwarded-for': ip });
@@ -67,12 +62,12 @@ describe('brute-force budgets', async () => {
     const session = await insertSession(user);
 
     for (let attempt = 0; attempt < 5; attempt++) {
-      const { response } = await call(stepUp, { body: { totpCode: wrongCode() }, headers: session.headers });
+      const { response } = await call(stepUp, { body: { totpCode: wrongTotpCode() }, headers: session.headers });
       expect(response.status).toBe(401);
     }
 
     // Blocked now, even with the right code.
-    const { response } = await call(stepUp, { body: { totpCode: currentCode() }, headers: session.headers });
+    const { response } = await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers });
     expect(response.status).toBe(429);
     expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
   });
@@ -81,10 +76,10 @@ describe('brute-force budgets', async () => {
     const user = await createTotpUser(`step-up-limit-ok-${nanoid(8)}@security-test.com`);
     const session = await insertSession(user);
 
-    expect((await call(stepUp, { body: { totpCode: wrongCode() }, headers: session.headers })).response.status).toBe(
-      401,
-    );
-    const { response } = await call(stepUp, { body: { totpCode: currentCode() }, headers: session.headers });
+    expect(
+      (await call(stepUp, { body: { totpCode: wrongTotpCode() }, headers: session.headers })).response.status,
+    ).toBe(401);
+    const { response } = await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers });
     expect(response.status).toBe(204);
   });
 
@@ -143,15 +138,15 @@ describe('brute-force budgets', async () => {
     };
 
     // One wrong code for each of five accounts: every account's own budget stays far from its limit.
-    for (let account = 0; account < 5; account++) expect((await answerFrom(ip, wrongCode())).status).toBe(401);
+    for (let account = 0; account < 5; account++) expect((await answerFrom(ip, wrongTotpCode())).status).toBe(401);
 
     // The address is spent: refused even with the right code of yet another account.
-    const blocked = await answerFrom(ip, currentCode());
+    const blocked = await answerFrom(ip, totpCode());
     expect(blocked.status).toBe(429);
     expect(cookieChange(blocked, 'session')).toBeUndefined();
 
     // Another address is unaffected (positive control).
-    expect((await answerFrom(randomIp(), currentCode())).status).toBe(204);
+    expect((await answerFrom(randomIp(), totpCode())).status).toBe(204);
   });
 
   it("must not keep guessing one account's authenticator codes from many IPs via totp-verification", async () => {
@@ -161,7 +156,7 @@ describe('brute-force budgets', async () => {
     // One wrong code from each of five addresses: every IP budget stays far from its limit.
     for (let attempt = 0; attempt < 5; attempt++) {
       const { response } = await call(signInWithTotp, {
-        body: { code: wrongCode() },
+        body: { code: wrongTotpCode() },
         headers: { ...fromIp(randomIp()), Cookie: cookie },
       });
       expect(response.status).toBe(401);
@@ -169,7 +164,7 @@ describe('brute-force budgets', async () => {
 
     // The account's own budget is spent: refused even with the right code, from yet another address.
     const { response } = await call(signInWithTotp, {
-      body: { code: currentCode() },
+      body: { code: totpCode() },
       headers: { ...fromIp(randomIp()), Cookie: cookie },
     });
     expect(response.status).toBe(429);
@@ -184,13 +179,13 @@ describe('brute-force budgets', async () => {
 
     for (let attempt = 0; attempt < 4; attempt++) {
       const { response } = await call(signInWithTotp, {
-        body: { code: wrongCode() },
+        body: { code: wrongTotpCode() },
         headers: { ...fromIp(randomIp()), Cookie: cookie },
       });
       expect(response.status).toBe(401);
     }
     const { response } = await call(signInWithTotp, {
-      body: { code: currentCode() },
+      body: { code: totpCode() },
       headers: { ...fromIp(randomIp()), Cookie: cookie },
     });
     expect(response.status).toBe(204);
@@ -206,7 +201,7 @@ describe('brute-force budgets', async () => {
     const statuses = await Promise.all(
       Array.from({ length: 20 }, async () => {
         const { response } = await call(signInWithTotp, {
-          body: { code: wrongCode() },
+          body: { code: wrongTotpCode() },
           headers: { ...fromIp(randomIp()), Cookie: cookie },
         });
         return response.status;
@@ -218,7 +213,7 @@ describe('brute-force budgets', async () => {
     expect(lockoutMailsTo(user.email)).toHaveLength(1);
 
     const { response } = await call(signInWithTotp, {
-      body: { code: currentCode() },
+      body: { code: totpCode() },
       headers: { ...fromIp(randomIp()), Cookie: cookie },
     });
     expect(response.status).toBe(429);
@@ -231,8 +226,8 @@ describe('brute-force budgets', async () => {
     const attempt = async (code: string) =>
       (await call(signInWithTotp, { body: { code }, headers: { ...fromIp(randomIp()), Cookie: cookie } })).response;
 
-    for (let failure = 0; failure < 5; failure++) expect((await attempt(wrongCode())).status).toBe(401);
-    expect((await attempt(currentCode())).status).toBe(429);
+    for (let failure = 0; failure < 5; failure++) expect((await attempt(wrongTotpCode())).status).toBe(401);
+    expect((await attempt(totpCode())).status).toBe(429);
 
     // The lockout runs out in the database, which every process reads.
     await getAdminDb('rate limit test')
@@ -240,7 +235,7 @@ describe('brute-force budgets', async () => {
       .set({ expire: new Date(Date.now() - 1000) })
       .where(eq(rateLimitsTable.key, `totpAccount:userId:${user.id}`));
 
-    const response = await attempt(currentCode());
+    const response = await attempt(totpCode());
     expect(response.status).toBe(204);
     expect(cookieChange(response, 'session')).toBe('set');
     expect(lockoutMailsTo(user.email)).toHaveLength(1);

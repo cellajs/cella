@@ -5,16 +5,16 @@ import { appConfig, type ConfigMode } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { describe, expect, it, vi } from 'vitest';
 import { createPgConnection } from '#/db/create-connection';
+import { overrideConfig } from '../../tests/fixtures';
 
 /**
  * Runs one query binding a fresh value on a pool built with `debug` while the app runs in `mode`, as the API and both
  * workers build theirs, and reports whether stdout received the value.
  */
 async function printsBoundValue(mode: ConfigMode, debug: boolean): Promise<boolean> {
-  const runningMode = appConfig.mode;
-  appConfig.mode = mode;
+  const restoreMode = overrideConfig(appConfig, { mode });
   const db = createPgConnection(testDatabaseUrl, { max: 1, debug });
-  appConfig.mode = runningMode;
+  restoreMode();
 
   const value = `bound-${randomUUID()}`;
   const stdout = vi.spyOn(console, 'log').mockImplementation(() => {});

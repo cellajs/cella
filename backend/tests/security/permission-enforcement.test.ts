@@ -8,8 +8,7 @@ import {
   resendPendingInvitation,
   updateOrganization,
 } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
@@ -20,7 +19,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { defaultHeaders } from '../fixtures';
 import { createTestOrganization, expectRefusal } from '../helpers';
-import { seedEntityHierarchy } from '../hierarchy-helpers';
+import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -85,34 +84,12 @@ describe('Member escalation over HTTP', async () => {
     const org = await createTestOrganization();
     const admin = await createOrgUser(call, org.tenantId, org.id, `${label}-admin`, adminRole);
     const member = await createOrgUser(call, org.tenantId, org.id, `${label}-member`, memberRole);
-    const plan: TestEntityHierarchyPlan = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: org.id,
-      makeChannelId: () => generateId(),
-    });
-    await seedEntityHierarchy(db, plan, { tenantId: org.tenantId, createdBy: admin.id, slugPrefix: label });
-    // The create body carries the deepest seeded home id only; empty in cella's org-homed default.
-    const deepest = hierarchy
-      .getOrderedAncestors('attachment')
-      .find((type) => type !== 'organization' && plan.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
-    const placement = deepest
-      ? { [appConfig.entityIdColumnKeys[deepest]]: plan.channelIdColumns[appConfig.entityIdColumnKeys[deepest]] }
-      : {};
+    const plan = await seedAttachmentHome(org, admin.id);
     const attachmentOf = async (user: User) => {
       const id = generateId();
       const { response } = await call(createAttachments, {
         path: { tenantId: org.tenantId, organizationId: org.id },
-        body: [
-          {
-            id,
-            filename: 'escalation.pdf',
-            contentType: 'application/pdf',
-            size: '1024',
-            keys: { original: `${org.id}/${user.id}/${id}.pdf` },
-            ...placement,
-            stx: { mutationId: id, sourceId: 'permission-enforcement', fieldTimestamps: {} },
-          },
-        ] as never,
+        body: [attachmentBody(id, plan)],
         headers: headers(user),
       });
       expect(response.status).toBe(201);

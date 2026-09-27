@@ -1,6 +1,7 @@
 import type { z } from '@hono/zod-openapi';
+import { decodeBase32 } from '@oslojs/encoding';
 import { and, eq } from 'drizzle-orm';
-import type { EntityRole, TokenType } from 'shared';
+import { appConfig, type EntityRole, type TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { expect, vi } from 'vitest';
@@ -11,6 +12,7 @@ import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/identities-db';
 import { type AuthStrategy, type SessionTypes, sessionsTable } from '#/modules/auth/sessions-db';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens-db';
+import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -84,12 +86,26 @@ export async function createMfaToken(user: { id: string; email: string }) {
   return (await insertTestToken('confirm-mfa', user, { expiresInMs: 10 * 60 * 1000 })).raw;
 }
 
+/** The Base32 authenticator secret `createTotpUser` stores. */
+export const testTotpSecret = 'JBSWY3DPEHPK3PXP';
+
+/** The authenticator code for `secret` in the time step `stepsAhead` steps from now (0: the current code). */
+export const totpCode = (secret = testTotpSecret, stepsAhead = 0) => {
+  const { intervalInSeconds, digits } = appConfig.totp;
+  const now = Math.floor(Date.now() / 1000);
+  return generateTOTP(decodeBase32(secret), intervalInSeconds, digits, now + stepsAhead * intervalInSeconds);
+};
+
+/** The current code with its first digit changed. */
+export const wrongTotpCode = (secret = testTotpSecret) =>
+  totpCode(secret).replace(/^./, (digit) => String((Number(digit) + 5) % 10));
+
 export async function createTotpUser(email: string) {
   const user = await createTestUser(email);
   await verifyUserEmail(email);
   await db.insert(totpsTable).values({
     userId: user.id,
-    secret: encryptTotpSecret('JBSWY3DPEHPK3PXP'),
+    secret: encryptTotpSecret(testTotpSecret),
     createdAt: mockPastIsoDate(),
   });
   await enableMFAForUser(user.id);

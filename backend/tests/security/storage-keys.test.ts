@@ -1,14 +1,14 @@
 import { eq } from 'drizzle-orm';
 import { createAttachments, type GetPresignedUrlsResponse, getPresignedUrls, getUploadToken } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { appConfig } from 'shared';
+import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db, getAdminDb } from '#/db/db';
+import { getAdminDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { defaultHeaders } from '../fixtures';
 import { expectRefusal } from '../helpers';
-import { seedEntityHierarchy } from '../hierarchy-helpers';
+import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
@@ -29,36 +29,14 @@ describe('Attachment storage keys', async () => {
   let attacker: TestTenant;
   let attackerPlan: TestEntityHierarchyPlan;
 
-  /**
-   * A create body in the attacker's organization, placed at the attachment's home channel (none in cella). `claims`
-   * are storage fields the client may send although the server decides them.
-   */
+  /** A create body in the attacker's organization; `claims` are storage fields the client may send, the server decides. */
   const bodyFor = (
     id: string,
     keys: { original: string; preview?: string },
     claims: { bucketName?: string; publicBucket?: boolean } = {},
-  ) => {
-    const deepest = hierarchy
-      .getOrderedAncestors('attachment')
-      .find((type) => type !== 'organization' && attackerPlan.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
-    const placement = deepest
-      ? {
-          [appConfig.entityIdColumnKeys[deepest]]: attackerPlan.channelIdColumns[appConfig.entityIdColumnKeys[deepest]],
-        }
-      : {};
-    return {
-      id,
-      filename: 'file.pdf',
-      contentType: 'application/pdf',
-      size: '1024',
-      keys,
-      ...claims,
-      ...placement,
-      stx: { mutationId: id, sourceId: 'storage-keys', fieldTimestamps: {} },
-    };
-  };
+  ) => attachmentBody(id, attackerPlan, { keys, ...claims });
 
-  const create = (body: ReturnType<typeof bodyFor>) =>
+  const create = (body: Record<string, unknown>) =>
     call(createAttachments, {
       path: { tenantId: attacker.tenantId, organizationId: attacker.organization.id },
       body: [body] as never,
@@ -91,16 +69,10 @@ describe('Attachment storage keys', async () => {
   beforeAll(async () => {
     victim = await createTestTenant(call, 'storage-victim');
     attacker = await createTestTenant(call, 'storage-attacker');
-    attackerPlan = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: attacker.organization.id,
-      makeChannelId: () => generateId(),
-    });
-    await seedEntityHierarchy(db, attackerPlan, {
-      tenantId: attacker.tenantId,
-      createdBy: attacker.user.id,
-      slugPrefix: 'storage-keys',
-    });
+    attackerPlan = await seedAttachmentHome(
+      { id: attacker.organization.id, tenantId: attacker.tenantId },
+      attacker.user.id,
+    );
   });
 
   afterAll(async () => await clearSecurityTestData());

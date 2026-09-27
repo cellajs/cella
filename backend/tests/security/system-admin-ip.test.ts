@@ -1,7 +1,7 @@
 import { getOrganization } from 'sdk';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { env } from '#/env';
-import { defaultHeaders } from '../fixtures';
+import { defaultHeaders, overrideConfig } from '../fixtures';
 import { createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -11,16 +11,9 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 const allowlistedIp = '10.0.0.1';
 const otherIp = '10.0.0.2';
-const allowlistBefore = env.SYSTEM_ADMIN_IP_ALLOWLIST;
 
-beforeAll(() => {
-  // The suite allows every address; here only one may use system-admin rights.
-  Object.assign(env, { SYSTEM_ADMIN_IP_ALLOWLIST: allowlistedIp });
-});
-
-afterAll(() => {
-  Object.assign(env, { SYSTEM_ADMIN_IP_ALLOWLIST: allowlistBefore });
-});
+// The suite allows every address; here only one may use system-admin rights.
+overrideConfig(env, { SYSTEM_ADMIN_IP_ALLOWLIST: allowlistedIp });
 
 afterEach(async () => await clearSecurityTestData());
 

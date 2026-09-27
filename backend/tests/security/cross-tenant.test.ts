@@ -6,65 +6,30 @@ import {
   getPresignedUrls,
   updateOrganization,
 } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
-import { generateId } from 'shared/utils/entity-id';
+import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
-import type { generateMockEntityBodyChannelIdColumns } from '#/mocks';
 import { defaultHeaders } from '../fixtures';
 import { expectRefusal } from '../helpers';
-import { seedEntityHierarchy } from '../hierarchy-helpers';
+import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-// The create body carries the deepest seeded home id only (the placement seam derives the chain
-// above it server-side and the relation columns reference it); empty in cella's org-homed default.
-let plan: TestEntityHierarchyPlan | undefined;
-type BodyChannelIdColumns = ReturnType<typeof generateMockEntityBodyChannelIdColumns<'attachment'>>;
-const bodyChannelIdColumns = (): BodyChannelIdColumns => {
-  const deepest = hierarchy
-    .getOrderedAncestors('attachment')
-    .find((type) => type !== 'organization' && plan?.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
-  if (!deepest) return {} as BodyChannelIdColumns;
-  const key = appConfig.entityIdColumnKeys[deepest];
-  return { [key]: plan?.channelIdColumns[key] } as BodyChannelIdColumns;
-};
-
-/** A create body keyed under the organization's upload prefix. */
-const attachmentBody = (id: string, organizationId: string) => ({
-  id,
-  filename: 'cross-tenant.pdf',
-  contentType: 'application/pdf',
-  size: '1024',
-  keys: { original: `${organizationId}/test/cross-tenant-${id}.pdf` },
-  // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
-  ...bodyChannelIdColumns(),
-  stx: { mutationId: id, sourceId: 'cross-tenant', fieldTimestamps: {} },
-});
-
 // Verifies tenant guard isolation for authenticated users across tenants.
 describe('Cross-tenant API isolation', async () => {
   const call = await createAppClient();
   let tenantA: TestTenant;
   let tenantB: TestTenant;
+  let homeA: TestEntityHierarchyPlan;
+  let homeB: TestEntityHierarchyPlan;
 
   beforeAll(async () => {
     tenantA = await createTestTenant(call, 'tenant-a');
     tenantB = await createTestTenant(call, 'tenant-b');
-    plan = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: tenantA.organization.id,
-      makeChannelId: () => generateId(),
-    });
-    await seedEntityHierarchy(db, plan, {
-      tenantId: tenantA.tenantId,
-      createdBy: tenantA.user.id,
-      slugPrefix: 'cross-tenant',
-    });
+    homeA = await seedAttachmentHome({ id: tenantA.organization.id, tenantId: tenantA.tenantId }, tenantA.user.id);
+    homeB = await seedAttachmentHome({ id: tenantB.organization.id, tenantId: tenantB.tenantId }, tenantB.user.id);
   });
 
   afterAll(async () => {
@@ -131,7 +96,7 @@ describe('Cross-tenant API isolation', async () => {
     it('should reject User A creating attachment in Tenant B with 403', async () => {
       const { error, response } = await call(createAttachments, {
         path: { tenantId: tenantB.tenantId, organizationId: tenantB.organization.id },
-        body: [attachmentBody('00000000-0000-4000-a000-000000000001', tenantB.organization.id)],
+        body: [attachmentBody('00000000-0000-4000-a000-000000000001', homeB)],
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
       await expectRefusal({ response, error }, 403, 'forbidden');
@@ -149,7 +114,7 @@ describe('Cross-tenant API isolation', async () => {
     it('should reject User B creating attachment in Tenant A with 403', async () => {
       const { error, response } = await call(createAttachments, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
-        body: [attachmentBody('00000000-0000-4000-a000-000000000002', tenantA.organization.id)],
+        body: [attachmentBody('00000000-0000-4000-a000-000000000002', homeA)],
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
       });
       await expectRefusal({ response, error }, 403, 'forbidden');
@@ -169,11 +134,14 @@ describe('Cross-tenant API isolation', async () => {
 
   describe("Cross-tenant reads of Tenant A's attachment", () => {
     const presignAttachmentId = '00000000-0000-4000-a000-0000000000a1';
+    let storedKey: string;
 
     beforeAll(async () => {
+      const body = attachmentBody(presignAttachmentId, homeA);
+      storedKey = body.keys.original;
       const { response } = await call(createAttachments, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
-        body: [attachmentBody(presignAttachmentId, tenantA.organization.id)],
+        body: [body],
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
       expect(response.status).toBe(201);
@@ -203,7 +171,7 @@ describe('Cross-tenant API isolation', async () => {
       const result = data as GetPresignedUrlsResponse;
       expect(result.rejectedIds).toEqual([]);
       expect(result.data).toHaveLength(1);
-      expect(result.data[0]?.url).toContain(`test/cross-tenant-${presignAttachmentId}.pdf`);
+      expect(result.data[0]?.url).toContain(storedKey);
     });
 
     it("should reject User B calling Tenant A's presign endpoint with 403", async () => {

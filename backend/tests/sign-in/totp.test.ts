@@ -1,10 +1,7 @@
-import { decodeBase32 } from '@oslojs/encoding';
 import { eq } from 'drizzle-orm';
 import { createTotp, generateTotpKey, signInWithTotp } from 'sdk';
-import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { decryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
@@ -18,18 +15,14 @@ import {
   enableMFAForUser,
   expectRefusal,
   setCookiePair,
+  totpCode,
   verifyUserEmail,
+  wrongTotpCode,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
-
-/** The current code for a Base32 secret; `createTotpUser` stores `JBSWY3DPEHPK3PXP`. */
-const currentCode = (secret = 'JBSWY3DPEHPK3PXP') =>
-  generateTOTP(decodeBase32(secret), appConfig.totp.intervalInSeconds, appConfig.totp.digits);
-/** A well-formed code that is not the current one. */
-const wrongCode = () => currentCode().replace(/^./, (digit) => String((Number(digit) + 5) % 10));
 
 afterEach(async () => {
   await clearDatabase();
@@ -72,7 +65,7 @@ describe('TOTP Authentication', async () => {
       const allCookies = `${sessionCookie}; ${setCookiePair(generateRes, 'totp-challenge')}`;
 
       const { response: createRes } = await call(createTotp, {
-        body: { code: currentCode(generatedTotp.manualKey) },
+        body: { code: totpCode(generatedTotp.manualKey) },
         headers: { ...defaultHeaders, Cookie: allCookies },
       });
 
@@ -92,7 +85,7 @@ describe('TOTP Authentication', async () => {
       const mfaToken = await createMfaToken(user);
 
       const { response: res } = await call(signInWithTotp, {
-        body: { code: currentCode() },
+        body: { code: totpCode() },
         headers: {
           ...defaultHeaders,
           Cookie: authCookie('confirm-mfa', mfaToken),
@@ -108,7 +101,7 @@ describe('TOTP Authentication', async () => {
       const mfaToken = await createMfaToken(user);
 
       const { response: res, error } = await call(signInWithTotp, {
-        body: { code: wrongCode() },
+        body: { code: wrongTotpCode() },
         headers: {
           ...defaultHeaders,
           Cookie: authCookie('confirm-mfa', mfaToken),
@@ -136,7 +129,7 @@ describe('TOTP Authentication', async () => {
 
       // No TOTP registered for the user.
       const { response: res, error } = await call(signInWithTotp, {
-        body: { code: currentCode() },
+        body: { code: totpCode() },
         headers: {
           ...defaultHeaders,
           Cookie: authCookie('confirm-mfa', mfaToken),

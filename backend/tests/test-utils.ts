@@ -5,6 +5,7 @@ import { vi } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { resetOrganizationMockEnforcers } from '#/modules/organization/organization-mocks';
 import { resetUserMockEnforcers } from '#/modules/user/user-mocks';
+import { overrideConfig } from './fixtures';
 
 type AuthStrategy = 'passkey' | 'oauth' | 'totp' | 'magic';
 type OAuthProvider = 'github' | 'google' | 'microsoft';
@@ -56,21 +57,10 @@ export const oauth4webapiMock = async () => {
   };
 };
 
-export function setTestConfig(overrides: ConfigOverride) {
-  if (overrides.enabledAuthStrategies) {
-    (appConfig as unknown as { enabledAuthStrategies: string[] }).enabledAuthStrategies =
-      overrides.enabledAuthStrategies;
-  }
-
-  if (overrides.enabledOAuthProviders) {
-    // `satisfies` in default-config narrows the type, so widen with a cast.
-    (appConfig as unknown as { enabledOAuthProviders: string[] }).enabledOAuthProviders =
-      overrides.enabledOAuthProviders;
-  }
-
-  if (overrides.selfRegistration !== undefined) {
-    (appConfig.has as { selfRegistration: boolean }).selfRegistration = overrides.selfRegistration;
-  }
+/** Sets the sign-in methods and self-registration for the rest of the test file. */
+export function setTestConfig({ selfRegistration, ...overrides }: ConfigOverride) {
+  overrideConfig(appConfig, overrides);
+  if (selfRegistration !== undefined) overrideConfig(appConfig.has, { selfRegistration });
 }
 
 /**

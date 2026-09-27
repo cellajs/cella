@@ -6,6 +6,7 @@ import { generateServerHLC } from '#/core/stx';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from '../fixtures';
 import { createTestOrganization, type ErrorResponse, expectRefusal } from '../helpers';
+import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { bearerHeaders, serviceAccountWithKey } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -73,16 +74,7 @@ describe('Product existence (getValidProduct)', async () => {
 
     const { response } = await call(createAttachments, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
-      body: [
-        {
-          id: attachmentId,
-          filename: 'existence.pdf',
-          contentType: 'application/pdf',
-          size: '1024',
-          keys: { original: `${organization.id}/${admin.id}/existence.pdf` },
-          stx: { mutationId: attachmentId, sourceId: 'product-existence', fieldTimestamps: {} },
-        },
-      ],
+      body: [attachmentBody(attachmentId, await seedAttachmentHome(organization, admin.id))],
       headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
     });
     expect(response.status).toBe(201);

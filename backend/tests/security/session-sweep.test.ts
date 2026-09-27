@@ -6,6 +6,7 @@ import { sessionsTable } from '#/modules/auth/sessions-db';
 import { streamSubscriberManager } from '#/modules/entities/stream';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { usersTable } from '#/modules/user/user-db';
+import { overrideConfig } from '../fixtures';
 import { createSystemAdminUser, createTestUser } from '../helpers';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -138,9 +139,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
   });
 
   it('keeps an admin stream from an address the role may not be used from, with no reconnect loop', async () => {
-    const allowlistBefore = env.SYSTEM_ADMIN_IP_ALLOWLIST;
-    Object.assign(env, { SYSTEM_ADMIN_IP_ALLOWLIST: '10.0.0.1' });
-    onTestFinished(() => void Object.assign(env, { SYSTEM_ADMIN_IP_ALLOWLIST: allowlistBefore }));
+    onTestFinished(overrideConfig(env, { SYSTEM_ADMIN_IP_ALLOWLIST: '10.0.0.1' }));
 
     const admin = await createSystemAdminUser('remote-admin@security-test.com');
     const [adminSession, revoked] = [await insertSession(admin), await insertSession(admin)];

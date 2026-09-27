@@ -17,14 +17,13 @@ import {
   updateMembership,
   updateOrganization,
 } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { hierarchy } from 'shared';
+import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateServerHLC } from '#/core/stx';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import type { generateMockEntityBodyChannelIdColumns } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -32,7 +31,7 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from '../fixtures';
 import { expectRefusal } from '../helpers';
-import { seedEntityHierarchy } from '../hierarchy-helpers';
+import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -42,30 +41,6 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 const [adminRole] = hierarchy.getRoles('organization');
 const memberRole = hierarchy.getLeastPrivilegedRole('organization');
-
-// The create body carries the deepest seeded home id only (the placement seam derives the chain
-// above it server-side and the relation columns reference it); empty in cella's org-homed default.
-type BodyChannelIdColumns = ReturnType<typeof generateMockEntityBodyChannelIdColumns<'attachment'>>;
-const bodyChannelIdColumns = (plan: TestEntityHierarchyPlan): BodyChannelIdColumns => {
-  const deepest = hierarchy
-    .getOrderedAncestors('attachment')
-    .find((type) => type !== 'organization' && plan.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
-  if (!deepest) return {} as BodyChannelIdColumns;
-  const key = appConfig.entityIdColumnKeys[deepest];
-  return { [key]: plan.channelIdColumns[key] } as BodyChannelIdColumns;
-};
-
-/** A create body keyed under the organization's upload prefix. */
-const attachmentBody = (id: string, organizationId: string, plan: TestEntityHierarchyPlan) => ({
-  id,
-  filename: 'cross-org.pdf',
-  contentType: 'application/pdf',
-  size: '1024',
-  keys: { original: `${organizationId}/test/cross-org-${id}.pdf` },
-  // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
-  ...bodyChannelIdColumns(plan),
-  stx: { mutationId: id, sourceId: 'cross-org', fieldTimestamps: {} },
-});
 
 const renameStx = () => ({
   ...mockStxBase(`stx:${generateId()}`),
@@ -117,26 +92,12 @@ describe('Cross-organization API isolation', async () => {
 
   beforeAll(async () => {
     tenant = await createTestTenant(call, 'org-isolation');
-    plan = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: tenant.organization.id,
-      makeChannelId: () => generateId(),
-    });
-    await seedEntityHierarchy(db, plan, {
-      tenantId: tenant.tenantId,
-      createdBy: tenant.user.id,
-      slugPrefix: 'cross-org',
-    });
+    plan = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
 
     const secondOrg = await createSecondOrg();
     orgB = { id: secondOrg.id, name: secondOrg.name, tenantId: secondOrg.tenantId };
     userB = await createOrgUser(call, orgB.tenantId, orgB.id, 'org-b', adminRole);
-    planB = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: orgB.id,
-      makeChannelId: () => generateId(),
-    });
-    await seedEntityHierarchy(db, planB, { tenantId: orgB.tenantId, createdBy: userB.id, slugPrefix: 'cross-org-b' });
+    planB = await seedAttachmentHome(orgB, userB.id);
 
     insider = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'org-both', memberRole);
     await db.insert(membershipsTable).values({
@@ -154,7 +115,7 @@ describe('Cross-organization API isolation', async () => {
     const attachmentId = generateId();
     const created = await call(createAttachments, {
       path: { tenantId: orgB.tenantId, organizationId: orgB.id },
-      body: [attachmentBody(attachmentId, orgB.id, planB)],
+      body: [attachmentBody(attachmentId, planB)],
       headers: headers(userB),
     });
     expect(created.response.status).toBe(201);
@@ -184,7 +145,7 @@ describe('Cross-organization API isolation', async () => {
       attempt: (as) =>
         call(createAttachments, {
           path: { tenantId: tenant.tenantId, organizationId: orgB.id },
-          body: [attachmentBody(generateId(), orgB.id, planB)],
+          body: [attachmentBody(generateId(), planB)],
           headers: headers(as),
         }),
     },
@@ -322,7 +283,7 @@ describe('Cross-organization API isolation', async () => {
       const own = generateId();
       const created = await call(createAttachments, {
         path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        body: [attachmentBody(own, tenant.organization.id, plan)],
+        body: [attachmentBody(own, plan)],
         headers: headers(attacker),
       });
       expect(created.response.status).toBe(201);

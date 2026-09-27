@@ -15,6 +15,7 @@ import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { createSession, type SignInContext } from '#/modules/auth/general/helpers/session';
 import { usersTable } from '#/modules/user/user-db';
+import { overrideConfig } from '../fixtures';
 import {
   authCookie,
   createOrganizationAdminUser,
@@ -154,13 +155,11 @@ describe('Ending a session closes its stream and its cached entry', async () => 
 
   describe('sign-in housekeeping', () => {
     const TEST_CAP = 2;
-    const originalCap = appConfig.maxSessionsPerUser;
+    let restoreCap = () => {};
     beforeAll(() => {
-      (appConfig as unknown as { maxSessionsPerUser: number }).maxSessionsPerUser = TEST_CAP;
+      restoreCap = overrideConfig(appConfig, { maxSessionsPerUser: TEST_CAP });
     });
-    afterAll(() => {
-      (appConfig as unknown as { maxSessionsPerUser: number }).maxSessionsPerUser = originalCap;
-    });
+    afterAll(() => restoreCap());
 
     const browser = (deviceId: string | null): SignInContext => ({
       rawIp: null,
