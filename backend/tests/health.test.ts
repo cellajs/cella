@@ -1,4 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { startTestOauthServer } from './oauth-helpers';
 import { setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -8,12 +9,13 @@ async function fetchHealth(query = '') {
   return app.fetch(new Request(`http://localhost/health${query}`));
 }
 
-/** The aggregate's HTTP status with its `authInvalidation` component. */
-async function authInvalidation() {
-  const res = await fetchHealth('?depth=full');
+/** A deep health response's HTTP status with its `authInvalidation` component. */
+async function authInvalidationIn(res: Response) {
   const body = (await res.json()) as { components: { authInvalidation?: { status?: string; reason?: string } } };
   return { httpStatus: res.status, ...body.components.authInvalidation };
 }
+
+const authInvalidation = async () => authInvalidationIn(await fetchHealth('?depth=full'));
 
 /**
  * Every process starts its auth invalidation listener at boot, as this file does before the diagnostics are read: a
@@ -77,9 +79,18 @@ describe('Health endpoint', async () => {
   });
 
   it('must not report a process healthy while nothing hears session endings: before the listener starts and once it stopped', async () => {
-    expect(beforeListening).toMatchObject({ httpStatus: 503, status: 'unhealthy', reason: 'never_started' });
-    expect(await authInvalidation()).toMatchObject({ httpStatus: 200, status: 'healthy' });
-    await stop();
-    expect(await authInvalidation()).toMatchObject({ httpStatus: 503, status: 'unhealthy', reason: 'stopped' });
+    // The authorization server holds the tenant cache, so its own health reports the same component.
+    const oauth = await startTestOauthServer();
+    const oauthAuthInvalidation = async () => authInvalidationIn(await fetch(`${oauth.issuer}/health?depth=full`));
+    try {
+      expect(beforeListening).toMatchObject({ httpStatus: 503, status: 'unhealthy', reason: 'never_started' });
+      expect(await authInvalidation()).toMatchObject({ httpStatus: 200, status: 'healthy' });
+      expect(await oauthAuthInvalidation()).toMatchObject({ httpStatus: 200, status: 'healthy' });
+      await stop();
+      expect(await authInvalidation()).toMatchObject({ httpStatus: 503, status: 'unhealthy', reason: 'stopped' });
+      expect(await oauthAuthInvalidation()).toMatchObject({ httpStatus: 503, status: 'unhealthy', reason: 'stopped' });
+    } finally {
+      await oauth.close();
+    }
   });
 });
