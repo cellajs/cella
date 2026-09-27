@@ -119,7 +119,7 @@ interface ScheduleApiKeyExpiryOpts {
 export async function scheduleApiKeyExpiry(ctx: DbContext, { actorId, id, expiresAt }: ScheduleApiKeyExpiryOpts) {
   const [row] = await ctx.var.db
     .update(apiKeysTable)
-    .set({ expiresAt: sql`LEAST(${apiKeysTable.expiresAt}, ${expiresAt}::timestamp)` })
+    .set({ expiresAt: sql`LEAST(${apiKeysTable.expiresAt}, ${expiresAt}::timestamptz)` })
     .where(and(eq(apiKeysTable.id, id), eq(apiKeysTable.actorId, actorId), isNull(apiKeysTable.revokedAt)))
     .returning({ id: apiKeysTable.id });
   return row ?? null;

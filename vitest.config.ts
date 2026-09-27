@@ -5,6 +5,11 @@ const coverageReporters =
     ? ['json-summary']
     : ['text-summary', 'html', 'lcov', 'json-summary'];
 
+// Two hours east of UTC (POSIX signs run backwards): a timestamp stored without its zone and parsed in JavaScript fails
+// here as on a developer's machine, while production runs UTC. Set on the process before the worker pool starts, since
+// `Date` reads the zone from the C library, which a worker's own `process.env` never reaches.
+process.env.TZ = 'Etc/GMT-2';
+
 // Unified project list and coverage reporting for the monorepo test command.
 export default defineConfig({
   test: {

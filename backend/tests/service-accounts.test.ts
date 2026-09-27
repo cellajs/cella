@@ -41,11 +41,15 @@ describe('Service accounts and API keys', async () => {
     return { org, user, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 
-  async function issueKey(opts: { role?: 'admin' | 'member'; scopes?: Scope[] | null } = {}) {
+  async function issueKey(opts: { role?: 'admin' | 'member'; scopes?: Scope[] | null; expiresAt?: string } = {}) {
     const ctx = await orgWithAdmin();
     const { data, response } = await call(createServiceAccount, {
       path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
-      body: { name: 'CI bot', role: opts.role ?? 'member', key: { name: 'deploy', scopes: opts.scopes ?? null } },
+      body: {
+        name: 'CI bot',
+        role: opts.role ?? 'member',
+        key: { name: 'deploy', scopes: opts.scopes ?? null, expiresAt: opts.expiresAt },
+      },
       headers: ctx.headers,
     });
     expect(response.status).toBe(201);
@@ -180,18 +184,25 @@ describe('Service accounts and API keys', async () => {
     expect(serialized).not.toContain(hashToken(key));
   });
 
-  it('refuses an expired key and a key of a disabled account', async () => {
-    const expired = await issueKey();
-    await db
-      .update(apiKeysTable)
-      .set({ expiresAt: new Date(Date.now() - 1000).toISOString() })
-      .where(eq(apiKeysTable.id, expired.apiKey.id));
-    const expiredCall = await call(getAttachments, {
-      path: { tenantId: expired.org.tenantId, organizationId: expired.org.id },
-      headers: machineHeaders(expired.key),
-    });
-    expect(expiredCall.response.status).toBe(401);
+  // The suite runs two hours off UTC (the root vitest config): an expiry stored without its zone and read back as local
+  // time lands two hours early, so a key with half an hour left reads as expired.
+  it('must not accept a key that expired half an hour ago, nor refuse one with half an hour left', async () => {
+    const halfAnHour = 30 * 60 * 1000;
+    const read = async (issued: Awaited<ReturnType<typeof issueKey>>) =>
+      call(getAttachments, {
+        path: { tenantId: issued.org.tenantId, organizationId: issued.org.id },
+        headers: machineHeaders(issued.key),
+      });
 
+    const expired = await read(await issueKey({ expiresAt: new Date(Date.now() - halfAnHour).toISOString() }));
+    expect(expired.response.status).toBe(401);
+    expect((expired.error as ErrorResponse).meta?.reason).toBe('invalid_api_key');
+
+    const live = await read(await issueKey({ expiresAt: new Date(Date.now() + halfAnHour).toISOString() }));
+    expect(live.response.status).toBe(200);
+  });
+
+  it('refuses a key of a disabled account', async () => {
     const disabled = await issueKey();
     const readAsDisabled = () =>
       call(getAttachments, {
