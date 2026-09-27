@@ -22,7 +22,7 @@ import { memberInviteEmail } from '../../../../emails';
 export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
   const invitation = await findInactiveMembershipById(ctx, { id });
   if (!invitation || invitation.organizationId !== ctx.var.organization.id || invitation.rejectedAt) {
-    throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
+    throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'invitation' } });
   }
 
   const { entity } = await getValidChannel(ctx, invitation.channelId, invitation.channelType, 'update');
@@ -32,7 +32,7 @@ export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
 
   // The re-issue refuses an invitation answered meanwhile.
   const sent = await resendInvitationEmail(ctx, token);
-  if (!sent) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
+  if (!sent) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'invitation' } });
 }
 
 /** The invitation email without a token, as an invitation to an address held by an account is first sent. */

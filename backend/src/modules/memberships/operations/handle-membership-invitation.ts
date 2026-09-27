@@ -35,8 +35,10 @@ export async function handleMembershipInvitationOp(
     ? await findClaimableInactiveMembership(ctx, { id: inactiveMembershipId })
     : await findInactiveMembershipForUser(ctx, { id: inactiveMembershipId });
 
-  if (!inactiveMembership)
-    throw new AppError(404, 'inactive_membership_not_found', 'error', { meta: { id: inactiveMembershipId } });
+  // Missing, rejected and another user's alike (PERMISSIONS.md, Refusals).
+  if (!inactiveMembership) {
+    throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'invitation', id: inactiveMembershipId } });
+  }
 
   await baseDb.transaction(async (tx) => {
     if (acceptOrReject === 'accept') {

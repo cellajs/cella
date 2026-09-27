@@ -61,8 +61,6 @@
   "impersonation_failed": "Impersonation failed",
   "impersonation_forbidden": "Not while impersonating",
   "impersonation_forbidden.text": "How an account is protected can't be changed while impersonating its user.",
-  "inactive_membership_not_found": "Inactive membership not found",
-  "inactive_membership_not_found.text": "The inactive membership you are trying to access does not exist or has been deleted.",
   "insert_in_progress": "Another create is still processing, please wait a moment.",
   "invalid_between_num": "{{name}} must be between {{min}} and {{max}} characters",
   "invalid_cdn_url": "URL must point to the configured CDN",

@@ -76,7 +76,7 @@ describe('Rejected invitations', async () => {
 
     const { response, error } = await respond(inactiveMembership.id, 'accept', sessionCookie);
     expect(response.status).toBe(404);
-    expect((error as ErrorResponse).type).toBe('inactive_membership_not_found');
+    expect((error as ErrorResponse).type).toBe('not_found');
     expect(await membershipsIn(invitee.id, organization.id)).toEqual([]);
     expect(await rejectedAtOf(inactiveMembership.id)).not.toBeNull();
   });
@@ -98,7 +98,7 @@ describe('Rejected invitations', async () => {
       headers: { ...defaultHeaders, Cookie: [sessionCookie, invitationCookie].join('; ') },
     });
     expect(response.status).toBe(404);
-    expect((error as ErrorResponse).type).toBe('inactive_membership_not_found');
+    expect((error as ErrorResponse).type).toBe('not_found');
     expect(await membershipsIn(invitee.id, organization.id)).toEqual([]);
   });
 
