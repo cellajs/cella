@@ -10,7 +10,7 @@ import { findOrCreatePreferences, updatePreferences } from '../notification-quer
 const errorPage = { willRedirect: true, meta: { errorPagePath: '/auth/error' } } as const;
 
 /** Turning the digest off is a frequency change; the other two are booleans. */
-const disableFor = (category: UnsubscribeCategory) =>
+const disableFor = (category: Exclude<UnsubscribeCategory, 'newsletter'>) =>
   category === 'digest'
     ? { digest: 'off' as const }
     : category === 'mention'
@@ -21,7 +21,8 @@ const disableFor = (category: UnsubscribeCategory) =>
  * Turn off one email category from an emailed link, without a session.
  *
  * The link carries the user id and a token that is an HMAC over `userId:category`, so holding the
- * link proves it was received in that user's mail and authorises exactly that one category.
+ * link proves it was received in that user's mail and authorises exactly that one category. The
+ * newsletter is a flag on the user; the notification categories are email preferences.
  */
 export async function unsubscribeNotificationsOp(
   userId: string,
@@ -35,9 +36,13 @@ export async function unsubscribeNotificationsOp(
   const [user] = await baseDb.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', ...errorPage });
 
-  const dbCtx = { var: { db: baseDb } };
-  await findOrCreatePreferences(dbCtx, user.id);
-  await updatePreferences(dbCtx, user.id, disableFor(category));
+  if (category === 'newsletter') {
+    await baseDb.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
+  } else {
+    const dbCtx = { var: { db: baseDb } };
+    await findOrCreatePreferences(dbCtx, user.id);
+    await updatePreferences(dbCtx, user.id, disableFor(category));
+  }
 
   return new URL('/auth/unsubscribed', appConfig.frontendUrl);
 }

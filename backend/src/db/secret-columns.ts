@@ -17,7 +17,6 @@ export const secretColumns = {
   signing_keys: ['privateJwk'],
   tokens: ['secret', 'singleUseToken'],
   totps: ['secret'],
-  unsubscribe_tokens: ['secret'],
 } as const satisfies Record<string, readonly string[]>;
 
 /**

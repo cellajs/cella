@@ -19,7 +19,6 @@ import { getMyInvitationsOp } from '#/modules/me/operations/get-my-invitations';
 import { getUploadTokenOp } from '#/modules/me/operations/get-upload-token';
 import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-app';
 import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
-import { unsubscribeMeOp } from '#/modules/me/operations/unsubscribe-me';
 import { updateMeOp } from '#/modules/me/operations/update-me';
 import { deleteAccounts } from '#/modules/user/helpers/delete-accounts';
 import { defaultHook } from '#/utils/default-hook';
@@ -116,12 +115,6 @@ app.openapi(meRoutes.getUploadToken, async (ctx) => {
   const { organizationId, templateId } = ctx.req.valid('query');
   const data = getUploadTokenOp(ctx, { organizationId, templateId });
   return ctx.json(data, 200);
-});
-
-app.openapi(meRoutes.unsubscribeMe, async (ctx) => {
-  const { token } = ctx.req.valid('query');
-  const redirectUrl = await unsubscribeMeOp(ctx, token);
-  return ctx.redirect(redirectUrl, 302);
 });
 
 app.openapi(meRoutes.getMyMemberships, async (ctx) => {

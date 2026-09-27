@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { crossTenantGuard, publicGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { crossTenantGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
+import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   connectedAppSchema,
   meAuthDataSchema,
@@ -21,7 +21,6 @@ import {
   entityWithTypeQuerySchema,
   errorResponseRefs,
   idsBodySchema,
-  locationSchema,
   paginationSchema,
 } from '#/schemas';
 import {
@@ -172,25 +171,6 @@ const meRoutes = {
     responses: {
       204: {
         description: 'Membership removed',
-      },
-      ...errorResponseRefs,
-    },
-  }),
-  unsubscribeMe: createXRoute({
-    operationId: 'unsubscribeMe',
-    method: 'get',
-    path: '/unsubscribe',
-    xGuard: [publicGuard],
-    xRateLimiter: [tokenLimiter('unsubscribe')],
-    tags: ['me', 'cella'],
-    summary: 'Unsubscribe',
-    description:
-      'Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the current user.',
-    request: { query: z.object({ token: z.string() }) },
-    responses: {
-      302: {
-        description: 'Redirect to FE',
-        headers: locationSchema,
       },
       ...errorResponseRefs,
     },

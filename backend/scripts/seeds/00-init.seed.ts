@@ -1,13 +1,12 @@
 import type { SeedScript } from '../types';
 import { getSeedDb } from '#/db/db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { insertUsers } from '#/modules/user/helpers/insert-users';
 import { usersTable } from '#/modules/user/user-db';
 import { env } from '#/env';
 import pc from 'picocolors';
 import { appConfig } from 'shared';
-import { mockAdmin, mockEmail, mockUnsubscribeToken } from '#/modules/user/user-mocks';
+import { mockAdmin, mockEmail } from '#/modules/user/user-mocks';
 import { setMockContext } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
@@ -57,10 +56,6 @@ export const initSeed = async () => {
 
   // Insert system role row into the database
   await db.insert(systemRolesTable).values({ userId: adminUser.id, role: 'admin' }).onConflictDoNothing();
-
-  // Make unsubscribeToken row, then insert into the database
-  const unsubscribeTokenRecord = await mockUnsubscribeToken(adminUser);
-  await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRecord).onConflictDoNothing();
 
   // Make email row, then insert into the database
   const emailRecord = mockEmail(adminUser);

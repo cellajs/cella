@@ -49,7 +49,6 @@ export function classifyRlsTables(): { rlsTables: string[]; fullCrudTables: stri
     'identities',
     'totps',
     'requests',
-    'unsubscribe_tokens',
     'emails',
     'rate_limits',
     'channel_counters',

@@ -23,19 +23,21 @@ const secrets = {
   magicPath: `magic_${nanoid(32)}`,
   invitationPath: `invitation_${nanoid(32)}`,
   unsubscribe: `unsub_${nanoid(32)}`,
-  categoryUnsubscribe: `category_${nanoid(32)}`,
   oauthCode: `code_${nanoid(32)}`,
   oauthState: `state_${nanoid(32)}`,
 };
+
+const unsubscribeUserId = crypto.randomUUID();
 
 const tokenUrls = [
   `/auth/invoke-token/magic/${secrets.magicPath}`,
   // Through the `/api` mount the load balancer preserves in production.
   `/api/auth/invoke-token/invitation/${secrets.invitationPath}`,
-  `/me/unsubscribe?token=${secrets.unsubscribe}`,
-  `/notifications/unsubscribe?user=${crypto.randomUUID()}&category=digest&token=${secrets.categoryUnsubscribe}`,
+  `/notifications/unsubscribe?user=${unsubscribeUserId}&category=digest&token=${secrets.unsubscribe}`,
   `/auth/github/callback?code=${secrets.oauthCode}&state=${secrets.oauthState}`,
 ];
+
+const scrubbedUnsubscribeUrl = `http://localhost/notifications/unsubscribe?user=${unsubscribeUserId}&category=digest&token=[REDACTED]`;
 
 const expectNoSecret = (text: string) => {
   for (const secret of Object.values(secrets)) expect(text).not.toContain(secret);
@@ -65,7 +67,7 @@ describe('telemetry redaction', () => {
     expect(urls).toEqual(
       expect.arrayContaining([
         'http://localhost/auth/invoke-token/magic/[REDACTED]',
-        'http://localhost/me/unsubscribe?token=[REDACTED]',
+        scrubbedUnsubscribeUrl,
         'http://localhost/auth/github/callback?code=[REDACTED]&state=[REDACTED]',
       ]),
     );
@@ -104,10 +106,7 @@ describe('telemetry redaction', () => {
       // Positive control: the request logger wrote one line per request, with the scrubbed path.
       const logged = lines.map((line) => JSON.parse(line) as { url?: string });
       expect(logged.map((line) => line.url)).toEqual(
-        expect.arrayContaining([
-          'http://localhost/auth/invoke-token/magic/[REDACTED]',
-          'http://localhost/me/unsubscribe?token=[REDACTED]',
-        ]),
+        expect.arrayContaining(['http://localhost/auth/invoke-token/magic/[REDACTED]', scrubbedUnsubscribeUrl]),
       );
       expect(logged).toHaveLength(tokenUrls.length);
       expectNoSecret(lines.join('\n'));

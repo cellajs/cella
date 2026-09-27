@@ -1161,10 +1161,6 @@ export const zGetUploadTokenQuery = z.object({
  */
 export const zGetUploadTokenResponse = zUploadToken;
 
-export const zUnsubscribeMeQuery = z.object({
-  token: z.string(),
-});
-
 /**
  * User memberships
  */
@@ -1271,7 +1267,7 @@ export const zUpdateNotificationPreferencesResponse = z.object({
 
 export const zUnsubscribeNotificationsQuery = z.object({
   user: z.string().max(50),
-  category: z.enum(['digest', 'mention', 'comment']),
+  category: z.enum(['digest', 'mention', 'comment', 'newsletter']),
   token: z.string(),
 });
 

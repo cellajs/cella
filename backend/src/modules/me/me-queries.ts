@@ -4,12 +4,10 @@ import type { DbContext, UserContext } from '#/core/context';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { userSelect } from '#/modules/user/helpers/select';
-import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { getEntityTable } from '#/tables';
-import { hashToken } from '#/utils/hash-token';
 import { pick } from '#/utils/pick';
 
 interface UpsertLastStartedOpts {
@@ -73,22 +71,6 @@ export const deleteMyMembership = async (ctx: UserContext, { channelId }: Delete
     .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.channelId, channelId)));
 };
 
-interface FindUserByUnsubscribeTokenOpts {
-  token: string;
-}
-
-/** The user an unsubscribe link belongs to, found by the token's hash: the table stores no token itself. */
-export const findUserByUnsubscribeToken = async (ctx: DbContext, { token }: FindUserByUnsubscribeTokenOpts) => {
-  const { db } = ctx.var;
-  const [user] = await db
-    .select(userSelect)
-    .from(usersTable)
-    .innerJoin(unsubscribeTokensTable, eq(usersTable.id, unsubscribeTokensTable.userId))
-    .where(eq(unsubscribeTokensTable.secret, hashToken(token)))
-    .limit(1);
-  return user;
-};
-
 interface FindPendingInvitationsOpts {
   userId: string;
 }
@@ -122,15 +104,4 @@ export const findPendingInvitations = async (ctx: DbContext, { userId }: FindPen
   );
 
   return results.flat();
-};
-
-interface UpdateNewsletterOpts {
-  userId: string;
-  newsletter: boolean;
-}
-
-/** Used in the unauthenticated unsubscribe flow. */
-export const updateNewsletter = async (ctx: DbContext, { userId, newsletter }: UpdateNewsletterOpts) => {
-  const { db } = ctx.var;
-  return db.update(usersTable).set({ newsletter }).where(eq(usersTable.id, userId));
 };

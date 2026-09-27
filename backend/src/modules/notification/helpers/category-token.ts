@@ -3,13 +3,13 @@ import { appConfig } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
 import { modeSecret } from '#/env';
 
-export const unsubscribeCategories = ['digest', 'mention', 'comment'] as const;
+export const unsubscribeCategories = ['digest', 'mention', 'comment', 'newsletter'] as const;
 export type UnsubscribeCategory = (typeof unsubscribeCategories)[number];
 
 /**
  * Category-scoped unsubscribe token: the HMAC binds the category in, so "stop the weekly
- * digest" cannot silently also stop mention emails (the newsletter path's email-only HMAC can
- * only toggle its single global flag).
+ * digest" cannot silently also stop mention emails or the newsletter. Nothing is stored, so a
+ * link works however old it is.
  *
  * Keyed on the user id, not the email, so the link carries an opaque identifier and keeps
  * working after an email change.

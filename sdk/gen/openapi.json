@@ -6469,59 +6469,6 @@
         }
       }
     },
-    "/me/unsubscribe": {
-      "get": {
-        "security": [],
-        "operationId": "unsubscribeMe",
-        "tags": ["me", "cella"],
-        "summary": "Unsubscribe",
-        "description": "Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the current user.",
-        "x-guard": ["publicGuard"],
-        "x-rate-limiter": ["tokenLimiter"],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string"
-            },
-            "required": true,
-            "name": "token",
-            "in": "query"
-          }
-        ],
-        "responses": {
-          "302": {
-            "description": "Redirect to FE",
-            "headers": {
-              "Location": {
-                "schema": {
-                  "type": "string"
-                },
-                "required": true
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
     "/me/memberships": {
       "get": {
         "security": [
@@ -7191,7 +7138,7 @@
           {
             "schema": {
               "type": "string",
-              "enum": ["digest", "mention", "comment"]
+              "enum": ["digest", "mention", "comment", "newsletter"]
             },
             "required": true,
             "name": "category",

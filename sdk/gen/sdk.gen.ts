@@ -279,8 +279,6 @@ import type {
   ToggleMfaData,
   ToggleMfaErrors,
   ToggleMfaResponses,
-  UnsubscribeMeData,
-  UnsubscribeMeErrors,
   UnsubscribeNotificationsData,
   UnsubscribeNotificationsErrors,
   UpdateAttachmentData,
@@ -486,7 +484,6 @@ import {
   zSystemInviteResponse,
   zToggleMfaBody,
   zToggleMfaResponse,
-  zUnsubscribeMeQuery,
   zUnsubscribeNotificationsQuery,
   zUpdateAttachmentBody,
   zUpdateAttachmentPath,
@@ -2222,34 +2219,6 @@ export const getUploadToken = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/me/upload-token',
-    ...options,
-  });
-
-/**
- * Unsubscribe
- *
- * Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the current user.
- *
- * **GET /me/unsubscribe** ·· [unsubscribeMe](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/GET/me/unsubscribe) ·· [unsubscribeMe](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/me/unsubscribe) ·· _me_cella_
- *
- * @param {unsubscribeMeData} options
- * @param {string} options.query.token - `string`
- * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
- */
-export const unsubscribeMe = <ThrowOnError extends boolean = true>(
-  options: Options<UnsubscribeMeData, ThrowOnError>,
-): RequestResult<unknown, UnsubscribeMeErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<unknown, UnsubscribeMeErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: z.never().optional(),
-          query: zUnsubscribeMeQuery,
-        })
-        .parseAsync(data),
-    responseStyle: 'data',
-    url: '/me/unsubscribe',
     ...options,
   });
 

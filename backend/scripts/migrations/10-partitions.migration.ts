@@ -25,7 +25,6 @@ export const partitionConfigs: PartitionConfig[] = [
 const sweepConfigs: { name: string; column: string; retention: string }[] = [
   { name: 'sessions', column: 'expires_at', retention: '30 days' },
   { name: 'tokens', column: 'expires_at', retention: '30 days' },
-  { name: 'unsubscribe_tokens', column: 'created_at', retention: '90 days' },
 ];
 
 /** The procedure pg_cron calls nightly (scheduled by scripts/db/schedule-partition-maintenance.ts). */

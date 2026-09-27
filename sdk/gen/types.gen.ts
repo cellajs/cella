@@ -3089,44 +3089,6 @@ export type GetUploadTokenResponses = {
 
 export type GetUploadTokenResponse = GetUploadTokenResponses[keyof GetUploadTokenResponses];
 
-export type UnsubscribeMeData = {
-  body?: never;
-  path?: never;
-  query: {
-    token: string;
-  };
-  url: '/me/unsubscribe';
-};
-
-export type UnsubscribeMeErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type UnsubscribeMeError = UnsubscribeMeErrors[keyof UnsubscribeMeErrors];
-
 export type GetMyMembershipsData = {
   body?: never;
   path?: never;
@@ -3566,7 +3528,7 @@ export type UnsubscribeNotificationsData = {
   path?: never;
   query: {
     user: string;
-    category: 'digest' | 'mention' | 'comment';
+    category: 'digest' | 'mention' | 'comment' | 'newsletter';
     token: string;
   };
   url: '/notifications/unsubscribe';

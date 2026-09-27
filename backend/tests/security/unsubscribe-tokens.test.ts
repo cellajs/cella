@@ -1,17 +1,14 @@
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { appConfig, hierarchy } from 'shared';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb, getAdminDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
-import { buildUnsubscribeLink } from '#/modules/notification/helpers/category-token';
+import { buildUnsubscribeLink, type UnsubscribeCategory } from '#/modules/notification/helpers/category-token';
 import { notificationPreferencesTable } from '#/modules/notification/notification-db';
-import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
+import { findOrCreatePreferences } from '#/modules/notification/notification-queries';
 import { usersTable } from '#/modules/user/user-db';
 import { mockUser } from '#/modules/user/user-mocks';
-import { hashToken } from '#/utils/hash-token';
-import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
-import { sideEffect as unsubscribeTokenHashes } from '../../scripts/migrations/20-unsubscribe-token-hashes.migration';
 import { defaultHeaders } from '../fixtures';
 import {
   createOrganizationAdminUser,
@@ -23,7 +20,7 @@ import { clearSecurityTestData } from './helpers';
 
 vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
 
-const adminDb = () => getAdminDb('unsubscribe token test');
+const adminDb = () => getAdminDb('unsubscribe link test');
 
 /** A user created the way sign-up creates one, subscribed to the newsletter. */
 const signUp = async (label: string) => {
@@ -35,134 +32,97 @@ const signUp = async (label: string) => {
   return user;
 };
 
-const storedSecrets = async (userId: string) =>
-  (await adminDb().select().from(unsubscribeTokensTable).where(eq(unsubscribeTokensTable.userId, userId))).map(
-    (row) => row.secret,
-  );
-
-const isSubscribed = async (userId: string) => {
-  const [user] = await adminDb().select().from(usersTable).where(eq(usersTable.id, userId));
-  return user?.newsletter;
+/** Everything an unsubscribe link may switch, read past RLS: the newsletter flag on the user and the email preferences. */
+const emailSettings = async (userId: string) => {
+  const [user] = await adminDb()
+    .select({ newsletter: usersTable.newsletter })
+    .from(usersTable)
+    .where(eq(usersTable.id, userId));
+  const [preferences] = await adminDb()
+    .select({ digest: notificationPreferencesTable.digest, mentionEmail: notificationPreferencesTable.mentionEmail })
+    .from(notificationPreferencesTable)
+    .where(eq(notificationPreferencesTable.userId, userId));
+  return { ...user, ...preferences };
 };
 
 /** Opens an unsubscribe link the way a mail client does; answers the redirect target. */
-const openLink = async (pathAndQuery: string) => {
+const openLink = async (link: string) => {
   const { baseApp } = await import('#/routes');
-  const response = await baseApp.request(pathAndQuery, { headers: defaultHeaders });
+  const response = await baseApp.request(link.replace(appConfig.backendUrl, ''), { headers: defaultHeaders });
   return { status: response.status, location: new URL(response.headers.get('location') ?? '', appConfig.frontendUrl) };
 };
 
-/**
- * An unsubscribe link carries a bearer token: whoever holds it can change the recipient's settings without signing in.
- * The database keeps only its hash, so a read of the table (a backup, a replica, a log of a failed query) yields
- * nothing that opens the link.
- */
-describe('Unsubscribe tokens', () => {
-  beforeAll(() => {
-    vi.mocked(mailer.prepareEmails).mockClear();
-  });
+const tokenOf = (userId: string, category: UnsubscribeCategory) =>
+  new URL(buildUnsubscribeLink(userId, category)).searchParams.get('token') ?? '';
 
+const linkFor = (userId: string, category: UnsubscribeCategory, token: string) =>
+  `/notifications/unsubscribe?user=${userId}&category=${category}&token=${token}`;
+
+/**
+ * An unsubscribe link turns off one email category for one user without a session. Its token is an HMAC over both
+ * under a server secret, so the database stores nothing a reader could open, the link keeps working however old it is,
+ * and a link made for one user or one category opens nothing else.
+ */
+describe('Unsubscribe links', () => {
   afterEach(async () => {
     vi.mocked(mailer.prepareEmails).mockClear();
     await clearSecurityTestData();
   });
 
-  it('must not keep an unsubscribe token as its own value in the database', async () => {
-    const user = await signUp('stored-token');
-    const token = generateUnsubscribeToken(user.email);
+  it("must not turn off another user's or another category's email via a link made for one", async () => {
+    const [owner, other] = [await signUp('link-owner'), await signUp('link-other')];
+    const before = [await emailSettings(owner.id), await emailSettings(other.id)];
+    const digestToken = tokenOf(owner.id, 'digest');
 
-    const secrets = await storedSecrets(user.id);
-    expect(secrets).toHaveLength(1);
-    expect(secrets).not.toContain(token);
+    for (const target of [
+      linkFor(other.id, 'digest', digestToken),
+      linkFor(owner.id, 'mention', digestToken),
+      linkFor(owner.id, 'newsletter', digestToken),
+      linkFor(owner.id, 'digest', tokenOf(owner.id, 'newsletter')),
+      linkFor(owner.id, 'digest', digestToken.slice(0, -1)),
+    ]) {
+      const { status, location } = await openLink(target);
+      expect(status, target).toBe(302);
+      expect(location.pathname, target).toBe('/auth/error');
+      expect(location.searchParams.get('error'), target).toBe('unsubscribe_failed');
+    }
+    expect([await emailSettings(owner.id), await emailSettings(other.id)]).toEqual(before);
   });
 
-  it('must not unsubscribe a user via the value the database holds', async () => {
-    const user = await signUp('db-reader');
-    const [stored] = await storedSecrets(user.id);
+  it('turns off only the category its link names (positive control)', async () => {
+    const everythingOn = { newsletter: true, digest: 'weekly', mentionEmail: true };
+    // The newsletter link leaves the digest on; the digest link leaves the newsletter on.
+    for (const [category, expected] of [
+      ['newsletter', { ...everythingOn, newsletter: false }],
+      ['digest', { ...everythingOn, digest: 'off' }],
+    ] as const) {
+      const owner = await signUp(`${category}-reader`);
+      await findOrCreatePreferences({ var: { db: baseDb } }, owner.id);
 
-    const { status, location } = await openLink(`/me/unsubscribe?token=${stored}`);
+      const { status, location } = await openLink(buildUnsubscribeLink(owner.id, category));
 
-    expect(status).toBe(302);
-    expect(location.pathname).toBe('/auth/error');
-    expect(location.searchParams.get('error')).toBe('unsubscribe_expired');
-    expect(await isSubscribed(user.id)).toBe(true);
+      expect(status, category).toBe(302);
+      expect(location.pathname, category).toBe('/auth/unsubscribed');
+      expect(await emailSettings(owner.id), category).toEqual(expected);
+    }
   });
 
-  it('unsubscribes with the token from the email (positive control)', async () => {
-    const user = await signUp('mail-reader');
-
-    const { status, location } = await openLink(`/me/unsubscribe?token=${generateUnsubscribeToken(user.email)}`);
-
-    expect(status).toBe(302);
-    expect(location.pathname).toBe('/auth/unsubscribed');
-    expect(await isSubscribed(user.id)).toBe(false);
-  });
-
-  it('must not unsubscribe a user via a link sent to an address the account no longer has', async () => {
-    const user = await signUp('moved-address');
-    const oldLink = `/me/unsubscribe?token=${generateUnsubscribeToken(user.email)}`;
-    await adminDb()
-      .update(usersTable)
-      .set({ email: 'moved-address-new@example.test' })
-      .where(eq(usersTable.id, user.id));
-
-    const { status, location } = await openLink(oldLink);
-
-    expect(status).toBe(302);
-    expect(location.pathname).toBe('/auth/error');
-    expect(location.searchParams.get('error')).toBe('unsubscribe_failed');
-    expect(await isSubscribed(user.id)).toBe(true);
-  });
-
-  describe('rows stored before hashing', () => {
-    /** Runs the side-effect block as a migration would, on a database where it has not run yet. */
-    const runHashingBlock = async () => {
-      const { sql: blockSql } = await unsubscribeTokenHashes.produce();
-      await adminDb().execute(sql.raw(blockSql));
-    };
-
-    /** A user whose row holds the token itself, as rows written before hashing do. */
-    const legacyRow = async (label: string) => {
-      const user = await signUp(label);
-      const token = generateUnsubscribeToken(user.email);
-      await adminDb().delete(unsubscribeTokensTable);
-      await adminDb().insert(unsubscribeTokensTable).values({ userId: user.id, secret: token });
-      await adminDb().execute(sql`COMMENT ON COLUMN unsubscribe_tokens.secret IS NULL`);
-      return { user, token };
-    };
-
-    it('must not keep a token stored before hashing as its own value', async () => {
-      const { user, token } = await legacyRow('legacy-row');
-
-      await runHashingBlock();
-
-      expect(await storedSecrets(user.id)).toEqual([hashToken(token)]);
-      // Positive control: the link sent before the migration still unsubscribes.
-      const { location } = await openLink(`/me/unsubscribe?token=${token}`);
-      expect(location.pathname).toBe('/auth/unsubscribed');
-      expect(await isSubscribed(user.id)).toBe(false);
-    });
-
-    it('hashes a stored token once, however often the side effects re-run', async () => {
-      const { user, token } = await legacyRow('legacy-rerun');
-
-      await runHashingBlock();
-      await runHashingBlock();
-
-      expect(await storedSecrets(user.id)).toEqual([hashToken(token)]);
-    });
-  });
-
-  it('sends a newsletter whose unsubscribe link unsubscribes its recipient (positive control)', async () => {
+  it('must not skip a member who signed up long ago, and must not mail one who unsubscribed', async () => {
     const organization = await createTestOrganization();
-    const member = await createOrganizationAdminUser(
-      'newsletter-reader@example.test',
-      organization.id,
-      hierarchy.getLeastPrivilegedRole('organization'),
-      true,
-      organization.tenantId,
-    );
-    await adminDb().update(usersTable).set({ newsletter: true }).where(eq(usersTable.id, member.id));
+    const role = hierarchy.getLeastPrivilegedRole('organization');
+    const member = async (label: string, newsletter: boolean) => {
+      const user = await createOrganizationAdminUser(
+        `${label}@example.test`,
+        organization.id,
+        role,
+        true,
+        organization.tenantId,
+      );
+      await adminDb().update(usersTable).set({ newsletter }).where(eq(usersTable.id, user.id));
+      return user;
+    };
+    const reader = await member('newsletter-reader', true);
+    await member('newsletter-left', false);
     const admin = await createSystemAdminUser('newsletter-sender@example.test');
     const { baseApp } = await import('#/routes');
 
@@ -171,68 +131,23 @@ describe('Unsubscribe tokens', () => {
       headers: { ...defaultHeaders, Cookie: await createTestSession(admin) },
       body: JSON.stringify({
         organizationIds: [organization.id],
-        roles: [hierarchy.getLeastPrivilegedRole('organization')],
+        roles: [role],
         subject: 'News',
         content: '<p>News</p>',
       }),
     });
     expect(response.status).toBe(204);
 
-    const [, , [recipient] = []] = vi.mocked(mailer.prepareEmails).mock.calls[0] ?? [];
-    expect(recipient?.email).toBe(member.email);
+    // The reader, who holds no row anywhere, is mailed; the member who unsubscribed is not.
+    const [, , recipients = []] = vi.mocked(mailer.prepareEmails).mock.calls[0] ?? [];
+    expect(recipients.map((recipient) => recipient.email)).toEqual([reader.email]);
+
+    // Positive control: the link in the mail turns the reader's newsletter off.
+    const [recipient] = recipients;
     const link = recipient && 'unsubscribeLink' in recipient ? String(recipient.unsubscribeLink) : '';
-    const { status, location } = await openLink(link.replace(appConfig.backendUrl, ''));
+    const { status, location } = await openLink(link);
     expect(status).toBe(302);
     expect(location.pathname).toBe('/auth/unsubscribed');
-    expect(await isSubscribed(member.id)).toBe(false);
-  });
-});
-
-/**
- * A notification email's unsubscribe link turns off one category for one user, without a session: its token is an HMAC
- * over both, so a link made for one user or one category opens nothing else.
- */
-describe('Category unsubscribe links', () => {
-  afterEach(async () => {
-    await clearSecurityTestData();
-  });
-
-  /** The user's email preferences, read past RLS; undefined while none are stored. */
-  const preferencesOf = async (userId: string) => {
-    const [row] = await adminDb()
-      .select({ digest: notificationPreferencesTable.digest, mentionEmail: notificationPreferencesTable.mentionEmail })
-      .from(notificationPreferencesTable)
-      .where(eq(notificationPreferencesTable.userId, userId));
-    return row;
-  };
-
-  it("must not turn off another user's or another category's email via a link made for one", async () => {
-    const [owner, other] = [await signUp('category-owner'), await signUp('category-other')];
-    const before = [await preferencesOf(owner.id), await preferencesOf(other.id)];
-    const token = new URL(buildUnsubscribeLink(owner.id, 'digest')).searchParams.get('token') ?? '';
-
-    for (const target of [
-      `/notifications/unsubscribe?user=${other.id}&category=digest&token=${token}`,
-      `/notifications/unsubscribe?user=${owner.id}&category=mention&token=${token}`,
-      `/notifications/unsubscribe?user=${owner.id}&category=digest&token=${token.slice(0, -1)}`,
-    ]) {
-      const { status, location } = await openLink(target);
-      expect(status, target).toBe(302);
-      expect(location.pathname, target).toBe('/auth/error');
-      expect(location.searchParams.get('error'), target).toBe('unsubscribe_failed');
-    }
-    expect([await preferencesOf(owner.id), await preferencesOf(other.id)]).toEqual(before);
-  });
-
-  it('turns off the one category its link names (positive control)', async () => {
-    const owner = await signUp('category-reader');
-
-    const { status, location } = await openLink(
-      buildUnsubscribeLink(owner.id, 'digest').replace(appConfig.backendUrl, ''),
-    );
-
-    expect(status).toBe(302);
-    expect(location.pathname).toBe('/auth/unsubscribed');
-    expect(await preferencesOf(owner.id)).toEqual({ digest: 'off', mentionEmail: true });
+    expect(await emailSettings(reader.id)).toEqual({ newsletter: false });
   });
 });

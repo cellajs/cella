@@ -1,11 +1,11 @@
-import { appConfig, type EntityRole } from 'shared';
+import type { EntityRole } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { mailer } from '#/lib/mailer';
+import { buildUnsubscribeLink } from '#/modules/notification/helpers/category-token';
 import { replaceSignedSrcs } from '#/modules/system/helpers/get-signed-src';
 import { findNewsletterRecipients } from '#/modules/system/system-queries';
 import { log } from '#/utils/logger';
-import { generateUnsubscribeToken } from '#/utils/unsubscribe-token';
 import { newsletterEmail } from '../../../../emails';
 
 interface SendNewsletterInput {
@@ -23,27 +23,18 @@ export async function sendNewsletterOp(ctx: UserContext, input: SendNewsletterIn
   if (!toSelf && organizationIds.length === 0) throw new AppError(400, 'no_recipients', 'warn');
 
   // Preview sends are addressed only to the initiating admin and need no organization scope.
-  const recipientsRecords = toSelf ? [] : await findNewsletterRecipients(ctx, { organizationIds, roles });
+  const recipientsRecords = toSelf
+    ? [{ userId: user.id, email: user.email, name: user.name, orgName: 'TEST EMAIL ORGANIZATION' }]
+    : await findNewsletterRecipients(ctx, { organizationIds, roles });
 
-  if (!recipientsRecords.length && !toSelf) throw new AppError(400, 'no_recipients', 'warn');
+  if (!recipientsRecords.length) throw new AppError(400, 'no_recipients', 'warn');
 
-  // The token is derived from the address; the database holds only its hash.
-  let recipients = recipientsRecords.map(({ newsletter, ...recipient }) => ({
+  // The link's token is derived from the user id and the category; nothing is stored for it.
+  const recipients = recipientsRecords.map(({ userId, ...recipient }) => ({
     ...recipient,
     lng: user.language,
-    unsubscribeLink: `${appConfig.backendUrl}/me/unsubscribe?token=${generateUnsubscribeToken(recipient.email)}`,
+    unsubscribeLink: buildUnsubscribeLink(userId, 'newsletter'),
   }));
-
-  if (toSelf)
-    recipients = [
-      {
-        email: user.email,
-        name: user.name,
-        lng: user.language,
-        unsubscribeLink: `${appConfig.backendUrl}/me/unsubscribe?token=NOTOKEN`,
-        orgName: 'TEST EMAIL ORGANIZATION',
-      },
-    ];
 
   const newContent = await replaceSignedSrcs(content);
 

@@ -1104,29 +1104,6 @@
     }
   },
   {
-    "id": "unsubscribeMe",
-    "hash": "tag/me/GET/me/unsubscribe",
-    "method": "get",
-    "path": "/me/unsubscribe",
-    "tags": ["me"],
-    "summary": "Unsubscribe",
-    "description": "Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the current user.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": false,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["publicGuard"],
-      "xRateLimiter": ["tokenLimiter"],
-      "xCache": []
-    },
-    "tagsByKind": {
-      "module": ["me"],
-      "owner": ["cella"]
-    }
-  },
-  {
     "id": "getMyMemberships",
     "hash": "tag/me/GET/me/memberships",
     "method": "get",

@@ -18,9 +18,8 @@ import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { insertUsers } from '#/modules/user/helpers/insert-users';
-import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
-import { mockEmail, mockUnsubscribeToken, mockUser } from '#/modules/user/user-mocks';
+import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import type { apiErrorSchema } from '#/schemas';
 import { hashToken } from '#/utils/hash-token';
 
@@ -93,9 +92,6 @@ export function passkeyAssertion(opts: { credentialId: string; challenge?: strin
 export async function createTestUser(email: string, verified = true) {
   const userRecord = mockUser({ email });
   const [user] = await insertUsers(db, [userRecord]);
-
-  const unsubscribeTokenRecord = await mockUnsubscribeToken(user);
-  await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRecord).onConflictDoNothing();
 
   const emailRecord = {
     email: user.email,

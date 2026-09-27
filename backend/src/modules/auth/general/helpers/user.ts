@@ -6,10 +6,8 @@ import { extractPgError } from '#/lib/error';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { emailsTable } from '#/modules/user/emails-db';
 import { insertUsers } from '#/modules/user/helpers/insert-users';
-import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
-import { unsubscribeTokenRow } from '#/utils/unsubscribe-token';
 
 /**
  * A unique violation on a user's address, on `users.email` or `emails.email`. Matched on the table and column part of
@@ -24,7 +22,7 @@ interface HandleCreateUserProps {
 }
 
 /**
- * Creates a user (also the OAuth sign-up path): user, unsubscribe token and an unverified email row. Pending invitations
+ * Creates a user (also the OAuth sign-up path): the user and an unverified email row. Pending invitations
  * for the address are claimed at the first inbox proof, never here: typing someone's address into sign-up proves nothing.
  * Throws 409 `email_exists` when the address is taken.
  */
@@ -47,8 +45,6 @@ export const handleCreateUser = async (
         language: appConfig.defaultLanguage,
       },
     ]);
-
-    await db.insert(unsubscribeTokensTable).values(unsubscribeTokenRow(user.id, normalizedEmail));
 
     // The account's one email row, with verification state from the sign-up strategy. A taken address never gets here:
     // the users insert above already failed on its unique email.
