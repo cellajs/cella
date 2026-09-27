@@ -188,6 +188,12 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
     expect((await attachment.read())?.description).toBe(original);
   });
 
+  it('answers the health path the internal load balancer pool probes, or the pool takes every backend out', async () => {
+    // The pool expects the backend's `healthExpectStatus` (infra/config/services.config.ts).
+    const response = await fetch(`http://127.0.0.1:${internalPort}/health`);
+    expect(response.status).toBe(204);
+  });
+
   it('accepts the CDC worker and the relay on the internal listener with their own secrets (positive control)', async () => {
     expect(await upgradeStatus(internalPort, '/internal/cdc', { 'x-cdc-secret': modeSecret('CDC_SECRET') })).toBe(101);
 
