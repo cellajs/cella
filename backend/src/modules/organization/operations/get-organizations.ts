@@ -1,5 +1,6 @@
 import { type EntityRole, hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
+import { AppError } from '#/core/error';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { findMemberPreviewsByChannels } from '#/modules/memberships/memberships-queries';
@@ -34,12 +35,19 @@ export async function getOrganizationsOp(ctx: UserContext, input: GetOrganizatio
   const sharedWithCaller =
     ofAnotherUser && !ctx.var.isSystemAdmin ? [...new Set(memberships.map((m) => m.organizationId))] : undefined;
 
+  // The listed user's archive and role are theirs alone: as a filter on another user's list they are refused, never
+  // dropped. The menu-order default names the caller's own menu, so another user's list comes by name.
+  if (ofAnotherUser && (role || excludeArchived)) {
+    throw new AppError(403, 'forbidden', 'warn', {
+      entityType: 'organization',
+      meta: { reason: 'other_user_membership' },
+    });
+  }
+
   const includeCounts = include.includes('counts');
   const includeMembership = include.includes('membership');
   const includeMembers = include.includes('members');
 
-  // Archive, role and menu order are read from the listed user's memberships: for another user's list none applies,
-  // and a menu-order sort falls back to name.
   const opts = {
     isSystemAdmin,
     targetUserId,
@@ -49,8 +57,8 @@ export async function getOrganizationsOp(ctx: UserContext, input: GetOrganizatio
     order,
     offset,
     limit,
-    excludeArchived: ofAnotherUser ? undefined : excludeArchived,
-    role: ofAnotherUser ? undefined : role,
+    excludeArchived,
+    role,
     includeCounts,
   };
   const { items: organizations, total } = await findOrganizationsPaginated(ctx, opts);

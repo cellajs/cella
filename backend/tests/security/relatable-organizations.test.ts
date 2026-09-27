@@ -131,7 +131,7 @@ describe('Organizations of another user (relatableUserId)', async () => {
     }
   });
 
-  it("must not filter or order by another user's archive, role or menu order via relatableUserId", async () => {
+  it("must not filter another user's list by their archive or role via relatableUserId", async () => {
     // Two more organizations the viewer shares with the target, named against the target's menu order.
     const alpha = await createTestOrganization({ name: 'Alpha shared' });
     const bravo = await createTestOrganization({ name: 'Bravo shared' });
@@ -144,30 +144,31 @@ describe('Organizations of another user (relatableUserId)', async () => {
     for (const user of [viewer, target]) invalidateCache.user(user.id);
     const pair = [alpha.id, bravo.id];
 
-    const listFor = async (query: Record<string, string>) => {
-      const { data, response } = await call(getOrganizations, {
+    const listFor = (query: Record<string, string>, as: { sessionCookie: string } = viewer) =>
+      call(getOrganizations, {
         query: { relatableUserId: target.id, ...query },
-        headers: { ...defaultHeaders, Cookie: viewer.sessionCookie },
+        headers: { ...defaultHeaders, Cookie: as.sessionCookie },
       });
-      expect(response.status).toBe(200);
-      return (data as OrgList).items.map((org) => org.id).filter((id) => pair.includes(id));
-    };
+    const idsOf = (data: unknown) => (data as OrgList).items.map((org) => org.id).filter((id) => pair.includes(id));
 
-    expect(await listFor({ excludeArchived: 'true' })).toEqual(pair);
-    expect(await listFor({ role: memberRole })).toEqual(pair);
-    expect(await listFor({ sort: 'displayOrder', order: 'asc' })).toEqual(pair);
+    // The listed user's archive and role are not the viewer's to filter on: refused, never dropped.
+    const refused: Record<string, string>[] = [{ excludeArchived: 'true' }, { role: memberRole }];
+    for (const query of refused) {
+      const { data, error, response } = await listFor(query);
+      expect(response.status, JSON.stringify(query)).toBe(403);
+      expect((error as ErrorResponse).type).toBe('forbidden');
+      expect(data).toBeUndefined();
+    }
+
+    // The menu-order default names the viewer's own menu; another user's list comes in name order.
+    const byMenu = await listFor({ sort: 'displayOrder', order: 'asc' });
+    expect(byMenu.response.status).toBe(200);
+    expect(idsOf(byMenu.data)).toEqual(pair);
 
     // The user's own list does follow their archive, role and menu order (positive control).
-    const ownFor = async (query: Record<string, string>) => {
-      const { data } = await call(getOrganizations, {
-        query: { relatableUserId: target.id, ...query },
-        headers: { ...defaultHeaders, Cookie: target.sessionCookie },
-      });
-      return (data as OrgList).items.map((org) => org.id).filter((id) => pair.includes(id));
-    };
-    expect(await ownFor({ excludeArchived: 'true' })).toEqual([bravo.id]);
-    expect(await ownFor({ role: memberRole })).toEqual([bravo.id]);
-    expect(await ownFor({ sort: 'displayOrder', order: 'asc' })).toEqual([bravo.id, alpha.id]);
+    expect(idsOf((await listFor({ excludeArchived: 'true' }, target)).data)).toEqual([bravo.id]);
+    expect(idsOf((await listFor({ role: memberRole }, target)).data)).toEqual([bravo.id]);
+    expect(idsOf((await listFor({ sort: 'displayOrder', order: 'asc' }, target)).data)).toEqual([bravo.id, alpha.id]);
   });
 
   it('must not list anything for a user who shares no organization', async () => {
