@@ -14,7 +14,7 @@ import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import { requireStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { verifyTotp } from '#/modules/auth/totps/helpers/totps';
 import { getUserSessions } from '#/modules/me/helpers/get-user-info';
-import { deleteUser, findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
+import { findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 import { meRoutes } from '#/modules/me/me-routes';
 import { deleteMyMembershipOp } from '#/modules/me/operations/delete-my-membership';
 import { getConnectedAppsOp } from '#/modules/me/operations/get-connected-apps';
@@ -26,7 +26,7 @@ import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-a
 import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
 import { unsubscribeMeOp } from '#/modules/me/operations/unsubscribe-me';
 import { updateMeOp } from '#/modules/me/operations/update-me';
-import { deleteConsentsOfUsers } from '#/modules/oauth-server/oauth-server-queries';
+import { deleteAccounts } from '#/modules/user/helpers/delete-accounts';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 
@@ -123,11 +123,7 @@ app.openapi(meRoutes.deleteMe, async (ctx) => {
 
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: 'self' } });
 
-  // CASCADE SET NULL on createdBy/updatedBy propagates to product entities.
-  await deleteUser(ctx);
-  await deleteConsentsOfUsers(ctx, { userIds: [user.id] });
-
-  await endSessions(ctx, { userId: user.id, all: true, reason: 'user_deleted', by: user.id });
+  await deleteAccounts(ctx, { userIds: [user.id], by: user.id });
   deleteAuthCookie(ctx, 'session');
   log.info('User deleted');
 

@@ -62,11 +62,6 @@ export const updateMe = async (ctx: UserContext, { values }: UpdateMeOpts) => {
   return db.update(usersTable).set(updateData).where(eq(usersTable.id, userId));
 };
 
-export const deleteUser = async (ctx: UserContext) => {
-  const { db, userId } = ctx.var;
-  return db.delete(usersTable).where(eq(usersTable.id, userId));
-};
-
 interface DeleteMyMembershipOpts {
   channelId: string;
 }
