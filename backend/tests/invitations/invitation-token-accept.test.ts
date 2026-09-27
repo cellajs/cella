@@ -121,7 +121,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     expect(first.response.status).toBe(200);
 
     const replay = await accept([await createTestSession(other), invitationCookie]);
-    expect(replay.response.status).toBe(404);
+    expect(replay.response.status).toBe(401);
     expect(await membershipsOf(other.id)).toHaveLength(0);
   });
 
@@ -180,7 +180,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
 
     const { response } = await accept([await createTestSession(me)]);
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
     expect(await membershipsOf(me.id)).toHaveLength(0);
   });
 
@@ -312,7 +312,7 @@ describe('Opening a token link while signed in', async () => {
       headers: { ...defaultHeaders, Cookie: await createTestSession(me) },
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
   });
 
   it("still refuses another user's magic link", async () => {
@@ -336,6 +336,6 @@ describe('Opening a token link while signed in', async () => {
       headers: { ...defaultHeaders, Cookie: cookies },
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
   });
 });

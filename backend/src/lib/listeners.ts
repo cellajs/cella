@@ -63,7 +63,8 @@ function internalSourceRefusal(remoteAddress: string | undefined): string | unde
  */
 export const internalApp = new Hono<Env>();
 internalApp.use('*', async (ctx, next) => {
-  const peer = ctx.env.incoming.socket.remoteAddress;
+  // A request that reaches the app without its node connection (`app.fetch` in-process) has no peer to admit.
+  const peer = ctx.env?.incoming?.socket?.remoteAddress;
   const refusal = internalSourceRefusal(peer);
   if (!refusal) return next();
   log.warn('Internal listener refused a request', { ip: peer, reason: refusal });

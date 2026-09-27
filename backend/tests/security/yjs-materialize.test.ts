@@ -31,6 +31,8 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
         headers: { 'content-type': 'application/json', ...(secret === null ? {} : { 'x-yjs-relay-secret': secret }) },
         body: JSON.stringify(body),
       }),
+      // The in-process call carries the loopback peer a co-hosted relay connects from.
+      { incoming: { socket: { remoteAddress: '127.0.0.1' } } },
     );
     return { status: response.status, body: (await response.json()) as Record<string, unknown> };
   };

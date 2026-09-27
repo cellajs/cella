@@ -62,7 +62,8 @@ describe('API key scopes at the token endpoint', async () => {
       body: { name: 'Taken over' },
       headers: bearer(jwt),
     });
-    expect(write.response.status).toBe(403);
+    // Without the organization's scope the key reads it as missing (PERMISSIONS.md, Refusals).
+    expect(write.response.status).toBe(404);
     const [row] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, account.org.id));
     expect(row.name).toBe(account.org.name);
   });
