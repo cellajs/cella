@@ -1,8 +1,7 @@
 import { signInWithTotp } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { authCookie, createMfaToken, createTotpUser, sessionsOf } from '../helpers';
+import { authCookie, createMfaToken, createTotpUser, sessionsOf, setCookieOf, setCookiePair } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
@@ -12,10 +11,6 @@ vi.mock('#/modules/auth/totps/helpers/totps', () => ({ verifyTotp: vi.fn().mockR
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
 afterEach(async () => await clearDatabase());
-
-/** The Set-Cookie line of one auth cookie, or undefined. */
-const setCookieLine = (res: Response, name: Parameters<typeof authCookieName>[0]) =>
-  res.headers.getSetCookie().find((line) => line.startsWith(`${authCookieName(name)}=`));
 
 describe('device id on sign-in', async () => {
   const call = await createAppClient();
@@ -36,10 +31,10 @@ describe('device id on sign-in', async () => {
 
     const res = await signIn(user);
 
-    expect(setCookieLine(res, 'device-id')).toContain('SameSite=Lax');
+    expect(setCookieOf(res, 'device-id').line).toContain('SameSite=Lax');
     // `__Host-`: Secure, Path=/ and no Domain, so no other host or subdomain can set or read it; HttpOnly keeps it from
     // scripts; Strict keeps it off requests another site starts.
-    const session = setCookieLine(res, 'session');
+    const session = setCookieOf(res, 'session').line;
     expect(session).toMatch(/^__Host-/);
     expect(session).toContain('Secure');
     expect(session).toContain('Path=/');
@@ -56,7 +51,7 @@ describe('device id on sign-in', async () => {
     expect(firstSession.type).toBe('mfa');
     expect(firstSession.deviceIdHash).toBeTruthy();
 
-    const deviceCookie = setCookieLine(first, 'device-id')?.split(';')[0];
+    const deviceCookie = setCookiePair(first, 'device-id');
     await signIn(user, deviceCookie);
 
     // The earlier session stays as a revoked row; only the newer one authenticates.

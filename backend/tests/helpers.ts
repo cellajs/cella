@@ -288,17 +288,72 @@ export function authCookie(name: CookieName, content: string, maxAgeSeconds = 60
   return `${authCookieName(name)}=${encodeURIComponent(sealAuthCookie(name, content, maxAgeSeconds))}`;
 }
 
-/** The last non-empty `name` cookie a response set, as a `Cookie` pair; throws when it set none. */
-export function setCookiePair(response: Response, name: CookieName) {
-  const prefix = `${authCookieName(name)}=`;
-  const pair = response.headers
+/** One Set-Cookie line (or `Cookie` pair) as a browser reads it: a past expiry or an empty value leaves no cookie. */
+const readSetCookie = (line: string) => {
+  const [pair, ...attributes] = line.split(';');
+  const index = pair.indexOf('=');
+  const name = index > 0 ? pair.slice(0, index).trim() : '';
+  const value = pair.slice(index + 1).trim();
+  const removed = !value || attributes.some((attribute) => /^\s*(max-age=0|expires=.*1970)/i.test(attribute));
+  return { name, pair: `${name}=${value}`, line, removed };
+};
+
+/** The last Set-Cookie line a response sent for the auth cookie `name`, which is the one the browser keeps. */
+const lastSetCookie = (response: Response, name: CookieName) =>
+  response.headers
     .getSetCookie()
-    .map((line) => line.split(';')[0])
-    .filter((value) => value.startsWith(prefix) && value.length > prefix.length)
+    .map(readSetCookie)
+    .filter((cookie) => cookie.name === authCookieName(name))
     .at(-1);
-  if (!pair) throw new Error(`The response set no ${name} cookie`);
-  return pair;
+
+/** What a response did to the auth cookie `name`: `set` it, `cleared` it, or left it alone (undefined). */
+export function cookieChange(response: Response, name: CookieName): 'set' | 'cleared' | undefined {
+  const cookie = lastSetCookie(response, name);
+  if (!cookie) return undefined;
+  return cookie.removed ? 'cleared' : 'set';
 }
+
+/** The `name` cookie a response set, as its whole Set-Cookie line and the `Cookie` pair; throws when it set none. */
+export function setCookieOf(response: Response, name: CookieName) {
+  const cookie = lastSetCookie(response, name);
+  if (!cookie || cookie.removed) throw new Error(`The response set no ${name} cookie`);
+  return cookie;
+}
+
+export const setCookiePair = (response: Response, name: CookieName) => setCookieOf(response, name).pair;
+
+/**
+ * One browser's cookies, path-blind (the server never minds receiving extras): each Set-Cookie line replaces the pair
+ * of its name, and a cookie a response removes leaves the jar, as it leaves a browser.
+ */
+export class CookieJar {
+  private readonly cookies = new Map<string, string>();
+  /** Each initial entry is a `Cookie` header: one pair, or several joined by `; `. */
+  constructor(initial: string[] = []) {
+    for (const header of initial) this.add(header);
+  }
+  /** Puts the pairs of a `Cookie` header in the jar, as a browser that already holds them. */
+  add(cookieHeader: string) {
+    for (const pair of cookieHeader.split('; ')) this.store(pair);
+  }
+  private store(line: string) {
+    const { name, pair, removed } = readSetCookie(line);
+    if (!name) return;
+    if (removed) this.cookies.delete(name);
+    else this.cookies.set(name, pair);
+  }
+  absorb(response: Response) {
+    for (const line of response.headers.getSetCookie()) this.store(line);
+    return this;
+  }
+  header() {
+    return [...this.cookies.values()].join('; ');
+  }
+}
+
+/** The `Cookie` header a browser holding `cookieHeader` sends after `response`. */
+export const cookiesAfter = (cookieHeader: string, response: Response) =>
+  new CookieJar([cookieHeader]).absorb(response).header();
 
 /** Links an external identity to a user; by default a verified GitHub identity asserting the user's own address. */
 export async function linkIdentity(user: { id: string; email: string }, overrides: Partial<InsertIdentityModel> = {}) {

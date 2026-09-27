@@ -9,7 +9,7 @@ import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to
 import { streamSubscriberManager } from '#/modules/entities/stream';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { insertTestSession, mailedLink, setCookiePair } from '../helpers';
+import { cookiesAfter, insertTestSession, mailedLink, setCookiePair } from '../helpers';
 import { createAppClient } from '../test-client';
 
 export interface TestSession {
@@ -97,26 +97,6 @@ export async function sessionSetBy(response: Response): Promise<TestSession> {
 export async function impersonationSetBy(response: Response, admin: TestSession): Promise<TestSession> {
   const pair = setCookiePair(response, 'impersonation');
   return asSession(await sessionIdFor(tokenOf(pair)), `${admin.cookie}; ${pair}`);
-}
-
-/**
- * The `Cookie` header a browser sends after a response: its Set-Cookie lines replace pairs of the same name, and an
- * emptied value removes the pair.
- */
-export function cookiesAfter(cookieHeader: string, response: Response): string {
-  const jar = new Map(
-    cookieHeader
-      .split('; ')
-      .filter(Boolean)
-      .map((pair) => [pair.slice(0, pair.indexOf('=')), pair] as const),
-  );
-  for (const line of response.headers.getSetCookie()) {
-    const pair = line.split(';')[0];
-    const name = pair.slice(0, pair.indexOf('='));
-    if (pair.length > name.length + 1) jar.set(name, pair);
-    else jar.delete(name);
-  }
-  return [...jar.values()].join('; ');
 }
 
 export interface OpenStream {

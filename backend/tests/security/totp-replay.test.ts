@@ -3,11 +3,11 @@ import { nanoid } from 'nanoid';
 import { createTotp, generateTotpKey, signInWithTotp, stepUp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { defaultHeaders } from '../fixtures';
 import {
   authCookie,
+  cookieChange,
   createMfaToken,
   createTestSession,
   createTestUser,
@@ -15,6 +15,7 @@ import {
   expectRefusal,
   sessionRow,
   sessionsOf,
+  setCookiePair,
   tokenRowOf,
 } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -36,8 +37,6 @@ const codeAt = (stepsAhead = 0, secret = totpSecret) =>
     digits,
     Math.floor(Date.now() / 1000) + stepsAhead * intervalInSeconds,
   );
-
-const sessionCookieSet = (res: Response) => res.headers.getSetCookie().some((line) => line.includes('-session-'));
 
 afterEach(async () => await clearSecurityTestData());
 
@@ -68,7 +67,7 @@ describe('TOTP replay', async () => {
     // Another challenge (another sign-in), answered with the code the first one used.
     const replay = await answerChallenge(user, code);
     await expectRefusal(replay, 401, 'totp_code_used');
-    expect(sessionCookieSet(replay.response)).toBe(false);
+    expect(cookieChange(replay.response, 'session')).toBeUndefined();
     expect(await tokenRowOf('confirm-mfa', replay.mfaToken)).toBeDefined();
     expect(await sessionsOf(user.id)).toHaveLength(1);
 
@@ -100,10 +99,7 @@ describe('TOTP replay', async () => {
     const generated = await call(generateTotpKey, { headers: { ...defaultHeaders, Cookie: sessionCookie } });
     expect(generated.response.status).toBe(200);
     const { manualKey } = generated.data as { manualKey: string };
-    const challengeCookie = generated.response.headers
-      .getSetCookie()
-      .find((line) => line.startsWith(`${authCookieName('totp-challenge')}=`))
-      ?.split(';')[0];
+    const challengeCookie = setCookiePair(generated.response, 'totp-challenge');
 
     const code = codeAt(0, manualKey);
     const created = await call(createTotp, {
@@ -114,7 +110,7 @@ describe('TOTP replay', async () => {
 
     const replay = await answerChallenge(user, code);
     await expectRefusal(replay, 401, 'totp_code_used');
-    expect(sessionCookieSet(replay.response)).toBe(false);
+    expect(cookieChange(replay.response, 'session')).toBeUndefined();
 
     // Positive control: the authenticator's next code signs in.
     expect((await answerChallenge(user, codeAt(1, manualKey))).response.status).toBe(204);

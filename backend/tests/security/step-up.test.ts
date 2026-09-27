@@ -5,12 +5,13 @@ import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { defaultHeaders } from '../fixtures';
 import {
   authCookie,
+  cookieChange,
+  cookiesAfter,
   createMfaToken,
   createSystemAdminUser,
   createTestUser,
@@ -23,7 +24,6 @@ import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, issuedChallenge, passkeyChallenge } from './helpers';
 import {
   askStepUpLink,
-  cookiesAfter,
   insertImpersonation,
   insertSession,
   insertStaleSession,
@@ -173,12 +173,7 @@ describe('step-up', async () => {
 
       expect(opened.response.status).toBe(302);
       expect(new URL(opened.response.headers.get('location') ?? '').pathname).toBe('/account');
-      const sessionCookie = `${authCookieName('session')}=`;
-      expect(
-        opened.response.headers
-          .getSetCookie()
-          .filter((line) => line.startsWith(sessionCookie) && !line.startsWith(`${sessionCookie};`)),
-      ).toEqual([]);
+      expect(cookieChange(opened.response, 'session')).not.toBe('set');
       // The browser that asked is stepped up on its own session; the link opens once.
       expect(await stateOf({ ...asking, headers: { ...defaultHeaders, Cookie: browser } })).toEqual({
         steppedUp: true,

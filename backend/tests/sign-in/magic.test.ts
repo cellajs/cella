@@ -10,7 +10,14 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { authCookie, createTestOrganization, createUser, enableMFAForUser, insertTestToken } from '../helpers';
+import {
+  authCookie,
+  cookieChange,
+  createTestOrganization,
+  createUser,
+  enableMFAForUser,
+  insertTestToken,
+} from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
@@ -165,9 +172,7 @@ describe('Magic link authentication', async () => {
       expect(location.pathname).toBe('/auth/mfa');
       expect(location.searchParams.get('redirect')).toBe('/orgs/acme');
       // Session must not be set before the MFA challenge completes
-      expect(res.headers.get('set-cookie') ?? '').not.toContain(
-        `${appConfig.slug}-session-${appConfig.cookieVersion}=`,
-      );
+      expect(cookieChange(res, 'session')).toBeUndefined();
     });
     it('should carry an invitation resume path through the MFA challenge, query string intact', async () => {
       const user = await createUser(signUpUser.email);

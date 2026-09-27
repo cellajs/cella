@@ -5,7 +5,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { devicesTable } from '#/modules/auth/devices-db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { enrollDevice } from '#/modules/auth/general/helpers/enroll-device';
 import { notifyNewSignIn } from '#/modules/auth/general/helpers/notify-sign-in';
 import { createSession, type SignInContext } from '#/modules/auth/general/helpers/session';
@@ -14,7 +13,15 @@ import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { hashDeviceIdForUser } from '#/utils/hash-pii';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { authCookie, createMfaToken, createTestSession, createTestUser, createTotpUser, sentMails } from '../helpers';
+import {
+  authCookie,
+  createMfaToken,
+  createTestSession,
+  createTestUser,
+  createTotpUser,
+  sentMails,
+  setCookiePair,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
@@ -190,10 +197,7 @@ describe('new sign-in notice through the sign-in endpoint', async () => {
       headers: { ...defaultHeaders, Cookie: cookies },
     });
     expect(response.status).toBe(204);
-    return response.headers
-      .getSetCookie()
-      .find((line) => line.startsWith(`${authCookieName('device-id')}=`))
-      ?.split(';')[0];
+    return setCookiePair(response, 'device-id');
   };
 
   it('mails an mfa sign-in from an unseen browser, and not the next one carrying its device id', async () => {

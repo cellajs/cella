@@ -39,6 +39,7 @@ import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import {
+  CookieJar,
   createSystemAdminUser,
   createTestOrganization,
   createTestSession,
@@ -51,7 +52,6 @@ import {
   authorizationCode,
   authorizationCodeToken,
   bearerHeaders,
-  CookieJar,
   clientCredentialsToken,
   exchangeCode,
   installApp,
@@ -600,7 +600,7 @@ describe('OAuth grants', async () => {
       const memberTokens = await consentIn(ctx, browser);
 
       // Someone else signs in on the same browser; the member never signed out.
-      browser.store(other.sessionCookie);
+      browser.add(other.sessionCookie);
       const next = await startAuthorization(oauth.issuer, { ...authorization(ctx, APP_ID, other), browser });
       expect(next.code).toBeNull();
       expect(next.uid).toBeTruthy();
@@ -630,8 +630,8 @@ describe('OAuth grants', async () => {
         { id: ctx.member.id },
         { type: 'impersonation', impersonatorSessionId: adminSession.id },
       );
-      browser.store(adminSession.cookie);
-      browser.store(impersonation.cookie);
+      browser.add(adminSession.cookie);
+      browser.add(impersonation.cookie);
       // Positive control: in the app, this browser now acts as the member.
       const me = await call(getMe, { headers: { ...defaultHeaders, Cookie: browser.header() } });
       expect((me.data as { user: { id: string } }).user.id).toBe(ctx.member.id);
@@ -651,7 +651,7 @@ describe('OAuth grants', async () => {
       ).toBeTruthy();
 
       const other = await createOrgUser(call, ctx.org.tenantId, ctx.org.id, `other-${nanoid(8)}`);
-      browser.store(other.sessionCookie);
+      browser.add(other.sessionCookie);
       const silent = await startAuthorization(oauth.issuer, { ...authorization(ctx), browser, prompt: 'none' });
       expect(silent.code).toBeNull();
       expect(silent.redirect?.get('error')).toBe('login_required');

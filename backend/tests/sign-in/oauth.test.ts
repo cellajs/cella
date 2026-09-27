@@ -15,6 +15,7 @@ import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
 import {
+  cookieChange,
   createTestOrganization,
   createUser,
   expectRefusal,
@@ -22,6 +23,7 @@ import {
   insertTestToken,
   linkIdentity,
   mailedLink,
+  setCookieOf,
 } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
@@ -115,9 +117,8 @@ describe('OAuth Authentication', async () => {
       });
 
       expect(res.status).toBe(302);
-      const setCookieHeader = res.headers.get('set-cookie');
-      expect(setCookieHeader).toBeTruthy();
-      expect(setCookieHeader).toContain(`"redirectAfter":"${redirectAfter}"`);
+      const [[state]] = vi.mocked(githubAuth.createAuthorizationURL).mock.calls;
+      expect(setCookieOf(res, `oauth-state-${state}`).line).toContain(`"redirectAfter":"${redirectAfter}"`);
     });
   });
 
@@ -137,9 +138,7 @@ describe('OAuth Authentication', async () => {
       });
 
       expect(res.status).toBe(302);
-      const setCookieHeader = res.headers.get('set-cookie');
-      expect(setCookieHeader).toBeDefined();
-      expect(setCookieHeader).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+      expect(cookieChange(res, 'session')).toBe('set');
     });
 
     it('finds the identity by provider subject when the provider address changed, and refreshes the snapshot', async () => {
@@ -155,7 +154,7 @@ describe('OAuth Authentication', async () => {
       });
 
       expect(res.status).toBe(302);
-      expect(res.headers.get('set-cookie')).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+      expect(cookieChange(res, 'session')).toBe('set');
 
       const [used] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, identity.id));
       expect(used.email).toBe('github-user@example.com');
@@ -181,7 +180,7 @@ describe('OAuth Authentication', async () => {
       // The callback treats the GitHub user as new: no session as the SSO identity's user, and that identity is untouched.
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).toContain('/auth/email-verification');
-      expect(res.headers.get('set-cookie') ?? '').not.toContain(`${appConfig.slug}-session-`);
+      expect(cookieChange(res, 'session')).toBeUndefined();
       const [untouched] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, ssoIdentity.id));
       expect(untouched.lastUsedAt).toBeNull();
       expect(untouched.userId).toBe(user.id);
@@ -203,7 +202,7 @@ describe('OAuth Authentication', async () => {
       });
 
       await expectRefusal({ response: res, error }, 409, 'oauth_conflict');
-      expect(res.headers.get('set-cookie') ?? '').not.toContain(`${appConfig.slug}-session-`);
+      expect(cookieChange(res, 'session')).toBeUndefined();
       expect(await db.select().from(tokensTable).where(eq(tokensTable.identityId, identity.id))).toHaveLength(0);
       const [unchanged] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, identity.id));
       expect(unchanged).toMatchObject({ email: 'local-account@example.com', verified: false });
@@ -603,8 +602,7 @@ describe('OAuth Authentication', async () => {
       expect(location).toContain('/auth/mfa');
 
       // GHSA-xg6x-h9c9-2m83: no session may be issued before the second factor completes.
-      const setCookie = res.headers.get('set-cookie') ?? '';
-      expect(setCookie).not.toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+      expect(cookieChange(res, 'session')).toBeUndefined();
     });
   });
   describe('Invite flow: the invitation opened in this browser proves the inbox', () => {
@@ -631,7 +629,7 @@ describe('OAuth Authentication', async () => {
       const { response: res } = await inviteCallback();
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).not.toContain('/auth/email-verification');
-      expect(res.headers.get('set-cookie')).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+      expect(cookieChange(res, 'session')).toBe('set');
       expect(mailer.prepareEmails).not.toHaveBeenCalled();
 
       const [account] = await db.select().from(usersTable).where(eq(usersTable.email, providerEmail));
@@ -698,7 +696,7 @@ describe('OAuth Authentication', async () => {
 
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).toContain('/auth/email-verification/signup');
-      expect(res.headers.get('set-cookie') ?? '').not.toContain(`${appConfig.slug}-session-`);
+      expect(cookieChange(res, 'session')).toBeUndefined();
       expect(await accountsFor(providerEmail)).toHaveLength(0);
       expect(await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail))).toHaveLength(0);
       expect(await db.select().from(identitiesTable)).toHaveLength(0);
@@ -737,7 +735,7 @@ describe('OAuth Authentication', async () => {
         headers: defaultHeaders,
       });
       expect(res.status).toBe(302);
-      expect(res.headers.get('set-cookie')).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+      expect(cookieChange(res, 'session')).toBe('set');
 
       const [account] = await accountsFor(providerEmail);
       expect(account).toBeDefined();
@@ -803,7 +801,7 @@ describe('OAuth Authentication', async () => {
 
       const { response: res, error } = await verifyCallback();
       await expectRefusal({ response: res, error }, 403, 'sign_up_restricted');
-      expect(res.headers.get('set-cookie') ?? '').not.toContain(`${appConfig.slug}-session-`);
+      expect(cookieChange(res, 'session')).toBeUndefined();
       expect(await accountsFor(providerEmail)).toHaveLength(0);
       expect(await db.select().from(identitiesTable)).toHaveLength(0);
 
@@ -822,7 +820,7 @@ describe('OAuth Authentication', async () => {
 
       const { response: res } = await verifyCallback();
       expect(res.status).toBe(302);
-      expect(res.headers.get('set-cookie')).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+      expect(cookieChange(res, 'session')).toBe('set');
       expect(await accountsFor(providerEmail)).toHaveLength(1);
       expect(await verificationTokens()).toHaveLength(0);
     });

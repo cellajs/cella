@@ -1,14 +1,12 @@
 import { eq, sql } from 'drizzle-orm';
 import { Hono } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
-import type { TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import {
   invokeToken,
   issueToken,
@@ -19,7 +17,7 @@ import {
 import { isTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { hashToken } from '#/utils/hash-token';
-import { authCookie, createTestUser } from '../../../../tests/helpers';
+import { authCookie, cookieChange, createTestUser, setCookiePair } from '../../../../tests/helpers';
 import { clearDatabase } from '../../../../tests/test-utils';
 
 const ctx = { var: { db } };
@@ -53,19 +51,6 @@ const app = new Hono<Env>()
 
 const request = (path: string, cookies: string[] = [], method = 'GET') =>
   app.request(path, { method, headers: cookies.length ? { Cookie: cookies.join('; ') } : {} });
-
-/** The `name=value` pair a response set for a token type's cookie, to send back as that browser would. */
-const cookieSet = (response: Response, type: TokenType) =>
-  response.headers
-    .getSetCookie()
-    .find((line) => line.startsWith(`${authCookieName(type)}=`))
-    ?.split(';')[0];
-
-/** Whether the response removes a token type's cookie. */
-const cookieCleared = (response: Response, type: TokenType) =>
-  response.headers
-    .getSetCookie()
-    .some((line) => line.startsWith(`${authCookieName(type)}=;`) && /Max-Age=0/i.test(line));
 
 const rowOf = async (id: string) => (await db.select().from(tokensTable).where(eq(tokensTable.id, id)))[0];
 
@@ -186,7 +171,7 @@ describe('invokeToken', () => {
     expect(winner.status).toBe(200);
     expect(loser.status).toBe(401);
     expect(await loser.json()).toEqual({ type: 'invitation_expired', tokenId: token.id });
-    expect(cookieSet(loser, 'invitation')).toBeUndefined();
+    expect(cookieChange(loser, 'invitation')).toBeUndefined();
 
     const opened = await rowOf(token.id);
     expect(opened.invokedAt).not.toBeNull();
@@ -194,13 +179,12 @@ describe('invokeToken', () => {
     expect(minutesUntil(opened.expiresAt)).toBeLessThanOrEqual(30);
 
     // Re-opened only with its own single-use cookie, never with a cookie from another link of the type.
-    const winnerCookie = cookieSet(winner, 'invitation');
-    expect(winnerCookie).toBeDefined();
-    expect((await request(`/invoke/invitation/${rawToken}`, [winnerCookie!])).status).toBe(200);
+    const winnerCookie = setCookiePair(winner, 'invitation');
+    expect((await request(`/invoke/invitation/${rawToken}`, [winnerCookie])).status).toBe(200);
 
     const otherLink = await issueToken(ctx, { type: 'invitation', email: address() });
-    const otherCookie = cookieSet(await request(`/invoke/invitation/${otherLink.rawToken}`), 'invitation');
-    const replay = await request(`/invoke/invitation/${rawToken}`, [otherCookie!]);
+    const otherCookie = setCookiePair(await request(`/invoke/invitation/${otherLink.rawToken}`), 'invitation');
+    const replay = await request(`/invoke/invitation/${rawToken}`, [otherCookie]);
     expect(replay.status).toBe(401);
     expect(await replay.json()).toEqual({ type: 'invitation_expired', tokenId: token.id });
   });
@@ -222,9 +206,9 @@ describe('invokeToken', () => {
 describe('readBoundToken', () => {
   it('reads the redeemed link its cookie binds, and spends nothing', async () => {
     const { token, rawToken } = await issueToken(ctx, { type: 'invitation', email: address() });
-    const cookie = cookieSet(await request(`/invoke/invitation/${rawToken}`), 'invitation');
+    const cookie = setCookiePair(await request(`/invoke/invitation/${rawToken}`), 'invitation');
 
-    const response = await request('/read/invitation', [cookie!]);
+    const response = await request('/read/invitation', [cookie]);
     expect(response.status).toBe(200);
     expect(await response.json()).toMatchObject({ id: token.id });
     expect(await rowOf(token.id)).toBeDefined();
@@ -264,7 +248,7 @@ describe('spendCookieToken', () => {
 
     expect(spent.filter(Boolean)).toEqual([expect.objectContaining({ id: token.id, userId: user.id })]);
     expect(spent.filter((row) => row === null)).toHaveLength(1);
-    for (const response of responses) expect(cookieCleared(response, 'confirm-mfa')).toBe(true);
+    for (const response of responses) expect(cookieChange(response, 'confirm-mfa')).toBe('cleared');
     expect(await rowOf(token.id)).toBeUndefined();
   });
 
@@ -286,8 +270,8 @@ describe('spendCookieToken', () => {
     expect((await byRawValue.json()).spent).toBeNull();
     expect(await rowOf(token.id)).toBeDefined();
 
-    const cookie = cookieSet(await request(`/invoke/invitation/${rawToken}`), 'invitation');
-    const bySingleUse = await request('/spend/invitation', [cookie!], 'POST');
+    const cookie = setCookiePair(await request(`/invoke/invitation/${rawToken}`), 'invitation');
+    const bySingleUse = await request('/spend/invitation', [cookie], 'POST');
     expect((await bySingleUse.json()).spent).toMatchObject({ id: token.id });
     expect(await rowOf(token.id)).toBeUndefined();
   });

@@ -9,7 +9,15 @@ import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { magicLinkEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createMfaToken, createTestUser, createTotpUser, mailsTo, sessionRow } from '../helpers';
+import {
+  authCookie,
+  cookieChange,
+  createMfaToken,
+  createTestUser,
+  createTotpUser,
+  mailsTo,
+  sessionRow,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
 import { insertSession } from './session-helpers';
@@ -140,7 +148,7 @@ describe('brute-force budgets', async () => {
     // The address is spent: refused even with the right code of yet another account.
     const blocked = await answerFrom(ip, currentCode());
     expect(blocked.status).toBe(429);
-    expect(blocked.headers.get('set-cookie') ?? '').not.toContain('-session-');
+    expect(cookieChange(blocked, 'session')).toBeUndefined();
 
     // Another address is unaffected (positive control).
     expect((await answerFrom(randomIp(), currentCode())).status).toBe(204);
@@ -165,7 +173,7 @@ describe('brute-force budgets', async () => {
       headers: { ...fromIp(randomIp()), Cookie: cookie },
     });
     expect(response.status).toBe(429);
-    expect(response.headers.get('set-cookie') ?? '').not.toContain('-session-');
+    expect(cookieChange(response, 'session')).toBeUndefined();
     // The owner hears of it once, when the budget ran out.
     expect(lockoutMailsTo(user.email)).toHaveLength(1);
   });
@@ -214,7 +222,7 @@ describe('brute-force budgets', async () => {
       headers: { ...fromIp(randomIp()), Cookie: cookie },
     });
     expect(response.status).toBe(429);
-    expect(response.headers.get('set-cookie') ?? '').not.toContain('-session-');
+    expect(cookieChange(response, 'session')).toBeUndefined();
   });
 
   it("must not keep one account's TOTP checks locked in a process after the lockout ended in the database", async () => {
@@ -234,7 +242,7 @@ describe('brute-force budgets', async () => {
 
     const response = await attempt(currentCode());
     expect(response.status).toBe(204);
-    expect(response.headers.get('set-cookie') ?? '').toContain('-session-');
+    expect(cookieChange(response, 'session')).toBe('set');
     expect(lockoutMailsTo(user.email)).toHaveLength(1);
   });
 });

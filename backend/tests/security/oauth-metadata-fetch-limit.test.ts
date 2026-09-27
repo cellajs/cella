@@ -3,10 +3,9 @@ import { hierarchy } from 'shared';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { clientMetadataFetchLimiter } from '#/middlewares/rate-limiter/limiters';
 import { resourceUri } from '#/modules/oauth-server/resources';
-import { createTestOrganization, expectRefusal } from '../helpers';
+import { CookieJar, createTestOrganization, expectRefusal } from '../helpers';
 import {
   authorizationCodeToken,
-  CookieJar,
   installApp,
   registerApp,
   startTestOauthServer,

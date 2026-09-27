@@ -2,23 +2,19 @@ import { eq } from 'drizzle-orm';
 import { signOut, startOAuthConnect } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestUser } from '../helpers';
+import { cookieChange, cookiesAfter, createTestUser } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
-import { cookiesAfter, insertSession } from './session-helpers';
+import { insertSession } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['oauth', 'magic'], enabledOAuthProviders: ['github'] });
 
 afterEach(async () => await clearSecurityTestData());
 
 const connectPins = () => db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-connect'));
-
-const connectCookieCleared = (res: Response) =>
-  res.headers.getSetCookie().some((line) => line.startsWith(`${authCookieName('oauth-connect')}=;`));
 
 /**
  * A provider connect started in a browser goes to whoever finishes the provider's page in it. On a shared computer
@@ -39,7 +35,7 @@ describe('Sign-out with a provider connect under way', async () => {
 
     const signedOut = await call(signOut, { headers: { ...defaultHeaders, Cookie: browser } });
     expect(signedOut.response.status).toBe(204);
-    expect(connectCookieCleared(signedOut.response)).toBe(true);
+    expect(cookieChange(signedOut.response, 'oauth-connect')).toBe('cleared');
     expect(await connectPins()).toHaveLength(0);
   });
 });

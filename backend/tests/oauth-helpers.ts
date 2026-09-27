@@ -13,6 +13,7 @@ import { createProvider } from '#/modules/oauth-server/provider';
 import { createOauthListener } from '#/modules/oauth-server/server';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { defaultHeaders } from './fixtures';
+import { CookieJar } from './helpers';
 import { createAppClient } from './test-client';
 
 type ServiceAccountBody = NonNullable<CreateServiceAccountData['body']>;
@@ -122,34 +123,6 @@ export async function clientCredentialsToken(
     body: new URLSearchParams({ grant_type: 'client_credentials', ...params }),
   });
   return { status: response.status, body: (await response.json()) as Record<string, unknown> };
-}
-
-/**
- * One browser's cookies, path-blind: the provider scopes its cookies by path, the server never minds receiving extras.
- * A cookie a response deletes leaves the jar, as it leaves a browser.
- */
-export class CookieJar {
-  private readonly cookies = new Map<string, string>();
-  /** Each initial entry is a `Cookie` header: one pair, or several joined by `; `. */
-  constructor(initial: string[] = []) {
-    for (const header of initial) for (const pair of header.split('; ')) this.store(pair);
-  }
-  store(setCookie: string): void {
-    const [pair, ...attributes] = setCookie.split(';');
-    const index = pair.indexOf('=');
-    if (index <= 0) return;
-    const name = pair.slice(0, index).trim();
-    const value = pair.slice(index + 1).trim();
-    const deleted = attributes.some((attribute) => /^\s*(max-age=0|expires=.*1970)/i.test(attribute));
-    if (deleted || !value) this.cookies.delete(name);
-    else this.cookies.set(name, value);
-  }
-  absorb(response: Response): void {
-    for (const cookie of response.headers.getSetCookie()) this.store(cookie);
-  }
-  header(): string {
-    return [...this.cookies].map(([name, value]) => `${name}=${value}`).join('; ');
-  }
 }
 
 const base64url = (buffer: Buffer) => buffer.toString('base64url');

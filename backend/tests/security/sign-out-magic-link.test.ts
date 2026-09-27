@@ -4,21 +4,23 @@ import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createTestUser, expectRefusal, insertTestToken, tokenRow } from '../helpers';
+import {
+  authCookie,
+  cookieChange,
+  cookiesAfter,
+  createTestUser,
+  expectRefusal,
+  insertTestToken,
+  tokenRow,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
-import { cookiesAfter, insertSession } from './session-helpers';
+import { insertSession } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['magic', 'passkey'] });
 
 afterEach(async () => await clearSecurityTestData());
-
-const sessionCookieSet = (res: Response) =>
-  res.headers.getSetCookie().some((line) => line.startsWith(`${authCookieName('session')}=`) && !line.includes('=;'));
-
-const magicCookieCleared = (res: Response) =>
-  res.headers.getSetCookie().some((line) => line.startsWith(`${authCookieName('magic')}=;`));
 
 /** An unopened magic link for `user`, and the marker cookie of the browser that asked for it. */
 const requestedMagicLink = async (user: { id: string; email: string }) => {
@@ -42,18 +44,18 @@ describe('Sign-out after a magic-link sign-in', async () => {
 
     const opened = await openLink(raw, requestedHere);
     expect(opened.response.status).toBe(302);
-    expect(sessionCookieSet(opened.response)).toBe(true);
+    expect(cookieChange(opened.response, 'session')).toBe('set');
     let ownerBrowser = cookiesAfter(requestedHere, opened.response);
 
     // Positive control: until the owner signs out, the browser holding the link's cookie gets back in with it.
     const reopenedBefore = await openLink(raw, ownerBrowser);
     expect(reopenedBefore.response.status).toBe(302);
-    expect(sessionCookieSet(reopenedBefore.response)).toBe(true);
+    expect(cookieChange(reopenedBefore.response, 'session')).toBe('set');
     ownerBrowser = cookiesAfter(ownerBrowser, reopenedBefore.response);
 
     const signedOut = await call(signOut, { headers: { ...defaultHeaders, Cookie: ownerBrowser } });
     expect(signedOut.response.status).toBe(204);
-    expect(magicCookieCleared(signedOut.response)).toBe(true);
+    expect(cookieChange(signedOut.response, 'magic')).toBe('cleared');
     expect(await tokenRow(row.id)).toBeUndefined();
 
     // The next person reopens the link from the history, even with the single-use cookie as it was before sign-out.
@@ -63,7 +65,7 @@ describe('Sign-out after a magic-link sign-in', async () => {
       .join('; ');
     const reopened = await openLink(raw, withoutSession);
     await expectRefusal(reopened, 401, 'magic_not_found');
-    expect(sessionCookieSet(reopened.response)).toBe(false);
+    expect(cookieChange(reopened.response, 'session')).not.toBe('set');
   });
 
   it('must not leave the opened magic link usable via a sign-out whose session already ended', async () => {
@@ -79,12 +81,12 @@ describe('Sign-out after a magic-link sign-in', async () => {
 
     const signedOut = await call(signOut, { headers: { ...defaultHeaders, Cookie: ownerBrowser } });
     expect(signedOut.response.status).toBe(401);
-    expect(magicCookieCleared(signedOut.response)).toBe(true);
+    expect(cookieChange(signedOut.response, 'magic')).toBe('cleared');
     expect(await tokenRow(row.id)).toBeUndefined();
 
     const reopened = await openLink(raw, ownerBrowser);
     expect(reopened.response.status).toBe(401);
-    expect(sessionCookieSet(reopened.response)).toBe(false);
+    expect(cookieChange(reopened.response, 'session')).not.toBe('set');
   });
 
   it('must not sign the next person in as the owner via a magic link held for confirmation at sign-out', async () => {
@@ -105,16 +107,14 @@ describe('Sign-out after a magic-link sign-in', async () => {
       headers: { ...defaultHeaders, Cookie: `${heldCookie}; ${session.cookie}` },
     });
     expect(signedOut.response.status).toBe(204);
-    expect(
-      signedOut.response.headers.getSetCookie().some((line) => line.startsWith(`${authCookieName('magic-pending')}=;`)),
-    ).toBe(true);
+    expect(cookieChange(signedOut.response, 'magic-pending')).toBe('cleared');
     expect(await tokenRow(row.id)).toBeUndefined();
 
     // The next person: the confirmation page, even with the held cookie as it was, and the link from the history.
     expect((await pending()).response.status).toBe(401);
     const confirmed = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: heldCookie } });
     expect(confirmed.response.status).toBe(401);
-    expect(sessionCookieSet(confirmed.response)).toBe(false);
+    expect(cookieChange(confirmed.response, 'session')).not.toBe('set');
     const reopened = await openLink(raw, '');
     await expectRefusal(reopened, 401, 'magic_not_found');
   });

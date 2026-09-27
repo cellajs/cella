@@ -1,7 +1,6 @@
 import { nanoid } from 'nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
-import { createUser, expectRefusal, sessionsOf } from '../helpers';
+import { cookieChange, createUser, expectRefusal, sessionsOf } from '../helpers';
 import { type PasskeyAssertion, type SoftwarePasskey, softwarePasskey } from '../software-passkey';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, passkeyChallenge, passkeySignIn, passkeysOf } from './helpers';
@@ -48,7 +47,7 @@ describe('Passkey verification', () => {
 
       const { error, response } = await passkeySignIn(forge(passkey, challenge), cookie);
       await expectRefusal({ response, error }, 401, 'passkey_verification_failed');
-      expect(response.headers.get('set-cookie') ?? '').not.toContain(authCookieName('session'));
+      expect(cookieChange(response, 'session')).toBeUndefined();
       expect(await sessionsOf(user.id)).toHaveLength(0);
     });
   }
@@ -59,7 +58,7 @@ describe('Passkey verification', () => {
 
     const { response } = await passkeySignIn(passkey.assert(challenge), cookie);
     expect(response.status).toBe(204);
-    expect(response.headers.get('set-cookie')).toContain(authCookieName('session'));
+    expect(cookieChange(response, 'session')).toBe('set');
     expect(await sessionsOf(user.id)).toHaveLength(1);
     const [stored] = await passkeysOf(user.id);
     expect(stored?.counter).toBe(1);

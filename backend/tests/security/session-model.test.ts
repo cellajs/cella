@@ -3,14 +3,21 @@ import { getMe, startImpersonation, stopImpersonation } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createSystemAdminUser, createTestUser, expectRefusal, sessionRow } from '../helpers';
+import {
+  authCookie,
+  cookieChange,
+  cookiesAfter,
+  createSystemAdminUser,
+  createTestUser,
+  expectRefusal,
+  sessionRow,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
-import { cookiesAfter, insertImpersonation, insertSession, type TestSession } from './session-helpers';
+import { insertImpersonation, insertSession, type TestSession } from './session-helpers';
 
 afterEach(async () => {
   vi.restoreAllMocks();
@@ -31,10 +38,6 @@ const failSessionLookup = ({ skip = 0 } = {}) => {
     return select(fields as never);
   }) as unknown as typeof db.select);
 };
-
-/** Whether a response deletes, or otherwise sets, the named auth cookie. */
-const touchesCookie = (response: Response, name: 'session' | 'impersonation') =>
-  response.headers.getSetCookie().some((line) => line.startsWith(`${authCookieName(name)}=`));
 
 /**
  * A session is its cookie's random token: the database keeps only the token's hash and the auth cache is keyed by that
@@ -99,7 +102,7 @@ describe('session model', async () => {
     const { response } = await me(session.cookie);
     lookup.mockRestore();
     expect(response.status).toBe(500);
-    expect(touchesCookie(response, 'session')).toBe(false);
+    expect(cookieChange(response, 'session')).toBeUndefined();
 
     // Once the database answers again, the same cookie signs in (positive control).
     expect((await me(session.cookie)).response.status).toBe(200);
@@ -115,7 +118,7 @@ describe('session model', async () => {
     const { response } = await me(impersonation.cookie);
     lookup.mockRestore();
     expect(response.status).toBe(500);
-    expect(touchesCookie(response, 'impersonation')).toBe(false);
+    expect(cookieChange(response, 'impersonation')).toBeUndefined();
 
     const control = await me(impersonation.cookie);
     expect(control.response.status).toBe(200);

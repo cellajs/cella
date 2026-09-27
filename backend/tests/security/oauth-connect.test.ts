@@ -2,10 +2,9 @@ import { eq } from 'drizzle-orm';
 import { startOAuthConnect } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestUser, insertTestSession } from '../helpers';
+import { createTestUser, insertTestSession, setCookieOf } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -34,10 +33,7 @@ describe('starting a provider connect', async () => {
     const { response } = await call(startOAuthConnect, { headers: { ...defaultHeaders, Cookie: session.cookie } });
 
     expect(response.status).toBe(204);
-    const cookie = response.headers
-      .getSetCookie()
-      .find((line) => line.startsWith(`${authCookieName('oauth-connect')}=`));
-    expect(cookie).toContain('SameSite=Lax');
+    expect(setCookieOf(response, 'oauth-connect').line).toContain('SameSite=Lax');
     expect(await pins()).toEqual([expect.objectContaining({ userId: user.id, createdBy: user.id })]);
   });
 });

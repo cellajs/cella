@@ -2,8 +2,9 @@ import { Hono } from 'hono';
 import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import type { Env } from '#/core/context';
-import { authCookieName, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { setCookieOf } from '../../../../tests/helpers';
 
 const linkTypes = appConfig.tokenTypes.filter((type) => tokenPolicies[type].carrier === 'link');
 
@@ -33,9 +34,8 @@ describe('token policies', () => {
 
     for (const type of appConfig.tokenTypes) {
       const response = await app.request(`/${type}`);
-      const cookie = response.headers.getSetCookie().find((line) => line.startsWith(`${authCookieName(type)}=`));
       const expected = tokenPolicies[type].sameSite === 'lax' ? 'SameSite=Lax' : 'SameSite=Strict';
-      expect(cookie, type).toContain(expected);
+      expect(setCookieOf(response, type).line, type).toContain(expected);
     }
   });
 });

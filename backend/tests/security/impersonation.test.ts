@@ -4,10 +4,9 @@ import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { env } from '#/env';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createSystemAdminUser, createTestUser, expectRefusal, sessionRow } from '../helpers';
+import { authCookie, cookieChange, createSystemAdminUser, createTestUser, expectRefusal, sessionRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
 import {
@@ -122,10 +121,8 @@ describe('impersonation lives on its admin', async () => {
       headers: impersonation.headers,
     });
     await expectRefusal(attempt, 403, 'impersonation_forbidden');
-    const cookieNames = [authCookieName('session'), authCookieName('impersonation')];
-    expect(
-      attempt.response.headers.getSetCookie().some((line) => cookieNames.some((n) => line.startsWith(`${n}=`))),
-    ).toBe(false);
+    expect(cookieChange(attempt.response, 'session')).toBeUndefined();
+    expect(cookieChange(attempt.response, 'impersonation')).toBeUndefined();
     expect((await sessionRow(targetsOwn.id)).revokedAt).toBeNull();
     expect(await meAs(impersonation)).toMatchObject({ status: 200, userId: target.id });
 

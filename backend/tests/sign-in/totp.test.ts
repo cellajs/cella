@@ -10,12 +10,14 @@ import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import {
   authCookie,
+  cookieChange,
   createMfaToken,
   createTestSession,
   createTestUser,
   createTotpUser,
   enableMFAForUser,
   expectRefusal,
+  setCookiePair,
   verifyUserEmail,
 } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -67,8 +69,7 @@ describe('TOTP Authentication', async () => {
       expect(generateRes.status).toBe(200);
       const generatedTotp = generateData as { manualKey: string };
 
-      const generateCookies = generateRes.headers.get('set-cookie');
-      const allCookies = [sessionCookie, generateCookies].filter(Boolean).join('; ');
+      const allCookies = `${sessionCookie}; ${setCookiePair(generateRes, 'totp-challenge')}`;
 
       const { response: createRes } = await call(createTotp, {
         body: { code: currentCode(generatedTotp.manualKey) },
@@ -99,9 +100,7 @@ describe('TOTP Authentication', async () => {
       });
 
       expect(res.status).toBe(204);
-      const setCookieHeader = res.headers.get('set-cookie');
-      expect(setCookieHeader).toBeDefined();
-      expect(setCookieHeader).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+      expect(cookieChange(res, 'session')).toBe('set');
     });
 
     it('should reject invalid TOTP code', async () => {

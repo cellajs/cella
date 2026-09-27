@@ -81,29 +81,25 @@ export function setTestConfig(overrides: ConfigOverride) {
 export const mockCookieStore = new Map<string, string>();
 export const clearCookieStore = () => mockCookieStore.clear();
 
+/** An auth cookie's name as the app gives it in test mode, which is secure, so the __Host- prefix applies. */
+const mockCookieName = (name: string) => `__Host-${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
+
 export const cookieMock = () => ({
-  // Test mode is secure, so the __Host- prefix applies.
-  authCookieName: (name: string) => `__Host-${appConfig.slug}-${name}-${appConfig.cookieVersion}`,
+  authCookieName: mockCookieName,
   // The store keeps plain values, so a sealed value is its content.
   sealAuthCookie: (_name: string, content: string) => content,
   cookieSecrets: ['test-cookie-secret-for-unit-tests'],
   setAuthCookie: vi.fn().mockImplementation(async (ctx, name, value, _maxAge) => {
     const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
     mockCookieStore.set(name, stringValue);
-    const existingCookies = ctx.res.headers.get('set-cookie') || '';
-    const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
-    const newCookie = `${versionedName}=${stringValue}; Path=/; HttpOnly; SameSite=Lax`;
-    ctx.res.headers.set('set-cookie', existingCookies ? `${existingCookies}, ${newCookie}` : newCookie);
+    ctx.res.headers.append('set-cookie', `${mockCookieName(name)}=${stringValue}; Path=/; HttpOnly; SameSite=Lax`);
   }),
   getAuthCookie: vi.fn().mockImplementation(async (_ctx, name) => {
     return mockCookieStore.get(name) || null;
   }),
   deleteAuthCookie: vi.fn().mockImplementation(async (ctx, name) => {
     mockCookieStore.delete(name);
-    const existingCookies = ctx.res.headers.get('set-cookie') || '';
-    const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
-    const deleteCookie = `${versionedName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-    ctx.res.headers.set('set-cookie', existingCookies ? `${existingCookies}, ${deleteCookie}` : deleteCookie);
+    ctx.res.headers.append('set-cookie', `${mockCookieName(name)}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
   }),
 });
 
@@ -111,9 +107,10 @@ export const cookieMock = () => ({
 export const sessionMock = () => ({
   setUserSession: vi.fn().mockImplementation(async (ctx, _user, _provider) => {
     const sessionToken = 'mock-session-token';
-    const existingCookies = ctx.res.headers.get('set-cookie') || '';
-    const sessionCookie = `${appConfig.slug}-session-${appConfig.cookieVersion}=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`;
-    ctx.res.headers.set('set-cookie', existingCookies ? `${existingCookies}, ${sessionCookie}` : sessionCookie);
+    ctx.res.headers.append(
+      'set-cookie',
+      `${mockCookieName('session')}=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`,
+    );
     return sessionToken;
   }),
   resolveSession: vi.fn().mockResolvedValue({ user: { id: 'test-user-id' }, session: { id: 'test-session-id' } }),

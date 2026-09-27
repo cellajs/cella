@@ -3,12 +3,12 @@ import { nanoid } from 'nanoid';
 import { createPasskey } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
 import {
   authCookie,
+  cookieChange,
   createMfaToken,
   createTestSession,
   createUser,
@@ -71,7 +71,7 @@ describe('Passkey challenges', async () => {
     // The same response with the challenge cookie the browser kept.
     const replay = await passkeySignIn(assertion, challengeCookie);
     await expectRefusal(replay, 401, 'passkey_verification_failed');
-    expect(replay.response.headers.get('set-cookie') ?? '').not.toContain(authCookieName('session'));
+    expect(cookieChange(replay.response, 'session')).toBeUndefined();
     expect(await sessionsOf(user.id)).toHaveLength(1);
 
     // Positive control: a fresh challenge signs in again.
@@ -121,7 +121,7 @@ describe('Passkey challenges', async () => {
       'mfa',
     );
     await expectRefusal(answered, 404, 'passkey_not_found');
-    expect(answered.response.headers.get('set-cookie') ?? '').not.toContain(authCookieName('session'));
+    expect(cookieChange(answered.response, 'session')).toBeUndefined();
     expect(await sessionsOf(user.id)).toHaveLength(0);
   });
 
