@@ -52,3 +52,18 @@ describe('accessScopes.allows (the key or token mask)', () => {
     expect(accessScopes.allows(['label:write' as never], 'attachment', 'read')).toBe(false);
   });
 });
+
+describe('accessScopes.parse (the scope value of a token request)', () => {
+  it('keeps the scopes the vocabulary knows and drops every other word', () => {
+    expect(accessScopes.parse('attachment:read label:write organization:write openid attachment:admin')).toEqual([
+      'attachment:read',
+      'organization:write',
+    ]);
+  });
+
+  it('reads nothing from an absent or empty value', () => {
+    expect(accessScopes.parse(undefined)).toEqual([]);
+    expect(accessScopes.parse(null)).toEqual([]);
+    expect(accessScopes.parse('')).toEqual([]);
+  });
+});

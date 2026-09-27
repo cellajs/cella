@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { configureWidePermissions, wideMembership, wideOverrides, wideSubject } from '../../testing/wide-fixture.ts';
+import {
+  configureWidePermissions,
+  type WideChannelType,
+  wideMembership,
+  wideOverrides,
+  wideSubject,
+} from '../../testing/wide-fixture.ts';
 import { getAllDecisions } from './check.ts';
-import type { SubjectForPermission } from './types.ts';
+import type { AccessMembership, SubjectForPermission } from './types.ts';
 
 const organizationSubject = (id: string): SubjectForPermission =>
   wideSubject({ entityType: 'organization', id, channelIds: {} });
@@ -440,13 +446,12 @@ describe('wide hierarchy, guest role, multi-level ancestors', () => {
     }
   });
 
-  it('grants a project guest their configured project-level cell', () => {
+  it('grants a project guest their configured project-level cell and nothing else', () => {
     const subject = attachmentSubject('att1', 'org1', { project: 'p1' });
     const { can } = getAllDecisions(policies, [wideMembership('project', 'p1', 'guest')], subject, {
       ...wideOverrides,
     });
-    expect(can.create).toBe(true);
-    expect(can.update).toBe(false);
+    expect(can).toEqual({ create: true, read: false, update: false, delete: false });
   });
 
   it('resolves grants from the correct ancestor level (project vs organization)', () => {
@@ -461,5 +466,65 @@ describe('wide hierarchy, guest role, multi-level ancestors', () => {
       ...wideOverrides,
     });
     expect(asOrgMember.can.update).toBe(false);
+  });
+});
+
+// A grant holds in the channel it was given and nowhere else: not in another channel type sharing the id, not in a
+// sibling project, and not upward, on the organization or on a row homed above the membership's channel.
+describe('grants stay in their channel', () => {
+  const { policyMatrix: policies } = configureWidePermissions(({ entityType, channels }) => {
+    switch (entityType) {
+      case 'organization':
+        channels.organization.admin({ read: 1, update: 1, delete: 1 });
+        break;
+      case 'project':
+        channels.project.admin({ read: 1, update: 1, delete: 1 });
+        break;
+      case 'task':
+        channels.organization.admin({ read: 1 });
+        channels.project.admin({ create: 1, read: 1, update: 1, delete: 1 });
+        break;
+    }
+  });
+  // Memberships carry their organization, as the app's rows do: it names where the row lives, never a grant there.
+  const adminOf = (channelType: WideChannelType, channelId: string): AccessMembership =>
+    ({ ...wideMembership(channelType, channelId, 'admin'), organizationId: 'org1' }) as AccessMembership;
+  const taskIn = (project: string | null) =>
+    wideSubject({ entityType: 'task', id: `task-${project}`, channelIds: { organization: 'org1', project } });
+  const denied = { create: false, read: false, update: false, delete: false };
+
+  it.each([
+    {
+      cell: 'a workspace admin on the project sharing its id',
+      membership: adminOf('workspace', 'p1'),
+      subject: wideSubject({ entityType: 'project', id: 'p1', channelIds: { organization: 'org1' } }),
+    },
+    {
+      cell: 'a workspace admin on a task of the project sharing its id',
+      membership: adminOf('workspace', 'p1'),
+      subject: taskIn('p1'),
+    },
+    {
+      cell: 'a project admin on a task of a sibling project',
+      membership: adminOf('project', 'p2'),
+      subject: taskIn('p1'),
+    },
+    {
+      cell: 'a project admin on the organization above',
+      membership: adminOf('project', 'p1'),
+      subject: wideSubject({ entityType: 'organization', id: 'org1', channelIds: {} }),
+    },
+    {
+      cell: 'a project admin on a task homed at the organization',
+      membership: adminOf('project', 'p1'),
+      subject: taskIn(null),
+    },
+  ])('denies every action to $cell', ({ membership, subject }) => {
+    expect(getAllDecisions(policies, [membership], subject, { ...wideOverrides }).can).toEqual(denied);
+  });
+
+  it('grants the project admin every action on a task of their own project (positive control)', () => {
+    const { can } = getAllDecisions(policies, [adminOf('project', 'p1')], taskIn('p1'), { ...wideOverrides });
+    expect(can).toEqual({ create: true, read: true, update: true, delete: true });
   });
 });
