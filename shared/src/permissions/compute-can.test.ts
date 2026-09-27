@@ -166,7 +166,7 @@ describe('computeCan parity with the engine under home scoping', () => {
       >
     ).item;
 
-  /** An `item` with every ancestor down to `home` set and the deeper ones null: homed at `${home}1`. */
+  /** An `item` homed at `${home}1`: every ancestor down to `home` set, the deeper ones null. Deep vocabulary, cast. */
   const itemHomedAt = (home: DeepChannelType, createdBy: string): SubjectForPermission => {
     const ancestors = hierarchy.getOrderedAncestors('item');
     const depth = ancestors.indexOf(home);

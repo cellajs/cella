@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { telemetrySink } from '../../config/telemetry.config';
+import type { FetchLike } from '../utils/fetch-like';
 import { createTelemetry, otlpConfigFromEnv } from './emitter';
 import { buildEvent, formatTraceparent, newSpanId, newTraceId, parseTraceparent, toKeyValues, unixNano } from './otlp';
 
@@ -35,7 +36,7 @@ describe('otlp builders', () => {
 });
 
 describe('createTelemetry', () => {
-  const fetchOk = () => vi.fn(async () => new Response('{}', { status: 200 }));
+  const fetchOk = () => vi.fn<FetchLike>(async () => new Response('{}', { status: 200 }));
 
   it('exports spans and events over OTLP/HTTP with headers', async () => {
     const fetchImpl = fetchOk();
@@ -52,9 +53,9 @@ describe('createTelemetry', () => {
     await t.flush();
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
-    const calls = fetchImpl.mock.calls as unknown as Array<[string, RequestInit]>;
+    const calls = fetchImpl.mock.calls;
     expect(calls[0]?.[0]).toBe('https://ingest.example/v1/traces');
-    expect((calls[0]?.[1]?.headers as Record<string, string>)?.['x-key']).toBe('k');
+    expect(calls[0]?.[1]?.headers?.['x-key']).toBe('k');
     const tracesBody = JSON.parse(String(calls[0]?.[1]?.body));
     expect(tracesBody.resourceSpans[0].scopeSpans[0].spans[0].name).toBe('deploy staging');
     expect(calls[1]?.[0]).toBe('https://ingest.example/v1/logs');
@@ -116,9 +117,7 @@ describe('createTelemetry', () => {
     known.add('late-secret');
     await t.flush();
 
-    const bodies = (fetchImpl.mock.calls as unknown as Array<[string, RequestInit]>).map(([, init]) =>
-      String(init.body),
-    );
+    const bodies = fetchImpl.mock.calls.map(([, init]) => String(init?.body));
     expect(bodies).toHaveLength(2);
     for (const text of [...bodies, t.eventsJsonl()]) {
       expect(text).not.toContain('late-secret');

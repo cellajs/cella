@@ -62,6 +62,7 @@ export const deepItemPolicies = (
   cellsFor: (channelType: DeepChannelType, role: string) => DeepCells,
   overrides: HierarchyOverrides = deepOverrides,
 ): PolicyMatrix =>
+  // The matrix builder is typed by the app's entities and roles; the deep vocabulary is cast to them.
   configurePolicyMatrix(
     deepEntityTypes as unknown as readonly EntityType[],
     ({ entityType, channels }) => {
