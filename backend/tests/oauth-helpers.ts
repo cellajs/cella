@@ -98,6 +98,8 @@ export interface AuthorizationInput {
   browser?: CookieJar;
   /** The OIDC `prompt` parameter, such as `none` for a request that may ask nobody. */
   prompt?: string;
+  /** False sends no code challenge, as a client that skips PKCE does; default true. */
+  pkce?: boolean;
 }
 
 type TokenResponse = { status: number; body: Record<string, unknown> };
@@ -120,8 +122,7 @@ export async function startAuthorization(issuer: string, input: AuthorizationInp
     scope: input.scope,
     ...(input.resource && { resource: input.resource }),
     ...(input.prompt && { prompt: input.prompt }),
-    code_challenge: challenge,
-    code_challenge_method: 'S256',
+    ...(input.pkce !== false && { code_challenge: challenge, code_challenge_method: 'S256' }),
     state,
   }).toString();
 

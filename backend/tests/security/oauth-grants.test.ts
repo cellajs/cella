@@ -347,7 +347,7 @@ describe('OAuth grants', async () => {
       expect((await refresh(String(tokens.body.refresh_token))).status).toBe(200);
     });
 
-    it('must not act via an access token after the person revokes the connected app', async () => {
+    it('must not act via an access token after the person revokes the connected app, which nobody else can', async () => {
       const ctx = await tenantWithApp();
       const grant = await consent(ctx);
       const memberHeaders = { ...defaultHeaders, Cookie: ctx.member.sessionCookie };
@@ -355,6 +355,11 @@ describe('OAuth grants', async () => {
 
       const listed = await call(getConnectedApps, { headers: memberHeaders });
       const [app] = (listed.data as { items: { id: string }[] }).items;
+      // Someone else who knows the grant's id, the organization's admin here, finds no connected app of theirs.
+      const notTheirs = await call(revokeConnectedApp, { path: { id: app.id }, headers: ctx.adminHeaders });
+      expect(notTheirs.response.status).toBe(404);
+      expect((await readAttachments(ctx, grant.access)).response.status).toBe(200);
+
       const revoked = await call(revokeConnectedApp, { path: { id: app.id }, headers: memberHeaders });
       expect(revoked.response.status).toBe(200);
 
@@ -684,6 +689,21 @@ describe('OAuth grants', async () => {
   });
 
   describe('codes and refresh tokens are single use', () => {
+    it('must not issue a code via an authorization request without a PKCE challenge', async () => {
+      const ctx = await tenantWithApp();
+      // One browser in which the member consented: a request with PKCE gets a code at once (positive control), so the
+      // refusal below is the request's, not consent's.
+      const browser = new CookieJar([ctx.member.sessionCookie]);
+      expect((await authorizationCode(oauth.issuer, { ...authorization(ctx), browser })).code).toBeTruthy();
+      expect((await startAuthorization(oauth.issuer, { ...authorization(ctx), browser })).code).toBeTruthy();
+
+      // Without a challenge, a code would bind to nothing: whoever intercepts it can exchange it.
+      const unbound = await startAuthorization(oauth.issuer, { ...authorization(ctx), browser, pkce: false });
+      expect(unbound.code).toBeNull();
+      expect(unbound.redirect?.get('error')).toBe('invalid_request');
+      expect(unbound.redirect?.get('error_description')).toContain('PKCE');
+    });
+
     it('must not mint tokens twice via a replayed code, and the replay revokes the grant', async () => {
       const ctx = await tenantWithApp();
       const { code, verifier } = await authorizationCode(oauth.issuer, authorization(ctx));
