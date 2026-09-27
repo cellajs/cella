@@ -19,6 +19,8 @@ export function ConfirmSignInPage() {
     queryKey: ['auth', 'magic', 'pending'],
     queryFn: ({ signal }) => getPendingMagicLink({ signal }),
     retry: false,
+    // The link may name another account than the one signed in here: its email stays out of the local database.
+    meta: { persist: false },
   });
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
