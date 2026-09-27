@@ -2,13 +2,12 @@ import { eq } from 'drizzle-orm';
 import { deleteMe, getMe } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { defaultHeaders } from '../fixtures';
 import { createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { insertPasskey, passkeysOf } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -28,7 +27,7 @@ describe('Account deletion invalidates sessions', async () => {
     const headers = { ...defaultHeaders, Cookie: sessionCookie };
     // A second, independent session for the same user.
     await createTestSession(user);
-    await db.insert(passkeysTable).values(mockPasskeyRecord(user.id, 'Device', 'passkey-deleter'));
+    await insertPasskey(user);
 
     // Cache the session first, so the 401 below proves the deletion drops the cached entry.
     expect((await call(getMe, { headers })).response.status).toBe(200);
@@ -43,7 +42,6 @@ describe('Account deletion invalidates sessions', async () => {
     const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, user.id));
     expect(sessions).toHaveLength(0);
 
-    const passkeys = await db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id));
-    expect(passkeys).toHaveLength(0);
+    expect(await passkeysOf(user.id)).toHaveLength(0);
   });
 });

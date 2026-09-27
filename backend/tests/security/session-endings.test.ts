@@ -13,9 +13,7 @@ import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
 import { createSession, type SignInContext } from '#/modules/auth/general/helpers/session';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { usersTable } from '#/modules/user/user-db';
 import {
   authCookie,
@@ -28,7 +26,7 @@ import {
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
-import { clearSecurityTestData } from './helpers';
+import { clearSecurityTestData, insertPasskey } from './helpers';
 import {
   asSession,
   cancelOpenStreams,
@@ -128,7 +126,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
   it('must not keep pre-MFA sessions live via their open streams or the auth cache once MFA is on', async () => {
     const user = await createTotpUser('mfa-on@security-test.com');
     await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
-    await db.insert(passkeysTable).values(mockPasskeyRecord(user.id));
+    await insertPasskey(user);
 
     const current = await insertSteppedUpSession(user);
     const otherRegular = await insertSession(user);

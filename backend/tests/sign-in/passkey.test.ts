@@ -1,21 +1,13 @@
 import { eq } from 'drizzle-orm';
-import { deletePasskey, generatePasskeyChallenge, signInWithPasskey } from 'sdk';
+import { deletePasskey, generatePasskeyChallenge } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import {
-  authCookie,
-  createMfaToken,
-  createTestSession,
-  createUser,
-  expectRefusal,
-  passkeySignInBody,
-} from '../helpers';
+import { authCookie, createMfaToken, createTestSession, createUser, expectRefusal } from '../helpers';
+import { insertPasskey, passkeyChallenge, passkeySignIn } from '../security/helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
@@ -36,50 +28,24 @@ describe('Passkey Authentication', async () => {
   /** A user with a software passkey registered. */
   async function userWithPasskey(email = signUpUser.email) {
     const user = await createUser(email);
-    const passkey = softwarePasskey();
-    await db.insert(passkeysTable).values({
-      userId: user.id,
-      credentialId: passkey.credentialId,
-      publicKey: passkey.publicKey,
-      counter: 0,
-      nameOnDevice: 'Test device',
-      deviceType: 'desktop',
-    });
-    return { user, passkey };
-  }
-
-  /** A challenge of `type`, its cookie, and the credential ids it lists. */
-  async function challenge(type: 'authentication' | 'mfa' = 'authentication', cookie?: string) {
-    const { data, response } = await call(generatePasskeyChallenge, {
-      body: { type },
-      headers: { ...defaultHeaders, ...(cookie ? { Cookie: cookie } : {}) },
-    });
-    expect(response.status).toBe(200);
-    const challengeCookie =
-      response.headers
-        .getSetCookie()
-        .find((line) => line.startsWith(`${authCookieName('passkey-challenge')}=`))
-        ?.split(';')[0] ?? '';
-    const { challenge: value, credentialIds } = data as { challenge: string; credentialIds: string[] };
-    return { challenge: value, credentialIds, challengeCookie };
+    return { user, passkey: await insertPasskey(user) };
   }
 
   describe('Challenge Generation', () => {
     it('should generate a sign-in challenge that lists no credentials', async () => {
       await userWithPasskey();
 
-      const { challenge: value, credentialIds } = await challenge('authentication');
+      const { challenge: value, credentialIds } = await passkeyChallenge('authentication');
       expect(value).toMatch(/^[A-Za-z0-9_-]+$/);
       expect(credentialIds).toHaveLength(0);
     });
 
     it("should list the account's passkeys for an MFA challenge", async () => {
       const { user } = await userWithPasskey();
-      const second = mockPasskeyRecord(user.id, 'Linux Device', 'passkey-record:second');
-      await db.insert(passkeysTable).values(second);
+      const second = await insertPasskey(user);
       const mfaCookie = authCookie('confirm-mfa', await createMfaToken(user));
 
-      const { credentialIds } = await challenge('mfa', mfaCookie);
+      const { credentialIds } = await passkeyChallenge('mfa', mfaCookie);
       expect(credentialIds).toHaveLength(2);
       expect(credentialIds).toContain(second.credentialId);
     });
@@ -100,11 +66,7 @@ describe('Passkey Authentication', async () => {
     it('should reject verification without a challenge', async () => {
       const { passkey } = await userWithPasskey();
 
-      const { response: res, error } = await call(signInWithPasskey, {
-        body: { type: 'authentication', assertion: passkey.assert(nanoid(43)) },
-        headers: defaultHeaders,
-      });
-      await expectRefusal({ response: res, error }, 401, 'passkey_verification_failed');
+      await expectRefusal(await passkeySignIn(passkey.assert(nanoid(43)), ''), 401, 'passkey_verification_failed');
     });
 
     it.each([
@@ -112,13 +74,10 @@ describe('Passkey Authentication', async () => {
       ['an empty credential ID', ''],
       ['a very long credential ID', 'a'.repeat(1000)],
     ])('should reject verification with %s', async (_label, credentialId) => {
-      const { challenge: value, challengeCookie } = await challenge();
+      const { challenge: value, cookie } = await passkeyChallenge('authentication');
 
-      const { response: res, error } = await call(signInWithPasskey, {
-        body: passkeySignInBody({ credentialId, challenge: value }),
-        headers: { ...defaultHeaders, Cookie: challengeCookie },
-      });
-      await expectRefusal({ response: res, error }, 404, 'passkey_not_found');
+      const unknown = await passkeySignIn(softwarePasskey({ credentialId }).assert(value), cookie);
+      await expectRefusal(unknown, 404, 'passkey_not_found');
     });
 
     it.each([
@@ -126,15 +85,11 @@ describe('Passkey Authentication', async () => {
       ['very long client data', 'a'.repeat(10000)],
     ])('should reject verification with %s', async (_label, clientDataJSON) => {
       const { passkey } = await userWithPasskey();
-      const { challenge: value, challengeCookie } = await challenge();
+      const { challenge: value, cookie } = await passkeyChallenge('authentication');
       const assertion = passkey.assert(value);
       assertion.response.clientDataJSON = clientDataJSON;
 
-      const { response: res, error } = await call(signInWithPasskey, {
-        body: { type: 'authentication', assertion },
-        headers: { ...defaultHeaders, Cookie: challengeCookie },
-      });
-      await expectRefusal({ response: res, error }, 401, 'passkey_verification_failed');
+      await expectRefusal(await passkeySignIn(assertion, cookie), 401, 'passkey_verification_failed');
     });
   });
 
@@ -145,10 +100,7 @@ describe('Passkey Authentication', async () => {
       const victim = await createUser('victim@example.com');
       const attacker = await createUser('attacker@example.com');
 
-      const [victimPasskey] = await db
-        .insert(passkeysTable)
-        .values(mockPasskeyRecord(victim.id, 'Victim Device', 'passkey-victim'))
-        .returning();
+      const victimPasskey = await insertPasskey(victim);
       const stored = () => db.select().from(passkeysTable).where(eq(passkeysTable.id, victimPasskey.id));
       const remove = async (cookie: string) =>
         (await call(deletePasskey, { path: { id: victimPasskey.id }, headers: { ...defaultHeaders, Cookie: cookie } }))

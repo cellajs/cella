@@ -1,14 +1,13 @@
 import { eq } from 'drizzle-orm';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { authCookieName, type CookieName } from '#/modules/auth/general/helpers/cookie';
 import { type SessionTypes, type StepUpProof, sessionsTable } from '#/modules/auth/sessions-db';
 import { stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { streamSubscriberManager } from '#/modules/entities/stream';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { insertTestSession } from '../helpers';
+import { insertTestSession, setCookiePair } from '../helpers';
 
 export interface TestSession {
   id: string;
@@ -56,18 +55,6 @@ const sessionIdFor = async (token: string) => {
 
 /** The token inside a signed cookie pair: the sealed value is `<token>.<expiresAt>.<mac>`. */
 const tokenOf = (pair: string) => decodeURIComponent(pair.slice(pair.indexOf('=') + 1)).split('.')[0];
-
-/** The last non-empty `name` cookie a response set, as a `Cookie` pair. */
-const setCookiePair = (response: Response, name: CookieName) => {
-  const prefix = `${authCookieName(name)}=`;
-  const pair = response.headers
-    .getSetCookie()
-    .map((line) => line.split(';')[0])
-    .filter((value) => value.startsWith(prefix) && value.length > prefix.length)
-    .at(-1);
-  if (!pair) throw new Error(`The response set no ${name} cookie`);
-  return pair;
-};
 
 /** The session a response set, as the browser then presents it. */
 export async function sessionSetBy(response: Response): Promise<TestSession> {

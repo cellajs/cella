@@ -3,16 +3,14 @@ import { nanoid } from 'nanoid';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { enrollDevice } from '#/modules/auth/general/helpers/enroll-device';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { accountExistsEmail, requestResponseEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, createUser } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
-import { clearSecurityTestData } from './helpers';
+import { clearSecurityTestData, insertPasskey, passkeyChallenge } from './helpers';
 
 vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
 // The team notification a stored request sends never answers here: the form must not wait for it, or its latency would
@@ -53,15 +51,7 @@ describe('Account enumeration', async () => {
   /** An account holding a passkey, and an address nobody holds. */
   async function accountAndStranger() {
     const account = await createUser(`holder-${nanoid(8)}@security-test.com`.toLowerCase());
-    const passkey = softwarePasskey();
-    await db.insert(passkeysTable).values({
-      userId: account.id,
-      credentialId: passkey.credentialId,
-      publicKey: passkey.publicKey,
-      counter: 0,
-      nameOnDevice: 'Test device',
-      deviceType: 'desktop',
-    });
+    await insertPasskey(account);
     return { account, stranger: `nobody-${nanoid(8)}@security-test.com`.toLowerCase() };
   }
 
@@ -90,16 +80,11 @@ describe('Account enumeration', async () => {
 
     /** Answers a fresh challenge with a passkey no account holds, naming `email`. */
     const signInAs = async (email: string) => {
-      const challenged = await post('/auth/passkey/generate-challenge', { type: 'authentication' });
-      const { challenge } = (await challenged.json()) as { challenge: string };
-      const challengeCookie = challenged.headers
-        .getSetCookie()
-        .find((line) => line.startsWith(`${authCookieName('passkey-challenge')}=`))
-        ?.split(';')[0];
+      const { challenge, cookie } = await passkeyChallenge('authentication');
       const res = await post(
         '/auth/passkey-verification',
         { type: 'authentication', email, assertion: softwarePasskey().assert(challenge) },
-        challengeCookie,
+        cookie,
       );
       const { type } = (await res.json()) as { type?: string };
       return { status: res.status, type };

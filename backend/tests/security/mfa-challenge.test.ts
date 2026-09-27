@@ -1,21 +1,19 @@
 import { decodeBase32 } from '@oslojs/encoding';
 import { and, eq } from 'drizzle-orm';
-import { generatePasskeyChallenge, signInWithPasskey, signInWithTotp } from 'sdk';
+import { signInWithTotp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, createMfaToken, createTotpUser, expectRefusal } from '../helpers';
-import { softwarePasskey } from '../software-passkey';
+import { type PasskeyAssertion, softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
-import { clearSecurityTestData } from './helpers';
+import { clearSecurityTestData, insertPasskey, passkeyChallenge, passkeySignIn } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
@@ -86,40 +84,20 @@ describe('Second-factor challenge', async () => {
 
   it("must not open a second session via a completed challenge's cookie and a passkey", async () => {
     const user = await createTotpUser('owner@security-test.com');
-    const passkey = softwarePasskey();
-    await db.insert(passkeysTable).values({
-      userId: user.id,
-      credentialId: passkey.credentialId,
-      publicKey: passkey.publicKey,
-      counter: 0,
-      nameOnDevice: 'Test device',
-      deviceType: 'desktop',
-    });
-    const mfaToken = await createMfaToken(user);
-    const mfaCookie = authCookie('confirm-mfa', mfaToken);
+    const passkey = await insertPasskey(user);
+    const mfaCookie = authCookie('confirm-mfa', await createMfaToken(user));
 
-    /** A passkey completion of the challenge, with a fresh WebAuthn challenge each time. */
-    const passkeySignIn = async (counter: number) => {
-      const challenged = await call(generatePasskeyChallenge, {
-        body: { type: 'mfa' },
-        headers: { ...defaultHeaders, Cookie: mfaCookie },
-      });
-      const challengeCookie = challenged.response.headers
-        .getSetCookie()
-        .find((line) => line.startsWith(`${authCookieName('passkey-challenge')}=`))
-        ?.split(';')[0];
-      const challenge = (challenged.data as { challenge?: string } | undefined)?.challenge ?? 'no-challenge';
-      return call(signInWithPasskey, {
-        body: { type: 'mfa', assertion: passkey.assert(challenge, { counter }) },
-        headers: { ...defaultHeaders, Cookie: [mfaCookie, challengeCookie].filter(Boolean).join('; ') },
-      });
-    };
-
-    const first = await passkeySignIn(1);
+    const issued = await passkeyChallenge('mfa', mfaCookie);
+    const first = await passkeySignIn(
+      passkey.assert(issued.challenge, { counter: 1 }),
+      `${mfaCookie}; ${issued.cookie}`,
+      'mfa',
+    );
     expect(first.response.status).toBe(204);
     expect(sessionCookieSet(first.response)).toBe(true);
 
-    const replay = await passkeySignIn(2);
+    // The cookie the browser held gets no passkey challenge any more, so its answer carries none.
+    const replay = await passkeySignIn(passkey.assert('no-challenge', { counter: 2 }), mfaCookie, 'mfa');
     await expectRefusal(replay, 401, 'confirm-mfa_not_found');
     expect(sessionCookieSet(replay.response)).toBe(false);
     expect(await sessionsOf(user.id)).toHaveLength(1);
@@ -127,33 +105,14 @@ describe('Second-factor challenge', async () => {
 
   it('keeps the challenge open after a failed passkey response, and completes it with a valid one (positive control)', async () => {
     const user = await createTotpUser('owner@security-test.com');
-    const passkey = softwarePasskey();
-    await db.insert(passkeysTable).values({
-      userId: user.id,
-      credentialId: passkey.credentialId,
-      publicKey: passkey.publicKey,
-      counter: 0,
-      nameOnDevice: 'Test device',
-      deviceType: 'desktop',
-    });
+    const passkey = await insertPasskey(user);
     const mfaToken = await createMfaToken(user);
     const mfaCookie = authCookie('confirm-mfa', mfaToken);
 
     /** Answers a fresh MFA passkey challenge with the response `sign` makes for it. */
-    const answer = async (sign: (challenge: string) => ReturnType<typeof passkey.assert>) => {
-      const challenged = await call(generatePasskeyChallenge, {
-        body: { type: 'mfa' },
-        headers: { ...defaultHeaders, Cookie: mfaCookie },
-      });
-      const challengeCookie = challenged.response.headers
-        .getSetCookie()
-        .find((line) => line.startsWith(`${authCookieName('passkey-challenge')}=`))
-        ?.split(';')[0];
-      const { challenge } = challenged.data as { challenge: string };
-      return call(signInWithPasskey, {
-        body: { type: 'mfa', assertion: sign(challenge) },
-        headers: { ...defaultHeaders, Cookie: [mfaCookie, challengeCookie].filter(Boolean).join('; ') },
-      });
+    const answer = async (sign: (challenge: string) => PasskeyAssertion) => {
+      const issued = await passkeyChallenge('mfa', mfaCookie);
+      return passkeySignIn(sign(issued.challenge), `${mfaCookie}; ${issued.cookie}`, 'mfa');
     };
 
     // Signed by another key under this passkey's id.

@@ -80,35 +80,6 @@ export async function createTotpUser(email: string) {
   return user;
 }
 
-/** WebAuthn `AuthenticationResponseJSON` shape. */
-export function passkeySignInBody(opts: { credentialId: string; type?: 'authentication' | 'mfa'; challenge?: string }) {
-  return {
-    assertion: passkeyAssertion({ credentialId: opts.credentialId, challenge: opts.challenge }),
-    type: opts.type ?? 'authentication',
-  };
-}
-
-/** WebAuthn assertion with base64url fields. */
-export function passkeyAssertion(opts: { credentialId: string; challenge?: string } = { credentialId: nanoid(32) }) {
-  const clientData = JSON.stringify({
-    type: 'webauthn.get',
-    challenge: opts.challenge ?? nanoid(32),
-    origin: 'http://localhost:3000',
-    crossOrigin: false,
-  });
-  return {
-    id: opts.credentialId,
-    rawId: opts.credentialId,
-    response: {
-      clientDataJSON: Buffer.from(clientData).toString('base64url'),
-      authenticatorData: Buffer.from(new Uint8Array(37)).toString('base64url'),
-      signature: Buffer.from(new Uint8Array(64)).toString('base64url'),
-    },
-    clientExtensionResults: {},
-    type: 'public-key' as const,
-  };
-}
-
 export async function createTestUser(email: string, verified = true) {
   const userRecord = mockUser({ email });
   const [user] = await insertUsers(db, [userRecord]);
@@ -249,6 +220,18 @@ export async function createTestSession(user: { id: string }, opts?: TestSession
 /** A `Cookie` header pair for an auth cookie, signed like the app signs it (every mode signs). */
 export function authCookie(name: CookieName, content: string, maxAgeSeconds = 60 * 60) {
   return `${authCookieName(name)}=${encodeURIComponent(sealAuthCookie(name, content, maxAgeSeconds))}`;
+}
+
+/** The last non-empty `name` cookie a response set, as a `Cookie` pair; throws when it set none. */
+export function setCookiePair(response: Response, name: CookieName) {
+  const prefix = `${authCookieName(name)}=`;
+  const pair = response.headers
+    .getSetCookie()
+    .map((line) => line.split(';')[0])
+    .filter((value) => value.startsWith(prefix) && value.length > prefix.length)
+    .at(-1);
+  if (!pair) throw new Error(`The response set no ${name} cookie`);
+  return pair;
 }
 
 /** Links an external identity to a user; by default a verified GitHub identity asserting the user's own address. */

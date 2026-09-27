@@ -3,14 +3,12 @@ import { nanoid } from 'nanoid';
 import { deletePasskey, deleteTotp, toggleMfa } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import type { StepUpProof } from '#/modules/auth/sessions-db';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { usersTable } from '#/modules/user/user-db';
 import { createTotpUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearSecurityTestData } from './helpers';
+import { clearSecurityTestData, insertPasskey, passkeysOf } from './helpers';
 import { insertSession, insertSteppedUpSession } from './session-helpers';
 
 /** Past the step-up window. */
@@ -37,9 +35,7 @@ describe('MFA toggle step-up', async () => {
   ) {
     const user = await createTotpUser(`mfa-${nanoid(8)}@security-test.com`);
     if (!mfaRequired) await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
-    const [passkey] = withPasskey
-      ? await db.insert(passkeysTable).values(mockPasskeyRecord(user.id)).returning()
-      : [undefined];
+    const passkey = withPasskey ? await insertPasskey(user) : undefined;
     const session = steppedUp ? await insertSteppedUpSession(user, via) : await insertSession(user, STALE);
     return { user, passkey, headers: session.headers };
   }
@@ -72,7 +68,7 @@ describe('MFA toggle step-up', async () => {
     const { error, response } = await call(deletePasskey, { path: { id: passkey!.id }, headers });
     await expectRefusal({ response, error }, 400, 'mfa_factor_in_use');
     expect(await mfaRequiredOf(user.id)).toBe(true);
-    expect(await db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id))).toHaveLength(1);
+    expect(await passkeysOf(user.id)).toHaveLength(1);
   });
 
   it('must not turn on MFA without both a passkey and an authenticator app', async () => {

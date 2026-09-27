@@ -5,7 +5,6 @@ import {
   github,
   google,
   microsoft,
-  signInWithPasskey,
   signInWithTotp,
   toggleMfa,
 } from 'sdk';
@@ -19,8 +18,9 @@ import {
   createTotpUser,
   type ErrorResponse,
   expectRefusal,
-  passkeySignInBody,
 } from '../helpers';
+import { passkeySignIn } from '../security/helpers';
+import { softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -100,11 +100,8 @@ describe('passkey strategy disabled', async () => {
   });
 
   it('should reject passkey authentication', async () => {
-    const { response: res, error } = await call(signInWithPasskey, {
-      body: passkeySignInBody({ credentialId: 'test_id' }),
-      headers: defaultHeaders,
-    });
-    await expectRefusal({ response: res, error }, 400, 'forbidden_strategy');
+    const refused = await passkeySignIn(softwarePasskey().assert('a-challenge'), '');
+    await expectRefusal(refused, 400, 'forbidden_strategy');
   });
 });
 
@@ -157,27 +154,20 @@ describe('all strategies disabled', async () => {
   });
 
   it('should reject passkey attempts', async () => {
-    const { response: res, error } = await call(signInWithPasskey, {
-      body: passkeySignInBody({ credentialId: '' }),
-      headers: defaultHeaders,
-    });
-    await expectRefusal({ response: res, error }, 400, 'forbidden_strategy');
+    const refused = await passkeySignIn(softwarePasskey().assert('a-challenge'), '');
+    await expectRefusal(refused, 400, 'forbidden_strategy');
   });
 });
 
-describe('passkey strategy disabled', async () => {
+describe('passkey strategy disabled', () => {
   beforeAll(() => {
     setTestConfig({ enabledAuthStrategies: ['oauth', 'totp', 'magic'], selfRegistration: true });
   });
-  const call = await createAppClient();
 
   it('must not verify a second factor with a passkey while passkeys are off', async () => {
     const user = await createTestUser('passkey-off-mfa@example.com');
-    const mfaToken = await createMfaToken(user);
-    const { response: res, error } = await call(signInWithPasskey, {
-      body: passkeySignInBody({ credentialId: 'x', type: 'mfa' }),
-      headers: { ...defaultHeaders, Cookie: authCookie('confirm-mfa', mfaToken) },
-    });
-    await expectRefusal({ response: res, error }, 400, 'forbidden_strategy');
+    const mfaCookie = authCookie('confirm-mfa', await createMfaToken(user));
+    const refused = await passkeySignIn(softwarePasskey().assert('a-challenge'), mfaCookie, 'mfa');
+    await expectRefusal(refused, 400, 'forbidden_strategy');
   });
 });

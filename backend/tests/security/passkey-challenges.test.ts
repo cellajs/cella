@@ -1,6 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { createPasskey, generatePasskeyChallenge, signInWithPasskey } from 'sdk';
+import { createPasskey } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
@@ -11,10 +11,10 @@ import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, createMfaToken, createTestSession, createUser, expectRefusal } from '../helpers';
-import { softwarePasskey } from '../software-passkey';
+import { type SoftwarePasskey, softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
-import { clearSecurityTestData } from './helpers';
+import { clearSecurityTestData, insertPasskey, passkeyChallenge, passkeySignIn } from './helpers';
 
 /** Runs between a response's verification and the counter write: where a concurrent sign-in would land. */
 const hooks = vi.hoisted(() => ({ afterVerify: undefined as (() => Promise<void>) | undefined }));
@@ -32,8 +32,6 @@ vi.mock('@simplewebauthn/server', async (importOriginal) => {
 });
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
-
-type Passkey = ReturnType<typeof softwarePasskey>;
 
 const sessionsOf = (userId: string) => db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
 const storedPasskey = async (credentialId: string) =>
@@ -56,57 +54,27 @@ describe('Passkey challenges', async () => {
   async function userWithPasskey({ counter = 0, mfaRequired = false } = {}) {
     const user = await createUser(`passkey-${nanoid(8)}@security-test.com`);
     if (mfaRequired) await db.update(usersTable).set({ mfaRequired }).where(eq(usersTable.id, user.id));
-    const passkey = softwarePasskey();
-    await db.insert(passkeysTable).values({
-      userId: user.id,
-      credentialId: passkey.credentialId,
-      publicKey: passkey.publicKey,
-      counter,
-      nameOnDevice: 'Test device',
-      deviceType: 'desktop',
-    });
-    return { user, passkey };
+    return { user, passkey: await insertPasskey(user, { counter }) };
   }
-
-  /** A challenge of `type` and the cookie that carries it, as the page gets them. */
-  async function challenge(type: 'authentication' | 'mfa' | 'registration', cookie?: string) {
-    const { data, response } = await call(generatePasskeyChallenge, {
-      body: { type },
-      headers: { ...defaultHeaders, ...(cookie ? { Cookie: cookie } : {}) },
-    });
-    expect(response.status).toBe(200);
-    const challengeCookie = response.headers
-      .getSetCookie()
-      .find((line) => line.startsWith(`${authCookieName('passkey-challenge')}=`))
-      ?.split(';')[0];
-    if (!challengeCookie) throw new Error('no passkey-challenge cookie');
-    return { challenge: (data as { challenge: string }).challenge, challengeCookie };
-  }
-
-  const signIn = (
-    assertion: ReturnType<Passkey['assert']>,
-    cookie: string,
-    type: 'authentication' | 'mfa' = 'authentication',
-  ) => call(signInWithPasskey, { body: { type, assertion }, headers: { ...defaultHeaders, Cookie: cookie } });
 
   it('must not sign in twice via a reused passkey challenge', async () => {
     // Synced passkeys report no signature counter (always 0), so only the challenge stops a replay.
     const { user, passkey } = await userWithPasskey();
-    const { challenge: value, challengeCookie } = await challenge('authentication');
+    const { challenge: value, cookie: challengeCookie } = await passkeyChallenge('authentication');
     const assertion = passkey.assert(value, { counter: 0 });
 
-    const first = await signIn(assertion, challengeCookie);
+    const first = await passkeySignIn(assertion, challengeCookie);
     expect(first.response.status).toBe(204);
 
     // The same response with the challenge cookie the browser kept.
-    const replay = await signIn(assertion, challengeCookie);
+    const replay = await passkeySignIn(assertion, challengeCookie);
     await expectRefusal(replay, 401, 'passkey_verification_failed');
     expect(replay.response.headers.get('set-cookie') ?? '').not.toContain(authCookieName('session'));
     expect(await sessionsOf(user.id)).toHaveLength(1);
 
     // Positive control: a fresh challenge signs in again.
-    const fresh = await challenge('authentication');
-    expect((await signIn(passkey.assert(fresh.challenge, { counter: 0 }), fresh.challengeCookie)).response.status).toBe(
+    const fresh = await passkeyChallenge('authentication');
+    expect((await passkeySignIn(passkey.assert(fresh.challenge, { counter: 0 }), fresh.cookie)).response.status).toBe(
       204,
     );
     expect(await sessionsOf(user.id)).toHaveLength(2);
@@ -124,10 +92,10 @@ describe('Passkey challenges', async () => {
           .where(and(eq(tokensTable.type, 'confirm-mfa'), eq(tokensTable.secret, hashToken(mfaToken))))
       )[0];
 
-    const signInChallenge = await challenge('authentication');
-    const wrongPurpose = await signIn(
+    const signInChallenge = await passkeyChallenge('authentication');
+    const wrongPurpose = await passkeySignIn(
       passkey.assert(signInChallenge.challenge, { counter: 1 }),
-      `${mfaCookie}; ${signInChallenge.challengeCookie}`,
+      `${mfaCookie}; ${signInChallenge.cookie}`,
       'mfa',
     );
     await expectRefusal(wrongPurpose, 401, 'passkey_verification_failed');
@@ -135,10 +103,10 @@ describe('Passkey challenges', async () => {
     expect(await confirmMfaRow()).toBeDefined();
 
     // Positive control: a challenge issued for this MFA challenge completes it.
-    const mfaChallenge = await challenge('mfa', mfaCookie);
-    const completed = await signIn(
+    const mfaChallenge = await passkeyChallenge('mfa', mfaCookie);
+    const completed = await passkeySignIn(
       passkey.assert(mfaChallenge.challenge, { counter: 1 }),
-      `${mfaCookie}; ${mfaChallenge.challengeCookie}`,
+      `${mfaCookie}; ${mfaChallenge.cookie}`,
       'mfa',
     );
     expect(completed.response.status).toBe(204);
@@ -151,10 +119,10 @@ describe('Passkey challenges', async () => {
     const mfaCookie = authCookie('confirm-mfa', await createMfaToken(user));
 
     // The first factor is taken; the passkey that answers is registered to the attacker's own account.
-    const mfaChallenge = await challenge('mfa', mfaCookie);
-    const answered = await signIn(
+    const mfaChallenge = await passkeyChallenge('mfa', mfaCookie);
+    const answered = await passkeySignIn(
       attackerPasskey.assert(mfaChallenge.challenge, { counter: 1 }),
-      `${mfaCookie}; ${mfaChallenge.challengeCookie}`,
+      `${mfaCookie}; ${mfaChallenge.cookie}`,
       'mfa',
     );
     await expectRefusal(answered, 404, 'passkey_not_found');
@@ -165,15 +133,15 @@ describe('Passkey challenges', async () => {
   it('must not sign in via a stale signature counter', async () => {
     const { user, passkey } = await userWithPasskey({ counter: 5 });
 
-    const stale = await challenge('authentication');
-    const refused = await signIn(passkey.assert(stale.challenge, { counter: 5 }), stale.challengeCookie);
+    const stale = await passkeyChallenge('authentication');
+    const refused = await passkeySignIn(passkey.assert(stale.challenge, { counter: 5 }), stale.cookie);
     await expectRefusal(refused, 401, 'passkey_verification_failed');
     expect(await sessionsOf(user.id)).toHaveLength(0);
     expect((await storedPasskey(passkey.credentialId)).counter).toBe(5);
 
     // Positive control: a counter past the stored one signs in and is stored.
-    const fresh = await challenge('authentication');
-    expect((await signIn(passkey.assert(fresh.challenge, { counter: 6 }), fresh.challengeCookie)).response.status).toBe(
+    const fresh = await passkeyChallenge('authentication');
+    expect((await passkeySignIn(passkey.assert(fresh.challenge, { counter: 6 }), fresh.cookie)).response.status).toBe(
       204,
     );
     expect((await storedPasskey(passkey.credentialId)).counter).toBe(6);
@@ -181,21 +149,21 @@ describe('Passkey challenges', async () => {
 
   it('must not sign in via a copy of a passkey whose counter moved on during verification', async () => {
     const { user, passkey } = await userWithPasskey({ counter: 0 });
-    const { challenge: value, challengeCookie } = await challenge('authentication');
+    const { challenge: value, cookie: challengeCookie } = await passkeyChallenge('authentication');
 
     // A clone of the authenticator signs in with the same counter while this response is being verified.
     hooks.afterVerify = async () => {
       await db.update(passkeysTable).set({ counter: 1 }).where(eq(passkeysTable.credentialId, passkey.credentialId));
     };
-    const raced = await signIn(passkey.assert(value, { counter: 1 }), challengeCookie);
+    const raced = await passkeySignIn(passkey.assert(value, { counter: 1 }), challengeCookie);
     await expectRefusal(raced, 401, 'passkey_verification_failed');
     expect(await sessionsOf(user.id)).toHaveLength(0);
     expect((await storedPasskey(passkey.credentialId)).counter).toBe(1);
 
     // Positive control: without a concurrent use, the next counter signs in.
     hooks.afterVerify = undefined;
-    const fresh = await challenge('authentication');
-    expect((await signIn(passkey.assert(fresh.challenge, { counter: 2 }), fresh.challengeCookie)).response.status).toBe(
+    const fresh = await passkeyChallenge('authentication');
+    expect((await passkeySignIn(passkey.assert(fresh.challenge, { counter: 2 }), fresh.cookie)).response.status).toBe(
       204,
     );
   });
@@ -205,8 +173,8 @@ describe('Passkey challenges', async () => {
     const attacker = await createUser(`attacker-${nanoid(8)}@security-test.com`);
     const sessionCookie = await createTestSession(attacker);
 
-    const register = async (passkey: Passkey) => {
-      const { challenge: value, challengeCookie } = await challenge('registration', sessionCookie);
+    const register = async (passkey: SoftwarePasskey) => {
+      const { challenge: value, cookie: challengeCookie } = await passkeyChallenge('registration', sessionCookie);
       return call(createPasskey, {
         body: { attestation: passkey.attest(value), nameOnDevice: 'Attacker device' },
         headers: { ...defaultHeaders, Cookie: `${sessionCookie}; ${challengeCookie}` },
@@ -222,8 +190,8 @@ describe('Passkey challenges', async () => {
     expect(holders).toEqual([{ userId: victim.id }]);
 
     // The victim's passkey still signs the victim in.
-    const victimChallenge = await challenge('authentication');
-    const victimSignIn = await signIn(victimPasskey.assert(victimChallenge.challenge), victimChallenge.challengeCookie);
+    const victimChallenge = await passkeyChallenge('authentication');
+    const victimSignIn = await passkeySignIn(victimPasskey.assert(victimChallenge.challenge), victimChallenge.cookie);
     expect(victimSignIn.response.status).toBe(204);
     expect(await sessionsOf(victim.id)).toHaveLength(1);
 

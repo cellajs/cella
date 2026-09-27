@@ -99,3 +99,6 @@ export function softwarePasskey({ credentialId = randomBytes(16).toString('base6
 
   return { credentialId, publicKey: Buffer.from(cose).toString('base64url'), assert, attest };
 }
+
+export type SoftwarePasskey = ReturnType<typeof softwarePasskey>;
+export type PasskeyAssertion = ReturnType<SoftwarePasskey['assert']>;

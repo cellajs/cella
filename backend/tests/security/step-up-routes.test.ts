@@ -8,7 +8,6 @@ import {
   deleteMe,
   deletePasskey,
   deleteTotp,
-  generatePasskeyChallenge,
   generateTotpKey,
   invokeToken,
   sendStepUpLink,
@@ -20,9 +19,7 @@ import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { type AuthStrategy, sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
@@ -43,7 +40,7 @@ import {
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient, type TestResult } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createOrgUser } from './helpers';
+import { clearSecurityTestData, createOrgUser, insertPasskey, passkeyChallenge, passkeysOf } from './helpers';
 import { asSession, cookiesAfter, insertImpersonation, insertSession, type TestSession } from './session-helpers';
 
 vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
@@ -113,44 +110,37 @@ describe('account-security routes need a step-up', async () => {
     const user = await totpHolder('add-passkey');
     const session = await insertSession(user, STALE);
     const authenticator = softwarePasskey();
-    const passkeysOf = () => db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id));
 
     /** A registration ceremony in this browser: a registration challenge, and the authenticator's answer to it. */
     const register = async () => {
-      const issued = await call(generatePasskeyChallenge, { body: { type: 'registration' }, headers: defaultHeaders });
-      const { challenge } = issued.data as { challenge: string };
-      const challengeCookie = issued.response.headers
-        .getSetCookie()
-        .map((line) => line.split(';')[0])
-        .find((pair) => pair.startsWith(`${authCookieName('passkey-challenge')}=`));
+      const issued = await passkeyChallenge('registration');
       return call(createPasskey, {
-        body: { attestation: authenticator.attest(challenge), nameOnDevice: 'Laptop' },
-        headers: { ...defaultHeaders, Cookie: `${session.cookie}; ${challengeCookie}` },
+        body: { attestation: authenticator.attest(issued.challenge), nameOnDevice: 'Laptop' },
+        headers: { ...defaultHeaders, Cookie: `${session.cookie}; ${issued.cookie}` },
       });
     };
 
     await expectStepUpRequired(await register());
-    expect(await passkeysOf()).toHaveLength(0);
+    expect(await passkeysOf(user.id)).toHaveLength(0);
 
     await stepUpWithTotp(session);
     expect((await register()).response.status).toBe(201);
-    expect(await passkeysOf()).toHaveLength(1);
+    expect(await passkeysOf(user.id)).toHaveLength(1);
   });
 
   it('must not delete a passkey via a stale session', async () => {
     const user = await totpHolder('delete-passkey');
-    const [passkey] = await db.insert(passkeysTable).values(mockPasskeyRecord(user.id)).returning();
+    const passkey = await insertPasskey(user);
     const session = await insertSession(user, STALE);
-    const passkeysOf = () => db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id));
 
     await expectStepUpRequired(await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers }));
-    expect(await passkeysOf()).toHaveLength(1);
+    expect(await passkeysOf(user.id)).toHaveLength(1);
 
     await stepUpWithTotp(session);
     expect((await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers })).response.status).toBe(
       204,
     );
-    expect(await passkeysOf()).toHaveLength(0);
+    expect(await passkeysOf(user.id)).toHaveLength(0);
   });
 
   it('must not set up an authenticator app via a stale session', async () => {
@@ -189,7 +179,7 @@ describe('account-security routes need a step-up', async () => {
 
   it('must not turn MFA on via a stale session', async () => {
     const user = await totpHolder('mfa-on');
-    await db.insert(passkeysTable).values(mockPasskeyRecord(user.id));
+    await insertPasskey(user);
     const session = await insertSession(user, STALE);
     const mfaOf = async () => (await db.select().from(usersTable).where(eq(usersTable.id, user.id)))[0].mfaRequired;
 
@@ -232,7 +222,7 @@ describe('account-security routes need a step-up', async () => {
   it('must not change account security via an impersonation session, however fresh', async () => {
     const admin = await createSystemAdminUser('impersonating-admin@security-test.com');
     const target = await totpHolder('impersonated');
-    const [passkey] = await db.insert(passkeysTable).values(mockPasskeyRecord(target.id)).returning();
+    const passkey = await insertPasskey(target);
     const impersonation = await insertImpersonation(await insertSession(admin), target);
     const headers = impersonation.headers;
 
@@ -247,7 +237,7 @@ describe('account-security routes need a step-up', async () => {
     for (const attempt of attempts) {
       await expectRefusal(attempt, 403, 'impersonation_forbidden');
     }
-    expect(await db.select().from(passkeysTable).where(eq(passkeysTable.userId, target.id))).toHaveLength(1);
+    expect(await passkeysOf(target.id)).toHaveLength(1);
     expect(await db.select().from(totpsTable).where(eq(totpsTable.userId, target.id))).toHaveLength(1);
 
     // The impersonated user's own stepped-up session passes.

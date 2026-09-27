@@ -3,13 +3,11 @@ import { nanoid } from 'nanoid';
 import { deleteTotp, toggleMfa } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
-import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { usersTable } from '#/modules/user/user-db';
 import { createTotpUser } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearSecurityTestData } from './helpers';
+import { clearSecurityTestData, insertPasskey, passkeysOf } from './helpers';
 import { insertSteppedUpSession } from './session-helpers';
 
 /** A point inside the MFA toggle's transaction: after its factor check under the lock, before it writes the flag. */
@@ -33,7 +31,7 @@ const stateOf = async (userId: string) => {
     .from(usersTable)
     .where(eq(usersTable.id, userId));
   const totps = await db.select().from(totpsTable).where(eq(totpsTable.userId, userId));
-  const passkeys = await db.select().from(passkeysTable).where(eq(passkeysTable.userId, userId));
+  const passkeys = await passkeysOf(userId);
   return { mfaRequired: user.mfaRequired, totps: totps.length, passkeys: passkeys.length };
 };
 
@@ -61,7 +59,7 @@ describe('MFA factor rules under concurrent requests', async () => {
   async function userWithBothFactors() {
     const user = await createTotpUser(`race-${nanoid(8)}@security-test.com`);
     await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
-    await db.insert(passkeysTable).values(mockPasskeyRecord(user.id));
+    await insertPasskey(user);
     return { user, headers: (await insertSteppedUpSession(user)).headers };
   }
 

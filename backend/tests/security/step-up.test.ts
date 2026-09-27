@@ -1,20 +1,11 @@
 import { decodeBase32 } from '@oslojs/encoding';
 import { and, eq } from 'drizzle-orm';
-import {
-  generatePasskeyChallenge,
-  getMe,
-  getStepUp,
-  getStepUpPasskeyChallenge,
-  invokeToken,
-  sendStepUpLink,
-  stepUp,
-} from 'sdk';
+import { getMe, getStepUp, getStepUpPasskeyChallenge, invokeToken, sendStepUpLink, stepUp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { defaultHeaders } from '../fixtures';
@@ -26,10 +17,9 @@ import {
   createTotpUser,
   expectRefusal,
 } from '../helpers';
-import { softwarePasskey } from '../software-passkey';
-import { createAppClient, type TestResult } from '../test-client';
+import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
-import { clearSecurityTestData } from './helpers';
+import { clearSecurityTestData, insertPasskey, issuedChallenge, passkeyChallenge } from './helpers';
 import { cookiesAfter, insertImpersonation, insertSession, sessionRow, type TestSession } from './session-helpers';
 
 vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
@@ -66,26 +56,7 @@ describe('step-up', async () => {
   /** A user holding a registered software passkey, with a session signed in before the window. */
   const passkeyHolder = async (label: string) => {
     const user = await createTestUser(`${label}@security-test.com`);
-    const passkey = softwarePasskey();
-    await db.insert(passkeysTable).values({
-      userId: user.id,
-      credentialId: passkey.credentialId,
-      publicKey: passkey.publicKey,
-      counter: 0,
-      nameOnDevice: 'Test device',
-      deviceType: 'desktop',
-    });
-    return { user, passkey, session: await insertSession(user, STALE) };
-  };
-
-  /** The challenge a response issued, and the cookie pair that carries it. */
-  const issuedChallenge = (result: TestResult) => {
-    expect(result.response.status).toBe(200);
-    const pair = result.response.headers
-      .getSetCookie()
-      .map((line) => line.split(';')[0])
-      .find((value) => value.startsWith(`${authCookieName('passkey-challenge')}=`));
-    return { challenge: (result.data as { challenge: string }).challenge, cookie: pair ?? '' };
+    return { user, passkey: await insertPasskey(user), session: await insertSession(user, STALE) };
   };
 
   it('must not step up a session via a passkey response to a sign-in or MFA challenge', async () => {
@@ -93,9 +64,7 @@ describe('step-up', async () => {
     const challengeCookies = { authentication: '', mfa: authCookie('confirm-mfa', await createMfaToken(user)) };
 
     for (const [type, cookie] of Object.entries(challengeCookies) as ['authentication' | 'mfa', string][]) {
-      const issued = issuedChallenge(
-        await call(generatePasskeyChallenge, { body: { type }, headers: { ...defaultHeaders, Cookie: cookie } }),
-      );
+      const issued = await passkeyChallenge(type, cookie);
       const { error, response } = await call(stepUp, {
         body: { passkeyData: passkey.assert(issued.challenge) },
         headers: { ...defaultHeaders, Cookie: `${session.cookie}; ${issued.cookie}` },
@@ -139,8 +108,8 @@ describe('step-up', async () => {
     await expectRefusal(viaFactor, 403, 'impersonation_forbidden');
     const viaLink = await call(sendStepUpLink, { body: {}, headers: impersonation.headers });
     expect(viaLink.response.status).toBe(403);
-    const passkeyChallenge = await call(getStepUpPasskeyChallenge, { headers: impersonation.headers });
-    expect(passkeyChallenge.response.status).toBe(403);
+    const viaPasskey = await call(getStepUpPasskeyChallenge, { headers: impersonation.headers });
+    expect(viaPasskey.response.status).toBe(403);
     expect(await stateOf(impersonation)).toEqual({ steppedUp: false, methods: [] });
     expect((await sessionRow(impersonation.id)).steppedUpAt).toBeNull();
     expect(vi.mocked(mailer.prepareEmails)).not.toHaveBeenCalled();
