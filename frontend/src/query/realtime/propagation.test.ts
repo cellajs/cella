@@ -1,3 +1,4 @@
+import '~/query/tests/query-client-env';
 import type { ProductEntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { ItemData } from '~/query/basic/types';
@@ -27,9 +28,6 @@ vi.mock('shared', async (importOriginal) => {
     isProduct: hierarchy.isProduct,
   };
 });
-
-vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
-vi.stubGlobal('navigator', { onLine: true });
 
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');

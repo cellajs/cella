@@ -1,15 +1,9 @@
 import 'fake-indexeddb/auto';
+import '~/query/tests/query-client-env';
 import { MutationObserver, onlineManager } from '@tanstack/react-query';
 import { Dexie } from 'dexie';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-
-// query-client.ts wires the online listeners and reads navigator.onLine at import time.
-vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
-vi.stubGlobal('navigator', { onLine: true });
-// The client's cache callbacks lazy-import these; neither is under test here.
-vi.mock('~/query/on-error', () => ({ onError: vi.fn() }));
-vi.mock('~/query/on-success', () => ({ onSuccess: vi.fn() }));
 
 const { queryClient } = await import('~/query/query-client');
 const { bindLocalUserDb, closeLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');

@@ -1,8 +1,6 @@
+import '~/query/tests/query-client-env';
 import { appConfig, hierarchy } from 'shared';
 import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
-
-vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
-vi.stubGlobal('navigator', { onLine: true });
 
 const { queryClient } = await import('~/query/query-client');
 const { isSeenTracked, seenKeys } = await import('./helpers');

@@ -2,6 +2,7 @@ import type { PostAppCatchupResponse } from 'sdk';
 import type { EntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-config';
+import { stubLocalStorage } from '~/query/tests/query-client-env';
 
 // Real builder and resolvers over a synthetic sub-org hierarchy; only the app-bound config and hierarchy singletons are replaced.
 vi.mock('shared', async (importOriginal) => {
@@ -70,19 +71,7 @@ vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: vi.fn() }));
 vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-source' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
 
-vi.stubGlobal('window', {
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-});
-vi.stubGlobal('navigator', { onLine: true });
-vi.stubGlobal('localStorage', {
-  getItem: vi.fn(() => null),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-  key: vi.fn(() => null),
-  length: 0,
-});
+stubLocalStorage();
 
 // The synthetic 'label' product exists only in this file's shared mock, hence the cast.
 const LABEL = 'label' as EntityType;

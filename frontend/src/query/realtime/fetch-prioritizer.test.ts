@@ -1,3 +1,4 @@
+import '~/query/tests/query-client-env';
 import { QueryObserver } from '@tanstack/react-query';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
@@ -35,11 +36,8 @@ vi.mock('./view-declaration', () => ({
   resolveChannelPath: (...a: [string | null, string]) => resolveChannelPath(...a),
 }));
 
-// Node test env has no document/window; stub them (before importing query-client, which attaches
-// online listeners at load) so installListeners wires the promote-on-observe path.
+// Node test env has no document: stubbed before query-client loads, installListeners wires the promote-on-observe path.
 vi.stubGlobal('document', { addEventListener: vi.fn(), hidden: false });
-vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
-vi.stubGlobal('navigator', { onLine: true });
 
 const { queryClient } = await import('~/query/query-client');
 const { enqueueRange, flushAllNow, resetFetchPrioritizer } = await import('./fetch-prioritizer');

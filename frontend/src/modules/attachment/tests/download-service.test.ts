@@ -48,23 +48,6 @@ vi.mock('~/query/local-user-storage', () => ({
   subscribeOwnerChange: () => () => {},
 }));
 
-vi.mock('~/query/persister', () => ({
-  persister: { removeClient: vi.fn() },
-  sessionPersister: { removeClient: vi.fn() },
-}));
-
-vi.mock('~/modules/common/alerter/alert-store', () => ({
-  useAlertStore: { getState: () => ({ clearAlertStore: vi.fn() }) },
-}));
-
-vi.mock('~/modules/common/form-draft/draft-store', () => ({
-  useDraftStore: { getState: () => ({ clearForms: vi.fn() }) },
-}));
-
-vi.mock('~/modules/seen/seen-store', () => ({
-  seenStore: { getState: () => ({ clear: vi.fn() }) },
-}));
-
 import { bindLocalUserDb } from '~/query/local-user-db';
 import { downloadQueue } from '../offline/download-queue';
 import { downloadService } from '../offline/download-service';

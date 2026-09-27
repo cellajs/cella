@@ -1,3 +1,4 @@
+import '~/query/tests/query-client-env';
 import type { EntityType, ProductEntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -35,12 +36,6 @@ vi.mock('~/modules/common/blocknote/yjs-editor', () => ({
 vi.mock('~/query/offline', () => ({
   sourceId: 'test-source',
 }));
-
-vi.stubGlobal('window', {
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-});
-vi.stubGlobal('navigator', { onLine: true });
 
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
