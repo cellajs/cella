@@ -1,16 +1,9 @@
-import type { DrizzleConfig } from 'drizzle-orm';
 import type { Pool, PoolClient } from 'pg';
-import { appConfig } from 'shared';
 import { resolvePostgresSslCa } from 'shared/utils/postgres-tls';
 import { env } from '../env';
-import { createPgConnection, type DB, type PgDB, queryLoggerEnabled } from './create-connection';
+import { createPgConnection, type DB, type PgDB } from './create-connection';
 
 export type { DB, DbOrTx, PgDB, Tx } from './create-connection';
-
-export const dbConfig = {
-  // Compared with true: under Vitest `env` holds the unparsed string.
-  logger: queryLoggerEnabled(env.DEBUG === true, appConfig.mode),
-} satisfies DrizzleConfig;
 
 export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'drizzle-backend' };
 
@@ -18,7 +11,7 @@ export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'd
 const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
 
 const connect = (connectionString: string, max: number): PgDB =>
-  createPgConnection(connectionString, { max, sslCa, logger: dbConfig.logger });
+  createPgConnection(connectionString, { max, sslCa, debug: env.DEBUG });
 
 /** Probes exempt from the NODB throw: `prepared.ts` reads `select`, the pool probe reads `$client`. */
 const noDbProbeKeys: ReadonlySet<string | symbol> = new Set(['select', '$client']);

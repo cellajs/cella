@@ -1,17 +1,8 @@
-import type { DrizzleConfig } from 'drizzle-orm';
 import { type NodePgClient, type NodePgDatabase, drizzle as pgDrizzle } from 'drizzle-orm/node-postgres';
-import type { ConfigMode } from 'shared';
+import { appConfig } from 'shared';
 import { stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
 
 // No `#/env` import and no pool opened at module load, so the cdc and yjs workers can import this.
-
-/**
- * Drizzle's query logger prints every query with the values it bound (tokens, email addresses) to stdout, so `DEBUG`
- * turns it on in development only, for the API and both workers.
- * @param debug - The parsed `DEBUG` flag.
- * @param mode - The app mode.
- */
-export const queryLoggerEnabled = (debug: boolean, mode: ConfigMode) => debug && mode === 'development';
 
 export type PgDB = NodePgDatabase & { $client: NodePgClient };
 export type DB = PgDB;
@@ -25,16 +16,24 @@ interface CreatePgConnectionOptions {
   max: number;
   /** PEM CA for verified TLS; omit for plain connections (dev/test). */
   sslCa?: string;
-  logger?: DrizzleConfig['logger'];
+  /** The process's parsed `DEBUG` flag. */
+  debug?: boolean;
   connectionTimeoutMillis?: number;
 }
 
 /** A connection quiet this long gets TCP keepalive probes, so a dead peer or a middlebox idle timeout ends it. */
 const KEEP_ALIVE_IDLE_MS = 30_000;
 
+/**
+ * A drizzle client on a pool of its own, for the API and both workers. Drizzle's query logger prints every query with
+ * the values it bound (tokens, email addresses) to stdout, so `debug` turns it on in development only.
+ * @param url - The connection string; its libpq TLS parameters are dropped, so `sslCa` alone decides TLS.
+ * @param options - Pool size, TLS CA, the `DEBUG` flag and the connect timeout.
+ * @returns The client; its pool opens a connection on the first query.
+ */
 export const createPgConnection = (
   url: string,
-  { max, sslCa, logger = false, connectionTimeoutMillis = 10_000 }: CreatePgConnectionOptions,
+  { max, sslCa, debug = false, connectionTimeoutMillis = 10_000 }: CreatePgConnectionOptions,
 ): PgDB =>
   pgDrizzle({
     connection: {
@@ -46,5 +45,5 @@ export const createPgConnection = (
       keepAlive: true,
       keepAliveInitialDelayMillis: KEEP_ALIVE_IDLE_MS,
     },
-    logger,
+    logger: debug && appConfig.mode === 'development',
   });
