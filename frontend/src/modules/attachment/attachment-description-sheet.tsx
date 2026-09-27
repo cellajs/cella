@@ -32,7 +32,8 @@ function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
 
   const resolveCan = useResolveCan();
   const channel = findInCache<EnrichedChannel>(homeType, homeId);
-  const canEdit = resolveCan(channel?.can?.attachment?.update, attachment.createdBy);
+  // The map is the home channel's own, so the row is at home for a home-scoped grant.
+  const canEdit = resolveCan(channel?.can?.attachment?.update, attachment.createdBy, { row: homeId, channel: homeId });
 
   const membersQuery = useInfiniteQuery(
     membersListQueryOptions({ entityId: homeId, entityType: homeType, tenantId, organizationId }),

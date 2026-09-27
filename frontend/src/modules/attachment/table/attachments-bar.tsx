@@ -2,7 +2,7 @@ import { InfoIcon, TrashIcon, UploadIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
 import type { AttachmentsTableProps } from '~/modules/attachment/table/attachments-table';
 import { useAttachmentsUploadDialog } from '~/modules/attachment/table/use-attachments-upload-dialog';
@@ -59,7 +59,12 @@ export function AttachmentsTableBar({
   const showUpload = canUpload && !isFiltered;
 
   // Bulk delete acts only on rows this user may delete; the badge shows that count when it differs from the selection.
-  const deletable = selected.filter((row) => resolveCan(channel.can?.attachment?.delete, row.createdBy));
+  const deletable = selected.filter((row) =>
+    resolveCan(channel.can?.attachment?.delete, row.createdBy, {
+      row: hierarchy.resolveDeepestAncestorId('attachment', row),
+      channel: channel.id,
+    }),
+  );
 
   const onSearch = (searchString: string) => {
     clearSelection();

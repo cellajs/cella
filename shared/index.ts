@@ -45,6 +45,7 @@ export type {
   AccessMembership,
   ActionAttribution,
   AncestorChannelIds,
+  CanHome,
   CanState,
   ChannelIdColumns,
   ChannelPolicyBuilder,

@@ -169,6 +169,18 @@ export type RowConditionName = "own" | "public"; // this union IS the contract
 
 Two row columns sit beside the engine: drafts (`publishedAt`) are visible to their author alone and checked before the engine ([Drafts](./SYNC_ENGINE.md#drafts)). Visibility (`publicAt`) is row-local, set by the client on create, and never cascades.
 
+## Frontend map
+
+`computeCan(channelType, membership, policyMatrix)` derives the `can` map the UI reads (`entity.can[entityType][action]`) from one membership: the channel's own cells plus every descendant type's cells for that channel and role. A cell reaches the UI as `true`, `false` or a condition the frontend resolves per row with `resolveCan(state, createdBy, actorId, home)`:
+
+| State | Resolves to | Where it comes from |
+| --- | --- | --- |
+| `'own'` | the actor created the row | the policy cell |
+| `'home'` | the row is homed at the map's channel: `home.row` (its deepest non-null ancestor id, `hierarchy.resolveDeepestAncestorId(type, row)`) equals `home.channel` | a `1` cell of a home-scoped grant |
+| `'home:own'` | both | an `'own'` cell of a home-scoped grant |
+
+`'home'` is the map's form of the engine's home scoping: a role outside `hierarchy.elevatedGrants` reaches only product rows homed at its own channel, so that membership's product cells carry the mark, except `create` (no row: the frontend creates at the map's channel, the new row's home) and grants at the product's declared parent (every row below is homed there). Channel entries are never marked: the engine scopes product subjects only. A call without `home` denies the marked states, so every product row affordance passes `{ row, channel }`; channel-wide features use `isUnconditionalCan`. The map shapes the interface only: `shared/src/permissions/compute-can.test.ts` runs every role, channel and action of a hierarchy with elevated and home-scoped roles against the engine, on rows homed at the channel and below it, and the two agree.
+
 ## Enforcement paths
 
 | Path | Guard or helper | What it checks | On failure |

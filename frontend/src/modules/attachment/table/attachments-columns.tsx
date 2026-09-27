@@ -2,7 +2,7 @@ import { UserIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
-import { resolveCan, seenWindowMs } from 'shared';
+import { hierarchy, resolveCan, seenWindowMs } from 'shared';
 import { DownloadCell, EllipsisCell, ThumbnailCell } from '~/modules/attachment/table/attachment-cells';
 import { DescriptionCell, openDescriptionSheetFromCell } from '~/modules/attachment/table/description-cell';
 import { EditCellInput, externalEditorOptions, RenderExternalEditor } from '~/modules/common/data-grid/cell-renderers';
@@ -29,11 +29,13 @@ const isOutsideSeenWindow = (createdAt: string | null | undefined) => {
 export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
   const { t } = useTranslation();
 
-  // Table editing covers unconditional and owner grants; the backend resolves ownership per row.
+  // Table editing covers unconditional, owner and home-scoped grants; the backend resolves them per row.
   const canUpdate = !!channel.can?.attachment?.update;
 
-  // Per-row delete resolves 'own' against the row's creator, called directly so the memo depends on plain values.
+  // Per-row delete resolves 'own' against the row's creator and 'home' against the row's placement,
+  // called directly so the memo depends on plain values.
   const deleteState = channel.can?.attachment?.delete;
+  const channelId = channel.id;
   const userId = useUserStore((state) => state.user?.id);
 
   const columns: ColumnOrColumnGroup<Attachment>[] = useMemo(
@@ -102,7 +104,10 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
           <EllipsisCell
             row={row}
             tabIndex={tabIndex}
-            canDelete={resolveCan(deleteState, row.createdBy?.id ?? null, userId)}
+            canDelete={resolveCan(deleteState, row.createdBy?.id ?? null, userId, {
+              row: hierarchy.resolveDeepestAncestorId('attachment', row),
+              channel: channelId,
+            })}
           />
         ),
       },
@@ -188,7 +193,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
           row.updatedBy && <UserCell compactable user={row.updatedBy} tabIndex={tabIndex} />,
       },
     ],
-    [canUpdate, deleteState, userId, isSheet],
+    [canUpdate, deleteState, channelId, userId, isSheet],
   );
 
   return columns;
