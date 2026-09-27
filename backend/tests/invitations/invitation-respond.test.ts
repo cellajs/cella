@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { handleMembershipInvitation, invokeToken } from 'sdk';
+import { getMembers, handleMembershipInvitation, invokeToken } from 'sdk';
 import { hierarchy } from 'shared';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -70,6 +70,33 @@ describe('Invitation response', async () => {
       .from(inactiveMembershipsTable)
       .where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
     expect(remainingInactive).toHaveLength(0);
+  });
+
+  it('lets the new member into the organization right after accepting', async () => {
+    const organization = await createOrg();
+    const invitedUser = await createTestUser('invited@example.com');
+    const { inactiveMembership } = await createInvitation({
+      organization,
+      email: invitedUser.email,
+      createdBy: invitedUser.id,
+      boundTo: invitedUser.id,
+      role: memberRole,
+    });
+    const sessionCookie = await createTestSession(invitedUser);
+    const readMembers = () =>
+      call(getMembers, {
+        path: { tenantId: organization.tenantId, organizationId: organization.id },
+        query: { entityId: organization.id, entityType: 'organization' },
+        headers: { ...defaultHeaders, Cookie: sessionCookie },
+      });
+
+    // Refused while invited only; the guard now holds the user's memberships without the organization.
+    expect((await readMembers()).response.status).toBe(403);
+
+    const { response: res } = await respondToInvitation(inactiveMembership.id, 'accept', sessionCookie);
+    expect(res.status).toBe(200);
+
+    expect((await readMembers()).response.status).toBe(200);
   });
 
   it('should accept with admin role', async () => {

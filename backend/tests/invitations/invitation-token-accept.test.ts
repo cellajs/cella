@@ -1,5 +1,5 @@
 import { eq } from 'drizzle-orm';
-import { acceptInvitationToken, invokeToken } from 'sdk';
+import { acceptInvitationToken, getMembers, invokeToken } from 'sdk';
 import { appConfig, hierarchy } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -90,6 +90,26 @@ describe('Accept an invitation token as the signed-in user', async () => {
       details: { accountEmail: 'my-account@example.com' },
     });
     expect(recipients).toEqual([expect.objectContaining({ email: invitedEmail })]);
+  });
+
+  it('lets the new member into the organization right after accepting', async () => {
+    const { organization, invitationCookie } = await setup();
+    const me = await createTestUser('my-account@example.com');
+    const sessionCookie = await createTestSession(me);
+    const readMembers = () =>
+      call(getMembers, {
+        path: { tenantId: organization.tenantId, organizationId: organization.id },
+        query: { entityId: organization.id, entityType: 'organization' },
+        headers: { ...defaultHeaders, Cookie: sessionCookie },
+      });
+
+    // Refused while invited only; the guard now holds the user's memberships without the organization.
+    expect((await readMembers()).response.status).toBe(403);
+
+    const { response } = await accept([sessionCookie, invitationCookie]);
+    expect(response.status).toBe(200);
+
+    expect((await readMembers()).response.status).toBe(200);
   });
 
   it('cannot be replayed once accepted', async () => {

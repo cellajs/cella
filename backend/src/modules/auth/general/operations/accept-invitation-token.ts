@@ -1,6 +1,5 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { handleMembershipInvitationOp } from '#/modules/memberships/operations/handle-membership-invitation';
@@ -19,8 +18,6 @@ export async function acceptInvitationTokenOp(ctx: UserContext, tokenRecord: Tok
   const entity = await handleMembershipInvitationOp(ctx, tokenRecord.inactiveMembershipId, 'accept', {
     viaToken: true,
   });
-
-  invalidateCache.user(user.id);
 
   // Accepted by an account on another address than the one invited: tell the invited inbox, since it may not be theirs.
   if (tokenRecord.email !== user.email) {
