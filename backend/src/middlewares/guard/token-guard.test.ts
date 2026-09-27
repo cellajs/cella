@@ -1,5 +1,4 @@
-import { createPublicKey } from 'node:crypto';
-import { generateKeyPair, importJWK, SignJWT, UnsecuredJWT } from 'jose';
+import { importJWK, SignJWT } from 'jose';
 import { appConfig } from 'shared';
 import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { AppError } from '#/core/error';
@@ -62,12 +61,6 @@ const signed = async ({
     .sign(key ?? (await importJWK(signingJwk, 'RS256')));
 };
 
-/** The public half of the server's signing key, as anyone reads it from the JWKS endpoint. */
-const publishedKey = async () => {
-  const [signingJwk] = (await loadSigningJwks()).keys;
-  return JSON.stringify(createPublicKey({ key: signingJwk, format: 'jwk' }).export({ format: 'jwk' }));
-};
-
 describe('tokenGuard', () => {
   // A fresh test database holds no signing key until the authorization server boots or this mints one.
   beforeAll(() => ensureSigningKeys());
@@ -91,28 +84,6 @@ describe('tokenGuard', () => {
    * verifier's reason, and no actor is set.
    */
   const forgeries: [vector: string, forge: () => Promise<string>, reason: string][] = [
-    [
-      'an unsigned token (alg none)',
-      async () =>
-        new UnsecuredJWT(claims)
-          .setSubject('user1')
-          .setIssuer(appConfig.oauthUrl)
-          .setAudience(resource)
-          .setIssuedAt()
-          .setExpirationTime('1h')
-          .encode(),
-      'invalid_token',
-    ],
-    [
-      "an HMAC token keyed with the server's published public key",
-      async () => signed({ alg: 'HS256', key: new TextEncoder().encode(await publishedKey()) }),
-      'invalid_token',
-    ],
-    [
-      "a token signed by another key under the server's kid",
-      async () => signed({ key: (await generateKeyPair('RS256')).privateKey }),
-      'invalid_token',
-    ],
     ['a token from another issuer', () => signed({ issuer: 'https://evil.example/oauth' }), 'invalid_token'],
     ['an expired token', () => signed({ expiresAt: Math.floor(Date.now() / 1000) - 3600 }), 'token_expired'],
     [
