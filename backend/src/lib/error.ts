@@ -7,6 +7,7 @@ import { withoutFailedQuery } from 'shared/utils/failed-query';
 import { scrubUrl } from 'shared/utils/scrub-url';
 import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
+import { keepOrganizationAdminConstraint } from '#/db/membership-rules';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
@@ -36,8 +37,8 @@ const PG_ERROR_MAP: Record<string, { status: number; type: ErrorKey; message: st
 
 /** Named database constraints whose refusal is a rule the user can act on, mapped ahead of the generic code map. */
 const PG_CONSTRAINT_MAP: Record<string, { status: number; type: ErrorKey; message: string }> = {
-  // Refused when an organization would be left without an admin; the trigger is defined in scripts/migrations.
-  memberships_keep_org_admin: {
+  // Refused when an organization would be left without an admin.
+  [keepOrganizationAdminConstraint]: {
     status: 409,
     type: 'last_admin',
     message: 'An organization keeps at least one admin',

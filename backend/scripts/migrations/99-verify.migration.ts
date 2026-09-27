@@ -5,6 +5,7 @@ import {
   allImmutabilityTables,
   immutableKeysTriggerName,
 } from '#/db/immutability-triggers';
+import { membershipRuleTriggers } from '#/db/membership-rules';
 import { rlsPolicyContract } from '#/db/rls-helpers';
 import { entityTables, resourceTables } from '#/tables';
 import { publicationRowFilter } from '#/db/utils/publication-filter';
@@ -20,7 +21,7 @@ const PRIVILEGES = ['SELECT', 'INSERT', 'UPDATE', 'DELETE'] as const;
  * Builds the final assertions for the combined side-effect migration, causing any missing
  * end state to roll back the transaction. Assertions share producer preconditions and
  * derive expected state from the same TypeScript sources: table classification from
- * `10-rls`, the policy set from `rls-helpers`, triggers from `immutability-triggers`.
+ * `10-rls`, the policy set from `rls-helpers`, triggers from `immutability-triggers` and `membership-rules`.
  */
 async function run(): Promise<SideEffectBlock> {
   const { rlsTables, fullCrudTables, readOnlyTables } = classifyRlsTables();
@@ -29,9 +30,11 @@ async function run(): Promise<SideEffectBlock> {
   const expectedTriggers = [
     ...allImmutabilityTables.map(({ tableName }) => ({ tableName, triggerName: immutableKeysTriggerName(tableName) })),
     ...allAdminOnlyWriteTables.map(({ tableName }) => ({ tableName, triggerName: adminOnlyWriteTriggerName(tableName) })),
+    ...membershipRuleTriggers,
   ];
   const functionNames = [
     ...new Set([...allImmutabilityTables, ...allAdminOnlyWriteTables].map((t) => t.functionName)),
+    ...membershipRuleTriggers.map((t) => t.functionName),
     'apply_count_deltas',
   ];
   const publicationTableCount = [...Object.values(entityTables), ...Object.values(resourceTables)].map(getTableName).length;
@@ -147,7 +150,7 @@ BEGIN
   -- Functions (created unconditionally by their blocks)
 ${functionChecks}
 
-  -- Immutability triggers
+  -- Immutability, write-guard and membership rule triggers
 ${triggerChecks}
 
   -- Ownership and enabled (not forced) RLS

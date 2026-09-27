@@ -1,7 +1,7 @@
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 /** Set on `unsubscribe_tokens.secret` once its rows hold hashes; its presence keeps a re-run from hashing a hash. */
-export const unsubscribeTokenHashMarker = 'sha256 hex of the unsubscribe token';
+const unsubscribeTokenHashMarker = 'sha256 hex of the unsubscribe token';
 
 /**
  * `unsubscribe_tokens.secret` holds the SHA-256 (lowercase hex, as `hashToken` writes it) of the token an unsubscribe
