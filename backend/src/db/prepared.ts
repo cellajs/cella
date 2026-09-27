@@ -38,15 +38,3 @@ export const findActivityByMutationId = prepared('find_activity_by_mutation_id',
     .limit(1)
     .prepare('find_activity_by_mutation_id'),
 );
-
-export const findActivityRefByMutationId = prepared('find_activity_ref_by_mutation_id', () =>
-  baseDb
-    .select({
-      entityType: activitiesTable.entityType,
-      subjectId: activitiesTable.subjectId,
-    })
-    .from(activitiesTable)
-    .where(sql`${activitiesTable.stx}->>'mutationId' = ${sql.placeholder('mutationId')}`)
-    .limit(1)
-    .prepare('find_activity_ref_by_mutation_id'),
-);

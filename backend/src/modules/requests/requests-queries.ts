@@ -5,21 +5,6 @@ import { type RequestModel, requestsTable } from '#/modules/requests/requests-db
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
 
-interface FindExistingRequestOpts {
-  email: string;
-  type: RequestModel['type'];
-}
-
-export const findExistingRequest = async (ctx: DbContext, { email, type }: FindExistingRequestOpts) => {
-  const { db } = ctx.var;
-  const [existing] = await db
-    .select()
-    .from(requestsTable)
-    .where(and(eq(requestsTable.email, email), eq(requestsTable.type, type)))
-    .limit(1);
-  return existing;
-};
-
 interface InsertRequestOpts {
   email: string;
   type: RequestModel['type'];

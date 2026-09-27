@@ -6,7 +6,6 @@ import { hasLiveInvitationToken } from '#/modules/auth/tokens/tokens-queries';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { emailsTable } from '#/modules/user/emails-db';
 
 interface FindCredentialIdsByUserOpts {
   userId: string;
@@ -37,16 +36,6 @@ export const findRemainingMfaMethods = async (ctx: DbContext, { userId }: FindUs
     db.select().from(totpsTable).where(eq(totpsTable.userId, userId)),
   ]);
   return { passkeys, totps };
-};
-
-interface VerifyEmailOpts {
-  email: string;
-  verifiedAt: string;
-}
-
-export const verifyEmail = async (ctx: DbContext, { email, verifiedAt }: VerifyEmailOpts) => {
-  const { db } = ctx.var;
-  return db.update(emailsTable).set({ verified: true, verifiedAt }).where(eq(emailsTable.email, email));
 };
 
 interface InsertTotpOpts {
