@@ -90,7 +90,7 @@ describe('Invitation response', async () => {
         headers: { ...defaultHeaders, Cookie: sessionCookie },
       });
 
-    // Refused while invited only; the guard now holds the user's memberships without the organization.
+    // The tenant refuses while invited only: the user holds no membership in it yet, so the tenant guard answers.
     expect((await readMembers()).response.status).toBe(403);
 
     const { response: res } = await respondToInvitation(inactiveMembership.id, 'accept', sessionCookie);

@@ -1,27 +1,17 @@
 import type { ActorContext } from '#/core/context';
-import { AppError } from '#/core/error';
 import { getChannelCounts } from '#/modules/entities/entities-queries';
 import { isMembershipRow, toMembershipBase } from '#/modules/memberships/helpers/select';
 import { withOrganizationDefaults } from '#/modules/organization/helpers/select';
 import { withAuditUser } from '#/modules/user/helpers/audit-user';
 import { getValidChannel } from '#/permissions';
 
-export async function getOrganizationOp(
-  ctx: ActorContext,
-  id: string,
-  tenantId: string,
-  opts: { bySlug?: boolean; include: string[] },
-) {
+export async function getOrganizationOp(ctx: ActorContext, id: string, opts: { bySlug?: boolean; include: string[] }) {
   const { bySlug, include } = opts;
 
+  // The tenant comparison is getValidChannel's: an organization of another tenant reads as missing.
   const { entity, membership } = await getValidChannel(ctx, id, 'organization', 'read', bySlug);
   // Rows store organizationFlags sparse; merge config defaults under the stored bag
   const organization = withOrganizationDefaults(entity);
-
-  // Validate organization belongs to the specified tenant, in org itself we do not have orgGuard
-  if (organization.tenantId !== tenantId) {
-    throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization', meta: { reason: 'Tenant mismatch' } });
-  }
 
   const includeCounts = include.includes('counts');
   const includeMembership = include.includes('membership');

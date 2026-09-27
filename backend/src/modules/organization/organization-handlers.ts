@@ -22,15 +22,15 @@ app.openapi(organizationRoutes.getOrganizations, async (ctx) => {
 });
 
 app.openapi(organizationRoutes.getOrganization, async (ctx) => {
-  const { tenantId, id } = ctx.req.valid('param');
+  const { id } = ctx.req.valid('param');
   const { slug: bySlug, include } = ctx.req.valid('query');
-  const data = await getOrganizationOp(ctx, id, tenantId, { bySlug, include });
+  const data = await getOrganizationOp(ctx, id, { bySlug, include });
   return ctx.json(data, 200);
 });
 
 app.openapi(organizationRoutes.updateOrganization, async (ctx) => {
-  const { tenantId, id } = ctx.req.valid('param');
-  const data = await updateOrganizationOp(ctx, id, tenantId, ctx.req.valid('json'));
+  const { id } = ctx.req.valid('param');
+  const data = await updateOrganizationOp(ctx, id, ctx.req.valid('json'));
   return ctx.json(data, 200);
 });
 

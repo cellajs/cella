@@ -108,20 +108,21 @@ describe('orgGuard — organization access', () => {
     expect((organization as { membership: unknown }).membership).toBeNull();
   });
 
-  it('rejects a caller whose only membership is in another organization', async () => {
+  // A caller without a foothold gets the answer a missing organization gets, so the id is never confirmed.
+  it('must not confirm the organization to a caller whose only membership is in another organization', async () => {
     const ctx = mockCtx({ memberships: [membership('course', OTHER_ORG_ID)] });
 
     const error = await runExpectingError(ctx);
 
-    expect(error.status).toBe(403);
+    expect(error).toMatchObject({ status: 404, type: 'not_found', entityType: 'organization' });
   });
 
-  it('rejects a caller with no memberships at all', async () => {
+  it('must not confirm the organization to a caller with no memberships at all', async () => {
     const ctx = mockCtx({ memberships: [] });
 
     const error = await runExpectingError(ctx);
 
-    expect(error.status).toBe(403);
+    expect(error).toMatchObject({ status: 404, type: 'not_found', entityType: 'organization' });
   });
 
   it('admits a system admin holding no membership in the organization', async () => {

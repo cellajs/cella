@@ -119,7 +119,8 @@ describe('Service accounts and API keys', async () => {
       body: { name: 'Should not happen' },
       headers: machineHeaders(key),
     });
-    expect(response.status).toBe(403);
+    // The mask covers no organization read, so the organization reads as missing.
+    expect(response.status).toBe(404);
   });
 
   it('rejects a revoked key, a browser origin, and a foreign tenant', async () => {

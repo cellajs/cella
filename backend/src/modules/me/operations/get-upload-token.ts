@@ -16,11 +16,14 @@ const systemUploadSub = (ctx: UserContext) => {
   return `${systemUploadPrefix}/${ctx.var.user.id}`;
 };
 
-/** The organization id becomes the upload's storage prefix, which attachments must name: members only. */
+/**
+ * The organization id becomes the upload's storage prefix, which attachments must name: members only, and to anyone
+ * else the organization reads as missing.
+ */
 const organizationUploadSub = (ctx: UserContext, organizationId?: string) => {
   const isMember = ctx.var.memberships.some((membership) => membership.organizationId === organizationId);
   if (organizationId && !isMember && !ctx.var.isSystemAdmin) {
-    throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
+    throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
   }
   return [organizationId, ctx.var.user.id].filter((part): part is string => typeof part === 'string').join('/');
 };

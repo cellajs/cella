@@ -315,7 +315,7 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
             requested: { homeChannelId: requestedHomeChannel },
           });
         } catch {
-          // 403: no scope at all for the requested home-channel, so the engine must read no row of it.
+          // 404: no scope at all for the requested home-channel, so the engine must read no row of it.
           const fromEngine = engineReadableIds(scenario);
           for (const row of ROWS.filter((r) => r.homeChannelId === requestedHomeChannel)) {
             expect(fromEngine.has(row.id), `seed 0xbee5 scenario ${i} row ${row.id}`).toBe(false);

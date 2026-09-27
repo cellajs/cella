@@ -128,13 +128,14 @@ describe('OAuth authorization server', async () => {
     });
     expect(read.response.status).toBe(200);
 
-    // The account is an admin, the token only carries attachment:read.
+    // The account is an admin, the token only carries attachment:read: under that mask it cannot read the
+    // organization, which therefore reads as missing.
     const write = await call(updateOrganization, {
       path: { tenantId: client.org.tenantId, id: client.org.id },
       body: { name: 'Should not happen' },
       headers: tokenHeaders(jwt),
     });
-    expect(write.response.status).toBe(403);
+    expect(write.response.status).toBe(404);
 
     const otherTenant = await call(getAttachments, {
       path: { tenantId: 'other01', organizationId: client.org.id },

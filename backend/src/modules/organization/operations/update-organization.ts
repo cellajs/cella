@@ -14,22 +14,13 @@ import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { assertBlockMediaUrls } from '#/utils/validate-block-urls';
 
-export async function updateOrganizationOp(
-  ctx: ActorContext,
-  id: string,
-  tenantId: string,
-  rawInput: Record<string, unknown>,
-) {
+export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInput: Record<string, unknown>) {
   // Normalize old-shape field names to their current names before any body access
   const input = organizationContract.normalizeBody(rawInput);
   const actorId = ctx.var.actor.id;
 
+  // The tenant comparison is getValidChannel's: an organization of another tenant reads as missing.
   const { entity: organization, membership } = await getValidChannel(ctx, id, 'organization', 'update');
-
-  // Validate organization belongs to the specified tenant, in org itself we do not have orgGuard
-  if (organization.tenantId !== tenantId) {
-    throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization', meta: { reason: 'Tenant mismatch' } });
-  }
 
   const slug = input.slug as string | undefined;
 
@@ -53,7 +44,7 @@ export async function updateOrganizationOp(
     after: [updatedOrganizationRecord],
   });
 
-  invalidateCache.org(tenantId, organization.id);
+  invalidateCache.org(organization.tenantId, organization.id);
 
   log.info('Organization updated', { organizationId: updatedOrganizationRecord.id });
 

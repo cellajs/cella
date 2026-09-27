@@ -9,7 +9,8 @@ import { getOrgCache, setOrgCache } from './org-cache';
 
 /**
  * Grants org-scoped routes to system admins and to anyone holding a membership inside the
- * organization, at organization level or in any channel below it. Must run after tenantGuard for
+ * organization, at organization level or in any channel below it. A caller without one gets the
+ * answer a missing organization gets, so an id is never confirmed. Must run after tenantGuard for
  * the RLS transaction.
  */
 export const orgGuard = xMiddleware(
@@ -38,6 +39,9 @@ export const orgGuard = xMiddleware(
       throw new AppError(500, 'server_error', 'error', { message: 'orgGuard requires userGuard or serviceGuard' });
     }
 
+    const missing = () => new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
+
+    // The lookup is bound to the request's tenant, so an organization of another tenant does not resolve.
     const cached = getOrgCache(tenantId, organizationId);
     const orgRow =
       cached ??
@@ -49,15 +53,10 @@ export const orgGuard = xMiddleware(
         if (row) setOrgCache(tenantId, organizationId, row);
         return row;
       })());
-    if (!orgRow) throw new AppError(404, 'not_found', 'warn', { entityType: 'organization' });
+    if (!orgRow) throw missing();
 
     // Rows store organizationFlags sparse; merge config defaults under the stored bag
     const organization = withOrganizationDefaults(orgRow);
-
-    // Second check beside RLS: the organization must belong to the current tenant
-    if (organization.tenantId !== tenantId) {
-      throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
-    }
 
     // Deeper channel rows carry organizationId as an ancestor column, so a sub-channel member is
     // in the org. This guard only rejects callers with no foothold at all; the permission engine
@@ -65,9 +64,7 @@ export const orgGuard = xMiddleware(
     const orgMembership =
       memberships.find((m) => m.organizationId === organization.id && m.channelType === 'organization') || null;
     const isInOrganization = orgMembership !== null || memberships.some((m) => m.organizationId === organization.id);
-    if (!isSystemAdmin && !isInOrganization) {
-      throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization' });
-    }
+    if (!isSystemAdmin && !isInOrganization) throw missing();
     // A service account's binding is not a membership row; the organization-level membership is a user's only.
     const orgWithMembership = {
       ...organization,
