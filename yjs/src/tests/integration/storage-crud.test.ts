@@ -18,9 +18,8 @@ import {
   touchDoc,
 } from '../../data/storage';
 import { mergeState } from '../../sync/document-state';
-import { mapUpdate, readMap } from '../helpers';
-
-const DATABASE_URL = testDatabaseUrl;
+import { mapUpdate, readMap, undecodableUpdate } from '../helpers';
+import { cleanupSeed, seedOrg } from './seed';
 
 // A dedicated tenant/user so parallel tests do not collide.
 const testTenantId = 'yjs-integ-tenant';
@@ -47,37 +46,19 @@ const ids = {
   retire: '10000000-0000-4000-a000-000000000007',
 };
 
-/** Seeds the rows the RLS context needs so `set_config` does not trigger FK violations; runs as the superuser, which bypasses RLS. */
-async function seedTestTenant(client: pg.Client) {
-  await client.query('INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING', [
-    testTenantId,
-    'YJS Integration Test Tenant',
-  ]);
-  await client.query(
-    'INSERT INTO organizations (id, tenant_id, slug, name, short_name) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
-    [testOrgId, testTenantId, 'yjs-integ-org', 'YJS Test Org', 'yto'],
-  );
-}
-
-async function cleanupTestData(client: pg.Client) {
-  await client.query('DELETE FROM yjs_updates WHERE tenant_id = $1', [testTenantId]);
-  await client.query('DELETE FROM yjs_documents WHERE tenant_id = $1', [testTenantId]);
-  await client.query('DELETE FROM organizations WHERE tenant_id = $1', [testTenantId]);
-  await client.query('DELETE FROM tenants WHERE id = $1', [testTenantId]);
-}
-
 describe('6.1 Storage: session row, update log, compaction', () => {
   let adminClient: pg.Client;
 
   beforeAll(async () => {
-    adminClient = new pg.Client({ connectionString: DATABASE_URL });
+    adminClient = new pg.Client({ connectionString: testDatabaseUrl });
     await adminClient.connect();
-    await cleanupTestData(adminClient);
-    await seedTestTenant(adminClient);
+    await cleanupSeed(adminClient, { tenantIds: [testTenantId] });
+    // The rows the RLS context's foreign keys need.
+    await seedOrg(adminClient, testTenantId, testOrgId, 'yjs-integ-org');
   });
 
   afterAll(async () => {
-    await cleanupTestData(adminClient);
+    await cleanupSeed(adminClient, { tenantIds: [testTenantId] });
     await adminClient.end();
   });
 
@@ -164,7 +145,7 @@ describe('6.1 Storage: session row, update log, compaction', () => {
     const other = ctx(ids.compaction);
     await ensureDoc(c, null);
     await appendUpdate(c, testUserId, mapUpdate('a', 1));
-    await appendUpdate(c, testUserId, new Uint8Array([1, 2, 3]));
+    await appendUpdate(c, testUserId, undecodableUpdate);
     await appendUpdate(other, testUserId, mapUpdate('elsewhere', true));
     const [kept, bad] = await readLog(c);
     const [elsewhere] = await readLog(other);

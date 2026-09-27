@@ -1,6 +1,6 @@
-import { createServer } from 'node:http';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
+import { setTimeout as sleep } from 'node:timers/promises';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
+import { WebSocket as WsWebSocket } from 'ws';
 import type { DocScope } from '../constants';
 import {
   awarenessUpdate,
@@ -10,7 +10,11 @@ import {
   deferred,
   fakeStorage,
   mapUpdate,
+  openSocket,
+  recordCrashes,
+  startRelayServer,
   storageKey,
+  until,
 } from './helpers';
 
 // The real upgrade handler, relay and session manager over in-memory storage. Entity access is decided per user;
@@ -40,75 +44,28 @@ vi.mock('../sync/materialize', () => ({
 }));
 vi.mock('../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
 
-const { setupConnectionHandler, setupUpgradeHandler } = await import('../server/upgrade');
 const { getCollab } = await import('../sync/session-manager');
 
 const entityType = 'task';
 /** A document of tenant-1, as the relay keys its session and rows. */
 const docOf = (entityId: string) => ({ entityType, entityId, tenantId: 'tenant-1' });
-let baseUrl: string;
-let httpServer: ReturnType<typeof createServer>;
-let wss: WebSocketServer;
+const relay = await startRelayServer();
 const usedDocs = new Set<string>();
 
-beforeAll(async () => {
-  httpServer = createServer((_req, res) => {
-    res.writeHead(404);
-    res.end();
-  });
-  wss = new WebSocketServer({ noServer: true });
-  httpServer.on('upgrade', setupUpgradeHandler(wss));
-  setupConnectionHandler(wss);
-  await new Promise<void>((resolve) => {
-    httpServer.listen(0, '127.0.0.1', () => {
-      const addr = httpServer.address();
-      baseUrl = `ws://127.0.0.1:${typeof addr === 'object' && addr ? addr.port : 0}`;
-      resolve();
-    });
-  });
-});
-
 afterEach(() => {
-  for (const client of wss.clients) client.terminate();
+  for (const client of relay.wss.clients) client.terminate();
   gates.clear();
 });
 
-afterAll(() => {
-  // The relay arms compaction and cleanup timers per document; none may outlive the file.
-  for (const entityId of usedDocs) {
-    const collab = getCollab(docOf(entityId));
-    if (collab?.compactTimer) clearTimeout(collab.compactTimer);
-    if (collab?.cleanupTimer) clearTimeout(collab.cleanupTimer);
-  }
-  wss.close();
-  httpServer.close();
-});
-
-const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-async function until(check: () => boolean, ms = 2000): Promise<void> {
-  const deadline = Date.now() + ms;
-  while (!check()) {
-    if (Date.now() > deadline) throw new Error('condition not met in time');
-    await wait(10);
-  }
-}
+afterAll(() => relay.close([...usedDocs].map(docOf)));
 
 const clientCount = (entityId: string) => getCollab(docOf(entityId))?.clients.size ?? 0;
 
-/** An open client socket on the document; `received` collects every frame the relay sends it. */
-async function open(userId: string, entityId: string, tenantId = 'tenant-1') {
+/** An open client socket of `userId` on the document, with a token naming `tenantId`. */
+function open(userId: string, entityId: string, tenantId = 'tenant-1') {
   usedDocs.add(entityId);
   const token = createSignedToken({ userId, entityType, entityId, tenantId });
-  const ws = new WsWebSocket(`${baseUrl}/${entityId}?token=${token}&entityType=${entityType}&tenantId=${tenantId}`);
-  const received: Uint8Array[] = [];
-  ws.on('message', (data: Buffer) => received.push(new Uint8Array(data)));
-  const closed = new Promise<number>((resolve) => ws.on('close', (code) => resolve(code)));
-  await new Promise<void>((resolve, reject) => {
-    ws.once('open', () => resolve());
-    ws.once('error', reject);
-  });
-  return { ws, received, closed };
+  return openSocket(`${relay.baseUrl}/${entityId}?token=${token}&entityType=${entityType}&tenantId=${tenantId}`);
 }
 
 describe('upgrade: a closing socket', () => {
@@ -124,7 +81,7 @@ describe('upgrade: a closing socket', () => {
     await until(() => storage.appendUpdate.mock.calls.length === appends + 1);
     editor.ws.close(1000);
     await editor.closed;
-    await wait(20);
+    await sleep(20);
     appendHold.release();
     appendHold = null;
 
@@ -136,16 +93,7 @@ describe('upgrade: a closing socket', () => {
 
 describe('upgrade: a frame no decoder accepts', () => {
   // A listener that throws is an uncaught exception: it ends the relay, and under singleVM the whole API.
-  const crashes: unknown[] = [];
-  const record = (err: unknown) => void crashes.push(err);
-
-  beforeAll(() => {
-    process.on('uncaughtException', record);
-  });
-
-  afterAll(() => {
-    process.off('uncaughtException', record);
-  });
+  const crashes = recordCrashes();
 
   it('must not crash the relay via a frame whose message type is cut short', async () => {
     const doc = 'doc-malformed-frame';
@@ -154,9 +102,9 @@ describe('upgrade: a frame no decoder accepts', () => {
     await until(() => clientCount(doc) === 2);
 
     sender.ws.send(Buffer.from([0x80, 0x80]));
-    const outcome = await Promise.race([sender.closed, wait(1000).then(() => 'still open')]);
+    const outcome = await Promise.race([sender.closed, sleep(1000, 'still open')]);
 
-    expect(outcome).toBe(4400);
+    expect(outcome).toEqual({ code: 4400, reason: 'Malformed frame' });
     expect(crashes).toEqual([]);
     // Positive control: only the sender's socket closed, and the peer's next update is logged.
     peer.ws.send(buildSyncUpdate(mapUpdate('k', 1)));
@@ -175,7 +123,7 @@ describe('upgrade: a socket joins its document only once verified', () => {
     const pending = await open('user-b', doc);
     editor.ws.send(buildSyncUpdate(mapUpdate('k', 1)));
     await until(() => storage.logs.get(storageKey(docOf(doc)))?.length === 1);
-    await wait(50);
+    await sleep(50);
     expect(pending.received).toHaveLength(0);
 
     // Positive control: once verified, the socket receives the next edit.
@@ -199,14 +147,14 @@ describe('upgrade: a socket joins its document only once verified', () => {
     const latest = buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 2 }));
     pending.ws.send(latest);
     denied.ws.send(buildAwarenessMessage(awarenessUpdate({ clientId: 9 })));
-    expect(await denied.closed).toBe(4003);
-    await wait(50);
+    expect(await denied.closed).toEqual({ code: 4003, reason: 'Access denied' });
+    await sleep(50);
     expect(peer.received).toHaveLength(0);
 
     // Positive control: once verified, the socket's latest presence reaches its peer, the denied socket's never.
     await until(() => clientCount(doc) === 2);
     await until(() => peer.received.length === 1);
-    await wait(50);
+    await sleep(50);
     expect(peer.received).toEqual([latest]);
   });
 
@@ -222,7 +170,7 @@ describe('upgrade: a socket joins its document only once verified', () => {
     closing.close(1000);
     expect(closing.readyState).toBe(WsWebSocket.CLOSING);
     closing.emit('message', Buffer.from(buildAwarenessMessage(awarenessUpdate({ clientId: 3 }))), false);
-    await wait(50);
+    await sleep(50);
     expect(peer.received).toHaveLength(0);
   });
 
@@ -234,7 +182,7 @@ describe('upgrade: a socket joins its document only once verified', () => {
     await open('user-v', doc);
     await until(() => clientCount(doc) === 1);
 
-    expect(await denied.closed).toBe(4003);
+    expect(await denied.closed).toEqual({ code: 4003, reason: 'Access denied' });
     const collab = getCollab(docOf(doc));
     // The session's scope is the entity row's, with no joiner in it: compaction and materialize act as the system.
     expect(collab?.scope).toEqual({ entityType, entityId: doc, tenantId: 'tenant-1', organizationId: 'org-1' });
@@ -247,8 +195,8 @@ describe('upgrade: a socket joins its document only once verified', () => {
     const forged = await open('user-g', doc, 'tenant-x');
     forged.ws.send(buildSyncUpdate(mapUpdate('k', 1)));
 
-    expect(await forged.closed).toBe(4003);
-    await wait(30);
+    expect(await forged.closed).toEqual({ code: 4003, reason: 'Access denied' });
+    await sleep(30);
     expect(getCollab({ entityType, entityId: doc, tenantId: 'tenant-x' })).toBeUndefined();
     expect(storage.logs.get(storageKey({ entityType, entityId: doc, tenantId: 'tenant-x' }))).toBeUndefined();
 
@@ -264,8 +212,8 @@ describe('upgrade: a socket joins its document only once verified', () => {
     const denied = await open('user-e', doc);
     denied.ws.send(buildSyncUpdate(mapUpdate('k', 1)));
 
-    expect(await denied.closed).toBe(4003);
-    await wait(30);
+    expect(await denied.closed).toEqual({ code: 4003, reason: 'Access denied' });
+    await sleep(30);
     expect(getCollab(docOf(doc))).toBeUndefined();
     expect(storage.logs.get(storageKey(docOf(doc)))).toBeUndefined();
   });

@@ -3,8 +3,8 @@ import { appConfig } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { deleteDoc, listStaleDocs } from '../../data/storage';
+import { cleanupSeed, seedOrg } from './seed';
 
-const DATABASE_URL = testDatabaseUrl;
 const entityType = appConfig.productEntityTypes[0];
 
 // Two tenants, so the sweep must cross a tenant boundary the RLS policy would otherwise hide.
@@ -22,18 +22,9 @@ const docs = {
   idleA: '30000000-0000-4000-a000-000000000005',
 };
 
-/** Seeds as the superuser (bypasses RLS); the functions under test connect as runtime_role. */
 async function seed(client: pg.Client) {
-  for (const [key, tenantId] of Object.entries(tenants) as ['a' | 'b', string][]) {
-    await client.query('INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING', [
-      tenantId,
-      `YJS Sweep Tenant ${key}`,
-    ]);
-    await client.query(
-      'INSERT INTO organizations (id, tenant_id, slug, name, short_name) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
-      [orgs[key], tenantId, `yjs-sweep-org-${key}`, `YJS Sweep Org ${key}`, `ys${key}`],
-    );
-  }
+  await seedOrg(client, tenants.a, orgs.a, 'yjs-sweep-org-a');
+  await seedOrg(client, tenants.b, orgs.b, 'yjs-sweep-org-b');
   const insert = (entityId: string, tenantId: string, organizationId: string, age: string) =>
     client.query(
       `INSERT INTO yjs_documents (entity_type, entity_id, tenant_id, organization_id, state, updated_at)
@@ -57,26 +48,19 @@ async function seed(client: pg.Client) {
   await insert(docs.idleA, tenants.a, orgs.a, '1 day');
 }
 
-async function cleanup(client: pg.Client) {
-  const ids = Object.values(tenants);
-  await client.query('DELETE FROM yjs_updates WHERE tenant_id = ANY($1)', [ids]);
-  await client.query('DELETE FROM yjs_documents WHERE tenant_id = ANY($1)', [ids]);
-  await client.query('DELETE FROM organizations WHERE tenant_id = ANY($1)', [ids]);
-  await client.query('DELETE FROM tenants WHERE id = ANY($1)', [ids]);
-}
-
 describe('startup sweep under RLS (runtime_role)', () => {
   let admin: pg.Client;
+  const cleanup = () => cleanupSeed(admin, { tenantIds: Object.values(tenants) });
 
   beforeAll(async () => {
-    admin = new pg.Client({ connectionString: DATABASE_URL });
+    admin = new pg.Client({ connectionString: testDatabaseUrl });
     await admin.connect();
-    await cleanup(admin);
+    await cleanup();
     await seed(admin);
   });
 
   afterAll(async () => {
-    await cleanup(admin);
+    await cleanup();
     await admin.end();
   });
 

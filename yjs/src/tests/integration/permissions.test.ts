@@ -1,23 +1,14 @@
 import { randomUUID } from 'node:crypto';
 import { sql } from 'drizzle-orm';
 import pg from 'pg';
+import { hierarchy } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { createPgConnection, type Tx } from '#/db/create-connection';
 import type { DocScope } from '../../constants';
 import { authorizeDoc } from '../../data/permissions';
-import {
-  cleanupEntityHierarchy,
-  seedAttachment,
-  seedEntityHierarchy,
-  seedMembership,
-  seedOrg,
-  seedTenant,
-  seedUser,
-} from './seed';
-
-const DATABASE_URL = testDatabaseUrl;
+import { cleanupSeed, seedAttachment, seedEntityHierarchy, seedMembership, seedOrg, seedUser } from './seed';
 
 const tenantA = 'yjs-authz-tenant-a';
 const tenantB = 'yjs-authz-tenant-b';
@@ -56,15 +47,12 @@ describe('Local entity authorization (authorizeDoc)', () => {
   let admin: pg.Client;
 
   beforeAll(async () => {
-    admin = new pg.Client({ connectionString: DATABASE_URL });
+    admin = new pg.Client({ connectionString: testDatabaseUrl });
     await admin.connect();
 
     await seedUser(admin, userA, 'a');
     await seedUser(admin, userB, 'b');
     await seedUser(admin, memberA, 'm');
-
-    await seedTenant(admin, tenantA);
-    await seedTenant(admin, tenantB);
 
     await seedOrg(admin, tenantA, orgA, 'authz-a');
     await seedOrg(admin, tenantB, orgC, 'authz-c');
@@ -74,7 +62,7 @@ describe('Local entity authorization (authorizeDoc)', () => {
 
     await seedMembership(admin, tenantA, orgA, userA);
     await seedMembership(admin, tenantB, orgC, userB);
-    await seedMembership(admin, tenantA, orgA, memberA, 'member');
+    await seedMembership(admin, tenantA, orgA, memberA, hierarchy.getLeastPrivilegedRole('organization'));
 
     await seedAttachment(admin, attachmentA, tenantA, hierarchyA, userA);
     await seedAttachment(admin, attachmentM, tenantA, hierarchyA, memberA);
@@ -82,16 +70,11 @@ describe('Local entity authorization (authorizeDoc)', () => {
   });
 
   afterAll(async () => {
-    await admin.query('DELETE FROM attachments WHERE id = ANY($1::uuid[])', [[attachmentA, attachmentM, attachmentC]]);
-    // One transaction: the organization-keeps-an-admin check is deferred to commit, when the organizations are gone too.
-    await admin.query('BEGIN');
-    await admin.query('DELETE FROM memberships WHERE user_id = ANY($1::uuid[])', [[userA, userB, memberA]]);
-    await cleanupEntityHierarchy(admin, [hierarchyA, hierarchyC]);
-    await admin.query('DELETE FROM organizations WHERE id = ANY($1::uuid[])', [[orgA, orgC]]);
-    await admin.query('COMMIT');
-    await admin.query('DELETE FROM tenants WHERE id = ANY($1::text[])', [[tenantA, tenantB]]);
-    await admin.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [[userA, userB, memberA]]);
-    await admin.query('DELETE FROM actors WHERE id = ANY($1::uuid[])', [[userA, userB, memberA]]);
+    await cleanupSeed(admin, {
+      tenantIds: [tenantA, tenantB],
+      userIds: [userA, userB, memberA],
+      plans: [hierarchyA, hierarchyC],
+    });
     await admin.end();
   });
 
@@ -104,7 +87,7 @@ describe('Local entity authorization (authorizeDoc)', () => {
     });
   });
 
-  it('denies editing an entity in a tenant where the user has no membership', async () => {
+  it('must not authorize a document via a tenant the user holds no membership in', async () => {
     await expect(
       authorizeDoc(userA, requested({ entityId: attachmentC, tenantId: tenantB, organizationId: orgC })),
     ).resolves.toBeNull();
@@ -156,7 +139,7 @@ describe('Local entity authorization (authorizeDoc)', () => {
     });
   });
 
-  it('denies access to a non-existent entity', async () => {
+  it('must not authorize a document for an entity that does not exist', async () => {
     await expect(authorizeDoc(userA, requested({ entityId: randomUUID() }))).resolves.toBeNull();
   });
 });

@@ -20,6 +20,7 @@ import {
   mockWebSocket,
   readMap,
   storageKey,
+  undecodableUpdate,
 } from './helpers';
 
 // Real append/read/compact semantics in memory, with per-call gates so tests can interleave.
@@ -248,8 +249,7 @@ describe('handleMessage: sync step 1', () => {
     const { ctx: c, scope, key, ws } = session();
     storage.bases.set(key, mapUpdate('base', true));
     await storage.appendUpdate(scope, 'user-1', mapUpdate('logged', 1));
-    // Logged before the relay refused undecodable updates.
-    await storage.appendUpdate(scope, 'user-x', new Uint8Array([1, 2, 3]));
+    await storage.appendUpdate(scope, 'user-x', undecodableUpdate);
 
     await expect(
       handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc()))),

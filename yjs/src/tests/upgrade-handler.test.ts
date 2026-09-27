@@ -1,10 +1,17 @@
-import { createHmac } from 'node:crypto';
-import { createServer } from 'node:http';
 import { type Socket, connect as tcpConnect } from 'node:net';
 import type { Duplex } from 'node:stream';
+import { setTimeout as sleep } from 'node:timers/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
-import { createExpiredToken, createSignedToken, deferred } from './helpers';
+import { WebSocket as WsWebSocket } from 'ws';
+import {
+  createExpiredToken,
+  createSignedToken,
+  deferred,
+  openSocket,
+  recordCrashes,
+  startRelayServer,
+  until,
+} from './helpers';
 
 // The real upgrade handler over mocked collaborators: entity access is granted in the requested scope, the relay and session manager are inert.
 // `hold` keeps a verification pending until the test releases it; `error` makes it fail, as an unreachable database does.
@@ -42,41 +49,15 @@ vi.mock('../sync/relay', () => ({
 vi.mock('../sync/session-manager', () => ({ joinCollab: vi.fn(), leaveCollab: vi.fn() }));
 vi.mock('../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
 
-const { setupConnectionHandler, setupUpgradeHandler } = await import('../server/upgrade');
 const { checkConnectionRate } = await import('../server/rate-limiter');
 
-let baseUrl: string;
-let port: number;
-let httpServer: ReturnType<typeof createServer>;
-let wss: WebSocketServer;
+const relay = await startRelayServer();
+const { baseUrl, port, wss } = relay;
 /** The server's side of every upgrade request, in arrival order. */
 const upgradeSockets: Duplex[] = [];
+relay.httpServer.on('upgrade', (_req, socket) => upgradeSockets.push(socket));
 
-beforeAll(async () => {
-  httpServer = createServer((_req, res) => {
-    res.writeHead(404);
-    res.end();
-  });
-  wss = new WebSocketServer({ noServer: true });
-  httpServer.on('upgrade', setupUpgradeHandler(wss));
-  httpServer.on('upgrade', (_req, socket) => upgradeSockets.push(socket));
-  setupConnectionHandler(wss);
-
-  await new Promise<void>((resolve) => {
-    httpServer.listen(0, '127.0.0.1', () => {
-      const addr = httpServer.address();
-      port = typeof addr === 'object' && addr ? addr.port : 0;
-      baseUrl = `ws://127.0.0.1:${port}`;
-      resolve();
-    });
-  });
-});
-
-afterAll(() => {
-  for (const client of wss.clients) client.close(1001);
-  wss.close();
-  httpServer.close();
-});
+afterAll(() => relay.close());
 
 /** Connects and settles on a stable open socket, a close code, or an HTTP-level error. */
 function connect(path: string): Promise<{ ws: WsWebSocket; closeCode?: number; closeReason?: string; error?: Error }> {
@@ -114,28 +95,10 @@ describe('setupUpgradeHandler', () => {
     expect(closeReason).toBe('Invalid or expired token');
   });
 
-  it('closes a token signed with another key after the handshake with 4001', async () => {
+  it('must not open a connection via a token another key signed: it closes with 4001 after the handshake', async () => {
+    // Every signature verifyToken refuses (a relay-secret MAC included, auth.test.ts) takes this one path.
     const token = createSignedToken({ userId: 'user-1', keyMaterial: 'another-key-material-of-32-characters' });
-    const { closeCode } = await connect(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
-
-    expect(closeCode).toBe(4001);
-  });
-
-  it('must not accept a connection with a token minted with the relay secret', async () => {
-    const payloadB64 = Buffer.from(
-      JSON.stringify({
-        userId: 'user-1',
-        entityType: 'task',
-        entityId: 'entity-1',
-        tenantId: 'tenant-1',
-        organizationId: 'org-1',
-        exp: Date.now() + 60_000,
-      }),
-    ).toString('base64url');
-    const mac = createHmac('sha256', 'test-yjs-relay-secret-for-unit-tests').update(payloadB64).digest('base64url');
-    const { closeCode, closeReason } = await connect(
-      `/entity-1?token=${payloadB64}.${mac}&entityType=task&tenantId=tenant-1`,
-    );
+    const { closeCode, closeReason } = await connect(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
 
     expect(closeCode).toBe(4001);
     expect(closeReason).toBe('Invalid or expired token');
@@ -166,18 +129,17 @@ describe('setupUpgradeHandler', () => {
   it('must not keep a socket open past its token expiry', async () => {
     const expiring = createSignedToken({ userId: 'user-1', exp: Date.now() + 400 });
     const lasting = createSignedToken({ userId: 'user-1' });
-    const short = new WsWebSocket(`${baseUrl}/entity-1?token=${expiring}&entityType=task&tenantId=tenant-1`);
-    const long = new WsWebSocket(`${baseUrl}/entity-1?token=${lasting}&entityType=task&tenantId=tenant-1`);
-    const closed = new Promise<{ code: number; reason: string }>((resolve) =>
-      short.on('close', (code, reason) => resolve({ code, reason: reason.toString() })),
+    const [short, long] = await Promise.all(
+      [expiring, lasting].map((token) =>
+        openSocket(`${baseUrl}/entity-1?token=${token}&entityType=task&tenantId=tenant-1`),
+      ),
     );
-    await Promise.all([short, long].map((ws) => new Promise((resolve) => ws.once('open', resolve))));
 
     // The client refetches its token on 4001 and reconnects; revoked access gets no new token.
-    expect(await closed).toEqual({ code: 4001, reason: 'Token expired' });
+    expect(await short.closed).toEqual({ code: 4001, reason: 'Token expired' });
     // Positive control: a socket whose token is still valid stays open.
-    expect(long.readyState).toBe(WsWebSocket.OPEN);
-    long.close();
+    expect(long.ws.readyState).toBe(WsWebSocket.OPEN);
+    long.ws.close();
   });
 
   it('accepts a valid token', async () => {
@@ -190,15 +152,6 @@ describe('setupUpgradeHandler', () => {
     ws.close();
   });
 });
-
-/** Polls until `check` holds, failing after `ms`. */
-async function until(check: () => boolean, ms = 2000): Promise<void> {
-  const deadline = Date.now() + ms;
-  while (!check()) {
-    if (Date.now() > deadline) throw new Error('condition not met in time');
-    await new Promise((resolve) => setTimeout(resolve, 5));
-  }
-}
 
 /**
  * An upgrade request on a plain TCP socket, so a test can reset the connection at any moment; `response` resolves the
@@ -230,24 +183,8 @@ function rawUpgrade(target: string, { halfOpen = false } = {}): { client: Socket
 }
 
 describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () => {
-  // A socket 'error' without a listener, or a rejected upgrade handler, is what takes the process down.
-  const crashes: unknown[] = [];
-  const record = (err: unknown) => void crashes.push(err);
-  const settle = () => new Promise((resolve) => setTimeout(resolve, 50));
-
-  beforeAll(() => {
-    process.on('uncaughtException', record);
-    process.on('unhandledRejection', record);
-  });
-
-  afterAll(() => {
-    process.off('uncaughtException', record);
-    process.off('unhandledRejection', record);
-  });
-
-  afterEach(() => {
-    crashes.length = 0;
-  });
+  const crashes = recordCrashes();
+  const settle = () => sleep(50);
 
   /** Positive control for each case: the server still accepts a valid connection. */
   async function expectStillServing() {
@@ -299,17 +236,12 @@ describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () 
 
   it('must not crash the process via a frame the relay throws on: only its socket closes, with 1011', async () => {
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-throw' });
-    const ws = new WsWebSocket(`${baseUrl}/entity-throw?token=${token}&entityType=task&tenantId=tenant-1`);
-    const closed = new Promise<number>((resolve) => ws.on('close', (code) => resolve(code)));
-    await new Promise<void>((resolve) => ws.on('open', () => resolve()));
+    const { ws, closed } = await openSocket(`${baseUrl}/entity-throw?token=${token}&entityType=task&tenantId=tenant-1`);
 
     ws.send(new Uint8Array([0xff, 0]));
-    const outcome = await Promise.race([
-      closed,
-      new Promise((resolve) => setTimeout(() => resolve('still open'), 1000)),
-    ]);
+    const outcome = await Promise.race([closed, sleep(1000, 'still open')]);
 
-    expect(outcome).toBe(1011);
+    expect(outcome).toEqual({ code: 1011, reason: 'Frame handling failed' });
     expect(crashes).toEqual([]);
     await expectStillServing();
   });
@@ -328,7 +260,6 @@ describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () 
 });
 
 describe('setupConnectionHandler: per-socket ordering', () => {
-  const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
   /** Frames the server's sockets received, counted apart from the handler, so a test knows they arrived. */
   let framesReceived = 0;
 
@@ -349,8 +280,7 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     verifyGate.hold = verification.promise;
     const before = framesReceived;
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-order' });
-    const ws = new WsWebSocket(`${baseUrl}/entity-order?token=${token}&entityType=task&tenantId=tenant-1`);
-    await new Promise<void>((resolve) => ws.on('open', () => resolve()));
+    const { ws } = await openSocket(`${baseUrl}/entity-order?token=${token}&entityType=task&tenantId=tenant-1`);
 
     // Three sync frames in one burst (the first is slow to apply) and one awareness frame, all before verification settles.
     ws.send(new Uint8Array([0, 2, 1]));
@@ -384,15 +314,15 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     verifyGate.allowed = false;
     const before = framesReceived;
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-denied' });
-    const ws = new WsWebSocket(`${baseUrl}/entity-denied?token=${token}&entityType=task&tenantId=tenant-1`);
-    const closed = new Promise<number>((resolve) => ws.on('close', (code) => resolve(code)));
-    await new Promise<void>((resolve) => ws.on('open', () => resolve()));
+    const { ws, closed } = await openSocket(
+      `${baseUrl}/entity-denied?token=${token}&entityType=task&tenantId=tenant-1`,
+    );
     ws.send(new Uint8Array([0, 2, 5]));
     await until(() => framesReceived === before + 1);
 
     verification.release();
-    expect(await closed).toBe(4003);
-    await wait(60);
+    expect(await closed).toEqual({ code: 4003, reason: 'Access denied' });
+    await sleep(60);
     expect(applied.filter((frame) => frame.type === 0)).toHaveLength(0);
   });
 
@@ -402,16 +332,16 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     verifyGate.error = new Error('ECONNREFUSED');
     const before = framesReceived;
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-unavailable' });
-    const ws = new WsWebSocket(`${baseUrl}/entity-unavailable?token=${token}&entityType=task&tenantId=tenant-1`);
-    const closed = new Promise<number>((resolve) => ws.on('close', (code) => resolve(code)));
-    await new Promise<void>((resolve) => ws.on('open', () => resolve()));
+    const { ws, closed } = await openSocket(
+      `${baseUrl}/entity-unavailable?token=${token}&entityType=task&tenantId=tenant-1`,
+    );
     ws.send(new Uint8Array([0, 2, 6]));
     await until(() => framesReceived === before + 1);
 
     verification.release();
-    const outcome = await Promise.race([closed, wait(1000).then(() => 'still open')]);
-    expect(outcome).toBe(4503);
-    await wait(60);
+    const outcome = await Promise.race([closed, sleep(1000, 'still open')]);
+    expect(outcome).toEqual({ code: 4503, reason: 'Authorization unavailable' });
+    await sleep(60);
     expect(applied).toHaveLength(0);
   });
 });

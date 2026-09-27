@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fakeStorage, mapUpdate, mockScope, readMap, storageKey } from './helpers';
+import { fakeStorage, mapUpdate, mockScope, readMap, storageKey, undecodableUpdate } from './helpers';
 
 const storage = fakeStorage();
 vi.mock('../data/storage', () => storage);
@@ -45,8 +45,7 @@ describe('compactDocument', () => {
 
   it('must not let one logged row that will not merge block the document: it is discarded and the rest is written', async () => {
     await storage.appendUpdate(scope, 'user-a', mapUpdate('a', 1));
-    // Logged before the relay refused undecodable updates.
-    await storage.appendUpdate(scope, 'user-x', new Uint8Array([1, 2, 3]));
+    await storage.appendUpdate(scope, 'user-x', undecodableUpdate);
     await storage.appendUpdate(scope, 'user-b', mapUpdate('b', 2));
 
     expect(await compactDocument(scope)).toBe('ok');
@@ -62,7 +61,7 @@ describe('compactDocument', () => {
   });
 
   it('a window whose only rows will not merge writes nothing and keeps nothing', async () => {
-    await storage.appendUpdate(scope, 'user-x', new Uint8Array([1, 2, 3]));
+    await storage.appendUpdate(scope, 'user-x', undecodableUpdate);
     expect(await compactDocument(scope)).toBe('empty');
     expect(postMaterialize).not.toHaveBeenCalled();
     expect(storage.logs.get(key)).toHaveLength(0);

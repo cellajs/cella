@@ -1,14 +1,15 @@
-import { createServer } from 'node:http';
+import { setTimeout as sleep } from 'node:timers/promises';
 import * as decoding from 'lib0/decoding';
 import pg from 'pg';
 import { appConfig } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
-import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
+import { WebSocket as WsWebSocket } from 'ws';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import type { DocScope } from '../../constants';
-import { createSignedToken } from '../helpers';
+import { createSignedToken, startRelayServer, until } from '../helpers';
+import { cleanupSeed, seedOrg, storedState } from './seed';
 
 // The real relay end to end over real sockets and the real database (runtime_role). The backend round trips are
 // stubbed: access is granted in the requested scope, the description seeds from a document the test can rewrite, and
@@ -48,13 +49,11 @@ const seedDescription = paragraph(' could you have a look?');
 let description = seedDescription;
 vi.mock('../../data/entity-content', () => ({ loadEntityDescription: vi.fn(async () => description) }));
 
-const { setupConnectionHandler, setupUpgradeHandler } = await import('../../server/upgrade');
 const { runCompaction } = await import('../../sync/relay');
 const { getCollab } = await import('../../sync/session-manager');
-const { deleteDoc, loadBase, readLog } = await import('../../data/storage');
+const { loadBase, readLog } = await import('../../data/storage');
 const { descriptionToYUpdate, yUpdateToBlocks } = await import('../../lib/blocknote-seed');
 
-const DATABASE_URL = testDatabaseUrl;
 const tenantId = 'yjs-e2e-tenant';
 const organizationId = '00000000-0000-4000-a000-000000000031';
 const userId = '00000000-0000-4000-a000-0000000000e2';
@@ -79,61 +78,17 @@ function textOf(state: Uint8Array): string {
 }
 
 let admin: pg.Client;
-let httpServer: ReturnType<typeof createServer>;
-let wss: WebSocketServer;
-let baseUrl: string;
-
-async function seedTenant() {
-  await admin.query('INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING', [
-    tenantId,
-    'YJS E2E',
-  ]);
-  await admin.query(
-    'INSERT INTO organizations (id, tenant_id, slug, name, short_name) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
-    [organizationId, tenantId, 'yjs-e2e-org', 'YJS E2E Org', 'ye2'],
-  );
-}
-
-async function cleanup() {
-  for (const entityId of Object.values(ids)) {
-    const collab = getCollab(ctx(entityId));
-    if (collab?.compactTimer) clearTimeout(collab.compactTimer);
-    if (collab?.cleanupTimer) clearTimeout(collab.cleanupTimer);
-    if (collab?.liveTimer) clearInterval(collab.liveTimer);
-    await deleteDoc(ctx(entityId));
-  }
-  await admin.query('DELETE FROM yjs_updates WHERE tenant_id = $1', [tenantId]);
-  await admin.query('DELETE FROM yjs_documents WHERE tenant_id = $1', [tenantId]);
-  await admin.query('DELETE FROM organizations WHERE tenant_id = $1', [tenantId]);
-  await admin.query('DELETE FROM tenants WHERE id = $1', [tenantId]);
-}
+const relay = await startRelayServer();
 
 beforeAll(async () => {
-  admin = new pg.Client({ connectionString: DATABASE_URL });
+  admin = new pg.Client({ connectionString: testDatabaseUrl });
   await admin.connect();
-  await seedTenant();
-
-  httpServer = createServer((_req, res) => {
-    res.writeHead(404);
-    res.end();
-  });
-  wss = new WebSocketServer({ noServer: true });
-  httpServer.on('upgrade', setupUpgradeHandler(wss));
-  setupConnectionHandler(wss);
-  await new Promise<void>((resolve) => {
-    httpServer.listen(0, '127.0.0.1', () => {
-      const addr = httpServer.address();
-      baseUrl = `ws://127.0.0.1:${typeof addr === 'object' && addr ? addr.port : 0}`;
-      resolve();
-    });
-  });
+  await seedOrg(admin, tenantId, organizationId, 'yjs-e2e-org');
 });
 
 afterAll(async () => {
-  for (const client of wss.clients) client.close(1001);
-  wss.close();
-  httpServer.close();
-  await cleanup();
+  await relay.close(Object.values(ids).map(ctx));
+  await cleanupSeed(admin, { tenantIds: [tenantId] });
   await admin.end();
 });
 
@@ -144,7 +99,7 @@ afterAll(async () => {
  */
 async function connectClient(entityId: string, doc = new Y.Doc()) {
   const token = createSignedToken({ userId, entityType, entityId, tenantId, organizationId });
-  const provider = new WebsocketProvider(baseUrl, entityId, doc, {
+  const provider = new WebsocketProvider(relay.baseUrl, entityId, doc, {
     params: { token, entityType, tenantId },
     WebSocketPolyfill: WsWebSocket as never,
     disableBc: true,
@@ -221,25 +176,16 @@ const sessionRows = async (entityId: string) =>
 /** The top-level children of the editor's fragment: one block group for one document, two when two histories were merged. */
 const blockGroups = (doc: Y.Doc) => doc.getXmlFragment('document-store').length;
 
-const until = async (check: () => Promise<boolean>, ms = 3000) => {
-  const deadline = Date.now() + ms;
-  while (Date.now() < deadline) {
-    if (await check()) return;
-    await new Promise((resolve) => setTimeout(resolve, 25));
-  }
-  throw new Error('condition not met in time');
-};
-
 describe('relay end to end', () => {
   it('a burst of keystrokes right after sync all persist and materialize (the lost-first-update regression)', async () => {
     const { doc, provider } = await connectClient(ids.burst);
     const text = firstText(doc);
     expect(text.toString()).toBe(' could you have a look?');
 
-    // Three separate transactions dispatched back to back: three frames in one burst.
+    // Three separate transactions dispatched back to back: three frames in one burst. Keystrokes that beat the client's
+    // reply to the relay's Step1 reach the log inside that reply, so the wait is on the stored text, not a row count.
     for (const ch of ['c', 'b', 'a']) doc.transact(() => text.insert(0, ch));
-    // The client's own sync reply can land as a fourth row; what matters is that all three keystrokes are logged.
-    await until(async () => (await readLog(ctx(ids.burst))).length >= 3);
+    await until(async () => textOf((await storedState(ctx(ids.burst)))!) === 'abc could you have a look?');
     provider.destroy();
     doc.destroy();
 
@@ -263,7 +209,7 @@ describe('relay end to end', () => {
     ]);
     await admin.query("UPDATE yjs_updates SET created_at = now() - interval '1 day' WHERE entity_id = $1", [ids.idle]);
     await seedOrphan(ids.orphan, 'orphaned');
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    await sleep(1000);
 
     const next = await startNextGeneration();
     try {
@@ -345,7 +291,7 @@ describe('relay end to end', () => {
     expect(fresh.generations[0]).toBe(generations[1]);
     expect(blockGroups(fresh.doc)).toBe(1);
     expect(textOf(Y.encodeStateAsUpdate(fresh.doc))).toBe('rewritten elsewhere');
-    await new Promise((resolve) => setTimeout(resolve, 100));
+    await sleep(100);
     expect(await readLog(ctx(ids.outside))).toEqual([]);
     fresh.provider.destroy();
     fresh.doc.destroy();

@@ -1,9 +1,13 @@
 import { sign } from 'node:crypto';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { setImmediate as nextTurn } from 'node:timers/promises';
 import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
 import { testYjsTokenKeyMaterial } from 'shared/testing/yjs-token-keys';
 import { yjsTokenSigningKey } from 'shared/utils/yjs-token';
-import { vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import * as Y from 'yjs';
 import type { DocKey, DocScope, SocketContext } from '../constants';
 
@@ -278,9 +282,88 @@ export function mapUpdate(key: string, value: unknown): Uint8Array {
   return Y.encodeStateAsUpdate(doc);
 }
 
+/** A row logged before the relay refused updates Yjs cannot decode: no merge takes it. */
+export const undecodableUpdate = new Uint8Array([1, 2, 3]);
+
 /** Applies a state to a fresh doc and reads the `data` map. */
 export function readMap(state: Uint8Array): Record<string, unknown> {
   const doc = new Y.Doc();
   Y.applyUpdate(doc, state);
   return doc.getMap('data').toJSON();
+}
+
+/** Polls until `check` holds, failing after `timeout` ms. */
+export const until = (check: () => boolean | Promise<boolean>, timeout = 3000) =>
+  vi.waitUntil(check, { timeout, interval: 10 });
+
+/**
+ * The relay's upgrade and connection handlers on a loopback HTTP server, as the worker mounts them. They are imported
+ * when this runs, so the calling file's module mocks apply.
+ */
+export async function startRelayServer() {
+  const { setupConnectionHandler, setupUpgradeHandler } = await import('../server/upgrade');
+  // The sessions the handlers join, taken now: after a vi.resetModules() an import hands out a fresh session map.
+  const sessions = await import('../sync/session-manager');
+  const httpServer = createServer((_req, res) => res.writeHead(404).end());
+  const wss = new WebSocketServer({ noServer: true });
+  httpServer.on('upgrade', setupUpgradeHandler(wss));
+  setupConnectionHandler(wss);
+  await new Promise<void>((resolve) => httpServer.listen(0, '127.0.0.1', resolve));
+  const { port } = httpServer.address() as AddressInfo;
+  return {
+    httpServer,
+    wss,
+    port,
+    baseUrl: `ws://127.0.0.1:${port}`,
+    /** Ends every socket and closes the server. The relay arms timers per document session: none of `docs` outlives the file. */
+    async close(docs: DocKey[] = []) {
+      for (const client of wss.clients) client.terminate();
+      await until(() => wss.clients.size === 0);
+      // A closed socket leaves its session through its frame queue, which arms the session's cleanup.
+      await nextTurn();
+      for (const collab of docs.map((doc) => sessions.getCollab(doc))) {
+        clearTimeout(collab?.compactTimer);
+        clearTimeout(collab?.cleanupTimer);
+        clearInterval(collab?.liveTimer);
+      }
+      wss.close();
+      httpServer.close();
+    },
+  };
+}
+
+/** A client socket on `url`, once open: `received` collects every frame the relay sends it, `closed` its close. */
+export async function openSocket(url: string) {
+  const ws = new WsWebSocket(url);
+  const received: Uint8Array[] = [];
+  ws.on('message', (data: Buffer) => received.push(new Uint8Array(data)));
+  const closed = new Promise<{ code: number; reason: string }>((resolve) =>
+    ws.on('close', (code, reason) => resolve({ code, reason: reason.toString() })),
+  );
+  await new Promise<void>((resolve, reject) => {
+    ws.once('open', () => resolve());
+    ws.once('error', reject);
+  });
+  return { ws, received, closed };
+}
+
+/**
+ * What would end the process while the calling describe block runs: an uncaught exception (a socket 'error' without a
+ * listener, a throwing listener) or an unhandled rejection (a rejected upgrade handler). Emptied after each test.
+ */
+export function recordCrashes(): unknown[] {
+  const crashes: unknown[] = [];
+  const record = (err: unknown) => void crashes.push(err);
+  beforeAll(() => {
+    process.on('uncaughtException', record);
+    process.on('unhandledRejection', record);
+  });
+  afterEach(() => {
+    crashes.length = 0;
+  });
+  afterAll(() => {
+    process.off('uncaughtException', record);
+    process.off('unhandledRejection', record);
+  });
+  return crashes;
 }
