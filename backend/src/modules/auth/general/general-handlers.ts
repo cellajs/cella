@@ -62,7 +62,8 @@ app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {
   const { type: tokenType, id: tokenId } = ctx.req.valid('param');
 
   const tokenRecord = await readBoundToken(ctx, tokenType);
-  if (tokenRecord.id !== tokenId) throw new AppError(400, 'invalid_request', 'warn');
+  // The browser holds a token of this type, not the one the URL names: the same answer as holding none.
+  if (tokenRecord.id !== tokenId) throw new AppError(401, `${tokenType}_not_found`, 'warn');
 
   return ctx.json(await getTokenDataOp(ctx, tokenRecord), 200);
 });

@@ -230,24 +230,16 @@ describe('readBoundToken', () => {
     expect(await rowOf(token.id)).toBeDefined();
   });
 
-  it('refuses a link token by what is missing', async () => {
-    const noCookie = await request('/read/invitation');
-    expect(noCookie.status).toBe(400);
-    expect(await noCookie.json()).toEqual({ type: 'invalid_token' });
+  it('refuses a token this browser does not hold the same way for a link and a cookie-carried type', async () => {
+    for (const type of ['invitation', 'confirm-mfa'] as const) {
+      const noCookie = await request(`/read/${type}`);
+      expect(noCookie.status, type).toBe(401);
+      expect(await noCookie.json()).toEqual({ type: `${type}_not_found` });
 
-    const unknown = await request('/read/invitation', [authCookie('invitation', nanoid(40))]);
-    expect(unknown.status).toBe(404);
-    expect(await unknown.json()).toEqual({ type: 'invitation_not_found' });
-  });
-
-  it('refuses a missing, unknown or expired second-factor challenge', async () => {
-    const noCookie = await request('/read/confirm-mfa');
-    expect(noCookie.status).toBe(401);
-    expect(await noCookie.json()).toEqual({ type: 'confirm-mfa_not_found' });
-
-    const unknown = await request('/read/confirm-mfa', [authCookie('confirm-mfa', nanoid(40))]);
-    expect(unknown.status).toBe(401);
-    expect(await unknown.json()).toEqual({ type: 'confirm-mfa_not_found' });
+      const unknown = await request(`/read/${type}`, [authCookie(type, nanoid(40))]);
+      expect(unknown.status, type).toBe(401);
+      expect(await unknown.json()).toEqual({ type: `${type}_not_found` });
+    }
 
     const user = await createTestUser(address());
     const { token, rawToken } = await issueToken(ctx, { type: 'confirm-mfa', email: user.email, userId: user.id });

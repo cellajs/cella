@@ -5,7 +5,7 @@ import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, createTestSession, createTestUser } from '../helpers';
+import { createTestOrganization, createTestSession, createTestUser, type ErrorResponse } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 import { createInvitation } from './helpers';
@@ -57,6 +57,27 @@ describe('Invitation token data', async () => {
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
     expect((invitations as { total: number }).total).toBe(1);
+  });
+
+  it("must not read another invitation's data via a browser that holds a different one", async () => {
+    const organization = await createTestOrganization();
+    const inviter = await createTestUser('inviter@example.com');
+    const held = await createInvitation({
+      token: 'invoked',
+      email: 'held@example.com',
+      organization,
+      createdBy: inviter.id,
+    });
+    const other = await createInvitation({ email: 'other@example.com', organization, createdBy: inviter.id });
+
+    const { response, error } = await call(getTokenData, {
+      path: { type: 'invitation', id: other.token.id },
+      headers: { ...defaultHeaders, Cookie: held.invitationCookie },
+    });
+
+    // The same answer as without a cookie: the browser holds no token by that id.
+    expect(response.status).toBe(401);
+    expect((error as ErrorResponse).type).toBe('invitation_not_found');
   });
 
   it('does not bind to an account that holds the address without having proven it', async () => {

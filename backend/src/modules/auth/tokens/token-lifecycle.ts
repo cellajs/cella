@@ -140,7 +140,7 @@ const refuseOtherAccount = async (ctx: Context<Env>, type: LinkTokenType, token:
 
   const { user } = signedIn;
   const ownerId = token.userId ?? (await findUserByEmail({ var: { db: baseDb } }, { email: token.email }))?.id;
-  if (ownerId !== user.id) throw new AppError(400, 'user_mismatch', 'warn');
+  if (ownerId !== user.id) throw new AppError(409, 'user_mismatch', 'warn');
 };
 
 /**
@@ -200,7 +200,7 @@ export const withdrawLinkToken = async ({ type, rawToken }: LinkTokenOpts) => {
  * holding that cookie, checked in SQL against the stored hash on a fresh read. A link issued without an account gets
  * its owner from `claimOwner`, committed with the redemption.
  * @returns The redeemed token.
- * @throws AppError 401 `<type>_not_found`, 401 `<type>_expired` (expired, or redeemed by another browser), 400
+ * @throws AppError 401 `<type>_not_found`, 401 `<type>_expired` (expired, or redeemed by another browser), 409
  *   `user_mismatch` while signed in to another account, or what `claimOwner` throws.
  */
 export const invokeToken = async (
@@ -293,21 +293,13 @@ export const findBoundToken = async (ctx: Context<Env>, type: TokenType): Promis
 
 /**
  * {@link findBoundToken} for a flow that cannot go on without the token. Reads only; nothing is spent.
- * @throws AppError for a link token 400 `invalid_token` without a cookie and 404 `<type>_not_found` without a row, for
- *   a cookie-carried token 401 `<type>_not_found` for either; 401 `<type>_expired` once expired.
+ * @throws AppError 401 `<type>_not_found` without a cookie or for a value that names no row, 401 `<type>_expired` once
+ *   expired: one shape for a link and a cookie-carried type alike.
  */
 export const readBoundToken = async (ctx: Context<Env>, type: TokenType): Promise<TokenRecord> => {
-  const isLink = tokenPolicies[type].carrier === 'link';
-
   const cookie = await getAuthCookie(ctx, type);
-  if (!cookie) {
-    throw isLink ? new AppError(400, 'invalid_token', 'warn') : new AppError(401, `${type}_not_found`, 'warn');
-  }
-
-  const token = await selectBoundToken(type, cookie);
-  if (!token) {
-    throw isLink ? new AppError(404, `${type}_not_found`, 'error') : new AppError(401, `${type}_not_found`, 'warn');
-  }
+  const token = cookie ? await selectBoundToken(type, cookie) : undefined;
+  if (!token) throw new AppError(401, `${type}_not_found`, 'warn');
   if (isExpiredDate(token.expiresAt)) throw expired(token);
 
   return token;

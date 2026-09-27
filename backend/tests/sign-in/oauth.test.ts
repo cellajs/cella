@@ -692,8 +692,8 @@ describe('OAuth Authentication', async () => {
       mockCookieStore.delete('invitation');
 
       const { response: res, error } = await inviteCallback();
-      expect(res.status).toBe(400);
-      expect((error as { type: string }).type).toBe('invalid_token');
+      expect(res.status).toBe(401);
+      expect((error as { type: string }).type).toBe('invitation_not_found');
       expect(await db.select().from(usersTable).where(eq(usersTable.email, providerEmail))).toHaveLength(0);
       expect(await db.select().from(identitiesTable)).toHaveLength(0);
     });
@@ -825,8 +825,8 @@ describe('OAuth Authentication', async () => {
       await signUpCallback();
 
       const { response: res, error } = await verifyCallback();
-      expect(res.status).toBe(400);
-      expect((error as { type: string }).type).toBe('invalid_token');
+      expect(res.status).toBe(401);
+      expect((error as { type: string }).type).toBe('oauth-verification_not_found');
       expect(await accountsFor(providerEmail)).toHaveLength(0);
       expect(await verificationTokens()).toHaveLength(1);
     });

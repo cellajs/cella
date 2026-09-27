@@ -252,7 +252,7 @@ describe('magic link opened in another browser', async () => {
 
     const cookies = [await createTestSession(victim), authCookie('magic-pending', raw)].join('; ');
     const { error, response } = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: cookies } });
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
     expect((error as { type: string }).type).toBe('user_mismatch');
     expect(await openedAt(row.id)).toBeNull();
   });
@@ -415,7 +415,7 @@ describe('magic-link sign-up', async () => {
 
     const cookies = [await createTestSession(victim), authCookie('magic-pending', rawToken)].join('; ');
     const { error, response } = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: cookies } });
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
     expect((error as { type: string }).type).toBe('user_mismatch');
     expect((await rowsFor(email)).users).toHaveLength(0);
     expect(await tokensFor(email)).toEqual([expect.objectContaining({ invokedAt: null, userId: null })]);
@@ -500,7 +500,7 @@ describe('magic link in a browser with a stale session cookie', async () => {
       path: { type: 'magic', token: raw },
       headers: { ...defaultHeaders, Cookie: cookies },
     });
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
     expect((error as { type: string }).type).toBe('user_mismatch');
     expect(sessionCookieSet(response)).toBe(false);
   });
