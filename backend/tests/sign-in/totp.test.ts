@@ -15,6 +15,7 @@ import {
   createTestUser,
   createTotpUser,
   enableMFAForUser,
+  expectRefusal,
   verifyUserEmail,
 } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -119,8 +120,7 @@ describe('TOTP Authentication', async () => {
         },
       });
 
-      expect(res.status).toBe(401);
-      expect((error as { type: string }).type).toBe('invalid_token');
+      await expectRefusal({ response: res, error }, 401, 'invalid_token');
     });
 
     it('should reject TOTP verification for non-existent user', async () => {
@@ -129,9 +129,7 @@ describe('TOTP Authentication', async () => {
         headers: defaultHeaders,
       });
 
-      expect(res.status).toBe(401);
-      const response = error as { type: string };
-      expect(response.type).toBe('confirm-mfa_not_found');
+      await expectRefusal({ response: res, error }, 401, 'confirm-mfa_not_found');
     });
 
     it('should reject TOTP verification for user without TOTP', async () => {
@@ -150,8 +148,7 @@ describe('TOTP Authentication', async () => {
         },
       });
 
-      expect(res.status).toBe(404);
-      expect((error as { type: string }).type).toBe('not_found');
+      await expectRefusal({ response: res, error }, 404, 'not_found');
     });
   });
 });

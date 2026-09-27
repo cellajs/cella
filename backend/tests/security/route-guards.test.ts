@@ -10,7 +10,7 @@ import {
   createTestOrganization,
   createTestSession,
   createTestUser,
-  type ErrorResponse,
+  expectRefusal,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -81,17 +81,14 @@ describe('Route guards', async () => {
       .replace('{organizationId}', tenant.organizationId)
       .replace(/\{[^}]+\}/g, () => generateId());
 
-  const request = async (operation: Operation, cookie?: string) => {
-    const response = await baseApp.request(pathOf(operation), {
+  const request = (operation: Operation, cookie?: string) =>
+    baseApp.request(pathOf(operation), {
       method: operation.method,
       headers: cookie ? { ...defaultHeaders, Cookie: cookie } : defaultHeaders,
       body: operation.method === 'GET' ? undefined : '{}',
     });
-    const body = response.headers.get('content-type')?.includes('json')
-      ? ((await response.json()) as Partial<ErrorResponse>)
-      : {};
-    return { status: response.status, type: body.type };
-  };
+
+  const nameOf = ({ method, path, operationId }: Operation) => `${method} ${path} (${operationId})`;
 
   beforeAll(async () => {
     mockFetchRequest();
@@ -115,7 +112,7 @@ describe('Route guards', async () => {
   it('must not reach any non-public route via a request without a session', async () => {
     for (const operation of nonPublic) {
       const { status } = await request(operation);
-      expect(status, `${operation.method} ${operation.path} (${operation.operationId})`).toBe(401);
+      expect(status, nameOf(operation)).toBe(401);
     }
     // Positive control: a session reaches a route behind userGuard.
     expect((await call(getMe, { headers: { ...defaultHeaders, Cookie: user.sessionCookie } })).response.status).toBe(
@@ -125,16 +122,12 @@ describe('Route guards', async () => {
 
   it('must not reach any system-admin route via a session without the system role', async () => {
     for (const operation of sysAdminOnly) {
-      const answer = await request(operation, user.sessionCookie);
-      expect(answer, `${operation.method} ${operation.path} (${operation.operationId})`).toEqual({
-        status: 403,
-        type: 'no_sysadmin',
-      });
+      await expectRefusal(await request(operation, user.sessionCookie), 403, 'no_sysadmin', nameOf(operation));
     }
     // Positive control: the system role passes the guard on every one of them (validation may still refuse the body).
     for (const operation of sysAdminOnly) {
       const { status } = await request(operation, sysAdmin.sessionCookie);
-      expect(status, `${operation.method} ${operation.path} (${operation.operationId})`).not.toBe(403);
+      expect(status, nameOf(operation)).not.toBe(403);
     }
   });
 });

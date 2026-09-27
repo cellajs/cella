@@ -24,7 +24,7 @@ import {
   createTestOrganization,
   createTestUser,
   createTotpUser,
-  type ErrorResponse,
+  expectRefusal,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -68,8 +68,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
 
   const expectRefused = async (session: TestSession, type: string) => {
     const { error, response } = await call(getMe, { headers: session.headers });
-    expect(response.status).toBe(401);
-    expect((error as ErrorResponse).type).toBe(type);
+    await expectRefusal({ response, error }, 401, type);
   };
 
   it('must not keep a signed-out session live via its open stream or the auth cache', async () => {
@@ -295,8 +294,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     const stream = await openStream(soleAdmin.id, session);
 
     const { error, response } = await call(deleteMe, { headers: session.headers });
-    expect(response.status).toBe(409);
-    expect((error as ErrorResponse).type).toBe('last_admin');
+    await expectRefusal({ response, error }, 409, 'last_admin');
 
     expectStillOpen(soleAdmin.id, stream);
     await warm(session);

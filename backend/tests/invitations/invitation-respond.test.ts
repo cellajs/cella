@@ -7,7 +7,7 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, createTestSession, createTestUser } from '../helpers';
+import { createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 import { createInvitation } from './helpers';
@@ -174,8 +174,7 @@ describe('Invitation response', async () => {
       path: { type: 'invitation', token: rawToken },
       headers: defaultHeaders,
     });
-    expect(response.status).toBe(401);
-    expect((error as { type: string }).type).toBe('invitation_not_found');
+    await expectRefusal({ response, error }, 401, 'invitation_not_found');
   });
 
   it('should reject for non-existent invitation', async () => {

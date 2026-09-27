@@ -5,6 +5,7 @@ import type { ServerType } from '@hono/node-server';
 import { appConfig } from 'shared';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { modeSecret } from '#/env';
+import { expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
@@ -45,13 +46,13 @@ function upgradeStatus(port: number, target: string, headers: Headers): Promise<
   });
 }
 
-/** A JSON POST with the request target sent exactly as given; resolves the status and the error type, if any. */
+/** A JSON POST with the request target sent exactly as given; resolves the status and the parsed body, if any. */
 function post(
   port: number,
   target: string,
   body: unknown,
   headers: Headers,
-): Promise<{ status: number; type?: string }> {
+): Promise<{ status: number; body?: unknown }> {
   return new Promise((resolve, reject) => {
     const req = request(
       {
@@ -67,11 +68,11 @@ function post(
           text += chunk;
         });
         res.on('end', () => {
-          let type: string | undefined;
+          let parsed: unknown;
           try {
-            type = (JSON.parse(text) as { type?: string }).type;
+            parsed = JSON.parse(text);
           } catch {}
-          resolve({ status: res.statusCode ?? 0, type });
+          resolve({ status: res.statusCode ?? 0, body: parsed });
         });
       },
     );
@@ -156,12 +157,11 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
       '/api/internal/yjs/materialize',
       '/api/%2e%2e/internal/yjs/materialize',
     ]) {
-      const { status, type } = await post(publicPort, target, materializeBody('via the public listener'), {
+      const answer = await post(publicPort, target, materializeBody('via the public listener'), {
         'x-yjs-relay-secret': modeSecret('YJS_RELAY_SECRET'),
         Origin: appConfig.frontendUrl,
       });
-      expect(status, target).toBe(404);
-      expect(type, target).toBe('route_not_found');
+      await expectRefusal(answer, 404, 'route_not_found', target);
     }
     expect((await attachment.read())?.description).toBe(original);
   });

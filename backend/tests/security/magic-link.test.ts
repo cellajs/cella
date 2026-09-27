@@ -21,6 +21,7 @@ import {
   createTestOrganization,
   createTestSession,
   createTestUser,
+  expectRefusal,
   insertTestSession,
   linkIdentity,
 } from '../helpers';
@@ -87,8 +88,7 @@ describe('magic link replay', async () => {
       path: { type: 'magic', token: raw },
       headers: { ...defaultHeaders, Cookie: authCookie('magic', nanoid(40)) },
     });
-    expect(response.status).toBe(401);
-    expect((error as { type: string }).type).toBe('magic_opened');
+    await expectRefusal({ response, error }, 401, 'magic_opened');
     expect(sessionCookieSet(response)).toBe(false);
   });
 
@@ -107,8 +107,8 @@ describe('magic link replay', async () => {
     expect(sessionCookieSet(first.response)).toBe(true);
 
     const second = await click();
-    expect(second.response.status).toBe(401);
-    expect(second.error).toMatchObject({ type: 'magic_opened', severity: 'info' });
+    await expectRefusal(second, 401, 'magic_opened');
+    expect(second.error).toMatchObject({ severity: 'info' });
     expect(sessionCookieSet(second.response)).toBe(false);
 
     // Two clicks at once: one signs in, the other hears the same.
@@ -137,8 +137,7 @@ describe('magic link replay', async () => {
       path: { type: 'magic', token: raw },
       headers: defaultHeaders,
     });
-    expect(response.status).toBe(401);
-    expect((error as { type: string }).type).toBe('magic_expired');
+    await expectRefusal({ response, error }, 401, 'magic_expired');
     expect(sessionCookieSet(response)).toBe(false);
   });
 
@@ -240,8 +239,7 @@ describe('magic link opened in another browser', async () => {
 
   it('must not confirm a link this browser does not hold', async () => {
     const { error, response } = await call(confirmMagicLink, { headers: defaultHeaders });
-    expect(response.status).toBe(401);
-    expect((error as { type: string }).type).toBe('magic_expired');
+    await expectRefusal({ response, error }, 401, 'magic_expired');
     expect(sessionCookieSet(response)).toBe(false);
   });
 
@@ -252,8 +250,7 @@ describe('magic link opened in another browser', async () => {
 
     const cookies = [await createTestSession(victim), authCookie('magic-pending', raw)].join('; ');
     const { error, response } = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: cookies } });
-    expect(response.status).toBe(409);
-    expect((error as { type: string }).type).toBe('user_mismatch');
+    await expectRefusal({ response, error }, 409, 'user_mismatch');
     expect(await openedAt(row.id)).toBeNull();
   });
 
@@ -401,8 +398,7 @@ describe('magic-link sign-up', async () => {
     closeRegistration();
 
     const { error, response } = await openLink(rawToken, requestedHere);
-    expect(response.status).toBe(403);
-    expect((error as { type: string }).type).toBe('sign_up_restricted');
+    await expectRefusal({ response, error }, 403, 'sign_up_restricted');
     expect(sessionCookieSet(response)).toBe(false);
     expect((await rowsFor(email)).users).toHaveLength(0);
     expect(await tokensFor(email)).toEqual([expect.objectContaining({ invokedAt: null, userId: null })]);
@@ -415,8 +411,7 @@ describe('magic-link sign-up', async () => {
 
     const cookies = [await createTestSession(victim), authCookie('magic-pending', rawToken)].join('; ');
     const { error, response } = await call(confirmMagicLink, { headers: { ...defaultHeaders, Cookie: cookies } });
-    expect(response.status).toBe(409);
-    expect((error as { type: string }).type).toBe('user_mismatch');
+    await expectRefusal({ response, error }, 409, 'user_mismatch');
     expect((await rowsFor(email)).users).toHaveLength(0);
     expect(await tokensFor(email)).toEqual([expect.objectContaining({ invokedAt: null, userId: null })]);
   });
@@ -448,8 +443,7 @@ describe('magic-link sign-up', async () => {
     expect(tokens[0].secret).toBe(hashToken(second.rawToken));
 
     const { error, response } = await openLink(first.rawToken, first.requestedHere);
-    expect(response.status).toBe(401);
-    expect((error as { type: string }).type).toBe('magic_not_found');
+    await expectRefusal({ response, error }, 401, 'magic_not_found');
   });
 });
 
@@ -500,8 +494,7 @@ describe('magic link in a browser with a stale session cookie', async () => {
       path: { type: 'magic', token: raw },
       headers: { ...defaultHeaders, Cookie: cookies },
     });
-    expect(response.status).toBe(409);
-    expect((error as { type: string }).type).toBe('user_mismatch');
+    await expectRefusal({ response, error }, 409, 'user_mismatch');
     expect(sessionCookieSet(response)).toBe(false);
   });
 });

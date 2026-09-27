@@ -24,7 +24,7 @@ import {
   createSystemAdminUser,
   createTestUser,
   createTotpUser,
-  type ErrorResponse,
+  expectRefusal,
 } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient, type TestResult } from '../test-client';
@@ -100,8 +100,7 @@ describe('step-up', async () => {
         body: { passkeyData: passkey.assert(issued.challenge) },
         headers: { ...defaultHeaders, Cookie: `${session.cookie}; ${issued.cookie}` },
       });
-      expect(response.status).toBe(401);
-      expect((error as ErrorResponse).type).toBe('passkey_verification_failed');
+      await expectRefusal({ response, error }, 401, 'passkey_verification_failed');
     }
     expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
 
@@ -121,8 +120,7 @@ describe('step-up', async () => {
     expect(await stateOf(session)).toEqual({ steppedUp: false, methods: ['totp'] });
 
     const { error, response } = await call(stepUp, { body: { totpCode: wrongCode() }, headers: session.headers });
-    expect(response.status).toBe(401);
-    expect((error as ErrorResponse).type).toBe('invalid_token');
+    await expectRefusal({ response, error }, 401, 'invalid_token');
     expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
 
     expect((await call(stepUp, { body: { totpCode: currentCode() }, headers: session.headers })).response.status).toBe(
@@ -138,8 +136,7 @@ describe('step-up', async () => {
     const impersonation = await insertImpersonation(await insertSession(admin), target);
 
     const viaFactor = await call(stepUp, { body: { totpCode: currentCode() }, headers: impersonation.headers });
-    expect(viaFactor.response.status).toBe(403);
-    expect((viaFactor.error as ErrorResponse).type).toBe('impersonation_forbidden');
+    await expectRefusal(viaFactor, 403, 'impersonation_forbidden');
     const viaLink = await call(sendStepUpLink, { body: {}, headers: impersonation.headers });
     expect(viaLink.response.status).toBe(403);
     const passkeyChallenge = await call(getStepUpPasskeyChallenge, { headers: impersonation.headers });
@@ -154,8 +151,7 @@ describe('step-up', async () => {
     const session = await insertSession(user, STALE);
 
     const { error, response } = await call(sendStepUpLink, { body: {}, headers: session.headers });
-    expect(response.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('invalid_request');
+    await expectRefusal({ response, error }, 400, 'invalid_request');
     expect(vi.mocked(mailer.prepareEmails)).not.toHaveBeenCalled();
   });
 
@@ -210,8 +206,7 @@ describe('step-up', async () => {
         path: { type: 'step-up', token: rawToken },
         headers: otherBrowser.headers,
       });
-      expect(elsewhere.response.status).toBe(403);
-      expect((elsewhere.error as ErrorResponse).type).toBe('step_up_other_browser');
+      await expectRefusal(elsewhere, 403, 'step_up_other_browser');
       expect((await sessionRow(asking.id)).steppedUpAt).toBeNull();
       expect((await sessionRow(otherBrowser.id)).steppedUpAt).toBeNull();
       // Refused before redemption, so the browser that asked can still open it.

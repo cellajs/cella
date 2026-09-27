@@ -5,8 +5,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateServerHLC } from '#/core/stx';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from '../fixtures';
-import type { ErrorResponse } from '../helpers';
-import { createTestOrganization } from '../helpers';
+import { createTestOrganization, type ErrorResponse, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -117,13 +116,11 @@ describe('Product existence (getValidProduct)', async () => {
     // A member reads every attachment of the organization but updates only their own.
     expect((await read(attachmentId, { ...defaultHeaders, Cookie: member.sessionCookie })).status).toBe(200);
     const byMember = await rename(attachmentId, { ...defaultHeaders, Cookie: member.sessionCookie });
-    expect(byMember.status).toBe(403);
-    expect(byMember.body.type).toBe('forbidden');
+    await expectRefusal(byMember, 403, 'forbidden');
 
     // A read-only key reads the attachment, and its update is refused as an action on a readable row.
     expect((await read(attachmentId, machineHeaders(readOnlyKey))).status).toBe(200);
     const byReadOnlyKey = await rename(attachmentId, machineHeaders(readOnlyKey));
-    expect(byReadOnlyKey.status).toBe(403);
-    expect(byReadOnlyKey.body.type).toBe('forbidden');
+    await expectRefusal(byReadOnlyKey, 403, 'forbidden');
   });
 });

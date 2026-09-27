@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { defaultHeaders } from '../fixtures';
-import { createSystemAdminUser, createTestSession } from '../helpers';
+import { createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
@@ -95,8 +95,7 @@ describe('Upload visibility', async () => {
       // The tenant user administers an organization but holds no system role.
       for (const query of systemQueries()) {
         const { status, body } = await requestToken(query);
-        expect(status).toBe(403);
-        expect(body.type).toBe('no_sysadmin');
+        await expectRefusal({ status, body }, 403, 'no_sysadmin');
       }
     });
 

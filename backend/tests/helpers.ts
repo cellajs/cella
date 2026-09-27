@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import type { EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
+import { expect } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
@@ -24,6 +25,25 @@ import type { apiErrorSchema } from '#/schemas';
 import { hashToken } from '#/utils/hash-token';
 
 export type ErrorResponse = z.infer<typeof apiErrorSchema>;
+
+/** What a request left the test: the raw response, an SDK result, or a local helper's status and parsed body. */
+type Answer = Response | { response: Response; error?: unknown } | { status: number; body?: unknown };
+
+/**
+ * Asserts the app refused with exactly this status and error type, in one comparison so a failure shows both. A raw
+ * response's body is read from a clone, so the test can still read it. A raw response is told by its shape: a
+ * `fetch` answer is no instance of the `Response` the node server installs globally.
+ */
+export async function expectRefusal(answer: Answer, status: number, type: string, label?: string) {
+  const unreadable = () => undefined;
+  const [actual, body] =
+    'response' in answer
+      ? [answer.response.status, answer.error]
+      : 'clone' in answer
+        ? [answer.status, await answer.clone().json().catch(unreadable)]
+        : [answer.status, answer.body];
+  expect({ status: actual, type: (body as { type?: unknown } | undefined)?.type }, label).toEqual({ status, type });
+}
 
 /** User with a verified email, for OAuth/passkey tests. */
 export async function createUser(email: string) {

@@ -17,7 +17,7 @@ import {
   createTestOrganization,
   createTestSession,
   createTestUser,
-  type ErrorResponse,
+  expectRefusal,
 } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
@@ -126,8 +126,7 @@ describe('Resend an invitation', async () => {
     );
 
     const old = await invoke(rawToken);
-    expect(old.response.status).toBe(401);
-    expect((old.error as ErrorResponse).type).toBe('invitation_not_found');
+    await expectRefusal(old, 401, 'invitation_not_found');
   });
 
   it('names an expired invitation on the error page by its token id, so the page can ask for a new link', async () => {
@@ -240,10 +239,8 @@ describe('Resend an invitation', async () => {
     // An address is no key: the invited and the unknown one get the same refusal.
     const invited = await resendByEmail(invitedEmail);
     const unknown = await resendByEmail('stranger@example.com');
-    expect(invited.status).toBe(400);
-    expect(unknown.status).toBe(400);
-    expect(((await invited.json()) as ErrorResponse).type).toBe('form.invalid_type');
-    expect(((await unknown.json()) as ErrorResponse).type).toBe('form.invalid_type');
+    await expectRefusal(invited, 400, 'form.invalid_type');
+    await expectRefusal(unknown, 400, 'form.invalid_type');
 
     // An id that names no invitation answers like one that does.
     const { response } = await resend({ tokenId: generateId() });
@@ -299,8 +296,7 @@ describe('Resend a pending invitation from the pending list', async () => {
     const { response, error } = await call(resendPendingInvitation, { path, headers });
 
     // A rejected invitation is no longer pending: it answers like a missing one.
-    expect(response.status).toBe(404);
-    expect((error as ErrorResponse).type).toBe('not_found');
+    await expectRefusal({ response, error }, 404, 'not_found');
     expect(mailer.prepareEmails).not.toHaveBeenCalled();
     expect(await invitationTokensOf(invitedEmail)).toEqual([token]);
   });

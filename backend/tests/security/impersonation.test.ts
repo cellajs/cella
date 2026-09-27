@@ -7,7 +7,7 @@ import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createSystemAdminUser, createTestUser, type ErrorResponse } from '../helpers';
+import { authCookie, createSystemAdminUser, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -39,7 +39,7 @@ describe('impersonation lives on its admin', async () => {
 
   const meAs = async (session: TestSession) => {
     const { data, error, response } = await call(getMe, { headers: session.headers });
-    return { status: response.status, userId: (data as { user: { id: string } } | undefined)?.user.id, error };
+    return { status: response.status, userId: (data as { user: { id: string } } | undefined)?.user.id, body: error };
   };
 
   /** A system admin with a session, impersonating a fresh user from it. */
@@ -76,8 +76,7 @@ describe('impersonation lives on its admin', async () => {
       ...impersonation,
       headers: { ...defaultHeaders, Cookie: authCookie('session', token) },
     });
-    expect(asSession.status).toBe(401);
-    expect((asSession.error as ErrorResponse).type).toBe('unauthorized');
+    await expectRefusal(asSession, 401, 'unauthorized');
 
     expect((await meAs(impersonation)).status).toBe(200);
   });
@@ -90,8 +89,7 @@ describe('impersonation lives on its admin', async () => {
     const from = (ip: string) => ({ ...impersonation, headers: { ...impersonation.headers, 'x-forwarded-for': ip } });
 
     const refused = await meAs(from('10.0.0.2'));
-    expect(refused.status).toBe(401);
-    expect((refused.error as ErrorResponse).type).toBe('unauthorized');
+    await expectRefusal(refused, 401, 'unauthorized');
 
     expect(await meAs(from('10.0.0.1'))).toMatchObject({ status: 200, userId: target.id });
   });
@@ -127,8 +125,7 @@ describe('impersonation lives on its admin', async () => {
       body: { ids: [targetsOwn.id, impersonation.id] },
       headers: impersonation.headers,
     });
-    expect(attempt.response.status).toBe(403);
-    expect((attempt.error as ErrorResponse).type).toBe('impersonation_forbidden');
+    await expectRefusal(attempt, 403, 'impersonation_forbidden');
     const cookieNames = [authCookieName('session'), authCookieName('impersonation')];
     expect(
       attempt.response.headers.getSetCookie().some((line) => cookieNames.some((n) => line.startsWith(`${n}=`))),
@@ -163,8 +160,7 @@ describe('impersonation lives on its admin', async () => {
     invalidateCache.user(admin.id);
 
     const refused = await meAs(impersonation);
-    expect(refused.status).toBe(401);
-    expect((refused.error as ErrorResponse).type).toBe('unauthorized');
+    await expectRefusal(refused, 401, 'unauthorized');
 
     expect(await meAs(kept.impersonation)).toMatchObject({ status: 200, userId: kept.target.id });
   });

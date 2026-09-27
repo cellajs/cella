@@ -19,7 +19,7 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, type ErrorResponse } from '../helpers';
+import { createTestOrganization, expectRefusal } from '../helpers';
 import { seedEntityHierarchy } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
@@ -217,8 +217,7 @@ describe('Member escalation over HTTP', async () => {
 
   it.each(rows)('must not $act via a member session', async ({ attempt, unchanged }) => {
     const { response, error } = await attempt(shared, shared.member);
-    expect(response.status).toBe(403);
-    expect((error as ErrorResponse).type).toBe('forbidden');
+    await expectRefusal({ response, error }, 403, 'forbidden');
     await unchanged(shared);
   });
 

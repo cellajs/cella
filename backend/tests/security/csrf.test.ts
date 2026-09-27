@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
-import { createTestUser, type ErrorResponse, insertTestSession } from '../helpers';
+import { createTestUser, expectRefusal, insertTestSession } from '../helpers';
 import { clearSecurityTestData } from './helpers';
 import { sessionRow } from './session-helpers';
 
@@ -34,8 +34,7 @@ describe('cross-site form posts', async () => {
     const { id, cookie } = await insertTestSession(user);
 
     const response = await formPost('/auth/sign-out', cookie, origin);
-    expect(response.status).toBe(403);
-    expect(((await response.json()) as ErrorResponse).type).toBe('forbidden');
+    await expectRefusal(response, 403, 'forbidden');
     // The handler never ran: the session stands and its cookie was left alone.
     expect(response.headers.getSetCookie()).toEqual([]);
     expect((await sessionRow(id)).revokedAt).toBeNull();

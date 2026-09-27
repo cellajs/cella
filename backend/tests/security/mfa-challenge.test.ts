@@ -11,7 +11,7 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createMfaToken, createTotpUser, type ErrorResponse } from '../helpers';
+import { authCookie, createMfaToken, createTotpUser, expectRefusal } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -61,8 +61,7 @@ describe('Second-factor challenge', async () => {
 
     // The cookie the browser held, sent again with a right code: the challenge is spent.
     const replay = await totpSignIn(currentCode(), mfaCookie);
-    expect(replay.response.status).toBe(401);
-    expect((replay.error as ErrorResponse).type).toBe('confirm-mfa_not_found');
+    await expectRefusal(replay, 401, 'confirm-mfa_not_found');
     expect(sessionCookieSet(replay.response)).toBe(false);
     expect(await sessionsOf(user.id)).toHaveLength(1);
     expect(await confirmMfaRowOf(mfaToken)).toBeUndefined();
@@ -75,8 +74,7 @@ describe('Second-factor challenge', async () => {
     const wrongCode = currentCode() === '000000' ? '111111' : '000000';
 
     const failed = await totpSignIn(wrongCode, mfaCookie);
-    expect(failed.response.status).toBe(401);
-    expect((failed.error as ErrorResponse).type).toBe('invalid_token');
+    await expectRefusal(failed, 401, 'invalid_token');
     expect(sessionCookieSet(failed.response)).toBe(false);
     expect(await confirmMfaRowOf(mfaToken)).toBeDefined();
 
@@ -122,8 +120,7 @@ describe('Second-factor challenge', async () => {
     expect(sessionCookieSet(first.response)).toBe(true);
 
     const replay = await passkeySignIn(2);
-    expect(replay.response.status).toBe(401);
-    expect((replay.error as ErrorResponse).type).toBe('confirm-mfa_not_found');
+    await expectRefusal(replay, 401, 'confirm-mfa_not_found');
     expect(sessionCookieSet(replay.response)).toBe(false);
     expect(await sessionsOf(user.id)).toHaveLength(1);
   });
@@ -165,8 +162,7 @@ describe('Second-factor challenge', async () => {
       id: passkey.credentialId,
       rawId: passkey.credentialId,
     }));
-    expect(failed.response.status).toBe(401);
-    expect((failed.error as ErrorResponse).type).toBe('passkey_verification_failed');
+    await expectRefusal(failed, 401, 'passkey_verification_failed');
     expect(sessionCookieSet(failed.response)).toBe(false);
     expect(await confirmMfaRowOf(mfaToken)).toBeDefined();
 

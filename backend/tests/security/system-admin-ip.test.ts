@@ -2,7 +2,7 @@ import { getOrganization } from 'sdk';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { env } from '#/env';
 import { defaultHeaders } from '../fixtures';
-import { createSystemAdminUser, createTestSession, type ErrorResponse } from '../helpers';
+import { createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant } from './helpers';
@@ -49,8 +49,7 @@ describe('System-admin rights follow the request address', async () => {
     expect(allowlisted.response.status).toBe(200);
 
     const elsewhere = await readForeignOrg(otherIp);
-    expect(elsewhere.response.status).toBe(403);
-    expect((elsewhere.error as ErrorResponse).type).toBe('forbidden');
+    await expectRefusal(elsewhere, 403, 'forbidden');
 
     const back = await readForeignOrg(allowlistedIp);
     expect(back.response.status).toBe(200);
@@ -61,8 +60,7 @@ describe('System-admin rights follow the request address', async () => {
 
     // Authenticated from another address first, which caches the session there.
     const elsewhere = await readForeignOrg(otherIp);
-    expect(elsewhere.response.status).toBe(403);
-    expect((elsewhere.error as ErrorResponse).type).toBe('forbidden');
+    await expectRefusal(elsewhere, 403, 'forbidden');
 
     const allowlisted = await readForeignOrg(allowlistedIp);
     expect(allowlisted.response.status).toBe(200);

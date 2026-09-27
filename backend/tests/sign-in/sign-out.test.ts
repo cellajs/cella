@@ -6,7 +6,7 @@ import { baseDb as db } from '#/db/db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createTestUser, insertTestSession } from '../helpers';
+import { authCookie, createTestUser, expectRefusal, insertTestSession } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -73,8 +73,7 @@ describe('Sign-out revokes the session', async () => {
     expect(row.revokedAt).not.toBeNull();
 
     const afterwards = await call(getMe, { headers });
-    expect(afterwards.response.status).toBe(401);
-    expect(afterwards.error).toMatchObject({ type: 'session_revoked' });
+    await expectRefusal(afterwards, 401, 'session_revoked');
   });
 });
 

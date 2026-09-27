@@ -6,7 +6,7 @@ import { mockPasskeyRecord } from '#/modules/auth/auth-mocks';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestSession, createTestUser, type ErrorResponse } from '../helpers';
+import { createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 
@@ -38,8 +38,7 @@ describe('Account deletion invalidates sessions', async () => {
     expect(res.status).toBe(204);
 
     const afterwards = await call(getMe, { headers });
-    expect(afterwards.response.status).toBe(401);
-    expect((afterwards.error as ErrorResponse).type).toBe('no_session');
+    await expectRefusal(afterwards, 401, 'no_session');
 
     const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, user.id));
     expect(sessions).toHaveLength(0);

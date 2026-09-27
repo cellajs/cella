@@ -10,7 +10,7 @@ import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, createTestSession, createTestUser, type ErrorResponse } from '../helpers';
+import { createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -75,8 +75,7 @@ describe('Rejected invitations', async () => {
     expect((await respond(inactiveMembership.id, 'reject', sessionCookie)).response.status).toBe(200);
 
     const { response, error } = await respond(inactiveMembership.id, 'accept', sessionCookie);
-    expect(response.status).toBe(404);
-    expect((error as ErrorResponse).type).toBe('not_found');
+    await expectRefusal({ response, error }, 404, 'not_found');
     expect(await membershipsIn(invitee.id, organization.id)).toEqual([]);
     expect(await rejectedAtOf(inactiveMembership.id)).not.toBeNull();
   });
@@ -97,8 +96,7 @@ describe('Rejected invitations', async () => {
     const { response, error } = await call(acceptInvitationToken, {
       headers: { ...defaultHeaders, Cookie: [sessionCookie, invitationCookie].join('; ') },
     });
-    expect(response.status).toBe(404);
-    expect((error as ErrorResponse).type).toBe('not_found');
+    await expectRefusal({ response, error }, 404, 'not_found');
     expect(await membershipsIn(invitee.id, organization.id)).toEqual([]);
   });
 
@@ -199,7 +197,6 @@ describe('Rejected invitations', async () => {
       body: { emails: ['past-the-quota@security-test.com'], role: memberRole },
       headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
     });
-    expect(overQuota.response.status).toBe(403);
-    expect((overQuota.error as ErrorResponse).type).toBe('restrict_by_org');
+    await expectRefusal(overQuota, 403, 'restrict_by_org');
   });
 });

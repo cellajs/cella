@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestSession, createTestUser, type ErrorResponse } from '../helpers';
+import { createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
 
@@ -44,8 +44,7 @@ describe('Profile image URLs', async () => {
       { bannerUrl: `${cdn}.evil.example/banner.png` },
     ]) {
       const { error, response } = await call(updateMe, { body, headers });
-      expect(response.status, JSON.stringify(body)).toBe(400);
-      expect((error as ErrorResponse).type).toBe('invalid_cdn_url');
+      await expectRefusal({ response, error }, 400, 'invalid_cdn_url', JSON.stringify(body));
     }
     expect(await imageUrlsOf(user.id)).toEqual({ thumbnailUrl: null, bannerUrl: null });
   });

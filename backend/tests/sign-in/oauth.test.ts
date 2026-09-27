@@ -16,7 +16,7 @@ import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, createUser, linkIdentity } from '../helpers';
+import { createTestOrganization, createUser, expectRefusal, linkIdentity } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { clearCookieStore, clearDatabase, mockCookieStore, mockFetchRequest, setTestConfig } from '../test-utils';
@@ -203,8 +203,7 @@ describe('OAuth Authentication', async () => {
         headers: defaultHeaders,
       });
 
-      expect(res.status).toBe(409);
-      expect((error as { type: string }).type).toBe('oauth_conflict');
+      await expectRefusal({ response: res, error }, 409, 'oauth_conflict');
       expect(res.headers.get('set-cookie') ?? '').not.toContain(`${appConfig.slug}-session-`);
       expect(await db.select().from(tokensTable).where(eq(tokensTable.identityId, identity.id))).toHaveLength(0);
       const [unchanged] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, identity.id));
@@ -261,8 +260,7 @@ describe('OAuth Authentication', async () => {
         headers: defaultHeaders,
       });
 
-      expect(res.status).toBe(401);
-      expect((error as { type: string }).type).toBe('invalid_state');
+      await expectRefusal({ response: res, error }, 401, 'invalid_state');
     });
 
     it('should reject callback with OAuth error', async () => {
@@ -274,8 +272,7 @@ describe('OAuth Authentication', async () => {
         headers: defaultHeaders,
       });
 
-      expect(res.status).toBe(400);
-      expect((error as { type: string }).type).toBe('oauth_failed');
+      await expectRefusal({ response: res, error }, 400, 'oauth_failed');
     });
 
     it('should reject callback with missing code', async () => {
@@ -287,8 +284,7 @@ describe('OAuth Authentication', async () => {
         headers: defaultHeaders,
       });
 
-      expect(res.status).toBe(400);
-      expect((error as { type: string }).type).toBe('oauth_failed');
+      await expectRefusal({ response: res, error }, 400, 'oauth_failed');
     });
   });
 
@@ -319,8 +315,7 @@ describe('OAuth Authentication', async () => {
         headers: defaultHeaders,
       });
 
-      expect(res.status).toBe(409);
-      expect((error as { type: string }).type).toBe('oauth_email_exists');
+      await expectRefusal({ response: res, error }, 409, 'oauth_email_exists');
     });
   });
 
@@ -387,8 +382,7 @@ describe('OAuth Authentication', async () => {
 
       const { response: res, error } = await connectCallback();
 
-      expect(res.status).toBe(409);
-      expect((error as { type: string }).type).toBe('oauth_conflict');
+      await expectRefusal({ response: res, error }, 409, 'oauth_conflict');
       expect(await db.select().from(identitiesTable)).toHaveLength(0);
     });
 
@@ -400,8 +394,7 @@ describe('OAuth Authentication', async () => {
 
       const { response: res, error } = await connectCallback();
 
-      expect(res.status).toBe(409);
-      expect((error as { type: string }).type).toBe('oauth_conflict');
+      await expectRefusal({ response: res, error }, 409, 'oauth_conflict');
     });
 
     it('must not connect a provider to another account via a state naming that account', async () => {
@@ -410,8 +403,7 @@ describe('OAuth Authentication', async () => {
 
       // A signed state that names the victim and no pin: nothing is connected.
       const unpinned = await connectCallback({ connectUserId: victim.id });
-      expect(unpinned.response.status).toBe(401);
-      expect((unpinned.error as { type: string }).type).toBe('oauth-connect_not_found');
+      await expectRefusal(unpinned, 401, 'oauth-connect_not_found');
       expect(await identitiesOf(victim.id)).toHaveLength(0);
 
       // The attacker's own pin with a state naming the victim: the pin decides, so it lands on the attacker.
@@ -431,8 +423,7 @@ describe('OAuth Authentication', async () => {
         .set({ revokedAt: new Date().toISOString() })
         .where(eq(sessionsTable.id, sessionId));
       const ended = await connectCallback();
-      expect(ended.response.status).toBe(401);
-      expect((ended.error as { type: string }).type).toBe('oauth-connect_not_found');
+      await expectRefusal(ended, 401, 'oauth-connect_not_found');
       expect(await identitiesOf(user.id)).toHaveLength(0);
       expect(await db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-connect'))).toHaveLength(0);
 
@@ -449,8 +440,7 @@ describe('OAuth Authentication', async () => {
       expect((await connectCallback()).response.status).toBe(302);
       const replay = await connectCallback();
 
-      expect(replay.response.status).toBe(401);
-      expect((replay.error as { type: string }).type).toBe('oauth-connect_not_found');
+      await expectRefusal(replay, 401, 'oauth-connect_not_found');
       expect(await db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-connect'))).toHaveLength(0);
     });
 
@@ -541,8 +531,7 @@ describe('OAuth Authentication', async () => {
         headers: defaultHeaders,
       });
 
-      expect(res.status).toBe(409);
-      expect((error as { type: string }).type).toBe('oauth_conflict');
+      await expectRefusal({ response: res, error }, 409, 'oauth_conflict');
       const [row] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
       expect(row.userId).not.toBe(user.id);
     });
@@ -564,8 +553,7 @@ describe('OAuth Authentication', async () => {
         headers: defaultHeaders,
       });
 
-      expect(res.status).toBe(401);
-      expect((error as { type: string }).type).toBe('invalid_state');
+      await expectRefusal({ response: res, error }, 401, 'invalid_state');
     });
   });
 
@@ -692,8 +680,7 @@ describe('OAuth Authentication', async () => {
       mockCookieStore.delete('invitation');
 
       const { response: res, error } = await inviteCallback();
-      expect(res.status).toBe(401);
-      expect((error as { type: string }).type).toBe('invitation_not_found');
+      await expectRefusal({ response: res, error }, 401, 'invitation_not_found');
       expect(await db.select().from(usersTable).where(eq(usersTable.email, providerEmail))).toHaveLength(0);
       expect(await db.select().from(identitiesTable)).toHaveLength(0);
     });
@@ -702,8 +689,7 @@ describe('OAuth Authentication', async () => {
       await openedInvitation('invited@example.com');
 
       const { response: res, error } = await inviteCallback();
-      expect(res.status).toBe(409);
-      expect((error as { type: string }).type).toBe('oauth_wrong_email');
+      await expectRefusal({ response: res, error }, 409, 'oauth_wrong_email');
       expect(await db.select().from(usersTable).where(eq(usersTable.email, providerEmail))).toHaveLength(0);
       expect(await db.select().from(identitiesTable)).toHaveLength(0);
     });
@@ -815,8 +801,7 @@ describe('OAuth Authentication', async () => {
       });
 
       const { response: res, error } = await verifyCallback();
-      expect(res.status).toBe(400);
-      expect((error as { type: string }).type).toBe('oauth_failed');
+      await expectRefusal({ response: res, error }, 400, 'oauth_failed');
       expect(await accountsFor(providerEmail)).toHaveLength(0);
       expect(await db.select().from(identitiesTable)).toHaveLength(0);
     });
@@ -825,8 +810,7 @@ describe('OAuth Authentication', async () => {
       await signUpCallback();
 
       const { response: res, error } = await verifyCallback();
-      expect(res.status).toBe(401);
-      expect((error as { type: string }).type).toBe('oauth-verification_not_found');
+      await expectRefusal({ response: res, error }, 401, 'oauth-verification_not_found');
       expect(await accountsFor(providerEmail)).toHaveLength(0);
       expect(await verificationTokens()).toHaveLength(1);
     });
@@ -837,8 +821,7 @@ describe('OAuth Authentication', async () => {
       const holder = await createUser(providerEmail);
 
       const { response: res, error } = await verifyCallback();
-      expect(res.status).toBe(409);
-      expect((error as { type: string }).type).toBe('oauth_email_exists');
+      await expectRefusal({ response: res, error }, 409, 'oauth_email_exists');
       expect((await accountsFor(providerEmail)).map((user) => user.id)).toEqual([holder.id]);
       expect(await db.select().from(identitiesTable)).toHaveLength(0);
     });
@@ -854,8 +837,7 @@ describe('OAuth Authentication', async () => {
       closeRegistration();
 
       const { response: res, error } = await verifyCallback();
-      expect(res.status).toBe(403);
-      expect((error as { type: string }).type).toBe('sign_up_restricted');
+      await expectRefusal({ response: res, error }, 403, 'sign_up_restricted');
       expect(res.headers.get('set-cookie') ?? '').not.toContain(`${appConfig.slug}-session-`);
       expect(await accountsFor(providerEmail)).toHaveLength(0);
       expect(await db.select().from(identitiesTable)).toHaveLength(0);
@@ -883,8 +865,7 @@ describe('OAuth Authentication', async () => {
     it('starts the sign-up of an invited address while registration is closed', async () => {
       closeRegistration();
       const refused = await signUpCallback();
-      expect(refused.response.status).toBe(403);
-      expect((refused.error as { type: string }).type).toBe('sign_up_restricted');
+      await expectRefusal(refused, 403, 'sign_up_restricted');
       expect(await verificationTokens()).toHaveLength(0);
 
       // The same gate as the sign-up's completion: an invitation to the address lets it start.

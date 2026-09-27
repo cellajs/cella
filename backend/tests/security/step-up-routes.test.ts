@@ -37,7 +37,7 @@ import {
   createTestOrganization,
   createTestUser,
   createTotpUser,
-  type ErrorResponse,
+  expectRefusal,
   insertTestSession,
 } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
@@ -73,10 +73,7 @@ const mailedStepUpToken = () => {
   return rawToken;
 };
 
-const expectStepUpRequired = (result: TestResult) => {
-  expect(result.response.status).toBe(403);
-  expect((result.error as ErrorResponse).type).toBe('step_up_required');
-};
+const expectStepUpRequired = (result: TestResult) => expectRefusal(result, 403, 'step_up_required');
 
 /**
  * Account-security routes need the user present again on the very session: a stale session, an impersonation, a
@@ -132,7 +129,7 @@ describe('account-security routes need a step-up', async () => {
       });
     };
 
-    expectStepUpRequired(await register());
+    await expectStepUpRequired(await register());
     expect(await passkeysOf()).toHaveLength(0);
 
     await stepUpWithTotp(session);
@@ -146,7 +143,7 @@ describe('account-security routes need a step-up', async () => {
     const session = await insertSession(user, STALE);
     const passkeysOf = () => db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id));
 
-    expectStepUpRequired(await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers }));
+    await expectStepUpRequired(await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers }));
     expect(await passkeysOf()).toHaveLength(1);
 
     await stepUpWithTotp(session);
@@ -163,8 +160,8 @@ describe('account-security routes need a step-up', async () => {
     const withChallenge = { ...defaultHeaders, Cookie: `${session.cookie}; ${authCookie('totp-challenge', secret)}` };
     const totpsOf = () => db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
 
-    expectStepUpRequired(await call(generateTotpKey, { headers: session.headers }));
-    expectStepUpRequired(await call(createTotp, { body: { code: codeFor(secret) }, headers: withChallenge }));
+    await expectStepUpRequired(await call(generateTotpKey, { headers: session.headers }));
+    await expectStepUpRequired(await call(createTotp, { body: { code: codeFor(secret) }, headers: withChallenge }));
     expect(await totpsOf()).toHaveLength(0);
 
     const steppedUp = await stepUpByEmail(session);
@@ -182,7 +179,7 @@ describe('account-security routes need a step-up', async () => {
     const session = await insertSession(user, STALE);
     const totpsOf = () => db.select().from(totpsTable).where(eq(totpsTable.userId, user.id));
 
-    expectStepUpRequired(await call(deleteTotp, { headers: session.headers }));
+    await expectStepUpRequired(await call(deleteTotp, { headers: session.headers }));
     expect(await totpsOf()).toHaveLength(1);
 
     await stepUpWithTotp(session);
@@ -196,7 +193,7 @@ describe('account-security routes need a step-up', async () => {
     const session = await insertSession(user, STALE);
     const mfaOf = async () => (await db.select().from(usersTable).where(eq(usersTable.id, user.id)))[0].mfaRequired;
 
-    expectStepUpRequired(await call(toggleMfa, { body: { mfaRequired: true }, headers: session.headers }));
+    await expectStepUpRequired(await call(toggleMfa, { body: { mfaRequired: true }, headers: session.headers }));
     expect(await mfaOf()).toBe(false);
 
     await stepUpWithTotp(session);
@@ -211,7 +208,7 @@ describe('account-security routes need a step-up', async () => {
     const session = await insertSession(user, STALE);
     const pins = () => db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-connect'));
 
-    expectStepUpRequired(await call(startOAuthConnect, { headers: session.headers }));
+    await expectStepUpRequired(await call(startOAuthConnect, { headers: session.headers }));
     expect(await pins()).toHaveLength(0);
 
     const steppedUp = await stepUpByEmail(session);
@@ -224,7 +221,7 @@ describe('account-security routes need a step-up', async () => {
     const session = await insertSession(user, STALE);
     const accounts = () => db.select().from(usersTable).where(eq(usersTable.id, user.id));
 
-    expectStepUpRequired(await call(deleteMe, { headers: session.headers }));
+    await expectStepUpRequired(await call(deleteMe, { headers: session.headers }));
     expect(await accounts()).toHaveLength(1);
 
     const steppedUp = await stepUpByEmail(session);
@@ -248,8 +245,7 @@ describe('account-security routes need a step-up', async () => {
       await call(deleteMe, { headers }),
     ];
     for (const attempt of attempts) {
-      expect(attempt.response.status).toBe(403);
-      expect((attempt.error as ErrorResponse).type).toBe('impersonation_forbidden');
+      await expectRefusal(attempt, 403, 'impersonation_forbidden');
     }
     expect(await db.select().from(passkeysTable).where(eq(passkeysTable.userId, target.id))).toHaveLength(1);
     expect(await db.select().from(totpsTable).where(eq(totpsTable.userId, target.id))).toHaveLength(1);
@@ -284,7 +280,7 @@ describe('account-security routes need a step-up', async () => {
     const minting = await keyMinting('key-minter');
     const stale = await insertSession(minting.admin, STALE);
 
-    expectStepUpRequired(await minting.createAccount(stale));
+    await expectStepUpRequired(await minting.createAccount(stale));
     expect(await minting.accounts()).toHaveLength(0);
 
     const steppedUp = await stepUpByEmail(stale);
@@ -293,7 +289,7 @@ describe('account-security routes need a step-up', async () => {
     const accountId = (created.data as { serviceAccount: { id: string } }).serviceAccount.id;
 
     // A further key for the account needs the step-up as well.
-    expectStepUpRequired(await minting.createKey(await insertSession(minting.admin, STALE), accountId));
+    await expectStepUpRequired(await minting.createKey(await insertSession(minting.admin, STALE), accountId));
     expect(await minting.keys()).toHaveLength(1);
     expect((await minting.createKey(steppedUp, accountId)).response.status).toBe(201);
     expect(await minting.keys()).toHaveLength(2);
@@ -312,8 +308,7 @@ describe('account-security routes need a step-up', async () => {
       await minting.createAccount(impersonation),
       await minting.createKey(impersonation, accountId),
     ]) {
-      expect(attempt.response.status).toBe(403);
-      expect((attempt.error as ErrorResponse).type).toBe('impersonation_forbidden');
+      await expectRefusal(attempt, 403, 'impersonation_forbidden');
     }
     expect(await minting.accounts()).toHaveLength(1);
     expect(await minting.keys()).toHaveLength(1);
@@ -324,7 +319,7 @@ describe('account-security routes need a step-up', async () => {
     const [stepped, other] = [await insertSession(user, STALE), await insertSession(user, STALE)];
     await stepUpWithTotp(stepped);
 
-    expectStepUpRequired(await call(deleteTotp, { headers: other.headers }));
+    await expectStepUpRequired(await call(deleteTotp, { headers: other.headers }));
     expect((await call(deleteTotp, { headers: stepped.headers })).response.status).toBe(204);
   });
 
@@ -337,7 +332,7 @@ describe('account-security routes need a step-up', async () => {
       .set({ steppedUpAt: new Date(Date.now() - 11 * 60 * 1000).toISOString() })
       .where(eq(sessionsTable.id, session.id));
 
-    expectStepUpRequired(await call(deleteTotp, { headers: session.headers }));
+    await expectStepUpRequired(await call(deleteTotp, { headers: session.headers }));
     expect(await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id))).toHaveLength(1);
   });
 
@@ -351,7 +346,7 @@ describe('account-security routes need a step-up', async () => {
     };
 
     // A magic link proves the inbox, not the authenticator app the account holds.
-    expectStepUpRequired(await call(deleteTotp, { headers: (await signedIn('magic')).headers }));
+    await expectStepUpRequired(await call(deleteTotp, { headers: (await signedIn('magic')).headers }));
     expect(await totpsOf()).toHaveLength(1);
 
     // Positive control: a sign-in with the authenticator app a minute ago stands as its proof.

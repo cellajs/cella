@@ -44,6 +44,7 @@ import {
   createTestSession,
   createTestUser,
   type ErrorResponse,
+  expectRefusal,
   insertTestSession,
 } from '../helpers';
 import {
@@ -682,8 +683,7 @@ describe('OAuth grants', async () => {
       expect((await details(started.browser.header())).status).toBe(200);
 
       const lost = await details(ctx.member.sessionCookie);
-      expect(lost.status).toBe(400);
-      expect(((await lost.json()) as { type: string }).type).toBe('oauth_consent_expired');
+      await expectRefusal(lost, 400, 'oauth_consent_expired');
     });
 
     it("ends the user's authorization server sessions with every ending where the person leaves", async () => {

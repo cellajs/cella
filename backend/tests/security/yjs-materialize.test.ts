@@ -2,6 +2,7 @@ import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { modeSecret } from '#/env';
+import { expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
@@ -76,8 +77,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
 
   it('must not write without the relay secret or with a wrong one', async () => {
     const refused = await materialize(bodyFor(ownScope(), 'no secret'), null);
-    expect(refused.status).toBe(401);
-    expect(refused.body).toMatchObject({ type: 'unauthorized', status: 401 });
+    await expectRefusal(refused, 401, 'unauthorized');
     expect((await materialize(bodyFor(ownScope(), 'wrong secret'), `${modeSecret('YJS_RELAY_SECRET')}x`)).status).toBe(
       401,
     );
@@ -86,8 +86,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
 
   it('refuses a body the schema rejects as every route does', async () => {
     const { status, body } = await materialize({ ...bodyFor(ownScope(), 'no editors'), editors: [] });
-    expect(status).toBe(400);
-    expect(body).toMatchObject({ type: 'invalid_request', status: 400 });
+    await expectRefusal({ status, body }, 400, 'invalid_request');
     expect((await stored())?.description).toBe(original);
   });
 
@@ -96,8 +95,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
       const { status, body } = await materialize(
         bodyFor({ tenantId: owner.tenantId, organizationId }, 'forged organization'),
       );
-      expect(status, String(organizationId)).toBe(403);
-      expect(body.type).toBe('forbidden');
+      await expectRefusal({ status, body }, 403, 'forbidden', String(organizationId));
     }
     expect((await stored())?.description).toBe(original);
   });
@@ -107,16 +105,14 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
     const { status, body } = await materialize(
       bodyFor({ tenantId: other.tenantId, organizationId: owner.organization.id }, 'forged tenant'),
     );
-    expect(status).toBe(410);
-    expect(body).toMatchObject({ type: 'not_found', status: 410 });
+    await expectRefusal({ status, body }, 410, 'not_found');
     expect((await stored())?.description).toBe(original);
   });
 
   it('must not write when no editor of the log may still update the entity', async () => {
     for (const editors of [[member.id], [generateId()]]) {
       const { status, body } = await materialize(bodyFor(ownScope(), 'no rightful editor', editors));
-      expect(status, editors.join()).toBe(403);
-      expect(body.type).toBe('forbidden');
+      await expectRefusal({ status, body }, 403, 'forbidden', editors.join());
     }
     expect(await stored()).toEqual({ description: original, updatedBy: null });
   });
@@ -134,7 +130,6 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
 
   it('answers 410 for an entity that no longer exists, so the relay can drop its rows', async () => {
     const { status, body } = await materialize(bodyFor(ownScope(), 'too late', [owner.user.id], generateId()));
-    expect(status).toBe(410);
-    expect(body).toMatchObject({ type: 'not_found', status: 410 });
+    await expectRefusal({ status, body }, 410, 'not_found');
   });
 });

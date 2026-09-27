@@ -5,7 +5,7 @@ import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, createTestSession, createTestUser, type ErrorResponse } from '../helpers';
+import { createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
 import { createInvitation } from './helpers';
@@ -76,8 +76,7 @@ describe('Invitation token data', async () => {
     });
 
     // The same answer as without a cookie: the browser holds no token by that id.
-    expect(response.status).toBe(401);
-    expect((error as ErrorResponse).type).toBe('invitation_not_found');
+    await expectRefusal({ response, error }, 401, 'invitation_not_found');
   });
 
   it('does not bind to an account that holds the address without having proven it', async () => {

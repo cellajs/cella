@@ -8,7 +8,7 @@ import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization } from '../helpers';
+import { createTestOrganization, expectRefusal } from '../helpers';
 import { authorizationCodeToken, CookieJar, startTestOauthServer, type TestOauthServer } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -205,9 +205,8 @@ describe('authorization server fetch budget', async () => {
         });
 
       const refused = await details(ip);
-      expect(refused.status).toBe(429);
+      await expectRefusal(refused, 429, 'too_many_requests');
       expect(refused.headers.get('retry-after')).toBeTruthy();
-      expect(await refused.json()).toMatchObject({ type: 'too_many_requests' });
       expect(fetched.length).toBe(before);
 
       // Positive control: from another address the page fetches the document again and shows the consent.

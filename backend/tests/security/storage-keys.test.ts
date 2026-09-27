@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { defaultHeaders } from '../fixtures';
-import type { ErrorResponse } from '../helpers';
+import { expectRefusal } from '../helpers';
 import { seedEntityHierarchy } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -109,8 +109,7 @@ describe('Attachment storage keys', async () => {
   it("must not plant another tenant's storage key via createAttachments", async () => {
     const id = generateId();
     const { error, response } = await create(bodyFor(id, { original: keyOf(victim, 'contract.pdf') }));
-    expect(response.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('invalid_request');
+    await expectRefusal({ response, error }, 400, 'invalid_request');
     expect(await rowExists(id)).toBe(false);
   });
 
@@ -138,8 +137,7 @@ describe('Attachment storage keys', async () => {
     for (const original of vectors) {
       const id = generateId();
       const { error, response } = await create(bodyFor(id, { original }));
-      expect(response.status, original).toBe(400);
-      expect((error as ErrorResponse).type, original).toBe('invalid_request');
+      await expectRefusal({ response, error }, 400, 'invalid_request', original);
       expect(await rowExists(id), original).toBe(false);
     }
   });

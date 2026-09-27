@@ -31,7 +31,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from '../fixtures';
-import type { ErrorResponse } from '../helpers';
+import { expectRefusal } from '../helpers';
 import { seedEntityHierarchy } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
@@ -315,10 +315,8 @@ describe('Cross-organization API isolation', async () => {
     "must not reach org B via $route on tenant A's path",
     async ({ attempt, refusal = notFound, unchanged }) => {
       // The organization is resolved inside the URL's tenant: a role in org B does not carry it over either.
-      for (const attacker of [tenant, insider]) {
-        const { response, error } = await attempt(attacker);
-        expect({ status: response.status, type: (error as ErrorResponse | undefined)?.type }).toEqual(refusal);
-      }
+      for (const attacker of [tenant, insider])
+        await expectRefusal(await attempt(attacker), refusal.status, refusal.type);
       await unchanged?.();
     },
   );
@@ -347,8 +345,7 @@ describe('Cross-organization API isolation', async () => {
 
   it('must not reach a user outside a shared organization via getUser or getUsers', async () => {
     const one = await call(getUser, { path: { relatableUserId: userB.id }, headers: headers(tenant) });
-    expect(one.response.status).toBe(403);
-    expect((one.error as ErrorResponse).type).toBe('forbidden');
+    await expectRefusal(one, 403, 'forbidden');
     const listedFor = async (as: Session) => {
       const { data, response } = await call(getUsers, { headers: headers(as) });
       expect(response.status).toBe(200);

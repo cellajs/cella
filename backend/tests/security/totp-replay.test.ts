@@ -17,7 +17,7 @@ import {
   createTestSession,
   createTestUser,
   createTotpUser,
-  type ErrorResponse,
+  expectRefusal,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -79,8 +79,7 @@ describe('TOTP replay', async () => {
 
     // Another challenge (another sign-in), answered with the code the first one used.
     const replay = await answerChallenge(user, code);
-    expect(replay.response.status).toBe(401);
-    expect((replay.error as ErrorResponse).type).toBe('totp_code_used');
+    await expectRefusal(replay, 401, 'totp_code_used');
     expect(sessionCookieSet(replay.response)).toBe(false);
     expect(await confirmMfaRowOf(replay.mfaToken)).toBeDefined();
     expect(await sessionsOf(user.id)).toHaveLength(1);
@@ -102,8 +101,7 @@ describe('TOTP replay', async () => {
 
     const session = await insertSession(user);
     const { error, response } = await call(stepUp, { body: { totpCode: code }, headers: session.headers });
-    expect(response.status).toBe(401);
-    expect((error as ErrorResponse).type).toBe('totp_code_used');
+    await expectRefusal({ response, error }, 401, 'totp_code_used');
     expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
   });
 
@@ -127,8 +125,7 @@ describe('TOTP replay', async () => {
     expect(created.response.status).toBe(201);
 
     const replay = await answerChallenge(user, code);
-    expect(replay.response.status).toBe(401);
-    expect((replay.error as ErrorResponse).type).toBe('totp_code_used');
+    await expectRefusal(replay, 401, 'totp_code_used');
     expect(sessionCookieSet(replay.response)).toBe(false);
 
     // Positive control: the authenticator's next code signs in.

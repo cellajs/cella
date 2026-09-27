@@ -6,8 +6,13 @@ import { baseDb as db } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultHeaders } from '../fixtures';
-import type { ErrorResponse } from '../helpers';
-import { createSystemAdminUser, createTestOrganization, createTestSession, getUserByEmail } from '../helpers';
+import {
+  createSystemAdminUser,
+  createTestOrganization,
+  createTestSession,
+  expectRefusal,
+  getUserByEmail,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -108,27 +113,21 @@ describe('Organizations of another user (relatableUserId)', async () => {
   it('must not pass a malformed relatableUserId to the database', async () => {
     const { baseApp } = await import('#/routes');
     // Raw requests: the SDK validates the query itself and would throw before the server is reached.
-    const listRaw = async (as: { sessionCookie: string }, relatableUserId: string) => {
-      const response = await baseApp.request(`/organizations?${new URLSearchParams({ relatableUserId })}`, {
+    const listRaw = (as: { sessionCookie: string }, relatableUserId: string) =>
+      baseApp.request(`/organizations?${new URLSearchParams({ relatableUserId })}`, {
         headers: { ...defaultHeaders, Cookie: as.sessionCookie },
       });
-      return { status: response.status, body: (await response.json()) as ErrorResponse };
-    };
 
     // Another user named by anything but a user id relates to nobody: the guard refuses before any query.
     const junk = await listRaw(viewer, 'not-a-user-id');
-    expect(junk.status).toBe(403);
-    expect(junk.body.type).toBe('forbidden');
+    await expectRefusal(junk, 403, 'forbidden');
 
     // Callers the guard lets through, the user by their own slug and a system admin, meet the query schema.
     const [viewerRow] = await getUserByEmail(viewer.email);
     const ownSlug = await listRaw(viewer, viewerRow.slug);
     const sysAdmin = await createSystemAdminUser('relatable-malformed-sysadmin@security-test.com');
     const asAdmin = await listRaw({ sessionCookie: await createTestSession(sysAdmin) }, 'not-a-user-id');
-    for (const { status, body } of [ownSlug, asAdmin]) {
-      expect(status).toBe(400);
-      expect(body.type).toBe('form.invalid_format');
-    }
+    for (const answer of [ownSlug, asAdmin]) await expectRefusal(answer, 400, 'form.invalid_format');
   });
 
   it("must not filter another user's list by their archive or role via relatableUserId", async () => {
@@ -155,8 +154,7 @@ describe('Organizations of another user (relatableUserId)', async () => {
     const refused: Record<string, string>[] = [{ excludeArchived: 'true' }, { role: memberRole }];
     for (const query of refused) {
       const { data, error, response } = await listFor(query);
-      expect(response.status, JSON.stringify(query)).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden', JSON.stringify(query));
       expect(data).toBeUndefined();
     }
 
@@ -174,7 +172,6 @@ describe('Organizations of another user (relatableUserId)', async () => {
   it('must not list anything for a user who shares no organization', async () => {
     const stranger = await createOrgUser(call, foreign.tenantId, foreign.id, 'relatable-stranger', memberRole);
     const { error, response } = await listAs(stranger, viewer.id);
-    expect(response.status).toBe(403);
-    expect((error as ErrorResponse).type).toBe('forbidden');
+    await expectRefusal({ response, error }, 403, 'forbidden');
   });
 });

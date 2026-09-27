@@ -9,7 +9,7 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createMfaToken, createTestSession, createTotpUser, type ErrorResponse } from '../helpers';
+import { authCookie, createMfaToken, createTestSession, createTotpUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -56,8 +56,7 @@ describe('Sign-out with a pending MFA challenge', async () => {
     expect(response.status).toBe(204);
 
     const afterwards = await call(getMe, { headers: sessionHeaders });
-    expect(afterwards.response.status).toBe(401);
-    expect((afterwards.error as ErrorResponse).type).toBe('session_revoked');
+    await expectRefusal(afterwards, 401, 'session_revoked');
 
     // The challenge is spent: its row is gone, and even the right code no longer completes it.
     expect(await confirmMfaRowOf(mfaToken)).toBeUndefined();
@@ -65,8 +64,7 @@ describe('Sign-out with a pending MFA challenge', async () => {
       body: { code: currentCode() },
       headers: { ...defaultHeaders, Cookie: mfaCookie },
     });
-    expect(completed.response.status).toBe(401);
-    expect((completed.error as ErrorResponse).type).toBe('confirm-mfa_not_found');
+    await expectRefusal(completed, 401, 'confirm-mfa_not_found');
 
     // Only this browser signed out: exactly one session is revoked, and the user's other session still works.
     const sessions = await db.select().from(sessionsTable).where(eq(sessionsTable.userId, user.id));

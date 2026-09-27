@@ -10,7 +10,13 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, createTestSession, createTestUser, type ErrorResponse } from '../helpers';
+import {
+  createTestOrganization,
+  createTestSession,
+  createTestUser,
+  type ErrorResponse,
+  expectRefusal,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant } from './helpers';
@@ -84,10 +90,7 @@ describe('Tenant access', async () => {
         checkSlug(tenantId, outsider.sessionCookie),
       ),
     );
-    for (const { status, error } of answers) {
-      expect(status).toBe(403);
-      expect(error?.type).toBe('forbidden');
-    }
+    for (const { status, error } of answers) await expectRefusal({ status, body: error }, 403, 'forbidden');
     const [missing, inactiveTenant, foreignTenant] = answers.map(({ error }) => refusalOf(error as ErrorResponse));
     expect(inactiveTenant).toEqual(missing);
     expect(foreignTenant).toEqual(missing);
@@ -117,8 +120,7 @@ describe('Tenant access', async () => {
     const tenant = await createdTenant(creator.id, true);
 
     const { status, error } = await checkSlug(tenant.id, sessionCookie);
-    expect(status).toBe(403);
-    expect(error?.type).toBe('forbidden');
+    await expectRefusal({ status, body: error }, 403, 'forbidden');
   });
 
   it('admits the creator to bootstrap a tenant that has no organization yet (positive control)', async () => {

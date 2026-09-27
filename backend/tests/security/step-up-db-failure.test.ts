@@ -4,7 +4,7 @@ import { stepUp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
-import { createTotpUser, type ErrorResponse } from '../helpers';
+import { createTotpUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
 import { insertSession, sessionRow } from './session-helpers';
@@ -56,8 +56,7 @@ describe('a database failure while a second factor is checked', async () => {
 
     nextCheck.failure = error();
     const failed = await call(stepUp, { body: { totpCode: currentCode() }, headers: session.headers });
-    expect(failed.response.status).toBe(status);
-    expect((failed.error as ErrorResponse).type).toBe('server_error');
+    await expectRefusal(failed, status, 'server_error');
     expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
 
     // Positive control: the same proof steps the session up once the database answers.

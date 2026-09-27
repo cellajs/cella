@@ -7,7 +7,7 @@ import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { defaultHeaders } from '../fixtures';
-import { createUser, type ErrorResponse } from '../helpers';
+import { createUser, expectRefusal } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -88,8 +88,7 @@ describe('Passkey verification', async () => {
       const { challenge, cookie } = await challengeFor();
 
       const { error, response } = await signIn(forge(passkey, challenge), cookie);
-      expect(response.status).toBe(401);
-      expect((error as ErrorResponse).type).toBe('passkey_verification_failed');
+      await expectRefusal({ response, error }, 401, 'passkey_verification_failed');
       expect(response.headers.get('set-cookie') ?? '').not.toContain(authCookieName('session'));
       expect(await sessionsOf(user.id)).toHaveLength(0);
     });

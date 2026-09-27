@@ -10,7 +10,7 @@ import { tokensTable } from '#/modules/auth/tokens-db';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createMfaToken, createTestSession, createUser, type ErrorResponse } from '../helpers';
+import { authCookie, createMfaToken, createTestSession, createUser, expectRefusal } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -100,8 +100,7 @@ describe('Passkey challenges', async () => {
 
     // The same response with the challenge cookie the browser kept.
     const replay = await signIn(assertion, challengeCookie);
-    expect(replay.response.status).toBe(401);
-    expect((replay.error as ErrorResponse).type).toBe('passkey_verification_failed');
+    await expectRefusal(replay, 401, 'passkey_verification_failed');
     expect(replay.response.headers.get('set-cookie') ?? '').not.toContain(authCookieName('session'));
     expect(await sessionsOf(user.id)).toHaveLength(1);
 
@@ -131,8 +130,7 @@ describe('Passkey challenges', async () => {
       `${mfaCookie}; ${signInChallenge.challengeCookie}`,
       'mfa',
     );
-    expect(wrongPurpose.response.status).toBe(401);
-    expect((wrongPurpose.error as ErrorResponse).type).toBe('passkey_verification_failed');
+    await expectRefusal(wrongPurpose, 401, 'passkey_verification_failed');
     expect(await sessionsOf(user.id)).toHaveLength(0);
     expect(await confirmMfaRow()).toBeDefined();
 
@@ -159,8 +157,7 @@ describe('Passkey challenges', async () => {
       `${mfaCookie}; ${mfaChallenge.challengeCookie}`,
       'mfa',
     );
-    expect(answered.response.status).toBe(404);
-    expect((answered.error as ErrorResponse).type).toBe('passkey_not_found');
+    await expectRefusal(answered, 404, 'passkey_not_found');
     expect(answered.response.headers.get('set-cookie') ?? '').not.toContain(authCookieName('session'));
     expect(await sessionsOf(user.id)).toHaveLength(0);
   });
@@ -170,8 +167,7 @@ describe('Passkey challenges', async () => {
 
     const stale = await challenge('authentication');
     const refused = await signIn(passkey.assert(stale.challenge, { counter: 5 }), stale.challengeCookie);
-    expect(refused.response.status).toBe(401);
-    expect((refused.error as ErrorResponse).type).toBe('passkey_verification_failed');
+    await expectRefusal(refused, 401, 'passkey_verification_failed');
     expect(await sessionsOf(user.id)).toHaveLength(0);
     expect((await storedPasskey(passkey.credentialId)).counter).toBe(5);
 
@@ -192,8 +188,7 @@ describe('Passkey challenges', async () => {
       await db.update(passkeysTable).set({ counter: 1 }).where(eq(passkeysTable.credentialId, passkey.credentialId));
     };
     const raced = await signIn(passkey.assert(value, { counter: 1 }), challengeCookie);
-    expect(raced.response.status).toBe(401);
-    expect((raced.error as ErrorResponse).type).toBe('passkey_verification_failed');
+    await expectRefusal(raced, 401, 'passkey_verification_failed');
     expect(await sessionsOf(user.id)).toHaveLength(0);
     expect((await storedPasskey(passkey.credentialId)).counter).toBe(1);
 

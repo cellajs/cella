@@ -3,7 +3,7 @@ import { getAdminDb } from '#/db/db';
 import { mockPastIsoDate } from '#/mocks';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, type ErrorResponse } from '../helpers';
+import { createTestOrganization, type ErrorResponse, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -54,8 +54,7 @@ describe('System roles in the user list', async () => {
     const queries: Record<string, string>[] = [{ role: 'admin' }, { sort: 'role', order: 'desc' }];
     for (const query of queries) {
       const { status, body } = await listUsers(member, query);
-      expect(status, JSON.stringify(query)).toBe(403);
-      expect(body.type).toBe('forbidden');
+      await expectRefusal({ status, body }, 403, 'forbidden', JSON.stringify(query));
       expect(body).not.toHaveProperty('items');
     }
   });

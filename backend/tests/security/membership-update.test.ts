@@ -6,8 +6,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultHeaders } from '../fixtures';
-import type { ErrorResponse } from '../helpers';
-import { createTestOrganization } from '../helpers';
+import { createTestOrganization, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
@@ -61,8 +60,7 @@ describe('Membership updates', async () => {
     const target = await membershipOf(admin.id);
 
     const { error, response } = await update(member, target.id, {});
-    expect(response.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('invalid_request');
+    await expectRefusal({ response, error }, 400, 'invalid_request');
     // Nothing is written: the row carries no stamp of the caller.
     expect(await membershipOf(admin.id)).toEqual(target);
   });
@@ -106,8 +104,7 @@ describe('Membership updates', async () => {
     const target = await membershipOf(admin.id);
 
     const { error, response } = await update(member, target.id, { muted: true, archived: true });
-    expect(response.status).toBe(403);
-    expect((error as ErrorResponse).type).toBe('forbidden');
+    await expectRefusal({ response, error }, 403, 'forbidden');
     expect(await membershipOf(admin.id)).toMatchObject({ muted: false, archived: false });
   });
 

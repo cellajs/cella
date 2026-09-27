@@ -12,7 +12,7 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from '../fixtures';
-import type { ErrorResponse } from '../helpers';
+import { expectRefusal } from '../helpers';
 import { cleanupEntityHierarchy, seedEntityHierarchy } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -143,8 +143,7 @@ describe('Block media references', async () => {
     it('must not load media from outside the organization via any of the bypass vectors', async () => {
       for (const [label, url] of bypasses()) {
         const { error, response } = await putDescription(documentOf(url));
-        expect(response.status, label).toBe(400);
-        expect((error as ErrorResponse).type, label).toBe('invalid_request');
+        await expectRefusal({ response, error }, 400, 'invalid_request', label);
         expect(await storedDescription(), label).toBe(original);
       }
     });
@@ -157,8 +156,7 @@ describe('Block media references', async () => {
       ];
       for (const blocks of malformed) {
         const { error, response } = await putDescription(JSON.stringify(blocks));
-        expect(response.status, JSON.stringify(blocks)).toBe(400);
-        expect((error as ErrorResponse).type).toBe('invalid_request');
+        await expectRefusal({ response, error }, 400, 'invalid_request', JSON.stringify(blocks));
         expect(await storedDescription()).toBe(original);
       }
     });
@@ -167,8 +165,7 @@ describe('Block media references', async () => {
       const before = await storedWelcomeText();
       for (const url of ['//evil.example/pixel.png', victimKey()]) {
         const { error, response } = await putWelcomeText(documentOf(url));
-        expect(response.status, url).toBe(400);
-        expect((error as ErrorResponse).type, url).toBe('invalid_request');
+        await expectRefusal({ response, error }, 400, 'invalid_request', url);
       }
       expect(await storedWelcomeText()).toBe(before);
     });

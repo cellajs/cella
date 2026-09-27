@@ -8,7 +8,7 @@ import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import type { StepUpProof } from '#/modules/auth/sessions-db';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { usersTable } from '#/modules/user/user-db';
-import { createTotpUser, type ErrorResponse } from '../helpers';
+import { createTotpUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
 import { insertSession, insertSteppedUpSession } from './session-helpers';
@@ -47,8 +47,7 @@ describe('MFA toggle step-up', async () => {
   it('must not disable MFA via PUT /me/mfa with a session that has not stepped up', async () => {
     const { user, headers } = await totpUserWithSession(true, { steppedUp: false });
     const { error, response } = await call(toggleMfa, { body: { mfaRequired: false }, headers });
-    expect(response.status).toBe(403);
-    expect((error as ErrorResponse).type).toBe('step_up_required');
+    await expectRefusal({ response, error }, 403, 'step_up_required');
     expect(await mfaRequiredOf(user.id)).toBe(true);
   });
 
@@ -63,8 +62,7 @@ describe('MFA toggle step-up', async () => {
   it('must not turn MFA off by deleting the authenticator app via deleteTotp', async () => {
     const { user, headers } = await totpUserWithSession(true);
     const { error, response } = await call(deleteTotp, { headers });
-    expect(response.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('mfa_factor_in_use');
+    await expectRefusal({ response, error }, 400, 'mfa_factor_in_use');
     expect(await mfaRequiredOf(user.id)).toBe(true);
     expect(await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id))).toHaveLength(1);
   });
@@ -72,8 +70,7 @@ describe('MFA toggle step-up', async () => {
   it('must not turn MFA off by deleting the last passkey via deletePasskey', async () => {
     const { user, passkey, headers } = await totpUserWithSession(true);
     const { error, response } = await call(deletePasskey, { path: { id: passkey!.id }, headers });
-    expect(response.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('mfa_factor_in_use');
+    await expectRefusal({ response, error }, 400, 'mfa_factor_in_use');
     expect(await mfaRequiredOf(user.id)).toBe(true);
     expect(await db.select().from(passkeysTable).where(eq(passkeysTable.userId, user.id))).toHaveLength(1);
   });
@@ -81,8 +78,7 @@ describe('MFA toggle step-up', async () => {
   it('must not turn on MFA without both a passkey and an authenticator app', async () => {
     const { user, headers } = await totpUserWithSession(false, { withPasskey: false });
     const { error, response } = await call(toggleMfa, { body: { mfaRequired: true }, headers });
-    expect(response.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('mfa_factors_required');
+    await expectRefusal({ response, error }, 400, 'mfa_factors_required');
     expect(await mfaRequiredOf(user.id)).toBe(false);
   });
 

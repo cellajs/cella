@@ -13,7 +13,7 @@ import {
   createMfaToken,
   createTestSession,
   createUser,
-  type ErrorResponse,
+  expectRefusal,
   passkeySignInBody,
 } from '../helpers';
 import { softwarePasskey } from '../software-passkey';
@@ -92,8 +92,7 @@ describe('Passkey Authentication', async () => {
         body: { type: 'mfa' },
         headers: defaultHeaders,
       });
-      expect(res.status).toBe(401);
-      expect((error as ErrorResponse).type).toBe('confirm-mfa_not_found');
+      await expectRefusal({ response: res, error }, 401, 'confirm-mfa_not_found');
     });
   });
 
@@ -105,8 +104,7 @@ describe('Passkey Authentication', async () => {
         body: { type: 'authentication', assertion: passkey.assert(nanoid(43)) },
         headers: defaultHeaders,
       });
-      expect(res.status).toBe(401);
-      expect((error as ErrorResponse).type).toBe('passkey_verification_failed');
+      await expectRefusal({ response: res, error }, 401, 'passkey_verification_failed');
     });
 
     it.each([
@@ -120,8 +118,7 @@ describe('Passkey Authentication', async () => {
         body: passkeySignInBody({ credentialId, challenge: value }),
         headers: { ...defaultHeaders, Cookie: challengeCookie },
       });
-      expect(res.status).toBe(404);
-      expect((error as ErrorResponse).type).toBe('passkey_not_found');
+      await expectRefusal({ response: res, error }, 404, 'passkey_not_found');
     });
 
     it.each([
@@ -137,8 +134,7 @@ describe('Passkey Authentication', async () => {
         body: { type: 'authentication', assertion },
         headers: { ...defaultHeaders, Cookie: challengeCookie },
       });
-      expect(res.status).toBe(401);
-      expect((error as ErrorResponse).type).toBe('passkey_verification_failed');
+      await expectRefusal({ response: res, error }, 401, 'passkey_verification_failed');
     });
   });
 

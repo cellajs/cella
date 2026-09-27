@@ -13,7 +13,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import type { generateMockEntityBodyChannelIdColumns } from '#/mocks';
 import { defaultHeaders } from '../fixtures';
-import type { ErrorResponse } from '../helpers';
+import { expectRefusal } from '../helpers';
 import { seedEntityHierarchy } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
@@ -78,8 +78,7 @@ describe('Cross-tenant API isolation', async () => {
         path: { tenantId: tenantB.tenantId, organizationId: tenantB.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
     it('should reject GET organization in another tenant with 403', async () => {
@@ -87,8 +86,7 @@ describe('Cross-tenant API isolation', async () => {
         path: { tenantId: tenantB.tenantId, id: tenantB.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
   });
 
@@ -98,8 +96,7 @@ describe('Cross-tenant API isolation', async () => {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
     it('should reject GET organization in another tenant with 403', async () => {
@@ -107,8 +104,7 @@ describe('Cross-tenant API isolation', async () => {
         path: { tenantId: tenantA.tenantId, id: tenantA.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
   });
 
@@ -139,8 +135,7 @@ describe('Cross-tenant API isolation', async () => {
         body: [attachmentBody('00000000-0000-4000-a000-000000000001', tenantB.organization.id)],
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
     it('should reject User A updating Tenant B organization with 403', async () => {
@@ -149,8 +144,7 @@ describe('Cross-tenant API isolation', async () => {
         body: { name: 'Hijacked by A' },
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
     it('should reject User B creating attachment in Tenant A with 403', async () => {
@@ -159,8 +153,7 @@ describe('Cross-tenant API isolation', async () => {
         body: [attachmentBody('00000000-0000-4000-a000-000000000002', tenantA.organization.id)],
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
     it('should reject User B updating Tenant A organization with 403', async () => {
@@ -169,8 +162,7 @@ describe('Cross-tenant API isolation', async () => {
         body: { name: 'Hijacked by B' },
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
   });
 
@@ -221,8 +213,7 @@ describe('Cross-tenant API isolation', async () => {
         body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
     it("should reject Tenant A's attachment id in User B's own tenant uniformly, never signing it", async () => {

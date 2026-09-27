@@ -21,7 +21,7 @@ import { serviceAccountsTable } from '#/modules/service-accounts/service-account
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from './fixtures';
-import { createTestOrganization, type ErrorResponse } from './helpers';
+import { createTestOrganization, type ErrorResponse, expectRefusal } from './helpers';
 import { clearSecurityTestData, createOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
@@ -82,8 +82,7 @@ describe('Service accounts and API keys', async () => {
       body: { name: 'bot', role: 'member' },
       headers: member.headers,
     });
-    expect(response.status).toBe(403);
-    expect((error as ErrorResponse).type).toBe('forbidden');
+    await expectRefusal({ response, error }, 403, 'forbidden');
     const accounts = await db
       .select()
       .from(serviceAccountsTable)

@@ -7,7 +7,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders } from '../fixtures';
-import { createOrganizationAdminUser, createSystemAdminUser, createTestSession, type ErrorResponse } from '../helpers';
+import { createOrganizationAdminUser, createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
@@ -88,8 +88,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
   it('must not sign a token for an entity the caller may not update', async () => {
     // Members update their own attachments only ('own' in the permission config).
     const { data, error, response } = await tokenFor(member.sessionCookie, ownScope(), ownersAttachment.id);
-    expect(response.status).toBe(403);
-    expect((error as ErrorResponse).type).toBe('forbidden');
+    await expectRefusal({ response, error }, 403, 'forbidden');
     expect(data).toBeUndefined();
   });
 
@@ -100,14 +99,12 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
       { tenantId: other.tenantId, organizationId: other.organization.id },
       otherTenantAttachment.id,
     );
-    expect(viaTheirPath.response.status).toBe(403);
-    expect((viaTheirPath.error as ErrorResponse).type).toBe('forbidden');
+    await expectRefusal(viaTheirPath, 403, 'forbidden');
     expect(viaTheirPath.data).toBeUndefined();
 
     // Through the caller's own path, the row is outside the request's scope and reads as missing.
     const viaOwnPath = await tokenFor(owner.sessionCookie, ownScope(), otherTenantAttachment.id);
-    expect(viaOwnPath.response.status).toBe(404);
-    expect((viaOwnPath.error as ErrorResponse).type).toBe('not_found');
+    await expectRefusal(viaOwnPath, 404, 'not_found');
     expect(viaOwnPath.data).toBeUndefined();
   });
 
@@ -115,8 +112,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
     const admin = await createSystemAdminUser('yjs-token-sysadmin@security-test.com');
     const adminCookie = await createTestSession(admin);
     const { data, error, response } = await tokenFor(adminCookie, ownScope(), ownersAttachment.id);
-    expect(response.status).toBe(403);
-    expect((error as ErrorResponse).type).toBe('forbidden');
+    await expectRefusal({ response, error }, 403, 'forbidden');
     expect(data).toBeUndefined();
 
     // Positive control: a system admin whose membership grants update gets one, as the relay would accept.
@@ -136,8 +132,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
 
   it('must not sign a token for an entity that does not exist', async () => {
     const { data, error, response } = await tokenFor(owner.sessionCookie, ownScope(), generateId());
-    expect(response.status).toBe(404);
-    expect((error as ErrorResponse).type).toBe('not_found');
+    await expectRefusal({ response, error }, 404, 'not_found');
     expect(data).toBeUndefined();
   });
 });

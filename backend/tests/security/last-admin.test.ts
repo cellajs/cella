@@ -8,7 +8,7 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, type ErrorResponse } from '../helpers';
+import { createTestOrganization, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
@@ -40,16 +40,13 @@ describe('last organization admin', async () => {
     return { org, admin, member, headers, membershipOf };
   }
 
-  const expectLastAdmin = (result: { response: Response; error: unknown }) => {
-    expect(result.response.status).toBe(409);
-    expect((result.error as ErrorResponse).type).toBe('last_admin');
-  };
+  const expectLastAdmin = (result: { response: Response; error: unknown }) => expectRefusal(result, 409, 'last_admin');
 
   it('must not leave an organization without an admin via demoting its only admin', async () => {
     const { org, admin, headers, membershipOf } = await orgWithOneAdmin();
     const own = await membershipOf(admin.id);
 
-    expectLastAdmin(
+    await expectLastAdmin(
       await call(updateMembership, {
         path: { tenantId: org.tenantId, organizationId: org.id, id: own.id },
         body: { role: memberRole } as never,
@@ -63,7 +60,7 @@ describe('last organization admin', async () => {
     const { org, admin, headers, membershipOf } = await orgWithOneAdmin();
 
     // This route names members by user id.
-    expectLastAdmin(
+    await expectLastAdmin(
       await call(deleteMemberships, {
         path: { tenantId: org.tenantId, organizationId: org.id },
         query: { entityId: org.id, entityType: 'organization' },
@@ -77,7 +74,7 @@ describe('last organization admin', async () => {
   it('must not leave an organization without an admin via its only admin leaving', async () => {
     const { org, admin, headers, membershipOf } = await orgWithOneAdmin();
 
-    expectLastAdmin(
+    await expectLastAdmin(
       await call(deleteMyMembership, {
         query: { entityId: org.id, entityType: 'organization' },
         headers: headers(admin),
@@ -89,7 +86,7 @@ describe('last organization admin', async () => {
   it('must not leave an organization without an admin via deleting the account of its only admin', async () => {
     const { admin, headers } = await orgWithOneAdmin();
 
-    expectLastAdmin(await call(deleteMe, { headers: headers(admin) }));
+    await expectLastAdmin(await call(deleteMe, { headers: headers(admin) }));
     expect(await db.select().from(usersTable).where(eq(usersTable.id, admin.id))).toHaveLength(1);
   });
 

@@ -8,7 +8,7 @@ import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { authCookie, createTestUser, type ErrorResponse } from '../helpers';
+import { authCookie, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -81,8 +81,7 @@ describe('Sign-out after a magic-link sign-in', async () => {
       .filter((pair) => !pair.startsWith(`${authCookieName('session')}=`))
       .join('; ');
     const reopened = await openLink(raw, withoutSession);
-    expect(reopened.response.status).toBe(401);
-    expect((reopened.error as ErrorResponse).type).toBe('magic_not_found');
+    await expectRefusal(reopened, 401, 'magic_not_found');
     expect(sessionCookieSet(reopened.response)).toBe(false);
   });
 
@@ -136,8 +135,7 @@ describe('Sign-out after a magic-link sign-in', async () => {
     expect(confirmed.response.status).toBe(401);
     expect(sessionCookieSet(confirmed.response)).toBe(false);
     const reopened = await openLink(raw, '');
-    expect(reopened.response.status).toBe(401);
-    expect((reopened.error as ErrorResponse).type).toBe('magic_not_found');
+    await expectRefusal(reopened, 401, 'magic_not_found');
   });
 
   it("spends only this browser's link: another browser's opened link keeps working (positive control)", async () => {
