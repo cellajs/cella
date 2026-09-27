@@ -1,4 +1,5 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac } from 'node:crypto';
+import { safeEqual } from 'shared/utils/safe-equal';
 import { modeSecret } from '#/env';
 import { hashToken } from '#/utils/hash-token';
 
@@ -16,10 +17,5 @@ export const unsubscribeTokenRow = (userId: string, email: string) => ({
 });
 
 /** Timing-safe comparison against the token derived from `email`. */
-export const verifyUnsubscribeToken = (email: string, token: string) => {
-  const expected = Buffer.from(generateUnsubscribeToken(email), 'utf8');
-  const received = Buffer.from(token, 'utf8');
-  // timingSafeEqual requires equal lengths.
-  if (expected.length !== received.length) return false;
-  return timingSafeEqual(expected, received);
-};
+export const verifyUnsubscribeToken = (email: string, token: string) =>
+  safeEqual(token, generateUnsubscribeToken(email));

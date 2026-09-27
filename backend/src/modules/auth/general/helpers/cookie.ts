@@ -1,8 +1,9 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 import type { Context } from 'hono';
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie';
 import type { CookieOptions } from 'hono/utils/cookie';
 import { appConfig, type TokenType } from 'shared';
+import { safeEqual } from 'shared/utils/safe-equal';
 import type { Env } from '#/core/context';
 import { isTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import type { TimeSpan } from '#/utils/time-span';
@@ -75,12 +76,11 @@ const openAuthCookie = (name: CookieName, sealed: string): string | undefined =>
   const expiresAt = Number(sealed.slice(expiresAtAt + 1, macAt));
   if (!Number.isSafeInteger(expiresAt) || expiresAt <= Math.floor(Date.now() / 1000)) return undefined;
 
-  const presented = Buffer.from(sealed.slice(macAt + 1));
+  const presented = sealed.slice(macAt + 1);
   const versionedName = versionedCookieName(name);
-  const valid = cookieSecrets.some((secret) => {
-    const expected = Buffer.from(cookieMac(secret, versionedName, expiresAt, content));
-    return expected.length === presented.length && timingSafeEqual(expected, presented);
-  });
+  const valid = cookieSecrets.some((secret) =>
+    safeEqual(presented, cookieMac(secret, versionedName, expiresAt, content)),
+  );
   return valid ? content : undefined;
 };
 

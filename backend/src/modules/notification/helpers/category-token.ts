@@ -1,5 +1,6 @@
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { createHmac } from 'node:crypto';
 import { appConfig } from 'shared';
+import { safeEqual } from 'shared/utils/safe-equal';
 import { modeSecret } from '#/env';
 
 export const unsubscribeCategories = ['digest', 'mention', 'comment'] as const;
@@ -16,13 +17,8 @@ export type UnsubscribeCategory = (typeof unsubscribeCategories)[number];
 export const generateCategoryToken = (userId: string, category: UnsubscribeCategory) =>
   createHmac('sha256', modeSecret('UNSUBSCRIBE_SECRET')).update(`${userId}:${category}`, 'utf8').digest('hex');
 
-export const verifyCategoryToken = (userId: string, category: UnsubscribeCategory, token: string) => {
-  const expected = Buffer.from(generateCategoryToken(userId, category), 'utf8');
-  const received = Buffer.from(token, 'utf8');
-  // timingSafeEqual requires equal lengths.
-  if (expected.length !== received.length) return false;
-  return timingSafeEqual(expected, received);
-};
+export const verifyCategoryToken = (userId: string, category: UnsubscribeCategory, token: string) =>
+  safeEqual(token, generateCategoryToken(userId, category));
 
 export const buildUnsubscribeLink = (userId: string, category: UnsubscribeCategory) => {
   const token = generateCategoryToken(userId, category);
