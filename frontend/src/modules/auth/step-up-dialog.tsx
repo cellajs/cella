@@ -3,14 +3,14 @@ import i18n from 'i18next';
 import { FingerprintPatternIcon, LogInIcon, MailIcon, SmartphoneIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { getStepUp, type StepUpData, sendStepUpLink, signOut, stepUp } from 'sdk';
+import { getStepUp, type StepUpData, sendStepUpLink, stepUp } from 'sdk';
+import { endSession } from '~/modules/auth/end-session';
 import { getPasskeyStepUpCredential } from '~/modules/auth/passkey-credentials';
 import { StepUpDismissed, type StepUpMethod } from '~/modules/auth/step-up-retry';
 import { TotpConfirmationForm } from '~/modules/auth/totp-verify-code-form';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { teardownUserState } from '~/utils/teardown-user-state';
 
 /** The page to come back to after an emailed link or a new sign-in. */
 const currentPath = () => window.location.pathname + window.location.search;
@@ -58,8 +58,8 @@ function StepUpDialog({ methods, onStepUp }: StepUpDialogProps) {
 
   const signInAgain = async () => {
     const redirect = currentPath();
-    await signOut().catch(() => {});
-    await teardownUserState(false);
+    // The same person signs in again, so their local database stays.
+    await endSession({ wipe: false }).catch(() => {});
     window.location.assign(`/auth/authenticate?redirect=${encodeURIComponent(redirect)}`);
   };
 
