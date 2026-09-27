@@ -491,6 +491,32 @@ describe('OAuth grants', async () => {
       expect(await bot.mint(bot.key.secret)).toMatchObject(noClient);
     });
 
+    it("must not act via a service token past its API key's expiry, even while its verdict is cached", async () => {
+      const bot = await serviceAccountWithKey();
+      const [key] = await db
+        .update(apiKeysTable)
+        .set({ expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() })
+        .where(eq(apiKeysTable.id, bot.key.id))
+        .returning({ expiresAt: apiKeysTable.expiresAt });
+      // When the guard counts the key expired, read from the row as the guard reads it; a token lives an hour.
+      const keyEnd = new Date(String(key.expiresAt)).getTime();
+      // Only the clock moves: the guard caches keep their entries.
+      vi.useFakeTimers({ toFake: ['Date'], now: keyEnd - 30 * 60 * 1000 });
+      try {
+        const jwt = await bot.tokenFor(bot.key.secret);
+        // Positive control, which also caches the token's verdict at the guard.
+        expect((await bot.read(jwt)).response.status).toBe(200);
+
+        // The expiry passes by the clock alone: nothing announces it.
+        vi.setSystemTime(keyEnd + 1000);
+        const refused = await bot.read(jwt);
+        expect(refused.response.status).toBe(401);
+        expect(reasonOf(refused.error)).toBe('invalid_api_key');
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('must not skip the grant check via a token that names no grant or API key', async () => {
       const ctx = await tenantWithApp();
       const grant = await consent(ctx);

@@ -1,4 +1,4 @@
-import { and, eq, isNull } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import Provider, { type Configuration, errors, type KoaContextWithOIDC } from 'oidc-provider';
 import { type AccessScope, type AccessScopedEntityType, accessScopes, appConfig } from 'shared';
 import { safeEqual } from 'shared/utils/safe-equal';
@@ -13,11 +13,10 @@ import { appInteractionPolicy } from '#/modules/oauth-server/interaction-policy'
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
 import { parseResource } from '#/modules/oauth-server/resources';
 import { revokeGrant } from '#/modules/oauth-server/revoke-grant';
-import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
-import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import { apiKeyRefusal } from '#/modules/service-accounts/helpers/api-key';
+import { findApiKeyWithAccount } from '#/modules/service-accounts/service-accounts-queries';
 import { usersTable } from '#/modules/user/user-db';
 import { hashToken } from '#/utils/hash-token';
-import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
 
 const HOUR = 60 * 60;
@@ -77,7 +76,7 @@ async function accountMayUseGrant(sub: string, source: GrantSource | undefined):
 
   let refusal: string | null = null;
   for (const tenantId of tenantIds) {
-    refusal ??= await grantRefusal({ kind: 'user', userId: sub, clientId: source.clientId ?? '', tenantId });
+    refusal ??= await grantRefusal({ userId: sub, clientId: source.clientId ?? '', tenantId });
   }
   if (!refusal) return true;
   if (source.grantId) await revokeGrant({ var: { db: baseDb } }, { grantId: source.grantId });
@@ -212,28 +211,15 @@ export async function createProvider(): Promise<Provider> {
   ) {
     const presented = hashToken(actual);
     if (this.client_kind === 'service') {
-      const keys = await baseDb
-        .select({
-          id: apiKeysTable.id,
-          hash: apiKeysTable.hash,
-          expiresAt: apiKeysTable.expiresAt,
-          scopes: apiKeysTable.scopes,
-          tenantId: serviceAccountsTable.tenantId,
-        })
-        .from(apiKeysTable)
-        .innerJoin(serviceAccountsTable, eq(serviceAccountsTable.id, apiKeysTable.actorId))
-        // Read here, not from the cached client: a disabled account stops minting the moment it is disabled.
-        .where(
-          and(
-            eq(apiKeysTable.actorId, this.clientId),
-            isNull(apiKeysTable.revokedAt),
-            eq(serviceAccountsTable.status, 'active'),
-          ),
-        );
-      const key = keys.find((k) => (!k.expiresAt || !isExpiredDate(k.expiresAt)) && safeEqual(k.hash, presented));
-      if (!key) return false;
+      // Read here, not from the cached client: a disabled account stops minting the moment it is disabled.
+      const found = await findApiKeyWithAccount(
+        { var: { db: baseDb } },
+        { key: { hash: presented }, actorId: this.clientId },
+      );
+      if (!found || apiKeyRefusal(found.apiKey, found.account)) return false;
+      const { apiKey, account } = found;
       const ctx = Provider.ctx;
-      if (ctx) presentedKeys.set(ctx, { id: key.id, scopes: key.scopes ?? null, tenantId: key.tenantId });
+      if (ctx) presentedKeys.set(ctx, { id: apiKey.id, scopes: apiKey.scopes ?? null, tenantId: account.tenantId });
       return true;
     }
     return typeof this.clientSecret === 'string' && safeEqual(this.clientSecret, presented);

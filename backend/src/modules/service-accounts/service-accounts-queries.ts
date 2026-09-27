@@ -74,6 +74,33 @@ export async function countLiveApiKeys(ctx: DbContext, { tenantId }: InTenantOpt
   return value;
 }
 
+interface FindApiKeyWithAccountOpts {
+  /** A presented key by its hash, or the key an access token names by its id. */
+  key: { hash: string } | { id: string };
+  /** The account the key must belong to; any account when omitted. */
+  actorId?: string;
+}
+
+/**
+ * A key with its service account, in one read, for `apiKeyRefusal`. The row includes the hash: for the machine guard
+ * and the token endpoint only.
+ * @returns The key and its account, or undefined when no such key exists.
+ */
+export async function findApiKeyWithAccount(ctx: DbContext, { key, actorId }: FindApiKeyWithAccountOpts) {
+  const [row] = await ctx.var.db
+    .select({ apiKey: apiKeysTable, account: serviceAccountsTable })
+    .from(apiKeysTable)
+    .innerJoin(serviceAccountsTable, eq(serviceAccountsTable.id, apiKeysTable.actorId))
+    .where(
+      and(
+        'hash' in key ? eq(apiKeysTable.hash, key.hash) : eq(apiKeysTable.id, key.id),
+        actorId === undefined ? undefined : eq(apiKeysTable.actorId, actorId),
+      ),
+    )
+    .limit(1);
+  return row;
+}
+
 export async function findApiKeysByActor(ctx: DbContext, { actorId }: { actorId: string }) {
   return ctx.var.db
     .select(apiKeySafeColumns)

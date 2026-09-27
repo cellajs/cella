@@ -1,14 +1,25 @@
 import { TTLCache } from '#/lib/ttl-cache';
-import type { GrantRefusal } from '#/modules/oauth-server/grant-policy';
+import type { UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
 import type { VerifiedAccessToken } from '#/modules/oauth-server/verify-access-token';
+import type { ApiKeyModel } from '#/modules/service-accounts/api-keys-db';
+import type { ApiKeyRefusal } from '#/modules/service-accounts/helpers/api-key';
 import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
 import type { UserModel } from '#/modules/user/user-db';
 
-/** The grant policy's answer on an access token's grant or API key, with the row the token's actor is built from. */
+/**
+ * The grant policy's answer on an access token's grant or API key, with the row the token's actor is built from. A
+ * service token's entry holds its key and account: `apiKeyRefusal` answers at every use, since a key expires
+ * unannounced.
+ */
 export type TokenGrantEntry =
-  | { refusal: GrantRefusal | 'grant_revoked' }
+  | { refusal: UserGrantRefusal | ApiKeyRefusal | 'grant_revoked' }
   | { refusal: null; kind: 'user'; user: UserModel }
-  | { refusal: null; kind: 'service'; account: ServiceAccountModel };
+  | {
+      refusal: null;
+      kind: 'service';
+      account: ServiceAccountModel;
+      apiKey: Pick<ApiKeyModel, 'revokedAt' | 'expiresAt'>;
+    };
 
 /** A verdict with the tenant and client its token names, so a change to either finds every verdict it affects. */
 interface CachedVerdict {

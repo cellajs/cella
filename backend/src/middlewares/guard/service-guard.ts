@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
@@ -13,11 +13,9 @@ import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { findConsentOfUser } from '#/modules/oauth-server/oauth-server-queries';
 import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom, type VerifiedAccessToken, verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
-import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
-import { apiKeyFrom, parseApiKey } from '#/modules/service-accounts/helpers/api-key';
-import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import { apiKeyFrom, apiKeyRefusal, parseApiKey } from '#/modules/service-accounts/helpers/api-key';
+import { findApiKeyWithAccount } from '#/modules/service-accounts/service-accounts-queries';
 import { usersTable } from '#/modules/user/user-db';
-import { isExpiredDate } from '#/utils/is-expired-date';
 
 export const unauthorized = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
 
@@ -69,26 +67,35 @@ export async function setActorFromToken(
   ctx.set('db', baseDb);
 }
 
-/** The grant policy's verdict on the grant (per tenant) or API key a token names, cached with the actor's row. */
+/**
+ * The grant policy's verdict on the grant (per tenant) or API key a token names, cached with the actor's row. A key
+ * expires by the clock alone, unannounced, so its rule runs at every use, on a cached key as on a fresh one.
+ */
 async function resolveTokenGrant(token: VerifiedAccessToken): Promise<TokenGrantEntry> {
-  const cached = getTokenGrantCache(token);
-  if (cached) return cached;
+  const entry = getTokenGrantCache(token) ?? (await loadTokenGrant(token));
+  if (entry.refusal !== null || entry.kind === 'user') return entry;
+  const refusal = apiKeyRefusal(entry.apiKey, entry.account);
+  return refusal ? { refusal } : entry;
+}
 
+/** What the database holds on the token's grant or key, cached for the token's next use. */
+async function loadTokenGrant(token: VerifiedAccessToken): Promise<TokenGrantEntry> {
   let entry: TokenGrantEntry;
   if (token.kind === 'user') {
     // A revoked grant, or one a replayed code or refresh token revoked, is deleted: its tokens stop with it.
     const grant = await findConsentOfUser({ var: { db: baseDb } }, { grantId: token.grantId, userId: token.actorId });
     const refusal = grant
-      ? await grantRefusal({ kind: 'user', userId: token.actorId, clientId: token.clientId, tenantId: token.tenantId })
+      ? await grantRefusal({ userId: token.actorId, clientId: token.clientId, tenantId: token.tenantId })
       : 'grant_revoked';
     const [user] = refusal ? [] : await baseDb.select().from(usersTable).where(eq(usersTable.id, token.actorId));
     entry = user ? { refusal: null, kind: 'user', user } : { refusal: refusal ?? 'unknown_user' };
   } else {
-    const refusal = await grantRefusal({ kind: 'service', serviceAccountId: token.actorId, keyId: token.keyId });
-    const [account] = refusal
-      ? []
-      : await baseDb.select().from(serviceAccountsTable).where(eq(serviceAccountsTable.id, token.actorId));
-    entry = account ? { refusal: null, kind: 'service', account } : { refusal: refusal ?? 'service_account_disabled' };
+    // The key the token was minted with, which must belong to the token's account.
+    const found = await findApiKeyWithAccount(
+      { var: { db: baseDb } },
+      { key: { id: token.keyId }, actorId: token.actorId },
+    );
+    entry = found ? { refusal: null, kind: 'service', ...found } : { refusal: 'invalid_api_key' };
   }
   setTokenGrantCache(token, entry);
   return entry;
@@ -98,14 +105,9 @@ async function resolveTokenGrant(token: VerifiedAccessToken): Promise<TokenGrant
 async function resolveApiKey(hash: string) {
   const cached = getApiKeyCache(hash);
   if (cached) return cached;
-  const [row] = await baseDb
-    .select({ apiKey: apiKeysTable, account: serviceAccountsTable })
-    .from(apiKeysTable)
-    .innerJoin(serviceAccountsTable, eq(serviceAccountsTable.id, apiKeysTable.actorId))
-    .where(and(eq(apiKeysTable.hash, hash)))
-    .limit(1);
-  if (row) setApiKeyCache(hash, row);
-  return row;
+  const found = await findApiKeyWithAccount({ var: { db: baseDb } }, { key: { hash } });
+  if (found) setApiKeyCache(hash, found);
+  return found;
 }
 
 /**
@@ -148,12 +150,10 @@ export const serviceGuard = xMiddleware(
     if (parsed?.type !== 'secret') throw unauthorized('invalid_api_key');
 
     const resolved = await resolveApiKey(parsed.hash);
-    const apiKey = resolved?.apiKey;
-    if (!apiKey || apiKey.revokedAt || (apiKey.expiresAt && isExpiredDate(apiKey.expiresAt))) {
-      throw unauthorized('invalid_api_key');
-    }
-    if (resolved.account.status !== 'active') throw unauthorized('service_account_disabled');
-    const { account } = resolved;
+    if (!resolved) throw unauthorized('invalid_api_key');
+    const refusal = apiKeyRefusal(resolved.apiKey, resolved.account);
+    if (refusal) throw unauthorized(refusal);
+    const { apiKey, account } = resolved;
 
     ctx.set('actor', {
       kind: 'service',
