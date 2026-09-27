@@ -1,57 +1,121 @@
-import { createAttachments, deleteAttachments, getAttachments, getOrganization, updateOrganization } from 'sdk';
+import { and, eq } from 'drizzle-orm';
+import {
+  createAttachments,
+  deleteAttachments,
+  deleteMemberships,
+  deleteOrganizations,
+  getAttachment,
+  getAttachments,
+  getMembers,
+  getOrganization,
+  getPendingMemberships,
+  getUser,
+  getUsers,
+  membershipInvite,
+  resendPendingInvitation,
+  updateAttachment,
+  updateMembership,
+  updateOrganization,
+} from 'sdk';
 import { appConfig, hierarchy } from 'shared';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { generateServerHLC } from '#/core/stx';
+import { baseDb as db, getAdminDb } from '#/db/db';
+import { mailer } from '#/lib/mailer';
 import type { generateMockEntityBodyChannelIdColumns } from '#/mocks';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { organizationsTable } from '#/modules/organization/organization-db';
+import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from '../fixtures';
 import type { ErrorResponse } from '../helpers';
 import { seedEntityHierarchy } from '../hierarchy-helpers';
-import { createAppClient } from '../test-client';
+import { createInvitation } from '../invitations/helpers';
+import { createAppClient, type TestResult } from '../test-client';
 import { mockFetchRequest, setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createSecondOrg, createTestTenant, type TestTenant } from './helpers';
 
+vi.mock('#/lib/mailer', () => ({ mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) } }));
+
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
+
+const [adminRole] = hierarchy.getRoles('organization');
+const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 // The create body carries the deepest seeded home id only (the placement seam derives the chain
 // above it server-side and the relation columns reference it); empty in cella's org-homed default.
-let plan: TestEntityHierarchyPlan | undefined;
 type BodyChannelIdColumns = ReturnType<typeof generateMockEntityBodyChannelIdColumns<'attachment'>>;
-const bodyChannelIdColumns = (): BodyChannelIdColumns => {
+const bodyChannelIdColumns = (plan: TestEntityHierarchyPlan): BodyChannelIdColumns => {
   const deepest = hierarchy
     .getOrderedAncestors('attachment')
-    .find((type) => type !== 'organization' && plan?.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
+    .find((type) => type !== 'organization' && plan.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
   if (!deepest) return {} as BodyChannelIdColumns;
   const key = appConfig.entityIdColumnKeys[deepest];
-  return { [key]: plan?.channelIdColumns[key] } as BodyChannelIdColumns;
+  return { [key]: plan.channelIdColumns[key] } as BodyChannelIdColumns;
 };
 
 /** A create body keyed under the organization's upload prefix. */
-const attachmentBody = (id: string, organizationId: string) => ({
+const attachmentBody = (id: string, organizationId: string, plan: TestEntityHierarchyPlan) => ({
   id,
   filename: 'cross-org.pdf',
   contentType: 'application/pdf',
   size: '1024',
   keys: { original: `${organizationId}/test/cross-org-${id}.pdf` },
   // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
-  ...bodyChannelIdColumns(),
+  ...bodyChannelIdColumns(plan),
   stx: { mutationId: id, sourceId: 'cross-org', fieldTimestamps: {} },
 });
 
+const renameStx = () => ({
+  ...mockStxBase(`stx:${generateId()}`),
+  fieldTimestamps: { name: generateServerHLC('test-client') },
+});
+
+type Session = { sessionCookie: string };
+const notFound = { status: 404, type: 'not_found' };
+const forbidden = { status: 403, type: 'forbidden' };
+
+interface Row {
+  route: string;
+  attempt: (as: Session) => Promise<TestResult>;
+  /** The one answer for a foreign id, the same as for an id that names nothing. */
+  refusal?: { status: number; type: string };
+  /** What the attempts must have left as it was. */
+  unchanged?: () => Promise<void>;
+}
+
 /**
  * One tenant holds one organization, so another organization's id is tried on the caller's OWN tenant path: that
- * passes tenantGuard and leaves orgGuard and the handlers' scope check as the barrier. The tenant boundary itself is
- * cross-tenant.test.ts.
+ * passes tenantGuard and leaves orgGuard and the handlers' scope check as the barrier. Organizations and memberships
+ * sit outside RLS, so that check is their only one. The tenant boundary itself is cross-tenant.test.ts.
  */
 describe('Cross-organization API isolation', async () => {
   const call = await createAppClient();
+  // Attachments sit under RLS: assert on the admin connection so a runtime_role run sees every row.
+  const adminDb = getAdminDb('cross-org test');
   let tenant: TestTenant;
-  let orgB: { id: string; slug: string; tenantId: string };
+  let plan: TestEntityHierarchyPlan;
+  let orgB: { id: string; name: string; tenantId: string };
+  let planB: TestEntityHierarchyPlan;
   let userB: { id: string; email: string; sessionCookie: string };
-  /** A member of org A and of org B, whose org B membership must not carry over to tenant A's path. */
+  /** A member of org A and an admin of org B, whose org B role must not carry over to tenant A's path. */
   let insider: { id: string; email: string; sessionCookie: string };
+  /** Org B's attachment, its admin's membership row and a pending invitation: the ids tried on tenant A's path. */
+  let attachmentB: { id: string; name: string | null };
+  let membershipB: { id: string };
+  let invitationB: { id: string };
+  const invitedByAttacker = 'cross-org-newcomer@security-test.com';
+
+  const headers = (as: Session) => ({ ...defaultHeaders, Cookie: as.sessionCookie });
+  const attachmentRow = async (id: string) =>
+    (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
+  const organizationRow = async (id: string) =>
+    (await db.select().from(organizationsTable).where(eq(organizationsTable.id, id)))[0];
+  const membershipRow = async (id: string) =>
+    (await db.select().from(membershipsTable).where(eq(membershipsTable.id, id)))[0];
 
   beforeAll(async () => {
     mockFetchRequest();
@@ -69,10 +133,16 @@ describe('Cross-organization API isolation', async () => {
     });
 
     const secondOrg = await createSecondOrg();
-    orgB = { id: secondOrg.id, slug: secondOrg.slug, tenantId: secondOrg.tenantId };
-    userB = await createOrgUser(call, secondOrg.tenantId, orgB.id, 'org-b');
+    orgB = { id: secondOrg.id, name: secondOrg.name, tenantId: secondOrg.tenantId };
+    userB = await createOrgUser(call, orgB.tenantId, orgB.id, 'org-b', adminRole);
+    planB = buildTestEntityHierarchyPlan({
+      entityType: 'attachment',
+      organizationId: orgB.id,
+      makeChannelId: () => generateId(),
+    });
+    await seedEntityHierarchy(db, planB, { tenantId: orgB.tenantId, createdBy: userB.id, slugPrefix: 'cross-org-b' });
 
-    insider = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'org-both');
+    insider = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'org-both', memberRole);
     await db.insert(membershipsTable).values({
       id: generateId(),
       userId: insider.id,
@@ -80,101 +150,230 @@ describe('Cross-organization API isolation', async () => {
       organizationId: orgB.id,
       tenantId: orgB.tenantId,
       channelType: 'organization',
-      role: hierarchy.getLeastPrivilegedRole('organization'),
+      role: adminRole,
       displayOrder: 2,
       createdBy: insider.id,
     });
+
+    const attachmentId = generateId();
+    const created = await call(createAttachments, {
+      path: { tenantId: orgB.tenantId, organizationId: orgB.id },
+      body: [attachmentBody(attachmentId, orgB.id, planB)],
+      headers: headers(userB),
+    });
+    expect(created.response.status).toBe(201);
+    attachmentB = { id: attachmentId, name: (await attachmentRow(attachmentId)).name };
+    [membershipB] = await db
+      .select({ id: membershipsTable.id })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, userB.id), eq(membershipsTable.channelId, orgB.id)));
+    invitationB = (
+      await createInvitation({ organization: orgB, email: 'cross-org-invitee@security-test.com', createdBy: userB.id })
+    ).inactiveMembership;
   });
 
   afterAll(async () => {
     await clearSecurityTestData();
   });
 
-  /** Org B's id on the given tenant path: a list, a create and an organization update, as the caller sees them. */
-  const reachOrgB = async (tenantId: string, cookie: string) => {
-    const headers = { ...defaultHeaders, Cookie: cookie };
-    const answers = await Promise.all([
-      call(getAttachments, { path: { tenantId, organizationId: orgB.id }, headers }),
-      call(createAttachments, {
-        path: { tenantId, organizationId: orgB.id },
-        body: [attachmentBody(generateId(), orgB.id)],
-        headers,
-      }),
-      call(updateOrganization, { path: { tenantId, id: orgB.id }, body: { name: 'Hijacked' }, headers }),
-    ]);
-    return answers.map(({ response, error }) => ({
-      status: response.status,
-      type: (error as ErrorResponse | undefined)?.type,
-    }));
-  };
+  /** Org B's ids on tenant A's path, on every route that takes one. */
+  const rows: Row[] = [
+    {
+      route: 'getAttachments',
+      attempt: (as) =>
+        call(getAttachments, { path: { tenantId: tenant.tenantId, organizationId: orgB.id }, headers: headers(as) }),
+    },
+    {
+      route: 'createAttachments',
+      attempt: (as) =>
+        call(createAttachments, {
+          path: { tenantId: tenant.tenantId, organizationId: orgB.id },
+          body: [attachmentBody(generateId(), orgB.id, planB)],
+          headers: headers(as),
+        }),
+    },
+    {
+      route: 'getOrganization',
+      attempt: (as) =>
+        call(getOrganization, { path: { tenantId: tenant.tenantId, id: orgB.id }, headers: headers(as) }),
+    },
+    {
+      route: 'updateOrganization',
+      attempt: (as) =>
+        call(updateOrganization, {
+          path: { tenantId: tenant.tenantId, id: orgB.id },
+          body: { name: 'Hijacked' },
+          headers: headers(as),
+        }),
+      unchanged: async () => expect((await organizationRow(orgB.id)).name).toBe(orgB.name),
+    },
+    {
+      route: 'deleteOrganizations',
+      attempt: (as) =>
+        call(deleteOrganizations, {
+          path: { tenantId: tenant.tenantId },
+          body: { ids: [orgB.id] },
+          headers: headers(as),
+        }),
+      refusal: forbidden,
+      unchanged: async () => expect(await organizationRow(orgB.id)).toBeDefined(),
+    },
+    {
+      route: 'getAttachment',
+      attempt: (as) =>
+        call(getAttachment, {
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, id: attachmentB.id },
+          headers: headers(as),
+        }),
+    },
+    {
+      route: 'updateAttachment',
+      attempt: (as) =>
+        call(updateAttachment, {
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, id: attachmentB.id },
+          body: { ops: { name: 'Hijacked' }, stx: renameStx() },
+          headers: headers(as),
+        }),
+      unchanged: async () => expect((await attachmentRow(attachmentB.id)).name).toBe(attachmentB.name),
+    },
+    {
+      route: 'deleteAttachments',
+      attempt: (as) =>
+        call(deleteAttachments, {
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+          body: { ids: [attachmentB.id], stx: { mutationId: generateId(), sourceId: 'cross-org' } },
+          headers: headers(as),
+        }),
+      refusal: forbidden,
+      unchanged: async () => expect((await attachmentRow(attachmentB.id)).deletedAt).toBeNull(),
+    },
+    {
+      route: 'getMembers',
+      attempt: (as) =>
+        call(getMembers, {
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+          query: { entityId: orgB.id, entityType: 'organization' },
+          headers: headers(as),
+        }),
+    },
+    {
+      route: 'getPendingMemberships',
+      attempt: (as) =>
+        call(getPendingMemberships, {
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+          query: { entityId: orgB.id, entityType: 'organization' },
+          headers: headers(as),
+        }),
+    },
+    {
+      route: 'updateMembership',
+      attempt: (as) =>
+        call(updateMembership, {
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, id: membershipB.id },
+          body: { role: memberRole } as never,
+          headers: headers(as),
+        }),
+      unchanged: async () => expect((await membershipRow(membershipB.id)).role).toBe(adminRole),
+    },
+    {
+      route: 'deleteMemberships',
+      attempt: (as) =>
+        call(deleteMemberships, {
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+          query: { entityId: orgB.id, entityType: 'organization' },
+          body: { ids: [userB.id] },
+          headers: headers(as),
+        }),
+      unchanged: async () => expect(await membershipRow(membershipB.id)).toBeDefined(),
+    },
+    {
+      route: 'membershipInvite',
+      attempt: (as) =>
+        call(membershipInvite, {
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+          query: { entityId: orgB.id, entityType: 'organization' },
+          body: { emails: [invitedByAttacker], role: memberRole },
+          headers: headers(as),
+        }),
+      unchanged: async () =>
+        expect(
+          await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, invitedByAttacker)),
+        ).toHaveLength(0),
+    },
+    {
+      route: 'resendPendingInvitation',
+      attempt: (as) =>
+        call(resendPendingInvitation, {
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, id: invitationB.id },
+          headers: headers(as),
+        }),
+      unchanged: async () => expect(mailer.prepareEmails).not.toHaveBeenCalled(),
+    },
+  ];
 
-  describe("Org B's id on tenant A's path", () => {
-    it('must not reach org B via the tenant A path of a user who is in org A only', async () => {
-      for (const answer of await reachOrgB(tenant.tenantId, tenant.sessionCookie)) {
-        expect(answer).toEqual({ status: 404, type: 'not_found' });
+  it.each(rows)(
+    "must not reach org B via $route on tenant A's path",
+    async ({ attempt, refusal = notFound, unchanged }) => {
+      // The organization is resolved inside the URL's tenant: a role in org B does not carry it over either.
+      for (const attacker of [tenant, insider]) {
+        const { response, error } = await attempt(attacker);
+        expect({ status: response.status, type: (error as ErrorResponse | undefined)?.type }).toEqual(refusal);
       }
-    });
+      await unchanged?.();
+    },
+  );
 
-    it('must not reach org B via the tenant A path of a member of both organizations', async () => {
-      // The organization is resolved inside the URL's tenant: a membership in org B does not carry it over.
-      for (const answer of await reachOrgB(tenant.tenantId, insider.sessionCookie)) {
-        expect(answer).toEqual({ status: 404, type: 'not_found' });
-      }
+  it("must not delete org B's attachment via a batch on tenant A's path that also names the caller's own", async () => {
+    for (const attacker of [tenant, insider]) {
+      const own = generateId();
+      const created = await call(createAttachments, {
+        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+        body: [attachmentBody(own, tenant.organization.id, plan)],
+        headers: headers(attacker),
+      });
+      expect(created.response.status).toBe(201);
 
-      // Positive control: the same member reaches each organization on its own tenant's path.
-      const headers = { ...defaultHeaders, Cookie: insider.sessionCookie };
-      for (const path of [
-        { tenantId: orgB.tenantId, organizationId: orgB.id },
-        { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-      ]) {
-        expect((await call(getAttachments, { path, headers })).response.status).toBe(200);
-      }
-    });
+      const { data, response } = await call(deleteAttachments, {
+        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+        body: { ids: [own, attachmentB.id], stx: { mutationId: generateId(), sourceId: 'cross-org' } },
+        headers: headers(attacker),
+      });
+      expect(response.status).toBe(200);
+      expect((data as { rejectedIds: string[] }).rejectedIds).toEqual([attachmentB.id]);
+      expect((await attachmentRow(own)).deletedAt).not.toBeNull();
+      expect((await attachmentRow(attachmentB.id)).deletedAt).toBeNull();
+    }
   });
 
-  describe('Users can access their own organization', () => {
-    it('should allow User B to GET attachments in org B', async () => {
-      const { response } = await call(getAttachments, {
-        path: { tenantId: orgB.tenantId, organizationId: orgB.id },
-        headers: { ...defaultHeaders, Cookie: userB.sessionCookie },
-      });
+  it('must not reach a user outside a shared organization via getUser or getUsers', async () => {
+    const one = await call(getUser, { path: { relatableUserId: userB.id }, headers: headers(tenant) });
+    expect(one.response.status).toBe(403);
+    expect((one.error as ErrorResponse).type).toBe('forbidden');
+    const listedFor = async (as: Session) => {
+      const { data, response } = await call(getUsers, { headers: headers(as) });
       expect(response.status).toBe(200);
+      return (data as { items: { id: string }[] }).items.map((user) => user.id);
+    };
+    expect(await listedFor(tenant)).not.toContain(userB.id);
+
+    // Positive control: the member of both organizations shares one with user B.
+    expect(
+      (await call(getUser, { path: { relatableUserId: userB.id }, headers: headers(insider) })).response.status,
+    ).toBe(200);
+    expect(await listedFor(insider)).toContain(userB.id);
+  });
+
+  it('reaches each organization on its own tenant path (positive control)', async () => {
+    for (const path of [
+      { tenantId: orgB.tenantId, organizationId: orgB.id },
+      { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+    ]) {
+      expect((await call(getAttachments, { path, headers: headers(insider) })).response.status).toBe(200);
+    }
+    const { response } = await call(getOrganization, {
+      path: { tenantId: orgB.tenantId, id: orgB.id },
+      headers: headers(userB),
     });
-
-    it('should allow User A to GET their own organization', async () => {
-      const { response } = await call(getOrganization, {
-        path: { tenantId: tenant.tenantId, id: tenant.organization.id },
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-      });
-      expect(response.status).toBe(200);
-    });
-
-    it('should allow User A to update their own organization', async () => {
-      const { response } = await call(updateOrganization, {
-        path: { tenantId: tenant.tenantId, id: tenant.organization.id },
-        body: { name: 'Org A Updated' },
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-      });
-      expect(response.status).toBe(200);
-    });
-
-    it('should allow User A to soft-delete their own attachment', async () => {
-      const id = '00000000-0000-4000-a000-00000000d001';
-
-      const createRes = await call(createAttachments, {
-        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        body: [attachmentBody(id, tenant.organization.id)],
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-      });
-      expect(createRes.response.status).toBe(201);
-
-      const { response } = await call(deleteAttachments, {
-        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        body: { ids: [id], stx: { mutationId: `${id}-delete`, sourceId: 'cross-org' } },
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-      });
-
-      expect(response.status).toBe(200);
-    });
+    expect(response.status).toBe(200);
   });
 });
