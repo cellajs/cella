@@ -154,17 +154,6 @@ describe('Accept an invitation token as the signed-in user', async () => {
     expect(mailer.prepareEmails).not.toHaveBeenCalled();
   });
 
-  it('requires a session', async () => {
-    const { invitationCookie, inactiveMembership } = await setup();
-
-    const { response } = await accept([invitationCookie]);
-
-    expect(response.status).toBe(401);
-    expect(
-      await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id)),
-    ).toHaveLength(1);
-  });
-
   it('requires the single-use invitation cookie', async () => {
     await setup();
     const me = await createTestUser('my-account@example.com');

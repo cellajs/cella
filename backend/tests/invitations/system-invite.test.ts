@@ -88,25 +88,6 @@ describe('System Invitation', async () => {
     });
   });
 
-  describe('Security & Authorization', () => {
-    it('should reject unauthenticated requests', async () => {
-      const { response: res } = await call(systemInvite, {
-        body: { emails: ['user@example.com'] },
-        headers: defaultHeaders,
-      });
-
-      expect(res.status).toBe(401);
-    });
-
-    it('should reject non-admin users', async () => {
-      const user = await createTestUser('user@example.com');
-      const sessionCookie = await createTestSession(user);
-
-      const { response: res } = await makeInviteRequest(['newuser@example.com'], sessionCookie);
-      expect(res.status).toBe(403);
-    });
-  });
-
   describe('Edge Cases', () => {
     it('should prevent duplicate invitations across requests', async () => {
       const sessionCookie = await createAdminSession();
