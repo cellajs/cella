@@ -7,12 +7,15 @@ CREATE TABLE "passkey_challenges" (
 	"expires_at" timestamp with time zone NOT NULL
 );
 --> statement-breakpoint
+DROP TABLE "unsubscribe_tokens";--> statement-breakpoint
 ALTER TABLE "sessions" ADD COLUMN "impersonator_session_id" uuid;--> statement-breakpoint
 ALTER TABLE "sessions" ADD COLUMN "stepped_up_at" timestamp;--> statement-breakpoint
 ALTER TABLE "sessions" ADD COLUMN "stepped_up_via" varchar;--> statement-breakpoint
 ALTER TABLE "tokens" ADD COLUMN "pending_sign_up" jsonb;--> statement-breakpoint
 ALTER TABLE "tokens" ADD COLUMN "session_id" uuid;--> statement-breakpoint
 ALTER TABLE "totps" ADD COLUMN "last_used_step" bigint;--> statement-breakpoint
+ALTER TABLE "yjs_documents" ADD COLUMN "generation" uuid DEFAULT gen_random_uuid() NOT NULL;--> statement-breakpoint
+ALTER TABLE "api_keys" ALTER COLUMN "expires_at" SET DATA TYPE timestamp with time zone USING "expires_at"::timestamp with time zone;--> statement-breakpoint
 DROP INDEX "passkeys_credential_id_idx";--> statement-breakpoint
 CREATE UNIQUE INDEX "passkeys_credential_id_idx" ON "passkeys" ("credential_id");--> statement-breakpoint
 CREATE UNIQUE INDEX "passkey_challenges_challenge_hash_idx" ON "passkey_challenges" ("challenge_hash");--> statement-breakpoint

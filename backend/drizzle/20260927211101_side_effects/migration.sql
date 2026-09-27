@@ -4,7 +4,7 @@
 -- The user will handle migration generation and application.
 --
 -- Combined side-effect migration.
--- Blocks (in order): cdc_setup, counter_functions, immutability_setup, membership_rules, partition_setup, rls_setup, unlogged_setup, channel_path_backfill, unsubscribe_token_hashes, verify_side_effects
+-- Blocks (in order): cdc_setup, counter_functions, immutability_setup, membership_rules, partition_setup, rls_setup, unlogged_setup, channel_path_backfill, verify_side_effects
 -- Regenerate with `pnpm generate`. Every block is idempotent; the whole set re-runs
 -- whenever ANY block changes, so this file always reflects the full current side-effect state.
 
@@ -340,8 +340,7 @@ BEGIN
   FOR sw IN
     SELECT * FROM (VALUES
       ('sessions', 'expires_at', interval '30 days'),
-      ('tokens', 'expires_at', interval '30 days'),
-      ('unsubscribe_tokens', 'created_at', interval '90 days')
+      ('tokens', 'expires_at', interval '30 days')
     ) AS t(tbl, col, keep)
   LOOP
     EXECUTE format('DELETE FROM %I WHERE %I < now() - $1', sw.tbl, sw.col) USING sw.keep;
@@ -619,7 +618,6 @@ BEGIN
     GRANT SELECT, INSERT, UPDATE, DELETE ON identities TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON totps TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON requests TO runtime_role;
-    GRANT SELECT, INSERT, UPDATE, DELETE ON unsubscribe_tokens TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON emails TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON rate_limits TO runtime_role;
     GRANT SELECT, INSERT, UPDATE, DELETE ON channel_counters TO runtime_role;
@@ -696,27 +694,6 @@ END $$;
 UPDATE channel_counters cc SET path = c.path
       FROM organizations c
       WHERE cc.channel_key = c.id::text AND cc.path IS DISTINCT FROM c.path;
---> statement-breakpoint
--- ══════════════════════════════════════════════════════════════════════════
--- [unsubscribe_token_hashes] Unsubscribe tokens stored as hashes
--- ══════════════════════════════════════════════════════════════════════════
--- Unsubscribe token hashes
--- Hashes the unsubscribe tokens stored as their own value, once; the column comment marks the column as hashed.
-
-DO $$
-BEGIN
-  IF to_regclass('public.unsubscribe_tokens') IS NULL THEN
-    RETURN;
-  END IF;
-  IF col_description('public.unsubscribe_tokens'::regclass, (
-    SELECT attnum FROM pg_attribute
-    WHERE attrelid = 'public.unsubscribe_tokens'::regclass AND attname = 'secret'
-  )) IS DISTINCT FROM 'sha256 hex of the unsubscribe token' THEN
-    UPDATE public.unsubscribe_tokens SET secret = encode(sha256(convert_to(secret, 'UTF8')), 'hex');
-    COMMENT ON COLUMN public.unsubscribe_tokens.secret IS 'sha256 hex of the unsubscribe token';
-    RAISE NOTICE 'unsubscribe_tokens: stored tokens replaced by their hash';
-  END IF;
-END $$;
 --> statement-breakpoint
 -- ══════════════════════════════════════════════════════════════════════════
 -- [verify_side_effects] Verify, assert end state of all side-effect blocks
@@ -1061,14 +1038,6 @@ BEGIN
     missing := array_append(missing, 'grant:requests:UPDATE'); END IF;
   IF NOT has_table_privilege('runtime_role', 'public.requests', 'DELETE') THEN
     missing := array_append(missing, 'grant:requests:DELETE'); END IF;
-  IF NOT has_table_privilege('runtime_role', 'public.unsubscribe_tokens', 'SELECT') THEN
-    missing := array_append(missing, 'grant:unsubscribe_tokens:SELECT'); END IF;
-  IF NOT has_table_privilege('runtime_role', 'public.unsubscribe_tokens', 'INSERT') THEN
-    missing := array_append(missing, 'grant:unsubscribe_tokens:INSERT'); END IF;
-  IF NOT has_table_privilege('runtime_role', 'public.unsubscribe_tokens', 'UPDATE') THEN
-    missing := array_append(missing, 'grant:unsubscribe_tokens:UPDATE'); END IF;
-  IF NOT has_table_privilege('runtime_role', 'public.unsubscribe_tokens', 'DELETE') THEN
-    missing := array_append(missing, 'grant:unsubscribe_tokens:DELETE'); END IF;
   IF NOT has_table_privilege('runtime_role', 'public.emails', 'SELECT') THEN
     missing := array_append(missing, 'grant:emails:SELECT'); END IF;
   IF NOT has_table_privilege('runtime_role', 'public.emails', 'INSERT') THEN

@@ -1,7 +1,7 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "79820708-4dc8-4722-b3d8-b584a15b056d",
+  "id": "ea917323-8be9-4f72-ac8c-4f2bc8c80104",
   "prevIds": [
     "72a09d5e-9db0-4e3a-8e74-a33e6a9d20a5"
   ],
@@ -183,12 +183,6 @@
     {
       "isRlsEnabled": false,
       "name": "emails",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
-      "name": "unsubscribe_tokens",
       "entityType": "tables",
       "schema": "public"
     },
@@ -3704,7 +3698,7 @@
       "table": "api_keys"
     },
     {
-      "type": "timestamp",
+      "type": "timestamp with time zone",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -4231,58 +4225,6 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "user_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "secret",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
       "name": "user_id",
       "entityType": "columns",
       "schema": "public",
@@ -4609,6 +4551,19 @@
       "generated": null,
       "identity": null,
       "name": "state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "yjs_documents"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "generation",
       "entityType": "columns",
       "schema": "public",
       "table": "yjs_documents"
@@ -6437,48 +6392,6 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "secret",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "unsubscribe_tokens_secret_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "user_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "unsubscribe_tokens_user_id_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
           "value": "name",
           "isExpression": false,
           "asc": false,
@@ -7444,23 +7357,6 @@
     {
       "nameExplicit": false,
       "columns": [
-        "user_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "unsubscribe_tokens_user_id_users_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
         "id"
       ],
       "schemaTo": "public",
@@ -7878,16 +7774,6 @@
       "name": "emails_pkey",
       "schema": "public",
       "table": "emails",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
-      "name": "unsubscribe_tokens_pkey",
-      "schema": "public",
-      "table": "unsubscribe_tokens",
       "entityType": "pks"
     },
     {
