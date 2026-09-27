@@ -255,6 +255,10 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
     expect((await internalApp.request('/health', {}, publicPeer)).status).toBe(403);
     const upgrade = emittedUpgradeStatus(internal.server, '203.0.113.9', { 'x-cdc-secret': modeSecret('CDC_SECRET') });
     expect(upgrade).toBe(403);
+    // The peer is refused before its secret is read, so a public peer cannot tell a wrong secret from a right one.
+    const withoutSecret = await internalApp.request('/internal/yjs/materialize', { method: 'POST' }, publicPeer);
+    expect(withoutSecret.status).toBe(403);
+    expect(emittedUpgradeStatus(internal.server, '203.0.113.9', {})).toBe(403);
     expect((await attachment.read())?.description).toBe(original);
   });
 

@@ -51,7 +51,7 @@ export function serveApi(
  * @param remoteAddress - The peer's address as its socket reports it.
  * @returns The reason, or undefined for an admitted peer.
  */
-export function internalSourceRefusal(remoteAddress: string | undefined): string | undefined {
+function internalSourceRefusal(remoteAddress: string | undefined): string | undefined {
   if (!remoteAddress) return 'no peer address';
   return isPublicIp(remoteAddress) ? 'public address' : undefined;
 }
