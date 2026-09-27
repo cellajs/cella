@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "f23ca514-d67f-4d87-90e9-402e5cf9d17d",
+  "id": "de6fbe50-2468-47fb-9805-c5130f25ae53",
   "prevIds": [
-    "37114cb5-edbb-4e8d-b672-bfe2b402dfdb"
+    "72a09d5e-9db0-4e3a-8e74-a33e6a9d20a5"
   ],
   "ddl": [
     {
@@ -1480,6 +1480,45 @@
     {
       "type": "uuid",
       "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "impersonator_session_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "stepped_up_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "stepped_up_via",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
       "default": null,
@@ -1603,6 +1642,19 @@
       "generated": null,
       "identity": null,
       "name": "pending_sign_up",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "session_id",
       "entityType": "columns",
       "schema": "public",
       "table": "tokens"
@@ -6734,6 +6786,23 @@
     {
       "nameExplicit": false,
       "columns": [
+        "impersonator_session_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "sessions",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "sessions_impersonator_session_id_sessions_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "user_id"
       ],
       "schemaTo": "public",
@@ -6761,6 +6830,23 @@
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "tokens_oauth_account_id_oauth_accounts_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "session_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "sessions",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "tokens_session_id_sessions_id_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "tokens"
