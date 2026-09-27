@@ -4,9 +4,10 @@ import { appConfig, hierarchy } from 'shared';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { getAdminDb } from '#/db/db';
+import { baseDb as db, getAdminDb } from '#/db/db';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultHeaders } from '../fixtures';
 import { createTestOrganization } from '../helpers';
 import { cleanupEntityHierarchy, seedEntityHierarchy } from '../hierarchy-helpers';
@@ -29,32 +30,44 @@ describe('Idempotent attachment creates', async () => {
   const adminDb = getAdminDb('attachment-idempotency test');
   let organization: { id: string; tenantId: string };
   let plan: TestEntityHierarchyPlan;
+  /** An organization in another tenant that the owner is a member of too. */
+  let elsewhere: { id: string; tenantId: string };
+  let planElsewhere: TestEntityHierarchyPlan;
   let owner: { id: string; sessionCookie: string };
   let other: { id: string; sessionCookie: string };
 
-  /** A create body for `user`'s own upload, placed at the attachment's home channel (none in cella). */
-  const bodyFor = (user: { id: string }, id: string, mutationId: string) => {
+  /** A create body for `user`'s own upload in `home`, placed at the attachment's home channel (none in cella). */
+  const bodyFor = (
+    user: { id: string },
+    id: string,
+    mutationId: string,
+    home: { organization: { id: string }; plan: TestEntityHierarchyPlan } = { organization, plan },
+  ) => {
     const deepest = hierarchy
       .getOrderedAncestors('attachment')
-      .find((type) => type !== 'organization' && plan.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
+      .find((type) => type !== 'organization' && home.plan.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
     const placement = deepest
-      ? { [appConfig.entityIdColumnKeys[deepest]]: plan.channelIdColumns[appConfig.entityIdColumnKeys[deepest]] }
+      ? { [appConfig.entityIdColumnKeys[deepest]]: home.plan.channelIdColumns[appConfig.entityIdColumnKeys[deepest]] }
       : {};
     return {
       id,
       filename: 'file.pdf',
       contentType: 'application/pdf',
       size: '1024',
-      keys: { original: `${organization.id}/${user.id}/${id}.pdf` },
+      keys: { original: `${home.organization.id}/${user.id}/${id}.pdf` },
       bucketName: appConfig.s3.privateBucket,
       ...placement,
       stx: { mutationId, sourceId: 'idempotency-test', fieldTimestamps: {} },
     };
   };
 
-  const create = async (as: { sessionCookie: string }, body: ReturnType<typeof bodyFor>) => {
+  const create = async (
+    as: { sessionCookie: string },
+    body: ReturnType<typeof bodyFor>,
+    home: { id: string; tenantId: string } = organization,
+  ) => {
     const { data, response } = await call(createAttachments, {
-      path: { tenantId: organization.tenantId, organizationId: organization.id },
+      path: { tenantId: home.tenantId, organizationId: home.id },
       body: [body] as never,
       headers: { ...defaultHeaders, Cookie: as.sessionCookie },
     });
@@ -95,12 +108,37 @@ describe('Idempotent attachment creates', async () => {
       createdBy: owner.id,
       slugPrefix: 'idempotency',
     });
+
+    elsewhere = await createTestOrganization();
+    planElsewhere = buildTestEntityHierarchyPlan({
+      entityType: 'attachment',
+      organizationId: elsewhere.id,
+      makeChannelId: () => generateId(),
+    });
+    await seedEntityHierarchy(adminDb, planElsewhere, {
+      tenantId: elsewhere.tenantId,
+      createdBy: owner.id,
+      slugPrefix: 'idempotency-elsewhere',
+    });
+    await db.insert(membershipsTable).values({
+      id: generateId(),
+      userId: owner.id,
+      channelId: elsewhere.id,
+      organizationId: elsewhere.id,
+      tenantId: elsewhere.tenantId,
+      channelType: 'organization',
+      role: hierarchy.getLeastPrivilegedRole('organization'),
+      displayOrder: 2,
+      createdBy: owner.id,
+    });
   });
 
   afterAll(async () => {
-    await adminDb.delete(attachmentsTable).where(eq(attachmentsTable.tenantId, organization.tenantId));
-    await adminDb.delete(activitiesTable).where(eq(activitiesTable.tenantId, organization.tenantId));
-    await cleanupEntityHierarchy(adminDb, plan);
+    for (const { tenantId } of [organization, elsewhere]) {
+      await adminDb.delete(attachmentsTable).where(eq(attachmentsTable.tenantId, tenantId));
+      await adminDb.delete(activitiesTable).where(eq(activitiesTable.tenantId, tenantId));
+    }
+    await cleanupEntityHierarchy(adminDb, plan, planElsewhere);
     await clearSecurityTestData();
   });
 
@@ -117,6 +155,21 @@ describe('Idempotent attachment creates', async () => {
     expect(data[0]?.createdBy?.id).toBe(other.id);
     expect((await storedRow(replayedId))?.createdBy).toBe(other.id);
     expect((await storedRow(ownersId))?.createdBy).toBe(owner.id);
+  });
+
+  it("must not answer a replay on another tenant's path with the caller's rows from this one", async () => {
+    const mutationId = generateId();
+    const hereId = generateId();
+    expect((await create(owner, bodyFor(owner, hereId, mutationId))).status).toBe(201);
+    await logProcessed(mutationId, hereId, owner.id);
+
+    // The same user replays their mutation id in the other tenant they belong to: a fresh create there.
+    const thereId = generateId();
+    const body = bodyFor(owner, thereId, mutationId, { organization: elsewhere, plan: planElsewhere });
+    const { status, data } = await create(owner, body, elsewhere);
+    expect(status).toBe(201);
+    expect(data.map((row) => row.id)).toEqual([thereId]);
+    expect(await storedRow(thereId)).toMatchObject({ tenantId: elsewhere.tenantId, organizationId: elsewhere.id });
   });
 
   it("answers a replay of the caller's own mutation id with its rows (positive control)", async () => {
