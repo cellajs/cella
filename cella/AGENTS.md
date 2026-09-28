@@ -39,7 +39,7 @@ Route-level guards in `backend/src/middlewares/guard/`:
 - `orgGuard`: resolves the organization and verifies membership.
 - `publicGuard`: unauthenticated routes. Sets `ctx.var.db` to baseDb.
 - `crossTenantGuard`: authenticated cross-tenant routes. Sets `ctx.var.db = baseDb`. Handlers use `tenantRead()` for product entity queries.
-- `stepUpGuard`: after `userGuard` on account-security routes: the session must have proven its user's presence again recently (a factor the user holds, else a fresh sign-in or an emailed link), never an impersonation; else 403 `step_up_required` naming the methods. The routes and the window: [Interoperability](./INTEROPERABILITY.md#guards).
+- `stepUpGuard`: after `userGuard` on account-security routes: the session must have proven its user's presence again recently, never an impersonation; else 403 `step_up_required` naming the methods. The routes, the proofs and the window: [Authentication](./AUTHENTICATION.md#step-up).
 - Also: `sysAdminGuard`, `relatableGuard`, `noImpersonationGuard` (after `userGuard`: the browser's own session, never an impersonation; 403 `impersonation_forbidden`).
 
 ### Database access patterns
@@ -55,6 +55,8 @@ Secret columns (a hash, a session or token secret, a private key) are declared o
 `AppError` is the structured error class: `status`, `type` (i18n key from `locales/en/error`), `severity`, `entityType`, `meta`, `willRedirect`. PostgreSQL error codes map automatically (FK violation → 400, unique constraint → 409, RLS denial → 403, deadlock → 409).
 
 ## Auth
+
+Model (sign-in methods, sign-up, sessions, cookies, tokens, second factors, step-up, the auth rate limits): [Authentication](./AUTHENTICATION.md). Where the app refuses what it must (listeners, secrets, limits, redaction, security testing): [Security](./SECURITY.md).
 
 Seven sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA), `magic/`, `oauth/` (signing in with a provider), `passkeys/` (WebAuthn), `totps/` (TOTP 2FA), `step-up/` (proving presence again before account-security actions), `tokens/` (the token lifecycle: issue, redeem, read and spend, with one policy per token type; the only importer of `tokens-db`, enforced by Biome; a link type also has its handler in `general/helpers/link-handlers.ts`). Sessions: `general/helpers/session.ts` (`resolveSession` reads the app session from any request context). Cookies: `general/helpers/cookie.ts`.
 

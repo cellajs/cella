@@ -27,7 +27,7 @@ application query.
 
 A service account's tenant comes from its account, never from the URL: `tenantGuard` compares the two before any lookup, and an access token carries a tenant-qualified audience, so a machine caller cannot probe another tenant ([Interoperability](./INTEROPERABILITY.md)).
 
-Per-operation checks: [Enforcement paths](./PERMISSIONS.md#enforcement-paths).
+Per-operation checks: [Enforcement paths](./PERMISSIONS.md#enforcement-paths). The boundaries outside the tenant question (listeners and secrets, limits, redaction, security testing): [Security](./SECURITY.md).
 
 ## What RLS covers
 
