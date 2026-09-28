@@ -205,9 +205,9 @@ export async function insertNotificationsIgnoringDuplicates(rows: NotificationIn
 // ── Instant email ────────────────────────────────────────────────────────────
 
 /**
- * Unmailed mention notifications for recipients who still want the email. The preferences row is
- * created on first read of the settings, so a missing row means the default (on), hence the
- * left join.
+ * Unmailed mention notifications for recipients who still want the email, oldest first so a
+ * backlog drains in order. The preferences row is created on first read of the settings, so a
+ * missing row means the default (on), hence the left join.
  */
 export async function findPendingMentionEmails(organizationId: string, limit: number) {
   return baseDb
@@ -235,6 +235,7 @@ export async function findPendingMentionEmails(organizationId: string, limit: nu
         recipientStillBelongs,
       ),
     )
+    .orderBy(asc(notificationsTable.createdAt))
     .limit(limit);
 }
 
@@ -278,6 +279,7 @@ export async function findUserNames(userIds: string[]): Promise<Map<string, stri
   return new Map(rows.map((row) => [row.id, row.name]));
 }
 
+/** Settles rows the instant-mail pass took, mailed or skipped for good: neither it nor the digest reads them again. */
 export async function stampEmailed(notificationIds: string[]): Promise<void> {
   if (notificationIds.length === 0) return;
   await baseDb

@@ -14,8 +14,8 @@ import { fanOutNotifications } from '#/modules/notification/operations/fan-out';
 import { sendPendingInstantEmails } from '#/modules/notification/operations/send-instant-emails';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
-import { adminRole, defaultHeaders } from './fixtures';
-import { createTestUser } from './helpers';
+import { adminRole, defaultHeaders, memberRole } from './fixtures';
+import { createOrganizationAdminUser, createTestUser } from './helpers';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -223,5 +223,54 @@ describe('Attachment mentions (template notification source)', async () => {
     expect(row?.actor?.id).toBe(tenant.user.id);
     expect(row?.channelName).not.toBe('');
     expect(row?.subjectTitle).not.toBe('');
+  });
+
+  it('mails a newer mention behind a backlog of unmailable rows larger than one pass', async () => {
+    // A member without a verified address is never mailed; one pass handles 200 rows.
+    const unverified = await createOrganizationAdminUser(
+      'attachment-mentions-unverified@security-test.com',
+      tenant.organization.id,
+      memberRole,
+      false,
+      tenant.tenantId,
+    );
+    const mentionOf = (userId: string, createdAt: Date) => ({
+      createdAt: createdAt.toISOString(),
+      userId,
+      actorId: tenant.user.id,
+      type: 'mention' as const,
+      entityType: 'attachment' as const,
+      subjectId: attachmentId,
+      contextId: attachmentId,
+      channelId: tenant.organization.id,
+      channelType: 'organization' as const,
+      organizationId: tenant.organization.id,
+      tenantId: tenant.tenantId,
+      activityId: `act:${generateId()}`,
+    });
+    const anHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    await db.insert(notificationsTable).values(Array.from({ length: 201 }, () => mentionOf(unverified.id, anHourAgo)));
+    const [fresh] = await db
+      .insert(notificationsTable)
+      .values(mentionOf(member.id, new Date()))
+      .returning({ id: notificationsTable.id });
+
+    await sendPendingInstantEmails(tenant.organization.id);
+    await sendPendingInstantEmails(tenant.organization.id);
+
+    const emailedAt = async (id: string) =>
+      (
+        await db
+          .select({ emailedAt: notificationsTable.emailedAt })
+          .from(notificationsTable)
+          .where(eq(notificationsTable.id, id))
+      )[0]?.emailedAt;
+    expect(await emailedAt(fresh.id)).not.toBeNull();
+    // The unmailable rows are settled too, so no later pass reads them again.
+    const backlog = await db
+      .select({ emailedAt: notificationsTable.emailedAt })
+      .from(notificationsTable)
+      .where(eq(notificationsTable.userId, unverified.id));
+    expect(backlog.filter(({ emailedAt }) => emailedAt === null)).toHaveLength(0);
   });
 });

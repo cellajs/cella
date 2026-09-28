@@ -44,7 +44,7 @@ export const notificationsTable = snakeCase.table(
     /** CDC activity id: the dedupe key for at-least-once delivery. */
     activityId: varchar({ length: 64 }).notNull(),
     readAt: timestamp({ mode: 'string' }),
-    /** Set when an instant email went out, so the digest can skip it. */
+    /** Set once the instant-mail pass took the row, mailed or skipped for good; the pass and the digest skip it. */
     emailedAt: timestamp({ mode: 'string' }),
     digestedAt: timestamp({ mode: 'string' }),
   },

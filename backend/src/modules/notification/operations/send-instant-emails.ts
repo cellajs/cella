@@ -22,8 +22,9 @@ const MAX_PER_RUN = 200;
  * Send instant emails for freshly created mention notifications.
  *
  * Only mentions mail instantly, and only when the recipient has not opted out and may still read
- * the subject: access can end between the fan-out and this pass. Everything mailed here is stamped
- * `emailedAt`, which is what keeps the digest from repeating it.
+ * the subject: access can end between the fan-out and this pass. Every row the pass takes is
+ * stamped `emailedAt`, mailed or skipped for good (no verified address, access or subject gone):
+ * the digest never repeats a mailed mention, and a skipped row never holds up the next pass.
  */
 export async function sendPendingInstantEmails(organizationId: string): Promise<void> {
   const pending = await findPendingMentionEmails(organizationId, MAX_PER_RUN);
@@ -38,11 +39,10 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
   ]);
   const channelNames = await findChannelNames(pending.map((row) => row.channelId));
 
-  const sent: string[] = [];
+  let sent = 0;
 
   for (const notification of pending) {
     const user = byUser.get(notification.userId);
-    // No verified address: leave emailedAt null so the digest still reaches them in-app.
     if (!user) continue;
     if (!readableByUser.get(notification.userId)?.has(notification.subjectId)) continue;
 
@@ -81,13 +81,11 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
       ],
     );
 
-    sent.push(notification.id);
+    sent++;
   }
 
-  if (sent.length === 0) return;
-
-  await stampEmailed(sent);
-  log.info('Mention emails sent', { count: sent.length, organizationId });
+  await stampEmailed(pending.map((row) => row.id));
+  if (sent > 0) log.info('Mention emails sent', { count: sent, organizationId });
 }
 
 /** Per recipient, the subjects of their pending mentions they may read now. */
