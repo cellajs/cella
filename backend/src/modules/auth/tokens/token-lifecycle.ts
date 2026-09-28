@@ -280,19 +280,8 @@ const selectBoundToken = async (type: TokenType, cookie: string) => {
 
 /**
  * The live token this browser's cookie of `type` binds it to: a redeemed link (invitation, verification) or a
- * cookie-carried token (a second-factor challenge). Reads only; nothing is spent.
- * @returns The token, or null without a cookie, for an unknown value or once the token has expired.
- */
-export const findBoundToken = async (ctx: Context<Env>, type: TokenType): Promise<TokenRecord | null> => {
-  const cookie = await getAuthCookie(ctx, type);
-  if (!cookie) return null;
-
-  const token = await selectBoundToken(type, cookie);
-  return token && !isExpiredDate(token.expiresAt) ? token : null;
-};
-
-/**
- * {@link findBoundToken} for a flow that cannot go on without the token. Reads only; nothing is spent.
+ * cookie-carried token (a second-factor challenge), for a flow that cannot go on without it. Reads only; nothing is
+ * spent.
  * @throws AppError 401 `<type>_not_found` without a cookie or for a value that names no row, 401 `<type>_expired` once
  *   expired: one shape for a link and a cookie-carried type alike.
  */

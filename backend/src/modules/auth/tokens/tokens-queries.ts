@@ -1,6 +1,5 @@
 import { and, desc, eq, getColumns, gt, inArray, isNull } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import type { DbOrTx } from '#/db/db';
 import { tokensTable, type UnsafeTokenModel } from '#/modules/auth/tokens-db';
 import { getIsoDate } from '#/utils/iso-date';
 
@@ -104,18 +103,3 @@ export const bindTokenToUser = async (ctx: DbContext, { tokenId, userId }: BindT
     .set({ userId })
     .where(and(eq(tokensTable.id, tokenId), isNull(tokensTable.userId)));
 };
-
-/**
- * Invitation tokens as a subquery, for listings that show a membership invitation beside its emailed link: the
- * token's `id`, the `email` it went to and its `inactiveMembershipId`.
- */
-export const invitationTokensSubquery = (db: DbOrTx) =>
-  db
-    .select({
-      id: tokensTable.id,
-      email: tokensTable.email,
-      inactiveMembershipId: tokensTable.inactiveMembershipId,
-    })
-    .from(tokensTable)
-    .where(eq(tokensTable.type, 'invitation'))
-    .as('invitation_tokens');
