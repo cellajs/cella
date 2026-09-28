@@ -86,6 +86,7 @@ packageExtensions:
 packages:
   - mcp
   - oauth
+  - jobs
   - backend
   - cdc
   - shared

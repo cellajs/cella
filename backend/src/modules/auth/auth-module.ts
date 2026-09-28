@@ -1,6 +1,6 @@
 import { defineBackendModule } from '#/lib/module';
 import { authGeneralHandlers } from './general/general-handlers';
-import { schedulePruneDevices } from './jobs/prune-devices';
+import { pruneDevices } from './jobs/prune-devices';
 import { authMagicLinkHandlers } from './magic/magic-handlers';
 import { authOAuthHandlers } from './oauth/oauth-handlers';
 import { authPasskeysHandlers } from './passkeys/passkeys-handlers';
@@ -14,8 +14,8 @@ defineBackendModule({
   description: `Endpoints for authentication, supporting multiple sign-in methods including OAuth
     (Google, Microsoft, GitHub) and passkeys (WebAuthn). They cover sign-up, sign-in, email verification,
     account linking, and impersonation for system admins.`,
-  // Job ownership (lib/job-ownership.ts) runs this on one instance at a time, so exactly one process prunes.
-  jobs: [{ name: 'prune-devices', start: () => schedulePruneDevices() }],
+  // Nightly, a quarter-hour ahead of the partition maintenance at 03:15 UTC.
+  jobs: [{ name: 'prune-devices', cron: '0 3 * * *', run: () => pruneDevices() }],
   routes: [
     { path: '/auth/', app: authGeneralHandlers },
     { path: '/auth/', app: authMagicLinkHandlers },

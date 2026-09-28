@@ -27,10 +27,11 @@ let servers: CapturedResource[];
 
 beforeAll(async () => {
   writeGenerationKeys(keys);
-  // Split-VM with the two services whose env needs no load balancer address: one VM each for the API and the SPA proxy.
+  // Split-VM with the two services whose env needs no load balancer address: one VM each for the API and the SPA proxy;
+  // the cdc and jobs workers are off.
   const { setEngineConfig } = await import('../config/engine-config');
   const { services } = fakeConfig();
-  setEngineConfig(fakeConfig({ services: { ...services, cdc: { enabled: false } } }));
+  setEngineConfig(fakeConfig({ services: { ...services, cdc: { enabled: false }, jobs: { enabled: false } } }));
   h = await installPulumiMocks();
   await import('./compute');
   await h.settle();

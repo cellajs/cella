@@ -89,6 +89,15 @@ describe('runtime secret registry', () => {
       'COOKIE_SECRET',
       'DATA_ENCRYPTION_KEY',
     ]);
+    expect(runtimeSecretsForConsumer('jobs').map((secret) => secret.envVar)).toEqual([
+      'DATABASE_URL',
+      'DATABASE_SSL_CA',
+      'COOKIE_SECRET',
+      'UNSUBSCRIBE_SECRET',
+      'DATA_ENCRYPTION_KEY',
+      'BREVO_API_KEY',
+      'MAPLE_SECRET_INGEST_KEY',
+    ]);
   });
 
   it('does not leak service-exclusive secrets across VM boundaries', () => {
@@ -147,7 +156,7 @@ describe('runtime secret schema alignment', () => {
     });
 
   it('delivers a mode-bound secret to exactly the backend-image VMs whose processes read it', () => {
-    expect(backendImageModes.map(([slug]) => slug)).toEqual(['backend', 'mcp', 'oauth']);
+    expect(backendImageModes.map(([slug]) => slug)).toEqual(['backend', 'mcp', 'oauth', 'jobs']);
     for (const [service, vmModes] of backendImageModes) {
       const delivered = new Set(runtimeSecretsForConsumer(service).map((secret) => secret.envVar));
       for (const [envVar, modes] of Object.entries(modeSecrets)) {

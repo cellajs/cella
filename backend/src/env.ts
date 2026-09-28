@@ -32,9 +32,10 @@ export const env = createEnv({
       .default('false')
       .transform((v) => v === 'true'),
     DATABASE_URL: z.url(),
-    // Admin credential (table owner, BYPASSRLS): only the migrate, seed, maintenance and mcp paths need it; the request-serving API boots without it.
+    // Admin credential (table owner, BYPASSRLS): only the migrate, seed and maintenance paths need it; the request-serving API boots without it.
     DATABASE_ADMIN_URL: z.url().optional(),
-    DATABASE_POOL_MAX: z.coerce.number().default(80),
+    // Capped for the managed instance's connection budget: max_connections is 100 (the engine default, 3 slots superuser-reserved), and the API, cdc, yjs, the job store and the migrate companion add up to about half of it. See jobs/README.md, Connection budget.
+    DATABASE_POOL_MAX: z.coerce.number().default(20),
     // PEM CA cert for the managed PostgreSQL TLS connection: required in production, where the DB client fails fast without it.
     DATABASE_SSL_CA: z.string().optional(),
     NODE_ENV: z.union([

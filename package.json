@@ -36,6 +36,7 @@
     "tunnel": "pnpm run clean && cross-env pnpm --reporter=append-only -r --parallel --stream tunnel",
     "dev:proxy": "pnpm run clean && cross-env pnpm --reporter=append-only -r --parallel --stream --filter backend --filter cdc-worker --filter frontend --filter proxy dev",
     "seed": "pnpm --filter backend seed",
+    "jobs": "pnpm --filter backend jobs",
     "infra": "pnpm infra:compose && pnpm --filter infra cli",
     "infra:staging": "pnpm infra --mode staging",
     "infra:production": "pnpm infra --mode production",

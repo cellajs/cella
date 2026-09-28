@@ -3,7 +3,6 @@ import { appConfig } from 'shared';
 import { waitForBackend } from 'shared/utils/wait-for-backend';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { env } from '#/env';
-import { getPgBoss, stopPgBoss } from '#/lib/pg-boss';
 import { baseLog } from '#/lib/pino';
 import { otel } from '#/lib/tracing';
 import { listenForAuthInvalidation } from '#/middlewares/guard/invalidation-listener';
@@ -33,11 +32,6 @@ export async function startMcpWorker(options: { port?: number } = {}): Promise<v
   // The token users and memberships this process caches drop when another process invalidates them.
   const stopInvalidationListener = listenForAuthInvalidation();
 
-  if (hasAiKey) {
-    await getPgBoss();
-    baseLog.info('pg-boss started, queues ready');
-  }
-
   const server: ServerType = serve({ fetch: baseApp.fetch, hostname: '0.0.0.0', port }, () => {
     baseLog.info(`MCP service listening on port ${port}${hasAiKey ? '' : ' (AI features off)'}`);
   });
@@ -47,7 +41,6 @@ export async function startMcpWorker(options: { port?: number } = {}): Promise<v
     cleanup: async () => {
       server.close();
       await stopInvalidationListener();
-      if (hasAiKey) await stopPgBoss();
       await otel.shutdown();
     },
     log: (msg) => baseLog.info(msg),

@@ -9,9 +9,8 @@ import { baseDb, getAdminDb, migrateConfig } from '#/db/db';
 import '#/lib/i18n';
 import process from 'node:process';
 import { startGeoipRefresh } from '#/lib/geoip';
-import { startJobOwnership } from '#/lib/job-ownership';
 import { serveApi, serveInternal } from '#/lib/listeners';
-import { getBackendJobs } from '#/lib/module';
+import { stopPgBoss } from '#/lib/pg-boss';
 import { otel } from '#/lib/tracing';
 import { listenForAuthInvalidation } from '#/middlewares/guard/invalidation-listener';
 import { registerCacheInvalidation } from '#/middlewares/product-cache/cache-invalidation';
@@ -24,7 +23,8 @@ otel.verifyConnection();
 
 let server: import('@hono/node-server').ServerType | undefined;
 let internalListener: ReturnType<typeof serveInternal> | undefined;
-const stopJobs: (() => void)[] = [];
+/** Stops what this process starts besides its listeners: the auth invalidation listener and the GeoIP refresh. */
+const stops: (() => unknown)[] = [];
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).startTunnel : () => null;
 
@@ -51,24 +51,20 @@ const main = async () => {
     await pgMigrate(migrationDb, migrateConfig);
     const { schedulePartitionMaintenance } = await import('../scripts/db/schedule-partition-maintenance');
     await schedulePartitionMaintenance();
+    // The job store (pg-boss) is installed by the same owner that migrates; the jobs service runs it.
+    const { installJobsSchema } = await import('../scripts/db/install-jobs-schema');
+    await installJobsSchema();
 
     console.info(`${timestamp()} [startup] Migrations complete, starting server...`);
   } else {
     console.info(`${timestamp()} [startup] RUN_MIGRATIONS_ON_BOOT=false: skipping migrations (run as MODE=migrate)`);
   }
 
-  // One instance runs the scheduled jobs: every RUN_JOBS instance contends for an advisory lock, also across a rollout.
-  if (env.RUN_JOBS && !env.NODB) {
-    const jobs = getBackendJobs();
-    stopJobs.push(startJobOwnership({ jobs }));
-    console.info(`${timestamp()} [startup] scheduled jobs: ${jobs.map((job) => job.name).join(', ') || 'none'}`);
-  }
-
   registerCacheInvalidation();
-  stopJobs.push(listenForAuthInvalidation());
+  stops.push(listenForAuthInvalidation());
 
   // Per process, not a scheduled job: every replica keeps its own GeoIP copy current.
-  stopJobs.push(startGeoipRefresh());
+  stops.push(startGeoipRefresh());
 
   // Server-to-server routes (the CDC socket, the Yjs relay) listen apart from the public API.
   internalListener = serveInternal({ port: Number(env.INTERNAL_PORT) });
@@ -103,6 +99,9 @@ const main = async () => {
             port: appConfig.devPorts.oauth,
             inProcess: true,
           });
+        // The folded jobs service needs no port: this process's /health carries the jobs component.
+        if (appConfig.services.jobs.enabled)
+          await (await import('#/lib/jobs-worker')).startJobsWorker({ inProcess: true });
       }
 
       const tunnelUrl = await startTunnel();
@@ -123,7 +122,8 @@ Tunnel: ${pc.bold(pc.magentaBright(tunnelUrl || '-'))}`);
 setupGracefulShutdown({
   name: 'api',
   cleanup: async () => {
-    for (const stop of stopJobs) stop();
+    for (const stop of stops) await stop();
+    await stopPgBoss();
     if (server) {
       server.close();
     }

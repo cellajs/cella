@@ -25,7 +25,7 @@ const envSchema = workerEnvBase.extend({
   // The backend's internal listener; its routes are not on the public API.
   BACKEND_INTERNAL_URL: z.url().default(`http://localhost:${appConfig.devPorts.internal}`),
   YJS_PORT: z.coerce.number().default(appConfig.devPorts.yjs),
-  YJS_DB_POOL_MAX: z.coerce.number().default(20),
+  YJS_DB_POOL_MAX: z.coerce.number().default(10),
 
   NODB: z
     .string()
