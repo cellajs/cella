@@ -277,12 +277,12 @@ describe('joinCollab / leaveCollab', () => {
     const other = joinCollab({ ...ctx, tenantId: 'tenant-2', organizationId: 'org-2' }, theirs as never);
     expect(other).not.toBe(collab);
     expect(other.scope.tenantId).toBe('tenant-2');
-    broadcastToCollab(ctx, new Uint8Array([1, 2, 3]));
+    broadcastToCollab(collab, new Uint8Array([1, 2, 3]));
     expect(theirs.sent).toHaveLength(0);
     // Positive control: the same tenant's document is the same session, and its members receive the broadcast.
     const peer = mockWebSocket();
     expect(joinCollab(ctx, peer as never)).toBe(collab);
-    broadcastToCollab(ctx, new Uint8Array([4, 5, 6]), ours as never);
+    broadcastToCollab(collab, new Uint8Array([4, 5, 6]), ours as never);
     expect(peer.sent).toHaveLength(1);
   });
 
@@ -382,23 +382,20 @@ describe('withDocLock', () => {
 });
 
 describe('broadcastToCollab', () => {
-  it('broadcasts to all open peers except the sender, scoped to the entity', () => {
+  it('broadcasts to all open peers except the sender', () => {
     const ctx = uniqueCtx();
     const sender = mockWebSocket();
     const peer = mockWebSocket();
     const closed = mockWebSocket({ readyState: 3 });
-    joinCollab(ctx, sender as never);
+    const collab = joinCollab(ctx, sender as never);
     joinCollab(ctx, peer as never);
     joinCollab(ctx, closed as never);
-    const otherPeer = mockWebSocket();
-    joinCollab(uniqueCtx(), otherPeer as never);
 
     const message = new Uint8Array([1, 2, 3]);
-    broadcastToCollab(ctx, message, sender as never);
+    broadcastToCollab(collab, message, sender as never);
 
     expect(sender.sent).toHaveLength(0);
     expect(peer.sent).toEqual([message]);
     expect(closed.sent).toHaveLength(0);
-    expect(otherPeer.sent).toHaveLength(0);
   });
 });

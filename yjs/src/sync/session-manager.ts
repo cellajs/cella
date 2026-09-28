@@ -265,10 +265,8 @@ export function claimAwarenessClient(
   return owner ? 'relay' : 'refuse';
 }
 
-export function broadcastToCollab(doc: DocKey, message: Uint8Array, exclude?: WebSocket): void {
-  const collab = getCollab(doc);
-  if (!collab) return;
-
+/** Sends a frame to every open socket of the session but `exclude`, its sender. */
+export function broadcastToCollab(collab: CollabSession, message: Uint8Array, exclude?: WebSocket): void {
   for (const client of collab.clients) {
     if (client !== exclude && client.readyState === client.OPEN) {
       client.send(message);

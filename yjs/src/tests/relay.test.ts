@@ -42,7 +42,7 @@ const { handleMessage, peekMessageType, runCompaction } = await import('../sync/
 const { loadEntityDescription } = await import('../data/entity-content');
 const { postMaterialize } = await import('../sync/materialize');
 const { yUpdateToBlocks } = await import('../lib/blocknote-seed');
-const { getCollab, joinCollab, leaveCollab } = await import('../sync/session-manager');
+const { endCollab, getCollab, joinCollab, leaveCollab } = await import('../sync/session-manager');
 
 const ctx = mockSocketContext();
 
@@ -319,22 +319,23 @@ describe('handleMessage: sync update', () => {
     leaveCollab(collab.scope, peer as never);
   });
 
-  it("must not log an update from a socket outside its document's session, into no session or a newer one: it closes with 1013", async () => {
-    // Authorized, but its session ended (its document was retired): the socket was never joined to the current one.
-    const scope = mockScope({ entityId: `entity-${++counter}` });
-    const c = mockSocketContext({ requested: scope });
-    const ws = mockWebSocket();
+  it('must not log an update a socket sent before its session ended under it, into no session or a newer one of its document', async () => {
+    // The document was retired while the update waited in the socket's queue: its session ended and it is closing.
+    const { ctx: c, scope, key, ws, collab } = session();
+    endCollab(collab);
+    expect(ws.closed).toEqual({ code: 1013, reason: 'Document retired' });
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
-    expect(storage.logs.get(storageKey(scope))).toBeUndefined();
-    expect(ws.closed).toEqual({ code: 1013, reason: 'Session ended' });
+    expect(storage.logs.get(key)).toBeUndefined();
 
-    // A newer session of the document, opened by a reconnecting socket, takes nothing from the old socket either.
+    // A newer session of the document, opened by another socket meanwhile, takes nothing from it either.
     const next = session({ entityId: scope.entityId });
-    const stale = mockWebSocket();
-    await handleMessage(c, stale as never, buildSyncUpdate(mapUpdate('k', 2)));
-    expect(storage.logs.get(next.key)).toBeUndefined();
-    expect(stale.closed).toEqual({ code: 1013, reason: 'Session ended' });
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 2)));
+    expect(storage.logs.get(key)).toBeUndefined();
     expect(next.ws.sent).toHaveLength(0);
+
+    // Positive control: the newer session's own socket logs into it.
+    await handleMessage(next.ctx, next.ws as never, buildSyncUpdate(mapUpdate('k', 3)));
+    expect(storage.logs.get(key)).toHaveLength(1);
   });
 
   it("must not log an update sent between the relay's Step1 and the socket's reply: the reply carries it", async () => {
