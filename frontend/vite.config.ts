@@ -99,6 +99,7 @@ const repoDocRoutes = {
   'cella/DEPLOYMENT.md': '/docs/page/guides/deployment',
   'cella/INTEROPERABILITY.md': '/docs/page/architecture/interoperability',
   'cella/AUTHENTICATION.md': '/docs/page/architecture/authentication',
+  'cella/SECURITY.md': '/docs/page/architecture/security',
   'oauth/README.md': '/docs/page/architecture/oauth',
   'mcp/README.md': '/docs/page/architecture/mcp',
   'bench/README.md': '/docs/page/guides/load-testing',
