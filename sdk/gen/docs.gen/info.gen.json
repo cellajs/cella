@@ -29,6 +29,10 @@
           "name": "crossTenant",
           "description": "Requires userGuard and sets baseDb for cross-tenant access"
         },
+        "noImpersonationGuard": {
+          "name": "noImpersonation",
+          "description": "Refused while impersonating: the admin acts as the user, never on the account itself"
+        },
         "orgGuard": { "name": "org", "description": "Validates organization membership within tenant context" },
         "publicGuard": {
           "name": "public",

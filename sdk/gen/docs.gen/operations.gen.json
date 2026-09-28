@@ -128,7 +128,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["userGuard", "sysAdminGuard"],
+      "xGuard": ["userGuard", "noImpersonationGuard", "sysAdminGuard"],
       "xRateLimiter": [],
       "xCache": []
     },
@@ -650,14 +650,14 @@
     "path": "/auth/step-up",
     "tags": ["auth"],
     "summary": "Step up with a second factor",
-    "description": "Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes. Refused while impersonating.",
+    "description": "Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["userGuard"],
+      "xGuard": ["userGuard", "noImpersonationGuard"],
       "xRateLimiter": ["stepUpLimiter"],
       "xCache": []
     },
@@ -673,14 +673,14 @@
     "path": "/auth/step-up/passkey-challenge",
     "tags": ["auth"],
     "summary": "Get a step-up passkey challenge",
-    "description": "Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it. Refused while impersonating.",
+    "description": "Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["userGuard"],
+      "xGuard": ["userGuard", "noImpersonationGuard"],
       "xRateLimiter": ["passkeyChallengeLimiter"],
       "xCache": []
     },
@@ -696,14 +696,14 @@
     "path": "/auth/step-up/link",
     "tags": ["auth"],
     "summary": "Email a step-up link",
-    "description": "For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in. Refused while impersonating.",
+    "description": "For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["userGuard"],
+      "xGuard": ["userGuard", "noImpersonationGuard"],
       "xRateLimiter": ["spamLimiter"],
       "xCache": []
     },
@@ -1041,14 +1041,14 @@
     "path": "/me/sessions",
     "tags": ["me"],
     "summary": "Revoke sessions",
-    "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out. An impersonation session is refused.",
+    "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": true,
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["userGuard"],
+      "xGuard": ["userGuard", "noImpersonationGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },

@@ -1,12 +1,22 @@
 import { eq } from 'drizzle-orm';
 import { deleteUsers, getMe, revokeMySessions, signOut, startImpersonation } from 'sdk';
+import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { env } from '#/env';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders, overrideConfig } from '../fixtures';
-import { authCookie, cookieChange, createSystemAdminUser, createTestUser, expectRefusal, sessionRow } from '../helpers';
+import {
+  authCookie,
+  cookieChange,
+  createSystemAdminUser,
+  createTestUser,
+  expectRefusal,
+  mailsTo,
+  sessionRow,
+  sessionsOf,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
 import {
@@ -129,6 +139,22 @@ describe('impersonation lives on its admin', async () => {
     const own = await call(revokeMySessions, { body: { ids: [other.id] }, headers: targetsOwn.headers });
     expect(own.response.status).toBe(200);
     expect((await sessionRow(other.id)).revocationReason).toBe('other_session');
+  });
+
+  it('must not start a second impersonation via an impersonation', async () => {
+    const { target, impersonation } = await impersonating('layering');
+    const other = await createTestUser('layering-other@security-test.com');
+
+    const attempt = await call(startImpersonation, {
+      body: { targetUserId: other.id },
+      headers: impersonation.headers,
+    });
+    await expectRefusal(attempt, 403, 'impersonation_forbidden');
+    expect(cookieChange(attempt.response, 'impersonation')).toBeUndefined();
+    expect(await sessionsOf(other.id)).toHaveLength(0);
+    // Refused as an impersonation, not as a user without the system role: no security alert goes out for the admin.
+    expect(mailsTo(appConfig.securityEmail)).toHaveLength(0);
+    expect(await meAs(impersonation)).toMatchObject({ status: 200, userId: target.id });
   });
 
   it('must not keep an impersonation live once its admin signs out', async () => {

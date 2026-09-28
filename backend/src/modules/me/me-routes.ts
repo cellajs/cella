@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { crossTenantGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
+import { crossTenantGuard, noImpersonationGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   connectedAppSchema,
@@ -137,12 +137,12 @@ const meRoutes = {
     operationId: 'revokeMySessions',
     method: 'delete',
     path: '/sessions',
-    xGuard: [userGuard],
+    xGuard: [userGuard, noImpersonationGuard],
     xRateLimiter: [bulkPointsLimiter],
     tags: ['me', 'cella'],
     summary: 'Revoke sessions',
     description:
-      'Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out. An impersonation session is refused.',
+      'Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.',
     request: {
       required: true,
       body: {

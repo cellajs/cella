@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import type { StrategyGate } from '#/core/openapi-extensions';
 import { createXRoute } from '#/core/x-routes';
-import { crossTenantGuard, publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
+import { crossTenantGuard, noImpersonationGuard, publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
@@ -42,7 +42,9 @@ const authGeneralRoutes = {
     operationId: 'startImpersonation',
     method: 'post',
     path: '/impersonation/start',
-    xGuard: [userGuard, sysAdminGuard],
+    // The impersonation refusal comes first: under an impersonation the system role check would judge the impersonated
+    // user, refuse them as no admin and raise a security alert about the admin's own request.
+    xGuard: [userGuard, noImpersonationGuard, sysAdminGuard],
     tags: ['auth', 'cella'],
     summary: 'Start impersonating',
     description:

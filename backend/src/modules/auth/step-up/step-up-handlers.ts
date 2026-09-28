@@ -24,9 +24,7 @@ app.openapi(authStepUpRoutes.getStepUp, async (ctx) => {
 });
 
 app.openapi(authStepUpRoutes.getStepUpPasskeyChallenge, async (ctx) => {
-  const { user, session } = ctx.var;
-
-  if (session.type === 'impersonation') throw new AppError(403, 'impersonation_forbidden', 'warn');
+  const { user } = ctx.var;
 
   // Issued for this account and for a step-up only: a sign-in or MFA challenge never answers as a step-up proof.
   const challenge = await issuePasskeyChallenge(ctx, { purpose: 'step-up', userId: user.id });
@@ -38,8 +36,6 @@ app.openapi(authStepUpRoutes.getStepUpPasskeyChallenge, async (ctx) => {
 app.openapi(authStepUpRoutes.stepUp, async (ctx) => {
   const { user, session } = ctx.var;
   const { passkeyData, totpCode } = ctx.req.valid('json');
-
-  if (session.type === 'impersonation') throw new AppError(403, 'impersonation_forbidden', 'warn');
 
   const via = passkeyData ? 'passkey' : totpCode ? 'totp' : null;
   const { methods } = await readStepUp(session);
@@ -62,8 +58,6 @@ app.openapi(authStepUpRoutes.stepUp, async (ctx) => {
 app.openapi(authStepUpRoutes.sendStepUpLink, async (ctx) => {
   const { user, session } = ctx.var;
   const { redirect } = ctx.req.valid('json');
-
-  if (session.type === 'impersonation') throw new AppError(403, 'impersonation_forbidden', 'warn');
 
   // An emailed link stands in for a second factor only while the user holds none.
   const { methods } = await readStepUp(session);

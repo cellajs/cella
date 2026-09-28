@@ -218,6 +218,7 @@ One answer per situation, so no route, app or test meets two shapes for one caus
 | An address or provider account another account holds (`oauth_email_exists`, `oauth_conflict`, `oauth_wrong_email`) | 409, severity `warn` | The caller's state, not a fault of the app |
 | Not signed in, or a session that ended | 401 `unauthorized`, `no_session`, `session_expired` or `session_revoked` | The frontend redirects to sign-in on these types alone; any other 401 refuses a proof while signed in |
 | An account-security route without a recent proof of presence | 403 `step_up_required` naming the methods | [Interoperability](./INTEROPERABILITY.md#guards) |
+| An action on the account itself while impersonating: stepping up, revoking the user's sessions, impersonating again, and every `stepUpGuard` route | 403 `impersonation_forbidden` (`noImpersonationGuard`; `stepUpGuard` gives the same answer before its own) | The admin acts as the user, never on the account, its sessions or how it is protected |
 
 ## Behavior
 

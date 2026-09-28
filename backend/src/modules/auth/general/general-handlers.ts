@@ -81,9 +81,6 @@ app.openapi(authGeneralRoutes.acceptInvitationToken, async (ctx) => {
 app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
   const { targetUserId } = ctx.req.valid('json');
 
-  // An impersonation is layered on the admin's own session, never on another impersonation.
-  if (ctx.var.session.type === 'impersonation') throw new AppError(400, 'invalid_request', 'warn');
-
   const user = await findUserById(ctx, { id: targetUserId });
 
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { targetUserId } });

@@ -1456,7 +1456,7 @@ export const getStepUp = <ThrowOnError extends boolean = true>(
 /**
  * Step up with a second factor
  *
- * Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes. Refused while impersonating.
+ * Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes.
  *
  * **POST /auth/step-up** ·· [stepUp](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up) ·· [stepUp](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/step-up) ·· _auth_cella_
  *
@@ -1497,7 +1497,7 @@ export const stepUp = <ThrowOnError extends boolean = true>(
 /**
  * Get a step-up passkey challenge
  *
- * Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it. Refused while impersonating.
+ * Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it.
  *
  * **POST /auth/step-up/passkey-challenge** ·· [getStepUpPasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/passkey-challenge) ·· [getStepUpPasskeyChallenge](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/step-up/passkey-challenge) ·· _auth_cella_
  *
@@ -1537,7 +1537,7 @@ export const getStepUpPasskeyChallenge = <ThrowOnError extends boolean = true>(
 /**
  * Email a step-up link
  *
- * For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in. Refused while impersonating.
+ * For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in.
  *
  * **POST /auth/step-up/link** ·· [sendStepUpLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/step-up/link) ·· [sendStepUpLink](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/step-up/link) ·· _auth_cella_
  *
@@ -2111,7 +2111,7 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
 /**
  * Revoke sessions
  *
- * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out. An impersonation session is refused.
+ * Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.
  *
  * **DELETE /me/sessions** ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=me#tag/me/DELETE/me/sessions) ·· [revokeMySessions](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/me/sessions) ·· _me_cella_
  *
