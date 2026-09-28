@@ -139,11 +139,9 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
   // A magic link this browser opened lets it back in, with no other proof, until its single-use window closes: spent
   // first, so it goes whatever becomes of the session below and the next person at a shared computer cannot reopen it.
   if (await getAuthCookie(ctx, 'magic')) await spendCookieToken(ctx, 'magic');
-  // A link held here for confirmation, never confirmed, goes as well.
+  // A link held here for confirmation, never confirmed, goes as well. A provider connect started here dies with the
+  // session below: its pin serves only the session that started it.
   await dropHeldMagicLink(ctx);
-
-  // Likewise a provider connect started here and never finished: the next person must not finish it on this account.
-  if (await getAuthCookie(ctx, 'oauth-connect')) await spendCookieToken(ctx, 'oauth-connect');
 
   // A second-factor challenge this browser holds ends too: its cookie goes and its token row is spent.
   if (await getAuthCookie(ctx, 'confirm-mfa')) {
