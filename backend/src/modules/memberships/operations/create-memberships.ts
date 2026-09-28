@@ -159,7 +159,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     }));
 
     createdMemberships = await insertMemberships({ var: { db } }, { items: membershipsToInsert });
-    for (const { userId } of existingUsersToDirectAdd) invalidateCache.user(userId);
+    for (const { userId } of existingUsersToDirectAdd) await invalidateCache.user(db, userId);
   }
 
   const memberInviteNoTokenLink = `${appConfig.frontendUrl}/${entityType}/${entitySlug}`;

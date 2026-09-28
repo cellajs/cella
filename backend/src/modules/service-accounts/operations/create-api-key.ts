@@ -28,7 +28,7 @@ export async function createApiKeyOp(ctx: UserContext, serviceAccountId: string,
       if (!rolled) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'apiKey' } });
       log.info('ApiKey rolled', { from: input.rollFrom, overlapEnd: expiresAt });
     }
-    return issueApiKey(tx, {
+    const key = await issueApiKey(tx, {
       actorId: account.id,
       tenantId: ctx.var.tenantId,
       name: input.name,
@@ -36,9 +36,10 @@ export async function createApiKeyOp(ctx: UserContext, serviceAccountId: string,
       expiresAt: input.expiresAt,
       createdBy: ctx.var.actor.id,
     });
+    await invalidateCache.serviceAccount(tx, account);
+    return key;
   });
 
-  invalidateCache.serviceAccount(account.id);
   log.info('ApiKey issued', { keyId: issued.apiKey.id, serviceAccountId: account.id });
   return { ...issued.apiKey, secret: issued.secret };
 }

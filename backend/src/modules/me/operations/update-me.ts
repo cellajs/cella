@@ -41,7 +41,7 @@ export async function updateMeOp(ctx: UserContext, input: UpdateMeInput) {
   };
 
   await updateMe(ctx, { values: updateData as UpdateMeOpts['values'] });
-  invalidateCache.user(user.id);
+  await invalidateCache.user(ctx.var.db, user.id);
 
   const userWithActivity = await findCurrentUser(ctx);
   return userWithActivity;

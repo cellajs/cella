@@ -141,7 +141,7 @@ describe('auth_invalidate listener', () => {
     expect(getTokenGrantCache(kept)).toBeDefined();
   });
 
-  it("must not keep verdicts on a tenant's tokens after another process changes its policy or an installation", async () => {
+  it("must not keep verdicts on a tenant's tokens after another process changes its policy or an installed app", async () => {
     const inChangedTenant = userToken('member', 'grant-a', 'tenant-policy');
     const installedApp = userToken('member', 'grant-b', 'tenant-apps', 'portfolio');
     const otherClient = userToken('member', 'grant-c', 'tenant-apps', 'https://client.example/metadata.json');
@@ -150,7 +150,7 @@ describe('auth_invalidate listener', () => {
     for (const token of [inChangedTenant, installedApp, otherClient, otherTenant]) cacheVerdict(token);
 
     await publishElsewhere({ tenant: 'tenant-policy' });
-    await publishElsewhere({ installation: { tenantId: 'tenant-apps', clientId: 'portfolio' } });
+    await publishElsewhere({ serviceAccount: { id: 'installation', tenantId: 'tenant-apps', clientId: 'portfolio' } });
 
     await vi.waitFor(() => expect(getTokenGrantCache(installedApp)).toBeUndefined());
     expect(getTokenGrantCache(inChangedTenant)).toBeUndefined();
@@ -162,7 +162,7 @@ describe('auth_invalidate listener', () => {
     cacheServiceAccount('changed-account');
     cacheServiceAccount('other-account');
 
-    await publishElsewhere({ serviceAccount: 'changed-account' });
+    await publishElsewhere({ serviceAccount: { id: 'changed-account', tenantId: 'tenant', clientId: null } });
 
     await vi.waitFor(() => expect(cachedForAccount('changed-account').apiKey).toBe(false));
     expect(cachedForAccount('changed-account')).toEqual({ apiKey: false, client: false, tokenGrant: false });
@@ -311,11 +311,12 @@ describe('invalidateCache and endSessions publish to every process', () => {
     const installedApp = userToken('member-f', 'grant-f', 'tenant-f', 'portfolio');
     cacheVerdict(installedApp);
 
-    invalidateCache.user('changed');
-    invalidateCache.org('tenant-c', 'org-4');
-    invalidateCache.tenant('tenant-d');
-    invalidateCache.serviceAccount('account-e');
-    invalidateCache.installation('tenant-f', 'portfolio');
+    await invalidateCache.user(baseDb, 'changed');
+    await invalidateCache.org(baseDb, 'tenant-c', 'org-4');
+    await invalidateCache.tenant(baseDb, 'tenant-d');
+    await invalidateCache.serviceAccount(baseDb, { id: 'account-e', tenantId: 'tenant-e', oauthClientId: null });
+    // An installed app's account: its users' tokens in the tenant rest on the installation.
+    await invalidateCache.serviceAccount(baseDb, { id: 'install-f', tenantId: 'tenant-f', oauthClientId: 'portfolio' });
 
     expect(cachedFor('changed')).toEqual({ session: false, memberships: false, tokenGrant: false });
     expect(cachedForAccount('account-e')).toEqual({ apiKey: false, client: false, tokenGrant: false });
@@ -326,11 +327,28 @@ describe('invalidateCache and endSessions publish to every process', () => {
           { user: 'changed' },
           { org: { tenantId: 'tenant-c', orgId: 'org-4' } },
           { tenant: 'tenant-d' },
-          { serviceAccount: 'account-e' },
-          { installation: { tenantId: 'tenant-f', clientId: 'portfolio' } },
+          { serviceAccount: { id: 'account-e', tenantId: 'tenant-e', clientId: null } },
+          { serviceAccount: { id: 'install-f', tenantId: 'tenant-f', clientId: 'portfolio' } },
         ]),
       ),
     );
+  });
+
+  it('must not tell the other processes about a change that rolled back, and tells them once when it commits', async () => {
+    const [rolledBack, committed] = [generateId(), generateId()];
+    const account = (id: string) => ({ id, tenantId: 'tenant-g', oauthClientId: null });
+    const heardOf = (id: string) => received.filter((payload) => payload.includes(id));
+
+    await baseDb
+      .transaction(async (tx) => {
+        await invalidateCache.serviceAccount(tx, account(rolledBack));
+        throw new Error('roll back');
+      })
+      .catch(() => {});
+    await baseDb.transaction((tx) => invalidateCache.serviceAccount(tx, account(committed)));
+
+    await vi.waitFor(() => expect(heardOf(committed)).toHaveLength(1));
+    expect(heardOf(rolledBack)).toEqual([]);
   });
 
   it("must not keep a user's system role in any process via the cache once CDC reports it changed", async () => {

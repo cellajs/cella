@@ -53,7 +53,7 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
     return updated;
   });
 
-  invalidateCache.user(user.id);
+  await invalidateCache.user(ctx.var.db, user.id);
 
   if (updatedUser.mfaRequired && factor) {
     // Clear session cookie to enforce fresh login

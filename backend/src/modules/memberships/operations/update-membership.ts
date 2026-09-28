@@ -71,7 +71,7 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
   };
   const updatedMembership = await updateMembership(ctx, { id: membershipId, values });
 
-  invalidateCache.user(updatedMembership.userId);
+  await invalidateCache.user(ctx.var.db, updatedMembership.userId);
 
   log.info('Membership updated', { userId: updatedMembership.userId, membershipId: updatedMembership.id });
 

@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { deleteUsers, getMe, revokeMySessions, signOut, startImpersonation } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
-import { getAdminDb } from '#/db/db';
+import { baseDb, getAdminDb } from '#/db/db';
 import { env } from '#/env';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
@@ -174,7 +174,7 @@ describe('impersonation lives on its admin', async () => {
 
     // Roles change outside the API; the change listener drops the admin's cached sessions.
     await getAdminDb('test arrange').delete(systemRolesTable).where(eq(systemRolesTable.userId, admin.id));
-    invalidateCache.user(admin.id);
+    await invalidateCache.user(baseDb, admin.id);
 
     const refused = await meAs(impersonation);
     await expectRefusal(refused, 401, 'unauthorized');

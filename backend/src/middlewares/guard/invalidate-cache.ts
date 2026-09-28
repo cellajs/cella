@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
 import { sql } from 'drizzle-orm';
-import { baseDb, type DbOrTx } from '#/db/db';
+import type { DbOrTx } from '#/db/db';
 import { env } from '#/env';
 import { clearOauthClientCache, invalidateOauthClientCache } from '#/modules/oauth-server/client-cache';
-import { log } from '#/utils/logger';
+import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
 import { clearApiKeyCache, invalidateApiKeyCacheByAccount } from './api-key-cache';
 import { clearAuthCache, invalidateAuthCacheByUser } from './auth-cache';
 import { clearOrgCache, invalidateOrgCache, invalidateOrgCacheByTenant } from './org-cache';
@@ -23,14 +23,13 @@ const authInvalidationSchema = z.union([
   z.object({ org: z.object({ tenantId: z.string(), orgId: z.string() }) }),
   z.object({ tenant: z.string() }),
   z.object({ grant: z.object({ accountId: z.string(), grantId: z.string() }) }),
-  z.object({ serviceAccount: z.string() }),
-  z.object({ installation: z.object({ tenantId: z.string(), clientId: z.string() }) }),
+  z.object({ serviceAccount: z.object({ id: z.string(), tenantId: z.string(), clientId: z.string().nullable() }) }),
 ]);
 
 /**
  * What one message drops: a user's sessions, memberships and access-token verdicts; an organization; a tenant with its
- * organizations and the verdicts on tokens naming it; the verdicts on one grant's tokens; a service account's API
- * keys, token verdicts and client; or the verdicts on one installed app's tokens in its tenant.
+ * organizations and the verdicts on tokens naming it; the verdicts on one grant's tokens; or a service account's API
+ * keys, token verdicts and client, plus the verdicts on its users' tokens in its tenant when it installs an app.
  */
 export type AuthInvalidation = z.infer<typeof authInvalidationSchema>;
 
@@ -56,10 +55,14 @@ export const dropCachedAuth = (invalidation: AuthInvalidation): void => {
     invalidateOrgCacheByTenant(invalidation.tenant);
     invalidateTokenGrantsByTenant(invalidation.tenant);
   } else if ('grant' in invalidation) invalidateTokenGrant(invalidation.grant.accountId, invalidation.grant.grantId);
-  else if ('serviceAccount' in invalidation) {
-    invalidateApiKeyCacheByAccount(invalidation.serviceAccount);
-    invalidateOauthClientCache(invalidation.serviceAccount);
-  } else invalidateTokenGrantsByTenant(invalidation.installation.tenantId, invalidation.installation.clientId);
+  else {
+    const { id, tenantId, clientId } = invalidation.serviceAccount;
+    invalidateApiKeyCacheByAccount(id);
+    invalidateTokenGrantsByActor(id);
+    invalidateOauthClientCache(id);
+    // An installed app: its users' grants in the tenant rest on the installation (`grantRefusal`).
+    if (clientId) invalidateTokenGrantsByTenant(tenantId, clientId);
+  }
 };
 
 /** Drops every entry of every guard cache: what a process does when it may have missed messages. */
@@ -81,44 +84,40 @@ export const publishAuthInvalidation = async (db: DbOrTx, invalidation: AuthInva
   await db.execute(sql`select pg_notify(${authInvalidateChannel}, ${JSON.stringify(invalidation)})`);
 };
 
-/** Drops here at once and in the other processes through `auth_invalidate`; a failed publish leaves them to the TTL. */
-const invalidate = (invalidation: AuthInvalidation): void => {
+/** Drops here at once and publishes on `db`: on the writing transaction, the message commits with the write. */
+const invalidate = async (db: DbOrTx, invalidation: AuthInvalidation): Promise<void> => {
   dropCachedAuth(invalidation);
-  publishAuthInvalidation(baseDb, invalidation).catch((error) => {
-    log.warn('Failed to publish a cache invalidation', { error, invalidation });
-  });
+  await publishAuthInvalidation(db, invalidation);
 };
 
-/**
- * Drops the cached sessions, memberships and access-token verdicts. Call after profile updates, membership changes, or
- * sign-out.
- */
-function user(userId: string): void {
-  invalidate({ user: userId });
+/** The cached sessions, memberships and access-token verdicts: after profile updates, membership changes or sign-out. */
+function user(db: DbOrTx, userId: string): Promise<void> {
+  return invalidate(db, { user: userId });
 }
 
-/** Call after org name/settings updates or org deletion. */
-function org(tenantId: string, orgId: string): void {
-  invalidate({ org: { tenantId, orgId } });
+/** After org name/settings updates or org deletion. */
+function org(db: DbOrTx, tenantId: string, orgId: string): Promise<void> {
+  return invalidate(db, { org: { tenantId, orgId } });
 }
 
-/** Call after tenant updates or deletion. Cascades to the tenant's organizations and the verdicts on its tokens. */
-function tenant(tenantId: string): void {
-  invalidate({ tenant: tenantId });
-}
-
-/** Call after a service account's status or keys change: its API keys, token verdicts and client drop. */
-function serviceAccount(accountId: string): void {
-  invalidate({ serviceAccount: accountId });
-}
-
-/** Call after an installed app changes in a tenant: the verdicts on its users' tokens there drop. */
-function installation(tenantId: string, clientId: string): void {
-  invalidate({ installation: { tenantId, clientId } });
+/** After tenant updates or deletion. Cascades to the tenant's organizations and the verdicts on its tokens. */
+function tenant(db: DbOrTx, tenantId: string): Promise<void> {
+  return invalidate(db, { tenant: tenantId });
 }
 
 /**
- * Every call drops the entries in every process: here at once, elsewhere through `auth_invalidate`. A deleted grant
- * publishes inside the deleting transaction (`revokeGrant`).
+ * After a service account's status or keys change: its API keys, token verdicts and client drop, and for an installed
+ * app the verdicts on its users' tokens in the tenant.
  */
-export const invalidateCache = { user, org, tenant, serviceAccount, installation };
+function serviceAccount(
+  db: DbOrTx,
+  { id, tenantId, oauthClientId }: Pick<ServiceAccountModel, 'id' | 'tenantId' | 'oauthClientId'>,
+): Promise<void> {
+  return invalidate(db, { serviceAccount: { id, tenantId, clientId: oauthClientId } });
+}
+
+/**
+ * Every call drops the entries in every process: here at once, elsewhere through `auth_invalidate` when `db` commits.
+ * Pass the writing transaction and call it last in it; a deleted grant publishes through `revokeGrant`.
+ */
+export const invalidateCache = { user, org, tenant, serviceAccount };

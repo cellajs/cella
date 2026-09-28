@@ -20,9 +20,10 @@ const notifySystemRoleChange = async (event: ActivityEvent) => {
   const systemRole = getEventData(event, 'system_role');
   if (!systemRole) return;
 
-  invalidateCache.user(systemRole.userId);
-
   try {
+    // The role row is committed by the time CDC reports it: the message goes out on the pool.
+    await invalidateCache.user(baseDb, systemRole.userId);
+
     // On delete the user may already be cascade-deleted; fall back to the raw id
     const user = await findUserById({ var: { db: baseDb } }, { id: systemRole.userId });
 
@@ -32,7 +33,7 @@ const notifySystemRoleChange = async (event: ActivityEvent) => {
       timestamp: `${new Date().toISOString().slice(0, 19).replace('T', ' ')} UTC`,
     });
   } catch (error) {
-    log.error('Failed to send system role security email', { error, activityId: event.id });
+    log.error('Failed to handle a system role change', { error, activityId: event.id });
   }
 };
 

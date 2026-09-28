@@ -184,7 +184,7 @@ describe('OAuth grants', async () => {
       .update(tenantsTable)
       .set({ restrictions: { ...normalizeRestrictions(tenant.restrictions), allowUnregisteredClients: allow } })
       .where(eq(tenantsTable.id, tenantId));
-    invalidateCache.tenant(tenantId);
+    await invalidateCache.tenant(db, tenantId);
   }
 
   describe('a grant ends with what it rests on', () => {
@@ -209,7 +209,9 @@ describe('OAuth grants', async () => {
       const read = await readAttachments(ctx, access);
       expect(read.response.status).toBe(401);
       expect(reasonOf(read.error)).toBe('app_not_installed');
-      await toldOtherProcesses({ installation: { tenantId: ctx.org.tenantId, clientId: APP_ID } });
+      await toldOtherProcesses({
+        serviceAccount: { id: ctx.installationId, tenantId: ctx.org.tenantId, clientId: APP_ID },
+      });
 
       const revoked = await grantOf(ctx, access);
       const refused = await refresh(String(rotated.body.refresh_token));
@@ -424,7 +426,7 @@ describe('OAuth grants', async () => {
       const refused = await bot.read(jwt);
       expect(refused.response.status).toBe(401);
       expect(reasonOf(refused.error)).toBe('invalid_api_key');
-      await toldOtherProcesses({ serviceAccount: bot.accountId });
+      await toldOtherProcesses({ serviceAccount: { id: bot.accountId, tenantId: bot.path.tenantId, clientId: null } });
       expect(await bot.mint(bot.key.secret)).toMatchObject(noClient);
       // Positive control: the account and its other key are untouched.
       expect((await bot.read(await bot.tokenFor(secondKey.secret))).response.status).toBe(200);
@@ -445,7 +447,7 @@ describe('OAuth grants', async () => {
       const refused = await bot.read(jwt);
       expect(refused.response.status).toBe(401);
       expect(reasonOf(refused.error)).toBe('service_account_disabled');
-      await toldOtherProcesses({ serviceAccount: bot.accountId });
+      await toldOtherProcesses({ serviceAccount: { id: bot.accountId, tenantId: bot.path.tenantId, clientId: null } });
     });
 
     it('must not mint a service token via a client cached before its account was disabled', async () => {
@@ -877,18 +879,22 @@ describe('OAuth grants', async () => {
 
     it('must not mint a service token via the client_credentials grant of a client that describes itself', async () => {
       const org = await createTestOrganization();
-      const response = await fetch(`${oauth.issuer}/token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-        body: new URLSearchParams({
-          grant_type: 'client_credentials',
-          client_id: CIMD_ID,
-          scope: 'organization:write',
-          resource: resourceUri({ face: 'api', tenantId: org.tenantId }),
-        }),
-      });
-      expect(response.status).toBe(400);
-      expect(((await response.json()) as { error: string }).error).toBe('unauthorized_client');
+      const mint = async (clientId: string) => {
+        const response = await fetch(`${oauth.issuer}/token`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+          body: new URLSearchParams({
+            grant_type: 'client_credentials',
+            client_id: clientId,
+            scope: 'organization:write',
+            resource: resourceUri({ face: 'api', tenantId: org.tenantId }),
+          }),
+        });
+        return { status: response.status, body: (await response.json()) as Record<string, unknown> };
+      };
+      const described = await mint(CIMD_ID);
+      expect(described.status).toBe(400);
+      expect(described.body.error).toBe('unauthorized_client');
     });
   });
 

@@ -31,7 +31,7 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
   };
   const tenant = await updateTenant(ctx, { targetTenantId: tenantId, values });
 
-  invalidateCache.tenant(tenantId);
+  await invalidateCache.tenant(ctx.var.db, tenantId);
 
   log.info('Tenant updated', { tenantId, updates });
 

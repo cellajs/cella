@@ -44,7 +44,7 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
     after: [updatedOrganizationRecord],
   });
 
-  invalidateCache.org(organization.tenantId, organization.id);
+  await invalidateCache.org(ctx.var.db, organization.tenantId, organization.id);
 
   log.info('Organization updated', { organizationId: updatedOrganizationRecord.id });
 
