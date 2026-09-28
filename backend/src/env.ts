@@ -11,8 +11,12 @@ import { severityLevels } from '#/schemas/api-error-schemas';
 const envFile = new URL('../.env', import.meta.url);
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
-/** Minimum length of a secret that signs or authenticates, the same one the CDC, relay and PII secrets carry. */
+/** Minimum length of a secret that signs or authenticates; the CDC and Yjs workers hold their copies to the same. */
 const minSecretLength = 16;
+
+/** A secret of at least `min` characters, refused with a message that names it. */
+const secretString = (name: string, min = minSecretLength) =>
+  z.string().min(min, `${name} must be at least ${min} characters`);
 
 /** Development and tunnel run on the example `.env`, whose cookie secret is shorter: there an entry only has to be non-empty. */
 const minCookieSecretLength = appConfig.mode === 'development' || appConfig.mode === 'tunnel' ? 1 : minSecretLength;
@@ -44,10 +48,7 @@ export const env = createEnv({
     // The internal listener (lib/listeners.ts): the CDC socket and the Yjs relay's routes, reached only from the private network.
     INTERNAL_PORT: z.string().default(String(appConfig.devPorts.internal)),
     // Mode-bound secrets (env-mode-secrets.ts): each is required below only in the modes that read it.
-    UNSUBSCRIBE_SECRET: z
-      .string()
-      .min(minSecretLength, `UNSUBSCRIBE_SECRET must be at least ${minSecretLength} characters`)
-      .optional(),
+    UNSUBSCRIBE_SECRET: secretString('UNSUBSCRIBE_SECRET').optional(),
 
     // Web Push (has.push): both keys present enables sending; VAPID_SUBJECT defaults to the frontend URL.
     VAPID_PUBLIC_KEY: z.string().optional(),
@@ -101,12 +102,12 @@ export const env = createEnv({
     MAPLE_SECRET_INGEST_KEY: z.string().optional(),
 
     // Key material the Ed25519 key signing Yjs editor tokens derives from; the relay holds only the public half.
-    YJS_TOKEN_PRIVATE_KEY: z.string().min(32, 'YJS_TOKEN_PRIVATE_KEY must be at least 32 characters').optional(),
+    YJS_TOKEN_PRIVATE_KEY: secretString('YJS_TOKEN_PRIVATE_KEY', 32).optional(),
     // Authenticates the Yjs relay on the internal listener's materialize route; it never signs a token.
-    YJS_RELAY_SECRET: z.string().min(16, 'YJS_RELAY_SECRET must be at least 16 characters').optional(),
-    CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters').optional(),
-    PII_HASH_SECRET: z.string().min(16, 'PII_HASH_SECRET must be at least 16 characters').optional(),
-    DATA_ENCRYPTION_KEY: z.string().min(32, 'DATA_ENCRYPTION_KEY must be at least 32 characters'),
+    YJS_RELAY_SECRET: secretString('YJS_RELAY_SECRET').optional(),
+    CDC_SECRET: secretString('CDC_SECRET').optional(),
+    PII_HASH_SECRET: secretString('PII_HASH_SECRET').optional(),
+    DATA_ENCRYPTION_KEY: secretString('DATA_ENCRYPTION_KEY', 32),
 
     // GeoIP (lib/geoip.ts): local MMDB paths, the object prefix they download from ('off' disables the refresh; empty
     // means the geoip/ prefix of the public bucket), and the public address development geolocates for loopback sign-ins.

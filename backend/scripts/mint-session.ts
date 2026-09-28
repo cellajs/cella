@@ -1,12 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { nanoid } from 'shared/utils/nanoid';
 import { baseDb as db } from '#/db/db';
 import { authCookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { newSessionToken } from '#/modules/auth/general/helpers/session';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { hashToken } from '#/utils/hash-token';
 
 /**
  * Mints a session for a local user and prints its signed cookie, for driving the app with curl or a browser without
@@ -33,12 +32,11 @@ if (!owner) {
 }
 
 const hours = Number(hoursArg ?? 24);
-// The cookie carries the token, the row only its hash, as a sign-in stores them.
-const sessionToken = nanoid(40);
+const { token: sessionToken, secret } = newSessionToken();
 
 await db.insert(sessionsTable).values({
   id: generateId(),
-  secret: hashToken(sessionToken),
+  secret,
   userId: owner.userId,
   type: 'regular',
   authStrategy: 'magic',

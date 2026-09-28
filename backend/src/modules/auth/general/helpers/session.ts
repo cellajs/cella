@@ -31,6 +31,12 @@ import { createDate, TimeSpan } from '#/utils/time-span';
 /** Chrome caps cookie lifetime at 400 days; the device id slides forward on every sign-in. */
 const DEVICE_ID_LIFESPAN = new TimeSpan(400, 'd');
 
+/** A fresh session token and the hash its row stores: the token itself exists only in the cookie. */
+export const newSessionToken = () => {
+  const token = nanoid(40);
+  return { token, secret: hashToken(token) };
+};
+
 /** Get or mint the opaque per-browser device id: set only on successful sign-in and refreshed each sign-in, so active devices never expire. */
 const ensureDeviceId = async (ctx: Context<Env>): Promise<string> => {
   const existing = await getAuthCookie(ctx, 'device-id');
@@ -126,14 +132,14 @@ export const createSession = async (
   // Pseudonymize network identity. Raw IP is never persisted.
   const subnet = rawIp ? toSubnet(rawIp) : null;
 
-  const sessionToken = nanoid(40);
+  const { token: sessionToken, secret } = newSessionToken();
 
   const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
   const sessionId = generateId();
   const session = {
     id: sessionId,
-    secret: hashToken(sessionToken),
+    secret,
     userId: user.id,
     type,
     deviceName: device.name,

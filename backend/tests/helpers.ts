@@ -9,6 +9,7 @@ import { baseDb as db, getAdminDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { newSessionToken } from '#/modules/auth/general/helpers/session';
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/identities-db';
 import { type AuthStrategy, type SessionTypes, sessionsTable } from '#/modules/auth/sessions-db';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens-db';
@@ -258,12 +259,12 @@ export async function insertTestSession(
     impersonatorSessionId,
   }: TestSessionOpts = {},
 ) {
-  const token = nanoid(40);
+  const { token, secret } = newSessionToken();
   const id = generateId();
 
   await db.insert(sessionsTable).values({
     id,
-    secret: hashToken(token),
+    secret,
     userId: user.id,
     type,
     authStrategy,

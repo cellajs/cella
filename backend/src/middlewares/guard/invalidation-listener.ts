@@ -101,12 +101,8 @@ export function listenForAuthInvalidation({
 
   /** Repeats the LISTEN; a failure, or no answer within the timeout, loses the connection. */
   async function beat(listening: PoolClient) {
-    let failure = new Error(`The heartbeat LISTEN got no answer within ${heartbeatTimeoutMs} ms`);
-    const answer = listening.query(listenStatement).catch((error: Error) => {
-      failure = error;
-      throw error;
-    });
-    if (!(await withinTimeout(answer, heartbeatTimeoutMs)) && client === listening) onLost(failure);
+    const failure = await withinTimeout(listening.query(listenStatement), heartbeatTimeoutMs, 'The heartbeat LISTEN');
+    if (failure && client === listening) onLost(failure);
   }
 
   async function connect() {
@@ -116,12 +112,8 @@ export function listenForAuthInvalidation({
       next.on('notification', onNotification);
       next.on('end', onLost);
       // An unanswered LISTEN fails the connect too: nothing else would start the heartbeat or schedule a retry.
-      let failure: unknown = new Error(`The LISTEN got no answer within ${heartbeatTimeoutMs} ms`);
-      const listening = next.query(listenStatement).catch((error: unknown) => {
-        failure = error;
-        throw error;
-      });
-      if (!(await withinTimeout(listening, heartbeatTimeoutMs))) throw failure;
+      const failure = await withinTimeout(next.query(listenStatement), heartbeatTimeoutMs, 'The LISTEN');
+      if (failure) throw failure;
       if (stopped) return drop(next);
       client = next;
       state = 'listening';

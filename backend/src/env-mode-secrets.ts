@@ -27,8 +27,8 @@ export const modeSecrets: Readonly<Record<ModeSecret, readonly ProcessMode[]>> =
   YJS_RELAY_SECRET: ['api'],
   UNSUBSCRIBE_SECRET: ['api', 'mcp'],
   PII_HASH_SECRET: ['api', 'mcp'],
-  // Read by the admin seed, which the release companion runs with the API's secrets.
-  ADMIN_EMAIL: ['api'],
+  // Read by the admin seed alone, which the release companion (MODE=migrate) runs with the API's secrets.
+  ADMIN_EMAIL: ['migrate'],
 };
 
 /**

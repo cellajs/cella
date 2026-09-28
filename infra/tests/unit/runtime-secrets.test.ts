@@ -132,7 +132,8 @@ describe('runtime secret schema alignment', () => {
     }
   });
 
-  // The backend image serves each of these as its own VM under split-VM; the MODE its env names picks the process.
+  // The backend image serves each of these as its own VM under split-VM; the MODE its env names picks the process, and
+  // a release companion runs one more process (its own MODE) on the same VM with the same secrets.
   const backendImageModes = runtimeSecretConsumers
     .filter((slug) => {
       const cfg = appServices[slug];
@@ -141,17 +142,18 @@ describe('runtime secret schema alignment', () => {
     .map((slug) => {
       const cfg = appServices[slug];
       const env: Readonly<Record<string, string>> = 'env' in cfg ? cfg.env : {};
-      return [slug, env.MODE ?? 'api'] as const;
+      const releaseEnv: Readonly<Record<string, string>> = ('release' in cfg && cfg.release?.env) || {};
+      return [slug, [env.MODE ?? 'api', ...(releaseEnv.MODE ? [releaseEnv.MODE] : [])]] as const;
     });
 
-  it('delivers a mode-bound secret to exactly the backend-image VMs whose mode reads it', () => {
+  it('delivers a mode-bound secret to exactly the backend-image VMs whose processes read it', () => {
     expect(backendImageModes.map(([slug]) => slug)).toEqual(['backend', 'mcp', 'oauth']);
-    for (const [service, mode] of backendImageModes) {
+    for (const [service, vmModes] of backendImageModes) {
       const delivered = new Set(runtimeSecretsForConsumer(service).map((secret) => secret.envVar));
       for (const [envVar, modes] of Object.entries(modeSecrets)) {
-        const reads = modes.some((readingMode) => readingMode === mode);
-        // Missing, the worker's env schema refuses to boot; extra, the VM holds a key its process never reads.
-        expect(delivered.has(envVar), `${service} (MODE=${mode}) and ${envVar}`).toBe(reads);
+        const reads = modes.some((readingMode) => vmModes.includes(readingMode));
+        // Missing, a process's env schema refuses to boot; extra, the VM holds a key none of its processes reads.
+        expect(delivered.has(envVar), `${service} (MODE=${vmModes.join('+')}) and ${envVar}`).toBe(reads);
       }
     }
   });

@@ -112,8 +112,9 @@ export function startJobOwnership({
     try {
       const session = owned;
       if (!session) await tryAcquire();
-      else if (!(await withinTimeout(session.query('SELECT 1'), livenessTimeoutMs))) {
-        release(session, 'lock session stopped answering');
+      else {
+        const failure = await withinTimeout(session.query('SELECT 1'), livenessTimeoutMs, 'The lock session check');
+        if (failure) release(session, failure.message);
       }
     } catch (error) {
       baseLog.warn('Contending for the scheduled jobs failed', { err: error });
