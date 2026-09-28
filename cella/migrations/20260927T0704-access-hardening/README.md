@@ -29,7 +29,7 @@ No script: manual.
 5. In the app's own `shared/config`: add `devPorts.internal` and `mediaAssetOrigin: ''`, and bump `clientCacheVersion` and `cookieVersion` (the template's bumps do not sync).
 6. In `transloadit-config.ts`, set `publicBucket: true` on avatar and cover, `false` on attachment, and add the `newsletter` template and id; in the Transloadit workspace, turn on "Require a correct Signature".
 7. Infra: rename `internalRoute` to `internalPort`, drop `mcp` from the CDC, Yjs signing key, relay and admin-email entries of `runtime-secrets.config.ts`, then run the privileged `Apply` and check the preview moves secret paths and replaces nothing.
-8. Infra code: import `db-exposure-acl` from `infra/lib`, pass the plan path to `parseBootPlanJson`, and throw from tasks.
+8. Infra code: import `db-exposure-acl` from `infra/lib` (it exports `parseAclInput(raw, allowWide = false)` and `AclParse` alone; the ACL takes IPv4 only, an IPv6 entry is refused), pass the plan path to `parseBootPlanJson`, and throw from tasks.
 
 **Sessions and sign-in**
 

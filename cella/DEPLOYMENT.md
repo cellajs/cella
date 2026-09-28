@@ -269,7 +269,7 @@ docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com backend
 
 **Alternative: break-glass from your laptop.** Briefly exposes the DB (ACL-locked to your IP), so prefer the serial console. Both flows serve any operator task against the live database. For staging, **Seed database** exposes, seeds, and closes in one go (refuses production).
 
-1. Expose the DB (needs your Owner API key). The ACL defaults to `<your.ip>/32` (open ranges refused) and the admin connection string is printed:
+1. Expose the DB (needs your Owner API key). The ACL defaults to `<your.ip>/32` (IPv4 only, open ranges refused) and the admin connection string is printed:
 
    ```bash
    pnpm infra   # → "Open temporary public DB access"
