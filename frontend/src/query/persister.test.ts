@@ -1,4 +1,5 @@
 import 'fake-indexeddb/auto';
+import { dehydrate, QueryClient } from '@tanstack/react-query';
 import type { PersistedClient } from '@tanstack/react-query-persist-client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -10,13 +11,40 @@ vi.stubGlobal('sessionStorage', {
   removeItem: (k: string) => sessionValues.delete(k),
 });
 vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
-// No locks API: liveness detection falls back to the record-age threshold.
-vi.stubGlobal('navigator', { onLine: true });
+// No locks API: liveness detection falls back to the record-age threshold. The user agent is read at import by the UI
+// primitives behind the page module imported below.
+vi.stubGlobal('navigator', { onLine: true, userAgent: '' });
 
 const { bindLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
-const { createIDBPersister } = await import('~/query/persister');
+const { createIDBPersister, shouldPersistQuery } = await import('~/query/persister');
+const { yjsTokenQueryOptions } = await import('~/modules/common/blocknote/query');
+const { pendingMagicLinkQueryOptions } = await import('~/modules/auth/confirm-sign-in-page');
 
 bindLocalUserDb('persister-test-user');
+
+// The filter every persisted snapshot passes through, fed the app's own query options, so a query that must stay out
+// of the local database is checked as declared and not as restated here.
+describe('persister query filter', () => {
+  it('must not persist the Yjs token or the pending magic link, while an ordinary query persists', async () => {
+    const queryClient = new QueryClient();
+    const yjsToken = yjsTokenQueryOptions({
+      entityType: 'attachment',
+      entityId: 'attachment-1',
+      tenantId: 'tenant-1',
+      organizationId: 'org-1',
+    });
+    await queryClient.prefetchQuery({ ...yjsToken, queryFn: async () => 'a-bearer-token' });
+    await queryClient.prefetchQuery({
+      ...pendingMagicLinkQueryOptions,
+      queryFn: async () => ({ email: 'other@example.com' }),
+    });
+    await queryClient.prefetchQuery({ queryKey: ['organization', 'list'], queryFn: async () => [] });
+
+    const { queries } = dehydrate(queryClient, { shouldDehydrateQuery: shouldPersistQuery });
+
+    expect(queries.map((query) => query.queryKey)).toEqual([['organization', 'list']]);
+  });
+});
 
 const pausedMutation = (key: string) =>
   ({

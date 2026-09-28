@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { queryOptions, useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { LogInIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,14 @@ import { getPendingMagicLink } from 'sdk';
 import { appConfig } from 'shared';
 import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
+
+/** The account the pending link signs in to. It may be another than the one signed in here: its email stays out of the local database. */
+export const pendingMagicLinkQueryOptions = queryOptions({
+  queryKey: ['auth', 'magic', 'pending'],
+  queryFn: ({ signal }) => getPendingMagicLink({ signal }),
+  retry: false,
+  meta: { persist: false },
+});
 
 /**
  * Where a magic link opened in a browser that did not ask for it lands. It names the account the link signs in to and
@@ -15,13 +23,7 @@ import { Button } from '~/modules/ui/button';
 export function ConfirmSignInPage() {
   const { t } = useTranslation();
 
-  const { data, isLoading, isError } = useQuery({
-    queryKey: ['auth', 'magic', 'pending'],
-    queryFn: ({ signal }) => getPendingMagicLink({ signal }),
-    retry: false,
-    // The link may name another account than the one signed in here: its email stays out of the local database.
-    meta: { persist: false },
-  });
+  const { data, isLoading, isError } = useQuery(pendingMagicLinkQueryOptions);
 
   if (isLoading) return <Spinner className="h-10 w-10" />;
 
