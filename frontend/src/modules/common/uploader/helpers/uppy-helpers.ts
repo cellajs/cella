@@ -6,7 +6,6 @@ import { getUploadToken, type UploadToken } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
-import { isPublicUploadTemplate } from 'shared/utils/upload-visibility';
 import { makeBlobKey, type UploadContext } from '~/modules/attachment/offline/attachments-db';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import { prepareFilesForOffline } from '~/modules/common/uploader/helpers/prepare-for-offline';
@@ -40,15 +39,9 @@ export const createBaseTransloaditUppy = async (
     hasCloudUpload = false;
   }
 
-  // The template decides where the backend stores the upload; the row records the same bucket.
-  const publicBucket = isPublicUploadTemplate(tokenQuery.templateId);
   const uppy = new Uppy({
     ...uppyOptions,
-    meta: {
-      publicBucket,
-      bucketName: publicBucket ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
-      offlineUploaded: !hasCloudUpload,
-    },
+    meta: { offlineUploaded: !hasCloudUpload },
     onBeforeFileAdded,
     onBeforeUpload: (files) => {
       for (const file of Object.values(files)) {

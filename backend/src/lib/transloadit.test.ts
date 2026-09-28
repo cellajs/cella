@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 import { uploadTemplates } from 'shared/transloadit-config';
-import { isPublicUploadTemplate } from 'shared/utils/upload-visibility';
+import { uploadStorage } from 'shared/utils/upload-visibility';
 import { describe, expect, it } from 'vitest';
 
 type Step = { use?: string | readonly string[]; robot?: string; format?: string };
@@ -21,7 +21,7 @@ const rasterFormat = /^(?:webp|png|jpg)$/;
 describe('upload templates', () => {
   it('must not store an upload as sent (HTML, SVG) public via a public template', () => {
     for (const templateId of appConfig.uploadTemplateIds) {
-      if (!isPublicUploadTemplate(templateId)) continue;
+      if (!uploadStorage(templateId).publicBucket) continue;
       const { steps, use } = uploadTemplates[templateId];
       for (const exported of use) {
         expect(reencodedFormat(steps, exported), `${templateId} exports ${exported}`).toMatch(rasterFormat);

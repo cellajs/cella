@@ -1,5 +1,5 @@
 import type { UploadTemplateId } from 'shared';
-import { isPublicUploadTemplate, isSystemUploadTemplate, systemUploadPrefix } from 'shared/utils/upload-visibility';
+import { isSystemUploadTemplate, systemUploadPrefix, uploadStorage } from 'shared/utils/upload-visibility';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { env } from '#/env';
@@ -34,7 +34,7 @@ const organizationUploadSub = (ctx: UserContext, organizationId?: string) => {
  * HTML and SVG included) is private.
  */
 export function getUploadTokenOp(ctx: UserContext, { organizationId, templateId }: GetUploadTokenOpts) {
-  const publicBucket = isPublicUploadTemplate(templateId);
+  const { publicBucket } = uploadStorage(templateId);
 
   const sub = isSystemUploadTemplate(templateId) ? systemUploadSub(ctx) : organizationUploadSub(ctx, organizationId);
 

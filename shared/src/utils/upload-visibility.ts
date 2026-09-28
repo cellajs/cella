@@ -1,5 +1,6 @@
 import { uploadTemplates } from '../../config/transloadit-config.ts';
 import type { UploadTemplateId } from '../../types.ts';
+import { appConfig } from '../config-builder/app-config.ts';
 
 /** The fields of an upload template that decide its storage; the flags are optional so a template may omit them. */
 type TemplateStorage = { use: readonly string[]; publicBucket?: boolean; systemAdminOnly?: boolean };
@@ -8,12 +9,14 @@ type TemplateStorage = { use: readonly string[]; publicBucket?: boolean; systemA
 export const systemUploadPrefix = 'system';
 
 /**
- * Whether uploads through `templateId` are stored public-read in the public bucket. The template decides, never the
- * client, and a template that does not say so stores privately.
+ * Where uploads through `templateId` are stored: public-read in the public bucket when the template says so, else
+ * private in the private bucket. The template decides, never the client: the signed upload, the row the server stamps
+ * and the client's optimistic row all read this one answer.
  */
-export const isPublicUploadTemplate = (templateId: UploadTemplateId): boolean => {
+export const uploadStorage = (templateId: UploadTemplateId) => {
   const template: TemplateStorage = uploadTemplates[templateId];
-  return template.publicBucket === true;
+  const publicBucket = template.publicBucket === true;
+  return { publicBucket, bucketName: publicBucket ? appConfig.s3.publicBucket : appConfig.s3.privateBucket };
 };
 
 /**

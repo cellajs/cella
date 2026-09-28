@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 import { appConfig, type UploadTemplateId } from 'shared';
 import { uploadTemplates } from 'shared/transloadit-config';
 import { nanoid } from 'shared/utils/nanoid';
-import { isPublicUploadTemplate } from 'shared/utils/upload-visibility';
+import { uploadStorage } from 'shared/utils/upload-visibility';
 import { env } from '#/env';
 import { utcDateString } from '#/utils/utc-data-string';
 
@@ -19,7 +19,7 @@ export const getParams = (templateId: UploadTemplateId, sub: string) => {
   if (!authKey || !authSecret) throw Error('auth_key_not_found');
 
   const template = uploadTemplates[templateId];
-  const publicBucket = isPublicUploadTemplate(templateId);
+  const { publicBucket, bucketName } = uploadStorage(templateId);
 
   return {
     auth: {
@@ -35,7 +35,7 @@ export const getParams = (templateId: UploadTemplateId, sub: string) => {
         // Use is also based on template data
         use: template.use,
         robot: '/s3/store',
-        credentials: publicBucket ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
+        credentials: bucketName,
         host: appConfig.s3.host,
         no_vhost: true,
         url_prefix: '',
