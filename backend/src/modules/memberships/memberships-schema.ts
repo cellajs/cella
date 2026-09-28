@@ -8,6 +8,7 @@ import {
   channelEntityTypeSchema,
   includeQuerySchema,
   paginationQuerySchema,
+  refineWithType,
   validEmailSchema,
   validIdSchema,
   validUuidSchema,
@@ -78,12 +79,15 @@ export const membershipCreateBodySchema = z.object({
   role: membershipSchema.shape.role,
 });
 
-export const membershipUpdateBodySchema = z.object({
-  role: membershipSchema.shape.role.optional(),
-  muted: z.boolean().optional(),
-  archived: z.boolean().optional(),
-  displayOrder: z.number().optional(),
-});
+export const membershipUpdateBodySchema = z
+  .object({
+    role: membershipSchema.shape.role.optional(),
+    muted: z.boolean().optional(),
+    archived: z.boolean().optional(),
+    displayOrder: z.number().optional(),
+  })
+  // With no field to change, the write would only stamp the caller on the row.
+  .superRefine(refineWithType((body) => Object.values(body).some((value) => value !== undefined), 'invalid_request'));
 
 export const memberListQuerySchema = paginationQuerySchema.extend({
   entityId: validIdSchema,

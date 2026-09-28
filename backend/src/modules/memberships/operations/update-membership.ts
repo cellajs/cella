@@ -25,10 +25,6 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
   const { role, archived, muted, displayOrder } = input;
 
   const setsPersonalView = archived !== undefined || muted !== undefined || displayOrder !== undefined;
-  // With no field to change, the write would only stamp the caller on the row.
-  if (role === undefined && !setsPersonalView) {
-    throw new AppError(400, 'invalid_request', 'warn', { meta: { membership: membershipId, reason: 'no_fields' } });
-  }
 
   let orderToUpdate = displayOrder;
 
