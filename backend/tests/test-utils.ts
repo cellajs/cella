@@ -93,8 +93,9 @@ export const cookieMock = () => ({
   }),
 });
 
-/** Use at top level: vi.mock('#/modules/auth/general/helpers/session', sessionMock) */
-export const sessionMock = () => ({
+/** Use at top level: vi.mock('#/modules/auth/general/helpers/session', sessionMock). The module's other exports stay real. */
+export const sessionMock = async (importOriginal: () => Promise<object>) => ({
+  ...(await importOriginal()),
   setUserSession: vi.fn().mockImplementation(async (ctx, _user, _provider) => {
     const sessionToken = 'mock-session-token';
     ctx.res.headers.append(

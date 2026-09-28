@@ -76,7 +76,9 @@ vi.mock('#/modules/auth/oauth/helpers/transform-user-data', () => ({
   })),
 }));
 vi.mock('#/modules/auth/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock());
-vi.mock('#/modules/auth/general/helpers/session', async () => (await import('../test-utils')).sessionMock());
+vi.mock('#/modules/auth/general/helpers/session', async (importOriginal) =>
+  (await import('../test-utils')).sessionMock(importOriginal),
+);
 afterEach(async () => {
   await clearDatabase();
   clearCookieStore();
