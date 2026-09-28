@@ -1,9 +1,9 @@
 {
   "version": "8",
   "dialect": "postgres",
-  "id": "72a09d5e-9db0-4e3a-8e74-a33e6a9d20a5",
+  "id": "3e5d9acf-f852-4800-9da7-54ae288f55a4",
   "prevIds": [
-    "c3b08c85-cd07-4418-836d-882a9002fa54"
+    "72a09d5e-9db0-4e3a-8e74-a33e6a9d20a5"
   ],
   "ddl": [
     {
@@ -33,6 +33,12 @@
     {
       "isRlsEnabled": false,
       "name": "identities",
+      "entityType": "tables",
+      "schema": "public"
+    },
+    {
+      "isRlsEnabled": false,
+      "name": "passkey_challenges",
       "entityType": "tables",
       "schema": "public"
     },
@@ -177,12 +183,6 @@
     {
       "isRlsEnabled": false,
       "name": "emails",
-      "entityType": "tables",
-      "schema": "public"
-    },
-    {
-      "isRlsEnabled": false,
-      "name": "unsubscribe_tokens",
       "entityType": "tables",
       "schema": "public"
     },
@@ -975,6 +975,84 @@
       "name": "id",
       "entityType": "columns",
       "schema": "public",
+      "table": "passkey_challenges"
+    },
+    {
+      "type": "varchar(64)",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "challenge_hash",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "passkey_challenges"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "purpose",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "passkey_challenges"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "user_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "passkey_challenges"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "now()",
+      "generated": null,
+      "identity": null,
+      "name": "created_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "passkey_challenges"
+    },
+    {
+      "type": "timestamp with time zone",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "expires_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "passkey_challenges"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "id",
+      "entityType": "columns",
+      "schema": "public",
       "table": "passkeys"
     },
     {
@@ -1396,6 +1474,45 @@
     {
       "type": "uuid",
       "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "impersonator_session_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "type": "timestamp",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "stepped_up_at",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "type": "varchar",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "stepped_up_via",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
       "notNull": true,
       "dimensions": 0,
       "default": null,
@@ -1511,6 +1628,32 @@
       "table": "tokens"
     },
     {
+      "type": "jsonb",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "pending_sign_up",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "session_id",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
       "type": "uuid",
       "typeSchema": null,
       "notNull": false,
@@ -1597,6 +1740,19 @@
       "generated": null,
       "identity": null,
       "name": "secret",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "totps"
+    },
+    {
+      "type": "bigint",
+      "typeSchema": null,
+      "notNull": false,
+      "dimensions": 0,
+      "default": null,
+      "generated": null,
+      "identity": null,
+      "name": "last_used_step",
       "entityType": "columns",
       "schema": "public",
       "table": "totps"
@@ -3542,7 +3698,7 @@
       "table": "api_keys"
     },
     {
-      "type": "timestamp",
+      "type": "timestamp with time zone",
       "typeSchema": null,
       "notNull": false,
       "dimensions": 0,
@@ -4069,58 +4225,6 @@
       "default": null,
       "generated": null,
       "identity": null,
-      "name": "id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "user_id",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "type": "varchar(255)",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
-      "name": "secret",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "type": "timestamp",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": "now()",
-      "generated": null,
-      "identity": null,
-      "name": "created_at",
-      "entityType": "columns",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "type": "uuid",
-      "typeSchema": null,
-      "notNull": true,
-      "dimensions": 0,
-      "default": null,
-      "generated": null,
-      "identity": null,
       "name": "user_id",
       "entityType": "columns",
       "schema": "public",
@@ -4447,6 +4551,19 @@
       "generated": null,
       "identity": null,
       "name": "state",
+      "entityType": "columns",
+      "schema": "public",
+      "table": "yjs_documents"
+    },
+    {
+      "type": "uuid",
+      "typeSchema": null,
+      "notNull": true,
+      "dimensions": 0,
+      "default": "gen_random_uuid()",
+      "generated": null,
+      "identity": null,
+      "name": "generation",
       "entityType": "columns",
       "schema": "public",
       "table": "yjs_documents"
@@ -4896,6 +5013,48 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "challenge_hash",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": true,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "passkey_challenges_challenge_hash_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "passkey_challenges"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "expires_at",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": null,
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "passkey_challenges_expires_at_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "passkey_challenges"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "user_id",
           "isExpression": false,
           "asc": true,
@@ -4924,7 +5083,7 @@
           "opclass": null
         }
       ],
-      "isUnique": false,
+      "isUnique": true,
       "where": null,
       "with": "",
       "method": "btree",
@@ -5057,6 +5216,27 @@
       "nameExplicit": true,
       "columns": [
         {
+          "value": "impersonator_session_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": "\"impersonator_session_id\" is not null",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "sessions_impersonator_session_id_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
           "value": "secret",
           "isExpression": false,
           "asc": true,
@@ -5147,6 +5327,27 @@
       "method": "btree",
       "concurrently": false,
       "name": "tokens_single_use_token_idx",
+      "entityType": "indexes",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
+      "nameExplicit": true,
+      "columns": [
+        {
+          "value": "session_id",
+          "isExpression": false,
+          "asc": true,
+          "nullsFirst": false,
+          "opclass": null
+        }
+      ],
+      "isUnique": false,
+      "where": "\"session_id\" is not null",
+      "with": "",
+      "method": "btree",
+      "concurrently": false,
+      "name": "tokens_session_id_idx",
       "entityType": "indexes",
       "schema": "public",
       "table": "tokens"
@@ -6191,48 +6392,6 @@
       "nameExplicit": true,
       "columns": [
         {
-          "value": "secret",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "unsubscribe_tokens_secret_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
-          "value": "user_id",
-          "isExpression": false,
-          "asc": true,
-          "nullsFirst": false,
-          "opclass": null
-        }
-      ],
-      "isUnique": false,
-      "where": null,
-      "with": "",
-      "method": "btree",
-      "concurrently": false,
-      "name": "unsubscribe_tokens_user_id_idx",
-      "entityType": "indexes",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "nameExplicit": true,
-      "columns": [
-        {
           "value": "name",
           "isExpression": false,
           "asc": false,
@@ -6523,6 +6682,23 @@
       ],
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
+      "name": "passkey_challenges_user_id_users_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "passkey_challenges"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "user_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "users",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
       "name": "passkeys_user_id_users_id_fkey",
       "entityType": "fks",
       "schema": "public",
@@ -6565,6 +6741,23 @@
     {
       "nameExplicit": false,
       "columns": [
+        "impersonator_session_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "sessions",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "sessions_impersonator_session_id_sessions_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "sessions"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
         "user_id"
       ],
       "schemaTo": "public",
@@ -6592,6 +6785,23 @@
       "onUpdate": "NO ACTION",
       "onDelete": "CASCADE",
       "name": "tokens_oauth_account_id_oauth_accounts_id_fkey",
+      "entityType": "fks",
+      "schema": "public",
+      "table": "tokens"
+    },
+    {
+      "nameExplicit": false,
+      "columns": [
+        "session_id"
+      ],
+      "schemaTo": "public",
+      "tableTo": "sessions",
+      "columnsTo": [
+        "id"
+      ],
+      "onUpdate": "NO ACTION",
+      "onDelete": "CASCADE",
+      "name": "tokens_session_id_sessions_id_fkey",
       "entityType": "fks",
       "schema": "public",
       "table": "tokens"
@@ -7147,23 +7357,6 @@
     {
       "nameExplicit": false,
       "columns": [
-        "user_id"
-      ],
-      "schemaTo": "public",
-      "tableTo": "users",
-      "columnsTo": [
-        "id"
-      ],
-      "onUpdate": "NO ACTION",
-      "onDelete": "CASCADE",
-      "name": "unsubscribe_tokens_user_id_users_id_fkey",
-      "entityType": "fks",
-      "schema": "public",
-      "table": "unsubscribe_tokens"
-    },
-    {
-      "nameExplicit": false,
-      "columns": [
         "id"
       ],
       "schemaTo": "public",
@@ -7361,6 +7554,16 @@
       "name": "oauth_accounts_pkey",
       "schema": "public",
       "table": "identities",
+      "entityType": "pks"
+    },
+    {
+      "columns": [
+        "id"
+      ],
+      "nameExplicit": false,
+      "name": "passkey_challenges_pkey",
+      "schema": "public",
+      "table": "passkey_challenges",
       "entityType": "pks"
     },
     {
@@ -7571,16 +7774,6 @@
       "name": "emails_pkey",
       "schema": "public",
       "table": "emails",
-      "entityType": "pks"
-    },
-    {
-      "columns": [
-        "id"
-      ],
-      "nameExplicit": false,
-      "name": "unsubscribe_tokens_pkey",
-      "schema": "public",
-      "table": "unsubscribe_tokens",
       "entityType": "pks"
     },
     {
@@ -7896,7 +8089,5 @@
       "table": "yjs_updates"
     }
   ],
-  "renames": [
-    "public.emails.last_verified_by->public.emails.last_verified_via"
-  ]
+  "renames": []
 }

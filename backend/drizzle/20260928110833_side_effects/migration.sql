@@ -4,7 +4,7 @@
 -- The user will handle migration generation and application.
 --
 -- Combined side-effect migration.
--- Blocks (in order): cdc_setup, counter_functions, immutability_setup, membership_rules, partition_setup, rls_setup, unlogged_setup, verify_side_effects
+-- Blocks (in order): cdc_setup, counter_functions, immutability_setup, jobs_grants, membership_rules, partition_setup, rls_setup, unlogged_setup, verify_side_effects
 -- Regenerate with `pnpm generate`. Every block is idempotent; the whole set re-runs
 -- whenever ANY block changes, so this file always reflects the full current side-effect state.
 
@@ -210,6 +210,32 @@ BEGIN
     -- mutable: the write-through RLS policies delegate that protection to these triggers.
     RAISE EXCEPTION 'Immutability triggers setup failed: % (SQLSTATE: %)', SQLERRM, SQLSTATE;
   END;
+END $$;
+--> statement-breakpoint
+-- ══════════════════════════════════════════════════════════════════════════
+-- [jobs_grants] Job store privileges
+-- ══════════════════════════════════════════════════════════════════════════
+-- Job store (pg-boss) privileges for runtime_role
+-- The schema itself is installed by the migrate companion on the admin DSN; see
+-- backend/scripts/db/install-jobs-schema.ts, which applies these same grants right after installing.
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'pgboss') THEN
+    RAISE NOTICE 'Skipping job store grants - schema pgboss not installed yet.';
+    RETURN;
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role') THEN
+    RAISE NOTICE 'Skipping job store grants - roles not available.';
+    RETURN;
+  END IF;
+
+  GRANT USAGE ON SCHEMA pgboss TO runtime_role;
+  GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON ALL TABLES IN SCHEMA pgboss TO runtime_role;
+  GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA pgboss TO runtime_role;
+  ALTER DEFAULT PRIVILEGES IN SCHEMA pgboss GRANT SELECT, INSERT, UPDATE, DELETE, TRUNCATE ON TABLES TO runtime_role;
+  ALTER DEFAULT PRIVILEGES IN SCHEMA pgboss GRANT USAGE, SELECT ON SEQUENCES TO runtime_role;
+
+  RAISE NOTICE 'Job store grants complete.';
 END $$;
 --> statement-breakpoint
 -- ══════════════════════════════════════════════════════════════════════════
