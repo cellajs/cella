@@ -8,7 +8,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { appErrorHandler } from '#/lib/error';
 import { limiterScope } from '#/middlewares/rate-limiter/helpers';
-import { resolveSession } from '#/modules/auth/general/helpers/session';
+import { findSession } from '#/modules/auth/general/helpers/session';
 import { requireStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
 import { deleteProviderSession, getConsentTargetNames } from '#/modules/oauth-server/oauth-server-queries';
@@ -118,7 +118,7 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
 
   const requested = accessScopes.parse(String(interaction.params.scope ?? ''));
 
-  const signedIn = await resolveSession(c).catch(() => null);
+  const signedIn = await findSession(c);
   const user = signedIn?.user ?? null;
   const refusal = user ? await grantRefusal({ userId: user.id, clientId, tenantId: resource.tenantId }) : null;
   // The session's user is gone since the session was read: consent starts over from sign-in.

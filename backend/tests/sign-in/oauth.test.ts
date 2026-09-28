@@ -677,10 +677,8 @@ describe('OAuth Authentication', async () => {
     };
 
     /** Opens the verification link in a signed-out browser, which keeps its single-use cookie. */
-    const openVerificationLink = async (rawToken: string) => {
-      vi.mocked(resolveSession).mockRejectedValueOnce(new Error('no session'));
-      return call(invokeToken, { path: { type: 'oauth-verification', token: rawToken }, headers: defaultHeaders });
-    };
+    const openVerificationLink = (rawToken: string) =>
+      call(invokeToken, { path: { type: 'oauth-verification', token: rawToken }, headers: defaultHeaders });
 
     /** The provider's callback for the verify round trip, in the browser that opened the link. */
     const verifyCallback = () => {

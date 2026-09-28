@@ -13,7 +13,7 @@ import { linkHandlers } from '#/modules/auth/general/helpers/link-handlers';
 import { isRecognizedBrowser } from '#/modules/auth/general/helpers/recognized-browser';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
-import { readSession, setUserSession } from '#/modules/auth/general/helpers/session';
+import { readOwnSession, setUserSession } from '#/modules/auth/general/helpers/session';
 import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accept-invitation-token';
 import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
 import { dropHeldMagicLink } from '#/modules/auth/magic/helpers/magic-link-browser';
@@ -156,10 +156,8 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
   const sessionToken = await getAuthCookie(ctx, 'session');
   deleteAuthCookie(ctx, 'session');
   if (await getAuthCookie(ctx, 'impersonation')) deleteAuthCookie(ctx, 'impersonation');
-  if (!sessionToken) throw new AppError(401, 'unauthorized', 'warn');
 
-  const { session: currentSession } = await readSession(sessionToken);
-  if (currentSession.type === 'impersonation') throw new AppError(401, 'unauthorized', 'warn');
+  const { session: currentSession } = await readOwnSession(sessionToken);
 
   await endSessions(ctx, {
     userId: currentSession.userId,

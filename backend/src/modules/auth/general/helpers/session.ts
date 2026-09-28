@@ -257,6 +257,24 @@ export const readSession = async (sessionToken: string): Promise<SessionCacheEnt
   return entry;
 };
 
+/** A refusal (an `AppError`) reads as no session; anything else, such as a failed read, stays the request's failure. */
+const refusalAsNull = (err: unknown): null => {
+  if (err instanceof AppError) return null;
+  throw err;
+};
+
+/**
+ * The browser's own session, from the token in its session cookie: never an impersonation, which counts only on top
+ * of it.
+ * @throws AppError 401 without a token, for an unknown, revoked or expired one, or for an impersonation's.
+ */
+export const readOwnSession = async (sessionToken: string | undefined): Promise<SessionCacheEntry> => {
+  if (!sessionToken) throw new AppError(401, 'unauthorized', 'warn');
+  const entry = await readSession(sessionToken);
+  if (entry.session.type === 'impersonation') throw new AppError(401, 'unauthorized', 'warn');
+  return entry;
+};
+
 /**
  * The app session a request presents, read from its cookies only, so any process serving the app's origin can call it
  * with a raw request context. An impersonation counts only on top of the admin session that started it, held by this
@@ -283,12 +301,8 @@ export const resolveSession = async (
     }
   };
 
-  /** The admin session behind an impersonation; a refusal means none, a failed read is the request's failure. */
-  const readAdminSession = (token: string) =>
-    readSession(token).catch((err) => {
-      if (err instanceof AppError) return null;
-      throw err;
-    });
+  /** The admin session behind an impersonation; a refusal means none. */
+  const readAdminSession = (token: string) => readSession(token).catch(refusalAsNull);
 
   if (impersonationToken) {
     return clearIfRefused('impersonation', async () => {
@@ -301,10 +315,13 @@ export const resolveSession = async (
     });
   }
 
-  return clearIfRefused('session', async () => {
-    if (!sessionToken) throw new AppError(401, 'unauthorized', 'warn');
-    const entry = await readSession(sessionToken);
-    if (entry.session.type === 'impersonation') throw new AppError(401, 'unauthorized', 'warn');
-    return entry;
-  });
+  return clearIfRefused('session', () => readOwnSession(sessionToken));
 };
+
+/**
+ * {@link resolveSession} for a request that may present no session: null on a refusal (no cookie, or an unknown,
+ * expired or revoked token), while a failed read stays the request's failure, so the database being away never reads
+ * as signed out.
+ */
+export const findSession = (ctx: Context): Promise<SessionCacheEntry | null> =>
+  resolveSession(ctx).catch(refusalAsNull);

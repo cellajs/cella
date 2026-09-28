@@ -104,5 +104,6 @@ export const sessionMock = () => ({
     return sessionToken;
   }),
   resolveSession: vi.fn().mockResolvedValue({ user: { id: 'test-user-id' }, session: { id: 'test-session-id' } }),
-  readSession: vi.fn().mockResolvedValue({ user: { id: 'test-user-id' }, session: { id: 'test-session-id' } }),
+  // A request that may present no session presents none, so an emailed link opens as in a signed-out browser.
+  findSession: vi.fn().mockResolvedValue(null),
 });

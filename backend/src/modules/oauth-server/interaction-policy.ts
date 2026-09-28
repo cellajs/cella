@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { Context } from 'hono';
 import { interactionPolicy } from 'oidc-provider';
 import { appConfig } from 'shared';
-import { resolveSession } from '#/modules/auth/general/helpers/session';
+import { findSession } from '#/modules/auth/general/helpers/session';
 
 /**
  * The user of the live app session a request to the authorization server presents, or null without one. It is read as
@@ -18,7 +18,7 @@ export async function appSessionUserId(req: IncomingMessage, res: ServerResponse
     if (typeof value === 'string') headers.set(name, value);
   }
   const ctx = new Context(new Request(appConfig.oauthUrl, { headers }), { env: { incoming: req, outgoing: res } });
-  const entry = await resolveSession(ctx).catch(() => null);
+  const entry = await findSession(ctx);
   if (!entry || entry.session.type === 'impersonation') return null;
   return entry.user.id;
 }

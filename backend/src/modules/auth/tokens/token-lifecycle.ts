@@ -7,7 +7,7 @@ import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb, type DbOrTx, type Tx } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { resolveSession } from '#/modules/auth/general/helpers/session';
+import { findSession } from '#/modules/auth/general/helpers/session';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import {
   type CookieTokenType,
@@ -135,7 +135,7 @@ const expired = (token: TokenRecord) =>
 const refuseOtherAccount = async (ctx: Context<Env>, type: LinkTokenType, token: TokenRecord) => {
   if (!token.userId && tokenPolicies[type].unboundOpener === 'any-account') return;
 
-  const signedIn = await resolveSession(ctx).catch(() => null);
+  const signedIn = await findSession(ctx);
   if (!signedIn) return;
 
   const { user } = signedIn;

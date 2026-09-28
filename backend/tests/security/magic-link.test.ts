@@ -50,6 +50,30 @@ const failNextDeleteOf = (table: PgTable) => {
   onTestFinished(() => spy.mockRestore());
 };
 
+/**
+ * The next read from `table` fails, as a statement does when the pool cannot hand out a connection; reads from other
+ * tables run as usual. Every `db.select(...)` builder is wrapped until the failing `from` fires.
+ */
+const failNextReadOf = (table: PgTable) => {
+  const prototype = PgAsyncDatabase.prototype;
+  // The `select` overloads (with and without fields) share one runtime shape: the mock forwards whatever it gets.
+  const original = prototype.select as (
+    this: typeof prototype,
+    fields?: unknown,
+  ) => { from: (source: unknown) => unknown };
+  const spy = vi.spyOn(prototype, 'select').mockImplementation(function (this: typeof prototype, fields?: unknown) {
+    const builder = original.call(this, fields);
+    const from = builder.from.bind(builder);
+    builder.from = (source) => {
+      if (source !== table) return from(source);
+      spy.mockRestore();
+      throw new Error('timeout exceeded when trying to connect');
+    };
+    return builder as never;
+  });
+  onTestFinished(() => spy.mockRestore());
+};
+
 /** A magic link row for `user`, optionally already opened with a single-use token (hash at rest). */
 const magicLink = (user: { id: string; email: string }, opened?: { singleUse: string }) =>
   insertTestToken('magic', user, { expiresInMs: 5 * 60 * 1000, openedWith: opened?.singleUse });
@@ -419,7 +443,8 @@ describe('magic-link sign-up', async () => {
 
 /**
  * A link refuses a browser signed in to another account. A session cookie that no longer authenticates (revoked,
- * expired, or naming no session at all) signs nobody in, so it counts as no session: the link opens as usual.
+ * expired, or naming no session at all) signs nobody in, so it counts as no session: the link opens as usual. A
+ * session the app could not read at all is another matter: the request fails, the link does not open as signed out.
  */
 describe('magic link in a browser with a stale session cookie', async () => {
   const call = await createAppClient();
@@ -465,6 +490,23 @@ describe('magic link in a browser with a stale session cookie', async () => {
     });
     await expectRefusal({ response, error }, 409, 'user_mismatch');
     expect(cookieChange(response, 'session')).toBeUndefined();
+  });
+
+  it('must not open a magic link as signed out via a session read that failed', async () => {
+    const owner = await createTestUser(`owner-${nanoid(6)}@security-test.com`.toLowerCase());
+    const other = await createTestUser(`other-${nanoid(6)}@security-test.com`.toLowerCase());
+    const { raw, row } = await magicLink(owner);
+    const cookies = [await createTestSession(other), authCookie('magic-requested', row.id)].join('; ');
+
+    // The pool has no connection for the session read: who is signed in here is unknown, so nobody signs in.
+    failNextReadOf(sessionsTable);
+    const { response } = await call(invokeToken, {
+      path: { type: 'magic', token: raw },
+      headers: { ...defaultHeaders, Cookie: cookies },
+    });
+    expect(response.status).toBe(503);
+    expect(cookieChange(response, 'session')).toBeUndefined();
+    expect((await tokenRow(row.id)).invokedAt).toBeNull();
   });
 });
 
