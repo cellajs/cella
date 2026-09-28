@@ -1,13 +1,9 @@
+import { isRecord } from 'shared/utils/as-record';
+import { isUuid } from 'shared/utils/entity-id';
+
 // Two body shapes exist because editors differ: BlockNote stores mentions as inline content
 // nodes in its JSON document, while HTML bodies carry them as a span with a data attribute.
 const HTML_MENTION_PATTERN = /data-mention-id=["']([0-9a-f-]{36})["']/gi;
-
-/** Ids are UUIDs; anything else is a malformed or hand-written payload and is dropped. */
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-type UnknownRecord = Record<string, unknown>;
-
-const isRecord = (value: unknown): value is UnknownRecord => typeof value === 'object' && value !== null;
 
 /** Walks arbitrary BlockNote JSON, collecting `{ type: 'mention', props: { id } }` nodes at any depth. */
 function collectFromBlocks(node: unknown, into: Set<string>): void {
@@ -19,7 +15,8 @@ function collectFromBlocks(node: unknown, into: Set<string>): void {
 
   if (node.type === 'mention' && isRecord(node.props)) {
     const id = node.props.id;
-    if (typeof id === 'string' && UUID_PATTERN.test(id)) into.add(id);
+    // Ids are UUIDs; anything else is a malformed or hand-written payload and is dropped.
+    if (typeof id === 'string' && isUuid(id)) into.add(id);
   }
 
   for (const value of Object.values(node)) {
@@ -49,7 +46,7 @@ export function extractMentionIds(body: string | null | undefined): string[] {
 
   for (const match of body.matchAll(HTML_MENTION_PATTERN)) {
     const id = match[1];
-    if (id && UUID_PATTERN.test(id)) found.add(id.toLowerCase());
+    if (id && isUuid(id)) found.add(id.toLowerCase());
   }
 
   return [...found];

@@ -80,7 +80,7 @@ app.openapi(authStepUpRoutes.sendStepUpLink, async (ctx) => {
       email: user.email,
       createdBy: user.id,
       sessionId: session.id,
-      redirectPath: isValidRedirectPath(redirect) || null,
+      redirectPath: isValidRedirectPath(redirect),
     },
   );
   // Opening the link stamps this session only in this browser.

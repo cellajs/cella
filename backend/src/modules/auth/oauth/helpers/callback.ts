@@ -373,7 +373,7 @@ const processCallbackResult = async (
 ) => {
   const { ctx, provider, redirectAfter } = info;
   // Stored on the verification token; null means "use the default path" at the final hop.
-  const redirectAfterPath = isValidRedirectPath(redirectAfter) || null;
+  const redirectAfterPath = isValidRedirectPath(redirectAfter);
 
   if (info.type === 'verified') {
     return finishSignIn(ctx, info.user, provider, redirectAfter);

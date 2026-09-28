@@ -1,5 +1,6 @@
+import { isRecord } from './as-record.ts';
 import { type MediaRefContext, parseMediaRef } from './media-ref.ts';
-import { isPropsObject, mediaBlockTypes } from './text-from-block.ts';
+import { mediaBlockTypes } from './text-from-block.ts';
 
 /**
  * Whether a media block's `url` prop may be stored and rendered: absent or blank (no file yet), or a string the media
@@ -12,8 +13,7 @@ export const isAcceptedMediaUrl = (url: unknown, ctx: MediaRefContext): boolean 
 export type DocumentNode = { type?: unknown; props?: unknown; children?: unknown };
 
 /** Whether a list item of a stored document is a node; every walk skips one that is not. */
-export const isDocumentNode = (value: unknown): value is DocumentNode =>
-  typeof value === 'object' && value !== null && !Array.isArray(value);
+export const isDocumentNode = (value: unknown): value is DocumentNode => isRecord(value);
 
 /** The nodes every walk descends into: `children` when it is a list, whatever the node's own type. */
 export const childNodes = (node: DocumentNode): unknown[] => (Array.isArray(node.children) ? node.children : []);
@@ -26,7 +26,7 @@ export const childNodes = (node: DocumentNode): unknown[] => (Array.isArray(node
 export const isRefusedMediaBlock = (node: DocumentNode, ctx: MediaRefContext): boolean =>
   typeof node.type === 'string' &&
   mediaBlockTypes.has(node.type) &&
-  !(isPropsObject(node.props) && isAcceptedMediaUrl(node.props.url, ctx));
+  !(isRecord(node.props) && isAcceptedMediaUrl(node.props.url, ctx));
 
 /** A refused media block, to blank in place with {@link blankMediaReference}, and its reference for reports. */
 interface RefusedMediaBlock {
@@ -35,7 +35,7 @@ interface RefusedMediaBlock {
 }
 
 const reportedReference = (node: DocumentNode): string => {
-  if (!isPropsObject(node.props)) return '[invalid props]';
+  if (!isRecord(node.props)) return '[invalid props]';
   const { url } = node.props;
   return typeof url === 'string' ? url : JSON.stringify(url);
 };
@@ -58,7 +58,7 @@ export const findRefusedMediaBlocks = (blocks: unknown[], ctx: MediaRefContext):
 
 /** Blanks a refused media block's reference in place: a blank `url` holds none, and props that were no object become one. */
 export const blankMediaReference = ({ block }: RefusedMediaBlock): void => {
-  block.props = { ...(isPropsObject(block.props) ? block.props : {}), url: '' };
+  block.props = { ...(isRecord(block.props) ? block.props : {}), url: '' };
 };
 
 type ValidationResult = { valid: true } | { valid: false; invalidUrls: string[] };

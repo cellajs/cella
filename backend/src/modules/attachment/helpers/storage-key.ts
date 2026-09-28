@@ -1,10 +1,8 @@
 import { appConfig } from 'shared';
+import { isUuid } from 'shared/utils/entity-id';
 import { isOrganizationKey } from 'shared/utils/media-ref';
 import { isPublicUploadTemplate } from 'shared/utils/upload-visibility';
 import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
-
-/** A browser's object URL path: a UUID. */
-const blobPathPattern = /^\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 /**
  * A local blob URL as a browser mints it for a file not yet uploaded: `blob:`, an http(s) origin and a UUID path, in
@@ -16,7 +14,7 @@ export const isLocalBlobUrl = (key: string): boolean => {
     const url = new URL(key.slice('blob:'.length));
     return (
       (url.protocol === 'http:' || url.protocol === 'https:') &&
-      blobPathPattern.test(url.pathname) &&
+      isUuid(url.pathname.slice(1)) &&
       key === `blob:${url.origin}${url.pathname}`
     );
   } catch {

@@ -1,4 +1,5 @@
 import { appConfig } from '../config-builder/app-config.ts';
+import { isUuid } from './entity-id.ts';
 import { isOriginIn } from './url-origin.ts';
 
 /**
@@ -40,9 +41,6 @@ export function isOrganizationKey(key: string, organizationId: string): boolean 
   return !path.split('/').some(isDotSegment);
 }
 
-/** Attachment ids are UUIDs: hex groups only, so one never reads as a URL or a path. */
-const attachmentIdPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 /** An asset is an immutable content-hash object at the CDN root: a SHA-256 hex name with a raster extension. */
 const assetPathPattern = /^\/[0-9a-f]{64}\.(?:webp|png)$/;
 
@@ -56,7 +54,7 @@ const isAssetUrl = (ref: string): boolean => {
 
 /** Classifies a media block reference for the document described by `ctx`. */
 export function parseMediaRef(ref: string, ctx: MediaRefContext): MediaRef {
-  if (attachmentIdPattern.test(ref)) return { kind: 'attachment', id: ref };
+  if (isUuid(ref)) return { kind: 'attachment', id: ref };
   if (ctx.organizationId && isOrganizationKey(ref, ctx.organizationId)) return { kind: 'orgKey', key: ref };
   if (isAssetUrl(ref)) return { kind: 'asset', url: ref };
   return { kind: 'invalid' };

@@ -137,10 +137,10 @@ export async function createProvider(): Promise<Provider> {
         useGrantedResource: () => true,
         getResourceServerInfo: (ctx, resourceIndicator, client) => {
           const resource = parseResource(resourceIndicator);
-          if (!resource) throw new InvalidTarget();
+          if (!resource) throw new errors.InvalidTarget();
           // A service account acts in its own tenant: its token never names another tenant's resource.
           if (isServiceClient(client) && presentedKeys.get(ctx)?.tenantId !== resource.tenantId)
-            throw new InvalidTarget();
+            throw new errors.InvalidTarget();
           return {
             scope: grantableScopes(ctx, client).join(' '),
             audience: resourceIndicator,
@@ -176,7 +176,7 @@ export async function createProvider(): Promise<Provider> {
       const aud = Array.isArray(token.aud) ? token.aud[0] : token.aud;
       const resource = parseResource(aud ?? '');
       // A token without one of this deployment's resources is never minted; the verifier would refuse it anyway.
-      if (!resource) throw new InvalidTarget();
+      if (!resource) throw new errors.InvalidTarget();
       if ('accountId' in token && token.accountId) {
         const claims: IssuedTokenClaims = { actor_kind: 'user', tenant_id: resource.tenantId, gid: token.grantId };
         return claims;
@@ -226,17 +226,6 @@ export async function createProvider(): Promise<Provider> {
   };
 
   return provider;
-}
-
-class InvalidTarget extends Error {
-  readonly error = 'invalid_target';
-  readonly status = 400;
-  readonly statusCode = 400;
-  readonly expose = true;
-  constructor() {
-    super('invalid_target');
-    this.name = 'InvalidTarget';
-  }
 }
 
 class TooManyFetches extends Error {

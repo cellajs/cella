@@ -25,7 +25,7 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
   const { email, redirect } = ctx.req.valid('json');
 
   // Validated here and re-validated at invoke; invalid input degrades to the default path.
-  const redirectPath = isValidRedirectPath(redirect) || null;
+  const redirectPath = isValidRedirectPath(redirect);
 
   const normalizedEmail = email.toLowerCase().trim();
 
