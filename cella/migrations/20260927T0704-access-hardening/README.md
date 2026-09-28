@@ -59,7 +59,7 @@ No script: manual.
 **Authorization server**
 
 25. Import `invalidateOauthClientCache` from `oauth-server/client-cache`; replace `refusalFor` with `grantRefusal` for users and `apiKeyRefusal` for a service's API key, and `tokenUserCache` with the token grant cache. An authorization request naming an unknown or foreign resource redirects to the client with `error=invalid_target`.
-26. Revoke grants through `revokeGrant`; replace `invalidateApiKeyCacheByAccount` with `invalidateCache.serviceAccount` or `invalidateCache.installation`; pass the `VerifiedAccessToken` to the token-verdict cache functions.
+26. Revoke grants through `revokeGrant`; replace `invalidateApiKeyCacheByAccount` with `invalidateCache.serviceAccount(tx, account)` (the row's `id`, `tenantId`, `oauthClientId`; it covers an installed app's tokens, `invalidateCache.installation` is gone); every `invalidateCache.*` takes the writing database or transaction first and is awaited last in that transaction; app listeners read the `{ serviceAccount: { id, tenantId, clientId } }` message through `parseAuthInvalidation`; pass the `VerifiedAccessToken` to the token-verdict cache functions. Read a client's kind through `clientKindOf(client)` (`oauth-server/adapter`); a Client ID Metadata Document that sets `client_kind` is refused with `invalid_client_metadata`. `deleteConsentWithTokens` runs on the caller's transaction.
 27. Show `target` from the consent details on an app-owned consent page (frontend `ConsentDetails`).
 
 **Data access**
