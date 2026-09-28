@@ -23,7 +23,7 @@ No script: manual.
 **Database, env, config and infra**
 
 1. `pnpm --filter backend generate` emits one schema migration (`passkey_challenges`, `totps.last_used_step`, the unique `passkeys.credential_id`, `sessions.impersonator_session_id`/`stepped_up_at`/`stepped_up_via`, `tokens.pending_sign_up`/`session_id`, partial indexes on both new session references, `api_keys.expires_at` with a time zone, `yjs_documents.generation`, the `unsubscribe_tokens` drop) and one side-effect set (`membership_rules`, grants, a verify check of the last-admin trigger); commit both. An app that drops the `10-membership-rules` producer also empties `membershipRuleTriggers`.
-2. Replace `YJS_SECRET` in every env with `YJS_TOKEN_PRIVATE_KEY`, `YJS_TOKEN_PUBLIC_KEY` and `YJS_RELAY_SECRET` (`pnpm --filter backend yjs:public-key` derives the public key); set `INTERNAL_PORT` where the default does not fit. Mode-bound secrets (`CDC_SECRET`, `PII_HASH_SECRET`, `UNSUBSCRIBE_SECRET`, `ADMIN_EMAIL`, the Yjs keys) are optional in the env type: read them through `modeSecret()`, and list app ones in `env-mode-secrets.ts`. The cdc worker's `API_WS_URL` becomes `BACKEND_INTERNAL_URL`, the internal listener's base URL, as for the yjs worker.
+2. Replace `YJS_SECRET` in every env with `YJS_TOKEN_PRIVATE_KEY`, `YJS_TOKEN_PUBLIC_KEY` and `YJS_RELAY_SECRET` (`pnpm --filter backend yjs:public-key` derives the public key); set `INTERNAL_PORT` where the default does not fit. Mode-bound secrets (`CDC_SECRET`, `PII_HASH_SECRET`, `UNSUBSCRIBE_SECRET`, `ADMIN_EMAIL`, the Yjs keys) are optional in the env type: read them through `modeSecret()`, declare their minimum length with `secretString(name)`, and list app ones in `env-mode-secrets.ts` (`ADMIN_EMAIL` is read by the migrate process alone). The cdc worker's `API_WS_URL` becomes `BACKEND_INTERNAL_URL`, the internal listener's base URL, as for the yjs worker.
 3. Rotate any `COOKIE_SECRET` entry or `UNSUBSCRIBE_SECRET` shorter than 16 characters before deploying; rotating `UNSUBSCRIBE_SECRET` voids the unsubscribe links already sent.
 4. Set `RUN_JOBS` on the service that should run the scheduled jobs (the digest, device prune and OAuth sweep) if an app moved `primaryRollout`.
 5. In the app's own `shared/config`: add `devPorts.internal` and `mediaAssetOrigin: ''`, and bump `clientCacheVersion` and `cookieVersion` (the template's bumps do not sync).
@@ -36,7 +36,7 @@ No script: manual.
 9. Replace `getParsedSessionCookie`, `validateSession` and `ctx.var.sessionToken` with `resolveSession`, `readSession` and `ctx.var.session`; a reader that may find no session calls `findSession(ctx)` (null on a refusal alone, a failed read throws), and a custom sign-out reads through `readOwnSession`.
 10. Replace `revokeSessions` with `endSessions`; listeners of `session.revoked` handle its `reason` and `'all'`.
 11. Every process with guard caches calls `listenForAuthInvalidation()` on a session-mode connection and reports it as the critical `authInvalidation` component of `/health?depth=full`.
-12. Custom stream clients reconnect on `session_replaced` and `access_changed`; app-registered `AppStreamSubscriber`s carry `systemAccessAllowed`, and callers of `closeAppStream` use `closeAppStreams`.
+12. Custom stream clients reconnect on `session_replaced` and `access_changed`; the 401 types that sign a client out are `sessionLostTypes` in `shared/utils/session-lost` (an app's own session reader adds its types there); app-registered `AppStreamSubscriber`s carry `systemAccessAllowed`, and callers of `closeAppStream` use `closeAppStreams`.
 13. An app's own sign-out UI ends the session through `endSession({ wipe })` (`frontend/src/modules/auth/end-session.ts`), which flushes seen marks and drops the push subscription first.
 14. Every route in an app's own auth modules declares `'x-strategy'`.
 15. Tests build cookies with `authCookie(name, content)` (`createTestSession` already signs); scripts sign with `sealAuthCookie` or use `pnpm --filter backend session:mint <email>`; a test that opens a magic link as the browser that asked sends `authCookie('magic-requested', tokenId)`.
@@ -54,7 +54,7 @@ No script: manual.
 
 22. Replace `validateTOTP`, `verifyTOTPWithGracePeriod` and `validatePasskey` with `verifyTotp` and `verifyPasskeyAssertion`; drop `email` from passkey challenge and verification bodies.
 23. Read `check-email` as `{ recognized }` and treat `POST /requests` as 204.
-24. Add `stepUpGuard` to app-owned account-security routes and to routes that mint API keys or other lasting secrets, and wrap their frontend calls in `withStepUp`; call `startOAuthConnect` before an app's own connect UI. PUT /me/mfa takes a step-up and no proof in its body.
+24. Add `stepUpGuard` to app-owned account-security routes and to routes that mint API keys or other lasting secrets, and `noImpersonationGuard` (403 `impersonation_forbidden`) to routes an impersonation may never call; and wrap their frontend calls in `withStepUp`; call `startOAuthConnect` before an app's own connect UI. PUT /me/mfa takes a step-up and no proof in its body.
 
 **Authorization server**
 
@@ -75,7 +75,7 @@ No script: manual.
 
 **Realtime**
 
-36. Pass `organizationId` to `CollaborativeBlockNote`; drop `YjsTokenFetcher` and `collaborativeProduct`.
+36. Pass `organizationId` to `CollaborativeBlockNote`; drop `YjsTokenFetcher` and `collaborativeProduct`; an app's own `PersistQueryClientProvider` passes `shouldPersistQuery` (`~/query/persister`) as `shouldDehydrateQuery`. Relay code calls `broadcastToCollab(session, message)` with the session `joinCollab` returns.
 37. App materializers refuse with a 403 or 404 `AppError`; custom Yjs clients treat close code 1011 as transient and 4400 as final, and handle the relay's generation message (`yjs/README.md`). A description written outside the relay calls `retireYjsDocuments` in the same transaction.
 38. App pools pass the parsed `DEBUG` flag to `createPgConnection(url, { debug })`, which decides the query logger; `dbConfig` is gone.
 
@@ -89,7 +89,7 @@ No script: manual.
 
 **Removed**
 
-44. Replace `deleteUser` with `deleteAccounts` (`user/helpers/delete-accounts`), `getHealthResponse` with the exported `healthApp`, and `StaleDocRow` with `DocScope`; drop `findExistingRequest`, `getEntityByTransaction`, `findActivityRefByMutationId` and `verifyEmail`. An app that still throws `request_email_is_user`, `request_exists`, `token_not_found` or `sync_unavailable` adds the key to its own locale.
+44. Replace `deleteUser` with `deleteAccounts` (`user/helpers/delete-accounts`); `findUserByEmail` loses `verifiedOnly` (every stored address is proven); `withinTimeout` returns the failure or `undefined`; test fixtures lose their `verified` argument and `verifyUserEmail`; `getHealthResponse` with the exported `healthApp`, and `StaleDocRow` with `DocScope`; drop `findExistingRequest`, `getEntityByTransaction`, `findActivityRefByMutationId` and `verifyEmail`. An app that still throws `request_email_is_user`, `request_exists`, `token_not_found` or `sync_unavailable` adds the key to its own locale.
 
 ## Verify
 
