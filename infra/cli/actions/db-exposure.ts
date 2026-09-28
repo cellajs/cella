@@ -118,7 +118,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
   else console.warn(`${warningMark} Could not auto-detect your public IP; enter the client CIDR(s) manually.`);
 
   const raw = await input({
-    message: 'Allowed client CIDR(s), comma-separated',
+    message: 'Allowed client IPv4 CIDR(s), comma-separated',
     default: suggestion || undefined,
     validate: (value) => {
       const parsed = parseAclInput(value);

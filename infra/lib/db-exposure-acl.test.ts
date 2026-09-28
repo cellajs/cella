@@ -27,19 +27,31 @@ describe('parseAclInput: one entry', () => {
       '256.0.0.1',
       '203.0.113',
       '203.0.113.01',
-      '2001:db8::/129',
-      'fe80::1%eth0',
     ]) {
       expect(parseAclInput(entry).ok, entry).toBe(false);
+    }
+  });
+
+  it('refuses IPv6 entries, naming the reason: the Scaleway database ACL takes IPv4 only', () => {
+    for (const entry of [
+      '2001:db8::1',
+      '2001:db8:1234::/48',
+      '2001:db8::/32',
+      '::/0',
+      'fe80::1%eth0',
+      '2001:db8::/129',
+    ]) {
+      expect(parseAclInput(entry, true), entry).toMatchObject({
+        ok: false,
+        reason: expect.stringContaining('IPv4 only'),
+      });
     }
   });
 
   it('must not open the database to a wide range without the escape hatch', () => {
     expect(parseAclInput('198.51.0.0/16')).toMatchObject({ ok: false, reason: expect.stringContaining('/24') });
     expect(parseAclInput('198.51.100.0/23').ok).toBe(false);
-    expect(parseAclInput('2001:db8::/32')).toMatchObject({ ok: false, reason: expect.stringContaining('/48') });
     expect(parseAclInput('198.51.0.0/16', true)).toEqual({ ok: true, cidrs: ['198.51.0.0/16'] });
-    expect(parseAclInput('2001:db8::/32', true)).toEqual({ ok: true, cidrs: ['2001:db8::/32'] });
   });
 
   it('must not open the database to the whole internet, even with the escape hatch', () => {
@@ -54,7 +66,7 @@ describe('parseAclInput: one entry', () => {
       expect(parseAclInput(entry).ok, entry).toBe(false);
       expect(parseAclInput(entry, true).ok, entry).toBe(false);
     }
-    // A mapped /112 is an IPv4 /16: wider than /24, though longer than the IPv6 minimum.
+    // A mapped /112 is an IPv4 /16: wider than /24.
     expect(parseAclInput('::ffff:198.51.0.0/112')).toMatchObject({
       ok: false,
       reason: expect.stringContaining('/24'),
@@ -68,11 +80,6 @@ describe('parseAclInput: one entry', () => {
     // 0.0.0.1/1 is 0.0.0.0/1: an entry is judged by the network it names.
     expect(parseAclInput('0.0.0.1/1', true).ok).toBe(false);
     expect(parseAclInput('198.51.100.7/24')).toEqual({ ok: true, cidrs: ['198.51.100.0/24'] });
-  });
-
-  it('normalizes IPv6 entries', () => {
-    expect(parseAclInput('2001:DB8:0:0::1')).toEqual({ ok: true, cidrs: ['2001:db8::1/128'] });
-    expect(parseAclInput('2001:db8:1234::/48')).toEqual({ ok: true, cidrs: ['2001:db8:1234::/48'] });
   });
 });
 
@@ -96,8 +103,8 @@ describe('parseAclInput: the list', () => {
   it('must not open the whole internet via entries that together cover it', () => {
     // Two halves of IPv4 (the network of 0.0.0.1/1 is 0.0.0.0/1).
     expect(parseAclInput('0.0.0.1/1, 128.0.0.0/1', true).ok).toBe(false);
-    // More than one entry could open: three quarters of IPv4, directly or through a mapped range, or of IPv6.
-    for (const acl of ['128.0.0.0/1, 64.0.0.0/2', '128.0.0.0/1, ::ffff:64.0.0.0/98', '8000::/1, 4000::/2']) {
+    // More than one entry could open: three quarters of IPv4, directly or through a mapped range.
+    for (const acl of ['128.0.0.0/1, 64.0.0.0/2', '128.0.0.0/1, ::ffff:64.0.0.0/98']) {
       expect(parseAclInput(acl, true), acl).toMatchObject({
         ok: false,
         reason: expect.stringContaining('more than half'),
@@ -105,7 +112,7 @@ describe('parseAclInput: the list', () => {
     }
   });
 
-  it('accepts a wide range that stays within half an address family (positive control)', () => {
+  it('accepts a wide range that stays within half of IPv4 (positive control)', () => {
     expect(parseAclInput('128.0.0.0/1', true)).toEqual({ ok: true, cidrs: ['128.0.0.0/1'] });
     expect(parseAclInput('128.0.0.0/2, 64.0.0.0/2', true)).toEqual({
       ok: true,

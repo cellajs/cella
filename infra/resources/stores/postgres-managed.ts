@@ -118,7 +118,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
       // Opt-in public endpoint for scoped operator tasks: `infra:dbPublicEndpoint` enables it, `infra:dbPublicAcl` limits client CIDRs, and unsetting both returns the database to private-only.
       const dbPublicEndpoint = infraConfig.getBoolean('dbPublicEndpoint') ?? false;
 
-      // Checked here too, not only in the CLI prompt: a hand-set config reaches this resource directly, and without an ACL the endpoint opens on Scaleway's default rule 0.0.0.0/0. `infra:dbPublicAclAllowWide` admits prefixes wider than /24 (IPv4) or /48 (IPv6), never the whole internet.
+      // Checked here too, not only in the CLI prompt: a hand-set config reaches this resource directly, and without an ACL the endpoint opens on Scaleway's default rule 0.0.0.0/0. `infra:dbPublicAclAllowWide` admits prefixes wider than /24, never the whole internet.
       const acl = dbPublicEndpoint
         ? parseAclInput(infraConfig.get('dbPublicAcl') ?? '', infraConfig.getBoolean('dbPublicAclAllowWide') ?? false)
         : undefined;

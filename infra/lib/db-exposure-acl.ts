@@ -1,102 +1,56 @@
 // Pure rules for the database public-endpoint ACL, free of prompts and I/O. The CLI validates the operator's input
-// with them, and the postgres store validates the stack config again before it creates the ACL.
+// with them, and the postgres store validates the stack config again before it creates the ACL. Scaleway's database
+// ACL takes IPv4 CIDRs only (the provider refuses IPv6 at apply time), so these are IPv4 rules.
 
 import { isIP } from 'node:net';
 
-type Family = 4 | 6;
-
-const bits: Record<Family, number> = { 4: 32, 6: 128 };
-
-/** Narrowest prefix per family an entry may have without `allowWide` (`infra:dbPublicAclAllowWide`). */
-const minPrefix: Record<Family, number> = { 4: 24, 6: 48 };
+/** Narrowest prefix an entry may have without `allowWide` (`infra:dbPublicAclAllowWide`). */
+const minPrefix = 24;
 
 /**
- * `::ffff:0:0/96`, the IPv4-mapped block. The provider hands a range inside it to Scaleway as the IPv4 range it names
- * (Go's `IPNet.String`), so such an entry carries the IPv4 rules; a range containing the block is all of IPv4.
+ * `::ffff:a.b.c.d[/96-128]`, an IPv4-mapped IPv6 entry, as dual-stack servers log IPv4 clients. It names an IPv4
+ * range, and the provider's Go net package would hand it to Scaleway as one, so it reads as `a.b.c.d/N-96`.
  */
-const mappedBlock = 0xffffn << 32n;
+const MAPPED = /^::ffff:(\d+(?:\.\d+){3})(?:\/(9[6-9]|1[01]\d|12[0-8]))?$/i;
 
-/** The address of an entry as a number with its family; undefined when it is not an IP address (zone ids included). */
-function parseAddress(ip: string): { family: Family; value: bigint } | undefined {
-  const kind = isIP(ip);
-  if (kind === 4)
-    return { family: 4, value: ip.split('.').reduce((value, octet) => (value << 8n) | BigInt(octet), 0n) };
-  if (kind !== 6 || ip.includes('%')) return undefined;
-  // The URL parser takes every written IPv6 form and emits lowercase hex groups around at most one `::` gap.
-  const [head = '', tail = ''] = new URL(`http://[${ip}]/`).hostname.slice(1, -1).split('::');
-  const groups = (part: string) => (part ? part.split(':') : []);
-  const gap = Array<string>(8 - groups(head).length - groups(tail).length).fill('0');
-  const value = [...groups(head), ...gap, ...groups(tail)].reduce(
-    (sum, group) => (sum << 16n) | BigInt(`0x${group}`),
-    0n,
-  );
-  return { family: 6, value };
-}
+type EntryCheck = { ok: true; cidr: string; size: number } | { ok: false; reason: string };
 
-/** One validated entry: the network it names, host bits cleared. */
-interface Range {
-  family: Family;
-  network: bigint;
-  prefix: number;
-}
-
-/** Canonical CIDR text of a range: dotted quad, or the compressed lowercase IPv6 form the URL parser writes. */
-function cidrOf({ family, network, prefix }: Range): string {
-  const groups = Array.from({ length: 8 }, (_, index) =>
-    ((network >> BigInt(112 - index * 16)) & 0xffffn).toString(16),
-  );
-  const address =
-    family === 4
-      ? [24n, 16n, 8n, 0n].map((shift) => (network >> shift) & 0xffn).join('.')
-      : new URL(`http://[${groups.join(':')}]/`).hostname.slice(1, -1);
-  return `${address}/${prefix}`;
-}
-
-type EntryCheck = { ok: true; range: Range } | { ok: false; reason: string };
-
-/** The range one entry opens, an IPv4-mapped IPv6 range as the IPv4 range it names, after the single-entry rules. */
+/** The canonical CIDR one entry names and the number of addresses it opens, after the single-entry rules. */
 function checkEntry(entry: string, allowWide: boolean): EntryCheck {
-  const [ipText = '', prefixText, ...extra] = entry.split('/');
-  const address = parseAddress(ipText);
-  if (!address || extra.length) return { ok: false, reason: `not an IP address or CIDR: '${entry}'` };
-  let { family, value } = address;
-  let prefix = prefixText === undefined ? bits[family] : /^\d{1,3}$/.test(prefixText) ? Number(prefixText) : Number.NaN;
-  if (!(prefix <= bits[family])) return { ok: false, reason: `invalid prefix in '${entry}'` };
+  const mapped = MAPPED.exec(entry);
+  const text = mapped ? `${mapped[1]}/${Number(mapped[2] ?? 128) - 96}` : entry;
+  const [ip = '', prefixText, ...extra] = text.split('/');
+  const kind = isIP(ip);
+  if (kind === 6) return { ok: false, reason: `'${entry}' is IPv6; the Scaleway database ACL takes IPv4 only` };
+  if (kind !== 4 || extra.length) return { ok: false, reason: `not an IPv4 address or CIDR: '${entry}'` };
+  const prefix = prefixText === undefined ? 32 : /^\d{1,2}$/.test(prefixText) ? Number(prefixText) : 33;
+  if (prefix > 32) return { ok: false, reason: `invalid prefix in '${entry}'` };
 
-  // The entry and the mapped block nest when their first min(prefix, 96) bits agree: inside the block (prefix >= 96) the entry is the IPv4 range it names, around it (prefix < 96) all of IPv4.
-  const shared = BigInt(128 - Math.min(prefix, 96));
-  if (family === 6 && value >> shared === mappedBlock >> shared) {
-    family = 4;
-    value &= 0xffffffffn;
-    prefix = Math.max(prefix - 96, 0);
+  const size = 2 ** (32 - prefix);
+  const network = Math.floor(ip.split('.').reduce((value, octet) => value * 256 + Number(octet), 0) / size) * size;
+  const cidr = `${[24, 16, 8, 0].map((shift) => (network >>> shift) & 255).join('.')}/${prefix}`;
+  if (network === 0 || prefix === 0) {
+    return { ok: false, reason: `'${cidr}' would expose the database to the entire internet` };
   }
-
-  const host = BigInt(bits[family] - prefix);
-  const range: Range = { family, network: (value >> host) << host, prefix };
-  const cidr = cidrOf(range);
-  const named = cidr === entry ? `'${entry}'` : `'${entry}' (${cidr})`;
-  if (range.network === 0n || prefix === 0) {
-    return { ok: false, reason: `${named} would expose the database to the entire internet` };
-  }
-  if (!allowWide && prefix < minPrefix[family]) {
+  if (!allowWide && prefix < minPrefix) {
     return {
       ok: false,
-      reason: `${named} is wider than /${minPrefix[family]}; set infra:dbPublicAclAllowWide=true to allow it`,
+      reason: `'${cidr}' is wider than /${minPrefix}; set infra:dbPublicAclAllowWide=true to allow it`,
     };
   }
-  return { ok: true, range };
+  return { ok: true, cidr, size };
 }
 
 /** Validated ACL: the canonical CIDR list, or the first refusal. */
 export type AclParse = { ok: true; cidrs: string[] } | { ok: false; reason: string };
 
 /**
- * Parse a comma-separated operator ACL into de-duplicated canonical CIDRs, or return the first refusal. Each entry
- * becomes the network it names: a bare address gains `/32` or `/128`, host bits are cleared, and an IPv4-mapped IPv6
- * range becomes the IPv4 range it names. Refused: malformed input, any range opening the database to the whole
- * internet (a `/0`, the unspecified network, every IPv4-mapped address), a prefix wider than `/24` (IPv4) or `/48`
- * (IPv6) unless `allowWide`, and entries that together open more than half of a family, the most one entry may open.
- * Sizes add up as written, so nested wide ranges count twice; they are redundant anyway.
+ * Parse a comma-separated operator ACL into de-duplicated canonical IPv4 CIDRs, or return the first refusal. Each
+ * entry becomes the network it names: a bare address gains `/32`, host bits are cleared, and an IPv4-mapped IPv6
+ * entry becomes the IPv4 range it names. Refused: IPv6 and malformed input, any range opening the database to the
+ * whole internet (a `/0` or the unspecified network), a prefix wider than `/24` unless `allowWide`, and entries that
+ * together open more than half of IPv4, the most one entry may open. Sizes add up as written, so nested wide ranges
+ * count twice; they are redundant anyway.
  */
 export function parseAclInput(raw: string, allowWide = false): AclParse {
   const entries = raw
@@ -106,19 +60,17 @@ export function parseAclInput(raw: string, allowWide = false): AclParse {
   if (entries.length === 0) return { ok: false, reason: 'no CIDRs provided' };
 
   const cidrs: string[] = [];
-  const opened: Record<Family, bigint> = { 4: 0n, 6: 0n };
+  let opened = 0;
   for (const entry of entries) {
     const check = checkEntry(entry, allowWide);
     if (!check.ok) return check;
-    const { family, prefix } = check.range;
-    const cidr = cidrOf(check.range);
-    if (cidrs.includes(cidr)) continue;
-    cidrs.push(cidr);
-    opened[family] += 1n << BigInt(bits[family] - prefix);
-    if (opened[family] > 1n << BigInt(bits[family] - 1)) {
+    if (cidrs.includes(check.cidr)) continue;
+    cidrs.push(check.cidr);
+    opened += check.size;
+    if (opened > 2 ** 31) {
       return {
         ok: false,
-        reason: `'${cidrs.join(', ')}' together would expose the database to more than half of IPv${family}`,
+        reason: `'${cidrs.join(', ')}' together would expose the database to more than half of IPv4`,
       };
     }
   }
