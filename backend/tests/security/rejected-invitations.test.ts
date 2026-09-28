@@ -116,7 +116,7 @@ describe('Rejected invitations', async () => {
   });
 
   it('must not bind a rejected invitation via an inbox proof', async () => {
-    const owner = await createTestUser('proven-owner@security-test.com', false);
+    const owner = await createTestUser('proven-owner@security-test.com');
     // A rejected invitation that no account holds, and a pending one, both to the owner's address.
     const rejected = await createInvitation({
       organization: await createTestOrganization(),

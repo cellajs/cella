@@ -28,7 +28,6 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
       `admin${index}@example.com`,
       organization.id,
       adminRole,
-      true,
       organization.tenantId,
     );
     const sessionCookie = await createTestSession(admin);

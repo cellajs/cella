@@ -1,4 +1,4 @@
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
@@ -45,7 +45,7 @@ const verificationFor = async (props: Props) => {
   const [emailInUse]: (EmailModel | undefined)[] = await db
     .select()
     .from(emailsTable)
-    .where(and(eq(emailsTable.email, email), eq(emailsTable.verified, true)));
+    .where(eq(emailsTable.email, email));
 
   if (emailInUse && identity.verified) {
     throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });

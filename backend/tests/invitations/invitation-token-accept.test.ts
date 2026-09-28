@@ -201,7 +201,6 @@ describe('Accept an invitation token as the signed-in user', async () => {
       'my-account@example.com',
       organization.id,
       adminRole,
-      true,
       organization.tenantId,
     );
     const { inactiveMembership, invitationCookie } = await createInvitation({

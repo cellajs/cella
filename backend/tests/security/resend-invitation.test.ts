@@ -231,7 +231,6 @@ describe('Resend a pending invitation from the pending list', async () => {
       'org-admin@example.com',
       organization.id,
       adminRole,
-      true,
       organization.tenantId,
     );
     const invitation = await createInvitation({ organization, email: invitedEmail, createdBy: admin.id });

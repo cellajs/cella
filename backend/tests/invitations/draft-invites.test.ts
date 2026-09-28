@@ -37,7 +37,6 @@ describe('Draft context invite deferral', async () => {
       'admin@example.com',
       organization.id,
       adminRole,
-      true,
       organization.tenantId,
     );
     const sessionCookie = await createTestSession(admin);
@@ -179,7 +178,6 @@ describe('Draft context invite deferral', async () => {
       'admin@example.com',
       organization.id,
       adminRole,
-      true,
       organization.tenantId,
     );
     const sessionCookie = await createTestSession(admin);
@@ -215,7 +213,6 @@ describe('Draft context invite deferral', async () => {
       'admin@example.com',
       organization.id,
       adminRole,
-      true,
       organization.tenantId,
     );
     const sessionCookie = await createTestSession(admin);

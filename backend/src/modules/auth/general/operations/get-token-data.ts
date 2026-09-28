@@ -36,9 +36,8 @@ export async function getTokenDataOp(ctx: DbContext, tokenRecord: TokenRecord): 
 
   if (tokenRecord.userId) return tokenData;
 
-  // A user may have proven this address since the invite was sent. An unverified holder does not count: anyone can
-  // type an address into sign-up, and binding to them would take the invitation away from whoever opens the link.
-  const existingUser = await findUserByEmail(ctx, { email: tokenRecord.email, verifiedOnly: true });
+  // An account may have taken this address since the invite was sent; every account's address is a proven inbox.
+  const existingUser = await findUserByEmail(ctx, { email: tokenRecord.email });
   if (existingUser) {
     await bindTokenToUser(ctx, { tokenId: tokenRecord.id, userId: existingUser.id });
     // Bind the invitation too, so it shows up in-app once they sign in; the token stays for this flow's cookie.

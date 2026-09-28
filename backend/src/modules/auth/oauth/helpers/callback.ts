@@ -28,9 +28,9 @@ type OAuthFlowResult =
       identity: IdentityModel;
     }
   | {
+      /** A provider account a proven user connected, awaiting the click on its verification mail. */
       type: 'unverified';
       identity: IdentityModel;
-      reason: 'signup' | 'signin' | 'connect';
     }
   | {
       /** A sign-up without an account: it waits on the verification mail sent to the provider's address. */
@@ -113,15 +113,14 @@ const authCallbackFlow = async ({
     return { type: 'verified', user, identity };
   }
 
-  // User has an unverified OAuth account → prompt oauth (re-)verification, mailed to the account's own address
+  // An unverified identity is a connect awaiting its mail: prompt the (re-)verification, mailed to the account's own address
   if (identity) {
     const user = await findUserById({ var: { db } }, { id: identity.userId });
     // Signed out, the provider holder has not shown they own this account, so verification never moves to another
     // inbox: proving that one would add it to the account and sign its holder in. Moving it takes connect, signed in.
     if (providerUser.email !== user.email) throw new AppError(409, 'oauth_conflict', 'warn');
     await refreshIdentityEmail(identity, providerUser);
-    const type = user.lastSignInAt ? 'connect' : 'signup';
-    return { type: 'unverified', identity, reason: type };
+    return { type: 'unverified', identity };
   }
 
   // Existing user (by email) found -> suggest sign in and connect
@@ -172,7 +171,7 @@ const connectCallbackFlow = async ({
     }
 
     await refreshIdentityEmail(identity, providerUser);
-    return { type: 'unverified', identity, reason: 'connect' };
+    return { type: 'unverified', identity };
   }
 
   // New OAuth account connection → validate email isn't used by another user
@@ -185,7 +184,7 @@ const connectCallbackFlow = async ({
     subject: providerUser.id,
     email: providerUser.email,
   });
-  return { type: 'unverified', identity: newIdentity, reason: 'connect' };
+  return { type: 'unverified', identity: newIdentity };
 };
 
 /**
@@ -391,7 +390,7 @@ const processCallbackResult = async (
     });
   }
 
-  const reason = info.type === 'pending' ? 'signup' : info.reason;
+  const reason = info.type === 'pending' ? 'signup' : 'connect';
   const redirectUrl = new URL(`/auth/email-verification/${reason}?provider=${provider}`, appConfig.frontendUrl);
 
   return ctx.redirect(redirectUrl, 302);

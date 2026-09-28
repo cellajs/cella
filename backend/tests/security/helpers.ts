@@ -25,7 +25,7 @@ export async function createTestTenant(_call: Call, label: string): Promise<Test
   // Seeded via the DB as superuser, which bypasses RLS.
   const organization = await createTestOrganization();
 
-  const user = await createOrganizationAdminUser(email, organization.id, adminRole, true, organization.tenantId);
+  const user = await createOrganizationAdminUser(email, organization.id, adminRole, organization.tenantId);
 
   const sessionCookie = await createTestSession(user);
 
@@ -51,7 +51,7 @@ export async function createOrgUser(
 ) {
   const email = `${label}-user@security-test.com`;
 
-  const user = await createOrganizationAdminUser(email, organizationId, role, true, tenantId);
+  const user = await createOrganizationAdminUser(email, organizationId, role, tenantId);
 
   const sessionCookie = await createTestSession(user);
 

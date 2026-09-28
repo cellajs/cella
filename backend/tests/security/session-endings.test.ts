@@ -272,7 +272,6 @@ describe('Ending a session closes its stream and its cached entry', async () => 
       'sole-admin@security-test.com',
       org.id,
       adminRole,
-      true,
       org.tenantId,
     );
     const session = await insertSession(soleAdmin);

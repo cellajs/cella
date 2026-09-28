@@ -135,7 +135,6 @@ export const wrongTotpCode = (secret = testTotpSecret) =>
 
 export async function createTotpUser(email: string) {
   const user = await createTestUser(email);
-  await verifyUserEmail(email);
   await db.insert(totpsTable).values({
     userId: user.id,
     secret: encryptTotpSecret(testTotpSecret),
@@ -145,18 +144,10 @@ export async function createTotpUser(email: string) {
   return user;
 }
 
-export async function createTestUser(email: string, verified = true) {
+export async function createTestUser(email: string) {
   const userRecord = mockUser({ email });
   const [user] = await insertUsers(db, [userRecord]);
-
-  const emailRecord = {
-    email: user.email,
-    userId: user.id,
-    verified,
-    verifiedAt: verified ? mockPastIsoDate() : null,
-  };
-  await db.insert(emailsTable).values(emailRecord);
-
+  await db.insert(emailsTable).values(mockEmail(user));
   return user;
 }
 
@@ -168,15 +159,8 @@ export async function enableMFAForUser(userId: string) {
   await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, userId));
 }
 
-export async function verifyUserEmail(email: string) {
-  await db
-    .update(emailsTable)
-    .set({ verified: true, verifiedAt: mockPastIsoDate() })
-    .where(eq(emailsTable.email, email.toLowerCase()));
-}
-
-export async function createSystemAdminUser(email: string, verified = true) {
-  const user = await createTestUser(email, verified);
+export async function createSystemAdminUser(email: string) {
+  const user = await createTestUser(email);
 
   // system_roles is admin-only (read-only grant + admin-only write trigger for runtime_role).
   await getAdminDb('test setup').insert(systemRolesTable).values({
@@ -193,10 +177,9 @@ export async function createOrganizationAdminUser(
   email: string,
   organizationId?: string,
   role: EntityRole = adminRole,
-  verified = true,
   tenantId = 'test01', // Default test tenant
 ) {
-  const user = await createTestUser(email, verified);
+  const user = await createTestUser(email);
 
   const membership = {
     id: generateId(),

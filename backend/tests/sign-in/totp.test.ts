@@ -16,7 +16,6 @@ import {
   expectRefusal,
   setCookiePair,
   totpCode,
-  verifyUserEmail,
   wrongTotpCode,
 } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -34,7 +33,6 @@ describe('TOTP Authentication', async () => {
   describe('TOTP Setup', () => {
     it('should generate TOTP key for authenticated user', async () => {
       const user = await createTestUser(signUpUser.email);
-      await verifyUserEmail(signUpUser.email);
 
       const sessionCookie = await createTestSession(user);
 
@@ -51,7 +49,6 @@ describe('TOTP Authentication', async () => {
 
     it('should create TOTP for user with valid code', async () => {
       const user = await createTestUser(signUpUser.email);
-      await verifyUserEmail(signUpUser.email);
 
       const sessionCookie = await createTestSession(user);
 
@@ -122,7 +119,6 @@ describe('TOTP Authentication', async () => {
 
     it('should reject TOTP verification for user without TOTP', async () => {
       const user = await createTestUser(signUpUser.email);
-      await verifyUserEmail(signUpUser.email);
       await enableMFAForUser(user.id);
 
       const mfaToken = await createMfaToken(user);

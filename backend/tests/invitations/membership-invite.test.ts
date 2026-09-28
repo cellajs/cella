@@ -31,7 +31,6 @@ describe('Membership Invitation', async () => {
       'admin@example.com',
       organization.id,
       adminRole,
-      true,
       organization.tenantId,
     );
 

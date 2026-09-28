@@ -109,7 +109,6 @@ describe('Unsubscribe links', () => {
         `${label}@example.test`,
         organization.id,
         memberRole,
-        true,
         organization.tenantId,
       );
       await adminDb.update(usersTable).set({ newsletter }).where(eq(usersTable.id, user.id));

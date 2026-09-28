@@ -18,20 +18,8 @@ const emailRow = async (email: string) => {
 };
 
 describe('markEmailVerified', () => {
-  it('verifies an unverified address of the account', async () => {
-    const user = await createTestUser('unverified@example.com', false);
-
-    expect(await markEmailVerified(db, { userId: user.id, email: user.email, via: 'magic' })).toBe(true);
-
-    const row = await emailRow(user.email);
-    expect(row.verified).toBe(true);
-    expect(row.verifiedAt).not.toBeNull();
-    expect(row.lastVerifiedVia).toBe('magic');
-    expect(row.lastVerifiedAt).toBe(row.verifiedAt);
-  });
-
   it('stamps every proof but keeps the first verification time', async () => {
-    const user = await createTestUser('twice@example.com', false);
+    const user = await createTestUser('twice@example.com');
     await markEmailVerified(db, { userId: user.id, email: user.email, via: 'magic' });
     const first = await emailRow(user.email);
 
@@ -55,12 +43,12 @@ describe('markEmailVerified', () => {
 
   it('reports an address the account does not hold instead of passing silently', async () => {
     const user = await createTestUser('owner@example.com');
-    const other = await createTestUser('other@example.com', false);
+    const other = await createTestUser('other@example.com');
 
     expect(await markEmailVerified(db, { userId: user.id, email: 'nobody@example.com', via: 'magic' })).toBe(false);
     // Another account's address is never touched.
     expect(await markEmailVerified(db, { userId: user.id, email: other.email, via: 'magic' })).toBe(false);
-    expect((await emailRow(other.email)).verified).toBe(false);
+    expect((await emailRow(other.email)).lastVerifiedVia).toBeNull();
   });
 
   it('fails a verification flow on an address the account does not hold', async () => {

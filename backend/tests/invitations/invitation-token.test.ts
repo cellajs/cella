@@ -74,30 +74,4 @@ describe('Invitation token data', async () => {
     // The same answer as without a cookie: the browser holds no token by that id.
     await expectRefusal({ response, error }, 401, 'invitation_not_found');
   });
-
-  it('does not bind to an account that holds the address without having proven it', async () => {
-    const organization = await createTestOrganization();
-    const inviter = await createTestUser('inviter@example.com');
-    const { token, inactiveMembership, invitationCookie } = await createInvitation({
-      token: 'invoked',
-      email: 'squatted@example.com',
-      organization,
-      createdBy: inviter.id,
-    });
-    // Someone typed the address into sign-up and never clicked the link.
-    await createTestUser('squatted@example.com', false);
-
-    const { response, data } = await call(getTokenData, {
-      path: { type: 'invitation', id: token.id },
-      headers: { ...defaultHeaders, Cookie: invitationCookie },
-    });
-
-    expect(response.status).toBe(200);
-    expect((data as { userId: string }).userId).toBe('');
-    const [stillUnbound] = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
-    expect(stillUnbound.userId).toBeNull();
-  });
 });

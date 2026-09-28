@@ -119,7 +119,6 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
       'yjs-token-sysadmin-member@security-test.com',
       owner.organization.id,
       adminRole,
-      true,
       owner.tenantId,
     );
     await getAdminDb('yjs token test')

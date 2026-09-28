@@ -25,14 +25,14 @@ const replacementOf = (oldToken: TokenRecord): NewToken => ({
 /**
  * Re-issues a pending invitation from one of its token rows and emails the new link. Pending means a membership
  * invitation whose row stands, unrejected, in a channel that still exists, or a system invitation whose address no
- * account has proven. The new token gets a fresh id and the invitation's older tokens are deleted, so only the newest
+ * account holds. The new token gets a fresh id and the invitation's older tokens are deleted, so only the newest
  * link works. Returns false, sending nothing, when the invitation is no longer pending. Callers resolve the token and
  * authorize the resend themselves.
  */
 export const resendInvitationEmail = async (ctx: DbContext, oldToken: TokenRecord): Promise<boolean> => {
   const { email, inactiveMembershipId } = oldToken;
 
-  if (!inactiveMembershipId && (await findUserByEmail(ctx, { email, verifiedOnly: true }))) return false;
+  if (!inactiveMembershipId && (await findUserByEmail(ctx, { email }))) return false;
 
   const reissued = await ctx.var.db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };

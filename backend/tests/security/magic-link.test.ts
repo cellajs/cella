@@ -6,7 +6,6 @@ import { appConfig } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { actorsTable } from '#/modules/actors/actors-db';
-import { identitiesTable } from '#/modules/auth/identities-db';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -23,7 +22,6 @@ import {
   expectRefusal,
   insertTestSession,
   insertTestToken,
-  linkIdentity,
   mailedLink,
   setCookiePair,
   tokenRow,
@@ -34,21 +32,6 @@ import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['magic', 'passkey'] });
-
-/**
- * The next delete from `table` fails, as a statement does when its connection drops. The pool and a transaction share
- * the prototype, so the failure hits alike with or without a transaction.
- */
-const failNextDeleteOf = (table: PgTable) => {
-  const prototype = PgAsyncDatabase.prototype;
-  const original = prototype.delete;
-  const spy = vi.spyOn(prototype, 'delete').mockImplementation(function (this: typeof prototype, target) {
-    if (target !== table) return original.call(this, target);
-    spy.mockRestore();
-    throw new Error('Connection terminated unexpectedly');
-  });
-  onTestFinished(() => spy.mockRestore());
-};
 
 /**
  * The next read from `table` fails, as a statement does when the pool cannot hand out a connection; reads from other
@@ -375,7 +358,7 @@ describe('magic-link sign-up', async () => {
   it('signs in to an account that took the address since the link went out, creating no second one', async () => {
     const email = newcomer();
     const { rawToken, requestedHere } = await requestLink(email);
-    const holder = await createTestUser(email, false);
+    const holder = await createTestUser(email);
 
     const { response } = await openLink(rawToken, requestedHere);
     expect(response.status).toBe(302);
@@ -507,79 +490,5 @@ describe('magic link in a browser with a stale session cookie', async () => {
     expect(response.status).toBe(503);
     expect(cookieChange(response, 'session')).toBeUndefined();
     expect((await tokenRow(row.id)).invokedAt).toBeNull();
-  });
-});
-
-/**
- * An account whose address nobody proved may carry a provider identity nobody verified: before sign-ups waited on the
- * inbox, anyone could create such an account on someone else's address. The owner's first inbox proof adopts the
- * account and drops those identities with it.
- */
-describe('adopting an unproven account', async () => {
-  const call = await createAppClient();
-
-  afterEach(async () => await clearSecurityTestData());
-
-  const address = (label: string) => `${label}-${nanoid(6)}@security-test.com`.toLowerCase();
-  const identityRow = async (id: string) =>
-    (await db.select().from(identitiesTable).where(eq(identitiesTable.id, id)))[0];
-
-  /** Opens a fresh magic link for `user` in the browser that asked for it. */
-  const signInByMagicLink = async (user: { id: string; email: string }) => {
-    const { raw, row } = await magicLink(user);
-    const { response } = await call(invokeToken, {
-      path: { type: 'magic', token: raw },
-      headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', row.id) },
-    });
-    expect(response.status).toBe(302);
-    expect(cookieChange(response, 'session')).toBe('set');
-  };
-
-  it("must not keep an unverified provider identity on an account adopted via its owner's magic link", async () => {
-    const owner = await createTestUser(address('owner'), false);
-    const planted = await linkIdentity(owner, { verified: false, subject: 'planted-github-id' });
-
-    await signInByMagicLink(owner);
-
-    expect(await identityRow(planted.id)).toBeUndefined();
-    const [adopted] = await db.select().from(emailsTable).where(eq(emailsTable.email, owner.email));
-    expect(adopted).toMatchObject({ verified: true, lastVerifiedVia: 'magic' });
-  });
-
-  it('must not keep an unverified provider identity on an adopted account via a cleanup that failed midway', async () => {
-    const owner = await createTestUser(address('owner'), false);
-    const planted = await linkIdentity(owner, { verified: false, subject: 'planted-github-id' });
-
-    // The first proof loses its connection between stamping the address and dropping the identities.
-    failNextDeleteOf(identitiesTable);
-    const { raw, row } = await magicLink(owner);
-    const { response } = await call(invokeToken, {
-      path: { type: 'magic', token: raw },
-      headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', row.id) },
-    });
-    expect(response.status).toBe(500);
-    expect(cookieChange(response, 'session')).toBeUndefined();
-
-    // Stamped without its cleanup, the address would read as proven and the next proof would skip the cleanup.
-    const [afterFailure] = await db.select().from(emailsTable).where(eq(emailsTable.email, owner.email));
-    expect(afterFailure.verified).toBe(false);
-
-    await signInByMagicLink(owner);
-
-    expect(await identityRow(planted.id)).toBeUndefined();
-    const [adopted] = await db.select().from(emailsTable).where(eq(emailsTable.email, owner.email));
-    expect(adopted).toMatchObject({ verified: true, lastVerifiedVia: 'magic' });
-  });
-
-  it("keeps verified identities, and an already proven account's pending connection (positive control)", async () => {
-    const owner = await createTestUser(address('owner'), false);
-    const verified = await linkIdentity(owner, { verified: true, subject: 'owner-github-id' });
-    await signInByMagicLink(owner);
-    expect(await identityRow(verified.id)).toBeDefined();
-
-    const proven = await createTestUser(address('proven'));
-    const pendingConnection = await linkIdentity(proven, { verified: false, subject: 'proven-github-id' });
-    await signInByMagicLink(proven);
-    expect(await identityRow(pendingConnection.id)).toBeDefined();
   });
 });
