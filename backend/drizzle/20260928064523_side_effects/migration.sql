@@ -4,7 +4,7 @@
 -- The user will handle migration generation and application.
 --
 -- Combined side-effect migration.
--- Blocks (in order): cdc_setup, counter_functions, immutability_setup, membership_rules, partition_setup, rls_setup, unlogged_setup, channel_path_backfill, verify_side_effects
+-- Blocks (in order): cdc_setup, counter_functions, immutability_setup, membership_rules, partition_setup, rls_setup, unlogged_setup, verify_side_effects
 -- Regenerate with `pnpm generate`. Every block is idempotent; the whole set re-runs
 -- whenever ANY block changes, so this file always reflects the full current side-effect state.
 
@@ -684,16 +684,6 @@ BEGIN
 
   RAISE NOTICE 'UNLOGGED setup complete.';
 END $$;
---> statement-breakpoint
--- ══════════════════════════════════════════════════════════════════════════
--- [channel_path_backfill] Channel path backfill, canonical paths on counters rows
--- ══════════════════════════════════════════════════════════════════════════
--- Channel path backfill
--- Copies each channel's canonical path onto its channel_counters row.
-
-UPDATE channel_counters cc SET path = c.path
-      FROM organizations c
-      WHERE cc.channel_key = c.id::text AND cc.path IS DISTINCT FROM c.path;
 --> statement-breakpoint
 -- ══════════════════════════════════════════════════════════════════════════
 -- [verify_side_effects] Verify, assert end state of all side-effect blocks
