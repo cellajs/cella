@@ -33,7 +33,7 @@ No script: manual.
 
 **Sessions and sign-in**
 
-9. Replace `getParsedSessionCookie`, `validateSession` and `ctx.var.sessionToken` with `resolveSession`, `readSession` and `ctx.var.session`.
+9. Replace `getParsedSessionCookie`, `validateSession` and `ctx.var.sessionToken` with `resolveSession`, `readSession` and `ctx.var.session`; a reader that may find no session calls `findSession(ctx)` (null on a refusal alone, a failed read throws), and a custom sign-out reads through `readOwnSession`.
 10. Replace `revokeSessions` with `endSessions`; listeners of `session.revoked` handle its `reason` and `'all'`.
 11. Every process with guard caches calls `listenForAuthInvalidation()` on a session-mode connection and reports it as the critical `authInvalidation` component of `/health?depth=full`.
 12. Custom stream clients reconnect on `session_replaced` and `access_changed`; app-registered `AppStreamSubscriber`s carry `systemAccessAllowed`, and callers of `closeAppStream` use `closeAppStreams`.
@@ -44,10 +44,10 @@ No script: manual.
 
 **Tokens and sign-up**
 
-17. Move direct `tokensTable` reads and writes into `backend/src/modules/auth/tokens/`; replace `getValidToken` and `getValidSingleUseToken` with `invokeToken`, `readBoundToken` or `spendCookieToken`.
+17. Move direct `tokensTable` reads and writes into `backend/src/modules/auth/tokens/`; replace `getValidToken` and `getValidSingleUseToken` with `invokeToken`, `readBoundToken` or `spendCookieToken`. `findBoundToken` and `invitationTokensSubquery` are gone (`readBoundToken`); `spendCookieToken(ctx, type, { db: tx })` leaves the cookie for the caller to delete once the transaction committed; `rememberLinkRequest`, `requestedHere` and `forgetLinkRequest` in `tokens/token-lifecycle.ts` replace the magic and step-up marker helpers, and a used link clears its marker.
 18. Give every app token type a `tokenPolicies` entry with `replaces` (and `unboundOpener` for links), a `linkHandlers` entry per link type, and add `oauth-connect` and `step-up` to `tokenTypes`.
-19. Issue cookie tokens that serve one session with `sessionId`; a custom sign-out spends `oauth-connect` and calls `dropHeldMagicLink`.
-20. Route app sign-up checks through `maySignUp(ctx, { email })`; an unverified OAuth result has no `invite` reason.
+19. Issue cookie tokens that serve one session with `sessionId`; a custom sign-out spends `magic` and calls `dropHeldMagicLink`; the `oauth-connect` pin dies with its session.
+20. Route app sign-up checks through `maySignUp(ctx, { email })`; an unverified OAuth result has no `invite` reason. `handleCreateUser(ctx, { newUser, via })` writes the email row verified and claims the invitations itself (`emailVerified` and `inactiveMembershipId` are gone); no app path creates an account without inbox proof, since the unproven-account reaper is gone.
 21. `findInvitationToken` takes `{ id } | { inactiveMembershipId }`; callers of `resendInvitationWithToken` send `{ tokenId }`.
 
 **Second factors and step-up**
@@ -58,7 +58,7 @@ No script: manual.
 
 **Authorization server**
 
-25. Import `invalidateOauthClientCache` from `oauth-server/client-cache`; replace `refusalFor` with `grantRefusal` for users and `apiKeyRefusal` for a service's API key, and `tokenUserCache` with the token grant cache.
+25. Import `invalidateOauthClientCache` from `oauth-server/client-cache`; replace `refusalFor` with `grantRefusal` for users and `apiKeyRefusal` for a service's API key, and `tokenUserCache` with the token grant cache. An authorization request naming an unknown or foreign resource redirects to the client with `error=invalid_target`.
 26. Revoke grants through `revokeGrant`; replace `invalidateApiKeyCacheByAccount` with `invalidateCache.serviceAccount` or `invalidateCache.installation`; pass the `VerifiedAccessToken` to the token-verdict cache functions.
 27. Show `target` from the consent details on an app-owned consent page (frontend `ConsentDetails`).
 
