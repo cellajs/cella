@@ -96,6 +96,10 @@ describe('postgresManaged public endpoint ACL', () => {
     ]);
   });
 
+  it("must not open the endpoint without an ACL: it would run on Scaleway's default rule 0.0.0.0/0", async () => {
+    await expect(render({ 'infra:dbPublicEndpoint': 'true' })).rejects.toThrow(/Security: infra:dbPublicAcl/);
+  });
+
   it('must not expose the database to the internet via an all-internet ACL', async () => {
     for (const acl of ['0.0.0.0/0', '::/0', '203.0.113.7, 0.0.0.0/0']) {
       await expect(render({ 'infra:dbPublicEndpoint': 'true', 'infra:dbPublicAcl': acl })).rejects.toThrow(

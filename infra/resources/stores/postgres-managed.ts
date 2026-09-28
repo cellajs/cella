@@ -117,19 +117,10 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
 
       // Opt-in public endpoint for scoped operator tasks: `infra:dbPublicEndpoint` enables it, `infra:dbPublicAcl` limits client CIDRs, and unsetting both returns the database to private-only.
       const dbPublicEndpoint = infraConfig.getBoolean('dbPublicEndpoint') ?? false;
-      const dbPublicAcl = infraConfig.get('dbPublicAcl') ?? '';
 
-      if (dbPublicEndpoint && !dbPublicAcl) {
-        throw new Error(
-          'Security: infra:dbPublicAcl must be set when infra:dbPublicEndpoint=true. ' +
-            'An open public endpoint with no ACL exposes the database to the internet. ' +
-            'Example: pulumi config set infra:dbPublicAcl "203.0.113.0/32"',
-        );
-      }
-
-      // Checked here too, not only in the CLI prompt: a hand-set config reaches this resource directly. `infra:dbPublicAclAllowWide` admits prefixes wider than /24 (IPv4) or /48 (IPv6), never the whole internet.
+      // Checked here too, not only in the CLI prompt: a hand-set config reaches this resource directly, and without an ACL the endpoint opens on Scaleway's default rule 0.0.0.0/0. `infra:dbPublicAclAllowWide` admits prefixes wider than /24 (IPv4) or /48 (IPv6), never the whole internet.
       const acl = dbPublicEndpoint
-        ? parseAclInput(dbPublicAcl, { allowWide: infraConfig.getBoolean('dbPublicAclAllowWide') ?? false })
+        ? parseAclInput(infraConfig.get('dbPublicAcl') ?? '', infraConfig.getBoolean('dbPublicAclAllowWide') ?? false)
         : undefined;
       if (acl && !acl.ok) throw new Error(`Security: infra:dbPublicAcl is refused: ${acl.reason}.`);
 
