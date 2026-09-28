@@ -1,11 +1,9 @@
 import { and, eq } from 'drizzle-orm';
 import { baseDb } from '#/db/db';
-import { findTenantById } from '#/db/prepared';
-import { getTenantCache } from '#/middlewares/guard/tenant-cache';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
-import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
+import { loadTenant } from '#/modules/tenants/helpers/load-tenant';
 import { usersTable } from '#/modules/user/user-db';
 
 /** A person's consent to a client, for one tenant's resource. */
@@ -69,6 +67,6 @@ export async function grantRefusal({ userId, clientId, tenantId }: UserGrantSubj
  * deleted over a suspension would stay gone after it is lifted.
  */
 async function allowsUnregisteredClients(tenantId: string): Promise<boolean> {
-  const tenant = getTenantCache(tenantId) ?? (await findTenantById.execute({ id: tenantId }))[0];
-  return !!tenant && normalizeRestrictions(tenant.restrictions).allowUnregisteredClients;
+  const tenant = await loadTenant(tenantId);
+  return !!tenant && tenant.restrictions.allowUnregisteredClients;
 }
