@@ -44,6 +44,18 @@ const app = new Hono<Env>()
     if (!isTokenType(type)) return ctx.body(null, 404);
     return ctx.json({ spent: await spendCookieToken(ctx, type) });
   })
+  // A completion that spends inside its transaction and fails after it: the spend rolls back with the rest.
+  .post('/spend-then-fail/:type', async (ctx) => {
+    const type = ctx.req.param('type');
+    if (!isTokenType(type)) return ctx.body(null, 404);
+    const outcome = await db
+      .transaction(async (tx) => {
+        await spendCookieToken(ctx, type, { db: tx });
+        throw new Error('the completion failed after the spend');
+      })
+      .catch((err: Error) => err.message);
+    return ctx.json({ outcome });
+  })
   .onError((err, ctx) => {
     if (!(err instanceof AppError)) throw err;
     return ctx.json({ type: err.type, tokenId: err.meta?.tokenId }, err.status as ContentfulStatusCode);
@@ -273,6 +285,23 @@ describe('spendCookieToken', () => {
     const cookie = setCookiePair(await request(`/invoke/invitation/${rawToken}`), 'invitation');
     const bySingleUse = await request('/spend/invitation', [cookie], 'POST');
     expect((await bySingleUse.json()).spent).toMatchObject({ id: token.id });
+    expect(await rowOf(token.id)).toBeUndefined();
+  });
+
+  it('leaves the token and its cookie in place when the transaction that spent it rolls back', async () => {
+    const user = await createTestUser(address());
+    const { token, rawToken } = await issueToken(ctx, { type: 'confirm-mfa', email: user.email, userId: user.id });
+    const cookie = authCookie('confirm-mfa', rawToken);
+
+    const rolledBack = await request('/spend-then-fail/confirm-mfa', [cookie], 'POST');
+    expect(rolledBack.status).toBe(200);
+    // The row is unspent and the browser keeps its cookie: the next attempt can still spend it.
+    expect(await rowOf(token.id)).toBeDefined();
+    expect(cookieChange(rolledBack, 'confirm-mfa')).toBeUndefined();
+
+    const retried = await request('/spend/confirm-mfa', [cookie], 'POST');
+    expect((await retried.json()).spent).toMatchObject({ id: token.id });
+    expect(cookieChange(retried, 'confirm-mfa')).toBe('cleared');
     expect(await rowOf(token.id)).toBeUndefined();
   });
 

@@ -314,15 +314,18 @@ export const readBoundToken = async (ctx: Context<Env>, type: TokenType): Promis
 };
 
 interface SpendCookieTokenOpts {
-  /** The caller's transaction, when the spend must commit with its other writes. */
+  /**
+   * The caller's transaction, when the spend must commit with its other writes. The cookie is then the caller's to
+   * delete once the transaction has committed: a rollback leaves the browser its token for the next attempt.
+   */
   db?: DbOrTx;
 }
 
 /**
- * Spends the token this browser's cookie of `type` binds it to: deletes its row and the cookie. A flow that grants
- * something for the spend, such as a session after a second factor, goes on only with the returned row: of two
- * concurrent completions exactly one gets it. Call it once the proof has succeeded; a failed attempt leaves the token
- * for the next try.
+ * Spends the token this browser's cookie of `type` binds it to: deletes its row and, on the pool, the cookie. A flow
+ * that grants something for the spend, such as a session after a second factor, goes on only with the returned row: of
+ * two concurrent completions exactly one gets it. Call it once the proof has succeeded; a failed attempt leaves the
+ * token for the next try.
  * A token issued for one session serves only that session: once it has ended, the token is spent without granting.
  * @returns The spent token, or null when there was nothing live to spend (no cookie, never issued, spent or expired,
  *   or its session has ended).
@@ -333,7 +336,8 @@ export const spendCookieToken = async (
   { db = baseDb }: SpendCookieTokenOpts = {},
 ): Promise<TokenRecord | null> => {
   const cookie = await getAuthCookie(ctx, type);
-  deleteAuthCookie(ctx, type);
+  // On a transaction the spend is final only at its commit, so the cookie stays until the caller deletes it then.
+  if (db === baseDb) deleteAuthCookie(ctx, type);
   if (!cookie) return null;
 
   const [spent] = await db.delete(tokensTable).where(boundTo(type, cookie)).returning(tokenColumns);

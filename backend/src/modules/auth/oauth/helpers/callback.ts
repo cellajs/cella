@@ -5,6 +5,7 @@ import type { Env } from '#/core/context';
 import { AppError, type ErrorKey } from '#/core/error';
 import { type DbOrTx, baseDb as db } from '#/db/db';
 import { maySignUp } from '#/modules/auth/auth-queries';
+import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { finishSignIn } from '#/modules/auth/general/helpers/finish-sign-in';
 import { addProvenEmail, requireEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
@@ -323,6 +324,8 @@ const completeSignUp = async ({
     );
     return { userId: user.id, identity: newIdentity };
   });
+  // The spend is committed: the cookie that named the verification goes with it.
+  deleteAuthCookie(ctx, 'oauth-verification');
 
   const user = await findUserById({ var: { db } }, { id: created.userId });
   return { type: 'verified', user, identity: created.identity };

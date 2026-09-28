@@ -743,8 +743,9 @@ describe('OAuth Authentication', async () => {
       expect(address).toMatchObject({ userId: account.id, verified: true, lastVerifiedVia: 'github' });
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
       expect(identity).toMatchObject({ issuer: 'github', subject: 'github-user-id', verified: true });
-      // The verification is spent with the sign-up.
+      // The verification is spent with the sign-up, and this browser's cookie for it goes once that has committed.
       expect(await verificationTokens()).toHaveLength(0);
+      expect(mockCookieStore.has('oauth-verification')).toBe(false);
     });
 
     it('must not complete an OAuth sign-up via another provider account', async () => {
