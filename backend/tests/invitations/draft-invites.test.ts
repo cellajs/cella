@@ -10,8 +10,15 @@ import { dispatchDeferredInvites } from '#/modules/memberships/helpers/deferred-
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
+import { hashToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
-import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser } from '../helpers';
+import {
+  createOrganizationAdminUser,
+  createTestOrganization,
+  createTestSession,
+  createTestUser,
+  mailedLink,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
@@ -135,6 +142,9 @@ describe('Draft context invite deferral', async () => {
     expect(afterRow.remindedAt).not.toBeNull();
     expect(afterRow.tokenId).toBeTruthy();
     expect(afterRow.tokenId).not.toBe(originalTokenId); // raw secrets are unrecoverable → rotate
+    // The dispatched mail carries the rotated token's link.
+    const [rotated] = await db.select().from(tokensTable).where(eq(tokensTable.id, afterRow.tokenId!));
+    expect(rotated.secret).toBe(hashToken(mailedLink('inviteLink').token));
 
     // Second dispatch inside the throttle window: no re-send, no token churn
     const second = await dispatchDeferredInvites(ctx, { channelIds: [organization.id] });

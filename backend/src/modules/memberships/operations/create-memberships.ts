@@ -1,10 +1,10 @@
-import { appConfig, type ChannelEntityType, type EntityRole, hierarchy } from 'shared';
+import { type ChannelEntityType, type EntityRole, hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { mailer } from '#/lib/mailer';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
+import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/helpers/invitation-mail';
 import { getMembershipEntityIds, insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import {
@@ -17,8 +17,6 @@ import {
 } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug-from-email';
-import { memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail } from '../../../../emails';
 
 interface CreateMembershipsInput {
   emails: string[];
@@ -70,16 +68,12 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   }
 
   const rejectedIds: string[] = [];
-  const reminderEmails: string[] = [];
+  const reminders: InvitedAddress[] = [];
   const existingUsersToActivate: Array<{ userId: string; email: string }> = [];
   const existingUsersToDirectAdd: Array<{ userId: string; email: string }> = [];
   const newUserTokenEmails: string[] = [];
 
   const inactiveMembershipsToInsert: Parameters<typeof insertInactiveMemberships>[1]['memberships'] = [];
-
-  const lng = appConfig.defaultLanguage;
-  const senderName = user.name;
-  const senderThumbnailUrl = user.thumbnailUrl;
 
   const [accounts, addressedInvitations] = await Promise.all([
     findInvitationAccounts(ctx, { emails: normalizedEmails, entityType, entityId: entity.id }),
@@ -105,7 +99,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
       if (invitation.rejectedAt) continue;
       const throttled = new Date(invitation.remindedAt ?? invitation.createdAt) >= reminderThrottleBefore;
       if (!deferDispatch && !throttled) {
-        reminderEmails.push(email);
+        reminders.push({ email, userId: invitation.userId });
         remindedInactiveMembershipIds.push(invitation.id);
       }
       continue;
@@ -162,17 +156,6 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     for (const { userId } of existingUsersToDirectAdd) await invalidateCache.user(db, userId);
   }
 
-  const memberInviteNoTokenLink = `${appConfig.frontendUrl}/${entityType}/${entitySlug}`;
-
-  const noTokenRecipients = [
-    ...existingUsersToActivate.map(({ email }) => {
-      return { email, lng, name: slugFromEmail(email), memberInviteLink: memberInviteNoTokenLink };
-    }),
-    ...reminderEmails.map((email) => {
-      return { email, lng, name: slugFromEmail(email), memberInviteLink: memberInviteNoTokenLink };
-    }),
-  ];
-
   const newUserInactiveMembershipIdsByEmail = new Map<string, string>();
   for (const email of newUserTokenEmails) newUserInactiveMembershipIdsByEmail.set(email, generateId());
 
@@ -185,12 +168,11 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
       inactiveMembershipId: newUserInactiveMembershipIdsByEmail.get(email)!,
     })),
   );
-  const insertedTokens = issuedTokens.map(({ token }) => token);
 
   let insertedInactiveMemberships: Array<{ id: string; email: string }> = [];
 
-  if (newUserTokenEmails.length > 0 && insertedTokens.length > 0) {
-    const tokensByEmail = new Map(insertedTokens.map((t) => [t.email, t.id]));
+  if (newUserTokenEmails.length > 0 && issuedTokens.length > 0) {
+    const tokensByEmail = new Map(issuedTokens.map(({ token }) => [token.email, token.id]));
 
     const newUserInactiveMemberships = newUserTokenEmails.map((email) => ({
       id: newUserInactiveMembershipIdsByEmail.get(email)!,
@@ -214,38 +196,20 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     });
   }
 
-  const rawByEmail = new Map(issuedTokens.map(({ token, rawToken }) => [token.email, rawToken]));
-
-  const withTokenRecipients = insertedTokens
-    .filter(({ email }) => insertedInactiveMemberships.some((m) => m.email === email))
-    .map(({ email, type }) => {
-      const rawToken = rawByEmail.get(email)!;
-      const inviteLink = `${appConfig.backendAuthUrl}/invoke-token/${type}/${rawToken}`;
-
-      return { email, lng, name: slugFromEmail(email), inviteLink };
-    });
-
-  const staticProps = { senderName, senderThumbnailUrl, role, entityName };
+  // A new address gets its token's link once its invitation row stands.
+  const newUsers = issuedTokens.flatMap(({ token, rawToken }) =>
+    insertedInactiveMemberships.some((m) => m.email === token.email) ? [{ email: token.email, rawToken }] : [],
+  );
 
   // Draft context: hold every email until deferred invites are dispatched at publish time.
-  if (!deferDispatch && noTokenRecipients.length > 0) {
-    await mailer.prepareEmails(memberInviteEmail, staticProps, noTokenRecipients, user.email);
-  }
-
-  const entityLink = `${appConfig.frontendUrl}/${entityType}/${entitySlug}`;
-  const directAdditionRecipients = existingUsersToDirectAdd.map(({ email }) => ({
-    email,
-    lng,
-    name: slugFromEmail(email),
-    entityLink,
-  }));
-
-  if (!deferDispatch && directAdditionRecipients.length > 0) {
-    await mailer.prepareEmails(memberAddedEmail, staticProps, directAdditionRecipients, user.email);
-  }
-
-  if (!deferDispatch && withTokenRecipients.length > 0) {
-    await mailer.prepareEmails(memberInviteWithTokenEmail, staticProps, withTokenRecipients, user.email);
+  if (!deferDispatch) {
+    await sendInvitationMails(ctx, {
+      sender: user,
+      channel: { type: entityType, slug: entitySlug, name: entityName, role },
+      organization,
+      invited: [...existingUsersToActivate, ...reminders, ...newUsers],
+      added: existingUsersToDirectAdd,
+    });
   }
 
   // Track reminder dispatch for the 7-day throttle

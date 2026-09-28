@@ -3,7 +3,9 @@ import { membershipInvite } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { addProvenEmail } from '#/modules/auth/general/helpers/mark-email-verified';
+import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { hashToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import {
   createOrganizationAdminUser,
@@ -11,6 +13,7 @@ import {
   createTestOrganization,
   createTestSession,
   createTestUser,
+  mailedLink,
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
@@ -84,6 +87,10 @@ describe('Membership Invitation', async () => {
     expect(inactiveMemberships[1].email).toBe('user2@example.com');
     expect(inactiveMemberships[0].role).toBe(memberRole);
     expect(inactiveMemberships[1].role).toBe(memberRole);
+
+    // The last mail carries the link of its own address's token.
+    const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inactiveMemberships[1].tokenId!));
+    expect(token.secret).toBe(hashToken(mailedLink('inviteLink').token));
   });
 
   it('should invite existing users to organization', async () => {

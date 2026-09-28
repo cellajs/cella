@@ -3,8 +3,9 @@ import { systemInvite } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens-db';
+import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
-import { createSystemAdminUser, createTestSession, createTestUser } from '../helpers';
+import { createSystemAdminUser, createTestSession, createTestUser, mailedLink } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
@@ -49,6 +50,8 @@ describe('System Invitation', async () => {
 
       const tokens = await db.select().from(tokensTable).where(eq(tokensTable.type, 'invitation'));
       expect(tokens).toHaveLength(2);
+      // The last mail carries the link of one of the minted tokens.
+      expect(tokens.map(({ secret }) => secret)).toContain(hashToken(mailedLink('inviteLink').token));
     });
 
     it('should filter out existing users', async () => {

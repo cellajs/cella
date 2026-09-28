@@ -1,20 +1,14 @@
-import { appConfig } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { mailer } from '#/lib/mailer';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
 import { findSystemInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
+import { sendInvitationMails } from '#/modules/memberships/helpers/invitation-mail';
 import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
 import { findVerifiedEmails } from '#/modules/system/system-queries';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug-from-email';
-import { systemInviteEmail } from '../../../../emails';
 
 export async function createInviteOp(ctx: UserContext, emails: string[]) {
   const user = ctx.var.user;
-  const lng = user.language;
-  const senderName = user.name;
-  const senderThumbnailUrl = user.thumbnailUrl;
 
   const normalizedEmails = [...new Set(emails.map((e) => e.toLowerCase().trim()))];
   if (normalizedEmails.length === 0) throw new AppError(400, 'no_recipients', 'warn');
@@ -71,17 +65,14 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
 
   await Promise.all(issued.map(({ token }) => linkWaitlistRequest(ctx, { email: token.email, tokenId: token.id })));
 
-  const recipients = issued.map(({ token, rawToken }) => ({
-    email: token.email,
-    lng,
-    name: slugFromEmail(token.email),
-    inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${token.type}/${rawToken}`,
-  }));
+  // No account holds these addresses (a verified one is rejected above) and no organization is involved: the mail
+  // goes out in the app's language.
+  await sendInvitationMails(ctx, {
+    sender: user,
+    invited: issued.map(({ token, rawToken }) => ({ email: token.email, rawToken })),
+  });
 
-  const staticProps = { senderName, senderThumbnailUrl };
-  await mailer.prepareEmails(systemInviteEmail, staticProps, recipients, user.email);
+  log.info('Users invited on system level', { count: issued.length });
 
-  log.info('Users invited on system level', { count: recipients.length });
-
-  return { data: [] as never[], rejectedIds, invitesSentCount: recipients.length };
+  return { data: [] as never[], rejectedIds, invitesSentCount: issued.length };
 }

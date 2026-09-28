@@ -118,6 +118,7 @@ export const findInvitationsToAddresses = async (
     .select({
       id: inactiveMembershipsTable.id,
       email: inactiveMembershipsTable.email,
+      userId: inactiveMembershipsTable.userId,
       rejectedAt: inactiveMembershipsTable.rejectedAt,
       // Last dispatch timestamps for the reminder throttle (remindedAt ?? createdAt)
       createdAt: inactiveMembershipsTable.createdAt,
@@ -125,6 +126,20 @@ export const findInvitationsToAddresses = async (
     })
     .from(inactiveMembershipsTable)
     .where(and(eq(inactiveMembershipsTable.channelId, channelId), inArray(inactiveMembershipsTable.email, emails)));
+};
+
+interface FindAccountLanguagesOpts {
+  userIds: string[];
+}
+
+/** Each account's language, for a mail an invited account reads in its own. */
+export const findAccountLanguages = async (ctx: DbContext, { userIds }: FindAccountLanguagesOpts) => {
+  if (!userIds.length) return new Map<string, string>();
+  const rows = await ctx.var.db
+    .select({ id: usersTable.id, language: usersTable.language })
+    .from(usersTable)
+    .where(inArray(usersTable.id, userIds));
+  return new Map(rows.map((row) => [row.id, row.language]));
 };
 
 interface FindPendingInactiveMembershipsByChannelsOpts {

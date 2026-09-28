@@ -1,17 +1,15 @@
-import { appConfig, type ChannelEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { mailer } from '#/lib/mailer';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
 import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
+import { sendInvitationMails } from '#/modules/memberships/helpers/invitation-mail';
 import type { InactiveMembershipModel } from '#/modules/memberships/inactive-memberships-db';
 import { findInactiveMembershipById } from '#/modules/memberships/memberships-queries';
 import { findUserById } from '#/modules/user/user-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import type { EntityModel } from '#/tables';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug-from-email';
-import { memberInviteEmail } from '../../../../emails';
 
 /**
  * Resends the invitation email for a pending membership, named by the pending row's own id; the caller needs `update`
@@ -43,19 +41,11 @@ async function remindInvitee(
 ): Promise<void> {
   // Replies reach the inviter, as on the first invitation.
   const sender = await findUserById(ctx, { id: invitation.createdBy });
-  const staticProps = {
-    senderName: sender?.name ?? 'System',
-    senderThumbnailUrl: sender?.thumbnailUrl ?? null,
-    entityName: entity.name,
-    role: invitation.role,
-  };
-  const recipient = {
-    email: invitation.email,
-    lng: 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage,
-    name: slugFromEmail(invitation.email),
-    memberInviteLink: `${appConfig.frontendUrl}/${invitation.channelType}/${entity.slug}`,
-  };
-
-  await mailer.prepareEmails(memberInviteEmail, staticProps, [recipient], sender?.email);
+  await sendInvitationMails(ctx, {
+    sender: sender ?? { name: 'System', thumbnailUrl: null },
+    channel: { type: invitation.channelType, slug: entity.slug, name: entity.name, role: invitation.role },
+    organization: ctx.var.organization,
+    invited: [{ email: invitation.email, userId: invitation.userId }],
+  });
   log.info('Membership invitation has been resent', { inactiveMembershipId: invitation.id });
 }

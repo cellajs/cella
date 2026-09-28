@@ -1,16 +1,14 @@
-import { appConfig, type ChannelEntityType } from 'shared';
+import type { ChannelEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
-import { mailer } from '#/lib/mailer';
 import { issueToken } from '#/modules/auth/tokens/token-lifecycle';
 import { resolveEntity } from '#/modules/entities/entities-queries';
+import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/helpers/invitation-mail';
 import {
   findPendingInactiveMembershipsByChannels,
   stampInactiveMembershipsReminded,
   updateInactiveMembershipToken,
 } from '#/modules/memberships/memberships-queries';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug-from-email';
-import { memberInviteEmail, memberInviteWithTokenEmail } from '../../../../emails';
 
 interface DispatchDeferredInvitesOpts {
   /** Channel entity ids whose pending invites should be dispatched (e.g. a published course + descendants). */
@@ -31,10 +29,6 @@ export async function dispatchDeferredInvites(ctx: UserContext, { channelIds }: 
   const dueRows = pendingRows.filter((row) => !row.remindedAt || new Date(row.remindedAt) < throttleBefore);
   if (!dueRows.length) return { dispatched: 0 };
 
-  const lng = appConfig.defaultLanguage;
-  const senderName = user.name;
-  const senderThumbnailUrl = user.thumbnailUrl;
-
   // Group per context+role: each email batch shares entityName + role static props
   const groups = new Map<string, typeof dueRows>();
   for (const row of dueRows) {
@@ -54,11 +48,7 @@ export async function dispatchDeferredInvites(ctx: UserContext, { channelIds }: 
     });
     if (!entity) continue;
 
-    const staticProps = { senderName, senderThumbnailUrl, role, entityName: entity.name };
-    const entityLink = `${appConfig.frontendUrl}/${channelType}/${entity.slug}`;
-
-    const withTokenRecipients: Array<{ email: string; lng: string; name: string; inviteLink: string }> = [];
-    const noTokenRecipients: Array<{ email: string; lng: string; name: string; memberInviteLink: string }> = [];
+    const invited: InvitedAddress[] = [];
 
     for (const row of group) {
       if (row.tokenId) {
@@ -70,30 +60,19 @@ export async function dispatchDeferredInvites(ctx: UserContext, { channelIds }: 
           inactiveMembershipId: row.id,
         });
         await updateInactiveMembershipToken(ctx, { id: row.id, tokenId: token.id });
-
-        withTokenRecipients.push({
-          email: row.email,
-          lng,
-          name: slugFromEmail(row.email),
-          inviteLink: `${appConfig.backendAuthUrl}/invoke-token/invitation/${rawToken}`,
-        });
+        invited.push({ email: row.email, rawToken });
       } else {
-        noTokenRecipients.push({
-          email: row.email,
-          lng,
-          name: slugFromEmail(row.email),
-          memberInviteLink: entityLink,
-        });
+        invited.push({ email: row.email, userId: row.userId });
       }
       dispatchedIds.push(row.id);
     }
 
-    if (withTokenRecipients.length > 0) {
-      await mailer.prepareEmails(memberInviteWithTokenEmail, staticProps, withTokenRecipients, user.email);
-    }
-    if (noTokenRecipients.length > 0) {
-      await mailer.prepareEmails(memberInviteEmail, staticProps, noTokenRecipients, user.email);
-    }
+    await sendInvitationMails(ctx, {
+      sender: user,
+      channel: { type: channelType as ChannelEntityType, slug: entity.slug, name: entity.name, role },
+      organization: ctx.var.organization,
+      invited,
+    });
   }
 
   await stampInactiveMembershipsReminded(ctx, { ids: dispatchedIds, remindedAt: new Date().toISOString() });
