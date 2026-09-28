@@ -264,6 +264,25 @@ export const invokeToken = async (
   return held;
 };
 
+/** The link types whose request the asking browser remembers, in a cookie named after the type. */
+type RequestedLinkType = 'magic' | 'step-up';
+
+/**
+ * Remembers, in the browser that asked, which link it asked for, as long as the link lives: opening the link there
+ * counts as the asking browser. The cookie is Lax (`cookie.ts`), since the click from the mail is a navigation another
+ * site starts.
+ */
+export const rememberLinkRequest = (ctx: Context<Env>, type: RequestedLinkType, tokenId: string) =>
+  setAuthCookie(ctx, `${type}-requested`, tokenId, tokenPolicies[type].ttl);
+
+/** Whether this browser asked for the link: its marker for the type names the token. */
+export const requestedHere = async (ctx: Context<Env>, type: RequestedLinkType, tokenId: string) =>
+  (await getAuthCookie(ctx, `${type}-requested`)) === tokenId;
+
+/** Drops the marker once the link is used: it has nothing left to say. */
+export const forgetLinkRequest = (ctx: Context<Env>, type: RequestedLinkType) =>
+  deleteAuthCookie(ctx, `${type}-requested`);
+
 /**
  * Names the row a browser's cookie of `type` binds it to, by the hash of the cookie's value: after a link's redemption
  * the cookie holds its single-use value, a cookie-carried token's cookie holds the token itself.

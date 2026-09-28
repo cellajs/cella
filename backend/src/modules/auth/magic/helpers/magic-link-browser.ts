@@ -3,8 +3,7 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { findLinkToken, withdrawLinkToken } from '#/modules/auth/tokens/token-lifecycle';
-import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { findLinkToken, requestedHere, withdrawLinkToken } from '#/modules/auth/tokens/token-lifecycle';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -13,14 +12,6 @@ const heldLinkLifetime = new TimeSpan(10, 'm');
 
 /** The frontend page where a link opened in another browser is confirmed. */
 export const confirmSignInPath = '/auth/confirm-sign-in';
-
-/**
- * Remembers, in the browser that asked, which magic link it asked for, as long as the link lives: opening that link
- * there signs in directly. Set on every request, with an unrelated id when no link went out, so the response never
- * tells whether an account exists.
- */
-export const rememberMagicLinkRequest = (ctx: Context<Env>, tokenId: string) =>
-  setAuthCookie(ctx, 'magic-requested', tokenId, tokenPolicies.magic.ttl);
 
 /** The unopened, unexpired magic link a raw value names, or undefined. */
 export const findOpenableMagicLink = async (rawToken: string) => {
@@ -55,7 +46,7 @@ export const holdMagicLinkOutsideItsBrowser = async (ctx: Context<Env>, rawToken
   // An unknown link takes the direct path, which refuses it the same way it always has. So does an opened one: only the
   // browser holding that link's own single-use cookie gets back in, and a `magic` cookie from any other link does not.
   if (!token || token.invokedAt) return null;
-  if ((await getAuthCookie(ctx, 'magic-requested')) === token.id) return null;
+  if (await requestedHere(ctx, 'magic', token.id)) return null;
 
   await findOpenableMagicLink(rawToken);
   await setAuthCookie(ctx, 'magic-pending', rawToken, heldLinkLifetime);

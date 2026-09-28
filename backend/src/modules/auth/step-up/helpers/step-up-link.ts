@@ -2,19 +2,10 @@ import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
-import { findLinkToken, invokeToken } from '#/modules/auth/tokens/token-lifecycle';
-import { tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import { findLinkToken, forgetLinkRequest, invokeToken, requestedHere } from '#/modules/auth/tokens/token-lifecycle';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { log } from '#/utils/logger';
-
-/**
- * Remembers, in the browser that asked, which step-up link it asked for, as long as the link lives. Lax, since the
- * click from the mail is a navigation another site starts.
- */
-export const rememberStepUpRequest = (ctx: Context<Env>, tokenId: string) =>
-  setAuthCookie(ctx, 'step-up-requested', tokenId, tokenPolicies['step-up'].ttl);
 
 /**
  * Opens a step-up link. Only the browser that asked for it may open it: there the click stamps the session the link is
@@ -26,12 +17,10 @@ export const rememberStepUpRequest = (ctx: Context<Env>, tokenId: string) =>
 export const openStepUpLink = async (ctx: Context<Env>, rawToken: string) => {
   const token = await findLinkToken({ type: 'step-up', rawToken });
   if (!token) throw new AppError(401, 'step-up_not_found', 'warn');
-  if ((await getAuthCookie(ctx, 'step-up-requested')) !== token.id) {
-    throw new AppError(403, 'step_up_other_browser', 'warn');
-  }
+  if (!(await requestedHere(ctx, 'step-up', token.id))) throw new AppError(403, 'step_up_other_browser', 'warn');
 
   const redeemed = await invokeToken(ctx, { type: 'step-up', rawToken });
-  deleteAuthCookie(ctx, 'step-up-requested');
+  forgetLinkRequest(ctx, 'step-up');
 
   const stamped =
     !!redeemed.userId && !!redeemed.sessionId && (await stampStepUp(redeemed.sessionId, redeemed.userId, 'email'));

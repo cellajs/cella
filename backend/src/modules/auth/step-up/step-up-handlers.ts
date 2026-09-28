@@ -8,9 +8,8 @@ import { mailer } from '#/lib/mailer';
 import { findCredentialIdsByUser } from '#/modules/auth/auth-queries';
 import { issuePasskeyChallenge, verifyPasskeyAssertion } from '#/modules/auth/passkeys/helpers/passkey';
 import { readStepUp, stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
-import { rememberStepUpRequest } from '#/modules/auth/step-up/helpers/step-up-link';
 import { authStepUpRoutes } from '#/modules/auth/step-up/step-up-routes';
-import { issueToken } from '#/modules/auth/tokens/token-lifecycle';
+import { issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
 import { verifyTotp } from '#/modules/auth/totps/helpers/totps';
 import { defaultHook } from '#/utils/default-hook';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
@@ -84,7 +83,7 @@ app.openapi(authStepUpRoutes.sendStepUpLink, async (ctx) => {
     },
   );
   // Opening the link stamps this session only in this browser.
-  await rememberStepUpRequest(ctx, token.id);
+  await rememberLinkRequest(ctx, 'step-up', token.id);
 
   const stepUpUrl = `${appConfig.backendAuthUrl}/invoke-token/${token.type}/${rawToken}`;
   mailer.prepareEmails(stepUpEmail, { stepUpUrl, name: user.name }, [

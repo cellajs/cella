@@ -9,7 +9,7 @@ import {
 import { claimMagicLinkOwner } from '#/modules/auth/magic/helpers/magic-sign-up';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
 import { openStepUpLink } from '#/modules/auth/step-up/helpers/step-up-link';
-import { invokeToken } from '#/modules/auth/tokens/token-lifecycle';
+import { forgetLinkRequest, invokeToken } from '#/modules/auth/tokens/token-lifecycle';
 import type { LinkTokenType } from '#/modules/auth/tokens/token-policies';
 import { log } from '#/utils/logger';
 
@@ -29,6 +29,7 @@ export const linkHandlers = {
     const token = await invokeToken(ctx, { type: 'magic', rawToken, claimOwner: claimMagicLinkOwner }).catch((err) =>
       explainOpenedMagicLink(err, rawToken),
     );
+    forgetLinkRequest(ctx, 'magic');
     return handleMagicLink(ctx, token);
   },
   'oauth-verification': async (ctx, rawToken) =>

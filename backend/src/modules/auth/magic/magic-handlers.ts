@@ -8,10 +8,10 @@ import { mailer } from '#/lib/mailer';
 import { maySignUp } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
-import { findOpenableMagicLink, rememberMagicLinkRequest } from '#/modules/auth/magic/helpers/magic-link-browser';
+import { findOpenableMagicLink } from '#/modules/auth/magic/helpers/magic-link-browser';
 import { claimMagicLinkOwner } from '#/modules/auth/magic/helpers/magic-sign-up';
 import { authMagicLinkRoutes } from '#/modules/auth/magic/magic-routes';
-import { invokeToken, issueToken } from '#/modules/auth/tokens/token-lifecycle';
+import { invokeToken, issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
@@ -36,7 +36,7 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
     // as a real request, to prevent email enumeration.
     if (!(await maySignUp(ctx, { email: normalizedEmail }))) {
       log.info('Magic link requested for unknown email', { email: normalizedEmail });
-      await rememberMagicLinkRequest(ctx, generateId());
+      await rememberLinkRequest(ctx, 'magic', generateId());
       return ctx.body(null, 204);
     }
   }
@@ -50,7 +50,7 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
   );
 
   // Opening the link in this browser signs in directly; elsewhere it asks for a confirmation first.
-  await rememberMagicLinkRequest(ctx, tokenRecord.id);
+  await rememberLinkRequest(ctx, 'magic', tokenRecord.id);
 
   const magicLinkUrl = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${rawToken}`);
 

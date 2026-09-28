@@ -99,6 +99,21 @@ describe('Magic link authentication', async () => {
       expect(res.headers.get('location')).toBe(`${appConfig.frontendUrl}/orgs/acme?tab=files`);
     });
 
+    it('clears the request marker once the link has signed in, as the step-up link does', async () => {
+      const user = await createUser(signUpUser.email);
+      const { rawToken, requestedHere } = await createMagicToken(user);
+
+      const { response: res } = await call(invokeToken, {
+        path: { type: 'magic', token: rawToken },
+        headers: { ...defaultHeaders, Cookie: requestedHere },
+      });
+
+      expect(res.status).toBe(302);
+      expect(cookieChange(res, 'session')).toBe('set');
+      // The link is used: the marker that let it open here directly has nothing left to say.
+      expect(cookieChange(res, 'magic-requested')).toBe('cleared');
+    });
+
     it('should let an explicit redirect win over the welcome page for a new user', async () => {
       const user = await createUser(signUpUser.email);
       const { rawToken, requestedHere } = await createMagicToken(user, '/orgs/acme');
