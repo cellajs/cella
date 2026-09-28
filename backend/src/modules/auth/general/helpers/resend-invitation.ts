@@ -1,17 +1,14 @@
 import { and, eq, isNull } from 'drizzle-orm';
-import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
-import { mailer } from '#/lib/mailer';
 import { issueToken, type NewToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findInvitationToken, type TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
+import { sendInvitationMails } from '#/modules/memberships/helpers/invitation-mail';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { updateInactiveMembershipToken } from '#/modules/memberships/memberships-queries';
 import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug-from-email';
-import { memberInviteWithTokenEmail, systemInviteEmail } from '../../../../../emails';
 
 /** The replacement token: the old token's invitation linkage under a new secret and lifetime. */
 const replacementOf = (oldToken: TokenRecord): NewToken => ({
@@ -72,28 +69,23 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: TokenRecor
 
   if (!reissued) return false;
 
-  const recipient = {
-    email,
-    lng: appConfig.defaultLanguage,
-    name: slugFromEmail(email),
-    inviteLink: `${appConfig.backendAuthUrl}/invoke-token/invitation/${reissued.rawToken}`,
-  };
-
   // Replies reach the inviter, as on the first invitation; without one it reads as a system invite.
   const sender = oldToken.createdBy ? await findUserById(ctx, { id: oldToken.createdBy }) : undefined;
-  const senderProps = { senderName: sender?.name ?? 'System', senderThumbnailUrl: sender?.thumbnailUrl ?? null };
-
-  const { invitation, tokenId } = reissued;
+  const { invitation, tokenId, rawToken } = reissued;
+  const invited = [{ email, userId: oldToken.userId, rawToken }];
 
   if (invitation) {
     const { entity } = invitation;
-    const emailProps = { ...senderProps, entityName: entity.name, role: invitation.role };
-    const lng = 'defaultLanguage' in entity ? entity.defaultLanguage : appConfig.defaultLanguage;
-
-    await mailer.prepareEmails(memberInviteWithTokenEmail, emailProps, [{ ...recipient, lng }], sender?.email);
+    await sendInvitationMails(ctx, {
+      sender: sender ?? { name: 'System', thumbnailUrl: null },
+      channel: { type: invitation.channelType, slug: entity.slug, name: entity.name, role: invitation.role },
+      // A channel below the organization carries no default language here: the app's applies.
+      organization: 'defaultLanguage' in entity ? entity : null,
+      invited,
+    });
     log.info('Membership invitation has been resent', { inactiveMembershipId: invitation.id, tokenId });
   } else {
-    await mailer.prepareEmails(systemInviteEmail, senderProps, [recipient], sender?.email);
+    await sendInvitationMails(ctx, { sender: sender ?? { name: 'System', thumbnailUrl: null }, invited });
     log.info('System invitation has been resent', { tokenId });
   }
 

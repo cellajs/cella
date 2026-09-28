@@ -64,12 +64,12 @@ No script: manual.
 
 **Data access**
 
-28. Attachment keys start with `<organizationId>/` (a custom upload path keeps that first segment, or adapts `isOrganizationKey`); the server stamps the bucket, so drop `publicBucket` and `bucketName` from `getUploadToken` and `createAttachments` calls; rows outside the prefix no longer presign.
+28. Attachment keys start with `<organizationId>/` (a custom upload path keeps that first segment, or adapts `isOrganizationKey`); the server stamps the bucket, so drop `publicBucket` and `bucketName` from `getUploadToken` and `createAttachments` calls and from the Uppy meta; rows outside the prefix no longer presign. `uploadStorage(templateId)` (`shared/utils/upload-visibility`) replaces `isPublicUploadTemplate`, `appBucketFor` and `attachmentBucket`: an app whose template stores elsewhere sets that template's `publicBucket` in `transloadit-config.ts` and every reader follows.
 29. Pass the entity's `organizationId` to `assertBlockMediaUrls` and `sanitizeBlockMediaUrls`; `validateBlockMediaUrls` takes `(json, ctx)`. `json/trusted-media-domains.json` and `trustedMediaDomains` are gone: stored blocks with external image URLs render nothing, and a save that contains one answers 400.
 30. App creates behind `checkIdempotency` filter on `createdBy`.
 31. Rename `loadActiveTenant` to `loadTenant`; treat an unknown tenant as 403 and an unreadable product or channel as 404 (`cella/PERMISSIONS.md`, Refusals).
 32. Frontend row affordances pass the row's home to `resolveCan(permission, createdBy, actorId, home)`: a non-elevated role's grant covers rows homed at its own channel only, as on the server.
-33. Replace `findMembershipAwareRows` with `findInvitationAccounts` and `findInvitationsToAddresses`; pass `canResend` to the pending table's `useColumns`.
+33. Replace `findMembershipAwareRows` with `findInvitationAccounts` and `findInvitationsToAddresses` (which also returns `userId`); pass `canResend` to the pending table's `useColumns`. Invitation mails go through `sendInvitationMails` (`memberships/helpers/invitation-mail.ts`): an invited account reads its mail in its own language, a new address in the organization's default, a system invitation in the app's. `personalViewKeys` is exported from `memberships-schema.ts`.
 34. Replace the SDK `Membership` type with `UpdateMembershipResponse`, merge or guard these responses before an own-membership cache (as `frontend/src/modules/memberships/query-mutations.ts` does), and pass other users' memberships from app routes through `membershipAsSeenBy`.
 35. Test cleanups that delete memberships before their organizations run in one transaction (the last-admin trigger).
 
@@ -83,7 +83,7 @@ No script: manual.
 
 39. Import `scrubUrl` from `shared/utils/scrub-url` and add app token routes to `secretPathTemplates` or `sensitiveQueryKeys`; pass `redactPaths` to every `createLogger`; log queries on `pgDetail` find nothing any more (use `pgCode` and `pgConstraint`).
 40. Email templates: keep markup in the translation string, spread `plainText` on text outputs, name params with `param('<key>')`, and declare HTML params in `htmlParams`; replace module-load `t()` calls in schemas with `translatedError(key)`.
-41. Newsletter links use `buildUnsubscribeLink(userId, 'newsletter')`; `/me/unsubscribe` and `unsubscribe_tokens` are gone. Pass `since` to `buildDigestForUser` and `findUndigestedNotifications`, and the recipient's language to `renderSectionsHtml`; apps with extra languages translate the new locale keys.
+41. Newsletter links use `buildUnsubscribeLink(userId, 'newsletter')`; `/me/unsubscribe` and `unsubscribe_tokens` are gone. Pass `since` to `buildDigestForUser` and `findUndigestedNotifications`, and the recipient's language to `renderSectionsHtml`; apps with extra languages translate the new locale keys; the instant mention-mail pass takes the oldest rows first and stamps every row it takes, mailed or skipped for good, so such a row leaves the digest too.
 42. Replace imports of `StaticDocumentBody`, `BlockNoteMinimalHtml` and `sanitizeUrl`.
 43. Fake limiter stores in app tests are a `RateLimiterMemory` per prefix (`rate-limiter/tests/memory-stores.ts`); an app that passed `onBlock`, imported `slowOptions` or read a limiter's `points` uses `reserveTiers`/`settleTiers` (`rate-limiter/tiers.ts`) and `handler.buckets`.
 

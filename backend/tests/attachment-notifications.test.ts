@@ -12,6 +12,7 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { notificationsTable } from '#/modules/notification/notification-db';
 import { fanOutNotifications } from '#/modules/notification/operations/fan-out';
 import { sendPendingInstantEmails } from '#/modules/notification/operations/send-instant-emails';
+import { emailsTable } from '#/modules/user/emails-db';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders, memberRole } from './fixtures';
@@ -231,9 +232,9 @@ describe('Attachment mentions (template notification source)', async () => {
       'attachment-mentions-unverified@security-test.com',
       tenant.organization.id,
       memberRole,
-      false,
       tenant.tenantId,
     );
+    await getSeedDb().delete(emailsTable).where(eq(emailsTable.userId, unverified.id));
     const mentionOf = (userId: string, createdAt: Date) => ({
       createdAt: createdAt.toISOString(),
       userId,
