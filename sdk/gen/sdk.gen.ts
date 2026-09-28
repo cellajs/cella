@@ -594,7 +594,7 @@ export const checkEmail = <ThrowOnError extends boolean = true>(
 /**
  * Invoke token session
  *
- * Validates and invokes a token (for email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.
+ * Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, a step-up link proves presence on this browser's session, an invitation hands the app a single-use token session in a cookie. Redirects to the app.
  *
  * **GET /auth/invoke-token/{type}/{token}** ·· [invokeToken](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/invoke-token/{type}/{token}) ·· [invokeToken](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/invoke-token/{type}/{token}) ·· _auth_cella_
  *

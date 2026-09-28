@@ -52,7 +52,7 @@
     "path": "/auth/invoke-token/{type}/{token}",
     "tags": ["auth"],
     "summary": "Invoke token session",
-    "description": "Validates and invokes a token (for email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.",
+    "description": "Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, a step-up link proves presence on this browser's session, an invitation hands the app a single-use token session in a cookie. Redirects to the app.",
     "deprecated": false,
     "hasParams": true,
     "hasRequestBody": false,

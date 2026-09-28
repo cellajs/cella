@@ -648,7 +648,7 @@ export const zSendMagicLinkBody = z.object({
 export const zSendMagicLinkResponse = z.void();
 
 /**
- * Masked address of the held link
+ * The full address the held link signs in, as the confirm page shows it
  */
 export const zGetPendingMagicLinkResponse = z.object({
   email: z.string(),

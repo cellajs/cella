@@ -43,7 +43,7 @@ const authMagicLinkRoutes = {
       'For a magic link opened in a browser that did not request it: the address it signs in, so the holder can recognize the account before confirming.',
     responses: {
       200: {
-        description: 'Masked address of the held link',
+        description: 'The full address the held link signs in, as the confirm page shows it',
         content: { 'application/json': { schema: z.object({ email: z.string() }) } },
       },
       ...errorResponseRefs,

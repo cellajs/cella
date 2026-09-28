@@ -1149,7 +1149,7 @@ export type GetPendingMagicLinkError = GetPendingMagicLinkErrors[keyof GetPendin
 
 export type GetPendingMagicLinkResponses = {
   /**
-   * Masked address of the held link
+   * The full address the held link signs in, as the confirm page shows it
    */
   200: {
     email: string;

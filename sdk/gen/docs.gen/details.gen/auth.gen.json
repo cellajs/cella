@@ -663,7 +663,7 @@
     "responses": [
       {
         "status": 200,
-        "description": "Masked address of the held link",
+        "description": "The full address the held link signs in, as the confirm page shows it",
         "contentType": "application/json",
         "schema": {
           "type": "object",

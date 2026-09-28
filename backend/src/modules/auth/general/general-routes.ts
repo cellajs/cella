@@ -109,7 +109,7 @@ const authGeneralRoutes = {
     tags: ['auth', 'cella'],
     summary: 'Invoke token session',
     description:
-      'Validates and invokes a token (for email verification, invitations, mfa) and redirects user to backend with a one-purpose, single-use token session in a cookie.',
+      "Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, a step-up link proves presence on this browser's session, an invitation hands the app a single-use token session in a cookie. Redirects to the app.",
     request: {
       params: z.object({ type: z.enum(invokableTokenTypes), token: z.string() }),
     },
