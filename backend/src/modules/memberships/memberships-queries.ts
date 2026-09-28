@@ -335,20 +335,6 @@ export const bindInactiveMembershipsByEmail = async (
   return bound.map((row) => row.id);
 };
 
-interface UnbindInactiveMembershipsOpts {
-  userIds: string[];
-}
-
-/** Releases invitations from users about to be removed, so they survive the cascade and wait for whoever proves the address. */
-export const unbindInactiveMemberships = async (ctx: DbContext, { userIds }: UnbindInactiveMembershipsOpts) => {
-  if (!userIds.length) return;
-  const { db } = ctx.var;
-  await db
-    .update(inactiveMembershipsTable)
-    .set({ userId: null })
-    .where(inArray(inactiveMembershipsTable.userId, userIds));
-};
-
 interface FindMembersPaginatedOpts {
   organizationId: string;
   entityId: string;

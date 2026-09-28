@@ -212,8 +212,7 @@ const inviteCallbackFlow = async ({
 
   const { email } = invitationToken;
   const created = await db.transaction(async (tx) => {
-    const user = await handleCreateUser({ var: { db: tx } }, { newUser: providerUser, emailVerified: false });
-    await requireEmailVerified(tx, { userId: user.id, email, via: provider });
+    const user = await handleCreateUser({ var: { db: tx } }, { newUser: providerUser, via: provider });
     const newIdentity = await createIdentity(
       tx,
       { userId: user.id, issuer: provider, subject: providerUser.id, email },
@@ -315,9 +314,8 @@ const completeSignUp = async ({
     const { name, slug, firstName } = signUp;
     const user = await handleCreateUser(
       { var: { db: tx } },
-      { newUser: { email, name, slug, firstName }, emailVerified: false },
+      { newUser: { email, name, slug, firstName }, via: provider },
     );
-    await requireEmailVerified(tx, { userId: user.id, email, via: provider });
     const newIdentity = await createIdentity(
       tx,
       { userId: user.id, issuer: provider, subject: signUp.subject, email },

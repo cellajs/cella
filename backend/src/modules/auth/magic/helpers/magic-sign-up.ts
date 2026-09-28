@@ -1,7 +1,6 @@
 import { AppError } from '#/core/error';
 import type { Tx } from '#/db/db';
 import { maySignUp } from '#/modules/auth/auth-queries';
-import { requireEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { findUserByEmail } from '#/modules/user/user-queries';
@@ -26,9 +25,8 @@ export const claimMagicLinkOwner = async (tx: Tx, token: TokenRecord): Promise<s
   const slug = slugFromEmail(token.email);
   const user = await handleCreateUser(txCtx, {
     newUser: { email: token.email, slug, name: slug, firstName: slug },
-    emailVerified: false,
+    via: 'magic',
   });
-  await requireEmailVerified(tx, { userId: user.id, email: token.email, via: 'magic' });
 
   log.info('User created via magic link sign-up', { userId: user.id });
   return user.id;

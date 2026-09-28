@@ -24,7 +24,7 @@ import { clearSecurityTestData } from './helpers';
 const signUp = async (label: string) => {
   const user = await handleCreateUser(
     { var: { db: baseDb } },
-    { newUser: mockUser({ email: `${label}@example.test` }) },
+    { newUser: mockUser({ email: `${label}@example.test` }), via: 'magic' },
   );
   await adminDb.update(usersTable).set({ newsletter: true }).where(eq(usersTable.id, user.id));
   return user;
