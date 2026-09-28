@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { getMe, invokeToken, sendStepUpLink } from 'sdk';
+import type { SessionLostType } from 'shared/utils/session-lost';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
@@ -76,8 +77,9 @@ const meWith = async (cookie: string) =>
 export const warmSession = async ({ cookie }: { cookie: string }) =>
   expect((await meWith(cookie)).response.status).toBe(200);
 
-/** A browser holding `cookie` is refused as signed out, with this error type. */
-export const expectSignedOut = async (cookie: string, type: string) => expectRefusal(await meWith(cookie), 401, type);
+/** A browser holding `cookie` is refused as signed out, with this error type, one the client signs out on. */
+export const expectSignedOut = async (cookie: string, type: SessionLostType) =>
+  expectRefusal(await meWith(cookie), 401, type);
 
 /** An impersonation of `target` layered on an admin's session, presented as the admin's browser does. */
 export async function insertImpersonation(admin: TestSession, target: { id: string }): Promise<TestSession> {

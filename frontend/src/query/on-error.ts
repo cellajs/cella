@@ -1,4 +1,5 @@
 import i18n from 'i18next';
+import { sessionLostTypes } from 'shared/utils/session-lost';
 import { ApiError } from '~/lib/api';
 import type { TKey } from '~/lib/i18n-locales';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
@@ -36,11 +37,6 @@ const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
   return getFallbackMessage(status) || 'Unknown error occurred';
 };
 
-/**
- * 401 types the session guards answer with when the session is gone. Any other 401 refuses a proof (a wrong
- * authenticator code on the MFA toggle, a failed passkey) on a request that is still signed in.
- */
-const sessionLostTypes = new Set(['unauthorized', 'no_session', 'session_expired', 'session_revoked']);
 const isSessionLost = (error: ApiError) => !error.type || sessionLostTypes.has(error.type);
 
 /** Global handler for API request errors: network errors, ApiErrors, and a lost session's 401 -> sign-in redirect. */
