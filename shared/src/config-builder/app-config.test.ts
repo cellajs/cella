@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { mergeDeep } from './utils.ts';
 
 const originalEnv = { ...process.env };
 
@@ -12,6 +13,15 @@ async function loadAppConfig(env: Record<string, string>) {
   process.env = { ...originalEnv, ...env };
   return (await import('./app-config.ts')).appConfig;
 }
+
+describe('mergeDeep', () => {
+  it('replaces an array, never merges it: a mode override lists its values in full', () => {
+    expect(mergeDeep({ list: [1, 2, 3], nested: { kept: true } }, { list: [9] })).toEqual({
+      list: [9],
+      nested: { kept: true },
+    });
+  });
+});
 
 describe('appConfig service endpoints', () => {
   it('derives service public URLs from the compatibility URL fields', async () => {
