@@ -11810,14 +11810,16 @@
                     "type": "string",
                     "enum": ["admin", "member"]
                   },
-                  "muted": {
-                    "type": "boolean"
-                  },
                   "archived": {
                     "type": "boolean"
                   },
+                  "muted": {
+                    "type": "boolean"
+                  },
                   "displayOrder": {
-                    "type": "number"
+                    "type": "number",
+                    "minimum": -140737488355328,
+                    "maximum": 140737488355327
                   }
                 }
               }

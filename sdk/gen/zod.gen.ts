@@ -1976,9 +1976,9 @@ export const zMembershipInviteResponse = z.object({
 
 export const zUpdateMembershipBody = z.object({
   role: z.enum(['admin', 'member']).optional(),
-  muted: z.boolean().optional(),
   archived: z.boolean().optional(),
-  displayOrder: z.number().optional(),
+  muted: z.boolean().optional(),
+  displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
 });
 
 export const zUpdateMembershipPath = z.object({

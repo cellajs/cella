@@ -391,9 +391,14 @@
             "required": false,
             "enum": ["admin", "member"]
           },
-          "muted": { "type": "boolean", "required": false },
           "archived": { "type": "boolean", "required": false },
-          "displayOrder": { "type": "number", "required": false }
+          "muted": { "type": "boolean", "required": false },
+          "displayOrder": {
+            "type": "number",
+            "required": false,
+            "minimum": -140737488355328,
+            "maximum": 140737488355327
+          }
         },
         "required": false,
         "contentType": "application/json"

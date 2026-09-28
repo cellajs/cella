@@ -3979,8 +3979,8 @@ export const membershipInvite = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.organizationid - `string`
  * @param {string} options.path.id - `string`
  * @param {enum=} options.body.role - `enum` (optional)
- * @param {boolean=} options.body.muted - `boolean` (optional)
  * @param {boolean=} options.body.archived - `boolean` (optional)
+ * @param {boolean=} options.body.muted - `boolean` (optional)
  * @param {number=} options.body.displayOrder - `number` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */

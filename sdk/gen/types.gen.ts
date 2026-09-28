@@ -5484,8 +5484,8 @@ export type MembershipInviteResponse = MembershipInviteResponses[keyof Membershi
 export type UpdateMembershipData = {
   body?: {
     role?: 'admin' | 'member';
-    muted?: boolean;
     archived?: boolean;
+    muted?: boolean;
     displayOrder?: number;
   };
   path: {
