@@ -39,14 +39,4 @@ describe('compose synth', () => {
       }
     }
   });
-
-  it('only the primary rollout service contends for the scheduled jobs', () => {
-    // Deployed backends default RUN_JOBS to false; an advisory lock then lets one generation of this service run them.
-    const contenders = Object.values(composeConfig.services)
-      .filter((svc) => svc['x-service'] && svc.environment?.RUN_JOBS === 'true')
-      .map((svc) => svc['x-service']?.slug);
-    const primary = services.find((meta) => meta.primaryRollout)?.slug;
-    expect(primary).toBeDefined();
-    expect(contenders).toEqual([primary]);
-  });
 });

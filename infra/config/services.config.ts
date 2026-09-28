@@ -31,8 +31,6 @@ export const appServices = defineServices({
     env: {
       FRONTEND_URL: '${FRONTEND_URL}',
       BACKEND_URL: '${BACKEND_URL}',
-      // The primary rollout service owns the scheduled jobs; an advisory lock lets one of its generations run them at a time.
-      RUN_JOBS: 'true',
     },
   },
 
