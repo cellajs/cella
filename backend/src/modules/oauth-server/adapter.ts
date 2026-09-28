@@ -10,8 +10,20 @@ import { serviceAccountsTable } from '#/modules/service-accounts/service-account
 import { hashToken } from '#/utils/hash-token';
 import { getIsoDate } from '#/utils/iso-date';
 
-/** Client metadata as the provider reads it; `client_kind` tells the secret check and the scope cap which table it came from. */
+/** Client metadata as the provider reads it; `client_kind` names the table the adapter read the client from. */
 export type AppClientMetadata = AdapterPayload & { client_kind: 'registered' | 'service' };
+
+/**
+ * Where a client comes from: `registered` (an `oauth_clients` row) or `service` (a service account) as the adapter
+ * read it, else `unregistered`: a client identified by its metadata document, which the provider marks and which never
+ * sets a kind itself (`allowClient` in `provider.ts` refuses a document that does). The secret check, the scope cap and
+ * the consent page read the kind here and nowhere else.
+ */
+export function clientKindOf(client: object): AppClientMetadata['client_kind'] | 'unregistered' {
+  if ('clientIdMetadataDocument' in client) return 'unregistered';
+  const kind = 'client_kind' in client ? client.client_kind : undefined;
+  return kind === 'registered' || kind === 'service' ? kind : 'unregistered';
+}
 
 async function findClient(id: string): Promise<AppClientMetadata | undefined> {
   const cached = clientCache.get(id);

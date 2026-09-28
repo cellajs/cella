@@ -10,6 +10,7 @@ import { appErrorHandler } from '#/lib/error';
 import { limiterScope } from '#/middlewares/rate-limiter/helpers';
 import { findSession } from '#/modules/auth/general/helpers/session';
 import { requireStepUp } from '#/modules/auth/step-up/helpers/step-up';
+import { clientKindOf } from '#/modules/oauth-server/adapter';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
 import { deleteProviderSession, getConsentTargetNames } from '#/modules/oauth-server/oauth-server-queries';
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
@@ -135,7 +136,7 @@ async function loadInteraction(provider: Provider, c: Context<InteractionEnv>) {
     // logo and could claim any name: such a client shows the host serving its client id. A registered app shows the
     // name and logo a system admin set.
     client:
-      'clientIdMetadataDocument' in client
+      clientKindOf(client) === 'unregistered'
         ? { id: clientId, name: new URL(clientId).host, logoUri: null, kind: 'cimd' }
         : { id: clientId, name: client.clientName ?? clientId, logoUri: client.logoUri ?? null, kind: 'registered' },
     scopes: requested,

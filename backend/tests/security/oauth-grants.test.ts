@@ -71,6 +71,8 @@ const REDIRECT_URI = 'http://localhost:9999/callback';
 const APP_ID = 'grant-policy-portfolio';
 const APP_LOGO = 'https://cdn.example/portfolio.png';
 const CIMD_ID = 'https://mcp-client.example/oauth/client.json';
+/** The same client's document claiming the kind the adapter gives service accounts. */
+const SERVICE_CLAIM_ID = 'https://mcp-client.example/oauth/service.json';
 
 /** An unregistered client's own description: every property in it is the client author's choice. */
 const cimdDocument = {
@@ -80,7 +82,6 @@ const cimdDocument = {
   token_endpoint_auth_method: 'none',
   grant_types: ['authorization_code', 'refresh_token', 'client_credentials'],
   response_types: ['code'],
-  client_kind: 'registered',
 };
 
 /**
@@ -115,7 +116,10 @@ describe('OAuth grants', async () => {
 
   beforeAll(async () => {
     oauth = await startTestOauthServer();
-    restoreFetch = serveClientMetadataDocuments({ [CIMD_ID]: cimdDocument });
+    restoreFetch = serveClientMetadataDocuments({
+      [CIMD_ID]: cimdDocument,
+      [SERVICE_CLAIM_ID]: { ...cimdDocument, client_kind: 'service' },
+    });
     await otherProcesses.client.connect();
     // A dropped connection shows as the messages it no longer hears, never as an unhandled error event.
     otherProcesses.client.on('error', () => {});
@@ -895,6 +899,14 @@ describe('OAuth grants', async () => {
       const described = await mint(CIMD_ID);
       expect(described.status).toBe(400);
       expect(described.body.error).toBe('unauthorized_client');
+
+      // The kind comes from the table the adapter read a client from; a document claiming one is refused as a document.
+      const claimed = await mint(SERVICE_CLAIM_ID);
+      expect(claimed.status).toBe(400);
+      expect(claimed.body).toMatchObject({
+        error: 'invalid_client_metadata',
+        error_description: 'client_id metadata document must not set client_kind',
+      });
     });
   });
 

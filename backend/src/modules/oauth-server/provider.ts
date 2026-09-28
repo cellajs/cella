@@ -7,7 +7,7 @@ import { baseDb } from '#/db/db';
 import { chargeLimiter } from '#/middlewares/rate-limiter/helpers';
 import { clientMetadataFetchLimiter } from '#/middlewares/rate-limiter/limiters';
 import { cookieSecrets } from '#/modules/auth/general/helpers/cookie';
-import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
+import { clientKindOf, DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { appInteractionPolicy } from '#/modules/oauth-server/interaction-policy';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
@@ -29,15 +29,12 @@ const DAY = 24 * HOUR;
  */
 const presentedKeys = new WeakMap<object, { id: string; scopes: readonly AccessScope[] | null; tenantId: string }>();
 
-const isServiceClient = (client: unknown) =>
-  (client as { client_kind?: string } | undefined)?.client_kind === 'service';
-
 /**
  * The scopes a token may carry. A key narrows its service account and never widens it, so a service account's token
  * stays within the key it authenticated with (`write` covers `read`, as on the API); other clients may ask for all.
  */
-function grantableScopes(ctx: object, client: unknown): readonly AccessScope[] {
-  if (!isServiceClient(client)) return accessScopes.all;
+function grantableScopes(ctx: object, client: object): readonly AccessScope[] {
+  if (clientKindOf(client) !== 'service') return accessScopes.all;
   const key = presentedKeys.get(ctx);
   // No recorded key means client authentication did not run for this request: grant nothing.
   if (!key) return [];
@@ -101,6 +98,17 @@ async function allowClientMetadataFetch(ctx: KoaContextWithOIDC | undefined): Pr
 }
 
 /**
+ * Asked about every client resolved from a metadata document, fetched or cached. A client's kind is the table the
+ * adapter read it from, so a document that claims one is refused as a document, with the provider's own error.
+ */
+function allowClient(_ctx: KoaContextWithOIDC, client: object): boolean {
+  if ('client_kind' in client) {
+    throw new errors.InvalidClientMetadata('client_id metadata document must not set client_kind');
+  }
+  return true;
+}
+
+/**
  * The authorization server (D12): `node-oidc-provider` fed the app's keystore and store, narrowed to what the scenarios
  * need. Grant types: authorization code + PKCE, refresh, client credentials (service accounts only). Client auth: none
  * (CIMD public clients) and client_secret_basic (registered apps; service accounts with their secret keys). Client
@@ -114,6 +122,7 @@ export async function createProvider(): Promise<Provider> {
     jwks,
     cookies: { keys: cookieSecrets, long: { signed: true }, short: { signed: true } },
     clientAuthMethods: ['none', 'client_secret_basic'],
+    // Keeps the adapter's `client_kind` on its clients; `allowClient` refuses a metadata document that sets one.
     extraClientMetadata: { properties: ['client_kind'] },
     responseTypes: ['code'],
     // Entity scopes plus what a machine client asks for; `openid` stays out: this AS issues no id_tokens.
@@ -129,7 +138,7 @@ export async function createProvider(): Promise<Provider> {
       userinfo: { enabled: false },
       revocation: { enabled: true },
       clientCredentials: { enabled: true },
-      clientIdMetadataDocument: { enabled: true, ack: 'draft-02', allowFetch: allowClientMetadataFetch },
+      clientIdMetadataDocument: { enabled: true, ack: 'draft-02', allowFetch: allowClientMetadataFetch, allowClient },
       resourceIndicators: {
         enabled: true,
         // Every token names its resource; a request without one gets `invalid_target` at the guard, never a broad token.
@@ -139,7 +148,7 @@ export async function createProvider(): Promise<Provider> {
           const resource = parseResource(resourceIndicator);
           if (!resource) throw new errors.InvalidTarget();
           // A service account acts in its own tenant: its token never names another tenant's resource.
-          if (isServiceClient(client) && presentedKeys.get(ctx)?.tenantId !== resource.tenantId)
+          if (clientKindOf(client) === 'service' && presentedKeys.get(ctx)?.tenantId !== resource.tenantId)
             throw new errors.InvalidTarget();
           return {
             scope: grantableScopes(ctx, client).join(' '),
@@ -206,11 +215,11 @@ export async function createProvider(): Promise<Provider> {
   // Secrets are never stored in plaintext: a registered app's secret is compared by hash, a service account's client
   // secret is any of its live secret keys, whose scopes then cap the token (`grantableScopes`).
   provider.Client.prototype.compareClientSecret = async function compare(
-    this: { clientId: string; clientSecret?: string; client_kind?: string },
+    this: { clientId: string; clientSecret?: string },
     actual: string,
   ) {
     const presented = hashToken(actual);
-    if (this.client_kind === 'service') {
+    if (clientKindOf(this) === 'service') {
       // Read here, not from the cached client: a disabled account stops minting the moment it is disabled.
       const found = await findApiKeyWithAccount(
         { var: { db: baseDb } },
