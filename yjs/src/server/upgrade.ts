@@ -95,9 +95,13 @@ export function setupUpgradeHandler(
     const handOver = (onOpen: (ws: WebSocket) => void) => {
       if (socket.destroyed) return;
       handedOver = true;
-      // `ws` listens for the socket's errors from here on.
+      // `ws` listens for the socket's errors from here on, and re-emits a bad frame's error on the WebSocket, which
+      // must have a listener before `ws` parses any frame: a refused socket gets no other.
       socket.off('error', onSocketError);
-      server.handleUpgrade(req, socket, head, onOpen);
+      server.handleUpgrade(req, socket, head, (ws) => {
+        ws.on('error', (err) => log.debug('WS error', { err }));
+        onOpen(ws);
+      });
     };
     admitUpgrade(server, req, socket, handOver).catch((err) => {
       log.error('WS upgrade failed', { err });

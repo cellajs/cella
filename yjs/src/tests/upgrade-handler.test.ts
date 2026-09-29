@@ -234,6 +234,20 @@ describe('setupUpgradeHandler: a peer that resets or garbles the handshake', () 
     await expectStillServing();
   });
 
+  it('must not crash the process via a malformed frame on a socket refused for its token', async () => {
+    const token = createExpiredToken('user-1');
+    const { client, response } = rawUpgrade(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
+    expect((await response).split('\r\n')[0]).toBe('HTTP/1.1 101 Switching Protocols');
+
+    // An unmasked frame: `ws` refuses every client frame without a mask and emits 'error' on the socket.
+    client.write(Buffer.from([0x82, 0x00]));
+    await settle();
+
+    expect(crashes).toEqual([]);
+    client.destroy();
+    await expectStillServing();
+  });
+
   it('must not crash the process via a frame the relay throws on: only its socket closes, with 1011', async () => {
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-throw' });
     const { ws, closed } = await openSocket(`${baseUrl}/entity-throw?token=${token}&entityType=task&tenantId=tenant-1`);
