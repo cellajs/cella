@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/cellajs/cella/compare/0.12.0...0.12.1) (2026-09-29)
+
+
+### 🐞 Bug fixes
+
+* security and test improvements ([#1202](https://github.com/cellajs/cella/issues/1202)) ([2ef5083](https://github.com/cellajs/cella/commit/2ef5083bebd71b0888be0a6fcf5c1fd56934154b))
+
 ## [0.12.0](https://github.com/cellajs/cella/compare/0.11.1...0.12.0) (2026-09-25)
 
 
