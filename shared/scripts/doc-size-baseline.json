@@ -96,7 +96,7 @@
     "cella/migrations/20260923T1200-partition-maintenance-pg-cron/README.md": 356,
     "cella/migrations/20260923T2319-session-revocation/README.md": 347,
     "cella/migrations/20260923T2343-infra-operator-keys/README.md": 320,
-    "cella/migrations/20260927T0704-access-hardening/README.md": 1647,
+    "cella/migrations/20260927T0704-access-hardening/README.md": 1846,
     "cella/migrations/README.md": 401,
     "cella/migrations/_TEMPLATE.md": 274,
     "cella/skills/cella-sync/SKILL.md": 1008,

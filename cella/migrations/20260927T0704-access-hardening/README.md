@@ -28,7 +28,7 @@ No script: manual.
 4. The scheduled jobs (the digest, device prune and OAuth sweep) run on the jobs service: `20260926T0700-jobs-pg-boss` prescribes the conversion and the service, port and config entries.
 5. In the app's own `shared/config`: add `devPorts.internal` and `mediaAssetOrigin: ''`, and bump `clientCacheVersion` and `cookieVersion` (the template's bumps do not sync).
 6. In `transloadit-config.ts`, set `publicBucket: true` on avatar and cover, `false` on attachment, and add the `newsletter` template and id; in the Transloadit workspace, turn on "Require a correct Signature".
-7. Infra: rename `internalRoute` to `internalPort`, drop `mcp` from the CDC, Yjs signing key, relay and admin-email entries of `runtime-secrets.config.ts`, then run the privileged `Apply` and check the preview moves secret paths and replaces nothing.
+7. Infra: rename `internalRoute` to `internalPort`, drop `mcp` from the CDC, Yjs signing key, relay and admin-email entries of `runtime-secrets.config.ts`, then run the privileged `Apply` and check the preview moves secret paths and replaces nothing. Deploy right after it: the Apply deletes `yjs-secret`, which the running release still requires, so an old VM that reboots in between cannot boot until the deploy replaces it. An app whose deployment serves users keeps `yjsSecret` and the old consumer lists for one release (`cella/DEPLOYMENT.md`, Changing infrastructure).
 8. Infra code: import `db-exposure-acl` from `infra/lib` (it exports `parseAclInput(raw, allowWide = false)` and `AclParse` alone; the ACL takes IPv4 only, an IPv6 entry is refused), pass the plan path to `parseBootPlanJson`, and throw from tasks.
 
 **Sessions and sign-in**
