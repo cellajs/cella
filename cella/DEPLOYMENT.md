@@ -48,7 +48,7 @@ Three principles ([infra/README.md](../infra/README.md#core-philosophy)): **crea
      └─────────────────────────────┘  presigned URLs)
 ```
 
-- **Load balancer:** the only public entrypoint. Backend, yjs, mcp and oauth share the app origin via registry-declared `pathPrefix` values (`/api`, `/yjs`, `/mcp`, `/oauth`). The LB never rewrites paths. `cdc` and `jobs` never take an LB route. The backend's internal listener (`internalPort`: the CDC socket and the Yjs relay's materialize route) is reached only through a private, ACL-guarded LB frontend that admits the private network; no public pool forwards to it.
+- **Load balancer:** the only public entrypoint. Backend, yjs, mcp and oauth share the app origin via registry-declared `pathPrefix` values (`/api`, `/yjs`, `/mcp`, `/oauth`). The LB never rewrites paths. `cdc` and `jobs` never take an LB route. The backend's internal listener (`internalPort`: the CDC socket and the Yjs relay's materialize route) is reached only through a private, ACL-guarded LB frontend that admits the private network; no public pool forwards to it. The API has no CORS middleware and serves browser requests from the app origin.
 - **VMs:** public IP for egress only (image pulls). All inbound is dropped, including SSH. Every service gets its own VM unless `singleVM` co-hosts the workers and the frontend Caddy container on the backend VM.
 - **Frontend VM:** Caddy adds security headers/CSP and the SPA deep-link fallback.
 - **Database:** private-network only. A break-glass toggle can expose it temporarily ([Changing infrastructure](#changing-infrastructure)).
@@ -117,7 +117,7 @@ pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref
 1. **Env**: export `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`, `PULUMI_CONFIG_PASSPHRASE` (the workflow maps its `SCW_PROJECT_ID` / `SCW_ORGANIZATION_ID` secrets onto the `SCW_DEFAULT_*` names the Scaleway provider reads). Install node, pnpm, docker (buildx), and the pulumi CLI.
 2. **Deploy**: `pnpm --filter infra run deploy --mode <mode> --sha <sha> --build`. `--build` bakes and pushes every image (app services + boot runner) via `docker buildx bake` with the registry `:buildcache` shared with CI. Safe to re-run. The stack lock serializes concurrent attempts.
 
-GitHub Actions builds images as a parallel matrix and omits `--build`. `--dist <dir>` supplies a prebuilt frontend: GitHub Actions builds it in a job with no secrets, because the Vite build and its dependencies' install scripts run third-party code. Without `--dist` the command builds the frontend itself in a child process stripped of the deploy's keys, which keeps them out of its environment but not out of reach of code running as the same user on that machine. `--git-ref`, when provided, gates production deploys to main/release refs.
+GitHub Actions builds images as a parallel matrix and omits `--build`. `--dist <dir>` supplies a prebuilt frontend: GitHub Actions builds it in a job with no secrets, because the Vite build and its dependencies' install scripts run third-party code. Jobs that hold deploy secrets install only the `infra` and `shared` workspaces and do not use the shared pnpm cache, so install scripts from other workspaces do not run in those jobs. Without `--dist` the command builds the frontend itself in a child process stripped of the deploy's keys, which keeps them out of its environment but not out of reach of code running as the same user on that machine. `--git-ref`, when provided, gates production deploys to main/release refs.
 
 ## Rollout strategies
 
@@ -135,6 +135,7 @@ Runtime secrets reach a VM through `/opt/app/.env.runtime`, a docker-compose `en
 
 - **Every secret value must be a single line** (an `env_file` is line-based). Store multi-line values such as a PEM certificate **base64-encoded** and decode them in the consuming service, as `DATABASE_SSL_CA` does (encoded by the postgres store in [resources/stores/postgres-managed.ts](../infra/resources/stores/postgres-managed.ts), decoded in the db clients). The rule lives in [lib/utils/env-file.ts](../infra/lib/utils/env-file.ts), shared by the preflight and the boot runner.
 - An undeliverable `required` secret fails hydration and blocks boot, rather than crash-looping behind a 502.
+- A process cannot read a mode-bound secret unless its `MODE` is configured to receive it; `modeSecret()` refuses the read otherwise.
 
 ### Certificate issuance and recovery
 
@@ -270,6 +271,10 @@ docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com backend
 **Alternative: break-glass from your laptop.** Briefly exposes the DB (ACL-locked to your IP), so prefer the serial console. Both flows serve any operator task against the live database. For staging, **Seed database** exposes, seeds, and closes in one go (refuses production).
 
 1. Expose the DB (needs your Owner API key). The ACL defaults to `<your.ip>/32` (IPv4 only, open ranges refused) and the admin connection string is printed:
+
+   The CLI refuses native IPv6 and `/0` entries. Entries wider than `/24` require
+   `infra:dbPublicAclAllowWide=true`, and all entries together may cover at most half of IPv4.
+   IPv4-mapped IPv6 addresses are normalized to the IPv4 range they name.
 
    ```bash
    pnpm infra   # → "Open temporary public DB access"

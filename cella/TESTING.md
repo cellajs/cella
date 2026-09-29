@@ -21,6 +21,12 @@ Besides checking that features work, the suite's main job is to prove that attac
 - **Steering the app with attacker input:** open redirects, redirect URIs that aren't registered, unsafe URLs in content.
 - **Leaking secrets:** hashes, token secrets or private keys appearing in responses, logs or the CDC stream.
 
+Route-wide checks read `x-guard` from the generated OpenAPI document: every operation without
+`publicGuard` must refuse anonymous access, and every `sysAdminGuard` operation must refuse a normal
+user. Cross-tenant and cross-organization tests try another scope's IDs; mass-assignment tests send
+fields outside each request body schema. The backend suite also runs as `runtime_role` to exercise
+database policies ([Multi-tenancy](./MULTI_TENANCY.md#verification)).
+
 ## Running tests
 
 ```bash

@@ -63,15 +63,4 @@ Access tokens are RS256 JWTs the OAuth face signs: `sub` is the actor, `actor_ki
 
 ### Quotas and limits
 
-Tenant restrictions cap `serviceAccount` (20) and `apiKey` (100) per tenant; only active accounts and live keys count, and `0` lifts the cap. Rate limits are keyed on the actor: a service account spends its own budget, and an app acting on a person's consent spends that person's.
-
-## Where to look
-
-| Piece | Path |
-| --- | --- |
-| Actors and provenance | `backend/src/modules/actors/`, `backend/src/db/utils/ids.ts`, provenance columns in `db/utils/product-columns.ts` and `channel-columns.ts` |
-| Service accounts and keys | `backend/src/modules/service-accounts/` |
-| Scopes | `shared/src/permissions/access-scopes.ts`, mask in `check-access.ts` and, for list queries, `backend/src/permissions/collection-scope.ts` |
-| Authorization server | `backend/src/modules/oauth-server/`, process entry in `oauth/` |
-| MCP | `backend/src/modules/mcp/`, MCP tools registered by `createXRoute` |
-| Guards | `backend/src/middlewares/guard/` |
+Tenant restrictions cap `serviceAccount` (20) and `apiKey` (100) per tenant; only active accounts and live keys count, and `0` lifts the cap. Rate limits are keyed on the actor: a service account spends its own budget, and an app acting on a person's consent spends that person's. Shared limiter behavior: [Authentication, Rate limits](./AUTHENTICATION.md#rate-limits).

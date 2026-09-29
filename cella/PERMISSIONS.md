@@ -206,6 +206,8 @@ export type CollectionReadWhere =
 
 One answer per situation, so no route, app or test meets two shapes for one cause. A refusal the caller's request or state brings about carries severity `warn` (a warning toast, no log id); `error` is kept for the app's own faults, such as a row that must exist and is gone.
 
+Unexpected server errors include internal details in client responses only in development and test. Other modes return a log ID; failed queries are logged without SQL or values.
+
 | Situation | Answer | Why |
 | --- | --- | --- |
 | The tenant: missing, inactive, none of the actor's, or not the tenant an API key belongs to | 403 `forbidden`, `meta.resource: 'tenant'` | The tenant is the URL segment every member knows, so the answer only says "not yours"; one answer for every case keeps the six-character ids from being enumerated |

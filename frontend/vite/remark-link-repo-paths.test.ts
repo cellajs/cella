@@ -113,7 +113,7 @@ describe('relative markdown links in repo docs', () => {
   });
 
   it('keeps using GitHub for repository docs without a first-class page', () => {
-    expect(runLink('./SECURITY.md', repoDocFile, docsTransform).url).toBe(`${repoUrl}/blob/main/cella/SECURITY.md`);
+    expect(runLink('./RELEASES.md', repoDocFile, docsTransform).url).toBe(`${repoUrl}/blob/main/cella/RELEASES.md`);
   });
 
   it('leaves unresolvable or out-of-repo relative links untouched', () => {

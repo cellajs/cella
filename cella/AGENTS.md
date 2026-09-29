@@ -56,7 +56,7 @@ Secret columns (a hash, a session or token secret, a private key) are declared o
 
 ## Auth
 
-Model (sign-in methods, sign-up, sessions, cookies, tokens, second factors, step-up, the auth rate limits): [Authentication](./AUTHENTICATION.md). Where the app refuses what it must (listeners, secrets, limits, redaction, security testing): [Security](./SECURITY.md).
+Authentication model and rate limits: [Authentication](./AUTHENTICATION.md). Machine access: [Interoperability](./INTEROPERABILITY.md). Permission decisions: [Permissions](./PERMISSIONS.md). Tenant database boundary: [Multi-tenancy](./MULTI_TENANCY.md). Listener and secret-delivery boundaries: [Deployment](./DEPLOYMENT.md). Secret-column handling: [Architecture](./ARCHITECTURE.md#trust-boundaries). Telemetry redaction: [Observability](./OTEL.md#redaction). Security testing: [Testing](./TESTING.md#goals).
 
 Seven sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA), `magic/`, `oauth/` (signing in with a provider), `passkeys/` (WebAuthn), `totps/` (TOTP 2FA), `step-up/` (proving presence again before account-security actions), `tokens/` (the token lifecycle: issue, redeem, read and spend, with one policy per token type; the only importer of `tokens-db`, enforced by Biome; a link type also has its handler in `general/helpers/link-handlers.ts`). Sessions: `general/helpers/session.ts` (`resolveSession` reads the app session from any request context). Cookies: `general/helpers/cookie.ts`.
 
@@ -116,7 +116,7 @@ Model: [Sync engine](./SYNC_ENGINE.md).
 - **Sync signals** (`frontend/src/query/realtime/sync-signals.ts`): the only extension point for sync-derived per-user state. Never import module logic into the prioritizer. Contract: [Sync engine](./SYNC_ENGINE.md#fetch-prioritization).
 - **Server-driven writes** (CDC fan-out, materialization, scheduled jobs) must strip the client's `changedFields` from the stored `stx`, else the CDC worker attributes the write to the wrong columns (absent key = WAL diff): `stripChangedFields` (`backend/src/db/utils/strip-changed-fields.ts`) or `stripChangedFieldsStx` in the CDC worker.
 - **Schema evolution (lenses)**: breaking wire-shape changes to product entities ship as append-only lens modules in `shared/src/schema-evolution/`. Never edit a shipped module. Until the first lens ships, a breaking wire-shape change bumps `appConfig.clientCacheVersion` (gate: Commits & PRs). Playbook: [Schema evolution](/docs/page/architecture/schema-evolution).
-- **Evolution contract**: every entity module registers `evolutionContract.product` or `.channel` once and routes bodies through it. `lens:check` fails a configured type without one. Recipe: [New entity](./ADD_ENTITY.md). Model: [Schema evolution](./SCHEMA_EVOLUTION.md#evolution-contract).
+- **Evolution contract**: every entity module registers `evolutionContract.product` or `.channel` once and routes bodies through it. `lens:check` fails a configured type without one. Guide: [New entity](./ADD_ENTITY.md). Model: [Schema evolution](./SCHEMA_EVOLUTION.md#evolution-contract).
 
 ## Cross-product references
 

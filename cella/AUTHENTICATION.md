@@ -1,6 +1,6 @@
 # Authentication
 
-This document explains who someone is to the app and how they prove it: the sign-in methods, sign-up, sessions and their cookies, tokens, second factors and step-up.
+This document explains everything authentication.
 
 ### TL;DR
 
@@ -20,7 +20,7 @@ actions that change how an account is protected first ask the session to prove i
 
 `appConfig.enabledAuthStrategies` says which methods are on. Every auth route declares its method with `x-strategy`, and a route of a method that is off answers 400 `forbidden_strategy` before any guard runs. The sign-in page starts by posting the address to `check-email`, which answers `recognized: true` only to a browser that has signed in to that account before (the signed `device-id` cookie plus a `devices` row); every other browser gets the neutral sign-in step, whether or not the address has an account.
 
-A magic-link or provider sign-in ends in `finishSignIn`: a session, or first an MFA challenge when the account requires one. A passkey sign-in sets the session at once. A system administrator signs in, and counts as one, only from an address in `SYSTEM_ADMIN_IP_ALLOWLIST`.
+A magic-link or provider sign-in ends in `finishSignIn`: a session, or first an MFA challenge when the account requires one. A passkey sign-in sets the session at once. A system administrator signs in, and counts as one, only from an address in `SYSTEM_ADMIN_IP_ALLOWLIST`, which defaults to `none`.
 
 ## Sign-up
 
@@ -46,7 +46,7 @@ Every ending before expiry goes through `endSessions`. It stamps the rows with `
 
 A client learns of a lost session from four 401 types, `unauthorized`, `no_session`, `session_expired` and `session_revoked` (`sessionLostTypes`): the frontend redirects to sign-in on these alone, since any other 401 refuses a proof while signed in. An open SSE stream hears `session_replaced` when the browser holds a newer session and `access_changed` when the system role changed, and reconnects; a sweep re-checks the session behind every open stream each minute.
 
-**Devices.** A sign-in sets a 400-day `device-id` cookie and records its per-user hash in `devices`. A sign-in from a browser the account has not used before mails the owner, and `check-email` recognizes a browser by it.
+**Devices.** A sign-in sets a 400-day `device-id` cookie and records its per-user hash in `devices`. `PII_HASH_SECRET` peppers the hash so a database leak cannot correlate browsers across accounts. A sign-in from a browser the account has not used before mails the owner, and `check-email` recognizes a browser by it.
 
 **Impersonation.** A system admin's impersonation is a session of its own (`type: 'impersonation'`, one hour) in its own cookie, layered on the admin's session cookie: it authenticates only while that admin session lives, the admin holds the system role and the request comes from an allowed address. The admin acts as the user, never on the account: stepping up, revoking the user's sessions and impersonating again are refused with 403 `impersonation_forbidden` (`noImpersonationGuard`).
 
@@ -80,7 +80,7 @@ One module, `auth/tokens/`, issues, opens and spends every token. `tokens.secret
 | `confirm-mfa` | cookie | 10 minutes | nothing | |
 | `oauth-connect` | cookie | 10 minutes | the account | |
 
-`invokeToken` redeems a link from the raw value in its URL: the first redemption wins a compare-and-set on `invokedAt`, the token's lifetime becomes its single-use window, and the browser gets a cookie of the type's name that binds the token to it. `readBoundToken` reads the token a browser's cookie binds it to; `spendCookieToken` spends it once, so of two concurrent completions one passes. A token issued with a `sessionId` serves that session alone and dies with it. Each link type has its handler in `linkHandlers`; a type without one does not compile.
+`invokeToken` redeems a link from the raw value in its URL: the first redemption wins a compare-and-set on `invokedAt`, the token's lifetime becomes its single-use window, and the browser gets a cookie of the type's name that binds the token to it. The response sets `Referrer-Policy: no-referrer` so the link token is not sent to the next page. `readBoundToken` reads the token a browser's cookie binds it to; `spendCookieToken` spends it once, so of two concurrent completions one passes. A token issued with a `sessionId` serves that session alone and dies with it. Each link type has its handler in `linkHandlers`; a type without one does not compile.
 
 A magic link signs in directly only in the browser that asked for it, which remembers the request in `magic-requested` (`rememberLinkRequest`, `requestedHere`). Opened anywhere else, the link is held in `magic-pending` and the holder confirms on `/auth/confirm-sign-in`, a page that names the address: a link planted in someone's browser, or fetched by a mail scanner, signs nobody in and is not used up. A link of another account than the one signed in answers 409 `user_mismatch`; an expired one 401 `<type>_expired` with the token id, so the error page can offer a new link.
 
@@ -88,7 +88,7 @@ A magic link signs in directly only in the browser that asked for it, which reme
 
 A passkey challenge is 32 random bytes, handed to the browser in the signed `passkey-challenge` cookie while `passkey_challenges` stores its hash with a purpose (`registration`, `authentication`, `mfa`, `step-up`) and, for `mfa` and `step-up`, the account it was issued for. Verifying a response deletes the row first, so a challenge answers one ceremony of its purpose at most once. A signature counter only moves forward, and a credential id names one account.
 
-`verifyTotp` is the one TOTP check. A code verifies within a minute of now and only for a time step later than `totps.last_used_step`, which it spends: each code counts once. Every check draws on the account's failure budget, whatever the IP: 5 failures in an hour lock the account's TOTP checks for 30 minutes and mail the owner, and the lockout lives in the database, so every process honours it.
+`verifyTotp` is the one TOTP check. The secret is encrypted at rest under `DATA_ENCRYPTION_KEY`. A code verifies within a minute of now and only for a time step later than `totps.last_used_step`, which it spends: each code counts once. Every check draws on the account's failure budget, whatever the IP: 5 failures in an hour lock the account's TOTP checks for 30 minutes and mail the owner, and the lockout lives in the database, so every process honours it.
 
 MFA (`users.mfaRequired`) needs both a passkey and an authenticator app, so a lost one can be replaced while the other still signs in; turning it on and deleting a factor run under a row lock (`mfaFactorRules`). A sign-in of such an account issues a `confirm-mfa` token in its cookie and lands on `/auth/mfa`. `completeMfaChallenge` is the only way out: it verifies the offered factor for the challenge's account, spends the challenge and signs in with an `mfa` session.
 
@@ -102,7 +102,7 @@ The OAuth face keeps a session of its own in the browser and answers a client wi
 
 ## Rate limits
 
-The auth routes reserve their budget before the handler runs, so a parallel burst reaches it at most the budget's times, and a failure budget also counts in a 24-hour bucket, where 100 failures block for three hours. The mechanism: [Security](./SECURITY.md#limits).
+Routes declare their limiter in `xRateLimiter`, which appears in OpenAPI. The shared limiter can key counts by IP (an IPv6 client counts by `/64`), email, user, actor, or tenant. `limit` counts every request. `success`, `fail`, and `failseries` reserve an attempt before the handler and return it unless the outcome counts, so parallel requests cannot exceed the budget; a `failseries` ends with a success. Failure budgets also count in a 24-hour bucket, where 100 failures block for three hours. Counts live in `rate_limits` and are shared across processes; if PostgreSQL is unavailable, the limiter falls back to process memory. A refusal returns `429 too_many_requests` with `Retry-After`. Work without an incoming request can charge a limiter directly through `chargeLimiter`.
 
 | Limiter | Counts | Budget |
 | --- | --- | --- |
@@ -115,16 +115,4 @@ The auth routes reserve their budget before the handler runs, so a parallel burs
 | `stepUpLimiter` | Failed second-factor checks on step-up, per account | 5 per hour, then 30 minutes blocked |
 | `passkeyChallengeLimiter` | Passkey challenges per IP | 30 per hour |
 
-## Where to look
-
-| Piece | Path |
-| --- | --- |
-| Sessions, cookies, devices, impersonation | `backend/src/modules/auth/general/helpers/session.ts`, `cookie.ts`, `end-sessions.ts`, `enroll-device.ts` |
-| Tokens | `backend/src/modules/auth/tokens/token-policies.ts`, `token-lifecycle.ts`; the link handlers in `general/helpers/link-handlers.ts` |
-| Magic links | `backend/src/modules/auth/magic/` |
-| Passkeys, TOTP and MFA | `backend/src/modules/auth/passkeys/helpers/passkey.ts`, `totps/helpers/totps.ts`, `totp-budget.ts`, `general/helpers/mfa.ts` |
-| Step-up | `backend/src/modules/auth/step-up/`, `backend/src/middlewares/guard/step-up-guard.ts`, `frontend/src/modules/auth/step-up.ts` |
-| Provider sign-in | `backend/src/modules/auth/oauth/` |
-| Guards and the auth cache | `backend/src/middlewares/guard/` |
-| Limiters | `backend/src/middlewares/rate-limiter/limiters.ts` |
-| Frontend | `frontend/src/modules/auth/`; the lost-session redirect in `frontend/src/query/on-error.ts` |
+Machine-facing rate limits: [Interoperability](./INTEROPERABILITY.md#quotas-and-limits).
