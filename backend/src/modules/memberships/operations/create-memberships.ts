@@ -94,9 +94,12 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     const account = accountByEmail.get(email);
 
     if (invitation) {
-      // A declined invitation is not sent again; a pending one gets a reminder, except against a draft context and
-      // within the throttle.
-      if (invitation.rejectedAt) continue;
+      // A declined invitation is not sent again, and the inviter is told so; a pending one gets a reminder, except
+      // against a draft context and within the throttle.
+      if (invitation.rejectedAt) {
+        rejectedIds.push(email);
+        continue;
+      }
       const throttled = new Date(invitation.remindedAt ?? invitation.createdAt) >= reminderThrottleBefore;
       if (!deferDispatch && !throttled) {
         reminders.push({ email, userId: invitation.userId });

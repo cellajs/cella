@@ -9,7 +9,7 @@ import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
-import { createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
+import { createTestOrganization, createTestSession, createTestUser, expectRefusal, mailsTo } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -142,6 +142,26 @@ describe('Rejected invitations', async () => {
     expect(await boundUserOf(rejected.inactiveMembership.id)).toBeNull();
     // The pending invitation to the same address is claimed (positive control).
     expect(await boundUserOf(pending.inactiveMembership.id)).toBe(owner.id);
+  });
+
+  it('tells the inviter that an address which declined was not invited again, and mails it nothing', async () => {
+    const organization = await createTestOrganization();
+    const admin = await createOrgUser(call, organization.tenantId, organization.id, 'reinvite-admin', adminRole);
+    const email = 'declined-address@security-test.com';
+    const declined = await createInvitation({ organization, email, createdBy: admin.id });
+    await markRejected(declined.inactiveMembership.id);
+    const mailsBefore = mailsTo(email).length;
+
+    const invited = await call(membershipInvite, {
+      path: { tenantId: organization.tenantId, organizationId: organization.id },
+      query: { entityId: organization.id, entityType: 'organization' },
+      body: { emails: [email], role: memberRole },
+      headers: { ...defaultHeaders, Cookie: admin.sessionCookie },
+    });
+    expect(invited.response.status).toBe(200);
+    expect(invited.data).toMatchObject({ rejectedIds: [email], invitesSentCount: 0 });
+    expect(mailsTo(email)).toHaveLength(mailsBefore);
+    expect(await rejectedAtOf(declined.inactiveMembership.id)).not.toBeNull();
   });
 
   it('must not list or count a rejected invitation as pending', async () => {
