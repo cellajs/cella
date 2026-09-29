@@ -259,9 +259,11 @@ BEGIN
   IF NOT EXISTS (SELECT 1 FROM organizations WHERE id = OLD.channel_id) THEN
     RETURN NULL;
   END IF;
+  PERFORM pg_advisory_xact_lock(hashtextextended('memberships_keep_org_admin:' || OLD.channel_id::text, 0));
   IF NOT EXISTS (
     SELECT 1 FROM memberships
-    WHERE channel_type = 'organization' AND channel_id = OLD.channel_id AND role = 'admin'
+    WHERE channel_type = 'organization' AND organization_id = OLD.channel_id AND channel_id = OLD.channel_id
+      AND role = 'admin'
   ) THEN
     RAISE EXCEPTION 'Organization % would be left without an admin', OLD.channel_id
       USING ERRCODE = '23514', CONSTRAINT = 'memberships_keep_org_admin';
