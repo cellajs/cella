@@ -132,7 +132,11 @@ const authCallbackFlow = async ({
     throw new AppError(403, 'sign_up_restricted', 'info');
   }
 
-  // No account until the provider's address is proven: the sign-up waits on its verification mail.
+  return pendingSignUp(providerUser, provider);
+};
+
+/** No account until the provider's address is proven: the sign-up waits on its verification mail. */
+const pendingSignUp = (providerUser: TransformedUser, provider: EnabledOAuthProvider): OAuthFlowResult => {
   const { name, slug, firstName } = providerUser;
   return {
     type: 'pending',
@@ -188,9 +192,11 @@ const connectCallbackFlow = async ({
 };
 
 /**
- * Sign-up via invitation, for a provider account that asserts the invited address. The invitation's link, opened in
- * this browser, proved the inbox it was mailed to, so the account is created with its address and identity verified,
- * in one transaction that also claims the invitations waiting for the address, and signs in without a second mail.
+ * Sign-up via invitation, for a provider account that asserts the invited address. An invitation link can be
+ * forwarded, so opening it proves the inbox only together with the provider's own verification of the address: then
+ * the account is created with its address and identity verified, in one transaction that also claims the invitations
+ * waiting for the address, and signs in without a second mail. Otherwise the sign-up waits on the verification mail,
+ * and completing it claims the invitations the same way.
  */
 const inviteCallbackFlow = async ({
   ctx,
@@ -209,6 +215,8 @@ const inviteCallbackFlow = async ({
   // Address already held by an account, verified or not: every sign-up writes its email row, so one lookup covers both.
   const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
   if (holder) throw new AppError(409, 'oauth_email_exists', 'warn');
+
+  if (!providerUser.emailVerified) return pendingSignUp(providerUser, provider);
 
   const { email } = invitationToken;
   const created = await db.transaction(async (tx) => {

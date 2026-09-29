@@ -23,6 +23,7 @@ import {
   insertTestToken,
   linkIdentity,
   mailedLink,
+  mailsTo,
   setCookieOf,
 } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
@@ -607,7 +608,7 @@ describe('OAuth Authentication', async () => {
       expect(cookieChange(res, 'session')).toBeUndefined();
     });
   });
-  describe('Invite flow: the invitation opened in this browser proves the inbox', () => {
+  describe("Invite flow: the opened invitation and the provider's verification prove the inbox together", () => {
     const state = 'mock-state-invite';
     const providerEmail = 'github-user@example.com';
 
@@ -646,6 +647,40 @@ describe('OAuth Authentication', async () => {
         .from(inactiveMembershipsTable)
         .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
       expect(claimed.userId).toBe(account.id);
+    });
+
+    it('must not create an account via an invite round trip whose provider has not verified the address', async () => {
+      // An invitation link can be forwarded, so only a provider's own verification stands for the inbox with it.
+      await openedInvitation(providerEmail);
+      const { transformGithubUserData } = await import('#/modules/auth/oauth/helpers/transform-user-data');
+      vi.mocked(transformGithubUserData).mockReturnValueOnce({
+        id: 'github-user-id',
+        slug: 'testuser',
+        email: providerEmail,
+        name: 'Test User',
+        emailVerified: false,
+        thumbnailUrl: 'https://avatar.url',
+        firstName: 'Test',
+        lastName: 'User',
+      });
+
+      const { response: res } = await inviteCallback();
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toContain('/auth/email-verification/signup');
+      expect(cookieChange(res, 'session')).toBeUndefined();
+      expect(await db.select().from(usersTable).where(eq(usersTable.email, providerEmail))).toHaveLength(0);
+      expect(await db.select().from(identitiesTable)).toHaveLength(0);
+
+      // The sign-up waits on the mail to the invited address; completing it claims the invitation with the account.
+      expect(mailsTo(providerEmail)).toHaveLength(1);
+      const pending = await db.select().from(tokensTable).where(eq(tokensTable.type, 'oauth-verification'));
+      expect(pending).toEqual([
+        expect.objectContaining({
+          email: providerEmail,
+          userId: null,
+          pendingSignUp: expect.objectContaining({ issuer: 'github', subject: 'github-user-id' }),
+        }),
+      ]);
     });
 
     it('must not create an account via an invite round trip in a browser that did not open the invitation', async () => {
