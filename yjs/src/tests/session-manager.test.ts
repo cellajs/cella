@@ -72,7 +72,7 @@ describe('joinCollab / leaveCollab', () => {
 
     await vi.advanceTimersByTimeAsync(GRACE);
 
-    expect(compactDocument).toHaveBeenCalledWith(ctx);
+    expect(compactDocument).toHaveBeenCalledWith(ctx, null);
     expect(deleteDoc).not.toHaveBeenCalled();
     expect(collab.compactTimer).toBeUndefined();
     expect(getCollab(ctx)).toBeUndefined();

@@ -180,9 +180,9 @@ export interface MockWebSocket {
 export const storageMock = () => ({
   loadBase: vi.fn().mockResolvedValue(null),
   ensureDoc: vi.fn().mockResolvedValue({ state: new Uint8Array(), generation: 'gen-1' }),
-  appendUpdate: vi.fn().mockResolvedValue(undefined),
+  appendUpdate: vi.fn().mockResolvedValue(true),
   readLog: vi.fn().mockResolvedValue([]),
-  compactState: vi.fn().mockResolvedValue(undefined),
+  compactState: vi.fn().mockResolvedValue(true),
   discardLogRows: vi.fn().mockResolvedValue(undefined),
   deleteDoc: vi.fn().mockResolvedValue(undefined),
   touchDoc: vi.fn().mockResolvedValue(true),
@@ -226,23 +226,29 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
       }
       return row(key(scope))!;
     }),
-    appendUpdate: vi.fn(async (scope: DocScope, userId: string, payload: Uint8Array) => {
+    /** A test seeds a log without a `generation`; the relay always names one, and appends only to its row. */
+    appendUpdate: vi.fn(async (scope: DocScope, userId: string, payload: Uint8Array, generation?: string) => {
       await wait('appendUpdate');
+      if (generation !== undefined && row(key(scope))?.generation !== generation) return false;
       const list = logs.get(key(scope)) ?? [];
       list.push({ id: nextId++, payload, userId: userId || null });
       logs.set(key(scope), list);
+      return true;
     }),
     readLog: vi.fn(async (doc: DocKey) => {
       await wait('readLog');
       return [...(logs.get(key(doc)) ?? [])];
     }),
-    compactState: vi.fn(async (doc: DocKey, merged: Uint8Array, ids: number[]) => {
+    compactState: vi.fn(async (doc: DocKey, merged: Uint8Array, ids: number[], generation?: string) => {
       await wait('compactState');
+      const current = row(key(doc));
+      if (!current || (generation !== undefined && current.generation !== generation)) return false;
       bases.set(key(doc), merged);
       logs.set(
         key(doc),
         (logs.get(key(doc)) ?? []).filter((row) => !ids.includes(row.id)),
       );
+      return true;
     }),
     discardLogRows: vi.fn(async (doc: DocKey, ids: number[]) => {
       await wait('discardLogRows');

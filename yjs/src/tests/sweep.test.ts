@@ -32,8 +32,8 @@ describe('runStartupSweep', () => {
 
     expect(compactDocument).toHaveBeenCalledTimes(2);
     // As the system, in the scope the row stored: no user context.
-    expect(compactDocument).toHaveBeenCalledWith(staleRow());
-    expect(compactDocument).toHaveBeenCalledWith(staleRow({ entityId: 'entity-2', organizationId: null }));
+    expect(compactDocument).toHaveBeenCalledWith(staleRow(), null);
+    expect(compactDocument).toHaveBeenCalledWith(staleRow({ entityId: 'entity-2', organizationId: null }), null);
     expect(deleteDoc).not.toHaveBeenCalled();
     expect(getCollab(staleRow())).toBeUndefined();
   });

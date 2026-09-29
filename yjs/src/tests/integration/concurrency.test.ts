@@ -65,6 +65,7 @@ const ids = {
   orphan: '40000000-0000-4000-a000-000000000004',
   survivor: '40000000-0000-4000-a000-000000000005',
   outside: '40000000-0000-4000-a000-000000000006',
+  late: '40000000-0000-4000-a000-000000000007',
 };
 
 function ctx(entityId: string): DocScope {
@@ -296,6 +297,30 @@ describe('relay end to end', () => {
     fresh.provider.destroy();
     fresh.doc.destroy();
     doc.destroy();
+    description = seedDescription;
+  });
+
+  it('must not log an update sent on a retired document before its session ends: the reseed never merges it', async () => {
+    const { doc, provider, closes } = await connectClient(ids.late);
+
+    // Retired as the backend does, and typed into at once, before the live stamp notices.
+    description = paragraph('rewritten elsewhere');
+    await admin.query('DELETE FROM yjs_documents WHERE entity_id = $1', [ids.late]);
+    await admin.query('DELETE FROM yjs_updates WHERE entity_id = $1', [ids.late]);
+    firstText(doc).insert(0, 'late ');
+
+    await until(async () => closes.includes(1013));
+    provider.destroy();
+    doc.destroy();
+    expect(await readLog(ctx(ids.late))).toEqual([]);
+
+    // The reseed holds the outside write alone, in one history.
+    const fresh = await connectClient(ids.late);
+    expect(blockGroups(fresh.doc)).toBe(1);
+    expect(textOf(Y.encodeStateAsUpdate(fresh.doc))).toBe('rewritten elsewhere');
+    expect(await readLog(ctx(ids.late))).toEqual([]);
+    fresh.provider.destroy();
+    fresh.doc.destroy();
     description = seedDescription;
   });
 

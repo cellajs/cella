@@ -374,6 +374,7 @@ describe('handleMessage: sync update', () => {
       const list = storage.logs.get(key) ?? [];
       list.push({ id: 1000, payload, userId });
       storage.logs.set(key, list);
+      return true;
     });
 
     const doc = new Y.Doc();

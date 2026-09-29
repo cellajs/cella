@@ -146,4 +146,27 @@ describe('compactDocument', () => {
     expect(rows).toHaveLength(1);
     expect(readMap(rows[0].payload)).toEqual({ late: true });
   });
+
+  it("must not touch a document reseeded under another generation than the session's: its log is the new session's", async () => {
+    await storage.appendUpdate(scope, 'user-1', mapUpdate('new session', 1));
+
+    expect(await compactDocument(scope, 'gen-retired')).toBe('retired');
+    expect(postMaterialize).not.toHaveBeenCalled();
+    expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
+    expect(storage.logs.get(key)).toHaveLength(1);
+  });
+
+  it('must not write a merge over a document reseeded while its window was written: nothing of the new seed is touched', async () => {
+    await storage.appendUpdate(scope, 'user-1', mapUpdate('old history', 1));
+    const reseed = mapUpdate('reseeded', true);
+    vi.mocked(postMaterialize).mockImplementationOnce(async () => {
+      // An outside write retires the document and a handshake reseeds it before this window's base is written.
+      await storage.deleteDoc(scope);
+      await storage.ensureDoc(scope, reseed);
+      return 'ok';
+    });
+
+    expect(await compactDocument(scope, 'gen-0')).toBe('retired');
+    expect(readMap(storage.bases.get(key)!)).toEqual({ reseeded: true });
+  });
 });

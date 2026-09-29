@@ -234,7 +234,11 @@ async function handleSyncStep1(
   }
 }
 
-/** Logs the update durably under its sender, then broadcasts it to peers and schedules compaction; one Yjs cannot decode closes its sender. */
+/**
+ * Logs the update durably under its sender, in the generation the session loaded, then broadcasts it to peers and
+ * schedules compaction; one Yjs cannot decode closes its sender. A document retired or reseeded since takes no update:
+ * the session ends, and its sockets reconnect into the new generation.
+ */
 async function handleSyncUpdate(
   collab: CollabSession,
   userId: string,
@@ -248,7 +252,13 @@ async function handleSyncUpdate(
   // Logged, it would break every later merge of the document.
   if (kind === 'malformed') return refuseFrame(collab.scope, userId, ws);
 
-  await appendUpdate(collab.scope, userId, update);
+  // Before any handshake loaded the document, the update takes the generation a handshake would load; none, when the
+  // document was retired under the session meanwhile, which has ended.
+  const generation = collab.generation ?? (await withDocLock(collab, () => loadDocumentState(collab)))?.generation;
+  if (!generation) return;
+  if (!(await appendUpdate(collab.scope, userId, update, generation))) return endCollab(collab);
+  // The session ended while the append ran: its peers are gone, and no timer may run on it.
+  if (getCollab(collab.scope) !== collab) return;
   broadcastToCollab(collab, rawMessage, ws);
   scheduleCompaction(collab);
 }
@@ -266,7 +276,7 @@ export function scheduleCompaction(collab: CollabSession): void {
 export async function runCompaction(collab: CollabSession): Promise<CompactionResult> {
   return withDocLock(collab, async () => {
     try {
-      const result = await compactDocument(collab.scope);
+      const result = await compactDocument(collab.scope, collab.generation);
       if (result === 'retired') endCollab(collab);
       return result;
     } catch (err) {

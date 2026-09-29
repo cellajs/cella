@@ -66,10 +66,11 @@ describe('6.1 Storage: session row, update log, compaction', () => {
     const c = ctx(ids.lifecycle);
     const seed = mapUpdate('seed', true);
     expect(await loadBase(c)).toBeNull();
-    expect((await ensureDoc(c, seed)).state).toEqual(seed);
+    const { state, generation } = await ensureDoc(c, seed);
+    expect(state).toEqual(seed);
 
-    await appendUpdate(c, testUserId, mapUpdate('a', 1));
-    await appendUpdate(c, '00000000-0000-4000-a000-0000000000bb', mapUpdate('b', 2));
+    expect(await appendUpdate(c, testUserId, mapUpdate('a', 1), generation)).toBe(true);
+    expect(await appendUpdate(c, '00000000-0000-4000-a000-0000000000bb', mapUpdate('b', 2), generation)).toBe(true);
     const rows = await readLog(c);
     expect(rows.map((row) => row.userId)).toEqual([testUserId, '00000000-0000-4000-a000-0000000000bb']);
     expect(rows[0].id).toBeLessThan(rows[1].id);
@@ -78,11 +79,14 @@ describe('6.1 Storage: session row, update log, compaction', () => {
       (await loadBase(c))!.state,
       rows.map((row) => row.payload),
     )!;
-    await compactState(
-      c,
-      merged,
-      rows.map((row) => row.id),
-    );
+    expect(
+      await compactState(
+        c,
+        merged,
+        rows.map((row) => row.id),
+        generation,
+      ),
+    ).toBe(true);
     expect(readMap((await loadBase(c))!.state)).toEqual({ seed: true, a: 1, b: 2 });
     expect(await readLog(c)).toEqual([]);
 
@@ -100,28 +104,36 @@ describe('6.1 Storage: session row, update log, compaction', () => {
     await deleteDoc(c);
   });
 
-  it('a retired document reseeds under a new generation, and touchDoc reports whether the row exists', async () => {
+  it('a retired document reseeds under a new generation, takes no write of the old one, and touchDoc reports whether the row exists', async () => {
     const c = ctx(ids.retire);
     const first = await ensureDoc(c, mapUpdate('first', true));
     expect(await touchDoc(c)).toBe(true);
     await deleteDoc(c);
     expect(await touchDoc(c)).toBe(false);
+    // An update or a compaction of the retired generation writes nothing, before and after the reseed.
+    expect(await appendUpdate(c, testUserId, mapUpdate('late', true), first.generation)).toBe(false);
     const second = await ensureDoc(c, mapUpdate('second', true));
     expect(readMap(second.state)).toEqual({ second: true });
     expect(second.generation).not.toBe(first.generation);
+    expect(await appendUpdate(c, testUserId, mapUpdate('late', true), first.generation)).toBe(false);
+    expect(await compactState(c, mapUpdate('old history', true), [], first.generation)).toBe(false);
+    expect(readMap((await loadBase(c))!.state)).toEqual({ second: true });
+    expect(await readLog(c)).toEqual([]);
     await deleteDoc(c);
   });
 
   it('twenty concurrent appends all land, and compaction deletes only the rows it was given', async () => {
     const c = ctx(ids.compaction);
-    await ensureDoc(c, null);
-    await Promise.all(Array.from({ length: 20 }, (_, i) => appendUpdate(c, testUserId, mapUpdate(`k${i}`, i))));
+    const { generation } = await ensureDoc(c, null);
+    await Promise.all(
+      Array.from({ length: 20 }, (_, i) => appendUpdate(c, testUserId, mapUpdate(`k${i}`, i), generation)),
+    );
     const rows = await readLog(c);
     expect(rows).toHaveLength(20);
 
     // An append that lands after the read and before the compaction write survives.
     const read = rows.slice(0, 20);
-    await appendUpdate(c, testUserId, mapUpdate('late', true));
+    await appendUpdate(c, testUserId, mapUpdate('late', true), generation);
     const merged = mergeState(
       (await loadBase(c))!.state,
       read.map((row) => row.payload),
@@ -130,6 +142,7 @@ describe('6.1 Storage: session row, update log, compaction', () => {
       c,
       merged,
       read.map((row) => row.id),
+      generation,
     );
 
     const remaining = await readLog(c);
@@ -143,10 +156,11 @@ describe('6.1 Storage: session row, update log, compaction', () => {
   it('discardLogRows deletes exactly the rows it was given, in the document it names', async () => {
     const c = ctx(ids.discard);
     const other = ctx(ids.compaction);
-    await ensureDoc(c, null);
-    await appendUpdate(c, testUserId, mapUpdate('a', 1));
-    await appendUpdate(c, testUserId, undecodableUpdate);
-    await appendUpdate(other, testUserId, mapUpdate('elsewhere', true));
+    const { generation } = await ensureDoc(c, null);
+    const otherGeneration = (await ensureDoc(other, null)).generation;
+    await appendUpdate(c, testUserId, mapUpdate('a', 1), generation);
+    await appendUpdate(c, testUserId, undecodableUpdate, generation);
+    await appendUpdate(other, testUserId, mapUpdate('elsewhere', true), otherGeneration);
     const [kept, bad] = await readLog(c);
     const [elsewhere] = await readLog(other);
 
@@ -167,8 +181,8 @@ describe('6.1 Storage: session row, update log, compaction', () => {
 
   it('rows are invisible to the runtime role without tenant context and from another tenant', async () => {
     const c = ctx(ids.rls);
-    await ensureDoc(c, mapUpdate('seed', true));
-    await appendUpdate(c, testUserId, mapUpdate('a', 1));
+    const { generation } = await ensureDoc(c, mapUpdate('seed', true));
+    await appendUpdate(c, testUserId, mapUpdate('a', 1), generation);
 
     // Selected by entity id alone on the relay's own (runtime role) pool, so the RLS policies alone decide what comes back.
     const rowsVisible = async (tenantId: string | null): Promise<[number, number]> => {

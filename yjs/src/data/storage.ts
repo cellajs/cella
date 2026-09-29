@@ -74,10 +74,27 @@ export async function ensureDoc(scope: DocScope, seed: Uint8Array | null): Promi
   });
 }
 
-/** Durable before the update is broadcast: one insert, no read, so concurrent appends never overwrite each other. `userId` is the sender, whom materialize may credit. */
-export async function appendUpdate(scope: DocScope, userId: string, payload: Uint8Array): Promise<void> {
+/**
+ * Durable before the update is broadcast: one insert, so concurrent appends never overwrite each other. `userId` is the
+ * sender, whom materialize may credit. The update extends the history of one `generation`: it is appended only while
+ * the document row of that generation exists, which it holds under a key-share lock until the insert commits, so a
+ * retire that deletes the row waits for it and then deletes the log row too. False when no such row exists: the
+ * document was retired or reseeded, and the update belongs to no history the next seed shares.
+ */
+export async function appendUpdate(
+  scope: DocScope,
+  userId: string,
+  payload: Uint8Array,
+  generation: string,
+): Promise<boolean> {
   const { entityType, entityId, tenantId, organizationId } = scope;
-  await asSystem(scope, async (tx) => {
+  return asSystem(scope, async (tx) => {
+    const [row] = await tx
+      .select({ generation: yjsDocumentsTable.generation })
+      .from(yjsDocumentsTable)
+      .where(and(docWhere(scope), eq(yjsDocumentsTable.generation, generation)))
+      .for('key share');
+    if (!row) return false;
     await tx.insert(yjsUpdatesTable).values({
       entityType,
       entityId,
@@ -86,6 +103,7 @@ export async function appendUpdate(scope: DocScope, userId: string, payload: Uin
       userId: userId || null,
       payload: Buffer.from(payload),
     });
+    return true;
   });
 }
 
@@ -101,16 +119,28 @@ export async function readLog(doc: DocKey): Promise<LogRow[]> {
   });
 }
 
-/** Replaces the base state and deletes exactly the log rows that were merged into it, in one transaction. Rows appended meanwhile stay. */
-export async function compactState(doc: DocKey, merged: Uint8Array, logIds: number[]): Promise<void> {
-  await asSystem(doc, async (tx) => {
-    await tx
+/**
+ * Replaces the base state of `generation`, the one the merge was read from, and deletes exactly the log rows that were
+ * merged into it, in one transaction. Rows appended meanwhile stay. False, with nothing changed, when the row of that
+ * generation is gone: the document was retired or reseeded since the read.
+ */
+export async function compactState(
+  doc: DocKey,
+  merged: Uint8Array,
+  logIds: number[],
+  generation: string,
+): Promise<boolean> {
+  return asSystem(doc, async (tx) => {
+    const updated = await tx
       .update(yjsDocumentsTable)
       .set({ state: Buffer.from(merged), updatedAt: sql`now()` })
-      .where(docWhere(doc));
+      .where(and(docWhere(doc), eq(yjsDocumentsTable.generation, generation)))
+      .returning({ entityId: yjsDocumentsTable.entityId });
+    if (updated.length === 0) return false;
     if (logIds.length > 0) {
       await tx.delete(yjsUpdatesTable).where(and(logWhere(doc), inArray(yjsUpdatesTable.id, logIds)));
     }
+    return true;
   });
 }
 
@@ -122,11 +152,14 @@ export async function discardLogRows(doc: DocKey, logIds: number[]): Promise<voi
   });
 }
 
-/** Removes the document row and any log rows: the entity is gone, so nothing can receive them. */
+/**
+ * Removes the document row and any log rows: the entity is gone, so nothing can receive them. The row goes first, so an
+ * append that holds it commits before the log delete, which takes its row too.
+ */
 export async function deleteDoc(doc: DocKey): Promise<void> {
   await asSystem(doc, async (tx) => {
-    await tx.delete(yjsUpdatesTable).where(logWhere(doc));
     await tx.delete(yjsDocumentsTable).where(docWhere(doc));
+    await tx.delete(yjsUpdatesTable).where(logWhere(doc));
   });
 }
 

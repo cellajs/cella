@@ -17,7 +17,7 @@ function editorsNewestFirst(rows: LogRow[]): string[] {
   return editors;
 }
 
-/** `empty`: nothing was logged since the last compaction, so nothing was written. `retired`: the document row is gone, and the log with it. The other values are the materialize outcome. */
+/** `empty`: nothing was logged since the last compaction, so nothing was written. `retired`: the document row is gone, or of another generation than the session's. The other values are the materialize outcome. */
 export type CompactionResult = 'empty' | 'ok' | 'gone' | 'permanent' | 'retry' | 'retired';
 
 /**
@@ -33,9 +33,12 @@ export type CompactionResult = 'empty' | 'ok' | 'gone' | 'permanent' | 'retry' |
  * with its sender logged: it carries no edit anyone can apply, and kept it would fail every window. A log without its
  * document row is discarded whole, `retired`: the row went with an outside write of the description or with the
  * entity, the rows extend a history the next seed does not share, and merged alone they are a partial document.
+ * A document of another `generation` than the session's was reseeded since: its log is the new session's, and nothing
+ * is touched. The write of the base holds only while the row read is still of its generation.
  */
-export async function compactDocument(scope: DocScope): Promise<CompactionResult> {
+export async function compactDocument(scope: DocScope, generation: string | null = null): Promise<CompactionResult> {
   const [base, logged] = await Promise.all([loadBase(scope), readLog(scope)]);
+  if (base !== null && generation !== null && base.generation !== generation) return 'retired';
   if (logged.length === 0) return 'empty';
   if (base === null) {
     log.warn(`Compaction: ${scope.entityType}:${scope.entityId} was retired, discarding ${logged.length} log row(s)`);
@@ -81,6 +84,5 @@ export async function compactDocument(scope: DocScope): Promise<CompactionResult
   const result = await postMaterialize(scope, editors, json);
   if (result !== 'ok') return result;
 
-  await compactState(scope, state, ids);
-  return 'ok';
+  return (await compactState(scope, state, ids, base.generation)) ? 'ok' : 'retired';
 }

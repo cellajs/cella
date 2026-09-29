@@ -150,7 +150,7 @@ async function finishCollab(key: string, collab: CollabSession): Promise<FinishO
 
     let result: CompactionResult;
     try {
-      result = await compactDocument(collab.scope);
+      result = await compactDocument(collab.scope, collab.generation);
     } catch (err) {
       log.error(`Final compaction failed for ${key}`, { err });
       result = 'retry';
