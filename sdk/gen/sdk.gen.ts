@@ -2010,13 +2010,13 @@ export const updateMe = <ThrowOnError extends boolean = true>(
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const toggleMfa = <ThrowOnError extends boolean = true>(
-  options?: Options<ToggleMfaData, ThrowOnError>,
+  options: Options<ToggleMfaData, ThrowOnError>,
 ): RequestResult<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).put<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).put<ToggleMfaResponses, ToggleMfaErrors, ThrowOnError, 'data'>({
     requestValidator: async (data) =>
       await z
         .object({
-          body: zToggleMfaBody.optional(),
+          body: zToggleMfaBody,
           path: z.never().optional(),
           query: z.never().optional(),
         })
@@ -2034,7 +2034,7 @@ export const toggleMfa = <ThrowOnError extends boolean = true>(
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...options?.headers,
+      ...options.headers,
     },
   });
 
@@ -2120,13 +2120,13 @@ export const getMyInvitations = <ThrowOnError extends boolean = true>(
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const revokeMySessions = <ThrowOnError extends boolean = true>(
-  options?: Options<RevokeMySessionsData, ThrowOnError>,
+  options: Options<RevokeMySessionsData, ThrowOnError>,
 ): RequestResult<RevokeMySessionsResponses, RevokeMySessionsErrors, ThrowOnError, 'data'> =>
-  (options?.client ?? client).delete<RevokeMySessionsResponses, RevokeMySessionsErrors, ThrowOnError, 'data'>({
+  (options.client ?? client).delete<RevokeMySessionsResponses, RevokeMySessionsErrors, ThrowOnError, 'data'>({
     requestValidator: async (data) =>
       await z
         .object({
-          body: zRevokeMySessionsBody.optional(),
+          body: zRevokeMySessionsBody,
           path: z.never().optional(),
           query: z.never().optional(),
         })
@@ -2144,7 +2144,7 @@ export const revokeMySessions = <ThrowOnError extends boolean = true>(
     ...options,
     headers: {
       'Content-Type': 'application/json',
-      ...options?.headers,
+      ...options.headers,
     },
   });
 
@@ -2928,7 +2928,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(
     requestValidator: async (data) =>
       await z
         .object({
-          body: zUpdateUserBody.optional(),
+          body: zUpdateUserBody,
           path: zUpdateUserPath,
           query: z.never().optional(),
         })
@@ -3453,7 +3453,7 @@ export const updateOrganization = <ThrowOnError extends boolean = true>(
     requestValidator: async (data) =>
       await z
         .object({
-          body: zUpdateOrganizationBody.optional(),
+          body: zUpdateOrganizationBody,
           path: zUpdateOrganizationPath,
           query: z.never().optional(),
         })
@@ -3991,7 +3991,7 @@ export const updateMembership = <ThrowOnError extends boolean = true>(
     requestValidator: async (data) =>
       await z
         .object({
-          body: zUpdateMembershipBody.optional(),
+          body: zUpdateMembershipBody,
           path: zUpdateMembershipPath,
           query: z.never().optional(),
         })

@@ -400,7 +400,7 @@
             "maximum": 140737488355327
           }
         },
-        "required": false,
+        "required": true,
         "contentType": "application/json"
       }
     }

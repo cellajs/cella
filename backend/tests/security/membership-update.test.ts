@@ -56,6 +56,20 @@ describe('Membership updates', async () => {
     expect(await membershipOf(admin.id)).toEqual(target);
   });
 
+  it("must not touch another member's membership via an update without a body or Content-Type", async () => {
+    const { org, admin, member, membershipOf } = await orgWithAdminAndMember();
+    const target = await membershipOf(admin.id);
+    const { baseApp } = await import('#/routes');
+    const { 'Content-Type': _json, ...headers } = defaultHeaders;
+
+    const response = await baseApp.request(`/${org.tenantId}/${org.id}/memberships/${target.id}`, {
+      method: 'PUT',
+      headers: { ...headers, Cookie: member.sessionCookie },
+    });
+    await expectRefusal(response, 400, 'invalid_request');
+    expect(await membershipOf(admin.id)).toEqual(target);
+  });
+
   it("refuses an empty update from an admin and on the caller's own membership too", async () => {
     const { admin, member, membershipOf, update } = await orgWithAdminAndMember();
     const target = await membershipOf(member.id);

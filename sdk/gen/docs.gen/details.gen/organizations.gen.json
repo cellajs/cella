@@ -1861,7 +1861,7 @@
             }
           }
         },
-        "required": false,
+        "required": true,
         "contentType": "application/json"
       }
     }

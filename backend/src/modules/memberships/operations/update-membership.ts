@@ -22,6 +22,8 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
   const { role, archived, muted, displayOrder } = input;
 
   const setsPersonalView = personalViewKeys.some((key) => input[key] !== undefined);
+  // Refused here as well as by the body schema, so the rule holds for every caller of the operation.
+  if (role === undefined && !setsPersonalView) throw new AppError(400, 'invalid_request', 'warn');
 
   let orderToUpdate = displayOrder;
 

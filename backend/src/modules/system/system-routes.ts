@@ -80,6 +80,7 @@ const systemRoutes = {
     request: {
       params: entityIdParamSchema,
       body: {
+        required: true,
         content: { 'application/json': { schema: userUpdateBodySchema } },
       },
     },

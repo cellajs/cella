@@ -106,6 +106,7 @@ const membershipRoutes = {
     request: {
       params: idInTenantOrgParamSchema,
       body: {
+        required: true,
         content: { 'application/json': { schema: membershipUpdateBodySchema } },
       },
     },

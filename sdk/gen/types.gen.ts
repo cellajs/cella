@@ -2763,7 +2763,7 @@ export type UpdateMeResponses = {
 export type UpdateMeResponse = UpdateMeResponses[keyof UpdateMeResponses];
 
 export type ToggleMfaData = {
-  body?: {
+  body: {
     mfaRequired: boolean;
   };
   path?: never;
@@ -2906,7 +2906,7 @@ export type GetMyInvitationsResponses = {
 export type GetMyInvitationsResponse = GetMyInvitationsResponses[keyof GetMyInvitationsResponses];
 
 export type RevokeMySessionsData = {
-  body?: {
+  body: {
     ids: Array<string>;
   };
   path?: never;
@@ -4046,7 +4046,7 @@ export type DeleteUsersResponses = {
 export type DeleteUsersResponse = DeleteUsersResponses[keyof DeleteUsersResponses];
 
 export type UpdateUserData = {
-  body?: {
+  body: {
     bannerUrl?: string | null;
     description?: string | null;
     firstName?: string | null;
@@ -4766,7 +4766,7 @@ export type GetOrganizationResponses = {
 export type GetOrganizationResponse = GetOrganizationResponses[keyof GetOrganizationResponses];
 
 export type UpdateOrganizationData = {
-  body?: {
+  body: {
     slug?: string;
     name?: string;
     shortName?: string | null;
@@ -5482,7 +5482,7 @@ export type MembershipInviteResponses = {
 export type MembershipInviteResponse = MembershipInviteResponses[keyof MembershipInviteResponses];
 
 export type UpdateMembershipData = {
-  body?: {
+  body: {
     role?: 'admin' | 'member';
     archived?: boolean;
     muted?: boolean;

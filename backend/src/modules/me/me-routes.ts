@@ -144,8 +144,8 @@ const meRoutes = {
     description:
       'Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.',
     request: {
-      required: true,
       body: {
+        required: true,
         content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
@@ -204,7 +204,7 @@ const meRoutes = {
     description:
       'Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.',
     request: {
-      body: { content: { 'application/json': { schema: toggleMfaBodySchema } } },
+      body: { required: true, content: { 'application/json': { schema: toggleMfaBodySchema } } },
     },
     responses: {
       200: {

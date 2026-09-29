@@ -5842,6 +5842,7 @@
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -6145,6 +6146,7 @@
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -7955,6 +7957,7 @@
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -9847,6 +9850,7 @@
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
@@ -11801,6 +11805,7 @@
           }
         ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {

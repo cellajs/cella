@@ -582,7 +582,7 @@
         "properties": {
           "mfaRequired": { "type": "boolean", "required": true }
         },
-        "required": false,
+        "required": true,
         "contentType": "application/json"
       }
     }
@@ -1241,7 +1241,7 @@
             "itemType": "string"
           }
         },
-        "required": false,
+        "required": true,
         "contentType": "application/json"
       }
     }
