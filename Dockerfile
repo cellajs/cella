@@ -131,7 +131,8 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-4000}/health || exit 1
 
 WORKDIR /app/backend
-CMD ["node", "dist/main.js"]
+# The passkey library asks Web Crypto which algorithms it supports at load, which Node 26 answers with experimental warnings.
+CMD ["node", "--disable-warning=ExperimentalWarning", "dist/main.js"]
 
 # =============================================================================
 # cdc: Change Data Capture worker
@@ -215,4 +216,5 @@ HEALTHCHECK --interval=10s --timeout=3s --start-period=15s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:4002/health || exit 1
 
 WORKDIR /app/yjs
-CMD ["node", "dist/yjs-worker.js"]
+# lib0 probes localStorage at load; without Web Storage it uses its in-memory store and Node 26 prints no warning.
+CMD ["node", "--no-experimental-webstorage", "dist/yjs-worker.js"]

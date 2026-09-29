@@ -10,9 +10,9 @@
     "node": "26.x"
   },
   "scripts": {
-    "start": "node dist/yjs-worker.js",
-    "start:dev": "tsx src/yjs-worker.ts",
-    "dev": "cross-env NODE_ENV=development node --import ../shared/scripts/register.mjs --env-file=../backend/.env --watch src/yjs-worker.ts",
+    "start": "node --no-experimental-webstorage dist/yjs-worker.js",
+    "start:dev": "cross-env NODE_OPTIONS=--no-experimental-webstorage tsx src/yjs-worker.ts",
+    "dev": "cross-env NODE_ENV=development node --no-experimental-webstorage --import ../shared/scripts/register.mjs --env-file=../backend/.env --watch src/yjs-worker.ts",
     "build": "cross-env NODE_ENV=production tsup",
     "ts": "tsgo --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics",

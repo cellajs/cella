@@ -7,8 +7,8 @@
     "node": "26.x"
   },
   "scripts": {
-    "start:dev": "tsx src/mcp-worker.ts",
-    "dev": "cross-env NODE_ENV=development tsx --watch-path=src --watch-path=../backend/src --watch-path=../shared/src --watch-path=../shared/config src/mcp-worker.ts",
+    "start:dev": "cross-env NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx src/mcp-worker.ts",
+    "dev": "cross-env NODE_ENV=development NODE_OPTIONS=--disable-warning=ExperimentalWarning tsx --watch-path=src --watch-path=../backend/src --watch-path=../shared/src --watch-path=../shared/config src/mcp-worker.ts",
     "ts": "cd .. && tsgo -p mcp/tsconfig.json --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
   },
