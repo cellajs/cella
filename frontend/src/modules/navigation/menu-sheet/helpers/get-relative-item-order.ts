@@ -1,4 +1,4 @@
-import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/dist/types/types';
+import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
 import type { ChannelEntityType } from 'shared';
 import { getRelativeOrder } from 'shared/utils/display-order';
 import type { UserMenu } from '~/modules/me/types';
