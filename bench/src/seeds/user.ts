@@ -1,9 +1,9 @@
-import type { UserModel } from '#/modules/user/user-db';
+import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
 import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import { emailId, sessionId, userEmail, userId } from './ids';
 
 /** Runs in data-setup under Node.js, not in Artillery scenarios. */
-export function loadtestUser(index: number) {
+export function loadtestUser(index: number): InsertUserModel {
   const id = userId(index);
   const email = userEmail(index);
 

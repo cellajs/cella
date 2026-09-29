@@ -1,12 +1,20 @@
+import { insertUsers } from '#/modules/user/helpers/insert-users';
 import { registerBenchSeed } from '../registry';
-import { CORE_ID_VARIANTS } from './ids';
+import { userId } from './ids';
 import { loadtestUser } from './user';
-
-export const TOTAL_USERS = 1200;
+import { TOTAL_USERS } from './user-constants';
 
 registerBenchSeed({
-  table: 'users',
+  kind: 'custom',
+  name: 'users',
   order: 20,
-  idVariant: CORE_ID_VARIANTS.user,
-  rows: ({ now }) => Array.from({ length: TOTAL_USERS }, (_, i) => ({ ...loadtestUser(i), createdAt: now })),
+  cleanup: async ({ client }) => {
+    const ids = Array.from({ length: TOTAL_USERS }, (_, i) => userId(i));
+    await client.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [ids]);
+    await client.query('DELETE FROM actors WHERE id = ANY($1::uuid[])', [ids]);
+  },
+  seed: async ({ now, db }) => {
+    const users = Array.from({ length: TOTAL_USERS }, (_, i) => ({ ...loadtestUser(i), createdAt: now }));
+    await insertUsers(db, users);
+  },
 });

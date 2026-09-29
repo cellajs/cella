@@ -42,7 +42,7 @@ overrides:
 packageExtensionsChecksum: sha256-EbkdiE+4yJTKyGo02FtjbCIAUmI46E1GxzTUU97RFSE=
 
 patchedDependencies:
-  artillery@2.0.34: dee4b82651dcd73de88e802853a34e787c43eb9c49d5d360beadcd3513f0e502
+  artillery@2.0.34: 4a3a3ec7f9f0440ca256977f0c66e784c0f7d0be498ebbd7e22bceb54d2f7c4b
 
 importers:
 
@@ -361,7 +361,7 @@ importers:
         version: 8.23.1
       artillery:
         specifier: ^2.0.34
-        version: 2.0.34(patch_hash=dee4b82651dcd73de88e802853a34e787c43eb9c49d5d360beadcd3513f0e502)(@types/node@26.6.2)(supports-color@8.1.1)
+        version: 2.0.34(patch_hash=4a3a3ec7f9f0440ca256977f0c66e784c0f7d0be498ebbd7e22bceb54d2f7c4b)(@types/node@26.6.2)(supports-color@8.1.1)
       artillery-plugin-ensure:
         specifier: ^1.27.0
         version: 1.27.0(supports-color@8.1.1)
@@ -18296,7 +18296,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  artillery@2.0.34(patch_hash=dee4b82651dcd73de88e802853a34e787c43eb9c49d5d360beadcd3513f0e502)(@types/node@26.6.2)(supports-color@8.1.1):
+  artillery@2.0.34(patch_hash=4a3a3ec7f9f0440ca256977f0c66e784c0f7d0be498ebbd7e22bceb54d2f7c4b)(@types/node@26.6.2)(supports-color@8.1.1):
     dependencies:
       '@artilleryio/sketches-js': 2.1.1
       '@aws-sdk/client-cloudwatch': 3.1112.0

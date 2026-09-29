@@ -1,6 +1,6 @@
 import { COOKIE_SECRET, SESSION_COOKIE_NAME } from '../config';
 import { sealSessionCookie, sessionToken } from '../seeds/session-auth';
-import { TOTAL_USERS } from '../seeds/user.bench';
+import { TOTAL_USERS } from '../seeds/user-constants';
 
 let userCounter = 0;
 
