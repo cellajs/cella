@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.2](https://github.com/cellajs/cella/compare/0.12.1...0.12.2) (2026-09-29)
+
+
+### 🐞 Bug fixes
+
+* **docker:** the service images build and boot again ([#1205](https://github.com/cellajs/cella/issues/1205)) ([0ecd0c0](https://github.com/cellajs/cella/commit/0ecd0c06aa03b1935420cd193351ed3369f275aa))
+
 ## [0.12.1](https://github.com/cellajs/cella/compare/0.12.0...0.12.1) (2026-09-29)
 
 
