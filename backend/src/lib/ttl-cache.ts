@@ -48,9 +48,14 @@ export class TTLCache<T> {
 
   /** Invalidate all entries matching a key prefix, returning the number deleted. */
   invalidateByPrefix(prefix: string): number {
+    return this.invalidateWhere((_, key) => key.startsWith(prefix));
+  }
+
+  /** Invalidate every entry the predicate picks, returning the number deleted. */
+  invalidateWhere(predicate: (value: T, key: string) => boolean): number {
     let deleted = 0;
-    for (const key of this.cache.keys()) {
-      if (key.startsWith(prefix)) {
+    for (const [key, value] of this.cache.entries()) {
+      if (predicate(value, key)) {
         this.cache.delete(key);
         deleted++;
       }

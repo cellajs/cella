@@ -45,3 +45,43 @@ describe('buildRuntimeSecrets with external stores (P2)', () => {
     expect(() => validateRuntimeSecrets(secrets, knownServices)).toThrow(/unknown service 'nope'/);
   });
 });
+
+describe('derived runtime secrets', () => {
+  const signingKey: Omit<RuntimeSecretDefinition, 'id'> = {
+    secretName: 'signing-key',
+    description: 'Signing key',
+    envVar: 'SIGNING_KEY',
+    required: true,
+    valueSource: 'pulumi',
+    generation: 'random',
+    services: ['api'],
+  };
+  const derive = (value: string) => `public:${value}`;
+  const publicKey = (overrides: Partial<RuntimeSecretDefinition> = {}): Omit<RuntimeSecretDefinition, 'id'> => ({
+    secretName: 'public-key',
+    description: 'Public key',
+    envVar: 'PUBLIC_KEY',
+    required: true,
+    valueSource: 'pulumi',
+    generation: 'manual',
+    services: ['worker'],
+    derivedFrom: { secretId: 'signingKey', derive },
+    ...overrides,
+  });
+
+  it('accepts a pulumi-owned secret derived from a pulumi-owned source (positive control)', () => {
+    const secrets = buildRuntimeSecrets({ primary: none() }, { signingKey, publicKey: publicKey() });
+    expect(() => validateRuntimeSecrets(secrets, knownServices)).not.toThrow();
+  });
+
+  it('must not derive from a source the operator can change out of band, or from an unknown one', () => {
+    for (const [label, entries] of [
+      ['operator source', { signingKey: { ...signingKey, valueSource: 'operator' as const }, publicKey: publicKey() }],
+      ['operator-owned derived value', { signingKey, publicKey: publicKey({ valueSource: 'operator' }) }],
+      ['unknown source', { signingKey, publicKey: publicKey({ derivedFrom: { secretId: 'missing', derive } }) }],
+    ] as const) {
+      const secrets = buildRuntimeSecrets({ primary: none() }, entries);
+      expect(() => validateRuntimeSecrets(secrets, knownServices), label).toThrow(/must be pulumi-owned/);
+    }
+  });
+});

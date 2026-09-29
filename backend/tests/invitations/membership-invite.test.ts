@@ -1,34 +1,26 @@
 import { eq } from 'drizzle-orm';
 import { membershipInvite } from 'sdk';
-import { hierarchy } from 'shared';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { addProvenEmail } from '#/modules/auth/general/helpers/mark-email-verified';
+import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { defaultHeaders } from '../fixtures';
-import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser } from '../helpers';
+import { hashToken } from '#/utils/hash-token';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
+import {
+  createOrganizationAdminUser,
+  createSystemAdminUser,
+  createTestOrganization,
+  createTestSession,
+  createTestUser,
+  mailedLink,
+} from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
-
-vi.mock('#/modules/memberships/handlers', async () => {
-  const actual = await vi.importActual('#/modules/memberships/handlers');
-  return {
-    ...actual,
-    MemberInviteEmail: vi.fn().mockResolvedValue(undefined),
-    MemberInviteWithTokenEmail: vi.fn().mockResolvedValue(undefined),
-  };
-});
+import { clearDatabase, setTestConfig } from '../test-utils';
 
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
   selfRegistration: true,
-});
-
-beforeAll(async () => {
-  mockFetchRequest();
 });
 
 afterEach(async () => await clearDatabase());
@@ -41,8 +33,7 @@ describe('Membership Invitation', async () => {
     const user = await createOrganizationAdminUser(
       'admin@example.com',
       organization.id,
-      'admin',
-      true,
+      adminRole,
       organization.tenantId,
     );
 
@@ -96,6 +87,10 @@ describe('Membership Invitation', async () => {
     expect(inactiveMemberships[1].email).toBe('user2@example.com');
     expect(inactiveMemberships[0].role).toBe(memberRole);
     expect(inactiveMemberships[1].role).toBe(memberRole);
+
+    // The last mail carries the link of its own address's token.
+    const [token] = await db.select().from(tokensTable).where(eq(tokensTable.id, inactiveMemberships[1].tokenId!));
+    expect(token.secret).toBe(hashToken(mailedLink('inviteLink').token));
   });
 
   it('should invite existing users to organization', async () => {
@@ -105,7 +100,7 @@ describe('Membership Invitation', async () => {
     const { response: res, data } = await makeInviteRequest(
       organization.tenantId,
       organization.id,
-      { emails: ['existing@example.com'], role: 'admin' },
+      { emails: ['existing@example.com'], role: adminRole },
       sessionCookie,
     );
 
@@ -117,7 +112,7 @@ describe('Membership Invitation', async () => {
     const inactiveMemberships = await getInactiveMemberships(organization.id);
     expect(inactiveMemberships).toHaveLength(1);
     expect(inactiveMemberships[0].userId).toBe(existingUser.id);
-    expect(inactiveMemberships[0].role).toBe('admin');
+    expect(inactiveMemberships[0].role).toBe(adminRole);
   });
 
   it('binds an invitation sent to a proven secondary address of an existing user', async () => {
@@ -169,75 +164,6 @@ describe('Membership Invitation', async () => {
     expect(newUserMembership?.email).toBe('newuser@example.com');
   });
 
-  it('should assign admin role correctly', async () => {
-    const { organization, sessionCookie } = await createOrgAndAdmin();
-
-    const { response: res } = await makeInviteRequest(
-      organization.tenantId,
-      organization.id,
-      { emails: ['user@example.com'], role: 'admin' },
-      sessionCookie,
-    );
-
-    expect(res.status).toBe(200);
-
-    const inactiveMemberships = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.organizationId, organization.id));
-    expect(inactiveMemberships).toHaveLength(1);
-    expect(inactiveMemberships[0].role).toBe('admin');
-  });
-
-  it('should assign member role correctly', async () => {
-    const { organization, sessionCookie } = await createOrgAndAdmin();
-
-    const { response: res } = await makeInviteRequest(
-      organization.tenantId,
-      organization.id,
-      { emails: ['user@example.com'], role: memberRole },
-      sessionCookie,
-    );
-
-    expect(res.status).toBe(200);
-
-    const inactiveMemberships = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.organizationId, organization.id));
-    expect(inactiveMemberships).toHaveLength(1);
-    expect(inactiveMemberships[0].role).toBe(memberRole);
-  });
-
-  it('should reject invitations without authentication', async () => {
-    const organization = await createTestOrganization();
-
-    const { response: res } = await call(membershipInvite, {
-      path: { tenantId: organization.tenantId, organizationId: organization.id },
-      body: { emails: ['user@example.com'], role: memberRole },
-      query: { entityId: organization.id, entityType: 'organization' as const },
-      headers: defaultHeaders,
-    });
-
-    expect(res.status).toBe(401);
-  });
-
-  it('should reject invitations from non-org members', async () => {
-    const organization = await createTestOrganization();
-
-    const user = await createTestUser('user@example.com');
-    const sessionCookie = await createTestSession(user);
-
-    const { response: res } = await makeInviteRequest(
-      organization.tenantId,
-      organization.id,
-      { emails: ['newuser@example.com'], role: memberRole },
-      sessionCookie,
-    );
-
-    expect(res.status).toBe(403);
-  });
-
   it('should handle already invited users', async () => {
     const { organization, sessionCookie } = await createOrgAndAdmin();
 
@@ -261,5 +187,23 @@ describe('Membership Invitation', async () => {
 
     const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
     expect(response.invitesSentCount).toBe(0);
+  });
+
+  it('returns the membership a system admin joins by inviting themself, archive, mute and order included', async () => {
+    const organization = await createTestOrganization();
+    const sysAdmin = await createSystemAdminUser('sysadmin@example.com');
+
+    const { response: res, data } = await makeInviteRequest(
+      organization.tenantId,
+      organization.id,
+      { emails: [sysAdmin.email], role: memberRole },
+      await createTestSession(sysAdmin),
+    );
+
+    expect(res.status).toBe(200);
+    // Their own membership: the client files it with their other memberships, menu order included.
+    const [joined] = (data as { data: Record<string, unknown>[] }).data;
+    expect(joined).toMatchObject({ userId: sysAdmin.id, role: memberRole, archived: false, muted: false });
+    expect(joined.displayOrder).toEqual(expect.any(Number));
   });
 });

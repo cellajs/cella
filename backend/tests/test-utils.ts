@@ -5,6 +5,7 @@ import { vi } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { resetOrganizationMockEnforcers } from '#/modules/organization/organization-mocks';
 import { resetUserMockEnforcers } from '#/modules/user/user-mocks';
+import { overrideConfig } from './fixtures';
 
 type AuthStrategy = 'passkey' | 'oauth' | 'totp' | 'magic';
 type OAuthProvider = 'github' | 'google' | 'microsoft';
@@ -14,40 +15,6 @@ type ConfigOverride = {
   enabledOAuthProviders?: OAuthProvider[];
   selfRegistration?: boolean;
 };
-
-export function mockFetchRequest() {
-  vi.stubGlobal(
-    'fetch',
-    vi.fn().mockImplementation((input) => {
-      if (input instanceof Request) {
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: async () => {
-            try {
-              return await input.clone().json();
-            } catch {
-              return {};
-            }
-          },
-          text: async () => '',
-          clone: () => input.clone(),
-        });
-      }
-
-      return Promise.resolve({
-        ok: true,
-        status: 200,
-        json: async () => ({}),
-        text: async () => '',
-        clone: () => ({
-          json: async () => ({}),
-          text: async () => '',
-        }),
-      });
-    }),
-  );
-}
 
 /** TRUNCATE CASCADE on the admin connection (runtime_role holds no TRUNCATE), plus a mock-enforcer reset so unique values do not conflict across tests. */
 export async function clearDatabase() {
@@ -61,29 +28,12 @@ export async function clearDatabase() {
 
 /** Vitest hoists vi.mock(), so call at top level: vi.mock('#/middlewares/rate-limiter/core', rateLimiterCoreMock) */
 export const rateLimiterCoreMock = () => ({
-  rateLimiter: vi
-    .fn()
-    .mockImplementation(
-      (mode: string, key: string, _identifiers: string[], opts?: { limits?: { points?: number } }) => {
-        const points = opts?.limits?.points ?? 10;
-        const handler = async (_: Context, next: Next) => {
-          await next();
-        };
-        return Object.assign(handler, { keyPrefix: `${key}_${mode}`, points });
-      },
-    ),
-  defaultOptions: {
-    tableName: 'rate_limits',
-    points: 10,
-    duration: 60 * 60,
-    blockDuration: 60 * 30,
-  },
-  slowOptions: {
-    tableName: 'rate_limits',
-    points: 100,
-    duration: 60 * 60 * 24,
-    blockDuration: 60 * 60 * 3,
-  },
+  rateLimiter: vi.fn().mockImplementation((mode: string, key: string) => {
+    const handler = async (_: Context, next: Next) => {
+      await next();
+    };
+    return Object.assign(handler, { keyPrefix: `${key}_${mode}`, buckets: [] });
+  }),
 });
 
 /** Use at top level: vi.mock('#/middlewares/rate-limiter/helpers', rateLimiterHelpersMock) */
@@ -107,21 +57,10 @@ export const oauth4webapiMock = async () => {
   };
 };
 
-export function setTestConfig(overrides: ConfigOverride) {
-  if (overrides.enabledAuthStrategies) {
-    (appConfig as unknown as { enabledAuthStrategies: string[] }).enabledAuthStrategies =
-      overrides.enabledAuthStrategies;
-  }
-
-  if (overrides.enabledOAuthProviders) {
-    // `satisfies` in default-config narrows the type, so widen with a cast.
-    (appConfig as unknown as { enabledOAuthProviders: string[] }).enabledOAuthProviders =
-      overrides.enabledOAuthProviders;
-  }
-
-  if (overrides.selfRegistration !== undefined) {
-    (appConfig.has as { selfRegistration: boolean }).selfRegistration = overrides.selfRegistration;
-  }
+/** Sets the sign-in methods and self-registration for the rest of the test file. */
+export function setTestConfig({ selfRegistration, ...overrides }: ConfigOverride) {
+  overrideConfig(appConfig, overrides);
+  if (selfRegistration !== undefined) overrideConfig(appConfig.has, { selfRegistration });
 }
 
 /**
@@ -132,38 +71,40 @@ export function setTestConfig(overrides: ConfigOverride) {
 export const mockCookieStore = new Map<string, string>();
 export const clearCookieStore = () => mockCookieStore.clear();
 
+/** An auth cookie's name as the app gives it in test mode, which is secure, so the __Host- prefix applies. */
+const mockCookieName = (name: string) => `__Host-${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
+
 export const cookieMock = () => ({
-  // Test mode is secure, so the __Host- prefix applies.
-  authCookieName: (name: string) => `__Host-${appConfig.slug}-${name}-${appConfig.cookieVersion}`,
+  authCookieName: mockCookieName,
+  // The store keeps plain values, so a sealed value is its content.
+  sealAuthCookie: (_name: string, content: string) => content,
+  cookieSecrets: ['test-cookie-secret-for-unit-tests'],
   setAuthCookie: vi.fn().mockImplementation(async (ctx, name, value, _maxAge) => {
     const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
     mockCookieStore.set(name, stringValue);
-    const existingCookies = ctx.res.headers.get('set-cookie') || '';
-    const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
-    const newCookie = `${versionedName}=${stringValue}; Path=/; HttpOnly; SameSite=Lax`;
-    ctx.res.headers.set('set-cookie', existingCookies ? `${existingCookies}, ${newCookie}` : newCookie);
+    ctx.res.headers.append('set-cookie', `${mockCookieName(name)}=${stringValue}; Path=/; HttpOnly; SameSite=Lax`);
   }),
   getAuthCookie: vi.fn().mockImplementation(async (_ctx, name) => {
     return mockCookieStore.get(name) || null;
   }),
   deleteAuthCookie: vi.fn().mockImplementation(async (ctx, name) => {
     mockCookieStore.delete(name);
-    const existingCookies = ctx.res.headers.get('set-cookie') || '';
-    const versionedName = `${appConfig.slug}-${name}-${appConfig.cookieVersion}`;
-    const deleteCookie = `${versionedName}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`;
-    ctx.res.headers.set('set-cookie', existingCookies ? `${existingCookies}, ${deleteCookie}` : deleteCookie);
+    ctx.res.headers.append('set-cookie', `${mockCookieName(name)}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT`);
   }),
 });
 
-/** Use at top level: vi.mock('#/modules/auth/general/helpers/session', sessionMock) */
-export const sessionMock = () => ({
+/** Use at top level: vi.mock('#/modules/auth/general/helpers/session', sessionMock). The module's other exports stay real. */
+export const sessionMock = async (importOriginal: () => Promise<object>) => ({
+  ...(await importOriginal()),
   setUserSession: vi.fn().mockImplementation(async (ctx, _user, _provider) => {
     const sessionToken = 'mock-session-token';
-    const existingCookies = ctx.res.headers.get('set-cookie') || '';
-    const sessionCookie = `${appConfig.slug}-session-${appConfig.cookieVersion}=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`;
-    ctx.res.headers.set('set-cookie', existingCookies ? `${existingCookies}, ${sessionCookie}` : sessionCookie);
+    ctx.res.headers.append(
+      'set-cookie',
+      `${mockCookieName('session')}=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`,
+    );
     return sessionToken;
   }),
-  getParsedSessionCookie: vi.fn().mockResolvedValue({ sessionToken: 'mock-session-token' }),
-  validateSession: vi.fn().mockResolvedValue({ user: { id: 'test-user-id' }, session: { id: 'test-session-id' } }),
+  resolveSession: vi.fn().mockResolvedValue({ user: { id: 'test-user-id' }, session: { id: 'test-session-id' } }),
+  // A request that may present no session presents none, so an emailed link opens as in a signed-out browser.
+  findSession: vi.fn().mockResolvedValue(null),
 });

@@ -3,12 +3,15 @@ import type { UserContext } from '#/core/context';
 import { onBackendModuleRegister } from '#/lib/module';
 import type { StxBase } from '#/schemas';
 
-/** Reference to the entity's standard update op; the relay invokes it with the server-origin envelope. */
+/**
+ * Reference to the entity's standard update op; the relay invokes it with the server clock (`serverOrigin`) and marks
+ * the write as its own (`materialized`), which the op forwards to `dispatchMutation` so the document is not retired.
+ */
 export type YjsMaterializer = (
   ctx: UserContext,
   id: string,
   input: { ops: { description: string }; stx: StxBase },
-  opts: { serverOrigin: true },
+  opts: { serverOrigin: true; materialized: true },
 ) => Promise<unknown>;
 
 const materializers = new Map<ProductEntityType, YjsMaterializer>();

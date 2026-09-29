@@ -1,11 +1,8 @@
-import { eq } from 'drizzle-orm';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { baseDb as db } from '#/db/db';
 import { createSession } from '#/modules/auth/general/helpers/session';
-import { sessionsTable } from '#/modules/auth/sessions-db';
 import { signUpUser } from '../fixtures';
-import { createTestUser } from '../helpers';
+import { createTestUser, sessionsOf } from '../helpers';
 import { clearDatabase } from '../test-utils';
 
 vi.mock('#/modules/auth/general/helpers/enroll-device', () => ({
@@ -28,6 +25,6 @@ describe('sign-in when device enrollment fails', () => {
     const { newDevice } = await createSession(user, context, 'passkey');
 
     expect(newDevice).toBeNull();
-    expect(await db.select().from(sessionsTable).where(eq(sessionsTable.userId, user.id))).toHaveLength(1);
+    expect(await sessionsOf(user.id)).toHaveLength(1);
   });
 });

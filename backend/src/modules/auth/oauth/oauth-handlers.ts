@@ -18,6 +18,7 @@ import {
 } from '#/modules/auth/oauth/helpers/providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
 import { authOAuthRoutes } from '#/modules/auth/oauth/oauth-routes';
+import { issueCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { defaultHook } from '#/utils/default-hook';
 
 // `openid` is required for Google and Microsoft so the token endpoint returns an id_token, which carries the nonce validated on callback.
@@ -27,16 +28,23 @@ const microsoftScopes = ['openid', 'profile', 'email'];
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
+app.openapi(authOAuthRoutes.startOAuthConnect, async (ctx) => {
+  const { user, session } = ctx.var;
+
+  // The provider's callback is a navigation from another site: this Lax cookie's token is what names the account. It
+  // serves only while the session that asked lives, so a sign-out (here or elsewhere) ends a connect left half-way.
+  await issueCookieToken(ctx, {
+    type: 'oauth-connect',
+    userId: user.id,
+    email: user.email,
+    createdBy: user.id,
+    sessionId: session.id,
+  });
+
+  return ctx.body(null, 204);
+});
+
 app.openapi(authOAuthRoutes.github, async (ctx) => {
-  const strategy = 'github' as EnabledOAuthProvider;
-
-  if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-    throw new AppError(400, 'unsupported_oauth', 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error', strategy },
-    });
-  }
-
   // Generate a `state` to prevent CSRF, and build URL with scope.
   const state = generateRandomState();
   const url = await githubAuth.createAuthorizationURL(state, githubScopes);
@@ -45,14 +53,6 @@ app.openapi(authOAuthRoutes.github, async (ctx) => {
 });
 
 app.openapi(authOAuthRoutes.google, async (ctx) => {
-  const strategy = 'google' as EnabledOAuthProvider;
-  if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-    throw new AppError(400, 'unsupported_oauth', 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error', strategy },
-    });
-  }
-
   const state = generateRandomState();
   const codeVerifier = generateRandomCodeVerifier();
   const nonce = generateRandomNonce();
@@ -62,14 +62,6 @@ app.openapi(authOAuthRoutes.google, async (ctx) => {
 });
 
 app.openapi(authOAuthRoutes.microsoft, async (ctx) => {
-  const strategy = 'microsoft' as EnabledOAuthProvider;
-  if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.includes(strategy)) {
-    throw new AppError(400, 'unsupported_oauth', 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error', strategy },
-    });
-  }
-
   const state = generateRandomState();
   const codeVerifier = generateRandomCodeVerifier();
   const nonce = generateRandomNonce();

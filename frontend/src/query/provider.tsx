@@ -7,7 +7,7 @@ import { initChannelEnrichment } from '~/query/enrichment/init-enrichment';
 // Side-effect import: starts the auth-driven localUserDb lifecycle and eager kv hydration before any route beforeLoad runs.
 import '~/query/local-user-storage';
 import { initMutationDefaults } from '~/query/mutation-registry';
-import { cleanupOrphanedSessions, persister, sessionPersister } from '~/query/persister';
+import { cleanupOrphanedSessions, persister, sessionPersister, shouldPersistQuery } from '~/query/persister';
 import {
   markCacheRestored,
   markReplayingMutations,
@@ -115,7 +115,7 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
         dehydrateOptions: {
           // Only paused mutations persist: active ones may hold non-cloneable streaming data.
           shouldDehydrateMutation: (mutation) => mutation.state.isPaused,
-          shouldDehydrateQuery: (query) => query.state.status === 'success' && query.meta?.persist !== false,
+          shouldDehydrateQuery: shouldPersistQuery,
         },
       }}
       onSuccess={() => {

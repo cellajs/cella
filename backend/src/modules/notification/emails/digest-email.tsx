@@ -18,8 +18,8 @@ interface DigestStatic {
 
 /**
  * `sectionsHtml` is pre-rendered per recipient because the mailer renders one HTML body per
- * language and fills the rest through Brevo placeholders, which are strings only. Building the
- * channel list as sanitised HTML upstream is what lets one render serve every recipient.
+ * language and fills the rest through Brevo placeholders, which are strings only. It is a declared
+ * HTML param: `renderSectionsHtml` escapes every user-derived fragment, and Brevo prints it as is.
  */
 type DigestRecipient = EmailRecipient & {
   sectionsHtml: string;
@@ -59,6 +59,7 @@ export const digestEmail = defineEmailTemplate<DigestStatic, DigestRecipient>()(
       </EmailContainer>
     );
   },
+  htmlParams: { sectionsHtml: 'richText' },
   preview: {
     statics: { daily: false },
     recipient: {

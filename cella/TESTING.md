@@ -2,14 +2,30 @@
 
 <!-- Sync test marker: 2026-01-28-test-1 -->
 
-How to run the test suite and where new tests belong.
+What the test suite is for, how to run it and where new tests belong.
 
 ### TL;DR
 
-All package tests use [Vitest](https://vitest.dev) and share one root setup. `pnpm test` starts the
-Docker test database and runs everything with a coverage summary. Storybook UI tests run separately
-in a browser with `pnpm test:storybook`. Keep unit tests next to their source. Tests that need extra
-services or network servers go in `tests/integration/`.
+The suite's main job is to prove that attacks fail. All package tests use [Vitest](https://vitest.dev)
+and share one root setup. `pnpm test` starts the Docker test database and runs everything with a
+coverage summary. Storybook UI tests run separately in a browser with `pnpm test:storybook`. Keep unit
+tests next to their source. Tests that need extra services or network servers go in `tests/integration/`.
+
+## Goals
+
+Besides checking that features work, the suite's main job is to prove that attacks fail. A security test acts as the attacker: it signs in as one user, tries to do something that user has no right to, and passes only when the app refuses. It checks for the exact refusal: the status code or Postgres error, no leaked rows, and any side effect such as a revoked grant. A matching test shows the rightful user still gets through, so an endpoint that refuses everyone can't pass. Name these tests after the attack (`must not leak attachments via another tenant's id`) and put the route-level ones in [backend/tests/security/](../backend/tests/security/). Every security fix adds a test that reproduces the exploit. The attacks we test against:
+
+- **Crossing a boundary:** reading or writing another tenant's or organization's data, through the API or directly against the database under RLS.
+- **Escalating a role:** a member doing what only an admin may, or setting fields the caller may not set.
+- **Reusing what should be dead:** a revoked session, a deleted account, a replayed OAuth code, an expired or out-of-scope token.
+- **Steering the app with attacker input:** open redirects, redirect URIs that aren't registered, unsafe URLs in content.
+- **Leaking secrets:** hashes, token secrets or private keys appearing in responses, logs or the CDC stream.
+
+Route-wide checks read `x-guard` from the generated OpenAPI document: every operation without
+`publicGuard` must refuse anonymous access, and every `sysAdminGuard` operation must refuse a normal
+user. Cross-tenant and cross-organization tests try another scope's IDs; mass-assignment tests send
+fields outside each request body schema. The backend suite also runs as `runtime_role` to exercise
+database policies ([Multi-tenancy](./MULTI_TENANCY.md#verification)).
 
 ## Running tests
 

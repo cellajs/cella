@@ -184,8 +184,14 @@ export const mockInactiveMembershipResponse = (
   };
 };
 
-export const mockPaginatedInactiveMembershipsResponse = (count = 2) =>
-  mockPaginated(mockInactiveMembershipResponse, count);
+/** Pending-invitation list row: the invited address, role and inviter, with no account fields. */
+export const mockPendingMembershipResponse = (key = 'pending-membership:default') => {
+  const { id, email, role, createdAt, createdBy } = mockInactiveMembershipResponse(key);
+  return { id, email, role, createdAt, createdBy };
+};
+
+export const mockPaginatedPendingMembershipsResponse = (count = 2) =>
+  mockPaginated(mockPendingMembershipResponse, count);
 
 export const mockMemberResponse = (key = 'member:default') => {
   const user = mockUserBase(`${key}:user`);

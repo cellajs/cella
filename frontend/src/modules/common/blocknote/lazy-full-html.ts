@@ -12,11 +12,12 @@ let rendererWarm = false;
 /**
  * Warms the static document renderer and precomputes the given documents' first-pass HTML,
  * reporting when they can all render at full height in their first commit. Pass `null` while the
- * documents are not known yet. Holding a list's skeleton on this flag turns lazy-chunk load plus
+ * documents are not known yet, and the organization the renderer receives, so the precomputed pass
+ * is the one it looks up. Holding a list's skeleton on this flag turns lazy-chunk load plus
  * per-card async HTML passes (which pop in and re-measure virtualized rows) into one reveal.
  * Flips true once per mount and stays true; later documents compute on demand.
  */
-export function useStaticDocumentsReady(documents: string[] | null): boolean {
+export function useStaticDocumentsReady(documents: string[] | null, organizationId?: string): boolean {
   const [ready, setReady] = useState(rendererWarm);
   const startedRef = useRef(false);
   const mountedRef = useRef(true);
@@ -38,10 +39,10 @@ export function useStaticDocumentsReady(documents: string[] | null): boolean {
       ]);
       if (!mountedRef.current) return;
       helpers.getHeadlessEditor();
-      for (const document of documents) fullHtml.precomputeDocumentHtml(document);
+      for (const document of documents) fullHtml.precomputeDocumentHtml(document, organizationId);
       rendererWarm = true;
       if (mountedRef.current) setReady(true);
     })();
-  }, [ready, documents]);
+  }, [ready, documents, organizationId]);
   return ready;
 }

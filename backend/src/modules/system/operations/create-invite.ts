@@ -1,21 +1,14 @@
-import { appConfig } from 'shared';
-import { nanoid } from 'shared/utils/nanoid';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { mailer } from '#/lib/mailer';
+import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
+import { findSystemInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
+import { sendInvitationMails } from '#/modules/memberships/helpers/invitation-mail';
 import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
-import { findPendingInvitationTokens, findVerifiedEmails, insertTokens } from '#/modules/system/system-queries';
-import { hashToken } from '#/utils/hash-token';
+import { findVerifiedEmails } from '#/modules/system/system-queries';
 import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug-from-email';
-import { createDate, TimeSpan } from '#/utils/time-span';
-import { systemInviteEmail } from '../../../../emails';
 
 export async function createInviteOp(ctx: UserContext, emails: string[]) {
   const user = ctx.var.user;
-  const lng = user.language;
-  const senderName = user.name;
-  const senderThumbnailUrl = user.thumbnailUrl;
 
   const normalizedEmails = [...new Set(emails.map((e) => e.toLowerCase().trim()))];
   if (normalizedEmails.length === 0) throw new AppError(400, 'no_recipients', 'warn');
@@ -26,7 +19,7 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
   const existingEmailRecords = await findVerifiedEmails(ctx, { emails: normalizedEmails });
   const existingEmails = new Set(existingEmailRecords.map((r) => r.email));
 
-  const pendingTokens = await findPendingInvitationTokens(ctx, { emails: normalizedEmails });
+  const pendingTokens = await findSystemInvitationTokens(ctx, { emails: normalizedEmails });
 
   const activeTokenByEmail = new Map<string, { id: string }>();
   const expiredTokenIdsByEmail = new Map<string, string[]>();
@@ -63,35 +56,23 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
     return { data: [] as never[], rejectedIds, invitesSentCount: 0 };
   }
 
-  // One independent random secret per recipient, so one link never authenticates another's invitation.
-  const rawByEmail = new Map<string, string>();
-  const tokens = recipientEmails.map((email) => {
-    const raw = nanoid(40);
-    rawByEmail.set(email, raw);
-    return {
-      secret: hashToken(raw),
-      type: 'invitation' as const,
-      email,
-      createdBy: user.id,
-      expiresAt: createDate(new TimeSpan(7, 'd')),
-    };
+  // One independent random secret per recipient, so one link never authenticates another's invitation. Each replaces
+  // the earlier system invitations of its address.
+  const issued = await issueTokens(
+    ctx,
+    recipientEmails.map((email) => ({ type: 'invitation' as const, email, createdBy: user.id })),
+  );
+
+  await Promise.all(issued.map(({ token }) => linkWaitlistRequest(ctx, { email: token.email, tokenId: token.id })));
+
+  // No account holds these addresses (a verified one is rejected above) and no organization is involved: the mail
+  // goes out in the app's language.
+  await sendInvitationMails(ctx, {
+    sender: user,
+    invited: issued.map(({ token, rawToken }) => ({ email: token.email, rawToken })),
   });
 
-  const insertedTokens = await insertTokens(ctx, { tokens });
+  log.info('Users invited on system level', { count: issued.length });
 
-  await Promise.all(insertedTokens.map((t) => linkWaitlistRequest(ctx, { email: t.email, tokenId: t.id })));
-
-  const recipients = insertedTokens.map(({ email, type }) => ({
-    email,
-    lng,
-    name: slugFromEmail(email),
-    inviteLink: `${appConfig.backendAuthUrl}/invoke-token/${type}/${rawByEmail.get(email)}`,
-  }));
-
-  const staticProps = { senderName, senderThumbnailUrl };
-  await mailer.prepareEmails(systemInviteEmail, staticProps, recipients, user.email);
-
-  log.info('Users invited on system level', { count: recipients.length });
-
-  return { data: [] as never[], rejectedIds, invitesSentCount: recipients.length };
+  return { data: [] as never[], rejectedIds, invitesSentCount: issued.length };
 }

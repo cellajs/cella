@@ -258,6 +258,33 @@
                   "cdc-worker": "Backend cannot import CDC worker code. Communicate via the database/CDC stream.",
                   "studio": "Backend cannot import studio (Drizzle Studio) code.",
                   "sdk": "Backend cannot import the generated SDK; the SDK is generated from backend."
+                },
+                "patterns": [
+                  {
+                    "group": ["**/tokens-db"],
+                    "message": "Only the token lifecycle module (modules/auth/tokens/) reads or writes the tokens table: issue, redeem, read and spend tokens through it."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      // The token lifecycle module is the one importer of the tokens table.
+      "includes": ["backend/src/modules/auth/tokens/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "paths": {
+                  "frontend": "Backend cannot import frontend code. Move shared types to `shared/`.",
+                  "cdc-worker": "Backend cannot import CDC worker code. Communicate via the database/CDC stream.",
+                  "studio": "Backend cannot import studio (Drizzle Studio) code.",
+                  "sdk": "Backend cannot import the generated SDK; the SDK is generated from backend."
                 }
               }
             }
@@ -279,7 +306,13 @@
                   "frontend": "Backend cannot import frontend code. Move shared types to `shared/`.",
                   "studio": "Backend cannot import studio (Drizzle Studio) code.",
                   "sdk": "Backend cannot import the generated SDK; the SDK is generated from backend."
-                }
+                },
+                "patterns": [
+                  {
+                    "group": ["**/tokens-db"],
+                    "message": "Only the token lifecycle module (modules/auth/tokens/) reads or writes the tokens table: issue, redeem, read and spend tokens through it."
+                  }
+                ]
               }
             }
           }

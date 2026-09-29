@@ -27,7 +27,7 @@ application query.
 
 A service account's tenant comes from its account, never from the URL: `tenantGuard` compares the two before any lookup, and an access token carries a tenant-qualified audience, so a machine caller cannot probe another tenant ([Interoperability](./INTEROPERABILITY.md)).
 
-Per-operation checks: [Enforcement paths](./PERMISSIONS.md#enforcement-paths).
+Per-operation checks: [Enforcement paths](./PERMISSIONS.md#enforcement-paths). Listener and database boundaries: [Deployment](./DEPLOYMENT.md#overview). Request limits: [Authentication](./AUTHENTICATION.md#rate-limits) and [Interoperability](./INTEROPERABILITY.md#quotas-and-limits). Secret handling: [Architecture](./ARCHITECTURE.md#trust-boundaries) and [Observability](./OTEL.md#redaction). Security test guidance: [Testing](./TESTING.md#goals).
 
 ## What RLS covers
 
@@ -87,6 +87,8 @@ the shared engine, and a contextless insert passes RLS.
 | Product identity cannot move | Shared product trigger makes `tenant_id` and `organization_id` immutable after insert | Does not validate the insert. Deeper ancestor IDs are not covered. |
 | Membership identity, activity log | Immutability triggers on membership identity columns. Activity rows cannot be updated, and `runtime_role` has no delete grant on them | Same limits. `admin_role` can delete activities. |
 
+A deferred membership trigger also rejects a change that would leave an organization without an admin (`409 last_admin`).
+
 ## Database roles
 
 | Role | RLS | Purpose |
@@ -101,8 +103,9 @@ tables is the one bypass that works everywhere, and the dev and test roles are c
 attribute to mirror that. The CDC worker probes its effective capabilities at startup: an RLS table it
 cannot bypass (forced, or owned by another role) or a missing `REPLICATION` is logged as an error and
 marks the CDC health component unhealthy, since seq stamping would silently affect zero rows or the
-replication slot could not open. An application system administrator is not `admin_role`. Their
-requests use the runtime connection and normal request scope.
+replication slot could not open. Only the admin connection can write `system_roles`. An application
+system administrator is not `admin_role`; their requests use the runtime connection and normal
+request scope.
 
 The admin credential (`DATABASE_ADMIN_URL`) is optional for the request-serving API: `getAdminDb()`
 opens the pool on first use, only the migrate, seed and mcp-queue paths call it, and

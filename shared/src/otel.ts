@@ -10,9 +10,10 @@ import { LoggerProvider, SimpleLogRecordProcessor } from '@opentelemetry/sdk-log
 import type { MeterProvider } from '@opentelemetry/sdk-metrics';
 import { PeriodicExportingMetricReader, MeterProvider as SdkMeterProvider } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
-import type { SpanProcessor } from '@opentelemetry/sdk-trace-base';
+import { BatchSpanProcessor, type SpanExporter, type SpanProcessor } from '@opentelemetry/sdk-trace-base';
 import { ATTR_SERVICE_NAME, ATTR_SERVICE_VERSION } from '@opentelemetry/semantic-conventions';
 import { appConfig } from './config-builder/app-config.ts';
+import { createRedactingSpanProcessor } from './tracing/redacting-span-processor.ts';
 
 /**
  * The instrumentations this stack has something to instrument: node:http, fetch through undici, and
@@ -42,6 +43,8 @@ export interface OtelSDKOptions {
   autoInstrumentations?: boolean;
   /** Additional span processors (e.g. SpanStoreProcessor for devtools/debug logging). */
   spanProcessors?: SpanProcessor[];
+  /** Receives finished spans. Defaults to Maple's OTLP endpoint when an ingest key is set; tests pass an in-memory one. */
+  traceExporter?: SpanExporter;
 }
 
 export interface OtelSDK {
@@ -107,8 +110,10 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     resource,
   });
 
+  const traceExporter = options.traceExporter ?? (hasMaple ? new OTLPTraceExporter(hasMaple('traces')) : undefined);
+
   // Skip NodeSDK startup when there is nothing to export and no local span processor.
-  if (!hasMaple && spanProcessors.length === 0) {
+  if (!traceExporter && spanProcessors.length === 0) {
     return {
       sdk: undefined,
       meterProvider,
@@ -120,7 +125,6 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     };
   }
 
-  const traceExporter = hasMaple ? new OTLPTraceExporter(hasMaple('traces')) : undefined;
   const logExporter = hasMaple ? new OTLPLogExporter(hasMaple('logs')) : undefined;
 
   // Stable HTTP semantic attributes, chosen before instrumentation is constructed and never
@@ -132,13 +136,18 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
 
   const sdk = new NodeSDK({
     resource,
-    traceExporter,
+    // Redaction runs first, so every later processor and the exporter read the scrubbed span. NodeSDK ignores
+    // `traceExporter` whenever `spanProcessors` is set, so the exporter gets its own batch processor, last.
+    spanProcessors: [
+      createRedactingSpanProcessor(),
+      ...spanProcessors,
+      ...(traceExporter ? [new BatchSpanProcessor(traceExporter)] : []),
+    ],
     logRecordProcessors: logExporter ? [new SimpleLogRecordProcessor({ exporter: logExporter })] : [],
     // Metrics are owned by the explicit meterProvider above. Without this, NodeSDK
     // creates a second env-driven OTLP metrics reader that can block hot restarts.
     metricReaders: [],
     instrumentations: autoInstrumentations ? instrumentations() : [],
-    spanProcessors,
   });
 
   function start(): void {

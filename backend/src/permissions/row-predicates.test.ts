@@ -278,14 +278,19 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
       expect(fromSql, label).toEqual(fromEngine);
 
       // Frontend vs engine per membership and in-scope row; both omit system-admin and public grants, as `computeCan` models one membership.
+      // The map reads the app's `elevatedGrants`, so the engine gets the same set here.
       for (const m of scenario.memberships) {
         const canMap = computeCan(m.channelType as ChannelEntityType, m, scenario.policies);
         const state = canMap.attachment?.read ?? false;
         const rowsInScope = m.channelType === ROOT ? ROWS : ROWS.filter((r) => r.homeChannelId === m.channelId);
 
         for (const row of rowsInScope) {
-          const resolved = resolveCan(state, row.createdBy, scenario.userId);
-          const { can } = getAllDecisions(scenario.policies, [m], rowSubject(row), { actorId: scenario.userId });
+          const home = { row: row.homeChannelId ?? ROOT_ID, channel: m.channelId };
+          const resolved = resolveCan(state, row.createdBy, scenario.userId, home);
+          const { can } = getAllDecisions(scenario.policies, [m], rowSubject(row), {
+            actorId: scenario.userId,
+            elevatedGrants: hierarchy.elevatedGrants,
+          });
           expect(resolved, `${label}; membership ${m.channelType}:${m.channelId}:${m.role}; row ${row.id}`).toBe(
             can.read,
           );
@@ -315,7 +320,7 @@ describe('row-condition parity: engine check ⊆⊇ compiled SQL ⊆⊇ compute-
             requested: { homeChannelId: requestedHomeChannel },
           });
         } catch {
-          // 403: no scope at all for the requested home-channel, so the engine must read no row of it.
+          // 404: no scope at all for the requested home-channel, so the engine must read no row of it.
           const fromEngine = engineReadableIds(scenario);
           for (const row of ROWS.filter((r) => r.homeChannelId === requestedHomeChannel)) {
             expect(fromEngine.has(row.id), `seed 0xbee5 scenario ${i} row ${row.id}`).toBe(false);

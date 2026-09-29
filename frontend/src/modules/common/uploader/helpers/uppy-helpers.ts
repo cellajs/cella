@@ -41,11 +41,7 @@ export const createBaseTransloaditUppy = async (
 
   const uppy = new Uppy({
     ...uppyOptions,
-    meta: {
-      publicBucket: tokenQuery.publicBucket,
-      bucketName: tokenQuery.publicBucket ? appConfig.s3.publicBucket : appConfig.s3.privateBucket,
-      offlineUploaded: !hasCloudUpload,
-    },
+    meta: { offlineUploaded: !hasCloudUpload },
     onBeforeFileAdded,
     onBeforeUpload: (files) => {
       for (const file of Object.values(files)) {
@@ -81,10 +77,7 @@ export const createBaseTransloaditUppy = async (
     // Store the blob before uploading so a failed upload can retry from IndexedDB
     const organizationId = tokenQuery.organizationId;
     if (organizationId) {
-      const uploadContext: UploadContext = {
-        templateId: tokenQuery.templateId,
-        publicBucket: tokenQuery.publicBucket,
-      };
+      const uploadContext: UploadContext = { templateId: tokenQuery.templateId };
       for (const file of uploadFiles) {
         await attachmentStorage.storeUploadBlob(file, organizationId, 'pending', uploadContext, file.meta.attachmentId);
       }

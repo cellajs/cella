@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText, SafeHtml } from '../components';
-import { i18n } from '../i18n';
+import { i18n, plainText } from '../i18n';
 import { defineEmailTemplate } from '../types';
 
 type AccountSecurityType =
@@ -30,26 +30,17 @@ interface AccountSecurityStatic {
 export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()({
   translate(lng, { name, type, details }) {
     const baseProps = { lng, appName: appConfig.name };
-    // The location line exists only when a country is known; the text keys splice it in unescaped ({{- location}}), so the
-    // country itself is escaped here.
+    // The location line exists only when a country is known; the text keys splice it in unescaped ({{- location}}), and
+    // the country inside it was escaped when the line was translated.
     const location = details?.country
-      ? i18n.t('backend:email.account_security.location', {
-          ...baseProps,
-          country: details.country,
-          interpolation: { escapeValue: true },
-        })
+      ? i18n.t('backend:email.account_security.location', { ...baseProps, country: details.country })
       : '';
     return {
-      subject: i18n.t(`backend:email.account_security.${type}.title`, { ...baseProps, ...details }),
-      previewText: i18n.t('backend:email.account_security.preview', { ...baseProps, name }),
-      headerText: i18n.t(`backend:email.account_security.${type}.title`, baseProps),
-      // Details can carry request-derived text (route, browser, names) and the body renders as HTML, so escape them here. The subject is plain text.
-      bodyHtml: i18n.t(`backend:email.account_security.${type}.text`, {
-        ...baseProps,
-        ...details,
-        location,
-        interpolation: { escapeValue: true },
-      }),
+      subject: i18n.t(`backend:email.account_security.${type}.title`, { ...baseProps, ...details, ...plainText }),
+      previewText: i18n.t('backend:email.account_security.preview', { ...baseProps, name, ...plainText }),
+      headerText: i18n.t(`backend:email.account_security.${type}.title`, { ...baseProps, ...plainText }),
+      // Details can carry request-derived text (route, browser, names); the body renders as HTML, so they stay escaped.
+      bodyHtml: i18n.t(`backend:email.account_security.${type}.text`, { ...baseProps, ...details, location }),
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },

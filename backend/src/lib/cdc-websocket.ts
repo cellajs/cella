@@ -1,10 +1,10 @@
 import type { IncomingMessage } from 'node:http';
 import type { Duplex } from 'node:stream';
-import type { ServerType } from '@hono/node-server';
 import { z } from '@hono/zod-openapi';
 import { isValidEventType } from 'shared';
+import { safeEqual } from 'shared/utils/safe-equal';
 import { type WebSocket, WebSocketServer } from 'ws';
-import { env } from '#/env';
+import { env, modeSecret } from '#/env';
 import { type ActivityEvent, activityBus } from '#/lib/activity-bus';
 import { productCache } from '#/middlewares/product-cache/app-product-cache';
 import { activityActionSchema, activitySchema } from '#/modules/activities/activities-schema';
@@ -52,45 +52,22 @@ const IDLE_TIMEOUT_MS = 90_000;
 
 const PING_INTERVAL_MS = 30_000;
 
-/** Strip an IPv4-mapped IPv6 prefix (e.g. `::ffff:10.0.0.9` → `10.0.0.9`). */
-function normalizeIp(ip: string): string {
-  return ip.startsWith('::ffff:') ? ip.slice(7) : ip;
-}
-
-/** Loopback for co-located deploys (standalone Compose / single pod). */
-function isLoopbackIp(ip: string): boolean {
-  return ip === '127.0.0.1' || ip === '::1';
-}
-
-/** Scaleway VPC subnet 10.0.0.0/24 (infra/modules/network.ts). */
-function isVpcIp(ip: string): boolean {
-  return /^10\.0\.0\.\d{1,3}$/.test(ip);
-}
-
-/** Docker bridge ranges: the per-VM Caddy `ingress` runs there and is the only direct peer of a proxied request. */
-function isDockerBridgeIp(ip: string): boolean {
-  return /^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(ip) || /^192\.168\.\d{1,3}\.\d{1,3}$/.test(ip);
-}
-
-/** Allows loopback/VPC CDC peers directly or through the local ingress; the shared secret is the primary auth. */
-function isAllowedCdcSource(remoteIp: string | undefined, forwardedFor: string | string[] | undefined): boolean {
-  if (!remoteIp) return false;
-  const peer = normalizeIp(remoteIp);
-
-  // Direct connection, no proxy in between: the peer is the worker
-  if (isLoopbackIp(peer) || isVpcIp(peer)) return true;
-
-  // Behind a local reverse proxy (a compose ingress on the docker bridge) the peer is that proxy, so trust X-Forwarded-For and check the reported client IP
-  if (isDockerBridgeIp(peer)) {
-    const xff = Array.isArray(forwardedFor) ? forwardedFor[0] : forwardedFor;
-    const client = normalizeIp(xff?.split(',')[0]?.trim() ?? '');
-    return isLoopbackIp(client) || isVpcIp(client);
+/**
+ * Why an upgrade's `x-cdc-secret` is refused, or undefined for the worker's own secret. A process that does not hold
+ * the secret refuses every upgrade.
+ * @param presented - The header as received.
+ * @returns The reason, or undefined for the worker's secret.
+ */
+export function cdcSecretRefusal(presented: string | string[] | undefined): string | undefined {
+  let expected: string;
+  try {
+    expected = modeSecret('CDC_SECRET');
+  } catch {
+    return 'CDC_SECRET not configured';
   }
-
-  return false;
+  return typeof presented === 'string' && safeEqual(presented, expected) ? undefined : 'invalid secret';
 }
 
-/** Self-reported CDC worker health payload pushed over the WS control channel. */
 /** WAL lag alert from the worker's `wal_lag_alert` control message. */
 export interface CdcLagAlert {
   severity: 'wal_lag_warn' | 'wal_lag_unhealthy';
@@ -101,6 +78,7 @@ export interface CdcLagAlert {
   receivedAt: string;
 }
 
+/** Self-reported CDC worker health payload pushed over the WS control channel. */
 export interface CdcWorkerHealth {
   replicationStatus: string;
   lastLsn: string | null;
@@ -119,7 +97,10 @@ export interface CdcWorkerHealth {
   roleReplication?: boolean | null;
 }
 
-/** Internal CDC worker channel: shared secret plus allowed source, one live connection, idle peers closed. */
+/**
+ * The CDC worker's channel: one live connection, idle peers closed. The internal listener (lib/listeners.ts) routes
+ * and authenticates the upgrade before handing it over.
+ */
 class CdcWebSocketServer {
   private wss: WebSocketServer | null = null;
   private currentConnection: WebSocket | null = null;
@@ -134,49 +115,10 @@ class CdcWebSocketServer {
   private _workerHealth: { payload: CdcWorkerHealth; receivedAt: Date } | null = null;
   private _lastLagAlert: CdcLagAlert | null = null;
 
-  /** Attach to an existing HTTP server and authenticate upgrade requests to /internal/cdc. */
-  attachToServer(server: ServerType): void {
-    this.wss = new WebSocketServer({ noServer: true });
-
-    // Type assertion needed because ServerType is broader than HTTP1 Server
-    (server as NodeJS.EventEmitter).on('upgrade', (request: IncomingMessage, socket: Duplex, head: Buffer) => {
-      const url = new URL(request.url ?? '', `http://${request.headers.host}`);
-      if (url.pathname !== '/internal/cdc') {
-        socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
-        socket.destroy();
-        return;
-      }
-
-      // Production accepts co-located loopback or VPC workers only
-      const remoteIp = request.socket.remoteAddress;
-      if (env.NODE_ENV === 'production' && !isAllowedCdcSource(remoteIp, request.headers['x-forwarded-for'])) {
-        log.warn('CDC WebSocket rejected disallowed source', {
-          ip: remoteIp,
-          forwardedFor: request.headers['x-forwarded-for'],
-        });
-        socket.write('HTTP/1.1 403 Forbidden\r\n\r\n');
-        socket.destroy();
-        return;
-      }
-
-      // Validate shared secret for every environment.
-      const secret = request.headers['x-cdc-secret'];
-      if (!env.CDC_SECRET || secret !== env.CDC_SECRET) {
-        log.warn('CDC WebSocket auth failed', {
-          ip: request.socket.remoteAddress,
-          reason: !env.CDC_SECRET ? 'CDC_SECRET not configured' : 'invalid secret',
-        });
-        socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-        socket.destroy();
-        return;
-      }
-
-      this.wss?.handleUpgrade(request, socket, head, (ws) => {
-        this.handleConnection(ws);
-      });
-    });
-
-    log.info('CDC WebSocket server attached to HTTP server');
+  /** Completes the handshake of an upgrade the internal listener authenticated and takes the connection. */
+  accept(request: IncomingMessage, socket: Duplex, head: Buffer): void {
+    this.wss ??= new WebSocketServer({ noServer: true });
+    this.wss.handleUpgrade(request, socket, head, (ws) => this.handleConnection(ws));
   }
 
   /** Accept a CDC worker connection, replacing any live one. */

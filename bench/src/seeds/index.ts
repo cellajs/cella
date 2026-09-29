@@ -13,4 +13,4 @@ export { loadtestOrgMembership } from './membership';
 export { loadtestOrganization } from './organization';
 export { hashToken, sessionToken } from './session-auth';
 export { loadtestEmail, loadtestSession, loadtestUser } from './user';
-export { TOTAL_USERS } from './user.bench';
+export { TOTAL_USERS } from './user-constants';

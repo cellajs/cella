@@ -1,4 +1,4 @@
-import { index, integer, snakeCase, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, integer, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
@@ -28,7 +28,8 @@ export const passkeysTable = snakeCase.table(
   },
   (table) => [
     index('passkeys_user_id_idx').on(table.userId),
-    index('passkeys_credential_id_idx').on(table.credentialId),
+    // One account per credential: a sign-in finds the account by the credential id the authenticator presents.
+    uniqueIndex('passkeys_credential_id_idx').on(table.credentialId),
   ],
 );
 

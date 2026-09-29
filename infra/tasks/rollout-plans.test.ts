@@ -16,7 +16,7 @@ describe('planForService', () => {
       drainSeconds: 10,
       healthUrl: 'https://www.cellajs.com/api/health',
     });
-    // backend declares internalRoute, so its internal LB pool follows the cutover.
+    // backend declares an internalPort, so its internal LB pool follows the cutover.
     expect(plan.repointBackendKeys).toContain('backend-internal');
   });
 

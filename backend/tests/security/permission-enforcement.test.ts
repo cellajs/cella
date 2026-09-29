@@ -1,224 +1,209 @@
+import { and, eq } from 'drizzle-orm';
 import {
   createAttachments,
-  type GetPresignedUrlsResponse,
-  getAttachments,
-  getOrganization,
-  getPresignedUrls,
+  deleteAttachments,
+  deleteMemberships,
+  deleteOrganizations,
+  membershipInvite,
+  resendPendingInvitation,
   updateOrganization,
 } from 'sdk';
-import { appConfig, getEntityPolicies, getPolicyPermissions, hierarchy, policyMatrix } from 'shared';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import type { generateMockEntityBodyChannelIdColumns } from '#/mocks';
-import { defaultHeaders } from '../fixtures';
-import type { ErrorResponse } from '../helpers';
-import { seedEntityHierarchy } from '../hierarchy-helpers';
-import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
+import { mailer } from '#/lib/mailer';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { organizationsTable } from '#/modules/organization/organization-db';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
+import { adminDb, createTestOrganization, expectRefusal } from '../helpers';
+import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
+import { createInvitation } from '../invitations/helpers';
+import { createAppClient, type TestResult } from '../test-client';
+import { setTestConfig } from '../test-utils';
+import { clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-// The create body carries the deepest seeded home id only (the placement seam derives the chain
-// above it server-side and the relation columns reference it); empty in cella's org-homed default.
-let plan: TestEntityHierarchyPlan | undefined;
-type BodyChannelIdColumns = ReturnType<typeof generateMockEntityBodyChannelIdColumns<'attachment'>>;
-const bodyChannelIdColumns = (): BodyChannelIdColumns => {
-  const deepest = hierarchy
-    .getOrderedAncestors('attachment')
-    .find((type) => type !== 'organization' && plan?.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
-  if (!deepest) return {} as BodyChannelIdColumns;
-  const key = appConfig.entityIdColumnKeys[deepest];
-  return { [key]: plan?.channelIdColumns[key] } as BodyChannelIdColumns;
-};
+type User = { id: string; email: string; sessionCookie: string };
 
-// Verifies role-based organization permissions and unauthenticated rejection via HTTP.
-describe('Permission enforcement via HTTP', async () => {
+interface Fixture {
+  org: { id: string; tenantId: string; name: string };
+  admin: User;
+  member: User;
+  /** The admin's attachment. */
+  attachment: string;
+  /** A pending invitation the admin sent. */
+  invitation: string;
+  /** An attachment `user` created, placed at the attachment's home channel (none in cella). */
+  attachmentOf: (user: User) => Promise<string>;
+}
+
+interface Row {
+  act: string;
+  /** The act on `fixture.org` by `actor`, aimed at the other of the two users where it names one. */
+  attempt: (fixture: Fixture, actor: User) => Promise<TestResult>;
+  /** What a refused attempt must have left as it was. */
+  unchanged: (fixture: Fixture) => Promise<void>;
+  /** The answer to the admin. */
+  okStatus: number;
+}
+
+/**
+ * A member reads the organization and manages what they created; inviting, removing members, re-sending invitations,
+ * the organization's settings and its deletion are the admin's. Each attempt is made on an organization the member
+ * reads, so the permission check is what answers, and the same call succeeds for the admin.
+ */
+describe('Member escalation over HTTP', async () => {
   const call = await createAppClient();
-  let tenant: TestTenant;
-  let member: { id: string; email: string; sessionCookie: string };
+  let shared: Fixture;
 
-  beforeAll(async () => {
-    mockFetchRequest();
+  const headers = (as: User) => ({ ...defaultHeaders, Cookie: as.sessionCookie });
+  const counterpart = ({ admin, member }: Fixture, actor: User) => (actor.id === admin.id ? member : admin);
+  const attachmentRow = async (id: string) =>
+    (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
+  const organizationRow = async (id: string) =>
+    (await db.select().from(organizationsTable).where(eq(organizationsTable.id, id)))[0];
+  const membershipsOf = (userId: string, organizationId: string) =>
+    db
+      .select()
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.organizationId, organizationId)));
+  const invitationsTo = (email: string) =>
+    db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, email));
 
-    tenant = await createTestTenant(call, 'perm-test');
-    plan = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: tenant.organization.id,
-      makeChannelId: () => generateId(),
-    });
-    await seedEntityHierarchy(db, plan, {
-      tenantId: tenant.tenantId,
-      createdBy: tenant.user.id,
-      slugPrefix: 'perm-test',
-    });
-    member = await createOrgUser(
-      call,
-      tenant.tenantId,
-      tenant.organization.id,
-      'perm-member',
-      hierarchy.getLeastPrivilegedRole('organization'),
-    );
-  });
-
-  afterAll(async () => {
-    await clearSecurityTestData();
-  });
-
-  describe('Organization read access', () => {
-    it('should allow admin to read organization', async () => {
-      const { response } = await call(getOrganization, {
-        path: { tenantId: tenant.tenantId, id: tenant.organization.id },
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-      });
-      expect(response.status).toBe(200);
-    });
-
-    it('should allow member to read organization', async () => {
-      const { response } = await call(getOrganization, {
-        path: { tenantId: tenant.tenantId, id: tenant.organization.id },
-        headers: { ...defaultHeaders, Cookie: member.sessionCookie },
-      });
-      expect(response.status).toBe(200);
-    });
-  });
-
-  describe('Organization update access', () => {
-    it('should allow admin to update organization', async () => {
-      const { response } = await call(updateOrganization, {
-        path: { tenantId: tenant.tenantId, id: tenant.organization.id },
-        body: { name: 'Updated Org Name' },
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-      });
-      expect(response.status).toBe(200);
-    });
-
-    it('should reject member updating organization with 403', async () => {
-      const { error, response } = await call(updateOrganization, {
-        path: { tenantId: tenant.tenantId, id: tenant.organization.id },
-        body: { name: 'Hijacked Name' },
-        headers: { ...defaultHeaders, Cookie: member.sessionCookie },
-      });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
-    });
-  });
-
-  describe('Attachment list access by role', () => {
-    it('should allow admin to list attachments', async () => {
-      const { response } = await call(getAttachments, {
-        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-      });
-      expect(response.status).toBe(200);
-    });
-
-    it('should allow member to list attachments', async () => {
-      const { response } = await call(getAttachments, {
-        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        headers: { ...defaultHeaders, Cookie: member.sessionCookie },
-      });
-      expect(response.status).toBe(200);
-    });
-  });
-
-  // The member/admin split follows the configured policy matrix, so this suite holds across apps.
-  describe('Presigned URLs by role', () => {
-    const presignAttachmentId = '00000000-0000-4000-a000-0000000000b1';
-
-    // Derive the member's expectation from the policy: read cell 1 signs an unowned row; 'own'/0
-    // rejects. The member only holds the organization role, so the cell must also reach the row's home:
-    // the row is org-homed, or the organization role is elevated (its grants cover the whole subtree).
-    const memberRole = hierarchy.getLeastPrivilegedRole('organization');
-    const memberAttachmentRead = getPolicyPermissions(
-      getEntityPolicies('attachment', policyMatrix),
-      'organization',
-      memberRole,
-    )?.read;
-    // Evaluated inside the test: the seeded plan only exists after the outer beforeAll has run.
-    const memberSignsUnowned = () => {
-      const rowHomedAtRoot = Object.keys(bodyChannelIdColumns()).length === 0;
-      const rootGrantReachesRow = rowHomedAtRoot || hierarchy.elevatedGrants.has(`organization:${memberRole}`);
-      return memberAttachmentRead === 1 && rootGrantReachesRow;
-    };
-
-    beforeAll(async () => {
+  /** An organization with an admin, a member, the admin's attachment and a pending invitation. */
+  const fixture = async (label: string): Promise<Fixture> => {
+    const org = await createTestOrganization();
+    const admin = await createOrgUser(call, org.tenantId, org.id, `${label}-admin`, adminRole);
+    const member = await createOrgUser(call, org.tenantId, org.id, `${label}-member`, memberRole);
+    const plan = await seedAttachmentHome(org, admin.id);
+    const attachmentOf = async (user: User) => {
+      const id = generateId();
       const { response } = await call(createAttachments, {
-        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        body: [
-          {
-            id: presignAttachmentId,
-            filename: 'perm-test.pdf',
-            contentType: 'application/pdf',
-            size: '1024',
-            keys: { original: `test/perm-${presignAttachmentId}.pdf` },
-            bucketName: 'test-bucket',
-            // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
-            ...bodyChannelIdColumns(),
-            stx: { mutationId: presignAttachmentId, sourceId: 'perm-test', fieldTimestamps: {} },
-          },
-        ],
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+        path: { tenantId: org.tenantId, organizationId: org.id },
+        body: [attachmentBody(id, plan)],
+        headers: headers(user),
       });
       expect(response.status).toBe(201);
+      return id;
+    };
+    const { inactiveMembership } = await createInvitation({
+      organization: org,
+      email: `${label}-invitee@security-test.com`,
+      createdBy: admin.id,
     });
+    return {
+      org,
+      admin,
+      member,
+      attachment: await attachmentOf(admin),
+      invitation: inactiveMembership.id,
+      attachmentOf,
+    };
+  };
 
-    it('should sign for admin', async () => {
-      const { data, response } = await call(getPresignedUrls, {
-        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },
-        headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-      });
-      expect(response.status).toBe(200);
-      const result = data as GetPresignedUrlsResponse;
-      expect(result.data).toHaveLength(1);
-      expect(result.rejectedIds).toEqual([]);
-    });
+  const rows: Row[] = [
+    {
+      act: 'update the organization',
+      attempt: ({ org }, actor) =>
+        call(updateOrganization, {
+          path: { tenantId: org.tenantId, id: org.id },
+          body: { name: 'Hijacked' },
+          headers: headers(actor),
+        }),
+      unchanged: async ({ org }) => expect((await organizationRow(org.id)).name).toBe(org.name),
+      okStatus: 200,
+    },
+    {
+      act: 'invite someone as admin',
+      attempt: ({ org }, actor) =>
+        call(membershipInvite, {
+          path: { tenantId: org.tenantId, organizationId: org.id },
+          query: { entityId: org.id, entityType: 'organization' },
+          body: { emails: [`newcomer-${actor.id}@security-test.com`], role: adminRole },
+          headers: headers(actor),
+        }),
+      unchanged: async ({ member }) =>
+        expect(await invitationsTo(`newcomer-${member.id}@security-test.com`)).toEqual([]),
+      okStatus: 200,
+    },
+    {
+      act: 're-send a pending invitation',
+      attempt: ({ org, invitation }, actor) =>
+        call(resendPendingInvitation, {
+          path: { tenantId: org.tenantId, organizationId: org.id, id: invitation },
+          headers: headers(actor),
+        }),
+      unchanged: async () => expect(mailer.prepareEmails).not.toHaveBeenCalled(),
+      okStatus: 204,
+    },
+    {
+      act: 'remove another member',
+      attempt: (fixture, actor) =>
+        call(deleteMemberships, {
+          path: { tenantId: fixture.org.tenantId, organizationId: fixture.org.id },
+          query: { entityId: fixture.org.id, entityType: 'organization' },
+          body: { ids: [counterpart(fixture, actor).id] },
+          headers: headers(actor),
+        }),
+      unchanged: async ({ org, admin }) => expect(await membershipsOf(admin.id, org.id)).toHaveLength(1),
+      okStatus: 200,
+    },
+    {
+      act: "delete the admin's attachment",
+      attempt: ({ org, attachment }, actor) =>
+        call(deleteAttachments, {
+          path: { tenantId: org.tenantId, organizationId: org.id },
+          body: { ids: [attachment], stx: { mutationId: generateId(), sourceId: 'permission-enforcement' } },
+          headers: headers(actor),
+        }),
+      unchanged: async ({ attachment }) => expect((await attachmentRow(attachment)).deletedAt).toBeNull(),
+      okStatus: 200,
+    },
+    {
+      act: 'delete the organization',
+      attempt: ({ org }, actor) =>
+        call(deleteOrganizations, {
+          path: { tenantId: org.tenantId },
+          body: { ids: [org.id] },
+          headers: headers(actor),
+        }),
+      unchanged: async ({ org }) => expect(await organizationRow(org.id)).toBeDefined(),
+      okStatus: 200,
+    },
+  ];
 
-    it('signs or rejects a member reading an unowned attachment per the configured read policy', async () => {
-      const { data, response } = await call(getPresignedUrls, {
-        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },
-        headers: { ...defaultHeaders, Cookie: member.sessionCookie },
-      });
-      expect(response.status).toBe(200);
-      const result = data as GetPresignedUrlsResponse;
-      if (memberSignsUnowned()) {
-        expect(result.data).toHaveLength(1);
-        expect(result.rejectedIds).toEqual([]);
-      } else {
-        expect(result.data).toEqual([]);
-        expect(result.rejectedIds).toEqual([presignAttachmentId]);
-      }
-    });
+  beforeAll(async () => {
+    shared = await fixture('escalation');
   });
 
-  describe('Unauthenticated access', () => {
-    it('should reject unauthenticated GET attachments with 401', async () => {
-      const { response } = await call(getAttachments, {
-        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        headers: defaultHeaders,
-      });
-      expect(response.status).toBe(401);
-    });
+  afterAll(async () => await clearSecurityTestData());
 
-    it('should reject unauthenticated presigned URLs with 401', async () => {
-      const { response } = await call(getPresignedUrls, {
-        path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
-        body: { items: [{ attachmentId: '00000000-0000-4000-a000-0000000000b1', variant: 'original' }] },
-        headers: defaultHeaders,
-      });
-      expect(response.status).toBe(401);
-    });
+  it.each(rows)('must not $act via a member session', async ({ attempt, unchanged }) => {
+    const { response, error } = await attempt(shared, shared.member);
+    await expectRefusal({ response, error }, 403, 'forbidden');
+    await unchanged(shared);
+  });
 
-    it('should reject unauthenticated GET organization with 401', async () => {
-      const { response } = await call(getOrganization, {
-        path: { tenantId: tenant.tenantId, id: tenant.organization.id },
-        headers: defaultHeaders,
-      });
-      expect(response.status).toBe(401);
+  it('lets a member delete their own attachment and an admin do each of the above (positive controls)', async () => {
+    const own = await fixture('escalation-control');
+
+    const mine = await own.attachmentOf(own.member);
+    const { data, response } = await call(deleteAttachments, {
+      path: { tenantId: own.org.tenantId, organizationId: own.org.id },
+      body: { ids: [mine], stx: { mutationId: generateId(), sourceId: 'permission-enforcement' } },
+      headers: headers(own.member),
     });
+    expect(response.status).toBe(200);
+    expect((data as { rejectedIds: string[] }).rejectedIds).toEqual([]);
+    expect((await attachmentRow(mine)).deletedAt).not.toBeNull();
+
+    // The rows end with the organization's deletion.
+    for (const { act, attempt, okStatus } of rows) {
+      expect((await attempt(own, own.admin)).response.status, act).toBe(okStatus);
+    }
+    expect(await organizationRow(own.org.id)).toBeUndefined();
   });
 });

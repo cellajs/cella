@@ -1,81 +1,19 @@
 ---
 allowBuilds:
   '@evilmartians/lefthook': true
-  '@parcel/watcher': false
   '@playwright/browser-chromium': false
   core-js: false
   esbuild: true
-  msgpackr-extract: false
   protobufjs: false
   unix-dgram: false
-allowUnusedPatches: true
 blockExoticSubdeps: true
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - '@cellajs/cli'
-  - '@opentelemetry/core@2.8.0'
-  - esbuild@0.24.3
-  - esbuild@0.28.1
-  - js-yaml@4.3.0
-  - shell-quote@1.8.5
-  - protobufjs@7.6.5
-  - '@hono/node-server@2.0.5'
-  - fast-uri@3.1.4
-  - fast-uri@3.1.3
-  - tar@7.5.21
-  - brace-expansion@5.0.8
-  - postcss@8.5.23
-  - socket.io-parser@4.2.7
-  - undici@7.29.0
-  - fast-uri@3.1.5
-  - hono@4.12.34
-  - brace-expansion@5.0.9
-  - js-yaml@3.15.1
-  - nanoid@3.3.18
-  - deepmerge-ts@8.0.0
-  - '@tiptap/core@3.30.4'
-  - toml@4.2.0
-  - toml@4.1.2
-  - csv-parse@7.0.2
-  - joi@17.13.6
-  - joi@17.13.5
-  - js-yaml@3.15.2
-  - js-yaml@4.3.2
-  - '@tiptap/core@3.30.5'
 overrides:
-  '@opentelemetry/core@<2.8.0': ^2.8.0
-  '@opentelemetry/core@>=2.0.0 <2.8.0': ^2.8.0
-  esbuild@<0.28.1: ^0.28.1
-  esbuild@>=0.27.3 <0.28.1: ^0.28.1
-  'protobufjs@>=8.0.0 <8.4.1': 8.6.5
-  '@types/hast': 3.0.5
-  '@shikijs/types': 4.3.1
-  '@hono/node-server@<2.0.5': ^2.0.5
-  fast-uri@>=3.0.0 <3.1.3: ^3.1.3
-  fast-uri@>=3.0.0 <=3.1.3: ^3.1.4
-  js-yaml@>=4.0.0 <4.3.0: ^4.3.0
-  protobufjs@>=7.5.0 <=7.6.4: ^7.6.5
-  shell-quote@<=1.8.4: ^1.8.5
-  brace-expansion@<=5.0.7: ^5.0.8
-  tar@<=7.5.20: ^7.5.21
-  brace-expansion@>=4.0.0 <5.0.9: ^5.0.9
-  fast-uri@>=3.0.0 <3.1.5: ^3.1.5
-  hono@<4.12.34: ^4.12.34
-  postcss@<=8.5.22: ^8.5.23
-  socket.io-parser@>=4.0.0 <4.2.7: ^4.2.7
-  undici@>=7.0.0 <7.29.0: ^7.29.0
-  js-yaml@>=3.0.0 <3.15.1: ^3.15.1
-  nanoid@<3.3.18: ^3.3.18
-  deepmerge-ts@<8.0.0: ^8.0.0
-  '@tiptap/core@>=2.0.0-alpha.0 <3.30.4': ^3.30.4
-  '@tiptap/core@>=3.7.0 <3.30.5': ^3.30.5
   csv-parse@<7.0.2: ^7.0.2
-  joi@>=16.0.0 <17.13.5: ^17.13.5
-  joi@>=17.2.0 <17.13.6: ^17.13.6
-  js-yaml@>=3.0.0 <3.15.2: ^3.15.2
+  esbuild@<0.28.1: ^0.28.1
   js-yaml@>=4.0.0 <4.3.2: ^4.3.2
-  toml@<4.1.2: ^4.1.2
-  toml@<4.2.0: ^4.2.0
 packageExtensions:
   '@artilleryio/sketches-js':
     dependencies:
@@ -86,6 +24,7 @@ packageExtensions:
 packages:
   - mcp
   - oauth
+  - jobs
   - backend
   - cdc
   - shared
@@ -99,16 +38,6 @@ patchedDependencies:
   artillery@2.0.34: patches/artillery@2.0.34.patch
 peerDependencyRules:
   allowedVersions:
-    '@opentelemetry/api': '>=1'
-    '@types/react': '>=19'
-    '@uppy/core': '5'
-    babel-plugin-react-compiler: '>=19'
-    react: '19'
-    react-dom: '19'
-    typescript: '6'
     vite: '8'
-  ignoreMissing:
-    - canvas
-    - '@floating-ui/dom'
 publicHoistPattern:
   - pdfjs-dist

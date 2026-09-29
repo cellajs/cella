@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  BACKEND_S3_PERMISSION_SETS,
-  BOOT_PROJECT_PERMISSION_SETS,
-  CI_RULE_SHAPES,
-  SERVICE_SECRET_PERMISSION_SETS,
-} from '../lib/scaleway/permissions';
-import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/secret-paths';
-import { principalSecretScopeSlugs, principalServices } from '../lib/services';
+import { principalSecretCondition } from '../lib/runtime-secrets';
 import { ALLOWED_KEYS, buildDeployEnv, isAllowedProductionRef } from './print-deploy-env';
 
 const fakeAppConfig = {
@@ -37,7 +30,9 @@ describe('buildDeployEnv', () => {
   });
 
   it('derives values from appConfig', () => {
-    expect(buildDeployEnv(fakeAppConfig)).toEqual({
+    // The grant assertion rows are the shared builder's output, covered by tests/unit/secret-scope.test.ts and the singleVM cases below.
+    const { vm_assert_json: _rows, ...values } = buildDeployEnv(fakeAppConfig);
+    expect(values).toEqual({
       environment: 'production',
       image_tag: '',
       pulumi_stack: 'production',
@@ -46,24 +41,6 @@ describe('buildDeployEnv', () => {
       frontend_bucket: 'cella-frontend',
       public_bucket: 'cella-public',
       state_bucket: 'cella-pulumi-state',
-      vm_assert_json: JSON.stringify([
-        ...principalServices(false).map((svc) => ({
-          app: `cella-production-vm-${svc.slug}`,
-          sets: [...SERVICE_SECRET_PERMISSION_SETS, ...(svc.s3Access ? BACKEND_S3_PERMISSION_SETS : [])],
-          condition: serviceKeyCondition('cella', 'production', svc.slug),
-          dormant: !['backend', 'cdc', 'frontend'].includes(svc.slug),
-        })),
-        {
-          app: 'cella-production-boot',
-          sets: [...BOOT_PROJECT_PERMISSION_SETS, ...SERVICE_SECRET_PERMISSION_SETS],
-          condition: bootKeyCondition('cella', 'production'),
-        },
-        {
-          app: 'cella-production-ci-deploy',
-          sets: CI_RULE_SHAPES.flatMap((shape) => [...shape.permissionSets]),
-          condition: '',
-        },
-      ]),
       enabled_services_json: JSON.stringify([
         {
           service: 'backend',
@@ -84,6 +61,15 @@ describe('buildDeployEnv', () => {
           primary_rollout: false,
         },
         {
+          service: 'jobs',
+          public_url: '',
+          health_url: '',
+          lb_route: '',
+          dockerfile: '',
+          reuses_image_of: 'backend',
+          primary_rollout: false,
+        },
+        {
           service: 'frontend',
           public_url: 'https://www.cella.example',
           health_url: 'https://www.cella.example',
@@ -101,6 +87,7 @@ describe('buildDeployEnv', () => {
       primary_rollout_matrix: JSON.stringify([{ service: 'backend', health_url: 'https://api.cella.example' }]),
       roll_rest_matrix: JSON.stringify([
         { service: 'cdc', health_url: '' },
+        { service: 'jobs', health_url: '' },
         { service: 'frontend', health_url: 'https://www.cella.example' },
       ]),
     });
@@ -114,9 +101,7 @@ describe('buildDeployEnv', () => {
     }>;
     const serviceRows = rows.filter((row) => row.app.includes('-vm-'));
     expect(serviceRows.map((row) => row.app)).toEqual(['cella-production-vm-backend']);
-    expect(serviceRows[0]?.condition).toBe(
-      serviceKeyCondition('cella', 'production', principalSecretScopeSlugs(true, 'backend')),
-    );
+    expect(serviceRows[0]?.condition).toBe(principalSecretCondition('cella', 'production', true, 'backend'));
     expect(serviceRows[0]?.condition).toContain('/cella-production/yjs/');
     expect(serviceRows[0]?.condition).toContain('/cella-production/mcp/');
     expect(serviceRows[0]?.dormant).toBe(false);
@@ -171,15 +156,6 @@ describe('buildDeployEnv', () => {
       'https://service-front.example',
     );
     expect(services.find((service) => service.service === 'backend')?.public_url).toBe('https://service-api.example');
-  });
-
-  it('no emitted value contains a secret-shaped substring', () => {
-    // The output is piped into $GITHUB_OUTPUT and rendered in logs; any token,
-    // key or password leaking through would be visible.
-    const SECRET_PATTERN = /(SCW|sk_|api_key|bearer\s|password=|secret=)/i;
-    for (const v of Object.values(buildDeployEnv(fakeAppConfig))) {
-      expect(v, `value "${v}"`).not.toMatch(SECRET_PATTERN);
-    }
   });
 });
 

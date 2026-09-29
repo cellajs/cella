@@ -1,17 +1,15 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import type { AuthenticationResponseJSON } from '@simplewebauthn/server';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
+import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
+import { mfaFactorRules } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { validatePasskey } from '#/modules/auth/passkeys/helpers/passkey';
-import type { AuthStrategy } from '#/modules/auth/sessions-db';
-import { validateTOTP } from '#/modules/auth/totps/helpers/totps';
+import { readStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { getUserSessions } from '#/modules/me/helpers/get-user-info';
-import { deleteUser, findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
+import { findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 import { meRoutes } from '#/modules/me/me-routes';
 import { deleteMyMembershipOp } from '#/modules/me/operations/delete-my-membership';
 import { getConnectedAppsOp } from '#/modules/me/operations/get-connected-apps';
@@ -21,8 +19,8 @@ import { getMyInvitationsOp } from '#/modules/me/operations/get-my-invitations';
 import { getUploadTokenOp } from '#/modules/me/operations/get-upload-token';
 import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-app';
 import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
-import { unsubscribeMeOp } from '#/modules/me/operations/unsubscribe-me';
 import { updateMeOp } from '#/modules/me/operations/update-me';
+import { deleteAccounts } from '#/modules/user/helpers/delete-accounts';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 
@@ -34,37 +32,34 @@ app.openapi(meRoutes.getMe, async (ctx) => {
 });
 
 app.openapi(meRoutes.toggleMfa, async (ctx) => {
-  const user = ctx.var.user;
+  const { user, session } = ctx.var;
 
-  const { mfaRequired, passkeyData, totpCode } = ctx.req.valid('json');
+  const { mfaRequired } = ctx.req.valid('json');
 
-  const strategy: Extract<AuthStrategy, 'passkey' | 'totp'> = passkeyData ? 'passkey' : 'totp';
+  // The guard refused a session that has not stepped up; the factor that proved this one signs the mfa session minted
+  // below in. Turning MFA on needs both factors enrolled, so a passing step-up always names one.
+  const { factor } = await readStepUp(session);
 
-  try {
-    if (passkeyData)
-      await validatePasskey(ctx, { assertion: passkeyData as AuthenticationResponseJSON, userId: user.id });
-
-    if (totpCode) await validateTOTP({ code: totpCode, userId: user.id });
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-
-    throw new AppError(500, 'invalid_credentials', 'error', {
-      ...(error instanceof Error ? { originalError: error } : {}),
-    });
-  }
-
-  // Update MFA flag and invalidate sessions atomically
-  const updatedUser = await baseDb.transaction(async (tx) => {
-    return updateUserMfa({ var: { ...ctx.var, db: tx } }, { mfaRequired });
+  // The flag and the sessions it ends change together, after a factor delete that got the lock first.
+  const updatedUser = await mfaFactorRules.locked(user.id, async (tx) => {
+    if (mfaRequired) await mfaFactorRules.assertCanEnable(tx, user.id);
+    const txCtx = { var: { ...ctx.var, db: tx } };
+    const updated = await updateUserMfa(txCtx, { mfaRequired });
+    if (updated.mfaRequired) {
+      // This browser's session gives way to the mfa session minted below; every other regular session ends.
+      await endSessions(txCtx, { userId: user.id, sessionIds: [ctx.var.sessionId], reason: 'replaced', by: user.id });
+      await endSessions(txCtx, { userId: user.id, all: true, type: 'regular', reason: 'mfa_enabled', by: user.id });
+    }
+    return updated;
   });
 
-  invalidateCache.user(user.id);
+  await invalidateCache.user(ctx.var.db, user.id);
 
-  if (updatedUser.mfaRequired) {
+  if (updatedUser.mfaRequired && factor) {
     // Clear session cookie to enforce fresh login
     deleteAuthCookie(ctx, 'session');
 
-    await setUserSession(ctx, user, strategy, 'mfa');
+    await setUserSession(ctx, user, factor, 'mfa');
   }
 
   sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');
@@ -103,10 +98,7 @@ app.openapi(meRoutes.deleteMe, async (ctx) => {
 
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: 'self' } });
 
-  // CASCADE SET NULL on createdBy/updatedBy propagates to product entities.
-  await deleteUser(ctx);
-
-  invalidateCache.user(user.id);
+  await deleteAccounts(ctx, { userIds: [user.id], by: user.id });
   deleteAuthCookie(ctx, 'session');
   log.info('User deleted');
 
@@ -120,15 +112,9 @@ app.openapi(meRoutes.deleteMyMembership, async (ctx) => {
 });
 
 app.openapi(meRoutes.getUploadToken, async (ctx) => {
-  const { publicBucket, organizationId, templateId } = ctx.req.valid('query');
-  const data = getUploadTokenOp(ctx, { publicBucket, organizationId, templateId });
+  const { organizationId, templateId } = ctx.req.valid('query');
+  const data = getUploadTokenOp(ctx, { organizationId, templateId });
   return ctx.json(data, 200);
-});
-
-app.openapi(meRoutes.unsubscribeMe, async (ctx) => {
-  const { token } = ctx.req.valid('query');
-  const redirectUrl = await unsubscribeMeOp(ctx, token);
-  return ctx.redirect(redirectUrl, 302);
 });
 
 app.openapi(meRoutes.getMyMemberships, async (ctx) => {

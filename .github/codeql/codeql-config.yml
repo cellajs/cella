@@ -1,0 +1,11 @@
+name: cella
+# The app has no passwords: what it hashes with SHA-256 or HMAC-SHA-256 are random session and API-key tokens, WebAuthn
+# challenges and cookie contents, which is the right primitive for them. The rule that expects a slow password hash
+# cannot find a true positive here. Test helpers are not shipped code.
+query-filters:
+  - exclude:
+      id: js/insufficient-password-hash
+paths-ignore:
+  - '**/tests/**'
+  - '**/*.test.ts'
+  - '**/*.test.tsx'

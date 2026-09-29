@@ -413,7 +413,7 @@
           "category": {
             "type": "string",
             "required": true,
-            "enum": ["digest", "mention", "comment"]
+            "enum": ["digest", "mention", "comment", "newsletter"]
           },
           "token": { "type": "string", "required": true }
         }

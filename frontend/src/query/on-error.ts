@@ -1,4 +1,5 @@
 import i18n from 'i18next';
+import { sessionLostTypes } from 'shared/utils/session-lost';
 import { ApiError } from '~/lib/api';
 import type { TKey } from '~/lib/i18n-locales';
 import { useAlertStore } from '~/modules/common/alerter/alert-store';
@@ -36,7 +37,9 @@ const getErrorMessage = ({ type, entityType, message, status }: ApiError) => {
   return getFallbackMessage(status) || 'Unknown error occurred';
 };
 
-/** Global handler for API request errors: network errors, ApiErrors, and 401 -> sign-in redirect. */
+const isSessionLost = (error: ApiError) => !error.type || sessionLostTypes.has(error.type);
+
+/** Global handler for API request errors: network errors, ApiErrors, and a lost session's 401 -> sign-in redirect. */
 export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
   // isNetworkError excludes ApiError, so a server that responded with any status falls through to the handling below.
   if (isNetworkError(error)) {
@@ -91,7 +94,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
       toaster[toastType](errorMessage, { description });
     }
 
-    if (statusCode === 401 && !location.pathname.startsWith('/auth/')) {
+    if (statusCode === 401 && isSessionLost(error) && !location.pathname.startsWith('/auth/')) {
       const redirectOptions: { to: string; search?: { redirect: string } } = {
         to: '/auth/authenticate',
       };

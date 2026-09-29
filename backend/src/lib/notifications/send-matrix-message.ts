@@ -32,11 +32,12 @@ export const sendMatrixMessage = async ({
   const botAccessToken = env.ELEMENT_BOT_ACCESS_TOKEN;
   const eventType = 'm.room.message';
 
-  const url = `${appConfig.matrixURL}/_matrix/client/v3/rooms/${roomId}/send/${eventType}/${txnId}?access_token=${botAccessToken}`;
+  const url = `${appConfig.matrixURL}/_matrix/client/v3/rooms/${roomId}/send/${eventType}/${txnId}`;
 
+  // The access token goes in a header: fetch spans record the full request URL.
   const matrixResponse = await fetch(url, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${botAccessToken}` },
     body: JSON.stringify(bodyPayload),
   });
 

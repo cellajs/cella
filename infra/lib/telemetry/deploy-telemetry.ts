@@ -1,3 +1,5 @@
+import { createSecretRedactor } from '../../boot/src/secret-redactor';
+import { isSecretEnvKey } from '../utils/scrub-secret-env';
 import { createTelemetry, otlpConfigFromEnv, type Telemetry } from './emitter';
 import { defineEvent, type EventDef, type Placeholders } from './events';
 import type { AttrValue } from './otlp';
@@ -44,9 +46,17 @@ export interface DeployTelemetryInit {
   onError?: (message: string) => void;
 }
 
-/** Create and activate the deploy-run emitter. Joins a CI TRACEPARENT when present. */
+/**
+ * Create and activate the deploy-run emitter. Joins a CI TRACEPARENT when present. Every value is redacted as boot
+ * redacts it (`createSecretRedactor`): by value, for each secret the process environment holds under a secret name
+ * (the Scaleway keys, the Pulumi passphrase, tokens) and the export headers, plus any URL userinfo.
+ */
 export function initDeployTelemetry(init: DeployTelemetryInit): Telemetry {
   const fromEnv = otlpConfigFromEnv();
+  const headers = init.headers ?? fromEnv?.headers;
+  const redactor = createSecretRedactor();
+  redactor.add(...Object.entries(process.env).flatMap(([key, value]) => (isSecretEnvKey(key) ? [value] : [])));
+  redactor.add(...Object.values(headers ?? {}));
   active = createTelemetry({
     resource: {
       'service.name': 'infra-deploy',
@@ -55,9 +65,10 @@ export function initDeployTelemetry(init: DeployTelemetryInit): Telemetry {
       ...(init.resource ?? {}),
     },
     endpoint: init.endpoint ?? fromEnv?.endpoint,
-    headers: init.headers ?? fromEnv?.headers,
+    headers,
     traceparent: process.env.TRACEPARENT,
     onError: init.onError,
+    redact: redactor.redact,
   });
   return active;
 }

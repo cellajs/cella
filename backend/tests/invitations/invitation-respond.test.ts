@@ -1,26 +1,19 @@
 import { eq } from 'drizzle-orm';
-import { handleMembershipInvitation } from 'sdk';
-import { hierarchy } from 'shared';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { handleMembershipInvitation, invokeToken } from 'sdk';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, createTestSession, createTestUser } from '../helpers';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
+import { createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-import { createInvitation } from './helpers';
-
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
+import { clearDatabase, setTestConfig } from '../test-utils';
+import { createInvitation, readMembersAs } from './helpers';
 
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
   selfRegistration: true,
-});
-
-beforeAll(async () => {
-  mockFetchRequest();
 });
 
 afterEach(async () => await clearDatabase());
@@ -71,6 +64,26 @@ describe('Invitation response', async () => {
     expect(remainingInactive).toHaveLength(0);
   });
 
+  it('lets the new member into the organization right after accepting', async () => {
+    const organization = await createOrg();
+    const invitedUser = await createTestUser('invited@example.com');
+    const { inactiveMembership } = await createInvitation({
+      organization,
+      email: invitedUser.email,
+      createdBy: invitedUser.id,
+      boundTo: invitedUser.id,
+      role: memberRole,
+    });
+    const sessionCookie = await createTestSession(invitedUser);
+    const readMembers = () => readMembersAs(organization, sessionCookie);
+    expect((await readMembers()).response.status).toBe(403);
+
+    const { response: res } = await respondToInvitation(inactiveMembership.id, 'accept', sessionCookie);
+    expect(res.status).toBe(200);
+
+    expect((await readMembers()).response.status).toBe(200);
+  });
+
   it('should accept with admin role', async () => {
     const organization = await createOrg();
     const invitedUser = await createTestUser('invited@example.com');
@@ -80,7 +93,7 @@ describe('Invitation response', async () => {
       email: invitedUser.email,
       createdBy: invitedUser.id,
       boundTo: invitedUser.id,
-      role: 'admin',
+      role: adminRole,
     });
     const sessionCookie = await createTestSession(invitedUser);
 
@@ -90,7 +103,7 @@ describe('Invitation response', async () => {
 
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, invitedUser.id));
     expect(memberships).toHaveLength(1);
-    expect(memberships[0].role).toBe('admin');
+    expect(memberships[0].role).toBe(adminRole);
   });
 
   it('should reject invitation', async () => {
@@ -121,6 +134,34 @@ describe('Invitation response', async () => {
     expect(rejectedInactive[0].rejectedAt).toBeDefined();
   });
 
+  it("retires a rejected invitation's emailed link", async () => {
+    const organization = await createOrg();
+    const invitedUser = await createTestUser('invited@example.com');
+    const { inactiveMembership, rawToken } = await createInvitation({
+      organization,
+      email: invitedUser.email,
+      createdBy: invitedUser.id,
+      boundTo: invitedUser.id,
+      role: memberRole,
+    });
+
+    const { response: res } = await respondToInvitation(
+      inactiveMembership.id,
+      'reject',
+      await createTestSession(invitedUser),
+    );
+    expect(res.status).toBe(200);
+
+    expect(
+      await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, inactiveMembership.id)),
+    ).toHaveLength(0);
+    const { response, error } = await call(invokeToken, {
+      path: { type: 'invitation', token: rawToken },
+      headers: defaultHeaders,
+    });
+    await expectRefusal({ response, error }, 401, 'invitation_not_found');
+  });
+
   it('should reject for non-existent invitation', async () => {
     await createOrg();
     const user = await createTestUser('user@example.com');
@@ -138,25 +179,32 @@ describe('Invitation response', async () => {
     expect(res.status).toBe(404);
   });
 
-  it("should not allow a different user to accept someone else's invitation", async () => {
+  it("must not accept someone else's invitation by id, whether bound to them or to nobody yet", async () => {
     const organization = await createOrg();
     const invitedUser = await createTestUser('invited@example.com');
     const attacker = await createTestUser('attacker@example.com');
+    const attackerSession = await createTestSession(attacker);
 
-    const { inactiveMembership } = await createInvitation({
+    // GHSA-fmh4-wcc4-5jm3: by id alone an invitation is answerable by its bound user only. One sent to an address
+    // without an account is bound to nobody: only its emailed token claims it, never its id.
+    const bound = await createInvitation({
       organization,
       email: invitedUser.email,
       createdBy: invitedUser.id,
       boundTo: invitedUser.id,
       role: memberRole,
     });
-    const attackerSession = await createTestSession(attacker);
+    const unbound = await createInvitation({
+      organization,
+      email: 'nobody@example.com',
+      createdBy: invitedUser.id,
+      role: memberRole,
+    });
 
-    // GHSA-fmh4-wcc4-5jm3: invitation acceptance is bound to the invited user id,
-    // not just an email claim. A different authenticated user cannot accept it.
-    const { response: res } = await respondToInvitation(inactiveMembership.id!, 'accept', attackerSession);
-
-    expect(res.status).toBe(404);
+    for (const { inactiveMembership } of [bound, unbound]) {
+      const { response: res } = await respondToInvitation(inactiveMembership.id, 'accept', attackerSession);
+      expect(res.status).toBe(404);
+    }
 
     const attackerMemberships = await db
       .select()
@@ -164,11 +212,9 @@ describe('Invitation response', async () => {
       .where(eq(membershipsTable.userId, attacker.id));
     expect(attackerMemberships).toHaveLength(0);
 
-    const stillInactive = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
-    expect(stillInactive).toHaveLength(1);
+    const stillInactive = await db.select().from(inactiveMembershipsTable);
+    expect(stillInactive.find((row) => row.id === bound.inactiveMembership.id)?.userId).toBe(invitedUser.id);
+    expect(stillInactive.find((row) => row.id === unbound.inactiveMembership.id)?.userId).toBeNull();
   });
 
   it('should reject for already processed invitation', async () => {

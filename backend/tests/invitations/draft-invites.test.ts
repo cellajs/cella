@@ -1,28 +1,31 @@
 import { eq } from 'drizzle-orm';
-import { getMyInvitations, membershipInvite } from 'sdk';
-import { type EntityRole, hierarchy } from 'shared';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { getMyInvitations, getPendingMemberships, membershipInvite } from 'sdk';
+import type { EntityRole } from 'shared';
+import { afterEach, describe, expect, it } from 'vitest';
 import type { UserContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
+import { mailer } from '#/lib/mailer';
+import { tokensTable } from '#/modules/auth/tokens-db';
 import { dispatchDeferredInvites } from '#/modules/memberships/helpers/deferred-invites';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
-import { defaultHeaders } from '../fixtures';
-import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser } from '../helpers';
+import { hashToken } from '#/utils/hash-token';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
+import {
+  createOrganizationAdminUser,
+  createTestOrganization,
+  createTestSession,
+  createTestUser,
+  mailedLink,
+} from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
-
+// Whether an invite left as mail is the observable difference between a held and a dispatched invite.
 setTestConfig({
   enabledAuthStrategies: ['passkey'],
   selfRegistration: true,
-});
-
-beforeAll(async () => {
-  mockFetchRequest();
 });
 
 afterEach(async () => await clearDatabase());
@@ -32,13 +35,15 @@ afterEach(async () => await clearDatabase());
 describe('Draft context invite deferral', async () => {
   const call = await createAppClient();
 
+  // The publish flow's operation reads only `db` and `user` from its context, so a partial one stands in.
+  const publisherContext = (user: { id: string }) => ({ var: { db, user } }) as unknown as UserContext;
+
   const createDraftOrgWorld = async () => {
     const organization = await createTestOrganization();
     const admin = await createOrganizationAdminUser(
       'admin@example.com',
       organization.id,
-      'admin',
-      true,
+      adminRole,
       organization.tenantId,
     );
     const sessionCookie = await createTestSession(admin);
@@ -76,6 +81,7 @@ describe('Draft context invite deferral', async () => {
     expect(row.role).toBe(memberRole);
     expect(row.tokenId).toBeTruthy(); // token minted for the new user
     expect(row.remindedAt).toBeNull(); // but email dispatch was held
+    expect(mailer.prepareEmails).not.toHaveBeenCalled();
 
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.channelId, organization.id));
     expect(memberships).toHaveLength(1); // only the inviting admin
@@ -84,13 +90,14 @@ describe('Draft context invite deferral', async () => {
   it('keeps the most-privileged role live: admin invites dispatch on a draft context', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
 
-    const { response } = await invite(organization, ['co-admin@example.com'], 'admin', sessionCookie);
+    const { response } = await invite(organization, ['co-admin@example.com'], adminRole, sessionCookie);
     expect(response.status).toBe(200);
 
     const [row] = await getInactiveRows(organization.id);
     expect(row).toBeDefined();
     expect(row.role).toBe('admin');
     expect(row.remindedAt).toBeNull(); // initial invite email is not a reminder stamp
+    expect(mailer.prepareEmails).toHaveBeenCalledOnce();
   });
 
   it('hides deferred invites from the invitee until dispatch', async () => {
@@ -111,7 +118,7 @@ describe('Draft context invite deferral', async () => {
       .update(organizationsTable)
       .set({ publishedAt: new Date().toISOString() })
       .where(eq(organizationsTable.id, organization.id));
-    await dispatchDeferredInvites({ var: { db, user: admin } } as unknown as UserContext, {
+    await dispatchDeferredInvites(publisherContext(admin), {
       channelIds: [organization.id],
     });
 
@@ -127,7 +134,7 @@ describe('Draft context invite deferral', async () => {
     const originalTokenId = beforeRow.tokenId;
     expect(beforeRow.remindedAt).toBeNull();
 
-    const ctx = { var: { db, user: admin } } as unknown as UserContext;
+    const ctx = publisherContext(admin);
     const first = await dispatchDeferredInvites(ctx, { channelIds: [organization.id] });
     expect(first.dispatched).toBe(1);
 
@@ -135,6 +142,9 @@ describe('Draft context invite deferral', async () => {
     expect(afterRow.remindedAt).not.toBeNull();
     expect(afterRow.tokenId).toBeTruthy();
     expect(afterRow.tokenId).not.toBe(originalTokenId); // raw secrets are unrecoverable → rotate
+    // The dispatched mail carries the rotated token's link.
+    const [rotated] = await db.select().from(tokensTable).where(eq(tokensTable.id, afterRow.tokenId!));
+    expect(rotated.secret).toBe(hashToken(mailedLink('inviteLink').token));
 
     // Second dispatch inside the throttle window: no re-send, no token churn
     const second = await dispatchDeferredInvites(ctx, { channelIds: [organization.id] });
@@ -144,17 +154,43 @@ describe('Draft context invite deferral', async () => {
     expect(afterSecond.tokenId).toBe(afterRow.tokenId);
   });
 
+  it('lists a dispatched invite once: rotating its link retires the old one', async () => {
+    const { organization, admin, sessionCookie } = await createDraftOrgWorld();
+    await invite(organization, ['deferred@example.com'], memberRole, sessionCookie);
+    const [held] = await getInactiveRows(organization.id);
+
+    await db
+      .update(organizationsTable)
+      .set({ publishedAt: new Date().toISOString() })
+      .where(eq(organizationsTable.id, organization.id));
+    await dispatchDeferredInvites(publisherContext(admin), {
+      channelIds: [organization.id],
+    });
+
+    const [dispatched] = await getInactiveRows(organization.id);
+    const links = await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, held.id));
+    expect(links.map((link) => link.id)).toEqual([dispatched.tokenId]);
+
+    const { data } = await call(getPendingMemberships, {
+      path: { tenantId: organization.tenantId, organizationId: organization.id },
+      query: { entityId: organization.id, entityType: 'organization' },
+      headers: { ...defaultHeaders, Cookie: sessionCookie },
+    });
+    const listed = (data as { items: { id: string; email: string }[] }).items;
+    expect(listed.filter((item) => item.id === held.id)).toEqual([
+      expect.objectContaining({ email: 'deferred@example.com' }),
+    ]);
+  });
+
   it('throttles reminder emails to once per 7 days on published contexts', async () => {
     const organization = await createTestOrganization();
     const admin = await createOrganizationAdminUser(
       'admin@example.com',
       organization.id,
-      'admin',
-      true,
+      adminRole,
       organization.tenantId,
     );
     const sessionCookie = await createTestSession(admin);
-    // Reminders apply only to invitees with a known email; new-user invites are conflict-suppressed.
     const invitee = await createTestUser('pending@example.com');
 
     await invite(organization, [invitee.email], memberRole, sessionCookie);
@@ -179,5 +215,33 @@ describe('Draft context invite deferral', async () => {
     expect(afterDueReinvite.remindedAt).not.toBeNull();
     expect(afterDueReinvite.remindedAt).not.toBe(aged.remindedAt);
     expect(new Date(afterDueReinvite.remindedAt!).getTime()).toBeGreaterThan(Date.now() - 24 * 60 * 60 * 1000);
+  });
+
+  it('reminds a pending invitation to a new address as one to an account, minting no further link', async () => {
+    const organization = await createTestOrganization();
+    const admin = await createOrganizationAdminUser(
+      'admin@example.com',
+      organization.id,
+      adminRole,
+      organization.tenantId,
+    );
+    const sessionCookie = await createTestSession(admin);
+    const newcomer = 'newcomer@example.com';
+
+    await invite(organization, [newcomer], memberRole, sessionCookie);
+    const [initial] = await getInactiveRows(organization.id);
+    const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
+    await db
+      .update(inactiveMembershipsTable)
+      .set({ remindedAt: eightDaysAgo })
+      .where(eq(inactiveMembershipsTable.id, initial.id));
+
+    const { data } = await invite(organization, [newcomer], memberRole, sessionCookie);
+    expect(data).toMatchObject({ rejectedIds: [], invitesSentCount: 0 });
+    const [reminded] = await getInactiveRows(organization.id);
+    expect(new Date(reminded.remindedAt!).getTime()).toBeGreaterThan(Date.now() - 24 * 60 * 60 * 1000);
+    // The emailed link stays the one link: a reminder mints no token.
+    const links = await db.select().from(tokensTable).where(eq(tokensTable.email, newcomer));
+    expect(links.map((link) => link.id)).toEqual([initial.tokenId]);
   });
 });

@@ -2,7 +2,7 @@ import { registerBenchSeed } from '../registry';
 import { CORE_ID_VARIANTS } from './ids';
 import { hashToken, sessionToken } from './session-auth';
 import { loadtestSession } from './user';
-import { TOTAL_USERS } from './user.bench';
+import { TOTAL_USERS } from './user-constants';
 
 registerBenchSeed({
   table: 'sessions',

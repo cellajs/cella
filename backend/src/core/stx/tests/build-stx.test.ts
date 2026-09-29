@@ -16,7 +16,7 @@ describe('buildStx', () => {
   });
 
   describe('update (with entity + acceptedFieldNames)', () => {
-    it('preserves mutationId and sourceId', () => {
+    it('merges incoming HLC timestamps for accepted fields and keeps the incoming mutationId and sourceId', () => {
       const entity = {
         stx: {
           mutationId: 'old',
@@ -29,19 +29,6 @@ describe('buildStx', () => {
 
       expect(result.mutationId).toBe('mut-1');
       expect(result.sourceId).toBe('src-1');
-    });
-
-    it('merges incoming HLC timestamps for accepted fields', () => {
-      const entity = {
-        stx: {
-          mutationId: 'old',
-          sourceId: 'old',
-          fieldTimestamps: { name: '100:0001:aaaaa', status: '200:0001:bbbbb' },
-        },
-      };
-      const stx = { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { name: '300:0001:ccccc' } };
-      const result = buildStx(stx, entity, ['name']);
-
       // Accepted fields use incoming HLC values; unchanged fields preserve stored HLCs.
       expect(result.fieldTimestamps.name).toBe('300:0001:ccccc');
       expect(result.fieldTimestamps.status).toBe('200:0001:bbbbb');

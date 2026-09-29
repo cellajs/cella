@@ -2,6 +2,7 @@ import type { PostAppCatchupResponse } from 'sdk';
 import type { EntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-config';
+import { stubLocalStorage } from '~/query/tests/query-client-env';
 
 // Real builder and resolvers over a synthetic sub-org hierarchy; only the app-bound config and hierarchy singletons are replaced.
 vi.mock('shared', async (importOriginal) => {
@@ -70,19 +71,7 @@ vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: vi.fn() }));
 vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-source' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
 
-vi.stubGlobal('window', {
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-});
-vi.stubGlobal('navigator', { onLine: true });
-vi.stubGlobal('localStorage', {
-  getItem: vi.fn(() => null),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-  key: vi.fn(() => null),
-  length: 0,
-});
+stubLocalStorage();
 
 // The synthetic 'label' product exists only in this file's shared mock, hence the cast.
 const LABEL = 'label' as EntityType;
@@ -485,24 +474,5 @@ describe('catchup → fetch prioritizer fold', () => {
 
     expect(deltaFetch).toHaveBeenCalledTimes(1);
     expect(propagateEmbeddingsSpy).toHaveBeenCalledTimes(1);
-  });
-
-  it('still reconciles viewing orgs inline through the fetch prioritizer flush (mutation-replay gate)', async () => {
-    const { getSyncTier } = await import('./sync-priority');
-    vi.mocked(getSyncTier).mockReturnValue({ min: 0, max: 0 });
-
-    const keys = createEntityKeys<Record<string, never>>('attachment');
-    const deltaFetch = vi.fn(async () => ({ items: [{ id: 'att-1', organizationId: 'org-1', seq: 9 }], total: 1 }));
-    registerEntityQueryKeys('attachment', keys, deltaFetch);
-
-    syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
-    syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
-    queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
-
-    await processAppCatchup(okViewResponse(9));
-
-    // Awaited before processAppCatchup resolved: the delta is already ingested here.
-    expect(deltaFetch).toHaveBeenCalledWith('org-1', 'tenant-1', '5,9', undefined);
-    expect(syncStore.getState().getOrgSeq('org-1', 'attachment')).toBe(9);
   });
 });

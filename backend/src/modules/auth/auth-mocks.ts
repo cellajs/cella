@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { mockNanoid, mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
+import { mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
 
 export const mockPasskeyChallengeResponse = (key = 'passkey-challenge:default') =>
   withFakerSeed(key, () => ({
@@ -32,15 +32,4 @@ export const mockTokenDataResponse = (key = 'token-data:default') =>
     email: faker.internet.email({ provider: 'demo.local' }).toLowerCase(),
     userId: mockUuid(),
     inactiveMembershipId: undefined,
-  }));
-
-export const mockPasskeyRecord = (userId: string, nameOnDevice = 'Test Device', key = 'passkey-record:default') =>
-  withFakerSeed(key, () => ({
-    userId,
-    credentialId: mockNanoid(32),
-    publicKey: mockNanoid(40),
-    counter: 0,
-    nameOnDevice,
-    deviceType: 'desktop' as const,
-    createdAt: mockPastIsoDate(),
   }));

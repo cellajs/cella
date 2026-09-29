@@ -1,5 +1,6 @@
 import type { DbContext } from '#/core/context';
-import { bindInactiveMembershipsByEmail, deleteInvitationTokens } from '#/modules/memberships/memberships-queries';
+import { deleteInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
+import { bindInactiveMembershipsByEmail } from '#/modules/memberships/memberships-queries';
 
 interface ClaimEmailForUserOpts {
   userId: string;
@@ -7,8 +8,8 @@ interface ClaimEmailForUserOpts {
 }
 
 /**
- * Binds every unbound invitation addressed to `email` to the user, then deletes their invitation tokens: a bound
- * invitation is answered in-app, so the emailed link has no further use. Keyed on the invitation's address, so an
+ * Binds every pending, unbound invitation addressed to `email` to the user, then deletes their invitation tokens: a
+ * bound invitation is answered in-app, so the emailed link has no further use. Keyed on the invitation's address, so an
  * invitation without a live token is claimed too. Idempotent. Call it only once the user has proven the inbox; an
  * unproven claim would let anyone capture another person's invitations.
  */

@@ -700,7 +700,29 @@
               "revocationReason": {
                 "type": ["string", "null"],
                 "required": true,
-                "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                "enum": [
+                  "sign_out",
+                  "other_session",
+                  "mfa_enabled",
+                  "session_cap",
+                  "replaced",
+                  "impersonation_stopped",
+                  null
+                ]
+              },
+              "impersonatorSessionId": {
+                "type": ["string", "null"],
+                "required": true,
+                "format": "uuid"
+              },
+              "steppedUpAt": {
+                "type": ["string", "null"],
+                "required": true
+              },
+              "steppedUpVia": {
+                "type": ["string", "null"],
+                "required": true,
+                "enum": ["passkey", "totp", "email", null]
               },
               "isCurrent": { "type": "boolean", "required": true },
               "isNewDevice": {
@@ -777,6 +799,9 @@
           "revokedAt": null,
           "revokedBy": null,
           "revocationReason": null,
+          "impersonatorSessionId": null,
+          "steppedUpAt": null,
+          "steppedUpVia": null,
           "isCurrent": true,
           "isNewDevice": false
         }
@@ -791,7 +816,11 @@
     "schema": {
       "type": "object",
       "properties": {
-        "publicBucket": { "type": "boolean", "required": true },
+        "publicBucket": {
+          "type": "boolean",
+          "required": true,
+          "description": "Whether the upload is stored public-read in the public bucket; the template decides."
+        },
         "sub": { "type": "string", "required": true },
         "s3": { "type": "boolean", "required": true },
         "signature": {
@@ -908,77 +937,6 @@
       },
       "organizationId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
       "tenantId": "2wo2oz"
-    }
-  },
-  {
-    "name": "Membership",
-    "ref": "#/components/schemas/Membership",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "createdAt": { "type": "string", "required": true },
-        "id": { "type": "string", "required": true, "format": "uuid" },
-        "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-        "channelType": {
-          "type": "string",
-          "required": true,
-          "enum": ["organization"]
-        },
-        "channelId": { "type": "string", "required": true, "format": "uuid" },
-        "userId": { "type": "string", "required": true, "format": "uuid" },
-        "role": {
-          "type": "string",
-          "required": true,
-          "enum": ["admin", "member"]
-        },
-        "createdBy": {
-          "type": ["string", "null"],
-          "required": true,
-          "format": "uuid"
-        },
-        "updatedAt": {
-          "type": ["string", "null"],
-          "required": true
-        },
-        "updatedBy": {
-          "type": ["string", "null"],
-          "required": true,
-          "format": "uuid"
-        },
-        "archived": { "type": "boolean", "required": true },
-        "muted": { "type": "boolean", "required": true },
-        "displayOrder": {
-          "type": "number",
-          "required": true,
-          "minimum": -140737488355328,
-          "maximum": 140737488355327
-        },
-        "organizationId": { "type": "string", "required": true, "format": "uuid" }
-      }
-    },
-    "schemaTag": "data",
-    "tagsByKind": {
-      "schema": ["data"],
-      "module": ["memberships"],
-      "owner": ["cella"]
-    },
-    "description": "A user's membership in a channel entity, including role and activity data.",
-    "example": {
-      "id": "14e27393-e22a-45d1-8c22-3250dc6fc109",
-      "tenantId": "k4z795",
-      "channelType": "organization",
-      "channelId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
-      "userId": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
-      "organizationId": "e73242d3-88f3-450e-838c-c98f7f3d9215",
-      "role": "member",
-      "displayOrder": 93,
-      "muted": false,
-      "archived": false,
-      "createdAt": "2024-10-28T10:38:59.996Z",
-      "createdBy": "dd6e6795-6b1c-4f91-9b3c-e934d7a0b534",
-      "updatedAt": "2024-10-28T10:38:59.996Z",
-      "updatedBy": null
     }
   },
   {

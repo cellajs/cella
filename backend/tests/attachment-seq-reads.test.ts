@@ -1,16 +1,16 @@
 import { inArray } from 'drizzle-orm';
 import { getAttachments } from 'sdk';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { defaultHeaders } from './fixtures';
-import { cleanupEntityHierarchy, seedEntityHierarchy } from './hierarchy-helpers';
+import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
-import { mockFetchRequest, setTestConfig } from './test-utils';
+import { setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -27,7 +27,6 @@ const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 10
 describe('Attachment seq reads', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
-  // Ancestor chain derived from the app hierarchy; an org-only app seeds nothing.
   let plan: TestEntityHierarchyPlan;
 
   const listAttachments = async (query: Record<string, string | number>) => {
@@ -41,19 +40,9 @@ describe('Attachment seq reads', async () => {
   };
 
   beforeAll(async () => {
-    mockFetchRequest();
     tenant = await createTestTenant(call, 'attachment-seq-reads');
 
-    plan = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: tenant.organization.id,
-      makeChannelId: () => generateId(),
-    });
-    await seedEntityHierarchy(db, plan, {
-      tenantId: tenant.tenantId,
-      createdBy: tenant.user.id,
-      slugPrefix: 'attachment-seq',
-    });
+    plan = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
 
     // Insert order is descending seq, so a createdAt sort would not match seq order.
     const makeRow = (id: string, seq: number, key: string, extra: Record<string, unknown> = {}) =>
@@ -80,8 +69,7 @@ describe('Attachment seq reads', async () => {
       makeRow(attachmentIds.seq10, 10, 'seq10'),
     ];
     for (const row of rows) {
-      // buildInsertableProduct returns a config-derived Record, so the insert type needs a cast.
-      await db.insert(attachmentsTable).values(row as typeof attachmentsTable.$inferInsert);
+      await insertAttachmentRow(row);
     }
   });
 

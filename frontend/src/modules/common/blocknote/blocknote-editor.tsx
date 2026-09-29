@@ -211,7 +211,7 @@ function BlockNote({
     collaboration ? { entityType: collaboration.entityType, entityId: collaboration.entityId } : null,
   );
 
-  const checkUntrustedMedia = useUntrustedMediaWarning();
+  const checkUntrustedMedia = useUntrustedMediaWarning({ organizationId: baseFilePanelProps?.organizationId });
 
   // Escape and blur both commit, so the same document is offered twice; the second call is skipped.
   const lastCommittedRef = useRef<string | null>(null);

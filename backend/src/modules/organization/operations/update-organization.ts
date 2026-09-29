@@ -14,22 +14,13 @@ import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { assertBlockMediaUrls } from '#/utils/validate-block-urls';
 
-export async function updateOrganizationOp(
-  ctx: ActorContext,
-  id: string,
-  tenantId: string,
-  rawInput: Record<string, unknown>,
-) {
+export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInput: Record<string, unknown>) {
   // Normalize old-shape field names to their current names before any body access
   const input = organizationContract.normalizeBody(rawInput);
   const actorId = ctx.var.actor.id;
 
+  // The tenant comparison is getValidChannel's: an organization of another tenant reads as missing.
   const { entity: organization, membership } = await getValidChannel(ctx, id, 'organization', 'update');
-
-  // Validate organization belongs to the specified tenant, in org itself we do not have orgGuard
-  if (organization.tenantId !== tenantId) {
-    throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization', meta: { reason: 'Tenant mismatch' } });
-  }
 
   const slug = input.slug as string | undefined;
 
@@ -38,8 +29,10 @@ export async function updateOrganizationOp(
     if (!slugAvailable) throw new AppError(409, 'slug_exists', 'warn', { entityType: 'organization', meta: { slug } });
   }
 
-  // Validate media URLs in welcomeText are from trusted sources (CDN only)
-  if (input.welcomeText) assertBlockMediaUrls(input.welcomeText as string, 'organization', 'welcomeText');
+  // Media in the welcome text may reference only this organization's uploads.
+  if (input.welcomeText) {
+    assertBlockMediaUrls(input.welcomeText as string, organization.id, 'organization', 'welcomeText');
+  }
 
   const values = { ...input, updatedAt: getIsoDate(), updatedBy: actorId };
   const updatedRecord = await updateOrganization(ctx, { id: organization.id, values });
@@ -51,7 +44,7 @@ export async function updateOrganizationOp(
     after: [updatedOrganizationRecord],
   });
 
-  invalidateCache.org(tenantId, organization.id);
+  await invalidateCache.org(ctx.var.db, organization.tenantId, organization.id);
 
   log.info('Organization updated', { organizationId: updatedOrganizationRecord.id });
 

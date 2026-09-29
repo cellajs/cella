@@ -1,9 +1,17 @@
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import type * as PulumiNS from '@pulumi/pulumi';
+import { vi } from 'vitest';
+import { type BootPlan, parseBootPlanJson } from '../../boot/src/plan';
+import type { GenerationKeys } from '../../tasks/mint-generation-keys';
 
 export interface CapturedResource {
   type: string;
   name: string;
   inputs: Record<string, unknown>;
+  /** The provider-computed outputs the mock stubbed for this resource (see `newResource`). */
+  outputs: Record<string, unknown>;
   provider?: string;
 }
 
@@ -14,13 +22,20 @@ export interface MockHarness {
   byType: (prefix: string) => CapturedResource[];
   /** Single resource of an exact type; throws if zero or many. */
   oneOfType: (typeStr: string) => CapturedResource;
+  /** Waits until no new resource has registered for a run of event-loop turns: a VM registers only after its cloud-init's async output chain settles. */
+  settle: () => Promise<void>;
 }
 
 export interface InstallOpts {
   project?: string;
   stack?: string;
   mode?: 'production' | 'staging' | 'development';
-  /** Stack config overrides, namespaced (e.g. `{ 'bootstrap:computeDeferred': '2026-01-01T00:00:00Z' }`). */
+  /**
+   * Marks compute deferred (`bootstrap:computeDeferred`), as a fresh provision does, so a module renders without the
+   * pinned image tags pulumi-context.ts asserts for compute. For a test that renders no VM.
+   */
+  deferCompute?: boolean;
+  /** Stack config overrides, namespaced (e.g. `{ 'infra:dbPublicEndpoint': 'true' }`). */
   config?: Record<string, string>;
 }
 
@@ -36,9 +51,8 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
   process.env.SCW_DEFAULT_ORGANIZATION_ID = process.env.SCW_DEFAULT_ORGANIZATION_ID ?? 'mock-organization-id';
 
   // Pulumi reads stack config from PULUMI_CONFIG (JSON). Build it before import.
-  if (opts.config) {
-    process.env.PULUMI_CONFIG = JSON.stringify(opts.config);
-  }
+  const config = { ...(opts.deferCompute ? { 'bootstrap:computeDeferred': 'test' } : {}), ...opts.config };
+  if (Object.keys(config).length > 0) process.env.PULUMI_CONFIG = JSON.stringify(config);
 
   // Engine modules read config at evaluation, so load it before any resource module is imported, exactly like index.ts does.
   const { loadEngineConfig } = await import('../../config/engine-config');
@@ -46,20 +60,33 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
 
   const pulumi = await import('@pulumi/pulumi');
   const resources: CapturedResource[] = [];
+  let ipamAddresses = 0;
 
   pulumi.runtime.setMocks(
     {
       newResource(args) {
+        // Echo inputs as outputs so chained pulumi.all() applies resolve with the values downstream resource construction needs.
+        // Outputs only the provider computes get deterministic stubs: a managed database's CA certificate, a generated password, a reserved private IP, the LB's public address, the registry endpoint.
+        const computedByType: Record<string, () => Record<string, unknown>> = {
+          'scaleway:databases/instance:Instance': () => ({ certificate: 'mock-ca-certificate' }),
+          'random:index/randomPassword:RandomPassword': () => ({ result: `random-${args.name}` }),
+          'scaleway:ipam/ip:Ip': () => ({ address: `10.0.0.${++ipamAddresses}/24` }),
+          'scaleway:loadbalancers/loadBalancer:LoadBalancer': () => ({ ipAddress: '203.0.113.10' }),
+          'scaleway:registry/namespace:Namespace': () => ({
+            endpoint: `rg.nl-ams.scw.cloud/${String((args.inputs as { name?: string }).name)}`,
+          }),
+        };
+        const computed = computedByType[args.type]?.() ?? {};
         resources.push({
           type: args.type,
           name: args.name,
           inputs: args.inputs as Record<string, unknown>,
+          outputs: computed,
           provider: args.provider,
         });
-        // Echo inputs as outputs so chained pulumi.all() applies resolve with the values downstream resource construction needs.
         return {
           id: `${args.name}-id`,
-          state: { ...args.inputs, id: `${args.name}-id` },
+          state: { ...args.inputs, ...computed, id: `${args.name}-id` },
         };
       },
       call(args) {
@@ -101,11 +128,39 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
     }
     return match;
   };
+  const settle = async () => {
+    let quiet = 0;
+    for (let seen = resources.length; quiet < 25; quiet++) {
+      await flushPulumi();
+      if (resources.length !== seen) {
+        seen = resources.length;
+        quiet = 0;
+      }
+    }
+  };
 
-  return { pulumi, resources, byType, oneOfType };
+  return { pulumi, resources, byType, oneOfType, settle };
 }
 
-/** Wait for every captured resource's input Outputs to settle so tests can inspect string values synchronously. One microtask tick suffices because the mock newResource returns state synchronously. */
-export async function flushPulumi(): Promise<void> {
+/** One event-loop turn: the mock's newResource answers synchronously, but a resource waiting on Outputs registers a turn later. */
+async function flushPulumi(): Promise<void> {
   await new Promise((resolve) => setImmediate(resolve));
+}
+
+/** A secret input arrives wrapped in Pulumi's secret envelope; the plain value sits under `value`. */
+export function unwrapSecret(input: unknown): unknown {
+  return input && typeof input === 'object' && 'value' in input ? (input as { value: unknown }).value : input;
+}
+
+/** Hands the Pulumi program this deploy's minted keys, as tasks/deploy-run.ts does through INFRA_GENERATION_KEYS_FILE. */
+export function writeGenerationKeys(keys: GenerationKeys): void {
+  const file = join(mkdtempSync(join(tmpdir(), 'generation-keys-')), 'keys.json');
+  writeFileSync(file, JSON.stringify(keys));
+  vi.stubEnv('INFRA_GENERATION_KEYS_FILE', file);
+}
+
+/** The boot plan a cloud-init writes to `planPath`, read by the boot runner's own parser; throws when it writes none there. */
+export function bootPlanIn(cloudInit: string, planPath: string): { plan: BootPlan; raw: Record<string, unknown> } {
+  const json = cloudInit.split(`cat > ${planPath} <<'BOOT_PLAN_EOF'\n`)[1]?.split('\nBOOT_PLAN_EOF')[0] ?? '';
+  return { plan: parseBootPlanJson(json, planPath), raw: JSON.parse(json) };
 }

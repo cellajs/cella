@@ -9,12 +9,11 @@ import { emailsTable } from '#/modules/user/emails-db';
 import { InsertMembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
 import { OrganizationModel, organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
-import { unsubscribeTokensTable } from '#/modules/user/unsubscribe-tokens-db';
 import { insertUsers } from '#/modules/user/helpers/insert-users';
 import { UserModel, usersTable } from '#/modules/user/user-db';
 import { getMembershipOrderOffset, mockChannelMembership } from '#/modules/memberships/memberships-mocks';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
-import { mockEmail, mockUnsubscribeToken, mockUser } from '#/modules/user/user-mocks';
+import { mockEmail, mockUser } from '#/modules/user/user-mocks';
 import { mockMany, setMockContext } from '#/mocks';
 import { defaultAdminUser } from '../fixtures';
 import { toBatches } from './seed-volume';
@@ -106,12 +105,6 @@ export const organizationsSeed = async () => {
     const users: UserModel[] = [];
     for (const batch of toBatches(userRecords)) {
       users.push(...(await insertUsers(db, batch, { onConflictDoNothing: true })));
-    }
-
-    // Make unsubscribeToken row for each user, then insert into the database
-    const unsubscribeTokenRecords = await Promise.all(users.map(user => mockUnsubscribeToken(user)));
-    for (const batch of toBatches(unsubscribeTokenRecords)) {
-      await db.insert(unsubscribeTokensTable).values(batch).onConflictDoNothing();
     }
 
     // Make email row for each user, then insert into the database

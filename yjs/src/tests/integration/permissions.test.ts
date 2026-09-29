@@ -1,12 +1,14 @@
 import { randomUUID } from 'node:crypto';
+import { sql } from 'drizzle-orm';
 import pg from 'pg';
+import { hierarchy } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { DocContext } from '../../constants';
-import { canEditEntity } from '../../data/permissions';
-
-const DATABASE_URL = testDatabaseUrl;
+import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { createPgConnection, type Tx } from '#/db/create-connection';
+import type { DocScope } from '../../constants';
+import { authorizeDoc } from '../../data/permissions';
+import { cleanupSeed, seedAttachment, seedEntityHierarchy, seedMembership, seedOrg, seedUser } from './seed';
 
 const tenantA = 'yjs-authz-tenant-a';
 const tenantB = 'yjs-authz-tenant-b';
@@ -16,8 +18,10 @@ const orgC = '20000000-0000-4000-a000-000000000003';
 
 const userA = randomUUID();
 const userB = randomUUID();
+const memberA = randomUUID(); // a plain member of orgA
 
 const attachmentA = randomUUID(); // tenantA / orgA, owned by userA
+const attachmentM = randomUUID(); // tenantA / orgA, owned by memberA
 const attachmentC = randomUUID(); // tenantB / orgC
 
 const hierarchyA = buildTestEntityHierarchyPlan({
@@ -31,152 +35,24 @@ const hierarchyC = buildTestEntityHierarchyPlan({
   makeChannelId: () => randomUUID(),
 });
 
-function ctx(overrides: Partial<DocContext>): DocContext {
-  return {
-    entityType: 'attachment',
-    entityId: attachmentA,
-    tenantId: tenantA,
-    userId: userA,
-    organizationId: orgA,
-    verified: false,
-    ...overrides,
-  };
-}
-
-function quoteIdent(identifier: string) {
-  return `"${identifier.replaceAll('"', '""')}"`;
-}
-
-async function seedEntityHierarchy(
-  client: pg.Client,
-  plan: TestEntityHierarchyPlan,
-  tenantId: string,
-  createdBy: string,
-  slugPrefix: string,
-) {
-  for (const row of plan.seedChannelRows) {
-    // Every ancestor id column is NOT NULL on nested channel tables, so seed all of them, not only the parent.
-    const columns = [
-      'id',
-      'tenant_id',
-      'entity_type',
-      'name',
-      'slug',
-      'created_by',
-      ...row.ancestorColumns.map((column) => column.columnName),
-    ];
-    const values = [
-      row.id,
-      tenantId,
-      row.channelType,
-      `Authz ${row.channelType}`,
-      `${slugPrefix}-${row.channelType}-${row.id.slice(0, 8)}`,
-      createdBy,
-      ...row.ancestorColumns.map((column) => column.id),
-    ];
-    const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
-
-    await client.query(
-      `INSERT INTO ${quoteIdent(row.tableName)} (${columns.map(quoteIdent).join(', ')}) VALUES (${placeholders}) ON CONFLICT (id) DO NOTHING`,
-      values,
-    );
-  }
-}
-
-async function cleanupEntityHierarchy(client: pg.Client, plans: TestEntityHierarchyPlan[]) {
-  for (const row of plans.flatMap((plan) => plan.seedChannelRows).reverse()) {
-    await client.query(`DELETE FROM ${quoteIdent(row.tableName)} WHERE id = $1`, [row.id]);
-  }
-}
-
-async function seedUser(client: pg.Client, id: string, suffix: string) {
-  // users.id is a foreign key to actors.id, so the actor row comes first
-  await client.query("INSERT INTO actors (id, kind) VALUES ($1, 'user') ON CONFLICT (id) DO NOTHING", [id]);
-  await client.query('INSERT INTO users (id, name, slug, email) VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING', [
-    id,
-    `YJS Authz ${suffix}`,
-    `yjs-authz-${suffix}-${id.slice(0, 8)}`,
-    `yjs-authz-${suffix}-${id.slice(0, 8)}@example.com`,
-  ]);
-}
-
-async function seedTenant(client: pg.Client, tenantId: string) {
-  await client.query('INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING', [
-    tenantId,
-    `Authz ${tenantId}`,
-  ]);
-}
-
-async function seedOrg(client: pg.Client, tenantId: string, orgId: string, slug: string) {
-  await client.query(
-    'INSERT INTO organizations (id, tenant_id, slug, name, short_name) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
-    [orgId, tenantId, slug, `Authz ${slug}`, slug.slice(0, 4)],
-  );
-}
-
-async function seedMembership(client: pg.Client, tenantId: string, orgId: string, userId: string) {
-  await client.query(
-    `INSERT INTO memberships (id, tenant_id, channel_type, channel_id, organization_id, user_id, role, created_by, display_order)
-     VALUES ($1, $2, 'organization', $3, $3, $4, 'admin', $4, 1)
-     ON CONFLICT (tenant_id, user_id, channel_id) DO NOTHING`,
-    [randomUUID(), tenantId, orgId, userId],
-  );
-}
-
-async function seedAttachment(
-  client: pg.Client,
-  id: string,
-  tenantId: string,
-  plan: TestEntityHierarchyPlan,
-  createdBy: string,
-) {
-  const columns = [
-    'id',
-    'tenant_id',
-    'created_by',
-    ...plan.sqlChannelColumns.map(({ columnName }) => columnName),
-    'bucket_name',
-    'filename',
-    'content_type',
-    'size',
-    'keys',
-    'stx',
-  ];
-  const values = [
-    id,
-    tenantId,
-    createdBy,
-    ...plan.sqlChannelColumns.map(({ id: channelId }) => channelId),
-    'authz-bucket',
-    'authz.pdf',
-    'application/pdf',
-    '1024',
-    JSON.stringify({ original: `authz/${id}.pdf` }),
-    JSON.stringify({ mutationId: id, sourceId: 'test', fieldTimestamps: {} }),
-  ];
-  const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
-
-  await client.query(
-    `INSERT INTO attachments (${columns.map(quoteIdent).join(', ')}) VALUES (${placeholders}) ON CONFLICT (id) DO NOTHING`,
-    values,
-  );
+/** The document a token asks for: attachmentA in its own scope unless overridden. */
+function requested(overrides: Partial<DocScope>): DocScope {
+  return { entityType: 'attachment', entityId: attachmentA, tenantId: tenantA, organizationId: orgA, ...overrides };
 }
 
 // Exercises the real `loadMemberships` / `resolveEntityScope` SQL and the shared permission engine
 // against Postgres, covering cross-tenant isolation. Cross-organization isolation within one tenant
 // is not representable: 1 tenant = 1 organization (organizations_tenant_id_key).
-describe('Local entity authorization (canEditEntity)', () => {
+describe('Local entity authorization (authorizeDoc)', () => {
   let admin: pg.Client;
 
   beforeAll(async () => {
-    admin = new pg.Client({ connectionString: DATABASE_URL });
+    admin = new pg.Client({ connectionString: testDatabaseUrl });
     await admin.connect();
 
     await seedUser(admin, userA, 'a');
     await seedUser(admin, userB, 'b');
-
-    await seedTenant(admin, tenantA);
-    await seedTenant(admin, tenantB);
+    await seedUser(admin, memberA, 'm');
 
     await seedOrg(admin, tenantA, orgA, 'authz-a');
     await seedOrg(admin, tenantB, orgC, 'authz-c');
@@ -186,39 +62,83 @@ describe('Local entity authorization (canEditEntity)', () => {
 
     await seedMembership(admin, tenantA, orgA, userA);
     await seedMembership(admin, tenantB, orgC, userB);
+    await seedMembership(admin, tenantA, orgA, memberA, hierarchy.getLeastPrivilegedRole('organization'));
 
     await seedAttachment(admin, attachmentA, tenantA, hierarchyA, userA);
+    await seedAttachment(admin, attachmentM, tenantA, hierarchyA, memberA);
     await seedAttachment(admin, attachmentC, tenantB, hierarchyC, userB);
   });
 
   afterAll(async () => {
-    await admin.query('DELETE FROM attachments WHERE id = ANY($1::uuid[])', [[attachmentA, attachmentC]]);
-    await admin.query('DELETE FROM memberships WHERE user_id = ANY($1::uuid[])', [[userA, userB]]);
-    await cleanupEntityHierarchy(admin, [hierarchyA, hierarchyC]);
-    await admin.query('DELETE FROM organizations WHERE id = ANY($1::uuid[])', [[orgA, orgC]]);
-    await admin.query('DELETE FROM tenants WHERE id = ANY($1::text[])', [[tenantA, tenantB]]);
-    await admin.query('DELETE FROM users WHERE id = ANY($1::uuid[])', [[userA, userB]]);
-    await admin.query('DELETE FROM actors WHERE id = ANY($1::uuid[])', [[userA, userB]]);
+    await cleanupSeed(admin, {
+      tenantIds: [tenantA, tenantB],
+      userIds: [userA, userB, memberA],
+      plans: [hierarchyA, hierarchyC],
+    });
     await admin.end();
   });
 
-  it('allows an org admin to edit an entity in their organization', async () => {
-    await expect(canEditEntity(ctx({ entityId: attachmentA }))).resolves.toBe(true);
+  it("returns the entity row's scope to an org admin editing in their organization (positive control)", async () => {
+    await expect(authorizeDoc(userA, requested({ entityId: attachmentA }))).resolves.toEqual({
+      entityType: 'attachment',
+      entityId: attachmentA,
+      tenantId: tenantA,
+      organizationId: orgA,
+    });
   });
 
-  it('denies editing an entity in a tenant where the user has no membership', async () => {
-    await expect(canEditEntity(ctx({ entityId: attachmentC, tenantId: tenantB, organizationId: orgC }))).resolves.toBe(
-      false,
-    );
+  it('must not authorize a document via a tenant the user holds no membership in', async () => {
+    await expect(
+      authorizeDoc(userA, requested({ entityId: attachmentC, tenantId: tenantB, organizationId: orgC })),
+    ).resolves.toBeNull();
   });
 
-  it('denies when the tenant param does not match the entity tenant (defense-in-depth)', async () => {
-    await expect(canEditEntity(ctx({ entityId: attachmentA, tenantId: tenantB, organizationId: orgA }))).resolves.toBe(
-      false,
-    );
+  it('must not authorize a row of another tenant than the token names, on a connection RLS does not bind (defense in depth)', async () => {
+    // The relay connects as the runtime role, whose reads RLS limits to the token's tenant, so under it the row is never
+    // found. On a superuser or BYPASSRLS connection string, or an app entity table without a tenant policy, the row's
+    // own tenant check is what refuses: the same authorization, over a superuser pool.
+    const unbound = createPgConnection(testDatabaseUrl, { max: 1 });
+    vi.doMock('../../data/db', () => ({
+      withRlsTx: <T>(tenantId: string, userId: string, fn: (tx: Tx) => Promise<T>) =>
+        unbound.transaction(async (tx) => {
+          await tx.execute(
+            sql`SELECT set_config('app.tenant_id', ${tenantId}, true), set_config('app.user_id', ${userId}, true)`,
+          );
+          return fn(tx);
+        }),
+    }));
+    vi.resetModules();
+    try {
+      const { authorizeDoc: authorizeUnbound } = await import('../../data/permissions');
+      await expect(authorizeUnbound(userA, requested({ tenantId: tenantB, organizationId: orgA }))).resolves.toBeNull();
+      // Positive control on the same pool: the token naming the row's own tenant is authorized.
+      await expect(authorizeUnbound(userA, requested({}))).resolves.toMatchObject({
+        tenantId: tenantA,
+        organizationId: orgA,
+      });
+    } finally {
+      vi.doUnmock('../../data/db');
+      vi.resetModules();
+      await (unbound.$client as pg.Pool).end();
+    }
   });
 
-  it('denies access to a non-existent entity', async () => {
-    await expect(canEditEntity(ctx({ entityId: randomUUID() }))).resolves.toBe(false);
+  it("must not authorize a request that names another tenant's organization", async () => {
+    await expect(authorizeDoc(userA, requested({ entityId: attachmentA, organizationId: orgC }))).resolves.toBeNull();
+  });
+
+  it("must not let a member write another member's attachment through the relay", async () => {
+    await expect(authorizeDoc(memberA, requested({ entityId: attachmentA }))).resolves.toBeNull();
+    // Positive control: the member's own attachment.
+    await expect(authorizeDoc(memberA, requested({ entityId: attachmentM }))).resolves.toEqual({
+      entityType: 'attachment',
+      entityId: attachmentM,
+      tenantId: tenantA,
+      organizationId: orgA,
+    });
+  });
+
+  it('must not authorize a document for an entity that does not exist', async () => {
+    await expect(authorizeDoc(userA, requested({ entityId: randomUUID() }))).resolves.toBeNull();
   });
 });

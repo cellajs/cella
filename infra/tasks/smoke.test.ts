@@ -14,7 +14,6 @@ import {
   missingSecurityHeaders,
   parseArgs,
   runSmoke,
-  SECURITY_HEADERS,
 } from './smoke';
 
 const SHA = 'abc1234';
@@ -34,10 +33,21 @@ const HEALTHY_COMPONENTS = JSON.stringify({
   },
 });
 
+/** The headers the smoke check must require, spelled out here so a shrunken SECURITY_HEADERS list cannot pass its own fixture. */
+const BASELINE = [
+  'Content-Security-Policy',
+  'Strict-Transport-Security',
+  'X-Frame-Options',
+  'X-Content-Type-Options',
+  'Referrer-Policy',
+  'Permissions-Policy',
+  'Cross-Origin-Opener-Policy',
+];
+
 /** Build a Headers object with the full security baseline, minus any omitted names. */
 function secureHeaders(extra: Record<string, string> = {}, omit: string[] = []): Headers {
   const h = new Headers();
-  for (const name of SECURITY_HEADERS) {
+  for (const name of BASELINE) {
     if (!omit.includes(name)) h.set(name, 'set');
   }
   for (const [k, v] of Object.entries(extra)) h.set(k, v);
@@ -80,7 +90,8 @@ describe('isHtmlDocument', () => {
 });
 
 describe('missingSecurityHeaders', () => {
-  it('returns empty when all baseline headers are present', () => {
+  it('requires the whole baseline: every header of a bare response is missing, none of a complete one', () => {
+    expect(missingSecurityHeaders(new Headers())).toEqual(BASELINE);
     expect(missingSecurityHeaders(secureHeaders())).toEqual([]);
   });
   it('lists the absent headers', () => {
@@ -89,7 +100,7 @@ describe('missingSecurityHeaders', () => {
   });
   it('matches header names case-insensitively (Headers normalises)', () => {
     const h = new Headers();
-    for (const name of SECURITY_HEADERS) h.set(name.toLowerCase(), 'x');
+    for (const name of BASELINE) h.set(name.toLowerCase(), 'x');
     expect(missingSecurityHeaders(h)).toEqual([]);
   });
 });

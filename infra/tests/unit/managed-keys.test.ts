@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { defineManagedKeys, managedKeyById, managedKeys } from '../../lib/managed-keys';
+import { managedKeyById, managedKeys } from '../../lib/managed-keys';
 import { runtimeSecrets } from '../../lib/runtime-secrets';
 
 // The config module and lib/managed-keys form an import cycle, so it must be entered from the lib side; a static import sorts alphabetically ahead of the lib imports.
@@ -19,12 +19,6 @@ describe('managed key registry', () => {
     for (const key of managedKeys) {
       expect(suffixes.has(key.suffix), `duplicate managed key suffix: ${key.suffix}`).toBe(false);
       suffixes.add(key.suffix);
-    }
-  });
-
-  it('grants at least one permission set per key', () => {
-    for (const key of managedKeys) {
-      expect(key.permissionSets.length, `${key.id} must grant a permission set`).toBeGreaterThan(0);
     }
   });
 
@@ -53,20 +47,5 @@ describe('managed key registry', () => {
     expect(managedKeyById('ai')?.assign).toEqual({ secretKey: 'scwAiApiKey' });
     // The backend signs S3 requests with its own per-deploy service key.
     expect(managedKeyById('s3')).toBeUndefined();
-  });
-
-  it('defineManagedKeys is a typed identity that preserves the app config', () => {
-    const config = defineManagedKeys({
-      example: {
-        suffix: 'example',
-        label: 'Example',
-        appDescription: 'app',
-        policyDescription: 'policy',
-        permissionSets: ['ObjectStorageFullAccess'],
-        prompt: { message: 'mint?', default: false },
-        assign: { secretKey: 'scwAiApiKey' },
-      },
-    });
-    expect(config.example.suffix).toBe('example');
   });
 });

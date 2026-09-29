@@ -1,9 +1,21 @@
+import { createHmac, generateKeyPairSync, sign } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import { verifyToken } from '../server/auth';
-import { createExpiredToken, createSignedToken } from './helpers';
+import { createExpiredToken, createSignedToken, signPayload } from './helpers';
+
+const RELAY_SECRET = 'test-yjs-relay-secret-for-unit-tests';
+const claims = () => ({
+  userId: 'user-1',
+  entityType: 'task',
+  entityId: 'entity-1',
+  tenantId: 'tenant-1',
+  organizationId: 'org-1',
+  exp: Date.now() + 60_000,
+});
+const encode = (payload: unknown) => Buffer.from(JSON.stringify(payload)).toString('base64url');
 
 describe('verifyToken', () => {
-  it('1.1.1 valid token returns payload', () => {
+  it('returns the payload of a token signed with the backend key (positive control)', () => {
     const token = createSignedToken('user-1');
     const result = verifyToken(token);
     expect(result.ok).toBe(true);
@@ -11,66 +23,57 @@ describe('verifyToken', () => {
     expect(result.ok && result.payload.exp).toBeGreaterThan(Date.now());
   });
 
-  it('1.1.2 expired token reports expired', () => {
-    const token = createExpiredToken('user-1');
-    expect(verifyToken(token)).toEqual({ ok: false, reason: 'expired' });
+  it('must not accept a token minted with the relay secret', () => {
+    const payloadB64 = encode(claims());
+    const mac = createHmac('sha256', RELAY_SECRET).update(payloadB64).digest();
+    // The relay holds this secret: neither a truncated-hex HMAC nor a full MAC passes as a signature.
+    for (const signature of [mac.toString('hex').slice(0, 16), mac.toString('base64url'), mac.toString('hex')]) {
+      expect(verifyToken(`${payloadB64}.${signature}`)).toEqual({ ok: false, reason: 'bad_signature' });
+    }
   });
 
-  it('1.1.3 tampered signature reports bad_signature', () => {
-    const token = createSignedToken('user-1');
-    const parts = token.split('.');
-    const tampered = `${parts[0]}.aaaaaaaaaaaaaaaa`;
-    expect(verifyToken(tampered)).toEqual({ ok: false, reason: 'bad_signature' });
+  it('must not accept a token signed with another Ed25519 key', () => {
+    expect(
+      verifyToken(createSignedToken({ userId: 'user-1', keyMaterial: 'another-key-material-of-32-characters' })),
+    ).toEqual({ ok: false, reason: 'bad_signature' });
+    const { privateKey } = generateKeyPairSync('ed25519');
+    const payloadB64 = encode(claims());
+    const foreign = sign(null, Buffer.from(payloadB64), privateKey).toString('base64url');
+    expect(verifyToken(`${payloadB64}.${foreign}`)).toEqual({ ok: false, reason: 'bad_signature' });
   });
 
-  it('1.1.4 tampered payload reports bad_signature', () => {
-    const token = createSignedToken('user-1');
-    const parts = token.split('.');
-    // Modified payload, original signature.
-    const otherPayload = Buffer.from(JSON.stringify({ userId: 'hacker', exp: Date.now() + 60000 })).toString(
-      'base64url',
-    );
-    const tampered = `${otherPayload}.${parts[1]}`;
-    expect(verifyToken(tampered)).toEqual({ ok: false, reason: 'bad_signature' });
+  it('reports an expired token as expired', () => {
+    expect(verifyToken(createExpiredToken('user-1'))).toEqual({ ok: false, reason: 'expired' });
   });
 
-  it('1.1.5 no delimiter reports malformed', () => {
+  it('must not accept a changed payload under the original signature', () => {
+    const [, signature] = createSignedToken('user-1').split('.');
+    const forged = encode({ ...claims(), userId: 'attacker' });
+    expect(verifyToken(`${forged}.${signature}`)).toEqual({ ok: false, reason: 'bad_signature' });
+  });
+
+  it('must not accept a tampered or truncated signature', () => {
+    const [payloadB64, signature] = createSignedToken('user-1').split('.');
+    const flipped = Buffer.from(signature, 'base64url');
+    flipped[0] ^= 1;
+    expect(verifyToken(`${payloadB64}.${flipped.toString('base64url')}`)).toEqual({
+      ok: false,
+      reason: 'bad_signature',
+    });
+    expect(verifyToken(`${payloadB64}.${signature.slice(0, 40)}`)).toEqual({ ok: false, reason: 'bad_signature' });
+    expect(verifyToken(`${payloadB64}.`)).toEqual({ ok: false, reason: 'bad_signature' });
+  });
+
+  it('reports a token without a delimiter, or an empty one, as malformed', () => {
     expect(verifyToken('nodothere')).toEqual({ ok: false, reason: 'malformed' });
-  });
-
-  it('1.1.6 empty string reports malformed', () => {
     expect(verifyToken('')).toEqual({ ok: false, reason: 'malformed' });
   });
 
-  it('1.1.7 invalid base64 payload reports bad_signature', () => {
-    expect(verifyToken('not-base64.abcd1234abcd1234')).toEqual({ ok: false, reason: 'bad_signature' });
-  });
-
-  it('1.1.8 valid base64 but invalid JSON reports bad_signature', () => {
-    const notJson = Buffer.from('this is not json').toString('base64url');
-    const token = createSignedToken('user-1');
-    const sig = token.split('.')[1];
-    expect(verifyToken(`${notJson}.${sig}`)).toEqual({ ok: false, reason: 'bad_signature' });
-  });
-
-  it('1.1.9 missing userId field reports malformed', () => {
-    const payload = Buffer.from(JSON.stringify({ exp: Date.now() + 60000 })).toString('base64url');
-    const { createHmac } = require('node:crypto');
-    const sig = createHmac('sha256', 'test-yjs-secret-for-unit-tests').update(payload).digest('hex').slice(0, 16);
-    expect(verifyToken(`${payload}.${sig}`)).toEqual({ ok: false, reason: 'malformed' });
-  });
-
-  it('1.1.10 missing exp field reports malformed', () => {
-    const payload = Buffer.from(JSON.stringify({ userId: 'user-1' })).toString('base64url');
-    const { createHmac } = require('node:crypto');
-    const sig = createHmac('sha256', 'test-yjs-secret-for-unit-tests').update(payload).digest('hex').slice(0, 16);
-    expect(verifyToken(`${payload}.${sig}`)).toEqual({ ok: false, reason: 'malformed' });
-  });
-
-  it('1.1.11 wrong signature length reports bad_signature early', () => {
-    const token = createSignedToken('user-1');
-    const parts = token.split('.');
-    expect(verifyToken(`${parts[0]}.abc`)).toEqual({ ok: false, reason: 'bad_signature' });
-    expect(verifyToken(`${parts[0]}.${'a'.repeat(32)}`)).toEqual({ ok: false, reason: 'bad_signature' });
+  it('reports a validly signed payload that is not a token as malformed', () => {
+    expect(verifyToken(signPayload('not an object'))).toEqual({ ok: false, reason: 'malformed' });
+    const { userId: _userId, ...withoutUser } = claims();
+    expect(verifyToken(signPayload(withoutUser))).toEqual({ ok: false, reason: 'malformed' });
+    const { exp: _exp, ...withoutExp } = claims();
+    expect(verifyToken(signPayload(withoutExp))).toEqual({ ok: false, reason: 'malformed' });
   });
 });

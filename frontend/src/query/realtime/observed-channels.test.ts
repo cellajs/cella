@@ -1,6 +1,7 @@
 import { QueryObserver } from '@tanstack/react-query';
 import type { EntityType } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { stubLocalStorage } from '~/query/tests/query-client-env';
 
 // Synthetic sub-org hierarchy (real builder instance) because base cella has no sub-org
 // channels. Task is a product homed at the `project` channel under `organization`.
@@ -34,17 +35,7 @@ vi.mock('~/routes/-router-instance', () => ({
   getRouter: () => ({ state: { matches: routeMatches } }),
 }));
 
-// query-client attaches online/offline listeners at module load.
-vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
-vi.stubGlobal('navigator', { onLine: true });
-vi.stubGlobal('localStorage', {
-  getItem: vi.fn(() => null),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-  key: vi.fn(() => null),
-  length: 0,
-});
+stubLocalStorage();
 
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');

@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { maxLength } from '#/db/utils/constraints';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 
 describe('isValidRedirectPath', () => {
@@ -11,51 +12,52 @@ describe('isValidRedirectPath', () => {
   });
 
   it('rejects non-string input', () => {
-    expect(isValidRedirectPath(undefined)).toBe(false);
-    expect(isValidRedirectPath(null)).toBe(false);
-    expect(isValidRedirectPath(42)).toBe(false);
+    expect(isValidRedirectPath(undefined)).toBeNull();
+    expect(isValidRedirectPath(null)).toBeNull();
+    expect(isValidRedirectPath(42)).toBeNull();
   });
 
   it('rejects empty string', () => {
-    expect(isValidRedirectPath('')).toBe(false);
+    expect(isValidRedirectPath('')).toBeNull();
   });
 
   it('rejects scheme-relative open-redirect targets', () => {
-    expect(isValidRedirectPath('//evil.example')).toBe(false);
-    expect(isValidRedirectPath('//evil.example/path')).toBe(false);
+    expect(isValidRedirectPath('//evil.example')).toBeNull();
+    expect(isValidRedirectPath('//evil.example/path')).toBeNull();
   });
 
   it('rejects backslash authority tricks', () => {
-    expect(isValidRedirectPath('/\\evil.example')).toBe(false);
-    expect(isValidRedirectPath('\\\\evil.example')).toBe(false);
+    expect(isValidRedirectPath('/\\evil.example')).toBeNull();
+    expect(isValidRedirectPath('\\\\evil.example')).toBeNull();
   });
 
   it('rejects encoded double-slash bypasses', () => {
-    expect(isValidRedirectPath('/%2Fevil.example')).toBe(false);
+    expect(isValidRedirectPath('/%2Fevil.example')).toBeNull();
   });
 
   it('rejects absolute URLs', () => {
-    expect(isValidRedirectPath('https://evil.example')).toBe(false);
-    expect(isValidRedirectPath('http://evil.example/path')).toBe(false);
+    expect(isValidRedirectPath('https://evil.example')).toBeNull();
+    expect(isValidRedirectPath('http://evil.example/path')).toBeNull();
   });
 
   it('rejects malformed percent-encoding', () => {
-    expect(isValidRedirectPath('/%')).toBe(false);
+    expect(isValidRedirectPath('/%')).toBeNull();
   });
 
   it('rejects control characters', () => {
-    expect(isValidRedirectPath('/home\nSet-Cookie: x=1')).toBe(false);
+    expect(isValidRedirectPath('/home\nSet-Cookie: x=1')).toBeNull();
   });
 
   it('rejects backend-only routes', () => {
-    expect(isValidRedirectPath('/api/secret')).toBe(false);
+    expect(isValidRedirectPath('/api/secret')).toBeNull();
   });
 
   it('normalizes traversal that stays same-origin', () => {
-    // `/../etc` resolves back to an origin-relative path, never escaping the origin.
-    const result = isValidRedirectPath('/../etc');
-    expect(result).not.toBe(false);
-    expect(typeof result).toBe('string');
-    expect((result as string).startsWith('/')).toBe(true);
+    expect(isValidRedirectPath('/../etc')).toBe('/etc');
+  });
+
+  it('caps the result at the stored column length', () => {
+    expect(isValidRedirectPath(`/${'a'.repeat(maxLength.field - 1)}`)).toBe(`/${'a'.repeat(maxLength.field - 1)}`);
+    expect(isValidRedirectPath(`/${'a'.repeat(maxLength.field)}`)).toBeNull();
   });
 });

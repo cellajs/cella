@@ -1,18 +1,15 @@
 import { eq } from 'drizzle-orm';
 import { getOrganizations } from 'sdk';
-import { type EntityRole, hierarchy } from 'shared';
+import type { EntityRole } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { defaultHeaders } from './fixtures';
+import { adminRole, defaultHeaders, memberRole } from './fixtures';
 import { createTestUser } from './helpers';
 import { clearSecurityTestData, createSecondOrg, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
-import { mockFetchRequest, setTestConfig } from './test-utils';
-
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
+import { setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -61,7 +58,6 @@ describe('Organization member previews (include=members)', async () => {
   };
 
   beforeAll(async () => {
-    mockFetchRequest();
     tenant = await createTestTenant(call, 'org-member-previews');
 
     // Pin the caller's membership createdAt so preview ordering is deterministic
@@ -74,7 +70,7 @@ describe('Organization member previews (include=members)', async () => {
     for (const [index, days] of [8, 6, 4].entries()) {
       const admin = await createTestUser(`org-member-previews-admin-${index}@security-test.com`);
       extraAdminIds.push(admin.id);
-      await insertMembership(admin.id, tenant.organization.id, 'admin', daysAgo(days));
+      await insertMembership(admin.id, tenant.organization.id, adminRole, daysAgo(days));
     }
     const member = await createTestUser('org-member-previews-member@security-test.com');
     memberUserId = member.id;
@@ -83,7 +79,7 @@ describe('Organization member previews (include=members)', async () => {
     // A second org, in its own tenant, has only the caller as admin; the global list spans tenants.
     const secondOrg = await createSecondOrg();
     secondOrgId = secondOrg.id;
-    await insertMembership(tenant.user.id, secondOrg.id, 'admin', daysAgo(9), secondOrg.tenantId);
+    await insertMembership(tenant.user.id, secondOrg.id, adminRole, daysAgo(9), secondOrg.tenantId);
   });
 
   afterAll(async () => {

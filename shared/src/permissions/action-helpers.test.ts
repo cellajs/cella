@@ -57,6 +57,26 @@ describe('resolveCan', () => {
   });
 });
 
+describe('resolveCan home scoping', () => {
+  const home = (row: string | null) => ({ row, channel: 'c1' });
+
+  it("grants 'home' only for a row homed at the map's channel", () => {
+    expect(resolveCan('home', 'creator', 'other', home('c1'))).toBe(true);
+    expect(resolveCan('home', 'creator', 'other', home('c2'))).toBe(false);
+    expect(resolveCan('home', 'creator', 'other', home(null))).toBe(false);
+  });
+
+  it("must not grant 'home' to a call that passes no placement: a row affordance without a home denies", () => {
+    expect(resolveCan('home', 'creator', 'creator')).toBe(false);
+  });
+
+  it("grants 'home:own' only to the creator on a row homed at the map's channel", () => {
+    expect(resolveCan('home:own', 'creator', 'creator', home('c1'))).toBe(true);
+    expect(resolveCan('home:own', 'creator', 'other', home('c1'))).toBe(false);
+    expect(resolveCan('home:own', 'creator', 'creator', home('c2'))).toBe(false);
+  });
+});
+
 describe('isUnconditionalCan', () => {
   it('is true only for an unconditional grant', () => {
     expect(isUnconditionalCan(true)).toBe(true);
@@ -66,6 +86,7 @@ describe('isUnconditionalCan', () => {
     // The whole point: channel-wide features (e.g. collab editing) enable on this, and `'own'`
     // must NOT enable them, because ownership is per-row and unknown here.
     expect(isUnconditionalCan('own')).toBe(false);
+    expect(isUnconditionalCan('home')).toBe(false);
   });
 
   it('is false for denied or absent', () => {

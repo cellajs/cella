@@ -58,6 +58,12 @@
       }
     ],
     "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
       "query": {
         "properties": {
           "entityType": {
@@ -65,8 +71,7 @@
             "required": true,
             "enum": ["attachment"]
           },
-          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
-          "organizationId": { "type": "string", "required": true, "maxLength": 50 }
+          "entityId": { "type": "string", "required": true, "maxLength": 50 }
         }
       }
     }

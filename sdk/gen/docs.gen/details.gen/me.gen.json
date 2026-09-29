@@ -580,39 +580,9 @@
       "body": {
         "type": "object",
         "properties": {
-          "passkeyData": {
-            "type": "object",
-            "required": false,
-            "properties": {
-              "id": { "type": "string", "required": true },
-              "rawId": { "type": "string", "required": true },
-              "response": {
-                "type": "object",
-                "required": true,
-                "properties": {
-                  "clientDataJSON": { "type": "string", "required": true },
-                  "authenticatorData": { "type": "string", "required": true },
-                  "signature": { "type": "string", "required": true },
-                  "userHandle": { "type": "string", "required": false }
-                }
-              },
-              "authenticatorAttachment": {
-                "type": "string",
-                "required": false,
-                "enum": ["cross-platform", "platform"]
-              },
-              "clientExtensionResults": { "type": "object", "required": false },
-              "type": {
-                "type": "string",
-                "required": true,
-                "enum": ["public-key"]
-              }
-            }
-          },
-          "totpCode": { "type": "string", "required": false },
           "mfaRequired": { "type": "boolean", "required": true }
         },
-        "required": false,
+        "required": true,
         "contentType": "application/json"
       }
     }
@@ -716,7 +686,29 @@
                   "revocationReason": {
                     "type": ["string", "null"],
                     "required": true,
-                    "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                    "enum": [
+                      "sign_out",
+                      "other_session",
+                      "mfa_enabled",
+                      "session_cap",
+                      "replaced",
+                      "impersonation_stopped",
+                      null
+                    ]
+                  },
+                  "impersonatorSessionId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
+                  "steppedUpAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "steppedUpVia": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["passkey", "totp", "email", null]
                   },
                   "isCurrent": { "type": "boolean", "required": true },
                   "isNewDevice": {
@@ -788,6 +780,9 @@
               "revokedAt": null,
               "revokedBy": null,
               "revocationReason": null,
+              "impersonatorSessionId": null,
+              "steppedUpAt": null,
+              "steppedUpVia": null,
               "isCurrent": true,
               "isNewDevice": false
             }
@@ -1148,7 +1143,29 @@
                   "revocationReason": {
                     "type": ["string", "null"],
                     "required": true,
-                    "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", null]
+                    "enum": [
+                      "sign_out",
+                      "other_session",
+                      "mfa_enabled",
+                      "session_cap",
+                      "replaced",
+                      "impersonation_stopped",
+                      null
+                    ]
+                  },
+                  "impersonatorSessionId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
+                  "steppedUpAt": {
+                    "type": ["string", "null"],
+                    "required": true
+                  },
+                  "steppedUpVia": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "enum": ["passkey", "totp", "email", null]
                   }
                 }
               }
@@ -1224,7 +1241,7 @@
             "itemType": "string"
           }
         },
-        "required": false,
+        "required": true,
         "contentType": "application/json"
       }
     }
@@ -1302,7 +1319,11 @@
           "type": "object",
           "description": "A signed token authorizing file uploads to the configured storage provider.",
           "properties": {
-            "publicBucket": { "type": "boolean", "required": true },
+            "publicBucket": {
+              "type": "boolean",
+              "required": true,
+              "description": "Whether the upload is stored public-read in the public bucket; the template decides."
+            },
             "sub": { "type": "string", "required": true },
             "s3": { "type": "boolean", "required": true },
             "signature": {
@@ -1384,80 +1405,12 @@
     "request": {
       "query": {
         "properties": {
-          "publicBucket": {
-            "required": false,
-            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
-            "anyOf": [
-              {
-                "type": "string",
-                "required": false,
-                "enum": ["true", "false"]
-              },
-              { "type": "boolean", "required": false }
-            ],
-            "ref": "#/components/schemas/BooleanQueryValue"
-          },
           "organizationId": { "type": "string", "required": false, "format": "uuid" },
           "templateId": {
             "type": "string",
             "required": true,
-            "enum": ["avatar", "cover", "attachment"]
+            "enum": ["avatar", "cover", "attachment", "newsletter"]
           }
-        }
-      }
-    }
-  },
-  {
-    "operationId": "unsubscribeMe",
-    "responses": [
-      { "status": 302, "description": "Redirect to FE" },
-      {
-        "status": 400,
-        "description": "Bad request: problem processing request.",
-        "name": "BadRequestError",
-        "ref": "#/components/responses/BadRequestError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 401,
-        "description": "Unauthorized: authentication required.",
-        "name": "UnauthorizedError",
-        "ref": "#/components/responses/UnauthorizedError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 403,
-        "description": "Forbidden: insufficient permissions.",
-        "name": "ForbiddenError",
-        "ref": "#/components/responses/ForbiddenError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 404,
-        "description": "Not found: resource does not exist.",
-        "name": "NotFoundError",
-        "ref": "#/components/responses/NotFoundError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 409,
-        "description": "Conflict: resource state conflict.",
-        "name": "ConflictError",
-        "ref": "#/components/responses/ConflictError",
-        "contentType": "application/json"
-      },
-      {
-        "status": 429,
-        "description": "Rate limit: too many requests.",
-        "name": "TooManyRequestsError",
-        "ref": "#/components/responses/TooManyRequestsError",
-        "contentType": "application/json"
-      }
-    ],
-    "request": {
-      "query": {
-        "properties": {
-          "token": { "type": "string", "required": true }
         }
       }
     }

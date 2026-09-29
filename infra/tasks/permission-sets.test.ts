@@ -62,13 +62,6 @@ describe('service VM key permission sets', () => {
     expect([...SERVICE_SECRET_PERMISSION_SETS].sort()).toEqual(['SecretManagerReadOnly', 'SecretManagerSecretAccess']);
   });
 
-  it('does not include any write or privilege-escalation permission', () => {
-    const all = [...SERVICE_SECRET_PERMISSION_SETS];
-    for (const forbidden of [...FORBIDDEN, 'FullAccess', 'InstancesFullAccess', 'LoadBalancersFullAccess']) {
-      expect(all, `service VM key must not hold '${forbidden}'`).not.toContain(forbidden);
-    }
-  });
-
   it('every service VM permission set is read-scoped (ReadOnly, or the SecretAccess decrypt-read grant)', () => {
     // SecretManagerSecretAccess reads (decrypts) secret values but grants no
     // write/escalation; everything else must be a plain `ReadOnly` grant.

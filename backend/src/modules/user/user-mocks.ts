@@ -6,7 +6,6 @@ import { mockPaginated, mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import type { InsertEmailModel } from '#/modules/user/emails-db';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
-import type { InsertUnsubscribeTokenModel } from '#/modules/user/unsubscribe-tokens-db';
 import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
 
 type MockUserOptions = { email?: string; enforceUnique?: boolean };
@@ -89,15 +88,6 @@ export const mockAdmin = (id: string | undefined, email: string): InsertUserMode
     language: appConfig.defaultLanguage,
     thumbnailUrl: null,
     newsletter: false,
-    createdAt: mockPastIsoDate(),
-  };
-};
-
-export const mockUnsubscribeToken = async (user: UserModel): Promise<InsertUnsubscribeTokenModel> => {
-  const { generateUnsubscribeToken } = await import('#/utils/unsubscribe-token');
-  return {
-    secret: generateUnsubscribeToken(user.email),
-    userId: user.id,
     createdAt: mockPastIsoDate(),
   };
 };

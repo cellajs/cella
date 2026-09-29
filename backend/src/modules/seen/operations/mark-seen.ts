@@ -1,4 +1,4 @@
-import { and, eq, gt, inArray, sql } from 'drizzle-orm';
+import { and, eq, getColumns, gt, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { ProductEntityType, SeenTrackedProductType } from 'shared';
 import { appConfig, hierarchy, seenWindowMs } from 'shared';
@@ -6,6 +6,11 @@ import { generateId } from 'shared/utils/entity-id';
 import type { UserContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
 import { homeChannelIdSql } from '#/db/utils/home-channel';
+import { draftVisibleRowsPredicate } from '#/db/utils/published-predicate';
+import { seenRecencySql } from '#/modules/seen/seen-queries';
+import { actorFrom } from '#/permissions/access';
+import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
+import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
 import { log } from '#/utils/logger';
 
@@ -28,6 +33,24 @@ export function isTrackedProductType(productType: string): productType is SeenTr
 /** Context types that group unseen counts: every possible home channel of a tracked row. */
 export const groupingChannelTypes = new Set(trackedProductTypes.flatMap((t) => hierarchy.possibleHomeChannels(t)));
 
+/** Sub-context column for the read predicate: the parent-level id column, org fallback. */
+export const homeChannelColumn = (productType: SeenTrackedProductType): PgColumn => {
+  const table = getEntityTable(productType);
+  const columns = getColumns(table) as Record<string, PgColumn | undefined>;
+  const parent = hierarchy.getParent(productType);
+  const parentColumn = parent
+    ? columns[appConfig.entityIdColumnKeys[parent as keyof typeof appConfig.entityIdColumnKeys]]
+    : undefined;
+  const column = parentColumn ?? columns.organizationId;
+  if (!column) throw new Error(`[Seen] No sub-context column for "${productType}"`);
+  return column;
+};
+
+/**
+ * Records the rows the user newly saw and bumps their view counts; returns how many were new. Only rows the user may
+ * read count, by the unseen counts' read scope, live rows only and drafts for their author, so the count never
+ * confirms that a hidden row exists.
+ */
 export async function markSeenOp(ctx: UserContext, entityIds: string[], productType: ProductEntityType) {
   const user = ctx.var.user;
   const organization = ctx.var.organization;
@@ -49,19 +72,29 @@ export async function markSeenOp(ctx: UserContext, entityIds: string[], productT
 
   const windowCutoff = new Date(Date.now() - seenWindowMs).toISOString();
 
+  const actor = actorFrom(ctx);
+  const readFilter = resolveCollectionReadFilter(ctx.var.memberships, productType, organization.id, actor);
+  const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, homeChannelColumn(productType), actor);
+  if (scopeWhere.kind === 'none') return { newCount: 0 };
+
+  const filters: SQL[] = [
+    inArray(orgTable.id, entityIds),
+    eq(orgTable.organizationId, organization.id),
+    gt(seenRecencySql(orgTable), windowCutoff),
+  ];
+  const { deletedAt } = getColumns(entityTable) as Record<string, PgColumn | undefined>;
+  if (deletedAt) filters.push(isNull(deletedAt));
+  const draftVisible = draftVisibleRowsPredicate(entityTable, user.id);
+  if (draftVisible) filters.push(draftVisible);
+  if (scopeWhere.kind === 'where') filters.push(scopeWhere.where);
+
   // Use tenantContext to set RLS session vars; entity tables have row-level security.
   const { validIds, newCount } = await tenantContext(ctx, async (txCtx) => {
     const db = txCtx.var.db;
     const validEntities: { id: string; channelId: string }[] = await db
       .select({ id: orgTable.id, channelId: channelIdColumn })
       .from(entityTable)
-      .where(
-        and(
-          inArray(orgTable.id, entityIds),
-          eq(orgTable.organizationId, organization.id),
-          gt(orgTable.createdAt, windowCutoff),
-        ),
-      );
+      .where(and(...filters));
 
     const vIds = validEntities.map((e) => e.id);
     const ctxIdMap = new Map(validEntities.map((e) => [e.id, e.channelId]));

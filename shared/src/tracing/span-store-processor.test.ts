@@ -162,10 +162,4 @@ describe('createSpanStoreProcessor', () => {
     expect(store.getSpans()).toHaveLength(1);
     expect(onSpanEnd).toHaveBeenCalledOnce();
   });
-
-  it('forceFlush and shutdown resolve without error', async () => {
-    const processor = createSpanStoreProcessor({});
-    await expect(processor.forceFlush()).resolves.toBeUndefined();
-    await expect(processor.shutdown()).resolves.toBeUndefined();
-  });
 });

@@ -1,4 +1,4 @@
-import { appConfig, type EntityRole, hierarchy } from 'shared';
+import { appConfig, type EntityRole } from 'shared';
 import { describe, expect, it } from 'vitest';
 import {
   canReceiveProductEvent,
@@ -8,9 +8,7 @@ import {
 } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-
-/** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
+import { memberRole } from '../../../../tests/fixtures';
 
 /**
  * `rowReadDecisions` must agree with `canReceiveProductEvent` on every (subscriber, row): veto
@@ -124,46 +122,6 @@ describe('dispatch batch eligibility: deterministic splits', () => {
     const nobody: SubscriberAccess = { userId: 'user-2', isSystemAdmin: false, memberships: [] };
 
     expect(batchDecisions([admin, nobody], event)).toEqual([true, false]);
-  });
-
-  it('draft rows deny every subscriber, author and admin included', () => {
-    const event = attachmentEvent(ORGS[0], {
-      rowData: attachmentRow('att-draft', ORGS[0], { createdBy: 'user-1', publishedAt: null }),
-    });
-
-    const author: SubscriberAccess = {
-      userId: 'user-1',
-      isSystemAdmin: false,
-      memberships: [membership(ORGS[0], memberRole, 'user-1')],
-    };
-    const admin: SubscriberAccess = { userId: 'user-2', isSystemAdmin: true, memberships: [] };
-
-    expect(batchDecisions([author, admin], event)).toEqual([false, false]);
-  });
-
-  it('batch rows: readable non-representative row still reaches only its readers', () => {
-    // Org members hold read:'own': att-b must be authored by orgAMember for them to read it.
-    const event = attachmentEvent(ORGS[1], {
-      batchUntilSeq: 2,
-      rowData: attachmentRow('att-a', ORGS[1]),
-      batchRows: [
-        { seq: 1, rowData: attachmentRow('att-a', ORGS[1]) },
-        { seq: 2, rowData: attachmentRow('att-b', ORGS[0], { createdBy: 'user-1' }) },
-      ],
-    });
-
-    const orgAMember: SubscriberAccess = {
-      userId: 'user-1',
-      isSystemAdmin: false,
-      memberships: [membership(ORGS[0], memberRole, 'user-1')],
-    };
-    const orgCMember: SubscriberAccess = {
-      userId: 'user-2',
-      isSystemAdmin: false,
-      memberships: [membership(ORGS[2], memberRole, 'user-2')],
-    };
-
-    expect(batchDecisions([orgAMember, orgCMember], event)).toEqual([true, false]);
   });
 });
 

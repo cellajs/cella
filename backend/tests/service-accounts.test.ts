@@ -11,7 +11,7 @@ import {
   updateOrganization,
   updateServiceAccount,
 } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, type EntityRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { actorsTable } from '#/modules/actors/actors-db';
@@ -20,8 +20,9 @@ import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { hashToken } from '#/utils/hash-token';
-import { defaultHeaders } from './fixtures';
-import { createTestOrganization } from './helpers';
+import { adminRole, defaultHeaders, memberRole } from './fixtures';
+import { createTestOrganization, type ErrorResponse, expectRefusal } from './helpers';
+import { bearerHeaders } from './oauth-helpers';
 import { clearSecurityTestData, createOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
@@ -29,23 +30,24 @@ afterEach(async () => await clearSecurityTestData());
 
 type Scope = NonNullable<NonNullable<NonNullable<CreateServiceAccountData['body']>['key']>['scopes']>[number];
 
-/** Machine requests carry no Origin and no cookie: a server, not a browser page. */
-const machineHeaders = (key: string) => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${key}` });
-
 describe('Service accounts and API keys', async () => {
   const call = await createAppClient();
 
-  async function orgWithAdmin(role: 'admin' | 'member' = 'admin') {
+  async function orgWithAdmin(role: EntityRole = adminRole) {
     const org = await createTestOrganization();
     const user = await createOrgUser(call, org.tenantId, org.id, `${role}-${nanoid(8)}`, role);
     return { org, user, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 
-  async function issueKey(opts: { role?: 'admin' | 'member'; scopes?: Scope[] | null } = {}) {
+  async function issueKey(opts: { role?: EntityRole; scopes?: Scope[] | null; expiresAt?: string } = {}) {
     const ctx = await orgWithAdmin();
     const { data, response } = await call(createServiceAccount, {
       path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
-      body: { name: 'CI bot', role: opts.role ?? 'member', key: { name: 'deploy', scopes: opts.scopes ?? null } },
+      body: {
+        name: 'CI bot',
+        role: opts.role ?? memberRole,
+        key: { name: 'deploy', scopes: opts.scopes ?? null, expiresAt: opts.expiresAt },
+      },
       headers: ctx.headers,
     });
     expect(response.status).toBe(201);
@@ -69,31 +71,38 @@ describe('Service accounts and API keys', async () => {
     expect(JSON.stringify(row)).not.toContain(key);
   });
 
-  it('refuses a member creating an account, and caps the role at the creator', async () => {
-    const member = await orgWithAdmin('member');
-    const { response } = await call(createServiceAccount, {
+  // The role cap at the creator's own rank is unreachable with two organization roles: only an admin gets past the
+  // update check, and an admin may bind either role.
+  it('refuses a member creating an account', async () => {
+    const member = await orgWithAdmin(memberRole);
+    const { response, error } = await call(createServiceAccount, {
       path: { tenantId: member.org.tenantId, organizationId: member.org.id },
-      body: { name: 'bot', role: 'member' },
+      body: { name: 'bot', role: memberRole },
       headers: member.headers,
     });
-    expect(response.status).toBe(403);
+    await expectRefusal({ response, error }, 403, 'forbidden');
+    const accounts = await db
+      .select()
+      .from(serviceAccountsTable)
+      .where(eq(serviceAccountsTable.tenantId, member.org.tenantId));
+    expect(accounts).toHaveLength(0);
   });
 
   it('authenticates a key as the service account and reads inside its organization', async () => {
     const { org, key } = await issueKey();
     const { response } = await call(getAttachments, {
       path: { tenantId: org.tenantId, organizationId: org.id },
-      headers: machineHeaders(key),
+      headers: bearerHeaders(key),
     });
     expect(response.status).toBe(200);
   });
 
   it('writes provenance as the service account', async () => {
-    const { org, key, account } = await issueKey({ role: 'admin' });
+    const { org, key, account } = await issueKey({ role: adminRole });
     const { response } = await call(updateOrganization, {
       path: { tenantId: org.tenantId, id: org.id },
       body: { name: 'Renamed by bot' },
-      headers: machineHeaders(key),
+      headers: bearerHeaders(key),
     });
     expect(response.status).toBe(200);
     const [row] = await db.select().from(organizationsTable).where(eq(organizationsTable.id, org.id));
@@ -101,13 +110,14 @@ describe('Service accounts and API keys', async () => {
   });
 
   it('masks the account grants with the key scopes', async () => {
-    const { org, key } = await issueKey({ role: 'admin', scopes: ['attachment:read'] });
+    const { org, key } = await issueKey({ role: adminRole, scopes: ['attachment:read'] });
     const { response } = await call(updateOrganization, {
       path: { tenantId: org.tenantId, id: org.id },
       body: { name: 'Should not happen' },
-      headers: machineHeaders(key),
+      headers: bearerHeaders(key),
     });
-    expect(response.status).toBe(403);
+    // The mask covers no organization read, so the organization reads as missing.
+    expect(response.status).toBe(404);
   });
 
   it('rejects a revoked key, a browser origin, and a foreign tenant', async () => {
@@ -115,13 +125,13 @@ describe('Service accounts and API keys', async () => {
 
     const foreign = await call(getAttachments, {
       path: { tenantId: 'other01', organizationId: org.id },
-      headers: machineHeaders(key),
+      headers: bearerHeaders(key),
     });
     expect(foreign.response.status).toBe(403);
 
     const browser = await call(getAttachments, {
       path: { tenantId: org.tenantId, organizationId: org.id },
-      headers: { ...machineHeaders(key), Origin: appConfig.frontendUrl },
+      headers: { ...bearerHeaders(key), Origin: appConfig.frontendUrl },
     });
     expect(browser.response.status).toBe(403);
 
@@ -133,7 +143,7 @@ describe('Service accounts and API keys', async () => {
 
     const afterRevoke = await call(getAttachments, {
       path: { tenantId: org.tenantId, organizationId: org.id },
-      headers: machineHeaders(key),
+      headers: bearerHeaders(key),
     });
     expect(afterRevoke.response.status).toBe(401);
   });
@@ -172,30 +182,42 @@ describe('Service accounts and API keys', async () => {
     expect(serialized).not.toContain(hashToken(key));
   });
 
-  it('refuses an expired key and a key of a disabled account', async () => {
-    const expired = await issueKey();
-    await db
-      .update(apiKeysTable)
-      .set({ expiresAt: new Date(Date.now() - 1000).toISOString() })
-      .where(eq(apiKeysTable.id, expired.apiKey.id));
-    const expiredCall = await call(getAttachments, {
-      path: { tenantId: expired.org.tenantId, organizationId: expired.org.id },
-      headers: machineHeaders(expired.key),
-    });
-    expect(expiredCall.response.status).toBe(401);
+  // The suite runs two hours off UTC (the root vitest config): an expiry stored without its zone and read back as local
+  // time lands two hours early, so a key with half an hour left reads as expired.
+  it('must not accept a key that expired half an hour ago, nor refuse one with half an hour left', async () => {
+    const halfAnHour = 30 * 60 * 1000;
+    const read = async (issued: Awaited<ReturnType<typeof issueKey>>) =>
+      call(getAttachments, {
+        path: { tenantId: issued.org.tenantId, organizationId: issued.org.id },
+        headers: bearerHeaders(issued.key),
+      });
 
+    const expired = await read(await issueKey({ expiresAt: new Date(Date.now() - halfAnHour).toISOString() }));
+    expect(expired.response.status).toBe(401);
+    expect((expired.error as ErrorResponse).meta?.reason).toBe('invalid_api_key');
+
+    const live = await read(await issueKey({ expiresAt: new Date(Date.now() + halfAnHour).toISOString() }));
+    expect(live.response.status).toBe(200);
+  });
+
+  it('refuses a key of a disabled account', async () => {
     const disabled = await issueKey();
+    const readAsDisabled = () =>
+      call(getAttachments, {
+        path: { tenantId: disabled.org.tenantId, organizationId: disabled.org.id },
+        headers: bearerHeaders(disabled.key),
+      });
+    // A read first, so the key and its account are cached at the guard when the account is disabled.
+    expect((await readAsDisabled()).response.status).toBe(200);
     const update = await call(updateServiceAccount, {
       path: { tenantId: disabled.org.tenantId, organizationId: disabled.org.id, id: disabled.account.id },
       body: { status: 'disabled' },
       headers: disabled.headers,
     });
     expect(update.response.status).toBe(200);
-    const disabledCall = await call(getAttachments, {
-      path: { tenantId: disabled.org.tenantId, organizationId: disabled.org.id },
-      headers: machineHeaders(disabled.key),
-    });
+    const disabledCall = await readAsDisabled();
     expect(disabledCall.response.status).toBe(401);
+    expect((disabledCall.error as ErrorResponse).meta?.reason).toBe('service_account_disabled');
   });
 
   it('enforces the tenant quota on accounts', async () => {
@@ -208,13 +230,13 @@ describe('Service accounts and API keys', async () => {
     const path = { tenantId: ctx.org.tenantId, organizationId: ctx.org.id };
     const first = await call(createServiceAccount, {
       path,
-      body: { name: 'one', role: 'member' },
+      body: { name: 'one', role: memberRole },
       headers: ctx.headers,
     });
     expect(first.response.status).toBe(201);
     const second = await call(createServiceAccount, {
       path,
-      body: { name: 'two', role: 'member' },
+      body: { name: 'two', role: memberRole },
       headers: ctx.headers,
     });
     expect(second.response.status).toBe(403);
@@ -258,10 +280,12 @@ describe('Service accounts and API keys', async () => {
   it('refuses a service account without a grant at the tenant door', async () => {
     const { org, account, key } = await issueKey();
     await db.update(serviceAccountsTable).set({ bindings: [] }).where(eq(serviceAccountsTable.id, account.id));
-    const { response } = await call(getAttachments, {
+    const { response, error } = await call(getAttachments, {
       path: { tenantId: org.tenantId, organizationId: org.id },
-      headers: machineHeaders(key),
+      headers: bearerHeaders(key),
     });
     expect(response.status).toBe(403);
+    // tenantGuard's refusal, before any organization is resolved; orgGuard's would name the organization.
+    expect((error as ErrorResponse).meta).toEqual({ resource: 'tenant' });
   });
 });

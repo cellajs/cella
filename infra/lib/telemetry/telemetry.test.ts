@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { telemetrySink } from '../../config/telemetry.config';
+import type { FetchLike } from '../utils/fetch-like';
 import { createTelemetry, otlpConfigFromEnv } from './emitter';
 import { buildEvent, formatTraceparent, newSpanId, newTraceId, parseTraceparent, toKeyValues, unixNano } from './otlp';
 
@@ -35,7 +36,7 @@ describe('otlp builders', () => {
 });
 
 describe('createTelemetry', () => {
-  const fetchOk = () => vi.fn(async () => new Response('{}', { status: 200 }));
+  const fetchOk = () => vi.fn<FetchLike>(async () => new Response('{}', { status: 200 }));
 
   it('exports spans and events over OTLP/HTTP with headers', async () => {
     const fetchImpl = fetchOk();
@@ -52,9 +53,9 @@ describe('createTelemetry', () => {
     await t.flush();
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
-    const calls = fetchImpl.mock.calls as unknown as Array<[string, RequestInit]>;
+    const calls = fetchImpl.mock.calls;
     expect(calls[0]?.[0]).toBe('https://ingest.example/v1/traces');
-    expect((calls[0]?.[1]?.headers as Record<string, string>)?.['x-key']).toBe('k');
+    expect(calls[0]?.[1]?.headers?.['x-key']).toBe('k');
     const tracesBody = JSON.parse(String(calls[0]?.[1]?.body));
     expect(tracesBody.resourceSpans[0].scopeSpans[0].spans[0].name).toBe('deploy staging');
     expect(calls[1]?.[0]).toBe('https://ingest.example/v1/logs');
@@ -99,6 +100,30 @@ describe('createTelemetry', () => {
     const lines = t.eventsJsonl().split('\n');
     expect(lines).toHaveLength(1);
     expect(JSON.parse(lines[0] ?? '').eventName).toBe('boot.failed');
+  });
+
+  it('must not export a secret learned after its record was buffered', async () => {
+    const fetchImpl = fetchOk();
+    const known = new Set<string>();
+    const t = createTelemetry({
+      resource: {},
+      endpoint: 'https://ingest.example/v1',
+      fetchImpl,
+      redact: (text) => [...known].reduce((out, secret) => out.split(secret).join('[REDACTED]'), text),
+    });
+    const span = t.startSpan('boot backend');
+    t.event('boot.step.failed', { error: 'dial postgres://app:late-secret@db' }, { body: 'late-secret in body' });
+    span.end('error', { message: 'late-secret in status' });
+    known.add('late-secret');
+    await t.flush();
+
+    const bodies = fetchImpl.mock.calls.map(([, init]) => String(init?.body));
+    expect(bodies).toHaveLength(2);
+    for (const text of [...bodies, t.eventsJsonl()]) {
+      expect(text).not.toContain('late-secret');
+      // Positive control: the record itself is exported, only the value is gone.
+      expect(text).toContain('[REDACTED]');
+    }
   });
 });
 

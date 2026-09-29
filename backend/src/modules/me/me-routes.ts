@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { crossTenantGuard, publicGuard, userGuard } from '#/middlewares/guard';
-import { bulkPointsLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { crossTenantGuard, noImpersonationGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
+import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   connectedAppSchema,
   meAuthDataSchema,
@@ -21,7 +21,6 @@ import {
   entityWithTypeQuerySchema,
   errorResponseRefs,
   idsBodySchema,
-  locationSchema,
   paginationSchema,
 } from '#/schemas';
 import {
@@ -106,7 +105,7 @@ const meRoutes = {
     operationId: 'deleteMe',
     method: 'delete',
     path: '/',
-    xGuard: [userGuard],
+    xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['me', 'cella'],
     summary: 'Delete self',
@@ -138,15 +137,15 @@ const meRoutes = {
     operationId: 'revokeMySessions',
     method: 'delete',
     path: '/sessions',
-    xGuard: [userGuard],
+    xGuard: [userGuard, noImpersonationGuard],
     xRateLimiter: [bulkPointsLimiter],
     tags: ['me', 'cella'],
     summary: 'Revoke sessions',
     description:
       'Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.',
     request: {
-      required: true,
       body: {
+        required: true,
         content: { 'application/json': { schema: idsBodySchema() } },
       },
     },
@@ -176,25 +175,6 @@ const meRoutes = {
       ...errorResponseRefs,
     },
   }),
-  unsubscribeMe: createXRoute({
-    operationId: 'unsubscribeMe',
-    method: 'get',
-    path: '/unsubscribe',
-    xGuard: [publicGuard],
-    xRateLimiter: [tokenLimiter('unsubscribe')],
-    tags: ['me', 'cella'],
-    summary: 'Unsubscribe',
-    description:
-      'Unsubscribes the user from email notifications using a personal unsubscribe token. No authentication is required, as the token implicitly identifies the current user.',
-    request: { query: z.object({ token: z.string() }) },
-    responses: {
-      302: {
-        description: 'Redirect to FE',
-        headers: locationSchema,
-      },
-      ...errorResponseRefs,
-    },
-  }),
   getUploadToken: createXRoute({
     operationId: 'getUploadToken',
     method: 'get',
@@ -203,7 +183,7 @@ const meRoutes = {
     tags: ['me', 'cella'],
     summary: 'Get upload token',
     description:
-      'Generates and returns an upload token for uploading files or images to a private S3 bucket, scoped to the current user and organization',
+      'Generates and returns an upload token for uploading files or images, scoped to the current user and organization. The upload template decides the bucket: avatars, covers and newsletter images are public, attachments private. Only a system admin gets a newsletter image token.',
     request: { query: uploadTokenQuerySchema },
     responses: {
       200: {
@@ -217,14 +197,14 @@ const meRoutes = {
     operationId: 'toggleMfa',
     method: 'put',
     path: '/mfa',
-    xGuard: [userGuard],
+    xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['me', 'cella'],
     summary: 'Toggle MFA',
     description:
-      'Enable or disable multifactor authentication for the current user. Always requires passkey or TOTP reauthentication.',
+      'Enable or disable multifactor authentication for the current user. Needs a session stepped up with a passkey or TOTP.',
     request: {
-      body: { content: { 'application/json': { schema: toggleMfaBodySchema } } },
+      body: { required: true, content: { 'application/json': { schema: toggleMfaBodySchema } } },
     },
     responses: {
       200: {

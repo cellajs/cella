@@ -6,7 +6,7 @@ import type { uploadTemplates } from 'shared/transloadit-config';
 type UppyBody = Record<string, unknown>;
 
 /** Assign each file its future row ID and round-trip it through Transloadit metadata. */
-type UppyMeta = { publicBucket: boolean; bucketName: string; offlineUploaded: boolean; attachmentId?: string };
+type UppyMeta = { offlineUploaded: boolean; attachmentId?: string };
 
 type TemplateStepKeys<T extends UploadTemplateId> = (typeof uploadTemplates)[T]['use'][number];
 

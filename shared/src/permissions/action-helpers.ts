@@ -17,20 +17,31 @@ export const allActionsAllowed = Object.freeze(createActionRecord(() => true as 
   Record<EntityActionType, true>
 >;
 
+/** The row's home channel id (its deepest non-null ancestor id) and the channel the can-map was computed for. */
+export type CanHome = { row: string | null; channel: string };
+
 /**
- * Resolves `true | false | condition name` to a boolean. `'own'` compares the actor id
- * against `entity.createdBy`. The switch is exhaustive over {@link CanState}, so adding a row
- * condition breaks the build here; the frontend never denies a new condition unnoticed.
+ * Resolves `true | false | condition name` to a boolean. `'own'` compares the actor id against
+ * `entity.createdBy`; `'home'` compares the row's home with the map's channel, `'home:own'` needs
+ * both, and a call without `home` denies them. The switch is exhaustive over {@link CanState}, so
+ * adding a condition breaks the build here; the frontend never denies a new condition unnoticed.
  */
 export const resolveCan = (
   permission: CanState | undefined,
   entityCreatedBy?: string | null,
   actorId?: string,
+  home?: CanHome,
 ): boolean => {
   if (typeof permission !== 'string') return permission === true;
+  const own = !!actorId && !!entityCreatedBy && entityCreatedBy === actorId;
+  const atHome = !!home?.row && home.row === home.channel;
   switch (permission) {
     case 'own':
-      return !!actorId && !!entityCreatedBy && entityCreatedBy === actorId;
+      return own;
+    case 'home':
+      return atHome;
+    case 'home:own':
+      return atHome && own;
     case 'public':
       // Public read is membership-independent and resolved server-side, so it never reaches the
       // frontend can-map. This arm exists for exhaustiveness and denies by default.

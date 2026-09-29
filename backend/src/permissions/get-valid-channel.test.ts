@@ -61,12 +61,26 @@ describe('getValidChannel request scope', () => {
     ).rejects.toMatchObject({ status: 404, type: 'not_found' });
   });
 
-  it('returns 403 when the channel is in scope but the engine denies the action', async () => {
+  it('reads a channel the engine denies `read` on as 404, whatever the action asked', async () => {
     vi.mocked(resolveEntity).mockResolvedValue(organization as never);
     vi.mocked(checkAccess).mockReturnValue({ allowed: false, membership: null } as ReturnType<typeof checkAccess>);
+    for (const action of ['read', 'update'] as const) {
+      await expect(getValidChannel(ctx({ tenantId: TENANT }), ORG, 'organization', action)).rejects.toMatchObject({
+        status: 404,
+        type: 'not_found',
+      });
+    }
+  });
+
+  it('returns 403 when the caller reads the channel but the engine denies the action', async () => {
+    vi.mocked(resolveEntity).mockResolvedValue(organization as never);
+    vi.mocked(checkAccess).mockImplementation(
+      (_access, action) => ({ allowed: action === 'read', membership: null }) as ReturnType<typeof checkAccess>,
+    );
     await expect(getValidChannel(ctx({ tenantId: TENANT }), ORG, 'organization', 'update')).rejects.toMatchObject({
       status: 403,
       type: 'forbidden',
+      meta: { action: 'update' },
     });
   });
 

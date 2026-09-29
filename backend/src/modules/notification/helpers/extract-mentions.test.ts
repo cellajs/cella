@@ -39,8 +39,9 @@ describe('extractMentionIds', () => {
     expect(extractMentionIds(html)).toEqual([alice]);
   });
 
-  it('ignores non-uuid ids, so a hand-written attribute cannot inject a recipient', () => {
+  it('ignores non-uuid ids, so a hand-written attribute or mention node cannot inject a recipient', () => {
     expect(extractMentionIds('<span data-mention-id="not-a-uuid">@ X</span>')).toEqual([]);
+    expect(extractMentionIds(JSON.stringify([{ type: 'mention', props: { id: 'not-a-uuid' } }]))).toEqual([]);
   });
 
   it('returns nothing for empty or absent bodies', () => {

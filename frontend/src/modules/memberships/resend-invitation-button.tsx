@@ -18,7 +18,7 @@ type ResendButtonPrpos = {
   callback?: (args: CallbackArgs) => void;
 };
 
-/** Prefer `resendData: { tokenId }`: email-only resolution targets the address's newest token, which may belong to another context. */
+/** Re-sends a pending invitation by one of its token ids; the backend answers alike whether or not a mail went out. */
 export function ResendInvitationButton({ resendData, wrapperClassName, buttonProps, callback }: ResendButtonPrpos) {
   const { t } = useTranslation();
   const [disabledResend, setDisabledResend] = useState(false);

@@ -1,4 +1,5 @@
 import type { z } from '@hono/zod-openapi';
+import { uploadStorage } from 'shared/utils/upload-visibility';
 import type { OrgContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { buildStx } from '#/core/stx';
@@ -8,6 +9,7 @@ import type { InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import { findAttachmentsByStxMutationId, insertAttachments } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
 import { resolveAttachmentPlacement } from '#/modules/attachment/helpers/attachment-placement';
+import { namesOwnStorage } from '#/modules/attachment/helpers/storage-key';
 import { getOrganizationEntityCount } from '#/modules/entities/entities-queries';
 import { withAuditUsers } from '#/modules/user/helpers/audit-user';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
@@ -45,13 +47,22 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   }
 
   const now = getIsoDate();
+  // The attachment upload template decides the bucket; the server stamps it on every row and ignores what a client
+  // claims, so a row never names storage its upload did not use.
+  const storage = uploadStorage('attachment');
   const attachmentsToInsert: InsertAttachmentModel[] = [];
   for (const { stx, ...att } of input) {
+    // The backend later signs these keys: they must name this organization's uploads.
+    if (!namesOwnStorage(att.keys, organization.id)) {
+      throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment', meta: { reason: 'storage_key' } });
+    }
+
     // Placement seam: ancestor columns derived server-side; the org-homed default stamps none.
     const placement = await resolveAttachmentPlacement(ctx, att);
 
     const attachment = {
       ...att,
+      ...storage,
       convertedContentType: att.convertedContentType || null,
       groupId: att.groupId || null,
       ...placement,

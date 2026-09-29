@@ -35,7 +35,7 @@
     "@opentelemetry/sdk-trace-base": "^2.11.0",
     "@opentelemetry/semantic-conventions": "^1.43.0",
     "dobajs": "0.1.0",
-    "hono": "^4.13.8",
+    "hono": "^4.13.10",
     "nanoid": "^6.0.1",
     "picocolors": "^1.1.1",
     "pino": "^10.3.1",
@@ -49,6 +49,6 @@
     "strip-json-comments": "^5.0.3",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.2"
   }
 }

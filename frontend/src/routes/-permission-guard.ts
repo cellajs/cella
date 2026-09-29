@@ -22,7 +22,9 @@ export function requireEntityAction(
 ): void {
   const enriched = enrichWithPermissions(entity, channelType);
   const createdBy = typeof entity.createdBy === 'string' ? entity.createdBy : (entity.createdBy?.id ?? null);
-  const allowed = resolveCan(enriched.can?.[entityType]?.[action], createdBy, useUserStore.getState().user?.id);
+  // The guard asks about the channel itself or rows placed at it, so the row's home is the channel.
+  const home = { row: entity.id, channel: entity.id };
+  const allowed = resolveCan(enriched.can?.[entityType]?.[action], createdBy, useUserStore.getState().user?.id, home);
   if (allowed) return;
   throw redirect({ to: redirectTo, params: true, replace: true });
 }

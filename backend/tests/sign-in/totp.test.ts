@@ -1,37 +1,30 @@
 import { eq } from 'drizzle-orm';
 import { createTotp, generateTotpKey, signInWithTotp } from 'sdk';
-import { appConfig } from 'shared';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { decryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import {
+  authCookie,
+  cookieChange,
   createMfaToken,
   createTestSession,
   createTestUser,
   createTotpUser,
   enableMFAForUser,
-  verifyUserEmail,
+  expectRefusal,
+  setCookiePair,
+  totpCode,
+  wrongTotpCode,
 } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-
-vi.mock('#/modules/auth/totps/helpers/totps', () => ({
-  validateTOTP: vi.fn().mockResolvedValue(true),
-  signInWithTotp: vi.fn().mockReturnValue(true),
-}));
+import { clearDatabase, setTestConfig } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
-beforeAll(async () => {
-  mockFetchRequest();
-});
-
 afterEach(async () => {
   await clearDatabase();
-  vi.clearAllMocks();
 });
 
 describe('TOTP Authentication', async () => {
@@ -40,7 +33,6 @@ describe('TOTP Authentication', async () => {
   describe('TOTP Setup', () => {
     it('should generate TOTP key for authenticated user', async () => {
       const user = await createTestUser(signUpUser.email);
-      await verifyUserEmail(signUpUser.email);
 
       const sessionCookie = await createTestSession(user);
 
@@ -57,7 +49,6 @@ describe('TOTP Authentication', async () => {
 
     it('should create TOTP for user with valid code', async () => {
       const user = await createTestUser(signUpUser.email);
-      await verifyUserEmail(signUpUser.email);
 
       const sessionCookie = await createTestSession(user);
 
@@ -68,11 +59,10 @@ describe('TOTP Authentication', async () => {
       expect(generateRes.status).toBe(200);
       const generatedTotp = generateData as { manualKey: string };
 
-      const generateCookies = generateRes.headers.get('set-cookie');
-      const allCookies = [sessionCookie, generateCookies].filter(Boolean).join('; ');
+      const allCookies = `${sessionCookie}; ${setCookiePair(generateRes, 'totp-challenge')}`;
 
       const { response: createRes } = await call(createTotp, {
-        body: { code: '123456' },
+        body: { code: totpCode(generatedTotp.manualKey) },
         headers: { ...defaultHeaders, Cookie: allCookies },
       });
 
@@ -92,35 +82,30 @@ describe('TOTP Authentication', async () => {
       const mfaToken = await createMfaToken(user);
 
       const { response: res } = await call(signInWithTotp, {
-        body: { code: '123456' },
+        body: { code: totpCode() },
         headers: {
           ...defaultHeaders,
-          Cookie: `${authCookieName('confirm-mfa')}=${mfaToken}`,
+          Cookie: authCookie('confirm-mfa', mfaToken),
         },
       });
 
       expect(res.status).toBe(204);
-      const setCookieHeader = res.headers.get('set-cookie');
-      expect(setCookieHeader).toBeDefined();
-      expect(setCookieHeader).toContain(`${appConfig.slug}-session-${appConfig.cookieVersion}=`);
+      expect(cookieChange(res, 'session')).toBe('set');
     });
 
     it('should reject invalid TOTP code', async () => {
       const user = await createTotpUser(signUpUser.email);
       const mfaToken = await createMfaToken(user);
 
-      const { validateTOTP } = await import('#/modules/auth/totps/helpers/totps');
-      vi.mocked(validateTOTP).mockRejectedValueOnce(new Error('Invalid TOTP code'));
-
-      const { response: res } = await call(signInWithTotp, {
-        body: { code: '000000' },
+      const { response: res, error } = await call(signInWithTotp, {
+        body: { code: wrongTotpCode() },
         headers: {
           ...defaultHeaders,
-          Cookie: `${authCookieName('confirm-mfa')}=${mfaToken}`,
+          Cookie: authCookie('confirm-mfa', mfaToken),
         },
       });
 
-      expect(res.status).toBe(500);
+      await expectRefusal({ response: res, error }, 401, 'invalid_token');
     });
 
     it('should reject TOTP verification for non-existent user', async () => {
@@ -129,53 +114,25 @@ describe('TOTP Authentication', async () => {
         headers: defaultHeaders,
       });
 
-      expect(res.status).toBe(401);
-      const response = error as { type: string };
-      expect(response.type).toBe('confirm-mfa_not_found');
+      await expectRefusal({ response: res, error }, 401, 'confirm-mfa_not_found');
     });
 
     it('should reject TOTP verification for user without TOTP', async () => {
       const user = await createTestUser(signUpUser.email);
-      await verifyUserEmail(signUpUser.email);
       await enableMFAForUser(user.id);
 
       const mfaToken = await createMfaToken(user);
 
       // No TOTP registered for the user.
-      const { validateTOTP } = await import('#/modules/auth/totps/helpers/totps');
-      vi.mocked(validateTOTP).mockRejectedValueOnce(new Error('TOTP not found'));
-
-      const { response: res } = await call(signInWithTotp, {
-        body: { code: '123456' },
+      const { response: res, error } = await call(signInWithTotp, {
+        body: { code: totpCode() },
         headers: {
           ...defaultHeaders,
-          Cookie: `${authCookieName('confirm-mfa')}=${mfaToken}`,
+          Cookie: authCookie('confirm-mfa', mfaToken),
         },
       });
 
-      expect(res.status).toBe(500);
-    });
-  });
-
-  describe('TOTP Security', () => {
-    it('should reject malformed TOTP codes via client-side validation', async () => {
-      const user = await createTotpUser(signUpUser.email);
-      const mfaToken = await createMfaToken(user);
-
-      // Codes that don't match /^\d{6}$/ are rejected by SDK validation
-      const invalidCodes = ['', 'abc', '12345', '1234567', '123456789'];
-
-      for (const code of invalidCodes) {
-        const { error, response } = await call(signInWithTotp, {
-          body: { code },
-          headers: {
-            ...defaultHeaders,
-            Cookie: `${authCookieName('confirm-mfa')}=${mfaToken}`,
-          },
-        });
-        expect(error, `code=${JSON.stringify(code)}`).toBeInstanceOf(Error);
-        expect(response).toBeUndefined();
-      }
+      await expectRefusal({ response: res, error }, 404, 'not_found');
     });
   });
 });

@@ -9,7 +9,7 @@ import { recalculateCounters } from '#/modules/entities/helpers/recalculate-coun
 import { getEntityTable } from '#/tables';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
-import { mockFetchRequest, setTestConfig } from './test-utils';
+import { setTestConfig } from './test-utils';
 
 const seedDb = getSeedDb();
 
@@ -48,7 +48,6 @@ describe('recalculateCounters (sequence + frontier)', async () => {
     );
 
   beforeAll(async () => {
-    mockFetchRequest();
     tenant = await createTestTenant(call, 'recalc-sequence');
 
     // Relation columns reference strict deeper ancestors, so their rows must exist: one minimal

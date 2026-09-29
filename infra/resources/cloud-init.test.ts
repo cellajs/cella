@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { bootPlanIn } from '../tests/helpers/pulumi-mock';
 import { type CloudInitParams, renderCloudInit } from './cloud-init';
 
 function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
@@ -25,11 +26,22 @@ describe('renderCloudInit', () => {
   it('renders the containerised boot-runner launcher', () => {
     const out = renderCloudInit(params());
 
-    expect(out).toContain('cat > /etc/cella/boot-plan.json');
     expect(out).toContain('"imageContract": "docker-node-boot-v1"');
-    expect(out).toContain('cat > /etc/cella/scw-access-key');
-    expect(out).toContain('cat > /etc/cella/scw-secret-key');
-    expect(out).toContain('cat > /etc/cella/run-boot.sh');
+    // Each file holding the key or the plan is closed to other users the moment its heredoc ends, before the runner starts.
+    for (const [file, marker] of [
+      ['boot-plan.json', 'BOOT_PLAN_EOF'],
+      ['scw-access-key', 'SCW_ACCESS_KEY_EOF'],
+      ['scw-secret-key', 'SCW_SECRET_KEY_EOF'],
+      ['boot.env', 'BOOT_ENV_EOF'],
+    ]) {
+      expect(out).toContain(`cat > /etc/cella/${file} <<'${marker}'`);
+      expect(out).toContain(`\n${marker}\nchmod 600 /etc/cella/${file}\n`);
+    }
+    expect(out).toContain("cat > /etc/cella/run-boot.sh <<'RUN_BOOT_EOF'");
+    expect(out).toContain('\nRUN_BOOT_EOF\nchmod 700 /etc/cella/run-boot.sh\n');
+    expect(out.indexOf('chmod 600 /etc/cella/scw-secret-key')).toBeLessThan(
+      out.indexOf('systemctl start infra-boot.service'),
+    );
     // Host logs into the registry to pull the boot runner image, then runs it. The
     // registry host + image ref arrive via the systemd EnvironmentFile, so the
     // launcher references them as env vars, never interpolated shell literals.
@@ -100,6 +112,17 @@ describe('renderCloudInit', () => {
     expect(out).toContain('"envVar": "COOKIE_SECRET"');
   });
 
+  it('writes a boot plan the boot runner accepts, whose paths sit under the allowed prefixes', () => {
+    const out = renderCloudInit(params({ slug: 'acme', handoffSecretId: 'handoff-secret' }));
+
+    const { plan } = bootPlanIn(out, '/etc/acme/boot-plan.json');
+    expect(plan.credentials).toEqual({
+      scwAccessKeyFile: '/etc/acme/scw-access-key',
+      scwSecretKeyFile: '/etc/acme/scw-secret-key',
+    });
+    expect(plan.serviceKeyHandoff?.cacheFile).toBe('/etc/acme/service-key.json');
+  });
+
   it('gates the release companion through the boot plan', () => {
     const withRelease = renderCloudInit(params({ runRelease: true }));
     const withoutRelease = renderCloudInit(params({ runRelease: false }));
@@ -108,17 +131,6 @@ describe('renderCloudInit', () => {
     expect(withRelease).toContain('"docker",');
     expect(withRelease).toContain('"backend-release"');
     expect(withoutRelease).toContain('"enabled": false');
-  });
-
-  it('does not contain legacy boot implementation details', () => {
-    const out = renderCloudInit(params());
-
-    expect(out).not.toContain('/usr/local/bin/runtime-secret-sync');
-    expect(out).not.toContain('docker compose --profile backend up -d backend');
-    expect(out).not.toContain('apt-get install -y -qq docker-ce');
-    expect(out).not.toContain('#!/usr/bin/env python3');
-    expect(out).not.toContain('urllib.request');
-    expect(out).not.toContain('/usr/local/bin/cella-upload-boot-diag');
   });
 
   it('emits a log-scrub sed pattern that actually matches secret-bearing lines', () => {
@@ -139,11 +151,5 @@ describe('renderCloudInit', () => {
       expect(re.test('DATABASE_URL=postgres://…')).toBe(true);
       expect(re.test('harmless log line')).toBe(false);
     }
-  });
-
-  it('renders different userdata when the release SHA changes', () => {
-    const a = renderCloudInit(params({ releaseSha: 'sha-a', envFileContent: 'BACKEND_TAG=sha-a' }));
-    const b = renderCloudInit(params({ releaseSha: 'sha-b', envFileContent: 'BACKEND_TAG=sha-b' }));
-    expect(a).not.toBe(b);
   });
 });

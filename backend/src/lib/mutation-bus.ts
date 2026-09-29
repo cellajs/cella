@@ -6,8 +6,11 @@ import { onBackendModuleRegister } from '#/lib/module';
 export interface MutationPayload {
   before?: Record<string, unknown>[];
   after?: Record<string, unknown>[];
-  /** True for writes from Yjs materialization; handlers that would double-process those re-writes return early. */
-  serverOrigin?: boolean;
+  /**
+   * True for the Yjs relay's own materialization of a collaborative document; handlers that would double-process those
+   * re-writes return early. Not the same as a server-built write (an MCP tool), which is an edit like a client's.
+   */
+  materialized?: boolean;
 }
 
 export type MutationHandler = (ctx: ActorContext, payload: MutationPayload) => Promise<void>;

@@ -2,11 +2,29 @@ import { and, asc, desc, eq, gte, inArray, isNull, lt, ne, or, sql } from 'drizz
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { toUserMinimalBase, type UserMinimalBase } from '#/modules/user/helpers/audit-user';
 import { usersTable } from '#/modules/user/user-db';
 import { type DigestFrequency, notificationPreferencesTable, notificationsTable } from './notification-db';
 import type { NotificationType } from './notification-types';
+
+/**
+ * The recipient still belongs to the notification's organization, or is a system admin. A member who left keeps no
+ * inbox row, digest line or mail from it; what a member may read inside it is checked per row by the callers.
+ */
+const recipientStillBelongs = sql`(
+  exists (
+    select 1 from ${membershipsTable}
+    where ${membershipsTable.userId} = ${notificationsTable.userId}
+      and ${membershipsTable.organizationId} = ${notificationsTable.organizationId}
+  )
+  or exists (
+    select 1 from ${systemRolesTable}
+    where ${systemRolesTable.userId} = ${notificationsTable.userId} and ${systemRolesTable.role} = 'admin'
+  )
+)`;
 
 // ── Inbox reads ──────────────────────────────────────────────────────────────
 
@@ -27,7 +45,7 @@ export interface FindNotificationsOpts {
 export async function findNotificationsByUser(ctx: DbContext, opts: FindNotificationsOpts) {
   const { userId, unreadOnly, limit, before } = opts;
 
-  const filters = [eq(notificationsTable.userId, userId)];
+  const filters = [eq(notificationsTable.userId, userId), recipientStillBelongs];
   if (unreadOnly) filters.push(isNull(notificationsTable.readAt));
   if (before) filters.push(lt(notificationsTable.createdAt, before));
 
@@ -50,7 +68,7 @@ export async function countUnreadByUser(ctx: DbContext, userId: string): Promise
   const [row] = await ctx.var.db
     .select({ count: sql<number>`count(distinct (${notificationsTable.activityId}, ${notificationsTable.type}))::int` })
     .from(notificationsTable)
-    .where(and(eq(notificationsTable.userId, userId), isNull(notificationsTable.readAt)));
+    .where(and(eq(notificationsTable.userId, userId), isNull(notificationsTable.readAt), recipientStillBelongs));
 
   return row?.count ?? 0;
 }
@@ -187,9 +205,9 @@ export async function insertNotificationsIgnoringDuplicates(rows: NotificationIn
 // ── Instant email ────────────────────────────────────────────────────────────
 
 /**
- * Unmailed mention notifications for recipients who still want the email. The preferences row is
- * created on first read of the settings, so a missing row means the default (on), hence the
- * left join.
+ * Unmailed mention notifications for recipients who still want the email, oldest first so a
+ * backlog drains in order. The preferences row is created on first read of the settings, so a
+ * missing row means the default (on), hence the left join.
  */
 export async function findPendingMentionEmails(organizationId: string, limit: number) {
   return baseDb
@@ -214,8 +232,10 @@ export async function findPendingMentionEmails(organizationId: string, limit: nu
         isNull(notificationsTable.emailedAt),
         isNull(notificationsTable.readAt),
         or(isNull(notificationPreferencesTable.userId), eq(notificationPreferencesTable.mentionEmail, true)),
+        recipientStillBelongs,
       ),
     )
+    .orderBy(asc(notificationsTable.createdAt))
     .limit(limit);
 }
 
@@ -259,6 +279,7 @@ export async function findUserNames(userIds: string[]): Promise<Map<string, stri
   return new Map(rows.map((row) => [row.id, row.name]));
 }
 
+/** Settles rows the instant-mail pass took, mailed or skipped for good: neither it nor the digest reads them again. */
 export async function stampEmailed(notificationIds: string[]): Promise<void> {
   if (notificationIds.length === 0) return;
   await baseDb
@@ -298,15 +319,16 @@ export async function findDueDigestRecipients(dayStart: string, includeWeekly: b
   );
 }
 
-/** Unread, un-emailed, un-digested rows in the window; the digest's whole content source. */
-export async function findUndigestedNotifications(userId: string, since: string | null, limit: number) {
+/** Unread, un-emailed, un-digested rows since `since`; the digest's whole content source. */
+export async function findUndigestedNotifications(userId: string, since: string, limit: number) {
   const filters = [
     eq(notificationsTable.userId, userId),
     isNull(notificationsTable.readAt),
     isNull(notificationsTable.emailedAt),
     isNull(notificationsTable.digestedAt),
+    gte(notificationsTable.createdAt, since),
+    recipientStillBelongs,
   ];
-  if (since) filters.push(gte(notificationsTable.createdAt, since));
 
   return baseDb
     .selectDistinctOn([notificationsTable.activityId, notificationsTable.type], {
@@ -314,6 +336,7 @@ export async function findUndigestedNotifications(userId: string, since: string 
       type: notificationsTable.type,
       entityType: notificationsTable.entityType,
       activityId: notificationsTable.activityId,
+      subjectId: notificationsTable.subjectId,
       channelId: notificationsTable.channelId,
       contextId: notificationsTable.contextId,
       tenantId: notificationsTable.tenantId,

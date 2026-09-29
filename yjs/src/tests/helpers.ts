@@ -1,61 +1,75 @@
-import { createHmac } from 'node:crypto';
+import { sign } from 'node:crypto';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
+import { setImmediate as nextTurn } from 'node:timers/promises';
 import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
-import { vi } from 'vitest';
+import { testYjsTokenKeyMaterial } from 'shared/testing/yjs-token-keys';
+import { yjsTokenSigningKey } from 'shared/utils/yjs-token';
+import { afterAll, afterEach, beforeAll, vi } from 'vitest';
+import { WebSocketServer, WebSocket as WsWebSocket } from 'ws';
 import * as Y from 'yjs';
-import type { DocContext } from '../constants';
-
-const DELIMITER = '.';
-const SIGNATURE_LENGTH = 16;
-const TEST_SECRET = 'test-yjs-secret-for-unit-tests';
-
-function computeSignature(encodedPayload: string, secret = TEST_SECRET): string {
-  return createHmac('sha256', secret).update(encodedPayload).digest('hex').slice(0, SIGNATURE_LENGTH);
-}
+import type { DocKey, DocScope, SocketContext } from '../constants';
 
 interface TokenOptions {
   userId: string;
   entityType?: string;
+  entityId?: string;
   tenantId?: string;
   organizationId?: string | null;
   exp?: number;
-  secret?: string;
+  /** Key material to sign with; defaults to the backend's test key, whose public half the relay holds. */
+  keyMaterial?: string;
 }
 
-/** Generate a valid HMAC-signed token for tests. */
-export function createSignedToken(opts: string | TokenOptions, exp?: number, secret?: string): string {
-  const o: TokenOptions = typeof opts === 'string' ? { userId: opts, exp, secret } : opts;
+/** The token as the backend signs it: base64url payload and an Ed25519 signature over it. */
+export function signPayload(payload: unknown, keyMaterial = testYjsTokenKeyMaterial): string {
+  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
+  const signature = sign(null, Buffer.from(payloadB64), yjsTokenSigningKey(keyMaterial)).toString('base64url');
+  return `${payloadB64}.${signature}`;
+}
+
+/** Generate a validly signed token for tests. */
+export function createSignedToken(opts: string | TokenOptions, exp?: number): string {
+  const o: TokenOptions = typeof opts === 'string' ? { userId: opts, exp } : opts;
   const payload = {
     userId: o.userId,
     entityType: o.entityType ?? 'task',
+    entityId: o.entityId ?? 'entity-1',
     tenantId: o.tenantId ?? 'tenant-1',
     organizationId: o.organizationId ?? 'org-1',
     exp: o.exp ?? Date.now() + 30 * 60 * 1000,
   };
-  const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
-  const signature = computeSignature(payloadB64, o.secret ?? secret);
-  return `${payloadB64}${DELIMITER}${signature}`;
+  return signPayload(payload, o.keyMaterial);
 }
 
 export function createExpiredToken(userId: string): string {
   return createSignedToken({ userId, exp: Date.now() - 1000 });
 }
 
-/** Factory for DocContext with sensible defaults. */
-export function mockDocContext(overrides?: Partial<DocContext>): DocContext {
+/** A document scope with sensible defaults, as authorization reads it from the entity row. */
+export function mockScope(overrides?: Partial<DocScope>): DocScope {
+  return { entityType: 'task', entityId: 'entity-1', tenantId: 'tenant-1', organizationId: 'org-1', ...overrides };
+}
+
+/** A socket's context: authorized in `requested` unless `scope` says otherwise (null for a socket still pending). */
+export function mockSocketContext(
+  overrides: { userId?: string; requested?: DocScope; scope?: DocScope | null } = {},
+): SocketContext {
+  const requested = overrides.requested ?? mockScope();
   return {
-    entityType: 'task',
-    entityId: 'entity-1',
-    tenantId: 'tenant-1',
-    userId: 'user-1',
-    organizationId: 'org-1',
-    verified: false,
-    ...overrides,
+    userId: overrides.userId ?? 'user-1',
+    requested,
+    scope: overrides.scope === undefined ? requested : overrides.scope,
+    awaitingReply: false,
   };
 }
 
-const YMessage = { Sync: 0, Awareness: 1 } as const;
-const YSync = { Step1: 0, Update: 2 } as const;
+/** The fake storage's key for a document: its tenant, type and id. */
+export const storageKey = ({ tenantId, entityType, entityId }: DocKey) => `${tenantId}:${entityType}:${entityId}`;
+
+const YMessage = { Sync: 0, Awareness: 1, Generation: 4 } as const;
+const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
 
 export function buildSyncStep1(stateVector: Uint8Array): Uint8Array {
   const encoder = encoding.createEncoder();
@@ -65,12 +79,49 @@ export function buildSyncStep1(stateVector: Uint8Array): Uint8Array {
   return encoding.toUint8Array(encoder);
 }
 
-export function buildSyncUpdate(update: Uint8Array): Uint8Array {
+export function buildSyncUpdate(update: Uint8Array, syncType: number = YSync.Update): Uint8Array {
   const encoder = encoding.createEncoder();
   encoding.writeVarUint(encoder, YMessage.Sync);
-  encoding.writeVarUint(encoder, YSync.Update);
+  encoding.writeVarUint(encoder, syncType);
   encoding.writeVarUint8Array(encoder, update);
   return encoding.toUint8Array(encoder);
+}
+
+/** A client's reply to the relay's Step1: the update it holds that the relay lacks (an empty one when nothing). */
+export const buildSyncStep2 = (update: Uint8Array = Y.encodeStateAsUpdate(new Y.Doc())) =>
+  buildSyncUpdate(update, YSync.Step2);
+
+/** The generation a relay frame announces; null for any other frame. */
+export function decodeGeneration(message: Uint8Array): string | null {
+  const decoder = decoding.createDecoder(message);
+  if (decoding.readVarUint(decoder) !== YMessage.Generation) return null;
+  return decoding.readVarString(decoder);
+}
+
+/** An awareness update as y-protocols encodes it: each entry's client id, clock and JSON state (null removes it). */
+export function awarenessUpdate(...entries: { clientId: number; clock?: number; state?: unknown }[]): Uint8Array {
+  const encoder = encoding.createEncoder();
+  encoding.writeVarUint(encoder, entries.length);
+  for (const { clientId, clock = 1, state = { user: { name: `client ${clientId}` } } } of entries) {
+    encoding.writeVarUint(encoder, clientId);
+    encoding.writeVarUint(encoder, clock);
+    encoding.writeVarString(encoder, JSON.stringify(state));
+  }
+  return encoding.toUint8Array(encoder);
+}
+
+/** The client ids an awareness frame carries. */
+export function awarenessClientIds(message: Uint8Array): number[] {
+  const decoder = decoding.createDecoder(message);
+  decoding.readVarUint(decoder); // MESSAGE_AWARENESS
+  const update = decoding.createDecoder(decoding.readVarUint8Array(decoder));
+  const ids: number[] = [];
+  for (let count = decoding.readVarUint(update); count > 0; count--) {
+    ids.push(decoding.readVarUint(update));
+    decoding.readVarUint(update);
+    decoding.readVarString(update);
+  }
+  return ids;
 }
 
 export function buildAwarenessMessage(data: Uint8Array): Uint8Array {
@@ -99,14 +150,19 @@ export async function flushMicrotasks(rounds = 50): Promise<void> {
   for (let i = 0; i < rounds; i++) await Promise.resolve();
 }
 
-/** Minimal fake WebSocket for unit tests. */
+/** Minimal fake WebSocket for unit tests; `closed` records the close the relay sent, if any. */
 export function mockWebSocket(overrides?: { readyState?: number }): MockWebSocket {
   return {
     readyState: overrides?.readyState ?? 1,
     OPEN: 1,
     sent: [] as Uint8Array[],
+    closed: null,
     send(data: Uint8Array) {
       this.sent.push(data);
+    },
+    close(code?: number, reason?: string) {
+      this.closed = { code, reason };
+      this.readyState = 2;
     },
   };
 }
@@ -115,17 +171,21 @@ export interface MockWebSocket {
   readyState: number;
   OPEN: number;
   sent: Uint8Array[];
+  closed: { code?: number; reason?: string } | null;
   send(data: Uint8Array): void;
+  close(code?: number, reason?: string): void;
 }
 
 /** Use at top level: vi.mock('../data/storage', () => storageMock()) */
 export const storageMock = () => ({
   loadBase: vi.fn().mockResolvedValue(null),
-  ensureDoc: vi.fn().mockResolvedValue(new Uint8Array()),
-  appendUpdate: vi.fn().mockResolvedValue(undefined),
+  ensureDoc: vi.fn().mockResolvedValue({ state: new Uint8Array(), generation: 'gen-1' }),
+  appendUpdate: vi.fn().mockResolvedValue(true),
   readLog: vi.fn().mockResolvedValue([]),
-  compactState: vi.fn().mockResolvedValue(undefined),
+  compactState: vi.fn().mockResolvedValue(true),
+  discardLogRows: vi.fn().mockResolvedValue(undefined),
   deleteDoc: vi.fn().mockResolvedValue(undefined),
+  touchDoc: vi.fn().mockResolvedValue(true),
   listStaleDocs: vi.fn().mockResolvedValue([]),
 });
 
@@ -136,49 +196,78 @@ export const storageMock = () => ({
  */
 export function fakeStorage(delay?: (call: string) => Promise<void> | undefined) {
   const bases = new Map<string, Uint8Array>();
+  /** The generation of each base; a base a test sets without one reads as `gen-0`. Every seed gets a new one. */
+  const generations = new Map<string, string>();
   const logs = new Map<string, { id: number; payload: Uint8Array; userId: string | null }[]>();
   let nextId = 1;
-  const key = (ctx: DocContext) => `${ctx.entityType}:${ctx.entityId}`;
+  let seeds = 0;
+  const key = storageKey;
   const wait = async (call: string) => {
     const p = delay?.(call);
     if (p) await p;
   };
+  const row = (k: string) => {
+    const state = bases.get(k);
+    return state ? { state, generation: generations.get(k) ?? 'gen-0' } : null;
+  };
   const store = {
     bases,
+    generations,
     logs,
-    loadBase: vi.fn(async (ctx: DocContext) => {
+    loadBase: vi.fn(async (doc: DocKey) => {
       await wait('loadBase');
-      return bases.get(key(ctx)) ?? null;
+      return row(key(doc));
     }),
-    ensureDoc: vi.fn(async (ctx: DocContext, seed: Uint8Array | null) => {
+    ensureDoc: vi.fn(async (scope: DocScope, seed: Uint8Array | null) => {
       await wait('ensureDoc');
-      if (!bases.has(key(ctx))) bases.set(key(ctx), seed ?? new Uint8Array());
-      return bases.get(key(ctx))!;
+      if (!bases.has(key(scope))) {
+        bases.set(key(scope), seed ?? new Uint8Array());
+        generations.set(key(scope), `gen-${++seeds}`);
+      }
+      return row(key(scope))!;
     }),
-    appendUpdate: vi.fn(async (ctx: DocContext, payload: Uint8Array) => {
+    /** A test seeds a log without a `generation`; the relay always names one, and appends only to its row. */
+    appendUpdate: vi.fn(async (scope: DocScope, userId: string, payload: Uint8Array, generation?: string) => {
       await wait('appendUpdate');
-      const list = logs.get(key(ctx)) ?? [];
-      list.push({ id: nextId++, payload, userId: ctx.userId || null });
-      logs.set(key(ctx), list);
+      if (generation !== undefined && row(key(scope))?.generation !== generation) return false;
+      const list = logs.get(key(scope)) ?? [];
+      list.push({ id: nextId++, payload, userId: userId || null });
+      logs.set(key(scope), list);
+      return true;
     }),
-    readLog: vi.fn(async (ctx: DocContext) => {
+    readLog: vi.fn(async (doc: DocKey) => {
       await wait('readLog');
-      return [...(logs.get(key(ctx)) ?? [])];
+      return [...(logs.get(key(doc)) ?? [])];
     }),
-    compactState: vi.fn(async (ctx: DocContext, merged: Uint8Array, ids: number[]) => {
+    compactState: vi.fn(async (doc: DocKey, merged: Uint8Array, ids: number[], generation?: string) => {
       await wait('compactState');
-      bases.set(key(ctx), merged);
+      const current = row(key(doc));
+      if (!current || (generation !== undefined && current.generation !== generation)) return false;
+      bases.set(key(doc), merged);
       logs.set(
-        key(ctx),
-        (logs.get(key(ctx)) ?? []).filter((row) => !ids.includes(row.id)),
+        key(doc),
+        (logs.get(key(doc)) ?? []).filter((row) => !ids.includes(row.id)),
+      );
+      return true;
+    }),
+    discardLogRows: vi.fn(async (doc: DocKey, ids: number[]) => {
+      await wait('discardLogRows');
+      logs.set(
+        key(doc),
+        (logs.get(key(doc)) ?? []).filter((row) => !ids.includes(row.id)),
       );
     }),
-    deleteDoc: vi.fn(async (ctx: DocContext) => {
+    deleteDoc: vi.fn(async (doc: DocKey) => {
       await wait('deleteDoc');
-      bases.delete(key(ctx));
-      logs.delete(key(ctx));
+      bases.delete(key(doc));
+      generations.delete(key(doc));
+      logs.delete(key(doc));
     }),
-    listStaleDocs: vi.fn(async () => []),
+    touchDoc: vi.fn(async (doc: DocKey) => {
+      await wait('touchDoc');
+      return bases.has(key(doc));
+    }),
+    listStaleDocs: vi.fn(async (): Promise<DocScope[]> => []),
   };
   return store;
 }
@@ -199,9 +288,88 @@ export function mapUpdate(key: string, value: unknown): Uint8Array {
   return Y.encodeStateAsUpdate(doc);
 }
 
+/** A row logged before the relay refused updates Yjs cannot decode: no merge takes it. */
+export const undecodableUpdate = new Uint8Array([1, 2, 3]);
+
 /** Applies a state to a fresh doc and reads the `data` map. */
 export function readMap(state: Uint8Array): Record<string, unknown> {
   const doc = new Y.Doc();
   Y.applyUpdate(doc, state);
   return doc.getMap('data').toJSON();
+}
+
+/** Polls until `check` holds, failing after `timeout` ms. */
+export const until = (check: () => boolean | Promise<boolean>, timeout = 3000) =>
+  vi.waitUntil(check, { timeout, interval: 10 });
+
+/**
+ * The relay's upgrade and connection handlers on a loopback HTTP server, as the worker mounts them. They are imported
+ * when this runs, so the calling file's module mocks apply.
+ */
+export async function startRelayServer() {
+  const { setupConnectionHandler, setupUpgradeHandler } = await import('../server/upgrade');
+  // The sessions the handlers join, taken now: after a vi.resetModules() an import hands out a fresh session map.
+  const sessions = await import('../sync/session-manager');
+  const httpServer = createServer((_req, res) => res.writeHead(404).end());
+  const wss = new WebSocketServer({ noServer: true });
+  httpServer.on('upgrade', setupUpgradeHandler(wss));
+  setupConnectionHandler(wss);
+  await new Promise<void>((resolve) => httpServer.listen(0, '127.0.0.1', resolve));
+  const { port } = httpServer.address() as AddressInfo;
+  return {
+    httpServer,
+    wss,
+    port,
+    baseUrl: `ws://127.0.0.1:${port}`,
+    /** Ends every socket and closes the server. The relay arms timers per document session: none of `docs` outlives the file. */
+    async close(docs: DocKey[] = []) {
+      for (const client of wss.clients) client.terminate();
+      await until(() => wss.clients.size === 0);
+      // A closed socket leaves its session through its frame queue, which arms the session's cleanup.
+      await nextTurn();
+      for (const collab of docs.map((doc) => sessions.getCollab(doc))) {
+        clearTimeout(collab?.compactTimer);
+        clearTimeout(collab?.cleanupTimer);
+        clearInterval(collab?.liveTimer);
+      }
+      wss.close();
+      httpServer.close();
+    },
+  };
+}
+
+/** A client socket on `url`, once open: `received` collects every frame the relay sends it, `closed` its close. */
+export async function openSocket(url: string) {
+  const ws = new WsWebSocket(url);
+  const received: Uint8Array[] = [];
+  ws.on('message', (data: Buffer) => received.push(new Uint8Array(data)));
+  const closed = new Promise<{ code: number; reason: string }>((resolve) =>
+    ws.on('close', (code, reason) => resolve({ code, reason: reason.toString() })),
+  );
+  await new Promise<void>((resolve, reject) => {
+    ws.once('open', () => resolve());
+    ws.once('error', reject);
+  });
+  return { ws, received, closed };
+}
+
+/**
+ * What would end the process while the calling describe block runs: an uncaught exception (a socket 'error' without a
+ * listener, a throwing listener) or an unhandled rejection (a rejected upgrade handler). Emptied after each test.
+ */
+export function recordCrashes(): unknown[] {
+  const crashes: unknown[] = [];
+  const record = (err: unknown) => void crashes.push(err);
+  beforeAll(() => {
+    process.on('uncaughtException', record);
+    process.on('unhandledRejection', record);
+  });
+  afterEach(() => {
+    crashes.length = 0;
+  });
+  afterAll(() => {
+    process.off('uncaughtException', record);
+    process.off('unhandledRejection', record);
+  });
+  return crashes;
 }

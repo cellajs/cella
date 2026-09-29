@@ -1,27 +1,18 @@
-import { getColumns, type SQL } from 'drizzle-orm';
-import type { PgColumn } from 'drizzle-orm/pg-core';
-import { appConfig, hierarchy, type SeenTrackedProductType } from 'shared';
+import type { SQL } from 'drizzle-orm';
+import { hierarchy, type SeenTrackedProductType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
-import { groupingChannelTypes, seenWindowMs, trackedProductTypes } from '#/modules/seen/operations/mark-seen';
+import {
+  groupingChannelTypes,
+  homeChannelColumn,
+  seenWindowMs,
+  trackedProductTypes,
+} from '#/modules/seen/operations/mark-seen';
 import { findUnseenCountsByUser } from '#/modules/seen/seen-queries';
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
-
-/** Sub-context column for the read predicate: the parent-level id column, org fallback. */
-const homeChannelColumn = (productType: SeenTrackedProductType): PgColumn => {
-  const table = getEntityTable(productType);
-  const columns = getColumns(table) as Record<string, PgColumn | undefined>;
-  const parent = hierarchy.getParent(productType);
-  const parentColumn = parent
-    ? columns[appConfig.entityIdColumnKeys[parent as keyof typeof appConfig.entityIdColumnKeys]]
-    : undefined;
-  const column = parentColumn ?? columns.organizationId;
-  if (!column) throw new Error(`[Seen] No sub-context column for "${productType}"`);
-  return column;
-};
 
 export async function getUnseenCountsOp(ctx: UserContext) {
   const user = ctx.var.user;

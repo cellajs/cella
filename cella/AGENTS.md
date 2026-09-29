@@ -39,7 +39,8 @@ Route-level guards in `backend/src/middlewares/guard/`:
 - `orgGuard`: resolves the organization and verifies membership.
 - `publicGuard`: unauthenticated routes. Sets `ctx.var.db` to baseDb.
 - `crossTenantGuard`: authenticated cross-tenant routes. Sets `ctx.var.db = baseDb`. Handlers use `tenantRead()` for product entity queries.
-- Also: `sysAdminGuard`, `relatableGuard`.
+- `stepUpGuard`: after `userGuard` on account-security routes: the session must have proven its user's presence again recently, never an impersonation; else 403 `step_up_required` naming the methods. The routes, the proofs and the window: [Authentication](./AUTHENTICATION.md#step-up).
+- Also: `sysAdminGuard`, `relatableGuard`, `noImpersonationGuard` (after `userGuard`: the browser's own session, never an impersonation; 403 `impersonation_forbidden`).
 
 ### Database access patterns
 
@@ -55,7 +56,9 @@ Secret columns (a hash, a session or token secret, a private key) are declared o
 
 ## Auth
 
-Five sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA, token invocation), `magic/`, `oauth/` (signing in with a provider), `passkeys/` (WebAuthn), `totps/` (TOTP 2FA). Sessions: `general/helpers/session.ts`. Cookies: `general/helpers/cookie.ts`.
+Authentication model and rate limits: [Authentication](./AUTHENTICATION.md). Machine access: [Interoperability](./INTEROPERABILITY.md). Permission decisions: [Permissions](./PERMISSIONS.md). Tenant database boundary: [Multi-tenancy](./MULTI_TENANCY.md). Listener and secret-delivery boundaries: [Deployment](./DEPLOYMENT.md). Secret-column handling: [Architecture](./ARCHITECTURE.md#trust-boundaries). Telemetry redaction: [Observability](./OTEL.md#redaction). Security testing: [Testing](./TESTING.md#goals).
+
+Seven sub-modules in `backend/src/modules/auth/`: `general/` (session, cookies, MFA), `magic/`, `oauth/` (signing in with a provider), `passkeys/` (WebAuthn), `totps/` (TOTP 2FA), `step-up/` (proving presence again before account-security actions), `tokens/` (the token lifecycle: issue, redeem, read and spend, with one policy per token type; the only importer of `tokens-db`, enforced by Biome; a link type also has its handler in `general/helpers/link-handlers.ts`). Sessions: `general/helpers/session.ts` (`resolveSession` reads the app session from any request context). Cookies: `general/helpers/cookie.ts`.
 
 Machine access ([Interoperability](/docs/page/architecture/interoperability)): `actors/` (the supertype that `createdBy`/`updatedBy`/`deletedBy` on channel and product tables reference), `service-accounts/` (accounts, role `bindings`, API keys in `api_keys`), `oauth-server/` (the app's authorization server; process entry in `oauth/`, tokens verified by the guards), `mcp/` (tokens-only endpoint; process entry in `mcp/`). Names: API key, access scope (`accessScopes` derived from the policy matrix), binding, OAuth client. Name the proof: session, API key or access token; `credential` is the WebAuthn word (passkeys) and nothing else.
 
@@ -107,13 +110,13 @@ Every check takes an `Access` from `accessFrom(ctx)`. Never assemble one by hand
 Model: [Sync engine](./SYNC_ENGINE.md).
 
 - **Stx helpers** (`frontend/src/query/offline/`): `createStxForCreate()`, `createStxForUpdate()`, `createStxForDelete()` build sync transaction metadata from the cached entity version. Idempotency runs through `isTransactionProcessed()` (`backend/src/utils/idempotency.ts`) against the `activities` table.
-- **Realtime backend**: `activityBus` (`backend/src/lib/activity-bus.ts`) → `createStreamDispatcher()` → `streamSubscriberManager` (`backend/src/modules/entities/stream/`, SSE fan-out). `CdcWebSocketServer` (`backend/src/lib/cdc-websocket.ts`) accepts the CDC worker on `/internal/cdc`.
+- **Realtime backend**: `activityBus` (`backend/src/lib/activity-bus.ts`) → `createStreamDispatcher()` → `streamSubscriberManager` (`backend/src/modules/entities/stream/`, SSE fan-out). `CdcWebSocketServer` (`backend/src/lib/cdc-websocket.ts`) accepts the CDC worker on `/internal/cdc` of the internal listener (`backend/src/lib/listeners.ts`), which serves the server-to-server routes apart from the public API.
 - **Seen-by tracking**: `IntersectionObserver` marks entities seen. A Zustand store batches IDs, flushes on timer + `sendBeacon` on unload, persists flushed IDs in `localUserDb` (`kv` table). Unseen badges decrement optimistically in the query cache. Backend: `seen_by` (one row per user+product), `product_counters` (denormalized counts).
 - **Product cache** (`backend/src/middlewares/product-cache/`): [Sync engine](./SYNC_ENGINE.md#detail-cache).
 - **Sync signals** (`frontend/src/query/realtime/sync-signals.ts`): the only extension point for sync-derived per-user state. Never import module logic into the prioritizer. Contract: [Sync engine](./SYNC_ENGINE.md#fetch-prioritization).
 - **Server-driven writes** (CDC fan-out, materialization, scheduled jobs) must strip the client's `changedFields` from the stored `stx`, else the CDC worker attributes the write to the wrong columns (absent key = WAL diff): `stripChangedFields` (`backend/src/db/utils/strip-changed-fields.ts`) or `stripChangedFieldsStx` in the CDC worker.
 - **Schema evolution (lenses)**: breaking wire-shape changes to product entities ship as append-only lens modules in `shared/src/schema-evolution/`. Never edit a shipped module. Until the first lens ships, a breaking wire-shape change bumps `appConfig.clientCacheVersion` (gate: Commits & PRs). Playbook: [Schema evolution](/docs/page/architecture/schema-evolution).
-- **Evolution contract**: every entity module registers `evolutionContract.product` or `.channel` once and routes bodies through it. `lens:check` fails a configured type without one. Recipe: [New entity](./ADD_ENTITY.md). Model: [Schema evolution](./SCHEMA_EVOLUTION.md#evolution-contract).
+- **Evolution contract**: every entity module registers `evolutionContract.product` or `.channel` once and routes bodies through it. `lens:check` fails a configured type without one. Guide: [New entity](./ADD_ENTITY.md). Model: [Schema evolution](./SCHEMA_EVOLUTION.md#evolution-contract).
 
 ## Cross-product references
 

@@ -1,5 +1,7 @@
 import { i18n } from '../../../../emails/i18n';
+import { accessForUserIds } from '../helpers/access-for-users';
 import { findChannelNames } from '../helpers/channel-names';
+import { findReadableSubjectIds } from '../helpers/readable-subjects';
 import { escapeString } from '../helpers/render-digest-html';
 import { findSubjectNames } from '../helpers/subject-names';
 import { findUndigestedNotifications } from '../notification-queries';
@@ -24,15 +26,21 @@ export interface DigestContent {
 
 /**
  * Assemble one user's digest for the window `[since, now)`, with lines in the recipient's
- * language.
+ * language. The runner bounds `since` (run-digest.ts).
  *
- * The window comes from the stored `lastDigestAt`, so a late or skipped run resumes exactly
- * where the previous one stopped; a fixed "now minus 24h" window would silently drop the gap.
- * Rows already emailed instantly are excluded, so a mention never arrives twice.
+ * Rows already emailed instantly are excluded, so a mention never arrives twice. So are rows of
+ * an organization the user left and rows whose subject the user may no longer read: the digest
+ * names only what the recipient can open.
  */
-export async function buildDigestForUser(userId: string, since: Date | null, lng: string): Promise<DigestContent> {
-  const rows = await findUndigestedNotifications(userId, since?.toISOString() ?? null, MAX_ROWS);
-  if (rows.length === 0) return { notificationIds: [], sections: [] };
+export async function buildDigestForUser(userId: string, since: Date, lng: string): Promise<DigestContent> {
+  const empty: DigestContent = { notificationIds: [], sections: [] };
+  const undigested = await findUndigestedNotifications(userId, since.toISOString(), MAX_ROWS);
+  const access = undigested.length ? (await accessForUserIds([userId])).get(userId) : undefined;
+  if (!access) return empty;
+
+  const readable = await findReadableSubjectIds(access, undigested);
+  const rows = undigested.filter((row) => readable.has(row.subjectId));
+  if (rows.length === 0) return empty;
 
   const contextNames = await findSubjectNames(rows.map((row) => ({ ...row, id: row.contextId })));
   const channelNames = await findChannelNames(rows.map((row) => row.channelId));
@@ -50,7 +58,7 @@ export async function buildDigestForUser(userId: string, since: Date | null, lng
     sections.push({
       channelId,
       channelName: channelNames.get(channelId) ?? '',
-      lines: visible.map((row) => describeRow(row.type, contextNames.get(row.contextId ?? '') ?? '', lng)),
+      lines: visible.map((row) => describeDigestRow(row.type, contextNames.get(row.contextId ?? '') ?? '', lng)),
       overflow: Math.max(0, channelRows.length - visible.length),
     });
   }
@@ -59,20 +67,30 @@ export async function buildDigestForUser(userId: string, since: Date | null, lng
 }
 
 /**
- * One digest line, from `c:email.digest_line.<type>` (apps add theirs to `app.json`) with the
+ * One digest line as HTML, from `c:email.digest_line.<type>` (apps add theirs to `app.json`) with the
  * generic line as fallback. Kept short: the email links through and never reproduces the thread.
+ * The title is interpolated escaped; any markup around it lives in the translation string.
+ * @param type - Notification type, selecting the line's translation key.
+ * @param contextTitle - Title of the item the notification is about; empty renders as `-`.
+ * @param lng - Recipient language.
+ * @returns The line, safe to place in the digest's HTML list.
  */
-function describeRow(type: string, contextTitle: string, lng: string): string {
-  const title = `<strong>${escapeString(contextTitle || '-')}</strong>`;
-  return i18n.t([`c:email.digest_line.${type}`, 'c:email.digest_line.default'], { lng, title });
+export function describeDigestRow(type: string, contextTitle: string, lng: string): string {
+  return i18n.t([`c:email.digest_line.${type}`, 'c:email.digest_line.default'], { lng, title: contextTitle || '-' });
 }
 
-/** Digest sections as sanitised HTML, because Brevo per-recipient params are strings only. */
-export function renderSectionsHtml(sections: DigestSection[]): string {
+/**
+ * Digest sections as HTML with every user-derived fragment escaped: the digest mail's declared HTML param.
+ * @param sections - The sections `buildDigestForUser` assembled.
+ * @param lng - Recipient language, for the line that counts the rows left out.
+ * @returns The sections, safe to place in the digest mail.
+ */
+export function renderSectionsHtml(sections: DigestSection[], lng: string): string {
   return sections
     .map((section) => {
       const items = section.lines.map((line) => `<li>${line}</li>`).join('');
-      const more = section.overflow > 0 ? `<li>and ${section.overflow} more</li>` : '';
+      const more =
+        section.overflow > 0 ? `<li>${i18n.t('c:email.digest_overflow', { lng, count: section.overflow })}</li>` : '';
       return `<h3>${escapeString(section.channelName)}</h3><ul>${items}${more}</ul>`;
     })
     .join('');

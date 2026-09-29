@@ -2,12 +2,13 @@ import { and, eq } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
+import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { deleteInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import {
   bindInactiveMemberships,
-  deleteInvitationTokens,
   findClaimableInactiveMembership,
   findInactiveMembershipForUser,
 } from '#/modules/memberships/memberships-queries';
@@ -34,8 +35,10 @@ export async function handleMembershipInvitationOp(
     ? await findClaimableInactiveMembership(ctx, { id: inactiveMembershipId })
     : await findInactiveMembershipForUser(ctx, { id: inactiveMembershipId });
 
-  if (!inactiveMembership)
-    throw new AppError(404, 'inactive_membership_not_found', 'error', { meta: { id: inactiveMembershipId } });
+  // Missing, rejected and another user's alike (PERMISSIONS.md, Refusals).
+  if (!inactiveMembership) {
+    throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'invitation', id: inactiveMembershipId } });
+  }
 
   await baseDb.transaction(async (tx) => {
     if (acceptOrReject === 'accept') {
@@ -73,8 +76,12 @@ export async function handleMembershipInvitationOp(
         .update(inactiveMembershipsTable)
         .set({ rejectedAt: getIsoDate() })
         .where(and(eq(inactiveMembershipsTable.id, inactiveMembership.id)));
+      await deleteInvitationTokens({ var: { db: tx } }, { inactiveMembershipIds: [inactiveMembership.id] });
     }
   });
+
+  // The guards cache the user's memberships: the next request sees the new one, in-app and by token alike.
+  if (acceptOrReject === 'accept') await invalidateCache.user(baseDb, userId);
 
   const organizationId = inactiveMembership.organizationId;
   if (!organizationId) throw new AppError(500, 'server_error', 'error', { entityType: 'organization' });

@@ -9,6 +9,7 @@
     "ensure-state-bucket": "tsx tasks/ensure-state-bucket.ts",
     "validate-state-bucket-policy": "tsx tasks/validate-state-bucket-policy.ts",
     "print-deploy-env": "tsx tasks/print-deploy-env.ts",
+    "print-frontend-build-env": "tsx tasks/print-frontend-build-env.ts",
     "sync-rollout-config": "tsx tasks/sync-rollout-config.ts",
     "deploy": "tsx tasks/deploy.ts",
     "reap": "tsx tasks/reap.ts",
@@ -27,21 +28,21 @@
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1138.0",
+    "@aws-sdk/client-s3": "^3.1141.0",
     "@inquirer/core": "^12.0.3",
     "@inquirer/prompts": "^8.7.2",
-    "@pulumi/pulumi": "^3.264.0",
+    "@pulumi/pulumi": "^3.265.0",
     "@pulumi/random": "^4.21.2",
     "@pulumiverse/scaleway": "^1.56.1",
     "picocolors": "^1.1.1",
     "shared": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^26.6.2",
+    "@types/node": "^26.6.3",
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "tsup": "^8.5.1",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
-    "vitest": "^5.0.1"
+    "vitest": "^5.0.2"
   }
 }

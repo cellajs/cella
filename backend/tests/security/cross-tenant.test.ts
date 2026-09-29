@@ -6,66 +6,30 @@ import {
   getPresignedUrls,
   updateOrganization,
 } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
-import { generateId } from 'shared/utils/entity-id';
+import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { baseDb as db } from '#/db/db';
-import type { generateMockEntityBodyChannelIdColumns } from '#/mocks';
 import { defaultHeaders } from '../fixtures';
-import type { ErrorResponse } from '../helpers';
-import { seedEntityHierarchy } from '../hierarchy-helpers';
+import { expectRefusal } from '../helpers';
+import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
-import { mockFetchRequest, setTestConfig } from '../test-utils';
+import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
-
-// The create body carries the deepest seeded home id only (the placement seam derives the chain
-// above it server-side and the relation columns reference it); empty in cella's org-homed default.
-let plan: TestEntityHierarchyPlan | undefined;
-type BodyChannelIdColumns = ReturnType<typeof generateMockEntityBodyChannelIdColumns<'attachment'>>;
-const bodyChannelIdColumns = (): BodyChannelIdColumns => {
-  const deepest = hierarchy
-    .getOrderedAncestors('attachment')
-    .find((type) => type !== 'organization' && plan?.channelIdColumns[appConfig.entityIdColumnKeys[type]]);
-  if (!deepest) return {} as BodyChannelIdColumns;
-  const key = appConfig.entityIdColumnKeys[deepest];
-  return { [key]: plan?.channelIdColumns[key] } as BodyChannelIdColumns;
-};
-
-const attachmentBody = (id: string) => ({
-  id,
-  filename: 'cross-tenant.pdf',
-  contentType: 'application/pdf',
-  size: '1024',
-  keys: { original: `test/cross-tenant-${id}.pdf` },
-  bucketName: 'test-bucket',
-  // Body-level context ids derived from the hierarchy (empty in cella, e.g. { projectId } in apps).
-  ...bodyChannelIdColumns(),
-  stx: { mutationId: id, sourceId: 'cross-tenant', fieldTimestamps: {} },
-});
 
 // Verifies tenant guard isolation for authenticated users across tenants.
 describe('Cross-tenant API isolation', async () => {
   const call = await createAppClient();
   let tenantA: TestTenant;
   let tenantB: TestTenant;
+  let homeA: TestEntityHierarchyPlan;
+  let homeB: TestEntityHierarchyPlan;
 
   beforeAll(async () => {
-    mockFetchRequest();
     tenantA = await createTestTenant(call, 'tenant-a');
     tenantB = await createTestTenant(call, 'tenant-b');
-    plan = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: tenantA.organization.id,
-      makeChannelId: () => generateId(),
-    });
-    await seedEntityHierarchy(db, plan, {
-      tenantId: tenantA.tenantId,
-      createdBy: tenantA.user.id,
-      slugPrefix: 'cross-tenant',
-    });
+    homeA = await seedAttachmentHome({ id: tenantA.organization.id, tenantId: tenantA.tenantId }, tenantA.user.id);
+    homeB = await seedAttachmentHome({ id: tenantB.organization.id, tenantId: tenantB.tenantId }, tenantB.user.id);
   });
 
   afterAll(async () => {
@@ -73,47 +37,43 @@ describe('Cross-tenant API isolation', async () => {
   });
 
   describe('User A cannot access Tenant B resources', () => {
-    it('should reject GET attachments in another tenant with 403', async () => {
+    it("must not list Tenant B's attachments via User A's session", async () => {
       const { error, response } = await call(getAttachments, {
         path: { tenantId: tenantB.tenantId, organizationId: tenantB.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
-    it('should reject GET organization in another tenant with 403', async () => {
+    it("must not read Tenant B's organization via User A's session", async () => {
       const { error, response } = await call(getOrganization, {
         path: { tenantId: tenantB.tenantId, id: tenantB.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
   });
 
   describe('User B cannot access Tenant A resources', () => {
-    it('should reject GET attachments in another tenant with 403', async () => {
+    it("must not list Tenant A's attachments via User B's session", async () => {
       const { error, response } = await call(getAttachments, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
-    it('should reject GET organization in another tenant with 403', async () => {
+    it("must not read Tenant A's organization via User B's session", async () => {
       const { error, response } = await call(getOrganization, {
         path: { tenantId: tenantA.tenantId, id: tenantA.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
   });
 
   describe('Users can access their own tenant', () => {
-    it('should allow User A to GET attachments in Tenant A', async () => {
+    it("lists Tenant A's attachments for User A (positive control)", async () => {
       const { response } = await call(getAttachments, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
@@ -121,7 +81,7 @@ describe('Cross-tenant API isolation', async () => {
       expect(response.status).toBe(200);
     });
 
-    it('should allow User B to GET attachments in Tenant B', async () => {
+    it("lists Tenant B's attachments for User B (positive control)", async () => {
       const { response } = await call(getAttachments, {
         path: { tenantId: tenantB.tenantId, organizationId: tenantB.organization.id },
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
@@ -133,62 +93,75 @@ describe('Cross-tenant API isolation', async () => {
   // ---- Write isolation: cross-tenant write attempts ----
 
   describe('Cross-tenant write denial', () => {
-    it('should reject User A creating attachment in Tenant B with 403', async () => {
+    it("must not create an attachment in Tenant B via User A's session", async () => {
       const { error, response } = await call(createAttachments, {
         path: { tenantId: tenantB.tenantId, organizationId: tenantB.organization.id },
-        body: [attachmentBody('00000000-0000-4000-a000-000000000001')],
+        body: [attachmentBody('00000000-0000-4000-a000-000000000001', homeB)],
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
-    it('should reject User A updating Tenant B organization with 403', async () => {
+    it("must not rename Tenant B's organization via User A's session", async () => {
       const { error, response } = await call(updateOrganization, {
         path: { tenantId: tenantB.tenantId, id: tenantB.organization.id },
         body: { name: 'Hijacked by A' },
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
-    it('should reject User B creating attachment in Tenant A with 403', async () => {
+    it("must not create an attachment in Tenant A via User B's session", async () => {
       const { error, response } = await call(createAttachments, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
-        body: [attachmentBody('00000000-0000-4000-a000-000000000002')],
+        body: [attachmentBody('00000000-0000-4000-a000-000000000002', homeA)],
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
-    it('should reject User B updating Tenant A organization with 403', async () => {
+    it("must not rename Tenant A's organization via User B's session", async () => {
       const { error, response } = await call(updateOrganization, {
         path: { tenantId: tenantA.tenantId, id: tenantA.organization.id },
         body: { name: 'Hijacked by B' },
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
   });
 
-  // ---- Presigned URLs: the file-access boundary must never sign foreign rows ----
+  // ---- Tenant A's attachment: never listed for, nor signed for, Tenant B ----
 
-  describe('Cross-tenant presigned URL denial', () => {
+  describe("Cross-tenant reads of Tenant A's attachment", () => {
     const presignAttachmentId = '00000000-0000-4000-a000-0000000000a1';
+    let storedKey: string;
 
     beforeAll(async () => {
+      const body = attachmentBody(presignAttachmentId, homeA);
+      storedKey = body.keys.original;
       const { response } = await call(createAttachments, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
-        body: [attachmentBody(presignAttachmentId)],
+        body: [body],
         headers: { ...defaultHeaders, Cookie: tenantA.sessionCookie },
       });
       expect(response.status).toBe(201);
     });
 
-    it('should sign for the owning tenant user', async () => {
+    it("must not list Tenant A's attachment via User B's own tenant path", async () => {
+      const listedIds = async (tenant: TestTenant) => {
+        const { data, response } = await call(getAttachments, {
+          path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id },
+          headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+        });
+        expect(response.status).toBe(200);
+        return (data as { items: { id: string }[] }).items.map((item) => item.id);
+      };
+      expect(await listedIds(tenantB)).not.toContain(presignAttachmentId);
+      // The owning tenant's list carries it (positive control).
+      expect(await listedIds(tenantA)).toContain(presignAttachmentId);
+    });
+
+    it("signs Tenant A's attachment for User A (positive control)", async () => {
       const { data, response } = await call(getPresignedUrls, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
         body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },
@@ -198,20 +171,19 @@ describe('Cross-tenant API isolation', async () => {
       const result = data as GetPresignedUrlsResponse;
       expect(result.rejectedIds).toEqual([]);
       expect(result.data).toHaveLength(1);
-      expect(result.data[0]?.url).toContain(`test/cross-tenant-${presignAttachmentId}.pdf`);
+      expect(result.data[0]?.url).toContain(storedKey);
     });
 
-    it("should reject User B calling Tenant A's presign endpoint with 403", async () => {
+    it("must not sign Tenant A's attachment via User B's session on Tenant A's path", async () => {
       const { error, response } = await call(getPresignedUrls, {
         path: { tenantId: tenantA.tenantId, organizationId: tenantA.organization.id },
         body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },
         headers: { ...defaultHeaders, Cookie: tenantB.sessionCookie },
       });
-      expect(response.status).toBe(403);
-      expect((error as ErrorResponse).type).toBe('forbidden');
+      await expectRefusal({ response, error }, 403, 'forbidden');
     });
 
-    it("should reject Tenant A's attachment id in User B's own tenant uniformly, never signing it", async () => {
+    it("must not sign Tenant A's attachment via its id on User B's own tenant path", async () => {
       const { data, response } = await call(getPresignedUrls, {
         path: { tenantId: tenantB.tenantId, organizationId: tenantB.organization.id },
         body: { items: [{ attachmentId: presignAttachmentId, variant: 'original' }] },

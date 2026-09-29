@@ -1,17 +1,9 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
+import { stubLocalStorage } from '~/query/tests/query-client-env';
 
 // Real shared config, real sync-store, real query-client: this suite proves the TEMPLATE
 // derives no registered views (catchup requests stay byte-identical to the org baseline).
-vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
-vi.stubGlobal('navigator', { onLine: true });
-vi.stubGlobal('localStorage', {
-  getItem: vi.fn(() => null),
-  setItem: vi.fn(),
-  removeItem: vi.fn(),
-  clear: vi.fn(),
-  key: vi.fn(() => null),
-  length: 0,
-});
+stubLocalStorage();
 
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');

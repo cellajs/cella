@@ -56,6 +56,25 @@ describe('checkAccess with a scoped key or token', () => {
     expect(checkAccess(admin(['organization:write']), 'read', subject()).allowed).toBe(false);
   });
 
+  it('must not let a system admin act beyond a scoped key or token: the mask applies to the bypass too', () => {
+    const systemAdmin = (scopes: readonly AccessScope[] | null): Access => ({
+      actorId: 'u1',
+      isSystemAdmin: true,
+      memberships: [],
+      scopes,
+    });
+    // Positive control: the bypass itself holds, with no membership at all.
+    expect(checkAccess(systemAdmin(null), 'delete', subject()).allowed).toBe(true);
+    expect(checkAccess(systemAdmin(['attachment:read']), 'read', subject()).allowed).toBe(true);
+    expect(checkAccess(systemAdmin(['attachment:read']), 'delete', subject()).allowed).toBe(false);
+    expect(checkAccess(systemAdmin(['organization:write']), 'read', subject()).allowed).toBe(false);
+    // The batch and fan-out entry points mask the bypass alike.
+    expect(checkAccessBatch(systemAdmin(['attachment:read']), 'update', [subject()]).results.get('a1')?.allowed).toBe(
+      false,
+    );
+    expect(checkAccessFanout([systemAdmin(['attachment:read'])], 'update', subject())[0].allowed).toBe(false);
+  });
+
   it('the membership is still reported when the mask denies, so callers can tell the two apart', () => {
     const result = checkAccess(admin(['attachment:read']), 'update', subject());
     expect(result.allowed).toBe(false);

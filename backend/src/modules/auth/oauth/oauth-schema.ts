@@ -13,8 +13,6 @@ export const oauthCookiePayloadSchema = z.object({
   redirectAfter: z.string().optional(),
   codeVerifier: z.string().optional(),
   nonce: z.string().optional(),
-  // Connect flow: the connecting user pinned at initiation, since the SameSite=Strict session cookie is absent on the provider's callback.
-  connectUserId: z.string().optional(),
 });
 
 export type OAuthCookiePayload = z.infer<typeof oauthCookiePayloadSchema>;

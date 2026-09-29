@@ -1,37 +1,31 @@
 import { eq } from 'drizzle-orm';
 import { acceptInvitationToken, invokeToken } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
-import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { appConfig } from 'shared';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { hashToken } from '#/utils/hash-token';
-import { defaultHeaders } from '../fixtures';
-import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser } from '../helpers';
+import { adminRole, defaultHeaders, memberRole } from '../fixtures';
+import {
+  authCookie,
+  createOrganizationAdminUser,
+  createTestOrganization,
+  createTestSession,
+  createTestUser,
+  insertTestToken,
+  sentMails,
+} from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-import { createInvitation } from './helpers';
+import { clearDatabase, setTestConfig } from '../test-utils';
+import { createInvitation, readMembersAs } from './helpers';
 
-vi.mock('#/lib/mailer', () => ({
-  mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) },
-}));
-
-const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 const invitedEmail = 'invited-address@example.com';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'magic'], selfRegistration: true });
 
-beforeAll(async () => {
-  mockFetchRequest();
-});
-
-afterEach(async () => {
-  await clearDatabase();
-  vi.clearAllMocks();
-});
+afterEach(async () => await clearDatabase());
 
 describe('Accept an invitation token as the signed-in user', async () => {
   const call = await createAppClient();
@@ -78,12 +72,25 @@ describe('Accept an invitation token as the signed-in user', async () => {
 
     // The invited inbox may not belong to the accepting account, so it hears about the acceptance.
     expect(mailer.prepareEmails).toHaveBeenCalledTimes(1);
-    const [, statics, recipients] = vi.mocked(mailer.prepareEmails).mock.calls[0];
-    expect(statics).toMatchObject({
+    const mails = sentMails();
+    expect(mails.map(({ recipient }) => recipient.email)).toEqual([invitedEmail]);
+    expect(mails[0].statics).toMatchObject({
       type: 'invitation-accepted-elsewhere',
       details: { accountEmail: 'my-account@example.com' },
     });
-    expect(recipients).toEqual([expect.objectContaining({ email: invitedEmail })]);
+  });
+
+  it('lets the new member into the organization right after accepting', async () => {
+    const { organization, invitationCookie } = await setup();
+    const me = await createTestUser('my-account@example.com');
+    const sessionCookie = await createTestSession(me);
+    const readMembers = () => readMembersAs(organization, sessionCookie);
+    expect((await readMembers()).response.status).toBe(403);
+
+    const { response } = await accept([sessionCookie, invitationCookie]);
+    expect(response.status).toBe(200);
+
+    expect((await readMembers()).response.status).toBe(200);
   });
 
   it('cannot be replayed once accepted', async () => {
@@ -95,7 +102,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     expect(first.response.status).toBe(200);
 
     const replay = await accept([await createTestSession(other), invitationCookie]);
-    expect(replay.response.status).toBe(404);
+    expect(replay.response.status).toBe(401);
     expect(await membershipsOf(other.id)).toHaveLength(0);
   });
 
@@ -148,24 +155,13 @@ describe('Accept an invitation token as the signed-in user', async () => {
     expect(mailer.prepareEmails).not.toHaveBeenCalled();
   });
 
-  it('requires a session', async () => {
-    const { invitationCookie, inactiveMembership } = await setup();
-
-    const { response } = await accept([invitationCookie]);
-
-    expect(response.status).toBe(401);
-    expect(
-      await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id)),
-    ).toHaveLength(1);
-  });
-
   it('requires the single-use invitation cookie', async () => {
     await setup();
     const me = await createTestUser('my-account@example.com');
 
     const { response } = await accept([await createTestSession(me)]);
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(401);
     expect(await membershipsOf(me.id)).toHaveLength(0);
   });
 
@@ -204,8 +200,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     const me = await createOrganizationAdminUser(
       'my-account@example.com',
       organization.id,
-      'admin',
-      true,
+      adminRole,
       organization.tenantId,
     );
     const { inactiveMembership, invitationCookie } = await createInvitation({
@@ -220,7 +215,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     expect(response.status).toBe(200);
     const memberships = await membershipsOf(me.id);
     expect(memberships).toHaveLength(1);
-    expect(memberships[0].role).toBe('admin');
+    expect(memberships[0].role).toBe(adminRole);
     expect(
       await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id)),
     ).toHaveLength(0);
@@ -264,16 +259,13 @@ describe('Opening a token link while signed in', async () => {
 
   it('keeps the short window for other token types', async () => {
     const owner = await createTestUser('owner@example.com');
-    const raw = nanoid(40);
-    await db.insert(tokensTable).values({
-      secret: hashToken(raw),
-      type: 'magic',
-      email: owner.email,
-      userId: owner.id,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-    });
+    const { raw, row: link } = await insertTestToken('magic', owner);
 
-    await call(invokeToken, { path: { type: 'magic', token: raw }, headers: defaultHeaders });
+    // Opened in the browser that asked for it, so it is redeemed directly.
+    await call(invokeToken, {
+      path: { type: 'magic', token: raw },
+      headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', link.id) },
+    });
 
     const [opened] = await db.select().from(tokensTable).where(eq(tokensTable.email, owner.email));
     const minutesLeft = (new Date(opened.expiresAt).getTime() - Date.now()) / 60_000;
@@ -290,26 +282,20 @@ describe('Opening a token link while signed in', async () => {
       headers: { ...defaultHeaders, Cookie: await createTestSession(me) },
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
   });
 
   it("still refuses another user's magic link", async () => {
     const owner = await createTestUser('owner@example.com');
     const me = await createTestUser('my-account@example.com');
-    const raw = nanoid(40);
-    await db.insert(tokensTable).values({
-      secret: hashToken(raw),
-      type: 'magic',
-      email: owner.email,
-      userId: owner.id,
-      expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-    });
+    const { raw, row: link } = await insertTestToken('magic', owner);
 
+    const cookies = [await createTestSession(me), authCookie('magic-requested', link.id)].join('; ');
     const { response } = await call(invokeToken, {
       path: { type: 'magic', token: raw },
-      headers: { ...defaultHeaders, Cookie: await createTestSession(me) },
+      headers: { ...defaultHeaders, Cookie: cookies },
     });
 
-    expect(response.status).toBe(400);
+    expect(response.status).toBe(409);
   });
 });

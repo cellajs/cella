@@ -1,35 +1,74 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import process from 'node:process';
 import { getRequestListener } from '@hono/node-server';
+import { RESPONSE_ALREADY_SENT } from '@hono/node-server/utils/response';
 import { eq, sql } from 'drizzle-orm';
+import { Hono } from 'hono';
 import type Provider from 'oidc-provider';
 import { createHealthApp } from 'shared/health-app';
+import type { Env } from '#/core/context';
 import { baseDb } from '#/db/db';
 import { env } from '#/env';
+import { appErrorHandler } from '#/lib/error';
+import { type HealthComponent, mapDatabaseComponent, rollupStatus } from '#/lib/health-helpers';
+import { authInvalidationHealth } from '#/middlewares/guard/invalidation-listener';
+import { limiterScope } from '#/middlewares/rate-limiter/helpers';
 import { createInteractionsApp } from '#/modules/oauth-server/interactions';
 import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
 
 export const OAUTH_MOUNT = '/oauth';
 
-/** What the deploy smoke reads: the store answers and a signing key exists; either missing is a 503. */
+/**
+ * The `?depth=full` diagnostics, in the API's component shape: the store answers, a signing key exists and this
+ * process hears auth invalidations; any of them missing is a 503.
+ */
 async function probeHealth(): Promise<{ httpStatus: number; body: unknown }> {
-  const components: Record<string, 'ok' | 'fail'> = { db: 'fail', signingKey: 'fail' };
+  const components: Record<string, HealthComponent> = {};
+  const startedAt = Date.now();
+  let signingKey = false;
   try {
     await baseDb.execute(sql`select 1`);
-    components.db = 'ok';
+    components.database = mapDatabaseComponent(true, Date.now() - startedAt);
     const [key] = await baseDb
       .select({ id: signingKeysTable.id })
       .from(signingKeysTable)
       .where(eq(signingKeysTable.status, 'current'))
       .limit(1);
-    if (key) components.signingKey = 'ok';
+    signingKey = key !== undefined;
   } catch {
-    // Reported below as the failing component.
+    // The store did not answer, or the key query it reached first did not: reported below.
+    components.database ??= mapDatabaseComponent(false, null);
   }
-  const ok = Object.values(components).every((status) => status === 'ok');
-  return { httpStatus: ok ? 200 : 503, body: { status: ok ? 'ok' : 'fail', components } };
+  components.signingKey = signingKey
+    ? { status: 'healthy', checkedVia: 'local' }
+    : { status: 'unhealthy', checkedVia: 'local', reason: 'signing_key_missing' };
+  components.authInvalidation = authInvalidationHealth();
+  const status = rollupStatus(components, new Set(Object.keys(components)));
+  return {
+    httpStatus: status === 'unhealthy' ? 503 : 200,
+    body: { status, uptime: Math.floor(process.uptime()), components },
+  };
 }
 
 type Listener = (req: IncomingMessage, res: ServerResponse) => void;
+
+/**
+ * The provider with each request bound for its client metadata fetch hook (`limiterScope`), as the interaction routes
+ * are: the hook charges the per-IP fetch budget only when a client id is about to be fetched, so a request that fetches
+ * nothing, a known client's refresh among them, never counts. The provider answers on the raw response and reads the
+ * request body itself.
+ */
+function withLimiterScope(handle: (req: IncomingMessage, res: ServerResponse) => unknown): Listener {
+  const app = new Hono<Env>();
+  app.onError(appErrorHandler);
+  app.use(limiterScope);
+  app.all('*', async (c) => {
+    await handle(c.env.incoming, c.env.outgoing);
+    return RESPONSE_ALREADY_SENT;
+  });
+  const listener = getRequestListener(app.fetch, { autoCleanupIncoming: false });
+  return (req, res) => void listener(req, res);
+}
 
 /**
  * One Node request listener for the authorization server process: the provider (a plain Node handler, mounted with
@@ -37,7 +76,7 @@ type Listener = (req: IncomingMessage, res: ServerResponse) => void;
  * entry and the integration tests.
  */
 export function createOauthListener(provider: Provider): Listener {
-  const oidc = provider.callback();
+  const oidc = withLimiterScope(provider.callback());
   const interactions = getRequestListener(createInteractionsApp(provider).fetch);
   const health = getRequestListener(createHealthApp({ version: env.RELEASE_SHA, full: probeHealth }).fetch);
 

@@ -24,18 +24,27 @@ const orgAdmin: MembershipBaseModel[] = [
   } as unknown as MembershipBaseModel,
 ];
 
+// A node below ORG whose counters row carries its verified path.
+const CHILD = 'node-catchup-child';
+
 beforeAll(async () => {
   await seedDb.execute(
     sql.raw(`
-      INSERT INTO channel_counters (channel_key, counts, updated_at)
-      VALUES ('${ORG}', '{"sequence": 40, "e:f:${productType}": 37, "e:c:${productType}": 12}'::jsonb, NOW())
-      ON CONFLICT (channel_key) DO UPDATE SET counts = EXCLUDED.counts
+      INSERT INTO channel_counters (channel_key, counts, path, updated_at)
+      VALUES
+        ('${ORG}', '{"sequence": 40, "e:f:${productType}": 37, "e:c:${productType}": 12}'::jsonb, NULL, NOW()),
+        -- Another organization's row as CDC left it at runtime: counts but no path.
+        ('${OTHER_ORG}', '{"sequence": 90, "e:f:${productType}": 88, "e:c:${productType}": 7}'::jsonb, NULL, NOW()),
+        ('${CHILD}', '{"e:f:${productType}": 21, "e:c:${productType}": 3}'::jsonb, '${ORG}/${CHILD}', NOW())
+      ON CONFLICT (channel_key) DO UPDATE SET counts = EXCLUDED.counts, path = EXCLUDED.path
     `),
   );
 });
 
 afterAll(async () => {
-  await seedDb.execute(sql.raw(`DELETE FROM channel_counters WHERE channel_key = '${ORG}'`));
+  await seedDb.execute(
+    sql.raw(`DELETE FROM channel_counters WHERE channel_key IN ('${ORG}', '${OTHER_ORG}', '${CHILD}')`),
+  );
 });
 
 describe('answerCatchupViews', () => {
@@ -80,6 +89,24 @@ describe('answerCatchupViews', () => {
     ]);
 
     expect(answers).toEqual([{ key: 'v3', status: 'forbidden' }]);
+  });
+
+  it("must not read another org's frontiers via a forged prefix on a counters row without a path", async () => {
+    const answers = await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
+      { key: 'v4', organizationId: ORG, prefixes: [`${ORG}/${OTHER_ORG}`], entityTypes: [productType], cursor: 0 },
+    ]);
+
+    expect(answers).toEqual([{ key: 'v4', status: 'opaque' }]);
+  });
+
+  it('answers a deeper node whose verified path lies in the org (positive control)', async () => {
+    const answers = await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [
+      { key: 'v5', organizationId: ORG, prefixes: [`${ORG}/${CHILD}`], entityTypes: [productType], cursor: 0 },
+    ]);
+
+    expect(answers).toEqual([
+      { key: 'v5', status: 'ok', frontiers: { [productType]: 21 }, counts: { [productType]: 3 } },
+    ]);
   });
 
   it('returns empty for no views', async () => {

@@ -8,7 +8,7 @@ import { replicationState } from '../../services/replication-state';
 import { lsnToBigInt } from '../../utils/lsn';
 import { type CdcPipelineHarness, slotActive, startCdcPipeline, waitFor } from './pipeline-harness';
 
-const WS_PORT = Number(new URL(process.env.API_WS_URL ?? 'ws://127.0.0.1:4788').port || 4788);
+const WS_PORT = Number(new URL(process.env.BACKEND_INTERNAL_URL ?? 'http://127.0.0.1:4788').port || 4788);
 
 /** Probe whether the configured DB can support this suite. TEST_MODE gating lives in vitest.config.ts. */
 async function probeReady(): Promise<boolean> {

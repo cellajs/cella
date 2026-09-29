@@ -81,6 +81,8 @@ export const deleteOrganizationsByIds = async (ctx: ActorContext, { ids }: Delet
 interface FindOrganizationsPaginatedOpts {
   isSystemAdmin: boolean;
   targetUserId: string;
+  /** Limits the list, its total and its includes to these organizations; unset lists every one the target belongs to. */
+  organizationIds?: string[];
   q?: string;
   sort?: 'id' | 'name' | 'createdAt' | 'userRole' | 'displayOrder';
   order?: 'asc' | 'desc';
@@ -93,7 +95,19 @@ interface FindOrganizationsPaginatedOpts {
 
 export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrganizationsPaginatedOpts) => {
   const { db } = ctx.var;
-  const { isSystemAdmin, targetUserId, q, sort, order, offset, limit, excludeArchived, role, includeCounts } = opts;
+  const {
+    isSystemAdmin,
+    targetUserId,
+    organizationIds,
+    q,
+    sort,
+    order,
+    offset,
+    limit,
+    excludeArchived,
+    role,
+    includeCounts,
+  } = opts;
 
   const entityType = 'organization';
 
@@ -112,7 +126,10 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
   const membershipOn = and(membershipKeyOn, membershipFilterOn);
 
   // Org-only filters belong in WHERE (safe for both admin + non-admin)
-  const orgWhere: SQL[] = [...(q ? [ilike(organizationsTable.name, prepareStringForILikeFilter(q))] : [])];
+  const orgWhere: SQL[] = [
+    ...(q ? [ilike(organizationsTable.name, prepareStringForILikeFilter(q))] : []),
+    ...(organizationIds ? [inArray(organizationsTable.id, organizationIds)] : []),
+  ];
 
   const orderBy = getOrderColumns({
     sort,

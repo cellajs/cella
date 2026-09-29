@@ -44,7 +44,10 @@ export function resolveViewReadStatusForPolicies(
   return classifyPrefix(prefix, input.organizationId, resolveCollectionReadFilterForPolicies(input), depth, truePath);
 }
 
-/** Verifies claimed ancestry against the CDC-maintained canonical path: a mismatch returns opaque (no existence oracle), a missing path proves only the node id. */
+/**
+ * Verifies claimed ancestry against the CDC-maintained canonical path: a mismatch returns opaque (no existence
+ * oracle), a missing path proves only the node id and never that a deeper node lives in the organization.
+ */
 function classifyPrefix(
   prefix: string,
   organizationId: string,
@@ -60,11 +63,13 @@ function classifyPrefix(
   // shortcut: equality also proves the node lives in this org, blocking a forged cross-org claim.
   if (truePath != null && truePath !== prefix) return hasNoReadScope(filter) ? 'forbidden' : 'opaque';
 
-  // Org-wide unconditional read (org admin, sysadmin): every node in the org is answerable.
-  if (filter.homeChannelIds === undefined) return 'ok';
-
   const node = segments[segments.length - 1];
   const isOrgPrefix = segments.length === 1;
+
+  // Org-wide unconditional read (org admin, sysadmin): every node proven to be in the org is answerable. The org
+  // prefix proves itself; a deeper node needs its verified path, since without one its first segment is only a claim.
+  if (filter.homeChannelIds === undefined) return isOrgPrefix || truePath != null ? 'ok' : 'opaque';
+
   // Verified: every segment is a real ancestor; unverified: only the node id is trusted.
   const provableIds = truePath != null ? segments : [node];
 

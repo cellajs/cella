@@ -4,12 +4,10 @@ import { resolveListTotal } from './list-total';
 const items = [{ id: 'a' }, { id: 'b' }, { id: 'c' }];
 
 describe('resolveListTotal', () => {
-  it('reports page length without invoking a total source', async () => {
-    const getTotal = vi.fn();
+  it('reports page length without a total source', async () => {
     const result = await resolveListTotal(Promise.resolve(items), { kind: 'pageLength' });
 
     expect(result).toEqual({ items, total: items.length });
-    expect(getTotal).not.toHaveBeenCalled();
   });
 
   it.each(['counter', 'exact'] as const)('resolves a %s total', async (kind) => {

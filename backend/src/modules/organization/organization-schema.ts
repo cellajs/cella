@@ -1,5 +1,4 @@
 import { z } from '@hono/zod-openapi';
-import { t } from 'i18next';
 import { appConfig, type OrganizationFlags, roles } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
@@ -13,12 +12,13 @@ import {
   maxLength,
   noDuplicateSlugsRefine,
   paginationQuerySchema,
+  translatedError,
   validCDNUrlSchema,
-  validIdSchema,
   validNameSchema,
   validSlugSchema,
   validTempIdSchema,
   validUrlSchema,
+  validUuidSchema,
 } from '#/schemas';
 import { setupConfigSchema } from '#/schemas/app-schemas';
 import { channelIncludedSchema } from '#/schemas/channel-included';
@@ -113,14 +113,14 @@ export const organizationCreateBodySchema = organizationContract.createItemSchem
   .array()
   .min(1)
   .max(10)
-  .refine(noDuplicateSlugsRefine, t('error:duplicate_slugs'));
+  .refine(noDuplicateSlugsRefine, translatedError('error:duplicate_slugs'));
 
 export const organizationUpdateBodySchema = organizationContract.updateBodySchema;
 
 export const organizationListQuerySchema = paginationQuerySchema.extend({
   sort: z.enum(['id', 'name', 'createdAt', 'displayOrder']).default('displayOrder'),
   order: z.enum(['asc', 'desc']).default('asc'),
-  relatableUserId: validIdSchema.optional(),
+  relatableUserId: validUuidSchema.optional(),
   role: z.enum(roles.all).optional(),
   excludeArchived: excludeArchivedQuerySchema,
   include: includeQuerySchema,

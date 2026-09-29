@@ -12,6 +12,12 @@ type OrgScopedEntityTable = AnyPgTable & {
   createdAt: PgColumn;
 };
 
+/** A row's recency for the seen window: publish time on draft-lifecycle tables, creation time elsewhere. */
+export const seenRecencySql = (table: AnyPgTable & { createdAt: PgColumn }): SQL<string> => {
+  const { publishedAt } = getColumns(table) as Record<string, PgColumn | undefined>;
+  return publishedAt ? sql<string>`COALESCE(${publishedAt}, ${table.createdAt})` : sql<string>`${table.createdAt}`;
+};
+
 interface FindUnseenCountsByUserOpts {
   userId: string;
   channelIds: string[];
@@ -36,14 +42,9 @@ export const findUnseenCountsByUser = async (
 
     const channelIdColumn = homeChannelIdSql(productType, entityTable);
 
-    // Recency key: publish time on draft-lifecycle tables, createdAt elsewhere.
-    const recencyColumn: SQL<string> = columns.publishedAt
-      ? sql<string>`COALESCE(${columns.publishedAt}, ${orgTable.createdAt})`
-      : sql<string>`${orgTable.createdAt}`;
-
     const filters: SQL[] = [
       inArray(channelIdColumn, channelIds),
-      gt(recencyColumn, cutoff),
+      gt(seenRecencySql(orgTable), cutoff),
       sql`NOT EXISTS (SELECT 1 FROM ${seenByTable} WHERE ${seenByTable.userId} = ${userId} AND ${seenByTable.productId} = ${orgTable.id})`,
     ];
     if (columns.deletedAt) filters.push(isNull(columns.deletedAt));

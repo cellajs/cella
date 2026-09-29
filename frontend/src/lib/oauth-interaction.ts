@@ -6,6 +6,8 @@ export interface ConsentDetails {
   client: { id: string; name: string; logoUri: string | null; kind: 'cimd' | 'registered' };
   scopes: string[];
   resource: { face: 'api' | 'mcp'; tenantId: string; organizationId?: string };
+  /** Names of the tenant and organization the grant reaches, as the server allows this user to see them. */
+  target: { tenant: string | null; organization: string | null };
   user: { id: string; name: string };
   prompt: { name: string; reasons: string[] };
   refusal: 'not_a_member' | 'unregistered_clients_not_allowed' | 'app_not_installed' | null;

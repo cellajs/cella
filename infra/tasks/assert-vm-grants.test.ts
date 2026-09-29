@@ -95,6 +95,56 @@ describe('assertVmGrants', () => {
     expect(result.extra).toEqual(['ObjectStorageReadOnly']);
   });
 
+  it('must not pass a secret-reading rule whose condition differs from the required path condition', async () => {
+    // IAM conditions only narrow an allow: a second secret rule without the condition reads every secret of the project, so the exact string must match on every secret-granting rule.
+    const condition = 'resource.name.startsWith("/cella-production/backend/")';
+    const grants = (rules: Array<Record<string, unknown>>) =>
+      assertVmGrants({
+        ...baseOpts,
+        requiredSecretCondition: condition,
+        fetchImpl: makeFetch([
+          NO_GROUPS,
+          {
+            match: '/iam/v1alpha1/policies?',
+            body: {
+              policies: [
+                { id: 'pol-1', name: 'vm-reader-policy', application_id: 'vm-app' },
+                { id: 'pol-2', name: 'console-added', application_id: 'vm-app' },
+              ],
+            },
+          },
+          { match: '/iam/v1alpha1/rules?policy_id=pol-1', body: { rules: rules.slice(0, 1) } },
+          { match: '/iam/v1alpha1/rules?policy_id=pol-2', body: { rules: rules.slice(1) } },
+        ]),
+      });
+    const secretRule = { permission_set_names: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'], condition };
+
+    // The second policy's secret rule without the condition fails the check; a registry-only rule needs no condition.
+    const widened = await grants([
+      secretRule,
+      { permission_set_names: ['ContainerRegistryReadOnly', 'SecretManagerSecretAccess'] },
+    ]);
+    expect(widened.ok).toBe(false);
+    expect(widened.unconditionedSecretRules).toEqual([
+      "console-added [ContainerRegistryReadOnly, SecretManagerSecretAccess] condition='(none)'",
+    ]);
+    const wider = await grants([
+      secretRule,
+      {
+        permission_set_names: ['ContainerRegistryReadOnly', 'SecretManagerSecretAccess'],
+        condition: `${condition} || true`,
+      },
+    ]);
+    expect(wider.ok).toBe(false);
+    expect(wider.unconditionedSecretRules).toHaveLength(1);
+
+    // Positive control: the exact condition on every secret rule passes.
+    const exact = await grants([secretRule, { permission_set_names: ['ContainerRegistryReadOnly'] }]);
+    expect(exact.missing).toEqual([]);
+    expect(exact.unconditionedSecretRules).toEqual([]);
+    expect(exact.ok).toBe(true);
+  });
+
   it('excludes policies bound to other principals (shared-organization leakage)', async () => {
     const fetchImpl = makeFetch([
       NO_GROUPS,

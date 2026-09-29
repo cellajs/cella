@@ -10,7 +10,7 @@ export type { Tx };
 const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
 
 /** The pool opens lazily on first query, so unconditional construction is safe under NODB. */
-export const db = createPgConnection(env.DATABASE_URL, { max: env.YJS_DB_POOL_MAX, sslCa, logger: env.DEBUG });
+export const db = createPgConnection(env.DATABASE_URL, { max: env.YJS_DB_POOL_MAX, sslCa, debug: env.DEBUG });
 
 /** Runs `fn` in a transaction with tenant/user RLS context: `set_config(..., true)` scopes the vars to the transaction, so pooled connections never leak context. */
 export async function withRlsTx<T>(tenantId: string, userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {

@@ -1,0 +1,148 @@
+import { eq } from 'drizzle-orm';
+import { createAttachments } from 'sdk';
+import { appConfig } from 'shared';
+import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { generateId } from 'shared/utils/entity-id';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { baseDb as db } from '#/db/db';
+import { activitiesTable } from '#/modules/activities/activities-db';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { defaultHeaders, memberRole } from '../fixtures';
+import { adminDb, createTestOrganization } from '../helpers';
+import { attachmentBody, cleanupEntityHierarchy, seedAttachmentHome } from '../hierarchy-helpers';
+import { createAppClient } from '../test-client';
+import { setTestConfig } from '../test-utils';
+import { clearSecurityTestData, createOrgUser } from './helpers';
+
+setTestConfig({ enabledAuthStrategies: ['passkey'] });
+
+type Created = { data: { id: string; createdBy: { id: string } | null }[] };
+
+/**
+ * A create carries a client-chosen mutation id, and a replay of a processed one answers with the rows it created. The
+ * id travels in every sync payload, so another member can learn it: a replay by them must never return someone
+ * else's rows.
+ */
+describe('Idempotent attachment creates', async () => {
+  const call = await createAppClient();
+  let organization: { id: string; tenantId: string };
+  let plan: TestEntityHierarchyPlan;
+  /** An organization in another tenant that the owner is a member of too. */
+  let elsewhere: { id: string; tenantId: string };
+  let planElsewhere: TestEntityHierarchyPlan;
+  let owner: { id: string; sessionCookie: string };
+  let other: { id: string; sessionCookie: string };
+
+  /** A create body for an upload in `home`, sent as the sync mutation `mutationId`. */
+  const bodyFor = (id: string, mutationId: string, home = plan) =>
+    attachmentBody(id, home, {
+      bucketName: appConfig.s3.privateBucket,
+      stx: { mutationId, sourceId: 'idempotency-test', fieldTimestamps: {} },
+    });
+
+  const create = async (
+    as: { sessionCookie: string },
+    body: ReturnType<typeof bodyFor>,
+    home: { id: string; tenantId: string } = organization,
+  ) => {
+    const { data, response } = await call(createAttachments, {
+      path: { tenantId: home.tenantId, organizationId: home.id },
+      body: [body] as never,
+      headers: { ...defaultHeaders, Cookie: as.sessionCookie },
+    });
+    return { status: response.status, data: (data as Created | undefined)?.data ?? [] };
+  };
+
+  /** The CDC worker logs each processed write with its stx; the suite runs without it, so the test writes the row. */
+  const logProcessed = (mutationId: string, attachmentId: string, userId: string) =>
+    adminDb.insert(activitiesTable).values({
+      id: generateId(),
+      tenantId: organization.tenantId,
+      organizationId: organization.id,
+      userId,
+      entityType: 'attachment',
+      action: 'create',
+      tableName: 'attachments',
+      type: 'attachment.created',
+      subjectId: attachmentId,
+      createdAt: new Date().toISOString(),
+      stx: { mutationId, sourceId: 'idempotency-test', fieldTimestamps: {} },
+    });
+
+  const storedRow = async (id: string) =>
+    (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
+
+  beforeAll(async () => {
+    organization = await createTestOrganization();
+    owner = await createOrgUser(call, organization.tenantId, organization.id, 'idempotency-owner');
+    other = await createOrgUser(call, organization.tenantId, organization.id, 'idempotency-other');
+    plan = await seedAttachmentHome(organization, owner.id);
+
+    elsewhere = await createTestOrganization();
+    planElsewhere = await seedAttachmentHome(elsewhere, owner.id);
+    await db.insert(membershipsTable).values({
+      id: generateId(),
+      userId: owner.id,
+      channelId: elsewhere.id,
+      organizationId: elsewhere.id,
+      tenantId: elsewhere.tenantId,
+      channelType: 'organization',
+      role: memberRole,
+      displayOrder: 2,
+      createdBy: owner.id,
+    });
+  });
+
+  afterAll(async () => {
+    for (const { tenantId } of [organization, elsewhere]) {
+      await adminDb.delete(attachmentsTable).where(eq(attachmentsTable.tenantId, tenantId));
+      await adminDb.delete(activitiesTable).where(eq(activitiesTable.tenantId, tenantId));
+    }
+    await cleanupEntityHierarchy(adminDb, plan, planElsewhere);
+    await clearSecurityTestData();
+  });
+
+  it("must not return another member's attachment via a replayed mutation id", async () => {
+    const mutationId = generateId();
+    const ownersId = generateId();
+    expect((await create(owner, bodyFor(ownersId, mutationId))).status).toBe(201);
+    await logProcessed(mutationId, ownersId, owner.id);
+
+    const replayedId = generateId();
+    const { status, data } = await create(other, bodyFor(replayedId, mutationId));
+    expect(status).toBe(201);
+    expect(data.map((row) => row.id)).toEqual([replayedId]);
+    expect(data[0]?.createdBy?.id).toBe(other.id);
+    expect((await storedRow(replayedId))?.createdBy).toBe(other.id);
+    expect((await storedRow(ownersId))?.createdBy).toBe(owner.id);
+  });
+
+  it("must not answer a replay on another tenant's path with the caller's rows from this one", async () => {
+    const mutationId = generateId();
+    const hereId = generateId();
+    expect((await create(owner, bodyFor(hereId, mutationId))).status).toBe(201);
+    await logProcessed(mutationId, hereId, owner.id);
+
+    // The same user replays their mutation id in the other tenant they belong to: a fresh create there.
+    const thereId = generateId();
+    const body = bodyFor(thereId, mutationId, planElsewhere);
+    const { status, data } = await create(owner, body, elsewhere);
+    expect(status).toBe(201);
+    expect(data.map((row) => row.id)).toEqual([thereId]);
+    expect(await storedRow(thereId)).toMatchObject({ tenantId: elsewhere.tenantId, organizationId: elsewhere.id });
+  });
+
+  it("answers a replay of the caller's own mutation id with its rows (positive control)", async () => {
+    const mutationId = generateId();
+    const id = generateId();
+    const body = bodyFor(id, mutationId);
+    expect((await create(owner, body)).status).toBe(201);
+    await logProcessed(mutationId, id, owner.id);
+
+    // The row exists already, so only the replay check can hand it back.
+    const { status, data } = await create(owner, body);
+    expect(status).toBe(201);
+    expect(data.map((row) => row.id)).toEqual([id]);
+  });
+});

@@ -1,27 +1,16 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { makeFetch } from '../../tests/helpers/fake-fetch';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { clearOrganizationEnv, makeFetch } from '../../tests/helpers/fake-fetch';
 import { createProject, listProjects, resolveOrganizationIdFromKey } from './scaleway-account';
 
-/** Fetch mock matching by (method, url-substring); mirrors scaleway-iam.test.ts. */
-
-const ORG_ENV_NAMES = ['SCW_DEFAULT_ORGANIZATION_ID', 'SCW_ORGANIZATION_ID'] as const;
-const savedOrgEnv = Object.fromEntries(ORG_ENV_NAMES.map((name) => [name, process.env[name]]));
-
-beforeEach(() => {
-  for (const name of ORG_ENV_NAMES) delete process.env[name];
-});
+clearOrganizationEnv();
 
 afterEach(() => {
-  for (const name of ORG_ENV_NAMES) {
-    if (savedOrgEnv[name] === undefined) delete process.env[name];
-    else process.env[name] = savedOrgEnv[name];
-  }
   vi.unstubAllGlobals();
 });
 
 describe('resolveOrganizationIdFromKey', () => {
   it('prefers SCW_DEFAULT_ORGANIZATION_ID from the environment', async () => {
-    process.env.SCW_DEFAULT_ORGANIZATION_ID = 'org-env';
+    vi.stubEnv('SCW_DEFAULT_ORGANIZATION_ID', 'org-env');
     const { fn } = makeFetch([]);
     vi.stubGlobal('fetch', fn);
     await expect(resolveOrganizationIdFromKey('secret', 'SCWKEY')).resolves.toBe('org-env');
@@ -29,7 +18,7 @@ describe('resolveOrganizationIdFromKey', () => {
   });
 
   it('accepts the repository name SCW_ORGANIZATION_ID too (backend/.env)', async () => {
-    process.env.SCW_ORGANIZATION_ID = 'org-repo';
+    vi.stubEnv('SCW_ORGANIZATION_ID', 'org-repo');
     const { fn } = makeFetch([]);
     vi.stubGlobal('fetch', fn);
     await expect(resolveOrganizationIdFromKey('secret', 'SCWKEY')).resolves.toBe('org-repo');

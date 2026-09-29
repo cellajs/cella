@@ -21,6 +21,7 @@ export const appChannelCountFields = (_entityType: ChannelEntityType) => ({});
 /**
  * App notification types beyond the template's `mention`, `comment` and `reply`
  * (`modules/notification/notification-types.ts`), e.g. `['assigned']`. Each needs a
- * `notification.<type>` label in `app.json` and, for its digest line, `email.digest_line.<type>`.
+ * `notification.<type>` label in `app.json` and, for its digest line, `email.digest_line.<type>`
+ * (HTML around the escaped `{{title}}`, e.g. `New task <strong>{{title}}</strong>`).
  */
 export const appNotificationTypes = [] as const;

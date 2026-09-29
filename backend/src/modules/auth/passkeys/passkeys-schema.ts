@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
-import { maxLength, validEmailSchema } from '#/schemas';
+import { maxLength } from '#/schemas';
 
 const passkeyTypeSchema = z.enum(['authentication', 'mfa']);
 const challengeTypeSchema = z.enum([...passkeyTypeSchema.options, 'registration']);
@@ -50,15 +50,12 @@ export const passkeyCreateBodySchema = z.object({
   nameOnDevice: z.string().max(maxLength.field),
 });
 
-export const passkeyChallengeBodySchema = z.object({
-  type: challengeTypeSchema,
-  email: validEmailSchema.optional(),
-});
+export const passkeyChallengeBodySchema = z.object({ type: challengeTypeSchema });
 
+/** `credentialIds` lists the account's passkeys for an MFA challenge only; it is empty for any other challenge. */
 export const passkeyChallengeSchema = z.object({ challenge: z.string(), credentialIds: z.array(z.string()) });
 
 export const passkeyVerificationBodySchema = z.object({
   assertion: webAuthnAssertionSchema,
   type: passkeyTypeSchema,
-  email: validEmailSchema.optional(),
 });

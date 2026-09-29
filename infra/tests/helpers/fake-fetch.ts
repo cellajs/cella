@@ -1,4 +1,4 @@
-import { vi } from 'vitest';
+import { afterEach, beforeEach, vi } from 'vitest';
 
 export type FetchArgs = { url: string; init: RequestInit };
 
@@ -22,4 +22,18 @@ export function makeFetch(routes: Array<{ method: string; match: string; body?: 
     });
   });
   return { fn, calls };
+}
+
+/**
+ * Clears both organization-id names the resolver reads for each test of the calling file, so the Account API fallback
+ * under test is not short-circuited by the ambient env; a test sets one with `vi.stubEnv`.
+ */
+export function clearOrganizationEnv(): void {
+  beforeEach(() => {
+    vi.stubEnv('SCW_DEFAULT_ORGANIZATION_ID', undefined);
+    vi.stubEnv('SCW_ORGANIZATION_ID', undefined);
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
 }

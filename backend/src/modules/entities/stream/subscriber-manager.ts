@@ -53,6 +53,11 @@ class StreamSubscriberManager {
     return this.subscribers.size;
   }
 
+  /** Every registered subscriber, for checks that cover all open streams. */
+  all(): BaseStreamSubscriber[] {
+    return Array.from(this.subscribers.values());
+  }
+
   getByChannel<T extends BaseStreamSubscriber>(channel: string): T[] {
     const ids = this.byChannel.get(channel);
     if (!ids) return [];

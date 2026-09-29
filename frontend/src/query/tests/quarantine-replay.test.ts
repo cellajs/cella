@@ -1,17 +1,14 @@
+import '~/query/tests/query-client-env';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('shared', () => ({
   appConfig: { productEntityTypes: ['attachment'], clientCacheVersion: 'v1' },
 }));
-vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
-vi.stubGlobal('navigator', { onLine: true });
 
 const quarantineFailedSync = vi.fn(async (_record: unknown) => {});
 vi.mock('~/query/offline/failed-sync', () => ({
   quarantineFailedSync: (record: unknown) => quarantineFailedSync(record),
 }));
-vi.mock('~/query/on-error', () => ({ onError: vi.fn() }));
-vi.mock('~/query/on-success', () => ({ onSuccess: vi.fn() }));
 
 const { markReplayingMutations, queryClient } = await import('~/query/query-client');
 

@@ -11,6 +11,12 @@ A template is a `defineEmailTemplate()` definition with two parts:
 
 `defineEmailTemplate` types `component()` to exactly what `translate()` returns (plus per-recipient placeholder strings), so the two cannot drift. Each definition carries a `preview: { statics, recipient }` field with sample data, type-checked against its own props. Export the template from [index.ts](index.ts) and register its preview slug in [preview-fixtures.ts](preview-fixtures.ts).
 
+## Escaping
+
+`i18n` in [i18n.ts](i18n.ts) is the templates' own i18next instance, and it HTML-escapes every interpolated value: bodies and headers render as HTML through `SafeHtml`, and user and organization names reach them unvalidated. Markup belongs in the translation string (`<strong>{{entityName}}</strong>`), never in a value. A plain-text output that interpolates values (the subject, the preview, JSX text) spreads `plainText` into its options, because the mail header or the renderer escapes it once already.
+
+Per-recipient props leave the render as Brevo placeholders, and Brevo fills them per recipient: `{{params.x}}` comes out HTML-escaped, so pass these values as plain text. A value that is HTML the app built itself, with every user-derived fragment escaped, is declared in the template's `htmlParams` with its `SafeHtml` policy. The mailer sanitizes it by that policy and Brevo prints it through `{{params.x|safe}}`. Brevo reads the subject and body as templates, so the mailer's `neutralizeBrevoTags` keeps only its own placeholders and writes every other tag opener (`{{`, `{%`, `{#`) as plain text.
+
 ## Rendering
 
 `render()` in [renderer/render.ts](renderer/render.ts) turns a React element into email-ready HTML (XHTML doctype, rehype style hoisting, raw-HTML and MSO conditional handling). Node-only and async. The `plainText` render option gives plain-text output.

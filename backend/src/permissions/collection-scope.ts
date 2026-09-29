@@ -368,14 +368,15 @@ export const resolveCollectionReadFilterForPolicies = ({
       .filter((scope) => scope.channelIds.length > 0);
   };
 
-  // Explicit single id (e.g. ?projectId=…): must be within the caller's readable scope.
+  // Explicit single id (e.g. ?projectId=…): must be within the caller's readable scope, else the channel reads as
+  // missing, as any channel the caller may not read does.
   if (requested?.homeChannelId !== undefined) {
     const id = requested.homeChannelId;
     if (unconditionallyReadable(id)) return { homeChannelIds: [id], conditionalScopes: [] };
 
     const scopes = conditionalScopesFor([id]);
     if (scopes.length === 0) {
-      throw new AppError(403, 'forbidden', 'warn', { entityType });
+      throw new AppError(404, 'not_found', 'warn', { entityType: homeChannel ?? entityType });
     }
     return { homeChannelIds: [], conditionalScopes: scopes };
   }

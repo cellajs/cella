@@ -10,6 +10,7 @@ interface FindAttachmentsByStxMutationIdOpts {
   mutationId: string;
 }
 
+/** The acting actor's own rows written under `mutationId`, the idempotent replay of a create. */
 export const findAttachmentsByStxMutationId = async (
   ctx: ActorContext,
   { mutationId }: FindAttachmentsByStxMutationIdOpts,
@@ -18,7 +19,13 @@ export const findAttachmentsByStxMutationId = async (
   return db
     .select()
     .from(attachmentsTable)
-    .where(and(sql`${attachmentsTable.stx}->>'mutationId' = ${mutationId}`, requestScopeWhere(ctx, attachmentsTable)));
+    .where(
+      and(
+        sql`${attachmentsTable.stx}->>'mutationId' = ${mutationId}`,
+        eq(attachmentsTable.createdBy, ctx.var.actor.id),
+        requestScopeWhere(ctx, attachmentsTable),
+      ),
+    );
 };
 
 export const insertAttachments = async (
@@ -50,6 +57,7 @@ interface DeleteAttachmentsByIdsOpts {
   deletedAt: string;
 }
 
+/** Soft-deletes the rows and returns them, for the `attachment.deleted` event. */
 export const deleteAttachmentsByIds = async (
   ctx: ActorContext,
   { ids, deletedAt, deletedBy }: DeleteAttachmentsByIdsOpts,
@@ -64,7 +72,8 @@ export const deleteAttachmentsByIds = async (
         requestScopeWhere(ctx, attachmentsTable),
         isNull(attachmentsTable.deletedAt),
       ),
-    );
+    )
+    .returning();
 };
 
 interface FindAttachmentsByIdsOpts {

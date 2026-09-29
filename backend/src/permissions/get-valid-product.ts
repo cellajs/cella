@@ -16,9 +16,10 @@ export interface ValidProductResult<K extends ProductEntityType> {
 
 /**
  * Checks whether the user may perform `action` on a product entity resolved by `id`; throws 404
- * if not found, 403 if not allowed. Every product carries `tenantId` and `organizationId`, and the
- * row must match the request scope set by the guard chain, so the answer is the same with RLS
- * bypassed. System-admin bypass sits inside `checkAccess` and never widens that scope.
+ * when it is not found or the caller may not read it, 403 when the caller reads it but may not
+ * perform `action`. Every product carries `tenantId` and `organizationId`, and the row must match
+ * the request scope set by the guard chain, so the answer is the same with RLS bypassed.
+ * System-admin bypass sits inside `checkAccess` and never widens that scope.
  */
 export const getValidProduct = async <K extends ProductEntityType>(
   ctx: ActorContext,
@@ -46,8 +47,14 @@ export const getValidProduct = async <K extends ProductEntityType>(
 
   // The entity doubles as `row`, so 'own' row conditions and public read grants evaluate from real row data.
   const subject = buildSubjectFromEntity(entityType, entity);
-  const { allowed } = checkAccess(accessFrom(ctx), action, subject);
-  if (!allowed) throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
+  const access = accessFrom(ctx);
+
+  // A row the caller may not read reads as missing too: a 403 would confirm the id. 403 is for an action denied on a
+  // row the caller reads.
+  if (!checkAccess(access, 'read', subject).allowed) throw new AppError(404, 'not_found', 'warn', { entityType });
+  if (action !== 'read' && !checkAccess(access, action, subject).allowed) {
+    throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
+  }
 
   return { entity };
 };

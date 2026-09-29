@@ -3,8 +3,10 @@ import { crc32 } from 'node:zlib';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
-import type { InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
+import type { ApiKeyModel, InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
+import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
 import { hashToken } from '#/utils/hash-token';
+import { isExpiredDate } from '#/utils/is-expired-date';
 
 /** `secret` keys authenticate a service account; `publishable` keys (later) identify a tenant and authorize nothing. */
 export const apiKeyTypes = ['secret', 'publishable'] as const;
@@ -93,3 +95,22 @@ export function apiKeyFrom(ctx: Context<Env>): string | null {
 
 /** Cheap header check for dispatch (CSRF skip, `actorGuard`): no parsing, no lookup. */
 export const hasApiKeyHeader = (ctx: Context<Env>): boolean => apiKeyFrom(ctx) !== null;
+
+/** Why a key no longer authenticates its service account. */
+export type ApiKeyRefusal = 'invalid_api_key' | 'service_account_disabled';
+
+/**
+ * The one rule for a secret key and every access token minted with it: the key authenticates while it is neither
+ * revoked nor past its expiry, and its service account is active. The clock is read at the call, so a cached key or
+ * verdict asks again at every use: an expiry passes unannounced.
+ * @param apiKey - The key's revocation and expiry.
+ * @param account - The key's service account.
+ * @returns Why the key no longer authenticates, or null while it does.
+ */
+export function apiKeyRefusal(
+  apiKey: Pick<ApiKeyModel, 'revokedAt' | 'expiresAt'>,
+  account: Pick<ServiceAccountModel, 'status'>,
+): ApiKeyRefusal | null {
+  if (apiKey.revokedAt || (apiKey.expiresAt && isExpiredDate(apiKey.expiresAt))) return 'invalid_api_key';
+  return account.status === 'active' ? null : 'service_account_disabled';
+}

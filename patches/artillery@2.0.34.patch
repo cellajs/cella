@@ -42,6 +42,14 @@ index 52236a66d6ecef4b25b1337252435e1f6be03658..d2e2ffa4931f701eb426dfb1c5a24a39
      try {
          esbuild.buildSync({
              entryPoints: [actualProcessorPath],
+@@ -147,6 +147,6 @@ function replaceProcessorIfTypescript(script, scriptPath) {
+             outfile: newProcessorPath,
+             bundle: true,
+             platform: 'node',
+-            format: 'cjs',
++            format: 'esm',
+             sourcemap: 'inline',
+             external: ['@playwright/test', ...userExternalPackages]
 diff --git a/lib/cmds/run.ts b/lib/cmds/run.ts
 index 1d7eb6fa98c66aaad4fcba8dde2b4bc5d7162e8e..bf1a23bca61c6a2eb9510f700e3f080391632a4c 100644
 --- a/lib/cmds/run.ts
@@ -86,3 +94,11 @@ index f8ea361d5a55c8f6ef46a2f19c6f283de35adc09..450d05285575ec441e8eea93d8b15c02
  
    try {
      esbuild.buildSync({
+@@ -231,6 +231,6 @@ function replaceProcessorIfTypescript(
+       outfile: newProcessorPath,
+       bundle: true,
+       platform: 'node',
+-      format: 'cjs',
++      format: 'esm',
+       sourcemap: 'inline',
+       external: ['@playwright/test', ...userExternalPackages]

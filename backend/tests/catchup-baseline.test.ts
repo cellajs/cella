@@ -1,13 +1,14 @@
-import { sql } from 'drizzle-orm';
+import { inArray } from 'drizzle-orm';
 import { postAppCatchup } from 'sdk';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import type { AppCatchupResponse } from '#/schemas';
 import { defaultHeaders } from './fixtures';
+import { createTestOrganization } from './helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
-import { mockFetchRequest, setTestConfig } from './test-utils';
+import { setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -16,10 +17,17 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
 describe('Catchup (view-driven, sequence)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
+  /** An organization in another tenant, with numbers of its own, that the caller has no part in. */
+  let otherOrgId: string;
 
   beforeAll(async () => {
-    mockFetchRequest();
     tenant = await createTestTenant(call, 'catchup-baseline');
+    otherOrgId = (await createTestOrganization()).id;
+    await db.insert(channelCountersTable).values({
+      channelKey: otherOrgId,
+      counts: { sequence: 9, 'e:f:attachment': 7, 'e:c:attachment': 3 },
+      path: otherOrgId,
+    });
 
     const counts = {
       sequence: 50,
@@ -40,7 +48,9 @@ describe('Catchup (view-driven, sequence)', async () => {
   });
 
   afterAll(async () => {
-    await db.delete(channelCountersTable).where(sql`channel_key = ${tenant.organization.id}`);
+    await db
+      .delete(channelCountersTable)
+      .where(inArray(channelCountersTable.channelKey, [tenant.organization.id, otherOrgId]));
     await clearSecurityTestData();
   });
 
@@ -153,8 +163,8 @@ describe('Catchup (view-driven, sequence)', async () => {
         views: [
           {
             key: 'other:attachment',
-            organizationId: 'a0000000-0000-4000-a000-000000000001',
-            prefixes: ['a0000000-0000-4000-a000-000000000001'],
+            organizationId: otherOrgId,
+            prefixes: [otherOrgId],
             entityTypes: ['attachment'],
             cursor: 0,
           },

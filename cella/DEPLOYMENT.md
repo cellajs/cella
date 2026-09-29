@@ -30,8 +30,8 @@ Three principles ([infra/README.md](../infra/README.md#core-philosophy)): **crea
  │                  ▼                ▼                  ▼                  │
  │           ┌─────────────┐  ┌─────────────┐ ┌──────────────────────────┐ │
  │           │ frontend VM │  │ backend VM  │ │  workers: cdc, yjs, mcp, │ │
- │           │   (Caddy)   │  │             │ │  oauth (run on backend   │ │
- │           │             │  │             │ │  VM when singleVM)       │ │
+ │           │   (Caddy)   │  │             │ │  oauth, jobs (run on     │ │
+ │           │             │  │             │ │  backend VM when singleVM)│ │
  │           └──────┬──────┘  └──────┬──────┘ └─────────┬────────────────┘ │
  │                  │                │                  │                  │
  │                  │                ▼                  ▼                  │
@@ -48,7 +48,7 @@ Three principles ([infra/README.md](../infra/README.md#core-philosophy)): **crea
      └─────────────────────────────┘  presigned URLs)
 ```
 
-- **Load balancer:** the only public entrypoint. Backend, yjs, mcp and oauth share the app origin via registry-declared `pathPrefix` values (`/api`, `/yjs`, `/mcp`, `/oauth`). The LB never rewrites paths. `cdc` never takes an LB route.
+- **Load balancer:** the only public entrypoint. Backend, yjs, mcp and oauth share the app origin via registry-declared `pathPrefix` values (`/api`, `/yjs`, `/mcp`, `/oauth`). The LB never rewrites paths. `cdc` and `jobs` never take an LB route. The backend's internal listener (`internalPort`: the CDC socket and the Yjs relay's materialize route) is reached only through a private, ACL-guarded LB frontend that admits the private network; no public pool forwards to it. The API has no CORS middleware and serves browser requests from the app origin.
 - **VMs:** public IP for egress only (image pulls). All inbound is dropped, including SSH. Every service gets its own VM unless `singleVM` co-hosts the workers and the frontend Caddy container on the backend VM.
 - **Frontend VM:** Caddy adds security headers/CSP and the SPA deep-link fallback.
 - **Database:** private-network only. A break-glass toggle can expose it temporarily ([Changing infrastructure](#changing-infrastructure)).
@@ -59,10 +59,11 @@ Three principles ([infra/README.md](../infra/README.md#core-philosophy)): **crea
 ```
 Release published, push to main (staging), or manual dispatch
         ↓
-CI builds images in parallel
+CI builds images in parallel, and the frontend
+in a job that holds no secret
         ↓
-`infra deploy` (one command): preflights + stack lock;
-frontend build + asset upload run inside it, concurrent
+`infra deploy --dist` (one command): preflights + stack lock;
+the frontend asset upload runs inside it, concurrent
 with the wait for image tags
         ↓
 Wave 1: provision + cut over the primary service (backend)
@@ -94,7 +95,7 @@ Scaleway API keys descend in privilege, each in a different store, each minting 
 | **Owner API key** (your own key as organization Owner, **or** an application holding ProjectManager + IAMManager) | Everything: required for any `pulumi up` that touches privileged resources (DB, VPC, private network, IAM policies), and for setup, teardown and runtime secrets. The CLI checks the bearer before using one: an application the engine created is refused by name. | Your durable key stays in the OS keychain or password manager; a privileged run never drives Pulumi with it but mints a 30-minute key from it and revokes that at the end. A short-lived key you paste is used as it is, and you revoke it afterwards. | `SCW_OWNER_ACCESS_KEY` / `SCW_OWNER_SECRET_KEY` in `infra/.env.<mode>` as a `keychain:` or `op:` reference; without it the CLI prompts. |
 | **CI deploy application key** (`<slug>-<mode>-ci-deploy`) | Write on compute / LB / private networks / edge / secrets / object storage / registry / DNS. **Read-only** on VPC and RDB (privileged resources). Project-scoped. | Long-lived. Rotate via the CLI **Rotate keys** action ([Key rotation](#key-rotation)) | The stack's GitHub Environment (`staging` or `production`) secrets `SCW_ACCESS_KEY` / `SCW_SECRET_KEY`, the names the Scaleway provider reads. |
 | **Admin application key** (`<slug>-<mode>-admin`) | Read-only on every project resource, object storage full access, IAM read; admitted to the state bucket. The day-2 key for status, Preview, and the state side of Apply infra change. | Long-lived. Created by the CLI **Rotate keys** action; custody copy at `/<slug>-<mode>/engine/admin-key`. | `infra/.env.<mode>` as `SCW_ADMIN_ACCESS_KEY` / `SCW_ADMIN_SECRET_KEY` (0600, never committed): setup writes it on the machine that ran it; anywhere else, **Manage keys & secrets → Fetch admin application key** reads it from Secret Manager with your Owner API key. |
-| **Boot + service application keys** (`<slug>-<mode>-boot`, `<slug>-<mode>-vm-<service>`) | Boot key: registry pull + boot-diag write + handoff-only secret read. Service key: path-conditioned secret read (its own + shared folders). The backend additionally gets granular S3 object sets. | Minted per deploy by the CI key. Superseded keys are pruned on the next mint | Boot key baked into VM cloud-init. Each service key is delivered via a single-access handoff bundle in Secret Manager. Not in stack config. |
+| **Boot + service application keys** (`<slug>-<mode>-boot`, `<slug>-<mode>-vm-<service>`) | Boot key: registry pull + boot-diag write + handoff-only secret read. Service key: path-conditioned secret read (its own folder plus the shared folder of each secret it consumes). The backend additionally gets granular S3 object sets. | Minted per deploy by the CI key. Superseded keys are pruned on the next mint | Boot key baked into VM cloud-init. Each service key is delivered via a single-access handoff bundle in Secret Manager. Not in stack config. |
 
 The **Pulumi passphrase** sits outside the chain: it encrypts the stack's secret outputs in the state bucket ([Passphrase rotation](#passphrase-rotation)). **Store passphrase in keychain** moves this machine's copy into the OS keychain and leaves `keychain:<slug>-<mode>/PULUMI_CONFIG_PASSPHRASE` in the env file; the password-manager copy stays the durable one.
 
@@ -116,7 +117,7 @@ pnpm --filter infra run deploy --mode <staging|production> --sha <sha> --git-ref
 1. **Env**: export `SCW_ACCESS_KEY`, `SCW_SECRET_KEY`, `SCW_DEFAULT_PROJECT_ID`, `SCW_DEFAULT_ORGANIZATION_ID`, `PULUMI_CONFIG_PASSPHRASE` (the workflow maps its `SCW_PROJECT_ID` / `SCW_ORGANIZATION_ID` secrets onto the `SCW_DEFAULT_*` names the Scaleway provider reads). Install node, pnpm, docker (buildx), and the pulumi CLI.
 2. **Deploy**: `pnpm --filter infra run deploy --mode <mode> --sha <sha> --build`. `--build` bakes and pushes every image (app services + boot runner) via `docker buildx bake` with the registry `:buildcache` shared with CI. Safe to re-run. The stack lock serializes concurrent attempts.
 
-GitHub Actions builds images as a parallel matrix and omits `--build`. `--dist <dir>` supplies a prebuilt frontend. `--git-ref`, when provided, gates production deploys to main/release refs.
+GitHub Actions builds images as a parallel matrix and omits `--build`. `--dist <dir>` supplies a prebuilt frontend: GitHub Actions builds it in a job with no secrets, because the Vite build and its dependencies' install scripts run third-party code. Jobs that hold deploy secrets install only the `infra` and `shared` workspaces and do not use the shared pnpm cache, so install scripts from other workspaces do not run in those jobs. Without `--dist` the command builds the frontend itself in a child process stripped of the deploy's keys, which keeps them out of its environment but not out of reach of code running as the same user on that machine. `--git-ref`, when provided, gates production deploys to main/release refs.
 
 ## Rollout strategies
 
@@ -125,7 +126,7 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 | Strategy | When | Behavior | Downtime |
 | --- | --- | --- | --- |
 | **start-first** | backend, frontend, yjs, mcp (LB-backed) | Pulumi provisions the pending generation (`vm-<svc>-<genId>`) next to the active one. [tasks/cutover.ts](../infra/tasks/cutover.ts) reconciles the live LB server list with idempotent `SetBackendServers` calls: expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It always issues the corrective call, so an empty or stale pool is repaired. | None (LB overlap). |
-| **stop-first** | cdc (holds one Postgres replication slot) | Pulumi provisions only the new generation, replacing the old in the same `up`. The new worker takes the slot the old one releases on drain (lossless: the slot retains the WAL position). | Worker gap during replacement. |
+| **stop-first** | cdc (holds one Postgres replication slot), jobs (the one cron scheduler) | Pulumi provisions only the new generation, replacing the old in the same `up`. The new worker takes the slot the old one releases on drain (lossless: the slot retains the WAL position). | Worker gap during replacement. |
 | **exclusive** (`singleVM`) | the backend VM when it hosts a stop-first worker | Plan marked `exclusive` in [tasks/rollout-plans.ts](../infra/tasks/rollout-plans.ts): `drainSeconds` 0, no old IPs. The cutover health-gates, then points the LB pool straight at the new generation. | Yes, on that host. Split-VM (the default) is unaffected. |
 
 ### Runtime secret delivery
@@ -134,6 +135,7 @@ Runtime secrets reach a VM through `/opt/app/.env.runtime`, a docker-compose `en
 
 - **Every secret value must be a single line** (an `env_file` is line-based). Store multi-line values such as a PEM certificate **base64-encoded** and decode them in the consuming service, as `DATABASE_SSL_CA` does (encoded by the postgres store in [resources/stores/postgres-managed.ts](../infra/resources/stores/postgres-managed.ts), decoded in the db clients). The rule lives in [lib/utils/env-file.ts](../infra/lib/utils/env-file.ts), shared by the preflight and the boot runner.
 - An undeliverable `required` secret fails hydration and blocks boot, rather than crash-looping behind a 502.
+- A process cannot read a mode-bound secret unless its `MODE` is configured to receive it; `modeSecret()` refuses the read otherwise.
 
 ### Certificate issuance and recovery
 
@@ -165,6 +167,8 @@ Most config changes ship through a normal CI deploy, including toggling `appConf
 The same preview runs as a **preflight**: first thing in every deploy, and as the `infra-preflight` job on the release PR against the production Environment. It names any pending privileged change (a database privilege, a VM policy rule, the VPC) with the Apply command above and, for an IAM policy, the old and new value of each changed rule path, so an owed Apply blocks the release PR instead of failing the production deploy after the images have built.
 
 VM IAM principals and policies follow the **service registry** ([config/services.config.ts](../infra/config/services.config.ts)), not the enabled set: every registry service that owns VMs has an application and a path-conditioned policy, and under `singleVM` the host condition covers every registry worker. Toggling `enabled` in either mode therefore needs no Apply. Adding or removing a registry service (the `oauth` worker added in #1179 is such an addition), or flipping `singleVM`, does: until you run **Apply infra change**, the next deploy fails at `requirePrincipalId` (split-VM) or at "Verify VM IAM grants" (`singleVM`). A registry service that is not deployed keeps its principal with zero API keys; the deploy's "Verify VM IAM grants" step asserts that and the key mint purges any it finds.
+
+**Deploy right after an Apply that removes a secret.** The running VMs keep the previous release until the next deploy replaces them. A VM boots from the secret list of its own generation and fails the boot on a `required` secret it can no longer read, so when an Apply deletes a runtime secret, or narrows which secrets a VM key reads, an old VM that reboots before the deploy stays down until the deploy replaces it. Run the deploy right after such an Apply. A deployment that serves users keeps the old secret and the old consumer lists for one release, and removes them in the next.
 
 ## Fresh installation
 
@@ -268,7 +272,11 @@ docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com backend
 
 **Alternative: break-glass from your laptop.** Briefly exposes the DB (ACL-locked to your IP), so prefer the serial console. Both flows serve any operator task against the live database. For staging, **Seed database** exposes, seeds, and closes in one go (refuses production).
 
-1. Expose the DB (needs your Owner API key). The ACL defaults to `<your.ip>/32` (open ranges refused) and the admin connection string is printed:
+1. Expose the DB (needs your Owner API key). The ACL defaults to `<your.ip>/32` (IPv4 only, open ranges refused) and the admin connection string is printed:
+
+   The CLI refuses native IPv6 and `/0` entries. Entries wider than `/24` require
+   `infra:dbPublicAclAllowWide=true`, and all entries together may cover at most half of IPv4.
+   IPv4-mapped IPv6 addresses are normalized to the IPv4 range they name.
 
    ```bash
    pnpm infra   # → "Open temporary public DB access"

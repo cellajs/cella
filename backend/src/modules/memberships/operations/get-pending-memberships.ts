@@ -13,6 +13,11 @@ interface GetPendingMembershipsInput {
   limit: number;
 }
 
+/**
+ * Pending invitations of a channel, for anyone who may read it: members already see every member's address. Each row
+ * names the address the invitation went to and nothing about an account that may hold it, not even whether a token was
+ * minted, since anyone may create an organization and invite any address. A resend names the row by its own id.
+ */
 export async function getPendingMembershipsOp(ctx: UserContext, input: GetPendingMembershipsInput) {
   const organization = ctx.var.organization;
 

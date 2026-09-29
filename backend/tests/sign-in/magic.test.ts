@@ -2,53 +2,42 @@ import { and, eq } from 'drizzle-orm';
 import { invokeToken, sendMagicLink } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
+import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { addProvenEmail } from '#/modules/auth/general/helpers/mark-email-verified';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
-import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { createTestOrganization, createUser, enableMFAForUser } from '../helpers';
+import {
+  authCookie,
+  cookieChange,
+  createTestOrganization,
+  createUser,
+  enableMFAForUser,
+  insertTestToken,
+} from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-
-vi.mock('#/lib/mailer', () => ({
-  mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) },
-}));
+import { clearDatabase, setTestConfig } from '../test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['magic'], selfRegistration: true });
 
-beforeAll(async () => {
-  mockFetchRequest();
-});
-
-afterEach(async () => {
-  await clearDatabase();
-  vi.clearAllMocks();
-});
+afterEach(async () => await clearDatabase());
 
 /** Mark a user as returning; without a counters row `lastSignInAt` resolves to null (new user). */
 async function markReturning(userId: string) {
   await db.insert(userCountersTable).values({ userId, lastSignInAt: new Date().toISOString() });
 }
 
-/** Insert a magic token directly and return the raw secret for the invoke URL. */
+/**
+ * Insert a magic token directly: the raw secret for the invoke URL, and the cookie of the browser that asked for it, so
+ * opening the link signs in directly (elsewhere it waits for a confirmation, see tests/security/magic-link.test.ts).
+ */
 async function createMagicToken(user: { id: string; email: string }, redirectPath: string | null = null) {
-  const rawToken = nanoid(40);
-  await db.insert(tokensTable).values({
-    secret: hashToken(rawToken),
-    type: 'magic',
-    userId: user.id,
-    email: user.email,
-    createdBy: user.id,
-    redirectPath,
-    expiresAt: new Date(Date.now() + 15 * 60 * 1000).toISOString(),
-  });
-  return rawToken;
+  const { raw, row } = await insertTestToken('magic', user, { redirectPath });
+  return { rawToken: raw, requestedHere: authCookie('magic-requested', row.id) };
 }
 
 /** Fetch the single magic token row for a user. */
@@ -99,24 +88,39 @@ describe('Magic link authentication', async () => {
     it('should redirect a returning user to the stored path', async () => {
       const user = await createUser(signUpUser.email);
       await markReturning(user.id);
-      const rawToken = await createMagicToken(user, '/orgs/acme?tab=files');
+      const { rawToken, requestedHere } = await createMagicToken(user, '/orgs/acme?tab=files');
 
       const { response: res } = await call(invokeToken, {
         path: { type: 'magic', token: rawToken },
-        headers: defaultHeaders,
+        headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
       expect(res.status).toBe(302);
       expect(res.headers.get('location')).toBe(`${appConfig.frontendUrl}/orgs/acme?tab=files`);
     });
 
-    it('should let an explicit redirect win over the welcome page for a new user', async () => {
+    it('clears the request marker once the link has signed in, as the step-up link does', async () => {
       const user = await createUser(signUpUser.email);
-      const rawToken = await createMagicToken(user, '/orgs/acme');
+      const { rawToken, requestedHere } = await createMagicToken(user);
 
       const { response: res } = await call(invokeToken, {
         path: { type: 'magic', token: rawToken },
-        headers: defaultHeaders,
+        headers: { ...defaultHeaders, Cookie: requestedHere },
+      });
+
+      expect(res.status).toBe(302);
+      expect(cookieChange(res, 'session')).toBe('set');
+      // The link is used: the marker that let it open here directly has nothing left to say.
+      expect(cookieChange(res, 'magic-requested')).toBe('cleared');
+    });
+
+    it('should let an explicit redirect win over the welcome page for a new user', async () => {
+      const user = await createUser(signUpUser.email);
+      const { rawToken, requestedHere } = await createMagicToken(user, '/orgs/acme');
+
+      const { response: res } = await call(invokeToken, {
+        path: { type: 'magic', token: rawToken },
+        headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
       expect(res.status).toBe(302);
@@ -125,11 +129,11 @@ describe('Magic link authentication', async () => {
 
     it('should append skipWelcome when the explicit redirect targets home', async () => {
       const user = await createUser(signUpUser.email);
-      const rawToken = await createMagicToken(user, `${appConfig.defaultRedirectPath}?foo=bar`);
+      const { rawToken, requestedHere } = await createMagicToken(user, `${appConfig.defaultRedirectPath}?foo=bar`);
 
       const { response: res } = await call(invokeToken, {
         path: { type: 'magic', token: rawToken },
-        headers: defaultHeaders,
+        headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
       expect(res.status).toBe(302);
@@ -141,11 +145,11 @@ describe('Magic link authentication', async () => {
 
     it('should fall back to welcome for a new user without a redirect', async () => {
       const user = await createUser(signUpUser.email);
-      const rawToken = await createMagicToken(user);
+      const { rawToken, requestedHere } = await createMagicToken(user);
 
       const { response: res } = await call(invokeToken, {
         path: { type: 'magic', token: rawToken },
-        headers: defaultHeaders,
+        headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
       expect(res.status).toBe(302);
@@ -155,11 +159,11 @@ describe('Magic link authentication', async () => {
     it('should never redirect to a stored path that fails re-validation', async () => {
       // Defense in depth: a row written before validation rules tightened must not replay.
       const user = await createUser(signUpUser.email);
-      const rawToken = await createMagicToken(user, 'https://evil.example/phish');
+      const { rawToken, requestedHere } = await createMagicToken(user, 'https://evil.example/phish');
 
       const { response: res } = await call(invokeToken, {
         path: { type: 'magic', token: rawToken },
-        headers: defaultHeaders,
+        headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
       expect(res.status).toBe(302);
@@ -171,11 +175,11 @@ describe('Magic link authentication', async () => {
     it('should hand the redirect to the MFA page for an MFA user', async () => {
       const user = await createUser(signUpUser.email);
       await enableMFAForUser(user.id);
-      const rawToken = await createMagicToken(user, '/orgs/acme');
+      const { rawToken, requestedHere } = await createMagicToken(user, '/orgs/acme');
 
       const { response: res } = await call(invokeToken, {
         path: { type: 'magic', token: rawToken },
-        headers: defaultHeaders,
+        headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
       expect(res.status).toBe(302);
@@ -183,19 +187,17 @@ describe('Magic link authentication', async () => {
       expect(location.pathname).toBe('/auth/mfa');
       expect(location.searchParams.get('redirect')).toBe('/orgs/acme');
       // Session must not be set before the MFA challenge completes
-      expect(res.headers.get('set-cookie') ?? '').not.toContain(
-        `${appConfig.slug}-session-${appConfig.cookieVersion}=`,
-      );
+      expect(cookieChange(res, 'session')).toBeUndefined();
     });
     it('should carry an invitation resume path through the MFA challenge, query string intact', async () => {
       const user = await createUser(signUpUser.email);
       await enableMFAForUser(user.id);
       const resumePath = '/auth/authenticate?tokenId=00000000-0000-4000-8000-000000000001';
-      const rawToken = await createMagicToken(user, resumePath);
+      const { rawToken, requestedHere } = await createMagicToken(user, resumePath);
 
       const { response: res } = await call(invokeToken, {
         path: { type: 'magic', token: rawToken },
-        headers: defaultHeaders,
+        headers: { ...defaultHeaders, Cookie: requestedHere },
       });
 
       expect(res.status).toBe(302);
@@ -211,6 +213,11 @@ describe('Magic link authentication', async () => {
       onTestFinished(() => setTestConfig({ selfRegistration: true }));
     };
     const userFor = (email: string) => db.select().from(usersTable).where(eq(usersTable.email, email));
+    const magicLinksFor = (email: string) =>
+      db
+        .select()
+        .from(tokensTable)
+        .where(and(eq(tokensTable.email, email), eq(tokensTable.type, 'magic')));
 
     it('still lets an invited address sign up', async () => {
       closeRegistration();
@@ -224,9 +231,9 @@ describe('Magic link authentication', async () => {
       });
 
       expect(res.status).toBe(204);
-      const [created] = await userFor('invited@example.com');
-      expect(created).toBeDefined();
-      expect(await getMagicToken(created.id)).toBeDefined();
+      // The link goes out without an account: the account is created when the link is clicked.
+      expect(await magicLinksFor('invited@example.com')).toEqual([expect.objectContaining({ userId: null })]);
+      expect(await userFor('invited@example.com')).toHaveLength(0);
     });
 
     it('creates nothing for an address that was not invited, with the same response', async () => {
@@ -238,6 +245,7 @@ describe('Magic link authentication', async () => {
       });
 
       expect(res.status).toBe(204);
+      expect(await magicLinksFor('stranger@example.com')).toHaveLength(0);
       expect(await userFor('stranger@example.com')).toHaveLength(0);
     });
 
@@ -258,6 +266,7 @@ describe('Magic link authentication', async () => {
 
       await call(sendMagicLink, { body: { email: 'declined@example.com' }, headers: defaultHeaders });
 
+      expect(await magicLinksFor('declined@example.com')).toHaveLength(0);
       expect(await userFor('declined@example.com')).toHaveLength(0);
     });
   });

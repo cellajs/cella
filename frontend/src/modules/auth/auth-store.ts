@@ -6,7 +6,7 @@ type State = {
   step: AuthStep;
   email: string;
   error: ApiError | null;
-  restrictedMode: boolean;
+  restrictedMode: boolean; // Neutral step: silent on whether the address has an account (unknown browser or limited IP)
   signedIn: boolean; // True after successful sign-in, prevents UI flash during route transition
   magicLinkMode: 'signin' | 'signup'; // Which flow triggered the magicLinkSent step, used for contextual copy
   inviteOtherAccount: boolean; // Invitation in hand, and the visitor chose to answer it with another account than the invited address

@@ -45,8 +45,10 @@ export const resolveChannelInScope = async <T extends ChannelEntityType>(
 
 /**
  * Checks whether the user may perform `action` on a channel entity, resolved by ID (or slug when
- * `bySlug`); throws 404 if not found, 403 if not allowed. `membership` may be `null` while allowed:
- * system admins and admins of a higher-level entity (`permissions-config`) pass without one.
+ * `bySlug`); throws 404 when it is not found or the caller may not read it, 403 when the caller
+ * reads it but may not perform `action` (the refusal rules in PERMISSIONS.md). `membership` may be
+ * `null` while allowed: system admins and admins of a higher-level entity (`permissions-config`)
+ * pass without one.
  * @param ctx - Context with memberships and isSystemAdmin set by the guard chain.
  */
 export const getValidChannel = async <T extends ChannelEntityType, C extends ActorContext>(
@@ -60,7 +62,11 @@ export const getValidChannel = async <T extends ChannelEntityType, C extends Act
 
   // System admin bypass is handled inside checkAccess.
   const subject = buildSubjectFromEntity(entityType, entity);
-  const { allowed, membership } = checkAccess(accessFrom(ctx), action, subject);
+  const access = accessFrom(ctx);
+  const read = checkAccess(access, 'read', subject);
+  if (!read.allowed) throw new AppError(404, 'not_found', 'warn', { entityType });
+
+  const { allowed, membership } = action === 'read' ? read : checkAccess(access, action, subject);
   if (!allowed) throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { action } });
 
   return { entity, membership };

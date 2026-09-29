@@ -20,8 +20,10 @@ export const appServices = defineServices({
     // Reached at https://<app-host>/api/... through an LB path-begin route; the backend self-mounts '/api', so the LB strips nothing.
     lbRoute: 'path',
     pathPrefix: '/api',
-    // Private ACL-guarded LB frontend so in-network consumers dial a stable address that follows every cutover.
-    internalRoute: true,
+    // The internal listener (the CDC socket, the Yjs relay's routes): only the private ACL-guarded LB frontend forwards
+    // to it, so in-network consumers dial a stable address that follows every cutover and the public pool never can.
+    // The synth passes it to the container as INTERNAL_PORT.
+    internalPort: 4005,
     // Attachment uploads and presigned URLs are signed with the backend's own per-deploy service key.
     s3Access: true,
     // Per-service VM size (required on every service).
@@ -46,13 +48,13 @@ export const appServices = defineServices({
     // singleVM folds it into the backend process, which then holds the same slot.
     coHosted: true,
     env: {
-      API_WS_URL: '${API_WS_URL}',
+      BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}',
       BACKEND_URL: '${BACKEND_URL}',
       CDC_HEALTH_PORT: '4001',
     },
-    // A server-to-server WebSocket on /internal/cdc, dialed through the LB's private internal frontend: the address survives backend cutovers, the LB stays inside the VPC so the backend's source check passes, and mark-down kills sessions so cdc re-dials.
+    // The worker derives its socket's address from the backend's internal listener, dialed through the LB's private internal frontend: the address survives backend cutovers, the LB stays inside the private network the listener admits, and mark-down kills sessions so cdc re-dials.
     bindings: {
-      API_WS_URL: 'ws://@{backend.internalHost}:@{backend.internalPort}/internal/cdc',
+      BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}',
     },
   },
 
@@ -78,7 +80,12 @@ export const appServices = defineServices({
     coHosted: true,
     env: {
       BACKEND_URL: '${BACKEND_URL}',
+      BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}',
       YJS_PORT: '4002',
+    },
+    // Materialize calls go to the backend's internal listener through the LB's private internal frontend, never the public API.
+    bindings: {
+      BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}',
     },
   },
 
@@ -139,6 +146,27 @@ export const appServices = defineServices({
     // The issuer URL, host-routed through the LB.
     bindings: {
       OAUTH_URL: '@{self.url}',
+    },
+  },
+
+  jobs: {
+    image: '${REGISTRY}/backend:${JOBS_TAG:-latest}',
+    port: 4006,
+    healthExpectStatus: 204,
+    healthTimeoutSeconds: 240,
+    startPeriod: '15s',
+    // One maintainer per deployment: pg-boss cron and queue supervision run in exactly one process, and nothing routes to it, so it never overlaps its predecessor.
+    replacementStrategy: 'stop-first',
+    // Reuses the backend image at the same SHA, so CI builds no separate jobs image.
+    reusesImageOf: 'backend',
+    instanceType: 'DEV1-S',
+    // singleVM folds it into the backend process, which then runs cron and the queue workers itself.
+    coHosted: true,
+    env: {
+      MODE: 'jobs',
+      PORT: '4006',
+      FRONTEND_URL: '${FRONTEND_URL}',
+      BACKEND_URL: '${BACKEND_URL}',
     },
   },
 

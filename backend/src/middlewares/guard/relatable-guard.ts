@@ -2,6 +2,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { validUuidSchema } from '#/schemas/common-schemas';
 
 /** Requires a shared organization with `relatableUserId` from path or query; skips absent/self, allows sysadmins. */
 export const relatableGuard = xMiddleware(
@@ -25,6 +26,12 @@ export const relatableGuard = xMiddleware(
     if (isSystemAdmin) {
       await next();
       return;
+    }
+
+    // Guards run before request validation: another user named by anything but a user id relates to nobody, and it
+    // never reaches the uuid-typed query below.
+    if (!validUuidSchema.safeParse(targetUserId).success) {
+      throw new AppError(403, 'forbidden', 'warn', { entityType: 'user' });
     }
 
     const memberships = ctx.var.memberships;

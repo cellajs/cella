@@ -1,3 +1,4 @@
+import '~/query/tests/query-client-env';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { EntityQueryKeys } from '~/query/basic/entity-query-registry';
 import type { ItemData, OrgRoutableItemData } from '~/query/basic/types';
@@ -25,8 +26,6 @@ vi.mock('shared', async (importOriginal) => {
   };
 });
 vi.mock('~/query/offline', () => ({ sourceId: 'test-source' }));
-vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
-vi.stubGlobal('navigator', { onLine: true });
 
 // The change* helpers write through the module-singleton queryClient, so tests use that instance.
 const { queryClient } = await import('~/query/query-client');

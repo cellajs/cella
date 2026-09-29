@@ -23,27 +23,31 @@ export const generateTOTP = (
   return generateHOTP(key, BigInt(Math.floor(unixTimeInSeconds / intervalInSeconds)), digits);
 };
 
-/** Verifies `otp` against every interval within ±`gracePeriodInSeconds` of now, so codes survive clock drift. Comparison is constant-time per interval. */
-export const verifyTOTPWithGracePeriod = (
+/**
+ * The time step `otp` belongs to, among the steps within ±`gracePeriodInSeconds` of now, so codes survive clock drift;
+ * null when it matches none. Every step is compared in constant time, and of two matching steps the later one counts.
+ */
+export const matchTOTPStep = (
   key: Uint8Array,
   intervalInSeconds: number,
   digits: number,
   otp: string,
   gracePeriodInSeconds: number,
-): boolean => {
-  if (otp.length !== digits) return false;
+): number | null => {
+  const presented = Buffer.from(otp);
+  if (presented.length !== digits) return null;
 
   const nowInSeconds = Math.floor(Date.now() / 1000);
-  const firstInterval = Math.floor((nowInSeconds - gracePeriodInSeconds) / intervalInSeconds);
-  const lastInterval = Math.floor((nowInSeconds + gracePeriodInSeconds) / intervalInSeconds);
+  const firstStep = Math.floor((nowInSeconds - gracePeriodInSeconds) / intervalInSeconds);
+  const lastStep = Math.floor((nowInSeconds + gracePeriodInSeconds) / intervalInSeconds);
 
-  let valid = false;
-  for (let interval = firstInterval; interval <= lastInterval; interval++) {
-    const expected = generateHOTP(key, BigInt(interval), digits);
-    // Check every interval (no early exit) with a constant-time comparison
-    if (timingSafeEqual(Buffer.from(expected), Buffer.from(otp))) valid = true;
+  let matched: number | null = null;
+  for (let step = firstStep; step <= lastStep; step++) {
+    const expected = Buffer.from(generateHOTP(key, BigInt(step), digits));
+    // Check every step (no early exit) with a constant-time comparison
+    if (timingSafeEqual(expected, presented)) matched = step;
   }
-  return valid;
+  return matched;
 };
 
 /** Builds an `otpauth://` provisioning URI for authenticator apps (QR code or deep link). */

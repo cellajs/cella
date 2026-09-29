@@ -31,6 +31,8 @@ import {
 } from 'sdk';
 import type { ApiError } from '~/lib/api';
 import { getPasskeyRegistrationCredential } from '~/modules/auth/passkey-credentials';
+import { ensureStepUp, withStepUp } from '~/modules/auth/step-up';
+import { StepUpDismissed } from '~/modules/auth/step-up-retry';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { getAndSetMe, getAndSetMeAuthData } from '~/modules/me/helpers';
 import type { Passkey } from '~/modules/me/types';
@@ -83,7 +85,7 @@ export const useUpdateSelfMutation = () => {
 export const useToggleMfaMutation = () => {
   return useMutation<User, ApiError, NonNullable<ToggleMfaData['body']>>({
     mutationKey: meKeys.update.info,
-    mutationFn: (body) => toggleMfa({ body }),
+    mutationFn: (body) => withStepUp(() => toggleMfa({ body })),
     onSuccess: (updatedUser, { mfaRequired: isEnabling }) => {
       applyUpdatedSelf(updatedUser);
       if (isEnabling) queryClient.invalidateQueries({ queryKey: meKeys.auth });
@@ -106,8 +108,12 @@ export const useCreatePasskeyMutation = () => {
   return useMutation<Passkey, ApiError, void>({
     mutationKey: meKeys.register.passkey,
     mutationFn: async () => {
-      const credentialData = await getPasskeyRegistrationCredential();
-      return createPasskey({ body: credentialData });
+      // Stepped up before the ceremony, so the authenticator prompts once.
+      await ensureStepUp();
+      return withStepUp(async () => {
+        const credentialData = await getPasskeyRegistrationCredential();
+        return createPasskey({ body: credentialData });
+      });
     },
     onSuccess: (newPasskey) => {
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
@@ -120,6 +126,7 @@ export const useCreatePasskeyMutation = () => {
       toaster.success(t('c:success.passkey_added'));
     },
     onError(error) {
+      if (error instanceof StepUpDismissed) return;
       // On cancel throws error NotAllowedError
       console.error('Error during passkey registration:', error);
       toaster.error(t('error:passkey_registration_failed'));
@@ -130,7 +137,7 @@ export const useCreatePasskeyMutation = () => {
 export const useDeletePasskeyMutation = () => {
   return useMutation<DeletePasskeyResponse, ApiError, MutationData<DeletePasskeyData>>({
     mutationKey: meKeys.delete.passkey,
-    mutationFn: ({ path }) => deletePasskey({ path }),
+    mutationFn: ({ path }) => withStepUp(() => deletePasskey({ path })),
     onSuccess: (_data, { path: { id } }) => {
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
@@ -142,6 +149,7 @@ export const useDeletePasskeyMutation = () => {
       toaster.success(t('c:success.delete_resource', { resource: t('c:passkey') }));
     },
     onError(error) {
+      if (error instanceof StepUpDismissed) return;
       console.error('Error deleting passkey:', error);
       toaster.error(t('error:passkey_delete_failed'));
     },
@@ -151,7 +159,7 @@ export const useDeletePasskeyMutation = () => {
 export const useDeleteTotpMutation = () => {
   return useMutation<DeleteTotpResponse, ApiError, void>({
     mutationKey: meKeys.delete.totp,
-    mutationFn: () => deleteTotp(),
+    mutationFn: () => withStepUp(() => deleteTotp()),
     onSuccess: () => {
       toaster.success(t('c:success.delete_resource', { resource: t('c:totp') }));
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
@@ -160,6 +168,7 @@ export const useDeleteTotpMutation = () => {
       });
     },
     onError(error) {
+      if (error instanceof StepUpDismissed) return;
       console.error('Error deleting totp:', error);
       toaster.error(t('error:totp_delete_failed'));
     },

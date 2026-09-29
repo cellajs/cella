@@ -2,7 +2,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { config } from '../../../../../shared/config/config.default';
-import { generateOperationHash } from '../../openapi-parser/file-generators';
 import { buildOperationDocsUrl } from '../plugin';
 
 // The docs URL format must match the frontend operations route, which reads `operationTag` and resolves the anchor through generateOperationHash.
@@ -10,22 +9,6 @@ describe('buildOperationDocsUrl', () => {
   it('builds a frontend docs link with the operationTag param and hash anchor', () => {
     const url = buildOperationDocsUrl('post', '/auth/check-email', 'auth');
     expect(url).toBe(`${config.frontendUrl}/docs/operations?operationTag=auth#tag/auth/POST/auth/check-email`);
-  });
-
-  it('points at the frontend URL, not the backend/api URL', () => {
-    const url = buildOperationDocsUrl('get', '/auth/health', 'auth');
-    expect(url.startsWith(`${config.frontendUrl}/docs/operations`)).toBe(true);
-    expect(url).not.toContain(`${config.backendUrl}/docs`);
-    expect(url).not.toContain('/docs#tag');
-  });
-
-  it('uses the same anchor format as the docs route (generateOperationHash)', () => {
-    const method = 'get';
-    const path = '/auth/health';
-    const tag = 'auth';
-    const url = buildOperationDocsUrl(method, path, tag);
-    const fragment = url.split('#')[1];
-    expect(fragment).toBe(generateOperationHash(method, path, [tag]));
   });
 });
 

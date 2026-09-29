@@ -1,47 +1,78 @@
+import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import { sanitizeBlockMediaUrls } from '#/modules/yjs/helpers/sanitize-block-media';
+
+const organizationId = '0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2b';
+const ctx = { organizationId };
+const ownKey = `${organizationId}/0199a1b2-c3d4-7e5f-8a6b-111111111111/image.webp`;
+const attachmentId = '0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c';
 
 const image = (url: string) => ({ id: '1', type: 'image', props: { url, caption: '' }, content: [], children: [] });
 const paragraph = () => ({ id: '2', type: 'paragraph', props: {}, content: [], children: [] });
 
 describe('sanitizeBlockMediaUrls', () => {
-  it('passes trusted content through unchanged', () => {
-    // Non-URL values are internal attachment keys and always trusted.
-    const description = JSON.stringify([paragraph(), image('attachment-key-123')]);
-    const result = sanitizeBlockMediaUrls(description);
+  it('passes an attachment id and an own-organization key through unchanged (positive control)', () => {
+    const description = JSON.stringify([paragraph(), image(attachmentId), image(ownKey)]);
+    const result = sanitizeBlockMediaUrls(description, ctx);
 
     expect(result.sanitized).toBe(false);
     expect(result.description).toBe(description);
   });
 
-  it('blanks untrusted media URLs instead of rejecting', () => {
-    const bad = 'https://evil.example.com/tracker.png';
-    const description = JSON.stringify([paragraph(), image(bad)]);
-    const result = sanitizeBlockMediaUrls(description);
+  it('must not persist media from outside the organization via a relay write', () => {
+    const cdn = appConfig.s3.publicCDNUrl;
+    const bypasses = [
+      `${cdn}@evil.example/pixel.png`,
+      `${cdn}.evil.example/pixel.png`,
+      '//evil.example/pixel.png',
+      '\\\\evil.example\\pixel.png',
+      '0199a1b2-c3d4-7e5f-8a6b-000000000000/user/contract.png',
+      `${organizationId}/../0199a1b2-c3d4-7e5f-8a6b-000000000000/user/contract.png`,
+      `${organizationId}/..%2f..%2f0199a1b2-c3d4-7e5f-8a6b-000000000000/contract.png`,
+      'https://i.imgur.com/abc123.png',
+    ];
+    const description = JSON.stringify([paragraph(), ...bypasses.map(image), image(ownKey)]);
+    const result = sanitizeBlockMediaUrls(description, ctx);
 
     expect(result.sanitized).toBe(true);
-    expect(result.invalidUrls).toContain(bad);
-    const blocks = JSON.parse(result.description);
-    expect(blocks[1].props.url).toBe('');
-    // Sanitized output must itself pass validation (blank = trusted internal reference)
-    expect(sanitizeBlockMediaUrls(result.description).sanitized).toBe(false);
+    expect(result.invalidUrls).toEqual(bypasses);
+    const urls = (JSON.parse(result.description) as { props: { url?: string } }[]).map((block) => block.props.url);
+    expect(urls).toEqual([undefined, ...bypasses.map(() => ''), ownKey]);
+    // The sanitized document passes on its own: a blank url holds no reference.
+    expect(sanitizeBlockMediaUrls(result.description, ctx).sanitized).toBe(false);
   });
 
   it('sanitizes nested children', () => {
-    const bad = 'https://evil.example.com/x.mp4';
+    const bad = 'https://evil.example/x.mp4';
     const description = JSON.stringify([
       { ...paragraph(), children: [{ id: '3', type: 'video', props: { url: bad }, content: [], children: [] }] },
     ]);
-    const result = sanitizeBlockMediaUrls(description);
+    const result = sanitizeBlockMediaUrls(description, ctx);
 
     expect(result.sanitized).toBe(true);
     expect(JSON.parse(result.description)[0].children[0].props.url).toBe('');
   });
 
-  it('degrades malformed JSON to an empty document rather than wedging', () => {
-    const result = sanitizeBlockMediaUrls('not json');
+  it('blanks a media block whose props is not an object, and one hidden under a node without a string type', () => {
+    const hidden = { id: '4', type: 'image', props: { url: '//evil.example/pixel.png' }, content: [], children: [] };
+    const description = JSON.stringify([
+      { id: '3', type: 'image', props: 'https://evil.example/pixel.png', content: [], children: [] },
+      { id: '5', type: 42, props: {}, children: [hidden] },
+    ]);
+    const result = sanitizeBlockMediaUrls(description, ctx);
 
     expect(result.sanitized).toBe(true);
-    expect(result.description).toBe('[]');
+    const [mediaBlock, oddNode] = JSON.parse(result.description);
+    expect(mediaBlock.props).toEqual({ url: '' });
+    expect(oddNode.children[0].props.url).toBe('');
+    expect(sanitizeBlockMediaUrls(result.description, ctx).sanitized).toBe(false);
+  });
+
+  it('degrades content that is not a block list to an empty document', () => {
+    for (const content of ['not json', '{"type": "image"}']) {
+      const result = sanitizeBlockMediaUrls(content, ctx);
+      expect(result.sanitized).toBe(true);
+      expect(result.description).toBe('[]');
+    }
   });
 });

@@ -2,7 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { getColumns } from 'drizzle-orm';
 import type { ActorBinding } from '#/core/context';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
+import { membershipBaseSchema, type PersonalViewKey, personalViewKeys } from '#/modules/memberships/memberships-schema';
 import { pick } from '#/utils/pick';
 
 export type MembershipBaseModel = z.infer<typeof membershipBaseSchema>;
@@ -25,6 +25,20 @@ export const toMembershipBase = (membership: Record<string, unknown>): Membershi
     if (key in membership) result[key] = membership[key];
   }
   return result as MembershipBaseModel;
+};
+
+/**
+ * A membership as the user `viewerId` may see it. Archive, mute and menu order are each member's own view of a channel,
+ * so a response keeps them on the viewer's own membership and leaves them out of anyone else's.
+ */
+export const membershipAsSeenBy = <M extends Pick<MembershipBaseModel, 'userId' | PersonalViewKey>>(
+  membership: M,
+  viewerId: string,
+): M | Omit<M, PersonalViewKey> => {
+  if (membership.userId === viewerId) return membership;
+  const seen = { ...membership };
+  for (const key of personalViewKeys) Reflect.deleteProperty(seen, key);
+  return seen;
 };
 
 /** A user's binding is its membership row; a service account's binding is not. Narrows `actor.bindings` elements. */

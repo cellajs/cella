@@ -1,9 +1,11 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   applyHint,
   classifyPreviewSteps,
   formatPending,
   isPrivilegedUrn,
+  main,
+  type PreviewStep,
   readPath,
   splitUrn,
 } from './preflight-privileged';
@@ -87,5 +89,39 @@ describe('classifyPreviewSteps', () => {
     expect(text).toContain('1 privileged change(s) pending');
     expect(text).toContain(applyHint('production'));
     expect(applyHint('staging')).toBe('pnpm infra --mode staging  →  Stack setup  →  Apply infra change');
+  });
+});
+
+describe('main', () => {
+  const env = { ...process.env };
+  afterEach(() => {
+    process.env = { ...env };
+  });
+
+  /** Effects that answer only for the production stack: the mode's stack file is set up and its preview returns `steps`. */
+  const production = (steps: PreviewStep[]) => ({
+    stackIsSetUp: (mode: string) => mode === 'production',
+    preview: async (stack: string) => {
+      if (stack !== 'organization/infra/production') throw new Error(`previewed the wrong stack: ${stack}`);
+      return steps;
+    },
+  });
+  const run = (steps: PreviewStep[]) => main(['--mode', 'production'], production(steps));
+
+  it('throws exit code 2 with the operator command when a privileged change is pending', async () => {
+    const pending = run([{ op: 'create', urn: urn('scaleway:databases/privilege:Privilege', 'admin-cron-privilege') }]);
+    await expect(pending).rejects.toMatchObject({ name: 'ExitCodeError', exitCode: 2 });
+    await expect(pending).rejects.toThrow(applyHint('production'));
+  });
+
+  it('passes when every change is one a CI deploy applies', async () => {
+    await expect(run([{ op: 'create', urn: urn('scaleway:instance/server:Server', 'vm-backend-abc') }])).resolves.toBe(
+      undefined,
+    );
+  });
+
+  it('skips a mode without a set-up stack', async () => {
+    const effects = production([{ op: 'create', urn: urn('scaleway:iam/policy:Policy', 'vm-backend-policy') }]);
+    await expect(main(['--mode', 'staging'], effects)).resolves.toBe(undefined);
   });
 });

@@ -1,3 +1,4 @@
+import { appConfig } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserContext } from '#/core/context';
 
@@ -25,22 +26,25 @@ const { getPresignedUrlsOp } = await import('./get-presigned-urls');
 
 const ctx = { var: { memberships: [] } } as unknown as UserContext;
 
+// Keys sit under the organization's upload prefix, in the app's private bucket, as uploads land.
 const attachmentA = {
   id: 'att-a',
+  organizationId: 'org-1',
   createdBy: 'user-1',
-  bucketName: 'private-bucket',
+  bucketName: appConfig.s3.privateBucket,
   keys: {
-    original: 'org/attachments/original/a.jpg',
-    preview: 'org/attachments/preview/a.jpg',
+    original: 'org-1/user-1/a.jpg',
+    preview: 'org-1/user-1/a-preview.jpg',
   },
 };
 const attachmentB = {
   id: 'att-b',
+  organizationId: 'org-1',
   createdBy: 'user-2',
-  bucketName: 'private-bucket',
+  bucketName: appConfig.s3.privateBucket,
   keys: {
-    original: 'org/attachments/original/b.jpg',
-    converted: 'org/attachments/converted/b.pdf',
+    original: 'org-1/user-2/b.jpg',
+    converted: 'org-1/user-2/b.pdf',
   },
 };
 
@@ -106,7 +110,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
     const res = await getPresignedUrlsOp(ctx, { items: [{ attachmentId: 'att-a', variant: 'converted' }] });
 
     expect(getSignedUrlFromKey).toHaveBeenCalledWith(attachmentA.keys.original, {
-      bucketName: 'private-bucket',
+      bucketName: appConfig.s3.privateBucket,
       publicBucket: false,
     });
     expect(res.data[0]?.variant).toBe('converted');
@@ -145,6 +149,29 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
 
     expect(getSignedUrlFromKey).toHaveBeenCalledTimes(1);
     expect(res.rejectedIds).toEqual(['att-b', 'att-missing']);
+  });
+
+  it('rejects a whole id when a requested variant names storage outside its organization, never signing it', async () => {
+    const planted = {
+      ...attachmentB,
+      keys: { original: attachmentB.keys.original, preview: 'org-2/user-9/secret.jpg' },
+    };
+    const foreignBucket = { ...attachmentA, id: 'att-c', bucketName: 'another-apps-bucket' };
+    findAttachmentsByIds.mockResolvedValue([attachmentA, planted, foreignBucket]);
+    allowAll([attachmentA, planted, foreignBucket]);
+
+    const res = await getPresignedUrlsOp(ctx, {
+      items: [
+        { attachmentId: 'att-a', variant: 'original' },
+        { attachmentId: 'att-b', variant: 'original' },
+        { attachmentId: 'att-b', variant: 'preview' },
+        { attachmentId: 'att-c', variant: 'original' },
+      ],
+    });
+
+    expect(getSignedUrlFromKey).toHaveBeenCalledTimes(1);
+    expect(res.data.map((item) => item.attachmentId)).toEqual(['att-a']);
+    expect(res.rejectedIds).toEqual(['att-b', 'att-c']);
   });
 
   it('succeeds with empty data when every item is rejected', async () => {

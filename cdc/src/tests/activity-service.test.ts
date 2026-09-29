@@ -9,7 +9,6 @@ vi.mock('shared/utils/nanoid', () => ({
   nanoidTenant: () => 'mock-t',
 }));
 
-import { log } from '../lib/pino';
 import { wsClient } from '../network/websocket-client';
 import { generateActivityId, sendBatchMessageToApi } from '../services/activity-service';
 
@@ -53,7 +52,6 @@ describe('sendBatchMessageToApi', () => {
 
     expect(activity.seq).toBe(10); // minSeq
     expect(activity.batchUntilSeq).toBe(12); // maxSeq
-    expect(log.error).not.toHaveBeenCalled();
   });
 
   it('accepts non-contiguous sequence positions within one group and carries the exact count', () => {
@@ -61,7 +59,6 @@ describe('sendBatchMessageToApi', () => {
     const events = [mockBatchEvent(10), mockBatchEvent(12)];
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
 
-    expect(log.error).not.toHaveBeenCalled();
     const payload = vi.mocked(wsClient.send).mock.calls[0][0] as never as {
       activity: { seq?: number; batchUntilSeq?: number; count?: number };
     };
@@ -99,8 +96,6 @@ describe('sendBatchMessageToApi', () => {
     // Each message speaks only for its own context's rows
     expect(orgA?.batchRows.map((row) => row.seq)).toEqual([10, 11]);
     expect(orgB?.batchRows.map((row) => row.seq)).toEqual([5, 6, 7]);
-    // Both ranges are contiguous, so the per-context integrity checks pass.
-    expect(log.error).not.toHaveBeenCalled();
   });
 
   it('slims batch rows to permission-relevant fields only', () => {
@@ -138,15 +133,6 @@ describe('sendBatchMessageToApi', () => {
 
     expect(() => sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never)).not.toThrow();
     expect(wsClient.send).toHaveBeenCalledOnce();
-    expect(log.error).not.toHaveBeenCalled();
-  });
-
-  it('handles single-event batch without error', () => {
-    const events = [mockBatchEvent(42)];
-    sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
-
-    expect(wsClient.send).toHaveBeenCalledOnce();
-    expect(log.error).not.toHaveBeenCalled();
   });
 
   it('handles events without seqs (delete batches)', () => {
@@ -161,6 +147,5 @@ describe('sendBatchMessageToApi', () => {
     expect(activity.batchUntilSeq).toBeUndefined();
     expect(activity.action).toBe('delete');
     expect(activity.deletedIds).toBeUndefined();
-    expect(log.error).not.toHaveBeenCalled();
   });
 });

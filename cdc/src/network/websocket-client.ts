@@ -22,8 +22,8 @@ interface WebSocketClientCallbacks {
 
 /**
  * Server-to-server channel from the CDC worker to the backend `/internal/cdc` endpoint, carrying full
- * entity row data. Guarded by shared-secret auth and (in production) loopback-only enforcement, so it
- * must never be reachable from external networks or browser clients. Reconnects with backoff + jitter.
+ * entity row data. The listener admits private-network and loopback peers only and the route checks the
+ * shared secret, so it is never reachable from external networks or browser clients. Reconnects with backoff + jitter.
  */
 class WebSocketClient {
   private ws: WebSocket | null = null;
@@ -215,4 +215,8 @@ class WebSocketClient {
   }
 }
 
-export const wsClient = new WebSocketClient(env.API_WS_URL);
+/** The socket's address: the internal listener's `/internal/cdc` route, over the WebSocket scheme matching the listener's. */
+const cdcSocketUrl = new URL('/internal/cdc', env.BACKEND_INTERNAL_URL);
+cdcSocketUrl.protocol = cdcSocketUrl.protocol === 'https:' ? 'wss:' : 'ws:';
+
+export const wsClient = new WebSocketClient(cdcSocketUrl.href);

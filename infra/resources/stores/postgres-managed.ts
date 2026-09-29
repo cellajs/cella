@@ -1,4 +1,5 @@
 import type * as pulumi from '@pulumi/pulumi';
+import { parseAclInput } from '../../lib/db-exposure-acl';
 import { CRON_HOME_DATABASE, POSTGRES_ROLE_NAMES } from '../../lib/scaleway/db-privileges';
 import type { ProvisionContext, ProvisionedStore, StoreProvisioner, StoreSecretContribution } from '../../lib/stores';
 
@@ -116,15 +117,12 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
 
       // Opt-in public endpoint for scoped operator tasks: `infra:dbPublicEndpoint` enables it, `infra:dbPublicAcl` limits client CIDRs, and unsetting both returns the database to private-only.
       const dbPublicEndpoint = infraConfig.getBoolean('dbPublicEndpoint') ?? false;
-      const dbPublicAcl = infraConfig.get('dbPublicAcl') ?? '';
 
-      if (dbPublicEndpoint && !dbPublicAcl) {
-        throw new Error(
-          'Security: infra:dbPublicAcl must be set when infra:dbPublicEndpoint=true. ' +
-            'An open public endpoint with no ACL exposes the database to the internet. ' +
-            'Example: pulumi config set infra:dbPublicAcl "203.0.113.0/32"',
-        );
-      }
+      // Checked here too, not only in the CLI prompt: a hand-set config reaches this resource directly, and without an ACL the endpoint opens on Scaleway's default rule 0.0.0.0/0. `infra:dbPublicAclAllowWide` admits prefixes wider than /24, never the whole internet.
+      const acl = dbPublicEndpoint
+        ? parseAclInput(infraConfig.get('dbPublicAcl') ?? '', infraConfig.getBoolean('dbPublicAclAllowWide') ?? false)
+        : undefined;
+      if (acl && !acl.ok) throw new Error(`Security: infra:dbPublicAcl is refused: ${acl.reason}.`);
 
       // PostgreSQL Instance
 
@@ -157,14 +155,11 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
         },
       );
 
-      if (dbPublicEndpoint && dbPublicAcl) {
+      if (acl?.ok) {
         new scaleway.databases.Acl('main-postgres-acl', {
           instanceId: instance.id,
           region,
-          aclRules: dbPublicAcl.split(',').map((cidr) => ({
-            ip: cidr.trim(),
-            description: 'operator (temporary)',
-          })),
+          aclRules: acl.cidrs.map((cidr) => ({ ip: cidr, description: 'operator (temporary)' })),
         });
       }
 

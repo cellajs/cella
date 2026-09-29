@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
 import { appConfig } from 'shared';
+import { systemUploadPrefix } from 'shared/utils/upload-visibility';
 import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { Spinner } from '~/modules/common/spinner';
@@ -18,6 +19,7 @@ export function NewsletterPreview() {
             defaultValue={form.getValues('content')}
             className="text-muted-foreground"
             clickOpensPreview
+            organizationId={systemUploadPrefix}
           />
         </Suspense>
       </section>

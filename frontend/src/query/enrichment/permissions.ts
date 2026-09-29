@@ -3,7 +3,7 @@ import { allActionsAllowed, computeCan, hierarchy, policyMatrix } from 'shared';
 import { useUserStore } from '~/modules/user/user-store';
 import type { EnrichableChannel } from '~/query/enrichment/types';
 
-/** Deep compare, over the three-state values true, false, and 'own'. */
+/** Deep compare over the can states (booleans and condition names). */
 function hasCanChanged(a: EntityCanMap | undefined, b: EntityCanMap | undefined): boolean {
   if (!a && !b) return false;
   if (!a || !b) return true;

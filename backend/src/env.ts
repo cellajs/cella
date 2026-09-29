@@ -3,12 +3,23 @@ import process from 'node:process';
 import { createEnv } from '@t3-oss/env-core';
 import { appConfig } from 'shared';
 import { z } from 'zod';
+import { type ModeSecret, missingModeSecrets, processModes } from '#/env-mode-secrets';
 import { severityLevels } from '#/schemas/api-error-schemas';
 
 // Resolved from this file (src/ or the dist/ bundle), so it works regardless of cwd (e.g. vitest workers).
 // Variables already in the environment win over the file.
 const envFile = new URL('../.env', import.meta.url);
 if (existsSync(envFile)) process.loadEnvFile(envFile);
+
+/** Minimum length of a secret that signs or authenticates; the CDC and Yjs workers hold their copies to the same. */
+const minSecretLength = 16;
+
+/** A secret of at least `min` characters, refused with a message that names it. */
+const secretString = (name: string, min = minSecretLength) =>
+  z.string().min(min, `${name} must be at least ${min} characters`);
+
+/** Development and tunnel run on the example `.env`, whose cookie secret is shorter: there an entry only has to be non-empty. */
+const minCookieSecretLength = appConfig.mode === 'development' || appConfig.mode === 'tunnel' ? 1 : minSecretLength;
 
 export const env = createEnv({
   server: {
@@ -21,9 +32,10 @@ export const env = createEnv({
       .default('false')
       .transform((v) => v === 'true'),
     DATABASE_URL: z.url(),
-    // Admin credential (table owner, BYPASSRLS): only the migrate, seed, maintenance and mcp paths need it; the request-serving API boots without it.
+    // Admin credential (table owner, BYPASSRLS): only the migrate, seed and maintenance paths need it; the request-serving API boots without it.
     DATABASE_ADMIN_URL: z.url().optional(),
-    DATABASE_POOL_MAX: z.coerce.number().default(80),
+    // Capped for the managed instance's connection budget: max_connections is 100 (the engine default, 3 slots superuser-reserved), and the API, cdc, yjs, the job store and the migrate companion add up to about half of it. See jobs/README.md, Connection budget.
+    DATABASE_POOL_MAX: z.coerce.number().default(20),
     // PEM CA cert for the managed PostgreSQL TLS connection: required in production, where the DB client fails fast without it.
     DATABASE_SSL_CA: z.string().optional(),
     NODE_ENV: z.union([
@@ -34,14 +46,23 @@ export const env = createEnv({
       z.literal('test'),
     ]),
     PORT: z.string().default(String(appConfig.devPorts.api)),
-    UNSUBSCRIBE_SECRET: z.string(),
+    // The internal listener (lib/listeners.ts): the CDC socket and the Yjs relay's routes, reached only from the private network.
+    INTERNAL_PORT: z.string().default(String(appConfig.devPorts.internal)),
+    // Mode-bound secrets (env-mode-secrets.ts): each is required below only in the modes that read it.
+    UNSUBSCRIBE_SECRET: secretString('UNSUBSCRIBE_SECRET').optional(),
 
     // Web Push (has.push): both keys present enables sending; VAPID_SUBJECT defaults to the frontend URL.
     VAPID_PUBLIC_KEY: z.string().optional(),
     VAPID_PRIVATE_KEY: z.string().optional(),
     VAPID_SUBJECT: z.string().optional(),
 
-    COOKIE_SECRET: z.string(),
+    // One secret or a comma-separated list (the first signs, any verifies). Every entry counts on its own, so a stray
+    // comma or a short entry stops the boot and never becomes a signing key.
+    COOKIE_SECRET: z
+      .string()
+      .refine((value) => value.split(',').every((entry) => entry.trim().length >= minCookieSecretLength), {
+        message: `Every COOKIE_SECRET entry must be at least ${minCookieSecretLength} characters`,
+      }),
 
     // Operator-managed runtime secret. When the secret has no version the env var is omitted and this
     // defaults to 'none' (deny), so sys-admin routes stay off until an operator sets the allowlist.
@@ -53,7 +74,7 @@ export const env = createEnv({
       ])
       .default('none'),
 
-    ADMIN_EMAIL: z.email(),
+    ADMIN_EMAIL: z.email().optional(),
 
     TUNNEL_URL: z.string().default(''),
     TUNNEL_AUTH_TOKEN: z.string().default(''),
@@ -81,10 +102,13 @@ export const env = createEnv({
 
     MAPLE_SECRET_INGEST_KEY: z.string().optional(),
 
-    YJS_SECRET: z.string().min(16, 'YJS_SECRET must be at least 16 characters'),
-    CDC_SECRET: z.string().min(16, 'CDC_SECRET must be at least 16 characters'),
-    PII_HASH_SECRET: z.string().min(16, 'PII_HASH_SECRET must be at least 16 characters'),
-    DATA_ENCRYPTION_KEY: z.string().min(32, 'DATA_ENCRYPTION_KEY must be at least 32 characters'),
+    // Key material the Ed25519 key signing Yjs editor tokens derives from; the relay holds only the public half.
+    YJS_TOKEN_PRIVATE_KEY: secretString('YJS_TOKEN_PRIVATE_KEY', 32).optional(),
+    // Authenticates the Yjs relay on the internal listener's materialize route; it never signs a token.
+    YJS_RELAY_SECRET: secretString('YJS_RELAY_SECRET').optional(),
+    CDC_SECRET: secretString('CDC_SECRET').optional(),
+    PII_HASH_SECRET: secretString('PII_HASH_SECRET').optional(),
+    DATA_ENCRYPTION_KEY: secretString('DATA_ENCRYPTION_KEY', 32),
 
     // GeoIP (lib/geoip.ts): local MMDB paths, the object prefix they download from ('off' disables the refresh; empty
     // means the geoip/ prefix of the public bucket), and the public address development geolocates for loopback sign-ins.
@@ -95,7 +119,7 @@ export const env = createEnv({
 
     SCW_AI_API_KEY: z.string().optional(),
 
-    MODE: z.enum(['api', 'mcp', 'oauth', 'cdc', 'migrate']).default('api'),
+    MODE: z.enum(processModes).default('api'),
 
     // Apply migrations and roles before binding the API port. Production runs migrations in a separate mode.
     RUN_MIGRATIONS_ON_BOOT: z
@@ -113,7 +137,26 @@ export const env = createEnv({
   // biome-ignore lint/style/noProcessEnv: this file IS the env loader.
   runtimeEnv: process.env,
   emptyStringAsUndefined: true,
+  // A worker VM receives only the secrets its mode reads, so a mode-bound secret is required in its own modes alone.
+  createFinalSchema: (shape) =>
+    z.object(shape).superRefine((values, ctx) => {
+      for (const name of missingModeSecrets(values)) {
+        ctx.addIssue({ code: 'custom', path: [name], message: `${name} is required when MODE=${values.MODE}` });
+      }
+    }),
   // Skip validation under Vitest, whose env vars come from vitest.config.ts test.env.
   // biome-ignore lint/style/noProcessEnv: this file IS the env loader.
   skipValidation: !!process.env.VITEST,
 });
+
+/**
+ * A mode-bound secret for the code path that reads it. Throws in a process whose mode does not receive it, so nothing
+ * signs, hashes or compares with a missing key.
+ * @param name - The secret's env var.
+ * @returns Its value.
+ */
+export function modeSecret(name: ModeSecret): string {
+  const value = env[name];
+  if (!value) throw new Error(`${name} is not configured: MODE=${env.MODE} does not receive it`);
+  return value;
+}

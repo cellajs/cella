@@ -93,7 +93,6 @@ const insertMembership = async (
 
 interface ListOpts {
   courseId?: string;
-  role?: string;
   excludeArchived?: boolean;
   isSystemAdmin?: boolean;
 }
@@ -103,7 +102,7 @@ interface ListedRow {
   membershipRole: string | null;
 }
 
-/** The list query as a consumer wires it: LEFT join for discovery, INNER join (filters in ON) once a role filter narrows to memberships. */
+/** The list query as a consumer wires it: a LEFT join keyed on the caller's own membership, so discovery rows carry none. */
 const listChannels = async (userId: string, opts: ListOpts = {}): Promise<ListedRow[]> => {
   const actor: PredicateActor = { actorId: userId, isSystemAdmin: opts.isSystemAdmin ?? false, scopes: null };
   const memberships = (await seedDb
@@ -116,10 +115,6 @@ const listChannels = async (userId: string, opts: ListOpts = {}): Promise<Listed
     eq(membershipsTable.channelType, CHANNEL_TYPE),
     eq(membershipsTable.userId, userId),
   );
-  const membershipFilterOn = and(
-    ...(opts.excludeArchived ? [eq(membershipsTable.archived, false)] : []),
-    ...(opts.role ? [eq(membershipsTable.role, opts.role)] : []),
-  );
 
   const readColumns: ChannelListReadColumns = {
     membershipUserId: membershipsTable.userId,
@@ -129,31 +124,29 @@ const listChannels = async (userId: string, opts: ListOpts = {}): Promise<Listed
     ...(opts.excludeArchived && { membershipArchived: membershipsTable.archived }),
   };
 
-  // A role filter is a membership question: no discovery rows
-  const discoveryScope = opts.role
-    ? undefined
-    : resolveChannelCollectionReadScopeForPolicies({
-        policies,
-        memberships,
-        channelType: CHANNEL_TYPE,
-        organizationId: ORG_ID,
-        actor,
-        hierarchy: deepHierarchy as unknown as EntityHierarchy,
-      });
-  const scopeWhere = discoveryScope ? buildChannelListReadWhere(discoveryScope, readColumns) : undefined;
+  const discoveryScope = resolveChannelCollectionReadScopeForPolicies({
+    policies,
+    memberships,
+    channelType: CHANNEL_TYPE,
+    organizationId: ORG_ID,
+    actor,
+    // The deep fixture's hierarchy has channel types the app's `EntityHierarchy` type does not name.
+    hierarchy: deepHierarchy as unknown as EntityHierarchy,
+  });
+  const scopeWhere = buildChannelListReadWhere(discoveryScope, readColumns);
 
   const where: SQL[] = [
     eq(channelsTable.organizationId, ORG_ID),
     ...(opts.courseId ? [eq(channelsTable.courseId, opts.courseId)] : []),
-    ...(scopeWhere?.kind === 'where' ? [scopeWhere.where] : []),
-    ...(discoveryScope ? [excludeArchivedWhere(readColumns)].filter((c): c is SQL => c !== undefined) : []),
+    ...(scopeWhere.kind === 'where' ? [scopeWhere.where] : []),
+    ...[excludeArchivedWhere(readColumns)].filter((c): c is SQL => c !== undefined),
   ];
 
-  const source = seedDb.select({ id: channelsTable.id, membershipRole: membershipsTable.role }).from(channelsTable);
-  const joined = discoveryScope
-    ? source.leftJoin(membershipsTable, membershipKeyOn)
-    : source.innerJoin(membershipsTable, and(membershipKeyOn, membershipFilterOn));
-  return joined.where(and(...where));
+  return seedDb
+    .select({ id: channelsTable.id, membershipRole: membershipsTable.role })
+    .from(channelsTable)
+    .leftJoin(membershipsTable, membershipKeyOn)
+    .where(and(...where));
 };
 
 const idsOf = (rows: ListedRow[]) => rows.map(({ id }) => id).sort();
@@ -247,16 +240,6 @@ describe('Channel list discovery rows', () => {
     await insertChannel({ courseId: 'course-1' });
 
     expect(await listChannels('outsider')).toEqual([]);
-  });
-
-  it('keeps role-filtered lists membership-scoped (no discovery rows)', async () => {
-    await insertMembership('student', 'course', 'course-1', 'student');
-    await insertChannel({ courseId: 'course-1' }); // discoverable, not membered
-    const own = await insertChannel({ courseId: 'course-1' });
-    await insertMembership('student', 'project', own, 'owner');
-
-    expect(idsOf(await listChannels('student', { courseId: 'course-1', role: 'owner' }))).toEqual([own]);
-    expect(await listChannels('student', { courseId: 'course-1', role: 'follower' })).toEqual([]);
   });
 
   it('hides an archived own membership under excludeArchived instead of showing it as a discovery row', async () => {

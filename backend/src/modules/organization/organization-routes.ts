@@ -105,6 +105,7 @@ const organizationRoutes = {
     request: {
       params: tenantIdParamSchema,
       body: {
+        required: true,
         content: { 'application/json': { schema: organizationUpdateBodySchema } },
       },
     },

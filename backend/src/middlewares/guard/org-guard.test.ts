@@ -1,5 +1,10 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { eq, inArray } from 'drizzle-orm';
+import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AppError } from '#/core/error';
+import { baseDb, getSeedDb } from '#/db/db';
+import { organizationsTable } from '#/modules/organization/organization-db';
+import { mockOrganization } from '#/modules/organization/organization-mocks';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { clearOrgCache, setOrgCache } from './org-cache';
 import { orgGuard } from './org-guard';
 
@@ -30,10 +35,16 @@ const membership = (channelType: string, organizationId: string) =>
 
 const emptyDb = { select: () => ({ from: () => ({ where: () => Promise.resolve([]) }) }) };
 
-const mockCtx = (opts: { memberships: unknown[]; isSystemAdmin?: boolean; organizationId?: string }) => ({
+const mockCtx = (opts: {
+  memberships: unknown[];
+  isSystemAdmin?: boolean;
+  organizationId?: string;
+  tenantId?: string;
+  db?: unknown;
+}) => ({
   req: { param: () => opts.organizationId ?? ORG_ID },
   var: {
-    db: emptyDb as never,
+    db: (opts.db ?? emptyDb) as never,
     memberships: opts.memberships,
     // The guard reads the actor's bindings; for a session those are the memberships.
     actor: {
@@ -43,7 +54,7 @@ const mockCtx = (opts: { memberships: unknown[]; isSystemAdmin?: boolean; organi
       scopes: null,
     },
     isSystemAdmin: opts.isSystemAdmin ?? false,
-    tenantId: TENANT_ID,
+    tenantId: opts.tenantId ?? TENANT_ID,
   },
   set: vi.fn(),
 });
@@ -97,20 +108,21 @@ describe('orgGuard — organization access', () => {
     expect((organization as { membership: unknown }).membership).toBeNull();
   });
 
-  it('rejects a caller whose only membership is in another organization', async () => {
+  // A caller without a foothold gets the answer a missing organization gets, so the id is never confirmed.
+  it('must not confirm the organization to a caller whose only membership is in another organization', async () => {
     const ctx = mockCtx({ memberships: [membership('course', OTHER_ORG_ID)] });
 
     const error = await runExpectingError(ctx);
 
-    expect(error.status).toBe(403);
+    expect(error).toMatchObject({ status: 404, type: 'not_found', entityType: 'organization' });
   });
 
-  it('rejects a caller with no memberships at all', async () => {
+  it('must not confirm the organization to a caller with no memberships at all', async () => {
     const ctx = mockCtx({ memberships: [] });
 
     const error = await runExpectingError(ctx);
 
-    expect(error.status).toBe(403);
+    expect(error).toMatchObject({ status: 404, type: 'not_found', entityType: 'organization' });
   });
 
   it('admits a system admin holding no membership in the organization', async () => {
@@ -120,12 +132,65 @@ describe('orgGuard — organization access', () => {
 
     expect(next).toHaveBeenCalled();
   });
+});
 
-  it('404s when the organization does not resolve within the tenant', async () => {
-    const ctx = mockCtx({ memberships: [membership('organization', ORG_ID)], organizationId: 'missing-org' });
+// The lookup on a cache miss runs against the database: the request's tenant bounds it, so an organization id
+// from another tenant does not resolve, whoever asks.
+describe('orgGuard — organization lookup within the tenant', () => {
+  const seedDb = getSeedDb();
+  let organization: { id: string; tenantId: string; name: string };
+  let otherTenantId: string;
 
-    const error = await runExpectingError(ctx);
+  beforeAll(async () => {
+    const [own, other] = await seedDb
+      .insert(tenantsTable)
+      .values([{ name: 'org guard tenant' }, { name: 'org guard other tenant' }])
+      .returning({ id: tenantsTable.id });
+    [organization] = await seedDb
+      .insert(organizationsTable)
+      .values({ ...mockOrganization(), tenantId: own.id })
+      .returning({ id: organizationsTable.id, tenantId: organizationsTable.tenantId, name: organizationsTable.name });
+    otherTenantId = other.id;
+  });
 
-    expect(error.status).toBe(404);
+  afterAll(async () => {
+    await seedDb.delete(organizationsTable).where(eq(organizationsTable.id, organization.id));
+    await seedDb.delete(tenantsTable).where(inArray(tenantsTable.id, [organization.tenantId, otherTenantId]));
+  });
+
+  beforeEach(() => clearOrgCache());
+
+  it("must not resolve another tenant's organization via its id, for a member of it or a system admin", async () => {
+    const asMember = mockCtx({
+      memberships: [membership('organization', organization.id)],
+      organizationId: organization.id,
+      tenantId: otherTenantId,
+      db: baseDb,
+    });
+    expect((await runExpectingError(asMember)).status).toBe(404);
+
+    const asSystemAdmin = mockCtx({
+      memberships: [],
+      isSystemAdmin: true,
+      organizationId: organization.id,
+      tenantId: otherTenantId,
+      db: baseDb,
+    });
+    expect((await runExpectingError(asSystemAdmin)).status).toBe(404);
+  });
+
+  it('resolves the organization within its own tenant and exposes the stored row (positive control)', async () => {
+    const ctx = mockCtx({
+      memberships: [membership('organization', organization.id)],
+      organizationId: organization.id,
+      tenantId: organization.tenantId,
+      db: baseDb,
+    });
+
+    const next = await run(ctx);
+
+    expect(next).toHaveBeenCalled();
+    const [, resolved] = ctx.set.mock.calls.find(([key]) => key === 'organization') ?? [];
+    expect(resolved).toMatchObject({ id: organization.id, tenantId: organization.tenantId, name: organization.name });
   });
 });

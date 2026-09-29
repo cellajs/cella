@@ -1,6 +1,6 @@
 import { onlineManager, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
-import type { Membership, MembershipBase, MembershipInviteResponse, Organization } from 'sdk';
+import type { MembershipBase, MembershipInviteResponse, Organization, UpdateMembershipResponse } from 'sdk';
 import { deleteMemberships, membershipInvite, updateMembership } from 'sdk';
 import { appConfig, type ChannelEntityType } from 'shared';
 import type { ApiError } from '~/lib/api';
@@ -137,7 +137,7 @@ export const useInviteMemberMutation = () =>
   });
 
 export const useMemberUpdateMutation = () =>
-  useMutation<Membership, ApiError, MutationUpdateMembership, MembershipChannelProp>({
+  useMutation<UpdateMembershipResponse, ApiError, MutationUpdateMembership, MembershipChannelProp>({
     mutationKey: memberQueryKeys.update,
     mutationFn: async ({ path, body }) => {
       return await updateMembership({ body, path });
@@ -318,6 +318,10 @@ const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount
   };
 };
 
+/** Archive, mute and menu order: a response carries them on the caller's own membership only. */
+const hasPersonalView = (membership: Partial<MembershipBase>): membership is MembershipBase =>
+  membership.archived !== undefined && membership.muted !== undefined && membership.displayOrder !== undefined;
+
 type ChangeEntityRoleVariables = {
   entity: EnrichedChannel;
   role: MembershipBase['role'];
@@ -347,7 +351,7 @@ export const useChangeEntityRoleMutation = () =>
           body: { role },
           path: { id: membership.id, tenantId, organizationId },
         });
-        return { entity, membership: updated, wasNew: false };
+        return { entity, membership: { ...membership, ...updated }, wasNew: false };
       }
 
       const { email } = getCurrentUser();
@@ -358,7 +362,7 @@ export const useChangeEntityRoleMutation = () =>
       });
 
       const created = result.data?.[0];
-      if (!created) throw new Error('Failed to create membership');
+      if (!created || !hasPersonalView(created)) throw new Error('Failed to create membership');
       return { entity, membership: created, wasNew: true };
     },
     onSuccess: ({ entity, membership }) => {

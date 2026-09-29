@@ -5,13 +5,12 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { disableMfa, findExistingTotp, findRemainingMfaMethods, insertTotp } from '#/modules/auth/auth-queries';
+import { findExistingTotp, insertTotp } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
+import { completeMfaChallenge, mfaFactorRules } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
-import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { createTOTPKeyURI } from '#/modules/auth/totps/helpers/totp-core';
-import { signInWithTotp, validateTOTP } from '#/modules/auth/totps/helpers/totps';
+import { verifyTotp } from '#/modules/auth/totps/helpers/totps';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { authTotpsRoutes } from '#/modules/auth/totps/totps-routes';
 import { defaultHook } from '#/utils/default-hook';
@@ -51,21 +50,12 @@ app.openapi(authTotpsRoutes.createTotp, async (ctx) => {
   const existingTotp = await findExistingTotp(ctx, { userId: user.id });
   if (existingTotp) throw new AppError(409, 'resource_already_exists', 'warn');
 
-  const encodedSecret = await getAuthCookie(ctx, 'totp-challenge');
-  if (!encodedSecret) throw new AppError(400, 'invalid_credentials', 'warn');
+  const pendingSecret = await getAuthCookie(ctx, 'totp-challenge');
+  if (!pendingSecret) throw new AppError(400, 'invalid_credentials', 'warn');
 
-  try {
-    const isValid = signInWithTotp(code, encodedSecret);
-    if (!isValid) throw new AppError(403, 'invalid_token', 'warn');
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-
-    throw new AppError(500, 'invalid_credentials', 'error', {
-      ...(error instanceof Error ? { originalError: error } : {}),
-    });
-  }
-
-  await insertTotp(ctx, { userId: user.id, secret: encodedSecret });
+  // The confirming code's step is stored with the secret, so the same code cannot also answer a second factor.
+  const lastUsedStep = await verifyTotp(ctx, { user, code, pendingSecret });
+  await insertTotp(ctx, { userId: user.id, secret: pendingSecret, lastUsedStep });
 
   // Clean up the challenge cookie to prevent reuse
   deleteAuthCookie(ctx, 'totp-challenge');
@@ -78,16 +68,10 @@ app.openapi(authTotpsRoutes.createTotp, async (ctx) => {
 app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
   const user = ctx.var.user;
 
-  // Delete TOTP and conditionally disable MFA atomically
-  await baseDb.transaction(async (tx) => {
+  // The delete rolls back when MFA is on: it keeps the authenticator app until MFA is turned off.
+  await mfaFactorRules.locked(user.id, async (tx) => {
     await tx.delete(totpsTable).where(eq(totpsTable.userId, user.id));
-
-    const { passkeys, totps } = await findRemainingMfaMethods({ var: { ...ctx.var, db: tx } }, { userId: user.id });
-
-    // MFA requires both passkeys and TOTP as backup.
-    if (!passkeys.length || !totps.length) {
-      await disableMfa({ var: { ...ctx.var, db: tx } }, { userId: user.id });
-    }
+    await mfaFactorRules.assertKeepsFactors(tx, user.id);
   });
 
   sendAccountSecurityEmail(user, 'totp-deleted');
@@ -98,31 +82,7 @@ app.openapi(authTotpsRoutes.deleteTotp, async (ctx) => {
 app.openapi(authTotpsRoutes.signInWithTotp, async (ctx) => {
   const { code } = ctx.req.valid('json');
 
-  const strategy = 'totp';
-
-  if (!appConfig.enabledAuthStrategies.includes(strategy)) {
-    throw new AppError(400, 'forbidden_strategy', 'error', { meta: { strategy } });
-  }
-
-  const meta = { strategy, sessionType: 'mfa' } as const;
-
-  const user = await validateConfirmMfaToken(ctx);
-
-  try {
-    await validateTOTP({ code, userId: user.id });
-  } catch (error) {
-    if (error instanceof AppError) throw error;
-
-    throw new AppError(500, 'totp_verification_failed', 'error', {
-      meta,
-      ...(error instanceof Error ? { originalError: error } : {}),
-    });
-  }
-
-  // Revoke single use token by deleting cookie
-  deleteAuthCookie(ctx, 'confirm-mfa');
-
-  await setUserSession(ctx, user, meta.strategy, meta.sessionType);
+  await completeMfaChallenge(ctx, { strategy: 'totp', code });
 
   return ctx.body(null, 204);
 });

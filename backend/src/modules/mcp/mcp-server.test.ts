@@ -1,8 +1,11 @@
 import { z } from '@hono/zod-openapi';
+import { sql } from 'drizzle-orm';
 import { describe, expect, it } from 'vitest';
 import type { OrgContext } from '#/core/context';
+import { AppError } from '#/core/error';
 import { getMcpTools } from '#/core/mcp-tool-registry';
 import { createXRoute } from '#/core/x-routes';
+import { baseDb } from '#/db/db';
 import { publicGuard } from '#/middlewares/guard';
 import '#/modules/attachment/attachment-routes';
 import { handleMcpMessage, InsufficientScopeError } from '#/modules/mcp/mcp-server';
@@ -103,6 +106,53 @@ describe('mcp-server', () => {
     expect(res?.error?.code).toBe(-32601);
   });
 
+  describe('a failing tool', () => {
+    /** Registers a read tool whose operation runs `execute`; each name registers once per run. */
+    const toolFailingWith = (operationId: string, execute: () => Promise<unknown>) =>
+      createXRoute({
+        operationId,
+        method: 'get',
+        path: `/${operationId}`,
+        xGuard: [publicGuard],
+        'x-tool': {
+          enabled: true,
+          description: 'A tool whose operation fails',
+          approvalRequired: false,
+          category: 'things',
+          entity: 'attachment',
+          execute,
+        },
+        responses: { 200: { description: 'ok' } },
+      });
+    const call = (name: string) =>
+      handleMcpMessage(contextWith(null), { jsonrpc: '2.0', id: 9, method: 'tools/call', params: { name } });
+
+    it('must not leak SQL or query parameters to the model via a failing query', async () => {
+      toolFailingWith('brokenQueryTool', async () =>
+        baseDb.execute(sql`select * from mcp_missing_table where token = ${'param-secret-value'}`),
+      );
+
+      const res = await call('brokenQueryTool');
+      expect(res?.result).toEqual({
+        content: [{ type: 'text', text: 'server_error: Internal server error' }],
+        isError: true,
+      });
+      expect(JSON.stringify(res)).not.toMatch(/select|mcp_missing_table|param-secret-value/i);
+    });
+
+    it('answers a domain failure with its type and message (positive control)', async () => {
+      toolFailingWith('missingThingTool', async () => {
+        throw new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
+      });
+
+      const { message } = new AppError(404, 'not_found', 'warn');
+      expect(message).not.toBe('');
+
+      const res = await call('missingThingTool');
+      expect(res?.result).toEqual({ content: [{ type: 'text', text: `not_found: ${message}` }], isError: true });
+    });
+  });
+
   it('errors when calling a tool that is not registered', async () => {
     const res = await handleMcpMessage(contextWith(null), {
       jsonrpc: '2.0',
@@ -162,8 +212,14 @@ describe('createXRoute with x-tool', () => {
       'ops',
     ]);
 
-    await tool!.run(contextWith(null), { id: 'thing-1', ops: { name: 'renamed' } });
+    // A sync transaction the model sends never reaches the route: the server's own replaces it.
+    await tool!.run(contextWith(null), {
+      id: 'thing-1',
+      ops: { name: 'renamed' },
+      stx: { mutationId: 'model', sourceId: 'model', fieldTimestamps: { name: '1:0001:model' } },
+    });
     expect(calls[0]).toMatchObject({ id: 'thing-1', name: 'renamed', stx: { sourceId: 'server' } });
+    expect((calls[0] as { stx: { mutationId: string } }).stx.mutationId).not.toBe('model');
     await expect(tool!.run(contextWith(null), { id: 'thing-1', ops: { name: 7 } })).rejects.toThrow();
   });
 });

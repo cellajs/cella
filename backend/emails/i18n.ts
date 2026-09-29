@@ -1,30 +1,28 @@
-import i18n from 'i18next';
+import i18next from 'i18next';
 import { appConfig } from 'shared';
-import enApp from '../../locales/en/app.json';
-import enBackend from '../../locales/en/backend.json';
-import enCommon from '../../locales/en/common.json';
-import enError from '../../locales/en/error.json';
-import nlApp from '../../locales/nl/app.json';
-import nlBackend from '../../locales/nl/backend.json';
-import nlCommon from '../../locales/nl/common.json';
-import nlError from '../../locales/nl/error.json';
+import { locales } from '#/lib/i18n-locales';
 
-// Templates call i18n.t() directly, so no React bindings are needed.
-if (!i18n.isInitialized) {
-  i18n.init({
-    resources: {
-      en: { backend: enBackend, c: { ...enCommon, ...enApp }, error: enError },
-      nl: { backend: nlBackend, c: { ...nlCommon, ...nlApp }, error: nlError },
-    },
-    ns: ['backend', 'c', 'error'],
-    supportedLngs: appConfig.languages,
-    load: 'languageOnly',
-    fallbackLng: appConfig.defaultLanguage,
-    interpolation: {
-      escapeValue: false,
-    },
-    defaultNS: 'backend',
-  });
-}
+/**
+ * The email templates' own i18next instance, kept apart from the API's error messages (JSON text). Templates call
+ * `i18n.t()` directly, so no React bindings are needed. Interpolated values are HTML-escaped by default, because bodies
+ * and headers render as HTML: markup belongs in the translation string, never in a value.
+ */
+const i18n = i18next.createInstance();
+
+i18n.init({
+  resources: locales,
+  ns: ['backend', 'c', 'error'],
+  supportedLngs: appConfig.languages,
+  load: 'languageOnly',
+  fallbackLng: appConfig.defaultLanguage,
+  interpolation: { escapeValue: true },
+  defaultNS: 'backend',
+});
+
+/**
+ * Spread into the options of a plain-text output that interpolates values (a subject, a preview, JSX text): the mail
+ * header or the renderer escapes it, so escaping here too would show `&amp;` to the reader.
+ */
+export const plainText = { interpolation: { escapeValue: false } } as const;
 
 export { i18n };

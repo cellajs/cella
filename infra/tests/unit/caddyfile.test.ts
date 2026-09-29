@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { deriveInfra } from '../../lib/naming';
+import { SECURITY_HEADERS } from '../../tasks/smoke';
 import { fakeConfig } from '../helpers/fake-config';
 
 const caddyfile = readFileSync(resolve(__dirname, '../../caddy/Caddyfile'), 'utf-8');
@@ -11,24 +12,25 @@ const dockerfile = readFileSync(resolve(__dirname, '../../caddy/Dockerfile'), 'u
 const frontendBucket = deriveInfra(fakeConfig()).naming.frontendBucket;
 
 // Pins the Caddyfile contract the rollout and smoke tests depend on.
-describe('frontend Caddyfile', () => {
-  it('emits every required security header', () => {
-    for (const header of [
-      'Content-Security-Policy',
-      'Strict-Transport-Security',
-      'X-Frame-Options',
-      'X-Content-Type-Options',
-      'Referrer-Policy',
-      'Permissions-Policy',
-      'Cross-Origin-Opener-Policy',
-    ]) {
-      expect(caddyfile, `missing header: ${header}`).toContain(header);
-    }
-  });
+/** The value the global header block sets for a response header, or undefined when the block does not set it. */
+const headerValue = (name: string): string | undefined =>
+  caddyfile.match(new RegExp(`^\\s*${name}\\s+"([^"]*)"`, 'm'))?.[1];
 
-  it('sets HSTS with includeSubDomains + preload', () => {
-    expect(caddyfile).toMatch(/Strict-Transport-Security[^\n]*includeSubDomains/);
-    expect(caddyfile).toMatch(/Strict-Transport-Security[^\n]*preload/);
+describe('frontend Caddyfile', () => {
+  it('sets every header the deploy smoke check requires, with the values that lock the response down', () => {
+    // Names only would pass a header emptied or weakened; the smoke check verifies presence on the live deployment, so the values are pinned here.
+    for (const header of SECURITY_HEADERS) expect(headerValue(header), header).toBeTruthy();
+    const hsts = headerValue('Strict-Transport-Security') ?? '';
+    expect(Number(hsts.match(/max-age=(\d+)/)?.[1])).toBeGreaterThanOrEqual(31536000);
+    expect(hsts).toContain('includeSubDomains');
+    expect(hsts).toContain('preload');
+    expect(headerValue('X-Frame-Options')).toBe('DENY');
+    expect(headerValue('X-Content-Type-Options')).toBe('nosniff');
+    expect(headerValue('Cross-Origin-Opener-Policy')).toBe('same-origin');
+    expect(headerValue('Referrer-Policy')).toBe('strict-origin-when-cross-origin');
+    for (const feature of ['camera', 'microphone', 'geolocation']) {
+      expect(headerValue('Permissions-Policy')).toContain(`${feature}=()`);
+    }
   });
 
   it('strips the Server header so the upstream is not advertised', () => {
@@ -41,7 +43,7 @@ describe('frontend Caddyfile', () => {
   });
 
   it('binds CSP from the {$FRONTEND_CSP} env', () => {
-    expect(caddyfile).toMatch(/Content-Security-Policy\s+"\{\$FRONTEND_CSP\}"/);
+    expect(headerValue('Content-Security-Policy')).toBe('{$FRONTEND_CSP}');
   });
 
   it('serves /health locally (LB + CI rollout verification depend on it)', () => {

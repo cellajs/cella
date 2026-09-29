@@ -24,8 +24,9 @@ const proofStamps = (via: EmailProof, now: string) => ({
 });
 
 /**
- * Records an inbox proof on the user's address and claims the invitations waiting for it. Returns false when the user has no row for the address: the caller
- * proved ownership of an address the account does not hold, which is drift to surface, never to ignore.
+ * Records an inbox proof on the user's address and claims the invitations waiting for it. Returns false when the user
+ * has no row for the address: the caller proved ownership of an address the account does not hold, which is drift to
+ * surface, never to ignore.
  */
 export const markEmailVerified = async (db: DbOrTx, { userId, email, via }: EmailProofOpts): Promise<boolean> => {
   const [stamped] = await db
@@ -65,7 +66,7 @@ export const addProvenEmail = async (db: DbOrTx, { userId, email, via }: EmailPr
     })
     .returning({ id: emailsTable.id });
 
-  if (!row) throw new AppError(409, 'oauth_conflict', 'error');
+  if (!row) throw new AppError(409, 'oauth_conflict', 'warn');
 
   await claimEmailForUser({ var: { db } }, { userId, email });
 };

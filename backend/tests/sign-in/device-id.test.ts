@@ -1,40 +1,23 @@
-import { eq } from 'drizzle-orm';
 import { signInWithTotp } from 'sdk';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
-import { baseDb as db } from '#/db/db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
-import { sessionsTable } from '#/modules/auth/sessions-db';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { createMfaToken, createTotpUser } from '../helpers';
+import { authCookie, createMfaToken, createTotpUser, sessionsOf, setCookieOf, setCookiePair } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 
-vi.mock('#/modules/auth/totps/helpers/totps', () => ({
-  validateTOTP: vi.fn().mockResolvedValue(true),
-  signInWithTotp: vi.fn().mockReturnValue(true),
-}));
+// The device id is under test, not the authenticator code: every TOTP check passes.
+vi.mock('#/modules/auth/totps/helpers/totps', () => ({ verifyTotp: vi.fn().mockResolvedValue(0) }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
-beforeAll(async () => {
-  mockFetchRequest();
-});
-
-afterEach(async () => {
-  await clearDatabase();
-  vi.clearAllMocks();
-});
-
-/** The Set-Cookie line of one auth cookie, or undefined. */
-const setCookieLine = (res: Response, name: Parameters<typeof authCookieName>[0]) =>
-  res.headers.getSetCookie().find((line) => line.startsWith(`${authCookieName(name)}=`));
+afterEach(async () => await clearDatabase());
 
 describe('device id on sign-in', async () => {
   const call = await createAppClient();
 
   const signIn = async (user: { id: string; email: string }, deviceCookie?: string) => {
     const mfaToken = await createMfaToken(user);
-    const cookies = [`${authCookieName('confirm-mfa')}=${mfaToken}`, deviceCookie].filter(Boolean).join('; ');
+    const cookies = [authCookie('confirm-mfa', mfaToken), deviceCookie].filter(Boolean).join('; ');
     const { response } = await call(signInWithTotp, {
       body: { code: '123456' },
       headers: { ...defaultHeaders, Cookie: cookies },
@@ -43,15 +26,21 @@ describe('device id on sign-in', async () => {
     return response;
   };
 
-  const sessionsOf = (userId: string) => db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
-
-  it('sets the device id SameSite=Lax so cross-site sign-in callbacks can read it, and keeps the session Strict', async () => {
+  it('sets the device id SameSite=Lax so cross-site sign-in callbacks can read it, and locks the session cookie to the host, https and the server', async () => {
     const user = await createTotpUser(signUpUser.email);
 
     const res = await signIn(user);
 
-    expect(setCookieLine(res, 'device-id')).toContain('SameSite=Lax');
-    expect(setCookieLine(res, 'session')).toContain('SameSite=Strict');
+    expect(setCookieOf(res, 'device-id').line).toContain('SameSite=Lax');
+    // `__Host-`: Secure, Path=/ and no Domain, so no other host or subdomain can set or read it; HttpOnly keeps it from
+    // scripts; Strict keeps it off requests another site starts.
+    const session = setCookieOf(res, 'session').line;
+    expect(session).toMatch(/^__Host-/);
+    expect(session).toContain('Secure');
+    expect(session).toContain('Path=/');
+    expect(session).not.toContain('Domain=');
+    expect(session).toContain('HttpOnly');
+    expect(session).toContain('SameSite=Strict');
   });
 
   it('gives an mfa session a device id hash and replaces the same browser’s earlier session', async () => {
@@ -62,7 +51,7 @@ describe('device id on sign-in', async () => {
     expect(firstSession.type).toBe('mfa');
     expect(firstSession.deviceIdHash).toBeTruthy();
 
-    const deviceCookie = setCookieLine(first, 'device-id')?.split(';')[0];
+    const deviceCookie = setCookiePair(first, 'device-id');
     await signIn(user, deviceCookie);
 
     // The earlier session stays as a revoked row; only the newer one authenticates.
@@ -85,5 +74,7 @@ describe('device id on sign-in', async () => {
     const sessions = await sessionsOf(user.id);
     expect(sessions).toHaveLength(2);
     expect(sessions[0].deviceIdHash).not.toBe(sessions[1].deviceIdHash);
+    // Neither browser's sign-in ended the other's session.
+    expect(sessions.map((session) => session.revokedAt)).toEqual([null, null]);
   });
 });

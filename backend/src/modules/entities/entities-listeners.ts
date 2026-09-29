@@ -6,9 +6,10 @@ import {
   dispatchMoveOuts,
   dispatchToAppStream,
 } from '#/modules/entities/helpers/dispatch-to-stream';
+import { closeAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
-import { streamSubscriberManager, writeError } from './stream';
+import { streamSubscriberManager } from './stream';
 import type { AppStreamEvent, AppStreamProductEvent } from './stream/types';
 
 // Activity bus listeners: product entity and membership events reach authenticated SSE subscribers.
@@ -27,18 +28,14 @@ for (const entityType of appConfig.productEntityTypes) {
   }
 }
 
-// Closes the streams bound to a revoked session; without this they stay live until the client reconnects.
-// The client treats the `unauthorized` code as permanent and opens its circuit.
-authEvents.on('session.revoked', async ({ userId, sessionIds }) => {
-  const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(`user:${userId}`);
-  for (const subscriber of subscribers) {
-    if (!sessionIds.includes(subscriber.sessionId)) continue;
-    await writeError(subscriber.stream, { code: 'unauthorized', message: 'Session revoked' });
-    streamSubscriberManager.unregister(subscriber.id);
-    // Abort runs the handler's onAbort cleanup and ends the response body; close lets keepAlive return.
-    subscriber.stream.abort();
-    await subscriber.stream.close();
-  }
+// Closes the streams bound to ended sessions, each with the code that tells the client whether to reconnect.
+authEvents.on('session.revoked', async ({ userId, sessionIds, reason }) => {
+  const payload = streamErrorForEnding(reason);
+  const ended = streamSubscriberManager
+    .getByChannel<AppStreamSubscriber>(`user:${userId}`)
+    .filter((subscriber) => sessionIds === 'all' || sessionIds.includes(subscriber.sessionId))
+    .map((subscriber) => ({ subscriber, payload }));
+  await closeAppStreams(ended, 'Failed to close the stream of an ended session');
 });
 
 for (const action of ['created', 'updated', 'deleted'] as const) {

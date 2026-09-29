@@ -277,7 +277,12 @@ export const zMeAuthData = z.object({
       expiresAt: z.string(),
       revokedAt: z.string().nullable(),
       revokedBy: z.uuid().nullable(),
-      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
+      revocationReason: z
+        .enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped'])
+        .nullable(),
+      impersonatorSessionId: z.uuid().nullable(),
+      steppedUpAt: z.string().nullable(),
+      steppedUpVia: z.enum(['passkey', 'totp', 'email']).nullable(),
       isCurrent: z.boolean(),
       isNewDevice: z.boolean(),
     }),
@@ -502,26 +507,6 @@ export const zAttachment = z.object({
 });
 
 /**
- * A user's membership in a channel entity, including role and activity data.
- */
-export const zMembership = z.object({
-  createdAt: z.string(),
-  id: z.uuid(),
-  tenantId: z.string().max(24),
-  channelType: z.enum(['organization']),
-  channelId: z.uuid(),
-  userId: z.uuid(),
-  role: z.enum(['admin', 'member']),
-  createdBy: z.uuid().nullable(),
-  updatedAt: z.string().nullable(),
-  updatedBy: z.uuid().nullable(),
-  archived: z.boolean(),
-  muted: z.boolean(),
-  displayOrder: z.number().gte(-140737488355328).lte(140737488355327),
-  organizationId: z.uuid(),
-});
-
-/**
  * The actor an API key runs as, with its role bindings.
  */
 export const zServiceAccount = z.object({
@@ -586,17 +571,19 @@ export const zCheckEmailBody = z.object({
 });
 
 /**
- * Email exists
+ * Whether this browser is recognized for the address
  */
-export const zCheckEmailResponse = z.void();
+export const zCheckEmailResponse = z.object({
+  recognized: z.boolean(),
+});
 
 export const zInvokeTokenPath = z.object({
-  type: z.enum(['oauth-verification', 'invitation', 'magic']),
+  type: z.enum(['oauth-verification', 'invitation', 'magic', 'step-up']),
   token: z.string(),
 });
 
 export const zGetTokenDataPath = z.object({
-  type: z.enum(['oauth-verification', 'invitation', 'magic']),
+  type: z.enum(['oauth-verification', 'invitation', 'magic', 'step-up']),
   id: z.string().max(50),
 });
 
@@ -636,19 +623,12 @@ export const zStartImpersonationResponse = z.void();
  */
 export const zStopImpersonationResponse = z.void();
 
-export const zResendInvitationWithTokenBody = z.union([
-  z.object({
-    email: z.email(),
-    tokenId: z.string().optional(),
-  }),
-  z.object({
-    email: z.email().optional(),
-    tokenId: z.string(),
-  }),
-]);
+export const zResendInvitationWithTokenBody = z.object({
+  tokenId: z.uuid(),
+});
 
 /**
- * Invitation email sent
+ * Invitation email sent when the invitation is pending
  */
 export const zResendInvitationWithTokenResponse = z.void();
 
@@ -666,6 +646,13 @@ export const zSendMagicLinkBody = z.object({
  * Magic link email sent (or silently ignored if email not found)
  */
 export const zSendMagicLinkResponse = z.void();
+
+/**
+ * The full address the held link signs in, as the confirm page shows it
+ */
+export const zGetPendingMagicLinkResponse = z.object({
+  email: z.string(),
+});
 
 /**
  * Challenge created
@@ -737,7 +724,6 @@ export const zDeletePasskeyResponse = z.void();
 
 export const zGeneratePasskeyChallengeBody = z.object({
   type: z.enum(['authentication', 'mfa', 'registration']),
-  email: z.email().min(4).max(255).optional(),
 });
 
 /**
@@ -763,13 +749,17 @@ export const zSignInWithPasskeyBody = z.object({
     type: z.enum(['public-key']),
   }),
   type: z.enum(['authentication', 'mfa']),
-  email: z.email().min(4).max(255).optional(),
 });
 
 /**
  * Passkey verified
  */
 export const zSignInWithPasskeyResponse = z.void();
+
+/**
+ * Connect pinned
+ */
+export const zStartOAuthConnectResponse = z.void();
 
 export const zGithubQuery = z.object({
   type: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
@@ -803,6 +793,58 @@ export const zMicrosoftCallbackQuery = z.object({
   code: z.string(),
   state: z.string(),
 });
+
+/**
+ * Step-up state
+ */
+export const zGetStepUpResponse = z.object({
+  steppedUp: z.boolean(),
+  methods: z.array(z.enum(['passkey', 'totp', 'email', 'sign_in'])),
+});
+
+export const zStepUpBody = z.object({
+  passkeyData: z
+    .object({
+      id: z.string(),
+      rawId: z.string(),
+      response: z.object({
+        clientDataJSON: z.string(),
+        authenticatorData: z.string(),
+        signature: z.string(),
+        userHandle: z.string().optional(),
+      }),
+      authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
+      clientExtensionResults: z.unknown().optional(),
+      type: z.enum(['public-key']),
+    })
+    .optional(),
+  totpCode: z
+    .string()
+    .regex(/^\d{6}$/)
+    .optional(),
+});
+
+/**
+ * Session stepped up
+ */
+export const zStepUpResponse = z.void();
+
+/**
+ * Challenge issued
+ */
+export const zGetStepUpPasskeyChallengeResponse = z.object({
+  challenge: z.string(),
+  credentialIds: z.array(z.string()),
+});
+
+export const zSendStepUpLinkBody = z.object({
+  redirect: z.string().optional(),
+});
+
+/**
+ * Link sent
+ */
+export const zSendStepUpLinkResponse = z.void();
 
 export const zGetDomainsPath = z.object({
   tenantId: z.string().max(50),
@@ -1034,25 +1076,6 @@ export const zUpdateMeBody = z.object({
 export const zUpdateMeResponse = zUser;
 
 export const zToggleMfaBody = z.object({
-  passkeyData: z
-    .object({
-      id: z.string(),
-      rawId: z.string(),
-      response: z.object({
-        clientDataJSON: z.string(),
-        authenticatorData: z.string(),
-        signature: z.string(),
-        userHandle: z.string().optional(),
-      }),
-      authenticatorAttachment: z.enum(['cross-platform', 'platform']).optional(),
-      clientExtensionResults: z.unknown().optional(),
-      type: z.enum(['public-key']),
-    })
-    .optional(),
-  totpCode: z
-    .string()
-    .regex(/^\d{6}$/)
-    .optional(),
   mfaRequired: z.boolean(),
 });
 
@@ -1106,7 +1129,12 @@ export const zRevokeMySessionsResponse = z.object({
       expiresAt: z.string(),
       revokedAt: z.string().nullable(),
       revokedBy: z.uuid().nullable(),
-      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced']).nullable(),
+      revocationReason: z
+        .enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped'])
+        .nullable(),
+      impersonatorSessionId: z.uuid().nullable(),
+      steppedUpAt: z.string().nullable(),
+      steppedUpVia: z.enum(['passkey', 'totp', 'email']).nullable(),
     }),
   ),
   rejectedIds: z.array(z.string()),
@@ -1124,19 +1152,14 @@ export const zDeleteMyMembershipQuery = z.object({
 export const zDeleteMyMembershipResponse = z.void();
 
 export const zGetUploadTokenQuery = z.object({
-  publicBucket: zBooleanQueryValue.optional(),
   organizationId: z.uuid().optional(),
-  templateId: z.enum(['avatar', 'cover', 'attachment']),
+  templateId: z.enum(['avatar', 'cover', 'attachment', 'newsletter']),
 });
 
 /**
  * Upload token with a scope for a user or organization
  */
 export const zGetUploadTokenResponse = zUploadToken;
-
-export const zUnsubscribeMeQuery = z.object({
-  token: z.string(),
-});
 
 /**
  * User memberships
@@ -1244,7 +1267,7 @@ export const zUpdateNotificationPreferencesResponse = z.object({
 
 export const zUnsubscribeNotificationsQuery = z.object({
   user: z.string().max(50),
-  category: z.enum(['digest', 'mention', 'comment']),
+  category: z.enum(['digest', 'mention', 'comment', 'newsletter']),
   token: z.string(),
 });
 
@@ -1323,9 +1346,9 @@ export const zCreateRequestBody = z.object({
 });
 
 /**
- * Requests
+ * Request received
  */
-export const zCreateRequestResponse = zRequest;
+export const zCreateRequestResponse = z.void();
 
 /**
  * Unseen counts per parent channel entity per entity type
@@ -1526,19 +1549,6 @@ export const zGetUserResponse = zUserBase.and(
   }),
 );
 
-export const zGetYjsTokenQuery = z.object({
-  entityType: z.enum(['attachment']),
-  tenantId: z.string().max(50),
-  organizationId: z.string().max(50),
-});
-
-/**
- * Yjs auth token
- */
-export const zGetYjsTokenResponse = z.object({
-  token: z.string(),
-});
-
 export const zGetApiProtectedResourceMetadataPath = z.object({
   tenantId: z.string().max(50),
 });
@@ -1643,7 +1653,7 @@ export const zGetOrganizationsQuery = z.object({
     .string()
     .regex(/^\d+,\d+$/)
     .optional(),
-  relatableUserId: z.string().max(50).optional(),
+  relatableUserId: z.uuid().optional(),
   role: z.enum(['admin', 'member']).optional(),
   excludeArchived: z.enum(['true', 'false']).optional(),
   include: z.string().optional(),
@@ -1793,8 +1803,6 @@ export const zCreateAttachmentsBody = z
         thumbnail: z.string().optional(),
         converted: z.string().optional(),
       }),
-      bucketName: z.string().max(255),
-      publicBucket: z.boolean().optional(),
       groupId: z.uuid().nullish(),
       convertedContentType: z.string().max(255).nullish(),
       publicAt: z.string().nullish(),
@@ -1947,7 +1955,20 @@ export const zMembershipInviteQuery = z.object({
  * Created memberships and invite count
  */
 export const zMembershipInviteResponse = z.object({
-  data: z.array(zMembershipBase),
+  data: z.array(
+    z.object({
+      id: z.uuid(),
+      tenantId: z.string().max(24),
+      channelType: z.enum(['organization']),
+      channelId: z.uuid(),
+      userId: z.uuid(),
+      role: z.enum(['admin', 'member']),
+      organizationId: z.uuid(),
+      archived: z.boolean().optional(),
+      muted: z.boolean().optional(),
+      displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
+    }),
+  ),
   rejectedIds: z.array(z.string()),
   rejectionReasons: z.record(z.string(), z.array(z.string())).optional(),
   invitesSentCount: z.number(),
@@ -1955,9 +1976,9 @@ export const zMembershipInviteResponse = z.object({
 
 export const zUpdateMembershipBody = z.object({
   role: z.enum(['admin', 'member']).optional(),
-  muted: z.boolean().optional(),
   archived: z.boolean().optional(),
-  displayOrder: z.number().optional(),
+  muted: z.boolean().optional(),
+  displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
 });
 
 export const zUpdateMembershipPath = z.object({
@@ -1969,7 +1990,22 @@ export const zUpdateMembershipPath = z.object({
 /**
  * Membership updated
  */
-export const zUpdateMembershipResponse = zMembership;
+export const zUpdateMembershipResponse = z.object({
+  createdAt: z.string(),
+  id: z.uuid(),
+  tenantId: z.string().max(24),
+  channelType: z.enum(['organization']),
+  channelId: z.uuid(),
+  userId: z.uuid(),
+  role: z.enum(['admin', 'member']),
+  createdBy: z.uuid().nullable(),
+  updatedAt: z.string().nullable(),
+  updatedBy: z.uuid().nullable(),
+  organizationId: z.uuid(),
+  archived: z.boolean().optional(),
+  muted: z.boolean().optional(),
+  displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
+});
 
 export const zHandleMembershipInvitationPath = z.object({
   id: z.string().max(50),
@@ -2014,7 +2050,18 @@ export const zGetMembersResponse = z.object({
     zUserBase.and(
       z.object({
         lastSeenAt: z.string().nullable(),
-        membership: zMembershipBase,
+        membership: z.object({
+          id: z.uuid(),
+          tenantId: z.string().max(24),
+          channelType: z.enum(['organization']),
+          channelId: z.uuid(),
+          userId: z.uuid(),
+          role: z.enum(['admin', 'member']),
+          organizationId: z.uuid(),
+          archived: z.boolean().optional(),
+          muted: z.boolean().optional(),
+          displayOrder: z.number().gte(-140737488355328).lte(140737488355327).optional(),
+        }),
         counts: z
           .object({
             memberships: z.record(z.string(), z.unknown()),
@@ -2058,9 +2105,7 @@ export const zGetPendingMembershipsResponse = z.object({
   items: z.array(
     z.object({
       id: z.string(),
-      tokenId: z.string().nullable(),
       email: z.email(),
-      thumbnailUrl: z.string().nullable(),
       role: z.enum(['admin', 'member']).nullable(),
       createdAt: z.string(),
       createdBy: zUserMinimalBase.nullable(),
@@ -2223,3 +2268,20 @@ export const zRevokeApiKeyPath = z.object({
  * API key was revoked
  */
 export const zRevokeApiKeyResponse = zApiKey;
+
+export const zGetYjsTokenPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+export const zGetYjsTokenQuery = z.object({
+  entityType: z.enum(['attachment']),
+  entityId: z.string().max(50),
+});
+
+/**
+ * Yjs auth token
+ */
+export const zGetYjsTokenResponse = z.object({
+  token: z.string(),
+});

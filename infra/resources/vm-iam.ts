@@ -4,14 +4,15 @@ import { engineConfig } from '../config/engine-config';
 
 const appConfig = engineConfig();
 
+import { principalSecretCondition } from '../lib/runtime-secrets';
 import {
   BACKEND_S3_PERMISSION_SETS,
   BOOT_PROJECT_PERMISSION_SETS,
   SERVICE_SECRET_PERMISSION_SETS,
 } from '../lib/scaleway/permissions';
 import { principalNames } from '../lib/scaleway/principals';
-import { bootKeyCondition, serviceKeyCondition } from '../lib/scaleway/secret-paths';
-import { principalSecretScopeSlugs, principalServices } from '../lib/services';
+import { bootKeyCondition } from '../lib/scaleway/secret-paths';
+import { principalServices } from '../lib/services';
 import { vmPolicyIgnoreChanges } from '../lib/stack/privileged-up';
 import { mode, naming, organizationId, projectId, tags } from '../pulumi-context';
 
@@ -82,7 +83,7 @@ export const bootApplicationId: pulumi.Output<string> = requirePrincipalId(
 
 /**
  * Pulumi-managed IAM policies for the VM-side principals. Privileged: IAM policy write is forbidden to the CI key, so a privileged up creates these before compute exists, and compute VMs depend on them so grants attach before the first runtime-secret hydration.
- * One policy per service app (secret read conditioned to its own and shared folders) and one for the boot app (registry pull, diag write, handoff-only secret read). Conditions only narrow, and `assert-vm-grants` verifies no other policy un-scopes them.
+ * One policy per service app (secret read conditioned to its own folder and the shared folders of the secrets it consumes) and one for the boot app (registry pull, diag write, handoff-only secret read). Conditions only narrow, and `assert-vm-grants` verifies no other policy un-scopes them.
  * Principals and conditions follow the service registry, not the enabled set: a service toggle changes compute only, while a registry change or a `singleVM` flip needs a privileged up.
  * CI ups ignore `rules` (they would 403 on the IAM write, and the provider shows a phantom ~rules from its condition empty-vs-unset asymmetry); a privileged up (CLI "Apply infra change") reconciles them, which is how a changed secret scope reaches the live policy.
  * @see resources/compute.ts
@@ -105,7 +106,7 @@ for (const svc of vmServices) {
           {
             permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS],
             projectIds: [projectId],
-            condition: serviceKeyCondition(naming.slug, mode, principalSecretScopeSlugs(singleVM, svc.slug)),
+            condition: principalSecretCondition(naming.slug, mode, singleVM, svc.slug),
           },
           ...(isBackend
             ? [

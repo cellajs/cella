@@ -7,13 +7,12 @@ describe('htmlToExcerpt', () => {
   });
 
   it('decodes the entities a stored body commonly carries', () => {
-    expect(htmlToExcerpt('<p>a &amp; b &lt; c</p>', 100)).toBe('a &amp; b &lt; c');
+    expect(htmlToExcerpt('<p>a &amp; b &lt; c</p>', 100)).toBe('a & b < c');
   });
 
-  it('escapes the result, so body text can never inject markup into the email', () => {
-    expect(htmlToExcerpt('<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>', 100)).toBe(
-      '&lt;script&gt;alert(1)&lt;/script&gt;',
-    );
+  // Plain text for a param Brevo escapes once; tests/emails/brevo-send.test.ts checks the mail as filled.
+  it('returns escaped markup in the body as the text it spells', () => {
+    expect(htmlToExcerpt('<p>&lt;script&gt;alert(1)&lt;/script&gt;</p>', 100)).toBe('<script>alert(1)</script>');
   });
 
   it('truncates on a word boundary and marks the cut', () => {

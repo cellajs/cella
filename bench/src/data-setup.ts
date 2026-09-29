@@ -5,6 +5,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import ora, { type Ora } from 'ora';
 import pg from 'pg';
 import pc from 'picocolors';
+import { createPgConnection, type PgDB } from '#/db/create-connection';
 import { setMockContext } from '#/mocks';
 import { DB_URL } from './config';
 import { type BenchSeed, getBenchSeedName, getBenchSeeds } from './registry';
@@ -54,18 +55,18 @@ function updateSpinner(text: string) {
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 
-async function runBenchSeed(pool: pg.Pool, seed: BenchSeed, now: string): Promise<void> {
+async function runBenchSeed(pool: pg.Pool, db: PgDB, seed: BenchSeed, now: string): Promise<void> {
   const name = getBenchSeedName(seed);
 
   if (seed.kind === 'custom') {
     if (!seed.seed) return;
     startSpinner(`seeding ${name}...`);
-    await seed.seed({ now, pool });
+    await seed.seed({ now, pool, db });
     succeedSpinner(`${name} seeded`);
     return;
   }
 
-  const rows = seed.rows({ now, pool });
+  const rows = seed.rows({ now, pool, db });
   startSpinner(`seeding ${pc.cyan(String(rows.length))} ${seed.table}...`);
   if (rows.length === 0) {
     succeedSpinner(`0 ${seed.table} inserted`);
@@ -102,6 +103,7 @@ async function cleanLoadtestData(pool: pg.Pool) {
 /** Seeds deterministic bench data through backend/mocks generators. Idempotent: existing bench data is cleaned before re-seeding. Run with `pnpm db:seed`. */
 async function seed() {
   const pool = new Pool({ connectionString: DB_URL, statement_timeout: QUERY_TIMEOUT_MS });
+  const db = createPgConnection(DB_URL, { max: 1 });
 
   try {
     await loadBenchEntities();
@@ -115,7 +117,7 @@ async function seed() {
     const now = new Date().toISOString();
 
     for (const seed of getBenchSeeds()) {
-      await runBenchSeed(pool, seed, now);
+      await runBenchSeed(pool, db, seed, now);
     }
 
     console.info(`\n${pc.green('✓')} Seed completed successfully.`);
@@ -123,7 +125,7 @@ async function seed() {
     failSpinner('seed step failed');
     throw err;
   } finally {
-    await pool.end();
+    await Promise.all([pool.end(), db.$client.end()]);
   }
 }
 

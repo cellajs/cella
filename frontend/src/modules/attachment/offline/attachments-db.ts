@@ -14,10 +14,9 @@ export function makeBlobKey(attachmentId: string, variant: BlobVariant): string 
   return `${attachmentId}:${variant}`;
 }
 
-/** Upload context stored with a blob, used when the upload service re-uploads it. */
+/** Upload context stored with a blob, used when the upload service re-uploads it; the template decides the bucket. */
 export interface UploadContext {
   templateId: UploadTemplateId;
-  publicBucket: boolean;
 }
 
 /** Blob storage: one table for locally created uploads and blobs fetched from the cloud for offline viewing. */

@@ -2,6 +2,7 @@ import type { Attachment } from 'sdk';
 import { zAttachment } from 'sdk/zod.gen';
 import { uploadTemplates } from 'shared/transloadit-config';
 import { generateId } from 'shared/utils/entity-id';
+import { uploadStorage } from 'shared/utils/upload-visibility';
 import type { UploadedUppyFile } from '~/modules/common/uploader/types';
 import { createOptimisticEntity } from '~/query/basic/create-optimistic';
 
@@ -16,6 +17,8 @@ export const parseUploadedAttachments = (
   const attachments: Attachment[] = [];
   const attachmentsByUploadId = new Map<string, Attachment>();
   const groupId = originalFiles.length > 1 ? generateId() : null;
+  // The row's storage follows the template, as the server stamps it; the upload's metadata has no say.
+  const storage = uploadStorage('attachment');
 
   for (const file of originalFiles) {
     const { size, url, mime, original_name, original_id, user_meta } = file;
@@ -38,8 +41,7 @@ export const parseUploadedAttachments = (
       filename,
       name,
       description: '',
-      publicBucket: user_meta?.publicBucket === 'true',
-      bucketName: user_meta?.bucketName,
+      ...storage,
       keys: { original: url ?? '' },
       groupId,
       organizationId,

@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { publicGuard, userGuard } from '#/middlewares/guard';
+import { publicGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
 import { passkeyChallengeLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockPasskeyChallengeResponse, mockPasskeyResponse } from '#/modules/auth/auth-mocks';
 import {
@@ -15,6 +15,7 @@ import { cookieSchema, errorResponseRefs, validIdSchema } from '#/schemas';
 const authPasskeysRoutes = {
   generatePasskeyChallenge: createXRoute({
     operationId: 'generatePasskeyChallenge',
+    'x-strategy': 'passkey',
     method: 'post',
     path: '/passkey/generate-challenge',
     xGuard: [publicGuard],
@@ -38,9 +39,10 @@ const authPasskeysRoutes = {
   }),
   createPasskey: createXRoute({
     operationId: 'createPasskey',
+    'x-strategy': 'passkey',
     method: 'post',
     path: '/passkey',
-    xGuard: [userGuard],
+    xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['auth', 'cella'],
     summary: 'Create passkey',
@@ -62,9 +64,10 @@ const authPasskeysRoutes = {
   }),
   deletePasskey: createXRoute({
     operationId: 'deletePasskey',
+    'x-strategy': null,
     method: 'delete',
     path: '/passkey/{id}',
-    xGuard: [userGuard],
+    xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     tags: ['auth', 'cella'],
     summary: 'Delete passkey',
@@ -79,6 +82,7 @@ const authPasskeysRoutes = {
   }),
   signInWithPasskey: createXRoute({
     operationId: 'signInWithPasskey',
+    'x-strategy': 'passkey',
     method: 'post',
     path: '/passkey-verification',
     xGuard: [publicGuard],

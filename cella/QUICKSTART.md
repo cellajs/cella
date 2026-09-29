@@ -61,6 +61,8 @@ Contributions are welcome: [open an issue or PR](https://github.com/cellajs/cell
 
 Pulls upstream fixes, features, and dependency updates into your app while preserving your customizations. Docs: [@cellajs/cli](https://github.com/cellajs/cella-cli#readme).
 
+Run `pnpm cella audit` to check for outdated packages, known CVEs, and unused dependency overrides.
+
 ```bash
 pnpm cella
 ```

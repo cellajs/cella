@@ -1,21 +1,28 @@
 import {
+  createTotp,
   generatePasskeyChallenge,
   generateTotpKey,
   github,
   google,
   microsoft,
-  signInWithPasskey,
   signInWithTotp,
+  toggleMfa,
 } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { defaultHeaders } from '../fixtures';
-import { type ErrorResponse, passkeySignInBody } from '../helpers';
+import {
+  authCookie,
+  createMfaToken,
+  createTestSession,
+  createTestUser,
+  createTotpUser,
+  type ErrorResponse,
+  expectRefusal,
+} from '../helpers';
+import { passkeySignIn } from '../security/helpers';
+import { softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
-
-beforeAll(async () => {
-  mockFetchRequest();
-});
+import { clearDatabase, setTestConfig } from '../test-utils';
 
 afterEach(async () => {
   await clearDatabase();
@@ -37,8 +44,7 @@ describe('oauth strategy disabled', async () => {
     { provider: 'microsoft', fn: microsoft },
   ])('should reject $provider OAuth initiation', async ({ provider, fn }) => {
     const { response: res, error } = await call(fn, { query: {}, headers: defaultHeaders });
-    expect(res.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('unsupported_oauth');
+    await expectRefusal({ response: res, error }, 400, 'unsupported_oauth');
     expect((error as ErrorResponse & { meta: Record<string, string> }).meta.strategy).toBe(provider);
   });
 });
@@ -54,9 +60,12 @@ describe('oauth provider configuration', async () => {
   });
   const call = await createAppClient();
 
-  it('should allow enabled GitHub provider', async () => {
+  it('sends the browser to the enabled GitHub provider (positive control)', async () => {
     const { response: res } = await call(github, { query: {}, headers: defaultHeaders });
-    expect(res.status).not.toBe(400);
+    expect(res.status).toBe(302);
+    const location = new URL(res.headers.get('location') ?? '');
+    expect(location.origin).toBe('https://github.com');
+    expect(location.searchParams.get('state')).toBeTruthy();
   });
 
   it.each([
@@ -64,8 +73,7 @@ describe('oauth provider configuration', async () => {
     { provider: 'microsoft', fn: microsoft },
   ])('should reject disabled $provider provider', async ({ provider, fn }) => {
     const { response: res, error } = await call(fn, { query: {}, headers: defaultHeaders });
-    expect(res.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('unsupported_oauth');
+    await expectRefusal({ response: res, error }, 400, 'unsupported_oauth');
     expect((error as ErrorResponse & { meta: Record<string, string> }).meta.strategy).toBe(provider);
   });
 });
@@ -81,20 +89,15 @@ describe('passkey strategy disabled', async () => {
 
   it('should reject passkey generation', async () => {
     const { response: res, error } = await call(generatePasskeyChallenge, {
-      body: { email: 'test@example.com', type: 'registration' },
+      body: { type: 'registration' },
       headers: defaultHeaders,
     });
-    expect(res.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('forbidden_strategy');
+    await expectRefusal({ response: res, error }, 400, 'forbidden_strategy');
   });
 
   it('should reject passkey authentication', async () => {
-    const { response: res, error } = await call(signInWithPasskey, {
-      body: passkeySignInBody({ credentialId: 'test_id', email: 'test@example.com' }),
-      headers: defaultHeaders,
-    });
-    expect(res.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('forbidden_strategy');
+    const refused = await passkeySignIn(softwarePasskey().assert('a-challenge'), '');
+    await expectRefusal(refused, 400, 'forbidden_strategy');
   });
 });
 
@@ -107,15 +110,28 @@ describe('totp strategy disabled', async () => {
   });
   const call = await createAppClient();
 
-  it('should reject TOTP key generation', async () => {
-    const { response: res } = await call(generateTotpKey, { headers: defaultHeaders });
-    expect(res.status).toBe(401);
+  // Signed in: the refusal must come from the strategy, not from the missing session.
+  it('must not start TOTP enrollment via generateTotpKey while TOTP is off', async () => {
+    const user = await createTestUser('totp-off@example.com');
+    const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
+
+    const generated = await call(generateTotpKey, { headers });
+    await expectRefusal(generated, 400, 'forbidden_strategy');
+
+    const created = await call(createTotp, { body: { code: '123456' }, headers });
+    await expectRefusal(created, 400, 'forbidden_strategy');
+  });
+
+  it('must not turn on MFA while TOTP is off', async () => {
+    const user = await createTotpUser('totp-off-mfa@example.com');
+    const headers = { ...defaultHeaders, Cookie: await createTestSession(user) };
+    const { response: res, error } = await call(toggleMfa, { body: { mfaRequired: true }, headers });
+    await expectRefusal({ response: res, error }, 400, 'forbidden_strategy');
   });
 
   it('should reject TOTP verification', async () => {
     const { response: res, error } = await call(signInWithTotp, { body: { code: '123456' }, headers: defaultHeaders });
-    expect(res.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('forbidden_strategy');
+    await expectRefusal({ response: res, error }, 400, 'forbidden_strategy');
   });
 });
 
@@ -130,16 +146,24 @@ describe('all strategies disabled', async () => {
 
   it('should reject OAuth attempts', async () => {
     const { response: res, error } = await call(github, { query: {}, headers: defaultHeaders });
-    expect(res.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('unsupported_oauth');
+    await expectRefusal({ response: res, error }, 400, 'unsupported_oauth');
   });
 
   it('should reject passkey attempts', async () => {
-    const { response: res, error } = await call(signInWithPasskey, {
-      body: passkeySignInBody({ credentialId: '', email: 'test@example.com' }),
-      headers: defaultHeaders,
-    });
-    expect(res.status).toBe(400);
-    expect((error as ErrorResponse).type).toBe('forbidden_strategy');
+    const refused = await passkeySignIn(softwarePasskey().assert('a-challenge'), '');
+    await expectRefusal(refused, 400, 'forbidden_strategy');
+  });
+});
+
+describe('passkey strategy disabled', () => {
+  beforeAll(() => {
+    setTestConfig({ enabledAuthStrategies: ['oauth', 'totp', 'magic'], selfRegistration: true });
+  });
+
+  it('must not verify a second factor with a passkey while passkeys are off', async () => {
+    const user = await createTestUser('passkey-off-mfa@example.com');
+    const mfaCookie = authCookie('confirm-mfa', await createMfaToken(user));
+    const refused = await passkeySignIn(softwarePasskey().assert('a-challenge'), mfaCookie, 'mfa');
+    await expectRefusal(refused, 400, 'forbidden_strategy');
   });
 });

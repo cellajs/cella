@@ -10,6 +10,7 @@ Development and build scripts for the backend.
 - **manual-migration.ts** - CLI to add custom SQL migrations (triggers, functions) to Drizzle
 - **upload-seed-assets.ts** (`pnpm seed:assets`) - Publishes `seeds/assets/` to the public bucket under an immutable version prefix and writes `seeds/seed-assets.json`, the manifest the attachment seed reads. Needs `S3_ACCESS_KEY_ID`; `--check` verifies the published set anonymously and needs nothing
 - **set-bucket-cors.ts** (`pnpm s3:cors [origins]`) - Sets browser CORS on the shared development buckets for the frontend origin, or a comma-separated list
+- **mint-session.ts** (`pnpm session:mint <email> [hours]`) - Mints a session for a local user and prints its signed cookie and a curl line, for driving the app without signing in. Development and test mode only; a hand-built cookie never authenticates, since every mode signs cookies
 
 ## Folders
 

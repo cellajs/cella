@@ -1,13 +1,33 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoute } from '#/core/x-routes';
-import { publicGuard } from '#/middlewares/guard';
-import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { publicGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
+import { singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
-import { errorResponseRefs, locationSchema } from '#/schemas';
+import { cookieSchema, errorResponseRefs, locationSchema } from '#/schemas';
 
 const authOAuthRoutes = {
+  startOAuthConnect: createXRoute({
+    operationId: 'startOAuthConnect',
+    'x-strategy': 'oauth',
+    method: 'post',
+    path: '/oauth-connect',
+    xGuard: [userGuard, stepUpGuard],
+    xRateLimiter: [singlePointsLimiter],
+    tags: ['auth', 'cella'],
+    summary: 'Start connecting a provider',
+    description:
+      "Pins this browser's next provider sign-in with `type=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
+    responses: {
+      204: {
+        description: 'Connect pinned',
+        headers: z.object({ 'Set-Cookie': cookieSchema }),
+      },
+      ...errorResponseRefs,
+    },
+  }),
   github: createXRoute({
     operationId: 'github',
+    'x-strategy': { oauth: 'github' },
     method: 'get',
     path: '/github',
     xGuard: [publicGuard],
@@ -26,6 +46,7 @@ const authOAuthRoutes = {
   }),
   githubCallback: createXRoute({
     operationId: 'githubCallback',
+    'x-strategy': { oauth: 'github' },
     method: 'get',
     path: '/github/callback',
     xGuard: [publicGuard],
@@ -50,6 +71,7 @@ const authOAuthRoutes = {
   }),
   google: createXRoute({
     operationId: 'google',
+    'x-strategy': { oauth: 'google' },
     method: 'get',
     path: '/google',
     xGuard: [publicGuard],
@@ -68,6 +90,7 @@ const authOAuthRoutes = {
   }),
   googleCallback: createXRoute({
     operationId: 'googleCallback',
+    'x-strategy': { oauth: 'google' },
     method: 'get',
     path: '/google/callback',
     xGuard: [publicGuard],
@@ -86,6 +109,7 @@ const authOAuthRoutes = {
   }),
   microsoft: createXRoute({
     operationId: 'microsoft',
+    'x-strategy': { oauth: 'microsoft' },
     method: 'get',
     path: '/microsoft',
     xGuard: [publicGuard],
@@ -104,6 +128,7 @@ const authOAuthRoutes = {
   }),
   microsoftCallback: createXRoute({
     operationId: 'microsoftCallback',
+    'x-strategy': { oauth: 'microsoft' },
     method: 'get',
     path: '/microsoft/callback',
     xGuard: [publicGuard],

@@ -8,7 +8,7 @@
   {
     "name": "auth",
     "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth\n    (Google, Microsoft, GitHub) and passkeys (WebAuthn). They cover sign-up, sign-in, email verification,\n    account linking, and impersonation for system admins.",
-    "count": 24,
+    "count": 31,
     "kind": "module"
   },
   {
@@ -26,12 +26,12 @@
   {
     "name": "me",
     "description": "Endpoints scoped to the current user, meaning the user associated with the active session making\n    the request. Unlike the users endpoints, which may operate on any user in the system, me endpoints act\n    exclusively on the current user and follow a different authorization flow.",
-    "count": 13,
+    "count": 12,
     "kind": "module"
   },
   {
     "name": "oauth-server",
-    "description": "The authorization server: node-oidc-provider on the app origin under /oauth, issuing the access\n    tokens the API and the MCP endpoint accept. Runs as its own process (MODE=oauth) or folded into the API under\n    singleVM; the store it writes is swept by the API's job runner.",
+    "description": "The authorization server: node-oidc-provider on the app origin under /oauth, issuing the access\n    tokens the API and the MCP endpoint accept. Runs as its own process (MODE=oauth) or folded into the API under\n    singleVM; the store it writes is swept hourly by the jobs worker.",
     "count": 1,
     "kind": "module"
   },
@@ -103,7 +103,7 @@
   },
   {
     "name": "yjs",
-    "description": "Endpoints for Yjs collaborative editing support: auth tokens for the Yjs relay worker, and the\n    relay's secret-gated materialize route that writes a compacted collaborative document to its entity.",
+    "description": "Endpoints for Yjs collaborative editing support: a short-lived token per entity for the Yjs relay\n    worker. The relay's materialize route, which writes a compacted collaborative document to its entity, is served\n    on the internal listener only.",
     "count": 1,
     "kind": "module"
   }

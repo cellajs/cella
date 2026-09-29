@@ -79,6 +79,12 @@ class FakeEventSource {
     for (const fn of this.listeners.get(type) ?? []) fn({ data, lastEventId } as MessageEvent);
   }
 
+  /** The server's typed `error` event, which the browser delivers as a MessageEvent (a transport failure is a bare Event). */
+  emitServerError(code: string) {
+    const event = new MessageEvent('error', { data: JSON.stringify({ code, message: code }) });
+    for (const fn of this.listeners.get('error') ?? []) fn(event);
+  }
+
   close() {
     this.readyState = FakeEventSource.CLOSED;
   }
@@ -268,5 +274,44 @@ describe('StreamManager leader promotion', () => {
     await tick();
 
     expect(h.manager.useStore.getState().state).toBe('live');
+  });
+});
+
+describe('StreamManager server-sent errors', () => {
+  afterEach(() => vi.useRealTimers());
+
+  /** Longest first reconnect delay: the initial backoff plus the full jitter. */
+  const FIRST_RECONNECT_MS = 7_000;
+
+  const closedByServer = async (code: string) => {
+    vi.useFakeTimers();
+    const h = createHarness();
+    await h.manager.connect();
+    const closed = h.es;
+    closed.emitServerError(code);
+    expect(closed.readyState).toBe(FakeEventSource.CLOSED);
+    return h;
+  };
+
+  it.each(['session_replaced', 'access_changed'])(
+    'reconnects after %s: the browser still holds a session',
+    async (code) => {
+      const h = await closedByServer(code);
+
+      await vi.advanceTimersByTimeAsync(FIRST_RECONNECT_MS);
+
+      expect(FakeEventSource.instances).toHaveLength(2);
+      expect(h.es.readyState).toBe(FakeEventSource.OPEN);
+      h.manager.disconnect();
+    },
+  );
+
+  it('stays closed after unauthorized: the session is gone, and the next request signs the user out', async () => {
+    const h = await closedByServer('unauthorized');
+
+    await vi.advanceTimersByTimeAsync(5 * 60_000);
+
+    expect(FakeEventSource.instances).toHaveLength(1);
+    expect(h.manager.useStore.getState().state).toBe('error');
   });
 });

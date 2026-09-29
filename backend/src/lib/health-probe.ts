@@ -55,7 +55,7 @@ export function extractMcpDetails(body: Record<string, unknown>): Record<string,
   const components = body.components as Record<string, { details?: Record<string, unknown> }> | undefined;
   const mcpDetails = components?.mcp?.details;
   if (mcpDetails) return mcpDetails;
-  return { mode: body.mode ?? null, queueDepth: null };
+  return { mode: body.mode ?? null };
 }
 
 export const workerUrls = { yjs: appConfig.yjsUrl, mcp: appConfig.mcpUrl };

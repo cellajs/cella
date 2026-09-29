@@ -1,11 +1,10 @@
 import { eq } from 'drizzle-orm';
 import { getMyAuth, type MeAuthData, signInWithTotp } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
-import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { devicesTable } from '#/modules/auth/devices-db';
-import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { enrollDevice } from '#/modules/auth/general/helpers/enroll-device';
 import { notifyNewSignIn } from '#/modules/auth/general/helpers/notify-sign-in';
 import { createSession, type SignInContext } from '#/modules/auth/general/helpers/session';
@@ -14,29 +13,24 @@ import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { hashDeviceIdForUser } from '#/utils/hash-pii';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import { createMfaToken, createTestSession, createTestUser, createTotpUser } from '../helpers';
+import {
+  authCookie,
+  createMfaToken,
+  createTestSession,
+  createTestUser,
+  createTotpUser,
+  sentMails,
+  setCookiePair,
+} from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 
-vi.mock('#/lib/mailer', () => ({
-  mailer: { prepareEmails: vi.fn().mockResolvedValue(undefined) },
-}));
-
-vi.mock('#/modules/auth/totps/helpers/totps', () => ({
-  validateTOTP: vi.fn().mockResolvedValue(true),
-  signInWithTotp: vi.fn().mockReturnValue(true),
-}));
+// New-device notices are under test, not authenticator codes: every TOTP check passes.
+vi.mock('#/modules/auth/totps/helpers/totps', () => ({ verifyTotp: vi.fn().mockResolvedValue(0) }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
-beforeAll(async () => {
-  mockFetchRequest();
-});
-
-afterEach(async () => {
-  await clearDatabase();
-  vi.clearAllMocks();
-});
+afterEach(async () => await clearDatabase());
 
 const browser = (deviceId: string | null = nanoid(24)): SignInContext => ({
   rawIp: null,
@@ -54,9 +48,8 @@ const devicesOf = (userId: string) => db.select().from(devicesTable).where(eq(de
 
 /** Statics of every new sign-in notice handed to the mailer. */
 const notices = () =>
-  vi
-    .mocked(mailer.prepareEmails)
-    .mock.calls.map(([, statics]) => statics as { type: string; details: Record<string, string> })
+  sentMails()
+    .map(({ statics }) => statics as { type: string; details: Record<string, string> })
     .filter((statics) => statics.type === 'new-sign-in');
 
 /** A full sign-in without a request: the session, then the notice its new device calls for. */
@@ -198,16 +191,13 @@ describe('new sign-in notice through the sign-in endpoint', async () => {
 
   const signInWithMfa = async (user: { id: string; email: string }, deviceCookie?: string) => {
     const mfaToken = await createMfaToken(user);
-    const cookies = [`${authCookieName('confirm-mfa')}=${mfaToken}`, deviceCookie].filter(Boolean).join('; ');
+    const cookies = [authCookie('confirm-mfa', mfaToken), deviceCookie].filter(Boolean).join('; ');
     const { response } = await call(signInWithTotp, {
       body: { code: '123456' },
       headers: { ...defaultHeaders, Cookie: cookies },
     });
     expect(response.status).toBe(204);
-    return response.headers
-      .getSetCookie()
-      .find((line) => line.startsWith(`${authCookieName('device-id')}=`))
-      ?.split(';')[0];
+    return setCookiePair(response, 'device-id');
   };
 
   it('mails an mfa sign-in from an unseen browser, and not the next one carrying its device id', async () => {

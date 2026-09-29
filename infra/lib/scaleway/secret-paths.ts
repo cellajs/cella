@@ -10,9 +10,13 @@ export function serviceSecretPath(slug: string, mode: string, service: string): 
   return `/${slug}-${mode}/${service}/`;
 }
 
-/** Folder for secrets consumed by more than one service (DB URLs etc.). */
-export function sharedSecretPath(slug: string, mode: string): string {
-  return `/${slug}-${mode}/shared/`;
+/**
+ * Folder for secrets consumed by more than one service: one folder per consumer set, the consumers sorted and nested
+ * (`/shared/backend/mcp/`), so a grant on it reaches exactly the secrets that set consumes. A folder that prefixes
+ * another belongs to a subset of its consumers, so a `startsWith` grant never reaches a secret outside its set.
+ */
+export function sharedSecretPath(slug: string, mode: string, consumers: readonly string[]): string {
+  return `/${slug}-${mode}/shared/${[...consumers].sort().join('/')}/`;
 }
 
 /** Folder for engine-internal keys. Outside the VM condition on purpose: a VM must never read the admin key. */
@@ -24,7 +28,7 @@ export function engineSecretPath(slug: string, mode: string): string {
 export function secretPathFor(definition: { services: readonly string[] }, slug: string, mode: string): string {
   return definition.services.length === 1
     ? serviceSecretPath(slug, mode, definition.services[0] as string)
-    : sharedSecretPath(slug, mode);
+    : sharedSecretPath(slug, mode, definition.services);
 }
 
 // P3 (per-service model): handoff folders + per-principal conditions.
@@ -40,12 +44,29 @@ export function handoffFolderPath(slug: string, mode: string): string {
 }
 
 /**
- * Condition for one service application: value reads only under its own folders plus shared, leaving engine keys and sibling stacks unreadable.
- * String equality matters: assert-vm-grants compares the live rule condition against this exact output. Pass the full secret scope from `secretScopeSlugs`, which for the singleVM host includes the folded services.
+ * Condition for one service application: value reads only under its own folders plus the shared folder of every
+ * consumer set its scope belongs to, leaving other sets' secrets, engine keys and sibling stacks unreadable.
+ * String equality matters: assert-vm-grants compares the live rule condition against this exact output. Pass the full secret scope from `secretScopeSlugs`, which for the singleVM host includes the folded services, and the consumer list of every runtime secret.
  */
-export function serviceKeyCondition(slug: string, mode: string, services: string | readonly string[]): string {
+export function serviceKeyCondition(
+  slug: string,
+  mode: string,
+  services: string | readonly string[],
+  consumerSets: readonly (readonly string[])[],
+): string {
   const scope = typeof services === 'string' ? [services] : services;
-  return [...scope.map((service) => serviceSecretPath(slug, mode, service)), sharedSecretPath(slug, mode)]
+  const sharedPaths = [
+    ...new Set(
+      consumerSets
+        .filter((consumers) => consumers.length > 1 && consumers.some((service) => scope.includes(service)))
+        .map((consumers) => sharedSecretPath(slug, mode, consumers)),
+    ),
+  ].sort();
+  // A folder under another granted folder is covered by it already.
+  const grantedShared = sharedPaths.filter(
+    (path) => !sharedPaths.some((other) => other !== path && path.startsWith(other)),
+  );
+  return [...scope.map((service) => serviceSecretPath(slug, mode, service)), ...grantedShared]
     .map((path) => `resource.name.startsWith("${path}")`)
     .join(' || ');
 }

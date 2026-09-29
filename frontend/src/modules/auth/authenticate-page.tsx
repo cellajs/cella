@@ -76,10 +76,9 @@ export function AuthenticatePage() {
     return () => clearTimeout(timer);
   }, [isHealthLoading]);
 
+  // Only ever switches the neutral step on: an address this browser is not recognized for switches it on as well.
   useEffect(() => {
-    if (healthData?.restrictedMode !== undefined) {
-      setRestrictedMode(healthData.restrictedMode);
-    }
+    if (healthData?.restrictedMode) setRestrictedMode(true);
   }, [healthData, setRestrictedMode]);
 
   useEffect(() => {

@@ -1,5 +1,6 @@
 import { type EntityRole, hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
+import { AppError } from '#/core/error';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { findMemberPreviewsByChannels } from '#/modules/memberships/memberships-queries';
@@ -29,12 +30,37 @@ export async function getOrganizationsOp(ctx: UserContext, input: GetOrganizatio
 
   // relatableGuard already verified shared org membership if relatableUserId is provided
   const targetUserId = relatableUserId ?? user.id;
+  const ofAnotherUser = !!relatableUserId && relatableUserId !== user.id;
+  // Another user's organizations are listed only where the caller is a member too; a system admin sees all of them.
+  const sharedWithCaller =
+    ofAnotherUser && !ctx.var.isSystemAdmin ? [...new Set(memberships.map((m) => m.organizationId))] : undefined;
+
+  // The listed user's archive and role are theirs alone: as a filter on another user's list they are refused, never
+  // dropped. The menu-order default names the caller's own menu, so another user's list comes by name.
+  if (ofAnotherUser && (role || excludeArchived)) {
+    throw new AppError(403, 'forbidden', 'warn', {
+      entityType: 'organization',
+      meta: { reason: 'other_user_membership' },
+    });
+  }
 
   const includeCounts = include.includes('counts');
   const includeMembership = include.includes('membership');
   const includeMembers = include.includes('members');
 
-  const opts = { isSystemAdmin, targetUserId, q, sort, order, offset, limit, excludeArchived, role, includeCounts };
+  const opts = {
+    isSystemAdmin,
+    targetUserId,
+    organizationIds: sharedWithCaller,
+    q,
+    sort: ofAnotherUser && (!sort || sort === 'displayOrder') ? ('name' as const) : sort,
+    order,
+    offset,
+    limit,
+    excludeArchived,
+    role,
+    includeCounts,
+  };
   const { items: organizations, total } = await findOrganizationsPaginated(ctx, opts);
 
   // Member previews: one batched query per page for the most-privileged role, capped at 3 per entity; overflow counts come from the m:{role} counters.

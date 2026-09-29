@@ -41,7 +41,7 @@ export function OAuthConsentPage() {
   if (error && !unauthenticated) return <ErrorNotice error={error as ErrorNoticeError} boundary="public" />;
   if (isPending || !data) return <Spinner className="h-10 w-10" />;
 
-  const { client, scopes, refusal } = data;
+  const { client, scopes, refusal, target } = data;
 
   return (
     <div className="flex flex-col gap-6">
@@ -59,6 +59,13 @@ export function OAuthConsentPage() {
         <p className="text-muted-foreground text-sm">
           {t('c:oauth_consent.text', { name: client.name, appName: appConfig.name })}
         </p>
+        {target.tenant && (
+          <p className="text-sm">
+            {target.organization
+              ? t('c:oauth_consent_target.organization', { organization: target.organization, tenant: target.tenant })
+              : t('c:oauth_consent_target.tenant', { tenant: target.tenant })}
+          </p>
+        )}
       </div>
 
       <div className="rounded-md border p-3">

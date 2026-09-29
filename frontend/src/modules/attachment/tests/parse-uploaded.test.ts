@@ -5,6 +5,7 @@ vi.mock('~/modules/user/user-store', () => ({
   useUserStore: { getState: () => ({ user: { id: 'user-1' } }) },
 }));
 
+import { uploadStorage } from 'shared/utils/upload-visibility';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
 import type { UploadedFile, UploadedUppyFile } from '~/modules/common/uploader/types';
 
@@ -19,7 +20,7 @@ function makeOriginal(overrides: Record<string, unknown> = {}) {
     url: 'files/holiday.png',
     mime: 'image/png',
     size: 2048,
-    user_meta: { attachmentId: 'att-uuid-1', publicBucket: 'false', bucketName: 'private' },
+    user_meta: { attachmentId: 'att-uuid-1' },
     ...overrides,
   } as unknown as UploadedFile;
 }
@@ -95,6 +96,15 @@ describe('parseUploadedAttachments', () => {
 
     expect(multi[0].groupId).toEqual(expect.any(String));
     expect(multi[1].groupId).toBe(multi[0].groupId);
+  });
+
+  it('stores the row where the attachment template stores its files, whatever the upload metadata claims', () => {
+    const claimed = { attachmentId: 'att-uuid-1', publicBucket: 'true', bucketName: 'another-apps-bucket' };
+    const result = makeResult({ ':original': [makeOriginal({ user_meta: claimed })] });
+
+    const [attachment] = parseUploadedAttachments(result, 'org-1');
+
+    expect(attachment).toMatchObject(uploadStorage('attachment'));
   });
 
   it('derives name from the filename without its extension', () => {

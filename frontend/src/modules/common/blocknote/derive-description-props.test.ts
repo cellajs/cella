@@ -10,34 +10,20 @@ const block = (type: string, props: Record<string, unknown> = {}, children: unkn
 });
 
 describe('deriveDescriptionCounts', () => {
-  it('counts checklist items including checked state', () => {
+  it('counts checklist items and media blocks depth-first through nested children', () => {
     const description = JSON.stringify([
-      block('checklistItem', { checkboxId: 'a', checked: true }),
-      block('checklistItem', { checkboxId: 'b', checked: false }),
+      block('paragraph', {}, [
+        block('checklistItem', { checkboxId: 'a', checked: true }, [
+          block('checklistItem', { checkboxId: 'b', checked: false }),
+        ]),
+        block('image', { url: 'https://x/img.png' }),
+      ]),
       block('paragraph'),
     ]);
     expect(deriveDescriptionCounts(description)).toEqual({
       expandable: true,
       checkboxCount: 2,
       checkedCount: 1,
-      attachmentCount: 0,
-      attachments: [],
-    });
-  });
-
-  it('counts nested children depth-first', () => {
-    const description = JSON.stringify([
-      block('paragraph', {}, [
-        block('checklistItem', { checkboxId: 'a', checked: true }, [
-          block('checklistItem', { checkboxId: 'b', checked: true }),
-        ]),
-        block('image', { url: 'https://x/img.png' }),
-      ]),
-    ]);
-    expect(deriveDescriptionCounts(description)).toEqual({
-      expandable: false,
-      checkboxCount: 2,
-      checkedCount: 2,
       attachmentCount: 1,
       attachments: [],
     });

@@ -42,7 +42,7 @@ export function planForService(serviceFlag: string, healthUrl?: string): Rollout
 
   // LB pools that must follow this service's cutover because Pulumi ignores
   // their live server lists: co-hosted workers' and collocated containers'
-  // pools (singleVM) and the service's own internal pool (internalRoute).
+  // pools (singleVM) and the service's own internal pool (internalPort).
   const repointKeys: string[] = [];
   if (definition.primaryRollout && appConfig.singleVM) {
     repointKeys.push(
@@ -54,7 +54,7 @@ export function planForService(serviceFlag: string, healthUrl?: string): Rollout
         .map((follower) => follower.slug),
     );
   }
-  if (definition.internalRoute) repointKeys.push(`${service}-internal`);
+  if (definition.internalPort !== undefined) repointKeys.push(`${service}-internal`);
   if (repointKeys.length > 0) plan.repointBackendKeys = repointKeys;
 
   return plan;

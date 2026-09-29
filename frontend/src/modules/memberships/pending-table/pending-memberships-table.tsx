@@ -2,7 +2,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { zGetPendingMembershipsQuery } from 'sdk/zod.gen';
-import { appConfig } from 'shared';
+import { appConfig, isUnconditionalCan } from 'shared';
 import type { z } from 'zod';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
@@ -35,10 +35,10 @@ export function PendingMembershipsTable({ channel }: PendingMembershipsTableProp
   const { sort, order } = search;
   const limit = LIMIT;
 
-  const [columns] = useColumns({
-    tenantId: channel.tenantId,
-    organizationId: channel.organizationId || channel.id,
-  });
+  const [columns] = useColumns(
+    { tenantId: channel.tenantId, organizationId: channel.organizationId || channel.id },
+    isUnconditionalCan(channel.can?.[channel.entityType]?.update),
+  );
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = pendingMembershipsQueryOptions({

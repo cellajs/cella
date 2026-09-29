@@ -1,7 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { type GetNotificationsResponse, getNotifications, updateAttachment } from 'sdk';
-import { appConfig, hierarchy } from 'shared';
-import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { appConfig } from 'shared';
+import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { generateServerHLC } from '#/core/stx';
@@ -12,13 +12,15 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { notificationsTable } from '#/modules/notification/notification-db';
 import { fanOutNotifications } from '#/modules/notification/operations/fan-out';
 import { sendPendingInstantEmails } from '#/modules/notification/operations/send-instant-emails';
+import { emailsTable } from '#/modules/user/emails-db';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
-import { defaultHeaders } from './fixtures';
-import { cleanupEntityHierarchy, seedEntityHierarchy } from './hierarchy-helpers';
+import { adminRole, defaultHeaders, memberRole } from './fixtures';
+import { createOrganizationAdminUser, createTestUser } from './helpers';
+import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
-import { mockFetchRequest, setTestConfig } from './test-utils';
+import { setTestConfig } from './test-utils';
 
 // Direct table seeding and inspection run as admin: attachments are RLS-subject and the runtime role sees them only inside a tenant transaction.
 const db = getSeedDb();
@@ -26,8 +28,6 @@ const db = getSeedDb();
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 const attachmentId = generateId();
-// UUID-shaped id with no user behind it (doctored mention node)
-const strangerId = generateId();
 
 const paragraphWithMentions = (ids: string[]) => ({
   id: generateId(),
@@ -63,6 +63,8 @@ describe('Attachment mentions (template notification source)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
   let member: { id: string; sessionCookie: string };
+  /** An account with no membership in the organization: a mention of it names someone who may not read the row. */
+  let stranger: { id: string };
   let plan: TestEntityHierarchyPlan;
 
   const putDescription = async (description: string) =>
@@ -119,27 +121,18 @@ describe('Attachment mentions (template notification source)', async () => {
     }) as unknown as ActivityEvent;
 
   beforeAll(async () => {
-    mockFetchRequest();
     tenant = await createTestTenant(call, 'attachment-mentions');
-    // The role that reads every attachment under any app's permission matrix; the stranger id covers the drop path.
+    // The role that reads every attachment under any app's permission matrix; the stranger covers the drop path.
     member = await createOrgUser(
       call,
       tenant.tenantId,
       tenant.organization.id,
       'attachment-mentions-member',
-      hierarchy.getMostPrivilegedRole('organization'),
+      adminRole,
     );
+    stranger = await createTestUser('attachment-mentions-stranger@security-test.com');
 
-    plan = buildTestEntityHierarchyPlan({
-      entityType: 'attachment',
-      organizationId: tenant.organization.id,
-      makeChannelId: () => generateId(),
-    });
-    await seedEntityHierarchy(db, plan, {
-      tenantId: tenant.tenantId,
-      createdBy: tenant.user.id,
-      slugPrefix: 'attachment-mentions',
-    });
+    plan = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
 
     const row = buildInsertableProduct(
       'attachment',
@@ -153,8 +146,7 @@ describe('Attachment mentions (template notification source)', async () => {
       },
       attachmentId,
     );
-    // buildInsertableProduct returns a config-derived Record, so the insert type needs a cast.
-    await db.insert(attachmentsTable).values(row as typeof attachmentsTable.$inferInsert);
+    await insertAttachmentRow(row);
   });
 
   afterAll(async () => {
@@ -164,8 +156,8 @@ describe('Attachment mentions (template notification source)', async () => {
     await clearSecurityTestData();
   });
 
-  it('stores readable mentioned users and drops ids without read access', async () => {
-    const result = await putDescription(JSON.stringify([paragraphWithMentions([member.id, strangerId])]));
+  it('stores readable mentioned users and drops an account without read access', async () => {
+    const result = await putDescription(JSON.stringify([paragraphWithMentions([member.id, stranger.id])]));
     expect(result.response.status).toBe(200);
     expect(await storedMentions()).toEqual([member.id]);
   });
@@ -189,7 +181,7 @@ describe('Attachment mentions (template notification source)', async () => {
       tenantId: tenant.tenantId,
       organizationId: tenant.organization.id,
       description: JSON.stringify([paragraphWithText('signed contract')]),
-      editedBy: tenant.user.id,
+      editors: [tenant.user.id],
     });
     const keywords = await storedKeywords();
     expect(keywords).toContain('signed contract');
@@ -203,7 +195,7 @@ describe('Attachment mentions (template notification source)', async () => {
       tenantId: tenant.tenantId,
       organizationId: tenant.organization.id,
       description: JSON.stringify([paragraphWithMentions([member.id])]),
-      editedBy: tenant.user.id,
+      editors: [tenant.user.id],
     });
     expect(await storedMentions()).toEqual([member.id]);
   });
@@ -232,5 +224,54 @@ describe('Attachment mentions (template notification source)', async () => {
     expect(row?.actor?.id).toBe(tenant.user.id);
     expect(row?.channelName).not.toBe('');
     expect(row?.subjectTitle).not.toBe('');
+  });
+
+  it('mails a newer mention behind a backlog of unmailable rows larger than one pass', async () => {
+    // A member without a verified address is never mailed; one pass handles 200 rows.
+    const unverified = await createOrganizationAdminUser(
+      'attachment-mentions-unverified@security-test.com',
+      tenant.organization.id,
+      memberRole,
+      tenant.tenantId,
+    );
+    await getSeedDb().delete(emailsTable).where(eq(emailsTable.userId, unverified.id));
+    const mentionOf = (userId: string, createdAt: Date) => ({
+      createdAt: createdAt.toISOString(),
+      userId,
+      actorId: tenant.user.id,
+      type: 'mention' as const,
+      entityType: 'attachment' as const,
+      subjectId: attachmentId,
+      contextId: attachmentId,
+      channelId: tenant.organization.id,
+      channelType: 'organization' as const,
+      organizationId: tenant.organization.id,
+      tenantId: tenant.tenantId,
+      activityId: `act:${generateId()}`,
+    });
+    const anHourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    await db.insert(notificationsTable).values(Array.from({ length: 201 }, () => mentionOf(unverified.id, anHourAgo)));
+    const [fresh] = await db
+      .insert(notificationsTable)
+      .values(mentionOf(member.id, new Date()))
+      .returning({ id: notificationsTable.id });
+
+    await sendPendingInstantEmails(tenant.organization.id);
+    await sendPendingInstantEmails(tenant.organization.id);
+
+    const emailedAt = async (id: string) =>
+      (
+        await db
+          .select({ emailedAt: notificationsTable.emailedAt })
+          .from(notificationsTable)
+          .where(eq(notificationsTable.id, id))
+      )[0]?.emailedAt;
+    expect(await emailedAt(fresh.id)).not.toBeNull();
+    // The unmailable rows are settled too, so no later pass reads them again.
+    const backlog = await db
+      .select({ emailedAt: notificationsTable.emailedAt })
+      .from(notificationsTable)
+      .where(eq(notificationsTable.userId, unverified.id));
+    expect(backlog.filter(({ emailedAt }) => emailedAt === null)).toHaveLength(0);
   });
 });

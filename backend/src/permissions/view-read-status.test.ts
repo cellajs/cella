@@ -67,16 +67,27 @@ describe('resolveViewReadStatus', () => {
   const orgMemberOwnRead = (ct: DeepChannelType, role: string): PolicyCellInput =>
     ct === 'organization' && role === 'member' ? 'own' : 0;
 
-  it('org-wide unconditional read answers every prefix in the org', () => {
+  it('org-wide unconditional read answers the org and every verified prefix in it', () => {
     const opts = { read: orgAdminRead, memberships: [membership('organization', ROOT_ID, 'admin')] };
     expect(statusFor(ROOT_ID, opts)).toBe('ok');
-    expect(statusFor(`${ROOT_ID}/c1`, opts)).toBe('ok');
-    expect(statusFor(`${ROOT_ID}/c1/s1/p1`, opts)).toBe('ok');
+    for (const prefix of [`${ROOT_ID}/c1`, `${ROOT_ID}/c1/s1/p1`]) {
+      expect(statusFor(prefix, { ...opts, truePath: prefix })).toBe('ok');
+    }
   });
 
-  it('sysadmin is ok everywhere inside the org, forbidden outside it', () => {
-    expect(statusFor(`${ROOT_ID}/c1`, { isSystemAdmin: true })).toBe('ok');
+  it('sysadmin is ok on verified prefixes inside the org, forbidden outside it', () => {
+    expect(statusFor(`${ROOT_ID}/c1`, { isSystemAdmin: true, truePath: `${ROOT_ID}/c1` })).toBe('ok');
     expect(statusFor('other-org/c1', { isSystemAdmin: true })).toBe('forbidden');
+  });
+
+  it('must not answer a deeper node org-wide via a prefix whose path is unknown', () => {
+    const opts = { read: orgAdminRead, memberships: [membership('organization', ROOT_ID, 'admin')] };
+    // A counters row with a NULL path, or none at all: the first segment is only the client's claim.
+    expect(statusFor(`${ROOT_ID}/other-org`, { ...opts, truePath: null })).toBe('opaque');
+    expect(statusFor(`${ROOT_ID}/c1/s1/p1`, opts)).toBe('opaque');
+    expect(statusFor(`${ROOT_ID}/c1`, { isSystemAdmin: true, truePath: null })).toBe('opaque');
+    // The organization prefix proves itself.
+    expect(statusFor(ROOT_ID, { ...opts, truePath: null })).toBe('ok');
   });
 
   it('an intermediate-level grant answers its OWN node, is opaque above and below', () => {

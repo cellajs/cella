@@ -1,7 +1,7 @@
 import { registerBenchSeed } from '../registry';
 import { CORE_ID_VARIANTS } from './ids';
 import { loadtestEmail } from './user';
-import { TOTAL_USERS } from './user.bench';
+import { TOTAL_USERS } from './user-constants';
 
 registerBenchSeed({
   table: 'emails',

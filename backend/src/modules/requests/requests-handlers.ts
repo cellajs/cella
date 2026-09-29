@@ -25,8 +25,8 @@ activityBus.on('inactive_membership.created', async (event: ActivityEvent) => {
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(requestRoutes.createRequest, async (ctx) => {
-  const data = await createRequestOp(ctx, ctx.req.valid('json'));
-  return ctx.json(data, 201);
+  await createRequestOp(ctx, ctx.req.valid('json'));
+  return ctx.body(null, 204);
 });
 
 app.openapi(requestRoutes.getRequests, async (ctx) => {

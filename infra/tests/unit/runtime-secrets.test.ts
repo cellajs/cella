@@ -1,12 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { signYjsToken, verifyYjsToken, yjsTokenSigningKey, yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { describe, expect, it } from 'vitest';
-import {
-  defineRuntimeSecrets,
-  runtimeSecretConsumers,
-  runtimeSecrets,
-  runtimeSecretsForConsumer,
-} from '../../lib/runtime-secrets';
+import { modeSecrets } from '../../../backend/src/env-mode-secrets';
+import { appServices } from '../../config/services.config';
+import { runtimeSecretConsumers, runtimeSecrets, runtimeSecretsForConsumer } from '../../lib/runtime-secrets';
 
 // The config module and lib/runtime-secrets form an import cycle, so it must be entered from the lib side; a static import sorts alphabetically ahead of the lib import.
 const { runtimeSecretsConfig } = await import('../../config/runtime-secrets.config');
@@ -70,10 +68,6 @@ describe('runtime secret registry', () => {
     }
   });
 
-  it('keeps frontend isolated from backend runtime secrets', () => {
-    expect(runtimeSecretsForConsumer('frontend')).toEqual([]);
-  });
-
   it('assigns an exact, minimal runtime secret set per VM consumer', () => {
     expect(runtimeSecretsForConsumer('cdc').map((secret) => secret.envVar)).toEqual([
       'DATABASE_CDC_URL',
@@ -84,10 +78,26 @@ describe('runtime secret registry', () => {
     expect(runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar)).toEqual([
       'DATABASE_URL',
       'DATABASE_SSL_CA',
-      'YJS_SECRET',
+      'YJS_TOKEN_PUBLIC_KEY',
+      'YJS_RELAY_SECRET',
       'MAPLE_SECRET_INGEST_KEY',
     ]);
     expect(runtimeSecretsForConsumer('frontend')).toEqual([]);
+    expect(runtimeSecretsForConsumer('oauth').map((secret) => secret.envVar)).toEqual([
+      'DATABASE_URL',
+      'DATABASE_SSL_CA',
+      'COOKIE_SECRET',
+      'DATA_ENCRYPTION_KEY',
+    ]);
+    expect(runtimeSecretsForConsumer('jobs').map((secret) => secret.envVar)).toEqual([
+      'DATABASE_URL',
+      'DATABASE_SSL_CA',
+      'COOKIE_SECRET',
+      'UNSUBSCRIBE_SECRET',
+      'DATA_ENCRYPTION_KEY',
+      'BREVO_API_KEY',
+      'MAPLE_SECRET_INGEST_KEY',
+    ]);
   });
 
   it('does not leak service-exclusive secrets across VM boundaries', () => {
@@ -95,9 +105,23 @@ describe('runtime secret registry', () => {
     const yjsVars = new Set(runtimeSecretsForConsumer('yjs').map((secret) => secret.envVar));
     const backendVars = new Set(runtimeSecretsForConsumer('backend').map((secret) => secret.envVar));
 
-    expect(cdcVars.has('YJS_SECRET')).toBe(false);
+    expect(cdcVars.has('YJS_RELAY_SECRET')).toBe(false);
     expect(yjsVars.has('CDC_SECRET')).toBe(false);
     expect(backendVars.has('DATABASE_CDC_URL')).toBe(false);
+  });
+
+  it('derives the relay public key from the signing key, so the two change together', () => {
+    const publicKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PUBLIC_KEY');
+    const privateKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PRIVATE_KEY');
+    expect(publicKey?.derivedFrom?.secretId).toBe(privateKey?.id);
+    const material = 'key-material-of-at-least-thirty-two-chars';
+    const token = signYjsToken(
+      { userId: 'u', entityType: 'attachment', entityId: 'e', tenantId: 't', organizationId: null },
+      yjsTokenSigningKey(material),
+      60_000,
+    );
+    const derived = publicKey?.derivedFrom?.derive(material) ?? '';
+    expect(verifyYjsToken(token, yjsTokenVerifyKey(derived)).ok).toBe(true);
   });
 });
 
@@ -117,6 +141,41 @@ describe('runtime secret schema alignment', () => {
     }
   });
 
+  // The backend image serves each of these as its own VM under split-VM; the MODE its env names picks the process, and
+  // a release companion runs one more process (its own MODE) on the same VM with the same secrets.
+  const backendImageModes = runtimeSecretConsumers
+    .filter((slug) => {
+      const cfg = appServices[slug];
+      return slug === 'backend' || ('reusesImageOf' in cfg && cfg.reusesImageOf === 'backend');
+    })
+    .map((slug) => {
+      const cfg = appServices[slug];
+      const env: Readonly<Record<string, string>> = 'env' in cfg ? cfg.env : {};
+      const releaseEnv: Readonly<Record<string, string>> = ('release' in cfg && cfg.release?.env) || {};
+      return [slug, [env.MODE ?? 'api', ...(releaseEnv.MODE ? [releaseEnv.MODE] : [])]] as const;
+    });
+
+  it('delivers a mode-bound secret to exactly the backend-image VMs whose processes read it', () => {
+    expect(backendImageModes.map(([slug]) => slug)).toEqual(['backend', 'mcp', 'oauth', 'jobs']);
+    for (const [service, vmModes] of backendImageModes) {
+      const delivered = new Set(runtimeSecretsForConsumer(service).map((secret) => secret.envVar));
+      for (const [envVar, modes] of Object.entries(modeSecrets)) {
+        const reads = modes.some((readingMode) => vmModes.includes(readingMode));
+        // Missing, a process's env schema refuses to boot; extra, the VM holds a key none of its processes reads.
+        expect(delivered.has(envVar), `${service} (MODE=${vmModes.join('+')}) and ${envVar}`).toBe(reads);
+      }
+    }
+  });
+
+  it('delivers the secrets every backend mode requires to each backend-image VM', () => {
+    for (const [service] of backendImageModes) {
+      const delivered = new Set(runtimeSecretsForConsumer(service).map((secret) => secret.envVar));
+      for (const envVar of ['DATABASE_URL', 'COOKIE_SECRET', 'DATA_ENCRYPTION_KEY']) {
+        expect(delivered.has(envVar), `${service} and ${envVar}`).toBe(true);
+      }
+    }
+  });
+
   it('documents mcp as a backend-env wrapper instead of requiring a standalone env.ts', () => {
     const aiSecrets = runtimeSecrets.filter((secret) => secret.services.includes('mcp'));
     expect(aiSecrets.length).toBeGreaterThan(0);
@@ -126,31 +185,6 @@ describe('runtime secret schema alignment', () => {
 });
 
 describe('runtime secret config seam', () => {
-  it('defineRuntimeSecrets is a typed identity that preserves the app config', () => {
-    const config = defineRuntimeSecrets({
-      example: {
-        secretName: 'example-secret',
-        description: 'fixture',
-        envVar: 'EXAMPLE_SECRET',
-        required: false,
-        valueSource: 'operator',
-        generation: 'manual',
-        services: ['backend'],
-      },
-    });
-    expect(config).toEqual({
-      example: {
-        secretName: 'example-secret',
-        description: 'fixture',
-        envVar: 'EXAMPLE_SECRET',
-        required: false,
-        valueSource: 'operator',
-        generation: 'manual',
-        services: ['backend'],
-      },
-    });
-  });
-
   it('derives the registry tail from the app config, keyed by id, preserving order', () => {
     const configIds = Object.keys(runtimeSecretsConfig);
     const tail = runtimeSecrets.slice(runtimeSecrets.length - configIds.length);

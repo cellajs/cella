@@ -31,7 +31,8 @@ export const apiKeysTable = snakeCase.table(
     last4: varchar({ length: 4 }).notNull(),
     /** Mask over the actor's bindings; null = unmasked. Values come from `accessScopes.all`. */
     scopes: varchar({ length: maxLength.field }).$type<AccessScope>().array(),
-    expiresAt: timestamp({ mode: 'string' }),
+    /** Null: never expires. Keeps its zone like `timestampColumns.expiresAt`: the guard reads it in JavaScript. */
+    expiresAt: timestamp({ withTimezone: true, mode: 'string' }),
     revokedAt: timestamp({ mode: 'string' }),
     revokedBy: uuid()
       .references(() => actorsTable.id, { onDelete: 'set null' })

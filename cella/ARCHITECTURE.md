@@ -4,13 +4,12 @@ This document explains the basics of Cella.
 
 ### TL;DR
 
-Cella is a **full-stack TypeScript project template for collaborative, content-rich web apps**. Most
-feature work follows a familiar path: store rows in PostgreSQL, expose API endpoints, and read them
-in React. Live updates, offline support, and tenant isolation are supported out-of-the-box.
+Cella is a **full-stack TypeScript project template for collaborative, content-rich web apps**.
+PostgreSQL is the source of truth. A Hono API defines validated OpenAPI routes and generates the typed SDK used by the React app. Shared hierarchy configuration drives permissions and tenant boundaries, while TanStack Query keeps data synced and available offline.
 
 ## Overview
 
-Below you see a typical full production stack. However, Yjs, OAuth and MCP are optional, and every worker can be **cohosted on the backend VM** to reduce costs.
+Below you see a typical full production stack. However, Yjs, OAuth and MCP are optional (only Yjs is shown below for readability), and every worker can be **cohosted on the backend VM** to reduce costs.
 
 ```
    ┌──────────────┐                          ┌──────────────────────────────┐
@@ -37,7 +36,7 @@ Below you see a typical full production stack. However, Yjs, OAuth and MCP are o
 | **OpenAPI owns the contract** | Zod-backed Hono routes generate the typed SDK used by the React app and external clients. |
 | **TanStack Query owns server state** | Reads, optimistic writes, realtime changes, and restored offline data converge in one cache. |
 | **One hierarchy configuration** | Configuration defines entities, their parents, roles, and the behavior derived from them. |
-| **Workers add capabilities** | Change data capture (CDC), Yjs, OAuth and MCP workers run separately or alongside the API. |
+| **Workers add capabilities** | Change data capture (CDC), Yjs, OAuth, MCP and jobs workers run separately or alongside the API. |
 
 Cella favors a narrow stack over replaceable abstractions: React, TanStack Router, TanStack Query, Zustand, Hono, Zod, Drizzle, and Dexie stay visible. The default app is a client-rendered progressive web app (PWA) on open standards, deployable to European-owned cloud infrastructure through Scaleway and Pulumi.
 
@@ -50,7 +49,7 @@ Cella favors a narrow stack over replaceable abstractions: React, TanStack Route
 | **Product entity** | User-facing content that inherits access from a channel | attachment |
 | **Resource** | Tracked data outside the entity hierarchy | session, token |
 
-Code names: `ChannelEntityType` and `ProductEntityType`. `EntityType` covers both plus `user`. The template starts with `organization -> attachment`. The hierarchy is declared once in `shared/config/hierarchy-config.ts`. It drives permission traversal, schema helpers, navigation, counters, and stream dispatch. Frontend and backend features live in matching modules. Recipe: [New entity](./ADD_ENTITY.md).
+Code names are `ChannelEntityType` and `ProductEntityType`. `EntityType` covers both plus `user`. The template starts with `organization -> attachment`. The hierarchy is declared once in `shared/config/hierarchy-config.ts`. It drives permission traversal, schema helpers, navigation, counters, and stream dispatch. Frontend and backend features live in matching modules. Guide: [New entity](./ADD_ENTITY.md).
 
 ## Selective sync engine
 
@@ -58,7 +57,7 @@ Channel entities stay conventional CRUD. Product entities get live updates and o
 
 ## Trust boundaries
 
-Authentication supports magic links, passkeys, OAuth, and optional time-based one-time-password (TOTP). Sessions are cookie-based, hashed in storage, rate-limited, and support controlled system administrator impersonation. A proof's row outlives the proof: a session or API key is revoked with a stamp (`revokedAt`, `revokedBy`, and for a session a `revocationReason`), a token is invoked, a consent code is consumed; reads filter on the stamp and the retention sweep removes the row later, so the sessions list can show what ended and why. Only a consent revoke deletes, because the authorization server owns those rows. Each sign-in enrolls the browser in the devices table under a per-user hash of a long-lived device cookie; a sign-in from a browser the account has not used before mails the owner, and rows unseen for 400 days are pruned. An account is identified by its sign-in credentials, not by an email address: an invitation sent to any address can be accepted by whoever opens its link, as the account they are signed in to. External identities (OAuth today, SSO later) live in the identities table keyed on kind, issuer slug and the issuer's subject, never on an address. The emails table lists the inboxes an account has proven, the sign-up address and any provider address whose verification mail was clicked; each is a magic-link sign-in identifier and an invitation target. Machines are actors too: a service account holds role bindings like a member and authenticates with an API key or an access token from the app's own authorization server, narrowed by access scopes ([Interoperability](./INTEROPERABILITY.md)). Cella has a layered approach to balance defense in depth, maintainability and performance.
+Authentication explains how people prove identity; [Interoperability](./INTEROPERABILITY.md) covers service accounts and machine access. Accounts are identified by verified proofs, not email addresses. See [Authentication](./AUTHENTICATION.md), [Permissions](./PERMISSIONS.md), and [Multi-tenancy](./MULTI_TENANCY.md).
 
 | Layer | Responsibility |
 | --- | --- |
@@ -66,14 +65,15 @@ Authentication supports magic links, passkeys, OAuth, and optional time-based on
 | **Permission engine** | Decide whether the actor may create, read, update, or delete the subject. |
 | **PostgreSQL row-level security** | Prevent tenant-scoped product reads from crossing the tenant boundary. |
 | **Foreign keys and triggers** | Keep tenant/channel relationships coherent and identity columns immutable. |
+| **Secret columns** | A single registry keeps secrets out of API responses, backend and worker logs, and CDC row images. |
 
 The permission engine lives in `shared/`, so the API and the optional Yjs relay share one policy model. The frontend only shapes the interface with it. The backend is authoritative. See [Permissions](./PERMISSIONS.md) and [Multi-tenancy](./MULTI_TENANCY.md).
 
 ## Contracts and operations
 
-Backend modules define Hono routes with Zod schemas. Those routes produce an OpenAPI 3.1 document, and the `sdk` workspace generates the fetch client, types, and validation schemas the frontend consumes. It also powers API docs and deterministic examples. Shared mocks serve docs, seeds, tests, and load tests.
+Backend modules define Hono routes with Zod schemas, which generate an OpenAPI 3.1 document. The `sdk` package uses that document to generate the fetch client, TypeScript types, and validation schemas consumed by the frontend. It also powers API docs and deterministic examples. Shared mocks serve docs, seeds, tests, and load tests.
 
-Backend and other service workers share OpenTelemetry setup ([Observability](./OTEL.md)). CDC, Yjs, OAuth and MCP are independent workers with health and shutdown contracts. Pulumi deploys to Scaleway through GitHub Actions ([infrastructure guide](../infra/README.md)).
+The backend and its workers share OpenTelemetry setup ([Observability](./OTEL.md)). CDC, Yjs, OAuth, MCP and jobs are independent workers with health and shutdown contracts. Pulumi deploys to Scaleway through GitHub Actions ([infrastructure guide](../infra/README.md)).
 
 Tests cover generated contracts, permission parity, cross-scope access, database constraints, sync catchup, and offline replay ([Testing](./TESTING.md)).
 
@@ -91,6 +91,7 @@ Flat-root monorepo:
 ├── yjs           Optional collaborative-editing relay
 ├── mcp           Optional Model Context Protocol worker
 ├── oauth         Optional OAuth authorization server worker
+├── jobs          Jobs worker: cron and queues on pg-boss
 ├── infra         Pulumi deployment and operational CLI
 ├── cella         Architecture, guides, changelog, and upgrade migrations
 ├── locales       Translations

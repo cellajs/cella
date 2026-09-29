@@ -1,4 +1,4 @@
-import type { DehydratedState } from '@tanstack/react-query';
+import type { DehydratedState, Query } from '@tanstack/react-query';
 import type { PersistedClient, Persister } from '@tanstack/react-query-persist-client';
 import { appConfig } from 'shared';
 import { currentSchemaVersion } from 'shared/schema-evolution';
@@ -22,6 +22,10 @@ function isProductQuery(queryKey: unknown): boolean {
   const entity = Array.isArray(key) ? key[0] : undefined;
   return typeof entity === 'string' && productSet.has(entity);
 }
+
+/** What the persister writes: a query that succeeded and does not opt out through `meta: { persist: false }` (a bearer token, another account's data). */
+export const shouldPersistQuery = (query: Query): boolean =>
+  query.state.status === 'success' && query.meta?.persist !== false;
 
 function getTabSessionId(): string {
   let id = sessionStorage.getItem(SESSION_ID_STORAGE_KEY);

@@ -43,5 +43,9 @@ export interface PolicyConfiguration {
 
 export type PolicyCallback = (config: PolicyConfiguration) => void;
 
-/** Unconditional boolean, or a row condition evaluated per entity. */
-export type CanState = boolean | RowConditionName;
+/**
+ * Unconditional boolean, or a condition the frontend resolves per row: a policy cell name, or the
+ * map's mark of a home-scoped grant (`'home'`: the row is homed at the map's channel; `'home:own'`:
+ * an `'own'` cell under that grant). @see compute-can.ts
+ */
+export type CanState = boolean | RowConditionName | 'home' | 'home:own';

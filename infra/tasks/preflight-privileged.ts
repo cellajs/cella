@@ -3,6 +3,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { adoptStateBackendEnv, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import { PRIVILEGED_UP_ENV } from '../lib/stack/privileged-up';
+import { ExitCodeError } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
 import { getFlag } from './args';
@@ -153,11 +154,26 @@ export async function runPrivilegedPreview(
   return parsed.steps ?? [];
 }
 
+/** What `main` reads from the machine: whether the mode's stack is set up, and the privileged preview. */
+export interface PreflightEffects {
+  /** True when `Pulumi.<mode>.yaml` exists and carries an encryption salt. */
+  stackIsSetUp(mode: string): boolean;
+  preview(stack: string): Promise<PreviewStep[]>;
+}
+
+const liveEffects: PreflightEffects = {
+  stackIsSetUp: (mode) => {
+    const stackFile = resolve(infraDir, `Pulumi.${mode}.yaml`);
+    return existsSync(stackFile) && /^encryptionsalt:/m.test(readFileSync(stackFile, 'utf8'));
+  },
+  preview: (stack) => runPrivilegedPreview(stack),
+};
+
 /**
  * Standalone entry: `pnpm --filter infra preflight --mode <m> [--login]`. Exit 2 with the operator command when a privileged change is pending,
  * 0 when a CI deploy can apply everything, 1 when the preview itself failed. `--login` performs the state-backend login + stack select first (the deploy has already done both).
  */
-export async function main(argv = process.argv.slice(2)): Promise<void> {
+export async function main(argv = process.argv.slice(2), fx: PreflightEffects = liveEffects): Promise<void> {
   const mode = getFlag(argv, '--mode') ?? process.env.APP_MODE ?? process.env.INFRA_MODE;
   if (!mode) throw new Error('preflight: --mode (or APP_MODE) is required');
   process.env.APP_MODE = mode;
@@ -178,19 +194,15 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       if (res.status !== 0) throw new Error(`pulumi ${args.join(' ')} exited ${res.status}`);
     }
   }
-  const stackFile = resolve(infraDir, `Pulumi.${mode}.yaml`);
-  if (!existsSync(stackFile) || !/^encryptionsalt:/m.test(readFileSync(stackFile, 'utf8'))) {
+  if (!fx.stackIsSetUp(mode)) {
     console.info(`[preflight] no set-up Pulumi.${mode}.yaml: nothing to check`);
     return;
   }
 
-  const steps = await runPrivilegedPreview(stack);
+  const steps = await fx.preview(stack);
   const { privileged, ciApplicable } = classifyPreviewSteps(steps);
-  if (privileged.length > 0) {
-    console.error(formatPending(mode, privileged));
-    process.exitCode = 2;
-    return;
-  }
+  // Thrown, never set as the exit code: the deploy runs this task in-process and must stop here.
+  if (privileged.length > 0) throw new ExitCodeError(formatPending(mode, privileged), 2);
   console.info(`✓ no privileged change pending (${ciApplicable} CI-applicable change(s) in the plan)`);
 }
 

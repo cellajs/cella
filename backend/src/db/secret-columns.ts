@@ -12,11 +12,11 @@
 export const secretColumns = {
   api_keys: ['hash'],
   oauth_clients: ['secretHash'],
+  passkey_challenges: ['challengeHash'],
   sessions: ['secret'],
   signing_keys: ['privateJwk'],
   tokens: ['secret', 'singleUseToken'],
   totps: ['secret'],
-  unsubscribe_tokens: ['secret'],
 } as const satisfies Record<string, readonly string[]>;
 
 /**

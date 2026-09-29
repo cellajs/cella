@@ -1,9 +1,13 @@
-import { describe, expect, it, vi } from 'vitest';
+import { importJWK, SignJWT } from 'jose';
+import { appConfig } from 'shared';
+import { beforeAll, describe, expect, it, vi } from 'vitest';
 import type { AppError } from '#/core/error';
-import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
+import { ensureSigningKeys, loadSigningJwks } from '#/modules/oauth-server/keystore';
+import { resourceMetadataUrl, resourceUri } from '#/modules/oauth-server/resources';
 import { tokenGuard } from './token-guard';
 
-// Verification runs against the keystore; a malformed JWT fails before any key is needed.
+// Verification runs against the keystore. The end-to-end positive control is tests/mcp.test.ts: its showcases carry
+// tokens the authorization server minted for the route's own organization through this guard to the tools.
 const mockCtx = (authorization?: string) => ({
   req: {
     param: (name: string) => ({ tenantId: 'tenant1', organizationId: 'org1' })[name],
@@ -24,8 +28,43 @@ const runExpectingError = async (ctx: ReturnType<typeof mockCtx>) => {
 };
 
 const metadata = resourceMetadataUrl({ face: 'mcp', tenantId: 'tenant1', organizationId: 'org1' });
+const resource = resourceUri({ face: 'mcp', tenantId: 'tenant1', organizationId: 'org1' });
+
+/** The claims of a person's token for this route's organization; a forgery changes one thing about it. */
+const claims = { tenant_id: 'tenant1', scope: 'attachment:read', actor_kind: 'user', gid: 'grant1', client_id: 'app' };
+
+interface Forgery {
+  /** The signing key; the server's current key unless given. */
+  key?: CryptoKey | Uint8Array;
+  alg?: string;
+  issuer?: string;
+  audience?: string;
+  expiresAt?: number | string;
+}
+
+/** A token signed under the server's `kid`, well-formed for this route unless a forgery says otherwise. */
+const signed = async ({
+  key,
+  alg = 'RS256',
+  issuer = appConfig.oauthUrl,
+  audience = resource,
+  expiresAt = '1h',
+}: Forgery = {}) => {
+  const [signingJwk] = (await loadSigningJwks()).keys;
+  return new SignJWT(claims)
+    .setProtectedHeader({ alg, kid: signingJwk.kid, typ: 'at+jwt' })
+    .setSubject('user1')
+    .setIssuer(issuer)
+    .setAudience(audience)
+    .setIssuedAt()
+    .setExpirationTime(expiresAt)
+    .sign(key ?? (await importJWK(signingJwk, 'RS256')));
+};
 
 describe('tokenGuard', () => {
+  // A fresh test database holds no signing key until the authorization server boots or this mints one.
+  beforeAll(() => ensureSigningKeys());
+
   it('challenges a tokenless call with the resource metadata URL (RFC 9728)', async () => {
     const ctx = mockCtx();
     const error = await runExpectingError(ctx);
@@ -39,11 +78,38 @@ describe('tokenGuard', () => {
     expect(ctx.header).toHaveBeenCalledWith('WWW-Authenticate', `Bearer resource_metadata="${metadata}"`);
   });
 
-  it('names invalid_token on a JWT it cannot verify', async () => {
-    const ctx = mockCtx('Bearer aaa.bbb.ccc');
+  /**
+   * The verifier pins the signature to the server's keys, and the token to this issuer, this route's resource and its
+   * expiry. A token that fails any of these never reaches the grant policy or the database: the challenge names the
+   * verifier's reason, and no actor is set.
+   */
+  const forgeries: [vector: string, forge: () => Promise<string>, reason: string][] = [
+    ['a token from another issuer', () => signed({ issuer: 'https://evil.example/oauth' }), 'invalid_token'],
+    ['an expired token', () => signed({ expiresAt: Math.floor(Date.now() / 1000) - 3600 }), 'token_expired'],
+    [
+      "the server's own token for another organization",
+      () => signed({ audience: resourceUri({ face: 'mcp', tenantId: 'tenant1', organizationId: 'org2' }) }),
+      'invalid_token',
+    ],
+  ];
+
+  it.each(forgeries)('must not set an actor via %s', async (_vector, forge, reason) => {
+    const ctx = mockCtx(`Bearer ${await forge()}`);
     expect((await runExpectingError(ctx)).status).toBe(401);
-    const [, value] = ctx.header.mock.calls[0];
-    expect(value).toContain('error="invalid_token"');
-    expect(value).toContain(`resource_metadata="${metadata}"`);
+    expect(ctx.set).not.toHaveBeenCalled();
+    expect(ctx.header).toHaveBeenCalledWith(
+      'WWW-Authenticate',
+      `Bearer error="invalid_token", error_description="${reason}", resource_metadata="${metadata}"`,
+    );
+  });
+
+  it("passes the server's own token for this organization on to the grant policy (positive control)", async () => {
+    const ctx = mockCtx(`Bearer ${await signed()}`);
+    expect((await runExpectingError(ctx)).status).toBe(401);
+    // The verifier accepted it: the refusal is the policy's, about the grant the token names.
+    expect(ctx.header).toHaveBeenCalledWith(
+      'WWW-Authenticate',
+      `Bearer error="invalid_token", error_description="grant_revoked", resource_metadata="${metadata}"`,
+    );
   });
 });

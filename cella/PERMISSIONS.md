@@ -169,15 +169,27 @@ export type RowConditionName = "own" | "public"; // this union IS the contract
 
 Two row columns sit beside the engine: drafts (`publishedAt`) are visible to their author alone and checked before the engine ([Drafts](./SYNC_ENGINE.md#drafts)). Visibility (`publicAt`) is row-local, set by the client on create, and never cascades.
 
+## Frontend map
+
+`computeCan(channelType, membership, policyMatrix)` derives the `can` map the UI reads (`entity.can[entityType][action]`) from one membership: the channel's own cells plus every descendant type's cells for that channel and role. A cell reaches the UI as `true`, `false` or a condition the frontend resolves per row with `resolveCan(state, createdBy, actorId, home)`:
+
+| State | Resolves to | Where it comes from |
+| --- | --- | --- |
+| `'own'` | the actor created the row | the policy cell |
+| `'home'` | the row is homed at the map's channel: `home.row` (its deepest non-null ancestor id, `hierarchy.resolveDeepestAncestorId(type, row)`) equals `home.channel` | a `1` cell of a home-scoped grant |
+| `'home:own'` | both | an `'own'` cell of a home-scoped grant |
+
+`'home'` is the map's form of the engine's home scoping: a role outside `hierarchy.elevatedGrants` reaches only product rows homed at its own channel, so that membership's product cells carry the mark, except `create` (no row: the frontend creates at the map's channel, the new row's home) and grants at the product's declared parent (every row below is homed there). Channel entries are never marked: the engine scopes product subjects only. A call without `home` denies the marked states, so every product row affordance passes `{ row, channel }`; channel-wide features use `isUnconditionalCan`. The map shapes the interface only: `shared/src/permissions/compute-can.test.ts` runs every role, channel and action of a hierarchy with elevated and home-scoped roles against the engine, on rows homed at the channel and below it, and the two agree.
+
 ## Enforcement paths
 
 | Path | Guard or helper | What it checks | On failure |
 | --- | --- | --- | --- |
-| Guard chain | `userGuard` → `tenantGuard` → `orgGuard` | Authenticated, in-tenant (member or tenant creator), org member or system admin. Never consults the policy matrix. | 401, 403, or 404 before the handler |
-| Single row | `getValidProduct`, `getValidChannel` via `buildSubjectFromEntity` | Loads the row, rejects it outside the request tenant or organization, passes it as `subject.row`, runs the engine | 403, or 404 for an out-of-scope row or a non-author on a draft |
+| Guard chain | `userGuard` → `tenantGuard` → `orgGuard` | Authenticated, in-tenant (member, system admin, or the tenant's creator while it has no organization), org member or system admin. Never consults the policy matrix. | 401 or 403 before the handler; the tenant is one 403 whether missing, inactive or not the actor's, the organization one 404 whether missing or without a foothold ([Refusals](#refusals)) |
+| Single row | `getValidProduct`, `getValidChannel` via `buildSubjectFromEntity` | Loads the row, rejects it outside the request tenant or organization, passes it as `subject.row`, runs the engine | 404 for a row that is missing, out of scope, a draft of someone else or one the caller may not read; 403 only for an action denied on a row the caller reads |
 | Create | `canCreateEntity` | No row exists yet. The subject describes the would-be placement | 403 |
 | Bulk | `splitByPermission` | Splits allowed from denied | 403 only when nothing is allowed |
-| Collection read | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Compiles readable scope, row conditions, and the public grant into one Drizzle `SQL` predicate. Never materializes rows to reject them. | `{ kind: 'none' }` returns `[]` without querying |
+| Collection read | `resolveCollectionReadFilter` → `buildCollectionReadWhere` | Compiles readable scope, row conditions, and the public grant into one Drizzle `SQL` predicate. Never materializes rows to reject them. | `{ kind: 'none' }` returns `[]` without querying; a home channel named in the query outside the readable scope is 404 |
 | SSE dispatch | `rowReadDecisions` (`canReceiveProductEvent` is its batch-of-1) | One `checkAccessFanout` per event row over the channel's subscribers | Subscriber not notified. Over-notifying leaks data because notified rows are fetchable by seq |
 | Catchup views | `resolveViewReadStatus` | May the caller see the subtree's aggregate change signal (`e:f:`/counts)? `ok` needs a grant on the node or a verified ancestor. Claimed prefixes must equal the counters row's canonical path ([Access](./SYNC_ENGINE.md#access)) | `opaque` or `forbidden` |
 
@@ -190,11 +202,31 @@ export type CollectionReadWhere =
   | { kind: "where"; where: SQL };
 ```
 
+## Refusals
+
+One answer per situation, so no route, app or test meets two shapes for one cause. A refusal the caller's request or state brings about carries severity `warn` (a warning toast, no log id); `error` is kept for the app's own faults, such as a row that must exist and is gone.
+
+Unexpected server errors include internal details in client responses only in development and test. Other modes return a log ID; failed queries are logged without SQL or values.
+
+| Situation | Answer | Why |
+| --- | --- | --- |
+| The tenant: missing, inactive, none of the actor's, or not the tenant an API key belongs to | 403 `forbidden`, `meta.resource: 'tenant'` | The tenant is the URL segment every member knows, so the answer only says "not yours"; one answer for every case keeps the six-character ids from being enumerated |
+| Anything under a tenant the caller may not read, missing and unreadable alike: an organization (`orgGuard`), a channel or product (`getValidChannel`, `getValidProduct`: out of scope, soft-deleted, someone else's draft, read denied), a home channel named in a list query, an invitation | 404 `not_found` with `entityType`; an invitation carries `meta.resource: 'invitation'` | A 403 would confirm the id. The access is the actor masked by its scopes, so an API key or access token without the entity's scope reads it as missing too |
+| An action denied on a row the caller reads; a create the placement denies; a bulk call where nothing is allowed | 403 `forbidden`, `entityType`, and `meta.action` for a single row | The caller already knows the row |
+| A list option the caller may not use: the system role as filter or sort of `getUsers` for anyone but a system admin; another user's `role` or `excludeArchived` in `getOrganizations` | 403 `forbidden`, `meta.reason` | Refused, never dropped: a dropped option answers a narrower question with the wider list. A sort is never refused; the `displayOrder` default names the caller's own menu, so another user's list comes by name |
+| Another user the caller shares no organization with (`relatableGuard`, `getUser`), missing and unshared alike | 403 `forbidden`, `entityType: 'user'` | The guard answers before validation and never loads the user; one answer hides existence as a 404 would |
+| A token this browser does not hold: no cookie, an unknown or spent value, a URL that names another token | 401 `<type>_not_found`; expired, 401 `<type>_expired` with `meta.tokenId` so the error page can offer a new link | The proof is the cookie, for a link and a cookie-carried type alike. These keys are spelled after the token type (`confirm-mfa_not_found`, `step-up_expired`); the step-up feature's own keys are snake_case (`step_up_required`) |
+| A link or invitation of another account: opened while signed in as someone else, bound to another user, or the race that binds it lost | 409 `user_mismatch` | The request conflicts with the signed-in account, not with its own shape |
+| An address or provider account another account holds (`oauth_email_exists`, `oauth_conflict`, `oauth_wrong_email`) | 409, severity `warn` | The caller's state, not a fault of the app |
+| Not signed in, or a session that ended | 401 `unauthorized`, `no_session`, `session_expired` or `session_revoked` | The frontend redirects to sign-in on these types alone; any other 401 refuses a proof while signed in |
+| An account-security route without a recent proof of presence | 403 `step_up_required` naming the methods | [Interoperability](./INTEROPERABILITY.md#guards) |
+| An action on the account itself while impersonating: stepping up, revoking the user's sessions, impersonating again, and every `stepUpGuard` route | 403 `impersonation_forbidden` (`noImpersonationGuard`; `stepUpGuard` gives the same answer before its own) | The admin acts as the user, never on the account, its sessions or how it is protected |
+
 ## Behavior
 
 | Scenario | Outcome |
 | --- | --- |
 | Member with `update: 'own'` edits someone else's row | Denied. The UI enables the control optimistically and the backend rejects on save. |
 | Actor reads a row whose `publicAt` is set (entity declares `publicRead()`) | Allowed, `grantedBy: public`, single-row, in lists, and over SSE, anonymous included |
-| Actor loses access mid-Yjs-session | Materialization re-checks `update` on the backend before persisting |
+| Actor loses access mid-Yjs-session | The socket closes when its five-minute token expires, and a reconnect is authorized again. Materialization credits the newest editor who still has `update` |
 | System admin joins a Yjs collab session | No bypass. Authorized as the acting user, matching materialization |

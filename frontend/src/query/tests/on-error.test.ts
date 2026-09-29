@@ -12,7 +12,7 @@ vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: mockToaster }));
 vi.mock('~/modules/common/alerter/alert-store', () => ({
   useAlertStore: { getState: () => ({ setDownAlert: mockSetDownAlert }) },
 }));
-vi.mock('~/routes/router', () => ({ default: { navigate: mockNavigate } }));
+vi.mock('~/routes/router', () => ({ router: { navigate: mockNavigate } }));
 vi.mock('~/utils/teardown-user-state', () => ({ teardownUserState: mockTeardownUserState }));
 vi.mock('i18next', () => {
   const t = (key: string) => key;
@@ -31,26 +31,17 @@ describe('onError network error detection', () => {
     vi.restoreAllMocks();
   });
 
-  // --- Network error variants across browsers ---
-
-  it('should trigger connectivity probe for Chrome "Failed to fetch"', () => {
-    onError(new TypeError('Failed to fetch'));
-    expect(mockCheckConnectivity).toHaveBeenCalledOnce();
-  });
-
-  it('should trigger connectivity probe for Safari "Load failed"', () => {
-    onError(new TypeError('Load failed'));
-    expect(mockCheckConnectivity).toHaveBeenCalledOnce();
-  });
-
-  it('should trigger connectivity probe for Firefox "NetworkError"', () => {
-    onError(new TypeError('NetworkError when attempting to fetch resource.'));
-    expect(mockCheckConnectivity).toHaveBeenCalledOnce();
-  });
-
-  it('should trigger connectivity probe case-insensitively', () => {
-    onError(new TypeError('FAILED TO FETCH'));
-    expect(mockCheckConnectivity).toHaveBeenCalledOnce();
+  it('should trigger the connectivity probe for the fetch failure of Chrome, Safari and Firefox, in any casing', () => {
+    const messages = [
+      'Failed to fetch',
+      'Load failed',
+      'NetworkError when attempting to fetch resource.',
+      'FAILED TO FETCH',
+    ];
+    for (const [i, message] of messages.entries()) {
+      onError(new TypeError(message));
+      expect(mockCheckConnectivity, message).toHaveBeenCalledTimes(i + 1);
+    }
   });
 
   // --- False positive protection ---
@@ -73,5 +64,26 @@ describe('onError network error detection', () => {
   it('should NOT trigger probe for generic Error', () => {
     onError(new Error('Something went wrong'));
     expect(mockCheckConnectivity).not.toHaveBeenCalled();
+  });
+});
+
+// A 401 is a lost session only when the session guards say so; a refused proof (a wrong authenticator code on the
+// MFA toggle) keeps the user signed in.
+describe('onError 401 handling', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.stubGlobal('location', new URL('https://app.example/organizations/acme'));
+  });
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('tears down the session state for a 401 that means the session is gone', () => {
+    onError(new ApiError({ name: 'ApiError', status: 401, type: 'session_revoked', path: '/organizations' }));
+    expect(mockTeardownUserState).toHaveBeenCalledWith(false);
+  });
+
+  it('must not sign the user out over a refused second factor', () => {
+    onError(new ApiError({ name: 'ApiError', status: 401, type: 'invalid_token', path: '/me/mfa', severity: 'warn' }));
+    expect(mockTeardownUserState).not.toHaveBeenCalled();
+    expect(mockToaster.warning).toHaveBeenCalledOnce();
   });
 });

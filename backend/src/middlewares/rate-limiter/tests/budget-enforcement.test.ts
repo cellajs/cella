@@ -1,31 +1,18 @@
 import { Hono } from 'hono';
-import { RateLimiterMemory } from 'rate-limiter-flexible';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
+import { memoryStores } from './memory-stores';
 
-// Undo the setup.ts mock: these tests drive the real middleware against a real RateLimiterMemory, end to end
+// Undo the setup.ts mock: these tests drive the real middleware against in-memory stores, end to end
 vi.unmock('#/middlewares/rate-limiter/core');
-
-// Real in-memory limiter instances, memoized by keyPrefix exactly like production.
-const instances = new Map<string, RateLimiterMemory>();
-
-vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => {
-  const original = await importOriginal<typeof import('#/middlewares/rate-limiter/helpers')>();
-  return {
-    ...original,
-    getRateLimiterInstance: (options: { keyPrefix: string; points: number; duration: number }) => {
-      const existing = instances.get(options.keyPrefix);
-      if (existing) return existing;
-      const instance = new RateLimiterMemory(options);
-      instances.set(options.keyPrefix, instance);
-      return instance;
-    },
-  };
-});
+vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) =>
+  (await import('./memory-stores')).memoryStoresMock(importOriginal),
+);
 
 // Must import AFTER mocks are set up
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
+const { getRetryAfter } = await import('#/middlewares/rate-limiter/helpers');
 const { clearCache } = await import('#/middlewares/rate-limiter/points-cache');
 
 /** App mimicking pointsLimiter: static ceiling, dynamic per-tenant budget. */
@@ -50,22 +37,19 @@ function buildApp(key: string, tenantId: string, ceiling: number, budget: () => 
 async function hammer(app: Hono<Env>, n: number) {
   let allowed = 0;
   let blocked = 0;
-  let lastBlockedResponse: Response | null = null;
   for (let i = 0; i < n; i++) {
     const res = await app.request('http://localhost/t', { method: 'POST' });
     if (res.status === 200) allowed++;
-    else if (res.status === 429) {
-      blocked++;
-      lastBlockedResponse = res;
-    } else throw new Error(`unexpected status ${res.status}`);
+    else if (res.status === 429) blocked++;
+    else throw new Error(`unexpected status ${res.status}`);
   }
-  return { allowed, blocked, lastBlockedResponse };
+  return { allowed, blocked };
 }
 
 describe('points budget enforcement (end to end)', () => {
   beforeEach(() => {
     clearCache();
-    instances.clear();
+    memoryStores.clear();
   });
 
   it('enforces the tenant budget exactly, including requests served by the fast path', async () => {
@@ -81,7 +65,7 @@ describe('points budget enforcement (end to end)', () => {
     const app = buildApp('settle', 't1', 5000, () => 100);
     await hammer(app, 90);
 
-    const state = await instances.get('settle_limit')!.get('tenantId:t1');
+    const state = await memoryStores.get('settle_limit')!.get('tenantId:t1');
     // The DB must contain all 90 requests: 79 from the fast path and 11 from the DB path.
     expect(state?.consumedPoints).toBe(90);
   });
@@ -113,7 +97,7 @@ describe('points budget enforcement (end to end)', () => {
 
     await hammer(small, 12); // exhaust the small tenant's budget of 10
 
-    const instance = instances.get('shared_limit')!;
+    const instance = memoryStores.get('shared_limit')!;
     expect(instance.points).toBe(CEILING);
 
     // Big tenant's traffic must not unblock the small tenant...
@@ -131,11 +115,9 @@ describe('points budget enforcement (end to end)', () => {
     expect(smallAllowedAfterRaise).toBe(9);
   });
 
-  it('sends a Retry-After of at least 1 second on 429', async () => {
-    const app = buildApp('retry', 't1', 5, () => 5);
-    const { lastBlockedResponse } = await hammer(app, 10);
-
-    const retryAfter = Number(lastBlockedResponse!.headers.get('Retry-After'));
-    expect(retryAfter).toBeGreaterThanOrEqual(1);
+  it('floors Retry-After at one second, so a sub-second wait never reads as "retry now"', () => {
+    expect(getRetryAfter(0)).toBe('1');
+    expect(getRetryAfter(400)).toBe('1');
+    expect(getRetryAfter(1500)).toBe('2');
   });
 });

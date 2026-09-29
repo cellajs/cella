@@ -9,6 +9,7 @@ import type {
   presignedUrlsBodySchema,
 } from '#/modules/attachment/attachment-schema';
 import { getSignedUrlFromKey } from '#/modules/attachment/helpers/signed-url';
+import { isSignableKey } from '#/modules/attachment/helpers/storage-key';
 import { checkAccessBatch } from '#/permissions';
 import { accessFrom } from '#/permissions/access';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
@@ -46,11 +47,23 @@ export async function getPresignedUrlsOp(ctx: UserContext, { items }: PresignedU
   const subjects = rows.map((row) => buildSubjectFromEntity('attachment', row));
   const { results } = checkAccessBatch(accessFrom(ctx), 'read', subjects);
 
+  // A row naming storage outside its organization is refused like a denied one, whatever wrote it: an id is signed
+  // for every requested variant or rejected whole.
+  const unsignableIds = new Set(
+    [...pairs.values()]
+      .filter(({ attachmentId, variant }) => {
+        const row = rowById.get(attachmentId);
+        return row && !isSignableKey(selectVariantKey(row, variant), row.bucketName, row.organizationId);
+      })
+      .map(({ attachmentId }) => attachmentId),
+  );
+  const isSignable = (id: string) => rowById.has(id) && results.get(id)?.allowed === true && !unsignableIds.has(id);
+
   const allowedPairs = [...pairs.values()].flatMap((pair) => {
     const row = rowById.get(pair.attachmentId);
-    return row && results.get(pair.attachmentId)?.allowed ? [{ ...pair, row }] : [];
+    return row && isSignable(pair.attachmentId) ? [{ ...pair, row }] : [];
   });
-  const rejectedIds = ids.filter((id) => !rowById.has(id) || !results.get(id)?.allowed);
+  const rejectedIds = ids.filter((id) => !isSignable(id));
 
   const data = await Promise.all(
     allowedPairs.map(async ({ attachmentId, variant, row }) => {

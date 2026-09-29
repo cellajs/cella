@@ -15,17 +15,16 @@ Use when a live-sync symptom needs runtime evidence ("create doesn't show up in 
 
 ## Auth: session-cookie injection
 
-No UI login. Dev cookie: name `cella-development-session-v2`, value `{sha256hex(sessionToken)}.{sessionId}.` (trailing dot = no impersonation), `domain: localhost, path: /, httpOnly: true, secure: false, sameSite: 'Strict'`, set via `context.addCookies`; valid for :3000 and the :4000 API.
+No UI login. The app signs every cookie, so mint one: `pnpm --filter backend session:mint <email>` inserts a session and prints `<cookie-name>=<signed value>` (name `cella-development-session-v3` in development). Set it with `domain: localhost, path: /, httpOnly: true, secure: false, sameSite: 'Strict'` via `context.addCookies`; valid for :3000 and the :4000 API.
 
-**Option A, bench user (deterministic; needs `pnpm --filter bench db:seed` once):**
-user 0 is admin of `xbench/xbench-org`; token `xbench-session-token-000000000000`, sessionId `00000000-0000-4000-a007-000000000000` → cookie value
-`e08a3f990277c545edfa77756948ae130da52f0e5059ba5c30538486499be388.00000000-0000-4000-a007-000000000000.`
+**Option A, bench user (needs `pnpm --filter bench db:seed` once):**
+user 0 is admin of `xbench/xbench-org`: `pnpm --filter backend session:mint xbench-user-0000@xbench.local`.
 ⚠️ xbench-org holds ~500 attachments, over the default org quota (100, `appConfig.defaultRestrictions.quotas.attachment`) → `createAttachments` returns **429 `restrict_by_org`**. Use option A for update/delete experiments only.
 
 **Option B, any seeded org member via magic link (needed for create experiments):**
 1. Pick an org + admin member: `SELECT o.tenant_id, o.slug, u.email FROM organizations o JOIN memberships m ON m.organization_id = o.id AND m.role='admin' JOIN users u ON u.id = m.user_id WHERE o.slug <> 'xbench-org' LIMIT 5;`
 2. `curl -X POST http://localhost:4000/auth/magic/send -H 'content-type: application/json' -d '{"email":"<email>"}'`. MUST send browser-like `user-agent` + `origin: http://localhost:3000` headers or the bot check rejects with `maybe_bot`. Limit: 2 links/30min per email.
-3. The link prints to backend stdout as `[magic-link] <email> <url>`. `curl -c jar.txt <url-with-:4000-and-/auth/invoke-token/...>` (302), then read the cookie value from the jar.
+3. Or skip the link: `pnpm --filter backend session:mint <email>` mints the session directly.
 
 ## Run
 

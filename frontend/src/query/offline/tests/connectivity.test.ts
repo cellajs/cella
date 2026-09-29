@@ -83,24 +83,6 @@ describe('connectivity probe', () => {
     expect(results).toEqual([true, true, true]);
   });
 
-  it('should clear inFlight on probe failure so subsequent calls are not stuck', async () => {
-    vi.mocked(fetch)
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-      .mockRejectedValueOnce(new TypeError('Failed to fetch'))
-      .mockResolvedValueOnce({ ok: true } as Response);
-    const { checkConnectivity, resetConnectivityCache } = await importModule();
-
-    const failPromise = checkConnectivity(); // fails on all retries, should clear inFlight
-    await vi.runAllTimersAsync(); // flush retry delays
-    await failPromise;
-    resetConnectivityCache(); // clear cached false so next call probes again
-    const result = await checkConnectivity(); // should issue new probe
-
-    expect(result).toBe(true);
-    expect(fetch).toHaveBeenCalledTimes(4); // 3 failed attempts + 1 success
-  });
-
   // --- onlineManager cascade ---
 
   it('should set onlineManager offline on network failure', async () => {

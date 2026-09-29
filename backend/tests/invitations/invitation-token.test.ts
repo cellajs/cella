@@ -1,20 +1,16 @@
 import { eq } from 'drizzle-orm';
 import { getMyInvitations, getTokenData } from 'sdk';
-import { afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { defaultHeaders } from '../fixtures';
-import { createTestOrganization, createTestSession, createTestUser } from '../helpers';
+import { createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
-import { clearDatabase, mockFetchRequest, setTestConfig } from '../test-utils';
+import { clearDatabase, setTestConfig } from '../test-utils';
 import { createInvitation } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
-
-beforeAll(async () => {
-  mockFetchRequest();
-});
 
 afterEach(async () => await clearDatabase());
 
@@ -59,54 +55,23 @@ describe('Invitation token data', async () => {
     expect((invitations as { total: number }).total).toBe(1);
   });
 
-  it('does not bind to an account that holds the address without having proven it', async () => {
+  it("must not read another invitation's data via a browser that holds a different one", async () => {
     const organization = await createTestOrganization();
     const inviter = await createTestUser('inviter@example.com');
-    const { token, inactiveMembership, invitationCookie } = await createInvitation({
+    const held = await createInvitation({
       token: 'invoked',
-      email: 'squatted@example.com',
+      email: 'held@example.com',
       organization,
       createdBy: inviter.id,
     });
-    // Someone typed the address into sign-up and never clicked the link.
-    await createTestUser('squatted@example.com', false);
+    const other = await createInvitation({ email: 'other@example.com', organization, createdBy: inviter.id });
 
-    const { response, data } = await call(getTokenData, {
-      path: { type: 'invitation', id: token.id },
-      headers: { ...defaultHeaders, Cookie: invitationCookie },
+    const { response, error } = await call(getTokenData, {
+      path: { type: 'invitation', id: other.token.id },
+      headers: { ...defaultHeaders, Cookie: held.invitationCookie },
     });
 
-    expect(response.status).toBe(200);
-    expect((data as { userId: string }).userId).toBe('');
-    const [stillUnbound] = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
-    expect(stillUnbound.userId).toBeNull();
-  });
-
-  it('leaves the invitation unbound when no user owns the address', async () => {
-    const organization = await createTestOrganization();
-    const inviter = await createTestUser('inviter@example.com');
-    const { token, inactiveMembership, invitationCookie } = await createInvitation({
-      token: 'invoked',
-      email: 'nobody@example.com',
-      organization,
-      createdBy: inviter.id,
-    });
-
-    const { response, data } = await call(getTokenData, {
-      path: { type: 'invitation', id: token.id },
-      headers: { ...defaultHeaders, Cookie: invitationCookie },
-    });
-
-    expect(response.status).toBe(200);
-    expect((data as { userId: string }).userId).toBe('');
-
-    const [unbound] = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
-    expect(unbound.userId).toBeNull();
+    // The same answer as without a cookie: the browser holds no token by that id.
+    await expectRefusal({ response, error }, 401, 'invitation_not_found');
   });
 });

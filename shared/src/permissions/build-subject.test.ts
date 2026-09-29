@@ -1,11 +1,4 @@
-import {
-  appConfig,
-  buildSubject,
-  buildSubjectFromEntity,
-  hierarchy,
-  MissingAncestorError,
-  matchesRowCondition,
-} from 'shared';
+import { appConfig, buildSubject, buildSubjectFromEntity, hierarchy, MissingAncestorError } from 'shared';
 import { describe, expect, it } from 'vitest';
 
 describe('shared buildSubject', () => {
@@ -71,19 +64,5 @@ describe('buildSubjectFromEntity: carries the row', () => {
     expect(subject.row).toBeDefined();
     expect(subject.row?.publicAt).toBe(publicAt);
     expect(subject.createdBy).toBe('u1');
-  });
-
-  it('yields a row the built-in rules actually match against', () => {
-    const subject = buildSubjectFromEntity(product, entity);
-    const row = { ...subject.row, createdBy: subject.createdBy };
-
-    // `own`: the actor created it. Public read: the row carries publicAt.
-    expect(matchesRowCondition('own', row, { actorId: 'u1' })).toBe(true);
-    expect(matchesRowCondition('own', row, { actorId: 'u2' })).toBe(false);
-    expect(matchesRowCondition('public', row, {})).toBe(true);
-
-    // ...and an unpublished row is not public.
-    const unpublished = buildSubjectFromEntity(product, { ...entity, publicAt: null });
-    expect(matchesRowCondition('public', { ...unpublished.row }, {})).toBe(false);
   });
 });

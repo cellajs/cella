@@ -8,6 +8,7 @@ export {
 export {
   allActionsAllowed,
   allActionsDenied,
+  type CanHome,
   createActionRecord,
   isUnconditionalCan,
   resolveCan,

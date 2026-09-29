@@ -60,13 +60,13 @@ describe('config inversion sweep', () => {
     const dir = mkdtempSync(join(tmpdir(), 'engine-config-'));
     const modulePath = join(dir, 'config.mjs');
     writeFileSync(modulePath, `export const engineConfig = ${JSON.stringify(fakeConfig({ slug: 'pointer-app' }))}\n`);
-    process.env.INFRA_CONFIG_MODULE = modulePath;
+    vi.stubEnv('INFRA_CONFIG_MODULE', modulePath);
     try {
       const { loadEngineConfig } = await import('../../config/engine-config');
       const config = await loadEngineConfig();
       expect(config.slug).toBe('pointer-app');
     } finally {
-      delete process.env.INFRA_CONFIG_MODULE;
+      vi.unstubAllEnvs();
       rmSync(dir, { recursive: true, force: true });
     }
   });

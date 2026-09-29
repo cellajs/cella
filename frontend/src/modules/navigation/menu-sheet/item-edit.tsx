@@ -34,12 +34,10 @@ export function MenuItemEdit({ item, icon: Icon }: MenuItemEditProps) {
         tenantId: item.tenantId,
         organizationId: item.membership.organizationId,
       },
+      body: key === 'archived' ? { archived: !item.membership.archived } : { muted: !item.membership.muted },
       channelId: item.id,
       channelType: item.entityType,
     };
-
-    if (key === 'archived') updatedMembership.body = { archived: !item.membership.archived };
-    if (key === 'muted') updatedMembership.body = { muted: !item.membership.muted };
 
     updateMembership(updatedMembership);
   };

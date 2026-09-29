@@ -1,7 +1,7 @@
 import { appConfig } from 'shared';
 import type { requestTypeEnum } from '#/modules/requests/requests-db';
 import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText, SafeHtml } from '../components';
-import { i18n } from '../i18n';
+import { i18n, plainText } from '../i18n';
 import { defineEmailTemplate } from '../types';
 
 export type RequestType = (typeof requestTypeEnum)[number];
@@ -15,7 +15,12 @@ interface RequestResponseStatic {
 export const requestResponseEmail = defineEmailTemplate<RequestResponseStatic>()({
   translate(lng, { type }) {
     return {
-      subject: i18n.t('backend:email.request.subject', { lng, appName: appConfig.name, requestType: type }),
+      subject: i18n.t('backend:email.request.subject', {
+        lng,
+        appName: appConfig.name,
+        requestType: type,
+        ...plainText,
+      }),
       headerHtml: i18n.t(`backend:email.${type}_request.title`, { lng }),
       bodyHtml: i18n.t(`backend:email.${type}_request.text`, { lng, appName: appConfig.name }),
       supportText: i18n.t('backend:email.support_email', { lng }),

@@ -14,6 +14,8 @@ export interface UploadBootDiagnosticsOptions {
   appLogs?: string;
   /** Black-box event stream (JSONL of OTLP log records), uploaded alongside the raw log. */
   events?: string;
+  /** Redaction by value (see secret-redactor.ts), applied to every uploaded object: boot log, app logs and events. */
+  redact: (text: string) => string;
   now?: Date;
   fetchImpl?: FetchLike;
 }
@@ -97,13 +99,13 @@ export async function uploadBootDiagnostics(opts: UploadBootDiagnosticsOptions):
   ];
   // The boot runner runs containerized without the host boot log mounted, so the file read above is usually empty and the captured app logs carry the crash reason.
   if (opts.appLogs?.trim()) parts.push('', '--- app logs ---', scrubSecretLines(opts.appLogs));
-  const body = parts.join('\n');
+  const body = opts.redact(parts.join('\n'));
   const keys = [`boot-diag/${opts.service}-${keyStamp}-boot.log`];
   if (opts.bootRc !== 0) keys.push(`boot-diag/${opts.service}-failed-${keyStamp}.log`);
   for (const key of keys) await putObject({ ...opts, now }, key, body);
   if (opts.events?.trim()) {
     const eventsKey = `boot-diag/${opts.service}-${keyStamp}-events.jsonl`;
-    await putObject({ ...opts, now }, eventsKey, `${opts.events}\n`);
+    await putObject({ ...opts, now }, eventsKey, `${opts.redact(opts.events)}\n`);
     keys.push(eventsKey);
   }
   return keys;

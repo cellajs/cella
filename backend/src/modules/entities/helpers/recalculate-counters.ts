@@ -200,14 +200,12 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
-  // Canonical channel paths let catchup verify ancestry; CDC maintains them incrementally.
+  // Canonical channel paths let catchup verify ancestry; CDC keeps them, this copies the ones that differ.
   for (const channelType of hierarchy.channelTypes) {
     await db.execute(
-      sql.raw(`
-      UPDATE channel_counters cc SET path = c.path
+      sql.raw(`UPDATE channel_counters cc SET path = c.path
       FROM ${tbl(channelType as EntityType)} c
-      WHERE cc.channel_key = c.id::text AND cc.path IS DISTINCT FROM c.path
-    `),
+      WHERE cc.channel_key = c.id::text AND cc.path IS DISTINCT FROM c.path`),
     );
   }
 

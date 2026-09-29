@@ -880,12 +880,6 @@
                 "converted": { "type": "string", "required": false }
               }
             },
-            "bucketName": { "type": "string", "required": true, "maxLength": 255 },
-            "publicBucket": {
-              "type": "boolean",
-              "required": false,
-              "description": "When true, the file is stored in the public bucket and served from the CDN without a presigned URL."
-            },
             "groupId": {
               "type": ["string", "null"],
               "required": false,
