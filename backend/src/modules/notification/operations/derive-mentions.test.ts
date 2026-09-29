@@ -32,22 +32,22 @@ const run = async (deriveFrom: NotificationSource['deriveFrom'], payload: Mutati
 describe('deriveMentions deriveFrom', () => {
   it('client: skips Yjs materialization', async () => {
     expect(await run('client', { after: [staleRow] })).toBe(1);
-    expect(await run('client', { after: [staleRow], serverOrigin: true })).toBe(0);
+    expect(await run('client', { after: [staleRow], materialized: true })).toBe(0);
   });
 
-  it('materialized: derives only from server-origin writes, the body of record for Yjs-edited rows', async () => {
-    expect(await run('materialized', { after: [staleRow], serverOrigin: true })).toBe(1);
+  it("materialized: derives only from the relay's materialization, the body of record for Yjs-edited rows", async () => {
+    expect(await run('materialized', { after: [staleRow], materialized: true })).toBe(1);
     expect(await run('materialized', { after: [staleRow] })).toBe(0);
   });
 
   it('both: derives from either path', async () => {
     expect(await run('both', { after: [staleRow] })).toBe(1);
-    expect(await run('both', { after: [staleRow], serverOrigin: true })).toBe(1);
+    expect(await run('both', { after: [staleRow], materialized: true })).toBe(1);
   });
 
   it('writes nothing when the derived set already matches the stored one', async () => {
     const current = { ...staleRow, mentions: [] };
-    expect(await run('both', { after: [current], serverOrigin: true })).toBe(0);
+    expect(await run('both', { after: [current], materialized: true })).toBe(0);
   });
 
   it('skips rows whose body did not change between before and after', async () => {

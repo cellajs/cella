@@ -105,7 +105,7 @@ export async function materializeDescriptionOp(
         ctx,
         input.entityId,
         { ops: { description }, stx: { mutationId: uuidv7(), sourceId: 'yjs-relay', fieldTimestamps: {} } },
-        { serverOrigin: true },
+        { serverOrigin: true, materialized: true },
       );
       return { sanitized };
     } catch (err) {

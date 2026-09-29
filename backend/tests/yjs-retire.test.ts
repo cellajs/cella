@@ -3,7 +3,12 @@ import { deleteAttachments, updateAttachment } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type { ActorContext } from '#/core/context';
 import { generateServerHLC } from '#/core/stx';
+import { baseDb } from '#/db/db';
+import { updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { usersTable } from '#/modules/user/user-db';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
@@ -67,6 +72,24 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs document retireme
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
 
+  /** The context an MCP tool call runs its operation in: the tenant's user acting in the organization. */
+  const toolContext = async () => {
+    const [user] = await baseDb.select().from(usersTable).where(eq(usersTable.id, tenant.user.id));
+    const bindings = await baseDb.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
+    return {
+      var: {
+        user,
+        userId: user.id,
+        actor: { kind: 'user', id: user.id, bindings, scopes: null },
+        isSystemAdmin: false,
+        memberships: bindings,
+        db: baseDb,
+        tenantId: tenant.tenantId,
+        organizationId: tenant.organization.id,
+      },
+    } as unknown as ActorContext; // a stand-in for the guards' context, with the fields the operation reads
+  };
+
   beforeAll(async () => {
     tenant = await createTestTenant(call, 'yjs-retire');
     attachment = await seedAttachment({
@@ -104,6 +127,19 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs document retireme
     const { response } = await putDescription(paragraph('rewritten elsewhere'));
     expect(response.status).toBe(200);
     expect((await attachment.read())?.description).toContain('rewritten elsewhere');
+    expect(await documentRows()).toEqual({ docs: 0, log: 0 });
+  });
+
+  it('must not keep a document whose description a server-clock write outside the relay changed, as an MCP tool does', async () => {
+    await seedDocument();
+    // The MCP update tool builds its transaction on the server, so it takes the server clock; it is no materialization.
+    await updateAttachmentOp(
+      await toolContext(),
+      attachment.id,
+      { ops: { description: paragraph('written by a tool') }, stx: { ...mockStxBase(`stx:${generateId()}`) } },
+      { serverOrigin: true },
+    );
+    expect((await attachment.read())?.description).toContain('written by a tool');
     expect(await documentRows()).toEqual({ docs: 0, log: 0 });
   });
 

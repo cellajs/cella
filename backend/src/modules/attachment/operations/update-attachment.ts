@@ -13,15 +13,18 @@ import { assertBlockMediaUrls } from '#/utils/validate-block-urls';
 
 type UpdateAttachmentInput = z.infer<typeof attachmentUpdateStxBodySchema>;
 
-/** Also the attachment's Yjs materializer: the relay calls it with `serverOrigin` for a collaborative description. */
+/**
+ * Also the attachment's Yjs materializer: the relay calls it with `materialized` for a collaborative description.
+ * `serverOrigin` stamps the fields with the server clock, for a transaction the server built (an MCP tool, the relay).
+ */
 export async function updateAttachmentOp(
   ctx: ActorContext,
   id: string,
   input: UpdateAttachmentInput,
-  opts: { serverOrigin?: boolean },
+  opts: { serverOrigin?: boolean; materialized?: boolean },
 ) {
   const { ops: rawOps, stx } = input;
-  const { serverOrigin } = opts;
+  const { serverOrigin, materialized } = opts;
   const actorId = ctx.var.actor.id;
 
   const updatedAttachmentRecord = await tenantContext(ctx, async (txCtx) => {
@@ -49,7 +52,7 @@ export async function updateAttachmentOp(
     };
     const updated = await updateAttachment(txCtx, { id, values });
     // Inside the transaction, `before`/`after` index-aligned as the mutation bus contract requires.
-    await dispatchMutation(txCtx, 'attachment.updated', { before: [entity], after: [updated], serverOrigin });
+    await dispatchMutation(txCtx, 'attachment.updated', { before: [entity], after: [updated], materialized });
     return updated;
   });
 

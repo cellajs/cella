@@ -86,7 +86,7 @@ export interface NotificationCandidate {
  *
  * The fan-out runs off the CDC activity stream, but mention derivation listens on the mutation
  * bus, so the module's create and update ops must `dispatchMutation(txCtx, '<type>.created' |
- * '<type>.updated', { before, after })` inside the write transaction (`serverOrigin: true` for
+ * '<type>.updated', { before, after })` inside the write transaction (`materialized: true` for
  * Yjs materialization); see the attachment ops for the shape. Deep links need no declaration:
  * emails and push carry the subject's location for the frontend `/n` route.
  */

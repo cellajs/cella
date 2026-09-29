@@ -56,7 +56,7 @@ export async function deriveMentions(
 
 function derivesFrom(mode: NotificationSource['deriveFrom'], payload: MutationPayload): boolean {
   if (mode === 'both') return true;
-  return payload.serverOrigin ? mode === 'materialized' : mode === 'client';
+  return payload.materialized ? mode === 'materialized' : mode === 'client';
 }
 
 function sameSet(a: string[], b: string[]): boolean {
