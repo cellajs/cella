@@ -194,6 +194,8 @@ RUN --mount=type=cache,id=pnpm-store,target=/root/.local/share/pnpm/store \
 COPY yjs/ ./yjs/
 COPY backend/src ./backend/src
 COPY shared/ ./shared/
+# AppError's messages bundle the backend translations
+COPY locales/ ./locales/
 
 WORKDIR /app/yjs
 RUN pnpm build
