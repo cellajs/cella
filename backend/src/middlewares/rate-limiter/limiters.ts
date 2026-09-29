@@ -4,9 +4,15 @@ import { rateLimiter } from '#/middlewares/rate-limiter/core';
 import { bulkBodyLength } from '#/middlewares/rate-limiter/helpers';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 
+/**
+ * A proof that verified on a sign-in route: TOTP and passkey sign-in answer 204, a link or a provider callback 302. A
+ * refusal that redirects counts by its own status (`errorStatus`), so here a 302 is a success. A route that answers 204
+ * whatever the outcome (a mail sent or not) never takes these codes, so it cannot end a failure series.
+ */
+const proofSuccessStatusCodes = [200, 201, 204, 302];
+
 /** Keyed per user when authenticated, so invite flows behind a shared NAT IP get their own budget. */
 export const spamLimiter = rateLimiter('success', 'spam', [['userId', 'ip']], {
-  // Count 204 delivery responses as success here only, so they cannot reset fail-series enumeration limits
   limits: { successStatusCodes: [200, 201, 204] },
   description: 'Max 10 requests/hour per user (per IP when anonymous) for email-sending endpoints',
 });
@@ -22,6 +28,7 @@ export const emailEnumLimiter = rateLimiter('limit', 'emailEnum', ['ip'], {
 
 export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
   rateLimiter('failseries', `token_${tokenType}`, ['ip'], {
+    limits: { successStatusCodes: proofSuccessStatusCodes },
     functionName: 'tokenLimiter',
     name: 'token',
     description: 'Blocks IP for 30 min after 10 consecutive token failures',
@@ -34,7 +41,7 @@ export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', [['userI
 
 /** Keyed by IP, across accounts. Each account also has its own budget, with a lockout mail, in `verifyTotp`. */
 export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerification', ['ip'], {
-  limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30 },
+  limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30, successStatusCodes: proofSuccessStatusCodes },
   description: 'Blocks IP for 30 min after 5 failed TOTP attempts',
 });
 

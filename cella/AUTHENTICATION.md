@@ -110,7 +110,7 @@ Routes declare their limiter in `xRateLimiter`, which appears in OpenAPI. The sh
 | `emailEnumLimiter` | Address lookups per IP, hits included | 30 per hour, then 30 minutes blocked |
 | `spamLimiter` | Mails sent per user, per IP when anonymous | 10 per hour |
 | `tokenLimiter` | Failed link, callback and passkey sign-ins per IP; a success ends the series | 10, then 30 minutes blocked |
-| `totpVerificationLimiter` | Failed TOTP codes per IP | 5 per hour, then 30 minutes blocked |
+| `totpVerificationLimiter` | Failed TOTP codes per IP; a code that verifies ends the series | 5 per hour, then 30 minutes blocked |
 | The TOTP account budget | Failed TOTP codes per account, whatever the IP | 5 per hour, then 30 minutes locked and a mail |
 | `stepUpLimiter` | Failed second-factor checks on step-up, per account | 5 per hour, then 30 minutes blocked |
 | `passkeyChallengeLimiter` | Passkey challenges per IP | 30 per hour |

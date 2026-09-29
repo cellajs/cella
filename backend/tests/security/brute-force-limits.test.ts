@@ -148,6 +148,20 @@ describe('brute-force budgets', async () => {
     expect((await answerFrom(randomIp(), totpCode())).status).toBe(204);
   });
 
+  it('lets people behind one address keep signing in with a second factor: a code that verifies ends the failure series', async () => {
+    const ip = randomIp();
+    const answerFrom = async (code: string) => {
+      const user = await createTotpUser(`totp-shared-${nanoid(8)}@security-test.com`);
+      const Cookie = authCookie('confirm-mfa', await createMfaToken(user));
+      return (await call(signInWithTotp, { body: { code }, headers: { ...fromIp(ip), Cookie } })).response.status;
+    };
+
+    // A campus address: mistyped codes of several people, one sign-in that verifies (204), then more mistypes.
+    for (let attempt = 0; attempt < 4; attempt++) expect(await answerFrom(wrongTotpCode())).toBe(401);
+    expect(await answerFrom(totpCode())).toBe(204);
+    for (let attempt = 0; attempt < 4; attempt++) expect(await answerFrom(wrongTotpCode())).toBe(401);
+  });
+
   it("must not keep guessing one account's authenticator codes from many IPs via totp-verification", async () => {
     const user = await createTotpUser(`totp-spread-${nanoid(8)}@security-test.com`);
     const cookie = authCookie('confirm-mfa', await createMfaToken(user));
