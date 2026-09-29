@@ -24,7 +24,7 @@ export async function sweepOidcPayloads(): Promise<number> {
   return deleted.length;
 }
 
-/** Hourly, on the jobs service; the quarter-hour offset keeps it clear of the digest tick. */
+/** Hourly, on the jobs worker; the quarter-hour offset keeps it clear of the digest tick. */
 export const oidcPayloadsSweepJob: BackendJob = {
   name: 'oidc-payloads-sweep',
   cron: '15 * * * *',

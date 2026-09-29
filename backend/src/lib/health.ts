@@ -70,7 +70,7 @@ function buildMcpSelfComponent(): HealthComponent {
   return { status: 'healthy', checkedVia: 'local', details: { mode } };
 }
 
-/** The job store as read from the database: the api process and the jobs service report the same component. */
+/** The job store as read from the database: the api process and the jobs worker report the same component. */
 async function buildJobsComponent(): Promise<HealthComponent> {
   try {
     return mapJobsComponent(await readJobsHealth(), getBackendJobs().length > 0);
@@ -84,7 +84,7 @@ async function buildJobsComponent(): Promise<HealthComponent> {
 /**
  * Aggregates every dependency and sibling worker into a uniform `component` keyed by name. The api process grades
  * itself, checks the database and its auth invalidation listener, reads the pushed CDC report, probes yjs/mcp and
- * reads the job store; the mcp worker grades the same three and reports itself; the jobs service grades itself, the
+ * reads the job store; the mcp worker grades the same three and reports itself; the jobs worker grades itself, the
  * database and the store.
  */
 async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: number }> {
@@ -93,7 +93,7 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
   const dbCheck = await checkDatabase();
   components.api = { ...mapApiComponent(getEventLoopLagMs(), process.memoryUsage()), label: 'API' };
   components.database = { ...mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs), label: 'Database' };
-  // The jobs service serves no request, so it holds no guard cache that an invalidation would have to reach.
+  // The jobs worker serves no request, so it holds no guard cache that an invalidation would have to reach.
   if (env.MODE !== 'jobs') components.authInvalidation = { ...authInvalidationHealth(), label: 'Auth invalidation' };
 
   if (env.MODE === 'mcp') {

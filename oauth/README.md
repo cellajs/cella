@@ -58,7 +58,7 @@ Every token names a resource (RFC 8707): `<backendUrl>/t/<tenant>` for the REST 
 
 ## Store and sweep
 
-`oidc_payloads` is the provider's store, one row per model instance keyed by `(type, id)`: grants, sessions, interactions, authorization codes, refresh tokens, replay detection. Codes and refresh tokens are keyed by the SHA-256 of their value and keep no copy of it. Each is spent once by a conditional update: a second spend, sequential or concurrent, is a replay and revokes the grant with every token issued under it. The consenting user's id is lifted into an indexed column so the account page and a revoke are index reads. An hourly cron job on the [jobs service](../jobs/README.md) (`oidc-payloads-sweep`) deletes expired rows and consumed rows older than thirty days.
+`oidc_payloads` is the provider's store, one row per model instance keyed by `(type, id)`: grants, sessions, interactions, authorization codes, refresh tokens, replay detection. Codes and refresh tokens are keyed by the SHA-256 of their value and keep no copy of it. Each is spent once by a conditional update: a second spend, sequential or concurrent, is a replay and revokes the grant with every token issued under it. The consenting user's id is lifted into an indexed column so the account page and a revoke are index reads. An hourly cron job on the [jobs worker](../jobs/README.md) (`oidc-payloads-sweep`) deletes expired rows and consumed rows older than thirty days.
 
 ## Operational constraints
 

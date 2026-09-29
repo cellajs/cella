@@ -25,7 +25,7 @@ export const modeSecrets: Readonly<Record<ModeSecret, readonly ProcessMode[]>> =
   CDC_SECRET: ['api'],
   YJS_TOKEN_PRIVATE_KEY: ['api'],
   YJS_RELAY_SECRET: ['api'],
-  // The digest's unsubscribe links are signed where the digest runs: the jobs service.
+  // The digest's unsubscribe links are signed where the digest runs: the jobs worker.
   UNSUBSCRIBE_SECRET: ['api', 'mcp', 'jobs'],
   PII_HASH_SECRET: ['api', 'mcp'],
   // Read by the admin seed alone, which the release companion (MODE=migrate) runs with the API's secrets.

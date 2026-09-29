@@ -5,19 +5,19 @@ import { env } from '#/env';
 import { baseLog } from '#/lib/pino';
 
 /**
- * What a process does with the job store. `producer` only enqueues (the API), `worker` also runs
+ * What a process does with the job store. `producer` only enqueues (the API), `consumer` also runs
  * handlers, `maintainer` additionally owns cron and queue supervision: one process per deployment,
- * the jobs service. Each role is a superset of the one before it.
+ * the jobs worker. Each role is a superset of the one before it.
  */
-export type JobsRole = 'producer' | 'worker' | 'maintainer';
+export type JobsRole = 'producer' | 'consumer' | 'maintainer';
 
-const roleRank: Record<JobsRole, number> = { producer: 0, worker: 1, maintainer: 2 };
+const roleRank: Record<JobsRole, number> = { producer: 0, consumer: 1, maintainer: 2 };
 
 /** pg-boss schema; tests use their own so the shared test database never touches a development store. */
 export const JOBS_SCHEMA = appConfig.mode === 'test' ? 'pgboss_test' : 'pgboss';
 
 /** Per-process listener connection on top of this pool: the budget in DB-DEV-S terms is 5 + 1 per worker. */
-const POOL_MAX: Record<JobsRole, number> = { producer: 2, worker: 5, maintainer: 5 };
+const POOL_MAX: Record<JobsRole, number> = { producer: 2, consumer: 5, maintainer: 5 };
 
 const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
 

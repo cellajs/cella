@@ -9,7 +9,7 @@ import type { NotificationType } from '#/modules/notification/notification-types
 import type { YjsMaterializer } from '#/modules/yjs/yjs-materializers';
 
 /**
- * A periodic job: pg-boss cron on a singleton queue named after the job, run by the jobs service.
+ * A periodic job: pg-boss cron on a singleton queue named after the job, run by the jobs worker.
  * One run per period whatever the number of API processes; a run that overruns delays the next
  * one, never overlaps it. A throw fails the run (no retry, the next period runs again).
  */
@@ -27,7 +27,7 @@ export interface BackendJob {
 export type BackendQueueHandler = (jobs: Job<Record<string, unknown>>[]) => Promise<unknown>;
 
 /**
- * A queue a module owns. The jobs service creates it, converges its options at every start, and
+ * A queue a module owns. The jobs worker creates it, converges its options at every start, and
  * runs `handler` when one is given; a queue without a handler is worked by another worker service.
  * `partition: true` needs the table owner, so the migrate companion creates such queues (it creates
  * every declared queue); a dead-letter queue named here must be declared as a queue too.
@@ -121,9 +121,9 @@ export interface BackendModule extends ModuleConfig {
   yjsMaterializer?: YjsMaterializer;
   /** In-request reactions keyed by `<type>.<verb>`; a module may react to any tracked type, several to one event. */
   onMutation?: Partial<Record<TrackedEventType, MutationHandler>>;
-  /** Cron jobs the jobs service schedules and runs (see {@link BackendJob}). */
+  /** Cron jobs the jobs worker schedules and runs (see {@link BackendJob}). */
   jobs?: BackendJob[];
-  /** Queues the jobs service creates and, given a handler, works (see {@link BackendQueue}). */
+  /** Queues the jobs worker creates and, given a handler, works (see {@link BackendQueue}). */
   queues?: BackendQueue[];
   /** Notification source for `productEntity`: `true` for the table-derived defaults, or overrides (indexed by the notification module). */
   notifications?: true | ModuleNotifications;

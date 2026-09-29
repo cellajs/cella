@@ -33,14 +33,14 @@ async function startMaintainer() {
 }
 
 /**
- * The jobs service: the one process per deployment that runs pg-boss cron and supervision, works
+ * The jobs worker: the one process per deployment that runs pg-boss cron and supervision, works
  * the template's queues and creates queues declared by modules. Its own process (`MODE=jobs`) on
  * `devPorts.jobs`, or folded into the API under `singleVM`, where the API's `/health` already
  * carries the jobs component and its shutdown stops the store.
  */
 export async function startJobsWorker(options: { port?: number; inProcess?: boolean } = {}): Promise<void> {
   if (appConfig.services.jobs.enabled === false) {
-    baseLog.info('Jobs service disabled by appConfig');
+    baseLog.info('Jobs worker disabled by appConfig');
     return;
   }
   const port = options.port ?? Number(env.PORT);
@@ -65,7 +65,7 @@ export async function startJobsWorker(options: { port?: number; inProcess?: bool
   let server: ServerType | undefined;
   if (!options.inProcess) {
     server = serve({ fetch: healthApp.fetch, hostname: '0.0.0.0', port }, () => {
-      baseLog.info(`Jobs service listening on port ${port}`);
+      baseLog.info(`Jobs worker listening on port ${port}`);
     });
     setupGracefulShutdown({
       name: 'jobs',

@@ -51,7 +51,7 @@ const main = async () => {
     await pgMigrate(migrationDb, migrateConfig);
     const { schedulePartitionMaintenance } = await import('../scripts/db/schedule-partition-maintenance');
     await schedulePartitionMaintenance();
-    // The job store (pg-boss) is installed by the same owner that migrates; the jobs service runs it.
+    // The job store (pg-boss) is installed by the same owner that migrates; the jobs worker runs it.
     const { installJobsSchema } = await import('../scripts/db/install-jobs-schema');
     await installJobsSchema();
 
@@ -99,7 +99,7 @@ const main = async () => {
             port: appConfig.devPorts.oauth,
             inProcess: true,
           });
-        // The folded jobs service needs no port: this process's /health carries the jobs component.
+        // The folded jobs worker needs no port: this process's /health carries the jobs component.
         if (appConfig.services.jobs.enabled)
           await (await import('#/lib/jobs-worker')).startJobsWorker({ inProcess: true });
       }

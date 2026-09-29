@@ -1,4 +1,4 @@
-# Scheduled jobs run on pg-boss through the jobs service
+# Scheduled jobs run on pg-boss through the jobs worker
 
 ## What & why
 

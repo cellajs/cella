@@ -36,7 +36,7 @@ Below you see a typical full production stack. However, Yjs, OAuth and MCP are o
 | **OpenAPI owns the contract** | Zod-backed Hono routes generate the typed SDK used by the React app and external clients. |
 | **TanStack Query owns server state** | Reads, optimistic writes, realtime changes, and restored offline data converge in one cache. |
 | **One hierarchy configuration** | Configuration defines entities, their parents, roles, and the behavior derived from them. |
-| **Workers add capabilities** | Change data capture (CDC), Yjs, OAuth and MCP workers run separately or alongside the API. |
+| **Workers add capabilities** | Change data capture (CDC), Yjs, OAuth, MCP and jobs workers run separately or alongside the API. |
 
 Cella favors a narrow stack over replaceable abstractions: React, TanStack Router, TanStack Query, Zustand, Hono, Zod, Drizzle, and Dexie stay visible. The default app is a client-rendered progressive web app (PWA) on open standards, deployable to European-owned cloud infrastructure through Scaleway and Pulumi.
 
@@ -73,7 +73,7 @@ The permission engine lives in `shared/`, so the API and the optional Yjs relay 
 
 Backend modules define Hono routes with Zod schemas, which generate an OpenAPI 3.1 document. The `sdk` package uses that document to generate the fetch client, TypeScript types, and validation schemas consumed by the frontend. It also powers API docs and deterministic examples. Shared mocks serve docs, seeds, tests, and load tests.
 
-Backend and other service workers share OpenTelemetry setup ([Observability](./OTEL.md)). CDC, Yjs, OAuth and MCP are independent workers with health and shutdown contracts. Pulumi deploys to Scaleway through GitHub Actions ([infrastructure guide](../infra/README.md)).
+The backend and its workers share OpenTelemetry setup ([Observability](./OTEL.md)). CDC, Yjs, OAuth, MCP and jobs are independent workers with health and shutdown contracts. Pulumi deploys to Scaleway through GitHub Actions ([infrastructure guide](../infra/README.md)).
 
 Tests cover generated contracts, permission parity, cross-scope access, database constraints, sync catchup, and offline replay ([Testing](./TESTING.md)).
 
@@ -91,6 +91,7 @@ Flat-root monorepo:
 ├── yjs           Optional collaborative-editing relay
 ├── mcp           Optional Model Context Protocol worker
 ├── oauth         Optional OAuth authorization server worker
+├── jobs          Jobs worker: cron and queues on pg-boss
 ├── infra         Pulumi deployment and operational CLI
 ├── cella         Architecture, guides, changelog, and upgrade migrations
 ├── locales       Translations

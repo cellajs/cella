@@ -1,7 +1,7 @@
 {
   "name": "jobs-worker",
   "version": "0.0.1",
-  "description": "Standalone jobs service (pg-boss cron, queue supervision and the template's queue workers)",
+  "description": "Standalone jobs worker (pg-boss cron, queue supervision and the template's queue handlers)",
   "type": "module",
   "engines": {
     "node": "26.x"

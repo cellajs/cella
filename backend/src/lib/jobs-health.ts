@@ -42,7 +42,7 @@ interface QueueRow extends Record<string, unknown> {
 }
 
 /**
- * Reads the job store directly, so the API reports it without reaching the jobs service: live
+ * Reads the job store directly, so the API reports it without reaching the jobs worker: live
  * counts per queue (pg-boss's internal queues left out) and the scheduler's last pass. Works for any role with read access to
  * the schema; an absent schema (before the first migrate) reads as not installed.
  */

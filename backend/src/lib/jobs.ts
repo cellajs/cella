@@ -27,7 +27,7 @@ export function declaredQueues({
 
 /**
  * Checks the declarations once per process: unique names, every dead-letter target declared, cron
- * expressions the scheduler accepts. Runs on the jobs service at start and in the unit test, so a
+ * expressions the scheduler accepts. Runs on the jobs worker at start and in the unit test, so a
  * bad declaration fails before anything is created.
  * @param preview - Validates one cron expression by evaluating it (pg-boss's `previewSchedule`).
  */
