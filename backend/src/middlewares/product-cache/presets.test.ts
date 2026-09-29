@@ -24,15 +24,16 @@ const { productCache } = await import('./presets');
 // break an `own` grant if fed to the permission subject verbatim.
 const cachedAttachment = {
   id: 'att-1',
+  tenantId: 'tenant-1',
   organizationId: 'org-1',
   createdBy: { id: 'user-1', name: 'Ann', entityType: 'user' },
   publicAt: null,
   name: 'file.png',
 };
 
-const mockCtx = () => ({
+const mockCtx = ({ tenantId = 'tenant-1', organizationId = 'org-1' } = {}) => ({
   req: { param: () => 'att-1' },
-  var: { memberships: [] },
+  var: { memberships: [], tenantId, organizationId },
   get: () => undefined,
   set: vi.fn(),
   header: vi.fn(),
@@ -63,6 +64,20 @@ describe('productCache: per-request authorization on cache hit', () => {
     await productCache('attachment')(mockCtx() as never, vi.fn());
 
     expect(buildSubjectFromEntity).toHaveBeenCalledWith('attachment', expect.objectContaining({ createdBy: 'user-1' }));
+  });
+
+  it.each([
+    { scope: 'another tenant', path: { tenantId: 'tenant-2' } },
+    { scope: 'another organization', path: { organizationId: 'org-2' } },
+  ])('must not serve a cached row on the path of $scope, even when the engine allows the read', async ({ path }) => {
+    checkAccess.mockReturnValue({ allowed: true });
+    const ctx = mockCtx(path);
+    const next = vi.fn();
+
+    await productCache('attachment')(ctx as never, next);
+
+    expect(next).toHaveBeenCalledOnce();
+    expect(ctx.json).not.toHaveBeenCalled();
   });
 
   it('falls through to the handler (never a stale serve) when the caller is NOT allowed', async () => {

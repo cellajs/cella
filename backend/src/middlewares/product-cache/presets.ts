@@ -67,10 +67,13 @@ function isEnriched(value: Record<string, unknown> | null | undefined): value is
 }
 
 /**
- * Re-authorizes a cache hit, draft veto first so an author-cached draft never serves to a non-author. `createdBy` is
- * normalized from the enriched user object back to the raw id the permission subject expects.
+ * Re-authorizes a cache hit: the row must sit in the tenant and organization of the request path, as `getValidProduct`
+ * requires, since the key names the id alone and the caller's memberships may reach the row's own scope. Then the draft
+ * veto, so an author-cached draft never serves to a non-author. `createdBy` is normalized from the enriched user object
+ * back to the raw id the permission subject expects.
  */
 function callerCanRead(ctx: Context<Env>, productType: ProductEntityType, cached: Record<string, unknown>): boolean {
+  if (cached.tenantId !== ctx.var.tenantId || cached.organizationId !== ctx.var.organizationId) return false;
   try {
     const createdBy = cached.createdBy;
     const authRow = {

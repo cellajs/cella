@@ -311,6 +311,21 @@ describe('Cross-organization API isolation', async () => {
     expect(await listedFor(insider)).toContain(userB.id);
   });
 
+  it("must not serve org B's attachment on tenant A's path from a cache its own path warmed", async () => {
+    // The member of both organizations reads it on its own path, which caches it.
+    const own = await call(getAttachment, {
+      path: { tenantId: orgB.tenantId, organizationId: orgB.id, id: attachmentB.id },
+      headers: headers(insider),
+    });
+    expect(own.response.status).toBe(200);
+
+    const { response, error } = await call(getAttachment, {
+      path: { tenantId: tenant.tenantId, organizationId: tenant.organization.id, id: attachmentB.id },
+      headers: headers(insider),
+    });
+    await expectRefusal({ response, error }, 404, 'not_found');
+  });
+
   it('reaches each organization on its own tenant path (positive control)', async () => {
     for (const path of [
       { tenantId: orgB.tenantId, organizationId: orgB.id },
