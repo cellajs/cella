@@ -42,8 +42,8 @@ export const dbPoolPressure = (): number => {
 };
 
 /**
- * A connection of its own from the runtime pool, for a session that outlives one query: a LISTEN, a session-level
- * advisory lock. The caller ends it with `release(true)`, which destroys it, so no session state goes back to the pool.
+ * A connection of its own from the runtime pool, for a session that outlives one query, such as a LISTEN. The caller
+ * ends it with `release(true)`, which destroys it, so no session state goes back to the pool.
  * @param onError - Attached before the connection is handed out: a checked-out client has no error listener, and an
  *   unhandled one ends the process.
  * @returns The checked-out client.
