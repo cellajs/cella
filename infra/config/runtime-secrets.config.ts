@@ -30,7 +30,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'mcp', 'oauth'],
+    services: ['backend', 'mcp', 'oauth', 'jobs'],
   },
   unsubscribeSecret: {
     secretName: 'unsubscribe-token-secret',
@@ -39,7 +39,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'mcp'],
+    services: ['backend', 'mcp', 'jobs'],
   },
   cdcSecret: {
     secretName: 'cdc-secret',
@@ -96,7 +96,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'mcp', 'oauth'],
+    services: ['backend', 'mcp', 'oauth', 'jobs'],
   },
   adminEmail: {
     secretName: 'admin-email',
@@ -115,7 +115,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: false,
     valueSource: 'operator',
     generation: 'manual',
-    services: ['backend', 'mcp'],
+    services: ['backend', 'mcp', 'jobs'],
   },
   scwAiApiKey: {
     secretName: 'scw-ai-api-key',
@@ -133,7 +133,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: false,
     valueSource: 'operator',
     generation: 'manual',
-    services: ['backend', 'cdc', 'yjs'],
+    services: ['backend', 'cdc', 'yjs', 'jobs'],
   },
   githubClientId: {
     secretName: 'github-client-id',

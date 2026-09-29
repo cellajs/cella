@@ -1,5 +1,5 @@
 /** The process modes (`MODE`) the backend image runs as. */
-export const processModes = ['api', 'mcp', 'oauth', 'cdc', 'migrate'] as const;
+export const processModes = ['api', 'mcp', 'oauth', 'cdc', 'jobs', 'migrate'] as const;
 
 export type ProcessMode = (typeof processModes)[number];
 
@@ -25,7 +25,8 @@ export const modeSecrets: Readonly<Record<ModeSecret, readonly ProcessMode[]>> =
   CDC_SECRET: ['api'],
   YJS_TOKEN_PRIVATE_KEY: ['api'],
   YJS_RELAY_SECRET: ['api'],
-  UNSUBSCRIBE_SECRET: ['api', 'mcp'],
+  // The digest's unsubscribe links are signed where the digest runs: the jobs service.
+  UNSUBSCRIBE_SECRET: ['api', 'mcp', 'jobs'],
   PII_HASH_SECRET: ['api', 'mcp'],
   // Read by the admin seed alone, which the release companion (MODE=migrate) runs with the API's secrets.
   ADMIN_EMAIL: ['migrate'],

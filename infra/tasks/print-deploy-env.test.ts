@@ -61,6 +61,15 @@ describe('buildDeployEnv', () => {
           primary_rollout: false,
         },
         {
+          service: 'jobs',
+          public_url: '',
+          health_url: '',
+          lb_route: '',
+          dockerfile: '',
+          reuses_image_of: 'backend',
+          primary_rollout: false,
+        },
+        {
           service: 'frontend',
           public_url: 'https://www.cella.example',
           health_url: 'https://www.cella.example',
@@ -78,6 +87,7 @@ describe('buildDeployEnv', () => {
       primary_rollout_matrix: JSON.stringify([{ service: 'backend', health_url: 'https://api.cella.example' }]),
       roll_rest_matrix: JSON.stringify([
         { service: 'cdc', health_url: '' },
+        { service: 'jobs', health_url: '' },
         { service: 'frontend', health_url: 'https://www.cella.example' },
       ]),
     });

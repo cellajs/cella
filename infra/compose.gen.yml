@@ -14,6 +14,7 @@ services:
       - '4002:4002'
       - '4003:4003'
       - '4004:4004'
+      - '4006:4006'
     stop_grace_period: '30s'
     env_file:
       - .env
@@ -25,7 +26,6 @@ services:
       INTERNAL_PORT: '4005'
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
-      RUN_JOBS: 'true'
       RUN_MIGRATIONS_ON_BOOT: 'false'
       BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL}
       CDC_HEALTH_PORT: '4001'
@@ -71,7 +71,6 @@ services:
       MODE: migrate
       FRONTEND_URL: ${FRONTEND_URL}
       BACKEND_URL: ${BACKEND_URL}
-      RUN_JOBS: 'true'
   cdc:
     image: ${REGISTRY}/cdc:${CDC_TAG:-latest}
     profiles: [cdc]
@@ -232,6 +231,41 @@ services:
       coHosted: true
       bindings:
         OAUTH_URL: '@{self.url}'
+  jobs:
+    image: ${REGISTRY}/backend:${JOBS_TAG:-latest}
+    profiles: [jobs]
+    restart: unless-stopped
+    ports:
+      - '4006:4006'
+    stop_grace_period: '30s'
+    env_file:
+      - .env
+      - .env.runtime
+    environment:
+      NODE_ENV: production
+      APP_MODE: ${APP_MODE:-production}
+      TZ: UTC
+      MODE: jobs
+      PORT: '4006'
+      FRONTEND_URL: ${FRONTEND_URL}
+      BACKEND_URL: ${BACKEND_URL}
+    healthcheck:
+      test: ['CMD', 'wget', '-qO-', 'http://127.0.0.1:4006/health']
+      interval: '5s'
+      timeout: '5s'
+      retries: 3
+      start_period: '15s'
+    x-service:
+      slug: jobs
+      healthPort: 4006
+      healthTimeoutSeconds: 240
+      healthExpectStatus: 204
+      runRelease: false
+      replacementStrategy: stop-first
+      drainSeconds: 0
+      instanceType: DEV1-S
+      reusesImageOf: backend
+      coHosted: true
   frontend:
     image: ${REGISTRY}/frontend:${FRONTEND_TAG:-latest}
     profiles: [frontend]

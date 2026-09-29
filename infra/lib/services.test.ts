@@ -101,21 +101,29 @@ describe('placeServices (placement is independent of enablement)', () => {
   it('singleVM keeps the host, folds co-hosted workers, collocates placement-host containers', () => {
     const placed = placeServices(services, true);
     expect(placed.vm.map((s) => s.slug)).toEqual(['backend']);
-    expect(placed.coHosted.map((s) => s.slug)).toEqual(['cdc', 'yjs', 'mcp', 'oauth']);
+    expect(placed.coHosted.map((s) => s.slug)).toEqual(['cdc', 'yjs', 'mcp', 'oauth', 'jobs']);
     expect(placed.collocated.map((s) => s.slug)).toEqual(['frontend']);
   });
 
   it('applies the same placement to a narrower list (the enabled set)', () => {
     const placed = placeServices(enabledServices(allOff), true);
     expect(placed.vm.map((s) => s.slug)).toEqual(['backend']);
-    expect(placed.coHosted.map((s) => s.slug)).toEqual(['cdc']);
+    expect(placed.coHosted.map((s) => s.slug)).toEqual(['cdc', 'jobs']);
     expect(placed.collocated.map((s) => s.slug)).toEqual(['frontend']);
   });
 });
 
 describe('registry view: privileged IAM ignores enablement', () => {
   it('split-VM: every registry service owns a principal, whatever appConfig enables', () => {
-    expect(principalServices(false).map((s) => s.slug)).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'frontend']);
+    expect(principalServices(false).map((s) => s.slug)).toEqual([
+      'backend',
+      'cdc',
+      'yjs',
+      'mcp',
+      'oauth',
+      'jobs',
+      'frontend',
+    ]);
   });
 
   it('singleVM: only the host owns a principal', () => {
@@ -123,7 +131,15 @@ describe('registry view: privileged IAM ignores enablement', () => {
   });
 
   it('singleVM host scope unions every registry worker and collocated container, enabled or not', () => {
-    expect(principalSecretScopeSlugs(true, 'backend')).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'frontend']);
+    expect(principalSecretScopeSlugs(true, 'backend')).toEqual([
+      'backend',
+      'cdc',
+      'yjs',
+      'mcp',
+      'oauth',
+      'jobs',
+      'frontend',
+    ]);
   });
 
   it('a non-host principal reads only its own folder', () => {
@@ -133,7 +149,7 @@ describe('registry view: privileged IAM ignores enablement', () => {
   });
 
   it('secretScopeSlugs over the enabled set still narrows to what is enabled', () => {
-    expect(secretScopeSlugs(enabledServices(allOff), true, 'backend')).toEqual(['backend', 'cdc', 'frontend']);
+    expect(secretScopeSlugs(enabledServices(allOff), true, 'backend')).toEqual(['backend', 'cdc', 'jobs', 'frontend']);
     expect(secretScopeSlugs(services, true, 'backend')).toEqual(principalSecretScopeSlugs(true, 'backend'));
   });
 });
@@ -149,8 +165,9 @@ describe('service registry: lbRoute contract', () => {
     }
   });
 
-  it('cdc has no LB route (internal-only)', () => {
+  it('cdc and jobs have no LB route (internal-only)', () => {
     expect(services.find((s) => s.slug === 'cdc')?.lbRoute).toBeUndefined();
+    expect(services.find((s) => s.slug === 'jobs')?.lbRoute).toBeUndefined();
   });
 
   it('keeps appConfig enablement out of the deploy registry', () => {

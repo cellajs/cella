@@ -31,8 +31,6 @@ export const appServices = defineServices({
     env: {
       FRONTEND_URL: '${FRONTEND_URL}',
       BACKEND_URL: '${BACKEND_URL}',
-      // The primary rollout service owns the scheduled jobs; an advisory lock lets one of its generations run them at a time.
-      RUN_JOBS: 'true',
     },
   },
 
@@ -148,6 +146,27 @@ export const appServices = defineServices({
     // The issuer URL, host-routed through the LB.
     bindings: {
       OAUTH_URL: '@{self.url}',
+    },
+  },
+
+  jobs: {
+    image: '${REGISTRY}/backend:${JOBS_TAG:-latest}',
+    port: 4006,
+    healthExpectStatus: 204,
+    healthTimeoutSeconds: 240,
+    startPeriod: '15s',
+    // One maintainer per deployment: pg-boss cron and queue supervision run in exactly one process, and nothing routes to it, so it never overlaps its predecessor.
+    replacementStrategy: 'stop-first',
+    // Reuses the backend image at the same SHA, so CI builds no separate jobs image.
+    reusesImageOf: 'backend',
+    instanceType: 'DEV1-S',
+    // singleVM folds it into the backend process, which then runs cron and the queue workers itself.
+    coHosted: true,
+    env: {
+      MODE: 'jobs',
+      PORT: '4006',
+      FRONTEND_URL: '${FRONTEND_URL}',
+      BACKEND_URL: '${BACKEND_URL}',
     },
   },
 

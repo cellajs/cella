@@ -17,6 +17,8 @@ import {
   rollupStatus,
 } from '#/lib/health-helpers';
 import { extractMcpDetails, extractYjsDetails, probeWorker, workerUrls } from '#/lib/health-probe';
+import { mapJobsComponent, readJobsHealth } from '#/lib/jobs-health';
+import { getBackendJobs } from '#/lib/module';
 import { authInvalidationHealth } from '#/middlewares/guard/invalidation-listener';
 
 export type { HealthResponse, HealthStatus };
@@ -62,28 +64,26 @@ function buildCdcComponent(): HealthComponent {
 }
 
 /** Build the mcp worker's own component (self-check) when this process IS the mcp worker. */
-async function buildMcpSelfComponent(): Promise<HealthComponent> {
+function buildMcpSelfComponent(): HealthComponent {
   const mode = env.SCW_AI_API_KEY ? 'active' : 'noop';
-  if (mode === 'noop') return { status: 'healthy', checkedVia: 'local', details: { mode, queueDepth: 0 } };
+  return { status: 'healthy', checkedVia: 'local', details: { mode } };
+}
 
+/** The job store as read from the database: the api process and the jobs service report the same component. */
+async function buildJobsComponent(): Promise<HealthComponent> {
   try {
-    const { getQueueDepth } = await import('#/lib/pg-boss');
-    const queueDepth = await getQueueDepth();
-    return { status: 'healthy', checkedVia: 'local', details: { mode, queueDepth } };
-  } catch {
-    return {
-      status: 'degraded',
-      checkedVia: 'local',
-      reason: 'queue_unavailable',
-      details: { mode, queueDepth: null },
-    };
+    return mapJobsComponent(await readJobsHealth(), getBackendJobs().length > 0);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return { status: 'degraded', checkedVia: 'local', reason: 'jobs_unreadable', details: { error: message } };
   }
 }
 
 /**
  * Aggregates every dependency and sibling worker into a uniform `component` keyed by name. The api process grades
- * itself, checks the database and its auth invalidation listener, reads the pushed CDC report, and probes yjs/mcp;
- * the mcp worker grades the same three and reports its own queue.
+ * itself, checks the database and its auth invalidation listener, reads the pushed CDC report, probes yjs/mcp and
+ * reads the job store; the mcp worker grades the same three and reports itself; the jobs service grades itself, the
+ * database and the store.
  */
 async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: number }> {
   const components: Record<string, HealthComponent> = {};
@@ -91,10 +91,13 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
   const dbCheck = await checkDatabase();
   components.api = { ...mapApiComponent(getEventLoopLagMs(), process.memoryUsage()), label: 'API' };
   components.database = { ...mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs), label: 'Database' };
-  components.authInvalidation = { ...authInvalidationHealth(), label: 'Auth invalidation' };
+  // The jobs service serves no request, so it holds no guard cache that an invalidation would have to reach.
+  if (env.MODE !== 'jobs') components.authInvalidation = { ...authInvalidationHealth(), label: 'Auth invalidation' };
 
   if (env.MODE === 'mcp') {
-    components.mcp = { ...(await buildMcpSelfComponent()), label: 'MCP' };
+    components.mcp = { ...buildMcpSelfComponent(), label: 'MCP' };
+  } else if (env.MODE === 'jobs') {
+    components.jobs = { ...(await buildJobsComponent()), label: 'Jobs' };
   } else {
     if (appConfig.services.cdc.enabled !== false) components.cdc = { ...buildCdcComponent(), label: 'CDC' };
 
@@ -116,6 +119,8 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
       const [name, component] = workerCheck;
       components[name] = component;
     }
+
+    if (appConfig.services.jobs.enabled !== false) components.jobs = { ...(await buildJobsComponent()), label: 'Jobs' };
   }
 
   const status = rollupStatus(components, CRITICAL_COMPONENTS);

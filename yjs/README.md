@@ -144,7 +144,7 @@ Environment, validated in `src/env.ts` (loads the backend's `.env`):
 | `YJS_RELAY_SECRET` | Authenticates the relay on the backend's materialize route, minimum 16 characters |
 | `BACKEND_INTERNAL_URL` | The backend's internal listener, default port `devPorts.internal` |
 | `YJS_PORT` | WebSocket and health port, default 4002 (`devPorts.yjs`) |
-| `YJS_DB_POOL_MAX` | PostgreSQL pool size, default 20 |
+| `YJS_DB_POOL_MAX` | PostgreSQL pool size, default 10 |
 | `MAPLE_SECRET_INGEST_KEY` | Optional telemetry ingest key |
 | `NODB` | In-memory connection limiter and no TLS CA requirement. Database reads still open lazily. |
 | `NODE_ENV`, `PINO_LOG_LEVEL`, `DEBUG` | Runtime mode and logging. `DEBUG` also prints every query, with its values, in the `development` app mode only |

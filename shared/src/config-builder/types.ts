@@ -192,6 +192,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
     mcp: number;
     oauth: number;
     internal: number;
+    jobs: number;
   };
   services: Record<string, AppServiceEndpointConfig>;
   singleVM: boolean;
