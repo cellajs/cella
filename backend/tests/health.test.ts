@@ -4,6 +4,12 @@ import { setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
+// The real job store read, which a test can make fail once.
+vi.mock('#/lib/jobs-health', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/lib/jobs-health')>();
+  return { ...actual, readJobsHealth: vi.fn(actual.readJobsHealth) };
+});
+
 async function fetchHealth(query = '') {
   const { baseApp: app } = await import('#/routes');
   return app.fetch(new Request(`http://localhost/health${query}`));
@@ -63,6 +69,16 @@ describe('Health endpoint', async () => {
     expect(components.api.details).toHaveProperty('heapUsedMb');
     expect(components.api.details).toHaveProperty('heapTotalMb');
     expect(components.api.details).toHaveProperty('rssMb');
+  });
+
+  it("must not show a failed job store read's own message in the unauthenticated diagnostics", async () => {
+    const { readJobsHealth } = await import('#/lib/jobs-health');
+    vi.mocked(readJobsHealth).mockRejectedValueOnce(new Error('failed query: select state from pgboss.job_marker'));
+
+    const res = await fetchHealth('?depth=full');
+    const text = await res.text();
+    expect(text).not.toContain('job_marker');
+    expect(JSON.parse(text).components.jobs).toMatchObject({ status: 'degraded', reason: 'jobs_unreadable' });
   });
 
   it('GET /health?depth=full cdc section has expected shape', async () => {

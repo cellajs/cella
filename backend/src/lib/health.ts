@@ -20,6 +20,7 @@ import { extractMcpDetails, extractYjsDetails, probeWorker, workerUrls } from '#
 import { mapJobsComponent, readJobsHealth } from '#/lib/jobs-health';
 import { getBackendJobs } from '#/lib/module';
 import { authInvalidationHealth } from '#/middlewares/guard/invalidation-listener';
+import { log } from '#/utils/logger';
 
 export type { HealthResponse, HealthStatus };
 
@@ -73,9 +74,10 @@ function buildMcpSelfComponent(): HealthComponent {
 async function buildJobsComponent(): Promise<HealthComponent> {
   try {
     return mapJobsComponent(await readJobsHealth(), getBackendJobs().length > 0);
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    return { status: 'degraded', checkedVia: 'local', reason: 'jobs_unreadable', details: { error: message } };
+  } catch (err) {
+    // The diagnostics are public, and a failed query's message can carry its SQL: the log keeps it, redacted.
+    log.error('Reading the job store for health failed', { err });
+    return { status: 'degraded', checkedVia: 'local', reason: 'jobs_unreadable' };
   }
 }
 
