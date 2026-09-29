@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, type ReactElement, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import { getStepUp, sendStepUpLink } from 'sdk';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 /** What ran, in order, and the dialog the step-up opened. */
@@ -58,7 +59,41 @@ afterEach(async () => {
   vi.unstubAllGlobals();
 });
 
+/** Renders the dialog the last `openStepUpDialog` created, into a fresh root, with `client`. */
+async function renderDialog(client: QueryClient) {
+  await act(async () => root?.unmount());
+  const container = document.createElement('div');
+  root = createRoot(container);
+  await act(async () => root?.render(<QueryClientProvider client={client}>{seen.dialog}</QueryClientProvider>));
+  return container;
+}
+
+const buttonWith = (container: HTMLElement, text: string) =>
+  [...container.querySelectorAll('button')].find((button) => button.textContent?.includes(text));
+
 describe('step-up dialog', () => {
+  it('must not close a later dialog via the answer an earlier emailed link left in the query cache', async () => {
+    vi.stubGlobal('location', { pathname: '/settings/security', search: '' });
+    vi.mocked(sendStepUpLink).mockResolvedValue(undefined as never);
+    vi.mocked(getStepUp).mockResolvedValue({ steppedUp: true } as never);
+    // One client for the whole app, as in the browser: the second dialog opens with the first one's cache.
+    const client = new QueryClient();
+
+    let first = 'pending';
+    openStepUpDialog(['email']).then(() => (first = 'stepped up'));
+    const container = await renderDialog(client);
+    await act(async () => buttonWith(container, 'c:step_up_email')?.click());
+    await vi.waitFor(() => expect(first).toBe('stepped up'));
+
+    // The step-up window has passed: the session needs a new proof, and the server says so.
+    vi.mocked(getStepUp).mockResolvedValue({ steppedUp: false } as never);
+    let second = 'pending';
+    openStepUpDialog(['passkey']).then(() => (second = 'stepped up'));
+    await renderDialog(client);
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
+    expect(second).toBe('pending');
+  });
+
   it('must not leave the push subscription or unsent seen marks to the next person via "Sign in again"', async () => {
     vi.stubGlobal('location', {
       pathname: '/settings/security',

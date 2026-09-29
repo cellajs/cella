@@ -38,23 +38,29 @@ function StepUpDialog({ methods, onStepUp }: StepUpDialogProps) {
     }
   };
 
+  // When this dialog sent its link: the poll is keyed on it, so no dialog reads an answer an earlier one left.
+  const [sentAt, setSentAt] = useState<number | null>(null);
   const { mutate: sendLink, isPending: sending } = useMutation({
     mutationFn: () => sendStepUpLink({ body: { redirect: currentPath() } }),
-    onSuccess: () => setView('linkSent'),
+    onSuccess: () => {
+      setSentAt(Date.now());
+      setView('linkSent');
+    },
   });
 
   // Opening the mailed link in this browser steps this session up; the dialog then carries on by itself.
   const { data: state } = useQuery({
-    queryKey: ['auth', 'step-up'],
+    queryKey: ['auth', 'step-up', sentAt],
     queryFn: () => getStepUp(),
-    enabled: view === 'linkSent',
+    enabled: sentAt !== null,
     refetchInterval: 3000,
     staleTime: 0,
+    gcTime: 0,
     meta: { persist: false },
   });
   useEffect(() => {
-    if (state?.steppedUp) onStepUp();
-  }, [state?.steppedUp, onStepUp]);
+    if (sentAt !== null && state?.steppedUp) onStepUp();
+  }, [sentAt, state?.steppedUp, onStepUp]);
 
   const signInAgain = async () => {
     const redirect = currentPath();
