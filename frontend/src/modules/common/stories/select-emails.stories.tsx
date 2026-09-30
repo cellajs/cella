@@ -334,3 +334,36 @@ export const ShouldFollowSubmitRule: Story = {
     await expect(canvas.getByText('value: ["user@example-.com"]')).toBeVisible();
   },
 };
+
+export const ShouldKeepEveryPastedAddress: Story = {
+  name: 'when several addresses are pasted, should add each of them as a chip',
+  tags: playTags,
+  render: () => <InviteEmailsField initial={['first@x.com']} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByRole('textbox');
+
+    await userEvent.click(input);
+    await userEvent.paste('a@x.com, b@x.com; c@x.com');
+
+    await expect(canvas.getByText('value: ["first@x.com","a@x.com","b@x.com","c@x.com"]')).toBeVisible();
+    await expect(input).toHaveValue('');
+  },
+};
+
+export const ShouldKeepInvalidPastedText: Story = {
+  name: 'when a pasted list holds an invalid address, should add the others and leave it in the input',
+  tags: playTags,
+  render: () => <InviteEmailsField />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByRole('textbox');
+
+    await userEvent.click(input);
+    await userEvent.paste('a@x.com, nope, c@x.com');
+
+    await expect(canvas.getByText('value: ["a@x.com","c@x.com"]')).toBeVisible();
+    await expect(toaster.warning).toHaveBeenCalled();
+    await expect(input).toHaveValue('nope');
+  },
+};

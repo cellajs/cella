@@ -134,15 +134,18 @@ function TagInputBase(props: TagInputProps, ref: React.ForwardedRef<HTMLInputEle
         .map((v) => v.trim())
         .filter((v) => v && v.length > 0);
 
+      // One update for all parts: the parent may derive each update from the same `tags` prop.
+      const added: string[] = [];
+      const rejected: string[] = [];
       for (const newTag of splitValues) {
         const errorMessage = newTagValidation(newTag);
-        if (errorMessage) return toaster.warning(errorMessage);
-
-        setTags((prevTags) => [...prevTags, newTag]);
-        onTagAdd?.(newTag);
+        if (errorMessage) toaster.warning(errorMessage);
+        (errorMessage ? rejected : added).push(newTag);
       }
 
-      setInputValue('');
+      if (added.length) setTags((prevTags) => [...prevTags, ...added]);
+      for (const newTag of added) onTagAdd?.(newTag);
+      setInputValue(rejected.join(' '));
     } else setInputValue(newValue);
 
     onInputChange?.(newValue);
