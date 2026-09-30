@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 
 const scripts = dirname(fileURLToPath(import.meta.url));
-const dash = '—';
+const dash = '\u2014';
 const word = (...parts: string[]) => parts.join('');
 const term = word('invar', 'iant');
 const bearing = word('load', '-bearing');

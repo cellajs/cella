@@ -24,7 +24,7 @@ const agentWording = {
 export const proseRules: ProseRule[] = [
   {
     name: 'em-dash',
-    pattern: /—/,
+    pattern: /\u2014/,
     level: 'required',
     message: {
       comments: 'split the sentence or remove the secondary clause',
