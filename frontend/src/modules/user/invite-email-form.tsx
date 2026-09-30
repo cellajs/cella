@@ -1,20 +1,10 @@
-import { useMutation } from '@tanstack/react-query';
-import { SendIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-// biome-ignore lint/style/noRestrictedImports: colocated mutation for system-level invite called from stepper flow.
-import { systemInvite as baseSystemInvite } from 'sdk';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectEmails } from '~/modules/common/form-fields/select-emails';
-import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
-import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
-import type { InviteMember } from '~/modules/memberships/types';
-import { Badge } from '~/modules/ui/badge';
-import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
-import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
+import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
+import { InviteFormFooter, useInviteSubmit } from '~/modules/user/invite-submit';
+import { useInviteFormDraft } from '~/modules/user/invite-users';
 
 interface Props {
   channel?: EnrichedChannel;
@@ -29,40 +19,10 @@ export function InviteEmailForm({ channel, dialog: isDialog, children }: Props) 
 
   const form = useInviteFormDraft(channel?.id, channel?.entityType);
 
-  const onSuccess = (
-    { invitesSentCount, rejectedIds }: { rejectedIds: string[]; invitesSentCount: number },
-    variables: InviteFormValues | InviteMember,
-  ) => {
-    const emails = 'emails' in variables ? variables.emails : variables.body.emails;
+  const { onSubmit, isPending } = useInviteSubmit(channel, isDialog, () => {
     form.reset(undefined, { keepDirtyValues: true });
-    if (isDialog) useDialoger.getState().remove();
-
-    if (invitesSentCount > 0) {
-      const resource = t('c:user', { count: invitesSentCount }).toLowerCase();
-      toaster.success(t('c:success.resource_count_invited', { count: invitesSentCount, resource }));
-    }
-    if (rejectedIds.length)
-      toaster.info(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }));
-
     nextStep?.();
-  };
-
-  const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
-  const { mutate: systemInvite, isPending: isSystemInvitePending } = useMutation({
-    mutationFn: (body: InviteFormValues) => baseSystemInvite({ body }),
-    onSuccess,
   });
-
-  const onSubmit = (body: InviteFormValues) => {
-    // With no context, this is a system invite; otherwise it is a membership invite.
-    if (!channel) return systemInvite(body);
-
-    const organizationId = channel.organizationId || channel.id;
-    const path = { tenantId: channel.tenantId, organizationId: organizationId };
-    const query = { entityId: channel.id, entityType: channel.entityType };
-
-    membershipInvite({ body, path, query, channel }, { onSuccess });
-  };
 
   return (
     <Form {...form}>
@@ -82,38 +42,16 @@ export function InviteEmailForm({ channel, dialog: isDialog, children }: Props) 
             </FormItem>
           )}
         />
-        {channel && (
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field: { value, onChange } }) => (
-              <FormItem className="ml-3 flex-row items-center gap-4">
-                <FormLabel>{t('c:role')}</FormLabel>
-                <SelectRoleRadio value={value} onValueChange={onChange} entityType={channel.entityType} />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
 
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <SubmitButton loading={isPending || isSystemInvitePending} className="relative">
-            {!!form.getValues('emails')?.length && (
-              <Badge variant="secondary" context="button">
-                {form.getValues('emails')?.length}
-              </Badge>
-            )}{' '}
-            <SendIcon className="mr-2" />
-            {t('c:invite')}
-          </SubmitButton>
+        <InviteFormFooter
+          form={form}
+          channel={channel}
+          count={form.getValues('emails')?.length ?? 0}
+          isPending={isPending}
+          onCancel={() => form.reset()}
+        >
           {children}
-
-          {!children && form.isDirty && (
-            <Button type="reset" variant="secondary" onClick={() => form.reset()}>
-              {t('c:cancel')}
-            </Button>
-          )}
-        </div>
+        </InviteFormFooter>
       </form>
     </Form>
   );
