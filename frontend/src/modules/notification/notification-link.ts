@@ -2,7 +2,8 @@ import type { NotificationLinkSearch } from 'shared/utils/notification-link';
 import type { EntityRoute } from '~/modules/navigation/types';
 import { type ChannelRouteEntry, channelRouteConfig } from '~/routes-config';
 
-type LinkTarget = Omit<NotificationLinkSearch, 'nid'>;
+/** A link's search or an inbox row; the row carries `contextId` as `string | null`. */
+type LinkTarget = Omit<NotificationLinkSearch, 'nid' | 'contextId'> & { contextId?: string | null };
 
 /**
  * Route to the channel a notification happened in. Ids go in the slug params: every channel route
@@ -19,8 +20,9 @@ export function getNotificationRoute(notification: LinkTarget): EntityRoute | nu
   params[config.paramName] = notification.channelId;
 
   const entry: ChannelRouteEntry = config;
-  const { entityType, subjectId } = notification;
-  const search =
-    entry.notificationSearch && entityType && subjectId ? entry.notificationSearch({ entityType, subjectId }) : {};
+  const { entityType, subjectId, contextId } = notification;
+  // A variable, not a literal in the call, so an app whose `notificationSearch` type lacks `contextId` still compiles.
+  const subject = entityType && subjectId ? { entityType, subjectId, contextId: contextId ?? null } : null;
+  const search = entry.notificationSearch && subject ? entry.notificationSearch(subject) : {};
   return { to: config.path, params, search };
 }

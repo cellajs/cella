@@ -96,13 +96,14 @@ async function fanOutRow(
 
   const channel = resolveChannel(entityType, row);
   const organizationId = event.organizationId as string;
+  const contextId = resolveContextId ? resolveContextId(row) : row.id;
   await insertNotificationsIgnoringDuplicates(
     allowed.map<NotificationInsert>((recipient) => ({
       userId: recipient.userId,
       type: recipient.type,
       entityType,
       subjectId: row.id,
-      contextId: resolveContextId ? resolveContextId(row) : row.id,
+      contextId,
       channelId: channel.id,
       channelType: channel.type,
       organizationId,
@@ -125,6 +126,7 @@ async function fanOutRow(
       channelType: channel.type,
       entityType,
       subjectId: row.id,
+      contextId: contextId ?? undefined,
     });
     await sendNotificationPush(
       allowed.map((recipient) => recipient.userId),

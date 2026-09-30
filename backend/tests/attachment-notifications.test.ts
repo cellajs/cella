@@ -3,7 +3,7 @@ import { type GetNotificationsResponse, getNotifications, updateAttachment } fro
 import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { generateServerHLC } from '#/core/stx';
 import { getSeedDb } from '#/db/db';
 import type { ActivityEvent } from '#/lib/activity-bus';
@@ -12,11 +12,12 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { notificationsTable } from '#/modules/notification/notification-db';
 import { fanOutNotifications } from '#/modules/notification/operations/fan-out';
 import { sendPendingInstantEmails } from '#/modules/notification/operations/send-instant-emails';
+import { sendNotificationPush } from '#/modules/push/push-sender';
 import { emailsTable } from '#/modules/user/emails-db';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders, memberRole } from './fixtures';
-import { createOrganizationAdminUser, createTestUser } from './helpers';
+import { createOrganizationAdminUser, createTestUser, mailsTo } from './helpers';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -26,6 +27,16 @@ import { setTestConfig } from './test-utils';
 const db = getSeedDb();
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
+
+// Push sending is on and records its payloads; nothing reaches a push service.
+vi.mock('#/modules/push/push-sender', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#/modules/push/push-sender')>()),
+  isPushSendConfigured: () => true,
+  sendNotificationPush: vi.fn(async () => undefined),
+}));
+
+/** The context id a notification link carries, as the `/n` route reads it. */
+const linkedContextId = (link: unknown) => new URL(String(link)).searchParams.get('contextId');
 
 const attachmentId = generateId();
 
@@ -62,7 +73,7 @@ const nullAncestorScopes = Object.fromEntries(
 describe('Attachment mentions (template notification source)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
-  let member: { id: string; sessionCookie: string };
+  let member: { id: string; email: string; sessionCookie: string };
   /** An account with no membership in the organization: a mention of it names someone who may not read the row. */
   let stranger: { id: string };
   let plan: TestEntityHierarchyPlan;
@@ -206,10 +217,34 @@ describe('Attachment mentions (template notification source)', async () => {
 
     await fanOutNotifications(updatedEvent(tenant.user.id));
     expect(await notificationsFor(member.id)).toEqual([{ type: 'mention', emailedAt: null }]);
+    // The push link opens the notification's context, which defaults to the row itself.
+    const [, payload] = vi.mocked(sendNotificationPush).mock.calls.at(-1) ?? [];
+    expect(linkedContextId(payload?.url)).toBe(attachmentId);
 
     // Mention email is on by default; the member's address is verified.
     await sendPendingInstantEmails(tenant.organization.id);
     expect((await notificationsFor(member.id))[0]?.emailedAt).not.toBeNull();
+  });
+
+  it('links the mention mail to the notification context, the item hosting the subject', async () => {
+    const hostId = generateId();
+    await db.insert(notificationsTable).values({
+      userId: member.id,
+      actorId: tenant.user.id,
+      type: 'mention',
+      entityType: 'attachment',
+      subjectId: attachmentId,
+      contextId: hostId,
+      channelId: tenant.organization.id,
+      channelType: 'organization',
+      organizationId: tenant.organization.id,
+      tenantId: tenant.tenantId,
+      activityId: `act:${generateId()}`,
+    });
+
+    await sendPendingInstantEmails(tenant.organization.id);
+    const [mail] = mailsTo(member.email);
+    expect(linkedContextId(mail?.recipient.link)).toBe(hostId);
   });
 
   it('lists the inbox row with the actor, channel and subject the card sentence needs', async () => {

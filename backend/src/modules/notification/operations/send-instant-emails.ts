@@ -74,6 +74,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
             channelType: notification.channelType,
             entityType: notification.entityType,
             subjectId: notification.subjectId,
+            contextId: notification.contextId ?? undefined,
             nid: notification.id,
           }),
           unsubscribeLink: buildUnsubscribeLink(user.id, 'mention'),
