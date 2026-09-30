@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router';
 import { memo } from 'react';
+import type { GenComponentSchema } from 'sdk/docs-types';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import type { GenComponentSchema } from '~/modules/docs/types';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { useSheeter } from '../../common/sheeter/use-sheeter';

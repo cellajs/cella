@@ -1,8 +1,8 @@
 import { Link, useNavigate } from '@tanstack/react-router';
+import type { GenOperationSummary } from 'sdk/docs-types';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import type { GenOperationSummary } from '~/modules/docs/types';
 import { Badge } from '~/modules/ui/badge';
 import { getMethodColor } from './helpers/get-method-color';
 

@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { GenOperationSummary } from 'sdk/docs-types';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
@@ -11,7 +12,6 @@ import { useColumns } from '~/modules/docs/operations/operations-table/operation
 import { useFilteredOperations } from '~/modules/docs/operations/operations-table/use-filtered-operations';
 import { useSortedOperations } from '~/modules/docs/operations/operations-table/use-sorted-operations';
 import { infoQueryOptions, operationsQueryOptions } from '~/modules/docs/query';
-import type { GenOperationSummary } from '~/modules/docs/types';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 function OperationsTable() {

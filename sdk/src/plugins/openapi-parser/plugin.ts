@@ -6,48 +6,42 @@ import { formatJson } from './format-json';
 import { parseOpenApiSpec } from './parse-spec';
 import type { OpenApiSpec } from './types';
 
-/** @property docsOutputPath - Absolute path for docs.gen output, set during temp folder generation. */
 type Config = {
   name: 'openapi-parser';
-  output?: string;
-  docsOutputPath?: string;
 };
 
 type OpenApiParserPlugin = DefinePlugin<Config>;
 
 /** Writes operation, tag, schema, info, and per-tag summaries as JSON into docs.gen, fetched at runtime so the SDK bundle stays small. */
 const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
-  const spec = plugin.context.spec as OpenApiSpec;
-  const parsed = parseOpenApiSpec(spec);
+  const parsed = parseOpenApiSpec(plugin.context.spec as OpenApiSpec);
 
-  const publicDocsDir = plugin.config.docsOutputPath
-    ? plugin.config.docsOutputPath
-    : resolve(plugin.context.config.output.path, 'docs.gen');
+  // Lives inside the generation output, so the incremental wrapper compares and copies all of sdk/gen as one tree.
+  const docsDir = resolve(plugin.context.config.output.path, 'docs.gen');
+  const detailsDir = resolve(docsDir, 'details.gen');
+  mkdirSync(detailsDir, { recursive: true });
 
-  mkdirSync(publicDocsDir, { recursive: true });
-
-  const publicDetailsDir = resolve(publicDocsDir, 'details.gen');
-  mkdirSync(publicDetailsDir, { recursive: true });
-
-  for (const [tagName, tagOperations] of parsed.tagDetails.entries()) {
-    const tagJsonPath = resolve(publicDetailsDir, `${tagName}.gen.json`);
-    writeFileSync(tagJsonPath, formatJson(tagOperations), 'utf-8');
+  for (const [tagName, tagOperations] of parsed.tagDetails) {
+    writeFileSync(resolve(detailsDir, `${tagName}.gen.json`), formatJson(tagOperations), 'utf-8');
   }
 
-  writeFileSync(resolve(publicDocsDir, 'operations.gen.json'), formatJson(parsed.operations), 'utf-8');
-  writeFileSync(resolve(publicDocsDir, 'tags.gen.json'), formatJson(parsed.tags), 'utf-8');
-  writeFileSync(resolve(publicDocsDir, 'info.gen.json'), formatJson(parsed.info), 'utf-8');
-  writeFileSync(resolve(publicDocsDir, 'schemas.gen.json'), formatJson(parsed.schemas), 'utf-8');
-  writeFileSync(resolve(publicDocsDir, 'schema-tags.gen.json'), formatJson(parsed.schemaTags), 'utf-8');
+  const summaries = {
+    'operations.gen.json': parsed.operations,
+    'tags.gen.json': parsed.tags,
+    'info.gen.json': parsed.info,
+    'schemas.gen.json': parsed.schemas,
+    'schema-tags.gen.json': parsed.schemaTags,
+  };
+  for (const [fileName, data] of Object.entries(summaries)) {
+    writeFileSync(resolve(docsDir, fileName), formatJson(data), 'utf-8');
+  }
 };
 
 const defaultConfig: OpenApiParserPlugin['Config'] = {
   dependencies: ['@hey-api/typescript'],
   handler,
   name: 'openapi-parser',
-  config: {
-    output: 'docs-operations',
-  },
+  config: {},
 };
 
 export const defineConfig = definePluginConfig(defaultConfig);

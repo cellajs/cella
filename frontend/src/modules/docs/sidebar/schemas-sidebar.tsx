@@ -1,10 +1,10 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import type { GenComponentSchema } from 'sdk/docs-types';
 import { nanoid } from 'shared/utils/nanoid';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { schemasByTagQueryOptions, schemaTagsQueryOptions } from '~/modules/docs/query';
-import type { GenComponentSchema } from '~/modules/docs/types';
 import { SidebarMenu } from '~/modules/ui/sidebar';
 import { CollapsibleTagItem } from './collapsible-tag-item';
 import { SchemaItem } from './schema-item';

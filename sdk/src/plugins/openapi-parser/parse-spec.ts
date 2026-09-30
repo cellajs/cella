@@ -1,3 +1,5 @@
+import { appConfig } from 'shared';
+import { config } from 'shared/config/config.default';
 import type {
   GenComponentSchema,
   GenExtensionDefinition,
@@ -7,15 +9,12 @@ import type {
   GenRequest,
   GenResponseSummary,
   GenSchema,
-  GenSchemaProperty,
   GenSchemaTagSummary,
   GenTagSummary,
-} from '../../../../frontend/src/modules/docs/types';
-import { appConfig } from '../../../../shared';
-import { config } from '../../../../shared/config/config.default';
-import { generateOperationHash } from './file-generators';
+} from '../../docs-types';
+import { generateOperationHash } from './operation-hash';
 import { resolveSchema, resolveSchemaProperty } from './schema-resolvers';
-import type { OpenApiReferenceObject, OpenApiResponseObject, OpenApiSpec, OpenApiTag } from './types';
+import type { OpenApiOperation, OpenApiReferenceObject, OpenApiResponseObject, OpenApiSpec, OpenApiTag } from './types';
 
 /** Map from pluralized tag names to singular entity types (e.g., 'users' -> 'user') */
 const tagToEntityType = new Map<string, string>(config.entityTypes.map((entityType) => [`${entityType}s`, entityType]));
@@ -27,6 +26,9 @@ const disabledServices = new Set(
     .map(([slug]) => slug),
 );
 
+// Iterating spec.paths directly preserves order.
+const httpMethods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] as const;
+
 interface ParsedOpenApiSpec {
   operations: GenOperationSummary[];
   tags: GenTagSummary[];
@@ -34,6 +36,122 @@ interface ParsedOpenApiSpec {
   schemas: GenComponentSchema[];
   schemaTags: GenSchemaTagSummary[];
   tagDetails: Map<string, GenOperationDetail[]>;
+}
+
+/** Prefers a JSON media type, falling back to the first declared one. */
+function pickContentType(content: Record<string, unknown>): string | undefined {
+  const types = Object.keys(content);
+  return types.find((ct) => ct.includes('json')) ?? types[0];
+}
+
+/** Groups tag names by their registered kind; unregistered tags land under 'other'. */
+function groupTagsByKind(tags: readonly string[], tagKindMap: Map<string, string>): Record<string, string[]> {
+  const byKind: Record<string, string[]> = {};
+  for (const tag of tags) {
+    const kind = tagKindMap.get(tag) ?? 'other';
+    byKind[kind] ??= [];
+    byKind[kind].push(tag);
+  }
+  return byKind;
+}
+
+/** Resolves one response entry: a `$ref` to a component response, or an inline response with its schema and example. */
+function summarizeResponse(
+  statusCode: string,
+  response: OpenApiResponseObject | OpenApiReferenceObject,
+  spec: OpenApiSpec,
+  componentResponses: Record<string, OpenApiResponseObject>,
+): GenResponseSummary {
+  let description = '';
+  let name: string | undefined;
+  let ref: string | undefined;
+  let contentType: string | undefined;
+  let schema: GenSchema | undefined;
+  let example: unknown;
+
+  if ('$ref' in response) {
+    ref = response.$ref;
+    name = ref.split('/').pop();
+    const component = name ? componentResponses[name] : undefined;
+    if (component) {
+      description = component.description ?? '';
+      contentType = component.content ? pickContentType(component.content) : undefined;
+      const componentSchema = contentType ? component.content?.[contentType]?.schema : undefined;
+      if (componentSchema) schema = resolveSchema(componentSchema, spec);
+    }
+  } else {
+    description = response.description ?? '';
+    const selected = response.content ? pickContentType(response.content) : undefined;
+    const mediaType = selected ? response.content?.[selected] : undefined;
+    if (selected && mediaType?.schema) {
+      contentType = selected;
+      schema = resolveSchema(mediaType.schema, spec);
+
+      if (mediaType.schema.$ref) {
+        ref = mediaType.schema.$ref;
+        name = ref.split('/').pop();
+        const componentExample = name ? spec.components?.schemas?.[name]?.example : undefined;
+        if (componentExample !== undefined) example = componentExample;
+      }
+      if (example === undefined && mediaType.schema.example !== undefined) example = mediaType.schema.example;
+    }
+    // OpenAPI 3.1 prefers the example at the media type level.
+    if (example === undefined && mediaType?.example !== undefined) example = mediaType.example;
+  }
+
+  const summary: GenResponseSummary = { status: Number.parseInt(statusCode, 10), description };
+  if (name) summary.name = name;
+  if (ref) summary.ref = ref;
+  if (contentType) summary.contentType = contentType;
+
+  // Error schemas are not embedded: the viewer resolves them from schemas.gen.json by response.name.
+  const isErrorSchema = schema?.ref?.endsWith('Error') && schema.ref.includes('/schemas/');
+  if (schema && !isErrorSchema) {
+    if (contentType) schema.contentType = contentType;
+    summary.schema = schema;
+  }
+  if (example !== undefined) summary.example = example;
+
+  return summary;
+}
+
+/** Path and query parameters plus the request body, or undefined when the operation takes none. */
+function buildRequest(op: OpenApiOperation, spec: OpenApiSpec): GenRequest | undefined {
+  const request: GenRequest = {};
+
+  if (op.parameters) {
+    const pathParams: Record<string, GenSchema> = {};
+    const queryParams: Record<string, GenSchema> = {};
+
+    for (const param of op.parameters) {
+      if ('$ref' in param) continue;
+      if (param.in !== 'path' && param.in !== 'query') continue;
+
+      const paramSchema: GenSchema = param.schema
+        ? resolveSchemaProperty(param.schema, param.required ?? false, spec)
+        : { type: 'string', required: param.required ?? false };
+
+      if (param.description && !paramSchema.description) {
+        paramSchema.description = param.description;
+      }
+
+      (param.in === 'path' ? pathParams : queryParams)[param.name] = paramSchema;
+    }
+
+    if (Object.keys(pathParams).length > 0) request.path = { properties: pathParams };
+    if (Object.keys(queryParams).length > 0) request.query = { properties: queryParams };
+  }
+
+  if (op.requestBody && !('$ref' in op.requestBody)) {
+    const content = op.requestBody.content;
+    const contentType = content ? pickContentType(content) : undefined;
+    const bodySchema = contentType ? content?.[contentType]?.schema : undefined;
+    if (contentType && bodySchema) {
+      request.body = { ...resolveSchema(bodySchema, spec), required: op.requestBody.required ?? false, contentType };
+    }
+  }
+
+  return Object.keys(request).length > 0 ? request : undefined;
 }
 
 /** Pure function, kept separate from the plugin handler for testability. */
@@ -51,278 +169,96 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
   const excludedTags = new Set<string>();
   const hiddenTags = new Set<string>();
   const schemaKindTags: { name: string; description: string; isDefault: boolean }[] = [];
-  if (spec.tags) {
-    for (const tag of spec.tags as readonly OpenApiTag[]) {
-      if (tag.kind) tagKindMap.set(tag.name, tag.kind);
-      if (tag.kind && tag.kind !== 'module') {
-        excludedTags.add(tag.name);
-        if (tag.kind === 'hidden') hiddenTags.add(tag.name);
-        if (tag.kind === 'schema') {
-          schemaKindTags.push({
-            name: tag.name,
-            description: tag.description ?? '',
-            isDefault: tag['x-default'] === true,
-          });
-        }
-        continue;
+  for (const tag of (spec.tags ?? []) as readonly OpenApiTag[]) {
+    if (tag.kind) tagKindMap.set(tag.name, tag.kind);
+    if (tag.kind && tag.kind !== 'module') {
+      excludedTags.add(tag.name);
+      if (tag.kind === 'hidden') hiddenTags.add(tag.name);
+      if (tag.kind === 'schema') {
+        schemaKindTags.push({
+          name: tag.name,
+          description: tag.description ?? '',
+          isDefault: tag['x-default'] === true,
+        });
       }
-      tagMap.set(tag.name, { description: tag.description, count: 0, kind: tag.kind });
+      continue;
     }
+    tagMap.set(tag.name, { description: tag.description, count: 0, kind: tag.kind });
   }
 
   const schemaTagNameSet = new Set(schemaKindTags.map((t) => t.name));
   const defaultSchemaTag = schemaKindTags.find((t) => t.isDefault)?.name ?? schemaKindTags[0]?.name ?? 'data';
 
-  // Iterating spec.paths directly preserves order.
-  const httpMethods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] as const;
-
   const componentResponses: Record<string, OpenApiResponseObject> = {};
-  if (spec.components?.responses) {
-    for (const [name, value] of Object.entries(spec.components.responses)) {
-      if (!('$ref' in value)) {
-        componentResponses[name] = value;
-      }
-    }
+  for (const [name, value] of Object.entries(spec.components?.responses ?? {})) {
+    if (!('$ref' in value)) componentResponses[name] = value;
   }
 
-  if (spec.paths) {
-    for (const [path, pathItem] of Object.entries(spec.paths)) {
-      if (!pathItem) continue;
+  for (const [path, pathItem] of Object.entries(spec.paths ?? {})) {
+    if (!pathItem) continue;
 
-      for (const method of httpMethods) {
-        const op = pathItem[method];
-        if (!op?.operationId) continue;
+    for (const method of httpMethods) {
+      const op = pathItem[method];
+      if (!op?.operationId) continue;
 
-        // Operations gated by a disabled service are dropped from the docs, keeping the SDK a stable superset.
-        const service = op['x-service' as `x-${string}`];
-        if (typeof service === 'string' && disabledServices.has(service)) continue;
+      // Operations gated by a disabled service are dropped from the docs, keeping the SDK a stable superset.
+      const service = op['x-service' as `x-${string}`];
+      if (typeof service === 'string' && disabledServices.has(service)) continue;
 
-        // Hidden-tagged operations stay in openapi.json and the SDK but drop from docs and search.
-        if ((op.tags ?? []).some((t: string) => hiddenTags.has(t))) {
-          hiddenOperationCount++;
-          continue;
-        }
+      // Hidden-tagged operations stay in openapi.json and the SDK but drop from docs and search.
+      if ((op.tags ?? []).some((t: string) => hiddenTags.has(t))) {
+        hiddenOperationCount++;
+        continue;
+      }
 
-        const opTags = (op.tags ?? []).filter((t: string) => !excludedTags.has(t));
+      const opTags = (op.tags ?? []).filter((t: string) => !excludedTags.has(t));
 
-        const responses: GenResponseSummary[] = [];
-        if (op.responses) {
-          for (const [statusCode, responseEntry] of Object.entries(op.responses)) {
-            // The ResponsesObject index signature includes `unknown`, so a boundary cast is required.
-            const response = responseEntry as OpenApiResponseObject | OpenApiReferenceObject | undefined;
-            if (!response) continue;
+      const responses: GenResponseSummary[] = [];
+      for (const [statusCode, entry] of Object.entries(op.responses ?? {})) {
+        // The ResponsesObject index signature includes `unknown`, so a boundary cast is required.
+        const response = entry as OpenApiResponseObject | OpenApiReferenceObject | undefined;
+        if (response) responses.push(summarizeResponse(statusCode, response, spec, componentResponses));
+      }
 
-            let description = '';
-            let name: string | undefined;
-            let ref: string | undefined;
-            let contentType: string | undefined;
-            let schema: GenSchema | undefined;
+      const extensions: Record<string, string[]> = {};
+      for (const ext of extensionDefs) {
+        const value = op[ext.key as `x-${string}`];
+        if (Array.isArray(value)) extensions[ext.id] = value;
+      }
 
-            if ('$ref' in response) {
-              ref = response.$ref;
-              name = response.$ref.split('/').pop();
-              if (name && componentResponses[name]) {
-                const componentResponse = componentResponses[name];
-                description = componentResponse.description ?? '';
-                if (componentResponse.content) {
-                  const contentTypes = Object.keys(componentResponse.content);
-                  const jsonType = contentTypes.find((ct) => ct.includes('json'));
-                  const selectedContentType = jsonType || contentTypes[0];
-                  if (selectedContentType) {
-                    contentType = selectedContentType;
-                    const responseSchema = componentResponse.content[selectedContentType]?.schema;
-                    if (responseSchema) {
-                      schema = resolveSchema(responseSchema, spec);
-                    }
-                  }
-                }
-              }
-            } else {
-              description = response.description ?? '';
-            }
+      const entityType = opTags.map((tag: string) => tagToEntityType.get(tag)).find(Boolean);
 
-            const content = !('$ref' in response) ? response.content : undefined;
-            let example: unknown;
-            if (content) {
-              const contentTypes = Object.keys(content);
-              const jsonType = contentTypes.find((ct) => ct.includes('json'));
-              const selectedContentType = jsonType || contentTypes[0];
-              if (selectedContentType) {
-                const mediaTypeObject = content[selectedContentType];
+      operations.push({
+        id: op.operationId,
+        hash: generateOperationHash(method, path, opTags),
+        method,
+        path,
+        tags: opTags,
+        summary: op.summary ?? '',
+        description: op.description ?? '',
+        deprecated: op.deprecated ?? false,
+        hasParams: (op.parameters ?? []).length > 0,
+        hasRequestBody: !!op.requestBody,
+        hasResponseBody: responses.some((r) => r.schema !== undefined),
+        hasExample: responses.some((r) => r.status >= 200 && r.status < 300 && r.example !== undefined),
+        extensions,
+        tagsByKind: groupTagsByKind(op.tags ?? [], tagKindMap),
+        ...(entityType && { entityType }),
+      });
 
-                if (mediaTypeObject?.schema) {
-                  contentType = selectedContentType;
-                  const responseSchema = mediaTypeObject.schema;
-                  schema = resolveSchema(responseSchema, spec);
+      const operationDetail: GenOperationDetail = { operationId: op.operationId, responses };
+      const request = buildRequest(op, spec);
+      if (request) operationDetail.request = request;
 
-                  if (responseSchema.$ref) {
-                    ref = responseSchema.$ref;
-                    name = responseSchema.$ref.split('/').pop();
+      for (const tag of opTags) {
+        // A tag used by an operation but absent from spec.tags starts without a description.
+        const tagEntry = tagMap.get(tag) ?? { count: 0 };
+        tagEntry.count++;
+        tagMap.set(tag, tagEntry);
 
-                    if (name && spec.components?.schemas?.[name]) {
-                      const componentSchema = spec.components.schemas[name];
-                      if (componentSchema.example !== undefined) {
-                        example = componentSchema.example;
-                      }
-                    }
-                  }
-
-                  if (example === undefined && responseSchema.example !== undefined) {
-                    example = responseSchema.example;
-                  }
-                }
-
-                // OpenAPI 3.1 prefers the example at the media type level.
-                if (example === undefined && mediaTypeObject?.example !== undefined) {
-                  example = mediaTypeObject.example;
-                }
-              }
-            }
-
-            const responseSummary: GenResponseSummary = {
-              status: Number.parseInt(statusCode, 10),
-              description,
-            };
-
-            if (name) responseSummary.name = name;
-            if (ref) responseSummary.ref = ref;
-            if (contentType) responseSummary.contentType = contentType;
-
-            // Error schemas are not embedded: the viewer resolves them from schemas.gen.json by response.name.
-            const isErrorSchema = schema?.ref?.endsWith('Error') && schema.ref.includes('/schemas/');
-            if (!isErrorSchema && schema) {
-              if (contentType) {
-                schema.contentType = contentType;
-              }
-              responseSummary.schema = schema;
-            }
-            if (example !== undefined) responseSummary.example = example;
-
-            responses.push(responseSummary);
-          }
-        }
-
-        const hasExample = responses.some((r) => r.status >= 200 && r.status < 300 && r.example !== undefined);
-
-        const hasResponseBody = responses.some((r) => r.schema !== undefined);
-
-        const extensions: Record<string, string[]> = {};
-        for (const ext of extensionDefs) {
-          const value = op[ext.key as `x-${string}`];
-          if (Array.isArray(value)) {
-            extensions[ext.id] = value;
-          }
-        }
-
-        const entityType = opTags.map((tag: string) => tagToEntityType.get(tag)).find(Boolean);
-
-        const allOpTags = op.tags ?? [];
-        const tagsByKind: Record<string, string[]> = {};
-        for (const tag of allOpTags) {
-          const kind = tagKindMap.get(tag) ?? 'other';
-          if (!tagsByKind[kind]) tagsByKind[kind] = [];
-          tagsByKind[kind].push(tag);
-        }
-
-        const operationSummary: GenOperationSummary = {
-          id: op.operationId,
-          hash: generateOperationHash(method, path, opTags),
-          method,
-          path,
-          tags: opTags,
-          summary: op.summary ?? '',
-          description: op.description ?? '',
-          deprecated: op.deprecated ?? false,
-          hasParams: (op.parameters ?? []).length > 0,
-          hasRequestBody: !!op.requestBody,
-          hasResponseBody,
-          hasExample,
-          extensions,
-          tagsByKind,
-          ...(entityType && { entityType }),
-        };
-
-        operations.push(operationSummary);
-
-        const request: GenRequest = {};
-
-        if (op.parameters) {
-          const pathParamProps: Record<string, GenSchemaProperty> = {};
-          const queryParamProps: Record<string, GenSchemaProperty> = {};
-
-          for (const param of op.parameters) {
-            if ('$ref' in param) continue;
-            if (param.in !== 'path' && param.in !== 'query') continue;
-
-            const paramSchema: GenSchemaProperty = param.schema
-              ? resolveSchemaProperty(param.schema, param.required ?? false, spec)
-              : { type: 'string', required: param.required ?? false };
-
-            if (param.description && !paramSchema.description) {
-              paramSchema.description = param.description;
-            }
-
-            if (param.in === 'path') {
-              pathParamProps[param.name] = paramSchema;
-            } else if (param.in === 'query') {
-              queryParamProps[param.name] = paramSchema;
-            }
-          }
-
-          if (Object.keys(pathParamProps).length > 0) {
-            request.path = {
-              properties: pathParamProps,
-            };
-          }
-
-          if (Object.keys(queryParamProps).length > 0) {
-            request.query = {
-              properties: queryParamProps,
-            };
-          }
-        }
-
-        if (op.requestBody && !('$ref' in op.requestBody)) {
-          const requestBody = op.requestBody;
-          const content = requestBody.content;
-          if (content) {
-            const contentType = Object.keys(content).find((ct) => ct.includes('json')) || Object.keys(content)[0];
-            if (contentType && content[contentType]?.schema) {
-              const bodySchema = resolveSchema(content[contentType].schema, spec);
-              request.body = {
-                ...bodySchema,
-                required: requestBody.required ?? false,
-                contentType,
-              };
-            }
-          }
-        }
-
-        const operationDetail: GenOperationDetail = {
-          operationId: op.operationId,
-          responses,
-        };
-
-        if (Object.keys(request).length > 0) {
-          operationDetail.request = request;
-        }
-
-        for (const tag of opTags) {
-          const existing = tagMap.get(tag);
-          if (existing) {
-            existing.count++;
-          } else {
-            // Used by an operation but absent from spec.tags.
-            tagMap.set(tag, { count: 1 });
-          }
-
-          const tagDetails = tagDetailsMap.get(tag);
-          if (tagDetails) {
-            tagDetails.push(operationDetail);
-          } else {
-            tagDetailsMap.set(tag, [operationDetail]);
-          }
-        }
+        const details = tagDetailsMap.get(tag) ?? [];
+        details.push(operationDetail);
+        tagDetailsMap.set(tag, details);
       }
     }
   }
@@ -352,53 +288,34 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
   const schemaTagCounts = new Map<string, number>(schemaKindTags.map((t) => [t.name, 0]));
   if (!schemaTagCounts.has(defaultSchemaTag)) schemaTagCounts.set(defaultSchemaTag, 0);
 
-  if (spec.components?.schemas) {
-    for (const [schemaName, schemaValue] of Object.entries(spec.components.schemas)) {
-      const resolvedSchema = resolveSchema(schemaValue, spec);
+  for (const [schemaName, schemaValue] of Object.entries(spec.components?.schemas ?? {})) {
+    const resolvedSchema = resolveSchema(schemaValue, spec);
 
-      // extendsRef is set by allOf merging.
-      const extendsRef = resolvedSchema.extendsRef;
+    const xTags = (schemaValue as { 'x-tags'?: unknown })['x-tags'];
+    const declaredTags = Array.isArray(xTags)
+      ? (xTags as unknown[]).filter((t): t is string => typeof t === 'string')
+      : [];
+    const schemaTag = declaredTags.find((t) => schemaTagNameSet.has(t)) ?? defaultSchemaTag;
+    schemaTagCounts.set(schemaTag, (schemaTagCounts.get(schemaTag) ?? 0) + 1);
 
-      const schemaRef = `#/components/schemas/${schemaName}`;
+    // The card header shows the description, so the nested schema drops it.
+    const { description: _schemaDescription, ...schemaWithoutDescription } = resolvedSchema;
 
-      const xTags = (schemaValue as { 'x-tags'?: unknown })['x-tags'];
-      const declaredTags = Array.isArray(xTags)
-        ? (xTags as unknown[]).filter((t): t is string => typeof t === 'string')
-        : [];
-      const schemaTag = declaredTags.find((t) => schemaTagNameSet.has(t)) ?? defaultSchemaTag;
-      schemaTagCounts.set(schemaTag, (schemaTagCounts.get(schemaTag) ?? 0) + 1);
+    const componentSchema: GenComponentSchema = {
+      name: schemaName,
+      ref: `#/components/schemas/${schemaName}`,
+      type: resolvedSchema.type,
+      schema: schemaWithoutDescription,
+      schemaTag,
+      tagsByKind: groupTagsByKind(declaredTags, tagKindMap),
+    };
 
-      const tagsByKind: Record<string, string[]> = {};
-      for (const tag of declaredTags) {
-        const kind = tagKindMap.get(tag) ?? 'other';
-        if (!tagsByKind[kind]) tagsByKind[kind] = [];
-        tagsByKind[kind].push(tag);
-      }
+    if (schemaValue.description) componentSchema.description = schemaValue.description;
+    // extendsRef is set by allOf merging.
+    if (resolvedSchema.extendsRef) componentSchema.extendsRef = resolvedSchema.extendsRef;
+    if (schemaValue.example !== undefined) componentSchema.example = schemaValue.example;
 
-      // The card header shows the description, so the nested schema drops it.
-      const { description: _schemaDescription, ...schemaWithoutDescription } = resolvedSchema;
-
-      const componentSchema: GenComponentSchema = {
-        name: schemaName,
-        ref: schemaRef,
-        type: resolvedSchema.type,
-        schema: schemaWithoutDescription,
-        schemaTag,
-        tagsByKind,
-      };
-
-      if (schemaValue.description) {
-        componentSchema.description = schemaValue.description;
-      }
-      if (extendsRef) {
-        componentSchema.extendsRef = extendsRef;
-      }
-      if (schemaValue.example !== undefined) {
-        componentSchema.example = schemaValue.example;
-      }
-
-      componentSchemas.push(componentSchema);
-    }
+    componentSchemas.push(componentSchema);
   }
 
   // Sorted by ownership, module, and name for stable output; untagged schemas sort last at their level.

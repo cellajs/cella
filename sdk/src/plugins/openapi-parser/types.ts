@@ -13,6 +13,8 @@ export type OpenApiReferenceObject = OpenAPIV3_1.ReferenceObject;
 
 export type OpenApiSpec = OpenAPIV3_1.Document;
 
+export type OpenApiOperation = OpenAPIV3_1.OperationObject;
+
 /** Tag object plus the non-standard fields this spec adds. */
 export type OpenApiTag = OpenAPIV3_1.TagObject & {
   kind?: string;

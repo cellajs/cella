@@ -1,10 +1,10 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useState } from 'react';
+import type { GenOperationSummary } from 'sdk/docs-types';
 import { nanoid } from 'shared/utils/nanoid';
 import { usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
 import { operationsByTagQueryOptions, tagDetailsQueryOptions, tagsQueryOptions } from '~/modules/docs/query';
-import type { GenOperationSummary } from '~/modules/docs/types';
 import { SidebarMenu } from '~/modules/ui/sidebar';
 import { queryClient } from '~/query/query-client';
 import { CollapsibleTagItem } from './collapsible-tag-item';

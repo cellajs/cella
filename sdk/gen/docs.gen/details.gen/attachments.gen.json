@@ -855,10 +855,11 @@
       },
       "body": {
         "type": "array",
+        "minItems": 1,
+        "maxItems": 50,
         "itemType": "object",
         "items": {
           "type": "object",
-          "required": true,
           "properties": {
             "id": { "type": "string", "required": true, "format": "uuid" },
             "name": { "type": "string", "required": false, "maxLength": 255 },
@@ -928,8 +929,6 @@
             }
           }
         },
-        "minItems": 1,
-        "maxItems": 50,
         "required": true,
         "contentType": "application/json"
       }

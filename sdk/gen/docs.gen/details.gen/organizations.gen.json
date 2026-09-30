@@ -442,10 +442,11 @@
       },
       "body": {
         "type": "array",
+        "minItems": 1,
+        "maxItems": 10,
         "itemType": "object",
         "items": {
           "type": "object",
-          "required": true,
           "properties": {
             "id": { "type": "string", "required": true, "maxLength": 50 },
             "name": {
@@ -462,8 +463,6 @@
             }
           }
         },
-        "minItems": 1,
-        "maxItems": 10,
         "required": true,
         "contentType": "application/json"
       }
