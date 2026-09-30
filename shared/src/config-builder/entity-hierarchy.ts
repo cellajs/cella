@@ -1,6 +1,5 @@
 import {
   entityIdColumnKey,
-  entityIdColumnName,
   possibleHomeChannels,
   type ResolvedAncestor,
   resolveDeepestAncestorId,
@@ -65,28 +64,6 @@ interface ProductEntry {
   nullableAncestors?: readonly string[];
 }
 type EntityEntry = UserEntry | ChannelEntry | ProductEntry;
-
-export interface ChannelView<R extends string = string> {
-  readonly kind: 'channel';
-  readonly parent: string | null;
-  readonly roles: readonly R[];
-  readonly relatedChannels?: readonly string[];
-  readonly organizationRoles?: Readonly<Record<string, string>>;
-  readonly elevated?: readonly string[];
-}
-
-export interface ProductView {
-  readonly kind: 'product';
-  readonly parent: string;
-  readonly relatedChannels?: readonly string[];
-  readonly nullableAncestors?: readonly string[];
-}
-
-export interface UserEntityView {
-  readonly kind: 'user';
-}
-
-export type EntityView = UserEntityView | ChannelView | ProductView;
 
 /** Chain calls to declare entities, then call build(). @see README.md */
 class EntityHierarchyBuilder<
@@ -614,31 +591,6 @@ export class EntityHierarchy<
     return (entry.nullableAncestors ?? []) as readonly TChannels[];
   };
 
-  readonly getConfig = (entityType: string): EntityView | undefined => {
-    const entry = this.entities.get(entityType);
-    if (!entry) return undefined;
-    if (entry.kind === 'user') return { kind: 'user' };
-    if (entry.kind === 'channel') {
-      return { kind: 'channel', parent: entry.parent, roles: entry.roles, relatedChannels: entry.relatedChannels };
-    }
-    return {
-      kind: 'product',
-      parent: entry.parent,
-      relatedChannels: entry.relatedChannels,
-      nullableAncestors: entry.nullableAncestors,
-    };
-  };
-
-  readonly getProductConfig = (entityType: string): ProductView | undefined => {
-    const config = this.getConfig(entityType);
-    return config?.kind === 'product' ? config : undefined;
-  };
-
-  readonly getChannelConfig = (entityType: string): ChannelView<RoleFromRegistry<TRoles>> | undefined => {
-    const config = this.getConfig(entityType);
-    return config?.kind === 'channel' ? (config as ChannelView<RoleFromRegistry<TRoles>>) : undefined;
-  };
-
   readonly hasAncestor = (entityType: string, ancestor: string): boolean => {
     return this.getOrderedAncestors(entityType).includes(ancestor as TChannels);
   };
@@ -683,18 +635,9 @@ export class EntityHierarchy<
     return this.roleRegistry;
   }
 
-  // Row location: id-column naming, home attribution and path computation. The instance is the
+  // Row location: home attribution and path computation. The instance is the
   // entry point; `resolve-row-channel.ts` and `row-path.ts` hold the implementations and also
   // export them as free functions over `AncestorSource` for injected hierarchies.
-
-  readonly idColumnKey = (entityType: string): string => {
-    return entityIdColumnKey(entityType);
-  };
-
-  /** `courseSection` gives `course_section_id`. */
-  readonly idColumnName = (entityType: string): string => {
-    return entityIdColumnName(entityType);
-  };
 
   readonly resolveNonNullAncestors = (entityType: string, row: Record<string, unknown>): ResolvedAncestor[] => {
     return resolveNonNullAncestors(this, entityType, row);

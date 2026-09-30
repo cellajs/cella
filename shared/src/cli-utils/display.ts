@@ -12,16 +12,3 @@ export function printHeader(name: string, version?: string, right = 'cellajs.com
   console.info(DIVIDER);
   console.info();
 }
-
-/** An optional detail line prints dimmed below, followed by a blank line. */
-export function printStep(label: string, detail?: string): void {
-  console.info(`${pc.green('✓')} ${label}`);
-  if (detail) {
-    console.info(`  ${pc.dim(detail)}`);
-    console.info();
-  }
-}
-
-export function printError(label: string): void {
-  console.info(`${pc.red('✗')} ${label}`);
-}

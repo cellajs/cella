@@ -144,15 +144,6 @@ export interface IncomingTraceContext {
   lsn?: string;
 }
 
-/** Primitives only. */
-export type SpanAttributeValue = string | number | boolean | null | undefined;
-
-/** The optional trace context yields end-to-end latency. */
-export interface SpanAttributes {
-  [key: string]: SpanAttributeValue | IncomingTraceContext;
-  _trace?: IncomingTraceContext;
-}
-
 // Attribute helpers
 
 /** No undefined values. */

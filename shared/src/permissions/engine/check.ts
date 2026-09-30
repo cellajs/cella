@@ -3,7 +3,6 @@ import { allActionsAllowed, createActionRecord } from '../action-helpers.ts';
 import type { PublicReadGrants } from '../public-read.ts';
 import { type ConditionActor, isRowCondition, matchesRowCondition, type RowForCondition } from '../row-conditions.ts';
 import type { EntityActionPermissions, PolicyMatrix } from '../types.ts';
-import { formatBatchPermissionSummary, formatPermissionDecision } from './format.ts';
 import { resolveHierarchy } from './resolve-hierarchy.ts';
 import type {
   AccessMembership,
@@ -104,7 +103,6 @@ export const checkWithIndices = <T extends AccessMembership>(
   actorId?: string,
   publicGrants?: PublicReadGrants,
   elevatedGrants?: ReadonlySet<string>,
-  debug?: boolean,
 ): PermissionDecision<T> => {
   const primaryChannel = orderedChannels[0];
   if (primaryChannel === undefined) throw new Error('checkSubject: orderedChannels must not be empty');
@@ -156,12 +154,7 @@ export const checkWithIndices = <T extends AccessMembership>(
     }
 
     const subjectChannelId = getSubjectChannelId(subject, channelType);
-    if (!subjectChannelId) {
-      if (debug) {
-        console.warn(`[Permission] ${subject.entityType}:${subject.id} missing channelId for ${channelType}`);
-      }
-      continue;
-    }
+    if (!subjectChannelId) continue;
 
     channelIds[channelType] = subjectChannelId;
 
@@ -245,7 +238,6 @@ export function getAllDecisions<T extends AccessMembership>(
   const actorId = options?.actorId;
   const publicGrants = options?.publicGrants;
   const elevatedGrants = options?.elevatedGrants;
-  const debug = options?.debug === true;
   const { hierarchy: resolvedHierarchy, entityActions, getRoles } = resolveHierarchy(options);
 
   const results = new Map<string, PermissionDecision<T>>();
@@ -294,7 +286,6 @@ export function getAllDecisions<T extends AccessMembership>(
       actorId,
       publicGrants,
       elevatedGrants,
-      debug,
     );
 
     const key = subject.id ?? `_idx:${subjectArray.indexOf(subject)}`;
@@ -307,10 +298,8 @@ export function getAllDecisions<T extends AccessMembership>(
 
     if (!decision) throw new Error(`[Permission] Check failed for subject ${subjects.entityType}:${subjects.id}`);
 
-    if (debug) console.debug(formatPermissionDecision(decision));
     return decision;
   }
 
-  if (debug) console.debug(formatBatchPermissionSummary(results));
   return results;
 }

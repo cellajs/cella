@@ -1,57 +1,13 @@
+/** Span names follow `layer.domain.action`; add a name here when code starts a span with it. */
 export const cdcSpanNames = {
   processWal: 'cdc.wal.process',
   createActivity: 'cdc.activity.create',
-  sendWs: 'cdc.ws.send',
-  heartbeat: 'cdc.heartbeat',
-  reconnect: 'cdc.ws.reconnect',
 } as const;
-
-export type CdcSpanName = (typeof cdcSpanNames)[keyof typeof cdcSpanNames];
 
 export const backendSpanNames = {
-  // ActivityBus
   activityBusReceive: 'sync.activitybus.receive',
-  activityBusEmit: 'sync.activitybus.emit',
-  activityBusPgNotify: 'sync.activitybus.pg_notify',
-
-  // SSE Streams
-  sseConnect: 'sync.sse.connect',
-  sseDisconnect: 'sync.sse.disconnect',
-  sseSend: 'sync.sse.send',
-  sseCatchUp: 'sync.sse.catchup',
 } as const;
-
-export type BackendSpanName = (typeof backendSpanNames)[keyof typeof backendSpanNames];
 
 export const frontendSpanNames = {
-  // SSE connection
-  sseConnect: 'sync.sse.connect',
-  sseReceive: 'sync.sse.receive',
-  sseReconnect: 'sync.sse.reconnect',
-  sseCatchUp: 'sync.sse.catchup',
-
-  // Message handling
   messageProcess: 'sync.message.process',
-  messageBroadcast: 'sync.message.broadcast',
-
-  // Cache operations
-  cacheUpdate: 'sync.cache.update',
-  cacheInvalidate: 'sync.cache.invalidate',
-  cacheHit: 'sync.cache.hit',
-  cacheMiss: 'sync.cache.miss',
-
-  // Sequence tracking
-  seqGap: 'sync.seq.gap',
-  seqUpdate: 'sync.seq.update',
 } as const;
-
-export type FrontendSpanName = (typeof frontendSpanNames)[keyof typeof frontendSpanNames];
-
-/** All span names organized by layer; each name follows the convention `layer.domain.action`. */
-export const spanNames = {
-  cdc: cdcSpanNames,
-  backend: backendSpanNames,
-  frontend: frontendSpanNames,
-} as const;
-
-export type SpanName = CdcSpanName | BackendSpanName | FrontendSpanName;

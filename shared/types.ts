@@ -8,9 +8,6 @@ export type ChannelEntityType = (typeof appConfig.channelEntityTypes)[number];
 /** User-generated content; no memberships are assigned on these. */
 export type ProductEntityType = (typeof appConfig.productEntityTypes)[number];
 
-/** Channel entities appearing as product parents; drives activities columns and CDC channel extraction. */
-export type RelatableChannelEntityType = (typeof hierarchy.relatableChannelTypes)[number];
-
 /** Not entities, but activities are logged for them. */
 export type ResourceType = (typeof appConfig.resourceTypes)[number];
 

@@ -1,6 +1,6 @@
 import { inArray, max } from 'drizzle-orm';
 import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
-import type { MenuStructureItem } from 'shared/config-builder';
+import type { MenuStructureItem } from 'shared/config-builder/types';
 import { defaultOrder, orderGap } from 'shared/utils/display-order';
 import type { DbContext } from '#/core/context';
 import { type MembershipBaseModel, membershipBaseSelect } from '#/modules/memberships/helpers/select';
