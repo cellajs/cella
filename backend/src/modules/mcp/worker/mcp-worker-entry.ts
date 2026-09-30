@@ -8,7 +8,7 @@ import { otel } from '#/lib/tracing';
 import { listenForAuthInvalidation } from '#/middlewares/guard/invalidation-listener';
 import '#/modules'; // composition root: registers every backend module (this worker mounts only mcp routes)
 import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
-import { baseApp } from '#/server';
+import { createBaseApp } from '#/server';
 
 /**
  * The MCP face as its own process: the tool endpoint and its protected-resource metadata, behind tokens from the
@@ -28,11 +28,13 @@ export async function startMcpWorker(options: { port?: number } = {}): Promise<v
   // Wait for the API to be ready (it owns migrations)
   if (env.NODE_ENV === 'development') await waitForBackend(2000, 60_000);
 
-  baseApp.route('/:tenantId/:organizationId/mcp', mcpHandlers);
+  // An app of its own: folded into the API process, the API's app takes no routes once it has answered a request.
+  const app = createBaseApp();
+  app.route('/:tenantId/:organizationId/mcp', mcpHandlers);
   // The token users and memberships this process caches drop when another process invalidates them.
   const stopInvalidationListener = listenForAuthInvalidation();
 
-  const server: ServerType = serve({ fetch: baseApp.fetch, hostname: '0.0.0.0', port }, () => {
+  const server: ServerType = serve({ fetch: app.fetch, hostname: '0.0.0.0', port }, () => {
     baseLog.info(`MCP service listening on port ${port}${hasAiKey ? '' : ' (AI features off)'}`);
   });
 
