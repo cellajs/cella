@@ -19,7 +19,8 @@ export function PreferencesContent() {
 
   const showDesktopMenuOption = appConfig.menuStructure.some(({ subentityType }) => subentityType);
 
-  const { mode, setMode } = useUIStore();
+  const mode = useUIStore((state) => state.mode);
+  const setMode = useUIStore((state) => state.setMode);
 
   return (
     <>

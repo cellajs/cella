@@ -14,7 +14,7 @@ import { useUserStore } from '~/modules/user/user-store';
 import { useMenu } from './helpers/use-menu';
 
 export function MenuSheet() {
-  const { user } = useUserStore();
+  const user = useUserStore((state) => state.user);
   const { mutateAsync } = useMemberUpdateMutation();
 
   const { menu, isLoading } = useMenu(user?.id);

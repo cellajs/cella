@@ -8,7 +8,7 @@ export interface LogoProps extends React.SVGProps<SVGSVGElement> {
 }
 
 export function Logo({ className, iconColor, textColor, height = 50, iconOnly = false, ...props }: LogoProps) {
-  const { mode } = useUIStore();
+  const mode = useUIStore((state) => state.mode);
   const defaultColor = mode === 'light' ? '#333' : '#fff';
   textColor ??= defaultColor;
   iconColor ??= defaultColor;

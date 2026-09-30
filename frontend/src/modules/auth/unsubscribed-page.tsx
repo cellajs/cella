@@ -5,7 +5,7 @@ import { useUserStore } from '~/modules/user/user-store';
 
 export function Unsubscribed() {
   const { t } = useTranslation();
-  const { user } = useUserStore();
+  const user = useUserStore((state) => state.user);
 
   return (
     <div className="text-center">

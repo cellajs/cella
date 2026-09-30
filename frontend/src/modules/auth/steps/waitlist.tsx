@@ -8,7 +8,8 @@ import { WaitlistForm } from '~/modules/requests/waitlist-form';
 export function WaitlistStep() {
   const { t } = useTranslation();
 
-  const { email, resetSteps } = useAuthStore();
+  const email = useAuthStore((state) => state.email);
+  const resetSteps = useAuthStore((state) => state.resetSteps);
 
   return (
     <>

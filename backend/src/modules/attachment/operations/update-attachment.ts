@@ -9,7 +9,6 @@ import { getValidProduct } from '#/permissions/get-valid-product';
 import { keywordsFromDocument } from '#/utils/description-document';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
-import { assertBlockMediaUrls } from '#/utils/validate-block-urls';
 
 type UpdateAttachmentInput = z.infer<typeof attachmentUpdateStxBodySchema>;
 
@@ -30,10 +29,7 @@ export async function updateAttachmentOp(
   const updatedAttachmentRecord = await tenantContext(ctx, async (txCtx) => {
     const { entity } = await getValidProduct(txCtx, id, 'attachment', 'update');
 
-    // Media in a description may reference only uploads of the attachment's own organization.
-    if (rawOps.description) {
-      assertBlockMediaUrls(rawOps.description, entity.organizationId, 'attachment', 'description');
-    }
+    attachmentContract.assertBlockFields(rawOps, entity.organizationId);
 
     // Server-origin writes carry no client field timestamps, so every changed scalar gets a fresh server HLC.
     const resolved = serverOrigin

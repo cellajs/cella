@@ -8,10 +8,11 @@ import { sideEffectProducers } from './scripts-discovery';
  *   2. The side-effect collector creates one combined folder for raw SQL that Drizzle Kit
  *      cannot express (RLS grants, triggers, functions, publications, partitioning, …).
  *
- * The collector runs second so its folder sorts (and applies) after the schema changes.
+ * The collector runs second so its folder sorts (and applies) after the schema changes. Extra arguments go to
+ * drizzle-kit: `pnpm generate -- --hints '<json-array>'` answers its rename-or-create question off a terminal.
  */
 async function generate(): Promise<void> {
-  await runDrizzleGenerate();
+  await runDrizzleGenerate(process.argv.slice(2));
   await generateSideEffects(sideEffectProducers);
 }
 

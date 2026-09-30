@@ -125,6 +125,7 @@ export type {
   MenuSection,
   NullableAncestorType,
   OrganizationFlags,
+  OrganizationRole,
   OrganizationSetupConfig,
   ProductEntityType,
   PropagationHint,

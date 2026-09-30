@@ -183,7 +183,7 @@ Value shape selects merge behavior:
 
 Paused mutations persist to IndexedDB and survive a reload, so mutation variables must carry all routing data. Hook closures no longer exist at replay. The attachment module is the reference: mutation functions are registered as replay defaults, and `stx` is minted at intent time and stored in the variables so a replay reuses the mutation ID and field timestamps.
 
-Idempotency is operation-specific: attachment create checks its mutation ID against the stored `stx` and can return an existing batch. The lookup is scoped to the creating actor, so another actor reusing that ID creates its own rows. Update and delete do not.
+Idempotency is operation-specific: a product create runs `checkIdempotency(ctx, table, mutationId)`, which returns the batch the caller created under that id in the request scope, so another actor reusing the id creates its own rows. Update and delete do not.
 
 ## Resilience
 

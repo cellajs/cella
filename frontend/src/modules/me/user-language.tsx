@@ -19,7 +19,8 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
   const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-  const { user, updateUser } = useUserStore();
+  const user = useUserStore((state) => state.user);
+  const updateUser = useUserStore((state) => state.updateUser);
   const language = user?.language || i18n.languages[0];
 
   const changeLanguage = (lng: Language) => {

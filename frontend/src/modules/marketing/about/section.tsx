@@ -19,7 +19,7 @@ interface AboutSectionHeaderProps {
   className?: string;
 }
 
-export const AboutSectionHeader = ({ title, text, textComponents, className = '' }: AboutSectionHeaderProps) => {
+export function AboutSectionHeader({ title, text, textComponents, className = '' }: AboutSectionHeaderProps) {
   const { t } = useTranslation();
 
   if (!title && !text) {
@@ -40,16 +40,16 @@ export const AboutSectionHeader = ({ title, text, textComponents, className = ''
       )}
     </div>
   );
-};
+}
 
-export const AboutSection = ({
+export function AboutSection({
   title,
   text,
   textComponents,
   sectionId,
   children,
   alternate = false,
-}: AboutSectionProps) => {
+}: AboutSectionProps) {
   const backgroundClass = alternate ? 'bg-accent/40 dark:bg-transparent' : '';
 
   return (
@@ -61,4 +61,4 @@ export const AboutSection = ({
       {children}
     </section>
   );
-};
+}

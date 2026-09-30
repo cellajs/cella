@@ -1,18 +1,9 @@
 import { defineConfig } from 'tsup';
+import { keepOnDisk } from '../shared/src/keep-on-disk.ts';
+import { appKeepOnDisk } from './src/bundle-config.ts';
 
-/**
- * Packages that have to stay on disk. Everything else is inlined into dist/.
- * - @ngrok/ngrok: native addon, loaded by platform-specific .node file.
- * - @opentelemetry/*: the SDK patches modules through the loader registry, so it loads from disk,
- *   and so does anything it instruments. `pg` is here for that reason: PgInstrumentation only ever
- *   sees a module the registry handed it, so an inlined copy emits no query spans.
- * - jsdom: resolves its default stylesheet through __dirname, so inlining it points that lookup at the
- *   bundle. @blocknote/server-util, which reaches it, is inlined; only its jsdom import stays external.
- * - pino and its transports: `pino.transport()` starts a worker thread from a file path inside the
- *   pino package, and resolves transport targets like 'pino-pretty' by name from the caller, so
- *   neither survives being inlined.
- */
-const KEEP_ON_DISK = String.raw`pg(?:\/|$)|@ngrok\/ngrok|@opentelemetry\/|pino(?:-|\/|$)|thread-stream|sonic-boom|jsdom`;
+// @ngrok/ngrok: native addon, loaded by platform-specific .node file.
+const { noExternal, external } = keepOnDisk(['@ngrok/ngrok', ...appKeepOnDisk]);
 
 export default defineConfig({
   entry: {
@@ -26,10 +17,7 @@ export default defineConfig({
   format: ['esm'],
   target: 'esnext',
   minify: false,
-  // Bundle everything except KEEP_ON_DISK, so the service loads one file plus a short list of
-  // packages at runtime. tsup's `noExternal` takes precedence over `external`, so the exceptions
-  // belong in this negative lookahead; `external` below repeats them to cover subpath imports.
-  noExternal: [new RegExp(`^(?!(?:${KEEP_ON_DISK}))`)],
+  noExternal,
   // Bundled CJS dependencies call require() at runtime (chalk reaching for node:os, for one), and
   // esbuild's ESM output defines none. This supplies a working one.
   banner: {
@@ -44,16 +32,5 @@ export default defineConfig({
     options.conditions = ['module']; // Enforce use of ESM
     options.jsx = 'automatic'; // Use modern JSX transform for email templates
   },
-  external: [
-    // Native addon. Regexes: a bare name matches the exact specifier, and these are reached through subpaths too.
-    /^@ngrok\/ngrok(\/|$)/,
-    // The SDK patches modules through the loader registry, so both it and anything it instruments
-    // have to be loaded from disk; a bundled copy of `pg` is never handed to the instrumentation.
-    /^@opentelemetry/,
-    /^pg(\/|$)/,
-    /^pino(-|\/|$)/,
-    /^thread-stream(\/|$)/,
-    /^sonic-boom(\/|$)/,
-    /^jsdom(\/|$)/,
-  ],
+  external,
 });

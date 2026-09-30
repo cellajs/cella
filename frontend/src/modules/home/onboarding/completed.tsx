@@ -18,7 +18,7 @@ import { getChannelRoute } from '~/utils/channel-route';
 export function OnboardingCompleted() {
   const { t } = useTranslation();
   const user = useCurrentUser();
-  const { setSectionsDefault } = useNavigationStore();
+  const setSectionsDefault = useNavigationStore((state) => state.setSectionsDefault);
 
   const { mutate } = useUpdateSelfFlagsMutation();
 

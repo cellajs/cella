@@ -39,7 +39,8 @@ if (import.meta.hot) {
 
 /** Adds cache persistence and offline support: the persister is session or IndexedDB per offlineAccess. */
 export function QueryClientProvider({ children }: { children: React.ReactNode }) {
-  const { offlineAccess, toggleOfflineAccess } = useUIStore();
+  const offlineAccess = useUIStore((state) => state.offlineAccess);
+  const toggleOfflineAccess = useUIStore((state) => state.toggleOfflineAccess);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
   useEffect(() => {

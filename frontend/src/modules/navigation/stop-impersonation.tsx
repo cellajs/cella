@@ -17,7 +17,7 @@ export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const { impersonating } = useUIStore();
+  const impersonating = useUIStore((state) => state.impersonating);
 
   const stopImpersonation = async () => {
     await stopImpersonationFlow();

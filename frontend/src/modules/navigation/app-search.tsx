@@ -66,7 +66,7 @@ export function AppSearch() {
   const toggleCollapsed = (entityType: string) =>
     setCollapsedTypes((prev) => ({ ...prev, [entityType]: !prev[entityType] }));
 
-  const { recentSearches } = useNavigationStore();
+  const recentSearches = useNavigationStore((state) => state.recentSearches);
 
   const { focusRef } = useFocusByRef();
 

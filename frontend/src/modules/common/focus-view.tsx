@@ -24,7 +24,8 @@ interface FocusViewContainerProps {
 /** Toggles focus view mode, which hides non-essential UI. */
 export function FocusView({ className = '', iconOnly }: FocusViewProps) {
   const { t } = useTranslation();
-  const { focusView, setFocusView } = useUIStore();
+  const focusView = useUIStore((state) => state.focusView);
+  const setFocusView = useUIStore((state) => state.setFocusView);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
   const removeSheet = sheeter.getState().remove;
 

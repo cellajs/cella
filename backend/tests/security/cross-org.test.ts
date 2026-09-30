@@ -34,7 +34,14 @@ import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createOrgUser, createSecondOrg, createTestTenant, type TestTenant } from './helpers';
+import {
+  assumeMemberAttachmentPolicy,
+  clearSecurityTestData,
+  createOrgUser,
+  createSecondOrg,
+  createTestTenant,
+  type TestTenant,
+} from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -62,6 +69,7 @@ interface Row {
  * sit outside RLS, so that check is their only one. The tenant boundary itself is cross-tenant.test.ts.
  */
 describe('Cross-organization API isolation', async () => {
+  assumeMemberAttachmentPolicy({ read: 1, update: 'own', delete: 'own' });
   const call = await createAppClient();
   let tenant: TestTenant;
   let plan: TestEntityHierarchyPlan;

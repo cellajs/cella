@@ -7,7 +7,7 @@ import { Button, SubmitButton } from '~/modules/ui/button';
 /** Confirms turning MFA on or off; a session that is not stepped up first proves the user's second factor. */
 export function ConfirmMfaToggle({ mfaRequired }: { mfaRequired: boolean }) {
   const { t } = useTranslation();
-  const { remove: removeDialog } = useDialoger();
+  const removeDialog = useDialoger((state) => state.remove);
 
   const { mutate: toggleMfa, isPending } = useToggleMfaMutation();
 

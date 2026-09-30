@@ -21,7 +21,7 @@ const ContactFormMap = lazyNamed(() => import('~/modules/common/contact-form/con
 
 export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   const { t } = useTranslation();
-  const { user } = useUserStore();
+  const user = useUserStore((state) => state.user);
   const isMediumScreen = useBreakpointAbove('lg');
   const nameLabel = t('c:name').toLowerCase();
   const emailLabel = t('c:email').toLowerCase();

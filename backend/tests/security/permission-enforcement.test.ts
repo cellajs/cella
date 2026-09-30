@@ -22,7 +22,7 @@ import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createOrgUser } from './helpers';
+import { assumeMemberAttachmentPolicy, clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -56,6 +56,7 @@ interface Row {
  * reads, so the permission check is what answers, and the same call succeeds for the admin.
  */
 describe('Member escalation over HTTP', async () => {
+  assumeMemberAttachmentPolicy({ read: 1, update: 'own', delete: 'own' });
   const call = await createAppClient();
   let shared: Fixture;
 

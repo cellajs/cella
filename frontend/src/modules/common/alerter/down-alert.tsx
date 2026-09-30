@@ -61,7 +61,8 @@ const downAlertConfig = {
 
 export function DownAlert() {
   const isOnline = useOnlineManager();
-  const { downAlert, setDownAlert } = useAlertStore();
+  const downAlert = useAlertStore((state) => state.downAlert);
+  const setDownAlert = useAlertStore((state) => state.setDownAlert);
   const [dismissedAlerts, setDismissedAlerts] = useState<Partial<Record<AlertKeys, boolean>>>({});
 
   // Derives the debounced UI offline state from onlineManager

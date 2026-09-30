@@ -23,7 +23,8 @@ type FormValues = z.infer<typeof formSchema>;
 export function CheckEmailStep() {
   const { t } = useTranslation();
 
-  const { setStep, setRestrictedMode } = useAuthStore();
+  const setStep = useAuthStore((state) => state.setStep);
+  const setRestrictedMode = useAuthStore((state) => state.setRestrictedMode);
 
   const isMobile = window.innerWidth < 640;
   const title = appConfig.has.selfRegistration ? t('c:sign_in_or_up') : t('c:sign_in');

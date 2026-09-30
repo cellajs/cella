@@ -25,7 +25,8 @@ interface Props {
 export function AvatarFormField({ form, label, name, entity, type }: Props) {
   const { t } = useTranslation();
   const uploadButtonRef = useRef(null);
-  const upload = useUploader();
+  const createUpload = useUploader((state) => state.create);
+  const removeUpload = useUploader((state) => state.remove);
 
   const { control } = form;
   const url = form.getValues(name);
@@ -37,7 +38,7 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
 
   const openUploadDialog = () => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
-    upload.create({
+    createUpload({
       id: 'upload-image',
       personalUpload: true,
       plugins: ['webcam', 'image-editor', 'url'],
@@ -46,7 +47,7 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
         onComplete(result) {
           const url = result.thumbnail[0].url;
           if (url) handleUpdateURL(url);
-          upload.remove();
+          removeUpload();
         },
       },
       title: t('c:upload_item', { item: t('c:profile_picture').toLowerCase() }),

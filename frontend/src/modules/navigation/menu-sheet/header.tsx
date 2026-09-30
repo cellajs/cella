@@ -32,7 +32,7 @@ function openStackedNavSheet(id: NavItemId, content: React.ReactNode, triggerRef
 
 export function MenuSheetHeader() {
   const { t } = useTranslation();
-  const { user } = useUserStore();
+  const user = useUserStore((state) => state.user);
   const notificationsButtonRef = useRef<HTMLButtonElement | null>(null);
   const accountButtonRef = useRef<HTMLButtonElement | null>(null);
 

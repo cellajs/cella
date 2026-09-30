@@ -18,7 +18,8 @@ export interface PageCoverProps {
 
 function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback }: PageCoverProps) {
   const { t } = useTranslation();
-  const upload = useUploader();
+  const createUpload = useUploader((state) => state.create);
+  const removeUpload = useUploader((state) => state.remove);
 
   const uploadButtonRef = useRef(null);
 
@@ -32,7 +33,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
 
   const openUploadDialog = () => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
-    upload.create({
+    createUpload({
       id: 'page-cover',
       ...(organizationId ? { organizationId, personalUpload: false } : { personalUpload: true }),
       plugins: ['webcam', 'image-editor', 'url'],
@@ -41,7 +42,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
         onComplete(result) {
           const url = result.cover[0].url;
           if (url) handleUpdateURL(url);
-          upload.remove();
+          removeUpload();
         },
       },
       title: t('c:upload_item', { item: t('c:cover').toLowerCase() }),

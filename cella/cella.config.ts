@@ -54,6 +54,7 @@ export default defineConfig({
       'backend/src/db/channel-tables.ts',
       'backend/src/db/product-tables.ts',
       'backend/src/modules.ts',
+      'backend/src/bundle-config.ts',
       'backend/src/mocks/app-product-mocks.ts',
       'backend/src/modules/attachment/helpers/attachment-placement.ts',
       'backend/src/schemas/app-schemas.ts',

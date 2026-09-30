@@ -60,7 +60,7 @@ export function AccountSheet() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const user = useCurrentUser();
-  const { isSystemAdmin } = useUserStore();
+  const isSystemAdmin = useUserStore((state) => state.isSystemAdmin);
   const isMobile = useBreakpointBelow('sm', false);
   const isOnline = useOnlineManager();
 

@@ -15,7 +15,7 @@ export function MfaSwitch() {
   const hasPasskey = authData.passkeys.length > 0;
   const hasTotp = authData.hasTotp;
 
-  const { create: createDialog } = useDialoger();
+  const createDialog = useDialoger((state) => state.create);
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 

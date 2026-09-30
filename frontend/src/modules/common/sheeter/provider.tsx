@@ -16,7 +16,8 @@ export function Sheeter() {
   const sheets = useSheeter((state) => state.sheets);
   // Part of the element keys, so crossing the breakpoint remounts the overlay
   const mode = isMobile ? 'drawer' : 'sheet';
-  const { lockUI, unlockUI } = useUIStore();
+  const lockUI = useUIStore((state) => state.lockUI);
+  const unlockUI = useUIStore((state) => state.unlockUI);
 
   useBodyClass({ 'sheeter-open': sheets.length > 0 });
 

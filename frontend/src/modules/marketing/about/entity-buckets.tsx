@@ -75,7 +75,7 @@ const ENTER_STAGGER = 0.15;
 
 // Single entity: icon over label. Stacks one-per-line on mobile, sits in a row on larger screens.
 // `delay` sets the tile's place in the one-by-one reveal when it enters after a config switch.
-const EntityTile = ({ Icon, label, delay = 0 }: Entity & { delay?: number }) => {
+function EntityTile({ Icon, label, delay = 0 }: Entity & { delay?: number }) {
   const { t } = useTranslation();
   return (
     <motion.div
@@ -90,10 +90,10 @@ const EntityTile = ({ Icon, label, delay = 0 }: Entity & { delay?: number }) => 
       <div className="w-full truncate text-muted-foreground text-xs">{t(label)}</div>
     </motion.div>
   );
-};
+}
 
 // Measured in real pixels so the rounded rect tracks the card at any breakpoint.
-const DashedBorder = ({ animated = false }: { animated?: boolean }) => {
+function DashedBorder({ animated = false }: { animated?: boolean }) {
   const ref = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
 
@@ -127,11 +127,11 @@ const DashedBorder = ({ animated = false }: { animated?: boolean }) => {
       )}
     </svg>
   );
-};
+}
 
 // One category card. On config switch, tiles whose entity persists across configs stay put;
 // only slots whose entity changed crossfade, entering one by one.
-const Bucket = ({
+function Bucket({
   title,
   entities,
   animated = false,
@@ -144,7 +144,7 @@ const Bucket = ({
   badge?: TKey;
   // Tiles revealing in other buckets before this one, so the one-by-one order spans buckets.
   staggerOffset?: number;
-}) => {
+}) {
   const { t } = useTranslation();
   // Previous render's entities, to detect which slots changed and stagger only those.
   const prevRef = useRef<Entity[]>(entities);
@@ -176,9 +176,9 @@ const Bucket = ({
       </div>
     </div>
   );
-};
+}
 
-export const EntityBuckets = () => {
+export function EntityBuckets() {
   const { t } = useTranslation();
   const [config, setConfig] = useState<ConfigKey>('todo');
   const [hint, setHint] = useState(true);
@@ -237,4 +237,4 @@ export const EntityBuckets = () => {
       </div>
     </div>
   );
-};
+}

@@ -13,7 +13,8 @@ import { getRouter } from '~/routes/-router-instance';
 export function Dialoger() {
   const isMobile = useBreakpointBelow('sm');
   const dialogs = useDialoger((state) => state.dialogs);
-  const { lockUI, unlockUI } = useUIStore();
+  const lockUI = useUIStore((state) => state.lockUI);
+  const unlockUI = useUIStore((state) => state.unlockUI);
 
   useBodyClass({ 'dialoger-open': dialogs.length > 0 });
 

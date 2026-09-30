@@ -26,7 +26,7 @@ interface LegalAsideProps {
   className?: string;
 }
 
-export const LegalAside = ({ subjects, currentSubject, className }: LegalAsideProps) => {
+export function LegalAside({ subjects, currentSubject, className }: LegalAsideProps) {
   const { t } = useTranslation();
 
   const isMobile = useBreakpointBelow('sm');
@@ -135,4 +135,4 @@ export const LegalAside = ({ subjects, currentSubject, className }: LegalAsidePr
       })}
     </div>
   );
-};
+}

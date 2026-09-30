@@ -14,7 +14,7 @@ function maximize_canvas(c: HTMLCanvasElement) {
 
 /** Full-viewport background art that positions and fades itself in; mount it lazily with a `null` Suspense fallback. */
 export function BgAnimation() {
-  const { theme } = useUIStore();
+  const theme = useUIStore((state) => state.theme);
   const { hasWaited } = useMountedState();
 
   useEffect(() => {

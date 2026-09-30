@@ -85,6 +85,7 @@ export const attachmentContract = evolutionContract.product('attachment', {
     /** BlockNote blocks JSON; the collaborative editor persists it through the Yjs materializer. */
     description: z.string().max(maxLength.html),
   },
+  blockFields: ['description'],
 });
 
 export const attachmentCreateManyStxBodySchema = attachmentContract.createItemSchema

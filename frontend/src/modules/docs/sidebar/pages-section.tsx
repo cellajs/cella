@@ -15,7 +15,7 @@ interface PagesSectionProps {
 /** Sidebar section with the docs pages tree (plus the admin manage-pages shortcut). */
 export function PagesSection({ label, onClose }: PagesSectionProps) {
   const { t } = useTranslation();
-  const { isSystemAdmin } = useUserStore();
+  const isSystemAdmin = useUserStore((state) => state.isSystemAdmin);
 
   return (
     <SidebarGroup>

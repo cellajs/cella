@@ -1,32 +1,10 @@
-import { and, eq, inArray, isNull, sql } from 'drizzle-orm';
+import { and, eq, inArray, isNull } from 'drizzle-orm';
 import type { ActorContext, DbContext } from '#/core/context';
 import { requestScopeWhere } from '#/db/utils/request-scope';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 
 // Every read and write below carries the request's tenant + organization predicate, so the
 // result is the same with RLS bypassed; the RLS transaction wrappers stay the backstop.
-
-interface FindAttachmentsByStxMutationIdOpts {
-  mutationId: string;
-}
-
-/** The acting actor's own rows written under `mutationId`, the idempotent replay of a create. */
-export const findAttachmentsByStxMutationId = async (
-  ctx: ActorContext,
-  { mutationId }: FindAttachmentsByStxMutationIdOpts,
-) => {
-  const { db } = ctx.var;
-  return db
-    .select()
-    .from(attachmentsTable)
-    .where(
-      and(
-        sql`${attachmentsTable.stx}->>'mutationId' = ${mutationId}`,
-        eq(attachmentsTable.createdBy, ctx.var.actor.id),
-        requestScopeWhere(ctx, attachmentsTable),
-      ),
-    );
-};
 
 export const insertAttachments = async (
   ctx: DbContext,

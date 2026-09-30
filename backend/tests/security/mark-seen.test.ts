@@ -1,19 +1,19 @@
 import { and, eq } from 'drizzle-orm';
 import { markSeen } from 'sdk';
-import { getEntityPolicies, getPolicyPermissions, policyMatrix } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
+import { isTrackedProductType } from '#/modules/seen/operations/mark-seen';
 import { seenByTable } from '#/modules/seen/seen-by-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { adminDb, createTestOrganization } from '../helpers';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createOrgUser } from './helpers';
+import { assumeMemberAttachmentPolicy, clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -21,7 +21,8 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
  * markSeen answers how many of the posted ids it newly recorded as seen, and bumps their view counts. It counts only
  * rows the caller may read, like the reads do, so the answer never confirms that a hidden row exists.
  */
-describe('markSeen and rows the caller cannot read', async () => {
+describe.skipIf(!isTrackedProductType('attachment'))('markSeen and rows the caller cannot read', async () => {
+  assumeMemberAttachmentPolicy({ read: 1, update: 'own', delete: 'own' });
   const call = await createAppClient();
   let organization: { id: string; tenantId: string };
   let plan: TestEntityHierarchyPlan;
@@ -94,20 +95,8 @@ describe('markSeen and rows the caller cannot read', async () => {
   });
 
   describe('with a member role that reads only its own attachments', () => {
-    const memberPolicy = getPolicyPermissions(
-      getEntityPolicies('attachment', policyMatrix),
-      'organization',
-      memberRole,
-    );
-    const configuredRead = memberPolicy?.read;
-
     // An app configuration the engine supports: `read: 'own'` hides every other member's attachments.
-    beforeEach(() => {
-      if (memberPolicy) memberPolicy.read = 'own';
-    });
-    afterEach(() => {
-      if (memberPolicy && configuredRead !== undefined) memberPolicy.read = configuredRead;
-    });
+    assumeMemberAttachmentPolicy({ read: 'own' });
 
     it("must not confirm another member's hidden attachment via markSeen", async () => {
       const hidden = await insertAttachment(admin.id);

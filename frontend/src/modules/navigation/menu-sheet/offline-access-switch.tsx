@@ -6,7 +6,8 @@ import { useUIStore } from '~/modules/ui/ui-store';
 
 export function OfflineAccessSwitch() {
   const { t } = useTranslation();
-  const { offlineAccess, toggleOfflineAccess } = useUIStore();
+  const offlineAccess = useUIStore((state) => state.offlineAccess);
+  const toggleOfflineAccess = useUIStore((state) => state.toggleOfflineAccess);
 
   const onCheckedChange = (isOffline: boolean) => {
     // Delay the toast until after the switch state updates through QueryProvider.
