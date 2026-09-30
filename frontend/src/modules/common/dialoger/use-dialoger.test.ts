@@ -103,6 +103,15 @@ describe('dialoger store', () => {
     expect(closed).toEqual(['a', 'b']);
   });
 
+  it('removes only the dialog with id 0', () => {
+    useDialoger.getState().create(null, dialog(0));
+    useDialoger.getState().create(null, dialog(1));
+
+    useDialoger.getState().remove(0);
+
+    expect(openIds()).toEqual([1]);
+  });
+
   it('leaves the store untouched when nothing matches', () => {
     useDialoger.getState().create(null, dialog('a'));
     const before = useDialoger.getState().dialogs;

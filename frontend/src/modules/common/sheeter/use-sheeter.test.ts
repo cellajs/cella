@@ -45,6 +45,15 @@ describe('sheeter close order', () => {
     expect(closed).toEqual(['route']);
     expect(openIds()).toEqual(['pinned']);
   });
+
+  it('closes a sheet created with an undefined closeSheetOnRouteChange on a route change', () => {
+    useSheeter.getState().create(null, sheet('a', { closeSheetOnRouteChange: undefined }));
+
+    expect(useSheeter.getState().get('a')?.closeSheetOnRouteChange).toBe(true);
+    useSheeter.getState().removeOnRouteChange();
+
+    expect(openIds()).toEqual([]);
+  });
 });
 
 describe('sheeter store', () => {
@@ -116,6 +125,15 @@ describe('sheeter store', () => {
 
     expect(openIds()).toEqual([]);
     expect(onClose.mock.calls).toEqual([[true], [true]]);
+  });
+
+  it('removes no sheet for an empty id', () => {
+    useSheeter.getState().create(null, sheet('a'));
+    useSheeter.getState().create(null, sheet('b'));
+
+    useSheeter.getState().remove('');
+
+    expect(openIds()).toEqual(['a', 'b']);
   });
 
   it('leaves the store untouched when nothing matches', () => {

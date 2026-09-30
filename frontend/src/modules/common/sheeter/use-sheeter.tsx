@@ -57,10 +57,15 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
   create: (content, data) => {
     blurAndStashTrigger();
 
-    const defaults = { open: true, modal: true, closeSheetOnRouteChange: true };
+    const defaults = { open: true, modal: true };
+    // An explicit undefined keeps the default, which the provider and removeOnRouteChange both read as true.
+    const closeSheetOnRouteChange = data.closeSheetOnRouteChange ?? true;
 
     set((state) => ({
-      sheets: [...state.sheets.filter((s) => s.id !== data.id), { ...defaults, ...data, content }],
+      sheets: [
+        ...state.sheets.filter((s) => s.id !== data.id),
+        { ...defaults, ...data, closeSheetOnRouteChange, content },
+      ],
     }));
     return data.id;
   },
@@ -83,13 +88,13 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
 
   remove: (id, opts) => {
     const { sheets } = get();
-    const toRemove = id ? sheets.filter((sheet) => sheet.id === id) : sheets;
+    const toRemove = id === undefined ? sheets : sheets.filter((sheet) => sheet.id === id);
     removeAndNotify((remaining) => set({ sheets: remaining }), sheets, toRemove, opts);
   },
 
   removeOnRouteChange: (opts) => {
     const { sheets } = get();
-    const toRemove = sheets.filter((sheet) => sheet.closeSheetOnRouteChange);
+    const toRemove = sheets.filter((sheet) => sheet.closeSheetOnRouteChange !== false);
     removeAndNotify((remaining) => set({ sheets: remaining }), sheets, toRemove, opts);
   },
 
