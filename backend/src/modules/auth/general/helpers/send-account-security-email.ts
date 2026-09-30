@@ -22,3 +22,7 @@ export const sendAccountSecurityEmail = (
     ])
     .catch((err) => log.error('Failed to send security email', { type, err }));
 };
+
+/** {@link sendAccountSecurityEmail} to the app's security inbox. */
+export const sendSecurityInboxEmail = (type: AccountSecurityType, details?: Record<string, string | number>) =>
+  sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, type, details);

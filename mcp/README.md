@@ -36,7 +36,7 @@ A client follows the challenge to the OAuth worker, obtains consent and a token 
 
 ## MCP tools are routes
 
-A route opts in by carrying `x-tool` on `createXRoute`:
+A route opts in by carrying `x-tool` in its `xRoute` config:
 
 ```ts
 'x-tool': {
@@ -50,11 +50,11 @@ A route opts in by carrying `x-tool` on `createXRoute`:
 },
 ```
 
-`createXRoute` registers the route in the MCP tool registry and keeps `execute` out of the OpenAPI spec. Everything else is derived:
+`createXRoutes` registers the route in the MCP tool registry and keeps `execute` out of the OpenAPI spec. Everything else is derived:
 
 | Tool field | Source |
 | --- | --- |
-| `name` | The route's `operationId` |
+| `name` | The route's `operationId`: its key in `createXRoutes` unless set |
 | `inputSchema` | The route's request: path params minus the tenant and organization the endpoint already resolved, the query, and the body. A body's sync transaction (`stx`) is left out of what the model sees and rebuilt server-side before the route's own schema validates the call. An array body nests under `items`. |
 | Scope | `entity` with the method: `GET` needs `<entity>:read`, anything else `<entity>:write` |
 | `annotations` | `readOnlyHint`, `destructiveHint`, `idempotentHint` from the method |

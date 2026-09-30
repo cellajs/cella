@@ -20,7 +20,7 @@ import { cacheCreate, cacheRemove, cacheUpdate, removeDetailQueriesById } from '
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
-import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
+import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import { preserveIncluded } from '~/query/basic/preserve-included';
 import type { MutationData } from '~/query/types';
@@ -53,41 +53,42 @@ export const organizationQueryOptions = (id: string, tenantId: string) =>
     structuralSharing: preserveIncluded,
   });
 
-type OrganizationsListParams = Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'> & {
-  limit?: number;
+type OrganizationsQuery = Omit<NonNullable<GetOrganizationsData['query']>, 'limit' | 'offset'>;
+type OrganizationsListParams = OrganizationsQuery & { limit?: number };
+
+/** Search filters with the table defaults filled in; `include` is left out, so it never reaches a list key. */
+const withDefaults = ({
+  q = organizationsSearchDefaults.q,
+  sort = organizationsSearchDefaults.sort,
+  // displayOrder reads ascending; every other column defaults to descending
+  order = sort === 'displayOrder' ? 'asc' : 'desc',
+  relatableUserId,
+  excludeArchived,
+  role,
+}: OrganizationsQuery) => ({ q, sort, order, relatableUserId, excludeArchived, role });
+
+const fetchOrganizationsPage = async (
+  query: OrganizationsQuery,
+  limit: number,
+  offset: number,
+  signal?: AbortSignal,
+) => {
+  const result = await getOrganizations({ query: { ...query, ...pageQuery(limit, offset) }, signal });
+  // Cache entries are populated by the enrichment pipeline (membership/can/ancestorSlugs).
+  return result as { items: EnrichedOrganization[]; total: number };
 };
 
-export const organizationsListQueryOptions = (params: OrganizationsListParams) => {
-  const {
-    q = organizationsSearchDefaults.q,
-    sort = organizationsSearchDefaults.sort,
-    // displayOrder reads ascending; every other column defaults to descending
-    order = sort === 'displayOrder' ? 'asc' : 'desc',
-    relatableUserId,
-    excludeArchived,
-    role,
-    include,
-    limit = appConfig.requestLimits.organizations,
-  } = params;
-
-  // Exclude `include` from cache key so queries with/without counts share the same cache
-  const filters = { q, sort, order, relatableUserId, excludeArchived, role };
-
-  const requestQuery = { ...filters, include, limit: String(limit) };
+export const organizationsListQueryOptions = ({
+  include,
+  limit = appConfig.requestLimits.organizations,
+  ...params
+}: OrganizationsListParams) => {
+  // Queries with and without counts share one cache entry.
+  const filters = withDefaults(params);
 
   return infiniteQueryOptions({
     queryKey: keys.list.filtered(filters),
-    queryFn: async ({ pageParam: { page, offset }, signal }) => {
-      const requestOffset = String(offset ?? (page ?? 0) * limit);
-
-      const result = await getOrganizations({
-        query: { ...requestQuery, offset: requestOffset },
-        signal,
-      });
-      // Cache entries are populated by the enrichment pipeline (membership/can/ancestorSlugs).
-      return result as { items: EnrichedOrganization[]; total: number };
-    },
-    ...baseInfiniteQueryOptions,
+    ...offsetPaging(limit, (offset, signal) => fetchOrganizationsPage({ ...filters, include }, limit, offset, signal)),
     refetchOnMount: true,
   });
 };
@@ -165,18 +166,12 @@ export const useOrganizationDeleteMutation = () => {
   });
 };
 
-/** Fetch organizations for table export. Bypasses cache; returns flat items. */
-export const fetchOrganizationsForExport = async (params: {
-  limit: number;
-  offset?: number;
-  q?: string;
-  sort?: NonNullable<GetOrganizationsData['query']>['sort'];
-  order?: NonNullable<GetOrganizationsData['query']>['order'];
-}) => {
-  const { limit, offset = 0, q = '', sort = organizationsSearchDefaults.sort } = params;
-  const order = params.order ?? (sort === 'displayOrder' ? 'asc' : 'desc');
-  const response = await getOrganizations({
-    query: { limit: String(limit), q, sort, order, offset: String(offset) },
-  });
-  return response.items;
-};
+/** Fetch organizations for table export. Bypasses cache; returns flat items without counts. */
+export const fetchOrganizationsForExport = async ({
+  limit,
+  offset = 0,
+  q,
+  sort,
+  order,
+}: Pick<OrganizationsQuery, 'q' | 'sort' | 'order'> & { limit: number; offset?: number }) =>
+  (await fetchOrganizationsPage(withDefaults({ q, sort, order }), limit, offset)).items;

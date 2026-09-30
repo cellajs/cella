@@ -8,7 +8,7 @@ import type { BaseUser } from '~/modules/user/types';
 import { cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
 import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
-import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
+import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation } from '~/query/basic/invalidation-helpers';
 import type { MutationData } from '~/query/types';
 
@@ -38,15 +38,12 @@ export const usersListQueryOptions = (params: UsersListParams) => {
     limit = appConfig.requestLimits.users,
   } = params;
   const filters = { q, sort, order, role };
-  const requestQuery = { ...filters, limit: String(limit) };
 
   return infiniteQueryOptions({
     queryKey: keys.list.filtered(filters),
-    queryFn: ({ pageParam: { page, offset }, signal }) => {
-      const requestOffset = String(offset ?? (page ?? 0) * limit);
-      return getUsers({ query: { ...requestQuery, offset: requestOffset }, signal });
-    },
-    ...baseInfiniteQueryOptions,
+    ...offsetPaging(limit, (offset, signal) =>
+      getUsers({ query: { ...filters, ...pageQuery(limit, offset) }, signal }),
+    ),
     refetchOnMount: true,
   });
 };

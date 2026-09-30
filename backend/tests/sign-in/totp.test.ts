@@ -76,6 +76,21 @@ describe('TOTP Authentication', async () => {
     });
   });
 
+  describe('TOTP Setup with an authenticator app in place', () => {
+    it('should refuse a new key and a new authenticator app with 409', async () => {
+      const user = await createTotpUser(signUpUser.email);
+      const headers = { ...defaultHeaders, Cookie: await createTestSession(user, { authStrategy: 'totp' }) };
+
+      await expectRefusal(await call(generateTotpKey, { headers }), 409, 'resource_already_exists');
+      await expectRefusal(
+        await call(createTotp, { body: { code: '123456' }, headers }),
+        409,
+        'resource_already_exists',
+      );
+      expect(await db.select().from(totpsTable).where(eq(totpsTable.userId, user.id))).toHaveLength(1);
+    });
+  });
+
   describe('TOTP Sign-In Flow', () => {
     it('should sign in with valid TOTP code', async () => {
       const user = await createTotpUser(signUpUser.email);

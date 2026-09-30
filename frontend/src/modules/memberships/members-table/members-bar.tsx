@@ -3,23 +3,11 @@ import { MailIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { isUnconditionalCan } from 'shared';
-import { ColumnsView } from '~/modules/common/data-table/columns-view';
-import { Export } from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
-import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
-import { TableCount } from '~/modules/common/data-table/table-count';
-import {
-  FilterBarActions,
-  FilterBarFilters,
-  FilterBarSearch,
-  TableFilterBar,
-} from '~/modules/common/data-table/table-filter-bar';
-import { TableSearch } from '~/modules/common/data-table/table-search';
+import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { FocusView } from '~/modules/common/focus-view';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
-import { SelectionActionBar } from '~/modules/common/selection-action-bar';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteMemberships } from '~/modules/memberships/delete-memberships';
@@ -53,24 +41,14 @@ export function MembersTableBar({
   const inviteContainerRef = useRef(null);
 
   const { q, role, order, sort } = searchVars;
+  const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', role: undefined } });
 
-  const isFiltered = role !== undefined || !!q;
   const canUpdate = isUnconditionalCan(channel.can?.[channel.entityType]?.update);
   const entityType = channel.entityType;
-
-  const onSearch = (searchString: string) => {
-    clearSelection();
-    setSearch({ q: searchString });
-  };
 
   const onRoleChange = (role?: string) => {
     clearSelection();
     setSearch({ role: role === 'all' ? undefined : (role as MembersRouteSearchParams['role']) });
-  };
-
-  const onResetFilters = () => {
-    setSearch({ q: '', role: undefined });
-    clearSelection();
   };
 
   const openDeleteDialog = () => {
@@ -134,65 +112,46 @@ export function MembersTableBar({
   };
 
   return (
-    <>
-      <TableBarContainer searchVars={searchVars}>
-        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
-          <FilterBarActions>
-            {!isFiltered && canUpdate && (
-              <TableBarButton
-                ref={inviteButtonRef}
-                icon={MailIcon}
-                label="c:invite"
-                onClick={() => openInviteDialog()}
-              />
-            )}
-            <TableCount count={total} label="c:member" isFiltered={isFiltered} onResetFilters={onResetFilters}>
-              {canUpdate && !isFiltered && <PendingMembershipsCount channel={channel} />}
-            </TableCount>
-          </FilterBarActions>
-
-          <div className="sm:grow" />
-
-          <FilterBarSearch>
-            <TableSearch name="memberSearch" value={q} setQuery={onSearch} />
-          </FilterBarSearch>
-          <FilterBarFilters>
-            <SelectRole
-              entityType={channel.entityType}
-              value={role === undefined ? 'all' : role}
-              onChange={onRoleChange}
-              className="h-10 w-auto sm:min-w-32"
-            />
-          </FilterBarFilters>
-        </TableFilterBar>
-
-        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-
-        {/* Export is gated like the other admin actions in this bar; row selection needs the same grant */}
-        {!isSheet && canUpdate && (
-          <Export
-            className="max-lg:hidden"
-            filename={`${entityType} members`}
-            columns={columns}
-            selectedRows={selected}
-            fetchRows={fetchExport}
-          />
-        )}
-
-        {!isSheet && <FocusView iconOnly />}
-      </TableBarContainer>
-
-      <SelectionActionBar count={selected.length} onClear={clearSelection}>
-        <TableBarButton
-          ref={deleteButtonRef}
-          variant="destructive"
-          onClick={openDeleteDialog}
-          icon={TrashIcon}
-          label={channel.id ? 'c:remove' : 'c:delete'}
+    <TableBarShell
+      {...barFilters}
+      {...{ searchVars, total, columns, setColumns }}
+      label="c:member"
+      searchName="memberSearch"
+      actions={
+        canUpdate && (
+          <TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />
+        )
+      }
+      countExtra={canUpdate && !barFilters.isFiltered && <PendingMembershipsCount channel={channel} />}
+      filters={
+        <SelectRole
+          entityType={channel.entityType}
+          value={role === undefined ? 'all' : role}
+          onChange={onRoleChange}
+          className="h-10 w-auto sm:min-w-32"
         />
-      </SelectionActionBar>
-
-      <div ref={inviteContainerRef} className="empty:hidden" />
-    </>
+      }
+      // Export is gated like the other admin actions in this bar; row selection needs the same grant
+      export={
+        !isSheet && canUpdate
+          ? { filename: `${entityType} members`, selectedRows: selected, fetchRows: fetchExport }
+          : undefined
+      }
+      focusView={!isSheet}
+      selection={{
+        count: selected.length,
+        onClear: clearSelection,
+        children: (
+          <TableBarButton
+            ref={deleteButtonRef}
+            variant="destructive"
+            onClick={openDeleteDialog}
+            icon={TrashIcon}
+            label={channel.id ? 'c:remove' : 'c:delete'}
+          />
+        ),
+      }}
+      after={<div ref={inviteContainerRef} className="empty:hidden" />}
+    />
   );
 }

@@ -1438,6 +1438,26 @@
     "pnpm check"
    ],
    "summary": "Toasts render through Base UI Toast (frontend/src/modules/ui/toast.tsx, ported from the shadcn base toast) and the sonner dependency is removed. toaster.<severity>(message, options) keeps its shape with Base UI options (description, actionProps, timeout, id, onClose, priority); the unused sonner methods are removed and close replaces dismiss. toaster holds toasts shown before the Toaster mounts, which retires toast-store.ts, and ReloadPrompt shows a persistent toast. Apps that import sonner directly, pass sonner-only options or use useToastStore adjust those calls by hand."
+  },
+  {
+   "id": "20260930T1723-loc-tier2-refactors",
+   "version": "next",
+   "title": "Route helpers, overlay and form cleanup, one prose rule table",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src",
+    "shared/scripts",
+    "shared/config"
+   ],
+   "requires": [
+    "pnpm style",
+    "pnpm check"
+   ],
+   "summary": "createXRoutes, xRoute, json and jsonBody shorten route files, and createXRoute adds errorResponseRefs itself; app route files keep compiling and the OpenAPI document is unchanged. The overlay stores drop the write-only triggerRefs registry (setTriggerRef is a deprecated no-op; delete the calls). The stepper keeps only the vertical variant, SelectEmails replaces ui/tag-input and utils/is-email and accepts a chip exactly when the invite schema does. The prose checks run from one rule table in one process: agent-vocabulary.ts is removed, VocabularyAllowlist gains proseExclude, and an app that edited check-comment-style.ts to skip paths moves them there."
   }
  ]
 }

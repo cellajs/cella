@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react';
+import type { ReactNode } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
@@ -95,23 +96,28 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
           <SheetTitle className={`${title ? '' : 'hidden'} h-6 leading-6`}>{titleContent}</SheetTitle>
           <SheetDescription className={`${description ? '' : 'hidden'}`}>{description}</SheetDescription>
         </SheetHeader>
-        {contentKey ? (
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div
-              key={contentKey}
-              className="flex flex-1 flex-col"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.15 }}
-            >
-              {content}
-            </motion.div>
-          </AnimatePresence>
-        ) : (
-          content
-        )}
+        <ContentKeyTransition contentKey={contentKey}>{content}</ContentKeyTransition>
       </SheetContent>
     </Sheet>
+  );
+}
+
+/** Slides in new content when `contentKey` changes; without a key the content renders as is. */
+export function ContentKeyTransition({ contentKey, children }: { contentKey?: string; children: ReactNode }) {
+  if (!contentKey) return children;
+
+  return (
+    <AnimatePresence mode="popLayout" initial={false}>
+      <motion.div
+        key={contentKey}
+        className="flex flex-1 flex-col"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -20 }}
+        transition={{ duration: 0.15 }}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
   );
 }

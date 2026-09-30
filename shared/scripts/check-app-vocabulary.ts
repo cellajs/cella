@@ -3,13 +3,11 @@
  * name in identifiers and wire strings of app logic (claims, headers, DNS records, URLs), which an app would otherwise
  * ship to its own users.
  */
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath, pathToFileURL } from 'node:url';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { repoRoot as defaultRepoRoot, isMain, lineColumn, type Output, repoFiles } from './repo-files.ts';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const defaultRepoRoot = join(here, '..', '..');
 const disallowedTerm = /fork/gi;
 /** The product name as an identifier or wire string; prose may still contrast the template with the app. */
 const productNameInLogic = /cella_[a-z0-9]|\bCella[A-Z]|cellajs\.com|_cella-/g;
@@ -26,6 +24,8 @@ const markerComment = /\/\/[ \t]*fork:[^\n]*|\/\*[ \t]*fork:[\s\S]*?\*\/|<!--[ \
 export interface VocabularyAllowlist {
   files: string[];
   prefixes: string[];
+  /** Path prefixes the comment and doc checks skip, such as reference code the app keeps but does not maintain. */
+  proseExclude?: string[];
 }
 
 const templateAllowlist: VocabularyAllowlist = {
@@ -87,16 +87,8 @@ export function findAppVocabularyFindings(
   const scanned = source.replace(markerComment, (marker) => marker.replace(/[^\n]/g, ' '));
   const contentPattern = new RegExp(disallowedTerm.source, disallowedTerm.flags);
   for (const match of scanned.matchAll(contentPattern)) {
-    const before = scanned.slice(0, match.index);
-    const lastLineBreak = before.lastIndexOf('\n');
-    findings.push({
-      file,
-      line: before.split('\n').length,
-      column: match.index - lastLineBreak,
-      term: match[0],
-      location: 'content',
-      rule: 'source-control-term',
-    });
+    const position = lineColumn(scanned, match.index);
+    findings.push({ file, ...position, term: match[0], location: 'content', rule: 'source-control-term' });
   }
   return findings;
 }
@@ -109,11 +101,9 @@ export function findProductNameFindings(file: string, source: string): AppVocabu
   const findings: AppVocabularyFinding[] = [];
   const pattern = new RegExp(productNameInLogic.source, productNameInLogic.flags);
   for (const match of source.matchAll(pattern)) {
-    const before = source.slice(0, match.index);
     findings.push({
       file,
-      line: before.split('\n').length,
-      column: match.index - before.lastIndexOf('\n'),
+      ...lineColumn(source, match.index),
       term: match[0],
       location: 'content',
       rule: 'product-name',
@@ -132,47 +122,38 @@ export async function loadAllowlist(repoRoot = defaultRepoRoot): Promise<Vocabul
   return {
     files: [...templateAllowlist.files, ...(app.files ?? [])],
     prefixes: [...templateAllowlist.prefixes, ...(app.prefixes ?? [])],
+    proseExclude: app.proseExclude ?? [],
   };
 }
 
-function trackedFiles(repoRoot: string): string[] {
-  return execFileSync('git', ['ls-files', '-co', '--exclude-standard'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-  })
-    .split('\n')
-    .filter(Boolean)
-    .filter((file) => existsSync(join(repoRoot, file)))
-    .sort();
-}
-
-export async function runAppVocabularyCheck(repoRoot = defaultRepoRoot): Promise<number> {
+export async function runAppVocabularyCheck(repoRoot = defaultRepoRoot, output: Output = console): Promise<number> {
   const allowlist = await loadAllowlist(repoRoot);
-  const findings = trackedFiles(repoRoot).flatMap((file) => {
-    const source = readFileSync(join(repoRoot, file));
-    if (source.includes(0)) return [];
-    const text = source.toString('utf8');
-    return [...findAppVocabularyFindings(file, text, allowlist), ...findProductNameFindings(file, text)];
-  });
+  const findings = repoFiles(repoRoot)
+    .toSorted()
+    .flatMap((file) => {
+      const source = readFileSync(join(repoRoot, file));
+      if (source.includes(0)) return [];
+      const text = source.toString('utf8');
+      return [...findAppVocabularyFindings(file, text, allowlist), ...findProductNameFindings(file, text)];
+    });
 
   if (findings.length === 0) {
-    console.info('[app-vocabulary] OK, template and app terminology is consistent.');
+    output.log('[app-vocabulary] OK, template and app terminology is consistent.');
     return 0;
   }
 
-  console.error(`[app-vocabulary] ${findings.length} disallowed occurrence(s):`);
+  output.error(`[app-vocabulary] ${findings.length} disallowed occurrence(s):`);
   for (const finding of findings) {
     const location = finding.location === 'path' ? finding.file : `${finding.file}:${finding.line}:${finding.column}`;
     const advice =
       finding.rule === 'product-name'
         ? 'derive from appConfig or use a neutral name; the product name is not an identifier or wire string'
         : 'with template/app terminology';
-    console.error(`  ${location} replace "${finding.term}" ${advice}`);
+    output.error(`  ${location} replace "${finding.term}" ${advice}`);
   }
   return 1;
 }
 
-const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
-if (fileURLToPath(import.meta.url) === invokedPath) {
+if (isMain(import.meta.url)) {
   process.exitCode = await runAppVocabularyCheck();
 }

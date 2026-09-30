@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { findExistingTotp, insertTotp } from '#/modules/auth/auth-queries';
+import { heldFactors, insertTotp } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { completeMfaChallenge, mfaFactorRules } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
@@ -21,8 +21,8 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 app.openapi(authTotpsRoutes.generateTotpKey, async (ctx) => {
   const user = ctx.var.user;
 
-  const existingTotp = await findExistingTotp({ var: { ...ctx.var, db: baseDb } }, { userId: user.id });
-  if (existingTotp) throw new AppError(409, 'resource_already_exists', 'warn');
+  const { totp } = await heldFactors({ var: { db: baseDb } }, user.id);
+  if (totp) throw new AppError(409, 'resource_already_exists', 'warn');
 
   // Generate a 20-byte random secret and encode it as Base32
   const secretBytes = crypto.getRandomValues(new Uint8Array(20));
@@ -47,8 +47,8 @@ app.openapi(authTotpsRoutes.createTotp, async (ctx) => {
 
   const { code } = ctx.req.valid('json');
 
-  const existingTotp = await findExistingTotp(ctx, { userId: user.id });
-  if (existingTotp) throw new AppError(409, 'resource_already_exists', 'warn');
+  const { totp } = await heldFactors(ctx, user.id);
+  if (totp) throw new AppError(409, 'resource_already_exists', 'warn');
 
   const pendingSecret = await getAuthCookie(ctx, 'totp-challenge');
   if (!pendingSecret) throw new AppError(400, 'invalid_credentials', 'warn');

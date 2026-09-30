@@ -1,39 +1,18 @@
-import { onlineManager } from '@tanstack/react-query';
-import { useTranslation } from 'react-i18next';
-import type { CallbackArgs } from '~/modules/common/data-table/types';
-import { DeleteForm } from '~/modules/common/delete-form';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { toaster } from '~/modules/common/toaster/toaster';
+import { DeleteItems, type DeleteItemsProps } from '~/modules/common/delete-items';
 import { useUserDeleteMutation } from '~/modules/user/query';
 import type { BaseUser } from '~/modules/user/types';
 
-interface Props {
-  users: BaseUser[];
-  dialog?: boolean;
-  callback?: (args: CallbackArgs<BaseUser[]>) => void;
-}
+type Props = Pick<DeleteItemsProps<BaseUser, BaseUser[]>, 'dialog' | 'callback'> & { users: BaseUser[] };
 
-export function DeleteUsers({ users, callback, dialog: isDialog }: Props) {
-  const { t } = useTranslation();
-  const removeDialog = useDialoger((state) => state.remove);
-
-  const { mutate: _deleteUsers, isPending } = useUserDeleteMutation();
-
-  const onDelete = () => {
-    if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
-
-    _deleteUsers(users, {
-      onSuccess: () => {
-        callback?.({ data: users, status: 'success' });
-        if (isDialog) removeDialog();
-      },
-    });
-  };
-
-  const onCancel = () => {
-    callback?.({ status: 'settle' });
-    if (isDialog) removeDialog();
-  };
-
-  return <DeleteForm onDelete={onDelete} onCancel={onCancel} pending={isPending} />;
+export function DeleteUsers({ users, ...props }: Props) {
+  return (
+    <DeleteItems
+      items={users}
+      useDelete={useUserDeleteMutation}
+      toVariables={(items) => items}
+      onlineOnly
+      callbackFirst
+      {...props}
+    />
+  );
 }

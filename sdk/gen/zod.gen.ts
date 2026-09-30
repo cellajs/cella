@@ -777,7 +777,7 @@ export const zMicrosoftQuery = z.object({
 });
 
 export const zGithubCallbackQuery = z.object({
-  code: z.string(),
+  code: z.string().optional(),
   state: z.string(),
   error: z.string().optional(),
   error_description: z.string().optional(),
@@ -785,13 +785,19 @@ export const zGithubCallbackQuery = z.object({
 });
 
 export const zGoogleCallbackQuery = z.object({
-  code: z.string(),
+  code: z.string().optional(),
   state: z.string(),
+  error: z.string().optional(),
+  error_description: z.string().optional(),
+  error_uri: z.string().optional(),
 });
 
 export const zMicrosoftCallbackQuery = z.object({
-  code: z.string(),
+  code: z.string().optional(),
   state: z.string(),
+  error: z.string().optional(),
+  error_description: z.string().optional(),
+  error_uri: z.string().optional(),
 });
 
 /**

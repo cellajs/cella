@@ -1,6 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { UsersIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, isUnconditionalCan } from 'shared';
 import { useOrganizationLayoutContext } from '~/hooks/use-route-context';
@@ -9,6 +7,8 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
+import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { MembersTableBar } from '~/modules/memberships/members-table/members-bar';
 import { useColumns } from '~/modules/memberships/members-table/members-columns';
@@ -48,7 +48,6 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
   const { q, role, sort, order } = search;
   const limit = LIMIT;
 
-  const [selected, setSelected] = useState<Member[]>([]);
   const [columns, setColumns] = useColumns(canUpdate, isSheet, entityType);
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
@@ -63,17 +62,8 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
     include: 'counts',
   });
 
-  const {
-    data: rows,
-    isLoading,
-    isFetching,
-    error,
-    fetchNextPage,
-    hasNextPage,
-  } = useInfiniteQuery({
-    ...queryOptions,
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
-  });
+  const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
+  const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
 
   const onRowsChange = (changedRows: Member[], { indexes, column }: RowsChangeData<Member>) => {
     if (column.key !== 'role') return;
@@ -94,18 +84,6 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
     }
   };
 
-  // isFetching already includes next page fetch scenario
-  const fetchMore = async () => {
-    if (!hasNextPage || isLoading || isFetching) return;
-    await fetchNextPage();
-  };
-
-  const onSelectedRowsChange = (value: Set<string>) => {
-    if (rows) setSelected(rows.filter((row) => value.has(row.id)));
-  };
-
-  const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
-
   return (
     <>
       <MembersTableBar
@@ -116,7 +94,7 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
         queryKey={queryOptions.queryKey}
         columns={columns}
         setColumns={setColumns}
-        clearSelection={() => setSelected([])}
+        clearSelection={clearSelection}
         isSheet={isSheet}
       />
       {children}

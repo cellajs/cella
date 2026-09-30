@@ -3,6 +3,7 @@ import type { ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { getYjsOwnedFields, isYjsEditorActive } from '~/modules/common/blocknote/yjs-editor';
 import { resolveHomeChannelId, spliceEntityIntoListCaches } from '~/query/basic/apply-entity-to-lists';
+import { cacheRemove } from '~/query/basic/cache-mutations';
 import {
   type EntityQueryKeys,
   getEntityDeltaFetch,
@@ -11,9 +12,8 @@ import {
   SYNC_CHUNK_SIZE,
 } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
-import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
-import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
-import type { EntityQueryData, InfiniteEntityQueryData, ItemData, RoutableItemData } from '~/query/basic/types';
+import { forEachListQuery, getQueryItems } from '~/query/basic/mutate-query';
+import type { ItemData, RoutableItemData } from '~/query/basic/types';
 import { isPending } from '~/query/offline/mutation-queue';
 import { queryClient } from '~/query/query-client';
 import { collectEmbeddingTouches, type EmbeddingTouches, invalidateEmbeddedUsage } from './propagation';
@@ -82,17 +82,9 @@ export function patchEntityStxInCache(
   if (detail?.stx) patchInPlace(detail);
 
   const listPrefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
-  for (const [, queryData] of queryClient.getQueriesData({ queryKey: listPrefix })) {
-    if (isInfiniteQueryData(queryData)) {
-      for (const page of (queryData as InfiniteEntityQueryData).pages) {
-        const item = page.items.find((i) => i.id === entityId) as StxEntity | undefined;
-        if (item) patchInPlace(item);
-      }
-    } else if (isQueryData(queryData)) {
-      const item = (queryData as EntityQueryData).items.find((i) => i.id === entityId) as StxEntity | undefined;
-      if (item) patchInPlace(item);
-    }
-  }
+  forEachListQuery<StxEntity>(listPrefix, (_, data) => {
+    for (const item of getQueryItems(data)) if (item.id === entityId) patchInPlace(item);
+  });
 }
 
 function removeEntityFromCache(entityType: string, entityId: string): void {
@@ -102,11 +94,12 @@ function removeEntityFromCache(entityType: string, entityId: string): void {
   }
 }
 
+/** Removes one entity from detail and list caches without triggering a refetch; an organizationId narrows the list scan to that org. */
 export function removeEntity(entityType: string, entityId: string, organizationId?: string): void {
   removeEntityFromCache(entityType, entityId);
   if (hasEntityQueryKeys(entityType)) {
     const keys = getEntityQueryKeys(entityType);
-    removeEntityFromListCache(entityId, keys, organizationId);
+    cacheRemove(organizationId ? keys.list.org(organizationId) : keys.list.base, [{ id: entityId }]);
   }
 }
 
@@ -140,18 +133,6 @@ function invalidateFilteredLists(orgListKey: readonly unknown[]): void {
     queryKey: orgListKey,
     predicate: (q) => q.queryKey.slice(2).some((seg) => typeof seg === 'object' && seg !== null),
   });
-}
-
-/** Removes one entity from list caches without triggering a refetch; an organizationId narrows the scan to that org. */
-export function removeEntityFromListCache(entityId: string, keys: EntityQueryKeys, organizationId?: string): void {
-  const listPrefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
-  for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: listPrefix })) {
-    if (isInfiniteQueryData(queryData)) {
-      changeInfiniteQueryData(queryKey, [{ id: entityId }], 'remove');
-    } else if (isQueryData(queryData)) {
-      changeQueryData(queryKey, [{ id: entityId }], 'remove');
-    }
-  }
 }
 
 /**

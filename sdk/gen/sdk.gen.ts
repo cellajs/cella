@@ -1336,7 +1336,7 @@ export const microsoft = <ThrowOnError extends boolean = true>(
  * **GET /auth/github/callback** ·· [githubCallback](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/github/callback) ·· [githubCallback](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/github/callback) ·· _auth_cella_
  *
  * @param {githubCallbackData} options
- * @param {string} options.query.code - `string`
+ * @param {string=} options.query.code - `string` (optional)
  * @param {string} options.query.state - `string`
  * @param {string=} options.query.error - `string` (optional)
  * @param {string=} options.query.error_description - `string` (optional)
@@ -1368,8 +1368,11 @@ export const githubCallback = <ThrowOnError extends boolean = true>(
  * **GET /auth/google/callback** ·· [googleCallback](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/google/callback) ·· [googleCallback](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/google/callback) ·· _auth_cella_
  *
  * @param {googleCallbackData} options
- * @param {string} options.query.code - `string`
+ * @param {string=} options.query.code - `string` (optional)
  * @param {string} options.query.state - `string`
+ * @param {string=} options.query.error - `string` (optional)
+ * @param {string=} options.query.error_description - `string` (optional)
+ * @param {string=} options.query.error_uri - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
  */
 export const googleCallback = <ThrowOnError extends boolean = true>(
@@ -1397,8 +1400,11 @@ export const googleCallback = <ThrowOnError extends boolean = true>(
  * **GET /auth/microsoft/callback** ·· [microsoftCallback](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/microsoft/callback) ·· [microsoftCallback](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/microsoft/callback) ·· _auth_cella_
  *
  * @param {microsoftCallbackData} options
- * @param {string} options.query.code - `string`
+ * @param {string=} options.query.code - `string` (optional)
  * @param {string} options.query.state - `string`
+ * @param {string=} options.query.error - `string` (optional)
+ * @param {string=} options.query.error_description - `string` (optional)
+ * @param {string=} options.query.error_uri - `string` (optional)
  * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
  */
 export const microsoftCallback = <ThrowOnError extends boolean = true>(

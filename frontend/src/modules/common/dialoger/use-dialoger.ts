@@ -1,6 +1,6 @@
 import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
-import { fallbackContentRef } from '~/utils/fallback-content-ref';
+import { blurAndStashTrigger, removeAndNotify } from '~/modules/common/overlay-store-helpers';
 
 type DialogContainerOptions = {
   ref: RefObject<HTMLDivElement | null>;
@@ -27,7 +27,6 @@ export type DialogData = {
 };
 
 export type InternalDialog = DialogData & {
-  key: number;
   open?: boolean;
   content: ReactNode;
 };
@@ -41,31 +40,18 @@ interface DialogStoreState {
   get: (id: number | string) => InternalDialog | undefined;
   scrollToTop: (id: number | string) => void;
 
-  triggerRefs: Record<string, TriggerRef | null>;
-
+  /** @deprecated No-op: focus returns through `triggerRef` or the focus fallback. Removed in the next release. */
   setTriggerRef: (id: string, ref: TriggerRef) => void;
-  getTriggerRef: (id: string) => TriggerRef | null;
 }
 
 // Manages one or multiple dialogs; on mobile they render as drawers.
 export const useDialoger = create<DialogStoreState>((set, get) => ({
   dialogs: [],
-  triggerRefs: {},
 
   create: (content, data) => {
-    // Blur the active element: a modal sets aria-hidden on ancestors and would trap focus there
-    if (document.activeElement instanceof HTMLButtonElement || document.activeElement instanceof HTMLAnchorElement) {
-      fallbackContentRef.current = document.activeElement;
-      document.activeElement.blur();
-    }
+    blurAndStashTrigger();
 
-    const defaults = {
-      drawerOnMobile: true,
-      headerClassName: 'with-close-btn',
-      open: true,
-      modal: true,
-      key: Date.now(),
-    };
+    const defaults = { drawerOnMobile: true, headerClassName: 'with-close-btn', open: true };
 
     set((state) => ({
       dialogs: [...state.dialogs.filter((d) => d.id !== data.id), { ...defaults, ...data, content }],
@@ -82,14 +68,8 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
 
   remove: (id, opts) => {
     const { dialogs } = get();
-    const dialogsToRemove = id ? dialogs.filter((d) => d.id === id) : dialogs;
-    if (!dialogsToRemove.length) return;
-
-    // Update the store before onClose: a callback that navigates from inside set() would
-    // interleave a router update with this one and render a stale frame of the dialog.
-    set({ dialogs: dialogs.filter((d) => !dialogsToRemove.some((r) => r.id === d.id)) });
-
-    for (const dialog of dialogsToRemove) dialog.onClose?.(opts?.isCleanup);
+    const toRemove = id ? dialogs.filter((d) => d.id === id) : dialogs;
+    removeAndNotify((remaining) => set({ dialogs: remaining }), dialogs, toRemove, opts);
   },
 
   get: (id) => get().dialogs.find((d) => d.id === id),
@@ -99,13 +79,5 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
     popup?.closest('[data-slot="dialog-viewport"]')?.scrollTo({ top: 0 });
   },
 
-  setTriggerRef: (id, ref) => {
-    set((state) => ({
-      triggerRefs: { ...state.triggerRefs, [id]: ref },
-    }));
-  },
-
-  getTriggerRef: (id) => {
-    return get().triggerRefs[id] ?? null;
-  },
+  setTriggerRef: () => {},
 }));

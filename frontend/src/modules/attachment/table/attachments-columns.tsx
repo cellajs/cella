@@ -1,13 +1,18 @@
-import { UserIcon } from 'lucide-react';
+import i18n from 'i18next';
+import { TrashIcon, UserIcon } from 'lucide-react';
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
 import { hierarchy, resolveCan, seenWindowMs } from 'shared';
-import { DownloadCell, EllipsisCell, ThumbnailCell } from '~/modules/attachment/table/attachment-cells';
+import { DeleteAttachments } from '~/modules/attachment/delete-attachments';
+import { DownloadCell, ThumbnailCell } from '~/modules/attachment/table/attachment-cells';
 import { DescriptionCell, openDescriptionSheetFromCell } from '~/modules/attachment/table/description-cell';
 import { EditCellInput, externalEditorOptions, RenderExternalEditor } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
+import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { PopConfirm } from '~/modules/common/popconfirm';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { SeenMark } from '~/modules/seen/seen-mark';
 import { UserCell } from '~/modules/user/user-cell';
@@ -95,22 +100,32 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
         width: 32,
         renderCell: ({ row, tabIndex }) => <DownloadCell row={row} tabIndex={tabIndex} />,
       },
-      {
-        key: 'ellipsis',
-        name: '',
-        maxBreakpoint: 'sm',
-        width: 32,
-        renderCell: ({ row, tabIndex }) => (
-          <EllipsisCell
-            row={row}
-            tabIndex={tabIndex}
-            canDelete={resolveCan(deleteState, row.createdBy?.id ?? null, userId, {
-              row: hierarchy.resolveDeepestAncestorId('attachment', row),
-              channel: channelId,
-            })}
-          />
-        ),
-      },
+      // Delete is the only row action, so a row the user cannot delete gets no menu.
+      ellipsisColumn<Attachment>((row) => {
+        const canDelete = resolveCan(deleteState, row.createdBy?.id ?? null, userId, {
+          row: hierarchy.resolveDeepestAncestorId('attachment', row),
+          channel: channelId,
+        });
+        if (!canDelete) return [];
+
+        return [
+          {
+            label: i18n.t('c:delete'),
+            icon: TrashIcon,
+            onSelect: (row) => {
+              const { update, remove } = useDropdowner.getState();
+
+              update({
+                content: (
+                  <PopConfirm title={i18n.t('c:delete_confirm.text', { name: row.name })}>
+                    <DeleteAttachments attachments={[row]} callback={remove} onCancel={remove} />
+                  </PopConfirm>
+                ),
+              });
+            },
+          },
+        ];
+      }, 'sm'),
       {
         key: 'filename',
         name: t('c:filename'),
@@ -155,17 +170,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
           );
         },
       },
-      {
-        key: 'createdAt',
-        name: t('c:created_at'),
-        sortable: true,
-        sortDescendingFirst: true,
-        hidden: isSheet,
-        minBreakpoint: 'md',
-        minWidth: 120,
-        placeholderValue: '-',
-        renderCell: ({ row }) => dateShort(row.createdAt),
-      },
+      dateColumn('createdAt', { name: t('c:created_at'), hidden: isSheet }),
       {
         key: 'createdBy',
         name: t('c:created_by'),

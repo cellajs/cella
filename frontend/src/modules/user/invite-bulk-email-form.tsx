@@ -1,19 +1,10 @@
-import { useMutation } from '@tanstack/react-query';
-import { SendIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-// biome-ignore lint/style/noRestrictedImports: colocated mutation for system-level invite, mirrors invite-email-form.
-import { systemInvite as baseSystemInvite } from 'sdk';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
-import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
-import { Badge } from '~/modules/ui/badge';
-import { Button, SubmitButton } from '~/modules/ui/button';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Textarea } from '~/modules/ui/textarea';
-import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
+import { InviteFormFooter, useInviteSubmit } from '~/modules/user/invite-submit';
+import { useInviteFormDraft } from '~/modules/user/invite-users';
 
 /** Extract unique, lowercased email addresses from any pasted text (commas, newlines, address-book dumps). */
 export const extractEmails = (text: string): string[] => {
@@ -33,44 +24,19 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Pro
   const [rawText, setRawText] = useState('');
   const form = useInviteFormDraft(channel?.id, channel?.entityType);
 
+  const clear = () => {
+    form.reset();
+    setRawText('');
+  };
+
+  const { onSubmit, isPending } = useInviteSubmit(channel, isDialog, clear);
+
   const onTextChange = (text: string) => {
     setRawText(text);
     form.setValue('emails', extractEmails(text), { shouldDirty: true });
   };
 
   const emails = form.getValues('emails') ?? [];
-
-  const onSuccess = (
-    { invitesSentCount, rejectedIds }: { rejectedIds: string[]; invitesSentCount: number },
-    submittedEmails: string[],
-  ) => {
-    form.reset();
-    setRawText('');
-    if (isDialog) useDialoger.getState().remove();
-
-    if (invitesSentCount > 0) {
-      const resource = t('c:user', { count: invitesSentCount }).toLowerCase();
-      toaster.success(t('c:success.resource_count_invited', { count: invitesSentCount, resource }));
-    }
-    if (rejectedIds.length)
-      toaster.info(t('c:still_not_accepted', { count: rejectedIds.length, total: submittedEmails.length }));
-  };
-
-  const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
-  const { mutate: systemInvite, isPending: isSystemInvitePending } = useMutation({
-    mutationFn: (body: InviteFormValues) => baseSystemInvite({ body }),
-    onSuccess: (result, body) => onSuccess(result, body.emails),
-  });
-
-  const onSubmit = (body: InviteFormValues) => {
-    if (!channel) return systemInvite(body);
-
-    const organizationId = channel.organizationId || channel.id;
-    const path = { tenantId: channel.tenantId, organizationId: organizationId };
-    const query = { entityId: channel.id, entityType: channel.entityType };
-
-    membershipInvite({ body, path, query, channel }, { onSuccess: (result) => onSuccess(result, body.emails) });
-  };
 
   return (
     <Form {...form}>
@@ -89,45 +55,16 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Pro
           <FormField control={form.control} name="emails" render={() => <FormMessage />} />
         </FormItem>
 
-        {channel && (
-          <FormField
-            control={form.control}
-            name="role"
-            render={({ field: { value, onChange } }) => (
-              <FormItem className="ml-3 flex-row items-center gap-4">
-                <FormLabel>{t('c:role')}</FormLabel>
-                <SelectRoleRadio value={value} onValueChange={onChange} entityType={channel.entityType} />
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
-
-        <div className="flex flex-col gap-2 sm:flex-row">
-          <SubmitButton disabled={!emails.length} loading={isPending || isSystemInvitePending} className="relative">
-            {!!emails.length && (
-              <Badge variant="secondary" context="button">
-                {emails.length}
-              </Badge>
-            )}{' '}
-            <SendIcon className="mr-2" />
-            {t('c:invite')}
-          </SubmitButton>
+        <InviteFormFooter
+          form={form}
+          channel={channel}
+          count={emails.length}
+          isPending={isPending}
+          disabled={!emails.length}
+          onCancel={clear}
+        >
           {children}
-
-          {!children && form.isDirty && (
-            <Button
-              type="reset"
-              variant="secondary"
-              onClick={() => {
-                form.reset();
-                setRawText('');
-              }}
-            >
-              {t('c:cancel')}
-            </Button>
-          )}
-        </div>
+        </InviteFormFooter>
       </form>
     </Form>
   );

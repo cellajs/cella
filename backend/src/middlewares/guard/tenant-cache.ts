@@ -20,5 +20,3 @@ export const invalidateTenantCache = (tenantId: string): void => {
 export const clearTenantCache = (): void => {
   cache.clear();
 };
-
-export const tenantCacheStats = () => cache.stats;

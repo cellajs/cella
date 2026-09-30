@@ -106,6 +106,13 @@ type TokenTypeCarriedBy<C extends TokenPolicy['carrier']> = {
 /** Token types carried by an emailed link. */
 export type LinkTokenType = TokenTypeCarriedBy<'link'>;
 
+/**
+ * The emailed URL that opens a link token. Keep the `/invoke-token/` path: `middlewares/app.ts` answers it with
+ * `Referrer-Policy: no-referrer`, so the secret in it never leaks through a Referer.
+ */
+export const tokenLinkUrl = (type: LinkTokenType, rawToken: string) =>
+  `${appConfig.backendAuthUrl}/invoke-token/${type}/${rawToken}`;
+
 /** Token types carried only by a cookie. */
 export type CookieTokenType = TokenTypeCarriedBy<'cookie'>;
 

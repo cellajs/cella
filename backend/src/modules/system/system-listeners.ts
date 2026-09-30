@@ -1,9 +1,9 @@
-import { appConfig } from 'shared';
 import { baseDb } from '#/db/db';
 import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bus';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { findUserById } from '#/modules/user/user-queries';
+import { utcStamp } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 const securityEmailType = {
@@ -27,10 +27,10 @@ const notifySystemRoleChange = async (event: ActivityEvent) => {
     // On delete the user may already be cascade-deleted; fall back to the raw id
     const user = await findUserById({ var: { db: baseDb } }, { id: systemRole.userId });
 
-    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, securityEmailType[event.action], {
+    sendSecurityInboxEmail(securityEmailType[event.action], {
       role: systemRole.role,
       userEmail: user?.email ?? systemRole.userId,
-      timestamp: `${new Date().toISOString().slice(0, 19).replace('T', ' ')} UTC`,
+      timestamp: utcStamp(),
     });
   } catch (error) {
     log.error('Failed to handle a system role change', { error, activityId: event.id });

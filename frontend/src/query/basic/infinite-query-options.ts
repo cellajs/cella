@@ -15,3 +15,16 @@ export const baseInfiniteQueryOptions = {
     return { page: allPages.length, offset: fetchedCount };
   }) as GetNextPageParamFunction<PageParams, QueryData<unknown>>,
 };
+
+/** The limit and offset query params of one page. */
+export const pageQuery = (limit: number, offset: number) => ({ limit: String(limit), offset: String(offset) });
+
+/** Offset paging over an `{ items, total }` endpoint: the queryFn fetches the page starting at the page param's offset. */
+export const offsetPaging = <TPage extends QueryData<unknown>>(
+  limit: number,
+  fetchPage: (offset: number, signal: AbortSignal) => Promise<TPage>,
+) => ({
+  queryFn: ({ pageParam: { page, offset }, signal }: { pageParam: PageParams; signal: AbortSignal }) =>
+    fetchPage(offset ?? (page ?? 0) * limit, signal),
+  ...baseInfiniteQueryOptions,
+});

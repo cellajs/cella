@@ -1,12 +1,12 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import { dateColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { useHandleInvitationMutation } from '~/modules/me/query';
 import type { Invitation } from '~/modules/me/types';
 import { Button } from '~/modules/ui/button';
 import { UserCell } from '~/modules/user/user-cell';
-import { dateShort } from '~/utils/date-short';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -56,15 +56,11 @@ export const useColumns = () => {
             </div>
           ) : null,
       },
-      {
-        key: 'createdAt',
+      dateColumn<Invitation>('createdAt', {
         name: t('c:invited_at'),
-
-        minBreakpoint: 'md',
-        minWidth: 120,
-        placeholderValue: '-',
-        renderCell: ({ row }) => dateShort(row.inactiveMembership.createdAt),
-      },
+        sortable: false,
+        get: (row) => row.inactiveMembership.createdAt,
+      }),
       {
         key: 'createdBy',
         name: t('c:invited_by'),

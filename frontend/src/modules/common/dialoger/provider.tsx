@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
-import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { DialogerDialog } from '~/modules/common/dialoger/dialog';
 import { DialogerDrawer } from '~/modules/common/dialoger/drawer';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { useOverlayLock } from '~/modules/common/overlay-store-helpers';
 import { getRouter } from '~/routes/-router-instance';
 
 /**
@@ -13,17 +12,8 @@ import { getRouter } from '~/routes/-router-instance';
 export function Dialoger() {
   const isMobile = useBreakpointBelow('sm');
   const dialogs = useDialoger((state) => state.dialogs);
-  const lockUI = useUIStore((state) => state.lockUI);
-  const unlockUI = useUIStore((state) => state.unlockUI);
 
-  useBodyClass({ 'dialoger-open': dialogs.length > 0 });
-
-  useEffect(() => {
-    if (dialogs.length > 0) {
-      lockUI('dialoger');
-      return () => unlockUI('dialoger');
-    }
-  }, [dialogs.length > 0]);
+  useOverlayLock('dialoger', dialogs.length > 0);
 
   useEffect(() => {
     return getRouter().subscribe('onBeforeLoad', ({ pathChanged }) => {

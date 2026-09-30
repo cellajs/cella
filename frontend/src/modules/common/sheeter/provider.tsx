@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { useOverlayLock } from '~/modules/common/overlay-store-helpers';
 import { SheeterDrawer } from '~/modules/common/sheeter/drawer';
 import { SheeterSheet } from '~/modules/common/sheeter/sheet';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
-import { useUIStore } from '~/modules/ui/ui-store';
 import { getRouter } from '~/routes/-router-instance';
 
 /**
@@ -16,17 +16,10 @@ export function Sheeter() {
   const sheets = useSheeter((state) => state.sheets);
   // Part of the element keys, so crossing the breakpoint remounts the overlay
   const mode = isMobile ? 'drawer' : 'sheet';
-  const lockUI = useUIStore((state) => state.lockUI);
-  const unlockUI = useUIStore((state) => state.unlockUI);
 
+  useOverlayLock('sheeter', sheets.length > 0);
+  // Dialogs opened from a sheet stack above it through this class
   useBodyClass({ 'sheeter-open': sheets.length > 0 });
-
-  useEffect(() => {
-    if (sheets.length > 0) {
-      lockUI('sheeter');
-      return () => unlockUI('sheeter');
-    }
-  }, [sheets.length > 0]);
 
   useEffect(() => {
     return getRouter().subscribe('onBeforeLoad', ({ pathChanged }) => {

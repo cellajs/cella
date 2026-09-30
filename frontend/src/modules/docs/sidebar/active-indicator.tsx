@@ -1,4 +1,4 @@
-import { motion } from 'motion/react';
+import { IndicatorBar } from '~/modules/common/spy-nav-item';
 
 // Use rem values for proper mobile scaling
 const ITEM_HEIGHT_REM = 2; // 32px at base 16px
@@ -23,19 +23,11 @@ export function ActiveIndicator({ activeIndex, layoutId, isMobile }: ActiveIndic
     height: `${INDICATOR_HEIGHT_REM}rem`,
   };
 
-  if (isMobile) {
-    return (
-      <span
-        className="absolute left-2 ml-px w-[0.20rem] rounded-full bg-primary transition-[top] duration-200"
-        style={style}
-      />
-    );
-  }
   return (
-    <motion.span
+    <IndicatorBar
       layoutId={layoutId}
-      transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }}
-      className="absolute left-2 ml-px w-[0.20rem] rounded-full bg-primary"
+      animate={!isMobile}
+      className={isMobile ? 'transition-[top] duration-200' : undefined}
       style={style}
     />
   );

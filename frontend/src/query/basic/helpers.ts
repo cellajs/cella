@@ -1,15 +1,10 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { ChannelBase } from 'sdk';
 import type { EntityType } from 'shared';
-import type {
-  ArbitraryEntityQueryData,
-  EntityIdAndType,
-  EntityQueryData,
-  InfiniteEntityQueryData,
-  ItemData,
-  QueryDataActions,
-} from '~/query/basic/types';
+import { getQueryItems, isInfiniteQueryData, mapListItems } from '~/query/basic/mutate-query';
+import type { ArbitraryEntityQueryData, EntityIdAndType, ItemData, QueryDataActions } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
+import type { BaseQueryItem } from '~/query/types';
 import { getQueryKeySortOrder } from './get-query-key-sort-order';
 
 /** ArbitraryEntityQueryData is an object whose values are entity refs or arrays of entity refs. */
@@ -25,61 +20,51 @@ export const isArbitraryQueryData = (data: unknown): data is ArbitraryEntityQuer
   });
 };
 
-export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
-  const { order: insertOrder } = getQueryKeySortOrder(queryKey);
+/**
+ * Applies create, update or remove to list data. Totals move only by rows that enter or leave, so a partial overlap
+ * cannot drift them; new rows enter one page, the first when `insertOrder` lists newest first, else the last.
+ */
+const changeListItems = (
+  data: BaseQueryItem<ItemData>,
+  items: ItemData[],
+  action: QueryDataActions,
+  insertOrder?: 'asc' | 'desc',
+) => {
+  const cachedIds = new Set(getQueryItems(data).map(({ id }) => id));
+  const changedItems = items.filter(({ id }) => (action === 'create' ? !cachedIds.has(id) : cachedIds.has(id)));
+  if (!changedItems.length) return data;
 
-  queryClient.setQueryData<InfiniteEntityQueryData>(queryKey, (data) => {
-    if (!data) return;
+  if (action === 'create') {
+    const insertPage = insertOrder === 'asc' && isInfiniteQueryData(data) ? data.pages.length - 1 : 0;
+    return mapListItems(
+      data,
+      (pageItems, index) =>
+        index === insertPage ? updateArrayItems(pageItems, changedItems, action, insertOrder) : pageItems,
+      changedItems.length,
+    );
+  }
 
-    // Returning the same reference keeps React Query from notifying observers.
-    if (action === 'update' || action === 'remove') {
-      const updateIds = new Set(items.map((i) => i.id));
-      const hasMatch = data.pages.some((page) => page.items.some((item) => updateIds.has(item.id)));
-      if (!hasMatch) return data;
-    }
-
-    // Count only rows that change membership: items.length would drift `total` when the input partially overlaps this query.
-    const existingIds = new Set(data.pages.flatMap((page) => page.items).map(({ id }) => id));
-    const totalAdjustment =
-      action === 'create'
-        ? items.filter(({ id }) => !existingIds.has(id)).length
-        : action === 'remove'
-          ? -items.filter(({ id }) => existingIds.has(id)).length
-          : 0;
-
-    const pages = data.pages.map((page) => ({
-      items: updateArrayItems(page.items, items, action, insertOrder),
-      total: page.total + totalAdjustment,
-    }));
-
-    return { pages, pageParams: data.pageParams };
-  });
+  const changedIds = new Set(changedItems.map(({ id }) => id));
+  return mapListItems(
+    data,
+    (pageItems) =>
+      pageItems.some(({ id }) => changedIds.has(id)) ? updateArrayItems(pageItems, items, action) : pageItems,
+    action === 'remove' ? -changedItems.length : 0,
+  );
 };
 
+/** Paged lists insert new rows in the key's createdAt order. */
+export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
+  const { order } = getQueryKeySortOrder(queryKey);
+  queryClient.setQueryData<BaseQueryItem<ItemData>>(
+    queryKey,
+    (data) => data && changeListItems(data, items, action, order),
+  );
+};
+
+/** Flat lists prepend new rows. */
 export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
-  queryClient.setQueryData<EntityQueryData>(queryKey, (data) => {
-    if (!data) return;
-
-    // Returning the same reference keeps React Query from notifying observers.
-    if (action === 'update' || action === 'remove') {
-      const updateIds = new Set(items.map((i) => i.id));
-      if (!data.items.some((existing) => updateIds.has(existing.id))) return data;
-    }
-
-    // Count only rows that change membership: items.length would drift `total` when the input partially overlaps this query.
-    const existingIds = new Set(data.items.map(({ id }) => id));
-    const totalAdjustment =
-      action === 'create'
-        ? items.filter(({ id }) => !existingIds.has(id)).length
-        : action === 'remove'
-          ? -items.filter(({ id }) => existingIds.has(id)).length
-          : 0;
-
-    return {
-      items: updateArrayItems(data.items, items, action),
-      total: data.total + totalAdjustment,
-    };
-  });
+  queryClient.setQueryData<BaseQueryItem<ItemData>>(queryKey, (data) => data && changeListItems(data, items, action));
 };
 
 /** With `keyToOperateIn` only that key is updated; otherwise every entry matching `entityType` across the data shape is. */

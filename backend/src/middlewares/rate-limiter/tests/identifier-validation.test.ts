@@ -24,14 +24,15 @@ function jsonRequest(path: string, body: Record<string, unknown>) {
   });
 }
 
-/** A route behind a fresh `limit` limiter keyed on `identifiers`; `userId` signs its requests in. */
-function keyedRoute(identifiers: RateLimitKeyPart[], userId?: string) {
+/** A route behind a fresh `limit` limiter keyed on `identifiers`; `userId` and `actorId` set who sends. */
+function keyedRoute(identifiers: RateLimitKeyPart[], userId?: string, actorId?: string) {
   const limiter = rateLimiter('limit', `key_${nanoid(8)}`, identifiers, { limits: { points: 10, duration: 60 } });
   const app = new Hono<Env>();
   app.onError(appErrorHandler);
-  if (userId) {
+  if (userId || actorId) {
     app.use(async (ctx, next) => {
-      ctx.set('user', { id: userId } as Env['Variables']['user']);
+      if (userId) ctx.set('user', { id: userId } as Env['Variables']['user']);
+      if (actorId) ctx.set('actor', { id: actorId } as Env['Variables']['actor']);
       await next();
     });
   }
@@ -98,6 +99,28 @@ describe('rate limiter identifier validation', () => {
       const route = keyedRoute([['userId', 'ip']]);
       const req = new Request('http://localhost/test', { method: 'POST' });
       expect((await route.app.request(req, undefined, emptyBindings)).status).toBe(400);
+      expect(route.keys()).toEqual([]);
+    });
+  });
+
+  describe('actor identifier', () => {
+    const bare = () => new Request('http://localhost/test', { method: 'POST' });
+
+    it('keys on the actor id', async () => {
+      const route = keyedRoute(['actorId'], undefined, 'actor-1');
+      expect((await route.app.request(bare(), undefined, emptyBindings)).status).toBe(200);
+      expect(route.keys()).toEqual(['actorId:actor-1']);
+    });
+
+    it('keeps the actor and the user as separate subjects', async () => {
+      const route = keyedRoute(['actorId', 'userId'], 'user-1', 'actor-1');
+      expect((await route.app.request(bare(), undefined, emptyBindings)).status).toBe(200);
+      expect(route.keys()).toEqual(['actorId:actor-1userId:user-1']);
+    });
+
+    it('rejects when no actor is set, even for a signed-in user', async () => {
+      const route = keyedRoute(['actorId'], 'user-1');
+      expect((await route.app.request(bare(), undefined, emptyBindings)).status).toBe(400);
       expect(route.keys()).toEqual([]);
     });
   });

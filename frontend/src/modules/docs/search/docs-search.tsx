@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { HistoryIcon, SearchIcon, XIcon } from 'lucide-react';
+import { SearchIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDebounce } from '~/hooks/use-debounce';
@@ -8,25 +8,18 @@ import { useFocusByRef } from '~/hooks/use-focus-by-ref';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { type HistoryEntry, SearchHistoryGroup } from '~/modules/common/search-history-group';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { getDocsSearchClient } from '~/modules/docs/search/client';
 import { DocsSearchRow } from '~/modules/docs/search/docs-search-row';
 import { deleteRecentSearch, updateRecentSearches, useDocsSearchStore } from '~/modules/docs/search/docs-search-store';
 import type { DocsSearchResult, DocsSearchScope } from '~/modules/docs/search/types';
 import { docsConfig } from '~/modules/page/content';
-import { Button } from '~/modules/ui/button';
-import {
-  Combobox,
-  ComboboxGroup,
-  ComboboxGroupLabel,
-  ComboboxItem,
-  ComboboxList,
-  ComboboxSearchInput,
-} from '~/modules/ui/combobox';
+import { Combobox, ComboboxItem, ComboboxList, ComboboxSearchInput } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
+import { resolveSearchInput } from '~/utils/recent-searches';
 
-type HistoryEntry = { kind: 'history'; value: string };
 type SearchSelection = DocsSearchResult | HistoryEntry;
 
 /** Scope chips, labeled by the config-driven sidebar section labels. */
@@ -115,15 +108,7 @@ export function DocsSearch() {
         if (selection) onSelect(selection);
       }}
       inputValue={searchValue}
-      onInputValueChange={(value) => {
-        // Typing a bare history index (shown next to the row) re-runs that search.
-        const historyIndexes = recentSearches.map((_, index) => index);
-        if (historyIndexes.includes(Number.parseInt(value, 10))) {
-          setSearchValue(recentSearches[+value]);
-          return;
-        }
-        setSearchValue(value);
-      }}
+      onInputValueChange={(value) => setSearchValue(resolveSearchInput(searchValue, value, recentSearches))}
       filter={() => true}
     >
       <div className="rounded-lg shadow-2xl">
@@ -140,35 +125,7 @@ export function DocsSearch() {
         <ScrollArea className="sm:h-[45vh]">
           <ComboboxList className="h-full max-h-none overflow-visible">
             {results === null && recentSearches.length > 0 && (
-              <ComboboxGroup className="p-1">
-                <ComboboxGroupLabel>{t('c:history')}</ComboboxGroupLabel>
-                {recentSearches.map((search, index) => (
-                  <ComboboxItem
-                    key={search}
-                    value={{ kind: 'history', value: search } as HistoryEntry}
-                    className="justify-between"
-                  >
-                    <div className="flex items-center gap-2">
-                      <HistoryIcon className="size-4 shrink-0 text-muted-foreground" />
-                      <span className="truncate font-medium">{search}</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span className="mx-3 text-xs opacity-50 max-sm:hidden">{index}</span>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 p-0"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          deleteRecentSearch(search);
-                        }}
-                      >
-                        <XIcon className="size-4 opacity-70 hover:opacity-100" />
-                      </Button>
-                    </div>
-                  </ComboboxItem>
-                ))}
-              </ComboboxGroup>
+              <SearchHistoryGroup searches={recentSearches} onRemove={deleteRecentSearch} />
             )}
             {results === null && recentSearches.length === 0 && (
               <ContentPlaceholder icon={SearchIcon} title="c:docs.search.text" className="sm:h-[41vh]" />

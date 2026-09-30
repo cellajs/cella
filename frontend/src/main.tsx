@@ -48,7 +48,7 @@ ReactDOM.createRoot(root, {
   <StrictMode>
     <Themer />
     {/* size="1rem" keeps the emitted width/height attributes truthful: they mirror the
-        `:where(svg.lucide)` CSS default instead of lucide's misleading px 24. Sizing itself
+        `:where(svg.lucide)` CSS default, not lucide's misleading px 24. Sizing itself
         stays class-based (icon-* utilities); classes override both the rule and the attrs.
         The cast bridges a lucide-react typing gap: LucideConfig narrows size to number,
         while the icons consuming the context accept LucideProps' string | number. */}

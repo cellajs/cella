@@ -4,8 +4,8 @@ import { asRecord } from 'shared/utils/as-record';
 import { resolveHomeChannelId } from '~/query/basic/apply-entity-to-lists';
 import { getEntityQueryKeys, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
-import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
-import type { EntityQueryData, InfiniteEntityQueryData, ItemData, RoutableItemData } from '~/query/basic/types';
+import { forEachListQuery, mapListItems } from '~/query/basic/mutate-query';
+import type { ItemData, RoutableItemData } from '~/query/basic/types';
 import { queryClient } from '~/query/query-client';
 
 /** Wire-compatible propagation hint. Product types stay a plain union to tolerate types this app's config omits. */
@@ -54,30 +54,10 @@ function patchHostCaches(
 
   const keys = getEntityQueryKeys(hostProduct);
 
-  for (const [queryKey, queryData] of queryClient.getQueriesData({ queryKey: keys.list.base })) {
-    if (!queryData) continue;
-
-    if (isInfiniteQueryData(queryData)) {
-      let mutated = false;
-      const patchedPages = (queryData as InfiniteEntityQueryData).pages.map((page) => {
-        const patchedItems = patchItems(page.items, hostColumn, updateSet, removeSet, freshEmbedded);
-        if (patchedItems !== page.items) {
-          mutated = true;
-          return { ...page, items: patchedItems };
-        }
-        return page;
-      });
-      if (mutated) {
-        queryClient.setQueryData(queryKey, { ...queryData, pages: patchedPages });
-      }
-    } else if (isQueryData(queryData)) {
-      const data = queryData as EntityQueryData;
-      const patchedItems = patchItems(data.items, hostColumn, updateSet, removeSet, freshEmbedded);
-      if (patchedItems !== data.items) {
-        queryClient.setQueryData(queryKey, { ...data, items: patchedItems });
-      }
-    }
-  }
+  forEachListQuery(keys.list.base, (queryKey, data) => {
+    const patched = mapListItems(data, (items) => patchItems(items, hostColumn, updateSet, removeSet, freshEmbedded));
+    if (patched !== data) queryClient.setQueryData(queryKey, patched);
+  });
 
   for (const [queryKey, host] of queryClient.getQueriesData({ queryKey: keys.detail.base })) {
     if (!host) continue;

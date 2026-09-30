@@ -1,168 +1,111 @@
-'use client';
-
-import * as React from 'react';
-import { StepperProvider } from '~/modules/common/stepper/context';
-import { Step } from '~/modules/common/stepper/step';
-import type { StepperProps } from '~/modules/common/stepper/types';
-import { useMediaQuery } from '~/modules/common/stepper/use-media-query';
-import { useStepper } from '~/modules/common/stepper/use-stepper';
+import { CheckIcon } from 'lucide-react';
+import { Children, cloneElement, isValidElement, useState } from 'react';
+import type { StepProps, StepperProps } from '~/modules/common/stepper/types';
+import { StepperContext, useStepper } from '~/modules/common/stepper/use-stepper';
+import { Button } from '~/modules/ui/button';
+import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
 
-const VARIABLE_SIZES = {
-  sm: '2rem',
-  md: '2.5rem',
-  lg: '2.75rem',
-};
+/** Vertical stepper: every step shows a numbered button and its label, only the current step's content is open. */
+export function Stepper({ children, className, initialStep = 0, steps, onClickStep }: StepperProps) {
+  const [activeStep, setActiveStep] = useState(initialStep);
 
-function StepperBase(props: StepperProps, ref: React.Ref<HTMLDivElement>) {
-  const {
-    className,
-    children,
-    orientation: orientationProp = 'horizontal',
-    state,
-    responsive = true,
-    checkIcon,
-    errorIcon,
-    onClickStep,
-    mobileBreakpoint,
-    expandVerticalSteps = false,
-    initialStep = 0,
-    size = 'sm',
-    steps,
-    variant,
-    styles,
-    variables,
-    scrollTracking = false,
-    ...rest
-  } = props;
-
-  const childArr = React.Children.toArray(children);
-
-  const items: React.ReactElement[] = [];
-
-  const footer = childArr.map((child, _index) => {
-    if (!React.isValidElement(child)) {
-      throw new Error('Stepper children must be valid React elements.');
-    }
-    if (child.type === Step) {
-      items.push(child);
-      return null;
-    }
-
-    return child;
-  });
-
-  const stepCount = items.length;
-
-  const isMobile = useMediaQuery(`(max-width: ${mobileBreakpoint || '48rem'})`);
-
-  const clickable = !!onClickStep;
-
-  const orientation = isMobile && responsive ? 'vertical' : orientationProp;
-
-  const isVertical = orientation === 'vertical';
+  // Step reads its position from the index handed down here.
+  const items = Children.toArray(children).map((child, index) =>
+    isValidElement<{ index?: number }>(child) ? cloneElement(child, { index }) : child,
+  );
 
   return (
-    <StepperProvider
+    <StepperContext.Provider
       value={{
-        initialStep,
-        orientation,
-        state,
-        size,
-        responsive,
-        checkIcon,
-        errorIcon,
-        onClickStep,
-        clickable,
-        stepCount,
-        isVertical,
-        variant: variant || 'circle',
-        expandVerticalSteps,
         steps,
-        scrollTracking,
-        styles,
+        activeStep,
+        onClickStep,
+        nextStep: () => setActiveStep((prev) => prev + 1),
+        setStep: setActiveStep,
       }}
     >
       <div
-        ref={ref}
         className={cn(
-          'stepper__main-container',
-          'flex w-full flex-wrap',
-          stepCount === 1 ? 'justify-end' : 'justify-between',
-          orientation === 'vertical' ? 'flex-col' : 'flex-row',
-          variant === 'line' && orientation === 'horizontal' && 'gap-4',
+          'flex w-full flex-col flex-wrap [--step-gap:0.5rem] [--step-icon-size:2rem]',
+          items.length === 1 ? 'justify-end' : 'justify-between',
           className,
-          styles?.['main-container'],
         )}
-        style={
-          {
-            '--step-icon-size': variables?.['--step-icon-size'] || `${VARIABLE_SIZES[size || 'md']}`,
-            '--step-gap': variables?.['--step-gap'] || '0.5rem',
-          } as React.CSSProperties
-        }
-        {...rest}
       >
-        <VerticalContent>{items}</VerticalContent>
+        {items}
       </div>
-      {orientation === 'horizontal' && <HorizontalContent>{items}</HorizontalContent>}
-      {footer}
-    </StepperProvider>
+    </StepperContext.Provider>
   );
 }
 
-export const Stepper = React.forwardRef<HTMLDivElement, StepperProps>(StepperBase);
+export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 }: StepProps & { index?: number }) {
+  const { steps, activeStep, isLastStep: isOnLastStep, onClickStep, setStep } = useStepper();
 
-function VerticalContent({ children }: { children: React.ReactNode }) {
-  const { activeStep } = useStepper();
-
-  const childArr = React.Children.toArray(children);
-  const stepCount = childArr.length;
+  const isCompletedStep = index < activeStep;
+  const isCurrentStep = index === activeStep;
+  const clickable = !!onClickStep;
 
   return (
-    <>
-      {React.Children.map(children, (child, i) => {
-        const isCompletedStep =
-          (React.isValidElement(child) &&
-            // biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
-            (child.props as any).isCompletedStep) ??
-          i < activeStep;
-        const isLastStep = i === stepCount - 1;
-        const isCurrentStep = i === activeStep;
-
-        const stepProps = {
-          index: i,
-          isCompletedStep,
-          isCurrentStep,
-          isLastStep,
-        };
-
-        if (React.isValidElement(child)) {
-          return React.cloneElement(child, stepProps);
-        }
-        return null;
-      })}
-    </>
+    <div
+      className={cn(
+        'relative flex flex-col transition-all duration-200 data-[completed=true]:not-last:after:bg-primary',
+        'not-last:gap-(--step-gap) not-last:pb-(--step-gap)',
+        "not-last:after:w-0.5 not-last:after:bg-border not-last:after:content-['']",
+        'not-last:after:absolute not-last:after:inset-x-[calc(var(--step-icon-size)/2)]',
+        'not-last:after:top-[calc(var(--step-icon-size)+var(--step-gap))] not-last:after:bottom-(--step-gap)',
+        'not-last:after:transition-all not-last:after:duration-200',
+        isOnLastStep && 'gap-(--step-gap)',
+      )}
+      data-completed={isCompletedStep}
+    >
+      {steps.length > 1 && (
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            type="button"
+            tabIndex={clickable ? 0 : -1}
+            className={cn(
+              'pointer-events-none rounded-full p-0',
+              'h-(--step-icon-size) w-(--step-icon-size)',
+              'flex items-center justify-center rounded-full border-2',
+              'data-[clickable=true]:pointer-events-auto',
+              'data-[active=true]:border-primary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground',
+              'data-[current=true]:border-primary data-[current=true]:bg-secondary',
+            )}
+            aria-current={isCurrentStep ? 'step' : undefined}
+            data-current={isCurrentStep}
+            data-active={isCompletedStep}
+            data-clickable={clickable}
+            onClick={() => onClickStep?.(index, setStep)}
+          >
+            {isCompletedStep ? (
+              <Check className="size-4" />
+            ) : (
+              <span className="text-center font-medium text-md">{index + 1}</span>
+            )}
+          </Button>
+          {!!label && (
+            <div
+              aria-current={isCurrentStep ? 'step' : undefined}
+              className="ms-2 flex flex-col"
+              style={{ opacity: isCurrentStep || isCompletedStep ? 1 : 0.8 }}
+            >
+              <span className="text-sm">{label}</span>
+            </div>
+          )}
+        </div>
+      )}
+      <div
+        className={cn(index !== steps.length - 1 && 'min-h-4', 'max-sm:relative max-sm:z-1 sm:ps-(--step-icon-size)')}
+      >
+        <Collapsible open={isCurrentStep}>
+          <CollapsibleContent className="overflow-hidden data-closed:animate-collapsible-up data-open:animate-collapsible-down">
+            {children}
+          </CollapsibleContent>
+        </Collapsible>
+      </div>
+    </div>
   );
 }
 
-function HorizontalContent({ children }: { children: React.ReactNode }) {
-  const { activeStep } = useStepper();
-  const childArr = React.Children.toArray(children);
-
-  if (activeStep > childArr.length) {
-    return null;
-  }
-
-  return (
-    <>
-      {React.Children.map(childArr[activeStep], (node) => {
-        if (!React.isValidElement<{ children?: React.ReactNode }>(node)) {
-          return null;
-        }
-        return React.Children.map(node.props.children, (childNode) => childNode);
-      })}
-    </>
-  );
-}
-
-export { Step, useStepper };
+export { useStepper };

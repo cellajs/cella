@@ -3,17 +3,10 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Request } from 'sdk';
 import { appConfig } from 'shared';
-import { ColumnsView } from '~/modules/common/data-table/columns-view';
-import { Export } from '~/modules/common/data-table/export';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
-import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
-import { TableCount } from '~/modules/common/data-table/table-count';
-import { FilterBarActions, FilterBarSearch, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
-import { TableSearch } from '~/modules/common/data-table/table-search';
+import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { FocusView } from '~/modules/common/focus-view';
-import { SelectionActionBar } from '~/modules/common/selection-action-bar';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { DeleteRequests } from '~/modules/requests/delete-requests';
 import { fetchRequestsForExport, requestsKeys, useSendApprovalInviteMutation } from '~/modules/requests/query';
@@ -42,21 +35,11 @@ export function RequestsTableBar({
   const selectedToWaitlist = selected.filter((r) => r.type === 'waitlist' && !r.wasInvited);
 
   const { q, order, sort } = searchVars;
-  const isFiltered = !!q;
+  const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '' } });
 
   const requestsListKey = requestsKeys.table.base;
 
   const { mutateAsync: approveRequests } = useSendApprovalInviteMutation();
-
-  const onSearch = (searchString: string) => {
-    clearSelection();
-    setSearch({ q: searchString });
-  };
-
-  const onResetFilters = () => {
-    setSearch({ q: '' });
-    clearSelection();
-  };
 
   const openDeleteDialog = () => {
     const callback = (args: CallbackArgs<Request[]>) => {
@@ -111,49 +94,37 @@ export function RequestsTableBar({
   };
 
   return (
-    <TableBarContainer searchVars={searchVars}>
-      <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
-        <FilterBarActions>
-          <TableCount count={total} label="c:request" isFiltered={isFiltered} onResetFilters={onResetFilters} />
-        </FilterBarActions>
-
-        <div className="sm:grow" />
-
-        <FilterBarSearch>
-          <TableSearch name="requestSearch" value={q} setQuery={onSearch} />
-        </FilterBarSearch>
-      </TableFilterBar>
-
-      <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-
-      <Export
-        className="max-lg:hidden"
-        filename={`${appConfig.slug}-requests`}
-        columns={columns}
-        fetchRows={fetchExport}
-      />
-
-      <FocusView iconOnly />
-
-      <SelectionActionBar count={selected.length} onClear={clearSelection}>
-        {selectedToWaitlist.length > 0 && (
-          <TableBarButton
-            badge={selectedToWaitlist.length < selected.length ? selectedToWaitlist.length : undefined}
-            variant="success"
-            className="relative"
-            label="c:invite"
-            icon={PartyPopperIcon}
-            onClick={approveSelectedRequests}
-          />
-        )}
-        <TableBarButton
-          ref={deleteButtonRef}
-          variant="destructive"
-          icon={TrashIcon}
-          label="c:remove"
-          onClick={openDeleteDialog}
-        />
-      </SelectionActionBar>
-    </TableBarContainer>
+    <TableBarShell
+      {...barFilters}
+      {...{ searchVars, total, columns, setColumns }}
+      label="c:request"
+      searchName="requestSearch"
+      export={{ filename: `${appConfig.slug}-requests`, fetchRows: fetchExport }}
+      selection={{
+        count: selected.length,
+        onClear: clearSelection,
+        children: (
+          <>
+            {selectedToWaitlist.length > 0 && (
+              <TableBarButton
+                badge={selectedToWaitlist.length < selected.length ? selectedToWaitlist.length : undefined}
+                variant="success"
+                className="relative"
+                label="c:invite"
+                icon={PartyPopperIcon}
+                onClick={approveSelectedRequests}
+              />
+            )}
+            <TableBarButton
+              ref={deleteButtonRef}
+              variant="destructive"
+              icon={TrashIcon}
+              label="c:remove"
+              onClick={openDeleteDialog}
+            />
+          </>
+        ),
+      }}
+    />
   );
 }

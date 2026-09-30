@@ -16,7 +16,7 @@ import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { requestsSearchDefaults } from '~/modules/requests/search-params-schemas';
-import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
+import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 
 type RequestFilters = Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'offset'>;
 type RequestsListParams = RequestFilters & { limit?: number };
@@ -31,24 +31,25 @@ export const requestsKeys = {
   delete: ['requests', 'delete'] as const,
 };
 
-export const requestsListQueryOptions = (params: RequestsListParams) => {
-  const defaults = requestsSearchDefaults;
-  const {
-    q = defaults.q,
-    sort = defaults.sort,
-    order = defaults.order,
-    limit = appConfig.requestLimits.requests,
-  } = params;
-  const filters = { q, sort, order };
-  const requestQuery = { ...filters, limit: String(limit) };
+const withDefaults = ({
+  q = requestsSearchDefaults.q,
+  sort = requestsSearchDefaults.sort,
+  order = requestsSearchDefaults.order,
+}: RequestFilters) => ({ q, sort, order });
+
+/** One page of requests, search defaults filled in. */
+const fetchRequestsPage = (filters: RequestFilters, limit: number, offset: number, signal?: AbortSignal) =>
+  getRequests({ query: { ...withDefaults(filters), ...pageQuery(limit, offset) }, signal });
+
+export const requestsListQueryOptions = ({
+  limit = appConfig.requestLimits.requests,
+  ...params
+}: RequestsListParams) => {
+  const filters = withDefaults(params);
 
   return infiniteQueryOptions({
     queryKey: requestsKeys.table.entries(filters),
-    queryFn: ({ pageParam: { page, offset }, signal }) => {
-      const requestOffset = String(offset ?? (page ?? 0) * limit);
-      return getRequests({ query: { ...requestQuery, offset: requestOffset }, signal });
-    },
-    ...baseInfiniteQueryOptions,
+    ...offsetPaging(limit, (offset, signal) => fetchRequestsPage(filters, limit, offset, signal)),
     refetchOnMount: true,
   });
 };
@@ -82,22 +83,8 @@ export const useDeleteRequestMutation = () => {
 };
 
 /** Fetch requests for table export. Bypasses cache; returns flat items. */
-export const fetchRequestsForExport = async (params: {
-  limit: number;
-  offset?: number;
-  q?: string;
-  sort?: NonNullable<GetRequestsData['query']>['sort'];
-  order?: NonNullable<GetRequestsData['query']>['order'];
-}) => {
-  const {
-    limit,
-    offset = 0,
-    q = requestsSearchDefaults.q,
-    sort = requestsSearchDefaults.sort,
-    order = requestsSearchDefaults.order,
-  } = params;
-  const response = await getRequests({
-    query: { q, sort, order, limit: String(limit), offset: String(offset) },
-  });
-  return response.items;
-};
+export const fetchRequestsForExport = async ({
+  limit,
+  offset = 0,
+  ...filters
+}: RequestsListParams & { limit: number; offset?: number }) => (await fetchRequestsPage(filters, limit, offset)).items;

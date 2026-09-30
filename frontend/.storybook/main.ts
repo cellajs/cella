@@ -1,4 +1,16 @@
 import type { StorybookConfig } from '@storybook/react-vite';
+import type { Plugin } from 'vite';
+import { docsFrontmatter } from '../vite/docs-frontmatter.ts';
+
+// The PWA plugin is app-only; stories get a service-worker hook that never reports an update.
+const pwaRegisterStub: Plugin = {
+  name: 'storybook-pwa-register-stub',
+  resolveId: (id) => (id === 'virtual:pwa-register/react' ? '\0pwa-register-stub' : undefined),
+  load: (id) =>
+    id === '\0pwa-register-stub'
+      ? 'export const useRegisterSW = () => ({ needRefresh: [false, () => {}], offlineReady: [false, () => {}], updateServiceWorker: async () => {} });'
+      : undefined,
+};
 
 const config: StorybookConfig = {
   "stories": [
@@ -27,7 +39,11 @@ const config: StorybookConfig = {
         NODE_ENV: JSON.stringify(process.env.NODE_ENV || 'development'),
       },
       __DEV_TOOLS__: 'true',
+      __APP_VERSION__: JSON.stringify('storybook'),
     };
+    // Every virtual module the app imports must resolve: an unresolved import fails Vite's dependency scan, so
+    // dependencies are found mid-run and each discovery reloads the tests.
+    config.plugins = [...(config.plugins ?? []), docsFrontmatter(), pwaRegisterStub];
     return config;
   },
 };

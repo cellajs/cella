@@ -1,8 +1,6 @@
-import { Link, useNavigate } from '@tanstack/react-router';
 import type { GenOperationSummary } from 'sdk/docs-types';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import { DataTable } from '~/modules/common/data-table/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { TagHashLink, TagTable } from '~/modules/docs/tag-table';
 import { Badge } from '~/modules/ui/badge';
 import { getMethodColor } from './helpers/get-method-color';
 
@@ -14,20 +12,6 @@ interface TagOperationsTableProps {
 }
 
 function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[] {
-  const navigate = useNavigate();
-
-  // Enqueue the scroll (the store retries until the target is laid out), then navigate
-  const handleOperationClick = (hash: string) => {
-    scrollToSectionById(hash);
-    navigate({
-      to: '.',
-      search: (prev) => ({ ...prev, operationTag: tagName }),
-      hash,
-      replace: true,
-      resetScroll: false,
-    });
-  };
-
   return [
     {
       key: 'method',
@@ -49,25 +33,17 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       minWidth: 200,
 
       renderCell: ({ row, tabIndex }) => (
-        <Link
-          to="."
-          search={(prev) => ({ ...prev, operationTag: tagName })}
+        <TagHashLink
+          tagParam="operationTag"
+          tagName={tagName}
           hash={row.hash}
-          replace
-          onClick={(e) => {
-            if (e.metaKey || e.ctrlKey) return;
-            e.preventDefault();
-            handleOperationClick(row.hash);
-          }}
-          resetScroll={false}
-          draggable={false}
           tabIndex={tabIndex}
           title={row.path}
           dir="rtl"
-          className="truncate text-left font-mono text-sm decoration-foreground/30 underline-offset-3 hover:underline"
+          className="text-left"
         >
           &lrm;{row.path}
-        </Link>
+        </TagHashLink>
       ),
     },
     {
@@ -85,22 +61,12 @@ export function TagOperationsTable({ operations, tagName, onPrerender }: TagOper
   const columns = useColumns(tagName);
 
   return (
-    <div onMouseEnter={onPrerender} onFocus={onPrerender}>
-      <DataTable<GenOperationSummary>
-        className="mb-0"
-        columns={columns}
-        rows={operations}
-        hasNextPage={false}
-        rowKeyGetter={(row) => row.hash}
-        isLoading={false}
-        isFetching={false}
-        limit={operations.length}
-        isFiltered={false}
-        rowHeight={36}
-        hideHeader
-        enableVirtualization={false}
-        readOnly
-      />
-    </div>
+    <TagTable<GenOperationSummary>
+      rows={operations}
+      columns={columns}
+      rowKeyGetter={(row) => row.hash}
+      hideHeader
+      onPrerender={onPrerender}
+    />
   );
 }

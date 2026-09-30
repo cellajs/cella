@@ -1,8 +1,8 @@
 import { appConfig } from 'shared';
-import { createXRoute } from '#/core/x-routes';
+import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
-import { errorResponseRefs, tenantOnlyParamSchema } from '#/schemas';
+import { tenantOnlyParamSchema } from '#/schemas';
 import {
   createDomainBodySchema,
   domainParamSchema,
@@ -11,125 +11,59 @@ import {
   verifyDomainResponseSchema,
 } from './domains-schema';
 
-export const domainRoutes = {
-  getDomains: createXRoute({
-    operationId: 'getDomains',
+export const domainRoutes = createXRoutes(['tenants', 'cella'], {
+  getDomains: xRoute({
     method: 'get',
     path: '/',
     xGuard: [userGuard, sysAdminGuard, tenantGuard],
-    tags: ['tenants', 'cella'],
     summary: 'List domains for a tenant',
     description:
       'Returns all domains belonging to a tenant, including verification tokens. System admin access required.',
     request: { params: tenantOnlyParamSchema },
-    responses: {
-      200: {
-        description: 'List of domains',
-        content: {
-          'application/json': {
-            schema: domainWithTokenSchema.array(),
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
+    responses: { 200: json('List of domains', domainWithTokenSchema.array()) },
   }),
 
-  createDomain: createXRoute({
-    operationId: 'createDomain',
+  createDomain: xRoute({
     method: 'post',
     path: '/',
     xGuard: [userGuard, sysAdminGuard, tenantGuard],
     xRateLimiter: [singlePointsLimiter],
-    tags: ['tenants', 'cella'],
     summary: 'Add a domain to a tenant',
     description: 'Adds a new domain to a tenant. The domain starts unverified. System admin access required.',
-    request: {
-      params: tenantOnlyParamSchema,
-      body: {
-        required: true,
-        content: { 'application/json': { schema: createDomainBodySchema } },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Created domain',
-        content: {
-          'application/json': {
-            schema: domainSchema,
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
+    request: { params: tenantOnlyParamSchema, body: jsonBody(createDomainBodySchema) },
+    responses: { 200: json('Created domain', domainSchema) },
   }),
 
-  deleteDomain: createXRoute({
-    operationId: 'deleteDomain',
+  deleteDomain: xRoute({
     method: 'delete',
     path: '/{id}',
     xGuard: [userGuard, sysAdminGuard, tenantGuard],
     xRateLimiter: [singlePointsLimiter],
-    tags: ['tenants', 'cella'],
     summary: 'Remove a domain',
     description: 'Removes a domain from a tenant. System admin access required.',
     request: { params: domainParamSchema },
-    responses: {
-      200: {
-        description: 'Domain removed',
-        content: {
-          'application/json': {
-            schema: domainSchema,
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
+    responses: { 200: json('Domain removed', domainSchema) },
   }),
 
-  getDomain: createXRoute({
-    operationId: 'getDomain',
+  getDomain: xRoute({
     method: 'get',
     path: '/{id}',
     xGuard: [userGuard, sysAdminGuard, tenantGuard],
-    tags: ['tenants', 'cella'],
     summary: 'Get domain with verification token',
     description:
       'Returns a single domain including its verification token for DNS TXT setup. System admin access required.',
     request: { params: domainParamSchema },
-    responses: {
-      200: {
-        description: 'Domain with verification token',
-        content: {
-          'application/json': {
-            schema: domainWithTokenSchema,
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
+    responses: { 200: json('Domain with verification token', domainWithTokenSchema) },
   }),
 
-  verifyDomain: createXRoute({
-    operationId: 'verifyDomain',
+  verifyDomain: xRoute({
     method: 'post',
     path: '/{id}/verify',
     xGuard: [userGuard, sysAdminGuard, tenantGuard],
     xRateLimiter: [singlePointsLimiter],
-    tags: ['tenants', 'cella'],
     summary: 'Verify domain ownership via DNS',
     description: `Looks up DNS TXT records for the domain to verify ownership. Checks for a _${appConfig.slug}-verification.<domain> TXT record matching the verification token.`,
     request: { params: domainParamSchema },
-    responses: {
-      200: {
-        description: 'Verification result',
-        content: {
-          'application/json': {
-            schema: verifyDomainResponseSchema,
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
+    responses: { 200: json('Verification result', verifyDomainResponseSchema) },
   }),
-};
+});

@@ -1,6 +1,9 @@
+import { eq } from 'drizzle-orm';
+import { baseDb } from '#/db/db';
 import { TTLCache } from '#/lib/ttl-cache';
 import type { SessionFacts } from '#/modules/auth/sessions-db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
 
 export interface SessionCacheEntry {
@@ -65,6 +68,15 @@ export const setMembershipCache = (userId: string, memberships: MembershipCacheE
   membershipCache.set(userId, memberships, jitteredTtl);
 };
 
+/** The user's memberships from the cache, read from the database and cached on a miss. */
+export const loadMemberships = async (userId: string): Promise<MembershipCacheEntry> => {
+  const cached = membershipCache.get(userId);
+  if (cached) return cached;
+  const memberships = await baseDb.select().from(membershipsTable).where(eq(membershipsTable.userId, userId));
+  setMembershipCache(userId, memberships);
+  return memberships;
+};
+
 /** Invalidate all cached entries for a user: every session and the memberships. */
 export const invalidateAuthCacheByUser = (userId: string): void => {
   const secretHashes = userIndex.get(userId);
@@ -82,8 +94,3 @@ export const clearAuthCache = (): void => {
   membershipCache.clear();
   userIndex.clear();
 };
-
-export const authCacheStats = () => ({
-  session: sessionCache.stats,
-  membership: membershipCache.stats,
-});

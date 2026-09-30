@@ -7,7 +7,7 @@ import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { identitiesTable } from '#/modules/auth/identities-db';
-import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/helpers/providers';
+import { githubAuth, googleAuth, microsoftAuth, OAuthCodeExchangeError } from '#/modules/auth/oauth/helpers/providers';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -39,7 +39,9 @@ setTestConfig({
   selfRegistration: true,
 });
 
-vi.mock('#/modules/auth/oauth/helpers/providers', () => ({
+vi.mock('#/modules/auth/oauth/helpers/providers', async (importOriginal) => ({
+  OAuthCodeExchangeError: (await importOriginal<typeof import('#/modules/auth/oauth/helpers/providers')>())
+    .OAuthCodeExchangeError,
   githubAuth: {
     createAuthorizationURL: vi.fn().mockReturnValue(new URL('https://github.com/login/oauth/authorize')),
     validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: 'mock-access-token' }),
@@ -134,7 +136,10 @@ describe('OAuth Authentication', async () => {
       await linkIdentity(user);
 
       const state = 'mock-state-test';
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ provider: 'github', type: 'auth', codeVerifier: undefined }),
+      );
 
       const { response: res } = await call(githubCallback, {
         query: { state, code: 'mock-auth-code' },
@@ -150,7 +155,10 @@ describe('OAuth Authentication', async () => {
       const identity = await linkIdentity(user, { email: 'old-address@example.com' });
 
       const state = 'mock-state-test';
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ provider: 'github', type: 'auth', codeVerifier: undefined }),
+      );
 
       const { response: res } = await call(githubCallback, {
         query: { state, code: 'mock-auth-code' },
@@ -174,7 +182,10 @@ describe('OAuth Authentication', async () => {
       const ssoIdentity = await linkIdentity(user, { kind: 'sso' });
 
       const state = 'mock-state-test';
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ provider: 'github', type: 'auth', codeVerifier: undefined }),
+      );
 
       const { response: res } = await call(githubCallback, {
         query: { state, code: 'mock-auth-code' },
@@ -198,7 +209,10 @@ describe('OAuth Authentication', async () => {
       const identity = await linkIdentity(user, { verified: false, email: user.email });
 
       const state = 'mock-state-test';
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ provider: 'github', type: 'auth', codeVerifier: undefined }),
+      );
 
       const { response: res, error } = await call(githubCallback, {
         query: { state, code: 'mock-auth-code' },
@@ -217,7 +231,10 @@ describe('OAuth Authentication', async () => {
       const identity = await linkIdentity(user, { verified: false, email: 'old-address@example.com' });
 
       const state = 'mock-state-test';
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ provider: 'github', type: 'auth', codeVerifier: undefined }),
+      );
 
       const { response: res } = await call(githubCallback, {
         query: { state, code: 'mock-auth-code' },
@@ -242,7 +259,10 @@ describe('OAuth Authentication', async () => {
       await linkIdentity(user, { verified: false });
 
       const state = 'mock-state-test';
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ provider: 'github', type: 'auth', codeVerifier: undefined }),
+      );
 
       const { response: res } = await call(githubCallback, {
         query: { state, code: 'mock-auth-code' },
@@ -267,7 +287,10 @@ describe('OAuth Authentication', async () => {
 
     it('should reject callback with OAuth error', async () => {
       const state = 'mock-state-test';
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ provider: 'github', type: 'auth', codeVerifier: undefined }),
+      );
 
       const { response: res, error } = await call(githubCallback, {
         query: { state, code: 'error-code', error: 'access_denied', error_description: 'User denied access' },
@@ -277,9 +300,32 @@ describe('OAuth Authentication', async () => {
       await expectRefusal({ response: res, error }, 400, 'oauth_failed');
     });
 
+    // A provider denial carries `error` and `state` but no `code` (RFC 6749 §4.1.2.1).
+    it.each([
+      { name: 'github', fn: githubCallback },
+      { name: 'google', fn: googleCallback },
+      { name: 'microsoft', fn: microsoftCallback },
+    ])('refuses a $name denial that arrives without a code as oauth_failed', async ({ name, fn }) => {
+      const state = 'mock-state-denied';
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ provider: name, type: 'auth', codeVerifier: 'verifier' }),
+      );
+
+      const { response: res, error } = await call(fn, {
+        query: { state, error: 'access_denied', error_description: 'User denied access' },
+        headers: defaultHeaders,
+      });
+
+      await expectRefusal({ response: res, error }, 400, 'oauth_failed');
+    });
+
     it('should reject callback with missing code', async () => {
       const state = 'mock-state-test';
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ provider: 'github', type: 'auth', codeVerifier: undefined }),
+      );
 
       const { response: res, error } = await call(githubCallback, {
         query: { state, code: '' },
@@ -310,7 +356,10 @@ describe('OAuth Authentication', async () => {
       await createUser('github-user@example.com');
 
       const state = 'mock-state-test';
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ provider: 'github', type: 'auth', codeVerifier: undefined }),
+      );
 
       const { response: res, error } = await call(githubCallback, {
         query: { state, code: 'mock-auth-code' },
@@ -337,7 +386,7 @@ describe('OAuth Authentication', async () => {
     };
 
     const connectCallback = (payload: Record<string, unknown> = {}) => {
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'connect', ...payload }));
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ provider: 'github', type: 'connect', ...payload }));
       return call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
     };
 
@@ -361,7 +410,7 @@ describe('OAuth Authentication', async () => {
     });
 
     it("sends a provider's refusal of a connect back to the account page, with the error to show", async () => {
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'connect' }));
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ provider: 'github', type: 'connect' }));
       const denied = () =>
         call(githubCallback, {
           query: { state, code: 'error-code', error: 'access_denied', error_description: 'User denied access' },
@@ -475,7 +524,7 @@ describe('OAuth Authentication', async () => {
       const started = await call(github, { query: { type: 'connect' }, headers: defaultHeaders });
       expect(started.response.status).toBe(302);
       const statePayload = [...mockCookieStore.entries()].find(([name]) => name.startsWith('oauth-state-'))?.[1];
-      expect(JSON.parse(statePayload ?? '{}')).toEqual({ type: 'connect' });
+      expect(JSON.parse(statePayload ?? '{}')).toEqual({ provider: 'github', type: 'connect' });
     });
   });
 
@@ -495,7 +544,10 @@ describe('OAuth Authentication', async () => {
         { identityId: oauthAccount.id, openedWith: rawSingleUse, expiresInMs: 5 * 60 * 1000 },
       );
       mockCookieStore.set('oauth-verification', rawSingleUse);
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'verify', tokenId: token.id }));
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ provider: 'github', type: 'verify', tokenId: token.id }),
+      );
 
       return { user, oauthAccount };
     };
@@ -540,10 +592,10 @@ describe('OAuth Authentication', async () => {
     it.each([
       { name: 'google', fn: googleCallback },
       { name: 'microsoft', fn: microsoftCallback },
-    ])('should reject $name callback when codeVerifier is missing from the state cookie', async ({ fn }) => {
+    ])('should reject $name callback when codeVerifier is missing from the state cookie', async ({ name, fn }) => {
       const state = 'mock-state-test';
       // Cookie present, but WITHOUT a PKCE code verifier.
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth' }));
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ provider: name, type: 'auth' }));
 
       const { response: res, error } = await call(fn, {
         query: { state, code: 'mock-auth-code' },
@@ -551,6 +603,134 @@ describe('OAuth Authentication', async () => {
       });
 
       await expectRefusal({ response: res, error }, 401, 'invalid_state');
+    });
+  });
+
+  describe('Callbacks per provider', () => {
+    const providers = [
+      { provider: 'github', fn: githubCallback, client: githubAuth, pkce: false },
+      { provider: 'google', fn: googleCallback, client: googleAuth, pkce: true },
+      { provider: 'microsoft', fn: microsoftCallback, client: microsoftAuth, pkce: true },
+    ] as const;
+
+    /** A state cookie as the provider's own start writes it: a PKCE provider's holds a code verifier and a nonce. */
+    const pendingState = (provider: string, pkce: boolean) => {
+      const state = `mock-state-${nanoid(6)}`;
+      const flow = pkce ? { codeVerifier: 'verifier', nonce: 'nonce' } : {};
+      const payload = { provider, type: 'auth', ...flow };
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify(payload));
+      return state;
+    };
+
+    const callback = (fn: (typeof providers)[number]['fn'], state: string) =>
+      call(fn, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
+
+    it.each(providers)('refuses a $provider callback without a state cookie', async ({ fn, client }) => {
+      await expectRefusal(await callback(fn, 'no-such-state'), 401, 'invalid_state');
+      expect(client.validateAuthorizationCode).not.toHaveBeenCalled();
+    });
+
+    it.each(
+      providers.flatMap((entry) => [
+        {
+          ...entry,
+          thrown: 'a refused code',
+          error: () => new OAuthCodeExchangeError(new Error('bad code')),
+          type: 'invalid_credentials',
+        },
+        { ...entry, thrown: 'any other failure', error: () => new Error('network down'), type: 'oauth_failed' },
+      ]),
+    )(
+      'answers $thrown at the $provider code exchange with 401 $type',
+      async ({ provider, fn, client, pkce, error, type }) => {
+        vi.mocked(client.validateAuthorizationCode).mockRejectedValueOnce(error());
+        await expectRefusal(await callback(fn, pendingState(provider, pkce)), 401, type);
+      },
+    );
+
+    it.each(providers)('refuses a $provider callback while the provider is off', async ({ provider, fn, pkce }) => {
+      const enabled = ['github', 'google', 'microsoft'] as const;
+      setTestConfig({ enabledOAuthProviders: enabled.filter((name) => name !== provider) });
+      onTestFinished(() => setTestConfig({ enabledOAuthProviders: [...enabled] }));
+
+      const refused = await callback(fn, pendingState(provider, pkce));
+      await expectRefusal(refused, 400, 'unsupported_oauth');
+      expect((refused.error as ErrorResponse & { meta: Record<string, string> }).meta.strategy).toBe(provider);
+    });
+
+    it.each([
+      { ...providers[0], urls: ['https://api.github.com/user', 'https://api.github.com/user/emails'] },
+      { ...providers[1], urls: ['https://openidconnect.googleapis.com/v1/userinfo'] },
+      { ...providers[2], urls: ['https://graph.microsoft.com/oidc/userinfo'] },
+    ])(
+      'reads the $provider profile from its userinfo endpoints, all at once',
+      async ({ provider, fn, client, pkce, urls }) => {
+        // Each request records how many were in flight when it started: parallel requests overlap.
+        const started: { url: string; authorization: string | null; inFlight: number }[] = [];
+        let inFlight = 0;
+        const stub = vi.mocked(fetch);
+        const original = stub.getMockImplementation();
+        onTestFinished(() => {
+          if (original) stub.mockImplementation(original);
+        });
+        stub.mockImplementation(async (input, init) => {
+          inFlight++;
+          started.push({
+            url: String(input),
+            authorization: new Headers(init?.headers).get('authorization'),
+            inFlight,
+          });
+          await new Promise((resolve) => setTimeout(resolve, 0));
+          inFlight--;
+          return { ok: true, status: 200, json: async () => ({}), text: async () => '' } as unknown as Response;
+        });
+
+        const state = pendingState(provider, pkce);
+        const { response } = await callback(fn, state);
+
+        expect(response.status).toBe(302);
+        expect(started).toEqual(
+          urls.map((url, index) => ({ url, authorization: 'Bearer mock-access-token', inFlight: index + 1 })),
+        );
+        const [[code, exchangedState, options]] = vi.mocked(client.validateAuthorizationCode).mock.calls;
+        expect([code, exchangedState]).toEqual(['mock-auth-code', state]);
+        if (pkce) expect(options).toEqual({ codeVerifier: 'verifier', nonce: 'nonce' });
+        else expect(options?.codeVerifier ?? options?.nonce).toBeUndefined();
+      },
+    );
+
+    // GitHub has no PKCE, so its state cookie holds no code verifier: a PKCE provider's callback never accepts it.
+    it.each([
+      { provider: 'google', fn: googleCallback, client: googleAuth },
+      { provider: 'microsoft', fn: microsoftCallback, client: microsoftAuth },
+    ])('must not accept a GitHub-minted state at the $provider callback', async ({ fn, client }) => {
+      const { response: started } = await call(github, { query: { type: 'auth' }, headers: defaultHeaders });
+      expect(started.status).toBe(302);
+      const [[state]] = vi.mocked(githubAuth.createAuthorizationURL).mock.calls;
+      expect(mockCookieStore.get(`oauth-state-${state}`)).toBeTruthy();
+
+      await expectRefusal(await callback(fn, state), 401, 'invalid_state');
+      expect(client.validateAuthorizationCode).not.toHaveBeenCalled();
+    });
+
+    // A state belongs to the provider whose start minted it, whatever else its cookie holds.
+    it.each([
+      { from: 'google', start: google, minter: googleAuth, to: 'github', fn: githubCallback, client: githubAuth },
+      {
+        from: 'microsoft',
+        start: microsoft,
+        minter: microsoftAuth,
+        to: 'google',
+        fn: googleCallback,
+        client: googleAuth,
+      },
+    ])('must not accept a $from-minted state at the $to callback', async ({ start, minter, fn, client }) => {
+      const { response: started } = await call(start, { query: { type: 'auth' }, headers: defaultHeaders });
+      expect(started.status).toBe(302);
+      const [[state]] = vi.mocked(minter.createAuthorizationURL).mock.calls;
+
+      await expectRefusal(await callback(fn, state), 401, 'invalid_state');
+      expect(client.validateAuthorizationCode).not.toHaveBeenCalled();
     });
   });
 
@@ -568,7 +748,12 @@ describe('OAuth Authentication', async () => {
       const state = 'mock-state-test';
       mockCookieStore.set(
         `oauth-state-${state}`,
-        JSON.stringify({ type: 'auth', redirectAfter: '/orgs/acme?tab=files', codeVerifier: undefined }),
+        JSON.stringify({
+          provider: 'github',
+          type: 'auth',
+          redirectAfter: '/orgs/acme?tab=files',
+          codeVerifier: undefined,
+        }),
       );
 
       const { response: res } = await call(githubCallback, {
@@ -589,7 +774,7 @@ describe('OAuth Authentication', async () => {
         const state = 'mock-state-test';
         mockCookieStore.set(
           `oauth-state-${state}`,
-          JSON.stringify({ type: 'auth', redirectAfter, codeVerifier: undefined }),
+          JSON.stringify({ provider: 'github', type: 'auth', redirectAfter, codeVerifier: undefined }),
         );
 
         const { response: res } = await call(githubCallback, {
@@ -615,7 +800,10 @@ describe('OAuth Authentication', async () => {
       await linkIdentity(user);
 
       const state = 'mock-state-test';
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ provider: 'github', type: 'auth', codeVerifier: undefined }),
+      );
 
       const { response: res } = await call(githubCallback, {
         query: { state, code: 'mock-auth-code' },
@@ -641,7 +829,7 @@ describe('OAuth Authentication', async () => {
       const invitation = await createInvitation({ organization, email, createdBy: inviter.id, token: 'invoked' });
       // The cookie mock keeps plain values: this browser's single-use cookie for the opened link.
       mockCookieStore.set('invitation', invitation.rawSingleUseToken);
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'invite' }));
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ provider: 'github', type: 'invite' }));
       return invitation;
     };
 
@@ -733,7 +921,10 @@ describe('OAuth Authentication', async () => {
 
     const signUpCallback = () => {
       const state = 'mock-state-sign-up';
-      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));
+      mockCookieStore.set(
+        `oauth-state-${state}`,
+        JSON.stringify({ provider: 'github', type: 'auth', codeVerifier: undefined }),
+      );
       return call(githubCallback, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
     };
 
@@ -743,7 +934,7 @@ describe('OAuth Authentication', async () => {
 
     /** The provider's callback for the verify round trip, in the browser that opened the link. */
     const verifyCallback = () => {
-      mockCookieStore.set(`oauth-state-${verifyState}`, JSON.stringify({ type: 'verify' }));
+      mockCookieStore.set(`oauth-state-${verifyState}`, JSON.stringify({ provider: 'github', type: 'verify' }));
       return call(githubCallback, { query: { state: verifyState, code: 'mock-auth-code' }, headers: defaultHeaders });
     };
 
@@ -773,7 +964,9 @@ describe('OAuth Authentication', async () => {
 
     it('creates the account once the mailed link and the same provider account prove it (positive control)', async () => {
       await signUpCallback();
-      const opened = await openVerificationLink(mailedLink('verificationLink').token);
+      const { url, token } = mailedLink('verificationLink');
+      expect(url).toBe(`${appConfig.backendAuthUrl}/invoke-token/oauth-verification/${token}`);
+      const opened = await openVerificationLink(token);
       expect(opened.response.status).toBe(302);
       const verifyStart = new URL(opened.response.headers.get('location') ?? '');
       expect(`${verifyStart.origin}${verifyStart.pathname}`).toBe(`${appConfig.backendAuthUrl}/github`);

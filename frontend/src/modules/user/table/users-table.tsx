@@ -1,9 +1,9 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
 import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
+import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { UsersTableBar } from '~/modules/user/table/users-bar';
 import { useColumns } from '~/modules/user/table/users-columns';
@@ -21,33 +21,12 @@ function UsersTable() {
   const { q, role, sort, order } = search;
   const limit = LIMIT;
 
-  const [selected, setSelected] = useState<BaseUser[]>([]);
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = usersListQueryOptions({ ...search, limit });
-  const {
-    data: rows,
-    isLoading,
-    isFetching,
-    error,
-    fetchNextPage,
-    hasNextPage,
-  } = useInfiniteQuery({
-    ...queryOptions,
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
-  });
-
-  const fetchMore = async () => {
-    if (!hasNextPage || isLoading || isFetching) return;
-    await fetchNextPage();
-  };
-
-  const onSelectedRowsChange = (value: Set<string>) => {
-    if (rows) setSelected(rows.filter((row) => value.has(row.id)));
-  };
-
-  const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
+  const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
+  const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
 
   return (
     <>
@@ -58,7 +37,7 @@ function UsersTable() {
         setSearch={setSearch}
         columns={columns}
         setColumns={setColumns}
-        clearSelection={() => setSelected([])}
+        clearSelection={clearSelection}
       />
       <DataTable<BaseUser>
         {...{

@@ -5,7 +5,9 @@ permissions: {}
 
 # CI runs on pull_request only (there is no merge queue). Two tiers of checks:
 #   • Every PR: cheap checks (lint, pr-title, schema-bust-gate, frontend-build, build-services) for fast feedback.
-#   • Release PR only: the heavy suites (test, storybook-test, docker-images) run on the
+#   • Frontend PRs: storybook-test runs the Storybook play tests when a PR touches frontend inputs
+#     (the release PR always runs them).
+#   • Release PR only: the heavy suites (test, docker-images) run on the
 #     release-please PR. That PR is what you merge to cut the release + deploy,
 #     so gating its merge gates production. On feature PRs these jobs are
 #     skipped, which a required status check treats as a pass, so the heavy
@@ -290,11 +292,9 @@ jobs:
 
   # Storybook component tests (Vitest browser mode via Playwright). Heavy: runs on the release PR only.
   storybook-test:
-    # Same-repo branch only: release-please pushes its branch into this repo, so a
-    # PR from another repository (whose branch name its author fully controls)
-    # cannot spoof the prefix to trigger the heavy suites. head_ref is set only for
-    # pull_request events.
-    if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release-please--branches--main')
+    # Stories are the frontend's behavior tests, so a PR that changes frontend inputs runs them; the SDK
+    # carries backend schemas into the frontend, hence backend/src and sdk. The release PR always runs
+    # them. Other PRs pass after the change check. The branch name reaches the script through env only.
     runs-on: ubuntu-latest
     timeout-minutes: 20
     permissions:
@@ -302,31 +302,59 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@93cb6efe18208431cddfb8368fd83d5badbf9bfd # v5
+        with:
+          fetch-depth: 0 # need base-branch blobs to diff
+
+      - name: Detect frontend input changes
+        id: changes
+        env:
+          BASE_REF: ${{ github.base_ref || 'main' }}
+          RELEASE_PR: ${{ github.event.pull_request.head.repo.full_name == github.repository && startsWith(github.head_ref, 'release-please--branches--main') }}
+        run: |
+          set -euo pipefail
+          if [ "$RELEASE_PR" = "true" ]; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git fetch --no-tags --depth=1 origin "$BASE_REF"
+          if git diff --quiet "origin/$BASE_REF"...HEAD -- frontend shared locales json sdk backend/src package.json pnpm-lock.yaml pnpm-workspace.yaml patches; then
+            echo "run=false" >> "$GITHUB_OUTPUT"
+            echo "No frontend inputs changed; skipping the Storybook tests."
+          else
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Setup pnpm
+        if: steps.changes.outputs.run == 'true'
         uses: pnpm/action-setup@fc06bc1257f339d1d5d8b3a19a8cae5388b55320 # v5
 
       - name: Setup Node.js
+        if: steps.changes.outputs.run == 'true'
         uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: 26
           cache: "pnpm"
 
       - name: Create .env files
+        if: steps.changes.outputs.run == 'true'
         run: |
           cp ./backend/.env.example ./backend/.env
           cp ./frontend/.env.example ./frontend/.env
 
       - name: Install dependencies
+        if: steps.changes.outputs.run == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Generate SDK (types imported by stories)
+        if: steps.changes.outputs.run == 'true'
         run: pnpm sdk
 
       - name: Install Playwright browser
+        if: steps.changes.outputs.run == 'true'
         run: pnpm --filter frontend exec playwright install --with-deps chromium chromium-headless-shell
 
       - name: Run Storybook tests
+        if: steps.changes.outputs.run == 'true'
         run: pnpm --filter frontend exec vitest run --project=storybook
 
   # Schema cache-bust gate: a breaking OpenAPI change to cached entity shapes

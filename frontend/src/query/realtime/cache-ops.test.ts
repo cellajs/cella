@@ -40,7 +40,7 @@ vi.mock('~/query/offline', () => ({
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
-const { fetchRangeAndPatch } = await import('./cache-ops');
+const { fetchRangeAndPatch, removeEntity } = await import('./cache-ops');
 
 // The synthetic 'task' type exists only in this file's shared mock, hence the cast.
 const TASK = 'task' as EntityType;
@@ -236,5 +236,71 @@ describe('realtime cache ops', () => {
     const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '5', keys);
 
     expect(status).toBe('error');
+  });
+});
+
+describe('removeEntity', () => {
+  afterEach(() => queryClient.clear());
+
+  const keys = createEntityKeys<Record<string, never>>('attachment');
+  const flatKey = keys.list.home('org-1');
+  const infiniteKey = [...keys.list.org('org-1'), { q: 'report' }];
+  const otherOrgKey = keys.list.home('org-2');
+
+  function seed() {
+    registerEntityQueryKeys('attachment', keys);
+    queryClient.setQueryData(keys.detail.byId('a1'), { id: 'a1' });
+    queryClient.setQueryData(flatKey, { items: [{ id: 'a1' }, { id: 'a2' }], total: 2 });
+    queryClient.setQueryData(infiniteKey, {
+      pages: [
+        { items: [{ id: 'a0' }, { id: 'a1' }], total: 3 },
+        { items: [{ id: 'a2' }], total: 3 },
+      ],
+      pageParams: [
+        { page: 0, offset: 0 },
+        { page: 1, offset: 2 },
+      ],
+    });
+    queryClient.setQueryData(otherOrgKey, { items: [{ id: 'a1' }], total: 1 });
+  }
+
+  it('drops the detail and the row from flat and infinite lists of its organization', () => {
+    seed();
+    const otherOrg = queryClient.getQueryData(otherOrgKey);
+
+    removeEntity('attachment', 'a1', 'org-1');
+
+    expect(queryClient.getQueryData(keys.detail.byId('a1'))).toBeUndefined();
+    expect(queryClient.getQueryData(flatKey)).toEqual({ items: [{ id: 'a2' }], total: 1 });
+    expect(queryClient.getQueryData(infiniteKey)).toEqual({
+      pages: [
+        { items: [{ id: 'a0' }], total: 2 },
+        { items: [{ id: 'a2' }], total: 2 },
+      ],
+      pageParams: [
+        { page: 0, offset: 0 },
+        { page: 1, offset: 2 },
+      ],
+    });
+    // The organization narrows the scan: another organization's list keeps its data object.
+    expect(queryClient.getQueryData(otherOrgKey)).toBe(otherOrg);
+  });
+
+  it('scans every list of the type without an organization', () => {
+    seed();
+
+    removeEntity('attachment', 'a1');
+
+    expect(queryClient.getQueryData(flatKey)).toEqual({ items: [{ id: 'a2' }], total: 1 });
+    expect(queryClient.getQueryData(otherOrgKey)).toEqual({ items: [], total: 0 });
+  });
+
+  it('keeps the data object of a list that does not hold the row', () => {
+    seed();
+    const flat = queryClient.getQueryData(flatKey);
+
+    removeEntity('attachment', 'missing', 'org-1');
+
+    expect(queryClient.getQueryData(flatKey)).toBe(flat);
   });
 });

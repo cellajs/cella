@@ -4,7 +4,6 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { UserMinimalBase } from 'sdk';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { cn } from '~/utils/cn';
 import { Button } from '../ui/button';
@@ -24,8 +23,6 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: B
   const { t } = useTranslation();
   const navigate = useNavigate();
   const cellRef = useRef<HTMLButtonElement | null>(null);
-
-  const setTriggerRef = sheeter.getState().setTriggerRef;
 
   // While compacted the name is visually hidden, so the compact-scoped table tooltip shows it.
   const compactTooltip =
@@ -56,8 +53,6 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: B
         }
         if (e.metaKey || e.ctrlKey) return;
         e.preventDefault();
-
-        setTriggerRef(user.id, cellRef);
 
         navigate({
           to: '.',

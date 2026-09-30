@@ -1,22 +1,11 @@
 import { MailIcon, TrashIcon } from 'lucide-react';
 import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { TableBarButton } from '~/modules/common/data-table/table-bar-button';
-import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
-import { TableCount } from '~/modules/common/data-table/table-count';
-import {
-  FilterBarActions,
-  FilterBarFilters,
-  FilterBarSearch,
-  TableFilterBar,
-} from '~/modules/common/data-table/table-filter-bar';
-import { TableSearch } from '~/modules/common/data-table/table-search';
+import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { BaseTableBarProps, CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
-import { FocusView } from '~/modules/common/focus-view';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
-import { SelectionActionBar } from '~/modules/common/selection-action-bar';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { DeleteUsers } from '~/modules/user/delete-users';
@@ -44,22 +33,12 @@ export function UsersTableBar({
   const deleteButtonRef = useRef(null);
   const inviteContainerRef = useRef(null);
 
-  const { q, role } = searchVars;
+  const { role } = searchVars;
+  const barFilters = useTableBarFilters({ searchVars, setSearch, clearSelection, reset: { q: '', role: undefined } });
 
-  const isFiltered = role !== undefined || !!q;
-
-  const onSearch = (searchString: string) => {
-    clearSelection();
-    setSearch({ q: searchString });
-  };
   const onRoleChange = (role?: string) => {
     clearSelection();
     setSearch({ role: role === 'all' ? undefined : (role as UsersRouteSearchParams['role']) });
-  };
-
-  const onResetFilters = () => {
-    setSearch({ q: '', role: undefined });
-    clearSelection();
   };
 
   const openInviteDialog = () => {
@@ -103,52 +82,30 @@ export function UsersTableBar({
   };
 
   return (
-    <>
-      <TableBarContainer searchVars={searchVars}>
-        <TableFilterBar onResetFilters={onResetFilters} isFiltered={isFiltered}>
-          <FilterBarActions>
-            {!isFiltered && (
-              <TableBarButton
-                ref={inviteButtonRef}
-                icon={MailIcon}
-                label="c:invite"
-                onClick={() => openInviteDialog()}
-              />
-            )}
-            <TableCount count={total} label="c:user" isFiltered={isFiltered} onResetFilters={onResetFilters} />
-          </FilterBarActions>
-
-          <div className="sm:grow" />
-
-          <FilterBarSearch>
-            <TableSearch name="userSearch" value={q} setQuery={onSearch} />
-          </FilterBarSearch>
-          <FilterBarFilters>
-            <SelectRole
-              value={role === undefined ? 'all' : role}
-              onChange={onRoleChange}
-              className="h-10 sm:min-w-32"
-            />
-          </FilterBarFilters>
-        </TableFilterBar>
-
-        <ColumnsView className="max-lg:hidden" columns={columns} setColumns={setColumns} />
-
-        <FocusView iconOnly />
-      </TableBarContainer>
-
-      <SelectionActionBar count={selected.length} onClear={clearSelection}>
-        <TableBarButton
-          ref={deleteButtonRef}
-          variant="destructive"
-          onClick={openDeleteDialog}
-          icon={TrashIcon}
-          label="c:delete"
-        />
-      </SelectionActionBar>
-
-      {/* Container for embedded dialog */}
-      <div ref={inviteContainerRef} className="empty:hidden" />
-    </>
+    <TableBarShell
+      {...barFilters}
+      {...{ searchVars, total, columns, setColumns }}
+      label="c:user"
+      searchName="userSearch"
+      actions={<TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />}
+      filters={
+        <SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
+      }
+      selection={{
+        count: selected.length,
+        onClear: clearSelection,
+        children: (
+          <TableBarButton
+            ref={deleteButtonRef}
+            variant="destructive"
+            onClick={openDeleteDialog}
+            icon={TrashIcon}
+            label="c:delete"
+          />
+        ),
+      }}
+      // Container for the embedded invite dialog
+      after={<div ref={inviteContainerRef} className="empty:hidden" />}
+    />
   );
 }

@@ -1774,7 +1774,7 @@ export type GithubCallbackData = {
   body?: never;
   path?: never;
   query: {
-    code: string;
+    code?: string;
     state: string;
     error?: string;
     error_description?: string;
@@ -1816,8 +1816,11 @@ export type GoogleCallbackData = {
   body?: never;
   path?: never;
   query: {
-    code: string;
+    code?: string;
     state: string;
+    error?: string;
+    error_description?: string;
+    error_uri?: string;
   };
   url: '/auth/google/callback';
 };
@@ -1855,8 +1858,11 @@ export type MicrosoftCallbackData = {
   body?: never;
   path?: never;
   query: {
-    code: string;
+    code?: string;
     state: string;
+    error?: string;
+    error_description?: string;
+    error_uri?: string;
   };
   url: '/auth/microsoft/callback';
 };

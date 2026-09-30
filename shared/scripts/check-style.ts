@@ -3,38 +3,36 @@
  * collapse into a single `[style]` line; findings print their detail. Exits non-zero on any
  * finding. `pnpm check`, `pnpm lint` and CI's style step all run this same pass.
  */
-import { spawnSync } from 'node:child_process';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { runAppVocabularyCheck } from './check-app-vocabulary.ts';
+import { runCommentCheck } from './check-comment-style.ts';
+import { runDocStyleCheck } from './check-doc-style.ts';
+import { runFrontendCheck } from './check-frontend-style.ts';
+import type { Output } from './repo-files.ts';
+import { keepParses } from './source-comments.ts';
 
-const here = dirname(fileURLToPath(import.meta.url));
-
-interface SubCheck {
-  label: string;
-  script: string;
-  args: string[];
-}
-
-const subChecks: SubCheck[] = [
-  { label: 'terminology', script: 'check-app-vocabulary.ts', args: [] },
-  { label: 'documentation', script: 'check-doc-style.ts', args: [] },
+const subChecks: { label: string; run: (output: Output) => number | Promise<number> }[] = [
+  { label: 'terminology', run: (output) => runAppVocabularyCheck(undefined, output) },
+  { label: 'documentation', run: (output) => runDocStyleCheck(undefined, false, output) },
   // `--placement` runs the required comment rules and the placement rule in one pass.
-  { label: 'comments', script: 'check-comment-style.ts', args: ['--placement'] },
-  { label: 'frontend', script: 'check-frontend-style.ts', args: [] },
+  { label: 'comments', run: (output) => runCommentCheck(['--placement'], output) },
+  { label: 'frontend', run: (output) => runFrontendCheck([], output) },
 ];
 
-const flagged = subChecks.filter((check) => {
-  const result = spawnSync(process.execPath, [join(here, check.script), ...check.args], {
-    encoding: 'utf8',
-  });
-  if (result.status === 0) return false;
-  process.stderr.write((result.stdout ?? '') + (result.stderr ?? ''));
-  return true;
-});
+// The comment check parses the frontend sources the frontend check reads next.
+keepParses('frontend/src/');
+const flagged: string[] = [];
+for (const check of subChecks) {
+  const stdout: string[] = [];
+  const stderr: string[] = [];
+  const status = await check.run({ log: (line) => stdout.push(line), error: (line) => stderr.push(line) });
+  if (status === 0) continue;
+  process.stderr.write([...stdout, ...stderr].map((line) => `${line}\n`).join(''));
+  flagged.push(check.label);
+}
 
 if (flagged.length === 0) {
   console.log('[style] OK, terminology, documentation, comments and frontend code follow the required style.');
 } else {
-  console.error(`[style] ${flagged.length} area(s) failed (${flagged.map((check) => check.label).join(', ')}).`);
-  process.exit(1);
+  console.error(`[style] ${flagged.length} area(s) failed (${flagged.join(', ')}).`);
+  process.exitCode = 1;
 }

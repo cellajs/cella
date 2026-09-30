@@ -1,4 +1,3 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { BuildingIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { TenantWithOrganization } from 'sdk';
@@ -8,6 +7,7 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import { tenantsListQueryOptions, useTenantUpdateMutation } from '~/modules/tenants/query';
 import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schemas';
 import { TenantsTableBar } from '~/modules/tenants/table/tenants-bar';
@@ -31,22 +31,7 @@ function TenantsTable() {
   const updateTenant = useTenantUpdateMutation();
 
   const queryOptions = tenantsListQueryOptions({ ...search, limit });
-  const {
-    data: rows,
-    isLoading,
-    isFetching,
-    error,
-    fetchNextPage,
-    hasNextPage,
-  } = useInfiniteQuery({
-    ...queryOptions,
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
-  });
-
-  const fetchMore = async () => {
-    if (!hasNextPage || isLoading || isFetching) return;
-    await fetchNextPage();
-  };
+  const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
 
   const onRowsChange = (
     changedRows: TenantWithOrganization[],

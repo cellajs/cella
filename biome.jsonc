@@ -451,7 +451,6 @@
         "frontend/src/modules/ui/carousel.tsx",
         "frontend/src/modules/ui/field.tsx",
         "frontend/src/modules/ui/input-group.tsx",
-        "frontend/src/modules/ui/tag-input.tsx",
         "frontend/src/modules/common/resizable-panels/resizable-panels.tsx"
       ],
       "linter": {

@@ -12,6 +12,7 @@ import { findOpenableMagicLink } from '#/modules/auth/magic/helpers/magic-link-b
 import { claimMagicLinkOwner } from '#/modules/auth/magic/helpers/magic-sign-up';
 import { authMagicLinkRoutes } from '#/modules/auth/magic/magic-routes';
 import { invokeToken, issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
+import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
@@ -52,10 +53,10 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
   // Opening the link in this browser signs in directly; elsewhere it asks for a confirmation first.
   await rememberLinkRequest(ctx, 'magic', tokenRecord.id);
 
-  const magicLinkUrl = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${rawToken}`);
+  const magicLinkUrl = tokenLinkUrl('magic', rawToken);
 
   const staticProps = {
-    magicLinkUrl: magicLinkUrl.toString(),
+    magicLinkUrl,
     name: existingUser?.name ?? slugFromEmail(normalizedEmail),
     isNewUser: !existingUser,
   };
@@ -64,7 +65,7 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
   mailer.prepareEmails(magicLinkEmail, staticProps, recipients);
 
   if (appConfig.mode === 'development') {
-    console.info(`[magic-link] ${normalizedEmail} ${magicLinkUrl.toString()}`);
+    console.info(`[magic-link] ${normalizedEmail} ${magicLinkUrl}`);
   }
 
   log.info('Magic link email sent', { userId, signUp: !existingUser });

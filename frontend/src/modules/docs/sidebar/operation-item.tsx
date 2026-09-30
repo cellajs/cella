@@ -1,12 +1,8 @@
-import { Link } from '@tanstack/react-router';
 import { memo } from 'react';
 import type { GenOperationSummary } from 'sdk/docs-types';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { Badge } from '~/modules/ui/badge';
-import { Button } from '~/modules/ui/button';
-import { cn } from '~/utils/cn';
-import { useSheeter } from '../../common/sheeter/use-sheeter';
 import { getMethodColor } from '../helpers/get-method-color';
+import { SidebarHashItem } from './sidebar-hash-item';
 
 type OperationItemProps = {
   operation: GenOperationSummary;
@@ -15,29 +11,7 @@ type OperationItemProps = {
 
 function OperationItemBase({ operation, isActive }: OperationItemProps) {
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className={cn(
-        'h-8 w-full justify-between gap-2 pl-5 text-left font-normal text-sm opacity-70 hover:bg-accent/50',
-        'data-[active=true]:opacity-100',
-      )}
-      render={
-        <Link
-          to="/docs/operations"
-          hash={operation.hash}
-          replace
-          draggable={false}
-          data-active={isActive}
-          onClick={(e) => {
-            if (e.metaKey || e.ctrlKey) return;
-            e.preventDefault();
-            scrollToSectionById(operation.hash);
-            useSheeter.getState().remove('docs-sidebar');
-          }}
-        />
-      }
-    >
+    <SidebarHashItem to="/docs/operations" hash={operation.hash} isActive={isActive} className="justify-between">
       <span className="flex-1 truncate text-sm lowercase">{operation.summary || operation.id}</span>
       <Badge
         variant="secondary"
@@ -45,7 +19,7 @@ function OperationItemBase({ operation, isActive }: OperationItemProps) {
       >
         {operation.method}
       </Badge>
-    </Button>
+    </SidebarHashItem>
   );
 }
 
