@@ -45,6 +45,12 @@ export function isMain(url: string): boolean {
   return !!process.argv[1] && resolve(process.argv[1]) === fileURLToPath(url);
 }
 
+/** Where a check writes: the console when run alone, a buffer when the style pass runs the checks together. */
+export interface Output {
+  log: (line: string) => void;
+  error: (line: string) => void;
+}
+
 /** Writes `<label> <count> <noun>:` and one indented line per finding; nothing when there are none. */
 export function writeFindings(write: (line: string) => void, label: string, noun: string, findings: string[]): void {
   if (findings.length === 0) return;

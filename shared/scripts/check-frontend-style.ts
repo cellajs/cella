@@ -6,9 +6,9 @@
 import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import ts from 'typescript';
-import { isRequested, repoFiles, repoRoot } from './repo-files.ts';
+import { isMain, isRequested, type Output, repoFiles, repoRoot, writeFindings } from './repo-files.ts';
+import { parseSource } from './source-comments.ts';
 
-const requestedRoots = process.argv.slice(2);
 const failures: string[] = [];
 const storeNames = new Set<string>();
 
@@ -122,34 +122,32 @@ function checkStoreSelector(sourceFile: ts.SourceFile, node: ts.Node): void {
   );
 }
 
-const sourceFiles = trackedFrontendFiles().map((file) =>
-  ts.createSourceFile(
-    file,
-    readFileSync(join(repoRoot, file), 'utf8'),
-    ts.ScriptTarget.Latest,
-    true,
-    extname(file) === '.tsx' ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
-  ),
-);
-for (const sourceFile of sourceFiles) collectStores(sourceFile);
+/** Checks the frontend files under `roots` (all when empty); stores are collected from every frontend file. */
+export function runFrontendCheck(roots: string[], output: Output = console): number {
+  failures.length = 0;
+  storeNames.clear();
+  const sourceFiles = trackedFrontendFiles().map((file) =>
+    parseSource(file, readFileSync(join(repoRoot, file), 'utf8')),
+  );
+  for (const sourceFile of sourceFiles) collectStores(sourceFile);
 
-for (const sourceFile of sourceFiles.filter((sourceFile) => isRequested(sourceFile.fileName, requestedRoots))) {
-  for (const statement of sourceFile.statements) {
-    if (ts.isVariableStatement(statement)) checkVariableStatement(sourceFile, statement);
+  for (const sourceFile of sourceFiles.filter((sourceFile) => isRequested(sourceFile.fileName, roots))) {
+    for (const statement of sourceFile.statements) {
+      if (ts.isVariableStatement(statement)) checkVariableStatement(sourceFile, statement);
+    }
+    sourceFile.forEachChild(function visit(node) {
+      checkReactComponentType(sourceFile, node);
+      checkStoreSelector(sourceFile, node);
+      node.forEachChild(visit);
+    });
   }
-  sourceFile.forEachChild(function visit(node) {
-    checkReactComponentType(sourceFile, node);
-    checkStoreSelector(sourceFile, node);
-    node.forEachChild(visit);
-  });
+
+  writeFindings(output.error, '[frontend:style]', 'violation(s)', failures);
+  if (failures.length > 0) return 1;
+  output.log(
+    '[frontend:style] OK, component declarations, component types and store reads follow the frontend conventions.',
+  );
+  return 0;
 }
 
-if (failures.length > 0) {
-  console.error(`[frontend:style] ${failures.length} violation(s):`);
-  for (const failure of failures) console.error(`  ${failure}`);
-  process.exit(1);
-}
-
-console.log(
-  '[frontend:style] OK, component declarations, component types and store reads follow the frontend conventions.',
-);
+if (isMain(import.meta.url)) process.exitCode = runFrontendCheck(process.argv.slice(2));

@@ -10,9 +10,23 @@ export interface Comment {
 
 export const scriptExtensions = new Set(['.cjs', '.js', '.jsx', '.mjs', '.ts', '.tsx']);
 
+const kept = new Map<string, ts.SourceFile>();
+let keptPrefix: string | undefined;
+let lastParsed: ts.SourceFile | undefined;
+
+/** Keeps the parses of files under `prefix` for the process, for checks that read the same files one after another. */
+export function keepParses(prefix: string): void {
+  keptPrefix = prefix;
+}
+
+/** The TypeScript parse of a script file; the latest parse and the kept ones are reused. */
 export function parseSource(file: string, source: string): ts.SourceFile {
+  const cached = lastParsed?.fileName === file ? lastParsed : kept.get(file);
+  if (cached?.text === source) return cached;
   const kind = ['.tsx', '.jsx'].includes(extname(file)) ? ts.ScriptKind.TSX : ts.ScriptKind.TS;
-  return ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, kind);
+  lastParsed = ts.createSourceFile(file, source, ts.ScriptTarget.Latest, true, kind);
+  if (keptPrefix !== undefined && file.startsWith(keptPrefix)) kept.set(file, lastParsed);
+  return lastParsed;
 }
 
 function scriptComments(file: string, source: string): Comment[] {

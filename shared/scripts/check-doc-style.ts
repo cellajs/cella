@@ -2,7 +2,14 @@
 import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { type ProseRule, proseRules } from './prose-rules.ts';
-import { repoRoot as defaultRepoRoot, isMain, lineColumn, repoFiles, writeFindings } from './repo-files.ts';
+import {
+  repoRoot as defaultRepoRoot,
+  isMain,
+  lineColumn,
+  type Output,
+  repoFiles,
+  writeFindings,
+} from './repo-files.ts';
 
 const docExtensions = new Set(['.md', '.mdx']);
 const docRules = proseRules.filter((rule) => rule.message.docs);
@@ -89,7 +96,7 @@ export function formatAgentVocabularyFinding(finding: AgentVocabularyFinding): s
 }
 
 /** Check every tracked or untracked, nonignored Markdown and MDX file in a repository. */
-export function runDocStyleCheck(repoRoot = defaultRepoRoot, audit = false): number {
+export function runDocStyleCheck(repoRoot = defaultRepoRoot, audit = false, output: Output = console): number {
   const docs = repoFiles(repoRoot)
     .filter((file) => docExtensions.has(extname(file).toLowerCase()))
     .sort()
@@ -101,18 +108,18 @@ export function runDocStyleCheck(repoRoot = defaultRepoRoot, audit = false): num
   const emDashes = report(findEmDashViolations, formatEmDashViolation);
   const vocabulary = report(findAgentVocabularyFindings, formatAgentVocabularyFinding);
   const failed = violations.length > 0 || emDashes.length > 0 || vocabulary.length > 0;
-  if (!failed) console.log('[docs:style] OK, documentation uses concrete language.');
-  writeFindings(console.error, '[docs:style]', 'concrete-language violation(s)', violations);
-  writeFindings(console.error, '[docs:style]', 'em dash(es)', emDashes);
-  writeFindings(console.error, '[docs:style]', 'required vocabulary replacement(s)', vocabulary);
+  if (!failed) output.log('[docs:style] OK, documentation uses concrete language.');
+  writeFindings(output.error, '[docs:style]', 'concrete-language violation(s)', violations);
+  writeFindings(output.error, '[docs:style]', 'em dash(es)', emDashes);
+  writeFindings(output.error, '[docs:style]', 'required vocabulary replacement(s)', vocabulary);
 
   if (audit) {
     const review = report(
       (file, source) => findAgentVocabularyFindings(file, source, 'review'),
       formatAgentVocabularyFinding,
     );
-    console.warn(`[docs:style:audit] ${review.length} review marker(s):`);
-    for (const finding of review) console.warn(`  ${finding}`);
+    output.error(`[docs:style:audit] ${review.length} review marker(s):`);
+    for (const finding of review) output.error(`  ${finding}`);
   }
 
   return failed ? 1 : 0;

@@ -6,26 +6,17 @@ import { readFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 import ts from 'typescript';
 import { proseRules } from './prose-rules.ts';
-import { isRequested, lineColumn, repoFiles, repoRoot, writeFindings } from './repo-files.ts';
+import { isMain, isRequested, lineColumn, type Output, repoFiles, repoRoot, writeFindings } from './repo-files.ts';
 import { type Comment, parseSource, scriptExtensions, sourceComments } from './source-comments.ts';
 
 const modeFlags = ['--audit', '--placement', '--concrete-language'];
-const audit = process.argv.includes('--audit');
-const placement = process.argv.includes('--placement');
-const concreteLanguageOnly = process.argv.includes('--concrete-language');
-const requestedRoots = process.argv.slice(2).filter((arg) => !modeFlags.includes(arg));
-
 const sourceExtensions = new Set([...scriptExtensions, '.css', '.jsonc', '.scss', '.sql', '.yaml', '.yml']);
 const excludedPrefixes = ['backend/drizzle/', 'cella/migrations/', 'locales/', 'sdk/gen/'];
 /** The required rules `--concrete-language` keeps. */
 const languageRules = new Set(['concrete-language', 'load-bearing']);
-const activeRules = proseRules.filter(
-  (rule) =>
-    rule.message.comments && (rule.level === 'review' ? audit : !concreteLanguageOnly || languageRules.has(rule.name)),
-);
+const placementAdvice = 'move shared context to a README or attach a concise local constraint to a declaration';
 
 function isSource(file: string): boolean {
-  if (!isRequested(file, requestedRoots)) return false;
   if (excludedPrefixes.some((prefix) => file.startsWith(prefix))) return false;
   if (file === 'infra/compose.gen.yml' || file.includes('.gen.')) return false;
   const name = basename(file);
@@ -94,47 +85,60 @@ function hasDirectDeclarationOwner(file: string, source: string, comment: Commen
   return /^\s*$/.test(gap) && !/\r?\n[\t ]*\r?\n/.test(gap);
 }
 
-const failures: string[] = [];
-const findings: string[] = [];
-const placementFailures: string[] = [];
+/** Runs the check with CLI `args`: mode flags and root paths to limit it to. Returns the exit code. */
+export function runCommentCheck(args: string[], output: Output = console): number {
+  const audit = args.includes('--audit');
+  const placement = args.includes('--placement');
+  const concreteLanguageOnly = args.includes('--concrete-language');
+  const roots = args.filter((arg) => !modeFlags.includes(arg));
+  const rules = proseRules.filter(
+    (rule) =>
+      rule.message.comments &&
+      (rule.level === 'review' ? audit : !concreteLanguageOnly || languageRules.has(rule.name)),
+  );
+  const failures: string[] = [];
+  const findings: string[] = [];
+  const placementFailures: string[] = [];
 
-for (const file of repoFiles().filter(isSource)) {
-  const source = readFileSync(join(repoRoot, file), 'utf8');
-  const comments = sourceComments(file, source);
-  for (const comment of comments) {
-    for (const rule of activeRules) {
-      if (rule.exclude?.comments?.test(file) || !rule.pattern.test(comment.text)) continue;
+  for (const file of repoFiles().filter((file) => isRequested(file, roots) && isSource(file))) {
+    const source = readFileSync(join(repoRoot, file), 'utf8');
+    const comments = sourceComments(file, source);
+    for (const comment of comments) {
+      for (const rule of rules) {
+        if (rule.exclude?.comments?.test(file) || !rule.pattern.test(comment.text)) continue;
+        const { line, column } = lineColumn(source, comment.offset);
+        const list = rule.level === 'review' ? findings : failures;
+        list.push(`${file}:${line}:${column} [${rule.name}] ${rule.message.comments}`);
+      }
+    }
+    if (!placement) continue;
+    for (const comment of groupedComments(comments, source)) {
+      const lineCount = proseLineCount(comment.text);
+      if (lineCount <= 3 || isRequiredHeader(comment.text)) continue;
+      if (hasDirectDeclarationOwner(file, source, comment)) continue;
       const { line, column } = lineColumn(source, comment.offset);
-      const list = rule.level === 'review' ? findings : failures;
-      list.push(`${file}:${line}:${column} [${rule.name}] ${rule.message.comments}`);
+      placementFailures.push(
+        `${file}:${line}:${column} [detached-long-comment] ${lineCount} prose lines; ${placementAdvice}`,
+      );
     }
   }
-  if (!placement) continue;
-  for (const comment of groupedComments(comments, source)) {
-    const lineCount = proseLineCount(comment.text);
-    if (lineCount <= 3 || isRequiredHeader(comment.text) || hasDirectDeclarationOwner(file, source, comment)) continue;
-    const { line, column } = lineColumn(source, comment.offset);
-    placementFailures.push(
-      `${file}:${line}:${column} [detached-long-comment] ${lineCount} prose lines; move shared context to a README or attach a concise local constraint to a declaration`,
-    );
-  }
+
+  const label = concreteLanguageOnly ? '[comments:language]' : '[comments:check]';
+  writeFindings(output.error, label, 'violation(s)', failures);
+  writeFindings(output.error, '[comments:audit]', 'review marker(s)', findings);
+  writeFindings(output.error, '[comments:placement]', 'detached long comment(s)', placementFailures);
+  if (failures.length > 0 || placementFailures.length > 0) return 1;
+
+  output.log(
+    placement
+      ? '[comments:placement] OK, long comments are local to declarations or executable code.'
+      : concreteLanguageOnly
+        ? '[comments:language] OK, source comments use concrete language.'
+        : audit
+          ? `[comments:audit] OK, ${findings.length} lower-confidence marker(s) require review.`
+          : '[comments:check] OK, source comments follow the required style.',
+  );
+  return 0;
 }
 
-writeFindings(
-  console.error,
-  concreteLanguageOnly ? '[comments:language]' : '[comments:check]',
-  'violation(s)',
-  failures,
-);
-writeFindings(console.warn, '[comments:audit]', 'review marker(s)', findings);
-writeFindings(console.error, '[comments:placement]', 'detached long comment(s)', placementFailures);
-
-if (failures.length > 0 || placementFailures.length > 0) process.exit(1);
-const successMessage = placement
-  ? '[comments:placement] OK, long comments are local to declarations or executable code.'
-  : concreteLanguageOnly
-    ? '[comments:language] OK, source comments use concrete language.'
-    : audit
-      ? `[comments:audit] OK, ${findings.length} lower-confidence marker(s) require review.`
-      : '[comments:check] OK, source comments follow the required style.';
-console.log(successMessage);
+if (isMain(import.meta.url)) process.exitCode = runCommentCheck(process.argv.slice(2));

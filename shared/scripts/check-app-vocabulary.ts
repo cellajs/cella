@@ -6,7 +6,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { repoRoot as defaultRepoRoot, isMain, lineColumn, repoFiles } from './repo-files.ts';
+import { repoRoot as defaultRepoRoot, isMain, lineColumn, type Output, repoFiles } from './repo-files.ts';
 
 const disallowedTerm = /fork/gi;
 /** The product name as an identifier or wire string; prose may still contrast the template with the app. */
@@ -123,7 +123,7 @@ export async function loadAllowlist(repoRoot = defaultRepoRoot): Promise<Vocabul
   };
 }
 
-export async function runAppVocabularyCheck(repoRoot = defaultRepoRoot): Promise<number> {
+export async function runAppVocabularyCheck(repoRoot = defaultRepoRoot, output: Output = console): Promise<number> {
   const allowlist = await loadAllowlist(repoRoot);
   const findings = repoFiles(repoRoot)
     .toSorted()
@@ -135,18 +135,18 @@ export async function runAppVocabularyCheck(repoRoot = defaultRepoRoot): Promise
     });
 
   if (findings.length === 0) {
-    console.info('[app-vocabulary] OK, template and app terminology is consistent.');
+    output.log('[app-vocabulary] OK, template and app terminology is consistent.');
     return 0;
   }
 
-  console.error(`[app-vocabulary] ${findings.length} disallowed occurrence(s):`);
+  output.error(`[app-vocabulary] ${findings.length} disallowed occurrence(s):`);
   for (const finding of findings) {
     const location = finding.location === 'path' ? finding.file : `${finding.file}:${finding.line}:${finding.column}`;
     const advice =
       finding.rule === 'product-name'
         ? 'derive from appConfig or use a neutral name; the product name is not an identifier or wire string'
         : 'with template/app terminology';
-    console.error(`  ${location} replace "${finding.term}" ${advice}`);
+    output.error(`  ${location} replace "${finding.term}" ${advice}`);
   }
   return 1;
 }
