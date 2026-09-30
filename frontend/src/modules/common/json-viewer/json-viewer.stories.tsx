@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
-import { expect, userEvent, waitFor } from 'storybook/test';
+import { expect, spyOn, userEvent, waitFor } from 'storybook/test';
 import { JsonViewer } from '../json-viewer';
 
 // Sample data for stories
@@ -494,7 +494,7 @@ export const ShouldCollapseOnClick: Story = {
 };
 
 /**
- * Tests that the copy button appears on hover and copies content.
+ * Tests that the copy button stays faded until its node is hovered and copies content.
  */
 export const ShouldShowCopyOnHover: Story = {
   name: 'when node is hovered, should show copy button',
@@ -506,16 +506,20 @@ export const ShouldShowCopyOnHover: Story = {
     defaultInspectDepth: 0,
   },
   play: async ({ canvas, step }) => {
-    await step('Hover over node to show copy button', async () => {
-      const rootNode = await canvas.findByText('5 items');
-      await userEvent.hover(rootNode);
-      await waitFor(() => expect(canvas.getByTitle('Copy to clipboard')).toBeVisible());
+    const copyButton = await canvas.findByTitle('Copy to clipboard');
+
+    await step('Copy button is faded out inside the hover group of its node', async () => {
+      // The reveal is a CSS group-hover; synthetic pointer events do not set :hover, so the resting state is checked.
+      await expect(copyButton).not.toBeVisible();
+      await expect(copyButton.closest('.group\\/node')).toHaveTextContent('5 items');
     });
 
-    await step('Unhover to hide copy button', async () => {
-      const rootNode = await canvas.findByText('5 items');
-      await userEvent.unhover(rootNode);
-      // Copy button should become invisible (opacity-0)
+    await step('Click copies the node and shows a check', async () => {
+      // A synthetic click grants no user activation, which the real clipboard requires.
+      const writeText = spyOn(navigator.clipboard, 'writeText').mockResolvedValue();
+      await userEvent.click(copyButton);
+      await expect(writeText).toHaveBeenCalledWith(JSON.stringify(simpleObject, null, 2));
+      await waitFor(() => expect(copyButton.querySelector('.lucide-check')).not.toBeNull());
     });
   },
 };

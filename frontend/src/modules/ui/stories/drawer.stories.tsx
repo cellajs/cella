@@ -1,5 +1,5 @@
 import type { Meta, StoryContext, StoryObj } from '@storybook/react-vite';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import {
   Drawer,
   DrawerClose,
@@ -69,7 +69,9 @@ export const ShouldOpenCloseWithSubmit: Story = {
 
     await step('Close the drawer', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /submit/i }), { delay: 100 });
-      await expect(args.onOpenChangeComplete).toHaveBeenCalled();
+      // Completes once the 300ms slide-out transition ends
+      await waitFor(() => expect(args.onOpenChangeComplete).toHaveBeenLastCalledWith(false));
+      await expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();
     });
   },
 };
@@ -92,7 +94,9 @@ export const ShouldOpenCloseWithCancel: Story = {
 
     await step('Close the drawer', async () => {
       await userEvent.click(await canvasBody.findByRole('button', { name: /cancel/i }), { delay: 100 });
-      await expect(args.onOpenChangeComplete).toHaveBeenCalled();
+      // Completes once the 300ms slide-out transition ends
+      await waitFor(() => expect(args.onOpenChangeComplete).toHaveBeenLastCalledWith(false));
+      await expect(canvasBody.queryByRole('dialog')).not.toBeInTheDocument();
     });
   },
 };

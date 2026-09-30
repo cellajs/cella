@@ -82,7 +82,8 @@ async function openAndClose(canvasElement: HTMLElement, { id, title, container }
   await expect(form).not.toBeNull();
   await expect(form?.closest('.container')?.className).toBe(container);
 
-  await userEvent.click(within(sheet).getByRole('button', { name: 'Close' }));
+  // Edit sheets show no close button; Escape is the keyboard way out.
+  await userEvent.keyboard('{Escape}');
   await waitFor(() => expect(body.queryByRole('dialog')).toBeNull());
   await waitFor(() => expect(trigger).toHaveFocus());
   return sheet;

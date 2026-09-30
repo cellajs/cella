@@ -507,10 +507,9 @@ export const ShouldSelectRowOnClick: Story = {
       const cell = await canvas.findByText('Bob');
       const cellEl = cell.closest('.rdg-cell')!;
       const style = window.getComputedStyle(cellEl);
-      // Cell should NOT carry the per-cell selection ring (2px). Avoid asserting
-      // outlineStyle === 'none' because UA :focus-visible may set outline:auto
-      // on focused tabindex cells in headless Chromium.
-      expect(style.outlineWidth).not.toBe('2px');
+      // The per-cell selection ring is a solid outline. Chromium keeps reporting its 2px width when the style is
+      // none, and UA :focus-visible may draw outline:auto on a focused cell, so the check reads the style.
+      expect(style.outlineStyle).not.toBe('solid');
     });
   },
 };
@@ -549,9 +548,8 @@ export const ShouldSelectCellRange: Story = {
       const rangeCells = grid.querySelectorAll('.rdg-cell-in-range');
       for (const cell of rangeCells) {
         const style = window.getComputedStyle(cell);
-        // See ShouldSelectRowOnClick: assert that no per-cell selection ring appears.
-        // of outlineStyle === 'none' to avoid UA :focus-visible interference.
-        expect(style.outlineWidth).not.toBe('2px');
+        // See ShouldSelectRowOnClick: no cell draws the solid per-cell selection ring.
+        expect(style.outlineStyle).not.toBe('solid');
       }
     });
 
