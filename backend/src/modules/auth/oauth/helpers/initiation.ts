@@ -41,14 +41,14 @@ export const readOAuthCookie = async (ctx: Context<Env>, state: string): Promise
  */
 export const handleOAuthInitiation = async (
   ctx: Context<Env, string, { out: { query: OAuthQueryParams } }>,
-  provider: string,
+  provider: OAuthCookiePayload['provider'],
   url: URL,
   state: string,
   codeVerifier?: string,
   nonce?: string,
 ) => {
   const { type, redirectAfter } = ctx.req.valid('query');
-  const cookieContent: OAuthCookiePayload = { codeVerifier, nonce, type, redirectAfter };
+  const cookieContent: OAuthCookiePayload = { provider, codeVerifier, nonce, type, redirectAfter };
 
   if (type === 'connect') {
     // A connect starts from the account page, which explains its refusals.

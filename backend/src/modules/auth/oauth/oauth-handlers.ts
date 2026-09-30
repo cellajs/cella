@@ -103,8 +103,9 @@ const finishOAuth = async (
 
   if (error || !code) throw new AppError(400, 'oauth_failed', 'error', { meta: { strategy } });
 
-  // The cookie `state` names is the CSRF check; a PKCE provider also needs the verifier its start stored.
-  if (!cookiePayload || (pkce && !cookiePayload.codeVerifier)) {
+  // The cookie `state` names is the CSRF check. It must come from this provider's start, and a PKCE provider also
+  // needs the verifier that start stored.
+  if (!cookiePayload || cookiePayload.provider !== provider || (pkce && !cookiePayload.codeVerifier)) {
     throw new AppError(401, 'invalid_state', 'error', { meta: { strategy } });
   }
 
