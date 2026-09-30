@@ -12,8 +12,8 @@ import {
   SYNC_CHUNK_SIZE,
 } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
-import { isInfiniteQueryData, isQueryData } from '~/query/basic/mutate-query';
-import type { EntityQueryData, InfiniteEntityQueryData, ItemData, RoutableItemData } from '~/query/basic/types';
+import { forEachListQuery, getQueryItems } from '~/query/basic/mutate-query';
+import type { ItemData, RoutableItemData } from '~/query/basic/types';
 import { isPending } from '~/query/offline/mutation-queue';
 import { queryClient } from '~/query/query-client';
 import { collectEmbeddingTouches, type EmbeddingTouches, invalidateEmbeddedUsage } from './propagation';
@@ -82,17 +82,9 @@ export function patchEntityStxInCache(
   if (detail?.stx) patchInPlace(detail);
 
   const listPrefix = organizationId ? keys.list.org(organizationId) : keys.list.base;
-  for (const [, queryData] of queryClient.getQueriesData({ queryKey: listPrefix })) {
-    if (isInfiniteQueryData(queryData)) {
-      for (const page of (queryData as InfiniteEntityQueryData).pages) {
-        const item = page.items.find((i) => i.id === entityId) as StxEntity | undefined;
-        if (item) patchInPlace(item);
-      }
-    } else if (isQueryData(queryData)) {
-      const item = (queryData as EntityQueryData).items.find((i) => i.id === entityId) as StxEntity | undefined;
-      if (item) patchInPlace(item);
-    }
-  }
+  forEachListQuery<StxEntity>(listPrefix, (_, data) => {
+    for (const item of getQueryItems(data)) if (item.id === entityId) patchInPlace(item);
+  });
 }
 
 function removeEntityFromCache(entityType: string, entityId: string): void {
