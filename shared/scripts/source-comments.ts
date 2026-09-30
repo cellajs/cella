@@ -67,7 +67,48 @@ function jsoncComments(source: string): Comment[] {
   return comments;
 }
 
-/** Block comments first, then line comments, for SQL; `#` comments that start a line for YAML, Dockerfile and Caddyfile. */
+/** Index of the `#` that opens a comment on a YAML line, or -1; `#` inside a quoted scalar or a word is text. */
+function commentHash(line: string): number {
+  let quote = '';
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (quote) {
+      if (char === '\\' && quote === '"') i++;
+      else if (char === quote && quote === "'" && line[i + 1] === "'") i++;
+      else if (char === quote) quote = '';
+    } else if ((char === '"' || char === "'") && /^$|[\s[{,]$/.test(line.slice(0, i))) {
+      quote = char;
+    } else if (char === '#' && (i === 0 || line[i - 1] === ' ' || line[i - 1] === '\t')) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+/** Comments after a YAML value, outside block scalars, whose lines hold text in another language. */
+function yamlTrailingComments(source: string): Comment[] {
+  const comments: Comment[] = [];
+  let offset = 0;
+  let blockIndent = -1;
+  for (const line of source.split('\n')) {
+    const indent = line.length - line.trimStart().length;
+    if (blockIndent < 0 || (line.trim() && indent <= blockIndent)) {
+      const hash = commentHash(line);
+      const value = hash < 0 ? line : line.slice(0, hash);
+      if (hash >= 0 && value.trim()) {
+        comments.push({ offset: offset + hash, end: offset + line.length, text: line.slice(hash) });
+      }
+      blockIndent = value.trim() && /(?:^|\s)[|>][0-9+-]*\s*$/.test(value) ? indent : -1;
+    }
+    offset += line.length + 1;
+  }
+  return comments;
+}
+
+/**
+ * Block comments first, then line comments, for SQL. `#` comments that start a line for YAML, Dockerfile and
+ * Caddyfile, with the comments after a YAML value in document order.
+ */
 export function sourceComments(file: string, source: string): Comment[] {
   const extension = extname(file);
   if (scriptExtensions.has(extension)) return scriptComments(file, source);
@@ -78,11 +119,13 @@ export function sourceComments(file: string, source: string): Comment[] {
       : extension === '.sql'
         ? [/\/\*[\s\S]*?\*\//g, /--[^\n]*/g]
         : [/^[\t ]*#[^\n]*/gm];
-  return patterns.flatMap((pattern) =>
+  const comments = patterns.flatMap((pattern) =>
     [...source.matchAll(pattern)].map((match) => ({
       offset: match.index,
       end: match.index + match[0].length,
       text: match[0],
     })),
   );
+  if (extension !== '.yaml' && extension !== '.yml') return comments;
+  return [...comments, ...yamlTrailingComments(source)].sort((a, b) => a.offset - b.offset);
 }

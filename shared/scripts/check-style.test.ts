@@ -51,7 +51,13 @@ const dirty = makeRepo({
     `const k = '${name}_id';`,
   ].join('\n'),
   'backend/src/long.ts': ['// one', '// two', '// three', '// four', '', 'const x = 1;'].join('\n'),
-  'infra/c.yaml': [`# ${bearing} in infra`, `# ${dash} still required`, 'key: value'].join('\n'),
+  'infra/c.yaml': [
+    `# ${bearing} in infra`,
+    `# ${dash} still required`,
+    `key: value # ${maybe} later`,
+    'run: |',
+    `  echo x # ${maybe} shell text`,
+  ].join('\n'),
   'shared/config/x.jsonc': ['{', `  // ${term}`, `  "k": "// not a comment ${dash}"`, '}'].join('\n'),
   'docs/guide.md': [`# Guide ${term}`, '', `Prose ${dash} and \`${dash}\`.`, `The ${bearing} ${seam}.`].join('\n'),
   'CHANGELOG.md': `${dash} ${bearing} ${term}\n`,
@@ -73,6 +79,7 @@ describe('comment check', () => {
     '  backend/src/rules.ts:2:26 [review-conversation] resolve the question or track it outside the source comment',
     `  backend/src/rules.ts:3:41 [${bearing}] name the dependency, requirement, or failure consequence directly`,
     '  infra/c.yaml:2:3 [em-dash] split the sentence or remove the secondary clause',
+    '  infra/c.yaml:3:14 [review-conversation] resolve the question or track it outside the source comment',
     '  shared/config/x.jsonc:2:6 [concrete-language] name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption',
   ];
   const review = [
@@ -82,11 +89,11 @@ describe('comment check', () => {
   const placement =
     '  backend/src/long.ts:1:1 [detached-long-comment] 4 prose lines; move shared context to a README or attach a concise local constraint to a declaration';
 
-  it('reports required rules at every match', () => {
+  it('reports required rules at every match, trailing YAML comments included', () => {
     expect(run(dirty, 'check-comment-style.ts')).toEqual({
       status: 1,
       stdout: '',
-      stderr: lines('[comments:check] 7 violation(s):', ...required),
+      stderr: lines('[comments:check] 8 violation(s):', ...required),
     });
   });
 
@@ -94,7 +101,7 @@ describe('comment check', () => {
     expect(run(dirty, 'check-comment-style.ts', '--audit')).toEqual({
       status: 1,
       stdout: '',
-      stderr: lines('[comments:check] 7 violation(s):', ...required, '[comments:audit] 2 review marker(s):', ...review),
+      stderr: lines('[comments:check] 8 violation(s):', ...required, '[comments:audit] 2 review marker(s):', ...review),
     });
   });
 
@@ -102,7 +109,7 @@ describe('comment check', () => {
     expect(run(dirty, 'check-comment-style.ts', '--concrete-language')).toEqual({
       status: 1,
       stdout: '',
-      stderr: lines('[comments:language] 3 violation(s):', required[2]!, required[4]!, required[6]!),
+      stderr: lines('[comments:language] 3 violation(s):', required[2]!, required[4]!, required[7]!),
     });
   });
 
@@ -184,7 +191,7 @@ describe('style check', () => {
       '[docs:style] 1 concrete-language violation(s):',
       '[docs:style] 1 em dash(es):',
       '[docs:style] 1 required vocabulary replacement(s):',
-      '[comments:check] 7 violation(s):',
+      '[comments:check] 8 violation(s):',
       '[comments:placement] 1 detached long comment(s):',
       '[frontend:style] 1 violation(s):',
       '[style] 4 area(s) failed (terminology, documentation, comments, frontend).',
