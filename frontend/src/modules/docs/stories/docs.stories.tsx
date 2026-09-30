@@ -1,4 +1,3 @@
-import './define-app-version';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Suspense } from 'react';
 import type { GenComponentSchema, GenOperationDetail, GenOperationSummary, GenResponseSummary } from 'sdk/docs-types';
