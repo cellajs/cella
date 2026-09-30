@@ -1,10 +1,8 @@
-import { useEffect } from 'react';
-import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { DropdownerDrawer } from '~/modules/common/dropdowner/drawer';
 import { DropdownerDropdown } from '~/modules/common/dropdowner/dropdown';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { useOverlayLock } from '~/modules/common/overlay-store-helpers';
 
 /**
  * Renders dropdowns as drawers on mobile and popovers on desktop.
@@ -12,17 +10,8 @@ import { useUIStore } from '~/modules/ui/ui-store';
 export function Dropdowner() {
   const dropdown = useDropdowner((state) => state.dropdown);
   const isMobile = useBreakpointBelow('sm');
-  const lockUI = useUIStore((state) => state.lockUI);
-  const unlockUI = useUIStore((state) => state.unlockUI);
 
-  useBodyClass({ 'dropdowner-open': !!dropdown });
-
-  useEffect(() => {
-    if (dropdown) {
-      lockUI('dropdowner');
-      return () => unlockUI('dropdowner');
-    }
-  }, [!!dropdown]);
+  useOverlayLock('dropdowner', !!dropdown);
 
   if (!dropdown) return null;
   if (isMobile) return <DropdownerDrawer dropdown={dropdown} />;

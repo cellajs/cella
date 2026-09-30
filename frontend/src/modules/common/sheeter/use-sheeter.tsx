@@ -1,6 +1,6 @@
 import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
-import { fallbackContentRef } from '~/utils/fallback-content-ref';
+import { blurAndStashTrigger, removeAndNotify } from '~/modules/common/overlay-store-helpers';
 
 /** Element focus returns to on close; read when the sheet closes, so a ref may resolve to a later DOM node. */
 export type TriggerRef = RefObject<HTMLElement | null>;
@@ -59,10 +59,7 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
   triggerRefs: {},
 
   create: (content, data) => {
-    if (document.activeElement instanceof HTMLButtonElement || document.activeElement instanceof HTMLAnchorElement) {
-      fallbackContentRef.current = document.activeElement;
-      document.activeElement.blur();
-    }
+    blurAndStashTrigger();
 
     const defaults = {
       drawerOnMobile: true,
@@ -96,25 +93,14 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
 
   remove: (id, opts) => {
     const { sheets } = get();
-    const removeSheets = id ? sheets.filter((sheet) => sheet.id === id) : sheets;
-    if (!removeSheets.length) return;
-
-    // Update the store before onClose: a callback that navigates from inside set() would
-    // interleave a router update with this one and render a stale frame of the sheet.
-    set({ sheets: sheets.filter((sheet) => !removeSheets.includes(sheet)) });
-
-    for (const sheet of removeSheets) sheet.onClose?.(opts?.isCleanup);
+    const toRemove = id ? sheets.filter((sheet) => sheet.id === id) : sheets;
+    removeAndNotify((remaining) => set({ sheets: remaining }), sheets, toRemove, opts);
   },
 
   removeOnRouteChange: (opts) => {
     const { sheets } = get();
-    const removeSheets = sheets.filter((sheet) => sheet.closeSheetOnRouteChange);
-    if (!removeSheets.length) return;
-
-    // Same order as remove: store first, then onClose.
-    set({ sheets: sheets.filter((sheet) => !removeSheets.includes(sheet)) });
-
-    for (const sheet of removeSheets) sheet.onClose?.(opts?.isCleanup);
+    const toRemove = sheets.filter((sheet) => sheet.closeSheetOnRouteChange);
+    removeAndNotify((remaining) => set({ sheets: remaining }), sheets, toRemove, opts);
   },
 
   get: (id) => get().sheets.find((sheet) => sheet.id === id),

@@ -1,5 +1,5 @@
-import { AnimatePresence, motion } from 'motion/react';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { ContentKeyTransition } from '~/modules/common/sheeter/sheet';
 import { type InternalSheet, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
 import { cn } from '~/utils/cn';
@@ -48,22 +48,7 @@ export function SheeterDrawer({ sheet }: { sheet: InternalSheet }) {
             {description}
           </DrawerDescription>
         </DrawerHeader>
-        {contentKey ? (
-          <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div
-              key={contentKey}
-              className="flex flex-1 flex-col"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.15 }}
-            >
-              {content}
-            </motion.div>
-          </AnimatePresence>
-        ) : (
-          content
-        )}
+        <ContentKeyTransition contentKey={contentKey}>{content}</ContentKeyTransition>
       </DrawerContent>
     </Drawer>
   );
