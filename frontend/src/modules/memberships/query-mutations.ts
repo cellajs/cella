@@ -2,7 +2,7 @@ import { onlineManager, useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
 import type { MembershipBase, MembershipInviteResponse, Organization, UpdateMembershipResponse } from 'sdk';
 import { deleteMemberships, membershipInvite, updateMembership } from 'sdk';
-import { appConfig, type ChannelEntityType } from 'shared';
+import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
@@ -19,16 +19,10 @@ import type {
   MutationUpdateMembership,
 } from '~/modules/memberships/types';
 import { getCurrentUser } from '~/modules/user/user-store';
+import { cacheUpdate } from '~/query/basic/cache-mutations';
 import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
-import { changeInfiniteQueryData, changeQueryData } from '~/query/basic/helpers';
 import { invalidateOnMembershipChange } from '~/query/basic/invalidation-helpers';
-import {
-  formatUpdatedCacheData,
-  getQueryItems,
-  getSimilarQueries,
-  isInfiniteQueryData,
-  isQueryData,
-} from '~/query/basic/mutate-query';
+import { formatUpdatedCacheData, getQueryItems, getSimilarQueries } from '~/query/basic/mutate-query';
 import { queryClient } from '~/query/query-client';
 
 const limit = appConfig.requestLimits.members;
@@ -78,18 +72,6 @@ export const upsertMyMembershipCache = (membership: MembershipBase) => {
         : [...oldData.items, membership],
     };
   });
-};
-
-/** Resolves the list query keys through the entity query registry. */
-const updateEntityInListCache = (entityType: ChannelEntityType, updatedItems: { id: string }[]) => {
-  const keys = getEntityQueryKeys(entityType);
-
-  const queries = queryClient.getQueriesData({ queryKey: keys.list.base });
-  for (const [queryKey, queryData] of queries) {
-    if (!queryData) continue;
-    if (isInfiniteQueryData(queryData)) changeInfiniteQueryData(queryKey, updatedItems, 'update');
-    else if (isQueryData(queryData)) changeQueryData(queryKey, updatedItems, 'update');
-  }
 };
 
 const onError = (
@@ -369,7 +351,7 @@ export const useChangeEntityRoleMutation = () =>
       upsertMyMembershipCache(membership);
 
       const updatedEntity = { ...entity, membership };
-      updateEntityInListCache(entity.entityType, [updatedEntity]);
+      cacheUpdate(getEntityQueryKeys(entity.entityType).list.base, [updatedEntity]);
 
       toaster.success(t('c:success.role_updated'));
     },
