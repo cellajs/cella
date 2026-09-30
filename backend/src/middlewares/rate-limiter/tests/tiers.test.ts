@@ -13,7 +13,7 @@ vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) =>
 );
 
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
-const { checkRateLimitStatus } = await import('#/middlewares/rate-limiter/helpers');
+const { checkRateLimitStatus, subjectSegment } = await import('#/middlewares/rate-limiter/helpers');
 const { appErrorHandler } = await import('#/lib/error');
 
 const budget = { points: 5, duration: 60 * 60, blockDuration: 60 * 30 };
@@ -42,12 +42,12 @@ describe('the buckets a failure budget counts in', () => {
       const route = guardedRoute(mode, json(401));
 
       await route.attempt('1.2.3.4');
-      expect(await counts(route.limiter, 'ip:1.2.3.4'), mode).toEqual([1, 1]);
+      expect(await counts(route.limiter, subjectSegment('ip', '1.2.3.4')), mode).toEqual([1, 1]);
       expect(memoryStores.has(`${route.limiter.keyPrefix}:slow`), mode).toBe(true);
 
       // Two addresses inside one /64 share both buckets.
       for (const ip of ['2001:db8:aaaa:bbbb::1', '2001:db8:aaaa:bbbb:ffff:0:0:2']) await route.attempt(ip);
-      expect(await counts(route.limiter, 'ip:2001:db8:aaaa:bbbb::/64'), mode).toEqual([2, 2]);
+      expect(await counts(route.limiter, subjectSegment('ip', '2001:db8:aaaa:bbbb::1')), mode).toEqual([2, 2]);
     }
   });
 
@@ -74,7 +74,7 @@ describe('the buckets a failure budget counts in', () => {
       status = 200;
       expect((await route.attempt(ip)).status, mode).toBe(200);
 
-      expect(await counts(route.limiter, `ip:${ip}`), mode).toEqual([kept, 3]);
+      expect(await counts(route.limiter, subjectSegment('ip', ip)), mode).toEqual([kept, 3]);
     }
   });
 
@@ -98,7 +98,7 @@ describe('the buckets a failure budget counts in', () => {
     expect(refused.status).toBe(429);
     // Blocked for the 24-hour bucket's three hours while the hourly budget has room; that bucket gave the attempt back.
     expect(Number(refused.headers.get('retry-after'))).toBeGreaterThan(3 * 60 * 60 - 60);
-    expect(await counts(route.limiter, `ip:${ip}`)).toEqual([4, 100]);
+    expect(await counts(route.limiter, subjectSegment('ip', ip))).toEqual([4, 100]);
   });
 
   it('must not answer 500 via a bucket whose store fails; the attempt goes uncounted there', async () => {
@@ -108,7 +108,7 @@ describe('the buckets a failure budget counts in', () => {
     vi.spyOn(hourly.store, 'penalty').mockRejectedValueOnce(new Error('store unavailable'));
 
     expect((await route.attempt(ip)).status).toBe(401);
-    expect(await counts(route.limiter, `ip:${ip}`)).toEqual([0, 1]);
+    expect(await counts(route.limiter, subjectSegment('ip', ip))).toEqual([0, 1]);
   });
 });
 
@@ -127,7 +127,7 @@ describe('rate limiter outcome behind a redirecting error', () => {
     const res = await route.attempt(ip);
     expect(res.status).toBe(302);
     expect(res.headers.get('location')).toContain('/auth/error?error=invalid_token');
-    expect(await counts(route.limiter, `ip:${ip}`)).toEqual([1, 1]);
+    expect(await counts(route.limiter, subjectSegment('ip', ip))).toEqual([1, 1]);
   });
 
   it('counts a failure answered as JSON the same way (positive control)', async () => {
@@ -137,7 +137,7 @@ describe('rate limiter outcome behind a redirecting error', () => {
     const ip = randomIp();
 
     expect((await route.attempt(ip)).status).toBe(404);
-    expect(await counts(route.limiter, `ip:${ip}`)).toEqual([1, 1]);
+    expect(await counts(route.limiter, subjectSegment('ip', ip))).toEqual([1, 1]);
   });
 
   it('leaves a successful redirect uncounted', async () => {
@@ -145,7 +145,7 @@ describe('rate limiter outcome behind a redirecting error', () => {
     const ip = randomIp();
 
     expect((await route.attempt(ip)).status).toBe(302);
-    expect(await counts(route.limiter, `ip:${ip}`)).toEqual([0, 0]);
+    expect(await counts(route.limiter, subjectSegment('ip', ip))).toEqual([0, 0]);
   });
 });
 
@@ -156,7 +156,7 @@ describe('rate limit status', () => {
     for (let attempt = 0; attempt <= budget.points; attempt++) await route.attempt(ip);
     expect((await route.attempt(ip)).status).toBe(429);
 
-    const status = await checkRateLimitStatus(route.limiter, `ip:${ip}`);
+    const status = await checkRateLimitStatus(route.limiter, subjectSegment('ip', ip));
     expect(status.isLimited).toBe(true);
     expect(status.retryAfter).toBeGreaterThan(0);
     expect(status.retryAfter).toBeLessThanOrEqual(budget.blockDuration);
@@ -167,7 +167,7 @@ describe('rate limit status', () => {
     const ip = randomIp();
     for (let attempt = 0; attempt < 3; attempt++) expect((await route.attempt(ip)).status).toBe(200);
 
-    expect((await checkRateLimitStatus(route.limiter, `ip:${ip}`)).isLimited).toBe(true);
+    expect((await checkRateLimitStatus(route.limiter, subjectSegment('ip', ip))).isLimited).toBe(true);
     expect(memoryStores.has(`${route.limiter.keyPrefix}:slow`)).toBe(false);
     // What the status announced: the next request is refused.
     expect((await route.attempt(ip)).status).toBe(429);

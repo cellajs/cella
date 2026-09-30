@@ -1,9 +1,10 @@
-import { eq } from 'drizzle-orm';
+import { eq, like } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { checkEmail, invokeToken, sendMagicLink, signInWithTotp, stepUp } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { getAdminDb } from '#/db/db';
+import { subjectSegment } from '#/middlewares/rate-limiter/helpers';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { magicLinkEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';
@@ -13,6 +14,7 @@ import {
   createMfaToken,
   createTestUser,
   createTotpUser,
+  type ErrorResponse,
   mailsTo,
   sessionRow,
   totpCode,
@@ -95,6 +97,16 @@ describe('brute-force budgets', async () => {
     }
     const blocked = await call(checkEmail, { body: { email: known.email }, headers: fromIp(ip) });
     expect(blocked.response.status).toBe(429);
+    // The refusal names the wait alone, and the table counts the client under a pseudonym, never its address.
+    expect((blocked.error as ErrorResponse | undefined)?.meta).toEqual({ retryAfter: expect.any(Number) });
+    const keys = getAdminDb('rate limit test').select({ key: rateLimitsTable.key }).from(rateLimitsTable);
+    expect(await keys.where(like(rateLimitsTable.key, `%${ip}%`))).toEqual([]);
+    expect(
+      await getAdminDb('rate limit test')
+        .select({ key: rateLimitsTable.key })
+        .from(rateLimitsTable)
+        .where(eq(rateLimitsTable.key, `emailEnum_limit:${subjectSegment('ip', ip)}`)),
+    ).toHaveLength(1);
 
     // Another client is unaffected (positive control).
     const other = await call(checkEmail, { body: { email: known.email }, headers: fromIp(randomIp()) });

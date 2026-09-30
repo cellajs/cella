@@ -14,6 +14,7 @@ import type {
 } from '#/middlewares/rate-limiter/types';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { getIp } from '#/utils/get-ip';
+import { hashRateLimitSubject } from '#/utils/hash-pii';
 import { toRateLimitIp } from '#/utils/ip-subnet';
 import { log } from '#/utils/logger';
 
@@ -216,14 +217,25 @@ export const blockSpentBucket = async (
   return true;
 };
 
-export const rateLimitError = (ctx: Context<Env>, limitState: RateLimiterRes, rateLimitKey: string) => {
+/** The refusal carries the wait alone: the key names a subject, which no client needs and no log line repeats. */
+export const rateLimitError = (ctx: Context<Env>, limitState: RateLimiterRes) => {
   const retryAfter = getRetryAfter(limitState.msBeforeNext);
   ctx.header('Retry-After', retryAfter);
-  throw new AppError(429, 'too_many_requests', 'warn', { meta: { rateLimitKey, retryAfter: Number(retryAfter) } });
+  throw new AppError(429, 'too_many_requests', 'warn', { meta: { retryAfter: Number(retryAfter) } });
 };
 
 /** Floored to 1s so sub-second waits never emit `Retry-After: 0`, which clients read as "retry immediately". */
 export const getRetryAfter = (ms: number) => Math.max(1, Math.round(ms / 1000)).toString();
+
+/**
+ * One identifier's segment of a rate-limit key. An id enters as it is; an IP (IPv6 by its /64) or an address enters
+ * as its keyed pseudonym, so `rate_limits` holds neither in the clear.
+ */
+export const subjectSegment = (identifier: RateLimitIdentifier, value: string): string => {
+  if (identifier === 'ip') return `ip:${hashRateLimitSubject('ip', toRateLimitIp(value))}`;
+  if (identifier === 'email') return `email:${hashRateLimitSubject('email', value)}`;
+  return `${identifier}:${value}`;
+};
 
 export const extractIdentifiers = async (
   ctx: Context<Env>,
@@ -277,7 +289,7 @@ export const extractIdentifiers = async (
 
 export const checkIpRateLimitStatus = async (ctx: Context<Env>, rateLimiterHandler: RateLimiterHandler) => {
   const ip = getIp(ctx);
-  return checkRateLimitStatus(rateLimiterHandler, `ip:${toRateLimitIp(ip ?? '')}`);
+  return checkRateLimitStatus(rateLimiterHandler, subjectSegment('ip', ip ?? ''));
 };
 
 /**

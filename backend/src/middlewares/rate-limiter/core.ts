@@ -6,6 +6,7 @@ import {
   getRateLimiterInstance,
   openBucket,
   rateLimitError,
+  subjectSegment,
 } from '#/middlewares/rate-limiter/helpers';
 import { restoreDebt, syncFromDb, takeDebt, tryFastConsume } from '#/middlewares/rate-limiter/points-cache';
 import { reserveTiers, settleTiers, slowTier } from '#/middlewares/rate-limiter/tiers';
@@ -17,7 +18,6 @@ import type {
   RateLimitMode,
   Tier,
 } from '#/middlewares/rate-limiter/types';
-import { toRateLimitIp } from '#/utils/ip-subnet';
 import { log } from '#/utils/logger';
 
 export const defaultOptions = {
@@ -92,9 +92,8 @@ export const rateLimiter = (
           continue;
         }
 
-        const value = extractedIdentifiers[identifier] as string;
-        // Normalize IPs so IPv6 clients cannot rotate within their /64 to evade auth rate limits
-        rateLimitKey += `${identifier}:${identifier === 'ip' ? toRateLimitIp(value) : value}`;
+        // An IP (by its /64 for IPv6, so rotation inside it cannot evade a limit) or an address counts under its pseudonym
+        rateLimitKey += subjectSegment(identifier, extractedIdentifiers[identifier] as string);
       }
 
       // An empty key would share one bucket across all traffic (a userId-keyed limiter on a public route): misconfiguration
@@ -117,7 +116,7 @@ export const rateLimiter = (
 
         const limitState = await store.get(rateLimitKey);
         if (limitState !== null && limitState.consumedPoints > effectiveBudget) {
-          return rateLimitError(ctx, limitState, rateLimitKey);
+          return rateLimitError(ctx, limitState);
         }
         // No live row yet: create it first, or the first requests of a parallel burst each start the count at one.
         if (limitState === null) await openBucketSafely(store, rateLimitKey, config.duration);
@@ -130,12 +129,12 @@ export const rateLimiter = (
           if (getPointsBudget) syncFromDb(rateLimitKey, consumeResult.consumedPoints);
           // The library only rejects at the static ceiling; the smaller per-tenant budget is enforced here
           if (consumeResult.consumedPoints > effectiveBudget) {
-            return rateLimitError(ctx, consumeResult, rateLimitKey);
+            return rateLimitError(ctx, consumeResult);
           }
         } catch (rlRejected) {
           if (rlRejected instanceof RateLimiterRes) {
             if (getPointsBudget) syncFromDb(rateLimitKey, rlRejected.consumedPoints);
-            return rateLimitError(ctx, rlRejected, rateLimitKey);
+            return rateLimitError(ctx, rlRejected);
           }
           // DB write failed: return the claimed debt so it is settled on a later request.
           restoreDebt(rateLimitKey, debt);

@@ -51,7 +51,8 @@ function loadEnv(vars: Record<string, string>) {
  */
 describe('env schema per process mode', () => {
   it('must not require the Yjs signing key, the relay, CDC or unsubscribe secrets to boot the authorization server', () => {
-    const { status, output } = loadEnv({ MODE: 'oauth', ...common });
+    // The pepper it does read: its client metadata fetches count per IP, under the IP's pseudonym.
+    const { status, output } = loadEnv({ MODE: 'oauth', ...common, PII_HASH_SECRET: modeBound.PII_HASH_SECRET });
     expect(output).not.toContain('Invalid environment variables');
     expect(status).toBe(0);
   });

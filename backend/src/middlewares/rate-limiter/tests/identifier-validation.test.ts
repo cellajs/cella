@@ -12,6 +12,7 @@ vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) =>
 );
 
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
+const { subjectSegment } = await import('#/middlewares/rate-limiter/helpers');
 const { appErrorHandler } = await import('#/lib/error');
 
 function jsonRequest(path: string, body: Record<string, unknown>) {
@@ -64,7 +65,7 @@ describe('rate limiter identifier validation', () => {
       for (const email of ['Victim@Example.COM', 'victim@example.com', ' VICTIM@example.com ']) {
         await route.app.request(jsonRequest('/test', { email }));
       }
-      expect(await route.counted('email:victim@example.com')).toBe(3);
+      expect(await route.counted(subjectSegment('email', 'victim@example.com'))).toBe(3);
     });
 
     it('rejects a non-string email without keying on it', async () => {
@@ -90,7 +91,7 @@ describe('rate limiter identifier validation', () => {
     it('falls back to the IP for anonymous requests', async () => {
       const route = keyedRoute([['userId', 'ip']]);
       expect((await route.app.request(fromIp.clone(), undefined, emptyBindings)).status).toBe(200);
-      expect(route.keys()).toEqual(['ip:1.2.3.4']);
+      expect(route.keys()).toEqual([subjectSegment('ip', '1.2.3.4')]);
     });
 
     it('rejects when no identifier in the chain resolves, counting nothing', async () => {
@@ -98,6 +99,25 @@ describe('rate limiter identifier validation', () => {
       const req = new Request('http://localhost/test', { method: 'POST' });
       expect((await route.app.request(req, undefined, emptyBindings)).status).toBe(400);
       expect(route.keys()).toEqual([]);
+    });
+  });
+
+  describe('pseudonymous subjects', () => {
+    it('must not store an IP or an address in the clear via the key', () => {
+      const ip = subjectSegment('ip', '1.2.3.4');
+      const email = subjectSegment('email', 'victim@example.com');
+      expect(ip).toMatch(/^ip:[0-9a-f]{32}$/);
+      expect(email).toMatch(/^email:[0-9a-f]{32}$/);
+      expect(`${ip}${email}`).not.toMatch(/1\.2\.3\.4|victim|example/);
+      // The same subject under another kind is another pseudonym; an id stays legible.
+      expect(subjectSegment('email', '1.2.3.4')).not.toBe(ip);
+      expect(subjectSegment('userId', 'user-1')).toBe('userId:user-1');
+    });
+
+    it('keeps one bucket per subject: an IPv6 /64, an address whatever its case', () => {
+      expect(subjectSegment('ip', '2001:db8:aaaa:bbbb::1')).toBe(subjectSegment('ip', '2001:db8:aaaa:bbbb:ffff::2'));
+      expect(subjectSegment('ip', '2001:db8:aaaa:bbbb::1')).not.toBe(subjectSegment('ip', '2001:db8:aaaa:cccc::1'));
+      expect(subjectSegment('email', ' Victim@Example.COM ')).toBe(subjectSegment('email', 'victim@example.com'));
     });
   });
 
