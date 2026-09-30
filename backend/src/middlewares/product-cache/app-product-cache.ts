@@ -1,7 +1,6 @@
 import type { EntityType } from 'shared';
 import { TTLCache } from '#/lib/ttl-cache';
 import { log } from '#/utils/logger';
-import { productCacheMetrics } from './metrics';
 
 const cacheTtl = 10 * 60 * 1000;
 
@@ -35,15 +34,7 @@ export const productCache = {
   },
 
   get(key: string): Record<string, unknown> | undefined {
-    const data = cache.get(key);
-
-    if (data === undefined) {
-      productCacheMetrics.recordMiss();
-      return undefined;
-    }
-
-    productCacheMetrics.recordHit();
-    return data;
+    return cache.get(key);
   },
 
   invalidateProduct(entityType: EntityType, entityId: string): boolean {
@@ -52,7 +43,6 @@ export const productCache = {
 
     if (existed) {
       cache.delete(key);
-      productCacheMetrics.recordInvalidation(1);
       return true;
     }
 
@@ -61,18 +51,5 @@ export const productCache = {
 
   clear(): void {
     cache.clear();
-  },
-
-  stats(): {
-    cacheSize: number;
-    capacity: number;
-    utilization: number;
-  } {
-    const cacheStats = cache.stats;
-    return {
-      cacheSize: cacheStats.size,
-      capacity: cacheStats.capacity,
-      utilization: cacheStats.utilization,
-    };
   },
 };

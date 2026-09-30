@@ -1,14 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { getTableName } from 'drizzle-orm';
 import { actionToVerb, activityActions, appConfig } from 'shared';
-import {
-  generateMockActivityChannelIdColumns,
-  mockPaginated,
-  mockPastIsoDate,
-  mockTenantId,
-  mockUuid,
-  withFakerSeed,
-} from '#/mocks';
+import { generateMockActivityChannelIdColumns, mockPastIsoDate, mockTenantId, mockUuid, withFakerSeed } from '#/mocks';
 import type { ActivityModel } from '#/modules/activities/activities-db';
 import { getEntityTable } from '#/tables';
 
@@ -43,5 +36,3 @@ export const mockActivity = (key = 'activity:default', overrides?: Partial<Activ
   });
 
 export const mockActivityResponse = mockActivity;
-
-export const mockPaginatedActivitiesResponse = (count = 2) => mockPaginated(mockActivityResponse, count);

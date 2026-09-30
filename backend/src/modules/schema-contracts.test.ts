@@ -1,17 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { activityListQuerySchema } from '#/modules/activities/activities-schema';
 import { memberListQuerySchema } from '#/modules/memberships/memberships-schema';
 import { sendNewsletterBodySchema } from '#/modules/system/system-schema';
 import { memberRole } from '../../tests/fixtures';
 
 const firstId = '00000000-0000-4000-8000-000000000001';
 const secondId = '00000000-0000-4000-8000-000000000002';
-
-describe('activityListQuerySchema', () => {
-  it('allows an unfiltered activity list request', () => {
-    expect(activityListQuerySchema.safeParse({}).success).toBe(true);
-  });
-});
 
 describe('memberListQuerySchema', () => {
   const baseQuery = { entityId: firstId, entityType: 'organization' as const };
