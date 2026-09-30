@@ -79,11 +79,6 @@ async function runBenchSeed(pool: pg.Pool, db: PgDB, seed: BenchSeed, now: strin
 async function cleanLoadtestData(pool: pg.Pool) {
   startSpinner('cleaning existing bench data...');
 
-  // An unconsumed CDC replication slot blocks DELETEs on published tables.
-  await pool
-    .query(`SELECT pg_drop_replication_slot(slot_name) FROM pg_replication_slots WHERE slot_name = 'cdc_slot'`)
-    .catch(() => {});
-
   // FK trigger checks off for this session: deleting bench users otherwise runs a SET NULL cascade and full-table scan per FK constraint.
   const client = await pool.connect();
   try {
