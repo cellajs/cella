@@ -1,7 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
-import { checkEmail, sendMagicLink, signInWithTotp, stepUp } from 'sdk';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { checkEmail, invokeToken, sendMagicLink, signInWithTotp, stepUp } from 'sdk';
+import { appConfig } from 'shared';
+import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { magicLinkEmail } from '../../emails';
@@ -252,5 +253,28 @@ describe('brute-force budgets', async () => {
     expect(response.status).toBe(204);
     expect(cookieChange(response, 'session')).toBe('set');
     expect(lockoutMailsTo(user.email)).toHaveLength(1);
+  });
+
+  it('answers a browser navigation past its budget with a redirect to the error page, never JSON', async () => {
+    const ip = randomIp();
+    /** A token link opened with a guessed token: a failure the link's budget counts. */
+    const open = async () =>
+      (await call(invokeToken, { path: { type: 'invitation', token: nanoid(40) }, headers: fromIp(ip) })).response;
+
+    for (let attempt = 0; attempt < 10; attempt++) expect((await open()).status).not.toBe(429);
+    // Tests read the refusal as JSON, like every other error.
+    expect((await open()).status).toBe(429);
+
+    const testMode = appConfig.mode;
+    onTestFinished(() => {
+      Reflect.set(appConfig, 'mode', testMode);
+    });
+    Reflect.set(appConfig, 'mode', 'development');
+    const refused = await open();
+    expect(refused.status).toBe(302);
+    const location = new URL(refused.headers.get('location') ?? '', appConfig.frontendUrl);
+    expect(location.pathname).toBe('/auth/error');
+    expect(location.searchParams.get('error')).toBe('too_many_requests');
+    expect(refused.headers.get('retry-after')).not.toBeNull();
   });
 });

@@ -1,8 +1,7 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { eq } from 'drizzle-orm';
-import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
-import { AppError, type ErrorKey } from '#/core/error';
+import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -44,18 +43,7 @@ app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {
 
 app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
   const { token, type: tokenType } = ctx.req.valid('param');
-
-  try {
-    return await linkHandlers[tokenType](ctx, token);
-  } catch (err) {
-    if (err instanceof AppError) {
-      throw new AppError(err.status, err.type as ErrorKey, err.severity, {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { ...err.meta, errorPagePath: '/auth/error' },
-      });
-    }
-    throw err;
-  }
+  return linkHandlers[tokenType](ctx, token);
 });
 
 app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {

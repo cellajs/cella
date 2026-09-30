@@ -2,7 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { Env } from '#/core/context';
-import { AppError, type ErrorKey } from '#/core/error';
+import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { maySignUp } from '#/modules/auth/auth-queries';
@@ -82,24 +82,14 @@ app.openapi(authMagicLinkRoutes.getPendingMagicLink, async (ctx) => {
 });
 
 app.openapi(authMagicLinkRoutes.confirmMagicLink, async (ctx) => {
-  try {
-    const rawToken = await getAuthCookie(ctx, 'magic-pending');
-    if (!rawToken) throw new AppError(401, 'magic_expired', 'warn');
+  const rawToken = await getAuthCookie(ctx, 'magic-pending');
+  if (!rawToken) throw new AppError(401, 'magic_expired', 'warn');
 
-    // Redeemed like opening the link in its own browser, including the refusal while signed in as someone else.
-    const tokenRecord = await invokeToken(ctx, { type: 'magic', rawToken, claimOwner: claimMagicLinkOwner });
-    deleteAuthCookie(ctx, 'magic-pending');
+  // Redeemed like opening the link in its own browser, including the refusal while signed in as someone else.
+  const tokenRecord = await invokeToken(ctx, { type: 'magic', rawToken, claimOwner: claimMagicLinkOwner });
+  deleteAuthCookie(ctx, 'magic-pending');
 
-    return handleMagicLink(ctx, tokenRecord);
-  } catch (err) {
-    if (err instanceof AppError) {
-      throw new AppError(err.status, err.type as ErrorKey, err.severity, {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { ...err.meta, errorPagePath: '/auth/error' },
-      });
-    }
-    throw err;
-  }
+  return handleMagicLink(ctx, tokenRecord);
 });
 
 export const authMagicLinkHandlers = app;

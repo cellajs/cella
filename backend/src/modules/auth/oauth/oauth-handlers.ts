@@ -1,11 +1,10 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import { generateRandomCodeVerifier, generateRandomNonce, generateRandomState } from 'oauth4webapi';
-import { appConfig, type EnabledOAuthProvider } from 'shared';
+import type { EnabledOAuthProvider } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { handleOAuthCallback } from '#/modules/auth/oauth/helpers/callback';
-import { handleOAuthInitiation, parseOAuthCookie } from '#/modules/auth/oauth/helpers/initiation';
+import { handleOAuthInitiation, readOAuthCookie } from '#/modules/auth/oauth/helpers/initiation';
 import {
   type GithubUserEmailProps,
   type GithubUserProps,
@@ -75,23 +74,13 @@ app.openapi(authOAuthRoutes.githubCallback, async (ctx) => {
 
   const strategy = 'github' as EnabledOAuthProvider;
 
-  if (error || !code) {
-    throw new AppError(400, 'oauth_failed', 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error', strategy },
-    });
-  }
+  // Read before the provider's answer is judged: a connect's refusals from here on go back to the account page.
+  const cookiePayload = await readOAuthCookie(ctx, state);
+
+  if (error || !code) throw new AppError(400, 'oauth_failed', 'error', { meta: { strategy } });
 
   // Verify cookie by `state` (CSRF protection)
-  const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
-  const cookiePayload = parseOAuthCookie(oauthCookie);
-
-  if (!state || !cookiePayload) {
-    throw new AppError(401, 'invalid_state', 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error', strategy },
-    });
-  }
+  if (!cookiePayload) throw new AppError(401, 'invalid_state', 'error', { meta: { strategy } });
 
   try {
     const { accessToken } = await githubAuth.validateAuthorizationCode(code, state);
@@ -112,8 +101,7 @@ app.openapi(authOAuthRoutes.githubCallback, async (ctx) => {
 
     const type = error instanceof OAuthCodeExchangeError ? 'invalid_credentials' : 'oauth_failed';
     throw new AppError(401, type, 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error', strategy },
+      meta: { strategy },
       ...(error instanceof Error ? { originalError: error } : {}),
     });
   }
@@ -124,15 +112,9 @@ app.openapi(authOAuthRoutes.googleCallback, async (ctx) => {
   const strategy = 'google' as EnabledOAuthProvider;
 
   // Verify cookie by `state` (CSRF protection) & PKCE validation
-  const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
-  const cookiePayload = parseOAuthCookie(oauthCookie);
+  const cookiePayload = await readOAuthCookie(ctx, state);
 
-  if (!code || !cookiePayload?.codeVerifier) {
-    throw new AppError(401, 'invalid_state', 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error', strategy },
-    });
-  }
+  if (!code || !cookiePayload?.codeVerifier) throw new AppError(401, 'invalid_state', 'error', { meta: { strategy } });
 
   try {
     // id_token claims, `nonce` binding, and signature are validated inside the provider client.
@@ -152,8 +134,7 @@ app.openapi(authOAuthRoutes.googleCallback, async (ctx) => {
 
     const type = error instanceof OAuthCodeExchangeError ? 'invalid_credentials' : 'oauth_failed';
     throw new AppError(401, type, 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error', strategy },
+      meta: { strategy },
       ...(error instanceof Error ? { originalError: error } : {}),
     });
   }
@@ -164,15 +145,9 @@ app.openapi(authOAuthRoutes.microsoftCallback, async (ctx) => {
   const strategy = 'microsoft' as EnabledOAuthProvider;
 
   // Verify cookie by `state` (CSRF protection) & PKCE validation
-  const oauthCookie = await getAuthCookie(ctx, `oauth-state-${state}`);
-  const cookiePayload = parseOAuthCookie(oauthCookie);
+  const cookiePayload = await readOAuthCookie(ctx, state);
 
-  if (!code || !cookiePayload?.codeVerifier) {
-    throw new AppError(401, 'invalid_state', 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error', strategy },
-    });
-  }
+  if (!code || !cookiePayload?.codeVerifier) throw new AppError(401, 'invalid_state', 'error', { meta: { strategy } });
 
   try {
     // id_token claims, `nonce` binding, and signature are validated inside the provider client.
@@ -192,8 +167,7 @@ app.openapi(authOAuthRoutes.microsoftCallback, async (ctx) => {
 
     const type = error instanceof OAuthCodeExchangeError ? 'invalid_credentials' : 'oauth_failed';
     throw new AppError(401, type, 'error', {
-      willRedirect: appConfig.mode !== 'test',
-      meta: { errorPagePath: '/auth/error', strategy },
+      meta: { strategy },
       ...(error instanceof Error ? { originalError: error } : {}),
     });
   }

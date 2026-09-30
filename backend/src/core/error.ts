@@ -15,6 +15,7 @@ export type AppErrorOpts = {
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;
   originalError?: Error;
+  /** Redirect to the error page in every mode, tests included; a route that answers 302 redirects on its own outside tests. */
   willRedirect?: boolean;
   name?: ErrorSchemaType['name'];
   message?: ErrorSchemaType['message'];
