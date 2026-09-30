@@ -28,5 +28,3 @@ export const invalidateOrgCacheByTenant = (tenantId: string): number => {
 export const clearOrgCache = (): void => {
   cache.clear();
 };
-
-export const orgCacheStats = () => cache.stats;

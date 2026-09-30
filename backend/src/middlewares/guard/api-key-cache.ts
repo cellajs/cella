@@ -44,5 +44,3 @@ export const clearApiKeyCache = (): void => {
   apiKeyCache.clear();
   accountIndex.clear();
 };
-
-export const apiKeyCacheStats = () => apiKeyCache.stats;

@@ -5,10 +5,9 @@ import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { getApiKeyCache, setApiKeyCache } from '#/middlewares/guard/api-key-cache';
-import { getMembershipCache, setMembershipCache } from '#/middlewares/guard/auth-cache';
+import { loadMemberships } from '#/middlewares/guard/auth-cache';
 import { getTokenGrantCache, setTokenGrantCache, type TokenGrantEntry } from '#/middlewares/guard/token-grant-cache';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
-import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { findConsentOfUser } from '#/modules/oauth-server/oauth-server-queries';
 import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
@@ -44,11 +43,7 @@ export async function setActorFromToken(
 
   if (grant.kind === 'user') {
     const { user } = grant;
-    let memberships = getMembershipCache(user.id);
-    if (!memberships) {
-      memberships = await baseDb.select().from(membershipsTable).where(eq(membershipsTable.userId, user.id));
-      setMembershipCache(user.id, memberships);
-    }
+    const memberships = await loadMemberships(user.id);
     ctx.set('user', user);
     ctx.set('userId', user.id);
     ctx.set('memberships', memberships);
