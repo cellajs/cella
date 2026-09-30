@@ -1628,7 +1628,7 @@
     "request": {
       "query": {
         "properties": {
-          "code": { "type": "string", "required": true },
+          "code": { "type": "string", "required": false },
           "state": { "type": "string", "required": true },
           "error": { "type": "string", "required": false },
           "error_description": { "type": "string", "required": false },
@@ -1687,8 +1687,11 @@
     "request": {
       "query": {
         "properties": {
-          "code": { "type": "string", "required": true },
-          "state": { "type": "string", "required": true }
+          "code": { "type": "string", "required": false },
+          "state": { "type": "string", "required": true },
+          "error": { "type": "string", "required": false },
+          "error_description": { "type": "string", "required": false },
+          "error_uri": { "type": "string", "required": false }
         }
       }
     }
@@ -1743,8 +1746,11 @@
     "request": {
       "query": {
         "properties": {
-          "code": { "type": "string", "required": true },
-          "state": { "type": "string", "required": true }
+          "code": { "type": "string", "required": false },
+          "state": { "type": "string", "required": true },
+          "error": { "type": "string", "required": false },
+          "error_description": { "type": "string", "required": false },
+          "error_uri": { "type": "string", "required": false }
         }
       }
     }

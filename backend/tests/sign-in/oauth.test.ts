@@ -277,6 +277,23 @@ describe('OAuth Authentication', async () => {
       await expectRefusal({ response: res, error }, 400, 'oauth_failed');
     });
 
+    // A provider denial carries `error` and `state` but no `code` (RFC 6749 §4.1.2.1).
+    it.each([
+      { name: 'github', fn: githubCallback },
+      { name: 'google', fn: googleCallback },
+      { name: 'microsoft', fn: microsoftCallback },
+    ])('refuses a $name denial that arrives without a code as oauth_failed', async ({ fn }) => {
+      const state = 'mock-state-denied';
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: 'verifier' }));
+
+      const { response: res, error } = await call(fn, {
+        query: { state, error: 'access_denied', error_description: 'User denied access' },
+        headers: defaultHeaders,
+      });
+
+      await expectRefusal({ response: res, error }, 400, 'oauth_failed');
+    });
+
     it('should reject callback with missing code', async () => {
       const state = 'mock-state-test';
       mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'auth', codeVerifier: undefined }));

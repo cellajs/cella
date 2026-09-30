@@ -54,13 +54,7 @@ const authOAuthRoutes = {
     tags: ['auth', 'cella'],
     summary: 'Callback for GitHub',
     description: 'Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.',
-    request: {
-      query: oauthCallbackQuerySchema.extend({
-        error: z.string().optional(),
-        error_description: z.string().optional(),
-        error_uri: z.string().optional(),
-      }),
-    },
+    request: { query: oauthCallbackQuerySchema },
     responses: {
       302: {
         description: 'Redirect to frontend',

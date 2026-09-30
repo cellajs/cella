@@ -108,13 +108,14 @@ app.openapi(authOAuthRoutes.githubCallback, async (ctx) => {
 });
 
 app.openapi(authOAuthRoutes.googleCallback, async (ctx) => {
-  const { state, code } = ctx.req.valid('query');
+  const { state, code, error } = ctx.req.valid('query');
   const strategy = 'google' as EnabledOAuthProvider;
 
   // Verify cookie by `state` (CSRF protection) & PKCE validation
   const cookiePayload = await readOAuthCookie(ctx, state);
 
-  if (!code || !cookiePayload?.codeVerifier) throw new AppError(401, 'invalid_state', 'error', { meta: { strategy } });
+  if (error || !code) throw new AppError(400, 'oauth_failed', 'error', { meta: { strategy } });
+  if (!cookiePayload?.codeVerifier) throw new AppError(401, 'invalid_state', 'error', { meta: { strategy } });
 
   try {
     // id_token claims, `nonce` binding, and signature are validated inside the provider client.
@@ -141,13 +142,14 @@ app.openapi(authOAuthRoutes.googleCallback, async (ctx) => {
 });
 
 app.openapi(authOAuthRoutes.microsoftCallback, async (ctx) => {
-  const { state, code } = ctx.req.valid('query');
+  const { state, code, error } = ctx.req.valid('query');
   const strategy = 'microsoft' as EnabledOAuthProvider;
 
   // Verify cookie by `state` (CSRF protection) & PKCE validation
   const cookiePayload = await readOAuthCookie(ctx, state);
 
-  if (!code || !cookiePayload?.codeVerifier) throw new AppError(401, 'invalid_state', 'error', { meta: { strategy } });
+  if (error || !code) throw new AppError(400, 'oauth_failed', 'error', { meta: { strategy } });
+  if (!cookiePayload?.codeVerifier) throw new AppError(401, 'invalid_state', 'error', { meta: { strategy } });
 
   try {
     // id_token claims, `nonce` binding, and signature are validated inside the provider client.
