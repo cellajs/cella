@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { type DbOrTx, baseDb as db, type Tx } from '#/db/db';
-import { findRemainingMfaMethods } from '#/modules/auth/auth-queries';
+import { heldFactors } from '#/modules/auth/auth-queries';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { verifyPasskeyAssertion } from '#/modules/auth/passkeys/helpers/passkey';
 import { issueCookieToken, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
@@ -90,8 +90,8 @@ export const mfaFactorRules = {
     const missing = (['passkey', 'totp'] as const).find((method) => !appConfig.enabledAuthStrategies.includes(method));
     if (missing) throw new AppError(400, 'forbidden_strategy', 'warn', { meta: { strategy: missing } });
 
-    const { passkeys, totps } = await findRemainingMfaMethods({ var: { db: tx } }, { userId });
-    if (!passkeys.length || !totps.length) throw new AppError(400, 'mfa_factors_required', 'warn');
+    const { passkey, totp } = await heldFactors({ var: { db: tx } }, userId);
+    if (!passkey || !totp) throw new AppError(400, 'mfa_factors_required', 'warn');
   },
 
   /** Run after deleting a factor, in the same `locked` transaction: refuses when MFA is on and a method is now gone. */
@@ -102,7 +102,7 @@ export const mfaFactorRules = {
       .where(eq(usersTable.id, userId));
     if (!user?.mfaRequired) return;
 
-    const { passkeys, totps } = await findRemainingMfaMethods({ var: { db: tx } }, { userId });
-    if (!passkeys.length || !totps.length) throw new AppError(400, 'mfa_factor_in_use', 'warn');
+    const { passkey, totp } = await heldFactors({ var: { db: tx } }, userId);
+    if (!passkey || !totp) throw new AppError(400, 'mfa_factor_in_use', 'warn');
   },
 };

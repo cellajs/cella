@@ -1,4 +1,4 @@
-import { and, eq, getColumns, isNull } from 'drizzle-orm';
+import { and, eq, getColumns, isNull, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
@@ -19,23 +19,16 @@ export const findCredentialIdsByUser = async (ctx: DbContext, { userId }: FindCr
     .where(eq(passkeysTable.userId, userId));
 };
 
-interface FindUserMfaOpts {
-  userId: string;
-}
-
-export const findExistingTotp = async (ctx: DbContext, { userId }: FindUserMfaOpts) => {
+/**
+ * Which second factors the user holds, in one query. Inside `mfaFactorRules.locked`, pass its transaction so the read
+ * sees the change made there.
+ */
+export const heldFactors = async (ctx: DbContext, userId: string) => {
   const { db } = ctx.var;
-  const [existing] = await db.select().from(totpsTable).where(eq(totpsTable.userId, userId)).limit(1);
-  return existing;
-};
-
-export const findRemainingMfaMethods = async (ctx: DbContext, { userId }: FindUserMfaOpts) => {
-  const { db } = ctx.var;
-  const [passkeys, totps] = await Promise.all([
-    db.select().from(passkeysTable).where(eq(passkeysTable.userId, userId)),
-    db.select().from(totpsTable).where(eq(totpsTable.userId, userId)),
-  ]);
-  return { passkeys, totps };
+  const { rows } = await db.execute<{ passkey: boolean; totp: boolean }>(sql`
+    select exists (select 1 from ${passkeysTable} where ${passkeysTable.userId} = ${userId}) as passkey,
+      exists (select 1 from ${totpsTable} where ${totpsTable.userId} = ${userId}) as totp`);
+  return rows[0];
 };
 
 interface InsertTotpOpts {
