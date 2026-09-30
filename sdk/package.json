@@ -4,11 +4,11 @@
   "description": "Auto-generated TypeScript SDK from the backend OpenAPI specification",
   "type": "module",
   "scripts": {
-    "dev": "node --import ../shared/scripts/register.mjs src/generate-sdk.ts --watch",
-    "watch": "node --import ../shared/scripts/register.mjs src/generate-sdk.ts --watch",
+    "dev": "tsx src/generate-sdk.ts --watch",
+    "watch": "tsx src/generate-sdk.ts --watch",
     "ts": "cd .. && tsgo -p sdk/tsconfig.json --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics",
-    "generate:sdk": "node --import ../shared/scripts/register.mjs src/generate-sdk.ts"
+    "generate:sdk": "tsx src/generate-sdk.ts"
   },
   "exports": {
     ".": "./gen/index.ts",

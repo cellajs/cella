@@ -47,7 +47,7 @@ const isDev = appConfig.mode === 'development';
  * Libraries only a dynamic import reaches, each with the chunk it is routed to. Chunk grouping reads
  * this twice: the per-package backstop excludes them so it cannot claim one, and the groups after it
  * claim them last. Adding a library here is all that is needed for both; naming it in only one place
- * is what puts it on the boot path. `pnpm deps:bundle:check` asserts the result.
+ * is what puts it on the boot path. The `pnpm deps:bundle:analyze` treemap shows the result.
  */
 const FEATURE_LIBS: [name: string, packages: RegExp][] = [
   ['editor', /^(@blocknote|@tiptap|@handlewithcare|prosemirror-[\w-]+|yjs|y-protocols|y-prosemirror|lib0)/],
@@ -159,7 +159,7 @@ const viteConfig = {
             // matches and puts them in its own chunk, and a later group's `test` does not protect a
             // module from that, so the only defence is to claim a package before a heavier group can
             // reach it. Three bands follow, and breaking the order puts a feature library on the
-            // boot path; `pnpm deps:bundle --assert-lazy` fails the build when that happens.
+            // boot path.
             //   1. Boot-time third-party code.
             //   2. A backstop claiming every remaining package, one chunk each.
             //   3. Feature libraries last, so they can only capture what nothing else claimed.

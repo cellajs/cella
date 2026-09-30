@@ -12,7 +12,7 @@
   "scripts": {
     "start": "node dist/cdc-worker.js",
     "start:dev": "tsx src/cdc-worker.ts",
-    "dev": "cross-env NODE_ENV=development node --import ../shared/scripts/register.mjs --env-file=../backend/.env --watch src/cdc-worker.ts",
+    "dev": "cross-env NODE_ENV=development tsx --env-file=../backend/.env --watch src/cdc-worker.ts",
     "build": "cross-env NODE_ENV=production tsup",
     "ts": "tsgo --pretty",
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics",

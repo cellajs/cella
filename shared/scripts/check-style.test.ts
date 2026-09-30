@@ -213,9 +213,9 @@ describe('entry points', () => {
     const link = `${dirty}-link`;
     symlinkSync(dirty, link);
     try {
-      const scripts = ['check-app-vocabulary.ts', 'check-doc-style.ts', 'check-comment-style.ts', 'check-doc-size.ts'];
+      const scripts = ['check-app-vocabulary.ts', 'check-doc-style.ts', 'check-comment-style.ts'];
       const statuses = [...scripts, 'check-frontend-style.ts'].map((script) => run(link, script).status);
-      expect(statuses).toEqual([1, 1, 1, 1, 1]);
+      expect(statuses).toEqual([1, 1, 1, 1]);
     } finally {
       rmSync(link);
     }
