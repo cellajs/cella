@@ -2,6 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
+import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { countDomainsByTenant, findTenantById, updateTenant } from '#/modules/tenants/tenants-queries';
 import type { updateTenantBodySchema } from '#/modules/tenants/tenants-schema';
 import { log } from '#/utils/logger';
@@ -14,13 +15,13 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
 
   const { restrictions: restrictionsUpdate, ...otherUpdates } = updates;
 
-  // Deep-merge restrictions so partial updates don't clobber existing values
+  // Deep-merge restrictions so partial updates don't clobber existing values; a stored row gains missing fields first
+  const current = normalizeRestrictions(existing.restrictions);
   const mergedRestrictions = restrictionsUpdate
     ? {
-        quotas: { ...existing.restrictions.quotas, ...restrictionsUpdate.quotas },
-        rateLimits: { ...existing.restrictions.rateLimits, ...restrictionsUpdate.rateLimits },
-        allowUnregisteredClients:
-          restrictionsUpdate.allowUnregisteredClients ?? existing.restrictions.allowUnregisteredClients,
+        quotas: { ...current.quotas, ...restrictionsUpdate.quotas },
+        rateLimits: { ...current.rateLimits, ...restrictionsUpdate.rateLimits },
+        allowUnregisteredClients: restrictionsUpdate.allowUnregisteredClients ?? current.allowUnregisteredClients,
       }
     : undefined;
 
@@ -36,5 +37,5 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
   log.info('Tenant updated', { tenantId, updates });
 
   const domainsCount = await countDomainsByTenant(ctx, { targetTenantId: tenantId });
-  return { ...tenant, domainsCount };
+  return { ...tenant, restrictions: normalizeRestrictions(tenant.restrictions), domainsCount };
 }

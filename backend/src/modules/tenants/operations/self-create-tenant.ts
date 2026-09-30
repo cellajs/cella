@@ -1,6 +1,7 @@
 import { and, eq, notInArray } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { organizationsTable } from '#/modules/organization/organization-db';
+import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { createTenantForUser } from '#/modules/tenants/tenant-service';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { countDomainsByTenant } from '#/modules/tenants/tenants-queries';
@@ -24,7 +25,7 @@ export async function selfCreateTenantOp(ctx: UserContext, input: SelfCreateTena
 
   if (orphanTenant) {
     const domainsCount = await countDomainsByTenant(ctx, { targetTenantId: orphanTenant.id });
-    return { ...orphanTenant, domainsCount };
+    return { ...orphanTenant, restrictions: normalizeRestrictions(orphanTenant.restrictions), domainsCount };
   }
 
   const tenant = await createTenantForUser(db, {
