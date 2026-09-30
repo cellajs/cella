@@ -138,6 +138,35 @@ describe('changeInfiniteQueryData', () => {
     expect(readInfinite(newestFirstKey)).toBe(before);
   });
 
+  it('create miss: inserts a newest-first row on the first page only', () => {
+    twoPages();
+
+    changeInfiniteQueryData(newestFirstKey, rows('x'), 'create');
+
+    const after = readInfinite(newestFirstKey);
+    expect(after?.pages.map((page) => ids(page.items))).toEqual([['x', 'a', 'b'], ['c']]);
+    expect(after?.pages.map((page) => page.total)).toEqual([4, 4]);
+  });
+
+  it('create miss: appends an oldest-first row to the last page only', () => {
+    queryClient.setQueryData(oldestFirstKey, infinite([rows('a', 'b'), rows('c')], 3));
+
+    changeInfiniteQueryData(oldestFirstKey, rows('x'), 'create');
+
+    expect(readInfinite(oldestFirstKey)?.pages.map((page) => ids(page.items))).toEqual([
+      ['a', 'b'],
+      ['c', 'x'],
+    ]);
+  });
+
+  it('create hit: keeps the data object when the row is cached on a later page', () => {
+    const before = twoPages();
+
+    changeInfiniteQueryData(newestFirstKey, rows('c'), 'create');
+
+    expect(readInfinite(newestFirstKey)).toBe(before);
+  });
+
   it('update hit: replaces the row on its page and keeps the other page, the totals and page params', () => {
     const before = twoPages();
 

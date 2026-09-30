@@ -47,8 +47,17 @@ export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], a
           ? -items.filter(({ id }) => existingIds.has(id)).length
           : 0;
 
-    const pages = data.pages.map((page) => ({
-      items: updateArrayItems(page.items, items, action, insertOrder),
+    // New rows enter one page: the first when newest come first, else the last.
+    const insertPage = insertOrder === 'asc' ? data.pages.length - 1 : 0;
+    const newItems = items.filter(({ id }) => !existingIds.has(id));
+
+    const pages = data.pages.map((page, index) => ({
+      items:
+        action !== 'create'
+          ? updateArrayItems(page.items, items, action)
+          : index === insertPage
+            ? updateArrayItems(page.items, newItems, action, insertOrder)
+            : page.items,
       total: page.total + totalAdjustment,
     }));
 
