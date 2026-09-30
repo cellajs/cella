@@ -3,6 +3,7 @@ import i18n from 'i18next';
 import { BoxIcon, PencilIcon, ShieldIcon, TrashIcon, UserRoundIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { Organization } from 'sdk';
 import { hierarchy, isChannel } from 'shared';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
@@ -11,12 +12,22 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { PopConfirm } from '~/modules/common/popconfirm';
+import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
+import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
-import { openUpdateSheet } from '~/modules/organization/table/update-row';
 import type { EnrichedOrganization } from '~/modules/organization/types';
+import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
+
+export const openUpdateSheet = (organization: Organization, triggerRef: TriggerRef) =>
+  openEditSheet({
+    id: 'update-organization',
+    resource: 'c:organization',
+    triggerRef,
+    children: <UpdateOrganizationForm organization={organization} sheet />,
+  });
 
 export const useColumns = () => {
   const { t } = useTranslation();

@@ -7,12 +7,23 @@ import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
+import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
+import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { DeleteUsers } from '~/modules/user/delete-users';
 import { ImpersonateRow } from '~/modules/user/table/impersonate-row';
-import { openUpdateUserSheet } from '~/modules/user/table/update-row';
 import type { BaseUser } from '~/modules/user/types';
+import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { UserCell } from '~/modules/user/user-cell';
 import { dateShort } from '~/utils/date-short';
+
+export const openUpdateUserSheet = (user: BaseUser, triggerRef: TriggerRef) =>
+  openEditSheet({
+    id: 'update-user',
+    resource: 'c:user',
+    triggerRef,
+    className: 'container',
+    children: <UpdateUserForm user={user} sheet />,
+  });
 
 export const useColumns = () => {
   const { t } = useTranslation();
