@@ -2,9 +2,10 @@
 
 | Script | Purpose | Invocation |
 | --- | --- | --- |
-| `check-doc-style.ts` | CI guard for concrete terminology in authored Markdown and MDX; exits 1 with file and line diagnostics when prose should name a more precise rule, constraint, guarantee, requirement, contract, precondition, or assumption. | `pnpm docs:style`. `pnpm prose:check` runs `pnpm style` (terminology + documentation + all comment rules including placement), the blocking entry point for CI and `pnpm check`. |
-| `check-app-vocabulary.ts` | Enforces the template/app vocabulary rule in `cella/AGENTS.md`. | `pnpm vocabulary:check` |
-| `prose-rules.ts` | The rules the comment and doc checks share. An app skips paths in both with `proseExclude` in `shared/config/vocabulary-allowlist.ts`. | Imported by both checks |
+| `check-style.ts` | The style check: one pass over the repo files, each finding printed as `file:line:column [rule] "term": message`. Blocking in `pnpm lint`, `pnpm check` and CI. | `pnpm style [paths…]`; `pnpm style:audit` also lists review markers, which never fail. |
+| `check-app-vocabulary.ts` | Template/app vocabulary and product-name rules from `cella/AGENTS.md`. An app adds exceptions, and `proseExclude` prefixes for the prose rules, in `shared/config/vocabulary-allowlist.ts`. | Run by `check-style.ts` |
+| `prose-rules.ts` | The prose rules: every rule reads source comments (`check-comment-style.ts`, which also checks comment placement, and `source-comments.ts`), `docs` rules also Markdown and MDX (`check-doc-style.ts`). | Run by `check-style.ts` |
+| `check-frontend-style.ts` | Frontend conventions Biome cannot express: named function components, no `FC`, zustand stores read through a selector. | Run by `check-style.ts` |
 | `check-lenses.ts` | Guards the schema-evolution lens system in `shared/src/schema-evolution/`; exits 1 on any violation ([CI guards](../../cella/SCHEMA_EVOLUTION.md#ci-guards)). | `pnpm --filter shared lens:check` |
 | `wait-backend.ts` | Waits for the backend health endpoint. | `tsx shared/scripts/wait-backend.ts [-i interval] [-t timeout]` |
 | Bundle treemap (`frontend/vite.config.ts`) | Per-module view of the shipped frontend chunks, to check which chunk holds a package. | `pnpm deps:bundle:analyze` builds with `ANALYZE=true`, which loads `rollup-plugin-visualizer` and writes `frontend/stats/bundle.html`. |

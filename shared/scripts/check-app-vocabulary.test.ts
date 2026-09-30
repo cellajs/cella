@@ -42,11 +42,9 @@ describe('findAppVocabularyFindings', () => {
     expect(findings).toEqual([
       {
         file: `src/${legacyTerm}-config.ts`,
-        line: 0,
-        column: 5,
-        term: legacyTerm,
-        location: 'path',
         rule: 'source-control-term',
+        term: legacyTerm,
+        message: 'use template/app terminology',
       },
     ]);
   });

@@ -1,33 +1,25 @@
 /**
  * Enforces frontend conventions Biome cannot express reliably. Components are named function declarations, also
  * inside wrappers such as `memo`; component values are typed `ComponentType<Props>`, never `FC`; zustand stores are
- * read through a selector, never a bare `useStore()` call. Export docs follow the cella/AGENTS.md comment budget.
+ * read through a selector, never a bare `useStore()` call.
  */
 import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import ts from 'typescript';
-import { isMain, isRequested, type Output, repoFiles, repoRoot, writeFindings } from './repo-files.ts';
+import { type Finding, repoRoot } from './repo-files.ts';
 import { parseSource } from './source-comments.ts';
 
-const failures: string[] = [];
-const storeNames = new Set<string>();
+type Report = (node: ts.Node, rule: string, message: string) => void;
 
-function trackedFrontendFiles(): string[] {
-  return repoFiles()
-    .filter((file) => file.startsWith('frontend/src/') && /\.(?:ts|tsx)$/.test(file))
-    .filter((file) => !file.includes('.gen.'))
-    .filter((file) => !file.includes('/content/'))
-    .filter((file) => !file.includes('/stories/'))
-    .filter((file) => !/\.(?:stories|test)\.tsx?$/.test(file));
-}
-
-function lineAndColumn(sourceFile: ts.SourceFile, offset: number): string {
-  const { line, character } = sourceFile.getLineAndCharacterOfPosition(offset);
-  return `${line + 1}:${character + 1}`;
-}
-
-function report(sourceFile: ts.SourceFile, node: ts.Node, rule: string, message: string): void {
-  failures.push(`${sourceFile.fileName}:${lineAndColumn(sourceFile, node.getStart(sourceFile))} [${rule}] ${message}`);
+/** App sources under frontend/src, outside generated files, content, stories and tests. */
+function isFrontendSource(file: string): boolean {
+  return (
+    /^frontend\/src\/.*\.tsx?$/.test(file) &&
+    !file.includes('.gen.') &&
+    !file.includes('/content/') &&
+    !file.includes('/stories/') &&
+    !/\.(?:stories|test)\.tsx?$/.test(file)
+  );
 }
 
 function containsJsx(node: ts.Node): boolean {
@@ -44,19 +36,18 @@ function containsJsx(node: ts.Node): boolean {
   return found;
 }
 
-function checkReactComponentType(sourceFile: ts.SourceFile, node: ts.Node): void {
+function checkReactComponentType(sourceFile: ts.SourceFile, node: ts.Node, report: Report): void {
   if (!ts.isTypeReferenceNode(node)) return;
   const name = node.typeName.getText(sourceFile);
   if (!['FC', 'FunctionComponent', 'React.FC', 'React.FunctionComponent'].includes(name)) return;
   report(
-    sourceFile,
     node,
     'react-component-type',
     'declare components with functions; use ComponentType<Props> when a component is stored as a value',
   );
 }
 
-function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStatement): void {
+function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStatement, report: Report): void {
   if (extname(sourceFile.fileName) !== '.tsx') return;
   for (const declaration of node.declarationList.declarations) {
     const name = ts.isIdentifier(declaration.name) ? declaration.name.text : null;
@@ -65,7 +56,6 @@ function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStat
 
     if (ts.isArrowFunction(initializer)) {
       report(
-        sourceFile,
         declaration,
         'component-declaration',
         `${name} is an ordinary component; use a named function declaration`,
@@ -80,7 +70,6 @@ function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStat
     );
     if (!wrappedRender || (ts.isFunctionExpression(wrappedRender) && wrappedRender.name?.text === name)) continue;
     report(
-      sourceFile,
       wrappedRender,
       'component-declaration',
       `${name} is wrapped by a component helper; use a named function expression`,
@@ -88,7 +77,7 @@ function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStat
   }
 }
 
-function collectStores(sourceFile: ts.SourceFile): void {
+function collectStores(sourceFile: ts.SourceFile, stores: Set<string>): void {
   const createNames = new Set<string>();
   for (const statement of sourceFile.statements) {
     if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
@@ -105,49 +94,45 @@ function collectStores(sourceFile: ts.SourceFile): void {
       let callee: ts.Node | undefined = declaration.initializer;
       while (callee && ts.isCallExpression(callee)) callee = callee.expression;
       if (!callee || !ts.isIdentifier(callee) || !createNames.has(callee.text)) continue;
-      if (ts.isIdentifier(declaration.name)) storeNames.add(declaration.name.text);
+      if (ts.isIdentifier(declaration.name)) stores.add(declaration.name.text);
     }
   }
 }
 
-function checkStoreSelector(sourceFile: ts.SourceFile, node: ts.Node): void {
+function checkStoreSelector(node: ts.Node, stores: Set<string>, report: Report): void {
   if (!ts.isCallExpression(node) || node.arguments.length > 0 || !ts.isIdentifier(node.expression)) return;
   const name = node.expression.text;
-  if (!storeNames.has(name)) return;
-  report(
-    sourceFile,
-    node,
-    'store-selector',
-    `${name}() subscribes to every field; select the values this component reads`,
-  );
+  if (!stores.has(name)) return;
+  report(node, 'store-selector', `${name}() subscribes to every field; select the values this component reads`);
 }
 
-/** Checks the frontend files under `roots` (all when empty); stores are collected from every frontend file. */
-export function runFrontendCheck(roots: string[], output: Output = console): number {
-  failures.length = 0;
-  storeNames.clear();
-  const sourceFiles = trackedFrontendFiles().map((file) =>
-    parseSource(file, readFileSync(join(repoRoot, file), 'utf8')),
-  );
-  for (const sourceFile of sourceFiles) collectStores(sourceFile);
-
-  for (const sourceFile of sourceFiles.filter((sourceFile) => isRequested(sourceFile.fileName, roots))) {
-    for (const statement of sourceFile.statements) {
-      if (ts.isVariableStatement(statement)) checkVariableStatement(sourceFile, statement);
-    }
-    sourceFile.forEachChild(function visit(node) {
-      checkReactComponentType(sourceFile, node);
-      checkStoreSelector(sourceFile, node);
-      node.forEachChild(visit);
-    });
+/** The zustand stores the frontend creates, read from every frontend file so a path-limited run still knows them. */
+export function frontendStores(files: string[]): Set<string> {
+  const stores = new Set<string>();
+  for (const file of files.filter(isFrontendSource)) {
+    const source = readFileSync(join(repoRoot, file), 'utf8');
+    if (source.includes('zustand')) collectStores(parseSource(file, source), stores);
   }
-
-  writeFindings(output.error, '[frontend:style]', 'violation(s)', failures);
-  if (failures.length > 0) return 1;
-  output.log(
-    '[frontend:style] OK, component declarations, component types and store reads follow the frontend conventions.',
-  );
-  return 0;
+  return stores;
 }
 
-if (isMain(import.meta.url)) process.exitCode = runFrontendCheck(process.argv.slice(2));
+/** Convention findings in one frontend file; `stores` comes from `frontendStores`. */
+export function frontendFindings(file: string, source: string, stores: Set<string>): Finding[] {
+  if (!isFrontendSource(file)) return [];
+  const sourceFile = parseSource(file, source);
+  const findings: Finding[] = [];
+  const report: Report = (node, rule, message) => {
+    const { line, character } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
+    findings.push({ file, line: line + 1, column: character + 1, rule, message });
+  };
+
+  for (const statement of sourceFile.statements) {
+    if (ts.isVariableStatement(statement)) checkVariableStatement(sourceFile, statement, report);
+  }
+  sourceFile.forEachChild(function visit(node) {
+    checkReactComponentType(sourceFile, node, report);
+    checkStoreSelector(node, stores, report);
+    node.forEachChild(visit);
+  });
+  return findings;
+}

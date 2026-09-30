@@ -1,119 +1,51 @@
 import { describe, expect, it } from 'vitest';
-import {
-  findAgentVocabularyFindings,
-  findDocStyleViolations,
-  findEmDashViolations,
-  formatAgentVocabularyFinding,
-  formatDocStyleViolation,
-  formatEmDashViolation,
-} from './check-doc-style.ts';
+import { docFindings } from './check-doc-style.ts';
 
 const singular = ['invar', 'iant'].join('');
-const plural = `${singular}s`;
+const dash = '—';
+const found = (file: string, source: string) =>
+  docFindings(file, source).map(({ line, column, rule, term, review }) => ({ line, column, rule, term, review }));
 
-describe('findDocStyleViolations', () => {
-  it('finds singular, plural, case, hyphenated, and code-example uses', () => {
-    const source = [`# ${singular}`, '', plural.toUpperCase(), '', `source-${singular}`, '', `\`${singular}\``].join(
-      '\n',
-    );
+describe('docFindings', () => {
+  it('finds the concrete-language term in any case or plural, never inside longer words', () => {
+    const source = [`# ${singular}`, `${singular}s`.toUpperCase(), `source-${singular}`, 'invariance, invariantly'];
 
-    expect(findDocStyleViolations('guide.md', source)).toEqual([
-      { file: 'guide.md', line: 1, column: 3, term: singular },
-      { file: 'guide.md', line: 3, column: 1, term: plural.toUpperCase() },
-      { file: 'guide.md', line: 5, column: 8, term: singular },
-      { file: 'guide.md', line: 7, column: 2, term: singular },
+    expect(found('guide.md', source.join('\n')).map(({ line, column, term }) => ({ line, column, term }))).toEqual([
+      { line: 1, column: 3, term: singular },
+      { line: 2, column: 1, term: `${singular}s`.toUpperCase() },
+      { line: 3, column: 8, term: singular },
     ]);
   });
 
-  it('reports ordinary prose with an actionable location and alternatives', () => {
-    const violation = findDocStyleViolations('guide.md', `This ${singular} matters.`)[0]!;
-
-    expect(formatDocStyleViolation(violation)).toBe(
-      [
-        `guide.md:1:6 replace "${singular}" with a precise rule, constraint, guarantee,`,
-        'requirement, contract, precondition, or assumption',
-      ].join(' '),
-    );
-  });
-
-  it('does not match longer neighboring words', () => {
-    expect(findDocStyleViolations('guide.mdx', 'invariance and invariantly')).toEqual([]);
-  });
-});
-
-describe('findEmDashViolations', () => {
-  const dash = '\u2014';
-
-  it('reports em dashes in prose with an actionable location', () => {
-    const source = ['# Title', '', `Sync is lazy ${dash} rows arrive on demand.`].join('\n');
-    const violations = findEmDashViolations('guide.md', source);
-
-    expect(violations).toEqual([{ file: 'guide.md', line: 3, column: 14 }]);
-    expect(formatEmDashViolation(violations[0]!)).toBe(
-      'guide.md:3:14 em dash (U+2014): split the sentence, use a colon, or drop the clause',
-    );
-  });
-
-  it('ignores inline and fenced code so a rule may quote the character', () => {
-    const source = [`Never use \`${dash}\` in text.`, '', '```', `a ${dash} b`, '```'].join('\n');
-
-    expect(findEmDashViolations('guide.md', source)).toEqual([]);
-  });
-});
-
-describe('findAgentVocabularyFindings', () => {
-  it('requires concrete language for load-bearing metaphors', () => {
-    const source = ['This is load-bearing.', 'That is load bearing.'].join('\n');
-
-    expect(findAgentVocabularyFindings('guide.md', source)).toEqual([
-      {
-        file: 'guide.md',
-        line: 1,
-        column: 9,
-        term: 'load-bearing',
-        rule: 'load-bearing',
-        message: 'name the dependency, requirement, or failure consequence directly',
-      },
-      {
-        file: 'guide.md',
-        line: 2,
-        column: 9,
-        term: 'load bearing',
-        rule: 'load-bearing',
-        message: 'name the dependency, requirement, or failure consequence directly',
-      },
-    ]);
-  });
-
-  it('ignores inline code, fenced code, and link targets', () => {
+  it('reads prose only: inline code, fenced code and link targets are masked', () => {
     const source = [
-      '`load-bearing` is discussed here.',
+      `Sync is lazy ${dash} rows arrive on demand.`,
+      `Never write \`${dash}\` or \`load-bearing\`.`,
       '[reference](https://example.com/load-bearing)',
       '```text',
-      'load-bearing',
+      `${singular} ${dash} load-bearing`,
       '```',
     ].join('\n');
 
-    expect(findAgentVocabularyFindings('guide.md', source)).toEqual([]);
+    expect(found('guide.mdx', source)).toEqual([{ line: 1, column: 14, rule: 'em-dash', term: dash, review: false }]);
   });
 
-  it('reports lower-confidence vocabulary only in review mode', () => {
-    const source = 'The wiring silently surfaces a seam.';
+  it('marks lower-confidence vocabulary as review and load-bearing as required', () => {
+    const source = 'The wiring is load bearing and silently surfaces a seam.';
 
-    expect(findAgentVocabularyFindings('guide.md', source)).toEqual([]);
-    expect(findAgentVocabularyFindings('guide.md', source, 'review').map((item) => item.term)).toEqual([
-      'wiring',
-      'silently',
-      'surfaces',
-      'seam',
+    expect(found('guide.md', source).map(({ term, review }) => `${term}:${review}`)).toEqual([
+      'load bearing:false',
+      'seam:true',
+      'surfaces:true',
+      'wiring:true',
+      'silently:true',
     ]);
   });
 
-  it('formats review findings with the rule and replacement guidance', () => {
-    const finding = findAgentVocabularyFindings('guide.md', 'This lands tomorrow.', 'review')[0]!;
-
-    expect(formatAgentVocabularyFinding(finding)).toBe(
-      'guide.md:1:6 [delivery-metaphor] "lands": consider merge, deploy, store, arrive, or take effect',
-    );
+  it('skips changelogs, non-doc files, and agent wording in migration notes and infra', () => {
+    expect(found('CHANGELOG.md', `${dash} ${singular}`)).toEqual([]);
+    expect(found('guide.txt', `${dash} ${singular}`)).toEqual([]);
+    expect(found('cella/migrations/x/README.md', 'This lands load-bearing code.')).toEqual([]);
+    expect(found('infra/README.md', `A ${dash} here.`)).toHaveLength(1);
   });
 });

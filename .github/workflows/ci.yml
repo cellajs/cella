@@ -74,8 +74,8 @@ jobs:
       - name: Run Biome
         run: pnpm biome check .
 
-      - name: Run style checks (terminology / docs / comments)
-        run: pnpm prose:check
+      - name: Run style checks (terminology / docs / comments / frontend)
+        run: pnpm style
 
       - name: Run lens checks (append-only / collision / purity / wire completeness)
         run: pnpm --filter shared lens:check

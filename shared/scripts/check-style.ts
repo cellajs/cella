@@ -1,38 +1,48 @@
 /**
- * Runs the terminology, documentation, comment and frontend checks as one blocking pass. Clean sub-checks
- * collapse into a single `[style]` line; findings print their detail. Exits non-zero on any
- * finding. `pnpm check`, `pnpm lint` and CI's style step all run this same pass.
+ * The style check (`pnpm style`, also in `pnpm lint`, `pnpm check` and CI): terminology, prose rules for comments and
+ * docs, comment placement and frontend conventions in one pass. Exits non-zero on any finding. `--audit` also prints
+ * review markers, which never fail; path arguments limit the files checked.
  */
-import { runAppVocabularyCheck } from './check-app-vocabulary.ts';
-import { runCommentCheck } from './check-comment-style.ts';
-import { runDocStyleCheck } from './check-doc-style.ts';
-import { runFrontendCheck } from './check-frontend-style.ts';
-import type { Output } from './repo-files.ts';
-import { keepParses } from './source-comments.ts';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { findAppVocabularyFindings, findProductNameFindings, loadAllowlist } from './check-app-vocabulary.ts';
+import { commentFindings } from './check-comment-style.ts';
+import { docFindings } from './check-doc-style.ts';
+import { frontendFindings, frontendStores } from './check-frontend-style.ts';
+import { type Finding, formatFinding, isRequested, repoFiles, repoRoot } from './repo-files.ts';
 
-const subChecks: { label: string; run: (output: Output) => number | Promise<number> }[] = [
-  { label: 'terminology', run: (output) => runAppVocabularyCheck(undefined, output) },
-  { label: 'documentation', run: (output) => runDocStyleCheck(undefined, false, output) },
-  // `--placement` runs the required comment rules and the placement rule in one pass.
-  { label: 'comments', run: (output) => runCommentCheck(['--placement'], output) },
-  { label: 'frontend', run: (output) => runFrontendCheck([], output) },
-];
+const audit = process.argv.includes('--audit');
+const roots = process.argv.slice(2).filter((arg) => arg !== '--audit');
+const allowlist = await loadAllowlist();
+const files = repoFiles();
+const stores = frontendStores(files);
 
-// The comment check parses the frontend sources the frontend check reads next.
-keepParses('frontend/src/');
-const flagged: string[] = [];
-for (const check of subChecks) {
-  const stdout: string[] = [];
-  const stderr: string[] = [];
-  const status = await check.run({ log: (line) => stdout.push(line), error: (line) => stderr.push(line) });
-  if (status === 0) continue;
-  process.stderr.write([...stdout, ...stderr].map((line) => `${line}\n`).join(''));
-  flagged.push(check.label);
+const findings: Finding[] = [];
+for (const file of files.filter((file) => isRequested(file, roots))) {
+  const content = readFileSync(join(repoRoot, file));
+  if (content.includes(0)) continue;
+  const source = content.toString('utf8');
+  const prose = allowlist.proseExclude?.some((prefix) => file.startsWith(prefix))
+    ? []
+    : [...docFindings(file, source), ...commentFindings(file, source, audit)];
+  const inFile = [
+    ...findAppVocabularyFindings(file, source, allowlist),
+    ...findProductNameFindings(file, source),
+    ...prose,
+    ...frontendFindings(file, source, stores),
+  ];
+  findings.push(...inFile.sort((a, b) => (a.line ?? 0) - (b.line ?? 0) || (a.column ?? 0) - (b.column ?? 0)));
 }
 
-if (flagged.length === 0) {
-  console.log('[style] OK, terminology, documentation, comments and frontend code follow the required style.');
-} else {
-  console.error(`[style] ${flagged.length} area(s) failed (${flagged.join(', ')}).`);
-  process.exitCode = 1;
+function print(header: string, list: Finding[]): void {
+  console.error([header, ...list.map((finding) => `  ${formatFinding(finding)}`)].join('\n'));
 }
+
+const required = findings.filter((finding) => !finding.review);
+if (required.length > 0) print(`[style] ${required.length} finding(s):`, required);
+else console.log('[style] OK, terminology, documentation, comments and frontend code follow the required style.');
+if (audit) {
+  const review = findings.filter((finding) => finding.review);
+  print(`[style:audit] ${review.length} review marker(s):`, review);
+}
+process.exitCode = required.length > 0 ? 1 : 0;
