@@ -5,6 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 import ts from 'typescript';
+import { loadAllowlist } from './check-app-vocabulary.ts';
 import { proseRules } from './prose-rules.ts';
 import { isMain, isRequested, lineColumn, type Output, repoFiles, repoRoot, writeFindings } from './repo-files.ts';
 import { type Comment, parseSource, scriptExtensions, sourceComments } from './source-comments.ts';
@@ -16,8 +17,8 @@ const excludedPrefixes = ['backend/drizzle/', 'cella/migrations/', 'locales/', '
 const languageRules = new Set(['concrete-language', 'load-bearing']);
 const placementAdvice = 'move shared context to a README or attach a concise local constraint to a declaration';
 
-function isSource(file: string): boolean {
-  if (excludedPrefixes.some((prefix) => file.startsWith(prefix))) return false;
+function isSource(file: string, skipped: string[]): boolean {
+  if (skipped.some((prefix) => file.startsWith(prefix))) return false;
   if (file === 'infra/compose.gen.yml' || file.includes('.gen.')) return false;
   const name = basename(file);
   return sourceExtensions.has(extname(name)) || name.startsWith('Dockerfile') || name === 'Caddyfile';
@@ -86,7 +87,7 @@ function hasDirectDeclarationOwner(file: string, source: string, comment: Commen
 }
 
 /** Runs the check with CLI `args`: mode flags and root paths to limit it to. Returns the exit code. */
-export function runCommentCheck(args: string[], output: Output = console): number {
+export async function runCommentCheck(args: string[], output: Output = console): Promise<number> {
   const audit = args.includes('--audit');
   const placement = args.includes('--placement');
   const concreteLanguageOnly = args.includes('--concrete-language');
@@ -99,8 +100,9 @@ export function runCommentCheck(args: string[], output: Output = console): numbe
   const failures: string[] = [];
   const findings: string[] = [];
   const placementFailures: string[] = [];
+  const skipped = [...excludedPrefixes, ...((await loadAllowlist()).proseExclude ?? [])];
 
-  for (const file of repoFiles().filter((file) => isRequested(file, roots) && isSource(file))) {
+  for (const file of repoFiles().filter((file) => isRequested(file, roots) && isSource(file, skipped))) {
     const source = readFileSync(join(repoRoot, file), 'utf8');
     const comments = sourceComments(file, source);
     for (const comment of comments) {
@@ -141,4 +143,4 @@ export function runCommentCheck(args: string[], output: Output = console): numbe
   return 0;
 }
 
-if (isMain(import.meta.url)) process.exitCode = runCommentCheck(process.argv.slice(2));
+if (isMain(import.meta.url)) process.exitCode = await runCommentCheck(process.argv.slice(2));

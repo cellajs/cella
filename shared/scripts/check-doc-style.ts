@@ -1,6 +1,7 @@
 /** Checks authored Markdown and MDX for vocabulary that obscures the concrete rule being described. */
 import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
+import { loadAllowlist } from './check-app-vocabulary.ts';
 import { type ProseRule, proseRules } from './prose-rules.ts';
 import {
   repoRoot as defaultRepoRoot,
@@ -96,9 +97,16 @@ export function formatAgentVocabularyFinding(finding: AgentVocabularyFinding): s
 }
 
 /** Check every tracked or untracked, nonignored Markdown and MDX file in a repository. */
-export function runDocStyleCheck(repoRoot = defaultRepoRoot, audit = false, output: Output = console): number {
+export async function runDocStyleCheck(
+  repoRoot = defaultRepoRoot,
+  audit = false,
+  output: Output = console,
+): Promise<number> {
+  const skipped = (await loadAllowlist(repoRoot)).proseExclude ?? [];
   const docs = repoFiles(repoRoot)
-    .filter((file) => docExtensions.has(extname(file).toLowerCase()))
+    .filter(
+      (file) => docExtensions.has(extname(file).toLowerCase()) && !skipped.some((prefix) => file.startsWith(prefix)),
+    )
     .sort()
     .map((file) => ({ file, source: readFileSync(join(repoRoot, file), 'utf8') }));
   const report = <T>(find: (file: string, source: string) => T[], format: (item: T) => string) =>
@@ -126,5 +134,5 @@ export function runDocStyleCheck(repoRoot = defaultRepoRoot, audit = false, outp
 }
 
 if (isMain(import.meta.url)) {
-  process.exitCode = runDocStyleCheck(defaultRepoRoot, process.argv.includes('--audit'));
+  process.exitCode = await runDocStyleCheck(defaultRepoRoot, process.argv.includes('--audit'));
 }

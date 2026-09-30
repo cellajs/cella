@@ -212,3 +212,26 @@ describe('entry points', () => {
     }
   });
 });
+
+describe('app-owned prose exclusions', () => {
+  it('skip the listed path prefixes in the comment and doc checks', () => {
+    const root = makeRepo({
+      'shared/config/vocabulary-allowlist.ts':
+        "export const vocabularyAllowlist = { files: [], prefixes: [], proseExclude: ['reference/'] };\n",
+      'reference/old.ts': `// ${dash}\n`,
+      'reference/README.md': `${dash}\n`,
+      'src/new.ts': `// ${dash}\n`,
+    });
+    try {
+      expect(run(root, 'check-comment-style.ts').stderr).toBe(
+        lines(
+          '[comments:check] 1 violation(s):',
+          '  src/new.ts:1:1 [em-dash] split the sentence or remove the secondary clause',
+        ),
+      );
+      expect(run(root, 'check-doc-style.ts').status).toBe(0);
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});

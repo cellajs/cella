@@ -24,6 +24,8 @@ const markerComment = /\/\/[ \t]*fork:[^\n]*|\/\*[ \t]*fork:[\s\S]*?\*\/|<!--[ \
 export interface VocabularyAllowlist {
   files: string[];
   prefixes: string[];
+  /** Path prefixes the comment and doc checks skip, such as reference code the app keeps but does not maintain. */
+  proseExclude?: string[];
 }
 
 const templateAllowlist: VocabularyAllowlist = {
@@ -120,6 +122,7 @@ export async function loadAllowlist(repoRoot = defaultRepoRoot): Promise<Vocabul
   return {
     files: [...templateAllowlist.files, ...(app.files ?? [])],
     prefixes: [...templateAllowlist.prefixes, ...(app.prefixes ?? [])],
+    proseExclude: app.proseExclude ?? [],
   };
 }
 
