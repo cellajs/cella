@@ -2,8 +2,7 @@ import { HandGrabIcon, HandIcon, MinusIcon, PlusIcon, RefreshCwIcon, RotateCwSqu
 import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ImageViewer } from '~/modules/attachment/render/image-viewer';
-import { clampZoom, ZOOM_STEP } from '~/modules/attachment/render/image-zoom';
+import { usePanZoom } from '~/modules/attachment/render/use-pan-zoom';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
@@ -49,32 +48,9 @@ export function ReactPanZoom({
   backdropDismiss = false,
 }: RenderImageProps) {
   const { t } = useTranslation();
-  const [dx, setDx] = useState(0);
-  const [dy, setDy] = useState(0);
-
-  const [zoom, setZoomState] = useState(1);
-  // Every input (buttons, wheel, trackpad pinch) goes through the same clamp.
-  const setZoom = (next: number) => setZoomState(clampZoom(next));
-  const [rotation, setRotation] = useState(0);
   // On by default when no onPanStateToggle is passed.
   const [panState, setPanState] = useState(!onPanStateToggle);
-
-  // The image fits its container via CSS (object-contain), so zoom 1 is the natural fit.
-  const resetAll = () => {
-    setDx(0);
-    setDy(0);
-    setZoom(1);
-    setRotation(0);
-  };
-
-  const zoomIn = () => setZoom(zoom + ZOOM_STEP);
-  const zoomOut = () => setZoom(zoom - ZOOM_STEP);
-  const rotateRight = () => setRotation((prevRotation) => (prevRotation === 3 ? 0 : prevRotation + 1));
-
-  const onPan = (dx: number, dy: number) => {
-    setDx(dx);
-    setDy(dy);
-  };
+  const { rotation, panProps, layerStyle, zoomIn, zoomOut, rotateRight, reset } = usePanZoom(panState);
 
   return (
     <>
@@ -113,34 +89,30 @@ export function ReactPanZoom({
 
           <ControlButton
             tooltipContent={t('c:reset')}
-            onClick={resetAll}
+            onClick={reset}
             icon={<RefreshCwIcon className="icon-sm" />}
             className="rounded-r-md"
           />
         </div>
       )}
 
-      <ImageViewer
+      <div
         className={cn('flex h-full w-full items-center justify-center', backdropDismiss && 'pointer-events-none')}
-        zoom={zoom}
-        setZoom={setZoom}
-        enablePan={panState}
-        pandx={dx}
-        pandy={dy}
-        onPan={onPan}
-        rotation={rotation}
+        {...panProps}
       >
-        <img
-          style={{ transform: `rotate(${rotation * 90}deg)` }}
-          className={cn(
-            imageClassName,
-            'object-contain',
-            backdropDismiss ? 'pointer-events-auto max-h-full max-w-full' : 'h-full w-full',
-          )}
-          src={image}
-          alt={alt}
-        />
-      </ImageViewer>
+        <div className="flex h-full w-full items-center justify-center" style={layerStyle}>
+          <img
+            style={{ transform: `rotate(${rotation * 90}deg)` }}
+            className={cn(
+              imageClassName,
+              'object-contain',
+              backdropDismiss ? 'pointer-events-auto max-h-full max-w-full' : 'h-full w-full',
+            )}
+            src={image}
+            alt={alt}
+          />
+        </div>
+      </div>
     </>
   );
 }
