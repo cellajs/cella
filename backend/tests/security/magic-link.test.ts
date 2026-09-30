@@ -289,7 +289,8 @@ describe('magic-link sign-up', async () => {
   const requestLink = async (email: string) => {
     const { response } = await call(sendMagicLink, { body: { email }, headers: defaultHeaders });
     expect(response.status).toBe(204);
-    const rawToken = mailedLink('magicLinkUrl').token;
+    const { url, token: rawToken } = mailedLink('magicLinkUrl');
+    expect(url).toBe(`${appConfig.backendAuthUrl}/invoke-token/magic/${rawToken}`);
     return { rawToken, requestedHere: setCookiePair(response, 'magic-requested') };
   };
 

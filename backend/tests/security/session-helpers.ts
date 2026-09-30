@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm';
 import { getMe, invokeToken, sendStepUpLink } from 'sdk';
+import { appConfig } from 'shared';
 import type { SessionLostType } from 'shared/utils/session-lost';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
@@ -49,7 +50,9 @@ export async function askStepUpLink(session: TestSession, redirect?: string) {
   const call = await createAppClient();
   const asked = await call(sendStepUpLink, { body: redirect ? { redirect } : {}, headers: session.headers });
   expect(asked.response.status).toBe(204);
-  return { browser: cookiesAfter(session.cookie, asked.response), rawToken: mailedLink('stepUpUrl').token };
+  const { url, token: rawToken } = mailedLink('stepUpUrl');
+  expect(url).toBe(`${appConfig.backendAuthUrl}/invoke-token/step-up/${rawToken}`);
+  return { browser: cookiesAfter(session.cookie, asked.response), rawToken };
 }
 
 /** A click on the mailed step-up link: the mail app starts the navigation, so the Strict session cookie stays home. */

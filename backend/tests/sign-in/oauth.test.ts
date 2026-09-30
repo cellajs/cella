@@ -790,7 +790,9 @@ describe('OAuth Authentication', async () => {
 
     it('creates the account once the mailed link and the same provider account prove it (positive control)', async () => {
       await signUpCallback();
-      const opened = await openVerificationLink(mailedLink('verificationLink').token);
+      const { url, token } = mailedLink('verificationLink');
+      expect(url).toBe(`${appConfig.backendAuthUrl}/invoke-token/oauth-verification/${token}`);
+      const opened = await openVerificationLink(token);
       expect(opened.response.status).toBe(302);
       const verifyStart = new URL(opened.response.headers.get('location') ?? '');
       expect(`${verifyStart.origin}${verifyStart.pathname}`).toBe(`${appConfig.backendAuthUrl}/github`);
