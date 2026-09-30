@@ -1,33 +1,58 @@
-import { toast } from 'sonner';
+import { Toast, type ToastManager, type ToastManagerAddOptions } from '@base-ui/react/toast';
+import type { ReactNode } from 'react';
 
-/** Visual toast variants accepted by the persisted toast store. */
+/** Toast variants with their own icon. */
 export type ToastSeverity = 'success' | 'error' | 'info' | 'warning';
 
-type ToastMessage = Parameters<typeof toast>[0];
-type ToastOptions = Parameters<typeof toast>[1];
-type ToastMethod = (message: ToastMessage, options?: ToastOptions) => string | number;
+/** Base UI toast options; the message and severity come from the call. */
+export type ToastOptions = Omit<ToastManagerAddOptions<object>, 'title' | 'type'>;
 
-/** Add a stable id for string messages so repeated calls update one active toast. */
-function withMessageDeduplication(method: ToastMethod): ToastMethod {
-  return (message, options) => {
-    if (options?.id !== undefined || typeof message !== 'string') return method(message, options);
-    return method(message, { ...options, id: `cella:${message}` });
+const manager = Toast.createToastManager();
+let held: ToastManagerAddOptions<object>[] = [];
+let subscriberCount = 0;
+
+/**
+ * The manager the app's `Toaster` renders. Toasts shown before any `Toaster` subscribes (a route `beforeLoad` on
+ * first load, for instance) are held and replayed to the first subscriber, where a bare manager would drop them.
+ */
+export const toastManager: ToastManager = {
+  ...manager,
+  ' subscribe': (listener) => {
+    const unsubscribe = manager[' subscribe'](listener);
+    subscriberCount += 1;
+    for (const options of held.splice(0)) manager.add(options);
+    return () => {
+      subscriberCount -= 1;
+      unsubscribe();
+    };
+  },
+};
+
+function add(options: ToastManagerAddOptions<object>) {
+  if (subscriberCount > 0) return manager.add(options);
+  const id = options.id ?? crypto.randomUUID();
+  held.push({ ...options, id });
+  return id;
+}
+
+function close(id?: string) {
+  if (subscriberCount > 0) return manager.close(id);
+  held = id === undefined ? [] : held.filter((options) => options.id !== id);
+}
+
+/** A string message gets a stable id, so repeating it refreshes the visible toast. Errors are announced urgently. */
+function show(type?: ToastSeverity) {
+  return (message: ReactNode, options: ToastOptions = {}) => {
+    const id = options.id ?? (typeof message === 'string' ? `toast:${message}` : undefined);
+    return add({ priority: type === 'error' ? 'high' : 'low', ...options, id, title: message, type });
   };
 }
 
-const showToast = withMessageDeduplication(toast);
-
-/** Sonner-compatible toast API with Cella's duplicate-message suppression. */
-export const toaster = Object.assign(showToast, {
-  success: withMessageDeduplication(toast.success),
-  info: withMessageDeduplication(toast.info),
-  warning: withMessageDeduplication(toast.warning),
-  error: withMessageDeduplication(toast.error),
-  loading: withMessageDeduplication(toast.loading),
-  message: withMessageDeduplication(toast.message),
-  custom: toast.custom,
-  promise: toast.promise,
-  dismiss: toast.dismiss,
-  getHistory: toast.getHistory,
-  getToasts: toast.getToasts,
-}) satisfies typeof toast;
+/** Shows a toast and returns its id: `toaster(message)` plain, `toaster.<severity>(message)` with an icon. */
+export const toaster = Object.assign(show(), {
+  success: show('success'),
+  info: show('info'),
+  warning: show('warning'),
+  error: show('error'),
+  close,
+});
