@@ -1,4 +1,4 @@
-import { createXRoute } from '#/core/x-routes';
+import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { actorGuard, crossTenantGuard, relatableGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { insertEntityLock } from '#/middlewares/insert-entity-lock';
 import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
@@ -11,7 +11,6 @@ import {
 } from '#/modules/organization/organization-schema';
 import {
   batchResponseSchema,
-  errorResponseRefs,
   idsBodySchema,
   paginationSchema,
   slugIncludeQuerySchema,
@@ -24,127 +23,63 @@ import {
   mockPaginatedOrganizationsResponse,
 } from './organization-mocks';
 
-const organizationRoutes = {
-  createOrganizations: createXRoute({
-    operationId: 'createOrganizations',
+const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], {
+  createOrganizations: xRoute({
     method: 'post',
     path: '/{tenantId}/organizations',
     xGuard: [userGuard, tenantGuard],
     xRateLimiter: [insertEntityLock, bulkPointsLimiter],
-    tags: ['organizations', 'cella', 'channel'],
     summary: 'Create organizations',
     description: 'Creates one or more new organizations within a tenant.',
-    request: {
-      params: tenantOnlyParamSchema,
-      body: {
-        required: true,
-        content: { 'application/json': { schema: organizationCreateBodySchema } },
-      },
-    },
+    request: { params: tenantOnlyParamSchema, body: jsonBody(organizationCreateBodySchema) },
     responses: {
-      201: {
-        description: 'Organizations were created',
-        content: {
-          'application/json': {
-            schema: batchResponseSchema(organizationWithMembershipSchema),
-            example: mockBatchOrganizationsResponse(),
-          },
-        },
-      },
-      ...errorResponseRefs,
+      201: json(
+        'Organizations were created',
+        batchResponseSchema(organizationWithMembershipSchema),
+        mockBatchOrganizationsResponse(),
+      ),
     },
   }),
-  getOrganizations: createXRoute({
-    operationId: 'getOrganizations',
+  getOrganizations: xRoute({
     method: 'get',
     path: '/organizations',
     xGuard: [userGuard, crossTenantGuard, relatableGuard],
-    tags: ['organizations', 'cella', 'channel'],
     summary: 'Get list of organizations',
     description: 'Returns a list of organizations.',
     request: { query: organizationListQuerySchema },
     responses: {
-      200: {
-        description: 'Organizations',
-        content: {
-          'application/json': {
-            schema: paginationSchema(organizationSchema),
-            example: mockPaginatedOrganizationsResponse(),
-          },
-        },
-      },
-      ...errorResponseRefs,
+      200: json('Organizations', paginationSchema(organizationSchema), mockPaginatedOrganizationsResponse()),
     },
   }),
-  getOrganization: createXRoute({
-    operationId: 'getOrganization',
+  getOrganization: xRoute({
     method: 'get',
     path: '/{tenantId}/organizations/{id}',
     xGuard: [actorGuard, tenantGuard],
-    tags: ['organizations', 'cella', 'channel'],
     summary: 'Get organization',
     description: 'Retrieves an organization by ID within a tenant. Pass ?slug=true to resolve by slug instead.',
     request: { params: tenantIdParamSchema, query: slugIncludeQuerySchema },
-    responses: {
-      200: {
-        description: 'Organization',
-        content: { 'application/json': { schema: organizationSchema, example: mockOrganizationResponse() } },
-      },
-      ...errorResponseRefs,
-    },
+    responses: { 200: json('Organization', organizationSchema, mockOrganizationResponse()) },
   }),
-  updateOrganization: createXRoute({
-    operationId: 'updateOrganization',
+  updateOrganization: xRoute({
     method: 'put',
     path: '/{tenantId}/organizations/{id}',
     xGuard: [actorGuard, tenantGuard],
     xRateLimiter: [singlePointsLimiter],
-    tags: ['organizations', 'cella', 'channel'],
     summary: 'Update organization',
     description: 'Updates an organization within a tenant.',
-    request: {
-      params: tenantIdParamSchema,
-      body: {
-        required: true,
-        content: { 'application/json': { schema: organizationUpdateBodySchema } },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Organization was updated',
-        content: { 'application/json': { schema: organizationSchema, example: mockOrganizationResponse() } },
-      },
-      ...errorResponseRefs,
-    },
+    request: { params: tenantIdParamSchema, body: jsonBody(organizationUpdateBodySchema) },
+    responses: { 200: json('Organization was updated', organizationSchema, mockOrganizationResponse()) },
   }),
-  deleteOrganizations: createXRoute({
-    operationId: 'deleteOrganizations',
+  deleteOrganizations: xRoute({
     method: 'delete',
     path: '/{tenantId}/organizations',
     xGuard: [userGuard, tenantGuard],
     xRateLimiter: [bulkPointsLimiter],
-    tags: ['organizations', 'cella', 'channel'],
     summary: 'Delete organizations',
     description: 'Deletes one or more organizations by ID within a tenant.',
-    request: {
-      params: tenantOnlyParamSchema,
-      body: {
-        required: true,
-        content: { 'application/json': { schema: idsBodySchema() } },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Success',
-        content: {
-          'application/json': {
-            schema: batchResponseSchema(),
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
+    request: { params: tenantOnlyParamSchema, body: jsonBody(idsBodySchema()) },
+    responses: { 200: json('Success', batchResponseSchema()) },
   }),
-};
+});
 
 export { organizationRoutes };

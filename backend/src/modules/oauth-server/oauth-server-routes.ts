@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
-import { createXRoute } from '#/core/x-routes';
+import { createXRoutes, json, xRoute } from '#/core/x-routes';
 import { publicGuard } from '#/middlewares/guard';
-import { errorResponseRefs, tenantOnlyParamSchema } from '#/schemas';
+import { tenantOnlyParamSchema } from '#/schemas';
 
 /** RFC 9728 protected resource metadata: what a client reads to find the authorization server of a resource. */
 export const protectedResourceSchema = z
@@ -14,26 +14,18 @@ export const protectedResourceSchema = z
   })
   .openapi('ProtectedResourceMetadata');
 
-const oauthServerRoutes = {
-  getApiProtectedResourceMetadata: createXRoute({
+const oauthServerRoutes = createXRoutes(['oauth-server', 'cella'], {
+  getApiProtectedResourceMetadata: xRoute({
     'x-service': 'oauth',
-    operationId: 'getApiProtectedResourceMetadata',
     method: 'get',
     path: '/{tenantId}/.well-known/oauth-protected-resource',
     xGuard: [publicGuard],
-    tags: ['oauth-server', 'cella'],
     summary: 'Protected resource metadata (API)',
     description:
       'RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.',
     request: { params: tenantOnlyParamSchema },
-    responses: {
-      200: {
-        description: 'Protected resource metadata',
-        content: { 'application/json': { schema: protectedResourceSchema } },
-      },
-      ...errorResponseRefs,
-    },
+    responses: { 200: json('Protected resource metadata', protectedResourceSchema) },
   }),
-};
+});
 
 export { oauthServerRoutes };

@@ -3,10 +3,10 @@
  * @see cella/ARCHITECTURE.md
  */
 
-import { createXRoute } from '#/core/x-routes';
+import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
-import { errorResponseRefs, paginationSchema, tenantOnlyParamSchema } from '#/schemas';
+import { paginationSchema, tenantOnlyParamSchema } from '#/schemas';
 import {
   selfCreateTenantBodySchema,
   tenantListQuerySchema,
@@ -15,84 +15,37 @@ import {
   updateTenantBodySchema,
 } from './tenants-schema';
 
-export const tenantRoutes = {
-  getTenants: createXRoute({
-    operationId: 'getTenants',
+export const tenantRoutes = createXRoutes(['tenants', 'cella'], {
+  getTenants: xRoute({
     method: 'get',
     path: '/',
     xGuard: [userGuard, sysAdminGuard],
-    tags: ['tenants', 'cella'],
     summary: 'Get list of tenants',
     description: 'Returns a paginated list of tenants. System admin access required.',
     request: { query: tenantListQuerySchema },
-    responses: {
-      200: {
-        description: 'Tenants list',
-        content: {
-          'application/json': {
-            schema: paginationSchema(tenantWithOrganizationSchema),
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
+    responses: { 200: json('Tenants list', paginationSchema(tenantWithOrganizationSchema)) },
   }),
 
-  selfCreateTenant: createXRoute({
-    operationId: 'selfCreateTenant',
+  selfCreateTenant: xRoute({
     method: 'post',
     path: '/self',
     xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
-    tags: ['tenants', 'cella'],
     summary: 'Create a tenant for yourself',
     description:
       'Creates a new tenant (workspace) for the authenticated user. A user may own multiple tenants; an org-less tenant from a prior failed attempt is reused instead of creating a duplicate.',
-    request: {
-      body: {
-        required: true,
-        content: { 'application/json': { schema: selfCreateTenantBodySchema } },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Created tenant',
-        content: {
-          'application/json': {
-            schema: tenantSchema,
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
+    request: { body: jsonBody(selfCreateTenantBodySchema) },
+    responses: { 200: json('Created tenant', tenantSchema) },
   }),
 
-  updateTenant: createXRoute({
-    operationId: 'updateTenant',
+  updateTenant: xRoute({
     method: 'put',
     path: '/{tenantId}',
     xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [singlePointsLimiter],
-    tags: ['tenants', 'cella'],
     summary: 'Update a tenant',
     description: 'Updates a tenant by ID. System admin access required.',
-    request: {
-      params: tenantOnlyParamSchema,
-      body: {
-        required: true,
-        content: { 'application/json': { schema: updateTenantBodySchema } },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Updated tenant',
-        content: {
-          'application/json': {
-            schema: tenantSchema,
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
+    request: { params: tenantOnlyParamSchema, body: jsonBody(updateTenantBodySchema) },
+    responses: { 200: json('Updated tenant', tenantSchema) },
   }),
-};
+});

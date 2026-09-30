@@ -8870,8 +8870,8 @@
     "/{tenantId}/.well-known/oauth-protected-resource": {
       "get": {
         "security": [],
-        "x-service": "oauth",
         "operationId": "getApiProtectedResourceMetadata",
+        "x-service": "oauth",
         "tags": ["oauth-server", "cella"],
         "summary": "Protected resource metadata (API)",
         "description": "RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.",
@@ -11348,8 +11348,8 @@
     "/{tenantId}/{organizationId}/mcp/.well-known/oauth-protected-resource": {
       "get": {
         "security": [],
-        "x-service": "mcp",
         "operationId": "getMcpProtectedResourceMetadata",
+        "x-service": "mcp",
         "tags": ["mcp", "cella"],
         "summary": "Protected resource metadata",
         "description": "RFC 9728 metadata of this organization MCP server: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.",
@@ -11415,8 +11415,8 @@
             "oauth2": []
           }
         ],
-        "x-service": "mcp",
         "operationId": "handleMcp",
+        "x-service": "mcp",
         "tags": ["mcp", "cella"],
         "summary": "MCP endpoint",
         "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.",
@@ -13548,9 +13548,9 @@
             "cookieAuth": []
           }
         ],
+        "operationId": "getYjsToken",
         "x-service": "yjs",
         "tags": ["yjs", "cella"],
-        "operationId": "getYjsToken",
         "summary": "Get Yjs token",
         "description": "Returns an Ed25519-signed token for collaboratively editing one product entity the caller may update. It names the entity, its tenant and organization, and expires after five minutes; the Yjs relay worker verifies it with the public key alone, without a backend callback, and closes the socket when it expires.",
         "x-guard": ["userGuard", "tenantGuard", "orgGuard"],

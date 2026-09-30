@@ -1,4 +1,4 @@
-import { createXRoute } from '#/core/x-routes';
+import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { actorGuard, orgGuard, tenantGuard } from '#/middlewares/guard';
 import { productCache } from '#/middlewares/product-cache';
 import {
@@ -18,7 +18,6 @@ import {
 } from '#/modules/attachment/attachment-schema';
 import {
   batchResponseSchema,
-  errorResponseRefs,
   fullResponseQuerySchema,
   idInTenantOrgParamSchema,
   idsWithStxBodySchema,
@@ -36,9 +35,8 @@ import { getAttachmentOp } from './operations/get-attachment';
 import { getAttachmentsOp } from './operations/get-attachments';
 import { updateAttachmentOp } from './operations/update-attachment';
 
-const attachmentRoutes = {
-  getAttachments: createXRoute({
-    operationId: 'getAttachments',
+const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
+  getAttachments: xRoute({
     'x-tool': {
       enabled: true,
       description:
@@ -53,28 +51,12 @@ const attachmentRoutes = {
     xGuard: [actorGuard, tenantGuard, orgGuard],
     // Sync-driven read backpressure on the delta path (template pattern for app product lists)
     xRateLimiter: [syncReadLimiter],
-    tags: ['attachments', 'cella', 'product'],
     summary: 'Get attachments',
     description: 'Returns a paginated list of attachments for the organization.',
-    request: {
-      params: tenantOrgParamSchema,
-      query: attachmentListQuerySchema,
-    },
-    responses: {
-      200: {
-        description: 'Attachments',
-        content: {
-          'application/json': {
-            schema: paginationSchema(attachmentSchema),
-            example: mockPaginatedAttachmentsResponse(),
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
+    request: { params: tenantOrgParamSchema, query: attachmentListQuerySchema },
+    responses: { 200: json('Attachments', paginationSchema(attachmentSchema), mockPaginatedAttachmentsResponse()) },
   }),
-  createAttachments: createXRoute({
-    operationId: 'createAttachments',
+  createAttachments: xRoute({
     'x-tool': {
       enabled: true,
       description:
@@ -88,35 +70,20 @@ const attachmentRoutes = {
     path: '/',
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
-    tags: ['attachments', 'cella', 'product'],
     summary: 'Create attachments',
     description:
       'Registers one or more new attachments after client side upload. Includes metadata like name, type, and linked entity.',
-    request: {
-      params: tenantOrgParamSchema,
-      body: {
-        required: true,
-        content: { 'application/json': { schema: attachmentCreateManyStxBodySchema } },
-      },
-    },
+    request: { params: tenantOrgParamSchema, body: jsonBody(attachmentCreateManyStxBodySchema) },
     responses: {
-      200: {
-        description: 'Attachments already created (idempotent)',
-        content: {
-          'application/json': { schema: attachmentCreateResponseSchema, example: mockBatchAttachmentsResponse() },
-        },
-      },
-      201: {
-        description: 'Attachments created',
-        content: {
-          'application/json': { schema: attachmentCreateResponseSchema, example: mockBatchAttachmentsResponse() },
-        },
-      },
-      ...errorResponseRefs,
+      200: json(
+        'Attachments already created (idempotent)',
+        attachmentCreateResponseSchema,
+        mockBatchAttachmentsResponse(),
+      ),
+      201: json('Attachments created', attachmentCreateResponseSchema, mockBatchAttachmentsResponse()),
     },
   }),
-  getAttachment: createXRoute({
-    operationId: 'getAttachment',
+  getAttachment: xRoute({
     'x-tool': {
       enabled: true,
       description: 'Read one attachment: its metadata and the description as text.',
@@ -129,22 +96,12 @@ const attachmentRoutes = {
     path: '/{id}',
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xCache: [productCache('attachment')],
-    tags: ['attachments', 'cella', 'product'],
     summary: 'Get attachment',
     description: 'Returns a single attachment by ID. Served from the CDC-invalidated entity detail cache.',
-    request: {
-      params: idInTenantOrgParamSchema,
-    },
-    responses: {
-      200: {
-        description: 'Attachment',
-        content: { 'application/json': { schema: attachmentSchema, example: mockAttachmentResponse() } },
-      },
-      ...errorResponseRefs,
-    },
+    request: { params: idInTenantOrgParamSchema },
+    responses: { 200: json('Attachment', attachmentSchema, mockAttachmentResponse()) },
   }),
-  updateAttachment: createXRoute({
-    operationId: 'updateAttachment',
+  updateAttachment: xRoute({
     'x-tool': {
       enabled: true,
       description: 'Rename an attachment or replace its description.',
@@ -158,27 +115,16 @@ const attachmentRoutes = {
     path: '/{id}',
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
-    tags: ['attachments', 'cella', 'product'],
     summary: 'Update attachment',
     description: 'Updates metadata of an attachment, such as its name or associated entity.',
     request: {
       params: idInTenantOrgParamSchema,
       query: fullResponseQuerySchema,
-      body: {
-        required: true,
-        content: { 'application/json': { schema: attachmentUpdateStxBodySchema } },
-      },
+      body: jsonBody(attachmentUpdateStxBodySchema),
     },
-    responses: {
-      200: {
-        description: 'Attachment was updated',
-        content: { 'application/json': { schema: attachmentSchema, example: mockAttachmentResponse() } },
-      },
-      ...errorResponseRefs,
-    },
+    responses: { 200: json('Attachment was updated', attachmentSchema, mockAttachmentResponse()) },
   }),
-  deleteAttachments: createXRoute({
-    operationId: 'deleteAttachments',
+  deleteAttachments: xRoute({
     'x-tool': {
       enabled: true,
       description: 'Delete attachments by id. The stored files stay in storage.',
@@ -191,67 +137,33 @@ const attachmentRoutes = {
     path: '/',
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
-    tags: ['attachments', 'cella', 'product'],
     summary: 'Delete attachments',
     description: 'Deletes one or more attachment records by ID. This does not delete the underlying file in storage.',
-    request: {
-      params: tenantOrgParamSchema,
-      body: {
-        required: true,
-        content: { 'application/json': { schema: idsWithStxBodySchema() } },
-      },
-    },
-    responses: {
-      200: {
-        description: 'Success',
-        content: {
-          'application/json': {
-            schema: batchResponseSchema(),
-          },
-        },
-      },
-      ...errorResponseRefs,
-    },
+    request: { params: tenantOrgParamSchema, body: jsonBody(idsWithStxBodySchema()) },
+    responses: { 200: json('Success', batchResponseSchema()) },
   }),
-  getPresignedUrls: createXRoute({
-    operationId: 'getPresignedUrls',
+  getPresignedUrls: xRoute({
     method: 'post',
     path: '/presigned-urls',
     xGuard: [actorGuard, tenantGuard, orgGuard],
     xRateLimiter: [presignedUrlLimiter],
-    tags: ['attachments', 'cella', 'product'],
     summary: 'Get presigned URLs',
     description:
       'Signs download URLs for up to 50 private attachment files in one call, referenced by id + variant. Missing and denied ids come back in a uniform rejectedIds list (no 403/404 split), and the call succeeds even when every item is rejected. Public files should use the public CDN URL directly. Requires organization context.',
-    request: {
-      params: tenantOrgParamSchema,
-      body: {
-        required: true,
-        content: { 'application/json': { schema: presignedUrlsBodySchema } },
-      },
-    },
+    request: { params: tenantOrgParamSchema, body: jsonBody(presignedUrlsBodySchema) },
     responses: {
-      200: {
-        description: 'Presigned URLs',
-        content: {
-          'application/json': {
-            schema: batchResponseSchema(presignedUrlItemSchema),
-            example: {
-              data: [
-                {
-                  attachmentId: '01890a5d-ac96-774b-b302-0f3e2ae14a2a',
-                  variant: 'thumbnail',
-                  url: 'https://bucket.s3.nl-ams.scw.cloud/key?X-Amz-Signature=…',
-                },
-              ],
-              rejectedIds: [],
-            },
+      200: json('Presigned URLs', batchResponseSchema(presignedUrlItemSchema), {
+        data: [
+          {
+            attachmentId: '01890a5d-ac96-774b-b302-0f3e2ae14a2a',
+            variant: 'thumbnail',
+            url: 'https://bucket.s3.nl-ams.scw.cloud/key?X-Amz-Signature=…',
           },
-        },
-      },
-      ...errorResponseRefs,
+        ],
+        rejectedIds: [],
+      }),
     },
   }),
-};
+});
 
 export { attachmentRoutes };
