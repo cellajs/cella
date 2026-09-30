@@ -237,53 +237,29 @@ export const subjectSegment = (identifier: RateLimitIdentifier, value: string): 
   return `${identifier}:${value}`;
 };
 
+/** How each identifier reads its value from the request; the map covers every identifier. */
+const identifierReaders = {
+  // Normalize the email exactly like validation so aliases share a bucket; this runs before Zod, so guard the type
+  email: async (ctx) => {
+    if (!ctx.req.header('content-type')?.includes('application/json')) return null;
+    try {
+      const body = (await ctx.req.json()) as { email?: unknown };
+      if (typeof body.email === 'string' && body.email) return body.email.toLowerCase().trim();
+    } catch {}
+    return null;
+  },
+  ip: (ctx) => getIp(ctx),
+  userId: (ctx) => ctx.var.user?.id ?? null,
+  actorId: (ctx) => ctx.var.actor?.id ?? null,
+  tenantId: (ctx) => ctx.var.tenantId || null,
+} satisfies Record<RateLimitIdentifier, (ctx: Context<Env>) => string | null | Promise<string | null>>;
+
 export const extractIdentifiers = async (
   ctx: Context<Env>,
   identifiersToExtract: RateLimitIdentifier[],
 ): Promise<Identifiers> => {
-  const results: Identifiers = {
-    email: null,
-    ip: null,
-    userId: null,
-    actorId: null,
-    tenantId: null,
-  };
-
-  for (const identifier of identifiersToExtract) {
-    switch (identifier) {
-      case 'email': {
-        // Normalize the email exactly like validation so aliases share a bucket; this runs before Zod, so guard the type
-        if (ctx.req.header('content-type')?.includes('application/json')) {
-          try {
-            const body = (await ctx.req.json()) as { email?: unknown };
-            if (typeof body.email === 'string' && body.email) results.email = body.email.toLowerCase().trim();
-          } catch {}
-        }
-        break;
-      }
-
-      case 'ip': {
-        results.ip = getIp(ctx);
-        break;
-      }
-      case 'userId': {
-        const user = ctx.var.user;
-        if (user) results.userId = user.id;
-        break;
-      }
-      case 'actorId': {
-        const actor = ctx.var.actor;
-        if (actor) results.actorId = actor.id;
-        break;
-      }
-      case 'tenantId': {
-        const tenantId = ctx.var.tenantId;
-        if (tenantId) results.tenantId = tenantId;
-        break;
-      }
-    }
-  }
-
+  const results: Identifiers = { email: null, ip: null, userId: null, actorId: null, tenantId: null };
+  for (const identifier of identifiersToExtract) results[identifier] = await identifierReaders[identifier](ctx);
   return results;
 };
 
