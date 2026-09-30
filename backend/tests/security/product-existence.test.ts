@@ -9,7 +9,7 @@ import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { bearerHeaders, serviceAccountWithKey } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createOrgUser } from './helpers';
+import { assumeMemberAttachmentPolicy, clearSecurityTestData, createOrgUser } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -20,6 +20,7 @@ setTestConfig({ enabledAuthStrategies: ['passkey'] });
  * for an action denied on a row the caller can read.
  */
 describe('Product existence (getValidProduct)', async () => {
+  assumeMemberAttachmentPolicy({ read: 1, update: 'own', delete: 'own' });
   const call = await createAppClient();
   const { baseApp } = await import('#/routes');
   let organization: { id: string; tenantId: string };

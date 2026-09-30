@@ -7,10 +7,9 @@ import { spawn } from 'node:child_process';
  * combined folder sorts (and therefore applies) after the schema changes. Uses tsx so path
  * aliases (`#/`) resolve while drizzle-kit scans the schema.
  */
-export function runDrizzleGenerate(): Promise<void> {
+export function runDrizzleGenerate(args: readonly string[] = []): Promise<void> {
   return new Promise((resolve, reject) => {
-    const child = spawn('tsx node_modules/drizzle-kit/bin.cjs generate --config drizzle.config.ts', {
-      shell: true,
+    const child = spawn('tsx', ['node_modules/drizzle-kit/bin.cjs', 'generate', '--config', 'drizzle.config.ts', ...args], {
       cwd: process.cwd(),
       stdio: 'inherit',
     });

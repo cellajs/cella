@@ -53,7 +53,9 @@ interface UserThemeProps {
 
 export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
   const { t } = useTranslation();
-  const { mode, setMode, setTheme } = useUIStore();
+  const mode = useUIStore((state) => state.mode);
+  const setMode = useUIStore((state) => state.setMode);
+  const setTheme = useUIStore((state) => state.setTheme);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const modes = [

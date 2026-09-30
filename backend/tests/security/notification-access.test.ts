@@ -1,8 +1,7 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { createAttachments, type GetNotificationsResponse, getNotifications } from 'sdk';
-import { getEntityPolicies, getPolicyPermissions, policyMatrix } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
@@ -15,7 +14,13 @@ import { adminDb, mailsTo } from '../helpers';
 import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
+import {
+  assumeMemberAttachmentPolicy,
+  clearSecurityTestData,
+  createOrgUser,
+  createTestTenant,
+  type TestTenant,
+} from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -28,6 +33,7 @@ const DAY = 24 * HOUR;
  * the digest or a mention mail, and a first digest must not reach back through the whole inbox.
  */
 describe('Notification access', async () => {
+  assumeMemberAttachmentPolicy({ read: 1, update: 'own', delete: 'own' });
   const call = await createAppClient();
   let tenant: TestTenant;
   let leaver: { id: string; email: string; sessionCookie: string };
@@ -167,21 +173,9 @@ describe('Notification access', async () => {
   });
 
   describe('with a member role that reads only its own attachments', () => {
-    const memberPolicy = getPolicyPermissions(
-      getEntityPolicies('attachment', policyMatrix),
-      'organization',
-      memberRole,
-    );
-    const configuredRead = memberPolicy?.read;
-
     // An app configuration the engine supports: `read: 'own'` hides the admin's items from the stayer, who stays in
     // the organization, as leaving a channel below it does in an app that has them.
-    beforeEach(() => {
-      if (memberPolicy) memberPolicy.read = 'own';
-    });
-    afterEach(() => {
-      if (memberPolicy && configuredRead !== undefined) memberPolicy.read = configuredRead;
-    });
+    assumeMemberAttachmentPolicy({ read: 'own' });
 
     it('must not name an item the member may no longer read via the inbox, the mention mail or the digest', async () => {
       // The stayer still belongs, so the rows stay, but none names its item or channel.

@@ -108,7 +108,7 @@ export { useUserStore as userStore };
 
 const signedOutMessage =
   '[userStore] Read the signed-in user while signed out. Only authenticated routes may use it; ' +
-  'read `useUserStore().user` and handle null elsewhere.';
+  'read `useUserStore((state) => state.user)` and handle null elsewhere.';
 
 /** The signed-in user. Throws while signed out, so only components under the route guard may call it. */
 export const useCurrentUser = (): MeUser => {

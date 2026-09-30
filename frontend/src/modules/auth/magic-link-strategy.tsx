@@ -9,7 +9,9 @@ import { Button } from '~/modules/ui/button';
 
 export function MagicLinkStrategy({ email }: { email?: string }) {
   const { t } = useTranslation();
-  const { setStep, setMagicLinkMode, email: storeEmail } = useAuthStore();
+  const setStep = useAuthStore((state) => state.setStep);
+  const setMagicLinkMode = useAuthStore((state) => state.setMagicLinkMode);
+  const storeEmail = useAuthStore((state) => state.email);
   const { redirect } = useSearch({ strict: false });
 
   const targetEmail = email || storeEmail;

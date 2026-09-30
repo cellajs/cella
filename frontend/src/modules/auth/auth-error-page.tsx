@@ -11,7 +11,7 @@ export function AuthErrorPage() {
 
   const { error: errorType, tokenId } = useSearch({ from: '/_public/auth/error' });
 
-  const { error } = useAuthStore();
+  const error = useAuthStore((state) => state.error);
 
   // Resending needs the expired invitation's token id: an address alone would tell anyone who was invited.
   const resendTokenId = errorType === 'invitation_expired' ? tokenId : undefined;

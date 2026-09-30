@@ -1,7 +1,7 @@
 /**
- * Enforces frontend declaration conventions that Biome cannot express reliably. Export
- * descriptions are not required here: the comment budget in cella/AGENTS.md governs which
- * exports earn a doc.
+ * Enforces frontend conventions Biome cannot express reliably. Components are named function declarations, also
+ * inside wrappers such as `memo`; component values are typed `ComponentType<Props>`, never `FC`; zustand stores are
+ * read through a selector, never a bare `useStore()` call. Export docs follow the cella/AGENTS.md comment budget.
  */
 import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
@@ -12,6 +12,7 @@ import ts from 'typescript';
 const repoRoot = join(fileURLToPath(new URL('../..', import.meta.url)));
 const requestedRoots = process.argv.slice(2);
 const failures: string[] = [];
+const storeNames = new Set<string>();
 
 function trackedFrontendFiles(): string[] {
   return execFileSync('git', ['ls-files', '-co', '--exclude-standard', 'frontend/src'], {
@@ -103,20 +104,58 @@ function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStat
   }
 }
 
-for (const file of trackedFrontendFiles().filter(isRequested)) {
-  const source = readFileSync(join(repoRoot, file), 'utf8');
-  const sourceFile = ts.createSourceFile(
+function collectStores(sourceFile: ts.SourceFile): void {
+  const createNames = new Set<string>();
+  for (const statement of sourceFile.statements) {
+    if (!ts.isImportDeclaration(statement) || !ts.isStringLiteral(statement.moduleSpecifier)) continue;
+    const bindings = statement.importClause?.namedBindings;
+    if (statement.moduleSpecifier.text !== 'zustand' || !bindings || !ts.isNamedImports(bindings)) continue;
+    for (const element of bindings.elements) {
+      if ((element.propertyName ?? element.name).text === 'create') createNames.add(element.name.text);
+    }
+  }
+  if (createNames.size === 0) return;
+  for (const statement of sourceFile.statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+    for (const declaration of statement.declarationList.declarations) {
+      let callee: ts.Node | undefined = declaration.initializer;
+      while (callee && ts.isCallExpression(callee)) callee = callee.expression;
+      if (!callee || !ts.isIdentifier(callee) || !createNames.has(callee.text)) continue;
+      if (ts.isIdentifier(declaration.name)) storeNames.add(declaration.name.text);
+    }
+  }
+}
+
+function checkStoreSelector(sourceFile: ts.SourceFile, node: ts.Node): void {
+  if (!ts.isCallExpression(node) || node.arguments.length > 0 || !ts.isIdentifier(node.expression)) return;
+  const name = node.expression.text;
+  if (!storeNames.has(name)) return;
+  report(
+    sourceFile,
+    node,
+    'store-selector',
+    `${name}() subscribes to every field; select the values this component reads`,
+  );
+}
+
+const sourceFiles = trackedFrontendFiles().map((file) =>
+  ts.createSourceFile(
     file,
-    source,
+    readFileSync(join(repoRoot, file), 'utf8'),
     ts.ScriptTarget.Latest,
     true,
     extname(file) === '.tsx' ? ts.ScriptKind.TSX : ts.ScriptKind.TS,
-  );
+  ),
+);
+for (const sourceFile of sourceFiles) collectStores(sourceFile);
+
+for (const sourceFile of sourceFiles.filter((sourceFile) => isRequested(sourceFile.fileName))) {
   for (const statement of sourceFile.statements) {
     if (ts.isVariableStatement(statement)) checkVariableStatement(sourceFile, statement);
   }
   sourceFile.forEachChild(function visit(node) {
     checkReactComponentType(sourceFile, node);
+    checkStoreSelector(sourceFile, node);
     node.forEachChild(visit);
   });
 }
@@ -127,4 +166,6 @@ if (failures.length > 0) {
   process.exit(1);
 }
 
-console.log('[frontend:style] OK, component declarations follow the frontend conventions.');
+console.log(
+  '[frontend:style] OK, component declarations, component types and store reads follow the frontend conventions.',
+);

@@ -1,5 +1,5 @@
 /**
- * Runs the terminology, documentation and comment checks as one blocking pass. Clean sub-checks
+ * Runs the terminology, documentation, comment and frontend checks as one blocking pass. Clean sub-checks
  * collapse into a single `[style]` line; findings print their detail. Exits non-zero on any
  * finding. `pnpm check`, `pnpm lint` and CI's style step all run this same pass.
  */
@@ -20,6 +20,7 @@ const subChecks: SubCheck[] = [
   { label: 'documentation', script: 'check-doc-style.ts', args: [] },
   // `--placement` runs the required comment rules and the placement rule in one pass.
   { label: 'comments', script: 'check-comment-style.ts', args: ['--placement'] },
+  { label: 'frontend', script: 'check-frontend-style.ts', args: [] },
 ];
 
 const flagged = subChecks.filter((check) => {
@@ -32,7 +33,7 @@ const flagged = subChecks.filter((check) => {
 });
 
 if (flagged.length === 0) {
-  console.log('[style] OK, terminology, documentation, and comments follow the required style.');
+  console.log('[style] OK, terminology, documentation, comments and frontend code follow the required style.');
 } else {
   console.error(`[style] ${flagged.length} area(s) failed (${flagged.map((check) => check.label).join(', ')}).`);
   process.exit(1);

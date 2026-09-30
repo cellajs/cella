@@ -3,10 +3,10 @@ import { uploadStorage } from 'shared/utils/upload-visibility';
 import type { OrgContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { buildStx } from '#/core/stx';
-import { tenantContext, tenantRead } from '#/db/tenant-context';
+import { tenantContext } from '#/db/tenant-context';
 import { dispatchMutation } from '#/lib/mutation-bus';
-import type { InsertAttachmentModel } from '#/modules/attachment/attachment-db';
-import { findAttachmentsByStxMutationId, insertAttachments } from '#/modules/attachment/attachment-queries';
+import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
+import { insertAttachments } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
 import { resolveAttachmentPlacement } from '#/modules/attachment/helpers/attachment-placement';
 import { namesOwnStorage } from '#/modules/attachment/helpers/storage-key';
@@ -29,13 +29,8 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   }
 
   const batchStxId = input[0].stx.mutationId;
-  const existing = await checkIdempotency(batchStxId, () =>
-    tenantRead(ctx, async (readCtx) => {
-      const batch = await findAttachmentsByStxMutationId(readCtx, { mutationId: batchStxId });
-      return withAuditUsers(readCtx, batch);
-    }),
-  );
-  if (existing) return { data: existing, rejectedIds: [] as string[] };
+  const existing = await checkIdempotency(ctx, attachmentsTable, batchStxId);
+  if (existing) return { data: await withAuditUsers(ctx, existing), rejectedIds: [] as string[] };
 
   const currentAttachments = await getOrganizationEntityCount(ctx, {
     organizationId: organization.id,
@@ -56,6 +51,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
     if (!namesOwnStorage(att.keys, organization.id)) {
       throw new AppError(400, 'invalid_request', 'warn', { entityType: 'attachment', meta: { reason: 'storage_key' } });
     }
+    attachmentContract.assertBlockFields(att, organization.id);
 
     // Placement seam: ancestor columns derived server-side; the org-homed default stamps none.
     const placement = await resolveAttachmentPlacement(ctx, att);

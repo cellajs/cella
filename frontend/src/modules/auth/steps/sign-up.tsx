@@ -8,6 +8,7 @@ import { sendMagicLink } from 'sdk';
 import { zCheckEmailBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
+import { useShallow } from 'zustand/react/shallow';
 import { AuthEmailButton } from '~/modules/auth/auth-email-button';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { LegalNotice } from '~/modules/auth/legal-notice';
@@ -30,7 +31,17 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
   const { t } = useTranslation();
 
   const { email, resetSteps, restrictedMode, setStep, setMagicLinkMode, inviteOtherAccount, setInviteOtherAccount } =
-    useAuthStore();
+    useAuthStore(
+      useShallow((state) => ({
+        email: state.email,
+        resetSteps: state.resetSteps,
+        restrictedMode: state.restrictedMode,
+        setStep: state.setStep,
+        setMagicLinkMode: state.setMagicLinkMode,
+        inviteOtherAccount: state.inviteOtherAccount,
+        setInviteOtherAccount: state.setInviteOtherAccount,
+      })),
+    );
   const { redirect, tokenId } = useSearch({ strict: false });
 
   const isMobile = window.innerWidth < 640;

@@ -6,7 +6,9 @@ import { Button } from '~/modules/ui/button';
 
 export function MagicLinkSentStep() {
   const { t } = useTranslation();
-  const { email, resetSteps, magicLinkMode } = useAuthStore();
+  const email = useAuthStore((state) => state.email);
+  const resetSteps = useAuthStore((state) => state.resetSteps);
+  const magicLinkMode = useAuthStore((state) => state.magicLinkMode);
 
   const isSignup = magicLinkMode === 'signup';
 

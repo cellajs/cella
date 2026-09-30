@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import type { CreateAttachmentsData } from 'sdk';
 import { appConfig, hierarchy } from 'shared';
 import { buildTestEntityHierarchyPlan, type TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
@@ -75,16 +76,21 @@ export function homeColumns(plan: TestEntityHierarchyPlan): Record<string, strin
  * A create body for one attachment in the plan's home, its file under the organization's upload prefix; `fields` add or
  * replace body fields.
  */
-export const attachmentBody = (id: string, plan: TestEntityHierarchyPlan, fields: Record<string, unknown> = {}) => ({
-  id,
-  filename: 'file.pdf',
-  contentType: 'application/pdf',
-  size: '1024',
-  keys: { original: `${plan.channelIdsByType.organization}/uploads/${id}.pdf` },
-  ...homeColumns(plan),
-  stx: { mutationId: id, sourceId: 'test', fieldTimestamps: {} },
-  ...fields,
-});
+export const attachmentBody = (
+  id: string,
+  plan: TestEntityHierarchyPlan,
+  fields: Record<string, unknown> = {},
+): CreateAttachmentsData['body'][number] =>
+  ({
+    id,
+    filename: 'file.pdf',
+    contentType: 'application/pdf',
+    size: '1024',
+    keys: { original: `${plan.channelIdsByType.organization}/uploads/${id}.pdf` },
+    ...homeColumns(plan),
+    stx: { mutationId: id, sourceId: 'test', fieldTimestamps: {} },
+    ...fields,
+  }) as CreateAttachmentsData['body'][number];
 
 /** Inserts an attachment row `buildInsertableProduct` built, on the admin connection. */
 export const insertAttachmentRow = (row: Record<string, unknown>) =>

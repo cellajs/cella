@@ -48,7 +48,7 @@ function FooterLinks() {
   );
 }
 
-const Credits = ({ className }: { className?: string }) => {
+function Credits({ className }: { className?: string }) {
   const { t } = useTranslation();
 
   return (
@@ -58,9 +58,9 @@ const Credits = ({ className }: { className?: string }) => {
       </p>
     </div>
   );
-};
+}
 
-export const MarketingFooter = () => {
+export function MarketingFooter() {
   const { t } = useTranslation();
   const sectionClass = 'rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]';
   const statusUrl = appConfig.statusUrl?.trim();
@@ -114,4 +114,4 @@ export const MarketingFooter = () => {
       </section>
     </div>
   );
-};
+}

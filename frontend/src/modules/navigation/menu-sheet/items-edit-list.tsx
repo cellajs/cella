@@ -15,7 +15,7 @@ export function MenuSheetItemsEdit({
   isArchived: boolean;
 }) {
   const { t } = useTranslation();
-  const { detailedMenu } = useNavigationStore();
+  const detailedMenu = useNavigationStore((state) => state.detailedMenu);
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
 
   if (options && data.length === 0) {

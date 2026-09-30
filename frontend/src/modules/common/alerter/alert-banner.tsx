@@ -35,8 +35,11 @@ export function AlertBanner({
   contextMode = 'app',
 }: AlertBanner) {
   const { t } = useTranslation();
-  const { alertsSeen, setAlertSeen, downAlert } = useAlertStore();
-  const { publicAlertsSeen, setPublicAlertSeen } = useUIStore();
+  const alertsSeen = useAlertStore((state) => state.alertsSeen);
+  const setAlertSeen = useAlertStore((state) => state.setAlertSeen);
+  const downAlert = useAlertStore((state) => state.downAlert);
+  const publicAlertsSeen = useUIStore((state) => state.publicAlertsSeen);
+  const setPublicAlertSeen = useUIStore((state) => state.setPublicAlertSeen);
 
   const isPublicContext = contextMode === 'public';
   const seenAlerts = isPublicContext ? publicAlertsSeen : alertsSeen;

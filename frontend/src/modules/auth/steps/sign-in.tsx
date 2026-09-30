@@ -9,6 +9,7 @@ import { type SignInWithPasskeyData, sendMagicLink, signInWithPasskey } from 'sd
 import { zCheckEmailBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
+import { useShallow } from 'zustand/react/shallow';
 import { AuthEmailButton } from '~/modules/auth/auth-email-button';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import type { ConditionalMediationResult } from '~/modules/auth/passkey-credentials';
@@ -32,9 +33,20 @@ type FormValues = z.infer<typeof formSchema>;
 export function SignInStep() {
   const { t } = useTranslation();
   const { email, resetSteps, restrictedMode, setStep, setSignedIn, setMagicLinkMode, inviteOtherAccount } =
-    useAuthStore();
+    useAuthStore(
+      useShallow((state) => ({
+        email: state.email,
+        resetSteps: state.resetSteps,
+        restrictedMode: state.restrictedMode,
+        setStep: state.setStep,
+        setSignedIn: state.setSignedIn,
+        setMagicLinkMode: state.setMagicLinkMode,
+        inviteOtherAccount: state.inviteOtherAccount,
+      })),
+    );
 
-  const { lastUser, reset: clearUserStore } = useUserStore();
+  const lastUser = useUserStore((state) => state.lastUser);
+  const clearUserStore = useUserStore((state) => state.reset);
   const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
   const navigateAfterAuth = useNavigateAfterAuth();
 

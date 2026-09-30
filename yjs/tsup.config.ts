@@ -1,17 +1,8 @@
 import { defineConfig } from 'tsup';
+import { appKeepOnDisk } from '../backend/src/bundle-config.ts';
+import { keepOnDisk } from '../shared/src/keep-on-disk.ts';
 
-/**
- * Packages that have to stay on disk. Everything else is inlined into dist/.
- * - pg, pg-logical-replication: `pg` stays external so PgInstrumentation can still patch it through
- *   the loader registry.
- * - @opentelemetry/*: the SDK patches modules through that registry, so it loads from disk.
- * - jsdom: resolves its default stylesheet through __dirname, so inlining it points that lookup at the
- *   bundle. @blocknote/server-util, which reaches it, is inlined; only its jsdom import stays external.
- * - pino and its transports: `pino.transport()` starts a worker thread from a file path inside the
- *   pino package, and resolves targets like 'pino-pretty' by name from the caller.
- */
-const KEEP_ON_DISK = String.raw`pg(?:\/|$)|pg-logical-replication|@opentelemetry\/|pino(?:-|\/|$)|thread-stream|sonic-boom|jsdom`;
-
+const { noExternal, external } = keepOnDisk(['pg-logical-replication', ...appKeepOnDisk]);
 
 export default defineConfig({
   entry: ['src/yjs-worker.ts'],
@@ -22,10 +13,7 @@ export default defineConfig({
   format: ['esm'],
   target: 'esnext',
   minify: false,
-  // Bundle everything except KEEP_ON_DISK, so the service loads one file plus a short list of
-  // packages at runtime. tsup's `noExternal` takes precedence over `external`, so the exceptions
-  // belong here; `external` repeats them to cover subpath imports.
-  noExternal: [new RegExp(`^(?!(?:${KEEP_ON_DISK}))`)],
+  noExternal,
   // Bundled CJS dependencies call require() at runtime (chalk reaching for node:os, for one), and
   // esbuild's ESM output defines none. This supplies a working one.
   banner: {
@@ -50,13 +38,5 @@ export default defineConfig({
     options.mainFields = ['module', 'main'];
     options.conditions = ['module'];
   },
-  external: [
-    /^pg(\/|$)/,
-    /^pg-logical-replication(\/|$)/,
-    /^@opentelemetry/,
-    /^pino(-|\/|$)/,
-    /^thread-stream(\/|$)/,
-    /^sonic-boom(\/|$)/,
-    /^jsdom(\/|$)/,
-  ],
+  external,
 });

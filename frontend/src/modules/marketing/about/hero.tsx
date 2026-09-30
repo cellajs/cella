@@ -11,9 +11,9 @@ interface HeroProps {
   chips?: TKey[];
 }
 
-export const Hero = ({ title, text, children, chips }: HeroProps) => {
+export function Hero({ title, text, children, chips }: HeroProps) {
   const { t } = useTranslation();
-  const { theme } = useUIStore();
+  const theme = useUIStore((state) => state.theme);
   const { ref, inView } = useInView({ once: true, threshold: 0.5 });
 
   // When a theme color is active, derive gradient from --primary CSS variable so any color in appConfig.theme.colors works automatically
@@ -56,16 +56,16 @@ export const Hero = ({ title, text, children, chips }: HeroProps) => {
       <BackgroundCurve />
     </section>
   );
-};
+}
 
 /** Decorative SVG curve at a gradient section edge; `position` places it at the section top or bottom. */
-export const BackgroundCurve = ({
+export function BackgroundCurve({
   height = 'clamp(3rem, 8vw, 8rem)',
   position = 'bottom',
 }: {
   height?: string;
   position?: 'top' | 'bottom';
-}) => {
+}) {
   const isTop = position === 'top';
 
   return (
@@ -82,4 +82,4 @@ export const BackgroundCurve = ({
       />
     </svg>
   );
-};
+}

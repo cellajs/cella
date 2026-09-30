@@ -21,7 +21,7 @@ interface Props {
 
 export function UserProfilePage({ user, organizationId, isSheet }: Props) {
   const { t } = useTranslation();
-  const { user: currentUser } = useUserStore();
+  const currentUser = useUserStore((state) => state.user);
 
   const isSelf = !!currentUser && currentUser.id === user.id;
 

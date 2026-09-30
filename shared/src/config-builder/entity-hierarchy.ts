@@ -27,6 +27,13 @@ export function createRoleRegistry<const T extends readonly string[]>(
 
 export type RoleFromRegistry<R extends { all: readonly string[] }> = R['all'][number];
 
+/** The roles a channel declared, or every registry role for a type the map does not name. */
+export type ChannelRole<
+  TRoleMap,
+  TRoles extends { all: readonly string[] },
+  T extends string,
+> = T extends keyof TRoleMap ? TRoleMap[T] : RoleFromRegistry<TRoles>;
+
 export type EntityKind = 'user' | 'channel' | 'product';
 
 interface UserEntry {
@@ -89,6 +96,7 @@ class EntityHierarchyBuilder<
   TParentMap extends Record<string, string | null> = Record<never, never>,
   TRelatedMap extends Record<string, string> = Record<never, never>,
   TNullableMap extends Record<string, string> = Record<never, never>,
+  TRoleMap extends Record<string, string> = Record<never, never>,
 > {
   private readonly entities: Map<string, EntityEntry>;
   private readonly roles: TRoles;
@@ -106,9 +114,9 @@ class EntityHierarchyBuilder<
   }
 
   /** Required exactly once before build(). */
-  user(): EntityHierarchyBuilder<TRoles, TChannels, TProducts, TParentMap, TRelatedMap, TNullableMap> {
+  user(): EntityHierarchyBuilder<TRoles, TChannels, TProducts, TParentMap, TRelatedMap, TNullableMap, TRoleMap> {
     if (this.entities.has('user')) throw new Error('EntityHierarchy: user() can only be called once');
-    return new EntityHierarchyBuilder<TRoles, TChannels, TProducts, TParentMap, TRelatedMap, TNullableMap>(
+    return new EntityHierarchyBuilder<TRoles, TChannels, TProducts, TParentMap, TRelatedMap, TNullableMap, TRoleMap>(
       this.roles,
       this.withEntity('user', { kind: 'user' }),
     );
@@ -128,7 +136,8 @@ class EntityHierarchyBuilder<
     TProducts,
     TParentMap & { organization: null },
     TRelatedMap,
-    TNullableMap
+    TNullableMap,
+    TRoleMap & { organization: RO[number] }
   > {
     this.validateName('organization');
     this.validateRoles('organization', options.roles);
@@ -139,7 +148,8 @@ class EntityHierarchyBuilder<
       TProducts,
       TParentMap & { organization: null },
       TRelatedMap,
-      TNullableMap
+      TNullableMap,
+      TRoleMap & { organization: RO[number] }
     >(
       this.roles,
       this.withEntity('organization', {
@@ -184,7 +194,8 @@ class EntityHierarchyBuilder<
     TProducts,
     TParentMap & { [K in N]: P },
     TRelatedMap & { [K in N]: RC[number] },
-    TNullableMap
+    TNullableMap,
+    TRoleMap & { [K in N]: RO[number] }
   > {
     if (name === 'organization') {
       throw new Error('EntityHierarchy: "organization" is the spine, declare it with organization()');
@@ -201,7 +212,8 @@ class EntityHierarchyBuilder<
       TProducts,
       TParentMap & { [K in N]: P },
       TRelatedMap & { [K in N]: RC[number] },
-      TNullableMap
+      TNullableMap,
+      TRoleMap & { [K in N]: RO[number] }
     >(
       this.roles,
       this.withEntity(name, {
@@ -282,7 +294,8 @@ class EntityHierarchyBuilder<
     TProducts | N,
     TParentMap & { [K in N]: P },
     TRelatedMap & { [K in N]: RC[number] },
-    TNullableMap & { [K in N]: NA[number] }
+    TNullableMap & { [K in N]: NA[number] },
+    TRoleMap
   > {
     this.validateName(name);
     this.validateParent(name, options.parent, 'product');
@@ -294,7 +307,8 @@ class EntityHierarchyBuilder<
       TProducts | N,
       TParentMap & { [K in N]: P },
       TRelatedMap & { [K in N]: RC[number] },
-      TNullableMap & { [K in N]: NA[number] }
+      TNullableMap & { [K in N]: NA[number] },
+      TRoleMap
     >(
       this.roles,
       this.withEntity(name, {
@@ -306,7 +320,7 @@ class EntityHierarchyBuilder<
     );
   }
 
-  build(): EntityHierarchy<TRoles, TChannels, TProducts, TParentMap, TRelatedMap, TNullableMap> {
+  build(): EntityHierarchy<TRoles, TChannels, TProducts, TParentMap, TRelatedMap, TNullableMap, TRoleMap> {
     if (!this.entities.has('user')) throw new Error('EntityHierarchy: user() must be called before build()');
     if (!this.entities.has('organization')) throw new Error('EntityHierarchy: organization channel is required');
     return new EntityHierarchy(this.roles, this.entities);
@@ -448,12 +462,14 @@ export class EntityHierarchy<
   TParentMap extends Record<string, string | null> = Record<string, string | null>,
   TRelatedMap extends Record<string, string> = Record<string, string>,
   TNullableMap extends Record<string, string> = Record<string, string>,
+  TRoleMap extends Record<string, string> = Record<string, string>,
 > {
   /** Phantom carriers, type-only with no runtime value: strict parent (null = organization), related
-   * (non-ancestor) channel union, and per-product nullable-ancestor union. */
+   * (non-ancestor) channel union, per-product nullable-ancestor union, and per-channel role union. */
   declare readonly _parentMap: TParentMap;
   declare readonly _relatedMap: TRelatedMap;
   declare readonly _nullableMap: TNullableMap;
+  declare readonly _roleMap: TRoleMap;
 
   private readonly entities: ReadonlyMap<string, EntityEntry>;
   private readonly roleRegistry: TRoles;
@@ -521,9 +537,9 @@ export class EntityHierarchy<
   };
 
   /** Empty for non-channel types. */
-  readonly getRoles = (channelType: string): readonly RoleFromRegistry<TRoles>[] => {
+  readonly getRoles = <T extends string>(channelType: T): readonly ChannelRole<TRoleMap, TRoles, T>[] => {
     const entry = this.entities.get(channelType);
-    return entry?.kind === 'channel' ? (entry.roles as readonly RoleFromRegistry<TRoles>[]) : [];
+    return entry?.kind === 'channel' ? (entry.roles as readonly ChannelRole<TRoleMap, TRoles, T>[]) : [];
   };
 
   /**
@@ -531,7 +547,7 @@ export class EntityHierarchy<
    * default, the auto-created associated-membership fallback and the membership column default.
    * Apps with other vocabularies (`guest`, `student`) get their own floor; throws for non-channels.
    */
-  readonly getLeastPrivilegedRole = (channelType: string): RoleFromRegistry<TRoles> => {
+  readonly getLeastPrivilegedRole = <T extends string>(channelType: T): ChannelRole<TRoleMap, TRoles, T> => {
     const roles = this.getRoles(channelType);
     const role = roles[roles.length - 1];
     if (!role) throw new Error(`Entity type '${channelType}' is not a channel or declares no roles`);
@@ -539,7 +555,7 @@ export class EntityHierarchy<
   };
 
   /** The first declared role of a channel; see {@link getLeastPrivilegedRole} for the ordering rule. */
-  readonly getMostPrivilegedRole = (channelType: string): RoleFromRegistry<TRoles> => {
+  readonly getMostPrivilegedRole = <T extends string>(channelType: T): ChannelRole<TRoleMap, TRoles, T> => {
     const role = this.getRoles(channelType)[0];
     if (!role) throw new Error(`Entity type '${channelType}' is not a channel or declares no roles`);
     return role;
@@ -550,10 +566,13 @@ export class EntityHierarchy<
    * organization membership row; undefined when the channel declares no mapping for it
    * (insertMemberships treats that as a programming error and throws).
    */
-  readonly getOrganizationRole = (channelType: string, role: string): RoleFromRegistry<TRoles> | undefined => {
+  readonly getOrganizationRole = (
+    channelType: string,
+    role: string,
+  ): ChannelRole<TRoleMap, TRoles, 'organization'> | undefined => {
     const entry = this.entities.get(channelType);
     if (entry?.kind !== 'channel') return undefined;
-    return entry.organizationRoles?.[role] as RoleFromRegistry<TRoles> | undefined;
+    return entry.organizationRoles?.[role] as ChannelRole<TRoleMap, TRoles, 'organization'> | undefined;
   };
 
   /** Always a channel; null for the organization and for user. */

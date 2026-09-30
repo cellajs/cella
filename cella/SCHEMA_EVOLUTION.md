@@ -137,12 +137,14 @@ export const attachmentContract = evolutionContract.product("attachment", {
     name: z.string().max(maxLength.field),
     // …
   },
+  blockFields: ["description"], // block-document fields whose media references are checked
 });
 // attachmentContract.createItemSchema  - createItem + stx, lens-widened; modules compose .array().min().max()
 // attachmentContract.updateBodySchema  - { ops: partial(updateOps) widened, stx }, ≥1 op required
 // attachmentContract.normalizeCreateItem(item)          - entity-bound runtime seam (create)
 // attachmentContract.resolveUpdateOps(entity, ops, stx) - entity-bound runtime seam (update)
 // attachmentContract.resolveServerUpdateOps(entity, ops) - trusted-server update seam
+// attachmentContract.assertBlockFields(input, organizationId) - 400 on media outside the organization (create and update)
 
 // Channel (plain) entity: organization-schema.ts
 export const organizationContract = evolutionContract.channel("organization", {

@@ -9,7 +9,7 @@ import { UserProfilePage as UserProfile } from './user-profile';
 
 export function UserSheet({ id, organizationId }: { id: string; organizationId: string | undefined }) {
   const isOnline = useOnlineManager();
-  const { user: currentUser } = useUserStore();
+  const currentUser = useUserStore((state) => state.user);
   const isSelf = currentUser?.id === id;
 
   const {

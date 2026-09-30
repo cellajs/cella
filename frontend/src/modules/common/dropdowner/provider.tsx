@@ -12,7 +12,8 @@ import { useUIStore } from '~/modules/ui/ui-store';
 export function Dropdowner() {
   const dropdown = useDropdowner((state) => state.dropdown);
   const isMobile = useBreakpointBelow('sm');
-  const { lockUI, unlockUI } = useUIStore();
+  const lockUI = useUIStore((state) => state.lockUI);
+  const unlockUI = useUIStore((state) => state.unlockUI);
 
   useBodyClass({ 'dropdowner-open': !!dropdown });
 

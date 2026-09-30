@@ -45,7 +45,7 @@ export function DocsSearch() {
   const [searchValue, setSearchValue] = useState('');
   const debouncedValue = useDebounce(searchValue, 100, { immediateValue: '' });
   const [scope, setScope] = useState<DocsSearchScope>('all');
-  const { recentSearches } = useDocsSearchStore();
+  const recentSearches = useDocsSearchStore((state) => state.recentSearches);
 
   // null = blank query (default links); previous results stay visible while a new search runs
   const [results, setResults] = useState<DocsSearchResult[] | null>(null);

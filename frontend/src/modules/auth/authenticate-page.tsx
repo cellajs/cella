@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { getAuthHealth } from 'sdk';
 import { appConfig } from 'shared';
+import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
 import {
@@ -39,8 +40,17 @@ export function AuthenticatePage() {
 
   const { tokenId } = useSearch({ from: '/_public/auth/authenticate' });
 
-  const { lastUser } = useUserStore();
-  const { step, setStep, restrictedMode, setRestrictedMode, signedIn, inviteOtherAccount } = useAuthStore();
+  const lastUser = useUserStore((state) => state.lastUser);
+  const { step, setStep, restrictedMode, setRestrictedMode, signedIn, inviteOtherAccount } = useAuthStore(
+    useShallow((state) => ({
+      step: state.step,
+      setStep: state.setStep,
+      restrictedMode: state.restrictedMode,
+      setRestrictedMode: state.setRestrictedMode,
+      signedIn: state.signedIn,
+      inviteOtherAccount: state.inviteOtherAccount,
+    })),
+  );
 
   // Cache-only: the route guard probes the session whenever a tokenId is present.
   const { data: signedInUser } = useQuery({ ...meQueryOptions(), enabled: false });

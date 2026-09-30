@@ -10,7 +10,13 @@ import { adminRole, defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
+import {
+  assumeMemberAttachmentPolicy,
+  clearSecurityTestData,
+  createOrgUser,
+  createTestTenant,
+  type TestTenant,
+} from './helpers';
 import { paragraph, seedAttachment } from './yjs-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -23,6 +29,7 @@ const TOKEN_TTL_MS = 5 * 60 * 1000;
  * organization-guarded and checks update on the row itself.
  */
 describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', async () => {
+  assumeMemberAttachmentPolicy({ read: 1, update: 'own', delete: 'own' });
   const call = await createAppClient();
   let owner: TestTenant;
   let other: TestTenant;

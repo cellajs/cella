@@ -148,7 +148,7 @@ const EDGE_PADDING = 8;
 type Point = { x: number; y: number };
 type Geometry = { width: number; height: number; centers: Record<string, Point>; radii: Record<string, number> };
 
-export const SyncDiagram = () => {
+export function SyncDiagram() {
   const containerRef = useRef<HTMLDivElement>(null);
   const boxRefs = useRef<Record<string, HTMLDivElement | null>>({});
   const [geom, setGeom] = useState<Geometry | null>(null);
@@ -607,4 +607,4 @@ export const SyncDiagram = () => {
       </div>
     </div>
   );
-};
+}
