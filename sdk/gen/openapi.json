@@ -212,7 +212,7 @@
     },
     {
       "name": "activities",
-      "description": "Endpoints for retrieving activities, which are audit log entries tracking create, update, and\n    delete operations across all resources. Activities provide an audit trail and can be extended for webhook\n    delivery.",
+      "description": "Audit log entries tracking create, update, and delete operations across all resources, written\n    by the CDC worker. Activities provide an audit trail and can be extended for webhook delivery.",
       "parent": "cella",
       "kind": "hidden"
     },
