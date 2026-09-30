@@ -3,7 +3,7 @@ import { PencilIcon, TrashIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
+import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { PopConfirm } from '~/modules/common/popconfirm';
@@ -45,41 +45,32 @@ export const useColumns = () => {
       width: 32,
       renderCell: ({ row, tabIndex }) => <ImpersonateRow user={row} tabIndex={tabIndex} />,
     },
-    {
-      key: 'ellipsis',
-      name: '',
-      width: 32,
-      renderCell: ({ row, tabIndex }) => {
-        const ellipsisOptions: EllipsisOption<BaseUser>[] = [
-          {
-            label: i18n.t('c:edit'),
-            icon: PencilIcon,
-            onSelect: (row, triggerRef) => {
-              useDropdowner.getState().remove();
-              openUpdateUserSheet(row, triggerRef);
-            },
-          },
-          {
-            label: i18n.t('c:delete'),
-            icon: TrashIcon,
-            onSelect: (row) => {
-              const { update } = useDropdowner.getState();
-              const callback = () => useDropdowner.getState().remove();
-
-              update({
-                content: (
-                  <PopConfirm title={i18n.t('c:delete_confirm.text', { name: row.name })}>
-                    <DeleteUsers users={[row]} callback={callback} />
-                  </PopConfirm>
-                ),
-              });
-            },
-          },
-        ];
-
-        return <TableEllipsis row={row} tabIndex={tabIndex} options={ellipsisOptions} />;
+    ellipsisColumn<BaseUser>(() => [
+      {
+        label: i18n.t('c:edit'),
+        icon: PencilIcon,
+        onSelect: (row, triggerRef) => {
+          useDropdowner.getState().remove();
+          openUpdateUserSheet(row, triggerRef);
+        },
       },
-    },
+      {
+        label: i18n.t('c:delete'),
+        icon: TrashIcon,
+        onSelect: (row) => {
+          const { update } = useDropdowner.getState();
+          const callback = () => useDropdowner.getState().remove();
+
+          update({
+            content: (
+              <PopConfirm title={i18n.t('c:delete_confirm.text', { name: row.name })}>
+                <DeleteUsers users={[row]} callback={callback} />
+              </PopConfirm>
+            ),
+          });
+        },
+      },
+    ]),
     {
       key: 'email',
       name: t('c:email'),
@@ -107,16 +98,7 @@ export const useColumns = () => {
       width: 100,
       renderCell: ({ row }) => <div>{row.role ? t(row.role) : t('c:user')}</div>,
     },
-    {
-      key: 'createdAt',
-      name: t('c:created_at'),
-      sortable: true,
-      sortDescendingFirst: true,
-      minBreakpoint: 'md',
-      minWidth: 120,
-      placeholderValue: '-',
-      renderCell: ({ row }) => dateShort(row.createdAt),
-    },
+    dateColumn('createdAt', { name: t('c:created_at') }),
     {
       key: 'lastSeenAt',
       name: t('c:last_seen_at'),

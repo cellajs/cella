@@ -5,6 +5,7 @@ import { appConfig, type ChannelEntityType, hierarchy, isChannel } from 'shared'
 import { hiddenMemberCountColumns, memberStatIcons } from '~/members-config';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
+import { dateColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { Member } from '~/modules/memberships/types';
 import { Badge } from '~/modules/ui/badge';
@@ -74,17 +75,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, entityType: Chann
           ),
         }),
       },
-      {
-        key: 'createdAt',
-        name: t('c:created_at'),
-        sortable: true,
-        sortDescendingFirst: true,
-        hidden: isSheet,
-        minBreakpoint: 'md',
-        minWidth: 120,
-        placeholderValue: '-',
-        renderCell: ({ row }) => dateShort(row.createdAt),
-      },
+      dateColumn('createdAt', { name: t('c:created_at'), hidden: isSheet }),
       {
         key: 'lastSeenAt',
         name: t('c:last_seen_at'),

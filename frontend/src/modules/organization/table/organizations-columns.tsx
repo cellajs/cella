@@ -7,7 +7,7 @@ import type { Organization } from 'sdk';
 import { hierarchy, isChannel } from 'shared';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { CheckboxColumn } from '~/modules/common/data-table/checkbox-column';
-import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
+import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
@@ -19,7 +19,6 @@ import type { EnrichedOrganization } from '~/modules/organization/types';
 import { UpdateOrganizationForm } from '~/modules/organization/update-organization-form';
 import { Button } from '~/modules/ui/button';
 import { UserCell } from '~/modules/user/user-cell';
-import { dateShort } from '~/utils/date-short';
 
 export const openUpdateSheet = (organization: Organization, triggerRef: TriggerRef) =>
   openEditSheet({
@@ -66,41 +65,32 @@ export const useColumns = () => {
         </Button>
       ),
     },
-    {
-      key: 'ellipsis',
-      name: '',
-      width: 32,
-      renderCell: ({ row, tabIndex }) => {
-        const ellipsisOptions: EllipsisOption<EnrichedOrganization>[] = [
-          {
-            label: i18n.t('c:edit'),
-            icon: PencilIcon,
-            onSelect: (row, triggerRef) => {
-              useDropdowner.getState().remove();
-              openUpdateSheet(row, triggerRef);
-            },
-          },
-          {
-            label: i18n.t('c:delete'),
-            icon: TrashIcon,
-            onSelect: (row) => {
-              const { update } = useDropdowner.getState();
-              const callback = () => useDropdowner.getState().remove();
-
-              update({
-                content: (
-                  <PopConfirm title={i18n.t('c:delete_confirm.text', { name: row.name })}>
-                    <DeleteOrganizations tenantId={row.tenantId} organizations={[row]} callback={callback} />
-                  </PopConfirm>
-                ),
-              });
-            },
-          },
-        ];
-
-        return <TableEllipsis row={row} tabIndex={tabIndex} options={ellipsisOptions} />;
+    ellipsisColumn<EnrichedOrganization>(() => [
+      {
+        label: i18n.t('c:edit'),
+        icon: PencilIcon,
+        onSelect: (row, triggerRef) => {
+          useDropdowner.getState().remove();
+          openUpdateSheet(row, triggerRef);
+        },
       },
-    },
+      {
+        label: i18n.t('c:delete'),
+        icon: TrashIcon,
+        onSelect: (row) => {
+          const { update } = useDropdowner.getState();
+          const callback = () => useDropdowner.getState().remove();
+
+          update({
+            content: (
+              <PopConfirm title={i18n.t('c:delete_confirm.text', { name: row.name })}>
+                <DeleteOrganizations tenantId={row.tenantId} organizations={[row]} callback={callback} />
+              </PopConfirm>
+            ),
+          });
+        },
+      },
+    ]),
     {
       key: 'role',
       name: t('c:your_role'),
@@ -126,16 +116,7 @@ export const useColumns = () => {
       ),
     },
 
-    {
-      key: 'createdAt',
-      name: t('c:created_at'),
-      sortable: true,
-      sortDescendingFirst: true,
-      minBreakpoint: 'md',
-      minWidth: 120,
-      placeholderValue: '-',
-      renderCell: ({ row }) => dateShort(row.createdAt),
-    },
+    dateColumn('createdAt', { name: t('c:created_at') }),
     {
       key: 'createdBy',
       name: t('c:created_by'),

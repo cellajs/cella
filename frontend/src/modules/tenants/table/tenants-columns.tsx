@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Tenant, TenantWithOrganization } from 'sdk';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
-import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
+import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
@@ -16,7 +16,6 @@ import { UpdateTenantForm } from '~/modules/tenants/update-tenant-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
-import { dateShort } from '~/utils/date-short';
 
 const statusOptions = ['active', 'suspended', 'archived'] as const;
 
@@ -114,25 +113,16 @@ export const useColumns = () => {
       minWidth: 180,
       placeholderValue: '-',
     },
-    {
-      key: 'ellipsis',
-      name: '',
-      width: 32,
-      renderCell: ({ row, tabIndex }) => {
-        const ellipsisOptions: EllipsisOption<TenantWithOrganization>[] = [
-          {
-            label: t('c:edit'),
-            icon: PencilIcon,
-            onSelect: (row: TenantWithOrganization, triggerRef: React.RefObject<HTMLButtonElement | null>) => {
-              useDropdowner.getState().remove();
-              openUpdateSheet(row, triggerRef);
-            },
-          },
-        ];
-
-        return <TableEllipsis row={row} tabIndex={tabIndex} options={ellipsisOptions} />;
+    ellipsisColumn<TenantWithOrganization>(() => [
+      {
+        label: t('c:edit'),
+        icon: PencilIcon,
+        onSelect: (row, triggerRef) => {
+          useDropdowner.getState().remove();
+          openUpdateSheet(row, triggerRef);
+        },
       },
-    },
+    ]),
     {
       key: 'subscriptionStatus',
       name: t('c:subscription'),
@@ -165,16 +155,7 @@ export const useColumns = () => {
         </>
       ),
     },
-    {
-      key: 'createdAt',
-      name: t('c:created_at'),
-      sortable: true,
-      sortDescendingFirst: true,
-      minBreakpoint: 'md',
-      minWidth: 120,
-      placeholderValue: '-',
-      renderCell: ({ row }) => dateShort(row.createdAt),
-    },
+    dateColumn('createdAt', { name: t('c:created_at') }),
   ];
 
   return useState<ColumnOrColumnGroup<TenantWithOrganization>[]>(columns);
