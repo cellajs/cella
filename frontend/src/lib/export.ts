@@ -84,12 +84,10 @@ const filterColumns = <R extends Row>(column: ColumnOrColumnGroup<R>) => {
   return !column.hidden && !invalidColumnKeys.includes(column.key) && column.name !== '';
 };
 
+/** A cell with a comma, quote or line break is quoted with its quotes doubled (RFC 4180); a list is one cell. */
 function serialiseCellValue(value: unknown) {
-  if (typeof value === 'string') {
-    const formattedValue = value.replace(/"/g, '""');
-    return formattedValue.includes(',') ? `"${formattedValue}"` : formattedValue;
-  }
-  return value;
+  const text = Array.isArray(value) ? value.join(', ') : String(value);
+  return /[",\r\n]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 }
 
 function downloadFile(fileName: string, data: Blob) {
