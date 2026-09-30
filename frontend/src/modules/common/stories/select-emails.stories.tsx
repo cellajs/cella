@@ -54,26 +54,6 @@ export const Empty: Story = {
 };
 
 /**
- * Email input with display name support.
- * Accepts emails in format "Name <email@domain.com>".
- */
-export const WithDisplayName: Story = {
-  render: function Render() {
-    const [emails, setEmails] = useState(['John Doe <john@example.com>', 'jane@example.com']);
-    return (
-      <div className="w-96">
-        <SelectEmails
-          emails={emails}
-          onValueChange={setEmails}
-          allowDisplayName
-          placeholder="Name <email> or just email..."
-        />
-      </div>
-    );
-  },
-};
-
-/**
  * Email input that strips display names to extract only the email address.
  */
 export const StripDisplayName: Story = {
@@ -87,7 +67,6 @@ export const StripDisplayName: Story = {
             console.info('Emails:', newEmails);
             setEmails(newEmails);
           }}
-          allowDisplayName
           stripDisplayName
           placeholder="Try: John Doe <john@example.com>"
         />
@@ -335,5 +314,23 @@ export const ShouldRejectInvalid: Story = {
     await expect(canvas.getByText('value: []')).toBeVisible();
     await expect(input).toHaveValue('not-an-email');
     await expect(canvas.getByText('submits: 0')).toBeVisible();
+  },
+};
+
+export const ShouldFollowSubmitRule: Story = {
+  name: 'when an address is typed, should accept it as a chip exactly when the invite submit would',
+  tags: playTags,
+  render: () => <InviteEmailsField />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = canvas.getByRole('textbox');
+
+    await userEvent.type(input, 'jöhn@example.com{Enter}');
+    await expect(toaster.warning).toHaveBeenCalledTimes(1);
+    await expect(canvas.getByText('value: []')).toBeVisible();
+
+    await userEvent.clear(input);
+    await userEvent.type(input, 'user@example-.com{Enter}');
+    await expect(canvas.getByText('value: ["user@example-.com"]')).toBeVisible();
   },
 };
