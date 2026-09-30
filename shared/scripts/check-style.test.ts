@@ -198,3 +198,17 @@ describe('style check', () => {
     });
   });
 });
+
+describe('entry points', () => {
+  it('run when node starts them through a symlinked path', () => {
+    const link = `${dirty}-link`;
+    symlinkSync(dirty, link);
+    try {
+      const scripts = ['check-app-vocabulary.ts', 'check-doc-style.ts', 'check-comment-style.ts', 'check-doc-size.ts'];
+      const statuses = [...scripts, 'check-frontend-style.ts'].map((script) => run(link, script).status);
+      expect(statuses).toEqual([1, 1, 1, 1, 1]);
+    } finally {
+      rmSync(link);
+    }
+  });
+});

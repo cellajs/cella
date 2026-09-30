@@ -1,7 +1,7 @@
 /** File listing, path filters and source positions shared by the style checks. */
 import { execFileSync } from 'node:child_process';
-import { existsSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
+import { existsSync, realpathSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -40,9 +40,10 @@ export function lineColumn(source: string, offset: number): { line: number; colu
   return { line: lines.length, column: lines.at(-1)!.length + 1 };
 }
 
-/** Whether the module at `url` is the script node started with. */
+/** Whether the module at `url` is the script node started with, also when started through a symlinked path. */
 export function isMain(url: string): boolean {
-  return !!process.argv[1] && resolve(process.argv[1]) === fileURLToPath(url);
+  const started = process.argv[1];
+  return !!started && existsSync(started) && realpathSync(started) === realpathSync(fileURLToPath(url));
 }
 
 /** Where a check writes: the console when run alone, a buffer when the style pass runs the checks together. */
