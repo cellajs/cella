@@ -15,16 +15,37 @@ export function usePanZoom(panEnabled: boolean) {
   const [isPanning, setIsPanning] = useState(false);
   // Pointer position and offset at the start of the current drag
   const dragStart = useRef<{ x: number; y: number; dx: number; dy: number } | null>(null);
+  // Removes the window mouseup listener of the current mouse drag
+  const stopWindowRelease = useRef<(() => void) | null>(null);
 
   // Every input (buttons, wheel, trackpad pinch) goes through the same clamp.
   const setZoom = (next: number) => setZoomState(clampZoom(next));
 
-  useEffect(() => () => document.removeEventListener('wheel', blockPageWheel), []);
+  useEffect(
+    () => () => {
+      document.removeEventListener('wheel', blockPageWheel);
+      stopWindowRelease.current?.();
+    },
+    [],
+  );
+
+  const panEnd = () => {
+    stopWindowRelease.current?.();
+    stopWindowRelease.current = null;
+    dragStart.current = null;
+    setIsPanning(false);
+  };
 
   const panStart = (pageX: number, pageY: number, e: React.MouseEvent | React.TouchEvent) => {
     if (!panEnabled) return;
     dragStart.current = { x: pageX, y: pageY, dx: offset.x, dy: offset.y };
     setIsPanning(true);
+    // A mouse button released outside the viewport ends the drag too; touch delivers touchend to its target.
+    if (!('touches' in e)) {
+      stopWindowRelease.current?.();
+      window.addEventListener('mouseup', panEnd, { once: true });
+      stopWindowRelease.current = () => window.removeEventListener('mouseup', panEnd);
+    }
     // Keeps the drag from reaching the carousel
     e.stopPropagation();
     e.nativeEvent.stopImmediatePropagation();
@@ -34,11 +55,6 @@ export function usePanZoom(panEnabled: boolean) {
   const panMove = (pageX: number, pageY: number) => {
     const start = dragStart.current;
     if (start) setOffset({ x: start.dx + pageX - start.x, y: start.dy + pageY - start.y });
-  };
-
-  const panEnd = () => {
-    dragStart.current = null;
-    setIsPanning(false);
   };
 
   const panProps = {

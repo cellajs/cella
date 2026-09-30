@@ -136,6 +136,24 @@ export const Viewer: Story = {
       await expect(panLayerOf(img)).toMatchObject({ x: 30, y: 30 });
     });
 
+    await step('a drag released outside the viewport ends the pan', async () => {
+      await userEvent.click(pan);
+      const rect = img.getBoundingClientRect();
+      const start = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 };
+      img.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, ...start }));
+      await frame();
+      // The button comes up outside the viewport, which never sees that mouseup
+      document.body.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+      await frame();
+
+      // Back over the image with no button held, the pointer moves without dragging the image along
+      const back = { clientX: start.clientX + 40, clientY: start.clientY + 25 };
+      img.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true, ...back }));
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await expect(panLayerOf(img)).toMatchObject({ x: 30, y: 30 });
+      await userEvent.click(pan);
+    });
+
     await step('reset restores zoom, offset and rotation', async () => {
       await userEvent.click(rotate);
       await userEvent.click(reset);
