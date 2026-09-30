@@ -1,4 +1,5 @@
-// Forced-title helpers: the entity keeps `name` as stored source of truth while the editor shows `[heading(name), ...body]`.
+// Title documents: block 0 of a stored description is its title. Editors seed it from a template and label it with
+// `placeholders.title`, nothing enforces it, and the server derives `name` from block 0's text (`nameFromDocument`).
 import type { CustomBlock, TitleLevel } from '~/modules/common/blocknote/types';
 
 /** Matches backend maxLength.field (backend/src/db/utils/constraints.ts): name column limit. */
@@ -42,11 +43,15 @@ export const titleFromBlocks = (strBlocks: string): string => {
   }
 };
 
-/** Pure split of parsed blocks: block 0 text → name, the rest (sans trailing empties) → body. */
+/**
+ * Pure split of parsed blocks: block 0 text → name, the rest (sans trailing empties) → body. A block 0 without
+ * inline content (an image moved to the top) holds no title, so it stays in the body.
+ */
 export const splitTitleBlocks = (blocks: LooseBlock[]): { name: string; body: LooseBlock[] } => {
   const [first, ...rest] = blocks;
-  while (rest.length && isEmptyTextBlock(rest[rest.length - 1])) rest.pop();
-  return { name: blockText(first).trim(), body: rest };
+  const body = first && !Array.isArray(first.content) ? [first, ...rest] : rest;
+  while (body.length && isEmptyTextBlock(body[body.length - 1])) body.pop();
+  return { name: blockText(first).trim(), body };
 };
 
 /**

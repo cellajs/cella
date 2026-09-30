@@ -16,6 +16,17 @@ describe('nameFromDocument', () => {
     expect(nameFromDocument(doc('  padded  '))).toBe('padded');
   });
 
+  it('reads block 0 whatever its type, since the title template is not enforced', () => {
+    const paragraphFirst = JSON.stringify([
+      { type: 'paragraph', content: [{ type: 'text', text: 'First line', styles: {} }] },
+    ]);
+    expect(nameFromDocument(paragraphFirst)).toBe('First line');
+  });
+
+  it('clamps to the name column length', () => {
+    expect(nameFromDocument(doc('x'.repeat(300)))).toHaveLength(255);
+  });
+
   it('is empty for a null, unparseable or non-array description', () => {
     expect(nameFromDocument(null)).toBe('');
     expect(nameFromDocument('<p>legacy html</p>')).toBe('');

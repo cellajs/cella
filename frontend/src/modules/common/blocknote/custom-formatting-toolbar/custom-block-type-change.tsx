@@ -15,13 +15,7 @@ import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote
 import { isHeadingMenuItemActive } from '~/modules/common/blocknote/helpers/header-item-select';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
-export function CustomBlockTypeSelect({
-  headingLevels,
-  titleLevel,
-}: {
-  headingLevels: CustomBlockNoteMenuProps['headingLevels'];
-  titleLevel?: CustomBlockNoteMenuProps['titleLevel'];
-}) {
+export function CustomBlockTypeSelect({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) {
   const Components = useComponentsContext()!;
   const dict = useDictionary();
   const portalElement = usePortalElement();
@@ -38,8 +32,6 @@ export function CustomBlockTypeSelect({
     if (type === 'heading') {
       if (props?.isToggleable) return false;
       if (typeof props?.level === 'number') {
-        // Forced-title mode: body blocks must not rank at or above the title
-        if (titleLevel !== undefined && props.level <= titleLevel) return false;
         return headingLevels.includes(props.level as (typeof headingLevels)[number]);
       }
     }

@@ -1477,6 +1477,22 @@
     "pnpm check"
    ],
    "summary": "pnpm style is the only style entry point and pnpm style:audit adds review markers; comments:*, docs:style*, vocabulary:check, frontend:style, prose:check and prose:audit are removed, and the check modules in shared/scripts no longer run on their own. Every finding prints as file:line:column [rule] \"term\": message, with the same findings as before. An app whose own scripts or workflows call the removed scripts or node shared/scripts/check-*.ts switches them to pnpm style (raak: prose:check, frontend:comments and its check script)."
+  },
+  {
+   "id": "20260930T2054-title-document-template",
+   "version": "next",
+   "title": "Title documents: templated, not enforced",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "The BlockNote wrapper stops enforcing a title block: forcedTitle, forcedTitleExtension, the titleLevel menu filters, the block-0 drag-handle exclusion and the !important placeholder CSS are removed. Titled documents become a template: seed block 0 with emptyTitleDocument(level) and label it with placeholders.title, which only an empty heading in block 0 shows; the new placeholders prop also relabels any block type over the locale dictionary. helpers/forced-title is renamed helpers/title-document with the same exports, splitTitleBlocks keeps a non-text block 0 in the body, empty heading placeholders keep heading typography, and nameFromDocument clamps the derived name to 255 characters. Apps that passed forcedTitle swap it for placeholders.title and headingLevels without the title's level and above, keep required-title checks in their forms, and drop any call-site code that re-adds a non-text block 0 to the split body."
   }
  ]
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { emptyTitleDocument, splitTitleBlocks, titleFromBlocks } from './forced-title';
+import { emptyTitleDocument, splitTitleBlocks, titleDocumentHasBody, titleFromBlocks } from './title-document';
 
 const text = (t: string) => ({ type: 'text', text: t, styles: {} });
 const heading = (t: string, level = 1) => ({ type: 'heading', props: { level }, content: t ? [text(t)] : [] });
@@ -43,6 +43,14 @@ describe('splitTitleBlocks', () => {
     const image = { type: 'image', props: { url: 'https://x/i.png' } };
     const { body } = splitTitleBlocks([heading('T'), image]);
     expect(body).toEqual([image]);
+  });
+
+  it('keeps a media block 0 in the body, since it holds no title', () => {
+    const image = { type: 'image', props: { url: 'https://x/i.png' } };
+    const { name, body } = splitTitleBlocks([image, paragraph('caption'), paragraph('')]);
+    expect(name).toBe('');
+    expect(body).toEqual([image, paragraph('caption')]);
+    expect(titleDocumentHasBody(JSON.stringify([image]))).toBe(true);
   });
 
   it('empty body yields no blocks; whitespace title trims to empty', () => {

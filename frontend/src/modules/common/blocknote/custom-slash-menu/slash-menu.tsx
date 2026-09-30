@@ -4,8 +4,8 @@ import { getSlashMenuItems } from '~/modules/common/blocknote/blocknote-config';
 import { CustomSlashMenuComponent } from '~/modules/common/blocknote/custom-slash-menu/custom-slash-menu';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 
-export function CustomSlashMenu({ editor, allowedTypes, headingLevels, titleLevel }: CustomBlockNoteMenuProps) {
-  const slashMenuItems = getSlashMenuItems(editor, allowedTypes, headingLevels, titleLevel);
+export function CustomSlashMenu({ editor, allowedTypes, headingLevels }: CustomBlockNoteMenuProps) {
+  const slashMenuItems = getSlashMenuItems(editor, allowedTypes, headingLevels);
 
   return (
     <SuggestionMenuController
