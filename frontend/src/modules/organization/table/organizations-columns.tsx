@@ -102,6 +102,11 @@ export const useColumns = () => {
       editable: true,
       editorOptions: enumSelectEditorOptions,
       renderCell: ({ row }) => (row.membership?.role ? t(`${row.membership.role}`) : null),
+      // Table rows carry the role from the cache; export rows fetched from the API carry it under `included`.
+      exportValue: (row) => {
+        const role = row.membership?.role ?? row.included?.membership?.role;
+        return role && t(role);
+      },
       renderEditCell: (props) => (
         <RenderEnumSelect
           {...props}
@@ -125,10 +130,12 @@ export const useColumns = () => {
       placeholderValue: '-',
       renderCell: ({ row, tabIndex }) =>
         row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
+      exportValue: (row) => row.createdBy?.name,
     },
     // Dynamic membership count columns from role config
     ...hierarchy.getRoles('organization').map((role) => ({
       key: `${role}Count`,
+      exportValue: (row: EnrichedOrganization) => row.included.counts?.membership[role],
       name: t(`c:${role}`, { count: 2 }),
       minBreakpoint: 'md' as const,
       minWidth: 60,
@@ -155,6 +162,7 @@ export const useColumns = () => {
 
       return descendants.map((type) => ({
         key: `${type}Count`,
+        exportValue: (row: EnrichedOrganization) => (row.included.counts?.entities as Record<string, number>)?.[type],
         name: t(`c:${type}`, { count: 2 }),
         hidden: type !== lastChannel && type !== firstProduct,
         minBreakpoint: 'md' as const,
