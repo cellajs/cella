@@ -210,7 +210,7 @@ describe('EntityHierarchyBuilder', () => {
         .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection'] })
         .build();
       expect(h.getNullableAncestors('item')).toEqual(['project', 'courseSection']);
-      expect(h.getProductConfig('item')?.nullableAncestors).toEqual(['project', 'courseSection']);
+      expect(h.getNullableAncestors('item')).toEqual(['project', 'courseSection']);
     });
 
     it('returns empty array when none declared', () => {

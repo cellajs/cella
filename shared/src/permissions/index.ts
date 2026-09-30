@@ -17,7 +17,6 @@ export { buildSubject, buildSubjectFromEntity } from './build-subject.ts';
 export {
   type Access,
   type BatchPermissionResult,
-  type CheckAccessFanoutOptions,
   checkAccess,
   checkAccessBatch,
   checkAccessFanout,
@@ -28,7 +27,7 @@ export type { EntityCanMap } from './compute-can.ts';
 export { computeCan } from './compute-can.ts';
 // Permission engine (tier-neutral decision logic)
 export { getAllDecisions } from './engine/check.ts';
-export { type EngineAccess, getDecisionsForAccesses, type ResolveAccessOptions } from './engine/resolve-access.ts';
+export { type EngineAccess, getDecisionsForAccesses } from './engine/resolve-access.ts';
 export type { HierarchyOverrides } from './engine/resolve-hierarchy.ts';
 export type {
   AccessMembership,

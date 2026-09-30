@@ -1,7 +1,7 @@
 import type { RouteConfig, z } from '@hono/zod-openapi';
 import type { Context, MiddlewareHandler } from 'hono';
 import type { AccessScopedEntityType, appConfig } from 'shared';
-import type { BaseAuthStrategies, BaseOAuthProviders } from 'shared/config-builder';
+import type { BaseAuthStrategies, BaseOAuthProviders } from 'shared/config-builder/types';
 import type { Env, OrgContext } from '#/core/context';
 
 /** Services that can gate a route, derived from appConfig.services. */

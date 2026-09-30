@@ -8,15 +8,7 @@ export type { ConfigMode } from './src/config-builder/types.ts';
 // `hierarchy` must override these from the same synthetic instance.
 export const { isChannel, isProduct } = hierarchy;
 
-export type {
-  ChannelView,
-  EntityHierarchy,
-  EntityKind,
-  EntityView,
-  ProductView,
-  RoleFromRegistry,
-  UserEntityView,
-} from './src/config-builder/entity-hierarchy.ts';
+export type { EntityHierarchy } from './src/config-builder/entity-hierarchy.ts';
 export {
   createEntityHierarchy,
   createRoleRegistry,
@@ -26,21 +18,8 @@ export {
 export type { ResolvedAncestor } from './src/config-builder/resolve-row-channel.ts';
 export { entityIdColumnKey, entityIdColumnName } from './src/config-builder/resolve-row-channel.ts';
 export { pathHomeId, pathSegments, pathStartsWith } from './src/config-builder/row-path.ts';
-export type {
-  AppServiceEndpointConfig,
-  RequestLimitsConfig,
-  RequiredConfig,
-  S3Config,
-  S3ConfigInput,
-} from './src/config-builder/types.ts';
-export {
-  hasKey,
-  identityRecord,
-  nonEmpty,
-  recordFromKeys,
-  typedEntries,
-  typedKeys,
-} from './src/config-builder/utils.ts';
+export type { RequiredConfig, S3Config, S3ConfigInput } from './src/config-builder/types.ts';
+export { nonEmpty, recordFromKeys, typedEntries } from './src/config-builder/utils.ts';
 export type {
   AccessMembership,
   ActionAttribution,
@@ -80,7 +59,6 @@ export {
   type BatchPermissionResult,
   buildSubject,
   buildSubjectFromEntity,
-  type CheckAccessFanoutOptions,
   checkAccess,
   checkAccessBatch,
   checkAccessFanout,
@@ -115,7 +93,6 @@ export type {
   EnabledOAuthProvider,
   EntityActionType,
   EntityIdColumnKey,
-  EntityIdColumnKeys,
   EntityIdColumns,
   EntityRole,
   EntityType,
@@ -127,7 +104,6 @@ export type {
   OrganizationSetupConfig,
   ProductEntityType,
   PropagationHint,
-  RelatableChannelEntityType,
   RelatedChannelType,
   ResourceType,
   SeenTrackedProductType,
@@ -139,7 +115,7 @@ export type {
   UploadTemplateId,
   UserFlags,
 } from './types.ts';
-export { actionToVerb, activityActions, activityVerbs, isValidEventType, trackedEventTypes } from './types.ts';
+export { actionToVerb, activityActions, isValidEventType, trackedEventTypes } from './types.ts';
 
 // Side-effect import: compile-time check that the config matches the hierarchy.
 import './src/config-builder/config-validation.ts';

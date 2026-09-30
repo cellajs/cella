@@ -8,7 +8,7 @@ import {
   wideOverrides,
   wideSubject,
 } from '../testing/wide-fixture.ts';
-import { getAllDecisions } from './engine/index.ts';
+import { getAllDecisions } from './engine/check.ts';
 import { configurePermissions } from './policy-matrix.ts';
 
 /** The wide fixture's root floor role; the callbacks below configure `wideOverrides`, not the app hierarchy. */
