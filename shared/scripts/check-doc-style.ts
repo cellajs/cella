@@ -1,16 +1,14 @@
 /** Checks authored Markdown and MDX for vocabulary that obscures the concrete rule being described. */
 import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
-import { requiredAgentVocabularyRules, reviewAgentVocabularyRules } from './agent-vocabulary.ts';
-import { repoRoot as defaultRepoRoot, isMain, lineColumn, repoFiles } from './repo-files.ts';
+import { type ProseRule, proseRules } from './prose-rules.ts';
+import { repoRoot as defaultRepoRoot, isMain, lineColumn, repoFiles, writeFindings } from './repo-files.ts';
 
 const docExtensions = new Set(['.md', '.mdx']);
-const disallowedTerm = /\binvariants?\b/gi;
-const alternatives = 'rule, constraint, guarantee, requirement, contract, precondition, or assumption';
-const emDash = /\u2014/g;
-const emDashAdvice = 'split the sentence, use a colon, or drop the clause';
-const agentVocabularyExcludedPrefixes = ['cella/migrations/', 'infra/', 'sdk/gen/'];
-const agentVocabularyExcludedFiles = new Set(['cella/CHANGELOG.md']);
+const docRules = proseRules.filter((rule) => rule.message.docs);
+/** Report sections of their own; the concrete-language rule also reads code examples. */
+const concreteLanguage = docRules.find((rule) => rule.name === 'concrete-language')!;
+const emDash = docRules.find((rule) => rule.name === 'em-dash')!;
 
 interface DocStyleViolation {
   file: string;
@@ -19,44 +17,20 @@ interface DocStyleViolation {
   term: string;
 }
 
-interface EmDashViolation {
-  file: string;
-  line: number;
-  column: number;
-}
+type EmDashViolation = Omit<DocStyleViolation, 'term'>;
 
-export interface AgentVocabularyFinding {
-  file: string;
-  line: number;
-  column: number;
-  term: string;
+export interface AgentVocabularyFinding extends DocStyleViolation {
   rule: string;
   message: string;
 }
 
-/** Find concrete-language violations in one document. */
-export function findDocStyleViolations(file: string, source: string): DocStyleViolation[] {
-  const violations: DocStyleViolation[] = [];
-
-  for (const match of source.matchAll(disallowedTerm)) {
-    violations.push({ file, ...lineColumn(source, match.index), term: match[0] });
-  }
-
-  return violations;
+function matches(file: string, text: string, rule: ProseRule): DocStyleViolation[] {
+  if (rule.exclude?.docs?.test(file)) return [];
+  const pattern = new RegExp(rule.pattern.source, `${rule.pattern.flags}g`);
+  return [...text.matchAll(pattern)].map((match) => ({ file, ...lineColumn(text, match.index), term: match[0] }));
 }
 
-/** Em dashes in prose; inline and fenced code are masked so a rule may quote the character. */
-export function findEmDashViolations(file: string, source: string): EmDashViolation[] {
-  const violations: EmDashViolation[] = [];
-  const prose = maskMarkdownCode(source);
-
-  for (const match of prose.matchAll(emDash)) {
-    violations.push({ file, ...lineColumn(prose, match.index) });
-  }
-
-  return violations;
-}
-
+/** The prose view: inline code, fenced code and link targets blanked to spaces, so positions hold. */
 function maskMarkdownCode(source: string): string {
   let inFence = false;
   return source
@@ -74,40 +48,39 @@ function maskMarkdownCode(source: string): string {
     .join('\n');
 }
 
+/** Find concrete-language violations in one document. */
+export function findDocStyleViolations(file: string, source: string): DocStyleViolation[] {
+  return matches(file, source, concreteLanguage);
+}
+
+/** Em dashes in prose; inline and fenced code are masked so a rule may quote the character. */
+export function findEmDashViolations(file: string, source: string): EmDashViolation[] {
+  return matches(file, maskMarkdownCode(source), emDash).map(({ line, column }) => ({ file, line, column }));
+}
+
 /** Find agent-associated vocabulary in authored prose while ignoring code examples and link targets. */
 export function findAgentVocabularyFindings(
   file: string,
   source: string,
   level: 'required' | 'review' = 'required',
 ): AgentVocabularyFinding[] {
-  const findings: AgentVocabularyFinding[] = [];
   const prose = maskMarkdownCode(source);
-  const rules = level === 'required' ? requiredAgentVocabularyRules : reviewAgentVocabularyRules;
-
-  for (const rule of rules) {
-    const pattern = new RegExp(rule.pattern.source, `${rule.pattern.flags}g`);
-    for (const match of prose.matchAll(pattern)) {
-      findings.push({
-        file,
-        ...lineColumn(prose, match.index),
-        term: match[0],
-        rule: rule.name,
-        message: rule.message,
-      });
-    }
-  }
-
-  return findings.sort((a, b) => a.line - b.line || a.column - b.column);
+  return docRules
+    .filter((rule) => rule.level === level && rule !== concreteLanguage && rule !== emDash)
+    .flatMap((rule) =>
+      matches(file, prose, rule).map((match) => ({ ...match, rule: rule.name, message: rule.message.docs! })),
+    )
+    .sort((a, b) => a.line - b.line || a.column - b.column);
 }
 
 /** Format one actionable CLI diagnostic. */
 export function formatDocStyleViolation(violation: DocStyleViolation): string {
   const location = `${violation.file}:${violation.line}:${violation.column}`;
-  return `${location} replace "${violation.term}" with a precise ${alternatives}`;
+  return `${location} replace "${violation.term}" with a precise ${concreteLanguage.message.docs}`;
 }
 
 export function formatEmDashViolation(violation: EmDashViolation): string {
-  return `${violation.file}:${violation.line}:${violation.column} em dash (U+2014): ${emDashAdvice}`;
+  return `${violation.file}:${violation.line}:${violation.column} em dash (U+2014): ${emDash.message.docs}`;
 }
 
 export function formatAgentVocabularyFinding(finding: AgentVocabularyFinding): string {
@@ -115,70 +88,31 @@ export function formatAgentVocabularyFinding(finding: AgentVocabularyFinding): s
   return `${location} [${finding.rule}] "${finding.term}": ${finding.message}`;
 }
 
-function trackedDocs(repoRoot: string): string[] {
-  return repoFiles(repoRoot)
-    .filter((file) => docExtensions.has(extname(file).toLowerCase()))
-    .sort();
-}
-
-/** Changelogs are generated from commit messages, not authored. */
-function checksEmDash(file: string): boolean {
-  return !file.endsWith('CHANGELOG.md');
-}
-
-function checksAgentVocabulary(file: string): boolean {
-  return (
-    !agentVocabularyExcludedFiles.has(file) &&
-    !agentVocabularyExcludedPrefixes.some((prefix) => file.startsWith(prefix))
-  );
-}
-
 /** Check every tracked or untracked, nonignored Markdown and MDX file in a repository. */
 export function runDocStyleCheck(repoRoot = defaultRepoRoot, audit = false): number {
-  const docs = trackedDocs(repoRoot);
-  const violations = docs.flatMap((file) => findDocStyleViolations(file, readFileSync(join(repoRoot, file), 'utf8')));
-  const emDashes = docs
-    .filter(checksEmDash)
-    .flatMap((file) => findEmDashViolations(file, readFileSync(join(repoRoot, file), 'utf8')));
-  const vocabularyDocs = docs.filter(checksAgentVocabulary);
-  const requiredVocabulary = vocabularyDocs.flatMap((file) =>
-    findAgentVocabularyFindings(file, readFileSync(join(repoRoot, file), 'utf8')),
-  );
-  const reviewVocabulary = audit
-    ? vocabularyDocs.flatMap((file) =>
-        findAgentVocabularyFindings(file, readFileSync(join(repoRoot, file), 'utf8'), 'review'),
-      )
-    : [];
+  const docs = repoFiles(repoRoot)
+    .filter((file) => docExtensions.has(extname(file).toLowerCase()))
+    .sort()
+    .map((file) => ({ file, source: readFileSync(join(repoRoot, file), 'utf8') }));
+  const report = <T>(find: (file: string, source: string) => T[], format: (item: T) => string) =>
+    docs.flatMap(({ file, source }) => find(file, source).map(format));
 
-  const failed = violations.length > 0 || emDashes.length > 0 || requiredVocabulary.length > 0;
-  if (!failed) {
-    console.log('[docs:style] OK, documentation uses concrete language.');
-  } else {
-    if (violations.length > 0) {
-      console.error(`[docs:style] ${violations.length} concrete-language violation(s):`);
-      for (const violation of violations) {
-        console.error(`  ${formatDocStyleViolation(violation)}`);
-      }
-    }
-    if (emDashes.length > 0) {
-      console.error(`[docs:style] ${emDashes.length} em dash(es):`);
-      for (const violation of emDashes) {
-        console.error(`  ${formatEmDashViolation(violation)}`);
-      }
-    }
-    if (requiredVocabulary.length > 0) {
-      console.error(`[docs:style] ${requiredVocabulary.length} required vocabulary replacement(s):`);
-      for (const finding of requiredVocabulary) {
-        console.error(`  ${formatAgentVocabularyFinding(finding)}`);
-      }
-    }
-  }
+  const violations = report(findDocStyleViolations, formatDocStyleViolation);
+  const emDashes = report(findEmDashViolations, formatEmDashViolation);
+  const vocabulary = report(findAgentVocabularyFindings, formatAgentVocabularyFinding);
+  const failed = violations.length > 0 || emDashes.length > 0 || vocabulary.length > 0;
+  if (!failed) console.log('[docs:style] OK, documentation uses concrete language.');
+  writeFindings(console.error, '[docs:style]', 'concrete-language violation(s)', violations);
+  writeFindings(console.error, '[docs:style]', 'em dash(es)', emDashes);
+  writeFindings(console.error, '[docs:style]', 'required vocabulary replacement(s)', vocabulary);
 
   if (audit) {
-    console.warn(`[docs:style:audit] ${reviewVocabulary.length} review marker(s):`);
-    for (const finding of reviewVocabulary) {
-      console.warn(`  ${formatAgentVocabularyFinding(finding)}`);
-    }
+    const review = report(
+      (file, source) => findAgentVocabularyFindings(file, source, 'review'),
+      formatAgentVocabularyFinding,
+    );
+    console.warn(`[docs:style:audit] ${review.length} review marker(s):`);
+    for (const finding of review) console.warn(`  ${finding}`);
   }
 
   return failed ? 1 : 0;

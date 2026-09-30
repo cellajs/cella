@@ -44,3 +44,10 @@ export function lineColumn(source: string, offset: number): { line: number; colu
 export function isMain(url: string): boolean {
   return !!process.argv[1] && resolve(process.argv[1]) === fileURLToPath(url);
 }
+
+/** Writes `<label> <count> <noun>:` and one indented line per finding; nothing when there are none. */
+export function writeFindings(write: (line: string) => void, label: string, noun: string, findings: string[]): void {
+  if (findings.length === 0) return;
+  write(`${label} ${findings.length} ${noun}:`);
+  for (const finding of findings) write(`  ${finding}`);
+}
