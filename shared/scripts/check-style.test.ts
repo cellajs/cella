@@ -62,7 +62,7 @@ const dirty = makeRepo({
   'docs/guide.md': [`# Guide ${term}`, '', `Prose ${dash} and \`${dash}\`.`, `The ${bearing} ${seam}.`].join('\n'),
   'CHANGELOG.md': `${dash} ${bearing} ${term}\n`,
   'cella/CHANGELOG.md': `${dash} ${bearing} ${term}\n`,
-  'frontend/src/comp.tsx': 'export const Arrow = () => <div />;\n',
+  'frontend/src/comp.tsx': `export const Arrow = () => <div>{/* ${term} */}</div>;\n`,
 });
 
 const clean = makeRepo({ 'backend/src/a.ts': '// A plain comment.\nexport const a = 1;\n', 'docs/a.md': '# Plain\n' });
@@ -85,6 +85,7 @@ describe('comment check', () => {
   const review = [
     '  backend/src/rules.ts:3:28 [boundary-metaphor] consider boundary, interface, integration point, or the named call site',
     '  backend/src/rules.ts:4:4 [compatibility-language] confirm that this describes an active compatibility contract',
+    '  frontend/src/comp.tsx:1:37 [concrete-language] name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption',
   ];
   const placement =
     '  backend/src/long.ts:1:1 [detached-long-comment] 4 prose lines; move shared context to a README or attach a concise local constraint to a declaration';
@@ -97,11 +98,11 @@ describe('comment check', () => {
     });
   });
 
-  it('adds review markers in audit mode', () => {
+  it('adds review markers in audit mode, comments only a token boundary reaches included', () => {
     expect(run(dirty, 'check-comment-style.ts', '--audit')).toEqual({
       status: 1,
       stdout: '',
-      stderr: lines('[comments:check] 8 violation(s):', ...required, '[comments:audit] 2 review marker(s):', ...review),
+      stderr: lines('[comments:check] 8 violation(s):', ...required, '[comments:audit] 3 review marker(s):', ...review),
     });
   });
 

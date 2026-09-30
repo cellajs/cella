@@ -104,20 +104,21 @@ export async function runCommentCheck(args: string[], output: Output = console):
 
   for (const file of repoFiles().filter((file) => isRequested(file, roots) && isSource(file, skipped))) {
     const source = readFileSync(join(repoRoot, file), 'utf8');
-    const comments = sourceComments(file, source);
+    const comments = sourceComments(file, source, audit);
     for (const comment of comments) {
       for (const rule of rules) {
         if (rule.exclude?.comments?.test(file) || !rule.pattern.test(comment.text)) continue;
         for (const { index } of ruleMatches(rule, comment.text)) {
           const { line, column } = lineColumn(source, comment.offset + index);
-          (rule.level === 'review' ? findings : failures).push(
+          (rule.level === 'review' || comment.reviewOnly ? findings : failures).push(
             `${file}:${line}:${column} [${rule.name}] ${rule.message.comments}`,
           );
         }
       }
     }
     if (!placement) continue;
-    for (const comment of groupedComments(comments, source)) {
+    const established = comments.filter((comment) => !comment.reviewOnly);
+    for (const comment of groupedComments(established, source)) {
       const lineCount = proseLineCount(comment.text);
       if (lineCount <= 3 || isRequiredHeader(comment.text)) continue;
       if (hasDirectDeclarationOwner(file, source, comment)) continue;

@@ -6,6 +6,7 @@ export interface Comment {
   offset: number;
   end: number;
   text: string;
+  reviewOnly?: boolean;
 }
 
 export const scriptExtensions = new Set(['.cjs', '.js', '.jsx', '.mjs', '.ts', '.tsx']);
@@ -29,17 +30,36 @@ export function parseSource(file: string, source: string): ts.SourceFile {
   return lastParsed;
 }
 
-function scriptComments(file: string, source: string): Comment[] {
+/**
+ * Comments at node boundaries and, with `tokenBoundaries`, the ones only a token boundary reaches: after an opening
+ * bracket, in an empty JSX expression, before a `.` that starts a line. Every comment trails a token on its line or
+ * leads the token after a line break. The token-only ones are marked `reviewOnly` so apps can fix theirs before they
+ * fail the build; walking the tokens costs about as much as the parse, so only the audit asks for them.
+ */
+function scriptComments(file: string, source: string, tokenBoundaries: boolean): Comment[] {
+  const sourceFile = parseSource(file, source);
   const comments = new Map<number, Comment>();
-  const add = (ranges: readonly ts.CommentRange[] | undefined) => {
-    for (const { pos, end } of ranges ?? []) comments.set(pos, { offset: pos, end, text: source.slice(pos, end) });
+  const add = (ranges: readonly ts.CommentRange[] | undefined, reviewOnly: boolean) => {
+    for (const { pos, end } of ranges ?? []) {
+      if (!comments.has(pos)) comments.set(pos, { offset: pos, end, text: source.slice(pos, end), reviewOnly });
+    }
   };
-  const visit = (node: ts.Node) => {
-    add(ts.getLeadingCommentRanges(source, node.pos));
-    add(ts.getTrailingCommentRanges(source, node.end));
-    node.forEachChild(visit);
+  const visitNodes = (node: ts.Node) => {
+    add(ts.getLeadingCommentRanges(source, node.pos), false);
+    add(ts.getTrailingCommentRanges(source, node.end), false);
+    node.forEachChild(visitNodes);
   };
-  visit(parseSource(file, source));
+  const visitTokens = (node: ts.Node) => {
+    if (ts.isJSDoc(node)) return;
+    const children = node.getChildren(sourceFile);
+    if (children.length === 0) {
+      add(ts.getLeadingCommentRanges(source, node.pos), true);
+      add(ts.getTrailingCommentRanges(source, node.end), true);
+    }
+    for (const child of children) visitTokens(child);
+  };
+  visitNodes(sourceFile);
+  if (tokenBoundaries) visitTokens(sourceFile);
   return [...comments.values()].sort((a, b) => a.offset - b.offset);
 }
 
@@ -109,9 +129,9 @@ function yamlTrailingComments(source: string): Comment[] {
  * Block comments first, then line comments, for SQL. `#` comments that start a line for YAML, Dockerfile and
  * Caddyfile, with the comments after a YAML value in document order.
  */
-export function sourceComments(file: string, source: string): Comment[] {
+export function sourceComments(file: string, source: string, tokenBoundaries = false): Comment[] {
   const extension = extname(file);
-  if (scriptExtensions.has(extension)) return scriptComments(file, source);
+  if (scriptExtensions.has(extension)) return scriptComments(file, source, tokenBoundaries);
   if (extension === '.jsonc') return jsoncComments(source);
   const patterns =
     extension === '.css' || extension === '.scss'
