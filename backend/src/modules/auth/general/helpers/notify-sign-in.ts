@@ -2,11 +2,14 @@ import { and, eq, gt } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { baseDb as db } from '#/db/db';
 import { devicesTable } from '#/modules/auth/devices-db';
-import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import {
+  sendAccountSecurityEmail,
+  sendSecurityInboxEmail,
+} from '#/modules/auth/general/helpers/send-account-security-email';
 import type { SignInContext } from '#/modules/auth/general/helpers/session';
 import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import type { UserModel } from '#/modules/user/user-db';
-import { getIsoDate } from '#/utils/iso-date';
+import { getIsoDate, utcStamp } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -51,7 +54,7 @@ const countryName = (code: string, language: string) => {
 export const notifySignIn = ({ user, isSystemAdmin, context, strategy, newDevice }: SignInNotice) => {
   // A system admin session goes to the security inbox. Skipped in development, where every local sign-in would mail it.
   if (isSystemAdmin && appConfig.mode !== 'development') {
-    sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'sysadmin-signin', {
+    sendSecurityInboxEmail('sysadmin-signin', {
       email: user.email,
       ip: context.rawIp ?? 'unknown',
       timestamp: new Date().toISOString(),
@@ -91,7 +94,7 @@ export const notifyNewSignIn = async ({
       .where(and(eq(devicesTable.userId, user.id), eq(devicesTable.deviceIdHash, newDevice.deviceIdHash)));
 
     sendAccountSecurityEmail(user, 'new-sign-in', {
-      timestamp: `${new Date().toISOString().slice(0, 19).replace('T', ' ')} UTC`,
+      timestamp: utcStamp(),
       browser: context.device.browser ?? 'unknown',
       os: context.device.os ?? 'unknown',
       // Omitted when GeoIP has no answer: the template then leaves the location line out entirely.

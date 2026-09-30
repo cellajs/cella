@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
-import { appConfig } from 'shared';
 import type { DbOrTx } from '#/db/db';
-import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { domainsTable } from '#/modules/domains/domains-db';
 import { type TenantModel, tenantsTable } from '#/modules/tenants/tenants-db';
+import { utcStamp } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 /** Creates a tenant with an associated domain claim, for self-serve creation during org onboarding. */
@@ -26,10 +26,10 @@ export async function createTenantForUser(
   log.info('Tenant auto-created', { tenantId: tenant.id, name, createdBy });
 
   // Fire-and-forget security notification to sysadmin
-  sendAccountSecurityEmail({ email: appConfig.securityEmail, name: 'Security' }, 'tenant-created', {
+  sendSecurityInboxEmail('tenant-created', {
     tenantName: name,
     userEmail,
-    timestamp: `${new Date().toISOString().slice(0, 19).replace('T', ' ')} UTC`,
+    timestamp: utcStamp(),
   });
 
   return tenant;

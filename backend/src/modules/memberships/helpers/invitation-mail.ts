@@ -1,13 +1,10 @@
 import { appConfig, type ChannelEntityType, type EntityRole } from 'shared';
 import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
+import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import { findAccountLanguages } from '#/modules/memberships/memberships-queries';
 import { slugFromEmail } from '#/utils/slug-from-email';
 import { memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail, systemInviteEmail } from '../../../../emails';
-
-/** The link an emailed invitation token opens. */
-export const invitationTokenLink = (rawToken: string) =>
-  `${appConfig.backendAuthUrl}/invoke-token/invitation/${rawToken}`;
 
 export interface InvitedAddress {
   email: string;
@@ -47,7 +44,7 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
     name: slugFromEmail(email),
   });
   const withToken = invited.flatMap((address) =>
-    address.rawToken ? [{ ...recipient(address), inviteLink: invitationTokenLink(address.rawToken) }] : [],
+    address.rawToken ? [{ ...recipient(address), inviteLink: tokenLinkUrl('invitation', address.rawToken) }] : [],
   );
   const senderProps = { senderName: sender.name, senderThumbnailUrl: sender.thumbnailUrl };
 

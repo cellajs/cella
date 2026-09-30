@@ -10,6 +10,7 @@ import { issuePasskeyChallenge, verifyPasskeyAssertion } from '#/modules/auth/pa
 import { readStepUp, stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { authStepUpRoutes } from '#/modules/auth/step-up/step-up-routes';
 import { issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
+import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import { verifyTotp } from '#/modules/auth/totps/helpers/totps';
 import { defaultHook } from '#/utils/default-hook';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
@@ -79,7 +80,7 @@ app.openapi(authStepUpRoutes.sendStepUpLink, async (ctx) => {
   // Opening the link stamps this session only in this browser.
   await rememberLinkRequest(ctx, 'step-up', token.id);
 
-  const stepUpUrl = `${appConfig.backendAuthUrl}/invoke-token/${token.type}/${rawToken}`;
+  const stepUpUrl = tokenLinkUrl('step-up', rawToken);
   mailer.prepareEmails(stepUpEmail, { stepUpUrl, name: user.name }, [
     { email: user.email, lng: user.language ?? appConfig.defaultLanguage },
   ]);

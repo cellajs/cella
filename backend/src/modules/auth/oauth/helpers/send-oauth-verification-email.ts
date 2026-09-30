@@ -5,6 +5,7 @@ import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import { issueToken, type NewToken } from '#/modules/auth/tokens/token-lifecycle';
+import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import type { PendingSignUp } from '#/modules/auth/tokens/tokens-queries';
 import { type EmailModel, emailsTable } from '#/modules/user/emails-db';
 import { userSelect } from '#/modules/user/helpers/select';
@@ -72,10 +73,10 @@ export const sendOAuthVerificationEmail = async (props: Props) => {
 
   const { token: tokenRecord, rawToken } = await issueToken({ var: { db } }, token);
 
-  const verificationURL = new URL(`${appConfig.backendAuthUrl}/invoke-token/${tokenRecord.type}/${rawToken}`);
+  const verificationLink = tokenLinkUrl('oauth-verification', rawToken);
 
   const staticProps = {
-    verificationLink: verificationURL.toString(),
+    verificationLink,
     name,
     providerEmail: tokenRecord.email,
     providerName,
@@ -87,7 +88,7 @@ export const sendOAuthVerificationEmail = async (props: Props) => {
     .catch((err) => log.error('Failed to send OAuth verification email', { err }));
 
   if (appConfig.mode === 'development') {
-    console.info(`[verification-link] ${tokenRecord.email} ${verificationURL.toString()}`);
+    console.info(`[verification-link] ${tokenRecord.email} ${verificationLink}`);
   }
 
   log.info('Verification email sent', { userId: tokenRecord.userId, signUp: !!tokenRecord.pendingSignUp });
