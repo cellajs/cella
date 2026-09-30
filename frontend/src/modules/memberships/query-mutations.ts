@@ -69,10 +69,12 @@ export const upsertMyMembershipCache = (membership: MembershipBase) => {
 };
 
 /** Maps the members of every list under `key` and returns each list's previous data for rollback. */
-const patchMemberLists = (key: QueryKey, mapItems: (members: Member[]) => Member[], totalDelta = 0) => {
+const patchMemberLists = (key: QueryKey, mapItems: (members: Member[]) => Member[]) => {
   const previous: [QueryKey, MemberQueryData | InfiniteMemberQueryData][] = [];
   forEachListQuery<Member>(key, (queryKey, data) => {
-    const next = mapListItems(data, mapItems, totalDelta);
+    // A list's total moves only by the rows the write drops from that list.
+    const items = getQueryItems(data);
+    const next = mapListItems(data, mapItems, mapItems(items).length - items.length);
     // A paged list emptied by the write collapses to one empty first page.
     const emptied = isInfiniteQueryData(next) && !getQueryItems(next).length;
     const emptyPage = { pages: [{ items: [], total: 0 }], pageParams: [{ page: 0, offset: 0 }] };
@@ -223,7 +225,7 @@ export const useMembershipsDeleteMutation = () =>
       await queryClient.cancelQueries({ queryKey: similarKey });
 
       // Previous list data, restored by onError.
-      return patchMemberLists(similarKey, (members) => members.filter(({ id }) => !ids.includes(id)), -ids.length);
+      return patchMemberLists(similarKey, (members) => members.filter(({ id }) => !ids.includes(id)));
     },
     onSuccess: (_, { query: { entityId, entityType }, path: { organizationId } }) => {
       invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
