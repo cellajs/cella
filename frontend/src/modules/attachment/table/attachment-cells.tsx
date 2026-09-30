@@ -13,7 +13,6 @@ import { useBlobUploadStatus } from '~/modules/attachment/hooks/use-blob-upload-
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
 import type { EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
 import { TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
-import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { MediaThumbnail } from '~/modules/common/media-thumbnail';
 import { PopConfirm } from '~/modules/common/popconfirm';
@@ -29,7 +28,6 @@ interface ThumbnailCellProps {
 export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
   const { id, filename, contentType, groupId } = row;
   const navigate = useNavigate();
-  const setTriggerRef = useDialoger((state) => state.setTriggerRef);
   const cellRef = useRef<HTMLButtonElement | null>(null);
 
   const wrapClass = 'relative flex space-x-2 items-center justify-center w-full h-full';
@@ -38,8 +36,6 @@ export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
   const { url } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });
 
   const handleClick = () => {
-    setTriggerRef(id, cellRef);
-
     navigate({
       to: '.',
       replace: false,

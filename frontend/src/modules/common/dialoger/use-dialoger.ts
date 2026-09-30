@@ -27,7 +27,6 @@ export type DialogData = {
 };
 
 export type InternalDialog = DialogData & {
-  key: number;
   open?: boolean;
   content: ReactNode;
 };
@@ -41,27 +40,18 @@ interface DialogStoreState {
   get: (id: number | string) => InternalDialog | undefined;
   scrollToTop: (id: number | string) => void;
 
-  triggerRefs: Record<string, TriggerRef | null>;
-
+  /** @deprecated No-op: focus returns through `triggerRef` or the focus fallback. Removed in the next release. */
   setTriggerRef: (id: string, ref: TriggerRef) => void;
-  getTriggerRef: (id: string) => TriggerRef | null;
 }
 
 // Manages one or multiple dialogs; on mobile they render as drawers.
 export const useDialoger = create<DialogStoreState>((set, get) => ({
   dialogs: [],
-  triggerRefs: {},
 
   create: (content, data) => {
     blurAndStashTrigger();
 
-    const defaults = {
-      drawerOnMobile: true,
-      headerClassName: 'with-close-btn',
-      open: true,
-      modal: true,
-      key: Date.now(),
-    };
+    const defaults = { drawerOnMobile: true, headerClassName: 'with-close-btn', open: true };
 
     set((state) => ({
       dialogs: [...state.dialogs.filter((d) => d.id !== data.id), { ...defaults, ...data, content }],
@@ -89,13 +79,5 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
     popup?.closest('[data-slot="dialog-viewport"]')?.scrollTo({ top: 0 });
   },
 
-  setTriggerRef: (id, ref) => {
-    set((state) => ({
-      triggerRefs: { ...state.triggerRefs, [id]: ref },
-    }));
-  },
-
-  getTriggerRef: (id) => {
-    return get().triggerRefs[id] ?? null;
-  },
+  setTriggerRef: () => {},
 }));

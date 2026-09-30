@@ -32,7 +32,6 @@ export type SheetData = {
 };
 
 export type InternalSheet = SheetData & {
-  key: number;
   content: ReactNode;
   open?: boolean;
 };
@@ -47,27 +46,18 @@ interface SheetStoreState {
   removeOnRouteChange: (opts?: { isCleanup?: boolean }) => void;
   get(id: string): InternalSheet | undefined;
 
-  triggerRefs: Record<string, TriggerRef | null>;
-
+  /** @deprecated No-op: focus returns through `triggerRef` or the focus fallback. Removed in the next release. */
   setTriggerRef: (id: string, ref: TriggerRef) => void;
-  getTriggerRef: (id: string) => TriggerRef | null;
 }
 
 // Manages one or multiple sheets; on mobile they render as drawers.
 export const useSheeter = create<SheetStoreState>()((set, get) => ({
   sheets: [],
-  triggerRefs: {},
 
   create: (content, data) => {
     blurAndStashTrigger();
 
-    const defaults = {
-      drawerOnMobile: true,
-      open: true,
-      modal: true,
-      key: Date.now(),
-      closeSheetOnRouteChange: true,
-    };
+    const defaults = { open: true, modal: true, closeSheetOnRouteChange: true };
 
     set((state) => ({
       sheets: [...state.sheets.filter((s) => s.id !== data.id), { ...defaults, ...data, content }],
@@ -105,15 +95,7 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
 
   get: (id) => get().sheets.find((sheet) => sheet.id === id),
 
-  setTriggerRef: (id, ref) => {
-    set((state) => ({
-      triggerRefs: { ...state.triggerRefs, [id]: ref },
-    }));
-  },
-
-  getTriggerRef: (id) => {
-    return get().triggerRefs[id] ?? null;
-  },
+  setTriggerRef: () => {},
 }));
 
 // Non-hook alias for use outside React components, e.g. sheeter.getState()

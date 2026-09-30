@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useBodyClass } from '~/hooks/use-body-class';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useOverlayLock } from '~/modules/common/overlay-store-helpers';
 import { SheeterDrawer } from '~/modules/common/sheeter/drawer';
@@ -17,6 +18,8 @@ export function Sheeter() {
   const mode = isMobile ? 'drawer' : 'sheet';
 
   useOverlayLock('sheeter', sheets.length > 0);
+  // Dialogs opened from a sheet stack above it through this class
+  useBodyClass({ 'sheeter-open': sheets.length > 0 });
 
   useEffect(() => {
     return getRouter().subscribe('onBeforeLoad', ({ pathChanged }) => {

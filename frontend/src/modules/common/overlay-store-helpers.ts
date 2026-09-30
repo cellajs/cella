@@ -1,5 +1,4 @@
 import { useEffect } from 'react';
-import { useBodyClass } from '~/hooks/use-body-class';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
@@ -28,12 +27,10 @@ export function removeAndNotify<T extends Closable>(
   for (const item of toRemove) item.onClose?.(opts?.isCleanup);
 }
 
-/** Marks the body with `<source>-open` and locks the UI for `source` while an overlay of that kind is open. */
+/** Locks the UI for `source` while an overlay of that kind is open. */
 export function useOverlayLock(source: string, active: boolean) {
   const lockUI = useUIStore((state) => state.lockUI);
   const unlockUI = useUIStore((state) => state.unlockUI);
-
-  useBodyClass({ [`${source}-open`]: active });
 
   useEffect(() => {
     if (!active) return;
