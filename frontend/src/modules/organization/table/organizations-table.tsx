@@ -1,6 +1,4 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
-import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
@@ -8,6 +6,8 @@ import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
+import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
 import { useChangeEntityRoleMutation } from '~/modules/memberships/query-mutations';
 import { organizationsListQueryOptions } from '~/modules/organization/query';
 import { OrganizationsTableBar } from '~/modules/organization/table/organizations-bar';
@@ -31,23 +31,13 @@ function OrganizationsTable() {
   const { q, sort, order } = search;
   const limit = LIMIT;
 
-  const [selected, setSelected] = useState<EnrichedOrganization[]>([]);
   const [columns, setColumns] = useColumns();
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   const queryOptions = organizationsListQueryOptions({ ...search, limit, include: 'counts' });
 
-  const {
-    data: rows,
-    isLoading,
-    isFetching,
-    error,
-    fetchNextPage,
-    hasNextPage,
-  } = useInfiniteQuery({
-    ...queryOptions,
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
-  });
+  const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
+  const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
 
   const onRowsChange = (
     changedRows: EnrichedOrganization[],
@@ -62,17 +52,6 @@ function OrganizationsTable() {
     }
   };
 
-  const fetchMore = async () => {
-    if (!hasNextPage || isLoading || isFetching) return;
-    await fetchNextPage();
-  };
-
-  const onSelectedRowsChange = (value: Set<string>) => {
-    if (rows) setSelected(rows.filter((row) => value.has(row.id)));
-  };
-
-  const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
-
   return (
     <>
       <OrganizationsTableBar
@@ -82,7 +61,7 @@ function OrganizationsTable() {
         searchVars={{ ...search, limit }}
         setSearch={setSearch}
         setColumns={setColumns}
-        clearSelection={() => setSelected([])}
+        clearSelection={clearSelection}
       />
       <DataTable<EnrichedOrganization>
         {...{

@@ -19,6 +19,7 @@ import type { RowsChangeData } from '~/modules/common/data-grid';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { useRowSelection } from '~/modules/common/data-table/use-row-selection';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { isDefaultListView } from '~/query/basic/create-query-keys';
 
@@ -55,7 +56,6 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
   const { q, sort, order } = search;
   const limit = LIMIT;
 
-  const [selected, setSelected] = useState<Attachment[]>([]);
   const columnsFromHook = useColumns(channel, isSheet);
   const [hiddenOverrides, setHiddenOverrides] = useState<Record<string, boolean>>({});
   const columns = useMemo(
@@ -107,6 +107,7 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
   });
 
   const { data: rows, isLoading, isFetching, error } = isDefaultView ? canonical : filtered;
+  const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
   const hasNextPage = isDefaultView ? false : filtered.hasNextPage;
 
   const onRowsChange = (changedRows: Attachment[], { indexes, column }: RowsChangeData<Attachment>) => {
@@ -123,12 +124,6 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
     await filtered.fetchNextPage();
   };
 
-  const onSelectedRowsChange = (value: Set<string>) => {
-    if (rows) setSelected(rows.filter((row) => value.has(row.id)));
-  };
-
-  const selectedRowIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected]);
-
   const NoRowsComponent = (
     <ContentPlaceholder
       icon={PaperclipIcon}
@@ -136,8 +131,6 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
       titleProps={{ resource: t('c:attachment_other').toLowerCase() }}
     />
   );
-
-  const clearSelection = () => setSelected([]);
 
   return (
     <>

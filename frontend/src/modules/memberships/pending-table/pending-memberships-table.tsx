@@ -1,4 +1,3 @@
-import { useInfiniteQuery } from '@tanstack/react-query';
 import { BirdIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { zGetPendingMembershipsQuery } from 'sdk/zod.gen';
@@ -8,6 +7,7 @@ import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import { useSortColumns } from '~/modules/common/data-table/sort-columns';
+import { useInfiniteRows } from '~/modules/common/data-table/use-infinite-rows';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { PendingMembershipsTableBar } from '~/modules/memberships/pending-table/pending-bar';
 import { useColumns } from '~/modules/memberships/pending-table/pending-columns';
@@ -50,22 +50,7 @@ export function PendingMembershipsTable({ channel }: PendingMembershipsTableProp
     limit,
   });
 
-  const {
-    data: rows,
-    isLoading,
-    isFetching,
-    error,
-    fetchNextPage,
-    hasNextPage,
-  } = useInfiniteQuery({
-    ...queryOptions,
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
-  });
-
-  const fetchMore = async () => {
-    if (!hasNextPage || isLoading || isFetching) return;
-    await fetchNextPage();
-  };
+  const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
 
   return (
     <div className="flex h-full flex-col gap-2">
