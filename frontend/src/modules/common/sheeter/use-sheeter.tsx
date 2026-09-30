@@ -95,32 +95,26 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
   },
 
   remove: (id, opts) => {
-    set((state) => {
-      let removeSheets = state.sheets;
+    const { sheets } = get();
+    const removeSheets = id ? sheets.filter((sheet) => sheet.id === id) : sheets;
+    if (!removeSheets.length) return;
 
-      if (id) removeSheets = state.sheets.filter((sheet) => sheet.id === id);
+    // Update the store before onClose: a callback that navigates from inside set() would
+    // interleave a router update with this one and render a stale frame of the sheet.
+    set({ sheets: sheets.filter((sheet) => !removeSheets.includes(sheet)) });
 
-      if (!removeSheets.length) return { sheets: state.sheets };
-
-      for (const sheet of removeSheets) sheet.onClose?.(opts?.isCleanup);
-
-      const sheets = state.sheets.filter((sheet) => !removeSheets.some((s) => s.id === sheet.id));
-
-      return { sheets };
-    });
+    for (const sheet of removeSheets) sheet.onClose?.(opts?.isCleanup);
   },
 
   removeOnRouteChange: (opts) => {
-    set((state) => {
-      const removeSheets = state.sheets.filter((sheet) => sheet.closeSheetOnRouteChange);
-      if (!removeSheets.length) return { sheets: state.sheets };
+    const { sheets } = get();
+    const removeSheets = sheets.filter((sheet) => sheet.closeSheetOnRouteChange);
+    if (!removeSheets.length) return;
 
-      for (const sheet of removeSheets) sheet.onClose?.(opts?.isCleanup);
+    // Same order as remove: store first, then onClose.
+    set({ sheets: sheets.filter((sheet) => !removeSheets.includes(sheet)) });
 
-      const sheets = state.sheets.filter((sheet) => !removeSheets.some((s) => s.id === sheet.id));
-
-      return { sheets };
-    });
+    for (const sheet of removeSheets) sheet.onClose?.(opts?.isCleanup);
   },
 
   get: (id) => get().sheets.find((sheet) => sheet.id === id),
