@@ -3,14 +3,11 @@
  * shrink on purpose and grow on purpose. `--write-baseline` records the current counts;
  * `--gate` exits non-zero when a file exceeds its baseline by more than the growth allowance.
  */
-import { execFileSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
+import { isMain, repoFiles, repoRoot } from './repo-files.ts';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const repoRoot = join(here, '..', '..');
-const baselinePath = join(here, 'doc-size-baseline.json');
+const baselinePath = join(repoRoot, 'shared/scripts/doc-size-baseline.json');
 const excludedFiles = new Set(['cella/CHANGELOG.md']);
 /** Fraction a file may grow past its baseline before `--gate` fails. */
 const growthAllowance = 0.1;
@@ -21,9 +18,8 @@ interface Baseline {
 }
 
 function trackedMarkdown(): string[] {
-  return execFileSync('git', ['ls-files', '*.md'], { cwd: repoRoot, encoding: 'utf8' })
-    .split('\n')
-    .filter((file) => file && !excludedFiles.has(file) && existsSync(join(repoRoot, file)))
+  return repoFiles(repoRoot, true)
+    .filter((file) => file.endsWith('.md') && !excludedFiles.has(file))
     .sort();
 }
 
@@ -90,8 +86,7 @@ export function runDocSizeCheck(gate: boolean): number {
   return 0;
 }
 
-const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
-if (fileURLToPath(import.meta.url) === invokedPath) {
+if (isMain(import.meta.url)) {
   if (process.argv.includes('--write-baseline')) writeBaseline(currentCounts());
   else process.exitCode = runDocSizeCheck(process.argv.includes('--gate'));
 }

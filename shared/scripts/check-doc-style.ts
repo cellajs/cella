@@ -1,12 +1,9 @@
 /** Checks authored Markdown and MDX for vocabulary that obscures the concrete rule being described. */
-import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, extname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { extname, join } from 'node:path';
 import { requiredAgentVocabularyRules, reviewAgentVocabularyRules } from './agent-vocabulary.ts';
+import { repoRoot as defaultRepoRoot, isMain, lineColumn, repoFiles } from './repo-files.ts';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const defaultRepoRoot = join(here, '..', '..');
 const docExtensions = new Set(['.md', '.mdx']);
 const disallowedTerm = /\binvariants?\b/gi;
 const alternatives = 'rule, constraint, guarantee, requirement, contract, precondition, or assumption';
@@ -42,15 +39,7 @@ export function findDocStyleViolations(file: string, source: string): DocStyleVi
   const violations: DocStyleViolation[] = [];
 
   for (const match of source.matchAll(disallowedTerm)) {
-    const offset = match.index;
-    const before = source.slice(0, offset);
-    const lastLineBreak = before.lastIndexOf('\n');
-    violations.push({
-      file,
-      line: before.split('\n').length,
-      column: offset - lastLineBreak,
-      term: match[0],
-    });
+    violations.push({ file, ...lineColumn(source, match.index), term: match[0] });
   }
 
   return violations;
@@ -62,10 +51,7 @@ export function findEmDashViolations(file: string, source: string): EmDashViolat
   const prose = maskMarkdownCode(source);
 
   for (const match of prose.matchAll(emDash)) {
-    const offset = match.index;
-    const before = prose.slice(0, offset);
-    const lastLineBreak = before.lastIndexOf('\n');
-    violations.push({ file, line: before.split('\n').length, column: offset - lastLineBreak });
+    violations.push({ file, ...lineColumn(prose, match.index) });
   }
 
   return violations;
@@ -101,13 +87,9 @@ export function findAgentVocabularyFindings(
   for (const rule of rules) {
     const pattern = new RegExp(rule.pattern.source, `${rule.pattern.flags}g`);
     for (const match of prose.matchAll(pattern)) {
-      const offset = match.index;
-      const before = prose.slice(0, offset);
-      const lastLineBreak = before.lastIndexOf('\n');
       findings.push({
         file,
-        line: before.split('\n').length,
-        column: offset - lastLineBreak,
+        ...lineColumn(prose, match.index),
         term: match[0],
         rule: rule.name,
         message: rule.message,
@@ -134,13 +116,8 @@ export function formatAgentVocabularyFinding(finding: AgentVocabularyFinding): s
 }
 
 function trackedDocs(repoRoot: string): string[] {
-  return execFileSync('git', ['ls-files', '-co', '--exclude-standard'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-  })
-    .split('\n')
+  return repoFiles(repoRoot)
     .filter((file) => docExtensions.has(extname(file).toLowerCase()))
-    .filter((file) => existsSync(join(repoRoot, file)))
     .sort();
 }
 
@@ -207,7 +184,6 @@ export function runDocStyleCheck(repoRoot = defaultRepoRoot, audit = false): num
   return failed ? 1 : 0;
 }
 
-const invokedPath = process.argv[1] ? resolve(process.argv[1]) : '';
-if (fileURLToPath(import.meta.url) === invokedPath) {
+if (isMain(import.meta.url)) {
   process.exitCode = runDocStyleCheck(defaultRepoRoot, process.argv.includes('--audit'));
 }

@@ -2,15 +2,12 @@
  * Checks source comments for prose that belongs in commit history or review discussion.
  * Audit modes report lower-confidence wording and detached long-form comment blocks.
  */
-import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
-import { basename, dirname, extname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import { basename, extname, join } from 'node:path';
 import ts from 'typescript';
 import { requiredAgentVocabularyRules, reviewAgentVocabularyRules } from './agent-vocabulary.ts';
+import { isRequested, lineColumn, repoFiles, repoRoot } from './repo-files.ts';
 
-const here = dirname(fileURLToPath(import.meta.url));
-const repoRoot = join(here, '..', '..');
 const audit = process.argv.includes('--audit');
 const placement = process.argv.includes('--placement');
 const concreteLanguageOnly = process.argv.includes('--concrete-language');
@@ -98,26 +95,8 @@ const activeRequiredRules = concreteLanguageOnly
   ? requiredRules.filter((rule) => rule.name === 'concrete-language')
   : requiredRules;
 
-function trackedFiles(): string[] {
-  return execFileSync('git', ['ls-files', '-co', '--exclude-standard'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-  })
-    .split('\n')
-    .filter(Boolean)
-    .filter((file) => existsSync(join(repoRoot, file)));
-}
-
-function isRequested(file: string): boolean {
-  if (requestedRoots.length === 0) return true;
-  return requestedRoots.some((root) => {
-    const normalized = root.replace(/^\.\//, '').replace(/\/$/, '');
-    return file === normalized || file.startsWith(`${normalized}/`);
-  });
-}
-
 function isSource(file: string): boolean {
-  if (!isRequested(file)) return false;
+  if (!isRequested(file, requestedRoots)) return false;
   if (excludedPrefixes.some((prefix) => file.startsWith(prefix))) return false;
   if (file === 'infra/compose.gen.yml' || file.includes('.gen.')) return false;
   const name = basename(file);
@@ -197,12 +176,6 @@ function regexComments(file: string, source: string): Comment[] {
   return comments;
 }
 
-function lineAndColumn(source: string, offset: number): { line: number; column: number } {
-  const before = source.slice(0, offset);
-  const lines = before.split('\n');
-  return { line: lines.length, column: lines.at(-1)!.length + 1 };
-}
-
 function groupedComments(comments: Comment[], source: string): Comment[] {
   const groups: Comment[] = [];
   for (const comment of comments) {
@@ -271,12 +244,12 @@ const failures: string[] = [];
 const findings: string[] = [];
 const placementFailures: string[] = [];
 
-for (const file of trackedFiles().filter(isSource)) {
+for (const file of repoFiles().filter(isSource)) {
   const source = readFileSync(join(repoRoot, file), 'utf8');
   const extension = extname(file);
   const comments = typedExtensions.has(extension) ? typedComments(file, source) : regexComments(file, source);
   for (const comment of comments) {
-    const location = lineAndColumn(source, comment.offset);
+    const location = lineColumn(source, comment.offset);
     for (const rule of activeRequiredRules) {
       if (rule.pattern.test(comment.text)) {
         failures.push(`${file}:${location.line}:${location.column} [${rule.name}] ${rule.message}`);
@@ -308,7 +281,7 @@ for (const file of trackedFiles().filter(isSource)) {
     const lineCount = proseLineCount(comment.text);
     if (lineCount <= 3 || isRequiredHeader(comment.text)) continue;
     if (hasDirectDeclarationOwner(file, source, comment)) continue;
-    const location = lineAndColumn(source, comment.offset);
+    const location = lineColumn(source, comment.offset);
     placementFailures.push(
       [
         `${file}:${location.line}:${location.column} [detached-long-comment] ${lineCount} prose lines;`,

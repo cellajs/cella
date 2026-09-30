@@ -3,38 +3,22 @@
  * inside wrappers such as `memo`; component values are typed `ComponentType<Props>`, never `FC`; zustand stores are
  * read through a selector, never a bare `useStore()` call. Export docs follow the cella/AGENTS.md comment budget.
  */
-import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
+import { isRequested, repoFiles, repoRoot } from './repo-files.ts';
 
-const repoRoot = join(fileURLToPath(new URL('../..', import.meta.url)));
 const requestedRoots = process.argv.slice(2);
 const failures: string[] = [];
 const storeNames = new Set<string>();
 
 function trackedFrontendFiles(): string[] {
-  return execFileSync('git', ['ls-files', '-co', '--exclude-standard', 'frontend/src'], {
-    cwd: repoRoot,
-    encoding: 'utf8',
-  })
-    .split('\n')
-    .filter(Boolean)
-    .filter((file) => existsSync(join(repoRoot, file)))
-    .filter((file) => /\.(?:ts|tsx)$/.test(file))
+  return repoFiles()
+    .filter((file) => file.startsWith('frontend/src/') && /\.(?:ts|tsx)$/.test(file))
     .filter((file) => !file.includes('.gen.'))
     .filter((file) => !file.includes('/content/'))
     .filter((file) => !file.includes('/stories/'))
     .filter((file) => !/\.(?:stories|test)\.tsx?$/.test(file));
-}
-
-function isRequested(file: string): boolean {
-  if (requestedRoots.length === 0) return true;
-  return requestedRoots.some((root) => {
-    const normalized = root.replace(/^\.\//, '').replace(/\/$/, '');
-    return file === normalized || file.startsWith(`${normalized}/`);
-  });
 }
 
 function lineAndColumn(sourceFile: ts.SourceFile, offset: number): string {
@@ -149,7 +133,7 @@ const sourceFiles = trackedFrontendFiles().map((file) =>
 );
 for (const sourceFile of sourceFiles) collectStores(sourceFile);
 
-for (const sourceFile of sourceFiles.filter((sourceFile) => isRequested(sourceFile.fileName))) {
+for (const sourceFile of sourceFiles.filter((sourceFile) => isRequested(sourceFile.fileName, requestedRoots))) {
   for (const statement of sourceFile.statements) {
     if (ts.isVariableStatement(statement)) checkVariableStatement(sourceFile, statement);
   }
