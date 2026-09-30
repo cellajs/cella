@@ -1,4 +1,7 @@
-/** AWSet (Add-Wins Set) delta operations for set-type fields: compute deltas from full arrays and apply them optimistically. */
+/**
+ * AWSet (Add-Wins Set) delta operations for set-type fields: compute deltas from full arrays and merge pending ones.
+ * The backend applies them (`backend/src/core/stx/array-delta.ts`); optimistic updates write the full array.
+ */
 
 export type ArrayDelta = { add: string[]; remove: string[] };
 
@@ -15,15 +18,6 @@ export function computeArrayDelta(oldIds: string[], newIds: string[]): ArrayDelt
     add: newIds.filter((id) => !oldSet.has(id)),
     remove: oldIds.filter((id) => !newSet.has(id)),
   };
-}
-
-/** Removes first and then appends, which preserves order and keeps the operation idempotent. */
-export function applyArrayDelta(current: string[], delta: ArrayDelta): string[] {
-  const removeSet = new Set(delta.remove);
-  const filtered = current.filter((id) => !removeSet.has(id));
-  const existingSet = new Set(filtered);
-  const toAdd = delta.add.filter((id) => !existingSet.has(id));
-  return [...filtered, ...toAdd];
 }
 
 /** Used when squashing pending mutations: the later delta wins when the same id appears in both add and remove. */

@@ -16,4 +16,4 @@ try {
   console.error(`Backend not ready after ${timeout}ms`);
   process.exit(1);
 }
-process.exit(1);
+process.exit(0);
