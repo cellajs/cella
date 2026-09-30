@@ -1,75 +1,29 @@
 import type { IconComponent } from '~/modules/common/icons/types';
 
-// biome-ignore lint/suspicious/noExplicitAny: unable to infer type due to dynamic data structure
-type IconType = IconComponent | React.ComponentType<any>;
-
 type StepItem = {
   id?: string;
   label?: string;
   description?: string;
-  icon?: IconType;
   optional?: boolean;
 };
 
-interface StepOptions {
-  orientation?: 'vertical' | 'horizontal';
-  state?: 'loading' | 'error';
-  responsive?: boolean;
-  checkIcon?: IconType;
-  errorIcon?: IconType;
-  onClickStep?: (step: number, setStep: (step: number) => void) => void;
-  mobileBreakpoint?: string;
-  variant?: 'circle' | 'circle-alt' | 'line';
-  expandVerticalSteps?: boolean;
-  size?: 'sm' | 'md' | 'lg';
-  styles?: {
-    'main-container'?: string;
-    'horizontal-step'?: string;
-    /** Styles for the horizontal step container (button and labels) */
-    'horizontal-step-container'?: string;
-    'vertical-step'?: string;
-    /** Styles for the vertical step container (button and labels) */
-    'vertical-step-container'?: string;
-    'vertical-step-content'?: string;
-    'step-button-container'?: string;
-    /** Styles for the label and description container */
-    'step-label-container'?: string;
-    'step-label'?: string;
-    'step-description'?: string;
-  };
-  variables?: {
-    '--step-icon-size'?: string;
-    '--step-gap'?: string;
-  };
-  scrollTracking?: boolean;
-}
-
-interface StepperProps extends StepOptions {
+interface StepperProps {
   children?: React.ReactNode;
   className?: string;
   initialStep: number;
   steps: StepItem[];
-}
-
-interface StepProps extends React.HTMLAttributes<HTMLLIElement> {
-  label?: string | React.ReactNode;
-  description?: string;
-  icon?: IconType;
-  state?: 'loading' | 'error';
-  checkIcon?: IconType;
-  errorIcon?: IconType;
-  isCompletedStep?: boolean;
-  isKeepError?: boolean;
+  orientation?: 'vertical';
+  /** Makes the step buttons clickable; the handler decides whether to call `setStep`. */
   onClickStep?: (step: number, setStep: (step: number) => void) => void;
 }
 
-interface StepSharedProps extends StepProps {
-  isLastStep?: boolean;
-  isCurrentStep?: boolean;
-  index?: number;
-  hasVisited?: boolean;
-  isError?: boolean;
-  isLoading?: boolean;
+interface StepProps {
+  children?: React.ReactNode;
+  label?: React.ReactNode;
+  /** Shown on the step button once the step is completed, in place of a check. */
+  checkIcon?: IconComponent;
+  /** @deprecated Has no effect: steps have no error state. */
+  isKeepError?: boolean;
 }
 
-export type { IconType, StepItem, StepProps, StepperProps, StepSharedProps };
+export type { StepItem, StepProps, StepperProps };

@@ -1,42 +1,31 @@
-import * as React from 'react';
-import { StepperContext } from '~/modules/common/stepper/context';
+import { createContext, useContext } from 'react';
+import type { StepItem, StepperProps } from '~/modules/common/stepper/types';
 
-function usePrevious<T>(value: T): T | undefined {
-  const ref = React.useRef<T | undefined>(undefined);
-
-  React.useEffect(() => {
-    ref.current = value;
-  }, [value]);
-
-  return ref.current;
+interface StepperContextValue {
+  steps: StepItem[];
+  activeStep: number;
+  onClickStep?: StepperProps['onClickStep'];
+  nextStep: () => void;
+  setStep: (step: number) => void;
 }
 
+/** Outside a stepper the defaults apply, so forms that call `nextStep` also work on their own. */
+export const StepperContext = createContext<StepperContextValue>({
+  steps: [],
+  activeStep: 0,
+  nextStep: () => {},
+  setStep: () => {},
+});
+
 export const useStepper = () => {
-  const context = React.useContext(StepperContext);
-
-  if (context === undefined) {
-    throw new Error('useStepper must be used within a StepperProvider');
-  }
-
-  const { children, className, ...rest } = context;
-
-  const isLastStep = context.activeStep === context.steps.length - 1;
-  const hasCompletedAllSteps = context.activeStep === context.steps.length;
-
-  const previousActiveStep = usePrevious(context.activeStep);
-
+  const context = useContext(StepperContext);
   const currentStep = context.steps[context.activeStep];
-  const isOptionalStep = !!currentStep?.optional;
-
-  const isDisabledStep = context.activeStep === 0;
 
   return {
-    ...rest,
-    isLastStep,
-    hasCompletedAllSteps,
-    isOptionalStep,
-    isDisabledStep,
+    ...context,
     currentStep,
-    previousActiveStep,
+    isOptionalStep: !!currentStep?.optional,
+    isLastStep: context.activeStep === context.steps.length - 1,
+    hasCompletedAllSteps: context.activeStep === context.steps.length,
   };
 };
