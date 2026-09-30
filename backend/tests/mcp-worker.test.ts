@@ -1,6 +1,7 @@
 import { getMcpProtectedResourceMetadata } from 'sdk';
 import { appConfig } from 'shared';
 import { afterAll, describe, expect, it, vi } from 'vitest';
+import { otel } from '#/lib/tracing';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { defaultHeaders } from './fixtures';
 import { createTestOrganization } from './helpers';
@@ -46,7 +47,9 @@ describe('MCP worker folded into the API process', () => {
     await baseApp.request('/health', { headers: defaultHeaders });
 
     const { startMcpWorker } = await import('#/modules/mcp/worker/mcp-worker-entry');
-    await startMcpWorker({ port: appConfig.devPorts.mcp });
+    await startMcpWorker({ port: appConfig.devPorts.mcp, inProcess: true });
+    // The API process owns telemetry
+    expect(otel.start).not.toHaveBeenCalled();
 
     const org = await createTestOrganization();
     const call = sdk(createTestClient({ fetch: worker.fetch as Fetch }));
