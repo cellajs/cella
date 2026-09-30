@@ -5,8 +5,7 @@ import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import { toaster } from '~/modules/common/toaster/toaster';
 
 /**
- * Email input component with multi-email support, validation, and paste handling.
- * Built on top of TagInput with email-specific validation and delimiter support.
+ * Email chip input of the invite form: typed or pasted addresses become chips when an invite submit would accept them.
  */
 const meta: Meta<typeof SelectEmails> = {
   title: 'common/SelectEmails',
@@ -54,92 +53,6 @@ export const Empty: Story = {
 };
 
 /**
- * Email input that strips display names to extract only the email address.
- */
-export const StripDisplayName: Story = {
-  render: function Render() {
-    const [emails, setEmails] = useState<string[]>([]);
-    return (
-      <div className="w-96">
-        <SelectEmails
-          emails={emails}
-          onValueChange={(newEmails) => {
-            console.info('Emails:', newEmails);
-            setEmails(newEmails);
-          }}
-          stripDisplayName
-          placeholder="Try: John Doe <john@example.com>"
-        />
-        <p className="mt-2 text-muted-foreground text-xs">
-          Display names are stripped, only email addresses are stored.
-        </p>
-      </div>
-    );
-  },
-};
-
-/**
- * Email input allowing duplicate entries.
- */
-export const AllowDuplicates: Story = {
-  render: function Render() {
-    const [emails, setEmails] = useState(['user@example.com']);
-    return (
-      <div className="w-80">
-        <SelectEmails emails={emails} onValueChange={setEmails} allowDuplicate placeholder="Duplicates allowed..." />
-        <p className="mt-2 text-muted-foreground text-xs">Try adding the same email twice.</p>
-      </div>
-    );
-  },
-};
-
-/**
- * Email input with maximum tag limit.
- */
-export const WithMaxEmails: Story = {
-  render: function Render() {
-    const [emails, setEmails] = useState(['first@example.com', 'second@example.com']);
-    return (
-      <div className="w-80">
-        <SelectEmails
-          emails={emails}
-          onValueChange={setEmails}
-          maxTags={5}
-          showCount
-          placeholder="Add up to 5 emails..."
-          placeholderWhenFull="Maximum emails reached"
-        />
-      </div>
-    );
-  },
-};
-
-/**
- * Email input with custom styling.
- */
-export const CustomStyling: Story = {
-  render: function Render() {
-    const [emails, setEmails] = useState(['styled@example.com']);
-    return (
-      <div className="w-80">
-        <SelectEmails
-          emails={emails}
-          onValueChange={setEmails}
-          placeholder="Styled emails..."
-          badgeVariants={{ variant: 'outline' }}
-          styleClasses={{
-            tag: {
-              body: 'bg-blue-50 text-blue-800 border-blue-200',
-              closeButton: 'text-blue-600 hover:text-blue-800',
-            },
-          }}
-        />
-      </div>
-    );
-  },
-};
-
-/**
  * Email input demonstrating paste functionality.
  * Try pasting: "test1@example.com, test2@example.com; test3@example.com"
  */
@@ -152,27 +65,6 @@ export const PasteMultiple: Story = {
         <p className="mt-2 text-muted-foreground text-xs">
           Try pasting: test1@example.com, test2@example.com; test3@example.com
         </p>
-      </div>
-    );
-  },
-};
-
-/**
- * Email input with event callbacks.
- */
-export const WithCallbacks: Story = {
-  render: function Render() {
-    const [emails, setEmails] = useState<string[]>([]);
-    return (
-      <div className="w-80">
-        <SelectEmails
-          emails={emails}
-          onValueChange={setEmails}
-          onTagAdd={(email) => console.info('Added:', email)}
-          onTagRemove={(email) => console.info('Removed:', email)}
-          onInputChange={(value) => console.info('Input:', value)}
-          placeholder="Check console for events..."
-        />
       </div>
     );
   },
@@ -365,5 +257,18 @@ export const ShouldKeepInvalidPastedText: Story = {
     await expect(canvas.getByText('value: ["a@x.com","c@x.com"]')).toBeVisible();
     await expect(toaster.warning).toHaveBeenCalled();
     await expect(input).toHaveValue('nope');
+  },
+};
+
+export const ShouldLabelRemoveButtons: Story = {
+  name: 'when chips render, should give each remove button an accessible name',
+  tags: playTags,
+  render: () => <InviteEmailsField initial={['a@x.com', 'b@x.com']} />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    for (const email of ['a@x.com', 'b@x.com']) {
+      await expect(within(canvas.getByText(email)).getByRole('button')).toHaveAccessibleName();
+    }
   },
 };
