@@ -27,7 +27,7 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
-import { addRecentSearch } from '~/utils/recent-searches';
+import { addRecentSearch, resolveSearchInput } from '~/utils/recent-searches';
 
 const searchableEntityTypes = ['user', ...appConfig.channelEntityTypes] as const;
 
@@ -154,12 +154,7 @@ export function AppSearch() {
         onSelectItem(selection as EnrichedChannel | UserBase);
       }}
       inputValue={searchValue}
-      onInputValueChange={(value) => {
-        // A bare index picks a history entry, but only while the history list is showing (input was empty).
-        // Otherwise backspacing a value down to a leading digit would swap in an old search.
-        const isHistoryPick = searchValue === '' && /^\d+$/.test(value) && Number(value) < recentSearches.length;
-        setSearchValue(isHistoryPick ? recentSearches[Number(value)] : value);
-      }}
+      onInputValueChange={(value) => setSearchValue(resolveSearchInput(searchValue, value, recentSearches))}
       filter={() => true}
     >
       <div className="rounded-lg shadow-2xl">

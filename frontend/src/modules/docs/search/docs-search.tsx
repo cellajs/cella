@@ -25,6 +25,7 @@ import {
 } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
+import { resolveSearchInput } from '~/utils/recent-searches';
 
 type HistoryEntry = { kind: 'history'; value: string };
 type SearchSelection = DocsSearchResult | HistoryEntry;
@@ -115,15 +116,7 @@ export function DocsSearch() {
         if (selection) onSelect(selection);
       }}
       inputValue={searchValue}
-      onInputValueChange={(value) => {
-        // Typing a bare history index (shown next to the row) re-runs that search.
-        const historyIndexes = recentSearches.map((_, index) => index);
-        if (historyIndexes.includes(Number.parseInt(value, 10))) {
-          setSearchValue(recentSearches[+value]);
-          return;
-        }
-        setSearchValue(value);
-      }}
+      onInputValueChange={(value) => setSearchValue(resolveSearchInput(searchValue, value, recentSearches))}
       filter={() => true}
     >
       <div className="rounded-lg shadow-2xl">

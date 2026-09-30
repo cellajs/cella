@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { addRecentSearch } from './recent-searches';
+import { addRecentSearch, resolveSearchInput } from './recent-searches';
 
 describe('addRecentSearch', () => {
   it('puts the most recent search on top', () => {
@@ -47,5 +47,23 @@ describe('addRecentSearch', () => {
       list = addRecentSearch(list, term);
     }
     expect(list).toEqual(['six666', 'five555', 'four444', 'three333', 'two222']);
+  });
+});
+
+describe('resolveSearchInput', () => {
+  const history = ['logical replication', 'passkeys', 'rate limits'];
+
+  it('picks a history entry for a bare index typed into an empty input', () => {
+    expect(resolveSearchInput('', '1', history)).toBe('passkeys');
+  });
+
+  it('keeps a digit typed after other text, or left over from backspacing', () => {
+    expect(resolveSearchInput('12', '1', history)).toBe('1');
+    expect(resolveSearchInput('abc', 'abc1', history)).toBe('abc1');
+  });
+
+  it('keeps input that only starts with a digit or points past the history', () => {
+    expect(resolveSearchInput('', '2fa', history)).toBe('2fa');
+    expect(resolveSearchInput('', '7', history)).toBe('7');
   });
 });

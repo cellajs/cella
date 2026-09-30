@@ -24,3 +24,9 @@ export function addRecentSearch(searches: string[], value: string): string[] {
 
   return [keep, ...rest].slice(0, MAX_RECENT_SEARCHES);
 }
+
+/** Value a search input takes: a bare history index picks that entry, but only while the input was empty (the history list is showing). */
+export function resolveSearchInput(previous: string, next: string, searches: string[]): string {
+  const isHistoryPick = previous === '' && /^\d+$/.test(next) && Number(next) < searches.length;
+  return isHistoryPick ? searches[Number(next)] : next;
+}
