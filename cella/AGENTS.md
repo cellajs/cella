@@ -17,7 +17,7 @@ Tech stack, file structure, data modeling, security and sync/offline design: [Ar
 
 - **Backend (Hono + OpenAPI)**:
   - `backend/src/server.ts`: base app, global middleware, error handler (`appErrorHandler`).
-  - Routes: `backend/src/modules/<module>/<module>-routes.ts` using `createXRoute`.
+  - Routes: `backend/src/modules/<module>/<module>-routes.ts` using `createXRoutes`.
   - Handlers: `backend/src/modules/<module>/<module>-handlers.ts` using `.openapi()` on `OpenAPIHono`.
 - **Frontend (TanStack Router, file-based)**:
   - Route files in `frontend/src/routes/`. The router vite plugin registers them into `routeTree.gen.ts` (committed, never hand-edited).
@@ -92,7 +92,7 @@ Every check takes an `Access` from `accessFrom(ctx)`. Never assemble one by hand
 **Extension system** in `backend/src/core/`:
 
 - `x-middleware.ts`: wrap guards/limiters/caches with `xMiddleware(options, fn)` so they appear in the spec and docs UI. Use `setMiddlewareExtension` for composed middleware.
-- `x-routes.ts`: always `createXRoute`, never `createRoute`. Props: `xGuard` (required), `xRateLimiter`, `xCache`, `x-service` (404 while that service is disabled), `x-tool` (opts the route in as an MCP tool: `{ enabled, description, approvalRequired, category, entity, execute }`; input derives from `request`, `execute` calls the operation). Per-operation `security` follows the guard's declaration (`cookieAuth`, `apiKey`, `oauth2`).
+- `x-routes.ts`: a module's routes are `createXRoutes(tags, { key: xRoute({ ... }) })`, never `createRoute`. Each route's `operationId` is its key (set it only when the SDK name differs), its tags are the module's, and the error responses (`errorResponseRefs`) are appended to every route. `json(description, schema, example?)` builds a JSON response, `jsonBody(schema)` a required JSON body. `createXRoute` finishes a single route the same way. Props: `xGuard` (required), `xRateLimiter`, `xCache`, `x-service` (404 while that service is disabled), `x-tool` (opts the route in as an MCP tool: `{ enabled, description, approvalRequired, category, entity, execute }`; input derives from `request`, `execute` calls the operation). Per-operation `security` follows the guard's declaration (`cookieAuth`, `apiKey`, `oauth2`).
 - `openapi-extensions.ts`: new `x-*` extension types go here.
 - `openapi-registration.ts`: builds the spec and writes `openapi.cache.json`.
 - Frontend: the openapi-parser plugin (`sdk/src/plugins/openapi-parser/`) writes generated docs, served by Vite at `/static/docs.gen/`. The docs UI is the frontend docs module.
