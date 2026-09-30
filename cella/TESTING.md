@@ -95,4 +95,4 @@ pnpm sdk
 pnpm test:storybook
 ```
 
-Every story is render-tested in headless Chromium. Stories with `play` functions also get their interactions exercised. A new component story is a test automatically.
+Every story is render-tested in headless Chromium. Stories with `play` functions also get their interactions exercised. A new component story is a test automatically. CI runs this project on the release PR only, so run `pnpm test:storybook` before merging a frontend change.
