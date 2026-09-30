@@ -26,7 +26,7 @@ import { createEntityKeys } from '~/query/basic/create-query-keys';
 import { registerEntityQueryKeys, SYNC_CHUNK_SIZE } from '~/query/basic/entity-query-registry';
 import { fetchAllPages } from '~/query/basic/fetch-all-pages';
 import { createCacheFinder } from '~/query/basic/find-in-list-cache';
-import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
+import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 import { invalidateIfLastMutation, removePendingMutations } from '~/query/basic/invalidation-helpers';
 import { syncStaleTime } from '~/query/basic/sync-stale-config';
 import type { OrgRoutableItemData } from '~/query/basic/types';
@@ -80,20 +80,16 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   } = params;
 
   const filters = { q, sort, order };
-  const requestQuery = { ...filters, limit: String(limit) };
 
   return infiniteQueryOptions({
     queryKey: keys.list.filtered(organizationId, filters),
-    queryFn: ({ pageParam: { page, offset }, signal }) => {
-      const requestOffset = String(offset ?? (page ?? 0) * limit);
-
-      return getAttachments({
+    ...offsetPaging(limit, (offset, signal) =>
+      getAttachments({
         path: { tenantId, organizationId },
-        query: { ...requestQuery, offset: requestOffset },
+        query: { ...filters, ...pageQuery(limit, offset) },
         signal,
-      });
-    },
-    ...baseInfiniteQueryOptions,
+      }),
+    ),
     meta: { persist: false },
     staleTime: syncStaleTime,
   });

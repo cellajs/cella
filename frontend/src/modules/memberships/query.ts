@@ -2,7 +2,7 @@ import { infiniteQueryOptions } from '@tanstack/react-query';
 import { type GetMembersData, type GetPendingMembershipsData, getMembers, getPendingMemberships } from 'sdk';
 import { appConfig } from 'shared';
 import { membersSearchDefaults } from '~/modules/memberships/search-params-schemas';
-import { baseInfiniteQueryOptions } from '~/query/basic/infinite-query-options';
+import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 
 type PendingMembershipsParams = Omit<GetPendingMembershipsData['query'], 'limit' | 'offset'> &
   GetPendingMembershipsData['path'];
@@ -44,16 +44,13 @@ export const membersListQueryOptions = (params: MembersListParams) => {
   // `include` stays out of the cache key so queries with/without counts share the same cache
   const filters = { q, sort, order, role, userIds };
   const keyFilters = { entityId, entityType, tenantId, organizationId, ...filters };
-  const path = { tenantId, organizationId };
-  const requestQuery = { ...filters, include, limit: String(limit), entityId, entityType };
+  const requestQuery = { ...filters, include, entityId, entityType };
 
   return infiniteQueryOptions({
     queryKey: keys.list.members(keyFilters),
-    queryFn: ({ pageParam: { page, offset }, signal }) => {
-      const requestOffset = String(offset ?? (page ?? 0) * limit);
-      return getMembers({ query: { ...requestQuery, offset: requestOffset }, path, signal });
-    },
-    ...baseInfiniteQueryOptions,
+    ...offsetPaging(limit, (offset, signal) =>
+      fetchMembersPage(requestQuery, { tenantId, organizationId }, limit, offset, signal),
+    ),
     refetchOnMount: true,
   });
 };
@@ -71,35 +68,33 @@ export const pendingMembershipsQueryOptions = (params: PendingMembershipsListPar
   } = params;
   const filters = { q, sort, order };
   const keyFilters = { entityId, entityType, tenantId, organizationId, ...filters };
-  const path = { tenantId, organizationId };
-  const requestQuery = { ...filters, limit: String(limit), entityId, entityType };
+  const query = { ...filters, entityId, entityType };
 
   return infiniteQueryOptions({
     queryKey: keys.list.pending(keyFilters),
-    queryFn: ({ pageParam: { page, offset }, signal }) => {
-      const requestOffset = String(offset ?? (page ?? 0) * limit);
-      return getPendingMemberships({ query: { ...requestQuery, offset: requestOffset }, path, signal });
-    },
-    ...baseInfiniteQueryOptions,
+    ...offsetPaging(limit, (offset, signal) =>
+      getPendingMemberships({
+        query: { ...query, ...pageQuery(limit, offset) },
+        path: { tenantId, organizationId },
+        signal,
+      }),
+    ),
     refetchOnMount: true,
   });
 };
 
+const fetchMembersPage = (
+  query: Omit<GetMembersData['query'], 'limit' | 'offset'>,
+  path: GetMembersData['path'],
+  limit: number,
+  offset: number,
+  signal?: AbortSignal,
+) => getMembers({ query: { ...query, ...pageQuery(limit, offset) }, path, signal });
+
 /** Fetch members for table export. Bypasses cache; returns flat items. */
 export const fetchMembersForExport = async (params: MembersParams & { limit: number; offset?: number }) => {
-  const { limit, offset = 0, ...rest } = params;
-  const { items } = await getMembers({
-    query: {
-      q: rest.q,
-      sort: rest.sort ?? membersSearchDefaults.sort,
-      order: rest.order ?? membersSearchDefaults.order,
-      role: rest.role,
-      limit: String(limit),
-      offset: String(offset),
-      entityId: rest.entityId,
-      entityType: rest.entityType,
-    },
-    path: { tenantId: rest.tenantId, organizationId: rest.organizationId },
-  });
-  return items;
+  const { limit, offset = 0, tenantId, organizationId, q, role, entityId, entityType } = params;
+  const { sort = membersSearchDefaults.sort, order = membersSearchDefaults.order } = params;
+  const query = { q, sort, order, role, entityId, entityType };
+  return (await fetchMembersPage(query, { tenantId, organizationId }, limit, offset)).items;
 };
