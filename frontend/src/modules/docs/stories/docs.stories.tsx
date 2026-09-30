@@ -1,6 +1,7 @@
 import './define-app-version';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Suspense } from 'react';
+import type { GenComponentSchema, GenOperationDetail, GenOperationSummary, GenResponseSummary } from 'sdk/docs-types';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { getSection } from '~/hooks/use-scroll-spy-store';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -10,12 +11,6 @@ import { TagSchemasTable } from '~/modules/docs/schemas/tag-schemas-table';
 import { OperationItem } from '~/modules/docs/sidebar/operation-item';
 import { SchemaItem } from '~/modules/docs/sidebar/schema-item';
 import { TagOperationsTable } from '~/modules/docs/tag-operations-table';
-import type {
-  GenComponentSchema,
-  GenOperationDetail,
-  GenOperationSummary,
-  GenResponseSummary,
-} from '~/modules/docs/types';
 import { getRouter } from '~/routes/-router-instance';
 import { withApp } from '~/stories/with-app';
 

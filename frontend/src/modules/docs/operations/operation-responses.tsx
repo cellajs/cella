@@ -5,6 +5,7 @@ import type { GenComponentSchema, GenOperationDetail, GenResponseSummary, GenSch
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
+import { cn } from '~/utils/cn';
 import {
   type DefinitionIndex,
   getTypeCodeForResponse,
@@ -32,17 +33,32 @@ interface ResponsesAccordionProps {
   operationId: string;
   zodIndex: DefinitionIndex;
   typesIndex: DefinitionIndex;
+  /** Lists only responses that carry an example, with the first one open in example view. */
+  examplesOnly?: boolean;
 }
 
-function ResponsesAccordion({ responses, schemas, operationId, zodIndex, typesIndex }: ResponsesAccordionProps) {
+export function ResponsesAccordion({
+  responses: allResponses,
+  schemas,
+  operationId,
+  zodIndex,
+  typesIndex,
+  examplesOnly,
+}: ResponsesAccordionProps) {
   const { t } = useTranslation();
 
+  const responses = examplesOnly ? allResponses.filter((r) => r.example !== undefined) : allResponses;
+
   if (responses.length === 0) {
-    return <div className="py-2 text-muted-foreground text-sm">{t('c:docs.no_responses_defined')}</div>;
+    return (
+      <div className="py-2 text-muted-foreground text-sm">
+        {examplesOnly ? t('c:docs.no_examples_defined') : t('c:docs.no_responses_defined')}
+      </div>
+    );
   }
 
   return (
-    <Accordion className="w-full">
+    <Accordion className="w-full" defaultValue={examplesOnly ? [String(responses[0].status)] : undefined}>
       {responses.map((response) => {
         const schema = resolveResponseSchema(response, schemas);
         return (
@@ -50,11 +66,24 @@ function ResponsesAccordion({ responses, schemas, operationId, zodIndex, typesIn
             <AccordionTrigger className="group py-2 opacity-80 hover:opacity-100 group-data-open:opacity-100">
               <div className="flex w-full items-center justify-between gap-3 pr-2">
                 <div
-                  className={`rounded px-2 py-0.5 font-mono font-semibold text-sm decoration-transparent group-data-open:opacity-100 ${getStatusColor(response.status)}`}
+                  className={cn(
+                    'rounded px-2 py-0.5 font-mono font-semibold text-sm group-data-open:opacity-100',
+                    !examplesOnly && 'decoration-transparent',
+                    getStatusColor(response.status),
+                  )}
                 >
                   {response.status}
                 </div>
-                <div className="grow text-foreground text-sm group-data-open:text-primary">{response.description}</div>
+                <div
+                  className={cn(
+                    'grow text-sm',
+                    examplesOnly
+                      ? 'text-muted-foreground group-data-open:text-foreground'
+                      : 'text-foreground group-data-open:text-primary',
+                  )}
+                >
+                  {response.description}
+                </div>
                 {response.name && (
                   <span className="truncate rounded bg-muted px-2 py-0.5 font-mono text-muted-foreground text-xs max-md:hidden">
                     {response.name}
@@ -69,6 +98,7 @@ function ResponsesAccordion({ responses, schemas, operationId, zodIndex, typesIn
                   zodCode={getZodCodeForResponse(zodIndex, operationId, response.status, response.name)}
                   typeCode={getTypeCodeForResponse(typesIndex, operationId, response.status)}
                   example={response.example}
+                  defaultViewMode={examplesOnly ? 'example' : undefined}
                 />
               ) : (
                 <div className="p-3 text-muted-foreground text-sm">{t('c:docs.no_response_body')}</div>

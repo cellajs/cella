@@ -1,8 +1,6 @@
-import { Link, useNavigate } from '@tanstack/react-router';
 import type { GenComponentSchema } from 'sdk/docs-types';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import { DataTable } from '~/modules/common/data-table/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
+import { TagHashLink, TagTable } from '~/modules/docs/tag-table';
 import { Badge } from '~/modules/ui/badge';
 
 interface TagSchemasTableProps {
@@ -16,19 +14,6 @@ interface TagSchemasTableProps {
 }
 
 function useColumns(tagName: string, tagKinds: string[]): ColumnOrColumnGroup<GenComponentSchema>[] {
-  const navigate = useNavigate();
-
-  const handleSchemaClick = (hash: string) => {
-    scrollToSectionById(hash);
-    navigate({
-      to: '.',
-      search: (prev) => ({ ...prev, schemaTag: tagName }),
-      hash,
-      replace: true,
-      resetScroll: false,
-    });
-  };
-
   const tagKindColumns: ColumnOrColumnGroup<GenComponentSchema>[] = tagKinds.map((kind) => ({
     key: `tag-${kind}`,
     name: kind.replace(/^\w/, (c) => c.toUpperCase()),
@@ -55,28 +40,11 @@ function useColumns(tagName: string, tagKinds: string[]): ColumnOrColumnGroup<Ge
       key: 'name',
       name: 'Name',
       minWidth: 200,
-      renderCell: ({ row, tabIndex }) => {
-        const schemaId = row.ref.replace(/^#/, '');
-        return (
-          <Link
-            to="."
-            search={(prev) => ({ ...prev, schemaTag: tagName })}
-            hash={schemaId}
-            replace
-            onClick={(e) => {
-              if (e.metaKey || e.ctrlKey) return;
-              e.preventDefault();
-              handleSchemaClick(schemaId);
-            }}
-            resetScroll={false}
-            draggable={false}
-            tabIndex={tabIndex}
-            className="truncate font-mono text-sm decoration-foreground/30 underline-offset-3 hover:underline"
-          >
-            {row.name}
-          </Link>
-        );
-      },
+      renderCell: ({ row, tabIndex }) => (
+        <TagHashLink tagParam="schemaTag" tagName={tagName} hash={row.ref.replace(/^#/, '')} tabIndex={tabIndex}>
+          {row.name}
+        </TagHashLink>
+      ),
     },
     ...tagKindColumns,
   ];
@@ -86,21 +54,11 @@ export function TagSchemasTable({ schemas, tagName, tagKinds, onPrerender }: Tag
   const columns = useColumns(tagName, tagKinds);
 
   return (
-    <div onMouseEnter={onPrerender} onFocus={onPrerender}>
-      <DataTable<GenComponentSchema>
-        className="mb-0"
-        columns={columns}
-        rows={schemas}
-        hasNextPage={false}
-        rowKeyGetter={(row) => row.name}
-        isLoading={false}
-        isFetching={false}
-        limit={schemas.length}
-        isFiltered={false}
-        rowHeight={36}
-        enableVirtualization={false}
-        readOnly
-      />
-    </div>
+    <TagTable<GenComponentSchema>
+      rows={schemas}
+      columns={columns}
+      rowKeyGetter={(row) => row.name}
+      onPrerender={onPrerender}
+    />
   );
 }
