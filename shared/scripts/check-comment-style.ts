@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 import ts from 'typescript';
 import { loadAllowlist } from './check-app-vocabulary.ts';
-import { proseRules } from './prose-rules.ts';
+import { proseRules, ruleMatches } from './prose-rules.ts';
 import { isMain, isRequested, lineColumn, type Output, repoFiles, repoRoot, writeFindings } from './repo-files.ts';
 import { type Comment, parseSource, scriptExtensions, sourceComments } from './source-comments.ts';
 
@@ -108,9 +108,12 @@ export async function runCommentCheck(args: string[], output: Output = console):
     for (const comment of comments) {
       for (const rule of rules) {
         if (rule.exclude?.comments?.test(file) || !rule.pattern.test(comment.text)) continue;
-        const { line, column } = lineColumn(source, comment.offset);
-        const list = rule.level === 'review' ? findings : failures;
-        list.push(`${file}:${line}:${column} [${rule.name}] ${rule.message.comments}`);
+        for (const { index } of ruleMatches(rule, comment.text)) {
+          const { line, column } = lineColumn(source, comment.offset + index);
+          (rule.level === 'review' ? findings : failures).push(
+            `${file}:${line}:${column} [${rule.name}] ${rule.message.comments}`,
+          );
+        }
       }
     }
     if (!placement) continue;

@@ -2,7 +2,7 @@
 import { readFileSync } from 'node:fs';
 import { extname, join } from 'node:path';
 import { loadAllowlist } from './check-app-vocabulary.ts';
-import { type ProseRule, proseRules } from './prose-rules.ts';
+import { type ProseRule, proseRules, ruleMatches } from './prose-rules.ts';
 import {
   repoRoot as defaultRepoRoot,
   isMain,
@@ -34,8 +34,7 @@ export interface AgentVocabularyFinding extends DocStyleViolation {
 
 function matches(file: string, text: string, rule: ProseRule): DocStyleViolation[] {
   if (rule.exclude?.docs?.test(file)) return [];
-  const pattern = new RegExp(rule.pattern.source, `${rule.pattern.flags}g`);
-  return [...text.matchAll(pattern)].map((match) => ({ file, ...lineColumn(text, match.index), term: match[0] }));
+  return ruleMatches(rule, text).map(({ index, term }) => ({ file, ...lineColumn(text, index), term }));
 }
 
 /** The prose view: inline code, fenced code and link targets blanked to spaces, so positions hold. */

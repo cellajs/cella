@@ -137,3 +137,9 @@ export const proseRules: ProseRule[] = [
     message: both('state which error, log, record, or notification is absent'),
   },
 ];
+
+/** Offset and text of every match of `rule` in `text`. */
+export function ruleMatches(rule: ProseRule, text: string): { index: number; term: string }[] {
+  const pattern = new RegExp(rule.pattern.source, `${rule.pattern.flags}g`);
+  return [...text.matchAll(pattern)].map((match) => ({ index: match.index, term: match[0] }));
+}

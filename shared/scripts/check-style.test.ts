@@ -44,7 +44,7 @@ const lines = (...rows: string[]) => rows.map((row) => `${row}\n`).join('');
 
 const dirty = makeRepo({
   'backend/src/rules.ts': [
-    `// One ${dash} two`,
+    `// One ${dash} two ${dash} three`,
     `/** The ${term} holds, ${maybe}. */`,
     `export const a = 1; // the ${seam} and the ${bearing} part`,
     `// ${legacy} path`,
@@ -67,25 +67,26 @@ afterAll(() => {
 
 describe('comment check', () => {
   const required = [
-    '  backend/src/rules.ts:1:1 [em-dash] split the sentence or remove the secondary clause',
-    '  backend/src/rules.ts:2:1 [concrete-language] name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption',
-    '  backend/src/rules.ts:2:1 [review-conversation] resolve the question or track it outside the source comment',
-    `  backend/src/rules.ts:3:21 [${bearing}] name the dependency, requirement, or failure consequence directly`,
-    '  infra/c.yaml:2:1 [em-dash] split the sentence or remove the secondary clause',
-    '  shared/config/x.jsonc:2:3 [concrete-language] name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption',
+    '  backend/src/rules.ts:1:8 [em-dash] split the sentence or remove the secondary clause',
+    '  backend/src/rules.ts:1:14 [em-dash] split the sentence or remove the secondary clause',
+    '  backend/src/rules.ts:2:9 [concrete-language] name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption',
+    '  backend/src/rules.ts:2:26 [review-conversation] resolve the question or track it outside the source comment',
+    `  backend/src/rules.ts:3:41 [${bearing}] name the dependency, requirement, or failure consequence directly`,
+    '  infra/c.yaml:2:3 [em-dash] split the sentence or remove the secondary clause',
+    '  shared/config/x.jsonc:2:6 [concrete-language] name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption',
   ];
   const review = [
-    '  backend/src/rules.ts:3:21 [boundary-metaphor] consider boundary, interface, integration point, or the named call site',
-    '  backend/src/rules.ts:4:1 [compatibility-language] confirm that this describes an active compatibility contract',
+    '  backend/src/rules.ts:3:28 [boundary-metaphor] consider boundary, interface, integration point, or the named call site',
+    '  backend/src/rules.ts:4:4 [compatibility-language] confirm that this describes an active compatibility contract',
   ];
   const placement =
     '  backend/src/long.ts:1:1 [detached-long-comment] 4 prose lines; move shared context to a README or attach a concise local constraint to a declaration';
 
-  it('reports required rules once per comment at its start', () => {
+  it('reports required rules at every match', () => {
     expect(run(dirty, 'check-comment-style.ts')).toEqual({
       status: 1,
       stdout: '',
-      stderr: lines('[comments:check] 6 violation(s):', ...required),
+      stderr: lines('[comments:check] 7 violation(s):', ...required),
     });
   });
 
@@ -93,7 +94,7 @@ describe('comment check', () => {
     expect(run(dirty, 'check-comment-style.ts', '--audit')).toEqual({
       status: 1,
       stdout: '',
-      stderr: lines('[comments:check] 6 violation(s):', ...required, '[comments:audit] 2 review marker(s):', ...review),
+      stderr: lines('[comments:check] 7 violation(s):', ...required, '[comments:audit] 2 review marker(s):', ...review),
     });
   });
 
@@ -101,7 +102,7 @@ describe('comment check', () => {
     expect(run(dirty, 'check-comment-style.ts', '--concrete-language')).toEqual({
       status: 1,
       stdout: '',
-      stderr: lines('[comments:language] 3 violation(s):', required[1]!, required[3]!, required[5]!),
+      stderr: lines('[comments:language] 3 violation(s):', required[2]!, required[4]!, required[6]!),
     });
   });
 
@@ -183,7 +184,7 @@ describe('style check', () => {
       '[docs:style] 1 concrete-language violation(s):',
       '[docs:style] 1 em dash(es):',
       '[docs:style] 1 required vocabulary replacement(s):',
-      '[comments:check] 6 violation(s):',
+      '[comments:check] 7 violation(s):',
       '[comments:placement] 1 detached long comment(s):',
       '[frontend:style] 1 violation(s):',
       '[style] 4 area(s) failed (terminology, documentation, comments, frontend).',
@@ -226,7 +227,7 @@ describe('app-owned prose exclusions', () => {
       expect(run(root, 'check-comment-style.ts').stderr).toBe(
         lines(
           '[comments:check] 1 violation(s):',
-          '  src/new.ts:1:1 [em-dash] split the sentence or remove the secondary clause',
+          '  src/new.ts:1:4 [em-dash] split the sentence or remove the secondary clause',
         ),
       );
       expect(run(root, 'check-doc-style.ts').status).toBe(0);
