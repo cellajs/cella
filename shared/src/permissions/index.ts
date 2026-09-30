@@ -28,7 +28,6 @@ export type { EntityCanMap } from './compute-can.ts';
 export { computeCan } from './compute-can.ts';
 // Permission engine (tier-neutral decision logic)
 export { getAllDecisions } from './engine/check.ts';
-export { formatBatchPermissionSummary, formatPermissionDecision } from './engine/format.ts';
 export { type EngineAccess, getDecisionsForAccesses, type ResolveAccessOptions } from './engine/resolve-access.ts';
 export type { HierarchyOverrides } from './engine/resolve-hierarchy.ts';
 export type {

@@ -119,7 +119,6 @@ export function getDecisionsForAccesses<T extends AccessMembership>(
         access.actorId,
         options?.publicGrants,
         options?.elevatedGrants,
-        options?.debug,
       );
       memo.set(key, decision);
     }

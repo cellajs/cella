@@ -76,6 +76,4 @@ export interface PermissionCheckOptions {
   hierarchy?: EntityHierarchy;
   /** Action set override; defaults to `appConfig.entityActions`. */
   entityActions?: readonly EntityActionType[];
-  /** Emit the decision tree to debug logging. */
-  debug?: boolean;
 }

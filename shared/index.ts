@@ -87,8 +87,6 @@ export {
   computeCan,
   configurePermissions,
   createActionRecord,
-  formatBatchPermissionSummary,
-  formatPermissionDecision,
   getAllDecisions,
   getEntityPolicies,
   getPolicyPermissions,
