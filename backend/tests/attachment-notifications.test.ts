@@ -212,14 +212,18 @@ describe('Attachment mentions (template notification source)', async () => {
   });
 
   it('fans out a mention to the inbox and mails it instantly, never to the actor', async () => {
-    await fanOutNotifications(updatedEvent(member.id));
+    // The fan-out reports whether it wrote a mention; only then does the listener run the instant email pass.
+    expect(await fanOutNotifications(updatedEvent(member.id))).toBe(false);
     expect(await notificationsFor(member.id)).toEqual([]);
 
-    await fanOutNotifications(updatedEvent(tenant.user.id));
+    expect(await fanOutNotifications(updatedEvent(tenant.user.id))).toBe(true);
     expect(await notificationsFor(member.id)).toEqual([{ type: 'mention', emailedAt: null }]);
     // The push link opens the notification's context, which defaults to the row itself.
     const [, payload] = vi.mocked(sendNotificationPush).mock.calls.at(-1) ?? [];
     expect(linkedContextId(payload?.url)).toBe(attachmentId);
+
+    // A later edit that adds no mention writes nothing.
+    expect(await fanOutNotifications(updatedEvent(tenant.user.id))).toBe(false);
 
     // Mention email is on by default; the member's address is verified.
     await sendPendingInstantEmails(tenant.organization.id);

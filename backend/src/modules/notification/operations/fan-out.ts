@@ -25,28 +25,31 @@ type Candidate = { userId: string; type: NotificationType };
  * further recipients from the source's `resolveRecipients`.
  *
  * Runs post-commit off the activity bus, so the row is durable before anyone is told about it.
+ * Resolves true when it wrote a mention row, the only kind the instant email pass mails.
  */
-export async function fanOutNotifications(event: ActivityEvent): Promise<void> {
+export async function fanOutNotifications(event: ActivityEvent): Promise<boolean> {
   const entityType = event.entityType;
-  if (!entityType || !isProduct(entityType)) return;
+  if (!entityType || !isProduct(entityType)) return false;
   const source = getNotificationSource(entityType);
-  if (!source) return;
+  if (!source) return false;
   const { organizationId, tenantId, id: activityId } = event;
-  if (!organizationId || !tenantId || !activityId) return;
+  if (!organizationId || !tenantId || !activityId) return false;
 
   const subjectIds = collectSubjectIds(event);
-  if (subjectIds.length === 0) return;
+  if (subjectIds.length === 0) return false;
 
   // Batch events carry only permission columns, never `mentions`, so the rows are always re-read.
   const rows = await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, subjectIds));
 
+  let mentioned = false;
   for (const row of rows) {
     try {
-      await fanOutRow(event, entityType, source, row, tenantId);
+      if (await fanOutRow(event, entityType, source, row, tenantId)) mentioned = true;
     } catch (error) {
       log.error('Notification fan-out failed for row', { error, activityId, subjectId: row.id });
     }
   }
+  return mentioned;
 }
 
 /** Single events name one subject; batches list theirs in `batchRows`. */
@@ -60,13 +63,14 @@ function collectSubjectIds(event: ActivityEvent): string[] {
   return event.subjectId ? [event.subjectId] : [];
 }
 
+/** Writes one row's notifications; true when a mention was among them (a redelivered one too, so its email pass reruns). */
 async function fanOutRow(
   event: ActivityEvent,
   entityType: ProductEntityType,
   source: NotificationSource,
   row: NotificationSubjectRow,
   tenantId: string,
-): Promise<void> {
+): Promise<boolean> {
   const actorId = event.userId ?? row.createdBy ?? null;
 
   const candidates = new Map<string, Candidate>();
@@ -84,15 +88,15 @@ async function fanOutRow(
     for (const recipient of recipients) add(recipient.userId, recipient.type);
   }
 
-  if (candidates.size === 0) return;
+  if (candidates.size === 0) return false;
 
   // An edit must not re-notify people who were already told about this row.
   const notified = event.action === 'update' ? await findNotifiedUserIds(row.id, [...candidates.keys()]) : new Set();
   const fresh = [...candidates.values()].filter((candidate) => !notified.has(candidate.userId));
-  if (fresh.length === 0) return;
+  if (fresh.length === 0) return false;
 
   const allowed = await filterByReadAccess(entityType, row, fresh);
-  if (allowed.length === 0) return;
+  if (allowed.length === 0) return false;
 
   const channel = resolveChannel(entityType, row);
   const organizationId = event.organizationId as string;
@@ -115,10 +119,12 @@ async function fanOutRow(
 
   log.debug('Notifications created', { activityId: event.id, subjectId: row.id, recipientCount: allowed.length });
 
+  const mentioned = allowed.some((recipient) => recipient.type === 'mention');
+
   // Best-effort Web Push on top of the durable rows; the audience is already resolved, so this
   // costs one subscription lookup. Never awaited into the fan-out's failure path.
   if (isPushSendConfigured()) {
-    const primaryType = allowed.some((recipient) => recipient.type === 'mention') ? 'mention' : allowed[0].type;
+    const primaryType = mentioned ? 'mention' : allowed[0].type;
     const url = buildNotificationLink(appConfig.frontendUrl, {
       tenantId,
       organizationId,
@@ -133,6 +139,7 @@ async function fanOutRow(
       { t: 'notif', activityId: event.id as string, channelId: channel.id, type: primaryType, url },
     );
   }
+  return mentioned;
 }
 
 /** Keep only recipients who may read the row, then drop muted-type candidates whose home membership is muted. */
