@@ -29,6 +29,8 @@ export interface HasFlagsConfig {
   pwa: boolean;
   /** Web Push delivery for notifications; sending also needs VAPID_* backend env vars. */
   push: boolean;
+  /** Shows the comment email preference in the account settings; no send path reads it yet. */
+  commentEmail: boolean;
   selfRegistration: boolean;
   waitlist: boolean;
   uploadEnabled: boolean;
