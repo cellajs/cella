@@ -35,12 +35,12 @@ export function formatUpdatedCacheData<TItem>(
 
   const oldTotal = prevData.pages[0]?.total ?? 0;
 
-  const totalPages = chunks.length;
-  const newPages = Array.from({ length: totalPages }, (_, i) => ({ page: i, offset: chunks[i].length }));
+  // Each page starts after the items of the pages before it; a refetch replays these from pageParams[0].
+  const pageParams = chunks.map((_, i) => ({ page: i, offset: i * pageItemsLimit }));
 
   return {
     ...prevData,
-    pageParams: newPages,
+    pageParams,
     pages: chunks.map((chunk) => ({
       total: oldTotal + addToTotal,
       items: chunk,
