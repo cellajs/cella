@@ -43,7 +43,16 @@ export const config = {
   entityActions: ['create', 'read', 'update', 'delete'] as const,
 
   /** Resource types that are not entities but have activities logged */
-  resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant'] as const,
+  resourceTypes: [
+    'request',
+    'membership',
+    'inactive_membership',
+    'tenant',
+    'system_role',
+    'service_account',
+    'api_key',
+    'oauth_client',
+  ] as const,
 
   /**
    * Product embeddings: declares which product entities are embedded as ID arrays inside
@@ -68,6 +77,8 @@ export const config = {
       organization: 1,
       user: 1000,
       attachment: 100,
+      serviceAccount: 20,
+      apiKey: 100,
     },
     rateLimits: {
       apiPointsPerHour: 1000,
@@ -122,16 +133,16 @@ export const config = {
     jobs: 4006,
   },
   /**
-   * Per-service toggles and public URLs. `enabled` controls whether the service
-   * is wired up; `publicUrl` is the externally reachable endpoint.
+   * Per-service toggles: `enabled` controls whether the service is wired up. Each service's
+   * public URL is derived from the URL family above.
    */
   services: {
-    frontend: { enabled: true as boolean, publicUrl: 'https://__project_slug__.example.com' },
-    backend: { enabled: true as boolean, publicUrl: 'https://__project_slug__.example.com/api' },
+    frontend: { enabled: true as boolean },
+    backend: { enabled: true as boolean },
     cdc: { enabled: true as boolean },
-    yjs: { enabled: false as boolean, publicUrl: 'wss://__project_slug__.example.com/yjs' },
-    mcp: { enabled: false as boolean, publicUrl: 'https://__project_slug__.example.com/mcp' },
-    oauth: { enabled: false as boolean, publicUrl: 'https://__project_slug__.example.com/oauth' },
+    yjs: { enabled: false as boolean },
+    mcp: { enabled: false as boolean },
+    oauth: { enabled: false as boolean },
     jobs: { enabled: true as boolean },
   },
 
