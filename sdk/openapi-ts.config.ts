@@ -4,19 +4,19 @@ import { defineConfig as openapiParserPlugin } from './src/plugins/openapi-parse
 import { defineConfig as tsdocPlugin } from './src/plugins/tsdoc';
 
 /**
- * Generate the SDK from cached OpenAPI. The incremental wrapper targets a staging directory
- * first so identical output does not trigger writes or HMR.
+ * Generation config for one output directory. The incremental wrapper in `src/generate-sdk.ts` targets a
+ * staging directory first so identical output does not trigger writes or HMR; the CLI targets `./gen` directly.
  */
-export const openApiConfig: UserConfig = {
+export const createOpenApiConfig = (outputPath: string): UserConfig => ({
   input: {
     path: '../backend/openapi.cache.json',
     watch: false,
   },
   output: {
-    path: './gen',
+    path: outputPath,
     source: {
       fileName: 'openapi',
-      path: './gen',
+      path: outputPath,
     },
   },
   parser: {
@@ -34,6 +34,6 @@ export const openApiConfig: UserConfig = {
       throwOnError: true,
     },
   ],
-};
+});
 
-export default defineConfig(openApiConfig);
+export default defineConfig(createOpenApiConfig('./gen'));

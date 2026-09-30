@@ -11,7 +11,6 @@
           "itemType": "object",
           "items": {
             "type": "object",
-            "required": true,
             "properties": {
               "id": { "type": "string", "required": true, "format": "uuid" },
               "tenantId": { "type": "string", "required": true, "maxLength": 24 },

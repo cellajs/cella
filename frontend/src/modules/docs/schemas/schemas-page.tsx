@@ -2,6 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { useSearch } from '@tanstack/react-router';
 import { Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { GenComponentSchema, GenSchemaTagSummary } from 'sdk/docs-types';
 import { usePrerenderSection, usePrerenderTrigger } from '~/hooks/use-prerender';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
@@ -11,7 +12,6 @@ import { schemasByTagQueryOptions, schemasQueryOptions, schemaTagsQueryOptions }
 import { TagSchemasList } from '~/modules/docs/schemas/schema-detail';
 import { TagSchemasTable } from '~/modules/docs/schemas/tag-schemas-table';
 import { TagExpandLink } from '~/modules/docs/tag-expand-link';
-import type { GenComponentSchema, GenSchemaTagSummary } from '~/modules/docs/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';

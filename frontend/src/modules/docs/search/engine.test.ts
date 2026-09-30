@@ -1,5 +1,5 @@
+import type { GenComponentSchema, GenOperationSummary } from 'sdk/docs-types';
 import { describe, expect, it } from 'vitest';
-import type { GenComponentSchema, GenOperationSummary } from '~/modules/docs/types';
 import { createEngine, type EnginePage } from './engine';
 
 /**

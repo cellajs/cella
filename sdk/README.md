@@ -19,7 +19,7 @@ sdk
 │   └── core/                      Internal helpers
 └── src/
     ├── generate-sdk.ts            Generation script (supports --watch mode)
-    ├── console.ts                 Logging helpers
+    ├── docs-types.ts              Types for the docs JSON, imported by the frontend as `sdk/docs-types`
     ├── .spec-hash                 Cached spec hash (skip redundant runs)
     └── plugins/
         ├── openapi-parser/        Parses spec, generates docs to sdk/gen/docs.gen/
@@ -34,7 +34,7 @@ sdk
 4. Only changed files are copied, which avoids needless HMR triggers
 5. A lock file prevents concurrent runs
 6. `src/.spec-hash` caches the spec hash so the watcher skips redundant runs on restart
-7. The `openapi.json` source spec is also written to `frontend/public/static/`
+7. Vite serves `openapi.json` and `docs.gen/` from `sdk/gen` under `/static` (see `frontend/vite.config.ts`)
 
 ## Exports
 
@@ -42,6 +42,7 @@ sdk
 | ------------ | --------------------------------------------- |
 | `sdk`        | All generated SDK functions                   |
 | `sdk/client` | HTTP client, `createClient`, config utilities |
+| `sdk/docs-types` | Types for the docs JSON in `gen/docs.gen`    |
 | `sdk/*`      | Wildcard, e.g. `sdk/types.gen`, `sdk/zod.gen` |
 
 ## Scripts

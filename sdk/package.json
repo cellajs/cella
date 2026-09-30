@@ -13,6 +13,7 @@
   "exports": {
     ".": "./gen/index.ts",
     "./client": "./gen/client/index.ts",
+    "./docs-types": "./src/docs-types.ts",
     "./*": "./gen/*.ts"
   },
   "dependencies": {

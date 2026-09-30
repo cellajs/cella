@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
+import type { GenComponentSchema } from 'sdk/docs-types';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { HashUrlButton } from '~/modules/common/hash-url-button';
-import type { GenComponentSchema } from '~/modules/docs/types';
 import { ViewerGroup } from '~/modules/docs/viewer-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';

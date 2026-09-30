@@ -1,7 +1,7 @@
 import { create, insertMultiple, search } from '@orama/orama';
+import type { GenComponentSchema, GenOperationSummary } from 'sdk/docs-types';
 import { markMatches, trimAroundMatch } from '~/modules/docs/search/highlight';
 import type { DocsSearchResult, DocsSearchResultType, DocsSearchScope } from '~/modules/docs/search/types';
-import type { GenComponentSchema, GenOperationSummary } from '~/modules/docs/types';
 
 /** Everything the engine indexes for one docs page. */
 export type EnginePage = {

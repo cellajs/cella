@@ -1,5 +1,5 @@
-import { config } from '../../../../shared/config/config.default';
-import { generateOperationHash } from '../openapi-parser/file-generators';
+import { config } from 'shared/config/config.default';
+import { generateOperationHash } from '../openapi-parser/operation-hash';
 import type { TsdocPlugin } from './types';
 
 /** The query and hash format must stay aligned with the frontend docs route and `generateOperationHash`. */
@@ -15,14 +15,12 @@ export const handler: TsdocPlugin['Handler'] = ({ plugin }) => {
     const method = operation.method.toUpperCase();
     const path = operation.path;
     const tags = operation.tags ?? [];
-    const allParams = operation.parameters ?? {};
-    const requestBody = operation.body;
-    const responses = operation.responses ?? {};
+    const parameters = operation.parameters ?? {};
 
     const paramTags = [
-      ...extractParamTags('path', allParams.path),
-      ...extractParamTags('query', allParams.query),
-      ...extractBodyParamTags(requestBody?.schema?.properties ?? {}),
+      ...extractParamTags('path', parameters.path),
+      ...extractParamTags('query', parameters.query),
+      ...extractParamTags('body', operation.body?.schema?.properties),
     ];
 
     const seeTags = tags.map((tag) => `[${operation.id}](${buildOperationDocsUrl(operation.method, path, tag)})`);
@@ -34,7 +32,7 @@ export const handler: TsdocPlugin['Handler'] = ({ plugin }) => {
       ...paramTags,
     ];
 
-    const returnCodes = extractResponseCodes(responses);
+    const returnCodes = extractResponseCodes(operation.responses ?? {});
     if (returnCodes) {
       tsdocEnhancements.push(returnCodes);
     }
@@ -58,32 +56,17 @@ function extractResponseCodes(responses: Record<string, any>): string | undefine
 }
 
 /**
- * Generates TSDoc `@param` tags for path or query parameters.
+ * Generates TSDoc `@param` tags for one request section. Path and query parameters carry their schema under `schema`; body properties are schemas themselves.
  *
  * biome-ignore lint/suspicious/noExplicitAny: allows flexibility in schema definitions
  */
-function extractParamTags(location: 'path' | 'query', parameters: Record<string, any> = {}): string[] {
-  return Object.entries(parameters).map(([name, param]) => {
-    const required = param.required ?? false;
-    const type = getSchemaType(param.schema);
+function extractParamTags(location: 'path' | 'query' | 'body', entries: Record<string, any> = {}): string[] {
+  return Object.entries(entries).map(([name, entry]) => {
+    const required = entry.required ?? false;
+    const type = getSchemaType(location === 'body' ? entry : entry.schema);
     const optional = required ? '' : '=';
 
     return `@param {${type}${optional}} options.${location}.${name} - \`${type}\` ${required ? '' : '(optional)'}`.trim();
-  });
-}
-
-/**
- * Generates TSDoc `@param` tags for request body properties.
- *
- * biome-ignore lint/suspicious/noExplicitAny: allows flexibility in schema definitions
- */
-function extractBodyParamTags(properties: Record<string, any>): string[] {
-  return Object.entries(properties).map(([name, prop]) => {
-    const required = prop.required ?? false;
-    const type = getSchemaType(prop);
-    const optional = required ? '' : '=';
-
-    return `@param {${type}${optional}} options.body.${name} - \`${type}\` ${required ? '' : '(optional)'}`.trim();
   });
 }
 

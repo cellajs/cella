@@ -10,10 +10,8 @@ const defaultConfig: TsdocPlugin['Config'] = {
 
   name: 'tsdoc',
 
-  /** Output file name, unused: the handler edits operation descriptions in place and writes no file. */
-  config: {
-    output: 'tsdoc',
-  },
+  // The handler edits operation descriptions in place and writes no file of its own.
+  config: {},
 };
 
 export const defineConfig = definePluginConfig(defaultConfig);

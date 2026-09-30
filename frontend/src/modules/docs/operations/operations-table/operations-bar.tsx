@@ -1,5 +1,6 @@
 import type { Dispatch, SetStateAction } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { GenOperationSummary } from 'sdk/docs-types';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import { TableCount } from '~/modules/common/data-table/table-count';
@@ -13,7 +14,6 @@ import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import { ViewModeToggle } from '~/modules/docs/operations/view-mode-toggle';
-import type { GenOperationSummary } from '~/modules/docs/types';
 import { ResponsiveSelect } from '~/modules/ui/responsive-select';
 
 interface OperationsTableBarProps {

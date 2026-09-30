@@ -1,6 +1,6 @@
 /**
- * Centralized types for the OpenAPI docs module, shared with the openapi-parser plugin and
- * generated files. The "Gen" prefix marks types generated from the OpenAPI spec.
+ * Types for the docs JSON that the openapi-parser plugin writes into `sdk/gen/docs.gen` and the
+ * frontend docs module fetches at runtime. The "Gen" prefix marks data generated from the OpenAPI spec.
  */
 
 /** Metadata for one extension value, such as a specific limiter or guard. */
@@ -62,13 +62,19 @@ export interface GenInfoSummary {
   extensions: GenExtensionDefinition[];
 }
 
-export interface GenSchemaProperty {
-  /** Property type (string, number, boolean, object, array, or array for nullable like ['string', 'null']). Omitted when anyOf/oneOf is present. */
+/**
+ * One resolved schema node: a response body, a request section, a component schema, or any nested
+ * property. `required` and `contentType` are present only where they apply.
+ */
+export interface GenSchema {
+  /** Schema type (object, array, string, etc.), or a list for nullable types like ['string', 'null']. Omitted when anyOf/oneOf is present. */
   type?: string | readonly string[];
   description?: string;
-  /** Required flag, inline on the property. Omitted for array items. */
+  /** Inline required flag on properties and request bodies. Omitted for top-level schemas and array items. */
   required?: boolean;
-  /** Format constraint (e.g., 'email', 'date-time') */
+  /** Content type of a response or request body (e.g., 'application/json') */
+  contentType?: string;
+  /** Format constraint (e.g., 'email', 'date-time', 'uuid') */
   format?: string;
   /** Enum values if this is an enum type (can include null for nullable enums) */
   enum?: readonly (string | number | boolean | null)[];
@@ -78,57 +84,22 @@ export interface GenSchemaProperty {
   maxLength?: number;
   minItems?: number;
   maxItems?: number;
-  properties?: Record<string, GenSchemaProperty>;
+  properties?: Record<string, GenSchema>;
   /** Value schema for record/map types, from OpenAPI additionalProperties */
-  additionalProperties?: GenSchemaProperty;
+  additionalProperties?: GenSchema;
   /** Item type for array types, unwrapped from items.type */
   itemType?: string | readonly string[];
   /** Items schema, set only for complex nested objects/arrays */
-  items?: GenSchemaProperty;
+  items?: GenSchema;
   /** Reference path if this was dereferenced (e.g., '#/components/schemas/User') */
   ref?: string;
   /** Description from the referenced schema */
   refDescription?: string;
   /** Base schema reference when merged from allOf */
   extendsRef?: string;
-  anyOf?: GenSchemaProperty[];
-  oneOf?: GenSchemaProperty[];
-  // Examples belong at the GenComponentSchema level only, not inside nested properties.
-}
-
-/** Top-level schema for response bodies, with reference metadata when dereferenced from a $ref. */
-export interface GenSchema {
-  /** Schema type (object, array, string, etc.). Omitted when anyOf/oneOf is present. */
-  type?: string | readonly string[];
-  description?: string;
-  /** Original reference path if dereferenced */
-  ref?: string;
-  /** Description from the referenced schema or inline */
-  refDescription?: string;
-  /** Content type (e.g., 'application/json') */
-  contentType?: string;
-  /** Format constraint (e.g., 'email', 'date-time', 'uuid') */
-  format?: string;
-  minimum?: number;
-  maximum?: number;
-  minLength?: number;
-  maxLength?: number;
-  properties?: Record<string, GenSchemaProperty>;
-  /** Value schema for record/map types, from OpenAPI additionalProperties */
-  additionalProperties?: GenSchemaProperty;
-  /** Item type for array types, unwrapped from items.type */
-  itemType?: string | readonly string[];
-  /** Items schema, set only for complex nested objects/arrays */
-  items?: GenSchemaProperty;
-  /** Enum values if this is an enum type (can include null for nullable enums) */
-  enum?: readonly (string | number | boolean | null)[];
-  minItems?: number;
-  maxItems?: number;
-  /** Base schema reference when merged from allOf */
-  extendsRef?: string;
   anyOf?: GenSchema[];
   oneOf?: GenSchema[];
-  // Examples belong at the GenComponentSchema level only, not inside schema.schema.
+  // Examples belong at the GenComponentSchema level only, not inside nested schemas.
 }
 
 export interface GenResponseSummary {
@@ -144,43 +115,13 @@ export interface GenResponseSummary {
   example?: unknown;
 }
 
-/** Container for a path, query, or body request section, not a schema type of its own. */
-export interface GenRequestSection {
-  /** Only meaningful for body */
-  required?: boolean;
-  /** Content type for body (e.g., 'application/json') */
-  contentType?: string;
-  /** Schema type, for array/object body types */
-  type?: string | readonly string[];
-  description?: string;
-  /** Format constraint (e.g., 'email', 'date-time', 'uuid') */
-  format?: string;
-  minimum?: number;
-  maximum?: number;
-  minLength?: number;
-  maxLength?: number;
-  properties?: Record<string, GenSchemaProperty>;
-  /** Value schema for record/map types, from OpenAPI additionalProperties */
-  additionalProperties?: GenSchemaProperty;
-  items?: GenSchemaProperty;
-  itemType?: string | readonly string[];
-  enum?: readonly (string | number | boolean | null)[];
-  minItems?: number;
-  maxItems?: number;
-  ref?: string;
-  refDescription?: string;
-  /** Base schema reference when merged from allOf */
-  extendsRef?: string;
-  anyOf?: GenSchema[];
-  oneOf?: GenSchema[];
-}
-
 export interface GenRequest {
   /** Path parameters, always required */
-  path?: GenRequestSection;
+  path?: GenSchema;
   /** Query parameters, each with its own required flag */
-  query?: GenRequestSection;
-  body?: GenRequestSection;
+  query?: GenSchema;
+  /** Request body, with its content type and required flag */
+  body?: GenSchema;
   /** Example request body value */
   example?: unknown;
 }

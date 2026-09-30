@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
+import type { GenOperationSummary } from 'sdk/docs-types';
 import type { SortColumn } from '~/modules/common/data-grid';
-import type { GenOperationSummary } from '~/modules/docs/types';
 
 /** Comparable key from string values, `''` when missing or empty so the comparator can pin those last. */
 const arrayKey = (values: string[] | undefined): string => {

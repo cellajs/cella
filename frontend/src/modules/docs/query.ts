@@ -1,5 +1,4 @@
 import { queryOptions } from '@tanstack/react-query';
-import { appConfig } from 'shared';
 import type {
   GenComponentSchema,
   GenInfoSummary,
@@ -7,7 +6,8 @@ import type {
   GenOperationSummary,
   GenSchemaTagSummary,
   GenTagSummary,
-} from '~/modules/docs/types';
+} from 'sdk/docs-types';
+import { appConfig } from 'shared';
 
 /** Append the build SHA to a /static URL, so browser and service worker caches roll over per release. */
 export const versionedUrl = (url: string) => `${url}?v=${__APP_VERSION__}`;

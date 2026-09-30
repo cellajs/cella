@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
+import { config } from 'shared/config/config.default';
 import { describe, expect, it } from 'vitest';
-import { config } from '../../../../../shared/config/config.default';
 import { buildOperationDocsUrl } from '../plugin';
 
 // The docs URL format must match the frontend operations route, which reads `operationTag` and resolves the anchor through generateOperationHash.

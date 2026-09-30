@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { GenOperationSummary } from '~/modules/docs/types';
+import type { GenOperationSummary } from 'sdk/docs-types';
 
 interface FilterOptions {
   /** Free-text query; space-separated terms are AND-combined. */

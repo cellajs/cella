@@ -2,10 +2,10 @@ import { BirdIcon, BracesIcon, FileTypeIcon, TextAlignStartIcon } from 'lucide-r
 import { AnimatePresence, motion } from 'motion/react';
 import { Suspense, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { GenRequest, GenSchema } from 'sdk/docs-types';
 import { JsonViewer } from '~/modules/common/json-viewer';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 import { lazyNamed } from '~/utils/lazy-named';
-import type { GenRequest, GenSchema, GenSchemaProperty } from './types';
 
 // Lazy: shiki and its grammars load when the code view opens, not with the docs route.
 const CodeViewer = lazyNamed(() => import('./code-viewer'), 'CodeViewer');
@@ -13,7 +13,7 @@ const CodeViewer = lazyNamed(() => import('./code-viewer'), 'CodeViewer');
 type SchemaViewMode = 'format' | 'zod' | 'type' | 'example';
 
 interface ViewerGroupProps {
-  schema: GenSchema | GenSchemaProperty | GenRequest;
+  schema: GenSchema | GenRequest;
   /** Code to display in zod mode */
   zodCode?: string;
   /** Code to display in type mode */

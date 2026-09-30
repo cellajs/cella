@@ -1,6 +1,6 @@
+import { appConfig } from 'shared';
+import { config } from 'shared/config/config.default';
 import { describe, expect, it } from 'vitest';
-import { appConfig } from '../../../../../shared';
-import { config } from '../../../../../shared/config/config.default';
 import { parseOpenApiSpec } from '../parse-spec';
 import type { OpenApiSpec, OpenApiTag } from '../types';
 
@@ -134,6 +134,42 @@ describe('parseOpenApiSpec', () => {
       ref: '#/components/schemas/UserMinimal',
       description: 'Editing user, or null when never updated.',
       refDescription: 'Minimal user data for references.',
+    });
+  });
+
+  it('lifts scalar facets of array items onto the array and leaves items without a required flag', () => {
+    const spec: OpenApiSpec = {
+      openapi: '3.1.0',
+      info: { title: 'Arrays', version: '1.0.0' },
+      tags: [{ name: 'data', kind: 'schema', 'x-default': true }] as OpenApiTag[],
+      paths: {},
+      components: {
+        schemas: {
+          Row: { type: 'object', properties: { id: { type: 'string' } }, required: ['id'] },
+          Ids: { type: 'array', items: { type: 'string', format: 'uuid', maxLength: 36 }, minItems: 1 },
+          Rows: { type: 'array', items: { $ref: '#/components/schemas/Row' } },
+        },
+      },
+    };
+
+    const schemas = Object.fromEntries(parseOpenApiSpec(spec).schemas.map((schema) => [schema.name, schema]));
+
+    expect(schemas.Ids.schema).toEqual({
+      type: 'array',
+      minItems: 1,
+      itemType: 'string',
+      format: 'uuid',
+      maxLength: 36,
+    });
+    expect(schemas.Rows.schema).toEqual({
+      type: 'array',
+      itemType: 'object',
+      ref: '#/components/schemas/Row',
+      items: {
+        type: 'object',
+        ref: '#/components/schemas/Row',
+        properties: { id: { type: 'string', required: true } },
+      },
     });
   });
 

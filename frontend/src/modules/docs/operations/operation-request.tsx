@@ -1,6 +1,7 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { ChevronDownIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import type { GenOperationDetail } from 'sdk/docs-types';
 import { Button } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import {
@@ -9,7 +10,6 @@ import {
   typesIndexQueryOptions,
   zodIndexQueryOptions,
 } from '../helpers/extract-types';
-import type { GenOperationDetail } from '../types';
 import { ViewerGroup } from '../viewer-group';
 
 interface OperationRequestProps {

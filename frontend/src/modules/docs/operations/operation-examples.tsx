@@ -2,6 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import i18n from 'i18next';
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { GenComponentSchema, GenOperationSummary, GenResponseSummary, GenSchema } from 'sdk/docs-types';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
@@ -14,7 +15,6 @@ import {
 } from '../helpers/extract-types';
 import { getStatusColor } from '../helpers/get-status-color';
 import { schemasQueryOptions, tagDetailsQueryOptions } from '../query';
-import type { GenComponentSchema, GenOperationSummary, GenResponseSummary, GenSchema } from '../types';
 import { ViewerGroup } from '../viewer-group';
 
 function resolveResponseSchema(response: GenResponseSummary, schemas: GenComponentSchema[]): GenSchema | undefined {
