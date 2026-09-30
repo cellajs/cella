@@ -1,16 +1,15 @@
 import { Link } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
-import { motion } from 'motion/react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { nanoid } from 'shared/utils/nanoid';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
-import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import type { TKey } from '~/lib/i18n-locales';
 import type { LegalSubject } from '~/modules/auth/legal/legal-config';
 import type { LegalSection } from '~/modules/auth/legal/legal-types';
-import { Button, buttonVariants } from '~/modules/ui/button';
+import { SpyNavItem } from '~/modules/common/spy-nav-item';
+import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { cn } from '~/utils/cn';
 
@@ -85,48 +84,18 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
               </CollapsibleTrigger>
               <CollapsibleContent keepMounted className="overflow-hidden data-closed:hidden">
                 <div className="relative flex flex-col px-0 py-1">
-                  {subjectSections.map(({ id: sectionId, label: sectionLabel }) => {
-                    const isSectionActive = isActive && currentSection === sectionId;
-                    return (
-                      <div
-                        key={sectionId}
-                        className="group/section relative"
-                        data-spy-link={sectionId}
-                        data-active={isSectionActive}
-                      >
-                        {isSectionActive && (
-                          <motion.span
-                            layoutId={layoutId}
-                            transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }}
-                            className="absolute top-2 bottom-2 left-2 ml-px w-[0.20rem] rounded-full bg-primary"
-                          />
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className={cn(
-                            'group h-8 w-full justify-start gap-2 pl-5 text-left font-normal text-sm opacity-75 hover:bg-accent/50',
-                            'group-data-[spy-active]/section:opacity-100',
-                          )}
-                          render={
-                            <Link
-                              to="."
-                              hash={sectionId}
-                              replace
-                              draggable={false}
-                              onClick={(e) => {
-                                if (e.metaKey || e.ctrlKey) return;
-                                e.preventDefault();
-                                scrollToSectionById(sectionId);
-                              }}
-                            />
-                          }
-                        >
-                          <span className="truncate text-sm">{sectionLabel}</span>
-                        </Button>
-                      </div>
-                    );
-                  })}
+                  {subjectSections.map(({ id: sectionId, label: sectionLabel }) => (
+                    <SpyNavItem
+                      key={sectionId}
+                      id={sectionId}
+                      isActive={isActive && currentSection === sectionId}
+                      layoutId={layoutId}
+                      group="section"
+                      className="pl-5"
+                    >
+                      {sectionLabel}
+                    </SpyNavItem>
+                  ))}
                 </div>
               </CollapsibleContent>
             </div>
