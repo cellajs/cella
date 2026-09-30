@@ -17,8 +17,12 @@ const productNameAllowlist: VocabularyAllowlist = {
   files: ['shared/src/cli-utils/display.ts'],
   prefixes: ['frontend/src/modules/marketing/', 'frontend/src/content/'],
 };
-/** The app-side marker the cella-sync skill puts on intentional app edits: `// fork: <why>` and the css/md forms. */
-const markerComment = /\/\/[ \t]*fork:[^\n]*|\/\*[ \t]*fork:[\s\S]*?\*\/|<!--[ \t]*fork:[\s\S]*?-->/gi;
+/**
+ * The app-side marker the cella-sync skill puts on intentional app edits: `// fork: <why>`, the css/md forms and a
+ * ` * fork: <why>` line inside a JSDoc block.
+ */
+const markerComment =
+  /\/\/[ \t]*fork:[^\n]*|\/\*[ \t]*fork:[\s\S]*?\*\/|<!--[ \t]*fork:[\s\S]*?-->|^[ \t]*\*[ \t]*fork:[^\n]*/gim;
 const sourceControlAdvice = 'use template/app terminology';
 const productNameAdvice =
   'derive it from appConfig or use a neutral name; the product name is not an identifier or wire string';

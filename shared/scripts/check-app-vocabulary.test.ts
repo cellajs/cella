@@ -29,11 +29,18 @@ describe('findAppVocabularyFindings', () => {
       `/* ${legacyTerm}: multi`,
       `   line */ const ${legacyTerm}Config = {};`,
       `<!-- ${legacyTerm}: app copy -->`,
+      '/**',
+      ` * ${legacyTerm}: the app keeps its own default`,
+      ` * and a ${legacyTerm} word on a later line still counts`,
+      ' */',
     ].join('\n');
 
     expect(
       findAppVocabularyFindings('example.ts', source).map(({ line, column, term }) => ({ line, column, term })),
-    ).toEqual([{ line: 3, column: 18, term: legacyTerm }]);
+    ).toEqual([
+      { line: 3, column: 18, term: legacyTerm },
+      { line: 7, column: 10, term: legacyTerm },
+    ]);
   });
 
   it('finds the term in a file path', () => {

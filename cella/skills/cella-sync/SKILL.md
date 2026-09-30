@@ -18,7 +18,7 @@ advances one stage (steps 6 and 7).
   always wins; the CLI restores every changed pinned file to HEAD right after the merge, so no upstream
   hunk merges in and a pinned file never conflicts. Adopt upstream hunks by hand from the analyze list
   ("protected but behind upstream").
-- **fork marker**: `// fork: <why>` (css `/* fork: ... */`, md `<!-- fork: ... -->`) on every
+- **fork marker**: `// fork: <why>` (css `/* fork: ... */`, md `<!-- fork: ... -->`, a ` * fork: ...` line in JSDoc) on every
   intentional app edit in a cella-owned file, one marker per contiguous edit, naming the
   customization axis, not the diff; unmarked drift counts as accidental. JSON cannot carry
   markers: pin or ignore changed JSON files.
@@ -39,7 +39,7 @@ copy, and their upstream hunks wait in the analyze list.
 
 | Conflict shape | Resolution |
 |---|---|
-| Both-added (AA) test or module, ours = upstream + app cases | Take upstream verbatim (`git checkout --theirs`); move the app cases to a fork-owned file beside its source (`<source>.test.ts` next to the fork's schema/module), never inside a cella-owned file. |
+| Both-added (AA) test or module, ours = upstream + app cases | Take upstream verbatim (`git checkout --theirs`); move the app cases to an app-owned companion beside its source (`<source>-app.test.ts`; the style check flags the word fork in file names), never inside a cella-owned file. |
 | Cella-owned file with fork markers (UU) | Take theirs, grep the pre-merge version (`git show :2:<file> \| grep -n -A2 'fork:'`), re-apply exactly the marked deltas with their markers. |
 | Cella-owned file, no markers, unclear delta | Suspect accidental drift. Diff `:2:` vs `:3:`: no intentional axis on the fork side, take theirs; intentional, re-apply WITH a new `// fork:` marker. |
 | Generated output (sdk/gen, routeTree.gen, openapi cache) | Take either side; regenerate at step 4. |
@@ -56,6 +56,10 @@ git log -p MERGE_HEAD -1 --stat # what upstream intended
 
 For each auto-merged file in an area with `fork:` markers (grep them repo-wide as the map), verify
 the marked lines survived; CI stays green until typecheck when one is dropped.
+
+Ignored paths never merge, so upstream changes there arrive only by hand. Read
+`git diff HEAD MERGE_HEAD -- shared/config` for new config keys and version bumps, and the same for every
+app-owned module folder (`owner: 'app'`) that started as an upstream module.
 
 ## 4. Regenerate and gate
 
