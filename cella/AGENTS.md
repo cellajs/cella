@@ -52,7 +52,7 @@ Secret columns (a hash, a session or token secret, a private key) are declared o
 
 ## Error handling
 
-`AppError` is the structured error class: `status`, `type` (i18n key from `locales/en/error`), `severity`, `entityType`, `meta`, `willRedirect`. PostgreSQL error codes map automatically (FK violation → 400, unique constraint → 409, RLS denial → 403, deadlock → 409).
+`AppError` is the structured error class: `status`, `type` (i18n key from `locales/en/error`), `severity`, `entityType`, `meta`, `willRedirect`. PostgreSQL error codes map automatically (FK violation → 400, unique constraint → 409, RLS denial → 403, deadlock → 409). A route that answers 302 is a browser navigation: outside tests, whatever refuses it (a gate, a limiter, the handler) answers with a redirect to `/auth/error`, the `ctx.var.errorPagePath` a handler may point elsewhere; `willRedirect` forces that redirect in every mode.
 
 ## Auth
 

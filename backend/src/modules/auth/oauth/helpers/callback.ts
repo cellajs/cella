@@ -2,7 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
 import type { Env } from '#/core/context';
-import { AppError, type ErrorKey } from '#/core/error';
+import { AppError } from '#/core/error';
 import { type DbOrTx, baseDb as db } from '#/db/db';
 import { maySignUp } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
@@ -70,32 +70,19 @@ export const handleOAuthCallback = async (
 
   let result: OAuthFlowResult;
 
-  try {
-    switch (type) {
-      case 'connect':
-        result = await connectCallbackFlow({ ctx, ...baseCallbackProps });
-        break;
-      case 'invite':
-        result = await inviteCallbackFlow({ ctx, ...baseCallbackProps });
-        break;
-      case 'verify':
-        result = await verifyCallbackFlow({ ctx, ...baseCallbackProps });
-
-        break;
-      case 'auth':
-        result = await authCallbackFlow(baseCallbackProps);
-
-        break;
-    }
-  } catch (err) {
-    if (err instanceof AppError) {
-      const errorPagePath = type === 'connect' ? '/account' : '/auth/error';
-      throw new AppError(err.status, err.type as ErrorKey, err.severity, {
-        willRedirect: appConfig.mode !== 'test',
-        meta: { ...err.meta, errorPagePath },
-      });
-    }
-    throw err;
+  switch (type) {
+    case 'connect':
+      result = await connectCallbackFlow({ ctx, ...baseCallbackProps });
+      break;
+    case 'invite':
+      result = await inviteCallbackFlow({ ctx, ...baseCallbackProps });
+      break;
+    case 'verify':
+      result = await verifyCallbackFlow({ ctx, ...baseCallbackProps });
+      break;
+    case 'auth':
+      result = await authCallbackFlow(baseCallbackProps);
+      break;
   }
 
   return await processCallbackResult({ ctx, redirectAfter, provider, ...result });
@@ -205,16 +192,16 @@ const inviteCallbackFlow = async ({
   identity = null,
 }: { ctx: Context<Env> } & BaseCallbackProps): Promise<OAuthFlowResult> => {
   const invitationToken = await readBoundToken(ctx, 'invitation');
+  // The error page resumes the invitation by its token id, so another sign-in method can be taken.
+  const meta = { tokenId: invitationToken.id };
 
-  if (invitationToken.email !== providerUser.email) {
-    throw new AppError(409, 'oauth_wrong_email', 'warn');
-  }
+  if (invitationToken.email !== providerUser.email) throw new AppError(409, 'oauth_wrong_email', 'warn', { meta });
 
-  if (identity) throw new AppError(409, 'oauth_conflict', 'warn');
+  if (identity) throw new AppError(409, 'oauth_conflict', 'warn', { meta });
 
   // Address already held by an account, verified or not: every sign-up writes its email row, so one lookup covers both.
   const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
-  if (holder) throw new AppError(409, 'oauth_email_exists', 'warn');
+  if (holder) throw new AppError(409, 'oauth_email_exists', 'warn', { meta });
 
   if (!providerUser.emailVerified) return pendingSignUp(providerUser, provider);
 

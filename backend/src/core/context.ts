@@ -87,6 +87,8 @@ export type Env = {
     tenant: TenantModel;
     /** Status of the error `appErrorHandler` answered, also when it answered with a redirect; the rate limiters read it. */
     errorStatus?: number;
+    /** Where a refusal of this request redirects to: set for a route that answers 302, a handler may point it elsewhere. */
+    errorPagePath?: string;
   };
   Bindings: Bindings;
 };

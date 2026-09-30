@@ -1,6 +1,7 @@
 import { createRoute } from '@hono/zod-openapi';
 import type { MiddlewareHandler } from 'hono';
 import { appConfig } from 'shared';
+import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { registerMcpTool } from '#/core/mcp-tool-registry';
 import type { ServiceGate, StrategyGate, XMiddlewareHandler } from '#/core/openapi-extensions';
@@ -34,11 +35,7 @@ const createStrategyGate =
         !appConfig.enabledAuthStrategies.includes('oauth') ||
         !appConfig.enabledOAuthProviders.some((p) => p === provider)
       ) {
-        // Provider routes are browser navigations: the error page explains the refusal.
-        throw new AppError(400, 'unsupported_oauth', 'error', {
-          willRedirect: appConfig.mode !== 'test',
-          meta: { errorPagePath: '/auth/error', strategy: provider },
-        });
+        throw new AppError(400, 'unsupported_oauth', 'error', { meta: { strategy: provider } });
       }
     } else {
       const strategy = typeof gate === 'function' ? gate(ctx) : gate;
@@ -48,6 +45,16 @@ const createStrategyGate =
     }
     await next();
   };
+
+/**
+ * A route that answers 302 is a browser navigation: whatever refuses the request, a gate, a limiter or the handler,
+ * answers with a redirect to the error page (`appErrorHandler`). Set before anything can refuse; a handler may point
+ * it elsewhere.
+ */
+const errorPageMiddleware: MiddlewareHandler<Env> = async (ctx, next) => {
+  ctx.set('errorPagePath', '/auth/error');
+  await next();
+};
 
 const strategyLabel = (gate: StrategyGate): string => {
   if (gate === null) return 'none';
@@ -80,12 +87,14 @@ export const createXRoute = <
       : [config.middleware]
     : [];
 
-  // Service gate (from declarative `x-service`) runs first so disabled services 404 before guards; the strategy gate next.
+  // The error page first, so every refusal finds it; then the service gate (from declarative `x-service`), so disabled
+  // services 404 before guards; the strategy gate next.
+  const errorPage = '302' in config.responses ? [errorPageMiddleware] : [];
   const service = config['x-service'] as ServiceGate | undefined;
   const serviceGate = service ? [createServiceGate(service)] : [];
   const strategy = config['x-strategy'] as StrategyGate | undefined;
   const strategyGate = strategy ? [createStrategyGate(strategy)] : [];
-  const middleware = [...serviceGate, ...strategyGate, ...extensionMiddleware, ...existing];
+  const middleware = [...errorPage, ...serviceGate, ...strategyGate, ...extensionMiddleware, ...existing];
 
   const xMiddlewares = middleware.filter(
     (mw): mw is XMiddlewareHandler =>

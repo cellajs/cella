@@ -18,6 +18,7 @@ import {
   cookieChange,
   createTestOrganization,
   createUser,
+  type ErrorResponse,
   expectRefusal,
   insertTestSession,
   insertTestToken,
@@ -359,6 +360,27 @@ describe('OAuth Authentication', async () => {
       expect(await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail))).toHaveLength(0);
     });
 
+    it("sends a provider's refusal of a connect back to the account page, with the error to show", async () => {
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify({ type: 'connect' }));
+      const denied = () =>
+        call(githubCallback, {
+          query: { state, code: 'error-code', error: 'access_denied', error_description: 'User denied access' },
+          headers: defaultHeaders,
+        });
+
+      // Tests read the refusal as JSON, like every other error.
+      await expectRefusal(await denied(), 400, 'oauth_failed');
+
+      const testMode = appConfig.mode;
+      onTestFinished(() => {
+        Reflect.set(appConfig, 'mode', testMode);
+      });
+      Reflect.set(appConfig, 'mode', 'development');
+      const { response: res } = await denied();
+      expect(res.status).toBe(302);
+      expect(res.headers.get('location')).toBe(`${appConfig.frontendUrl}/account?error=oauth_failed&severity=error`);
+    });
+
     it('refuses when another user holds the provider address', async () => {
       const user = await createUser('local-account@example.com');
       await createUser(providerEmail);
@@ -694,10 +716,12 @@ describe('OAuth Authentication', async () => {
     });
 
     it('must not create an account on the invited address via a provider account of another address', async () => {
-      await openedInvitation('invited@example.com');
+      const { token } = await openedInvitation('invited@example.com');
 
       const { response: res, error } = await inviteCallback();
       await expectRefusal({ response: res, error }, 409, 'oauth_wrong_email');
+      // The refusal names the invitation, so the error page can resume it with another method.
+      expect((error as ErrorResponse | undefined)?.meta).toEqual({ tokenId: token.id });
       expect(await db.select().from(usersTable).where(eq(usersTable.email, providerEmail))).toHaveLength(0);
       expect(await db.select().from(identitiesTable)).toHaveLength(0);
     });

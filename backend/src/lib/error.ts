@@ -78,7 +78,7 @@ export interface ClientError {
   severity: Severity;
   entityType?: AppError['entityType'];
   meta?: AppError['meta'];
-  /** The error came from an `AppError` thrown with `willRedirect`: answer with a redirect to its error page. */
+  /** The error came from an `AppError` thrown with `willRedirect`: answer with a redirect to its error page in every mode. */
   willRedirect: boolean;
 }
 
@@ -195,8 +195,10 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   const traced = withoutFailedQuery(err);
   if (traced instanceof Error) ctx.error = traced;
 
-  if (clientError.willRedirect) {
-    const redirectUrl = new URL(clientError.meta?.errorPagePath || '/error', appConfig.frontendUrl);
+  // A navigation's refusal answers with a redirect to its error page, whatever refused it; tests read the JSON body.
+  const errorPagePath = clientError.meta?.errorPagePath ?? ctx.var.errorPagePath;
+  if (clientError.willRedirect || (ctx.var.errorPagePath !== undefined && appConfig.mode !== 'test')) {
+    const redirectUrl = new URL(errorPagePath || '/error', appConfig.frontendUrl);
     redirectUrl.searchParams.set('error', clientError.type);
     redirectUrl.searchParams.set('severity', clientError.severity);
     if (clientError.meta?.tokenId) redirectUrl.searchParams.set('tokenId', clientError.meta.tokenId);
