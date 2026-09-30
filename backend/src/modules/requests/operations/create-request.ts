@@ -2,7 +2,7 @@ import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { mailer } from '#/lib/mailer';
 import { sendMatrixMessage } from '#/lib/notifications/send-matrix-message';
-import { getRateLimiterInstance } from '#/middlewares/rate-limiter/helpers';
+import { getRateLimiterInstance, subjectSegment } from '#/middlewares/rate-limiter/helpers';
 import type { RequestModel } from '#/modules/requests/requests-db';
 import { insertRequest } from '#/modules/requests/requests-queries';
 import { findUserByEmail } from '#/modules/user/user-queries';
@@ -39,7 +39,7 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
   if (type === 'waitlist') {
     const existingUser = await findUserByEmail(ctx, { email: normalizedEmail });
     if (existingUser) {
-      const mailToday = await accountExistsMails.consume(`email:${normalizedEmail}`).then(
+      const mailToday = await accountExistsMails.consume(subjectSegment('email', normalizedEmail)).then(
         () => true,
         () => false,
       );

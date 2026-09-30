@@ -87,7 +87,7 @@ export const runtimeSecretsConfig = defineRuntimeSecrets({
     required: true,
     valueSource: 'pulumi',
     generation: 'random',
-    services: ['backend', 'mcp'],
+    services: ['backend', 'mcp', 'oauth'],
   },
   dataEncryptionKey: {
     secretName: 'data-encryption-key',

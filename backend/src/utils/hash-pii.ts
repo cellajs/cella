@@ -45,3 +45,13 @@ export const hashSubnet = (subnet: string): string => {
     .digest('hex')
     .slice(0, 32);
 };
+
+/** Global namespace per subject kind, so an IP or address counts in one bucket in every process; `rate_limits` holds the pseudonym alone. */
+export const hashRateLimitSubject = (kind: 'ip' | 'email', value: string): string => {
+  const normalized = value.trim().toLowerCase();
+  if (!normalized) return '';
+  return createHmac('sha256', modeSecret('PII_HASH_SECRET'))
+    .update(`ratelimit:${kind}:${normalized}`)
+    .digest('hex')
+    .slice(0, 32);
+};

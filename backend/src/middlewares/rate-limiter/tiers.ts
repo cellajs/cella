@@ -55,7 +55,7 @@ export const reserveTiers = async (ctx: Context<Env>, tiers: Tier[], key: string
     }
     if (!taken.granted) {
       await settleTiers(reservation, 'other');
-      return rateLimitError(ctx, taken.state, key);
+      return rateLimitError(ctx, taken.state);
     }
     reservation.held.push({ tier, store: taken.store, count: taken.state.consumedPoints });
   }

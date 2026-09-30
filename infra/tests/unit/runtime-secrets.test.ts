@@ -87,6 +87,7 @@ describe('runtime secret registry', () => {
       'DATABASE_URL',
       'DATABASE_SSL_CA',
       'COOKIE_SECRET',
+      'PII_HASH_SECRET',
       'DATA_ENCRYPTION_KEY',
     ]);
     expect(runtimeSecretsForConsumer('jobs').map((secret) => secret.envVar)).toEqual([

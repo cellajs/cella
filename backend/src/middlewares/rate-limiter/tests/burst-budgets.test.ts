@@ -11,6 +11,7 @@ import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 vi.unmock('#/middlewares/rate-limiter/core');
 
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
+const { subjectSegment } = await import('#/middlewares/rate-limiter/helpers');
 const { appErrorHandler } = await import('#/lib/error');
 
 const budget = { points: 5, duration: 60 * 60, blockDuration: 60 * 30 };
@@ -82,7 +83,7 @@ const bucketOf = async (limiter: { keyPrefix: string }, ip: string) => {
   const [row] = await getAdminDb('rate limit test')
     .select()
     .from(rateLimitsTable)
-    .where(eq(rateLimitsTable.key, `${limiter.keyPrefix}:ip:${ip}`));
+    .where(eq(rateLimitsTable.key, `${limiter.keyPrefix}:${subjectSegment('ip', ip)}`));
   return row;
 };
 
@@ -128,7 +129,7 @@ describe('fail-mode budgets under a parallel burst', () => {
     await getAdminDb('rate limit test')
       .update(rateLimitsTable)
       .set({ expire: new Date(Date.now() - 1000) })
-      .where(eq(rateLimitsTable.key, `${route.limiter.keyPrefix}:ip:${ip}`));
+      .where(eq(rateLimitsTable.key, `${route.limiter.keyPrefix}:${subjectSegment('ip', ip)}`));
 
     // A fresh budget: the process holds no block of its own that outlives the one in the database.
     const statuses: number[] = [];

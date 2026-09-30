@@ -27,7 +27,8 @@ export const modeSecrets: Readonly<Record<ModeSecret, readonly ProcessMode[]>> =
   YJS_RELAY_SECRET: ['api'],
   // The digest's unsubscribe links are signed where the digest runs: the jobs worker.
   UNSUBSCRIBE_SECRET: ['api', 'mcp', 'jobs'],
-  PII_HASH_SECRET: ['api', 'mcp'],
+  // The rate limiter keys an IP or address by its pseudonym; the OAuth face limits client metadata fetches per IP.
+  PII_HASH_SECRET: ['api', 'mcp', 'oauth'],
   // Read by the admin seed alone, which the release companion (MODE=migrate) runs with the API's secrets.
   ADMIN_EMAIL: ['migrate'],
 };
