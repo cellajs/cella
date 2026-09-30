@@ -3,7 +3,8 @@ import { vi } from 'vitest';
 // A test of the query layer imports this before query-client.ts, which wires the online listeners and reads
 // navigator.onLine when it loads. The client's cache callbacks lazy-import on-error and on-success; neither is under test.
 vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
-vi.stubGlobal('navigator', { onLine: true });
+// Base UI's toast module lowercases navigator.userAgent when it loads, so the stub carries one.
+vi.stubGlobal('navigator', { onLine: true, userAgent: '' });
 vi.mock('~/query/on-error', () => ({ onError: vi.fn() }));
 vi.mock('~/query/on-success', () => ({ onSuccess: vi.fn() }));
 
