@@ -50,9 +50,15 @@ const VARIANT_PATTERN = /^[89ab][0-9a-f]{3}$/;
 
 export const getBenchSeedName = (seed: BenchSeed): string => (seed.kind === 'custom' ? seed.name : seed.table);
 
-/** Derive the cleanup WHERE clause for a table seed from its `idVariant`, or fall back to an explicit `cleanupWhere`. */
+/**
+ * Derive the cleanup WHERE clause for a table seed from its `idVariant`, or fall back to an explicit `cleanupWhere`.
+ * The variant becomes a uuid range so the delete scans the primary key index; a text cast on `id` scans the whole table.
+ */
 export const getBenchSeedCleanupWhere = (seed: TableBenchSeed): string => {
-  if (seed.idVariant) return `id::text LIKE '${BENCH_UUID_PREFIX}${seed.idVariant}%'`;
+  if (seed.idVariant) {
+    const prefix = `${BENCH_UUID_PREFIX}${seed.idVariant}`;
+    return `id BETWEEN '${prefix}-000000000000'::uuid AND '${prefix}-ffffffffffff'::uuid`;
+  }
   if (seed.cleanupWhere) return seed.cleanupWhere;
   throw new Error(`Bench seed '${seed.table}' must define either 'idVariant' or 'cleanupWhere' for cleanup.`);
 };
