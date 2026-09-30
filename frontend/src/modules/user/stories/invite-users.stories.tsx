@@ -122,6 +122,21 @@ export const ShouldSendMembershipInvite: Story = {
   },
 };
 
+export const ShouldCountChips: Story = {
+  name: 'when chips are added, should show their count on the invite button',
+  tags: playTags,
+  args: { mode: 'email' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await userEvent.type(canvas.getByRole('textbox'), 'a@x.com{Enter}b@x.com{Enter}c@x.com{Enter}');
+    await expect(canvas.getByRole('button', { name: /invite$/i })).toHaveTextContent('3');
+
+    await userEvent.keyboard('{Backspace}');
+    await expect(canvas.getByRole('button', { name: /invite$/i })).toHaveTextContent('2');
+  },
+};
+
 export const ShouldCancelEmailForm: Story = {
   name: 'when the email form is cancelled, should clear the chips',
   tags: playTags,

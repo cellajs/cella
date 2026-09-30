@@ -1,3 +1,4 @@
+import { useWatch } from 'react-hook-form';
 import { useTranslation } from 'react-i18next';
 import { SelectEmails } from '~/modules/common/form-fields/select-emails';
 import { useStepper } from '~/modules/common/stepper/use-stepper';
@@ -18,6 +19,7 @@ export function InviteEmailForm({ channel, dialog: isDialog, children }: Props) 
   const { nextStep } = useStepper();
 
   const form = useInviteFormDraft(channel?.id, channel?.entityType);
+  const emails = useWatch({ control: form.control, name: 'emails' });
 
   const { onSubmit, isPending } = useInviteSubmit(channel, isDialog, () => {
     form.reset(undefined, { keepDirtyValues: true });
@@ -46,7 +48,7 @@ export function InviteEmailForm({ channel, dialog: isDialog, children }: Props) 
         <InviteFormFooter
           form={form}
           channel={channel}
-          count={form.getValues('emails')?.length ?? 0}
+          count={emails?.length ?? 0}
           isPending={isPending}
           onCancel={() => form.reset()}
         >
