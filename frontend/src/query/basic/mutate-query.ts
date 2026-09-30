@@ -7,48 +7,6 @@ import type { BaseQueryItem, BaseQueryResponse, InfiniteQueryData, PageParams, Q
 export const getQueryItems = <TItem>(prevItems: BaseQueryItem<TItem>) =>
   isQueryData(prevItems) ? prevItems.items : prevItems.pages.flatMap(({ items }) => items);
 
-/** Preserves the previous structure, re-chunking into pages for infinite queries. `addToTotal` adjusts cached `total`, and page params are assumed to be `{ page, offset }`. */
-export function formatUpdatedCacheData<TItem>(
-  prevData: BaseQueryItem<TItem>,
-  updatedData: TItem[],
-  limit?: number,
-  addToTotal = 0,
-): BaseQueryItem<TItem> {
-  if (isQueryData(prevData)) return { total: prevData.total + addToTotal, items: updatedData };
-
-  // Every item was deleted.
-  if (!updatedData.length) return { pageParams: [{ page: 0, offset: 0 }], pages: [{ items: [], total: 0 }] };
-
-  // Without an explicit limit, the first existing page sets the chunk size.
-  const pageItemsLimit = limit ?? (prevData.pages.length > 1 ? prevData.pages[0].items.length : null);
-
-  if (!pageItemsLimit) {
-    return {
-      ...prevData,
-      pages: [{ total: (prevData.pages[0]?.total ?? 0) + addToTotal, items: updatedData }],
-    };
-  }
-
-  const chunks: TItem[][] = [];
-  for (let i = 0; i < updatedData.length; i += pageItemsLimit) {
-    chunks.push(updatedData.slice(i, i + pageItemsLimit));
-  }
-
-  const oldTotal = prevData.pages[0]?.total ?? 0;
-
-  // Each page starts after the items of the pages before it; a refetch replays these from pageParams[0].
-  const pageParams = chunks.map((_, i) => ({ page: i, offset: i * pageItemsLimit }));
-
-  return {
-    ...prevData,
-    pageParams,
-    pages: chunks.map((chunk) => ({
-      total: oldTotal + addToTotal,
-      items: chunk,
-    })),
-  };
-}
-
 export const isQueryData = <TItem>(data: unknown): data is QueryData<TItem> => {
   return typeof data === 'object' && data !== null && 'items' in data && 'total' in data;
 };
