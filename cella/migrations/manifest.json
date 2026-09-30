@@ -1421,6 +1421,23 @@
     "pnpm check"
    ],
    "summary": "pnpm style fails a zustand store hook called without a selector, after the overlay providers re-rendered every UI-store reader on each open and close. checkIdempotency takes the table and builds the creator and request-scope predicate itself, evolutionContract.product declares blockFields and exposes assertBlockFields for creates and updates, the hierarchy role getters are typed per channel and shared exports OrganizationRole, the three tsup configs derive their externals from one keepOnDisk helper plus the pinned backend/src/bundle-config.ts, pnpm generate forwards extra arguments to drizzle-kit, security suites declare the member attachment policy they assume, and PR CI typechecks, builds the three service bundles and, on the release PR, the three images."
+  },
+  {
+   "id": "20260930T1510-base-ui-toast",
+   "version": "next",
+   "title": "Replace sonner with Base UI Toast",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm install",
+    "pnpm check"
+   ],
+   "summary": "Toasts render through Base UI Toast (frontend/src/modules/ui/toast.tsx, ported from the shadcn base toast) and the sonner dependency is removed. toaster.<severity>(message, options) keeps its shape with Base UI options (description, actionProps, timeout, id, onClose, priority); the unused sonner methods are removed and close replaces dismiss. toaster holds toasts shown before the Toaster mounts, which retires toast-store.ts, and ReloadPrompt shows a persistent toast. Apps that import sonner directly, pass sonner-only options or use useToastStore adjust those calls by hand."
   }
  ]
 }

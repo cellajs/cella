@@ -1,15 +1,16 @@
 import { useRegisterSW } from 'virtual:pwa-register/react';
 import { LoaderCircleIcon } from 'lucide-react';
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
-import { Button } from '~/modules/ui/button';
+import { toaster } from '~/modules/common/toaster/toaster';
 
 const SW_UPDATE_INTERVAL = 15 * 60 * 1000;
+const reloadToastId = 'reload-prompt';
 
+/** Registers the service worker and, when a new version is waiting, shows a persistent toast to reload. */
 export function ReloadPrompt() {
   const { t } = useTranslation();
-  const [reloading, setReloading] = useState(false);
 
   const {
     needRefresh: [needRefresh, setNeedRefresh],
@@ -38,46 +39,44 @@ export function ReloadPrompt() {
     },
   });
 
-  // In development, auto-reload on SW update (skip prompt during offline:watch)
   useEffect(() => {
-    if (needRefresh && appConfig.mode === 'development') {
+    if (!needRefresh) return;
+
+    // In development, auto-reload on SW update (skip prompt during offline:watch)
+    if (appConfig.mode === 'development') {
       updateServiceWorker(true);
+      return;
     }
-  }, [needRefresh, updateServiceWorker]);
 
-  // The gap between click and reload is the new service worker's activate phase, so the
-  // button spins until the page goes away. A hard reload follows if nothing happens in 5s.
-  const reload = useCallback(() => {
-    if (reloading) return;
-    setReloading(true);
-    setTimeout(() => window.location.reload(), 5000);
-    updateServiceWorker(true);
-  }, [reloading, updateServiceWorker]);
+    const showPrompt = (reloading: boolean) =>
+      toaster(t('c:refresh_pwa_app.text'), {
+        id: reloadToastId,
+        timeout: 0,
+        onClose: () => setNeedRefresh(false),
+        actionProps: {
+          disabled: reloading,
+          'aria-busy': reloading || undefined,
+          onClick: reload,
+          children: (
+            <span className="relative inline-flex items-center">
+              <span className={reloading ? 'invisible' : undefined}>{t('c:reload')}</span>
+              {reloading && <LoaderCircleIcon className="absolute inset-0 m-auto animate-spin" />}
+            </span>
+          ),
+        },
+      });
 
-  const close = () => {
-    setNeedRefresh(false);
-  };
+    // The gap between click and reload is the new service worker's activate phase, so the
+    // button spins until the page goes away. A hard reload follows if nothing happens in 5s.
+    const reload = () => {
+      showPrompt(true);
+      setTimeout(() => window.location.reload(), 5000);
+      updateServiceWorker(true);
+    };
 
-  return (
-    <>
-      {needRefresh && (
-        <div className="pointer-events-auto fixed right-0 bottom-0 z-200000 m-4 rounded-sm border bg-background p-3 text-left">
-          <div className="mb-2">
-            <span>{t('c:refresh_pwa_app.text')}</span>
-          </div>
-          <div className="space-x-2">
-            <Button onClick={reload} disabled={reloading} aria-busy={reloading || undefined}>
-              <span className="relative inline-flex items-center">
-                <span className={reloading ? 'invisible' : undefined}>{t('c:reload')}</span>
-                {reloading && <LoaderCircleIcon className="absolute inset-0 m-auto animate-spin" />}
-              </span>
-            </Button>
-            <Button variant="secondary" onClick={close} disabled={reloading}>
-              {t('c:close')}
-            </Button>
-          </div>
-        </div>
-      )}
-    </>
-  );
+    // Reruns re-add under the same id, which updates the open toast in place
+    showPrompt(false);
+  }, [needRefresh, setNeedRefresh, updateServiceWorker, t]);
+
+  return null;
 }

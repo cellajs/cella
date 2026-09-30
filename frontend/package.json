@@ -106,7 +106,6 @@
     "shared": "workspace:*",
     "shiki": "^4.4.3",
     "slugify": "1.6.9",
-    "sonner": "^2.0.8",
     "tailwindcss": "^4.3.3",
     "tailwindcss-animate": "^1.0.7",
     "use-debounce": "^10.1.1",

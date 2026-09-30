@@ -1,64 +1,67 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { ToastManagerEvent } from '@base-ui/react/toast';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { toaster, toastManager } from '~/modules/common/toaster/toaster';
 
-const sonner = vi.hoisted(() => {
-  const toast = Object.assign(
-    vi.fn(() => 'default-id'),
-    {
-      success: vi.fn(() => 'success-id'),
-      info: vi.fn(() => 'info-id'),
-      warning: vi.fn(() => 'warning-id'),
-      error: vi.fn(() => 'error-id'),
-      loading: vi.fn(() => 'loading-id'),
-      message: vi.fn(() => 'message-id'),
-      custom: vi.fn(() => 'custom-id'),
-      promise: vi.fn(() => ({ unwrap: vi.fn() })),
-      dismiss: vi.fn(() => 'dismissed-id'),
-      getHistory: vi.fn(() => []),
-      getToasts: vi.fn(() => []),
-    },
-  );
-  return { toast };
-});
+// Stands in for the Toaster: the Base UI provider subscribes the same way.
+let events: ToastManagerEvent[] = [];
+let unsubscribe: (() => void) | undefined;
 
-vi.mock('sonner', () => sonner);
-
-import { toaster } from '~/modules/common/toaster/toaster';
+const subscribe = () => {
+  unsubscribe = toastManager[' subscribe']((event) => events.push(event));
+};
 
 describe('toaster', () => {
-  beforeEach(() => vi.clearAllMocks());
-
-  it('matches the callable Sonner API and returns its toast id', () => {
-    expect(toaster('Saved')).toBe('default-id');
-    expect(sonner.toast).toHaveBeenCalledWith('Saved', { id: 'cella:Saved' });
+  beforeEach(() => {
+    events = [];
   });
 
-  it('provides typed severity methods with complete option forwarding', () => {
-    const options = { description: 'Attachment kept', duration: 8_000 };
-
-    expect(toaster.info('Delete denied', options)).toBe('info-id');
-    expect(sonner.toast.info).toHaveBeenCalledWith('Delete denied', {
-      ...options,
-      id: 'cella:Delete denied',
-    });
+  afterEach(() => {
+    unsubscribe?.();
+    unsubscribe = undefined;
+    toaster.close();
   });
 
-  it('maps every title-bearing Sonner method through message deduplication', () => {
-    const methods = ['success', 'info', 'warning', 'error', 'loading', 'message'] as const;
+  it('gives string messages a stable id so repeats refresh one toast', () => {
+    subscribe();
 
-    for (const method of methods) {
-      expect(toaster[method](`${method} message`)).toBe(`${method}-id`);
-      expect(sonner.toast[method]).toHaveBeenCalledWith(`${method} message`, {
-        id: `cella:${method} message`,
-      });
-    }
+    expect(toaster('Saved')).toBe('toast:Saved');
+    expect(toaster.success('Saved')).toBe('toast:Saved');
+    expect(events.map((event) => event.options)).toMatchObject([
+      { id: 'toast:Saved', title: 'Saved', type: undefined, priority: 'low' },
+      { id: 'toast:Saved', title: 'Saved', type: 'success', priority: 'low' },
+    ]);
   });
 
-  it('preserves explicit ids and leaves non-string messages without an automatic id', () => {
-    toaster.success('Saved', { id: 'save-operation' });
-    const renderMessage = () => 'Rendered message';
-    toaster.warning(renderMessage);
+  it('sets the severity as type, announces errors urgently and forwards options', () => {
+    subscribe();
 
-    expect(sonner.toast.success).toHaveBeenCalledWith('Saved', { id: 'save-operation' });
-    expect(sonner.toast.warning).toHaveBeenCalledWith(renderMessage, undefined);
+    toaster.info('Delete denied', { description: 'Attachment kept', timeout: 8_000 });
+    toaster.error('Upload failed');
+
+    expect(events.map((event) => event.options)).toMatchObject([
+      { title: 'Delete denied', type: 'info', description: 'Attachment kept', timeout: 8_000 },
+      { title: 'Upload failed', type: 'error', priority: 'high' },
+    ]);
+  });
+
+  it('keeps explicit ids and leaves the id of a non-string message to Base UI', () => {
+    subscribe();
+
+    expect(toaster.warning('Saved', { id: 'save-operation' })).toBe('save-operation');
+    const id = toaster.warning(null);
+
+    expect(id).not.toMatch(/^toast:/);
+    expect(events[1].options).toMatchObject({ id, title: null });
+  });
+
+  it('holds toasts shown before a toaster subscribes and replays them on subscribe', () => {
+    toaster.warning('Offline cache miss');
+    toaster.error('Dropped', { id: 'dropped' });
+    toaster.close('dropped');
+    expect(events).toHaveLength(0);
+
+    subscribe();
+
+    expect(events.map(({ action, options }) => [action, options.id])).toEqual([['add', 'toast:Offline cache miss']]);
   });
 });

@@ -1,8 +1,7 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import { getErrorInfo } from '~/modules/common/error-helpers';
 import { errorSearchSchema } from '~/modules/common/search-params-schemas';
-import { useToastStore } from '~/modules/common/toaster/toast-store';
-import type { ToastSeverity } from '~/modules/common/toaster/toaster';
+import { type ToastSeverity, toaster } from '~/modules/common/toaster/toaster';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { queryClient } from '~/query/query-client';
 import { withSuspenseSpinner } from '~/routes/-route-utils';
@@ -23,7 +22,7 @@ export const Route = createFileRoute('/_app/account')({
       const severityMap: Record<string, ToastSeverity> = { error: 'error', warn: 'warning', fatal: 'error' };
 
       const toastSeverity = severityMap[search.severity ?? ''] ?? 'warning';
-      useToastStore.getState().showToast(message, toastSeverity);
+      toaster[toastSeverity](message);
       throw redirect({ to: '/account', search: {}, replace: true });
     }
   },
