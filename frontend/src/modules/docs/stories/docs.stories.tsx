@@ -256,8 +256,8 @@ export const ResponsesEmpty: Story = {
 };
 
 /**
- * Only responses with an example are listed, the first one open in example view. A 2xx example decides
- * whether anything is listed, yet an error response with an example is listed too.
+ * The success response sheet lists only 2xx responses with an example, the first one open in example view; an
+ * error response with an example stays on the operation page.
  */
 export const Examples: Story = {
   parameters: { app: { queryData: docsQueries([meDetail]) } },
@@ -270,20 +270,11 @@ export const Examples: Story = {
     const canvas = within(canvasElement);
 
     const ok = await canvas.findByRole('button', { name: /200\s*Current user/ });
-    const badRequest = canvas.getByRole('button', { name: /400\s*Bad request/ });
+    await expect(canvas.queryByRole('button', { name: /400/ })).toBeNull();
     await expect(canvas.queryByRole('button', { name: /404/ })).toBeNull();
 
     await expect(ok).toHaveAttribute('aria-expanded', 'true');
-    await expect(badRequest).toHaveAttribute('aria-expanded', 'false');
     await expect(canvas.getByRole('button', { name: /view_example/ })).toHaveAttribute('aria-pressed', 'true');
-
-    await userEvent.click(badRequest);
-    await expect(badRequest).toHaveAttribute('aria-expanded', 'true');
-    const panel = document.getElementById(badRequest.getAttribute('aria-controls') ?? '') as HTMLElement;
-    await expect(await within(panel).findByRole('button', { name: /view_example/ })).toHaveAttribute(
-      'aria-pressed',
-      'true',
-    );
   },
 };
 
