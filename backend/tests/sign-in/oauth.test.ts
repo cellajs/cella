@@ -7,7 +7,7 @@ import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { identitiesTable } from '#/modules/auth/identities-db';
-import { githubAuth, googleAuth, microsoftAuth } from '#/modules/auth/oauth/helpers/providers';
+import { githubAuth, googleAuth, microsoftAuth, OAuthCodeExchangeError } from '#/modules/auth/oauth/helpers/providers';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
@@ -39,7 +39,9 @@ setTestConfig({
   selfRegistration: true,
 });
 
-vi.mock('#/modules/auth/oauth/helpers/providers', () => ({
+vi.mock('#/modules/auth/oauth/helpers/providers', async (importOriginal) => ({
+  OAuthCodeExchangeError: (await importOriginal<typeof import('#/modules/auth/oauth/helpers/providers')>())
+    .OAuthCodeExchangeError,
   githubAuth: {
     createAuthorizationURL: vi.fn().mockReturnValue(new URL('https://github.com/login/oauth/authorize')),
     validateAuthorizationCode: vi.fn().mockResolvedValue({ accessToken: 'mock-access-token' }),
@@ -568,6 +570,103 @@ describe('OAuth Authentication', async () => {
       });
 
       await expectRefusal({ response: res, error }, 401, 'invalid_state');
+    });
+  });
+
+  describe('Callbacks per provider', () => {
+    const providers = [
+      { provider: 'github', fn: githubCallback, client: githubAuth, pkce: false },
+      { provider: 'google', fn: googleCallback, client: googleAuth, pkce: true },
+      { provider: 'microsoft', fn: microsoftCallback, client: microsoftAuth, pkce: true },
+    ] as const;
+
+    /** A state cookie as the provider's own start writes it: a PKCE provider's holds a code verifier and a nonce. */
+    const pendingState = (pkce: boolean) => {
+      const state = `mock-state-${nanoid(6)}`;
+      const payload = pkce ? { type: 'auth', codeVerifier: 'verifier', nonce: 'nonce' } : { type: 'auth' };
+      mockCookieStore.set(`oauth-state-${state}`, JSON.stringify(payload));
+      return state;
+    };
+
+    const callback = (fn: (typeof providers)[number]['fn'], state: string) =>
+      call(fn, { query: { state, code: 'mock-auth-code' }, headers: defaultHeaders });
+
+    it.each(providers)('refuses a $provider callback without a state cookie', async ({ fn, client }) => {
+      await expectRefusal(await callback(fn, 'no-such-state'), 401, 'invalid_state');
+      expect(client.validateAuthorizationCode).not.toHaveBeenCalled();
+    });
+
+    it.each(
+      providers.flatMap((entry) => [
+        {
+          ...entry,
+          thrown: 'a refused code',
+          error: () => new OAuthCodeExchangeError(new Error('bad code')),
+          type: 'invalid_credentials',
+        },
+        { ...entry, thrown: 'any other failure', error: () => new Error('network down'), type: 'oauth_failed' },
+      ]),
+    )('answers $thrown at the $provider code exchange with 401 $type', async ({ fn, client, pkce, error, type }) => {
+      vi.mocked(client.validateAuthorizationCode).mockRejectedValueOnce(error());
+      await expectRefusal(await callback(fn, pendingState(pkce)), 401, type);
+    });
+
+    it.each(providers)('refuses a $provider callback while the provider is off', async ({ provider, fn, pkce }) => {
+      const enabled = ['github', 'google', 'microsoft'] as const;
+      setTestConfig({ enabledOAuthProviders: enabled.filter((name) => name !== provider) });
+      onTestFinished(() => setTestConfig({ enabledOAuthProviders: [...enabled] }));
+
+      const refused = await callback(fn, pendingState(pkce));
+      await expectRefusal(refused, 400, 'unsupported_oauth');
+      expect((refused.error as ErrorResponse & { meta: Record<string, string> }).meta.strategy).toBe(provider);
+    });
+
+    it.each([
+      { ...providers[0], urls: ['https://api.github.com/user', 'https://api.github.com/user/emails'] },
+      { ...providers[1], urls: ['https://openidconnect.googleapis.com/v1/userinfo'] },
+      { ...providers[2], urls: ['https://graph.microsoft.com/oidc/userinfo'] },
+    ])('reads the $provider profile from its userinfo endpoints, all at once', async ({ fn, client, pkce, urls }) => {
+      // Each request records how many were in flight when it started: parallel requests overlap.
+      const started: { url: string; authorization: string | null; inFlight: number }[] = [];
+      let inFlight = 0;
+      const stub = vi.mocked(fetch);
+      const original = stub.getMockImplementation();
+      onTestFinished(() => {
+        if (original) stub.mockImplementation(original);
+      });
+      stub.mockImplementation(async (input, init) => {
+        inFlight++;
+        started.push({ url: String(input), authorization: new Headers(init?.headers).get('authorization'), inFlight });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        inFlight--;
+        return { ok: true, status: 200, json: async () => ({}), text: async () => '' } as unknown as Response;
+      });
+
+      const state = pendingState(pkce);
+      const { response } = await callback(fn, state);
+
+      expect(response.status).toBe(302);
+      expect(started).toEqual(
+        urls.map((url, index) => ({ url, authorization: 'Bearer mock-access-token', inFlight: index + 1 })),
+      );
+      const [[code, exchangedState, options]] = vi.mocked(client.validateAuthorizationCode).mock.calls;
+      expect([code, exchangedState]).toEqual(['mock-auth-code', state]);
+      if (pkce) expect(options).toEqual({ codeVerifier: 'verifier', nonce: 'nonce' });
+      else expect(options?.codeVerifier ?? options?.nonce).toBeUndefined();
+    });
+
+    // GitHub has no PKCE, so its state cookie holds no code verifier: a PKCE provider's callback never accepts it.
+    it.each([
+      { provider: 'google', fn: googleCallback, client: googleAuth },
+      { provider: 'microsoft', fn: microsoftCallback, client: microsoftAuth },
+    ])('must not accept a GitHub-minted state at the $provider callback', async ({ fn, client }) => {
+      const { response: started } = await call(github, { query: { type: 'auth' }, headers: defaultHeaders });
+      expect(started.status).toBe(302);
+      const [[state]] = vi.mocked(githubAuth.createAuthorizationURL).mock.calls;
+      expect(mockCookieStore.get(`oauth-state-${state}`)).toBeTruthy();
+
+      await expectRefusal(await callback(fn, state), 401, 'invalid_state');
+      expect(client.validateAuthorizationCode).not.toHaveBeenCalled();
     });
   });
 
