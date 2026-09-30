@@ -16,7 +16,7 @@ export interface InvitedAddress {
 
 interface InvitationMailOpts {
   /** The inviter: named in the mail, and replies reach them. */
-  sender: { name: string; thumbnailUrl: string | null; email?: string };
+  sender: { name: string; email?: string };
   /** The invited channel and role; a system invitation names none. */
   channel?: { type: ChannelEntityType; slug: string; name: string; role: EntityRole };
   /** Whose default language an address without an account reads. */
@@ -46,7 +46,7 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
   const withToken = invited.flatMap((address) =>
     address.rawToken ? [{ ...recipient(address), inviteLink: tokenLinkUrl('invitation', address.rawToken) }] : [],
   );
-  const senderProps = { senderName: sender.name, senderThumbnailUrl: sender.thumbnailUrl };
+  const senderProps = { senderName: sender.name };
 
   if (!channel) {
     if (withToken.length) await mailer.prepareEmails(systemInviteEmail, senderProps, withToken, sender.email);

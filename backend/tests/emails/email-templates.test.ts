@@ -1,10 +1,11 @@
 /// <reference types="vite/client" />
 
+import { readFileSync } from 'node:fs';
 import { appConfig } from 'shared';
 import { describe, expect, it } from 'vitest';
 import enBackend from '../../../locales/en/backend.json';
 import { i18n } from '../../emails/i18n';
-import { type EmailPreviewFixture, emailPreviewFixtures } from '../../emails/preview-fixtures';
+import { type EmailPreviewFixture, emailPreviewFixtures, emailPreviewNames } from '../../emails/preview-fixtures';
 import { render } from '../../emails/renderer/render';
 import { accountSecurityEmail } from '../../emails/templates/account-security';
 
@@ -56,6 +57,16 @@ describe('email template rendering', () => {
       });
     }
   }
+});
+
+// Storybook indexes stories from static exports, so each preview needs its own line in the stories file.
+describe('email storybook', () => {
+  it('has a story for every preview', () => {
+    const storiesUrl = new URL('../../../frontend/src/stories/email-templates.stories.tsx', import.meta.url);
+    const stories = readFileSync(storiesUrl, 'utf8');
+    const missing = emailPreviewNames.filter((name) => !stories.includes(`makeEmailStory('${name}')`));
+    expect(missing).toEqual([]);
+  });
 });
 
 /** Details reach these mails from request data (route, tenant name, browser), and the body is rendered as HTML. */

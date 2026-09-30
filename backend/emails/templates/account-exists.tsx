@@ -1,16 +1,6 @@
 import { appConfig } from 'shared';
-import {
-  EmailBody,
-  EmailButton,
-  EmailContainer,
-  EmailFooter,
-  EmailHeader,
-  EmailLogo,
-  EmailText,
-  SafeHtml,
-} from '../components';
+import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
-import { greetingStyle } from '../styles';
 import { defineEmailTemplate } from '../types';
 
 const appName = appConfig.name;
@@ -28,7 +18,7 @@ export const accountExistsEmail = defineEmailTemplate<AccountExistsStatic>()({
     return {
       subject: i18n.t('backend:email.account_exists.subject', { lng, appName, ...plainText }),
       previewText: i18n.t('backend:email.account_exists.preview', { lng, appName, ...plainText }),
-      headerText: i18n.t('backend:email.account_exists.title', { lng, appName, ...plainText }),
+      headerHtml: i18n.t('backend:email.account_exists.title', { lng, appName }),
       hiText: name ? i18n.t('backend:email.hi', { lng, name, ...plainText }) : '',
       bodyHtml: i18n.t('backend:email.account_exists.text', { lng, appName }),
       buttonText: i18n.t('c:sign_in', { lng }),
@@ -36,20 +26,16 @@ export const accountExistsEmail = defineEmailTemplate<AccountExistsStatic>()({
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
-  component({ previewText, headerText, hiText, bodyHtml, buttonText, signInUrl, supportText }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, signInUrl, supportText }) {
     return (
-      <EmailContainer previewText={previewText}>
-        <EmailHeader headerText={headerText} />
-        <EmailBody>
-          {hiText && <EmailText style={greetingStyle}>{hiText}</EmailText>}
-          <EmailText>
-            <SafeHtml html={bodyHtml} policy="inline" />
-          </EmailText>
-          <EmailButton ButtonText={buttonText} href={signInUrl} />
-        </EmailBody>
-        <EmailLogo />
-        <EmailFooter supportText={supportText} />
-      </EmailContainer>
+      <EmailMessage
+        previewText={previewText}
+        headerHtml={headerHtml}
+        greeting={hiText}
+        bodyHtml={bodyHtml}
+        action={{ label: buttonText, href: signInUrl }}
+        supportText={supportText}
+      />
     );
   },
   preview: {

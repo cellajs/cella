@@ -1,9 +1,9 @@
 import { appConfig } from 'shared';
 import welcomeConfig from '../../../json/text-blocks.json';
-import { EmailAvatar, EmailBody, EmailContainer, EmailFooter, EmailLogo, EmailText } from '../components';
-import { Column, Link, Row } from '../components/primitives';
+import { EmailLayout, EmailText } from '../components';
+import { Link } from '../components/primitives';
 import { i18n, plainText } from '../i18n';
-import { avatarRowStyle, greetingStyle, smallTextStyle } from '../styles';
+import { greetingStyle, smallTextStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
 
 type WelcomeRecipient = EmailRecipient & { name: string };
@@ -32,57 +32,34 @@ export const welcomeEmailTemplate = defineEmailTemplate<Record<string, never>, W
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
-  component({
-    previewText,
-    hiText,
-    intro,
-    stepsHeading,
-    steps,
-    ps,
-    signOff,
-    founderName,
-    founderRole,
-    supportText,
-    name,
-  }) {
+  component({ previewText, hiText, intro, stepsHeading, steps, ps, signOff, founderName, founderRole, supportText }) {
     return (
-      <EmailContainer previewText={previewText}>
-        <Row style={avatarRowStyle}>
-          <Column align="center">
-            <EmailAvatar name={founderName} type="user" />
-          </Column>
-        </Row>
+      <EmailLayout previewText={previewText} avatarName={founderName} supportText={supportText}>
+        <EmailText style={greetingStyle}>{hiText}</EmailText>
 
-        <EmailBody>
-          {name && <EmailText style={greetingStyle}>{hiText}</EmailText>}
+        {intro.map((paragraph) => (
+          <EmailText key={paragraph}>{paragraph}</EmailText>
+        ))}
 
-          {intro.map((paragraph) => (
-            <EmailText key={paragraph}>{paragraph}</EmailText>
+        <EmailText style={{ marginTop: '1.5rem' }}>{stepsHeading}</EmailText>
+        <ol style={{ paddingLeft: '1.25rem', margin: '0.5rem 0 1.5rem' }}>
+          {steps.map((step) => (
+            <li key={step.href} style={{ margin: '0.375rem 0' }}>
+              <Link href={step.href} style={{ color: '#000', textDecoration: 'underline' }}>
+                {step.label}
+              </Link>
+            </li>
           ))}
+        </ol>
 
-          <EmailText style={{ marginTop: '1.5rem' }}>{stepsHeading}</EmailText>
-          <ol style={{ paddingLeft: '1.25rem', margin: '0.5rem 0 1.5rem' }}>
-            {steps.map((step) => (
-              <li key={step.href} style={{ margin: '0.375rem 0' }}>
-                <Link href={step.href} style={{ color: '#000', textDecoration: 'underline' }}>
-                  {step.label}
-                </Link>
-              </li>
-            ))}
-          </ol>
+        <EmailText style={smallTextStyle}>{ps}</EmailText>
 
-          <EmailText style={smallTextStyle}>{ps}</EmailText>
-
-          <EmailText style={{ marginTop: '1.5rem' }}>{signOff}</EmailText>
-          <EmailText style={{ margin: '0' }}>{founderName}</EmailText>
-          <EmailText style={{ ...smallTextStyle, margin: '0' }}>
-            {founderRole}, {appName}
-          </EmailText>
-        </EmailBody>
-
-        <EmailLogo />
-        <EmailFooter supportText={supportText} />
-      </EmailContainer>
+        <EmailText style={{ marginTop: '1.5rem' }}>{signOff}</EmailText>
+        <EmailText style={{ margin: '0' }}>{founderName}</EmailText>
+        <EmailText style={{ ...smallTextStyle, margin: '0' }}>
+          {founderRole}, {appName}
+        </EmailText>
+      </EmailLayout>
     );
   },
   preview: {

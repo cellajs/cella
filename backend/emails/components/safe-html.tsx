@@ -88,5 +88,3 @@ export const SafeHtml = ({ html, policy, as: Tag = 'span', className }: SafeHtml
   // biome-ignore lint/security/noDangerouslySetInnerHtml: input is sanitized via sanitize-html allowlist policy
   return <Tag className={className} dangerouslySetInnerHTML={{ __html: clean }} />;
 };
-
-export const Template = SafeHtml;

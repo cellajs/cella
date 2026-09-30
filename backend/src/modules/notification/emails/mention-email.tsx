@@ -1,16 +1,5 @@
-import {
-  EmailBody,
-  EmailButton,
-  EmailContainer,
-  EmailFooter,
-  EmailHeader,
-  EmailLogo,
-  EmailText,
-  SafeHtml,
-} from '../../../../emails/components';
-import { Link } from '../../../../emails/components/primitives';
+import { EmailButton, EmailLayout, EmailText } from '../../../../emails/components';
 import { i18n, plainText } from '../../../../emails/i18n';
-import { smallTextStyle } from '../../../../emails/styles';
 import { defineEmailTemplate, type EmailRecipient } from '../../../../emails/types';
 
 interface MentionStatic {
@@ -58,27 +47,19 @@ export const mentionEmail = defineEmailTemplate<MentionStatic, MentionRecipient>
     unsubscribeLink,
   }) {
     return (
-      <EmailContainer previewText={previewText}>
-        <EmailHeader headerText={<SafeHtml html={headerHtml} policy="inline" as="div" />} />
-        <EmailBody>
-          <EmailText>{inText}</EmailText>
-          <EmailText>
-            <strong>{subjectTitle}</strong>
-          </EmailText>
-          <EmailText>{excerpt}</EmailText>
-
-          <EmailButton ButtonText={buttonText} href={link} />
-
-          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-            <Link style={smallTextStyle} href={unsubscribeLink}>
-              {unsubscribeText}
-            </Link>
-          </div>
-        </EmailBody>
-
-        <EmailLogo />
-        <EmailFooter supportText={supportText} />
-      </EmailContainer>
+      <EmailLayout
+        previewText={previewText}
+        headerHtml={headerHtml}
+        unsubscribe={{ label: unsubscribeText, href: unsubscribeLink }}
+        supportText={supportText}
+      >
+        <EmailText>{inText}</EmailText>
+        <EmailText>
+          <strong>{subjectTitle}</strong>
+        </EmailText>
+        <EmailText>{excerpt}</EmailText>
+        <EmailButton ButtonText={buttonText} href={link} />
+      </EmailLayout>
     );
   },
   preview: {

@@ -4,6 +4,8 @@ export { EmailButton } from './email-button';
 export { EmailContainer } from './email-container';
 export { EmailFooter } from './email-footer';
 export { EmailHeader } from './email-header';
+export { EmailLayout } from './email-layout';
 export { EmailLogo } from './email-logo';
+export { EmailMessage } from './email-message';
 export { EmailText } from './email-text';
 export { SafeHtml, type SafeHtmlPolicy } from './safe-html';

@@ -26,5 +26,3 @@ export const EmailBody = ({ children }: { children: React.ReactNode }): JSX.Elem
     </div>
   </Section>
 );
-
-export const Template = EmailBody;
