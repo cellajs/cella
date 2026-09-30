@@ -54,7 +54,8 @@ const dirty = makeRepo({
   'infra/c.yaml': [`# ${bearing} in infra`, `# ${dash} still required`, 'key: value'].join('\n'),
   'shared/config/x.jsonc': ['{', `  // ${term}`, `  "k": "// not a comment ${dash}"`, '}'].join('\n'),
   'docs/guide.md': [`# Guide ${term}`, '', `Prose ${dash} and \`${dash}\`.`, `The ${bearing} ${seam}.`].join('\n'),
-  'CHANGELOG.md': `${dash} ${bearing}\n`,
+  'CHANGELOG.md': `${dash} ${bearing} ${term}\n`,
+  'cella/CHANGELOG.md': `${dash} ${bearing} ${term}\n`,
   'frontend/src/comp.tsx': 'export const Arrow = () => <div />;\n',
 });
 
@@ -122,7 +123,7 @@ describe('comment check', () => {
 });
 
 describe('doc check', () => {
-  it('reports every match at its position, the audit section included', () => {
+  it('reports every match at its position outside changelogs, the audit section included', () => {
     expect(run(dirty, 'check-doc-style.ts', '--audit')).toEqual({
       status: 1,
       stdout: '',
@@ -131,8 +132,7 @@ describe('doc check', () => {
         `  docs/guide.md:1:9 replace "${term}" with a precise rule, constraint, guarantee, requirement, contract, precondition, or assumption`,
         '[docs:style] 1 em dash(es):',
         '  docs/guide.md:3:7 em dash (U+2014): split the sentence, use a colon, or drop the clause',
-        '[docs:style] 2 required vocabulary replacement(s):',
-        `  CHANGELOG.md:1:3 [${bearing}] "${bearing}": name the dependency, requirement, or failure consequence directly`,
+        '[docs:style] 1 required vocabulary replacement(s):',
         `  docs/guide.md:4:5 [${bearing}] "${bearing}": name the dependency, requirement, or failure consequence directly`,
         '[docs:style:audit] 1 review marker(s):',
         `  docs/guide.md:4:18 [boundary-metaphor] "${seam}": consider boundary, interface, integration point, or the named call site`,
@@ -182,7 +182,7 @@ describe('style check', () => {
       '[app-vocabulary] 1 disallowed occurrence(s):',
       '[docs:style] 1 concrete-language violation(s):',
       '[docs:style] 1 em dash(es):',
-      '[docs:style] 2 required vocabulary replacement(s):',
+      '[docs:style] 1 required vocabulary replacement(s):',
       '[comments:check] 6 violation(s):',
       '[comments:placement] 1 detached long comment(s):',
       '[frontend:style] 1 violation(s):',

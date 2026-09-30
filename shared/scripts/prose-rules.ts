@@ -15,10 +15,13 @@ export interface ProseRule {
 
 const both = (message: string) => ({ comments: message, docs: message });
 
+/** Changelogs are generated from commit messages, not authored. */
+const changelog = /CHANGELOG\.md$/;
+
 /** Agent-associated wording, skipped in infra/ and in docs that are generated or address app maintainers. */
 const agentWording = {
   level: 'review',
-  exclude: { comments: /^infra\//, docs: /^(?:cella\/migrations\/|infra\/|sdk\/gen\/|cella\/CHANGELOG\.md$)/ },
+  exclude: { comments: /^infra\//, docs: /^(?:cella\/migrations\/|infra\/|sdk\/gen\/)|CHANGELOG\.md$/ },
 } as const;
 
 export const proseRules: ProseRule[] = [
@@ -30,8 +33,7 @@ export const proseRules: ProseRule[] = [
       comments: 'split the sentence or remove the secondary clause',
       docs: 'split the sentence, use a colon, or drop the clause',
     },
-    // Changelogs are generated from commit messages, not authored.
-    exclude: { docs: /CHANGELOG\.md$/ },
+    exclude: { docs: changelog },
   },
   {
     name: 'contrast-history',
@@ -47,6 +49,7 @@ export const proseRules: ProseRule[] = [
       comments: 'name the precise rule, constraint, guarantee, requirement, contract, precondition, or assumption',
       docs: 'rule, constraint, guarantee, requirement, contract, precondition, or assumption',
     },
+    exclude: { docs: changelog },
   },
   {
     name: 'change-history',
