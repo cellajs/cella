@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { type AccessScope, accessScopes, appConfig, hierarchy, type OrganizationRole } from 'shared';
+import { type AccessScope, accessScopes, appConfig, hierarchy, type OrganizationRole, roles } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { apiKeysTable } from '#/modules/service-accounts/api-keys-db';
@@ -17,7 +17,8 @@ const roleBindingSchema = z.object({
   channelType: z.enum(appConfig.channelEntityTypes),
   channelId: validIdSchema,
   organizationId: validIdSchema,
-  role: z.enum(organizationRoles),
+  // A binding carries its channel's role, and a channel may declare roles the organization does not.
+  role: z.enum(roles.all),
 });
 
 /** The route addresses one key of one account. */

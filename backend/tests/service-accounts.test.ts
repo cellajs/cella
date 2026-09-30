@@ -11,7 +11,7 @@ import {
   updateOrganization,
   updateServiceAccount,
 } from 'sdk';
-import { appConfig, type EntityRole } from 'shared';
+import { appConfig, type OrganizationRole } from 'shared';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { actorsTable } from '#/modules/actors/actors-db';
@@ -33,13 +33,14 @@ type Scope = NonNullable<NonNullable<NonNullable<CreateServiceAccountData['body'
 describe('Service accounts and API keys', async () => {
   const call = await createAppClient();
 
-  async function orgWithAdmin(role: EntityRole = adminRole) {
+  // Organization roles: the role registry can also span channel-only roles.
+  async function orgWithAdmin(role: OrganizationRole = adminRole) {
     const org = await createTestOrganization();
     const user = await createOrgUser(call, org.tenantId, org.id, `${role}-${nanoid(8)}`, role);
     return { org, user, headers: { ...defaultHeaders, Cookie: user.sessionCookie } };
   }
 
-  async function issueKey(opts: { role?: EntityRole; scopes?: Scope[] | null; expiresAt?: string } = {}) {
+  async function issueKey(opts: { role?: OrganizationRole; scopes?: Scope[] | null; expiresAt?: string } = {}) {
     const ctx = await orgWithAdmin();
     const { data, response } = await call(createServiceAccount, {
       path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
