@@ -1,7 +1,12 @@
-import { defineConfig } from 'vitest/config'
+import { defineConfig, type TestProjectConfiguration } from 'vitest/config'
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin'
 import { playwright } from '@vitest/browser-playwright'
 import path from 'node:path'
+
+// The Storybook browser project needs Playwright browsers plus a Storybook server, so it only
+// joins runs started from this directory (`pnpm test:storybook`, the CI storybook-test job).
+// The root config loads this file as a nested project and runs the node and unit projects.
+const standaloneRun = path.resolve(process.cwd()) === import.meta.dirname
 
 export default defineConfig({
   // vitest does not load vite.config.ts, so build-time literals are repeated here.
@@ -22,8 +27,6 @@ export default defineConfig({
     // stays node (most src tests stub their own window); DOM tests opt in per-file
     // with `// @vitest-environment jsdom`.
     setupFiles: ['./vitest.setup.ts'],
-    // The root vitest config runs the node and unit projects; the storybook browser
-    // project is excluded there and runs via `pnpm test:storybook`.
     projects: [
       // Node-side tests (vite plugins, helpers, etc.)
       {
@@ -54,28 +57,32 @@ export default defineConfig({
         },
       },
       // Storybook browser tests
-      {
-        extends: true,
-        plugins: [
-          storybookTest({
-            configDir: path.join(import.meta.dirname, '.storybook'),
-            storybookScript: 'pnpm storybook --ci',
-          }),
-        ],
+      ...(standaloneRun
+        ? ([
+          {
+            extends: true,
+            plugins: [
+              storybookTest({
+                configDir: path.join(import.meta.dirname, '.storybook'),
+                storybookScript: 'pnpm storybook --ci',
+              }),
+            ],
 
-        test: {
-          name: 'storybook',
-          browser: {
-            enabled: true,
-            provider: playwright({}),
-            headless: true,
-            viewport: { width: 1280, height: 720 },
-            instances: [{ browser: 'chromium' }],
+            test: {
+              name: 'storybook',
+              browser: {
+                enabled: true,
+                provider: playwright({}),
+                headless: true,
+                viewport: { width: 1280, height: 720 },
+                instances: [{ browser: 'chromium' }],
+              },
+              setupFiles: ['./.storybook/vitest.setup.ts'],
+              exclude: ['**/BlockNote.stories.tsx'],
+            },
           },
-          setupFiles: ['./.storybook/vitest.setup.ts'],
-          exclude: ['**/BlockNote.stories.tsx'],
-        },
-      },
+        ] satisfies TestProjectConfiguration[])
+        : []),
     ],
   },
 })

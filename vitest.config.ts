@@ -14,11 +14,10 @@ process.env.TZ = 'Etc/GMT-2';
 export default defineConfig({
   test: {
     passWithNoTests: true,
-    // Vitest 5 recurses into nested projects, so the frontend's Storybook browser
-    // project would run here too and needs Playwright browsers plus a Storybook
-    // server. It only runs on its own via `pnpm test:storybook`. A CLI `--project`
-    // replaces this list.
-    project: ['!frontend (storybook)'],
+    // No `project` filter here: with one set, vitest matches `coverage.include` against each
+    // project's own root, so the repo-relative globs below match nothing and the coverage
+    // summary comes out empty. The frontend config leaves its Storybook browser project out
+    // of this run by itself.
     projects: [
       'backend',
       'bench',
