@@ -26,6 +26,7 @@ export type DeltaFetchFn = (
 /** Registry decoupling entity modules from stream handlers: modules register keys at load time, stream/cache code looks them up by entityType. */
 const entityQueryKeysRegistry = new Map<string, EntityQueryKeys>();
 const deltaFetchRegistry = new Map<string, DeltaFetchFn>();
+const equalityFilterKeysRegistry = new Map<string, readonly string[]>();
 
 const SENTINEL_ORG = '__org__';
 const SENTINEL_HOME = '__home__';
@@ -93,4 +94,17 @@ export function getRegisteredProductEntityTypes(): ProductEntityType[] {
 /** Undefined when the entity type does not support delta fetching. */
 export function getEntityDeltaFetch(entityType: string): DeltaFetchFn | undefined {
   return deltaFetchRegistry.get(entityType);
+}
+
+/**
+ * Declares list filter keys that a row matches only when its field of the same name equals the filter value, as `itemId` on
+ * a `{ itemId }` list. A new row then refetches only the filtered lists it can belong to; undeclared keys and `q` keep the refetch.
+ */
+export function registerEqualityFilterKeys(entityType: EntityType, filterKeys: readonly string[]): void {
+  equalityFilterKeysRegistry.set(entityType, filterKeys);
+}
+
+/** Undefined when the entity type declared no equality filter keys: every filtered list refetches on a new row. */
+export function getEqualityFilterKeys(entityType: string): readonly string[] | undefined {
+  return equalityFilterKeysRegistry.get(entityType);
 }
