@@ -194,6 +194,29 @@
   height: 1.5rem;
 }
 
+/* From shadcn's tailwind.css so ported upstream classes work: Base UI sets `data-orientation`, never `data-horizontal`.
+   Its other state variants stay native, as Base UI's boolean attributes match them (shadcn's `data-selected` is cmdk's). */
+@custom-variant data-horizontal {
+  &:where([data-orientation="horizontal"]) {
+    @slot;
+  }
+}
+
+@custom-variant data-vertical {
+  &:where([data-orientation="vertical"]) {
+    @slot;
+  }
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 @layer components {
   .focus-effect {
     @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;
@@ -293,6 +316,10 @@
     --input: oklch(0.88 0.005 285.75);
     --ring: oklch(0.2067 0.01 285.49);
     --radius: 0.5rem;
+    /* The rounded-sm/md/lg scale (tailwind.config.ts reads it); upstream shadcn classes also read --radius-md. */
+    --radius-sm: calc(var(--radius) - 4px);
+    --radius-md: calc(var(--radius) - 2px);
+    --radius-lg: var(--radius);
     --success: oklch(0.5917 0.2014 142.5);
     --success-foreground: oklch(0.9851 0 0);
     --warning: oklch(0.68 0.16 70);
