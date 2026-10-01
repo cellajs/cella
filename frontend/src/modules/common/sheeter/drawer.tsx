@@ -1,5 +1,4 @@
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { ContentKeyTransition } from '~/modules/common/sheeter/sheet';
 import { type InternalSheet, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
@@ -7,7 +6,7 @@ import { cn } from '~/utils/cn';
 
 const sideToSwipeDirection = { top: 'up', bottom: 'down', left: 'left', right: 'right' } as const;
 
-export function SheeterDrawer({ sheet }: { sheet: InternalSheet }) {
+export function SheeterDrawer({ sheet, onExited }: { sheet: InternalSheet; onExited?: () => void }) {
   // Drawers on mobile are always modal (overlay + outside click to close)
   const { id, side, description, title, titleContent = title, headerClassName, className, content, contentKey, open = true } = sheet;
 
@@ -15,18 +14,10 @@ export function SheeterDrawer({ sheet }: { sheet: InternalSheet }) {
 
   const isDropdownOpen = useDropdowner((state) => state.dropdown);
 
-  // The drawer slides out before its entry is removed; onClose still runs as the close starts.
-  const { close: closeSheet, onOpenChangeComplete } = useRemoveAfterExit(
-    () => {
-      updateSheet(sheet.id, { open: false, onClose: undefined });
-      sheet.onClose?.();
-    },
-    () => sheeter.getState().remove(sheet.id),
-  );
-
+  // The provider keeps the removed drawer rendered until it has slid out
   const onOpenChange = (open: boolean) => {
     if (open) updateSheet(sheet.id, { open });
-    else closeSheet();
+    else sheeter.getState().remove(sheet.id);
   };
 
   return (
@@ -37,7 +28,7 @@ export function SheeterDrawer({ sheet }: { sheet: InternalSheet }) {
       disablePointerDismissal={!!isDropdownOpen}
       swipeDirection={sideToSwipeDirection[side]}
       onOpenChange={onOpenChange}
-      onOpenChangeComplete={onOpenChangeComplete}
+      onOpenChangeComplete={(isOpen) => !isOpen && onExited?.()}
     >
       <DrawerContent id={String(id)} className={className}>
         <DrawerHeader sticky className={cn(headerClassName, !(description || title) && 'hidden')}>

@@ -17,18 +17,16 @@ export function AppNav() {
   const isMobile = useBreakpointBelow('sm');
   const isDesktop = useBreakpointAbove('2xl');
 
-  const updateSheet = useSheeter((state) => state.update);
-
   const navSheetOpen = useNavigationStore((state) => state.navSheetOpen);
   const keepOpenPreference = useNavigationStore((state) => state.keepOpenPreference);
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
 
-  const triggerNavItem: TriggerNavItemFn = (id, ref, options) => {
+  const triggerNavItem: TriggerNavItemFn = (id, ref) => {
     const triggerRef = ref || { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null };
 
     if (id === navSheetOpen) {
       setNavSheetOpen(null);
-      updateSheet('nav-sheet', { open: false });
+      useSheeter.getState().remove('nav-sheet');
       return;
     }
 
@@ -39,7 +37,7 @@ export function AppNav() {
     if (navItem.href) {
       if (!useNavigationStore.getState().keepNavOpen) {
         setNavSheetOpen(null);
-        updateSheet('nav-sheet', { open: false });
+        useSheeter.getState().remove('nav-sheet');
       }
       return navigate({ to: navItem.href });
     }
@@ -58,7 +56,6 @@ export function AppNav() {
         // Outside-press is gated by `keepNavOpen` in the sheeter's onOpenChange; disabling it here suppresses the event entirely.
         disablePointerDismissal: false,
         className: navSheetClassName,
-        skipAnimation: options?.skipAnimation,
         contentKey: navItem.id,
         autoScrollOnDrag: 'vertical',
         onClose: () => setNavSheetOpen(null),

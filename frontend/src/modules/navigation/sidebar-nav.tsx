@@ -70,7 +70,7 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
       <div
         data-slot="sidebar-spacer"
         data-started={hasStarted}
-        className="relative w-(--spacer-w) bg-transparent group-[.focus-view]/body:hidden data-[started=true]:transition-[width] data-[started=true]:duration-300 data-[started=true]:ease-out"
+        className="relative w-(--spacer-w) bg-transparent focus-view:hidden data-[started=true]:transition-[width] data-[started=true]:duration-300 data-[started=true]:ease-out"
       />
       <Sidebar
         id="sidebar-nav"
@@ -78,7 +78,7 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
         data-started={hasStarted}
         data-collapsed={isCollapsed}
         data-overlay={isOverlay}
-        className="linear fixed inset-y-0 left-0 z-100 w-(--sidebar-w) border-r-0 transition-[width] duration-200 focus:outline-none group-[.focus-view]/body:hidden data-[started=false]:-translate-x-full"
+        className="linear fixed inset-y-0 left-0 z-100 w-(--sidebar-w) border-r-0 transition-[width] duration-200 focus-view:hidden focus:outline-none data-[started=false]:-translate-x-full"
       >
         <FocusTarget target="sidebar" />
         <div className="relative flex h-full flex-row">

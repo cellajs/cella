@@ -10,10 +10,12 @@ blockExoticSubdeps: true
 minimumReleaseAge: 1440
 minimumReleaseAgeExclude:
   - '@cellajs/cli'
+  - moment@2.31.0
 overrides:
   csv-parse@<7.0.2: ^7.0.2
   esbuild@<0.28.1: ^0.28.1
   js-yaml@>=4.0.0 <4.3.2: ^4.3.2
+  moment@>=2.29.2 <2.31.0: ^2.31.0
 packageExtensions:
   '@artilleryio/sketches-js':
     dependencies:

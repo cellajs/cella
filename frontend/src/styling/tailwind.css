@@ -208,6 +208,9 @@
   }
 }
 
+/* Active while a FocusViewContainer is in focus view, e.g. `focus-view:hidden` for chrome outside a `.focus-view-scope`. */
+@custom-variant focus-view (&:where(.focus-view *));
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -410,8 +413,8 @@
     @apply max-w-400 w-full px-3 sm:px-4 mx-auto;
   }
 
-  /* Hide elements when focus view is active, but keep ancestors of focus-view-container visible */
-  .focus-view #app-content-inner *:not(.focus-view-container, .focus-view-container *, :has(.focus-view-container)) {
+  /* In focus view, a scope (app or docs main) shows only the focus-view-container and its ancestors */
+  .focus-view .focus-view-scope *:not(.focus-view-container, .focus-view-container *, :has(.focus-view-container)) {
     display: none !important;
   }
 

@@ -5,8 +5,6 @@ export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
 /** One service or dependency in the health envelope: `status` grades it, the open `details` bag diagnoses it. */
 export interface HealthComponent {
   status: HealthStatus;
-  /** Human-readable name for user-facing status displays. */
-  label?: string;
   /** How the status was obtained: `local` self-check, worker `push`, or active `probe`. */
   checkedVia?: 'local' | 'push' | 'probe';
   /** Age of the underlying data (ms), set for pushed/cached reports. */

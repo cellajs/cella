@@ -1,8 +1,6 @@
 import type { RefObject } from 'react';
 import { useLayoutEffect } from 'react';
 
-const STICKY_CLASS = 'rdg-header-sticky';
-
 /** Pins measured header cells to the viewport with fixed positioning, syncing horizontal offsets in animation frames. */
 export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, headerRowsCount: number, headerRowHeight: number, enabled: boolean) {
   useLayoutEffect(() => {
@@ -43,9 +41,7 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
         cell.style.backgroundColor = 'var(--background)';
       }
 
-      // Reserve space so content doesn't jump
-      grid!.style.setProperty('--rdg-sticky-offset', `${headerRowsHeight}px`);
-      grid!.classList.add(STICKY_CLASS);
+      // The grid's template rows keep reserving the header height, so rows don't jump up.
       isSticky = true;
     }
 
@@ -53,8 +49,6 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
       for (let i = 0; i < headerCells.length; i++) {
         headerCells[i].style.cssText = originalStyles[i].cssText;
       }
-      grid!.classList.remove(STICKY_CLASS);
-      grid!.style.removeProperty('--rdg-sticky-offset');
       headerCells = [];
       originalStyles = [];
       isSticky = false;

@@ -115,7 +115,7 @@ describe('Mails as Brevo fills them', () => {
 
     const verification = await send(
       oauthVerificationEmail,
-      { name: 'Emily', verificationLink: link, providerEmail: 'emily@provider.example', providerName: 'GitHub' },
+      { name: 'Emily', verificationLink: link, providerEmail: 'emily@provider.example', providerName: 'GitHub', isNewUser: false },
       { email: 'emily@example.test', lng: 'en' },
     );
     expect(verification.html).toContain('emily@example.test');

@@ -21,7 +21,6 @@ export type SheetData = {
   disablePointerDismissal?: boolean;
   closeSheetOnRouteChange?: boolean;
   container?: SheetContainerOptions;
-  skipAnimation?: boolean;
   /** Key to identify content for animated transitions (used with AnimatePresence). */
   contentKey?: string;
   /** Enable auto-scrolling when dragging elements near edges. */
@@ -64,7 +63,7 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
     const existing = get().sheets.find((s) => s.id === data.id);
     if (!existing) return get().create(content, data);
 
-    // Merges into the open sheet: an option passed as undefined clears its value, as the nav's per-call skipAnimation expects.
+    // Merges into the open sheet: an option passed as undefined clears its value.
     set((state) => ({ sheets: state.sheets.map((s) => (s.id === data.id ? { ...s, ...data, content, open: true } : s)) }));
     return data.id;
   },

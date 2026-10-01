@@ -4,7 +4,7 @@ This document covers how systems outside the browser act on your app: the faces 
 
 ### TL;DR
 
-Your app has three machine-facing faces: the REST API, an OAuth authorization server, and an MCP endpoint per organization. All three run on one substrate. A caller is always an actor (a person or a service account), always holds role bindings the permission engine understands, and may carry a mask of access scopes that narrows what those bindings allow. There is no second permission vocabulary for machines.
+Your app has three machine-facing faces: the REST API, an OAuth authorization server, and an MCP endpoint per organization. All three run on one substrate. A caller is always an actor (a person or a service account), always holds role bindings the permission engine understands, and may carry access scopes that narrow what those bindings allow.
 
 ## Who connects
 

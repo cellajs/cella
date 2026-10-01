@@ -47,7 +47,10 @@ export function FocusView({ className = '', iconOnly }: FocusViewProps) {
   );
 }
 
-/** Applies focus view styles while the mode is active. Wraps the page's main content. */
+/**
+ * Wraps the page's main content. While focus view is active, everything else in the enclosing `.focus-view-scope`
+ * is hidden; chrome outside a scope opts in with the `focus-view:hidden` variant.
+ */
 export function FocusViewContainer({ children, className = '', disabled }: FocusViewContainerProps) {
   const focusView = useUIStore((state) => state.focusView);
 

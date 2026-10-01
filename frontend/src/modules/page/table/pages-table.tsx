@@ -105,6 +105,7 @@ function PagesTable() {
           rowKeyGetter={rowKeyGetter}
           columns={columns}
           enableVirtualization={true}
+          enableStickyHeader
           isFiltered={!!q}
           hasNextPage={false}
           {...(canEditDocs && {
