@@ -16,17 +16,6 @@ export type UserMinimalBase = {
 };
 
 /**
- * Minimal organization data for references.
- */
-export type OrganizationMinimalBase = {
-  id: string;
-  name: string;
-  slug: string;
-  thumbnailUrl: string | null;
-  entityType: 'organization';
-};
-
-/**
  * Base user schema with essential fields for identification and display.
  */
 export type UserBase = {
@@ -403,16 +392,6 @@ export type Request = {
 };
 
 /**
- * A tenant together with the single organization it holds.
- */
-export type TenantWithOrganization = Tenant & {
-  /**
-   * The organization this tenant holds, or null if none
-   */
-  organization: OrganizationMinimalBase | null;
-};
-
-/**
  * A tenant representing an isolated data partition for multi-tenancy.
  */
 export type Tenant = {
@@ -448,6 +427,16 @@ export type Tenant = {
    * Number of domains claimed by this tenant
    */
   domainsCount: number;
+  /**
+   * The organization this tenant holds, or null if none
+   */
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    thumbnailUrl: string | null;
+    entityType: 'organization';
+  } | null;
 };
 
 export type ProtectedResourceMetadata = {
@@ -4184,7 +4173,7 @@ export type GetTenantsResponses = {
    * Tenants list
    */
   200: {
-    items: Array<TenantWithOrganization>;
+    items: Array<Tenant>;
     total: number;
   };
 };

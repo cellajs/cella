@@ -454,8 +454,7 @@
               "type": "array",
               "required": true,
               "itemType": "object",
-              "ref": "#/components/schemas/TenantWithOrganization",
-              "refDescription": "A tenant together with the single organization it holds.",
+              "ref": "#/components/schemas/Tenant",
               "items": {
                 "type": "object",
                 "description": "A tenant representing an isolated data partition for multi-tenancy.",
@@ -531,14 +530,24 @@
                   "organization": {
                     "type": ["object", "null"],
                     "required": true,
-                    "ref": "#/components/schemas/OrganizationMinimalBase",
                     "description": "The organization this tenant holds, or null if none",
-                    "refDescription": "Minimal organization data for references."
+                    "properties": {
+                      "id": { "type": "string", "required": true },
+                      "name": { "type": "string", "required": true },
+                      "slug": { "type": "string", "required": true },
+                      "thumbnailUrl": {
+                        "type": ["string", "null"],
+                        "required": true
+                      },
+                      "entityType": {
+                        "type": "string",
+                        "required": true,
+                        "enum": ["organization"]
+                      }
+                    }
                   }
                 },
-                "extendsRef": "#/components/schemas/Tenant",
-                "ref": "#/components/schemas/TenantWithOrganization",
-                "refDescription": "A tenant together with the single organization it holds."
+                "ref": "#/components/schemas/Tenant"
               }
             },
             "total": { "type": "number", "required": true }
@@ -696,7 +705,26 @@
               "type": ["string", "null"],
               "required": true
             },
-            "domainsCount": { "type": "integer", "required": true, "description": "Number of domains claimed by this tenant" }
+            "domainsCount": { "type": "integer", "required": true, "description": "Number of domains claimed by this tenant" },
+            "organization": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "The organization this tenant holds, or null if none",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["organization"]
+                }
+              }
+            }
           },
           "ref": "#/components/schemas/Tenant",
           "contentType": "application/json"
@@ -841,7 +869,26 @@
               "type": ["string", "null"],
               "required": true
             },
-            "domainsCount": { "type": "integer", "required": true, "description": "Number of domains claimed by this tenant" }
+            "domainsCount": { "type": "integer", "required": true, "description": "Number of domains claimed by this tenant" },
+            "organization": {
+              "type": ["object", "null"],
+              "required": true,
+              "description": "The organization this tenant holds, or null if none",
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                },
+                "entityType": {
+                  "type": "string",
+                  "required": true,
+                  "enum": ["organization"]
+                }
+              }
+            }
           },
           "ref": "#/components/schemas/Tenant",
           "contentType": "application/json"

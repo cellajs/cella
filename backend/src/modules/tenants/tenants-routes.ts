@@ -7,13 +7,7 @@ import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { paginationSchema, tenantOnlyParamSchema } from '#/schemas';
-import {
-  selfCreateTenantBodySchema,
-  tenantListQuerySchema,
-  tenantSchema,
-  tenantWithOrganizationSchema,
-  updateTenantBodySchema,
-} from './tenants-schema';
+import { selfCreateTenantBodySchema, tenantListQuerySchema, tenantSchema, updateTenantBodySchema } from './tenants-schema';
 
 export const tenantRoutes = createXRoutes(['tenants', 'cella'], {
   getTenants: xRoute({
@@ -23,7 +17,7 @@ export const tenantRoutes = createXRoutes(['tenants', 'cella'], {
     summary: 'Get list of tenants',
     description: 'Returns a paginated list of tenants. System admin access required.',
     request: { query: tenantListQuerySchema },
-    responses: { 200: json('Tenants list', paginationSchema(tenantWithOrganizationSchema)) },
+    responses: { 200: json('Tenants list', paginationSchema(tenantSchema)) },
   }),
 
   selfCreateTenant: xRoute({

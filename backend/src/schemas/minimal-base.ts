@@ -1,12 +1,14 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
-import { mockOrganizationMinimalBase, mockUserMinimalBase } from './entity-base-mocks';
+import { mockUserMinimalBase } from './entity-base-mocks';
 
 /**
  * Only the fields needed to render an entity cell (avatar, name, link), discriminated by a literal
  * `entityType`. Its own file, so references can be imported without the full entity schemas.
+ * Only the user reference is a named component, as many schemas point to it; a reference to another
+ * entity stays unnamed and inlines where it is used.
  */
-const minimalBaseSchema = <T extends string>(entityType: T) =>
+export const minimalBaseSchema = <T extends string>(entityType: T) =>
   z.object({
     id: z.string(),
     name: z.string(),
@@ -27,13 +29,3 @@ export const userMinimalBaseSchema = minimalBaseSchema('user').openapi('UserMini
  * zod-to-openapi emits a contradictory allOf for `.nullable()` refs.
  */
 export const nullableUserMinimalBaseSchema = z.union([userMinimalBaseSchema, z.null()]);
-
-/** Minimal organization schema for references (e.g. the single organization a tenant holds). */
-export const organizationMinimalBaseSchema = minimalBaseSchema('organization').openapi('OrganizationMinimalBase', {
-  description: 'Minimal organization data for references.',
-  example: mockOrganizationMinimalBase(),
-  'x-tags': schemaTags('base', 'organizations', 'cella'),
-});
-
-/** Nullable minimal-organization reference; unnamed for the same reason as the user variant. */
-export const nullableOrganizationMinimalBaseSchema = z.union([organizationMinimalBaseSchema, z.null()]);
