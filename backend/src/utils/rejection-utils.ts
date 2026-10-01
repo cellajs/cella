@@ -8,16 +8,8 @@ export const createRejectionState = (): RejectionState => ({
   rejectionReasons: {},
 });
 
-export const reject = (rejectionState: RejectionState, id: string, reason: string): RejectionState => ({
-  rejectedIds: [...rejectionState.rejectedIds, id],
-  rejectionReasons: {
-    ...rejectionState.rejectionReasons,
-    [reason]: [...(rejectionState.rejectionReasons[reason] ?? []), id],
-  },
-});
-
 /** No ids leaves the state untouched: clients read the reason keys, so a reason must not appear without ids. */
-export const rejectMany = (rejectionState: RejectionState, ids: string[], reason: string): RejectionState => {
+const rejectMany = (rejectionState: RejectionState, ids: string[], reason: string): RejectionState => {
   if (ids.length === 0) return rejectionState;
   return {
     rejectedIds: [...rejectionState.rejectedIds, ...ids],
@@ -28,17 +20,6 @@ export const rejectMany = (rejectionState: RejectionState, ids: string[], reason
   };
 };
 
-export const mergeRejections = (a: RejectionState, b: RejectionState): RejectionState => {
-  const merged = { ...a.rejectionReasons };
-  for (const [reason, ids] of Object.entries(b.rejectionReasons)) {
-    merged[reason] = [...(merged[reason] ?? []), ...ids];
-  }
-  return {
-    rejectedIds: [...a.rejectedIds, ...b.rejectedIds],
-    rejectionReasons: merged,
-  };
-};
-
 export const filterWithRejection = <T extends { id: string }>(
   items: T[],
   predicate: (item: T) => boolean,
@@ -46,14 +27,13 @@ export const filterWithRejection = <T extends { id: string }>(
   rejectionState: RejectionState = createRejectionState(),
 ): { items: T[]; rejectionState: RejectionState } => {
   const passed: T[] = [];
-  let newState = rejectionState;
-
+  const rejectedIds: string[] = [];
   for (const item of items) {
     if (predicate(item)) passed.push(item);
-    else newState = reject(newState, item.id, reason);
+    else rejectedIds.push(item.id);
   }
 
-  return { items: passed, rejectionState: newState };
+  return { items: passed, rejectionState: rejectMany(rejectionState, rejectedIds, reason) };
 };
 
 export const takeWithRestriction = <T extends { id: string }>(
@@ -62,12 +42,6 @@ export const takeWithRestriction = <T extends { id: string }>(
   reason: string,
   rejectionState: RejectionState = createRejectionState(),
 ): { items: T[]; rejectionState: RejectionState } => {
-  const taken = items.slice(0, restriction);
-  const excess = items.slice(restriction);
-  const excessIds = excess.map((item) => item.id);
-
-  return {
-    items: taken,
-    rejectionState: rejectMany(rejectionState, excessIds, reason),
-  };
+  const excessIds = items.slice(restriction).map((item) => item.id);
+  return { items: items.slice(0, restriction), rejectionState: rejectMany(rejectionState, excessIds, reason) };
 };

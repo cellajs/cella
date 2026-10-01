@@ -31,11 +31,5 @@ export function withReplayFlag(stx: StxBase): StxBase {
   return hasPaused(stx.mutationId) ? { ...stx, replayed: true } : stx;
 }
 
-/** Deletes carry no field timestamps. */
-export function createStxForDelete(): StxBase {
-  return {
-    mutationId: uuidv7(),
-    sourceId,
-    fieldTimestamps: {},
-  };
-}
+/** Deletes carry no field timestamps either, so they share the create stx. */
+export const createStxForDelete = createStxForCreate;

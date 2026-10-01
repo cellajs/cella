@@ -28,13 +28,9 @@ export const runWithLogContext = <T>(ctx: LogContext, fn: () => T): T => logCont
 
 const extractBase = (ctx: LogContext) => {
   if (!ctx?.var) return {};
+  // Pino leaves undefined values out of the line, so unset ids need no guard.
   const { tenantId, userId, organizationId, requestId } = ctx.var;
-  return {
-    ...(tenantId && { tenantId }),
-    ...(userId && { userId }),
-    ...(organizationId && { organizationId }),
-    ...(requestId && { requestId }),
-  };
+  return { tenantId, userId, organizationId, requestId };
 };
 
 const logAt =

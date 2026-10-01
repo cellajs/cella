@@ -2,16 +2,11 @@ import { createFileRoute } from '@tanstack/react-router';
 import { DocsIndexComponent } from '~/modules/docs/page-route-components';
 import { docsConfig, ensureDocPageComponent } from '~/modules/page/content';
 import { createErrorComponent, createNotFoundComponent } from '~/routes/-route-utils';
-import { appTitle } from '~/utils/app-title';
+import { pageHead } from '~/utils/app-title';
 
 export const Route = createFileRoute('/_public/_content/docs/')({
   staticData: { isAuth: false },
-  head: () => ({
-    meta: [
-      { title: appTitle(docsConfig.title) },
-      ...(docsConfig.description ? [{ name: 'description', content: docsConfig.description }] : []),
-    ],
-  }),
+  head: () => pageHead(docsConfig.title, docsConfig.description),
   // Resolve the code-split intro body before rendering (same rationale as page.$.tsx).
   loader: async () => {
     await ensureDocPageComponent('');

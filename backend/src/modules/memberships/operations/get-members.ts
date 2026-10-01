@@ -20,32 +20,16 @@ interface GetMembersInput {
 }
 
 export async function getMembersOp(ctx: UserContext, input: GetMembersInput) {
-  const organization = ctx.var.organization;
-
-  const { entityId, entityType, q, sort, order, offset, limit, role, userIds, include } = input;
-
-  const { entity } = await getValidChannel(ctx, entityId, entityType, 'read');
+  const { include, ...query } = input;
+  const { entity } = await getValidChannel(ctx, query.entityId, query.entityType, 'read');
 
   const includeCounts = include?.includes('counts') ?? false;
-
-  const listOpts = {
-    organizationId: organization.id,
-    entityId: entity.id,
-    entityType,
-    q,
-    sort,
-    order,
-    offset,
-    limit,
-    role,
-    userIds,
-    includeCounts,
-  };
+  const listOpts = { ...query, organizationId: ctx.var.organization.id, entityId: entity.id, includeCounts };
 
   // Member counts and the lastPostedAt sort read RLS-guarded product tables,
   // which read empty on this route's bare baseDb; tenantGuard pinned the tenant, so read as it.
   const { items, total } =
-    includeCounts || sort === 'lastPostedAt'
+    includeCounts || query.sort === 'lastPostedAt'
       ? await tenantRead(ctx, (readCtx) => findMembersPaginated(readCtx, listOpts))
       : await findMembersPaginated(ctx, listOpts);
 
