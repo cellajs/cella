@@ -70,7 +70,7 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
               <div className="flex items-center gap-2">
                 {appConfig.has.uploadEnabled && (
                   <Button ref={uploadButtonRef} variant="plain" type="button" size="sm" onClick={openUploadDialog}>
-                    <UploadIcon className="mr-2" />
+                    <UploadIcon />
                     <span>{t('c:upload')}</span>
                   </Button>
                 )}

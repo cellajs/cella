@@ -88,7 +88,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
           ) : (
             <>
               {t('c:join')}
-              <ArrowRightIcon className="ml-2" />
+              <ArrowRightIcon />
             </>
           )}
         </SubmitButton>

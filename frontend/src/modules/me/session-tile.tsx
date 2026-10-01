@@ -119,7 +119,7 @@ export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending 
             >
               <div className="group-data-[expanded=true]/tile:hidden">More</div>
               <div className="group-data-[expanded=false]/tile:hidden">Less</div>
-              <ChevronDownIcon className={cn('ml-1 size-3 transition-transform', expanded && 'rotate-180')} />
+              <ChevronDownIcon className={cn('size-3 transition-transform', expanded && 'rotate-180')} />
             </Button>
           </div>
         </div>
@@ -127,7 +127,7 @@ export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending 
         {isLive && !session.isCurrent && handleRevoke && (
           <Button variant="plain" size="sm" className="ml-auto text-sm" disabled={isPending} onClick={() => handleRevoke([session.id])}>
             <UnplugIcon />
-            <span className="ml-1 max-md:hidden">{t('c:revoke')}</span>
+            <span className="max-md:hidden">{t('c:revoke')}</span>
           </Button>
         )}
       </CardContent>

@@ -53,7 +53,7 @@ export function AboutPage() {
               className="group h-14 rounded-full! px-8 transition"
               aria-label={t('about:github_star')}
             >
-              <GithubIcon className="mr-2 size-4 transition-transform group-hover:scale-110" />
+              <GithubIcon className="size-4 transition-transform group-hover:scale-110" />
               {t('about:github_star')}
             </Button>
             <div className="glow-button relative max-sm:hidden">
@@ -80,7 +80,7 @@ export function AboutPage() {
           </div>
           <Button variant="ghost" size="lg" className="group max-sm:hidden" onClick={() => scrollToSectionById('benefits')} aria-label="Read more">
             <span className="font-normal text-base opacity-70 group-hover:opacity-100">{t('about:continue_below_fold')}</span>
-            <ArrowDownIcon className="ml-2 animate-bounce opacity-70 group-hover:opacity-100" />
+            <ArrowDownIcon className="animate-bounce opacity-70 group-hover:opacity-100" />
           </Button>
         </Hero>
 

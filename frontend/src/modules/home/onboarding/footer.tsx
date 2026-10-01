@@ -41,7 +41,7 @@ export function StepperFooter({ setOnboardingState }: StepperFooterProps) {
     <div className="flex w-full gap-2 max-sm:justify-stretch">
       {isOptionalStep && (
         <Button ref={skipButtonRef} onClick={skipStep} variant="secondary" className="max-sm:w-full">
-          <RedoIcon className="mr-2" />
+          <RedoIcon />
           {t('c:skip')}
         </Button>
       )}

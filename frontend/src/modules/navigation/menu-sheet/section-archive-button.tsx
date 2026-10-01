@@ -21,7 +21,7 @@ export function SectionArchiveButton({ archiveToggleClick, archivedCount, archiv
         onClick={archiveToggleClick}
         disabled={archivedCount < 1}
         variant="secondary"
-        className="group focus-effect w-full bg-transparent p-0 shadow-none ring-inset ring-offset-0 transition duration-300 hover:bg-accent/50 hover:text-accent-foreground group-data-[submenu=true]/archived:h-8"
+        className="group focus-effect w-full gap-0 bg-transparent p-0 shadow-none ring-inset ring-offset-0 transition duration-300 hover:bg-accent/50 hover:text-accent-foreground group-data-[submenu=true]/archived:h-8"
       >
         <div className="flex w-12 items-center justify-center py-2">
           <ArchiveIcon className="ml-2 size-5 items-center opacity-75" />

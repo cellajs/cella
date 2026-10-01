@@ -82,7 +82,7 @@ export function AttachmentRender({
             {/* The URL is always fetchable: a CDN or presigned URL online, a local blob URL offline. */}
             <Button variant="plain" className="mt-4" disabled={isInProgress} onClick={() => download(url, filename || 'file')}>
               {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon className="size-4" />}
-              <span className="ml-1">{t('c:download')}</span>
+              <span>{t('c:download')}</span>
             </Button>
           </ContentPlaceholder>
         )}

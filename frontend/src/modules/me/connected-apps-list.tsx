@@ -39,7 +39,7 @@ export function ConnectedAppsList() {
             </div>
             <Button variant="plain" size="sm" className="ml-auto" loading={isPending} onClick={() => handleRevoke(app.id)}>
               <UnplugIcon />
-              <span className="ml-1 max-md:hidden">{t('c:revoke')}</span>
+              <span className="max-md:hidden">{t('c:revoke')}</span>
             </Button>
           </CardContent>
         </Card>

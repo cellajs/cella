@@ -64,7 +64,7 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
             {!domain.verified && (
               <Button variant="plain" size="sm" className="text-sm" disabled={verifyMutation.isPending} onClick={handleVerify}>
                 {verifyMutation.isPending ? <LoaderCircleIcon className="animate-spin" /> : <SearchCheckIcon />}
-                <span className="ml-1 max-sm:hidden">{t('c:verify')}</span>
+                <span className="max-sm:hidden">{t('c:verify')}</span>
               </Button>
             )}
             <Button
@@ -84,7 +84,7 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
               }}
             >
               {deleteMutation.isPending ? <LoaderCircleIcon className="animate-spin" /> : <Trash2Icon />}
-              <span className="ml-1 max-sm:hidden">{t('c:remove')}</span>
+              <span className="max-sm:hidden">{t('c:remove')}</span>
             </Button>
           </div>
         </div>

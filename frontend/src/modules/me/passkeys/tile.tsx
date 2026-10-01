@@ -61,7 +61,7 @@ export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPassk
             >
               <div className="group-data-[expanded=true]/tile:hidden">More</div>
               <div className="group-data-[expanded=false]/tile:hidden">Less</div>
-              <ChevronDownIcon className={cn('ml-1 size-3 transition-transform', expanded && 'rotate-180')} />
+              <ChevronDownIcon className={cn('size-3 transition-transform', expanded && 'rotate-180')} />
             </Button>
           </div>
         </div>
@@ -75,7 +75,7 @@ export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPassk
           onClick={() => handleDeletePasskey(passkey.id)}
         >
           <TrashIcon />
-          <span className="ml-1 max-md:hidden">{t('c:delete')}</span>
+          <span className="max-md:hidden">{t('c:delete')}</span>
         </Button>
       </CardContent>
     </Card>

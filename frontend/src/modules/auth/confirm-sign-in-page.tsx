@@ -33,7 +33,7 @@ export function ConfirmSignInPage() {
         <h1 className="text-2xl">{t('c:confirm_sign_in_expired')}</h1>
         <p className="my-4">{t('c:confirm_sign_in_expired.text')}</p>
         <Button render={<Link to="/auth/authenticate" replace />}>
-          <LogInIcon className="mr-2" />
+          <LogInIcon />
           {t('c:sign_in')}
         </Button>
       </div>
@@ -46,7 +46,7 @@ export function ConfirmSignInPage() {
       <p className="my-4">{t('c:confirm_sign_in.text', { email: data.email })}</p>
       <form method="post" action={`${appConfig.backendAuthUrl}/magic/confirm`}>
         <Button type="submit" className="w-full">
-          <LogInIcon className="mr-2" />
+          <LogInIcon />
           {t('c:continue_as', { email: data.email })}
         </Button>
       </form>

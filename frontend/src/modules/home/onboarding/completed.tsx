@@ -55,7 +55,7 @@ export function OnboardingCompleted() {
 
       {!hasOrganization && !orgQuery.isFetching && createOrganization && (
         <Button ref={createButtonRef} variant="secondary" onClick={() => createOrganization(createButtonRef)}>
-          <PlusIcon className="mr-2" />
+          <PlusIcon />
           {t('c:create_resource', { resource: t('c:organization').toLowerCase() })}
         </Button>
       )}

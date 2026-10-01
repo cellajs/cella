@@ -73,21 +73,21 @@ export function InfoContent() {
       <div className="flex flex-col gap-1">
         <h3 className="px-4 font-medium text-muted-foreground/70 text-sm lowercase">{t('c:support')}</h3>
         <Button variant="ghost" className="w-full justify-start px-3.5 text-left" render={<Link to={appConfig.aboutUrl} draggable={false} />}>
-          <InfoIcon className="mr-2 size-4" aria-hidden="true" />
+          <InfoIcon className="size-4" aria-hidden="true" />
           {t('c:about')}
         </Button>
         <Button variant="ghost" className="w-full justify-start px-3.5 text-left" render={<Link to="/docs" draggable={false} />}>
-          <BookOpenIcon className="mr-2 size-4" aria-hidden="true" />
+          <BookOpenIcon className="size-4" aria-hidden="true" />
           {t('c:api_docs')}
         </Button>
         {appConfig.has.chatSupport && (
           <Button ref={supportRef} variant="ghost" className="w-full justify-start px-3.5 text-left" onClick={() => handleAskForHelp(supportRef)}>
-            <LifeBuoyIcon className="mr-2 size-4" aria-hidden="true" />
+            <LifeBuoyIcon className="size-4" aria-hidden="true" />
             {t('c:support')}
           </Button>
         )}
         <Button ref={contactRef} variant="ghost" className="w-full justify-start px-3.5 text-left" onClick={() => contactFormHandler(contactRef)}>
-          <MailIcon className="mr-2 size-4" aria-hidden="true" />
+          <MailIcon className="size-4" aria-hidden="true" />
           {t('c:contact_us')}
         </Button>
       </div>

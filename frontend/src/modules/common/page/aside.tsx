@@ -59,7 +59,7 @@ export function PageAside<T extends PageTab>({ tabs, className, setFocus }: Page
               />
             }
           >
-            {Icon && <Icon className="mr-2 size-5" />} {t(label, { resource: resource ? t(resource).toLowerCase() : '' })}
+            {Icon && <Icon className="size-5" />} {t(label, { resource: resource ? t(resource).toLowerCase() : '' })}
           </Button>
         );
       })}

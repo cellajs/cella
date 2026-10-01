@@ -50,7 +50,7 @@ function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action 
         />
       }
     >
-      <Icon className="mr-2 size-4" aria-hidden="true" />
+      <Icon className="size-4" aria-hidden="true" />
       {label}
     </Button>
   );
@@ -123,7 +123,7 @@ export function AccountSheet() {
           className="focus-effect w-full justify-start text-left hover:bg-accent/50"
           onClick={openProfile}
         >
-          <UserRoundIcon className="mr-2 size-4" aria-hidden="true" />
+          <UserRoundIcon className="size-4" aria-hidden="true" />
           {t('c:view_resource', { resource: t('c:profile').toLowerCase() })}
         </Button>
         <AccountButton offlineAccess={false} isOnline={isOnline} icon={SettingsIcon} id="btn-account" label={t('c:settings')} action="/account" />

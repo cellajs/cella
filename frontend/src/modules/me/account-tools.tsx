@@ -171,7 +171,7 @@ export function AccountAuthenticationCard() {
                       <img
                         src={`/static/auth/${provider.id}-icon.svg`}
                         alt={provider.id}
-                        className={cn('mr-2 size-4', provider.id === 'github' && invertClass)}
+                        className={cn('size-4', provider.id === 'github' && invertClass)}
                         loading="lazy"
                       />
                       {`${t('c:add')} ${provider.name} ${t('c:account').toLowerCase()}`}
@@ -213,7 +213,7 @@ export function AccountDeleteCard() {
   return (
     <ToolCard label="c:delete_account" description={t('c:delete_account.text', { appName: appConfig.name })} className={cardClass}>
       <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-        <TrashIcon className="mr-2" />
+        <TrashIcon />
         {t('c:delete_account')}
       </Button>
     </ToolCard>

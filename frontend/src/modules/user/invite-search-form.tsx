@@ -79,7 +79,7 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
                 {form.getValues('emails')?.length}
               </Badge>
             )}
-            <SendIcon className="mr-2" />
+            <SendIcon />
             {t('c:invite')}
           </SubmitButton>
           {form.isDirty && (

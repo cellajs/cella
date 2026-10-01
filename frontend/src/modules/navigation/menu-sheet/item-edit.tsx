@@ -11,7 +11,6 @@ import type { UserMenuItem } from '~/modules/me/types';
 import { useMemberUpdateMutation } from '~/modules/memberships/query-mutations';
 import type { MutationUpdateMembership } from '~/modules/memberships/types';
 import { Button } from '~/modules/ui/button';
-import { cn } from '~/utils/cn';
 
 interface MenuItemEditProps {
   item: UserMenuItem;
@@ -97,7 +96,7 @@ function MenuItemEditButton({ icon: Icon, title, onClick, subitem = false }: Men
       aria-label={`Click ${title}`}
       onClick={onClick}
     >
-      <Icon className={cn('mr-1.5', subitem ? 'size-3' : 'size-3.25')} />
+      <Icon className={subitem ? 'size-3' : 'size-3.25'} />
       {title}
     </Button>
   );

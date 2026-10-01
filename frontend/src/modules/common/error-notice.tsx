@@ -80,7 +80,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                     className="flex w-full items-center whitespace-pre-wrap text-red-600"
                   >
                     <span>{showError ? t('c:hide_details') : t('c:show_details')}</span>
-                    {<ChevronUpIcon className={cn('ml-2 transition-transform', showError ? 'rotate-0' : 'rotate-180')} />}
+                    {<ChevronUpIcon className={cn('transition-transform', showError ? 'rotate-0' : 'rotate-180')} />}
                   </Button>
                 )}
 
@@ -125,12 +125,12 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
               ) : (
                 <>
                   <Button onClick={handleGoToHome} variant="secondary">
-                    <HouseIcon className="mr-2" />
+                    <HouseIcon />
                     {t('c:home')}
                   </Button>
                   {!location.pathname.endsWith('/error') && severity !== 'info' && (
                     <Button onClick={handleReload}>
-                      <RefreshCwIcon className="mr-2" />
+                      <RefreshCwIcon />
                       {t('c:reload')}
                     </Button>
                   )}
@@ -138,7 +138,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
               )}
               {severity && ['warn', 'error'].includes(severity) && (
                 <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)}>
-                  <MessageCircleQuestionMarkIcon className="mr-2" />
+                  <MessageCircleQuestionMarkIcon />
                   {t('c:contact_support')}
                 </Button>
               )}

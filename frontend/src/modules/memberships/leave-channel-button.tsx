@@ -70,7 +70,7 @@ export function LeaveChannelButton({ channel, buttonProps, redirectPath = appCon
       aria-label="Leave"
     >
       <UserRoundXIcon />
-      <span className="ml-1">{t('c:leave')}</span>
+      <span>{t('c:leave')}</span>
     </Button>
   );
 }

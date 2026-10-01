@@ -89,7 +89,7 @@ export function InviteFormFooter({ form, channel, count, isPending, disabled, on
               {count}
             </Badge>
           )}{' '}
-          <SendIcon className="mr-2" />
+          <SendIcon />
           {t('c:invite')}
         </SubmitButton>
         {children}

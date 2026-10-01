@@ -121,7 +121,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
             {label}
             <span className="ml-1 opacity-50">*</span>
           </FormLabel>
-          <InputGroup className={cn('', inputClassName)}>
+          <InputGroup className={inputClassName}>
             <SlugInput type={entityType} onFocus={() => setDeviating(true)} value={formFieldValue || ''} {...rest} />
             {prefix && (
               <InputGroupAddon>
@@ -134,7 +134,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
             {previousSlug && previousSlug !== slug && (
               <InputGroupAddon align="inline-end">
                 <Button variant="ghost" size="sm" aria-label={t('c:revert_handle')} onClick={revertSlug} className="h-full">
-                  <UndoIcon /> <span className="ml-1 max-sm:hidden">{t('c:revert')}</span>
+                  <UndoIcon /> <span className="max-sm:hidden">{t('c:revert')}</span>
                 </Button>
               </InputGroupAddon>
             )}

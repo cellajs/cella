@@ -77,14 +77,13 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
             key={provider}
             type="button"
             variant="plain"
-            className="gap-1"
             onClick={() => authenticateWithProvider(providerData.id)}
           >
             <img
               data-provider={provider}
               src={`/static/auth/${provider}-icon.svg`}
               alt={provider}
-              className="mr-1 size-4 data-[provider=github]:group-data-[mode=dark]:invert"
+              className="size-4 data-[provider=github]:group-data-[mode=dark]:invert"
               loading="lazy"
             />
             <span>

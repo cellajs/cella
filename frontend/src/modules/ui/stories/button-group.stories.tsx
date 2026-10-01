@@ -68,15 +68,15 @@ export const WithIcons: Story = {
   render: () => (
     <ButtonGroup>
       <Button variant="outline">
-        <SearchIcon className="mr-2 h-4 w-4" />
+        <SearchIcon className="h-4 w-4" />
         Search
       </Button>
       <Button variant="outline">
-        <DownloadIcon className="mr-2 h-4 w-4" />
+        <DownloadIcon className="h-4 w-4" />
         Download
       </Button>
       <Button variant="outline">
-        <UploadIcon className="mr-2 h-4 w-4" />
+        <UploadIcon className="h-4 w-4" />
         Upload
       </Button>
     </ButtonGroup>

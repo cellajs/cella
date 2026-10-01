@@ -68,7 +68,7 @@ export function CheckEmailStep() {
           />
           <SubmitButton loading={isPending} className="w-full">
             {t('c:continue')}
-            <ArrowRightIcon className="ml-2" />
+            <ArrowRightIcon />
           </SubmitButton>
         </form>
       )}

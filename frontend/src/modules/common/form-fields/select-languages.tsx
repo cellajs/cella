@@ -99,7 +99,7 @@ export function SelectLanguages({ value, onChange }: SelectLanguagesProps) {
       ) : (
         <span className="text-muted-foreground">{t('c:placeholder.select_languages')}</span>
       )}
-      <ChevronDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
+      <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
     </Button>
   );
 }

@@ -169,7 +169,7 @@ export function MarketingNav() {
                   openInNewTab(appConfig.company.githubUrl);
                 }}
               >
-                <GithubIcon className="mr-2 size-6" />
+                <GithubIcon className="size-6" />
                 Github
               </Button>
             )}

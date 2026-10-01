@@ -5,7 +5,6 @@ import { useOnlineManager } from '~/hooks/use-online-manager';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button, type ButtonProps } from '~/modules/ui/button';
-import { cn } from '~/utils/cn';
 
 type SubmitButtonProps = Omit<ButtonProps, 'type'> & { allowOfflineDelete?: boolean; icon?: React.ReactNode };
 
@@ -37,7 +36,7 @@ export function SubmitButton({ onClick, children, allowOfflineDelete = false, lo
       disabled={isDisabled}
       aria-busy={loading || undefined}
       loading={!icon && loading}
-      className={cn(icon && 'gap-2', className)}
+      className={className}
       {...props}
     >
       {icon ? (
@@ -47,7 +46,7 @@ export function SubmitButton({ onClick, children, allowOfflineDelete = false, lo
         </>
       ) : (
         <>
-          {showOfflineWarning && <TriangleAlertIcon className="mr-2" />}
+          {showOfflineWarning && <TriangleAlertIcon />}
           {children}
         </>
       )}
