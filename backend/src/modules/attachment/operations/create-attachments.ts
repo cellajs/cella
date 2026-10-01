@@ -77,7 +77,7 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
 
   const createdAttachments = await tenantContext(ctx, async (txCtx) => {
     const rows = await insertAttachments(txCtx, { attachments: attachmentsToInsert });
-    // Inside the transaction, so handlers such as mention derivation join the write.
+    // Inside the transaction, so mutation handlers join the write.
     await dispatchMutation(txCtx, 'attachment.created', { after: rows });
     return rows;
   });

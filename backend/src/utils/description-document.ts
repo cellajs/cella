@@ -1,4 +1,4 @@
-import { getSearchableTextFromBlocks, parseBlocks, titleFromDocument } from 'shared/blocknote';
+import { deriveDocument } from 'shared/utils/derive-description-core';
 import { maxLength } from '#/db/utils/constraints';
 
 /**
@@ -8,16 +8,13 @@ import { maxLength } from '#/db/utils/constraints';
  */
 
 /**
- * `name` for a stored title document: `titleFromDocument`, clamped to the column so autosave and Yjs materialize
- * writes, which have no user to report to, never fail on length. Empty when block 0 holds no text (an image); the
- * caller then keeps the previous name.
+ * `name` for a stored title document: the title `deriveDocument` reads (`titleFromDocument`), clamped to the column so
+ * autosave and Yjs materialize writes, which have no user to report to, never fail on length. Empty when block 0 holds
+ * no text (an image); the caller then keeps the previous name.
  */
 export const nameFromDocument = (description: string | null | undefined): string =>
-  titleFromDocument(description).slice(0, maxLength.field).trim();
+  deriveDocument(description).name.slice(0, maxLength.field).trim();
 
-/** Search text for a stored document, capped at 900 characters. Block 0 already carries the title, so it is not prepended. */
+/** Search text for a stored document, capped at 900 characters. Block 0 already carries the title, so it is not prepended. One field of `deriveDocument`. */
 export const keywordsFromDocument = (description: string | null | undefined): string =>
-  getSearchableTextFromBlocks(parseBlocks(description) ?? [])
-    .replace(/\s+/g, ' ')
-    .trim()
-    .slice(0, 900);
+  deriveDocument(description).keywords;

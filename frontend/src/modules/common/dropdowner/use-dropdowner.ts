@@ -1,5 +1,6 @@
 import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
+import { withDefaults } from '~/modules/common/overlay-store-helpers';
 
 export type DropdownKind = 'menu' | 'panel';
 
@@ -69,9 +70,8 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     // Blur active element to prevent aria-hidden conflict when modal sets aria-hidden on ancestors
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 
-    set({
-      dropdown: { content, align: 'start', modal: true, kind: 'panel', ...data, key: Date.now() },
-    });
+    const defaults: Pick<InternalDropdown, 'align' | 'modal' | 'kind'> = { align: 'start', modal: true, kind: 'panel' };
+    set({ dropdown: { ...withDefaults(defaults, data), content, key: Date.now() } });
 
     return data.id;
   },

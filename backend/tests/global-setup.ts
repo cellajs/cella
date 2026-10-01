@@ -9,6 +9,8 @@ import { crossMark, startSpinner, succeedSpinner } from '#/utils/console';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const DATABASE_URL = testDatabaseUrl;
+/** Arbitrary advisory lock key shared by every backend test run against the test database. */
+const testRunLockKey = 7_365_224;
 
 /**
  * Global test setup: provisions the RLS roles, then migrates. The order matters: the RLS,
@@ -34,6 +36,19 @@ export default async function globalSetup() {
     console.error(`   DATABASE_URL: ${DATABASE_URL}`);
     console.error('   Run `pnpm docker:test` (or `pnpm dev`) to start Postgres, then run tests again.\n');
     process.exit(1);
+  }
+
+  // Worktrees and parallel sessions share one test database, and a run truncates and seeds rows another run reads, so
+  // runs take turns: this session holds an advisory lock until the teardown below ends it.
+  const lockClient = new pg.Client({ connectionString: DATABASE_URL });
+  await lockClient.connect();
+  const { rows: locked } = await lockClient.query<{ acquired: boolean }>(
+    'SELECT pg_try_advisory_lock($1) AS acquired',
+    [testRunLockKey],
+  );
+  if (!locked[0]?.acquired) {
+    console.info('Another backend test run is using the test database; waiting for it to finish...');
+    await lockClient.query('SELECT pg_advisory_lock($1)', [testRunLockKey]);
   }
 
   const pool = new pg.Pool({ connectionString: DATABASE_URL });
@@ -94,4 +109,9 @@ export default async function globalSetup() {
   }
 
   await pool.end();
+
+  // Closing the session releases the lock for the next waiting run.
+  return async () => {
+    await lockClient.end();
+  };
 }

@@ -53,6 +53,12 @@ describe('dropdowner store', () => {
     expect(useDropdowner.getState().dropdown).toMatchObject({ align: 'end', modal: false, kind: 'menu' });
   });
 
+  it('keeps the defaults for options passed as undefined', () => {
+    useDropdowner.getState().create(null, dropdown('t1', { align: undefined, modal: undefined, kind: undefined }));
+
+    expect(useDropdowner.getState().dropdown).toMatchObject({ align: 'start', modal: true, kind: 'panel' });
+  });
+
   it('closes when the same trigger opens it again', () => {
     const data = dropdown('t1');
     useDropdowner.getState().create(null, data);

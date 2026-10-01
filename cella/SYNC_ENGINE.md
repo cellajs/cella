@@ -179,7 +179,7 @@ Value shape selects merge behavior:
 
 `fieldTimestamps` must name exactly the scalar operation keys. For a replay, the server omits scalar values that lose HLC comparison and returns the authoritative row, never a conflict response. Merge resolution takes no `FOR UPDATE` lock, so overlapping updates can race.
 
-Columns the server derives from a write stay outside the merge: the attachment `keywords`, re-derived from the description in `update-attachment.ts`, `mentions`, written by `writeSubjectMentions` inside the writing transaction, and an app's own audit stamps. They are written in the same transaction as the resolved values but never enter `stx.fieldTimestamps` or `stx.changedFields`, the columns the CDC worker reports as changed: they are not operations and carry no HLC. Only `updatedAt` joins `changedFields`, which is how the CDC worker tells a user edit from its own writes.
+Columns the server derives from a write stay outside the merge: the attachment `keywords`, re-derived from the description in `update-attachment.ts`, and an app's own audit stamps. They are written in the same transaction as the resolved values but never enter `stx.fieldTimestamps` or `stx.changedFields`, the columns the CDC worker reports as changed: they are not operations and carry no HLC. Only `updatedAt` joins `changedFields`, which is how the CDC worker tells a user edit from its own writes.
 
 ### Paused writes
 

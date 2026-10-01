@@ -8,6 +8,7 @@ import {
   type EntityQueryKeys,
   getEntityDeltaFetch,
   getEntityQueryKeys,
+  getEqualityFilterKeys,
   hasEntityQueryKeys,
   SYNC_CHUNK_SIZE,
 } from '~/query/basic/entity-query-registry';
@@ -127,11 +128,39 @@ export function invalidateEntityListForOrg(
   });
 }
 
-/** Invalidates org-scoped lists whose key tail holds a filter object; canonical home lists have string-only tails and are patched directly. */
-function invalidateFilteredLists(orgListKey: readonly unknown[]): void {
+const isScalar = (value: unknown): value is string | number | boolean =>
+  typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
+
+/**
+ * True when the list sets a declared equality key to a value the row's own differs from. The server combines filters
+ * with AND, so that one key excludes the row whatever `q` or the other filters say; a row without the field never
+ * counts as excluded.
+ */
+function filtersExcludeRow(filters: object[], row: Record<string, unknown>, equalityKeys: readonly string[]): boolean {
+  return filters
+    .flatMap((filter) => Object.entries(filter))
+    .some(([key, value]) => {
+      if (!equalityKeys.includes(key) || !isScalar(value) || value === '') return false;
+      const rowValue = row[key];
+      if (rowValue === null) return true;
+      return isScalar(rowValue) && String(rowValue) !== String(value);
+    });
+}
+
+/**
+ * Invalidates org-scoped lists whose key tail holds a filter object; canonical home lists have string-only tails and are patched directly.
+ * A list whose declared equality filters exclude every new row keeps its data, see `registerEqualityFilterKeys`.
+ */
+function invalidateFilteredLists(entityType: string, orgListKey: readonly unknown[], newRows: ItemData[]): void {
+  const equalityKeys = getEqualityFilterKeys(entityType);
   queryClient.invalidateQueries({
     queryKey: orgListKey,
-    predicate: (q) => q.queryKey.slice(2).some((seg) => typeof seg === 'object' && seg !== null),
+    predicate: (q) => {
+      const filters = q.queryKey.slice(2).filter((seg): seg is object => typeof seg === 'object' && seg !== null);
+      if (!filters.length) return false;
+      if (!equalityKeys || !newRows.length) return true;
+      return !newRows.every((row) => filtersExcludeRow(filters, asRecord(row), equalityKeys));
+    },
   });
 }
 
@@ -216,7 +245,9 @@ export async function fetchEntityAndUpdateList(
     applyServerEntity(entityType ?? '', entity, keys, organizationId ?? null);
     if (organizationId) invalidateEmbeddedUsage(touches, organizationId);
     // The notification says create: active filtered lists refetch to place the new row.
-    if (action === 'create' && organizationId) invalidateFilteredLists(keys.list.org(organizationId));
+    if (action === 'create' && organizationId) {
+      invalidateFilteredLists(entityType ?? '', keys.list.org(organizationId), [entity]);
+    }
   } catch {
     // No query defaults registered for this entity type, fall back to list invalidation
     invalidateEntityList(keys, 'all');
@@ -264,16 +295,16 @@ export async function fetchRangeAndPatch(
       return { status: 'overflow', items: [], reachedSeq: 0, embeddingTouches: new Map() };
     }
 
-    let sawNewRow = false;
+    const newRows: ItemData[] = [];
     const embeddingTouches: EmbeddingTouches = new Map();
     for (const entity of items) {
       // Read before applying: the cached row is the only record of which embedded rows this host referenced.
       collectEmbeddingTouches(entityType, findInCache<ItemData>(entityType, entity.id), entity, embeddingTouches);
-      sawNewRow = applyServerEntity(entityType, entity, keys, organizationId) || sawNewRow;
+      if (applyServerEntity(entityType, entity, keys, organizationId)) newRows.push(entity);
     }
 
-    // Filtered lists have unknown server-side filters, so one invalidation per flush lets the active ones refetch and place new rows.
-    if (sawNewRow && organizationId) invalidateFilteredLists(keys.list.org(organizationId));
+    // Filtered lists filter on the server, so one invalidation per flush lets the active ones refetch and place new rows.
+    if (newRows.length && organizationId) invalidateFilteredLists(entityType, keys.list.org(organizationId), newRows);
 
     if (items.length > 0) {
       console.debug(`[CacheOps] Delta fetch: ${entityType} patched ${items.length} entities (seqCursor=${seqCursor})`);

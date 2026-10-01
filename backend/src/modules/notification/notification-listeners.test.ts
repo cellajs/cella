@@ -28,14 +28,14 @@ const deliver = async (event: ActivityEvent) => {
 };
 
 describe('notification listeners', () => {
-  it('runs the instant email pass for the organization after the fan-out wrote a mention', async () => {
+  it('runs the instant email pass for the organization after the fan-out wrote a mailable row', async () => {
     vi.mocked(fanOutNotifications).mockResolvedValueOnce(true);
     const event = productWrite();
     await deliver(event);
     expect(sendPendingInstantEmails).toHaveBeenCalledExactlyOnceWith(event.organizationId);
   });
 
-  it('skips the email pass for a write that added no mention (no source, no recipient, an edit)', async () => {
+  it('skips the email pass for a write that added no mailable row (no source, no recipient, an edit)', async () => {
     vi.mocked(fanOutNotifications).mockResolvedValueOnce(false);
     await deliver(productWrite());
     expect(sendPendingInstantEmails).not.toHaveBeenCalled();

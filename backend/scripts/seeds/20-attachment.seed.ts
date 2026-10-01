@@ -1,13 +1,13 @@
 import type { SeedScript } from '../types';
 import { faker } from '@faker-js/faker';
 import { appConfig } from 'shared';
+import { deriveDocument } from 'shared/utils/derive-description-core';
 import { noteSpinnerWarning, startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 import { getSeedDb } from '#/db/db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { seedAttachmentPlacements } from '#/modules/attachment/helpers/attachment-placement';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockStx, mockUuid, setMockContext, withFakerSeed } from '#/mocks';
-import { keywordsFromDocument } from '#/utils/description-document';
 import { defaultAdminUser } from '../fixtures';
 import { textDocument } from './description-document';
 import { seedAssets } from './seed-assets';
@@ -101,7 +101,7 @@ export const attachmentsSeed = async () => {
           stx: mockStx(),
           description,
           // The update op derives keywords from the document; a row without one keeps filler search text.
-          keywords: description ? keywordsFromDocument(description) : faker.lorem.words(3),
+          keywords: description ? deriveDocument(description).keywords : faker.lorem.words(3),
           filename: asset.filename,
           name: extIndex > 0 ? asset.filename.slice(0, extIndex) : asset.filename,
           contentType: asset.contentType,

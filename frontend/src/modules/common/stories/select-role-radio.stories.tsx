@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { type EntityRole, hierarchy } from 'shared';
-import { expect, userEvent, waitFor } from 'storybook/test';
+import { expect, spyOn, userEvent, waitFor } from 'storybook/test';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
 
 /** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
@@ -71,6 +71,7 @@ export const ShouldSelectRole: Story = {
     return <SelectRoleRadio value={value} onValueChange={setValue} />;
   },
   play: async ({ canvas, step }) => {
+    const consoleError = spyOn(console, 'error');
     const radios = await canvas.findAllByRole('radio');
 
     await step('select the first role', async () => {
@@ -82,6 +83,10 @@ export const ShouldSelectRole: Story = {
       await userEvent.click(radios[1]);
       await waitFor(() => expect(radios[1]).toBeChecked());
       await waitFor(() => expect(radios[0]).not.toBeChecked());
+    });
+
+    await step('stay a controlled radio group from no role to a role', async () => {
+      await expect(consoleError).not.toHaveBeenCalledWith(expect.stringContaining('changing the uncontrolled value'));
     });
   },
 };

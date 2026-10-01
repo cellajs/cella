@@ -27,11 +27,14 @@ const earliestStart = (cadence: keyof typeof MAX_WINDOW_DAYS, now: Date): Date =
  * previous one stopped, but never further back than the cadence plus a day. A first digest, and the first after the
  * digest was off, cover recent rows only, never the whole inbox. `findDueDigestRecipients` mirrors this in SQL.
  */
-const windowStart = (recipient: { digest: string; lastDigestAt: string | null }, now: Date): Date => {
+export const windowStart = (recipient: { digest: string; lastDigestAt: string | null }, now: Date): Date => {
   const earliest = earliestStart(recipient.digest === 'weekly' ? 'weekly' : 'daily', now).getTime();
-  const last = recipient.lastDigestAt ? new Date(recipient.lastDigestAt).getTime() : earliest;
+  const last = recipient.lastDigestAt ? utcTimestamp(recipient.lastDigestAt).getTime() : earliest;
   return new Date(Math.max(last, earliest));
 };
+
+/** A `timestamp` (without zone) column value, which holds UTC: JavaScript would read the bare text as local time. */
+const utcTimestamp = (value: string): Date => new Date(`${value.replace(' ', 'T')}Z`);
 
 /**
  * One digest pass.

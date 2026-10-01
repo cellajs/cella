@@ -63,10 +63,8 @@ export interface NotificationSubjectRow {
   id: string;
   createdBy: string | null;
   organizationId: string;
-  /** Stored body; mention derivation reads it on mentionable modules. */
+  /** Stored body; the fan-out reads mentions from it on a mentionable source. */
   description?: string | null;
-  /** Server-derived mentioned user ids; the fan-out trusts this column, never client input. */
-  mentions?: string[] | null;
   [key: string]: unknown;
 }
 
@@ -79,30 +77,21 @@ export interface NotificationCandidate {
 /**
  * Notification source declaration for a product module (`notifications: true` declares nothing).
  * Each reader below is used when given, else the notification module reads the product table
- * (`notification-sources.ts`): live rows are the non-deleted, published ones; a `mentions` column
- * (`mentionableColumns`) switches mention derivation and mention fan-out on; previews and digest
- * lines read `name` and `description`; `deriveFrom` is `both` when the module registers a
- * `yjsMaterializer`. Apps typically declare only `resolveRecipients` and `resolveContextId`.
+ * (`notification-sources.ts`): live rows are the non-deleted, published ones; previews and digest
+ * lines read `name` and `description`. Apps typically declare only `resolveRecipients` and
+ * `resolveContextId`.
  *
- * The fan-out runs off the CDC activity stream, but mention derivation listens on the mutation
- * bus, so the module's create and update ops must `dispatchMutation(txCtx, '<type>.created' |
- * '<type>.updated', { before, after })` inside the write transaction (`materialized: true` for
- * Yjs materialization); see the attachment ops for the shape. Deep links need no declaration:
- * emails and push carry the subject's location for the frontend `/n` route.
+ * The fan-out runs after commit off the CDC activity stream, so ops need no wiring for it. On a
+ * mentionable source it reads mentions from the stored `description` of a created row, or of an
+ * updated one whose changed fields include it, and notifies the mentioned users who may read the
+ * row and were not told about it before. Deep links need no declaration: emails and push carry
+ * the subject's location for the frontend `/n` route.
  */
 export interface ModuleNotifications {
-  /** Server-side mention derivation and mention fan-out; defaults to whether the table has a `mentions` column. */
+  /** Mention fan-out from the stored `description`; on unless set to false. */
   mentionable?: boolean;
-  /**
-   * Which writes mention derivation reads: `client` skips Yjs materialization so a collaborative
-   * re-write cannot resurrect a mention edited away in a client-owned body; `materialized` for
-   * bodies whose Yjs document is the source of truth; `both` when either path edits.
-   */
-  deriveFrom?: 'client' | 'materialized' | 'both';
-  /** Batch-load audience-bearing subject rows for the given ids; drop drafts and deleted rows here. */
+  /** Batch-load audience-bearing subject rows (with `description` when mentionable); drop drafts and deleted rows here. */
   loadRows?: (tx: DbOrTx, ids: string[]) => Promise<NotificationSubjectRow[]>;
-  /** Persist the server-derived mention set for one row. */
-  writeMentions?: (tx: DbOrTx, id: string, mentions: string[]) => Promise<void>;
   /** Recipients beyond mentions (thread participants, assignees, ...) with their notification type. */
   resolveRecipients?: (tx: DbOrTx, row: NotificationSubjectRow) => Promise<NotificationCandidate[]>;
   /** Grouping/deep-link context id for a row (e.g. the host thread); defaults to the row's own id. */

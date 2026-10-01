@@ -79,6 +79,18 @@ describe('sheeter store', () => {
     });
   });
 
+  it('keeps the defaults for options passed as undefined', () => {
+    useSheeter.getState().create(null, sheet('a', { modal: undefined }));
+
+    expect(useSheeter.getState().get('a')).toMatchObject({ modal: true, closeSheetOnRouteChange: true });
+  });
+
+  it('replace keeps the defaults for options passed as undefined when it opens a new sheet', () => {
+    useSheeter.getState().replace(null, sheet('a', { modal: undefined }));
+
+    expect(useSheeter.getState().get('a')).toMatchObject({ modal: true, open: true });
+  });
+
   it('replaces a sheet created with the same id and moves it last', () => {
     useSheeter.getState().create('first', sheet('a'));
     useSheeter.getState().create(null, sheet('b'));

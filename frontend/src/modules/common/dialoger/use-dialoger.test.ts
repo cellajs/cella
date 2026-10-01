@@ -41,6 +41,12 @@ describe('dialoger store', () => {
     expect(useDialoger.getState().get('a')).toMatchObject({ drawerOnMobile: false, headerClassName: 'custom' });
   });
 
+  it('keeps the defaults for options passed as undefined', () => {
+    useDialoger.getState().create(null, dialog('a', { drawerOnMobile: undefined, headerClassName: undefined }));
+
+    expect(useDialoger.getState().get('a')).toMatchObject({ drawerOnMobile: true, headerClassName: 'with-close-btn' });
+  });
+
   it('replaces a dialog opened with the same id and moves it last', () => {
     useDialoger.getState().create('first', dialog('a'));
     useDialoger.getState().create(null, dialog(2));

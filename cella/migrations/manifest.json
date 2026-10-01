@@ -1532,6 +1532,25 @@
     "pnpm check"
    ],
    "summary": "The BlockNote wrapper stops enforcing a title block: forcedTitle, forcedTitleExtension, the titleLevel menu filters, the block-0 drag-handle exclusion and the !important placeholder CSS are removed. Titled documents become a template: seed block 0 with emptyTitleDocument(level) and label it with the titlePlaceholder prop, which only an empty heading in block 0 shows. helpers/forced-title is renamed helpers/title-document; titleFromBlocks is replaced by titleFromDocument in shared/blocknote, which nameFromDocument uses too, so frontend and backend read the same title (block 0 inline text, no children or media file name). splitTitleBlocks keeps a non-text block 0 in the body, empty heading placeholders keep heading typography, and nameFromDocument clamps the derived name to 255 characters. Apps that passed forcedTitle swap it for titlePlaceholder and headingLevels without the title's level and above, keep required-title checks in their forms, switch titleFromBlocks imports to shared/blocknote, and drop any call-site code that re-adds a non-text block 0 to the split body."
+  },
+  {
+   "id": "20261001T0710-mentions-from-body",
+   "version": "next",
+   "title": "Mentions read from the body, one document derivation, comment emails",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm generate",
+    "pnpm test:core",
+    "pnpm check"
+   ],
+   "summary": "No column stores mentions: the notification fan-out reads them from the row's stored description on a create or a body change, keeping the read check and the already-notified dedupe, so a mention edit is one CDC activity. mentionableColumns is deprecated and empty, writeMentions and deriveFrom are removed, and pnpm generate drops every mentions column; apps remove mentions from their mocks, seeds and bench seeds (raak task, projectcampus comment and item). deriveDocument in shared/utils/derive-description-core derives a description's name, keywords, attachment ids, mentions and counts in one parse. With has.commentEmail on, comment and reply notifications mail users who opted in, one mail per subject with a mention winning. registerEqualityFilterKeys lets a new row skip filtered lists a declared equality filter rules it out of. Backend test runs queue on one advisory lock, the digest reads lastDigestAt as UTC, and findPendingMentionEmails is findPendingInstantEmails."
   }
  ]
 }

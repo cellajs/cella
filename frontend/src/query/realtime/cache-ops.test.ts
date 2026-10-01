@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 // Synthetic sub-org hierarchy as a real builder instance: 'task' is a product homed at the
 // `project` channel so home-list placement (deepest non-null ancestor) is exercised; base
-// cella only has org-homed attachments.
+// cella only has org-homed attachments. 'comment' is an org-homed product listed per `itemId`.
 vi.mock('shared', async (importOriginal) => {
   const actual = await importOriginal<typeof import('shared')>();
   const roles = actual.createRoleRegistry(['member'] as const);
@@ -14,6 +14,7 @@ vi.mock('shared', async (importOriginal) => {
     .organization({ roles: roles.all })
     .channel('project', { parent: 'organization', roles: roles.all })
     .product('task', { parent: 'project' })
+    .product('comment', { parent: 'organization' })
     .build();
   return {
     ...actual,
@@ -38,12 +39,13 @@ vi.mock('~/query/offline', () => ({
 }));
 
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
-const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
+const { registerEntityQueryKeys, registerEqualityFilterKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
-const { fetchRangeAndPatch, removeEntity } = await import('./cache-ops');
+const { fetchEntityAndUpdateList, fetchRangeAndPatch, removeEntity } = await import('./cache-ops');
 
-// The synthetic 'task' type exists only in this file's shared mock, hence the cast.
+// The synthetic 'task' and 'comment' types exist only in this file's shared mock, hence the casts.
 const TASK = 'task' as EntityType;
+const COMMENT = 'comment' as ProductEntityType;
 
 describe('realtime cache ops', () => {
   afterEach(() => {
@@ -236,6 +238,97 @@ describe('realtime cache ops', () => {
     const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '5', keys);
 
     expect(status).toBe('error');
+  });
+});
+
+describe('filtered list refetch for a new row', () => {
+  afterEach(() => {
+    queryClient.clear();
+    vi.restoreAllMocks();
+  });
+
+  const commentKeys = createEntityKeys<{ itemId?: string }>(COMMENT);
+  const newComment = { id: 'comment-2', organizationId: 'org-1', itemId: 'item-1' };
+  const listKey = (filters: Record<string, unknown>) => [...commentKeys.list.org('org-1'), filters];
+
+  // Comment lists are declared to hold only rows whose itemId equals the filter's.
+  function registerComments(items: { id: string; organizationId: string; itemId?: string }[] = [newComment]) {
+    registerEntityQueryKeys(COMMENT, commentKeys, async () => ({ items, total: items.length }));
+    registerEqualityFilterKeys(COMMENT, ['itemId']);
+    queryClient.setQueryDefaults(commentKeys.detail.base, { queryFn: async () => newComment });
+  }
+
+  function seedLists(filtersByName: Record<string, Record<string, unknown>>) {
+    for (const filters of Object.values(filtersByName)) {
+      queryClient.setQueryData(listKey(filters), { items: [], total: 0 });
+    }
+  }
+
+  const isInvalidated = (filters: Record<string, unknown>) =>
+    queryClient.getQueryState(listKey(filters))?.isInvalidated;
+
+  const lists = {
+    otherItem: { itemId: 'item-2' },
+    otherItemSorted: { itemId: 'item-2', sort: 'createdAt', order: 'desc', limit: 20 },
+    sameItem: { itemId: 'item-1' },
+    otherItemSearch: { itemId: 'item-2', q: 'hello' },
+    otherItemUndeclared: { itemId: 'item-2', authorId: 'user-1' },
+    sameItemSearch: { itemId: 'item-1', q: 'hello' },
+    sameItemUndeclared: { itemId: 'item-1', authorId: 'user-1' },
+    noItem: { sort: 'createdAt' },
+  };
+
+  it('refetches on a create notification only the lists whose declared filter the row matches', async () => {
+    registerComments();
+    seedLists(lists);
+
+    await fetchEntityAndUpdateList('comment-2', commentKeys, 'create', 'org-1', 'tenant-1', COMMENT);
+
+    expect(isInvalidated(lists.otherItem)).toBe(false);
+    expect(isInvalidated(lists.otherItemSorted)).toBe(false);
+    expect(isInvalidated(lists.sameItem)).toBe(true);
+    // Filters combine with AND: another item rules the row out whatever the search or other filters say
+    expect(isInvalidated(lists.otherItemSearch)).toBe(false);
+    expect(isInvalidated(lists.otherItemUndeclared)).toBe(false);
+    expect(isInvalidated(lists.sameItemSearch)).toBe(true);
+    expect(isInvalidated(lists.sameItemUndeclared)).toBe(true);
+    expect(isInvalidated(lists.noItem)).toBe(true);
+  });
+
+  it('refetches after a delta fetch only the lists that one of the new rows can belong to', async () => {
+    registerComments([newComment, { id: 'comment-3', organizationId: 'org-1', itemId: 'item-3' }]);
+    seedLists({ ...lists, thirdItem: { itemId: 'item-3' } });
+
+    await fetchRangeAndPatch(COMMENT, 'org-1', 'tenant-1', '9,10', commentKeys);
+
+    expect(isInvalidated(lists.otherItem)).toBe(false);
+    expect(isInvalidated(lists.sameItem)).toBe(true);
+    expect(isInvalidated({ itemId: 'item-3' })).toBe(true);
+    expect(isInvalidated(lists.otherItemSearch)).toBe(false);
+    expect(isInvalidated(lists.sameItemSearch)).toBe(true);
+  });
+
+  it('keeps the refetch when the row does not carry the declared field', async () => {
+    registerComments([{ id: 'comment-4', organizationId: 'org-1' }]);
+    seedLists({ otherItem: lists.otherItem });
+
+    await fetchRangeAndPatch(COMMENT, 'org-1', 'tenant-1', '11,11', commentKeys);
+
+    expect(isInvalidated(lists.otherItem)).toBe(true);
+  });
+
+  it('refetches every filtered list of an entity type without declared keys', async () => {
+    const keys = createEntityKeys<Record<string, never>>(TASK);
+    registerEntityQueryKeys(TASK, keys, async () => ({
+      items: [{ id: 'task-9', organizationId: 'org-1', projectId: 'project-1', itemId: 'item-1' }],
+      total: 1,
+    }));
+    const otherItemKey = [...keys.list.org('org-1'), { itemId: 'item-2' }];
+    queryClient.setQueryData(otherItemKey, { items: [], total: 0 });
+
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '12,12', keys);
+
+    expect(queryClient.getQueryState(otherItemKey)?.isInvalidated).toBe(true);
   });
 });
 

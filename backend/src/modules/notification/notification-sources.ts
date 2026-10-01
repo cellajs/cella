@@ -1,30 +1,23 @@
-import { and, eq, getColumns, inArray, isNull, type SQL } from 'drizzle-orm';
+import { and, getColumns, inArray, isNull, type SQL } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
-import type { ProductEntityType, TrackedEventType } from 'shared';
+import type { ProductEntityType } from 'shared';
 import { textFromDocument } from 'shared/blocknote';
 import type { DbOrTx } from '#/db/db';
-import type { mentionableColumns, productColumns } from '#/db/utils/product-columns';
+import type { productColumns } from '#/db/utils/product-columns';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
-import type { BackendModule, ModuleNotifications, NotificationSubjectRow } from '#/lib/module';
+import type { ModuleNotifications, NotificationSubjectRow } from '#/lib/module';
 import { onBackendModuleRegister } from '#/lib/module';
-import { registerMutationHandler } from '#/lib/mutation-bus';
 import { getEntityTable } from '#/tables';
 import { log } from '#/utils/logger';
-import { deriveMentions } from './operations/derive-mentions';
 
-/** A product table as `productColumns` and the opt-in `mentionableColumns` shape it. */
+/** A product table as `productColumns` shapes it. */
 type ProductTable = AnyPgTable &
-  Record<keyof Pick<ReturnType<typeof productColumns>, 'id' | 'name' | 'description' | 'deletedAt'>, PgColumn> &
-  Partial<Record<keyof typeof mentionableColumns, PgColumn>>;
+  Record<keyof Pick<ReturnType<typeof productColumns>, 'id' | 'name' | 'description' | 'deletedAt'>, PgColumn>;
 
-/** One registered source: the module's declaration plus the two facts settled at registration. */
+/** One registered source: the product it covers and the module's declaration. */
 export interface NotificationSource {
   entityType: ProductEntityType;
   declaration: ModuleNotifications;
-  /** The declaration's value, else whether the product table carries the `mentions` column. */
-  mentionable: boolean;
-  /** The declaration's value, else `both` when the module registers a Yjs materializer, else `client`. */
-  deriveFrom: NonNullable<ModuleNotifications['deriveFrom']>;
 }
 
 /**
@@ -40,28 +33,9 @@ onBackendModuleRegister((module) => {
     log.error('Module declares notifications without productEntity; declaration ignored', { module: module.name });
     return;
   }
-  const source = registeredSource(module, module.productEntity);
-  sources.set(module.productEntity, source);
-
-  // Mentions derive in the writing transaction, so the stored `mentions` column is server-owned.
-  if (source.mentionable) {
-    for (const action of ['created', 'updated'] as const) {
-      registerMutationHandler(`${module.productEntity}.${action}` as TrackedEventType, (ctx, payload) =>
-        deriveMentions(ctx, payload, source),
-      );
-    }
-  }
+  const declaration = module.notifications === true ? {} : module.notifications;
+  sources.set(module.productEntity, { entityType: module.productEntity, declaration });
 });
-
-function registeredSource(module: BackendModule, entityType: ProductEntityType): NotificationSource {
-  const declaration = module.notifications === true ? {} : (module.notifications ?? {});
-  return {
-    entityType,
-    declaration,
-    mentionable: declaration.mentionable ?? productTable(entityType).mentions !== undefined,
-    deriveFrom: declaration.deriveFrom ?? (module.yjsMaterializer ? 'both' : 'client'),
-  };
-}
 
 export const getNotificationSource = (entityType: string): NotificationSource | undefined => sources.get(entityType);
 
@@ -69,26 +43,20 @@ export const getNotificationSourceTypes = (): string[] => [...sources.keys()];
 
 // Subject reads: the declaration's function when the app gave one, else the product table.
 
-/** Audience-bearing rows for the ids: live (non-deleted, published) rows without the body and search text. */
-export async function loadSubjectRows(source: NotificationSource, tx: DbOrTx, ids: string[]) {
+/**
+ * Audience-bearing rows for the ids: live (non-deleted, published) rows without the search text,
+ * and without the body unless `body` asks for it (the fan-out reads mentions from it).
+ */
+export async function loadSubjectRows(source: NotificationSource, tx: DbOrTx, ids: string[], { body = false } = {}) {
   if (source.declaration.loadRows) return source.declaration.loadRows(tx, ids);
   const table = productTable(source.entityType);
-  const { description: _description, keywords: _keywords, ...columns } = getColumns(table);
-  const rows = await tx.select(columns).from(table).where(liveRows(table, ids));
+  const { description, keywords: _keywords, ...columns } = getColumns(table);
+  const rows = await tx
+    .select(body ? { ...columns, description } : columns)
+    .from(table)
+    .where(liveRows(table, ids));
   // A product row satisfies NotificationSubjectRow; the generic table select is untyped.
   return rows as NotificationSubjectRow[];
-}
-
-/** Persists the server-derived mention set; false when neither the declaration nor the table can. */
-export async function writeSubjectMentions(source: NotificationSource, tx: DbOrTx, id: string, mentions: string[]) {
-  if (source.declaration.writeMentions) {
-    await source.declaration.writeMentions(tx, id, mentions);
-    return true;
-  }
-  const table = productTable(source.entityType);
-  if (!table.mentions) return false;
-  await tx.update(table).set({ mentions }).where(eq(table.id, id));
-  return true;
 }
 
 /** Title and plain-text body for the instant email; null for a row that is gone. */

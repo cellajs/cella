@@ -1,6 +1,6 @@
 import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
-import { blurAndStashTrigger, removeAndNotify } from '~/modules/common/overlay-store-helpers';
+import { blurAndStashTrigger, removeAndNotify, withDefaults } from '~/modules/common/overlay-store-helpers';
 
 /** Element focus returns to on close; read when the sheet closes, so a ref may resolve to a later DOM node. */
 export type TriggerRef = RefObject<HTMLElement | null>;
@@ -57,15 +57,10 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
   create: (content, data) => {
     blurAndStashTrigger();
 
-    const defaults = { open: true, modal: true };
-    // An explicit undefined keeps the default, which the provider and removeOnRouteChange both read as true.
-    const closeSheetOnRouteChange = data.closeSheetOnRouteChange ?? true;
+    const defaults = { open: true, modal: true, closeSheetOnRouteChange: true };
 
     set((state) => ({
-      sheets: [
-        ...state.sheets.filter((s) => s.id !== data.id),
-        { ...defaults, ...data, closeSheetOnRouteChange, content },
-      ],
+      sheets: [...state.sheets.filter((s) => s.id !== data.id), { ...withDefaults(defaults, data), content }],
     }));
     return data.id;
   },
@@ -74,6 +69,7 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
     const existing = get().sheets.find((s) => s.id === data.id);
     if (!existing) return get().create(content, data);
 
+    // Merges into the open sheet: an option passed as undefined clears its value, as the nav's per-call skipAnimation expects.
     set((state) => ({
       sheets: state.sheets.map((s) => (s.id === data.id ? { ...s, ...data, content, open: true } : s)),
     }));

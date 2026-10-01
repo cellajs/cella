@@ -35,7 +35,7 @@ Pick the kind ([Architecture](./ARCHITECTURE.md#entity-hierarchy-model)): a **ch
 
 ### Frontend
 
-- `frontend/src/modules/<name>/query.ts`, copy [attachment/query.ts](../frontend/src/modules/attachment/query.ts): `createEntityKeys<Filters>('<name>')` and `registerEntityQueryKeys('<name>', keys, deltaFetch)` (missing registration throws on SSE dispatch). Query options (canonical, infinite, detail) and mutations via `createOptimisticEntity`. Add `addMutationRegistrar(...)` so paused offline mutations resume after reload.
+- `frontend/src/modules/<name>/query.ts`, copy [attachment/query.ts](../frontend/src/modules/attachment/query.ts): `createEntityKeys<Filters>('<name>')` and `registerEntityQueryKeys('<name>', keys, deltaFetch)` (missing registration throws on SSE dispatch). Lists filtered on a row column can add `registerEqualityFilterKeys('<name>', ['<column>'])`, so a new row refetches only the lists it can belong to. Query options (canonical, infinite, detail) and mutations via `createOptimisticEntity`. Add `addMutationRegistrar(...)` so paused offline mutations resume after reload.
 - Add `types.ts`, `search-params-schemas.ts`, and the UI components. Then `pnpm check` regenerates SDK types, client functions, and Zod schemas.
 - [list-queries-config.tsx](../frontend/src/list-queries-config.tsx): import the canonical options (the eager import triggers self-registration) and push them in `buildEntitySyncQueries` under the parent channel. Add a route file under `frontend/src/routes/`.
 

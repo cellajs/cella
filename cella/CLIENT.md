@@ -43,7 +43,7 @@ Five state owners. This document unpacks the query client. `localUserDb` is the 
 
 - **Channel entity lists and details** (`[organization, 'list', ...]`): plain queries, refetched on membership or channel notifications.
 - **Canonical product lists** (`[attachment, 'list', org, home]`): one flat, complete list per home channel (the deepest channel a row belongs to), patched by live updates. Components narrow it with `select()`.
-- **Filtered product lists**: server-side search and sort results under their own keys. They are invalidated, not patched.
+- **Filtered product lists**: server-side search and sort results under their own keys. They are invalidated, not patched. A new row skips the lists it cannot belong to when its entity declares equality filter keys (`registerEqualityFilterKeys('comment', ['itemId'])`) and the row's own value differs.
 - **Session queries**: `me`, memberships, invites, unseen counts.
 
 Each entity module registers its query keys and delta fetch once in its `query.ts`, so generic cache and realtime code never import entity modules. Staleness follows the stream ([Freshness](./SYNC_ENGINE.md#freshness)). Sync deliveries are plain cache writes: upserts or invalidations.

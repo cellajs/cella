@@ -1,8 +1,16 @@
 import { useEffect } from 'react';
+import { asRecord } from 'shared/utils/as-record';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
 type Closable = { onClose?: (isCleanup?: boolean) => void };
+
+/** Spreads `data` over `defaults`, skipping undefined values: an option passed as undefined keeps its default. */
+export function withDefaults<D extends object, T extends object>(defaults: D, data: T): D & T {
+  const merged = { ...asRecord(defaults) };
+  for (const [key, value] of Object.entries(data)) if (value !== undefined) merged[key] = value;
+  return merged as D & T;
+}
 
 /** Blurs a focused button or link and keeps it as the focus fallback: a modal sets aria-hidden on its ancestors. */
 export function blurAndStashTrigger() {

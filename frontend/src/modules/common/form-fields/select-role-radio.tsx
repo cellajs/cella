@@ -18,7 +18,8 @@ export function SelectRoleRadio({ onValueChange, value, entityType, className }:
 
   return (
     <RadioGroup
-      value={value}
+      // Null selects no role and keeps the group controlled: an undefined value would make it uncontrolled until a role is picked.
+      value={value ?? null}
       onValueChange={(v) => onValueChange(v as EntityRole)}
       className={cn('inline-flex items-center gap-4', className)}
     >

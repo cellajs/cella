@@ -5,8 +5,8 @@ import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { accessForUserIds, type UserAccess } from './access-for-users';
 
 /**
- * Access objects of the given users who may read the row, keyed by user id. Mention derivation
- * and the fan-out both need this decision, and the fan-out also reads the memberships for mute.
+ * Access objects of the given users who may read the row, keyed by user id. The fan-out needs this
+ * decision for every recipient, and reads the memberships for mute.
  * Fails closed: an unknown user drops the whole set, as a doctored id must never notify anyone.
  */
 export async function readableAccess(

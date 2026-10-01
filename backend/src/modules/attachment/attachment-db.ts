@@ -3,7 +3,7 @@ import { tenantSelectPolicy, writeThroughPolicies } from '#/db/rls-helpers';
 import { channelRelationColumns, channelRelationIndexes } from '#/db/utils/channel-relation-columns';
 import { maxLength } from '#/db/utils/constraints';
 import { organizationForeignKey } from '#/db/utils/organization-foreign-key';
-import { mentionableColumns, productColumns } from '#/db/utils/product-columns';
+import { productColumns } from '#/db/utils/product-columns';
 import type { AttachmentKeys } from '#/modules/attachment/attachment-schema';
 
 /** Each attachment belongs to exactly one tenant and organization: the RLS isolation boundary. */
@@ -27,7 +27,6 @@ export const attachmentsTable = snakeCase.table(
       .$type<AttachmentKeys>()
       .notNull()
       .default({} as AttachmentKeys),
-    ...mentionableColumns,
     ...channelRelationColumns('attachment'),
   },
   (table) => [

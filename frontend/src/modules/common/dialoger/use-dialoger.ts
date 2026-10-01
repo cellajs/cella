@@ -1,6 +1,6 @@
 import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
-import { blurAndStashTrigger, removeAndNotify } from '~/modules/common/overlay-store-helpers';
+import { blurAndStashTrigger, removeAndNotify, withDefaults } from '~/modules/common/overlay-store-helpers';
 
 type DialogContainerOptions = {
   ref: RefObject<HTMLDivElement | null>;
@@ -54,7 +54,7 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
     const defaults = { drawerOnMobile: true, headerClassName: 'with-close-btn', open: true };
 
     set((state) => ({
-      dialogs: [...state.dialogs.filter((d) => d.id !== data.id), { ...defaults, ...data, content }],
+      dialogs: [...state.dialogs.filter((d) => d.id !== data.id), { ...withDefaults(defaults, data), content }],
     }));
 
     return data.id;

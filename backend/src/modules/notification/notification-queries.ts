@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
@@ -13,7 +13,7 @@ import {
   notificationPreferencesTable,
   notificationsTable,
 } from './notification-db';
-import type { NotificationType } from './notification-types';
+import { instantEmailTypes, type NotificationType } from './notification-types';
 
 /**
  * The recipient still belongs to the notification's organization, or is a system admin. A member who left keeps no
@@ -210,14 +210,24 @@ export async function insertNotificationsIgnoringDuplicates(rows: NotificationIn
 // ── Instant email ────────────────────────────────────────────────────────────
 
 /**
- * Unmailed mention notifications for recipients who still want the email, oldest first so a
- * backlog drains in order. The preferences row is created on first read of the settings, so a
- * missing row means the default (on), hence the left join.
+ * Unmailed rows the instant pass mails, oldest first so a backlog drains in order. A mention goes
+ * to recipients who keep mention email on; the preferences row is created on first read of the
+ * settings, so a missing row means the default (on), hence the left join. A comment or reply, when
+ * the app offers them (`instantEmailTypes`), goes only to recipients who turned comment email on.
  */
-export async function findPendingMentionEmails(organizationId: string, limit: number) {
+export async function findPendingInstantEmails(organizationId: string, limit: number) {
+  const wantsMail = or(
+    and(
+      eq(notificationsTable.type, 'mention'),
+      or(isNull(notificationPreferencesTable.userId), eq(notificationPreferencesTable.mentionEmail, true)),
+    ),
+    and(ne(notificationsTable.type, 'mention'), eq(notificationPreferencesTable.commentEmail, true)),
+  );
+
   return baseDb
     .select({
       id: notificationsTable.id,
+      type: notificationsTable.type,
       userId: notificationsTable.userId,
       subjectId: notificationsTable.subjectId,
       entityType: notificationsTable.entityType,
@@ -233,10 +243,10 @@ export async function findPendingMentionEmails(organizationId: string, limit: nu
     .where(
       and(
         eq(notificationsTable.organizationId, organizationId),
-        eq(notificationsTable.type, 'mention'),
+        inArray(notificationsTable.type, instantEmailTypes()),
+        wantsMail,
         isNull(notificationsTable.emailedAt),
         isNull(notificationsTable.readAt),
-        or(isNull(notificationPreferencesTable.userId), eq(notificationPreferencesTable.mentionEmail, true)),
         recipientStillBelongs,
       ),
     )

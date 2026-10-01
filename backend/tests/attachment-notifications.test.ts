@@ -3,20 +3,23 @@ import { type GetNotificationsResponse, getNotifications, updateAttachment } fro
 import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { generateServerHLC } from '#/core/stx';
 import { getSeedDb } from '#/db/db';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { notificationsTable } from '#/modules/notification/notification-db';
+import { commentEmail } from '#/modules/notification/emails/comment-email';
+import { mentionEmail } from '#/modules/notification/emails/mention-email';
+import { notificationPreferencesTable, notificationsTable } from '#/modules/notification/notification-db';
+import { getNotificationSource } from '#/modules/notification/notification-sources';
 import { fanOutNotifications } from '#/modules/notification/operations/fan-out';
 import { sendPendingInstantEmails } from '#/modules/notification/operations/send-instant-emails';
 import { sendNotificationPush } from '#/modules/push/push-sender';
 import { emailsTable } from '#/modules/user/emails-db';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
-import { adminRole, defaultHeaders, memberRole } from './fixtures';
+import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createOrganizationAdminUser, createTestUser, mailsTo } from './helpers';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './security/helpers';
@@ -48,6 +51,9 @@ const paragraphWithMentions = (ids: string[]) => ({
   children: [],
 });
 
+/** A stored body whose one paragraph mentions the given users. */
+const mentionsOf = (ids: string[]) => JSON.stringify([paragraphWithMentions(ids)]);
+
 const paragraphWithText = (text: string) => ({
   id: generateId(),
   type: 'paragraph',
@@ -68,8 +74,8 @@ const nullAncestorScopes = Object.fromEntries(
 );
 
 // Covers the attachment notification source, the template consumer of the notifications contract:
-// `mentions` is derived server-side from the description on client writes and on Yjs
-// materialization, keeps only users who may read the row, fans out to the inbox and mails.
+// the fan-out reads mentions from the stored description of a created row or a changed body,
+// keeps only users who may read the row, writes the inbox and mails.
 describe('Attachment mentions (template notification source)', async () => {
   const call = await createAppClient();
   let tenant: TestTenant;
@@ -78,20 +84,12 @@ describe('Attachment mentions (template notification source)', async () => {
   let stranger: { id: string };
   let plan: TestEntityHierarchyPlan;
 
-  const putDescription = async (description: string) =>
+  const putDescription = async (description: string, id = attachmentId) =>
     call(updateAttachment, {
-      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id: attachmentId },
+      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id },
       body: { ops: { description }, stx: updateStx() },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
-
-  const storedMentions = async () => {
-    const [row] = await db
-      .select({ mentions: attachmentsTable.mentions })
-      .from(attachmentsTable)
-      .where(eq(attachmentsTable.id, attachmentId));
-    return row.mentions;
-  };
 
   const storedKeywords = async () => {
     const [row] = await db
@@ -107,7 +105,7 @@ describe('Attachment mentions (template notification source)', async () => {
       .from(notificationsTable)
       .where(and(eq(notificationsTable.userId, userId), eq(notificationsTable.subjectId, attachmentId)));
 
-  const updatedEvent = (actorId: string): ActivityEvent =>
+  const updatedEvent = (actorId: string, overrides: Partial<ActivityEvent> = {}): ActivityEvent =>
     // Test mock: the CDC worker fills the remaining columns; the fan-out reads only these.
     ({
       id: `act:${generateId()}`,
@@ -129,6 +127,7 @@ describe('Attachment mentions (template notification source)', async () => {
       trace: null,
       stx: null,
       changedFields: ['description'],
+      ...overrides,
     }) as unknown as ActivityEvent;
 
   beforeAll(async () => {
@@ -167,18 +166,6 @@ describe('Attachment mentions (template notification source)', async () => {
     await clearSecurityTestData();
   });
 
-  it('stores readable mentioned users and drops an account without read access', async () => {
-    const result = await putDescription(JSON.stringify([paragraphWithMentions([member.id, stranger.id])]));
-    expect(result.response.status).toBe(200);
-    expect(await storedMentions()).toEqual([member.id]);
-  });
-
-  it('clears mentions once the description no longer carries them', async () => {
-    const result = await putDescription(JSON.stringify([paragraphWithMentions([])]));
-    expect(result.response.status).toBe(200);
-    expect(await storedMentions()).toEqual([]);
-  });
-
   it('re-derives the keywords search column from the description on both write paths', async () => {
     const result = await putDescription(
       JSON.stringify([paragraphWithText('quarterly budget'), paragraphWithMentions([member.id])]),
@@ -199,20 +186,17 @@ describe('Attachment mentions (template notification source)', async () => {
     expect(keywords).not.toContain('quarterly budget');
   });
 
-  it('derives from Yjs materialization too, the write path of the collaborative editor', async () => {
+  it('fans out a mention a Yjs materialization wrote to the inbox and mails it instantly, never to the actor', async () => {
     await materializeDescriptionOp({
       entityType: 'attachment',
       entityId: attachmentId,
       tenantId: tenant.tenantId,
       organizationId: tenant.organization.id,
-      description: JSON.stringify([paragraphWithMentions([member.id])]),
+      description: mentionsOf([member.id]),
       editors: [tenant.user.id],
     });
-    expect(await storedMentions()).toEqual([member.id]);
-  });
 
-  it('fans out a mention to the inbox and mails it instantly, never to the actor', async () => {
-    // The fan-out reports whether it wrote a mention; only then does the listener run the instant email pass.
+    // The fan-out reports whether it wrote a row the instant pass mails; only then does the listener run the pass.
     expect(await fanOutNotifications(updatedEvent(member.id))).toBe(false);
     expect(await notificationsFor(member.id)).toEqual([]);
 
@@ -222,7 +206,7 @@ describe('Attachment mentions (template notification source)', async () => {
     const [, payload] = vi.mocked(sendNotificationPush).mock.calls.at(-1) ?? [];
     expect(linkedContextId(payload?.url)).toBe(attachmentId);
 
-    // A later edit that adds no mention writes nothing.
+    // A later edit of the same body tells nobody twice.
     expect(await fanOutNotifications(updatedEvent(tenant.user.id))).toBe(false);
 
     // Mention email is on by default; the member's address is verified.
@@ -312,5 +296,250 @@ describe('Attachment mentions (template notification source)', async () => {
       .from(notificationsTable)
       .where(eq(notificationsTable.userId, unverified.id));
     expect(backlog.filter(({ emailedAt }) => emailedAt === null)).toHaveLength(0);
+  });
+
+  // Each test edits a subject of its own, so one test's inbox rows never dedupe another's.
+  describe('mentions read from the stored body', () => {
+    /** A second readable member, mentioned next to `member`. */
+    let other: { id: string };
+    const subjectIds: string[] = [];
+
+    const newSubject = async (description: string | null = null) => {
+      const id = generateId();
+      subjectIds.push(id);
+      const row = buildInsertableProduct(
+        'attachment',
+        {
+          id,
+          tenantId: tenant.tenantId,
+          ...plan.channelIdColumns,
+          description,
+          createdBy: tenant.user.id,
+          updatedBy: null,
+          deletedBy: null,
+        },
+        id,
+      );
+      await insertAttachmentRow(row);
+      return id;
+    };
+
+    const inboxOf = (userId: string, subjectId: string) =>
+      db
+        .select({ type: notificationsTable.type })
+        .from(notificationsTable)
+        .where(and(eq(notificationsTable.userId, userId), eq(notificationsTable.subjectId, subjectId)));
+
+    const createdEvent = (subjectId: string) =>
+      updatedEvent(tenant.user.id, { subjectId, type: 'attachment.created', action: 'create', changedFields: null });
+
+    beforeAll(async () => {
+      other = await createOrgUser(
+        call,
+        tenant.tenantId,
+        tenant.organization.id,
+        'attachment-mentions-other',
+        adminRole,
+      );
+    });
+
+    afterAll(async () => {
+      if (!subjectIds.length) return;
+      await db.delete(notificationsTable).where(inArray(notificationsTable.subjectId, subjectIds));
+      await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, subjectIds));
+    });
+
+    it('adds no mention on an update that leaves the description alone', async () => {
+      const subjectId = await newSubject();
+      expect((await putDescription(mentionsOf([member.id]), subjectId)).response.status).toBe(200);
+
+      const renamed = updatedEvent(tenant.user.id, { subjectId, changedFields: ['name', 'updatedAt'] });
+      expect(await fanOutNotifications(renamed)).toBe(false);
+      expect(await inboxOf(member.id, subjectId)).toEqual([]);
+    });
+
+    it('mentions each user a description change adds, once', async () => {
+      // Stored without the update op: the fan-out reads whatever body the row holds.
+      const subjectId = await newSubject(mentionsOf([member.id]));
+      expect(await fanOutNotifications(createdEvent(subjectId))).toBe(true);
+      expect(await inboxOf(member.id, subjectId)).toEqual([{ type: 'mention' }]);
+
+      expect((await putDescription(mentionsOf([member.id, other.id]), subjectId)).response.status).toBe(200);
+      expect(await fanOutNotifications(updatedEvent(tenant.user.id, { subjectId }))).toBe(true);
+      expect(await fanOutNotifications(updatedEvent(tenant.user.id, { subjectId }))).toBe(false);
+      expect(await inboxOf(member.id, subjectId)).toEqual([{ type: 'mention' }]);
+      expect(await inboxOf(other.id, subjectId)).toEqual([{ type: 'mention' }]);
+    });
+
+    it('notifies nobody about a mention of an account without read access', async () => {
+      const subjectId = await newSubject();
+      expect((await putDescription(mentionsOf([stranger.id]), subjectId)).response.status).toBe(200);
+
+      expect(await fanOutNotifications(updatedEvent(tenant.user.id, { subjectId }))).toBe(false);
+      expect(await inboxOf(stranger.id, subjectId)).toEqual([]);
+    });
+
+    it('sends no mention from a source declared mentionable: false', async () => {
+      const source = getNotificationSource('attachment');
+      if (!source) throw new Error('attachment notification source not registered');
+      source.declaration.mentionable = false;
+      onTestFinished(() => {
+        delete source.declaration.mentionable;
+      });
+
+      const subjectId = await newSubject(mentionsOf([member.id]));
+      expect(await fanOutNotifications(createdEvent(subjectId))).toBe(false);
+      expect(await inboxOf(member.id, subjectId)).toEqual([]);
+    });
+  });
+
+  // The template emits no comment or reply rows (an app's `resolveRecipients` does), so these tests write the rows
+  // directly, or give the attachment source a recipient resolver for one test.
+  describe('comment emails', () => {
+    /** A second live subject, so the reply mail is not folded into the comment mail on `attachmentId`. */
+    const replySubjectId = generateId();
+
+    const rowOf = (type: 'mention' | 'comment' | 'reply', subjectId = attachmentId) => ({
+      userId: member.id,
+      actorId: tenant.user.id,
+      type,
+      entityType: 'attachment' as const,
+      subjectId,
+      contextId: subjectId,
+      channelId: tenant.organization.id,
+      channelType: 'organization' as const,
+      organizationId: tenant.organization.id,
+      tenantId: tenant.tenantId,
+      activityId: `act:${generateId()}`,
+    });
+
+    /** Rows for this test only: a row the pass leaves pending must not reach the next test's pass. */
+    const insertRows = async (...rows: ReturnType<typeof rowOf>[]) => {
+      const inserted = await db.insert(notificationsTable).values(rows).returning({ id: notificationsTable.id });
+      const ids = inserted.map(({ id }) => id);
+      onTestFinished(async () => {
+        await db.delete(notificationsTable).where(inArray(notificationsTable.id, ids));
+      });
+      return ids;
+    };
+
+    /** The given rows the instant pass has not taken; the digest still covers these. */
+    const unemailed = async (ids: string[]) =>
+      (
+        await db
+          .select({ id: notificationsTable.id, emailedAt: notificationsTable.emailedAt })
+          .from(notificationsTable)
+          .where(inArray(notificationsTable.id, ids))
+      ).filter(({ emailedAt }) => emailedAt === null);
+
+    const setCommentEmail = (commentEmail: boolean) =>
+      db
+        .insert(notificationPreferencesTable)
+        .values({ userId: member.id, commentEmail })
+        .onConflictDoUpdate({ target: notificationPreferencesTable.userId, set: { commentEmail } });
+
+    const offerCommentEmail = () => onTestFinished(overrideConfig(appConfig.has, { commentEmail: true }));
+
+    beforeAll(async () => {
+      const row = buildInsertableProduct(
+        'attachment',
+        {
+          id: replySubjectId,
+          tenantId: tenant.tenantId,
+          ...plan.channelIdColumns,
+          createdBy: tenant.user.id,
+          updatedBy: null,
+          deletedBy: null,
+        },
+        replySubjectId,
+      );
+      await insertAttachmentRow(row);
+    });
+
+    afterAll(async () => {
+      await db.delete(notificationsTable).where(eq(notificationsTable.subjectId, replySubjectId));
+      await db.delete(attachmentsTable).where(eq(attachmentsTable.id, replySubjectId));
+      await db.delete(notificationPreferencesTable).where(eq(notificationPreferencesTable.userId, member.id));
+    });
+
+    it('mails comment and reply rows when the app offers comment email and the recipient turned it on', async () => {
+      offerCommentEmail();
+      await setCommentEmail(true);
+      const ids = await insertRows(rowOf('comment'), rowOf('reply', replySubjectId));
+
+      await sendPendingInstantEmails(tenant.organization.id);
+
+      const mails = mailsTo(member.email);
+      expect(mails.map(({ template, statics }) => [template, statics.reply])).toEqual(
+        expect.arrayContaining([
+          [commentEmail, false],
+          [commentEmail, true],
+        ]),
+      );
+      expect(mails).toHaveLength(2);
+      for (const { recipient } of mails) expect(String(recipient.unsubscribeLink)).toContain('category=comment');
+      expect(await unemailed(ids)).toEqual([]);
+    });
+
+    it('leaves comment rows to the digest when the recipient keeps comment email off', async () => {
+      offerCommentEmail();
+      await setCommentEmail(false);
+      const ids = await insertRows(rowOf('comment'));
+
+      await sendPendingInstantEmails(tenant.organization.id);
+
+      expect(mailsTo(member.email)).toEqual([]);
+      expect(await unemailed(ids)).toHaveLength(1);
+    });
+
+    it('mails no comment row while the app does not offer comment email', async () => {
+      expect(appConfig.has.commentEmail).toBe(false);
+      await setCommentEmail(true);
+      const ids = await insertRows(rowOf('comment'));
+
+      await sendPendingInstantEmails(tenant.organization.id);
+
+      expect(mailsTo(member.email)).toEqual([]);
+      expect(await unemailed(ids)).toHaveLength(1);
+    });
+
+    it('mails a mention and a comment on the same subject once, as the mention', async () => {
+      offerCommentEmail();
+      await setCommentEmail(true);
+      const ids = await insertRows(rowOf('comment'), rowOf('mention'));
+
+      await sendPendingInstantEmails(tenant.organization.id);
+
+      expect(mailsTo(member.email).map(({ template }) => template)).toEqual([mentionEmail]);
+      // The mention mail settles the comment too, so the digest does not repeat it.
+      expect(await unemailed(ids)).toEqual([]);
+    });
+
+    it('reports a fan-out that wrote a comment row as mailable only while the app offers comment email', async () => {
+      const source = getNotificationSource('attachment');
+      if (!source) throw new Error('attachment notification source not registered');
+      source.declaration.resolveRecipients = async () => [{ userId: member.id, type: 'comment' }];
+      onTestFinished(() => {
+        delete source.declaration.resolveRecipients;
+      });
+      // A create event: an update skips recipients already notified about the subject.
+      const createdEvent = () =>
+        ({
+          ...updatedEvent(tenant.user.id),
+          id: `act:${generateId()}`,
+          type: 'attachment.created',
+          action: 'create',
+          subjectId: replySubjectId,
+        }) as ActivityEvent;
+
+      expect(await fanOutNotifications(createdEvent())).toBe(false);
+      offerCommentEmail();
+      expect(await fanOutNotifications(createdEvent())).toBe(true);
+      const written = await db
+        .select({ type: notificationsTable.type })
+        .from(notificationsTable)
+        .where(eq(notificationsTable.subjectId, replySubjectId));
+      expect(written).toEqual([{ type: 'comment' }, { type: 'comment' }]);
+    });
   });
 });
