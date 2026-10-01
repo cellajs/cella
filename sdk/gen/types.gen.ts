@@ -434,6 +434,9 @@ export type Tenant = {
   } | null;
 };
 
+/**
+ * RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.
+ */
 export type ProtectedResourceMetadata = {
   resource: string;
   authorization_servers: Array<string>;

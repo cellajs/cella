@@ -1902,7 +1902,8 @@
             "type": "string"
           }
         },
-        "required": ["resource", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"]
+        "required": ["resource", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"],
+        "description": "RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts."
       },
       "Organization": {
         "type": "object",

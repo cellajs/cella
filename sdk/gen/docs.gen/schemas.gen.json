@@ -2099,7 +2099,8 @@
       }
     },
     "schemaTag": "data",
-    "tagsByKind": {}
+    "tagsByKind": {},
+    "description": "RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts."
   },
   {
     "name": "StxBase",

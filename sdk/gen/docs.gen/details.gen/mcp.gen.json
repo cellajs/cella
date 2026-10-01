@@ -10,6 +10,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.",
           "properties": {
             "resource": { "type": "string", "required": true },
             "authorization_servers": { "type": "array", "required": true, "itemType": "string" },

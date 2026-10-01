@@ -12,7 +12,9 @@ export const protectedResourceSchema = z
     bearer_methods_supported: z.array(z.string()),
     resource_documentation: z.string(),
   })
-  .openapi('ProtectedResourceMetadata');
+  .openapi('ProtectedResourceMetadata', {
+    description: 'RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.',
+  });
 
 const oauthServerRoutes = createXRoutes(['oauth-server', 'cella'], {
   getApiProtectedResourceMetadata: xRoute({

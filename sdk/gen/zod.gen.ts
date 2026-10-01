@@ -368,6 +368,9 @@ export const zTenant = z.object({
     .nullable(),
 });
 
+/**
+ * RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.
+ */
 export const zProtectedResourceMetadata = z.object({
   resource: z.string(),
   authorization_servers: z.array(z.string()),
