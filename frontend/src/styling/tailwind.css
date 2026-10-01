@@ -1,7 +1,7 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 @import "./gradients.css" layer(base); /* Custom gradients that are not easy to build using tailwind */
 
-@plugin "tailwindcss-animate";
 /* Breakpoints, the container cap and typography: the parts that need JS. */
 @plugin "./tailwind-plugin.ts";
 
@@ -23,7 +23,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
 
-  /* Base UI publishes the panel heights as --accordion-panel-height and --collapsible-panel-height. */
+  /* Base UI publishes the panel heights as --accordion-panel-height and --collapsible-panel-height. These keyframes
+     replace tw-animate-css's same-name ones, which read the Radix variables. */
   --animate-accordion-down: accordion-down 0.2s ease-out;
   --animate-accordion-up: accordion-up 0.2s ease-out;
   --animate-collapsible-down: collapsible-down 0.2s ease-out;
