@@ -20,6 +20,8 @@ pnpm exec tsx cella/migrations/20261001T0909-line-width-150/collapse-objects.ts 
 ```
 
 Roots default to `files.includes` in `biome.jsonc`, so the app's own Biome roots are covered; pass roots to narrow.
+Files identical to the upstream commit in `cella/cella.manifest.json` are skipped: they arrived formatted, and
+upstream keeps some objects expanded on purpose (#1231). The run prints how many it skipped.
 
 ## Manual steps
 
