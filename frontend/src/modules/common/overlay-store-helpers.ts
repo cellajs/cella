@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { asRecord } from 'shared/utils/as-record';
+import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 
@@ -28,6 +29,39 @@ export function removeAndNotify<T extends Closable>(commit: (remaining: T[]) => 
   if (!toRemove.length) return;
   commit(items.filter((item) => !toRemove.includes(item)));
   for (const item of toRemove) item.onClose?.(opts?.isCleanup);
+}
+
+/**
+ * Lets a user-dismissed overlay play its exit animation: `close` runs `hide` (set `open: false`) and the entry is
+ * removed when Base UI reports the overlay closed. Pass `onOpenChangeComplete` to the Base UI root. Closes made
+ * through the store (`update`, `remove`, route changes) behave as before.
+ */
+export function useRemoveAfterExit(hide: () => void, remove: () => void) {
+  const pendingRemoval = useRef(false);
+  const removeRef = useLatestRef(remove);
+
+  // Unmounting mid-exit (e.g. a breakpoint switch remounts the overlay) must not strand the closed entry.
+  useEffect(
+    () => () => {
+      if (pendingRemoval.current) removeRef.current();
+    },
+    [],
+  );
+
+  const close = () => {
+    pendingRemoval.current = true;
+    hide();
+  };
+
+  const onOpenChangeComplete = (isOpen: boolean) => {
+    if (isOpen) pendingRemoval.current = false;
+    else if (pendingRemoval.current) {
+      pendingRemoval.current = false;
+      remove();
+    }
+  };
+
+  return { close, onOpenChangeComplete };
 }
 
 /** Locks the UI for `source` while an overlay of that kind is open. */

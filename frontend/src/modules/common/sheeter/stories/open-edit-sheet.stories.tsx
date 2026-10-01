@@ -97,6 +97,21 @@ export const User: Story = {
   },
 };
 
+/** A dismissed sheet stays mounted while it slides out; its entry is removed once the exit animation ends. */
+export const DismissAnimatesOut: Story = {
+  name: 'Dismiss animates out',
+  args: { open: (triggerRef) => openUpdateUserSheet(user, triggerRef) },
+  play: async ({ canvasElement }) => {
+    await userEvent.click(within(canvasElement).getByRole('button', { name: 'Edit' }));
+    const sheet = await within(document.body).findByRole('dialog');
+
+    await userEvent.keyboard('{Escape}');
+    await expect(sheet.isConnected).toBe(true);
+    await expect(sheet).toHaveAttribute('data-closed');
+    await waitFor(() => expect(sheet.isConnected).toBe(false));
+  },
+};
+
 export const OrganizationSheet: Story = {
   name: 'Organization',
   args: { open: (triggerRef) => openUpdateOrganizationSheet(organization, triggerRef) },

@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
@@ -32,13 +33,18 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
   const isMobile = useBreakpointBelow('sm', false);
   const containerElement = container?.ref?.current ?? null;
 
-  const closeSheet = () => {
-    useSheeter.getState().remove(sheet.id);
+  // The sheet slides out before its entry is removed; onClose still runs as the close starts.
+  const { close: closeSheet, onOpenChangeComplete } = useRemoveAfterExit(
+    () => {
+      useSheeter.getState().update(sheet.id, { open: false, onClose: undefined });
+      sheet.onClose?.();
 
-    // Closing the sheet closes the dialogs it opened
-    const dialogs = useDialoger.getState().dialogs.filter((d) => d.open);
-    for (const dialog of dialogs) useDialoger.getState().remove(dialog.id);
-  };
+      // Closing the sheet closes the dialogs it opened
+      const dialogs = useDialoger.getState().dialogs.filter((d) => d.open);
+      for (const dialog of dialogs) useDialoger.getState().remove(dialog.id);
+    },
+    () => useSheeter.getState().remove(sheet.id),
+  );
 
   const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string; event?: Event }) => {
     if (!nextOpen && eventDetails.reason === 'escape-key') {
@@ -80,7 +86,13 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
   const finalFocus = triggerRef ? () => triggerRef.current ?? true : undefined;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange} modal={modal} disablePointerDismissal={disablePointerDismissal}>
+    <Sheet
+      open={open}
+      onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
+      modal={modal}
+      disablePointerDismissal={disablePointerDismissal}
+    >
       <SheetContent
         id={String(id)}
         side={side}
