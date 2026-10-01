@@ -102,6 +102,11 @@ export function BoardLayout({
 
   const [dropIndicator, setDropIndicator] = useState<{ panelId: string; edge: Edge } | null>(null);
 
+  // pdnd's onDrag fires continuously over a target; keeping the previous object skips re-renders while the edge holds
+  const updateDropIndicator = useCallback((next: { panelId: string; edge: Edge } | null) => {
+    setDropIndicator((prev) => (prev?.panelId === next?.panelId && prev?.edge === next?.edge ? prev : next));
+  }, []);
+
   useEffect(() => {
     if (!reorderable) return;
     return monitorForElements({
@@ -143,7 +148,7 @@ export function BoardLayout({
                 index={i}
                 total={panels.length}
                 panelIdsRef={panelIdsRef}
-                onEdgeChange={setDropIndicator}
+                onEdgeChange={updateDropIndicator}
                 onPanelToggle={handlePanelToggle}
                 onPanelReorder={onPanelReorder}
               >

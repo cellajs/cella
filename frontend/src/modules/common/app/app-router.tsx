@@ -1,4 +1,4 @@
-import { useIsFetching, useIsRestoring } from '@tanstack/react-query';
+import { useIsRestoring } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { PullToRefresh } from '~/modules/common/pull-to-refresh';
@@ -11,7 +11,6 @@ export function AppRouter() {
   const isRestoring = useIsRestoring();
   // Subscribed, so pull-to-refresh comes back when the connection does
   const isOnline = useOnlineManager();
-  const fetchingCount = useIsFetching();
 
   if (isRestoring && !isOnline) {
     return <Spinner className="mt-[45vh] h-12 w-12" />;
@@ -24,7 +23,7 @@ export function AppRouter() {
 
   return (
     <>
-      <PullToRefresh onRefresh={() => handleRefresh()} isFetching={fetchingCount > 0} isDisabled={isRestoring || !isOnline} />
+      <PullToRefresh onRefresh={() => handleRefresh()} isDisabled={isRestoring || !isOnline} />
       <RouterProvider router={router} />
     </>
   );

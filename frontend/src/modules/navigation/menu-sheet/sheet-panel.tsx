@@ -2,8 +2,10 @@ import { ChevronDownIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { type ReactNode, useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import type { TKey } from '~/lib/i18n-locales';
 import { FocusTrap } from '~/modules/common/focus-trap';
+import { collapseMotion } from '~/modules/navigation/menu-sheet/helpers/collapse-motion';
 import { InfoContent } from '~/modules/navigation/menu-sheet/info-section';
 import { PreferencesContent } from '~/modules/navigation/menu-sheet/preferences-section';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
@@ -18,6 +20,7 @@ interface MenuSheetPanelProps {
 
 function MenuSheetPanel({ id, label, children }: MenuSheetPanelProps) {
   const { t } = useTranslation();
+  const isMobile = useBreakpointBelow('sm', false);
   const menuSheetPanel = useNavigationStore((state) => state.menuSheetPanel);
   const toggleMenuSheetPanel = useNavigationStore((state) => state.toggleMenuSheetPanel);
 
@@ -34,9 +37,7 @@ function MenuSheetPanel({ id, label, children }: MenuSheetPanelProps) {
         {isOpen && (
           <motion.div
             key={`panel-${id}`}
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
+            {...collapseMotion(isMobile)}
             transition={{ duration: 0.2, ease: 'easeInOut' }}
             style={{ overflow: 'hidden' }}
           >

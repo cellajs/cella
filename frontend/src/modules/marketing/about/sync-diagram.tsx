@@ -2,6 +2,8 @@ import { ArrowRightIcon, DatabaseIcon, MonitorIcon, ServerIcon } from 'lucide-re
 import { AnimatePresence, motion } from 'motion/react';
 import { useLayoutEffect, useRef, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 
@@ -155,6 +157,10 @@ export function SyncDiagram() {
   const [hint, setHint] = useState(true);
   const { nodeDelay, edgeAnim } = buildTimeline(lead);
   const { t } = useTranslation();
+  // The infinite loops run in JS every frame: they pause offscreen, and the hint arrow also below `sm`, where it is hidden
+  const { ref: inViewRef, inView } = useInView();
+  const isMobile = useBreakpointBelow('sm');
+  const animateHint = inView && !isMobile;
 
   // Keeps everything the previous part showed and animates only the delta.
   const switchMode = (target: SyncMode) => {
@@ -236,13 +242,16 @@ export function SyncDiagram() {
   };
 
   return (
-    <div className="mx-auto mb-8 flex w-full max-w-3xl flex-col items-center">
+    <div ref={inViewRef} className="mx-auto mb-8 flex w-full max-w-3xl flex-col items-center">
       {/* Mode toggle switches the diagram's nodes, edges, and timeline. */}
       <div className="relative mb-6">
         {hint && (
           <div className="absolute top-1/2 right-full mr-3 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap text-muted-foreground max-sm:hidden">
             {t('about:try_me')}
-            <motion.span animate={{ x: [0, 4, 0] }} transition={{ repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut', duration: 1 }}>
+            <motion.span
+              animate={{ x: animateHint ? [0, 4, 0] : 0 }}
+              transition={animateHint ? { repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut', duration: 1 } : { duration: 0 }}
+            >
               <ArrowRightIcon />
             </motion.span>
           </div>
@@ -402,6 +411,7 @@ export function SyncDiagram() {
               const delay = startDelay(anim.delay, drawn[key]);
               const labelDelay = delay + anim.duration;
               const animateDashes = introducedEdges.has(key);
+              const flowDashes = animateDashes && inView;
               const showLabel = animateDashes || hovered === key || showAllLabels;
               // Bidirectional streams split into two collinear halves with a center gap, dashes flowing outward.
               const flowLanes = (() => {
@@ -435,8 +445,8 @@ export function SyncDiagram() {
                         strokeLinecap="round"
                         strokeDasharray="5 5"
                         markerEnd={`url(#stream-arrow-${from}-${to})`}
-                        animate={{ strokeDashoffset: animateDashes ? [0, dir] : 0 }}
-                        transition={animateDashes ? { repeat: Number.POSITIVE_INFINITY, ease: 'linear', duration: 0.6 } : { duration: 0 }}
+                        animate={{ strokeDashoffset: flowDashes ? [0, dir] : 0 }}
+                        transition={flowDashes ? { repeat: Number.POSITIVE_INFINITY, ease: 'linear', duration: 0.6 } : { duration: 0 }}
                       />
                     ))
                   ) : (

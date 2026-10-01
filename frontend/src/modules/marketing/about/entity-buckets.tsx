@@ -15,6 +15,8 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
 
@@ -92,8 +94,8 @@ function EntityTile({ Icon, label, delay = 0 }: Entity & { delay?: number }) {
   );
 }
 
-// Measured in real pixels so the rounded rect tracks the card at any breakpoint.
-function DashedBorder({ animated = false }: { animated?: boolean }) {
+// Measured in real pixels so the rounded rect tracks the card at any breakpoint. `paused` keeps the dash pattern but stops the flow.
+function DashedBorder({ animated = false, paused = false }: { animated?: boolean; paused?: boolean }) {
   const ref = useRef<SVGSVGElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
 
@@ -121,8 +123,8 @@ function DashedBorder({ animated = false }: { animated?: boolean }) {
           strokeWidth={1}
           strokeLinecap="round"
           strokeDasharray={animated ? '6 6' : '0.1 5'}
-          animate={animated ? { strokeDashoffset: [0, -12] } : { strokeDashoffset: 0 }}
-          transition={animated ? { repeat: Number.POSITIVE_INFINITY, ease: 'linear', duration: 0.6 } : { duration: 0 }}
+          animate={animated && !paused ? { strokeDashoffset: [0, -12] } : { strokeDashoffset: 0 }}
+          transition={animated && !paused ? { repeat: Number.POSITIVE_INFINITY, ease: 'linear', duration: 0.6 } : { duration: 0 }}
         />
       )}
     </svg>
@@ -135,12 +137,14 @@ function Bucket({
   title,
   entities,
   animated = false,
+  paused = false,
   badge,
   staggerOffset = 0,
 }: {
   title: TKey;
   entities: Entity[];
   animated?: boolean;
+  paused?: boolean;
   badge?: TKey;
   // Tiles revealing in other buckets before this one, so the one-by-one order spans buckets.
   staggerOffset?: number;
@@ -157,7 +161,7 @@ function Bucket({
 
   return (
     <div className="relative flex min-w-0 flex-col rounded-2xl bg-background px-2 py-4 sm:px-6 sm:py-6">
-      <DashedBorder animated={animated} />
+      <DashedBorder animated={animated} paused={paused} />
       {badge && (
         <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary px-2.5 py-0.5 font-medium text-primary-foreground text-xs">
           {t(badge)}
@@ -181,15 +185,22 @@ export function EntityBuckets() {
   const [config, setConfig] = useState<ConfigKey>('todo');
   const [hint, setHint] = useState(true);
   const active = configs[config];
+  // The infinite loops run in JS every frame: they pause offscreen, and the hint arrow also below `sm`, where it is hidden
+  const { ref: inViewRef, inView } = useInView();
+  const isMobile = useBreakpointBelow('sm');
+  const animateHint = inView && !isMobile;
 
   return (
-    <div className="mx-auto mt-4 mb-4 flex w-full max-w-3xl flex-col items-center">
+    <div ref={inViewRef} className="mx-auto mt-4 mb-4 flex w-full max-w-3xl flex-col items-center">
       {/* App-config toggle swaps which entities populate the buckets. */}
       <div className="relative mb-6">
         {hint && (
           <div className="absolute top-1/2 right-full mr-3 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap text-muted-foreground text-sm max-sm:hidden">
             {t('about:try_me')}
-            <motion.span animate={{ x: [0, 4, 0] }} transition={{ repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut', duration: 1 }}>
+            <motion.span
+              animate={{ x: animateHint ? [0, 4, 0] : 0 }}
+              transition={animateHint ? { repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut', duration: 1 } : { duration: 0 }}
+            >
               <ArrowRightIcon />
             </motion.span>
           </div>
@@ -222,6 +233,7 @@ export function EntityBuckets() {
             title="about:entity_buckets.product_entities"
             entities={active.product}
             animated
+            paused={!inView}
             badge="about:entity_buckets.synced"
             staggerOffset={1}
           />

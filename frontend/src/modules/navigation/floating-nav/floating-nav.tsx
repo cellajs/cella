@@ -4,6 +4,7 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
 import { FloatingNavButton, type FloatingNavItem } from '~/modules/navigation/floating-nav/button';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
+import { getViewportBottom, subscribeViewportBottom } from '~/utils/viewport-observer';
 
 interface FloatingNavProps {
   items: FloatingNavItem[];
@@ -12,6 +13,14 @@ interface FloatingNavProps {
   bodyClass?: string;
   /** Any change to this value resets visibility to visible: pass a page key, sidebar state, etc. */
   resetTrigger?: unknown;
+}
+
+/** Scopes the hidden viewport bottom to the nav, so its per-frame changes restyle only the buttons. */
+function trackViewportBottom(nav: HTMLElement | null) {
+  if (!nav) return;
+  const apply = (px: number) => nav.style.setProperty('--vv-bottom', `${px}px`);
+  apply(getViewportBottom());
+  return subscribeViewportBottom(apply);
 }
 
 export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-nav', resetTrigger }: FloatingNavProps) {
@@ -39,7 +48,7 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
   if (items.length === 0) return null;
 
   return (
-    <nav id="floating-nav">
+    <nav id="floating-nav" ref={trackViewportBottom}>
       {items.map((item) => {
         // Combine global showButtons with individual item visibility
         const isItemVisible = showButtons && item.visible !== false;

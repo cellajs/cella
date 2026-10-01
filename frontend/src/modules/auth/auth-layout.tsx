@@ -10,9 +10,7 @@ const BgAnimation = lazyNamed(() => import('~/modules/common/bg-animation/bg-ani
 
 export function AuthLayout() {
   const { hasStarted, hasWaited } = useMountedState();
-  const { location, resolvedLocation } = useRouterState();
-  const pathname = (resolvedLocation ?? location).pathname;
-  const isSignInPage = pathname === '/auth/authenticate';
+  const isSignInPage = useRouterState({ select: (s) => (s.resolvedLocation ?? s.location).pathname === '/auth/authenticate' });
 
   const authFooterLinks: FooterLinkProps[] = [{ id: 'about', href: appConfig.aboutUrl }];
 

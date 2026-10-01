@@ -24,14 +24,15 @@ function setBrandColor(passedTheme: Theme) {
 }
 
 export const Themer = () => {
-  useEffect(() => {
-    uiStore.subscribe(({ mode }) => {
-      setModeClass(mode);
-    });
-    uiStore.subscribe(({ theme }) => {
-      setBrandColor(theme);
-    });
-  }, []);
+  // The listener fires on every uiStore write (overlay locks, focus view), so it acts only on mode and theme changes.
+  useEffect(
+    () =>
+      uiStore.subscribe((state, prev) => {
+        if (state.mode !== prev.mode) setModeClass(state.mode);
+        if (state.theme !== prev.theme) setBrandColor(state.theme);
+      }),
+    [],
+  );
 
   setModeClass(uiStore.getState().mode);
   setBrandColor(uiStore.getState().theme);

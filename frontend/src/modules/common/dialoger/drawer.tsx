@@ -9,7 +9,7 @@ export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
   const updateDialog = useDialoger((state) => state.update);
 
   // An open dropdown makes the drawer non-dismissible
-  const isDropdownOpen = useDropdowner((state) => state.dropdown);
+  const isDropdownOpen = useDropdowner((state) => !!state.dropdown);
 
   // The drawer slides out before its entry is removed; onClose still runs as the close starts.
   const { close: closeDialog, onOpenChangeComplete } = useRemoveAfterExit(
@@ -26,7 +26,7 @@ export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
   };
 
   return (
-    <Drawer key={id} open={open} disablePointerDismissal={!!isDropdownOpen} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete}>
+    <Drawer key={id} open={open} disablePointerDismissal={isDropdownOpen} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete}>
       <DrawerContent id={String(id)} className={className}>
         <DrawerHeader data-overlay="dialog" className={title || description ? headerClassName : 'hidden'}>
           {title && <DrawerTitle>{titleContent}</DrawerTitle>}

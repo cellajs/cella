@@ -1,4 +1,4 @@
-import { createContext, type ReactNode, type Ref, useContext, useEffect, useRef } from 'react';
+import { createContext, type ReactNode, type Ref, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { cn } from '~/utils/cn';
 
@@ -779,7 +779,10 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
     };
   }, []);
 
-  const ctxValue: PanelGroupContextValue = { groupId: id, registerPanel, unregisterPanel, registerSeparator, unregisterSeparator };
+  // Panels and separators re-register whenever this value changes, which re-measures and aborts a running drag.
+  // The functions only touch refs, so the first render's copies stay valid and the value follows `id` alone.
+  const [registry] = useState(() => ({ registerPanel, unregisterPanel, registerSeparator, unregisterSeparator }));
+  const ctxValue = useMemo<PanelGroupContextValue>(() => ({ groupId: id, ...registry }), [id, registry]);
 
   const dragCtx: SeparatorDragContextValue = {
     startDrag,

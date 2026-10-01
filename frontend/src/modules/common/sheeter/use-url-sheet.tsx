@@ -45,10 +45,9 @@ function useCloseOverlay(searchParamKey: string, additionalParamKeys: string[] =
 export function useUrlSheet(config: UseUrlSheetConfig) {
   const { searchParamKey, additionalSearchParamKeys, renderContent, onAfterClose, options } = config;
 
-  const searchParams = useSearch({ strict: false }) as Record<string, string | undefined>;
-  const orgMatch = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false });
-  const organizationId = orgMatch?.context?.organization?.id;
-  const value = searchParams[searchParamKey] ?? null;
+  // Primitive selects, so writes to other search keys don't re-render the host.
+  const value = useSearch({ strict: false, select: (s) => (s as Record<string, string | undefined>)[searchParamKey] ?? null });
+  const organizationId = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false, select: (m) => m.context.organization?.id });
   const close = useCloseOverlay(searchParamKey, additionalSearchParamKeys);
 
   useEffect(() => {

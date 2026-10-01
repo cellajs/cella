@@ -18,12 +18,13 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
   const lastShownCellRef = useRef<HTMLElement | null>(null);
   const lastHiddenAtRef = useRef<number>(0);
   const observerRef = useRef<MutationObserver | null>(null);
-  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!gridRef?.current) return;
     const gridEl = gridRef.current;
     const tooltip = document.createElement('div');
+    // A tap fires compatibility mousemoves, so hover only counts for a pointer that can hover (jsdom has no matchMedia).
+    const canHover = window.matchMedia?.('(hover: hover)');
 
     tooltip.className =
       'max-md:invisible bg-muted-foreground text-primary-foreground fixed pointer-events-none hidden rounded-md text-xs px-3 py-1.5 z-200';
@@ -37,26 +38,17 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
       tooltip.textContent = tooltipContent;
       tooltip.style.display = 'block';
       lastShownCellRef.current = cell;
-
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-
-      // Reposition on every frame, since virtualization recycles the cell element.
       positionTooltip(cell, tooltip);
-      const track = () => {
-        if (!cell.isConnected) return clearTooltip();
-        positionTooltip(cell, tooltip);
-        rafRef.current = requestAnimationFrame(track);
-      };
-      rafRef.current = requestAnimationFrame(track);
 
+      // Grid renders can recycle the cell (new content) or remove it (virtualization, row updates): follow it or clear.
       observerRef.current?.disconnect();
-      observerRef.current = new MutationObserver(() => updateTooltipContent(cell));
+      observerRef.current = new MutationObserver(() => {
+        if (!cell.isConnected) return clearTooltip();
+        tooltip.textContent = cell.getAttribute('data-tooltip-content') || '';
+        positionTooltip(cell, tooltip);
+      });
       observerRef.current.observe(cell, { attributes: true, attributeFilter: ['data-tooltip-content'] });
-    };
-
-    const updateTooltipContent = (cell: HTMLElement) => {
-      const tooltipContent = cell.getAttribute('data-tooltip-content') || '';
-      tooltip.textContent = tooltipContent;
+      observerRef.current.observe(gridEl, { childList: true, subtree: true });
     };
 
     // `data-tooltip="true"` always qualifies; `data-tooltip="compact"` only inside a compacted grid.
@@ -68,6 +60,7 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
     };
 
     const handleMouseMove = (e: MouseEvent) => {
+      if (canHover && !canHover.matches) return;
       const cell = resolveTooltipCell(e.target as HTMLElement);
       if (!cell) return clearTooltip();
 
@@ -100,26 +93,29 @@ export function useTableTooltip(gridRef: React.RefObject<HTMLDivElement | null>,
       if (lastShownCellRef.current) lastHiddenAtRef.current = Date.now();
       tooltip.style.display = 'none';
       lastShownCellRef.current = null;
-      if (rafRef.current) {
-        cancelAnimationFrame(rafRef.current);
-        rafRef.current = null;
-      }
       observerRef.current?.disconnect();
+    };
+
+    // Window capture sees every scroll: the grid's own (or a nested one) clears, an ancestor's moves the tooltip with its cell.
+    const handleScroll = (e: Event) => {
+      if (e.target instanceof Node && gridEl.contains(e.target)) return clearTooltip();
+      const cell = lastShownCellRef.current;
+      if (cell) positionTooltip(cell, tooltip);
     };
 
     gridEl.addEventListener('mousemove', handleMouseMove);
     gridEl.addEventListener('mouseleave', handleMouseLeave);
     gridEl.addEventListener('focusin', handleFocus);
     gridEl.addEventListener('focusout', clearTooltip);
-    gridEl.addEventListener('scroll', clearTooltip, { capture: true, passive: true });
+    window.addEventListener('scroll', handleScroll, { capture: true, passive: true });
 
     return () => {
       gridEl.removeEventListener('mousemove', handleMouseMove);
       gridEl.removeEventListener('mouseleave', handleMouseLeave);
       gridEl.removeEventListener('focusin', handleFocus);
       gridEl.removeEventListener('focusout', clearTooltip);
-      gridEl.removeEventListener('scroll', clearTooltip, { capture: true });
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      window.removeEventListener('scroll', handleScroll, { capture: true });
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
       observerRef.current?.disconnect();
       tooltip.remove();
     };

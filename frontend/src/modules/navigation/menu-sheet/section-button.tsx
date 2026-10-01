@@ -1,5 +1,5 @@
 import { ChevronDownIcon, PlusIcon, Settings2Icon } from 'lucide-react';
-import { AnimatePresence, motion } from 'motion/react';
+import { motion } from 'motion/react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { TooltipButton } from '~/modules/common/tooltip-button';
@@ -39,13 +39,8 @@ export function MenuSectionButton({
   return (
     <div className="sticky top-0 z-10">
       <div className="z-10 flex items-center bg-card py-2">
-        <motion.div layout="size" transition={{ bounce: 0, duration: 0.2 }} className="flex w-full items-center">
-          <Button
-            onClick={() => toggleSection(options.entityType)}
-            className="min-w-0 flex-1 justify-between shadow-none"
-            variant="ghost"
-            render={<motion.button layout="size" transition={{ bounce: 0, duration: 0.2 }} />}
-          >
+        <div className="flex w-full items-center">
+          <Button onClick={() => toggleSection(options.entityType)} className="min-w-0 flex-1 justify-between shadow-none" variant="ghost">
             <div className="flex items-center">
               <span className="mr-1 flex items-center">{t(options.label)}</span>
               {/* Unseen count, or the item count while the section is collapsed. */}
@@ -69,50 +64,43 @@ export function MenuSectionButton({
             <ChevronDownIcon className="opacity-50 transition-transform duration-200 group-data-[visible=true]/menuSection:rotate-180" />
           </Button>
 
-          <AnimatePresence>
-            {isSectionVisible && !!data.length && (
-              <motion.div
-                key={`sheet-menu-settings-${options.entityType}`}
-                initial={{ width: 0, opacity: 0, marginLeft: 0 }}
-                animate={{ width: '2.5rem', opacity: 1, marginLeft: '0.5rem' }}
-                exit={{ width: 0, opacity: 0, marginLeft: 0 }}
-                transition={{ bounce: 0, duration: 0.2 }}
-                className="shrink-0 max-sm:hidden"
-              >
-                <TooltipButton toolTipContent={t('c:manage_content')} side="bottom" sideOffset={10}>
-                  <Button className="w-10 px-2 shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => toggleIsEditing()}>
-                    <Settings2Icon className="icon-lg" />
-                  </Button>
-                </TooltipButton>
-              </motion.div>
-            )}
-          </AnimatePresence>
+          {/* Enter by transform and opacity, which skip layout; leaving is instant, so the toggle widens in one step */}
+          {isSectionVisible && !!data.length && (
+            <motion.div
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ bounce: 0, duration: 0.2 }}
+              className="ml-2 shrink-0 max-sm:hidden"
+            >
+              <TooltipButton toolTipContent={t('c:manage_content')} side="bottom" sideOffset={10}>
+                <Button className="w-10 px-2 shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => toggleIsEditing()}>
+                  <Settings2Icon className="icon-lg" />
+                </Button>
+              </TooltipButton>
+            </motion.div>
+          )}
 
-          <AnimatePresence>
-            {isSectionVisible && handleCreateAction && (
-              <motion.div
-                key={`sheet-menu-plus-${options.entityType}`}
-                initial={{ width: 0, opacity: 0, marginLeft: 0 }}
-                animate={{ width: '2.5rem', opacity: 1, marginLeft: '0.5rem' }}
-                exit={{ width: 0, opacity: 0, marginLeft: 0 }}
-                transition={{ bounce: 0, duration: 0.2 }}
-                className="shrink-0"
-              >
-                <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
-                  <Button
-                    ref={createButtonRef}
-                    className="w-10 px-2 shadow-none"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => handleCreateAction(createButtonRef)}
-                  >
-                    <PlusIcon className="icon-lg" />
-                  </Button>
-                </TooltipButton>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+          {isSectionVisible && handleCreateAction && (
+            <motion.div
+              initial={{ scale: 0.6, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ bounce: 0, duration: 0.2 }}
+              className="ml-2 shrink-0"
+            >
+              <TooltipButton toolTipContent={t('c:create')} sideOffset={22} side="right">
+                <Button
+                  ref={createButtonRef}
+                  className="w-10 px-2 shadow-none"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => handleCreateAction(createButtonRef)}
+                >
+                  <PlusIcon className="icon-lg" />
+                </Button>
+              </TooltipButton>
+            </motion.div>
+          )}
+        </div>
       </div>
     </div>
   );

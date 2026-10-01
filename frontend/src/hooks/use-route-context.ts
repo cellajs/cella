@@ -3,19 +3,23 @@ import type { Organization } from 'sdk';
 
 // String route IDs avoid circular imports between route files and component modules, which break Vite HMR.
 
-type OrganizationLayoutContext = { organization: Organization; tenantId: string };
+type OrganizationContext = { organization: Organization; tenantId: string };
 
-/** Organization context from the nearest route that provides it; throws when no match carries one. */
-export const useOrganizationLayoutContext = (): OrganizationLayoutContext => {
-  const match = useRouterState({
-    select: (s) =>
-      s.matches.find((m) => {
-        const ctx = m.context as Record<string, unknown>;
-        return ctx?.organization && typeof ctx?.tenantId === 'string';
-      }),
-  });
+const findOrganizationContext = (matches: { context: unknown }[]) =>
+  matches.find((m) => {
+    const ctx = m.context as Record<string, unknown>;
+    return ctx?.organization && typeof ctx?.tenantId === 'string';
+  })?.context as OrganizationContext | undefined;
 
-  if (match) return match.context as OrganizationLayoutContext;
+/**
+ * Organization and tenant ids from the nearest route that provides them; throws when no match carries them.
+ * Selects primitives because match context is rebuilt on every navigation, search-only ones included.
+ */
+export const useOrganizationLayoutContext = (): { organizationId: string; tenantId: string } => {
+  const organizationId = useRouterState({ select: (s) => findOrganizationContext(s.matches)?.organization.id });
+  const tenantId = useRouterState({ select: (s) => findOrganizationContext(s.matches)?.tenantId });
+
+  if (organizationId && tenantId) return { organizationId, tenantId };
 
   throw new Error('useOrganizationLayoutContext must be used within a route that provides organization context');
 };

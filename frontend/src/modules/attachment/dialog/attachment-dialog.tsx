@@ -18,9 +18,9 @@ type AttachmentDialogItem = Partial<CarouselItemData> & { id: string };
 
 export function AttachmentDialog() {
   const removeDialog = useDialoger((state) => state.remove);
-  const orgMatch = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false });
-  const tenantId = orgMatch?.params?.tenantId;
-  const organizationId = orgMatch?.context?.organization?.id;
+  // Primitive selects: the match object is rebuilt on every carousel URL write.
+  const tenantId = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false, select: (m) => m.params.tenantId });
+  const organizationId = useMatch({ from: '/_app/$tenantId/$organizationSlug', shouldThrow: false, select: (m) => m.context.organization?.id });
 
   const groupId = useSearch({ strict: false, select: (s) => (s as { groupId?: string }).groupId });
 

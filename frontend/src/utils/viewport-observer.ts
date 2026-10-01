@@ -1,6 +1,7 @@
 /**
- * Writes how much of the layout viewport is hidden at the bottom (on-screen keyboard, browser chrome, URL bar) to
- * `--vv-bottom` on <html>. Fixed-to-bottom UI consumes it through `--bottom-inset` in tailwind.css.
+ * Tracks how much of the layout viewport is hidden at the bottom (on-screen keyboard, browser chrome, URL bar).
+ * Fixed-to-bottom UI subscribes and writes it as `--vv-bottom` on its own element, consumed through `--bottom-inset`
+ * in tailwind.css: on iOS it changes every frame while the keyboard is open, and a write on <html> restyles everything.
  */
 
 /** While browser chrome animates in or out, innerHeight lags visualViewport.height by up to the chrome height
@@ -13,13 +14,26 @@ const MIN_KEYBOARD_PX = 100;
  * the page, which fixed elements do not track. */
 const SETTLE_MS = 300;
 
+let viewportBottom = 0;
+const listeners = new Set<(px: number) => void>();
+
+/** Hidden layout-viewport bottom in px, as last measured. */
+export const getViewportBottom = () => viewportBottom;
+
+/** Calls the listener on every change of the hidden bottom; returns the unsubscribe. */
+export function subscribeViewportBottom(listener: (px: number) => void): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
 export const initViewportObserver = () => {
   const viewport = window.visualViewport;
   if (!viewport) return;
 
   let rafId = 0;
   let settleId = 0;
-  let lastHidden = -1;
 
   const measure = (settled: boolean) => {
     // Pinch zoom shrinks the visual viewport without hiding anything under it; fixed UI stays in the layout
@@ -34,9 +48,9 @@ export const initViewportObserver = () => {
 
   const write = (settled: boolean) => {
     const hidden = measure(settled);
-    if (hidden === lastHidden) return;
-    lastHidden = hidden;
-    document.documentElement.style.setProperty('--vv-bottom', `${hidden}px`);
+    if (hidden === viewportBottom) return;
+    viewportBottom = hidden;
+    for (const listener of listeners) listener(hidden);
   };
 
   const update = () => {

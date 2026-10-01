@@ -1,5 +1,4 @@
 import { ArchiveIcon, ChevronDownIcon } from 'lucide-react';
-import { motion } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import { useUnseenCount } from '~/modules/seen/use-unseen-count';
 import { Button } from '~/modules/ui/button';
@@ -17,7 +16,7 @@ export function SectionArchiveButton({ archiveToggleClick, archivedCount, archiv
   const archivedUnseenCount = useUnseenCount(archivedChannelIds);
 
   return (
-    <motion.div layout>
+    <div>
       <Button
         onClick={archiveToggleClick}
         disabled={archivedCount < 1}
@@ -43,7 +42,7 @@ export function SectionArchiveButton({ archiveToggleClick, archivedCount, archiv
           <ChevronDownIcon className="opacity-50 transition-transform group-data-[has-inactive=false]/archived:hidden group-data-[archived-visible=true]/archived:rotate-180" />
         </div>
       </Button>
-    </motion.div>
+    </div>
   );
 }
 
