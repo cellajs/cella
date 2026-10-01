@@ -1,11 +1,16 @@
 import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
 import { invalidateApiKeyCacheByAccount } from './api-key-cache';
 import { invalidateOrgCache, invalidateOrgCacheByTenant } from './org-cache';
+import { dropCachedSessions } from './session-cache';
 import { invalidateTenantCache } from './tenant-cache';
 import { invalidateTokenGrant, invalidateTokenGrantsByActor, invalidateTokenGrantsByTenant } from './token-grant-cache';
 
-/** The token verdicts with the user row they cached: after profile, flag or MFA updates. */
+/**
+ * The user's cached sessions, which carry the user row, system role and bindings version, and token verdicts: after a
+ * write to the user's row or memberships.
+ */
 function user(userId: string): void {
+  dropCachedSessions(userId);
   invalidateTokenGrantsByActor(userId);
 }
 
@@ -35,8 +40,9 @@ function grant(accountId: string, grantId: string): void {
 
 /**
  * Drops what a write changed from this process's guard caches; call it once the write has committed, so no request
- * caches the old row again in between. Other processes keep an entry until it expires (15 seconds for token verdicts,
- * a minute for the rest). What must count at once everywhere is read per request or versioned: sessions, grants, API
- * keys behind tokens and OAuth clients are read per request, memberships are cached under the bindings version.
+ * caches the old row again in between. The API process also drops sessions on CDC reports of user, membership and
+ * system role changes. Other processes keep an entry until it expires: 10 seconds for sessions, 15 for token verdicts,
+ * a minute for the rest. Grants, the API keys behind tokens and OAuth clients are read per request, and memberships
+ * are cached under the bindings version.
  */
 export const invalidateCache = { user, org, tenant, serviceAccount, grant };

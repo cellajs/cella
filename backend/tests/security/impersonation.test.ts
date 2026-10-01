@@ -1,9 +1,11 @@
 import { eq } from 'drizzle-orm';
 import { deleteUsers, getMe, revokeMySessions, signOut, startImpersonation } from 'sdk';
 import { appConfig } from 'shared';
+import { generateId } from 'shared/utils/entity-id';
 import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { env } from '#/env';
+import { activityBus } from '#/lib/activity-bus';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders, overrideConfig } from '../fixtures';
 import { authCookie, cookieChange, createSystemAdminUser, createTestUser, expectRefusal, mailsTo, sessionRow, sessionsOf } from '../helpers';
@@ -147,8 +149,16 @@ describe('impersonation lives on its admin', async () => {
     const { admin, impersonation } = await impersonating('demoted');
     const kept = await impersonating('kept');
 
-    // Roles change outside the API; every request reads the role with its session.
-    await getAdminDb('test arrange').delete(systemRolesTable).where(eq(systemRolesTable.userId, admin.id));
+    // Roles change outside the API; CDC reports the delete, which drops the admin's cached sessions.
+    const [role] = await getAdminDb('test arrange').delete(systemRolesTable).where(eq(systemRolesTable.userId, admin.id)).returning();
+    activityBus.emit({
+      id: generateId(),
+      type: 'system_role.deleted',
+      action: 'delete',
+      resourceType: 'system_role',
+      entityType: null,
+      rowData: role,
+    } as never);
 
     const refused = await meAs(impersonation);
     await expectRefusal(refused, 401, 'unauthorized');

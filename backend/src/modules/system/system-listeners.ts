@@ -8,8 +8,8 @@ import { log } from '#/utils/logger';
 const securityEmailType = { create: 'system-role-granted', update: 'system-role-changed', delete: 'system-role-revoked' } as const;
 
 /**
- * Every CDC-observed system-role change notifies the security contact. The role itself needs no listener: every
- * process reads it with the session at each request, so it (and the impersonations it backs) holds only while granted.
+ * Every CDC-observed system-role change notifies the security contact. The session listeners drop the user's cached
+ * sessions on the same event, so the role (and the impersonations it backs) holds only while granted.
  */
 const notifySystemRoleChange = async (event: ActivityEvent) => {
   const systemRole = getEventData(event, 'system_role');

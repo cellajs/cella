@@ -2,6 +2,7 @@ import { and, eq } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
+import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
 import { insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
@@ -74,6 +75,7 @@ export async function handleMembershipInvitationOp(
       await deleteInvitationTokens({ var: { db: tx } }, { inactiveMembershipIds: [inactiveMembership.id] });
     }
   });
+  if (acceptOrReject === 'accept') invalidateCache.user(userId);
 
   const organizationId = inactiveMembership.organizationId;
   if (!organizationId) throw new AppError(500, 'server_error', 'error', { entityType: 'organization' });

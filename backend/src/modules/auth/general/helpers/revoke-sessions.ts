@@ -1,6 +1,7 @@
 import { and, eq, gt, inArray, isNull, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
+import { dropCachedSessions } from '#/middlewares/guard/session-cache';
 import { authEvents } from '#/modules/auth/auth-events';
 import {
   type SessionEndReason,
@@ -33,15 +34,15 @@ export type RevokeSessionsOpts = SessionSelection & {
 
 /**
  * The one way sessions end before their expiry. Stamps the user's selected live sessions with `revokedAt`,
- * `revokedBy` and `revocationReason` and closes the streams bound to them; every process reads the session per request,
- * so the stamp ends it at its next request. A revoked session is never re-stamped, so the first revocation is the one
- * the sessions list shows; the row stays until the nightly sweep. `user_deleted` follows the delete, which took the
- * rows along: nothing is stamped, and every stream of the user closes. An impersonation layered on a revoked session is
- * revoked with it as `impersonation_stopped` (a deleted admin's rows take theirs along), since only its admin's session
- * can present it.
+ * `revokedBy` and `revocationReason`, drops the user's cached sessions in this process and closes the streams bound to
+ * them; other processes stop serving the session within the session cache's 10 seconds. A revoked session is never
+ * re-stamped, so the first revocation is the one the sessions list shows; the row stays until the nightly sweep.
+ * `user_deleted` follows the delete, which took the rows along: nothing is stamped, and every stream of the user
+ * closes. An impersonation layered on a revoked session is revoked with it as `impersonation_stopped` (a deleted admin's
+ * rows take theirs along), since only its admin's session can present it.
  *
- * The stamps commit inside the caller's transaction when there is one; the streams close at the call, so call it last
- * in a transaction.
+ * The stamps commit inside the caller's transaction when there is one; the cache drop and the streams happen at the
+ * call, so call it last in a transaction.
  *
  * @param ctx - Any context with a database; the sign-in paths pass the base pool.
  * @param opts - The user, which sessions (`sessionIds` or `all`), the reason and the acting actor.
@@ -69,6 +70,9 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
     if (deletesProviderSessions.has(reason)) await deleteProviderSessionsOfUser({ var: { db: tx } }, { userId });
     return { ended: stamped, layered: stopped };
   });
+
+  dropCachedSessions(userId);
+  for (const impersonation of layered) dropCachedSessions(impersonation.userId);
 
   const everySession = 'all' in opts && !opts.type;
   if (everySession || ended.length > 0) {

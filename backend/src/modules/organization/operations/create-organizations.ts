@@ -1,6 +1,7 @@
 import { appConfig } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { buildZeroCounts } from '#/modules/entities/helpers/build-zero-counts';
 import { checkSlugsAvailable } from '#/modules/entities/helpers/check-slug';
 import { insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
@@ -71,6 +72,7 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
   const membershipInserts = organizationRecords.map((org) => ({ userId: user.id, createdBy: user.id, role: 'admin' as const, entity: org }));
 
   const createdMemberships = await insertMemberships({ var: { db } }, { items: membershipInserts });
+  invalidateCache.user(user.id);
 
   const counts = buildZeroCounts('organization');
 

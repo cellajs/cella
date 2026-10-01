@@ -2,6 +2,7 @@ import { type ChannelEntityType, type EntityRole, hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
+import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
 import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/helpers/invitation-mail';
 import { getMembershipEntityIds, insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
@@ -145,6 +146,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
     }));
 
     createdMemberships = await insertMemberships({ var: { db } }, { items: membershipsToInsert });
+    for (const { userId } of existingUsersToDirectAdd) invalidateCache.user(userId);
   }
 
   const newUserInactiveMembershipIdsByEmail = new Map<string, string>();

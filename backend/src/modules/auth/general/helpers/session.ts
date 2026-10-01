@@ -7,6 +7,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { lookupIp } from '#/lib/geoip';
+import { getCachedSession, setCachedSession } from '#/middlewares/guard/session-cache';
 import { actorsTable } from '#/modules/actors/actors-db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
@@ -226,11 +227,18 @@ export interface ResolvedSession {
 
 /**
  * The live session a cookie's token names, with its user, whether the user holds the admin system role and the
- * version of the user's bindings: one read per request by the token's hash, the only form the database stores, so a
- * revocation or a role change counts at the next request in every process.
+ * version of the user's bindings: from the session cache (`session-cache.ts`), keyed by the token's hash, or else read
+ * by that hash, the only form the database stores. A cached entry stops at the session's expiry.
  * @throws AppError 401 `no_session` for an unknown token, `session_revoked` or `session_expired`.
  */
 export const readSession = async (sessionToken: string): Promise<ResolvedSession> => {
+  const secretHash = hashToken(sessionToken);
+  const cached = getCachedSession(secretHash);
+  if (cached) {
+    if (isExpiredDate(cached.session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
+    return cached;
+  }
+
   const [result] = await db
     .select({
       session: sessionFactColumns,
@@ -243,7 +251,7 @@ export const readSession = async (sessionToken: string): Promise<ResolvedSession
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id))
     .innerJoin(actorsTable, eq(actorsTable.id, usersTable.id))
     .leftJoin(systemRolesTable, eq(systemRolesTable.userId, usersTable.id))
-    .where(eq(sessionsTable.secret, hashToken(sessionToken)))
+    .where(eq(sessionsTable.secret, secretHash))
     .limit(1);
 
   if (!result) throw new AppError(401, 'no_session', 'warn');
@@ -251,7 +259,9 @@ export const readSession = async (sessionToken: string): Promise<ResolvedSession
   if (isExpiredDate(result.session.expiresAt)) throw new AppError(401, 'session_expired', 'warn');
 
   const { session, user, systemRole, bindingsVersion } = result;
-  return { session, user, hasSystemRole: systemRole === 'admin', bindingsVersion };
+  const entry = { session, user, hasSystemRole: systemRole === 'admin', bindingsVersion };
+  setCachedSession(secretHash, entry);
+  return entry;
 };
 
 /** A refusal (an `AppError`) reads as no session; anything else, such as a failed read, stays the request's failure. */

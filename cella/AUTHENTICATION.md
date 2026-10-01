@@ -30,9 +30,9 @@ An account is identified by the proofs it holds, never by an address; the identi
 
 ## Sessions
 
-The session cookie carries a random 40-character token; `sessions.secret` stores its SHA-256 hash, so reading the table yields no session. `resolveSession(ctx)` reads the session a request presents from its cookies alone, so any process on the app origin can call it. `readSession(token)` turns a token into its row with one read per request, so a revoked session ends at its next request in every process. `findSession(ctx)` serves requests that may carry no session: a refusal reads as null, while a failed read stays the request's failure, so the database being away never reads as signed out. A session lives a week. A browser holds one live session per account, and an account at most `maxSessionsPerUser` (10) besides impersonations.
+The session cookie carries a random 40-character token; `sessions.secret` stores its SHA-256 hash, so reading the table yields no session. `resolveSession(ctx)` reads the session a request presents from its cookies alone, so any process on the app origin can call it. `readSession(token)` turns a token into its row, from a 10-second cache or the database. The process that revokes a session drops it at once, the API process drops a user's entries when CDC reports a change to the user, a membership or the system role, and any other process stops serving a revoked session within the 10 seconds. `findSession(ctx)` serves requests that may carry no session: a refusal reads as null, while a failed read stays the request's failure, so the database being away never reads as signed out. A session lives a week. A browser holds one live session per account, and an account at most `maxSessionsPerUser` (10) besides impersonations.
 
-Every revocation before expiry goes through `revokeSessions`. It stamps the rows with `revokedAt`, `revokedBy` and a `revocationReason` and closes the streams bound to them; the row stays for the sessions list.
+Every revocation before expiry goes through `revokeSessions`. It stamps the rows with `revokedAt`, `revokedBy` and a `revocationReason`, drops the user's cached sessions and closes the streams bound to them; the row stays for the sessions list.
 
 | Reason | When |
 | --- | --- |
