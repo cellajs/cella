@@ -63,5 +63,6 @@
   "time_mini.minutes": "{{count}}m",
   "time_mini.now": "Zojuist",
   "time_mini.seconds": "{{count}}s",
+  "title": "Titel",
   "video": "Video"
 }

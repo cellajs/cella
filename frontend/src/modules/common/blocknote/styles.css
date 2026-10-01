@@ -69,6 +69,23 @@ li:has(.is-focused) {
   font-weight: 400;
 }
 
+/* An empty heading's placeholder keeps the heading's type, so nothing jumps when typing starts. */
+.bn-shadcn .bn-block-content[data-content-type="heading"]:has(.ProseMirror-trailingBreak:only-child)::after {
+  font-size: inherit;
+  line-height: inherit;
+  font-weight: inherit;
+}
+
+/* `titlePlaceholder` labels block 0 only. The chain outranks BlockNote's injected per-type rules by specificity. */
+.bn-title-placeholder
+  .bn-editor
+  > .bn-block-group
+  > .bn-block-outer:first-child
+  > .bn-block
+  > .bn-block-content[data-content-type="heading"]:has(.ProseMirror-trailingBreak:only-child)::after {
+  content: var(--bn-title-placeholder);
+}
+
 .bn-editor[contenteditable="false"] .bn-block-content[data-content-type="codeBlock"] select {
   display: none;
 }
@@ -404,18 +421,4 @@ li:has(.is-focused) {
 }
 [data-content-type="heading"][data-level="3"] {
   --level: 1.1rem;
-}
-
-/* Forced-title placeholder for block 0; !important beats BlockNote's injected placeholder rules, so re-check on every @blocknote bump. */
-.bn-forced-title
-  .bn-editor
-  > .bn-block-group
-  > .bn-block-outer:first-child
-  > .bn-block
-  > .bn-block-content[data-content-type="heading"]:has(.ProseMirror-trailingBreak:only-child)::after {
-  content: var(--bn-title-placeholder, "Title") !important;
-  color: color-mix(in oklch, var(--muted-foreground) 60%, transparent);
-  font-size: inherit;
-  font-weight: inherit;
-  line-height: inherit;
 }
