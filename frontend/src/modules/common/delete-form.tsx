@@ -15,17 +15,10 @@ export function DeleteForm({ onDelete, onCancel, pending, allowOfflineDelete = f
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row">
-      <SubmitButton
-        variant="destructive"
-        icon={<TrashIcon />}
-        allowOfflineDelete={allowOfflineDelete}
-        onClick={onDelete}
-        aria-label="Delete"
-        loading={pending}
-      >
+      <SubmitButton variant="destructive" icon={<TrashIcon />} allowOfflineDelete={allowOfflineDelete} onClick={onDelete} loading={pending}>
         {t('c:delete')}
       </SubmitButton>
-      <Button type="reset" variant="secondary" aria-label="Cancel" onClick={onCancel}>
+      <Button type="reset" variant="secondary" data-autofocus onClick={onCancel}>
         {t('c:cancel')}
       </Button>
     </div>

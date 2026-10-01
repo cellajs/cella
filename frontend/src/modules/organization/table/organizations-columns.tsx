@@ -11,7 +11,7 @@ import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns'
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { PopConfirm } from '~/modules/common/popconfirm';
+import { openPopConfirm } from '~/modules/common/popconfirm';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
 import { DeleteOrganizations } from '~/modules/organization/delete-organizations';
@@ -78,16 +78,11 @@ export const useColumns = () => {
         label: i18n.t('c:delete'),
         icon: TrashIcon,
         onSelect: (row) => {
-          const { update } = useDropdowner.getState();
           const callback = () => useDropdowner.getState().remove();
-
-          update({
-            content: (
-              <PopConfirm title={i18n.t('c:delete_confirm.text', { name: row.name })}>
-                <DeleteOrganizations tenantId={row.tenantId} organizations={[row]} callback={callback} />
-              </PopConfirm>
-            ),
-          });
+          openPopConfirm(
+            i18n.t('c:delete_confirm.text', { name: row.name }),
+            <DeleteOrganizations tenantId={row.tenantId} organizations={[row]} callback={callback} />,
+          );
         },
       },
     ]),

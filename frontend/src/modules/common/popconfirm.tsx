@@ -1,5 +1,8 @@
+import type { ReactNode } from 'react';
+import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+
 interface Props {
-  children: React.ReactNode;
+  children: ReactNode;
   title: string;
 }
 
@@ -10,4 +13,12 @@ export function PopConfirm({ children, title }: Props) {
       {children}
     </div>
   );
+}
+
+/**
+ * Turns the open dropdown (e.g. a table row's "…" menu) into a confirmation panel on the same trigger. A menu cannot
+ * hold a form: its items close it and its focus handling drops the buttons, so the confirmation opens as a panel.
+ */
+export function openPopConfirm(title: string, children: ReactNode) {
+  useDropdowner.getState().update({ kind: 'panel', key: Date.now(), content: <PopConfirm title={title}>{children}</PopConfirm> });
 }

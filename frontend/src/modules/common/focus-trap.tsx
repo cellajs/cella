@@ -76,8 +76,10 @@ export function FocusTrap({
           initialFocus.current.focus({ preventScroll: true });
           return;
         }
+        // A `data-autofocus` element wins, so a confirmation can start on its safe option.
+        const preferred = trap.querySelector<HTMLElement>('[data-autofocus]');
         const focusable = getFocusableElements(trap);
-        (focusable[0] ?? trap).focus({ preventScroll: true });
+        (preferred ?? focusable[0] ?? trap).focus({ preventScroll: true });
       });
     }
 
