@@ -27,7 +27,6 @@ interface Operation {
   method: string;
   path: string;
   guards: string[];
-  service?: string;
 }
 
 const httpMethods = ['get', 'post', 'put', 'patch', 'delete'] as const;
@@ -45,16 +44,18 @@ const operationsOf = (app: OpenAPIHono<Env>): Operation[] => {
           method: method.toUpperCase(),
           path,
           guards: (operation['x-guard'] as string[] | undefined) ?? [],
-          service: operation['x-service'] as string | undefined,
         },
       ];
     }),
   );
 };
 
-/** A route of a disabled service answers 404 before any guard runs. */
-const serviceEnabled = ({ service }: Operation) =>
-  !service || appConfig.services[service as keyof typeof appConfig.services]?.enabled !== false;
+/** A route of a disabled service answers 404 before any guard runs: its `serviceEnabled(<service>)` gate. */
+const serviceIsOn = ({ guards }: Operation) =>
+  guards.every((guard) => {
+    const service = /^serviceEnabled\((\w+)\)$/.exec(guard)?.[1];
+    return !service || appConfig.services[service as keyof typeof appConfig.services]?.enabled !== false;
+  });
 
 /**
  * Function-level access follows the guard chain a route declares, so the table is the API itself: every route without
@@ -64,7 +65,7 @@ const serviceEnabled = ({ service }: Operation) =>
 describe('Route guards', async () => {
   const call = await createAppClient();
   const { baseApp } = await import('#/routes');
-  const operations = operationsOf(baseApp).filter(serviceEnabled);
+  const operations = operationsOf(baseApp).filter(serviceIsOn);
   const nonPublic = operations.filter(({ guards }) => !guards.includes('publicGuard'));
   const sysAdminOnly = operations.filter(({ guards }) => guards.includes('sysAdminGuard'));
 

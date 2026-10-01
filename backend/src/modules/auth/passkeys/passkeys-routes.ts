@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { publicGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
+import { publicGuard, stepUpGuard, strategyEnabled, userGuard } from '#/middlewares/guard';
 import { passkeyChallengeLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockPasskeyChallengeResponse, mockPasskeyResponse } from '#/modules/auth/auth-mocks';
 import {
@@ -14,10 +14,9 @@ import { cookieSchema, validIdSchema } from '#/schemas';
 
 const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
   generatePasskeyChallenge: xRoute({
-    'x-strategy': 'passkey',
     method: 'post',
     path: '/passkey/generate-challenge',
-    xGuard: [publicGuard],
+    xGuard: [strategyEnabled('passkey'), publicGuard],
     xRateLimiter: [passkeyChallengeLimiter],
     summary: 'Generate passkey challenge',
     description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
@@ -25,10 +24,9 @@ const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
     responses: { 200: json('Challenge generated', passkeyChallengeSchema, mockPasskeyChallengeResponse()) },
   }),
   createPasskey: xRoute({
-    'x-strategy': 'passkey',
     method: 'post',
     path: '/passkey',
-    xGuard: [userGuard, stepUpGuard],
+    xGuard: [strategyEnabled('passkey'), userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Create passkey',
     description:
@@ -37,7 +35,6 @@ const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
     responses: { 201: json('Passkey created', passkeySchema, mockPasskeyResponse()) },
   }),
   deletePasskey: xRoute({
-    'x-strategy': null,
     method: 'delete',
     path: '/passkey/{id}',
     xGuard: [userGuard, stepUpGuard],
@@ -48,10 +45,9 @@ const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
     responses: { 204: { description: 'Passkey deleted' } },
   }),
   signInWithPasskey: xRoute({
-    'x-strategy': 'passkey',
     method: 'post',
     path: '/passkey-verification',
-    xGuard: [publicGuard],
+    xGuard: [strategyEnabled('passkey'), publicGuard],
     xRateLimiter: [tokenLimiter('passkey')],
     summary: 'Verify passkey',
     description: 'Validates the signed challenge and completes passkey based authentication.',

@@ -18,7 +18,7 @@ actions that change how an account is protected first ask the session to prove i
 | Provider sign-in | An account at GitHub, Google or Microsoft, stored in `identities` by issuer and subject | `auth/oauth/` |
 | TOTP | A code from an authenticator app; a second factor only, never a first | `auth/totps/` |
 
-`appConfig.enabledAuthStrategies` says which methods are on. Every auth route declares its method with `x-strategy`, and a route of a method that is off answers 400 `forbidden_strategy` before any guard runs. The sign-in page starts by posting the address to `check-email`, which answers `recognized: true` only to a browser that has signed in to that account before (the signed `device-id` cookie plus a `devices` row); every other browser gets the neutral sign-in step, whether or not the address has an account.
+`appConfig.enabledAuthStrategies` says which methods are on. Every auth route leads its `xGuard` with the gate `strategyEnabled(<method>)`, so a route of a method that is off answers 400 `forbidden_strategy` before any other guard runs; deleting a passkey or TOTP carries no gate and stays reachable. The sign-in page starts by posting the address to `check-email`, which answers `recognized: true` only to a browser that has signed in to that account before (the signed `device-id` cookie plus a `devices` row); every other browser gets the neutral sign-in step, whether or not the address has an account.
 
 A magic-link or provider sign-in ends in `finishSignIn`: a session, or first an MFA challenge when the account requires one. A passkey sign-in sets the session at once. A system administrator signs in, and counts as one, only from an address in `SYSTEM_ADMIN_IP_ALLOWLIST`, which defaults to `none`.
 
@@ -32,7 +32,7 @@ An account is identified by the proofs it holds, never by an address; the identi
 
 The session cookie carries a random 40-character token; `sessions.secret` stores its SHA-256 hash, so reading the table yields no session. `resolveSession(ctx)` reads the session a request presents from its cookies alone, so any process on the app origin can call it. `readSession(token)` turns a token into its row, from a one-minute cache or the database. `findSession(ctx)` serves requests that may carry no session: a refusal reads as null, while a failed read stays the request's failure, so the database being away never reads as signed out. A session lives a week. A browser holds one live session per account, and an account at most `maxSessionsPerUser` (10) besides impersonations.
 
-Every ending before expiry goes through `endSessions`. It stamps the rows with `revokedAt`, `revokedBy` and a `revocationReason`, tells every process to drop its cached sessions (`auth_invalidate`), and closes the streams bound to them; the row stays for the sessions list.
+Every revocation before expiry goes through `revokeSessions`. It stamps the rows with `revokedAt`, `revokedBy` and a `revocationReason`, tells every process to drop its cached sessions (`auth_invalidate`), and closes the streams bound to them; the row stays for the sessions list.
 
 | Reason | When |
 | --- | --- |

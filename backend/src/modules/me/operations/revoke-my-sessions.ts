@@ -1,22 +1,22 @@
 import type { UserContext } from '#/core/context';
-import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
+import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
 
 /**
  * Revokes the user's own sessions by id. Revoking the session behind this request is a sign-out; the others end from
- * this session. Rows stay for the sessions list; connections bound to them close through `endSessions`. Ids of
+ * this session. Rows stay for the sessions list; connections bound to them close through `revokeSessions`. Ids of
  * sessions the user does not hold, or that ended already, come back rejected.
  */
 export async function revokeMySessionsOp(ctx: UserContext, ids: string[]) {
   const { user, sessionId: currentSessionId } = ctx.var;
 
   const [others, own] = await Promise.all([
-    endSessions(ctx, {
+    revokeSessions(ctx, {
       userId: user.id,
       sessionIds: ids.filter((id) => id !== currentSessionId),
       reason: 'other_session',
       by: user.id,
     }),
-    endSessions(ctx, {
+    revokeSessions(ctx, {
       userId: user.id,
       sessionIds: ids.filter((id) => id === currentSessionId),
       reason: 'sign_out',

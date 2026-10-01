@@ -5,7 +5,7 @@ import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb, getAdminDb } from '#/db/db';
 import { activityBus } from '#/lib/activity-bus';
-import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
+import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
 import { clientCache } from '#/modules/oauth-server/client-cache';
 import type { VerifiedAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { getApiKeyCache, setApiKeyCache } from './api-key-cache';
@@ -291,7 +291,7 @@ describe('auth_invalidate listener on a connection that stops answering', () => 
   });
 });
 
-describe('invalidateCache and endSessions publish to every process', () => {
+describe('invalidateCache and revokeSessions publish to every process', () => {
   const listener = new pg.Client({ connectionString: testDatabaseUrl });
   const received: string[] = [];
 
@@ -371,17 +371,17 @@ describe('invalidateCache and endSessions publish to every process', () => {
     await vi.waitFor(() => expect(received).toContain(JSON.stringify({ user: 'demoted' })));
   });
 
-  it('announces an ending of sessions to the other processes only once it commits', async () => {
+  it('announces a revocation of sessions to the other processes only once it commits', async () => {
     const [rolledBack, committed] = [generateId(), generateId()];
-    const ending = (userId: string) => ({ userId, all: true as const, reason: 'user_deleted' as const, by: null });
+    const revocation = (userId: string) => ({ userId, all: true as const, reason: 'user_deleted' as const, by: null });
 
     await baseDb
       .transaction(async (tx) => {
-        await endSessions({ var: { db: tx } }, ending(rolledBack));
+        await revokeSessions({ var: { db: tx } }, revocation(rolledBack));
         throw new Error('roll back');
       })
       .catch(() => {});
-    await endSessions({ var: { db: baseDb } }, ending(committed));
+    await revokeSessions({ var: { db: baseDb } }, revocation(committed));
 
     await vi.waitFor(() => expect(received).toContain(JSON.stringify({ user: committed })));
     expect(received).not.toContain(JSON.stringify({ user: rolledBack }));

@@ -1,6 +1,6 @@
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
-import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
+import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
 import { deleteConsentsOfUsers } from '#/modules/oauth-server/oauth-server-queries';
 import { deleteUsersByIds } from '#/modules/system/system-queries';
 
@@ -21,5 +21,5 @@ export async function deleteAccounts(ctx: DbContext, { userIds, by }: DeleteAcco
   // CASCADE SET NULL on createdBy/updatedBy propagates to product entities.
   await deleteUsersByIds(ctx, { ids: userIds });
   await deleteConsentsOfUsers(ctx, { userIds });
-  for (const userId of userIds) await endSessions(ctx, { userId, all: true, reason: 'user_deleted', by });
+  for (const userId of userIds) await revokeSessions(ctx, { userId, all: true, reason: 'user_deleted', by });
 }

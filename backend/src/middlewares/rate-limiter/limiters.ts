@@ -103,6 +103,12 @@ export const serviceBurstLimiter = rateLimiter('limit', 'serviceBurst', ['actorI
   description: 'Max 30 requests/second per service account',
 });
 
+/** Per-second ceiling for MCP endpoint requests, a bucket of its own: the route a tool call runs charges the burst. */
+export const mcpRequestLimiter = rateLimiter('limit', 'mcpRequest', ['actorId'], {
+  limits: { points: 30, duration: 1, blockDuration: 0 },
+  description: 'Max 30 MCP requests/second per account',
+});
+
 /** Backpressure for the read fan-out one SSE notification triggers; a 429 rides the client's invalidate-and-backoff. */
 export const syncReadLimiter = rateLimiter('limit', 'syncRead', [['userId', 'ip']], {
   limits: { points: 5000, duration: 60 * 60, blockDuration: 60 * 5 },
