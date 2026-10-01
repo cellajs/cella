@@ -28,7 +28,8 @@ const isNotificationsSeeded = async () => {
 /**
  * Gives the admin an inbox: per organization, a member edits a few seeded attachments and mentions
  * the admin in their description (`createdBy` is immutable, `updatedBy` records the editor as the
- * fan-out would), and the matching `mention` rows are inserted as the fan-out would write them.
+ * fan-out would), and the matching `mention` rows are inserted as the fan-out, which reads the
+ * mention from that description, would write them.
  * Attachment rows and inbox rows therefore agree, so the bell, the description caption and the
  * `/n` link all work on seeded data.
  */
@@ -83,7 +84,6 @@ export const notificationsSeed = async () => {
         .update(attachmentsTable)
         .set({
           updatedBy: member.userId,
-          mentions: [admin.id],
           description: mentionDocument(admin, `could you have a look at ${attachment.name}?`),
         })
         .where(eq(attachmentsTable.id, attachment.id));

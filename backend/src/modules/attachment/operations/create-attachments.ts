@@ -4,7 +4,7 @@ import type { OrgContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { buildStx } from '#/core/stx';
 import { tenantContext } from '#/db/tenant-context';
-import { dispatchMutation, prepareMutation } from '#/lib/mutation-bus';
+import { dispatchMutation } from '#/lib/mutation-bus';
 import { attachmentsTable, type InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import { insertAttachments } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/modules/attachment/attachment-schema';
@@ -76,11 +76,9 @@ export async function createAttachmentsOp(ctx: OrgContext, rawInput: CreateAttac
   }
 
   const createdAttachments = await tenantContext(ctx, async (txCtx) => {
-    // Server-derived columns (mentions) join the insert; handlers such as mention derivation join the transaction.
-    const derived = await prepareMutation(txCtx, 'attachment.created', { after: attachmentsToInsert });
-    const attachments = attachmentsToInsert.map((attachment, index) => ({ ...attachment, ...derived[index] }));
-    const rows = await insertAttachments(txCtx, { attachments });
-    await dispatchMutation(txCtx, 'attachment.created', { after: rows, prepared: true });
+    const rows = await insertAttachments(txCtx, { attachments: attachmentsToInsert });
+    // Inside the transaction, so mutation handlers join the write.
+    await dispatchMutation(txCtx, 'attachment.created', { after: rows });
     return rows;
   });
 

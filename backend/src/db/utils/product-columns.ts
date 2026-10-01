@@ -1,5 +1,4 @@
-import { sql } from 'drizzle-orm';
-import { bigint, text, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { bigint, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
 import type { ProductEntityType } from 'shared';
 import { maxLength } from '#/db/utils/constraints';
 import type { ActorId } from '#/db/utils/ids';
@@ -30,9 +29,8 @@ export const productColumns = <T extends ProductEntityType>(entityType: T) => ({
 });
 
 /**
- * Server-derived user ids mentioned in `description`. Its presence on a product table switches
- * on mention derivation and mention fan-out for that product's notification source.
+ * @deprecated The fan-out reads mentions from `description`, so no column stores them. Empty, so a
+ * table that still spreads it drops its `mentions` column on the next `pnpm generate`; removed in a
+ * later release.
  */
-export const mentionableColumns = {
-  mentions: text().array().notNull().default(sql`'{}'::text[]`),
-};
+export const mentionableColumns = {};

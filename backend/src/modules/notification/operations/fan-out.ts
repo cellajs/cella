@@ -5,6 +5,7 @@ import type { ActivityEvent } from '#/lib/activity-bus';
 import type { NotificationSubjectRow } from '#/lib/module';
 import { isPushSendConfigured, sendNotificationPush } from '#/modules/push/push-sender';
 import { log } from '#/utils/logger';
+import { extractMentionIds } from '../helpers/extract-mentions';
 import { readableAccess } from '../helpers/readable-access';
 import {
   findNotifiedUserIds,
@@ -21,8 +22,10 @@ type Candidate = { userId: string; type: NotificationType };
 
 /**
  * Turn one CDC event into per-recipient inbox rows, for entity types whose module declared a
- * notification source (lib/module.ts). Mentions come from the server-derived `mentions` column;
- * further recipients from the source's `resolveRecipients`.
+ * notification source (lib/module.ts). Mentions come from the row's stored body when the event
+ * can carry new ones; further recipients from the source's `resolveRecipients`. Every recipient
+ * passes the same read check, so a mention in a body the client wrote never reaches a user who
+ * may not read the row.
  *
  * Runs post-commit off the activity bus, so the row is durable before anyone is told about it.
  * Resolves true when it wrote a row the instant email pass mails (`instantEmailTypes`): a mention,
@@ -39,18 +42,31 @@ export async function fanOutNotifications(event: ActivityEvent): Promise<boolean
   const subjectIds = collectSubjectIds(event);
   if (subjectIds.length === 0) return false;
 
-  // Batch events carry only permission columns, never `mentions`, so the rows are always re-read.
-  const rows = await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, subjectIds));
+  // Batch events carry only permission columns, never the body, so the rows are always re-read.
+  const readsMentions = source.declaration.mentionable !== false && mayAddMentions(event);
+  const rows = await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, subjectIds, { body: readsMentions }));
 
   let mailable = false;
   for (const row of rows) {
     try {
-      if (await fanOutRow(event, entityType, source, row, tenantId)) mailable = true;
+      if (await fanOutRow(event, entityType, source, row, tenantId, readsMentions)) mailable = true;
     } catch (error) {
       log.error('Notification fan-out failed for row', { error, activityId, subjectId: row.id });
     }
   }
   return mailable;
+}
+
+/**
+ * Whether the event can add mentions: a create, or an update whose changed fields include the
+ * body. A batch carries its first row's changed fields only and a missing list says nothing, so
+ * both count as a body change; users told before are skipped either way.
+ */
+function mayAddMentions(event: ActivityEvent): boolean {
+  if (event.action === 'create') return true;
+  if (event.action !== 'update') return false;
+  if (!event.changedFields || (event.batchRows?.length ?? 0) > 1) return true;
+  return event.changedFields.includes('description');
 }
 
 /** Single events name one subject; batches list theirs in `batchRows`. */
@@ -71,6 +87,7 @@ async function fanOutRow(
   source: NotificationSource,
   row: NotificationSubjectRow,
   tenantId: string,
+  readsMentions: boolean,
 ): Promise<boolean> {
   const actorId = event.userId ?? row.createdBy ?? null;
 
@@ -81,7 +98,7 @@ async function fanOutRow(
     if (!candidates.has(userId)) candidates.set(userId, { userId, type });
   };
 
-  if (source.mentionable) for (const mentioned of row.mentions ?? []) add(mentioned, 'mention');
+  if (readsMentions) for (const mentioned of extractMentionIds(row.description)) add(mentioned, 'mention');
 
   const { resolveRecipients, resolveContextId } = source.declaration;
   if (resolveRecipients) {

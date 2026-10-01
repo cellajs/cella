@@ -658,7 +658,7 @@ const rlsSuiteReady = await (async () => {
         if (!rolesAvailable) return;
         const [entityType, fixture] = iterableRlsProducts[0];
         // The generic table read; app declarations with their own loadRows take the same tx.
-        const source: NotificationSource = { entityType, declaration: {}, mentionable: false, deriveFrom: 'client' };
+        const source: NotificationSource = { entityType, declaration: {} };
         const ids = (rows: { id: string }[]) => rows.map((row) => row.id);
 
         const asAdmin = await loadSubjectRows(source, adminRoleDb as unknown as DbOrTx, [fixture.rowId]);

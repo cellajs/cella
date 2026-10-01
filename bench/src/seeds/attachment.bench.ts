@@ -33,7 +33,6 @@ export const loadtestAttachment = (index: number): InsertAttachmentModel => ({
 registerBenchSeed({
   table: 'attachments',
   order: 100,
-  pgArrayColumns: ['mentions'],
   idVariant: CORE_ID_VARIANTS.attachment,
   rows: ({ now }) =>
     Array.from({ length: TOTAL_ATTACHMENTS }, (_, i) => ({ ...loadtestAttachment(i), createdAt: now, seq: 0 })),

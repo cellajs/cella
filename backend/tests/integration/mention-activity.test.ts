@@ -1,17 +1,14 @@
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { updateAttachment } from 'sdk';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import type { ActorContext } from '#/core/context';
 import { generateServerHLC } from '#/core/stx';
 import { getSeedDb } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { activitiesTable } from '#/modules/activities/activities-db';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { notificationsTable } from '#/modules/notification/notification-db';
-import { getNotificationSource } from '#/modules/notification/notification-sources';
-import { deriveMentions } from '#/modules/notification/operations/derive-mentions';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { adminRole, defaultHeaders } from '../fixtures';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from '../hierarchy-helpers';
@@ -21,10 +18,7 @@ import { startInProcessCdcWorker, waitFor } from './test-utils';
 
 const db = getSeedDb();
 
-/** Edited through the update op, which prepares the mentions into its own statement. */
-const preparedId = generateId();
-/** Edited by hand and derived after the write, as an op without `prepareMutation` does. */
-const unpreparedId = generateId();
+const attachmentId = generateId();
 
 const mentionDocument = (userId: string) =>
   JSON.stringify([
@@ -38,30 +32,29 @@ const mentionDocument = (userId: string) =>
   ]);
 
 /**
- * Mention derivation through the CDC worker: the activity log is what sync and the notification
- * fan-out consume, so one client edit must stay one `updated` activity attributed to the edit.
+ * A mention edit through the CDC worker: the activity log is what sync and the notification
+ * fan-out consume, so one client edit must stay one `updated` activity attributed to the edit,
+ * and the fan-out reads the mention from the body that activity carries.
  */
-describe.skipIf(process.env.TEST_MODE !== 'full')('Mention derivation activity', async () => {
+describe.skipIf(process.env.TEST_MODE !== 'full')('Mention edit activity', async () => {
   const call = await createAppClient();
   let cdcHarness: Awaited<ReturnType<typeof startInProcessCdcWorker>>;
   let tenant: TestTenant;
   let member: { id: string };
   let plan: TestEntityHierarchyPlan;
 
-  const updateActivities = (subjectId: string) =>
+  const updateActivities = () =>
     db
       .select({ changedFields: activitiesTable.changedFields })
       .from(activitiesTable)
-      .where(and(eq(activitiesTable.subjectId, subjectId), eq(activitiesTable.action, 'update')))
+      .where(and(eq(activitiesTable.subjectId, attachmentId), eq(activitiesTable.action, 'update')))
       .orderBy(activitiesTable.id);
 
-  const storedMentions = async (id: string) => {
-    const [row] = await db
-      .select({ mentions: attachmentsTable.mentions })
-      .from(attachmentsTable)
-      .where(eq(attachmentsTable.id, id));
-    return row.mentions;
-  };
+  const memberInbox = () =>
+    db
+      .select({ type: notificationsTable.type })
+      .from(notificationsTable)
+      .where(and(eq(notificationsTable.userId, member.id), eq(notificationsTable.subjectId, attachmentId)));
 
   beforeAll(async () => {
     cdcHarness = await startInProcessCdcWorker();
@@ -69,40 +62,44 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Mention derivation activity',
     member = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'mention-activity-member', adminRole);
     plan = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
 
-    for (const id of [preparedId, unpreparedId]) {
-      const row = buildInsertableProduct(
-        'attachment',
-        { id, tenantId: tenant.tenantId, ...plan.channelIdColumns, createdBy: tenant.user.id, updatedBy: null },
-        id,
-      );
-      await insertAttachmentRow({ ...row, deletedBy: null, mentions: [] });
-    }
+    const row = buildInsertableProduct(
+      'attachment',
+      {
+        id: attachmentId,
+        tenantId: tenant.tenantId,
+        ...plan.channelIdColumns,
+        createdBy: tenant.user.id,
+        updatedBy: null,
+      },
+      attachmentId,
+    );
+    await insertAttachmentRow({ ...row, deletedBy: null });
 
-    // The inserts' seq stamps mark the worker as caught up with the rows.
+    // The insert's seq stamp marks the worker as caught up with the row.
     await waitFor(
       async () => {
-        const stamped = await db
+        const [stamped] = await db
           .select({ seq: attachmentsTable.seq })
           .from(attachmentsTable)
-          .where(inArray(attachmentsTable.id, [preparedId, unpreparedId]));
-        return stamped.length === 2 && stamped.every(({ seq }) => seq > 0);
+          .where(eq(attachmentsTable.id, attachmentId));
+        return (stamped?.seq ?? 0) > 0;
       },
       15_000,
-      'CDC insert stamps on attachments',
+      'CDC insert stamp on the attachment',
     );
   });
 
   afterAll(async () => {
     await cdcHarness?.stop();
-    await db.delete(notificationsTable).where(inArray(notificationsTable.subjectId, [preparedId, unpreparedId]));
-    await db.delete(attachmentsTable).where(inArray(attachmentsTable.id, [preparedId, unpreparedId]));
+    await db.delete(notificationsTable).where(eq(notificationsTable.subjectId, attachmentId));
+    await db.delete(attachmentsTable).where(eq(attachmentsTable.id, attachmentId));
     await cleanupEntityHierarchy(db, plan);
     await clearSecurityTestData();
   });
 
-  it('writes a derived mention in the edit itself: one updated activity, attributed to the edit', async () => {
+  it('stores an edit that adds a mention as one updated activity and mentions the member', async () => {
     const result = await call(updateAttachment, {
-      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id: preparedId },
+      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id: attachmentId },
       body: {
         ops: { description: mentionDocument(member.id) },
         stx: { ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { description: generateServerHLC('test') } },
@@ -111,39 +108,11 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Mention derivation activity',
     });
     expect(result.response.status).toBe(200);
 
-    // Writes of one transaction reach the worker together and are persisted in one insert.
-    await waitFor(async () => (await updateActivities(preparedId)).length > 0, 15_000, 'attachment updated activity');
+    // The fan-out runs after the activity is persisted; writes of one transaction are persisted in one insert.
+    await waitFor(async () => (await memberInbox()).length > 0, 15_000, 'mention notification for the member');
 
-    expect(await storedMentions(preparedId)).toEqual([member.id]);
-    const activities = await updateActivities(preparedId);
+    const activities = await updateActivities();
     expect(activities.map(({ changedFields }) => changedFields)).toEqual([['description', 'updatedAt']]);
-  });
-
-  it('attributes a mention update after an unprepared write to the mentions column', async () => {
-    const source = getNotificationSource('attachment');
-    if (!source) throw new Error('attachment notification source not registered');
-
-    await db.transaction(async (tx) => {
-      const [before] = await tx.select().from(attachmentsTable).where(eq(attachmentsTable.id, unpreparedId));
-      // The client edit as an op stores it: its changed fields recorded in stx.
-      const [after] = await tx
-        .update(attachmentsTable)
-        .set({
-          description: mentionDocument(member.id),
-          stx: sql`jsonb_set(${attachmentsTable.stx}, '{changedFields}', '["description","updatedAt"]'::jsonb)`,
-        })
-        .where(eq(attachmentsTable.id, unpreparedId))
-        .returning();
-      // Test mock: derivation reads only `var.db`, here the writing transaction.
-      const ctx = { var: { db: tx } } as unknown as ActorContext;
-      await deriveMentions(ctx, { before: [before], after: [after] }, source);
-    });
-
-    await waitFor(async () => (await updateActivities(unpreparedId)).length > 0, 15_000, 'attachment updated activity');
-
-    expect(await storedMentions(unpreparedId)).toEqual([member.id]);
-    // The second update is server-driven: the worker diffs it, so it does not repeat the edit's fields.
-    const activities = await updateActivities(unpreparedId);
-    expect(activities.map(({ changedFields }) => changedFields)).toEqual([['description', 'updatedAt'], ['mentions']]);
+    expect(await memberInbox()).toEqual([{ type: 'mention' }]);
   });
 });
