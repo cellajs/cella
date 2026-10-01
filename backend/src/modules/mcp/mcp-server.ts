@@ -36,7 +36,7 @@ const serverInfo = { name: `${appConfig.name} MCP`, version: appConfig.apiVersio
 
 /**
  * Model Context Protocol server over JSON-RPC 2.0 (Streamable HTTP, JSON responses): `initialize`, `tools/list`,
- * `tools/call`, `ping`. Tools are the routes carrying `x-tool`; the token's scopes gate execution, and a call runs the
+ * `tools/call`, `ping`. Tools are the routes carrying `xTool`; the token's scopes gate execution, and a call runs the
  * route's own handler. Returns `null` for notifications (messages without an `id`), which must not get a reply.
  * @see https://modelcontextprotocol.io
  */

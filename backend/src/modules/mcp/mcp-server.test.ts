@@ -119,30 +119,26 @@ describe('mcp-server', () => {
   describe('a failing tool', () => {
     const failRoutes = createXRoutes(['things'], {
       brokenQueryTool: xRoute({
-        'x-tool': {
-          enabled: true,
-          description: 'Fails',
-          approvalRequired: false,
-          category: 'things',
-          entity: 'attachment',
-        },
         method: 'get',
         path: '/broken',
         xGuard: [publicGuard],
+        xTool: {
+          description: 'Fails',
+          approvalRequired: false,
+          entity: 'attachment',
+        },
         summary: 'Broken query',
         responses: { 200: json('ok', z.any()) },
       }),
       missingThingTool: xRoute({
-        'x-tool': {
-          enabled: true,
-          description: 'Fails',
-          approvalRequired: false,
-          category: 'things',
-          entity: 'attachment',
-        },
         method: 'get',
         path: '/missing',
         xGuard: [publicGuard],
+        xTool: {
+          description: 'Fails',
+          approvalRequired: false,
+          entity: 'attachment',
+        },
         summary: 'Missing thing',
         responses: { 200: json('ok', z.any()) },
       }),

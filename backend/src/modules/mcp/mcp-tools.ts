@@ -2,7 +2,7 @@ import { type OpenAPIHono, type RouteConfig, z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import { type AccessScope, type AccessScopedEntityType, accessScopes, type EntityActionType } from 'shared';
 import type { Env } from '#/core/context';
-import type { XToolSpec } from '#/core/openapi-extensions';
+import type { XTool } from '#/core/openapi-extensions';
 import { createServerStx, createServerStxStamping } from '#/core/stx/create-server-stx';
 
 /** A tool as `tools/list` returns it. */
@@ -92,7 +92,7 @@ async function toOutcome(response: Response): Promise<McpToolOutcome> {
   return { ok: false, type: error.type ?? 'error', message: error.message ?? response.statusText };
 }
 
-function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XToolSpec): McpTool {
+function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpTool {
   const name = route.operationId;
   if (!name) throw new Error(`[MCP] The tool route ${route.method} ${route.path} has no operationId`);
 
@@ -185,16 +185,16 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XToolSpec): 
 }
 
 /**
- * One tool per route carrying `x-tool`, read from the app's OpenAPI registry, where every mounted route has its full
+ * One tool per route carrying `xTool` (`x-tool` in the spec), read from the app's OpenAPI registry, where every mounted route has its full
  * path, operationId and request schemas. Calls go through `app`, so pass the app the routes are mounted on.
  */
 export function buildMcpTools(app: OpenAPIHono<Env>): McpTool[] {
   const tools: McpTool[] = [];
   for (const definition of app.openAPIRegistry.definitions) {
     if (definition.type !== 'route') continue;
-    const route = definition.route as RouteConfig & { 'x-tool'?: XToolSpec };
+    const route = definition.route as RouteConfig & { 'x-tool'?: XTool };
     const spec = route['x-tool'];
-    if (!spec?.enabled) continue;
+    if (!spec) continue;
     const tool = buildTool(app, route, spec);
     if (tools.some((existing) => existing.name === tool.name))
       throw new Error(`[MCP] Tool ${tool.name} is registered twice`);

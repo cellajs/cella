@@ -4,7 +4,7 @@ This document covers the MCP worker: the app's **Model Context Protocol endpoint
 
 ### TL;DR
 
-An AI client connects to `<mcpUrl>/<tenant>/<org>/mcp` with an access token from the OAuth worker and nothing else. MCP tools are ordinary routes that carry `x-tool`; their input comes from the route's request schema and a call runs the route itself, as the person who consented or the service account behind the token. A call outside the token's scopes answers with the scope to step up to.
+An AI client connects to `<mcpUrl>/<tenant>/<org>/mcp` with an access token from the OAuth worker and nothing else. MCP tools are ordinary routes that carry `xTool`; their input comes from the route's request schema and a call runs the route itself, as the person who consented or the service account behind the token. A call outside the token's scopes answers with the scope to step up to.
 
 ## How it fits
 
@@ -14,7 +14,7 @@ AI client (Claude Desktop, VS Code, a CI job)
         ▼
 MCP endpoint  /<tenant>/<org>/mcp
   ├─ tokenGuard → tenantGuard → orgGuard
-  ├─ tools/list: every route registered through x-tool
+  ├─ tools/list: every route that carries xTool
   └─ tools/call: scope check, input validation, the route in-process
         │
         ▼
@@ -36,19 +36,17 @@ A client follows the challenge to the OAuth worker, obtains consent and a token 
 
 ## MCP tools are routes
 
-A route opts in by carrying `x-tool` in its `xRoute` config:
+A route opts in by carrying `xTool` in its `xRoute` config, after its `xGuard`, `xRateLimiter` and `xCache`:
 
 ```ts
-'x-tool': {
-  enabled: true,
+xTool: {
   description: 'Rename an attachment or replace its description.',
   approvalRequired: true,
-  category: 'attachments',
   entity: 'attachment',
 },
 ```
 
-The OpenAPI spec shows it as it is; the MCP endpoint builds its tools from the mounted routes that carry it. Everything else is derived:
+The OpenAPI spec shows it under `x-tool`; the MCP endpoint builds its tools from the mounted routes that carry it. Everything else is derived:
 
 | Tool field | Source |
 | --- | --- |
@@ -58,7 +56,7 @@ The OpenAPI spec shows it as it is; the MCP endpoint builds its tools from the m
 | `annotations` | `readOnlyHint`, `destructiveHint`, `idempotentHint` from the method |
 | `_meta.scope` | The scope, so a client can ask for it up front |
 
-`tools/list` returns every tool, not only the ones the token may call, so a client can discover what to step up to. `tools/call` validates the arguments against the route's own schemas (a refusal is a JSON-RPC `-32602` with the issues), then sends the request through the app with the caller's token: the route's guards, limiters, cache and handler run as for a REST request, and its JSON answer is the result. A permission or domain error from the route comes back as a tool result with `isError`, which a model can act on; only transport-level faults are JSON-RPC errors. The template registers the five attachment routes (list, get, create, update, delete); an app adds `x-tool` to any organization route that answers JSON. "Every operation is a tool" is not the default on purpose.
+`tools/list` returns every tool, not only the ones the token may call, so a client can discover what to step up to. `tools/call` validates the arguments against the route's own schemas (a refusal is a JSON-RPC `-32602` with the issues), then sends the request through the app with the caller's token: the route's guards, limiters, cache and handler run as for a REST request, and its JSON answer is the result. A permission or domain error from the route comes back as a tool result with `isError`, which a model can act on; only transport-level faults are JSON-RPC errors. The template registers the five attachment routes (list, get, create, update, delete); an app adds `xTool` to any organization route that answers JSON. "Every operation is a tool" is not the default on purpose.
 
 ## Transport
 

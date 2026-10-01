@@ -9,22 +9,16 @@ import { createBaseApp } from '#/server';
 import { defaultHook } from '#/utils/default-hook';
 import { buildMcpTools, type McpTool } from './mcp-tools';
 
-const tool = (entity: 'attachment') => ({
-  enabled: true,
-  description: 'A test tool',
-  approvalRequired: false,
-  category: 'things',
-  entity,
-});
+const tool = (entity: 'attachment') => ({ description: 'A test tool', approvalRequired: false, entity });
 
 const itemSchema = z.object({ name: z.string(), stx: z.object({ mutationId: z.string(), sourceId: z.string() }) });
 
 const thingRoutes = createXRoutes(['things'], {
   listThings: xRoute({
-    'x-tool': tool('attachment'),
     method: 'get',
     path: '/{id}',
     xGuard: [publicGuard],
+    xTool: tool('attachment'),
     summary: 'List things',
     request: {
       params: z.object({ tenantId: z.string(), organizationId: z.string(), id: z.string() }),
@@ -33,10 +27,10 @@ const thingRoutes = createXRoutes(['things'], {
     responses: { 200: json('Things', z.any()) },
   }),
   createThings: xRoute({
-    'x-tool': tool('attachment'),
     method: 'post',
     path: '/',
     xGuard: [publicGuard],
+    xTool: tool('attachment'),
     summary: 'Create things',
     request: {
       params: z.object({ tenantId: z.string(), organizationId: z.string() }),
@@ -45,10 +39,10 @@ const thingRoutes = createXRoutes(['things'], {
     responses: { 201: json('Created', z.any()) },
   }),
   refuseThing: xRoute({
-    'x-tool': tool('attachment'),
     method: 'delete',
     path: '/{id}',
     xGuard: [publicGuard],
+    xTool: tool('attachment'),
     summary: 'Refuse thing',
     request: { params: z.object({ tenantId: z.string(), organizationId: z.string(), id: z.string() }) },
     responses: { 200: json('Deleted', z.any()) },

@@ -3,6 +3,7 @@ import type { MiddlewareHandler } from 'hono';
 import type { Env } from '#/core/context';
 import {
   collectExtensionMiddleware,
+  createMetadataExtensions,
   createSpecificationExtensions,
   type ExtensionPropId,
   getExtensionPropIds,
@@ -58,11 +59,12 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   // Security follows the guard: the first guard that declares schemes decides; a route with none is cookie-only.
   const security = xMiddlewares.find((mw) => mw.__security !== undefined)?.__security ?? [{ cookieAuth: [] }];
 
-  // Strip extension props to prevent them leaking as null in OpenAPI
+  // Extension props leave the route config: middleware runs, metadata returns under its `x-*` key.
   const extensionPropIds = getExtensionPropIds();
-  const cleanConfig = Object.fromEntries(
-    Object.entries(config).filter(([key]) => !extensionPropIds.includes(key)),
-  ) as Omit<R, ExtensionPropId>;
+  const cleanConfig = {
+    ...Object.fromEntries(Object.entries(config).filter(([key]) => !extensionPropIds.includes(key))),
+    ...createMetadataExtensions(config),
+  } as Omit<R, ExtensionPropId>;
 
   return createRoute({
     security,

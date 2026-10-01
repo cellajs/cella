@@ -70,14 +70,11 @@ export type ExtensionEntry = {
 };
 
 /** A route opts in as an MCP tool by carrying this; the input schema derives from the route's `request`. */
-export type XToolSpec = {
-  /** Whether this route is exposed as an MCP tool */
-  enabled: boolean;
-  /** LLM-friendly description of what this tool does */
+export type XTool = {
+  /** What the tool does, written for a model */
   description: string;
-  /** Whether user approval is required before execution (write MCP tools) */
+  /** Whether the client asks its user before running the tool */
   approvalRequired: boolean;
-  category: string;
   /** The entity the route acts on: with the method it names the scope a token needs (`<entity>:read` | `:write`). */
   entity: AccessScopedEntityType;
 };
@@ -87,7 +84,8 @@ export type XMiddlewareOptions = {
   xGuard: MiddlewareArray;
   xRateLimiter?: MiddlewareArray;
   xCache?: MiddlewareArray;
-  'x-tool'?: XToolSpec;
+  /** Exposes the route as an MCP tool. */
+  xTool?: XTool;
 };
 
 export type ExtensionPropId = keyof XMiddlewareOptions;
@@ -97,11 +95,16 @@ export const collectExtensionMiddleware = (config: Record<string, unknown>): Mid
     .filter(({ kind }) => kind === 'middleware')
     .flatMap(({ id }) => (config[id] as MiddlewareHandler<Env>[]) ?? []);
 
-/** Get middleware extension prop IDs from the map (e.g., ['xGuard', 'xRateLimiter']). Metadata extensions use raw keys and are not stripped. */
-export const getExtensionPropIds = (): string[] =>
-  Object.values(extensionMap)
-    .filter(({ kind }) => kind === 'middleware')
-    .map(({ id }) => id);
+/** The route prop ids of every extension (e.g. `['xGuard', 'xRateLimiter', 'xCache', 'xTool']`), kept out of the spec. */
+export const getExtensionPropIds = (): string[] => Object.values(extensionMap).map(({ id }) => id);
+
+/** The metadata extensions a route declares, under their spec keys (`xTool` as `x-tool`). */
+export const createMetadataExtensions = (config: Record<string, unknown>): Record<string, unknown> =>
+  Object.fromEntries(
+    Object.entries(extensionMap)
+      .filter(([, { id, kind }]) => kind === 'metadata' && config[id] !== undefined)
+      .map(([key, { id }]) => [key, config[id]]),
+  );
 
 export function createSpecificationExtensions(getValue: (key: ExtensionType) => string[]): SpecificationExtensions {
   const keys = (Object.keys(extensionMap) as ExtensionType[]).filter((key) => extensionMap[key].kind === 'middleware');
