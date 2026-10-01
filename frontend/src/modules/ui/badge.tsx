@@ -1,6 +1,5 @@
+import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
-import * as React from 'react';
-import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';
 
 export const badgeVariants = cva(
@@ -57,14 +56,11 @@ export function Badge({
   context,
   size,
   render,
-  children,
   ...props
-}: React.ComponentProps<'span'> & VariantProps<typeof badgeVariants> & { render?: React.ReactElement }) {
-  const computedProps = { 'data-slot': 'badge', className: cn(badgeVariants({ variant, soft, size, context }), className), ...props };
-
-  if (render) {
-    return <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot>;
-  }
-
-  return <span {...computedProps}>{children}</span>;
+}: useRender.ComponentProps<'span'> & VariantProps<typeof badgeVariants>) {
+  return useRender({
+    defaultTagName: 'span',
+    render,
+    props: { 'data-slot': 'badge', className: cn(badgeVariants({ variant, soft, size, context }), className), ...props },
+  });
 }

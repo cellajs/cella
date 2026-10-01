@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import type * as React from 'react';
 import { act, createRef, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -6,6 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('i18next', () => ({ default: { t: (key: string) => key }, t: (key: string) => key }));
 
+const { Badge } = await import('~/modules/ui/badge');
 const { Button } = await import('~/modules/ui/button');
 const { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } = await import('~/modules/ui/select');
 const { Tabs, TabsList, TabsTrigger } = await import('~/modules/ui/tabs');
@@ -42,6 +44,48 @@ async function typeInto(input: HTMLInputElement, text: string) {
     input.dispatchEvent(new Event('input', { bubbles: true }));
   });
 }
+
+describe('render prop', () => {
+  it('renders a Button as its render element, keeping link semantics and merging refs and handlers', async () => {
+    const outerRef = createRef<HTMLAnchorElement>();
+    const innerRef = createRef<HTMLAnchorElement>();
+    const onOuterClick = vi.fn();
+    const onInnerClick = vi.fn((event: React.MouseEvent) => event.preventDefault());
+    const el = await render(
+      <Button
+        ref={outerRef as unknown as React.Ref<HTMLButtonElement>}
+        variant="plain"
+        className="caller-class"
+        onClick={onOuterClick}
+        render={<a ref={innerRef} href="/docs" className="link-class" onClick={onInnerClick} />}
+      >
+        Docs
+      </Button>,
+    );
+    const link = el.querySelector('a') as HTMLAnchorElement;
+
+    expect(el.querySelector('button')).toBeNull();
+    expect(link.textContent).toBe('Docs');
+    expect(link.hasAttribute('type')).toBe(false);
+    expect(link.getAttribute('data-slot')).toBe('button');
+    expect(link.className).toContain('caller-class');
+    expect(link.className).toContain('link-class');
+    expect(outerRef.current).toBe(link);
+    expect(innerRef.current).toBe(link);
+
+    await act(async () => link.click());
+    expect(onInnerClick).toHaveBeenCalledTimes(1);
+    expect(onOuterClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('renders a Badge through its render element', async () => {
+    const el = await render(<Badge render={<a href="/new" />}>New</Badge>);
+    const link = el.querySelector('a') as HTMLAnchorElement;
+
+    expect(link.textContent).toBe('New');
+    expect(link.getAttribute('data-slot')).toBe('badge');
+  });
+});
 
 describe('Button', () => {
   it('does not submit a surrounding form unless it asks to', async () => {

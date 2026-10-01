@@ -1600,6 +1600,22 @@
    "pnpm check"
   ],
   "summary": "biome.jsonc lineWidth goes from 120 to 150, and collapse-objects.ts removes the line break after { in shallow multi-line objects, type literals and destructuring patterns so Biome collapses each one that fits; literals nested three or more levels deep keep their shape. Formatting only. After the sync, keep the app's side in formatting conflicts, then run the codemod (roots default to the biome.jsonc includes), biome format until it reports no fixes, pnpm lint:fix and pnpm sdk."
+ },
+ {
+  "id": "20261001T0951-slot-to-use-render",
+  "version": "next",
+  "title": "Slot replaced by Base UI useRender",
+  "kind": "manual",
+  "syncBreaking": true,
+  "clientCacheBump": false,
+  "script": null,
+  "roots": [
+   "frontend/src"
+  ],
+  "requires": [
+   "pnpm check"
+  ],
+  "summary": "frontend/src/modules/ui/slot.tsx is removed: Button, Badge, ButtonGroupText, BreadcrumbLink and the sidebar parts with a render prop build on Base UI's useRender, like upstream shadcn. Props merge as before (the render element wins, class names join, both handlers run), refs now merge where Slot dropped the outer one, and render also accepts Base UI's function form. Apps that import ~/modules/ui/slot rebuild those components on useRender; render={<Link />} call sites are unaffected."
  }
  ]
 }
