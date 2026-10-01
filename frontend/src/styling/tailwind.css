@@ -3,15 +3,14 @@
 
 @config "../../tailwind.config.ts";
 
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
-  }
+/* `:is` keeps the specificity of the `.dark` ancestor; v4's documented `:where` form would drop it. */
+@custom-variant dark (&:is(.dark *));
 
+/* Vite scans frontend/ on its own. shared/ also carries classes (the avatar placeholder colors); its scripts only feed junk candidates. */
+@source "../../../shared";
+@source not "../../../shared/scripts";
+
+@layer base {
   @font-face {
     font-family: "Open Sans";
     src:
@@ -108,17 +107,12 @@
    utilities like Card's `text-card-foreground` in light mode. In dark mode the intent tokens
    are too dark on the tinted fill, so lift them toward white to restore contrast. */
 @utility soft-text {
-  color: var(--intent-color);
   :root & {
     color: var(--intent-color);
   }
   .dark & {
     color: color-mix(in oklch, var(--intent-color), white 35%);
   }
-}
-
-@utility soft-bg-hover {
-  background-color: color-mix(in srgb, var(--intent-color) 15%, var(--background));
 }
 
 /* Stronger steps for interactive elements sitting ON a soft surface, where flat soft-bg blends
@@ -131,7 +125,6 @@
   background-color: color-mix(in srgb, var(--intent-color) 26%, var(--background));
 }
 @utility soft-text-strong {
-  color: color-mix(in oklch, var(--intent-color), black 10%);
   :root & {
     color: color-mix(in oklch, var(--intent-color), black 10%);
   }
@@ -140,7 +133,6 @@
   }
 }
 @utility soft-text-stronger {
-  color: color-mix(in oklch, var(--intent-color), black 20%);
   :root & {
     color: color-mix(in oklch, var(--intent-color), black 20%);
   }
@@ -259,7 +251,7 @@
 /* Inline `code` pills: drop the prose backtick pseudo-elements, add a bordered chip. */
 .prose code:not(pre code)::before,
 .prose code:not(pre code)::after {
-  content: none !important;
+  content: none;
 }
 
 .prose code:not(pre code) {
@@ -341,8 +333,6 @@
 
     --sidebar: oklch(0.9575 0.0044 285.76);
     --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.97 0 0);
     --sidebar-accent-foreground: oklch(0.205 0 0);
     --sidebar-border: oklch(0.922 0 0);
@@ -364,26 +354,17 @@
     --muted-foreground: oklch(0.8089 0.0128 285.86);
     --accent: oklch(0.3138 0.0102 285.63);
     --accent-foreground: oklch(0.9851 0 0);
-    --destructive: oklch(0.5137 0.2082 29.23);
-    --destructive-foreground: oklch(0.9851 0 0);
     --border: oklch(0.36 0.011 285.63);
     --input: oklch(0.42 0.011 285.63);
     --ring: oklch(0.86 0.0096 285.72);
-    --success: oklch(0.5917 0.2014 142.5);
-    --success-foreground: oklch(0.9851 0 0);
-    --warning: oklch(0.68 0.16 70);
-    --warning-foreground: oklch(0.9851 0 0);
     --brand: oklch(0.9851 0 0);
     --brand-foreground: oklch(0.3138 0.0102 285.63);
 
     --sidebar: oklch(0.3138 0.0102 285.63);
     --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
     --sidebar-accent: oklch(0.269 0 0);
     --sidebar-accent-foreground: oklch(0.985 0 0);
     --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: var(--ring);
   }
 }
 
@@ -410,8 +391,12 @@
     height: 1rem;
   }
 
-  * {
-    @apply border-border;
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    @apply border-border outline-ring/50;
   }
 
   body {
