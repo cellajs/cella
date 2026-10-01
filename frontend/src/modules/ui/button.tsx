@@ -66,7 +66,10 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   render?: useRender.RenderProp;
 }
 
-/** `loading` disables the button and overlays a spinner on its hidden content, so the width stays put. Native buttons default to `type="button"`. */
+/**
+ * `loading` disables the button and overlays a spinner on its transparent content, so the width stays put and the
+ * content still names the button. Native buttons default to `type="button"`.
+ */
 export function Button({
   className,
   variant,
@@ -80,7 +83,7 @@ export function Button({
 }: React.ComponentProps<'button'> & ButtonProps) {
   const content = loading ? (
     <span className="relative inline-flex items-center justify-center gap-[inherit]">
-      <span className="invisible inline-flex items-center gap-[inherit]">{children}</span>
+      <span className="inline-flex items-center gap-[inherit] opacity-0">{children}</span>
       <LoaderCircleIcon className="absolute inset-0 m-auto animate-spin" />
     </span>
   ) : (

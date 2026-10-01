@@ -16,7 +16,7 @@ export function Avatar({ className, size = 'default', ...props }: AvatarProps) {
 }
 
 export function AvatarImage({ className, ...props }: AvatarPrimitive.Image.Props & React.RefAttributes<HTMLImageElement>) {
-  return <AvatarPrimitive.Image data-slot="avatar-image" className={cn('aspect-square size-full', className)} {...props} />;
+  return <AvatarPrimitive.Image data-slot="avatar-image" className={cn('aspect-square size-full object-cover', className)} {...props} />;
 }
 
 export function AvatarFallback({ className, ...props }: AvatarPrimitive.Fallback.Props & React.RefAttributes<HTMLSpanElement>) {
