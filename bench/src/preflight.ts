@@ -2,14 +2,13 @@ import pg from 'pg';
 import { appConfig } from 'shared';
 import { BASE_URL, DB_URL } from './config';
 
-// Only services the app runs are health-checked: cdc, yjs, and mcp are skipped when disabled in appConfig.services.
+// Only the services the scenarios use are health-checked: the API, and the cdc worker when the app runs it. Yjs and
+// mcp stay out, so a stack without them (or the test config, which turns them on) does not skip or block a run.
 export const SERVICES = {
   backend: `${BASE_URL}/health`,
   ...(appConfig.services.cdc.enabled !== false
     ? { cdc: `http://localhost:${appConfig.devPorts.cdcHealth}/health` }
     : {}),
-  ...(appConfig.services.yjs.enabled !== false ? { yjs: `http://localhost:${appConfig.devPorts.yjs}/health` } : {}),
-  ...(appConfig.services.mcp.enabled !== false ? { mcp: `http://localhost:${appConfig.devPorts.mcp}/health` } : {}),
 } as const;
 
 export async function isPostgresReady(): Promise<boolean> {
