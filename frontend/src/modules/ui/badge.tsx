@@ -19,8 +19,18 @@ export const badgeVariants = cva(
         warning: 'border-transparent [--intent-color:var(--warning)]',
       },
       soft: { true: '', false: '' },
-      size: { micro: 'h-4 py-0 text-[10px]', xs: 'h-5 text-xs', sm: 'h-6 text-xs', md: 'h-7 text-sm', lg: 'h-10 text-base', xl: 'h-12 text-lg' },
-      context: { button: 'zoom-in absolute -top-1.5 -right-1.5 flex min-w-5 animate-in justify-center px-1 py-0 shadow-md', none: 'lowercase' },
+      size: {
+        micro: 'h-4 py-0 text-[10px]',
+        xs: 'h-5 text-xs',
+        sm: 'h-6 text-xs',
+        md: 'h-7 text-sm',
+        lg: 'h-10 text-base',
+        xl: 'h-12 text-lg',
+      },
+      context: {
+        button: 'zoom-in absolute -top-1.5 -right-1.5 flex min-w-5 animate-in justify-center px-1 py-0 shadow-md',
+        none: 'lowercase',
+      },
     },
     // Solid fills gated on `soft: false`, so the soft form never emits `text-<intent>-foreground`
     compoundVariants: [

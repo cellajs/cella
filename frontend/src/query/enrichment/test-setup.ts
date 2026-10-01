@@ -10,8 +10,14 @@ export const queryClient = new QueryClient({
 function createMockEntityKeys(entityType: string) {
   return {
     all: [entityType],
-    list: { base: [entityType, 'list'] as readonly unknown[], filtered: (filters: object) => [entityType, 'list', filters] },
-    detail: { base: [entityType, 'detail'] as readonly unknown[], byId: (id: string) => [entityType, 'detail', id] as readonly unknown[] },
+    list: {
+      base: [entityType, 'list'] as readonly unknown[],
+      filtered: (filters: object) => [entityType, 'list', filters],
+    },
+    detail: {
+      base: [entityType, 'detail'] as readonly unknown[],
+      byId: (id: string) => [entityType, 'detail', id] as readonly unknown[],
+    },
     create: [entityType, 'create'],
     update: [entityType, 'update'],
     delete: [entityType, 'delete'],

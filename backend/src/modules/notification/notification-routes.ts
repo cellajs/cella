@@ -33,7 +33,7 @@ const notificationRoutes = createXRoutes(['notifications'], {
     xGuard: [userGuard],
     summary: 'Mark notifications as read',
     description:
-      'Marks specific notifications read by id, everything sharing one context, or all unread ' + 'notifications when the body is empty. Idempotent.',
+      'Marks specific notifications read by id, everything sharing one context, or all unread notifications when the body is empty. Idempotent.',
     request: { body: jsonBody(markReadBodySchema) },
     responses: { 200: json('Number of notifications marked read', markReadResponseSchema) },
   }),

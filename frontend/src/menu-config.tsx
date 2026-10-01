@@ -20,13 +20,15 @@ function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null
     }
   };
 
+  const title = i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() });
+
   return useDialoger.getState().create(<CreateOrganizationForm dialog callback={callback} />, {
     className: 'md:max-w-2xl',
     id: 'create-organization',
     description: i18n.t('c:create_organization.text'),
     triggerRef,
-    title: i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() }),
-    titleContent: <UnsavedBadge title={i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() })} />,
+    title,
+    titleContent: <UnsavedBadge title={title} />,
   });
 }
 

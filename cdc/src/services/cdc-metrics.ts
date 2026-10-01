@@ -103,6 +103,8 @@ class Metrics {
     const sortedBatch = allBatchSizes.slice().sort((a, b) => a - b);
     const windowSec = Math.max(1, windowMs / 1000);
 
+    const avgBatchSize = sortedBatch.length ? Math.round((sortedBatch.reduce((a, b) => a + b, 0) / sortedBatch.length) * 10) / 10 : 0;
+
     return {
       windowSeconds: Math.round(windowSec),
       eventsProcessed: totalEvents,
@@ -114,7 +116,7 @@ class Metrics {
         p99: Math.round(percentile(sortedProc, 99) * 10) / 10,
       },
       batchSize: {
-        avg: sortedBatch.length ? Math.round((sortedBatch.reduce((a, b) => a + b, 0) / sortedBatch.length) * 10) / 10 : 0,
+        avg: avgBatchSize,
         max: sortedBatch.length ? sortedBatch[sortedBatch.length - 1] : 0,
       },
       flushes: totalFlushes,

@@ -105,9 +105,10 @@ export function OpenApiSpecViewer() {
   if (isLoading) return <Spinner />;
 
   if (error) {
+    const resource = t('c:docs.openapi_specification').toLowerCase();
     return (
       <div className="flex items-center justify-center p-12">
-        <span className="text-destructive">{t('error:load_resource', { resource: t('c:docs.openapi_specification').toLowerCase() })}</span>
+        <span className="text-destructive">{t('error:load_resource', { resource })}</span>
       </div>
     );
   }

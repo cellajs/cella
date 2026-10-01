@@ -19,7 +19,11 @@ export async function acceptInvitationTokenOp(ctx: UserContext, tokenRecord: Tok
 
   // Accepted by an account on another address than the one invited: tell the invited inbox, since it may not be theirs.
   if (tokenRecord.email !== user.email) {
-    log.warn('Invitation accepted by an account on another address', { tokenId: tokenRecord.id, invitedEmail: tokenRecord.email, userId: user.id });
+    log.warn('Invitation accepted by an account on another address', {
+      tokenId: tokenRecord.id,
+      invitedEmail: tokenRecord.email,
+      userId: user.id,
+    });
     sendAccountSecurityEmail({ email: tokenRecord.email, name: slugFromEmail(tokenRecord.email) }, 'invitation-accepted-elsewhere', {
       entityName: entity.name,
       accountEmail: user.email,

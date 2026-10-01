@@ -99,7 +99,8 @@ export function StickyBox({
         const barHeight = bar.offsetHeight;
         const scrollTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
         const barStyles = getComputedStyle(bar);
-        const stackPx = Math.max(...STACK_VARS.filter((v) => v !== publishVar).map((v) => Number.parseFloat(barStyles.getPropertyValue(v)) || 0));
+        const stackValues = STACK_VARS.filter((v) => v !== publishVar).map((v) => Number.parseFloat(barStyles.getPropertyValue(v)) || 0);
+        const stackPx = Math.max(...stackValues);
         const stickyBottom = scrollTop + stackPx + offsetTop + barHeight;
         const spaceBelow = parentRect.bottom - stickyBottom;
         // Offset from the sentinel: at the release boundary it equals the stuck position exactly

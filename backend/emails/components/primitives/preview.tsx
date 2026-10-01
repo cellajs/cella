@@ -16,7 +16,18 @@ export const Preview: JsxEmailComponent<PreviewProps> = ({ children = '', ...pro
   const text = String(childText ?? '').substring(0, maxLength);
 
   return (
-    <div data-skip="true" style={{ display: 'none', lineHeight: '1px', maxHeight: 0, maxWidth: 0, opacity: 0, overflow: 'hidden' }} {...props}>
+    <div
+      data-skip="true"
+      style={{
+        display: 'none',
+        lineHeight: '1px',
+        maxHeight: 0,
+        maxWidth: 0,
+        opacity: 0,
+        overflow: 'hidden',
+      }}
+      {...props}
+    >
       {text}
       {renderWhiteSpace(text)}
     </div>

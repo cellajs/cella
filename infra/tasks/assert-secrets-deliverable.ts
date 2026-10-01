@@ -135,9 +135,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const projectId = getFlag(argv, '--project-id') ?? process.env.SCW_DEFAULT_PROJECT_ID;
   const servicesJson = getFlag(argv, '--services-json');
   const servicesArg = getFlag(argv, '--services');
-  const enabled = (servicesJson ? serviceNamesFromServicesJson(servicesJson) : servicesArg ? servicesArg.split(',') : serviceNames)
-    .map((s) => s.trim())
-    .filter((s): s is ServiceName => (serviceNames as readonly string[]).includes(s));
+  const requested = servicesJson ? serviceNamesFromServicesJson(servicesJson) : servicesArg ? servicesArg.split(',') : serviceNames;
+  const enabled = requested.map((s) => s.trim()).filter((s): s is ServiceName => (serviceNames as readonly string[]).includes(s));
 
   if (!secretKey || !region || !projectId) throw new Error('Required: SCW_SECRET_KEY, --region, --project-id');
 

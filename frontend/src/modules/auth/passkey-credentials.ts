@@ -70,8 +70,9 @@ export const getPasskeyRegistrationCredential = async () => {
 export const getPasskeyVerifyCredential = async (query: { type: Exclude<PasskeyCredentialProps['type'], 'registration'> }) => {
   const { challenge, credentialIds } = await getChallenge(query);
 
+  const allowCredentials = credentialIds.map(toAllowCredential);
   const assertion = await startAuthentication({
-    optionsJSON: { challenge, rpId: relyingPartyId, userVerification: 'required', allowCredentials: credentialIds.map(toAllowCredential) },
+    optionsJSON: { challenge, rpId: relyingPartyId, userVerification: 'required', allowCredentials },
   });
 
   return { assertion, ...query };
@@ -81,8 +82,10 @@ export const getPasskeyVerifyCredential = async (query: { type: Exclude<PasskeyC
 export const getPasskeyStepUpCredential = async () => {
   const { challenge, credentialIds } = await getStepUpPasskeyChallenge();
 
+  const allowCredentials = credentialIds.map(toAllowCredential);
+
   return startAuthentication({
-    optionsJSON: { challenge, rpId: relyingPartyId, userVerification: 'required', allowCredentials: credentialIds.map(toAllowCredential) },
+    optionsJSON: { challenge, rpId: relyingPartyId, userVerification: 'required', allowCredentials },
   });
 };
 

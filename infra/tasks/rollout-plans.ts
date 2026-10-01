@@ -43,11 +43,8 @@ export function planForService(serviceFlag: string, healthUrl?: string): Rollout
   // pools (singleVM) and the service's own internal pool (internalPort).
   const repointKeys: string[] = [];
   if (definition.primaryRollout && appConfig.singleVM) {
-    repointKeys.push(
-      ...[...coHostedServices(appConfig.services, appConfig.singleVM), ...collocatedServices(appConfig.services, appConfig.singleVM)]
-        .filter((follower) => follower.lbRoute)
-        .map((follower) => follower.slug),
-    );
+    const followers = [...coHostedServices(appConfig.services, appConfig.singleVM), ...collocatedServices(appConfig.services, appConfig.singleVM)];
+    repointKeys.push(...followers.filter((follower) => follower.lbRoute).map((follower) => follower.slug));
   }
   if (definition.internalPort !== undefined) repointKeys.push(`${service}-internal`);
   if (repointKeys.length > 0) plan.repointBackendKeys = repointKeys;

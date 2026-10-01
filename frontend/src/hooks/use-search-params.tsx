@@ -43,7 +43,13 @@ export function useSearchParams<T extends Record<string, string | string[] | und
 
     setCurrentSearch(updatedSearch);
     if (saveDataInSearch) {
-      navigate({ replace: true, params, resetScroll: false, to: '.', search: (prev) => ({ ...prev, ...updatedSearch }) });
+      navigate({
+        replace: true,
+        params,
+        resetScroll: false,
+        to: '.',
+        search: (prev) => ({ ...prev, ...updatedSearch }),
+      });
     }
   };
 

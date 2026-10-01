@@ -144,7 +144,16 @@ export const config = {
    * `frontendUrl` carries no port (tunnel mode); otherwise the URL port wins. `internal` is the
    * backend's internal listener, which the cdc and yjs workers dial (`INTERNAL_PORT` overrides it).
    */
-  devPorts: { frontend: 3000, api: 4000, cdcHealth: 4001, yjs: 4002, mcp: 4003, oauth: 4004, internal: 4005, jobs: 4006 },
+  devPorts: {
+    frontend: 3000,
+    api: 4000,
+    cdcHealth: 4001,
+    yjs: 4002,
+    mcp: 4003,
+    oauth: 4004,
+    internal: 4005,
+    jobs: 4006,
+  },
 
   has: {
     pwa: true as boolean,
@@ -190,7 +199,15 @@ export const config = {
 
   // Request limits
 
-  requestLimits: { default: 40, users: 100, members: 40, organizations: 40, requests: 40, attachments: 40, pendingMemberships: 20 },
+  requestLimits: {
+    default: 40,
+    users: 100,
+    members: 40,
+    organizations: 40,
+    requests: 40,
+    attachments: 40,
+    pendingMemberships: 20,
+  },
 
   jsonBodyLimit: 1 * 1024 * 1024,
   fileUploadLimit: 20 * 1024 * 1024,

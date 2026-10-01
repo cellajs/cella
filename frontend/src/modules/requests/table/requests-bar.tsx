@@ -40,7 +40,10 @@ export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, co
         const message =
           args.data.length === 1
             ? t('c:success.delete_resource', { resource: t('c:request') })
-            : t('c:success.delete_counted_resources', { count: args.data.length, resources: t('c:request_other').toLowerCase() });
+            : t('c:success.delete_counted_resources', {
+                count: args.data.length,
+                resources: t('c:request_other').toLowerCase(),
+              });
         toaster.success(message);
       }
       clearSelection();

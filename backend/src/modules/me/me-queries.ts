@@ -50,7 +50,10 @@ export const updateMe = async (ctx: UserContext, { values }: UpdateMeOpts) => {
   const { db, userId } = ctx.var;
   const { userFlags, ...rest } = values;
 
-  const updateData = { ...rest, ...(userFlags && { userFlags: sql`${usersTable.userFlags} || ${JSON.stringify(userFlags)}::jsonb` }) };
+  const updateData = {
+    ...rest,
+    ...(userFlags && { userFlags: sql`${usersTable.userFlags} || ${JSON.stringify(userFlags)}::jsonb` }),
+  };
 
   return db.update(usersTable).set(updateData).where(eq(usersTable.id, userId));
 };

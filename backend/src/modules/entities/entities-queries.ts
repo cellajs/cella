@@ -116,7 +116,8 @@ export const getChannelCounts = async (ctx: DbContext, { entityType, entityId }:
     const descendants = hierarchy.getOrderedDescendants(entityType);
     const zeroMembership = Object.fromEntries([...roles.all.map((r) => [r, 0]), ['pending', 0], ['total', 0]]);
     const zeroEntities = Object.fromEntries(descendants.map((e) => [e, 0]));
-    const nullActivity = Object.fromEntries(descendants.filter((e) => isProduct(e)).map((e) => [e, { created: null, updated: null }]));
+    const productDescendants = descendants.filter((e) => isProduct(e));
+    const nullActivity = Object.fromEntries(productDescendants.map((e) => [e, { created: null, updated: null }]));
     return {
       membership: zeroMembership as z.infer<typeof membershipCountSchema>,
       entities: zeroEntities as Record<string, number>,

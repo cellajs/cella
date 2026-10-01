@@ -48,10 +48,18 @@ const initStore: StreamStoreState = { state: 'disconnected', cursor: null };
 
 function createStreamStore(name: string) {
   return create<StreamStore>()(
-    devtools((set) => ({ ...initStore, setState: (state) => set({ state }), setCursor: (cursor) => set({ cursor }), reset: () => set(initStore) }), {
-      name,
-      enabled: isDebugMode,
-    }),
+    devtools(
+      (set) => ({
+        ...initStore,
+        setState: (state) => set({ state }),
+        setCursor: (cursor) => set({ cursor }),
+        reset: () => set(initStore),
+      }),
+      {
+        name,
+        enabled: isDebugMode,
+      },
+    ),
   );
 }
 
@@ -383,7 +391,8 @@ export class StreamManager {
 
     const elapsed = Date.now() - (this.circuitOpenedAt ?? 0);
     if (elapsed < CIRCUIT_COOLDOWN_MS) {
-      console.debug(`[${this.name}] Circuit cooldown:`, Math.round((CIRCUIT_COOLDOWN_MS - elapsed) / 1000), 's remaining');
+      const secondsRemaining = Math.round((CIRCUIT_COOLDOWN_MS - elapsed) / 1000);
+      console.debug(`[${this.name}] Circuit cooldown:`, secondsRemaining, 's remaining');
       return;
     }
 

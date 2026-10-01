@@ -117,7 +117,15 @@ class EntityHierarchyBuilder<
       TRelatedMap,
       TNullableMap,
       TRoleMap & { organization: RO[number] }
-    >(this.roles, this.withEntity('organization', { kind: 'channel', parent: null, roles: options.roles, elevated: options.elevated }));
+    >(
+      this.roles,
+      this.withEntity('organization', {
+        kind: 'channel',
+        parent: null,
+        roles: options.roles,
+        elevated: options.elevated,
+      }),
+    );
   }
 
   /** A channel below the organization (`parent` is the organization or a channel under it). */
@@ -286,7 +294,7 @@ class EntityHierarchyBuilder<
       throw new Error(`EntityHierarchy: ${kind} "${name}" references unknown parent "${parent}". Parents must be defined before children.`);
     }
     if (parentEntry.kind !== 'channel') {
-      throw new Error(`EntityHierarchy: ${kind} "${name}" parent "${parent}" must be a channel entity, ` + `but it is a ${parentEntry.kind} entity.`);
+      throw new Error(`EntityHierarchy: ${kind} "${name}" parent "${parent}" must be a channel entity, but it is a ${parentEntry.kind} entity.`);
     }
   }
 
@@ -298,7 +306,7 @@ class EntityHierarchyBuilder<
     const validRoles = new Set(this.roles.all);
     for (const role of roles) {
       if (!validRoles.has(role)) {
-        throw new Error(`EntityHierarchy: channel "${name}" has invalid role "${role}". ` + `Valid roles: ${[...validRoles].join(', ')}`);
+        throw new Error(`EntityHierarchy: channel "${name}" has invalid role "${role}". Valid roles: ${[...validRoles].join(', ')}`);
       }
     }
   }
@@ -333,9 +341,7 @@ class EntityHierarchyBuilder<
         );
       }
       if (entry.kind !== 'channel') {
-        throw new Error(
-          `EntityHierarchy: entity "${name}" relatedChannel "${related}" must be a channel entity, ` + `but it is a ${entry.kind} entity.`,
-        );
+        throw new Error(`EntityHierarchy: entity "${name}" relatedChannel "${related}" must be a channel entity, but it is a ${entry.kind} entity.`);
       }
       if (ancestors.has(related)) {
         throw new Error(
@@ -370,7 +376,7 @@ class EntityHierarchyBuilder<
 
       if (!chain.includes(ancestor)) {
         throw new Error(
-          `EntityHierarchy: product "${name}" nullableAncestor "${ancestor}" is not an ancestor. ` + `Ancestor chain: ${chain.join(' > ')}.`,
+          `EntityHierarchy: product "${name}" nullableAncestor "${ancestor}" is not an ancestor. Ancestor chain: ${chain.join(' > ')}.`,
         );
       }
       if (ancestor === 'organization') {

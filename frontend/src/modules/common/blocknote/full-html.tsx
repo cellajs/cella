@@ -114,7 +114,8 @@ async function processBlocks(
           const resolvedUrl = await resolveUrl(rawUrl);
           props = { ...props, url: resolvedUrl };
 
-          media.push({ id: block.id, url: resolvedUrl, filename: ('name' in props ? (props.name as string) : '') || '', contentType: block.type });
+          const filename = ('name' in props ? (props.name as string) : '') || '';
+          media.push({ id: block.id, url: resolvedUrl, filename, contentType: block.type });
         }
 
         const children = block.children?.length ? await walk(block.children as CustomBlock[]) : block.children;

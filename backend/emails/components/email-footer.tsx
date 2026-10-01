@@ -4,7 +4,16 @@ import { EmailText } from './email-text';
 import { Link } from './primitives';
 
 export const EmailFooter = ({ supportText }: { supportText: string }) => (
-  <EmailText style={{ ...smallTextStyle, color: '#777', textAlign: 'center' as const, marginTop: '2rem', maxWidth: '400px', padding: '0 1.5rem' }}>
+  <EmailText
+    style={{
+      ...smallTextStyle,
+      color: '#777',
+      textAlign: 'center' as const,
+      marginTop: '2rem',
+      maxWidth: '400px',
+      padding: '0 1.5rem',
+    }}
+  >
     {appConfig.name}・{appConfig.company.streetAddress}・{appConfig.company.city}・{appConfig.company.country}, {appConfig.company.postcode}・
     <Link style={{ ...smallTextStyle, color: '#0366d6' }} href={`mailto:${appConfig.supportEmail}`}>
       {supportText}

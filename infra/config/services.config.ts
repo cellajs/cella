@@ -91,7 +91,13 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process; the LB still routes to the host VM.
     coHosted: true,
-    env: { MODE: 'mcp', PORT: '4003', FRONTEND_URL: '${FRONTEND_URL}', BACKEND_URL: '${BACKEND_URL}', MCP_URL: '${MCP_URL}' },
+    env: {
+      MODE: 'mcp',
+      PORT: '4003',
+      FRONTEND_URL: '${FRONTEND_URL}',
+      BACKEND_URL: '${BACKEND_URL}',
+      MCP_URL: '${MCP_URL}',
+    },
     // The worker's own public URL, host-routed through the LB.
     bindings: { MCP_URL: '@{self.url}' },
   },
@@ -113,7 +119,13 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process; the LB still routes to the host VM.
     coHosted: true,
-    env: { MODE: 'oauth', PORT: '4004', FRONTEND_URL: '${FRONTEND_URL}', BACKEND_URL: '${BACKEND_URL}', OAUTH_URL: '${OAUTH_URL}' },
+    env: {
+      MODE: 'oauth',
+      PORT: '4004',
+      FRONTEND_URL: '${FRONTEND_URL}',
+      BACKEND_URL: '${BACKEND_URL}',
+      OAUTH_URL: '${OAUTH_URL}',
+    },
     // The issuer URL, host-routed through the LB.
     bindings: { OAUTH_URL: '@{self.url}' },
   },

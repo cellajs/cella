@@ -18,7 +18,13 @@ type Bindings = HttpBindings & {
 type UserActor = { kind: 'user'; id: UserId; bindings: MembershipBaseModel[]; scopes: readonly AccessScope[] | null };
 
 /** A service account behind an API key: `bindings` are its stored role bindings, `scopes` the key's mask (null = unmasked). */
-type ServiceActor = { kind: 'service'; id: ServiceAccountId; tenantId: string; bindings: RoleBinding[]; scopes: readonly AccessScope[] | null };
+type ServiceActor = {
+  kind: 'service';
+  id: ServiceAccountId;
+  tenantId: string;
+  bindings: RoleBinding[];
+  scopes: readonly AccessScope[] | null;
+};
 
 /**
  * The actor a request runs as, with the role bindings the permission engine reads. `id` is what provenance

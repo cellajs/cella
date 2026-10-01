@@ -247,7 +247,8 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
   const fromSeq = Math.min(...entries.map((entry) => entry.fromSeq));
   const untilSeq = Math.max(...entries.map((entry) => entry.untilSeq));
   const keys = getEntityQueryKeys(entityType);
-  const result = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, `${fromSeq},${untilSeq}`, keys, coveringChannelId(entries));
+  const channelId = coveringChannelId(entries);
+  const result = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, `${fromSeq},${untilSeq}`, keys, channelId);
 
   if (result.status === 'error' && entries.some((entry) => entry.attempts + 1 < MAX_FLUSH_ATTEMPTS)) {
     for (const entry of entries) requeue({ ...entry, attempts: entry.attempts + 1 }, RETRY_BASE_MS * 2 ** entry.attempts);

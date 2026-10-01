@@ -70,7 +70,13 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
 
   // The admin application key from infra/.env.<mode> signs every state-bucket touch (login, lock, `up`) while the Owner API key drives the resource mutations; without an admin key the Owner API key serves both sides.
   const stateOverride = identity.admin ? { stateAccessKey: identity.admin.accessKey, stateSecretKey: identity.admin.secretKey } : {};
-  const env = buildProviderEnv(infraDir, { accessKey: ownerKey.accessKey, secretKey: ownerKey.secretKey, projectId, passphrase, ...stateOverride });
+  const env = buildProviderEnv(infraDir, {
+    accessKey: ownerKey.accessKey,
+    secretKey: ownerKey.secretKey,
+    projectId,
+    passphrase,
+    ...stateOverride,
+  });
   // Marks the `pulumi up` child as privileged: the resources only a privileged run writes (VM IAM policy rules) reconcile under this marker.
   env[PRIVILEGED_UP_ENV] = '1';
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);

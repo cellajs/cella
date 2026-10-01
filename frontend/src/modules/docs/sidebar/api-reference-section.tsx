@@ -39,9 +39,9 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
   const activeSchemaTag = searchParams.schemaTag as string | undefined;
   const hasOperationSearchParams = !!activeOperationTag || !!searchParams.q;
   const hasSchemasSearchParams = !!activeSchemaTag;
-  const [forcedCollapsed, setForcedCollapsed] = useState<string | null>(
-    isOperationsRoute && !hasOperationSearchParams ? 'operations' : isSchemasRoute && !hasSchemasSearchParams ? 'schemas' : null,
-  );
+  const initialForcedCollapsed =
+    isOperationsRoute && !hasOperationSearchParams ? 'operations' : isSchemasRoute && !hasSchemasSearchParams ? 'schemas' : null;
+  const [forcedCollapsed, setForcedCollapsed] = useState<string | null>(initialForcedCollapsed);
 
   const prefetchOperations = () => {
     queryClient.prefetchQuery(operationsQueryOptions);

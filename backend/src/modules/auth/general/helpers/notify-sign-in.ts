@@ -13,7 +13,13 @@ import { TimeSpan } from '#/utils/time-span';
 /** A browser the user had not signed in from, with the sign-in before this one (null for a brand-new account). */
 export type NewDevice = { deviceIdHash: string; previousSignInAt: string | null };
 
-type SignInNotice = { user: UserModel; isSystemAdmin: boolean; context: SignInContext; strategy: AuthStrategy; newDevice: NewDevice | null };
+type SignInNotice = {
+  user: UserModel;
+  isSystemAdmin: boolean;
+  context: SignInContext;
+  strategy: AuthStrategy;
+  newDevice: NewDevice | null;
+};
 
 /** These sign-ins went through the user's inbox: a second mail tells the owner nothing, and an intruder in the inbox deletes it. */
 const inboxStrategies: AuthStrategy[] = ['magic', 'email'];
@@ -65,7 +71,8 @@ export const notifyNewSignIn = async ({
 
   try {
     const since = new Date(Date.now() - NOTICE_WINDOW.milliseconds()).toISOString();
-    const sent = await db.$count(devicesTable, and(eq(devicesTable.userId, user.id), gt(devicesTable.notifiedAt, since)));
+    const notifiedRecently = and(eq(devicesTable.userId, user.id), gt(devicesTable.notifiedAt, since));
+    const sent = await db.$count(devicesTable, notifiedRecently);
 
     if (sent >= NOTICE_BUDGET) {
       log.info('New sign-in notice skipped: daily budget spent', { userId: user.id });

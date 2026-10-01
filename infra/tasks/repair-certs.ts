@@ -30,11 +30,23 @@ export function planCertRepairs(stateCerts: StateCert[], liveById: Map<string, L
     if (!zone || !certId) continue;
     const live = liveById.get(cert.id);
     if (live === 'missing') {
-      repairs.push({ urn: cert.urn, zone, certId, deleteLive: false, reason: 'live certificate gone; pruning stale state entry' });
+      repairs.push({
+        urn: cert.urn,
+        zone,
+        certId,
+        deleteLive: false,
+        reason: 'live certificate gone; pruning stale state entry',
+      });
       continue;
     }
     if (live && live.status === 'error') {
-      repairs.push({ urn: cert.urn, zone, certId, deleteLive: true, reason: `status=error${live.statusDetails ? ` (${live.statusDetails})` : ''}` });
+      repairs.push({
+        urn: cert.urn,
+        zone,
+        certId,
+        deleteLive: true,
+        reason: `status=error${live.statusDetails ? ` (${live.statusDetails})` : ''}`,
+      });
     }
   }
   return repairs;

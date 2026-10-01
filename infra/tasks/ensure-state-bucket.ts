@@ -126,7 +126,12 @@ export async function hardenStateBucket(
               Filter: { Prefix: '' },
               NoncurrentVersionExpiration: { NoncurrentDays: NONCURRENT_VERSION_RETENTION_DAYS },
             },
-            { ID: 'purge-expired-delete-markers', Status: 'Enabled', Filter: { Prefix: '' }, Expiration: { ExpiredObjectDeleteMarker: true } },
+            {
+              ID: 'purge-expired-delete-markers',
+              Status: 'Enabled',
+              Filter: { Prefix: '' },
+              Expiration: { ExpiredObjectDeleteMarker: true },
+            },
           ],
         },
       }),

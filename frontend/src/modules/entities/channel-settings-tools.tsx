@@ -14,14 +14,33 @@ import { Button } from '~/modules/ui/button';
  * `render`. Order convention: general 10, details 20, tabs 80, danger zone 90; module tools default
  * to 50. Bases without `locked` are hideable and reorderable per channel.
  */
-export const generalToolBase = { id: 'general', label: 'c:general', order: 10, locked: true, requires: 'update' } satisfies PlacementDescriptor;
+export const generalToolBase = {
+  id: 'general',
+  label: 'c:general',
+  order: 10,
+  locked: true,
+  requires: 'update',
+} satisfies PlacementDescriptor;
 
 export const detailsToolBase = { id: 'details', label: 'c:details', order: 20 } satisfies PlacementDescriptor;
 
-export const tabsToolBase = { id: 'tabs', label: 'c:tabs', order: 80, locked: true, requires: 'update' } satisfies PlacementDescriptor;
+export const tabsToolBase = {
+  id: 'tabs',
+  label: 'c:tabs',
+  order: 80,
+  locked: true,
+  requires: 'update',
+} satisfies PlacementDescriptor;
 
 export function dangerToolBase(channelType: ChannelEntityType, resource: TKey): PlacementDescriptor {
-  return { id: `delete-${channelType}`, label: 'c:delete_resource', resource, order: 90, locked: true, requires: 'delete' };
+  return {
+    id: `delete-${channelType}`,
+    label: 'c:delete_resource',
+    resource,
+    order: 90,
+    locked: true,
+    requires: 'delete',
+  };
 }
 
 interface DeleteToolCardProps {

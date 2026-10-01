@@ -49,6 +49,6 @@ export function getUploadTokenOp(ctx: UserContext, { organizationId, templateId 
     return { sub, publicBucket, s3: !!env.S3_ACCESS_KEY_ID, params, signature };
   } catch (error) {
     if (error instanceof AppError) throw error;
-    throw new AppError(500, 'auth_key_not_found', 'error', { ...(error instanceof Error ? { originalError: error } : {}) });
+    throw new AppError(500, 'auth_key_not_found', 'error', error instanceof Error ? { originalError: error } : {});
   }
 }

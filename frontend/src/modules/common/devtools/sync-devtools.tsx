@@ -48,7 +48,14 @@ function getCategoryColor(name: string): string {
 }
 
 const styles = {
-  container: { position: 'fixed' as const, bottom: '16px', right: '16px', zIndex: 99999, fontFamily: 'ui-monospace, monospace', fontSize: '12px' },
+  container: {
+    position: 'fixed' as const,
+    bottom: '16px',
+    right: '16px',
+    zIndex: 99999,
+    fontFamily: 'ui-monospace, monospace',
+    fontSize: '12px',
+  },
   toggle: {
     width: '40px',
     height: '40px',
@@ -84,10 +91,26 @@ const styles = {
   },
   title: { color: '#f1f5f9', fontWeight: 600, fontSize: '13px' },
   tabs: { display: 'flex', gap: '4px' },
-  tab: { padding: '4px 8px', background: 'transparent', border: 'none', color: '#94a3b8', cursor: 'pointer', borderRadius: '4px', fontSize: '11px' },
+  tab: {
+    padding: '4px 8px',
+    background: 'transparent',
+    border: 'none',
+    color: '#94a3b8',
+    cursor: 'pointer',
+    borderRadius: '4px',
+    fontSize: '11px',
+  },
   tabActive: { background: '#334155', color: '#f1f5f9' },
   content: { flex: 1, overflow: 'auto', padding: '8px' },
-  spanRow: { display: 'flex', alignItems: 'center', gap: '8px', padding: '6px 8px', borderRadius: '4px', marginBottom: '4px', background: '#1e293b' },
+  spanRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '6px 8px',
+    borderRadius: '4px',
+    marginBottom: '4px',
+    background: '#1e293b',
+  },
   spanDot: { width: '8px', height: '8px', borderRadius: '50%' },
   spanName: { flex: 1, color: '#e2e8f0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const },
   spanDuration: { color: '#94a3b8', fontSize: '11px' },
@@ -98,7 +121,15 @@ const styles = {
   statGrid: { display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '8px' },
   empty: { color: '#64748b', textAlign: 'center' as const, padding: '24px' },
   actions: { display: 'flex', gap: '8px', padding: '8px', borderTop: '1px solid #334155' },
-  button: { padding: '6px 12px', background: '#334155', border: 'none', borderRadius: '4px', color: '#e2e8f0', cursor: 'pointer', fontSize: '11px' },
+  button: {
+    padding: '6px 12px',
+    background: '#334155',
+    border: 'none',
+    borderRadius: '4px',
+    color: '#e2e8f0',
+    cursor: 'pointer',
+    fontSize: '11px',
+  },
   filter: {
     flex: 1,
     padding: '6px 8px',

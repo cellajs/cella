@@ -18,7 +18,13 @@ import { cn } from '~/utils/cn';
 
 type SidebarState = 'expanded' | 'collapsed';
 
-type UseSidebarReturn = { state: SidebarState; open: boolean; setOpen: (open: boolean) => void; isMobile: boolean; toggleSidebar: () => void };
+type UseSidebarReturn = {
+  state: SidebarState;
+  open: boolean;
+  setOpen: (open: boolean) => void;
+  isMobile: boolean;
+  toggleSidebar: () => void;
+};
 
 /** Sidebar state from the navigation store (no provider): only `keepNavOpen`, since the sheeter service owns mobile sheets. */
 function useSidebar(): UseSidebarReturn {

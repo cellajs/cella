@@ -139,7 +139,12 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
 
   const { session: currentSession } = await readOwnSession(sessionToken);
 
-  await revokeSessions(ctx, { userId: currentSession.userId, sessionIds: [currentSession.id], reason: 'sign_out', by: currentSession.userId });
+  await revokeSessions(ctx, {
+    userId: currentSession.userId,
+    sessionIds: [currentSession.id],
+    reason: 'sign_out',
+    by: currentSession.userId,
+  });
   log.info('User signed out', { userId: currentSession.userId });
 
   return ctx.body(null, 204);

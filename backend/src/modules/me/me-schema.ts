@@ -20,7 +20,10 @@ export const sessionSchema = sessionBaseSchema.extend({
 });
 
 export const meSchema = z
-  .object({ user: userSchema, isSystemAdmin: z.boolean().openapi({ description: 'Whether the current user has system admin privileges.' }) })
+  .object({
+    user: userSchema,
+    isSystemAdmin: z.boolean().openapi({ description: 'Whether the current user has system admin privileges.' }),
+  })
   .openapi('Me', {
     description: 'The currently authenticated user with their system admin status.',
     example: mockMeResponse(),

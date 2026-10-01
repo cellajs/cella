@@ -31,7 +31,8 @@ export const apiErrorSchema = z
     timestamp: z.string().optional(),
     userId: z.string().optional(),
     organizationId: z.string().optional(),
-    meta: z.record(z.string(), z.union([z.number(), z.string(), z.array(z.string()), z.boolean(), z.null()])).optional(), // Optional structured metadata (e.g. retryAfter, slug, reason)
+    /** Optional structured metadata (e.g. retryAfter, slug, reason). */
+    meta: z.record(z.string(), z.union([z.number(), z.string(), z.array(z.string()), z.boolean(), z.null()])).optional(),
   })
   .openapi('ApiError', {
     description: 'Standard error response returned by all API endpoints.',

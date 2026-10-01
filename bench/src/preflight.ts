@@ -6,7 +6,7 @@ import { BASE_URL, DB_URL } from './config';
 // mcp stay out, so a stack without them (or the test config, which turns them on) does not skip or block a run.
 export const SERVICES = {
   backend: `${BASE_URL}/health`,
-  ...(appConfig.services.cdc.enabled !== false ? { cdc: `http://localhost:${appConfig.devPorts.cdcHealth}/health` } : {}),
+  ...(appConfig.services.cdc.enabled !== false && { cdc: `http://localhost:${appConfig.devPorts.cdcHealth}/health` }),
 } as const;
 
 export async function isPostgresReady(): Promise<boolean> {

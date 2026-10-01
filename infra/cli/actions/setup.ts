@@ -238,9 +238,12 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
       // A setup key owned by an application needs org-wide DNS before the first up can write records in an org-shared zone.
       const organizationId = ctx.childEnv.SCW_DEFAULT_ORGANIZATION_ID;
       if (organizationId) {
-        await ensureBootstrapDnsGrant({ callerSecretKey: ctx.secretKey, accessKey: ctx.accessKey, organizationId, slug: ctx.appConfig.slug }).catch(
-          (error) => console.warn(`  ${warningMark} Bootstrap DNS grant skipped: ${errorMessage(error)}`),
-        );
+        await ensureBootstrapDnsGrant({
+          callerSecretKey: ctx.secretKey,
+          accessKey: ctx.accessKey,
+          organizationId,
+          slug: ctx.appConfig.slug,
+        }).catch((error) => console.warn(`  ${warningMark} Bootstrap DNS grant skipped: ${errorMessage(error)}`));
       }
       await ensureDnsZone({ secretKey: ctx.secretKey, projectId: ctx.projectId, domain: dnsZone });
     } catch (error) {
@@ -399,7 +402,8 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
   if (status === 0) {
     const { serviceEndpoints } = await import('../../lib/services');
     const frontendUrl = serviceEndpoints(ctx.appConfig).find((endpoint) => endpoint.slug === 'frontend')?.url;
-    console.info(`\n${checkMark} ${pc.bold(pc.greenBright('App is live.'))}${frontendUrl ? ` ${pc.underline(pc.cyanBright(frontendUrl))}` : ''}`);
+    const liveUrl = frontendUrl ? ` ${pc.underline(pc.cyanBright(frontendUrl))}` : '';
+    console.info(`\n${checkMark} ${pc.bold(pc.greenBright('App is live.'))}${liveUrl}`);
     if (hasAdminEmail) console.info(`  ${pc.dim('Sign in by requesting a magic link for the admin email you provided.')}`);
   } else {
     console.warn(

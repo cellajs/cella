@@ -52,7 +52,16 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
   language: languageSchema,
   description: z.string().max(maxLength.html).nullable(),
 })
-  .pick({ bannerUrl: true, description: true, firstName: true, lastName: true, language: true, newsletter: true, thumbnailUrl: true, slug: true })
+  .pick({
+    bannerUrl: true,
+    description: true,
+    firstName: true,
+    lastName: true,
+    language: true,
+    newsletter: true,
+    thumbnailUrl: true,
+    slug: true,
+  })
   .partial();
 
 export const userListQuerySchema = paginationQuerySchema.extend({

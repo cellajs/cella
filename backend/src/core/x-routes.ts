@@ -36,7 +36,7 @@ type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>
  */
 export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>(config: R): Route<P, R> => {
   const extensionMiddleware = collectExtensionMiddleware(config);
-  const existing = config.middleware ? (Array.isArray(config.middleware) ? config.middleware : [config.middleware]) : [];
+  const existing = [config.middleware ?? []].flat();
 
   // The error page first, so every refusal finds it, a gate leading `xGuard` included.
   const errorPage = '302' in config.responses ? [errorPageMiddleware] : [];

@@ -76,7 +76,11 @@ function decodeAwarenessEntries(update: Uint8Array): AwarenessEntry[] | null {
   if (count > YJS_AWARENESS_MAX_ENTRIES) return null;
   const entries: AwarenessEntry[] = [];
   for (let i = 0; i < count; i++) {
-    entries.push({ clientId: decoding.readVarUint(decoder), clock: decoding.readVarUint(decoder), state: decoding.readVarString(decoder) });
+    entries.push({
+      clientId: decoding.readVarUint(decoder),
+      clock: decoding.readVarUint(decoder),
+      state: decoding.readVarString(decoder),
+    });
   }
   return entries;
 }

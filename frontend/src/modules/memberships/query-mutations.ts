@@ -111,7 +111,11 @@ export const useMemberUpdateMutation = () =>
       const { tenantId, organizationId, id } = path;
       const membershipInfo = { id, ...body };
 
-      const context = { queryChannel: [] as MemberChannelProp[], toastMessage: t('c:success.update_item', { item: t('c:membership') }), channelType };
+      const context = {
+        queryChannel: [] as MemberChannelProp[],
+        toastMessage: t('c:success.update_item', { item: t('c:membership') }),
+        channelType,
+      };
 
       if (body?.archived !== undefined) {
         context.toastMessage = t(`c:success.${body.archived ? 'archived' : 'restore'}_resource`, { resource: t(`c:${channelType}`) });
@@ -200,7 +204,10 @@ const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount
       ...oldEntity.included,
       counts: {
         ...oldEntity.included.counts,
-        membership: { ...oldEntity.included.counts.membership, pending: (oldEntity.included.counts.membership.pending ?? 0) + updateCount },
+        membership: {
+          ...oldEntity.included.counts.membership,
+          pending: (oldEntity.included.counts.membership.pending ?? 0) + updateCount,
+        },
       },
     },
   };

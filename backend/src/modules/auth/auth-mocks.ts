@@ -10,7 +10,13 @@ export const mockPasskeyResponse = (key = 'passkey:default') =>
       { deviceName: 'MacBook Pro', deviceType: 'desktop', deviceOs: 'macOS', browser: 'Chrome' },
       { deviceName: 'iPhone', deviceType: 'mobile', deviceOs: 'iOS', browser: 'Safari' },
     ] as const);
-    return { id: mockUuid(), userId: mockUuid(), ...device, nameOnDevice: `${device.browser} on ${device.deviceName}`, createdAt: mockPastIsoDate() };
+    return {
+      id: mockUuid(),
+      userId: mockUuid(),
+      ...device,
+      nameOnDevice: `${device.browser} on ${device.deviceName}`,
+      createdAt: mockPastIsoDate(),
+    };
   });
 
 export const mockTotpKeyResponse = () => ({

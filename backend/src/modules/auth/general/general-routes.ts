@@ -28,7 +28,9 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     xGuard: [publicGuard],
     summary: 'Auth health check',
     description: 'Returns auth health status including whether the client IP is rate-limited for email enumeration protection.',
-    responses: { 200: json('Auth health status', z.object({ restrictedMode: z.boolean(), retryAfter: z.number().optional() })) },
+    responses: {
+      200: json('Auth health status', z.object({ restrictedMode: z.boolean(), retryAfter: z.number().optional() })),
+    },
   }),
   startImpersonation: xRoute({
     method: 'post',

@@ -45,7 +45,8 @@ export const useMarkNotificationsRead = () =>
       };
 
       const items = previous.items.map((item) => (item.readAt || !shouldMark(item) ? item : { ...item, readAt }));
-      queryClient.setQueryData(notificationKeys.list, { ...previous, items, unreadCount: items.filter((item) => !item.readAt).length });
+      const unreadCount = items.filter((item) => !item.readAt).length;
+      queryClient.setQueryData(notificationKeys.list, { ...previous, items, unreadCount });
     },
     onSettled: () => invalidateNotifications(),
   });

@@ -93,7 +93,8 @@ async function main() {
   const state: PollState = { prevEvents: 0, prevTime: 0, samples: [] };
 
   if (!quiet) {
-    console.info(`${pc.cyan('⧈ CDC poller')} polling ${CDC_HEALTH_URL} every ${interval}s${duration > 0 ? ` for ${duration}s` : ''}`);
+    const limit = duration > 0 ? ` for ${duration}s` : '';
+    console.info(`${pc.cyan('⧈ CDC poller')} polling ${CDC_HEALTH_URL} every ${interval}s${limit}`);
   }
 
   const timer = setInterval(() => poll(state, quiet), interval * 1000);

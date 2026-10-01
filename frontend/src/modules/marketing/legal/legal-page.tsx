@@ -13,11 +13,7 @@ import { objectEntries } from '~/utils/object-entries';
 export function LegalPage() {
   const { t } = useTranslation();
 
-  const subjects = useMemo(
-    () =>
-      objectEntries(legalConfig).map(([subject]) => ({ id: subject, label: legalConfig[subject].label, sections: legalConfig[subject].sections })),
-    [],
-  );
+  const subjects = useMemo(() => objectEntries(legalConfig).map(([subject, { label, sections }]) => ({ id: subject, label, sections })), []);
 
   const { subject: currentSubject } = useParams({ from: '/_public/_marketing/legal/$subject' });
 

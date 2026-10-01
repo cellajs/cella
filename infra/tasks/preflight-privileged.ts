@@ -98,7 +98,8 @@ export function applyHint(mode: string): string {
 export function formatPending(mode: string, pending: PendingPrivilegedChange[]): string {
   const lines = [`✗ ${pending.length} privileged change(s) pending; a CI deploy cannot apply them:`];
   for (const change of pending) {
-    lines.push(`  ${change.op.padEnd(7)} ${change.resource}${change.paths.length ? `  (${change.paths.join(', ')})` : ''}`);
+    const changedPaths = change.paths.length ? `  (${change.paths.join(', ')})` : '';
+    lines.push(`  ${change.op.padEnd(7)} ${change.resource}${changedPaths}`);
     for (const value of change.values ?? []) {
       lines.push(`          ${value.path}: ${showValue(value.old)} → ${showValue(value.new)}`);
     }

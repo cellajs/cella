@@ -118,7 +118,10 @@ function bootPlan(p: CloudInitParams): string {
       ...(p.handoffSecretId ? { serviceKeyHandoff: { secretId: p.handoffSecretId, cacheFile: `${paths.etcDir}/service-key.json` } } : {}),
       ...(p.exportS3Env ? { exportS3Env: true } : {}),
       bootDiagnostics: { bucket: p.bootDiagBucket, logFile: '/var/log/infra-boot.log' },
-      releaseCommand: { enabled: p.runRelease, command: ['docker', 'compose', '--profile', p.profile, 'run', '--rm', `${p.profile}-release`] },
+      releaseCommand: {
+        enabled: p.runRelease,
+        command: ['docker', 'compose', '--profile', p.profile, 'run', '--rm', `${p.profile}-release`],
+      },
       docker: { composeFile: '/opt/app/compose.yml' },
       files: { compose: p.composeContent, env: p.envFileContent, runtimeSecretManifest: parseRuntimeSecretManifest(JSON.parse(p.manifestContent)) },
       timeouts: { privateNetworkSeconds: 150, pullAttempts: 12, pullRetrySeconds: 10 },

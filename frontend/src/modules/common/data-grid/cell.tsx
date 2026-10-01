@@ -137,7 +137,14 @@ function Cell<R, SR>({
           onRowChange={onRowChange}
         />
       ) : (
-        renderCellContent(column, { column, row, rowIdx, isCellEditable: isEditable, tabIndex: childTabIndex, onRowChange: handleRowChange })
+        renderCellContent(column, {
+          column,
+          row,
+          rowIdx,
+          isCellEditable: isEditable,
+          tabIndex: childTabIndex,
+          onRowChange: handleRowChange,
+        })
       )}
       {isEditable && (
         <PencilIcon className="pointer-events-none absolute top-2 right-2 hidden size-3 text-muted-foreground sm:group-hover/cell:block" />

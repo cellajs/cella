@@ -145,7 +145,8 @@ export async function createProvider(): Promise<Provider> {
           if (!resource) throw new errors.InvalidTarget();
           // A service account acts in its own tenant: its token never names another tenant's resource.
           if (clientKindOf(client) === 'service' && presentedKeys.get(ctx)?.tenantId !== resource.tenantId) throw new errors.InvalidTarget();
-          return { scope: grantableScopes(ctx, client).join(' '), audience: resourceIndicator, accessTokenFormat: 'jwt', accessTokenTTL: HOUR };
+          const scope = grantableScopes(ctx, client).join(' ');
+          return { scope, audience: resourceIndicator, accessTokenFormat: 'jwt', accessTokenTTL: HOUR };
         },
       },
     },

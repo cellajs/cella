@@ -29,7 +29,13 @@ export const channelBaseSchema = z
 
 /** Exported separately to avoid circular dependencies. */
 export const productBaseSchema = z
-  .object({ ...entityCoreShape, description: z.string().nullable(), ...auditShape, entityType: productEntityTypeSchema, keywords: z.string() })
+  .object({
+    ...entityCoreShape,
+    description: z.string().nullable(),
+    ...auditShape,
+    entityType: productEntityTypeSchema,
+    keywords: z.string(),
+  })
   .openapi('ProductBase', {
     description: 'Base schema for content entities with creator tracking (e.g. page, attachment).',
     example: mockProductBase(),

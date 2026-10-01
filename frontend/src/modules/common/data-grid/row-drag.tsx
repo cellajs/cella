@@ -132,7 +132,7 @@ export function RowDropTarget<R, SR>({ rowKey, config, renderRow, ...props }: Ro
         if (!isRowDragData(source.data)) return;
         const zone = (self.data as Record<string, unknown>).dropZone as DropZone | null;
         // Redirect bottom to the next row's top only when that row accepts this drag's `top` zone.
-        const allowRedirect = zone !== 'bottom' || !canDropRow ? true : canDropRow({ fromIdx: source.data.rowIdx, toIdx: rowIdx + 1, zone: 'top' });
+        const allowRedirect = zone !== 'bottom' || !canDropRow || canDropRow({ fromIdx: source.data.rowIdx, toIdx: rowIdx + 1, zone: 'top' });
         setRowDropEdge(el, zone, prevRowElRef, allowRedirect);
       },
       onDragLeave: () => {

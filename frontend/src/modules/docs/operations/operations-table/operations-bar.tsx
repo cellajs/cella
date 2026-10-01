@@ -54,10 +54,8 @@ export function OperationsTableBar({ total, searchVars, setSearch, columns, setC
     ...Object.keys(tagFilters).filter((k) => !KIND_ORDER.includes(k) && tagFilters[k]?.length),
   ];
 
-  const filterOptions = [
-    { value: 'all', label: t('c:all') },
-    ...orderedKinds.flatMap((kind) => tagFilters[kind].map((value) => ({ value: `${kind}:${value}`, label: labelFor(kind, value) }))),
-  ];
+  const tagOptions = orderedKinds.flatMap((kind) => tagFilters[kind].map((value) => ({ value: `${kind}:${value}`, label: labelFor(kind, value) })));
+  const filterOptions = [{ value: 'all', label: t('c:all') }, ...tagOptions];
 
   return (
     <TableBarContainer searchVars={searchVars}>

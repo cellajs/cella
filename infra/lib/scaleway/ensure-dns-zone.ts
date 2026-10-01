@@ -24,7 +24,10 @@ async function listZones(secretKey: string, projectId: string | undefined, domai
   // active for record management, which is org-wide by permission set.
   const projectFilter = projectId ? `project_id=${projectId}&` : '';
   const url = `${BASE}/dns-zones/?${projectFilter}domain=${encodeURIComponent(domain)}&page_size=100&_=${Date.now()}`;
-  const res = await fetch(url, { headers: { 'X-Auth-Token': secretKey, 'Cache-Control': 'no-cache', Pragma: 'no-cache' }, cache: 'no-store' });
+  const res = await fetch(url, {
+    headers: { 'X-Auth-Token': secretKey, 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+    cache: 'no-store',
+  });
   if (!res.ok) throw new Error(`GET dns-zones failed: ${res.status} ${await res.text()}`);
   const body = (await res.json()) as { dns_zones?: DnsZone[] };
   return body.dns_zones ?? [];

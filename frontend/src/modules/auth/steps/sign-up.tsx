@@ -52,7 +52,8 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
       const signUpEmail = form.getValues('email') || email;
       // Signing up on another address than the invited one: the invitation is not claimed at sign-up, so return to confirm it.
       const resumeInvitation = tokenId && tokenData && signUpEmail !== tokenData.email;
-      return sendMagicLink({ body: { email: signUpEmail, redirect: resumeInvitation ? invitationResumePath(tokenId) : redirect } });
+      const redirectTo = resumeInvitation ? invitationResumePath(tokenId) : redirect;
+      return sendMagicLink({ body: { email: signUpEmail, redirect: redirectTo } });
     },
     onSuccess: () => {
       setMagicLinkMode('signup');

@@ -17,7 +17,10 @@ interface FilterBarChildProps {
   className?: string;
 }
 
-export const TableFilterBarContext = createContext<{ isFilterActive: boolean; setFilterActive: (isActive: boolean) => void }>({
+export const TableFilterBarContext = createContext<{
+  isFilterActive: boolean;
+  setFilterActive: (isActive: boolean) => void;
+}>({
   isFilterActive: false,
   setFilterActive: () => {},
 });

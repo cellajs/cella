@@ -43,7 +43,8 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
   const byUser = new Map(recipients.map((row) => [row.id, row]));
   const readableByUser = await findReadableByUser(pending);
 
-  const actorNames = await findUserNames([...new Set(pending.map((row) => row.actorId).filter((id): id is string => Boolean(id)))]);
+  const actorIds = [...new Set(pending.map((row) => row.actorId).filter((id): id is string => Boolean(id)))];
+  const actorNames = await findUserNames(actorIds);
   const channelNames = await findChannelNames(pending.map((row) => row.channelId));
 
   let sent = 0;

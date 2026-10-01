@@ -82,6 +82,13 @@ export function openAttachmentDescriptionSheet(attachment: Attachment, triggerRe
     <div className="container w-full sm:pl-8">
       <AttachmentDescriptionForm attachment={attachment} />
     </div>,
-    { id: sheetId, triggerRef, side: 'right', className: 'max-w-full lg:max-w-3xl', title: attachment.name, description: i18n.t('c:description') },
+    {
+      id: sheetId,
+      triggerRef,
+      side: 'right',
+      className: 'max-w-full lg:max-w-3xl',
+      title: attachment.name,
+      description: i18n.t('c:description'),
+    },
   );
 }

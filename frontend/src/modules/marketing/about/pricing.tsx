@@ -47,8 +47,10 @@ export function Pricing() {
     }
   };
 
+  const layoutClass = isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3';
+
   return (
-    <div className={`mx-auto mt-8 max-w-7xl ${isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3'} gap-8`}>
+    <div className={`mx-auto mt-8 max-w-7xl ${layoutClass} gap-8`}>
       {pricingPlans.map(({ id, borderColor, featureCount, popular, discount, action }, planIndex) => {
         const title = `about:pricing.title_${planIndex + 1}` as TKey;
         const text = `about:pricing.text_${planIndex + 1}` as TKey;

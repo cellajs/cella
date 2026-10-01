@@ -54,7 +54,8 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
   }));
   const primaryServices = enabled.filter((service) => service.primaryRollout);
   if (primaryServices.length > 1) {
-    throw new Error(`At most one enabled service may set primaryRollout: true (${primaryServices.map((service) => service.slug).join(', ')})`);
+    const slugs = primaryServices.map((service) => service.slug).join(', ');
+    throw new Error(`At most one enabled service may set primaryRollout: true (${slugs})`);
   }
   const primaryService = primaryServices[0];
   // Include only services that own VM generations; single-VM workers cut over with their host.
@@ -64,9 +65,8 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
   const primaryRollout = primaryService
     ? rolloutRows.filter((item) => item.service === primaryService.slug).map(({ service, health_url }) => ({ service, health_url }))
     : [];
-  const restRollout = (primaryService ? rolloutRows.filter((item) => item.service !== primaryService.slug) : rolloutRows).map(
-    ({ service, health_url }) => ({ service, health_url }),
-  );
+  const restRows = primaryService ? rolloutRows.filter((item) => item.service !== primaryService.slug) : rolloutRows;
+  const restRollout = restRows.map(({ service, health_url }) => ({ service, health_url }));
   const buildImages = enabled
     .filter((service) => !service.reusesImageOf)
     .map((service) => {

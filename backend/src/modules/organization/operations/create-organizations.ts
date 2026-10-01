@@ -66,7 +66,8 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
     })),
   });
 
-  log.info('Organizations created', { count: organizationRecords.length, ids: organizationRecords.map((org) => org.id) });
+  const ids = organizationRecords.map((org) => org.id);
+  log.info('Organizations created', { count: organizationRecords.length, ids });
 
   const membershipInserts = organizationRecords.map((org) => ({ userId: user.id, createdBy: user.id, role: 'admin' as const, entity: org }));
 

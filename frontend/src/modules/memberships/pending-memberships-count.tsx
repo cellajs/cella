@@ -42,7 +42,7 @@ export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel 
   if (!hasIncluded(channel) || !channel.included.counts) return null;
 
   return (
-    <Button ref={buttonRef} disabled={channel.included.counts.membership.pending < 1} variant="ghost" size="xs" className="" onClick={openSheet}>
+    <Button ref={buttonRef} disabled={channel.included.counts.membership.pending < 1} variant="ghost" size="xs" onClick={openSheet}>
       {new Intl.NumberFormat('de-DE').format(channel.included.counts.membership.pending)} {t('c:pending').toLowerCase()}
     </Button>
   );

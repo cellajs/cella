@@ -2,7 +2,16 @@ import type { JSX } from 'react';
 import { Section } from './primitives';
 
 export const EmailBody = ({ children }: { children: React.ReactNode }): JSX.Element => (
-  <Section style={{ margin: '0 auto 40px', maxWidth: '600px', width: '100%', fontSize: '0.875rem', lineHeight: '1.3rem', color: '#404040' }}>
+  <Section
+    style={{
+      margin: '0 auto 40px',
+      maxWidth: '600px',
+      width: '100%',
+      fontSize: '0.875rem',
+      lineHeight: '1.3rem',
+      color: '#404040',
+    }}
+  >
     <div
       style={{
         backgroundColor: '#ffffff',

@@ -42,7 +42,8 @@ export async function runSyncService(offlineAccess: boolean, signal: AbortSignal
     }
   }
 
-  console.debug(`[SyncService] Complete: ${highPriority.length} high-priority, ${offlineAccess ? lowPriority.length : 0} low-priority`);
+  const lowPriorityCount = offlineAccess ? lowPriority.length : 0;
+  console.debug(`[SyncService] Complete: ${highPriority.length} high-priority, ${lowPriorityCount} low-priority`);
 }
 
 /** Refetches through ensureQueryData only when catchup marked the list stale; a fresh list is a no-op. */

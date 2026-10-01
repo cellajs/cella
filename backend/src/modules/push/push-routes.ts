@@ -25,7 +25,7 @@ const pushRoutes = createXRoutes(['push'], {
     xGuard: [userGuard],
     summary: 'Register a Web Push subscription',
     description:
-      'Stores the browser push subscription for the current user. Upserts by endpoint, so ' + 're-subscribing after key rotation reclaims the row.',
+      'Stores the browser push subscription for the current user. Upserts by endpoint, so re-subscribing after key rotation reclaims the row.',
     request: { body: jsonBody(pushSubscriptionBodySchema) },
     responses: { 200: json('Stored subscription', pushSubscriptionResponseSchema) },
   }),

@@ -233,7 +233,13 @@ export function createIDBPersister(scope = 'rq') {
           if (removals.length > 0) await db.queries.bulkDelete(removals);
           if (mutationsChanged) {
             if (mutations.length > 0) {
-              await db.meta.put({ key: ownMutationKey, timestamp: client.timestamp, buster: client.buster, mutations, channelQueries: [] });
+              await db.meta.put({
+                key: ownMutationKey,
+                timestamp: client.timestamp,
+                buster: client.buster,
+                mutations,
+                channelQueries: [],
+              });
             } else {
               await db.meta.delete(ownMutationKey);
             }
@@ -333,7 +339,8 @@ export function createIDBPersister(scope = 'rq') {
         ];
 
         // Seed the snapshot the next write diffs against.
-        lastChannelSnapshot = JSON.stringify((meta.channelQueries ?? []).map((q) => [q.queryHash, q.state.dataUpdatedAt]));
+        const restoredChannelQueries = meta.channelQueries ?? [];
+        lastChannelSnapshot = JSON.stringify(restoredChannelQueries.map((q) => [q.queryHash, q.state.dataUpdatedAt]));
 
         // Restores shared data, this tab's record, and orphaned tab records; live tabs keep their own, and age substitutes when lock liveness is undetectable.
         const prefix = mutationRecordPrefix(scope);
@@ -352,7 +359,11 @@ export function createIDBPersister(scope = 'rq') {
         }
         if (absorbedKeys.length > 0) await db.meta.bulkDelete(absorbedKeys);
 
-        return { timestamp: meta.timestamp, buster: meta.buster, clientState: { queries: allQueries, mutations: restoredMutations } };
+        return {
+          timestamp: meta.timestamp,
+          buster: meta.buster,
+          clientState: { queries: allQueries, mutations: restoredMutations },
+        };
       } catch (error) {
         console.error('[QueryPersister] Failed to restore client:', error);
         reportCriticalError('persister.restore_failed', error);

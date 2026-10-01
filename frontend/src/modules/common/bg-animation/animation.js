@@ -221,8 +221,7 @@ const normalize = (v) => {
   const mag = Math.sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
   return v.map((e) => e / mag);
 };
-const rand_dir = () =>
-  normalize([rand(-1, 1) + rand(-1, 1) + rand(-1, 1), rand(-1, 1) + rand(-1, 1) + rand(-1, 1), rand(-1, 1) + rand(-1, 1) + rand(-1, 1)]);
+const rand_dir = () => normalize(Array.from({ length: 3 }, () => rand(-1, 1) + rand(-1, 1) + rand(-1, 1)));
 const cross = (v1, v2) => [v1[1] * v2[2] - v1[2] * v2[1], v1[2] * v2[0] - v1[0] * v2[2], v1[0] * v2[1] - v1[1] * v2[0]];
 const distortion_dot_dir_1 = rand_dir();
 const distortion_dot_dir_2 = normalize(cross(distortion_dot_dir_1, rand_dir()));

@@ -45,7 +45,9 @@ export async function getUnseenCountsOp(ctx: UserContext) {
 
     for (const productType of trackedProductTypes) {
       const readFilter = resolveCollectionReadFilter(memberships, productType, organizationId, actor);
-      const scopeWhere = buildCollectionReadWhere(readFilter, getEntityTable(productType), homeChannelColumn(productType), actor);
+      const entityTable = getEntityTable(productType);
+      const homeColumn = homeChannelColumn(productType);
+      const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, homeColumn, actor);
       if (scopeWhere.kind === 'none') continue;
       readableTypes.push(productType);
       if (scopeWhere.kind === 'where') scopeWhereByType[productType] = scopeWhere.where;

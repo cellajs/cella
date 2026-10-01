@@ -14,7 +14,13 @@ function parseRolloutJson(raw: string, flag: string): RolloutItem[] {
   return parseServiceRows(raw, flag, { required: ['service', 'health_url'] });
 }
 
-export function parseArgs(argv: string[]): { primary: RolloutItem[]; rest: RolloutItem[]; stack: string; sha: string; skipReap: boolean } {
+export function parseArgs(argv: string[]): {
+  primary: RolloutItem[];
+  rest: RolloutItem[];
+  stack: string;
+  sha: string;
+  skipReap: boolean;
+} {
   const primaryRaw = getFlag(argv, '--primary-json') ?? '[]';
   const restRaw = getFlag(argv, '--rest-json') ?? '[]';
   const stack = getFlag(argv, '--stack');

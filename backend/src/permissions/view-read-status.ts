@@ -25,7 +25,8 @@ export function resolveViewReadStatus(
   depth: ViewDepth = 'subtree',
   truePath?: string | null,
 ): ViewReadStatus {
-  return classifyPrefix(prefix, organizationId, resolveCollectionReadFilter(memberships, entityType, organizationId, actor), depth, truePath);
+  const filter = resolveCollectionReadFilter(memberships, entityType, organizationId, actor);
+  return classifyPrefix(prefix, organizationId, filter, depth, truePath);
 }
 
 /** {@link resolveViewReadStatus} against an explicit policy set / hierarchy, for deep-hierarchy parity tests. */

@@ -11,6 +11,7 @@ export const checkSlugAvailable = async (ctx: DbContext, slug: string, entityTyp
 
 /** Returns a Map of slug to availability; true means free. */
 export const checkSlugsAvailable = async (ctx: DbContext, slugs: string[], entityType: EntityTypeWithSlug) => {
-  const results = await Promise.all(slugs.map(async (slug) => ({ slug, available: await checkSlugAvailable(ctx, slug, entityType) })));
+  const checks = slugs.map(async (slug) => ({ slug, available: await checkSlugAvailable(ctx, slug, entityType) }));
+  const results = await Promise.all(checks);
   return new Map(results.map((r) => [r.slug, r.available]));
 };

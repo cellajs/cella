@@ -154,7 +154,13 @@ export async function createLiveEffects(opts: { bucket: string; region: string; 
     },
     putObject: async (key: string, body: Uint8Array, contentType: string) => {
       await s3.send(
-        new PutObjectCommand({ Bucket: opts.bucket, Key: key, Body: body, ContentType: contentType, CacheControl: 'public, max-age=3600' }),
+        new PutObjectCommand({
+          Bucket: opts.bucket,
+          Key: key,
+          Body: body,
+          ContentType: contentType,
+          CacheControl: 'public, max-age=3600',
+        }),
       );
     },
   };

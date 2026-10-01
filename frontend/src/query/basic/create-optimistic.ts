@@ -136,7 +136,14 @@ export const createOptimisticEntity = <T extends z.ZodObject<z.ZodRawShape>>(
 ): z.infer<T> => {
   const user = useUserStore.getState().user;
   const createdByUser = user
-    ? { id: user.id, name: user.name, slug: user.slug, thumbnailUrl: user.thumbnailUrl, email: user.email, entityType: 'user' as const }
+    ? {
+        id: user.id,
+        name: user.name,
+        slug: user.slug,
+        thumbnailUrl: user.thumbnailUrl,
+        email: user.email,
+        entityType: 'user' as const,
+      }
     : null;
 
   const defaults = getSchemaDefaults(schema);

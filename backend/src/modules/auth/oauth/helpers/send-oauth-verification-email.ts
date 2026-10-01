@@ -49,7 +49,14 @@ const verificationFor = async (props: Props) => {
     throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });
   }
 
-  const token: NewToken = { type: 'oauth-verification', userId: user.id, email, createdBy: user.id, identityId: identity.id, redirectPath };
+  const token: NewToken = {
+    type: 'oauth-verification',
+    userId: user.id,
+    email,
+    createdBy: user.id,
+    identityId: identity.id,
+    redirectPath,
+  };
   return { token, name: user.name, lng: user.language, providerName: identity.issuer };
 };
 

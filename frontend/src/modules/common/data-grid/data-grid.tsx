@@ -399,7 +399,8 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     }
     const getRenderedWidth = (column: CalculatedColumn<R, unknown>) =>
       renderedColumnWidths.get(column.key) ?? (typeof column.width === 'number' ? column.width : column.minWidth);
-    return (row: R) => computeWrapTextRowHeight(scaledBase, columns as readonly CalculatedColumn<R, unknown>[], row, getRenderedWidth) + slotExtra;
+    const wrapColumns = columns as readonly CalculatedColumn<R, unknown>[];
+    return (row: R) => computeWrapTextRowHeight(scaledBase, wrapColumns, row, getRenderedWidth) + slotExtra;
   }, [baseRowHeight, columns, isMobileBreakpoint, renderedColumnWidths]);
 
   const groupedColumnHeaderRowsCount = headerRowsCount - 1;

@@ -162,7 +162,8 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
     await check(`${service.service} reports deployed SHA`, async () => {
       const res = await get(`${service.health_url}${healthContract.path}`);
       const version = res.headers.get(healthContract.versionHeader) ?? undefined;
-      return verdict(isHealthy({ status: res.status, version }, expectedSha), `served=${version ?? '<missing>'} expected=${expectedSha}`);
+      const healthy = isHealthy({ status: res.status, version }, expectedSha);
+      return verdict(healthy, `served=${version ?? '<missing>'} expected=${expectedSha}`);
     });
   }
 

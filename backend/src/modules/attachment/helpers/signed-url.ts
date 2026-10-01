@@ -21,7 +21,11 @@ function getS3Client(): S3Client {
     });
   }
 
-  s3Client = new S3Client({ region: appConfig.s3.region, endpoint: `https://${appConfig.s3.host}`, credentials: { accessKeyId, secretAccessKey } });
+  s3Client = new S3Client({
+    region: appConfig.s3.region,
+    endpoint: `https://${appConfig.s3.host}`,
+    credentials: { accessKeyId, secretAccessKey },
+  });
 
   return s3Client;
 }

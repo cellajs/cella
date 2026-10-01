@@ -6,5 +6,6 @@ export const getQueryKeySortOrder = (queryKey: QueryKey) => {
   );
 
   // Any sort other than createdAt lists newest first.
-  return { hasSortData: !!sortData, sort: sortData?.sort, order: sortData?.sort === 'createdAt' ? (sortData.order ?? 'desc') : 'desc' };
+  const order = sortData?.sort === 'createdAt' ? (sortData.order ?? 'desc') : 'desc';
+  return { hasSortData: !!sortData, sort: sortData?.sort, order };
 };
