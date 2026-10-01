@@ -969,6 +969,34 @@
     }
   },
   {
+    "name": "ProtectedResourceMetadata",
+    "ref": "#/components/schemas/ProtectedResourceMetadata",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "resource": { "type": "string", "required": true },
+        "authorization_servers": { "type": "array", "required": true, "itemType": "string" },
+        "scopes_supported": { "type": "array", "required": true, "itemType": "string" },
+        "bearer_methods_supported": { "type": "array", "required": true, "itemType": "string" },
+        "resource_documentation": { "type": "string", "required": true }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "module": ["oauth-server"],
+      "owner": ["cella"]
+    },
+    "description": "RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.",
+    "example": {
+      "resource": "http://localhost:3000/api/t/m5jfjs",
+      "authorization_servers": ["http://localhost:3000/oauth"],
+      "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+      "bearer_methods_supported": ["header"],
+      "resource_documentation": "http://localhost:3000/docs"
+    }
+  },
+  {
     "name": "Organization",
     "ref": "#/components/schemas/Organization",
     "type": "object",
@@ -2083,24 +2111,6 @@
       "severity": "warn",
       "timestamp": "2025-01-01T12:00:00.000Z"
     }
-  },
-  {
-    "name": "ProtectedResourceMetadata",
-    "ref": "#/components/schemas/ProtectedResourceMetadata",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "resource": { "type": "string", "required": true },
-        "authorization_servers": { "type": "array", "required": true, "itemType": "string" },
-        "scopes_supported": { "type": "array", "required": true, "itemType": "string" },
-        "bearer_methods_supported": { "type": "array", "required": true, "itemType": "string" },
-        "resource_documentation": { "type": "string", "required": true }
-      }
-    },
-    "schemaTag": "data",
-    "tagsByKind": {},
-    "description": "RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts."
   },
   {
     "name": "StxBase",

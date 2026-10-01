@@ -1,27 +1,16 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { accessScopes, appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { mcpRoutes } from '#/modules/mcp/mcp-routes';
 import { handleMcpMessage, InsufficientScopeError, type JsonRpcMessage, type JsonRpcResponse } from '#/modules/mcp/mcp-server';
 import { getMcpTools } from '#/modules/mcp/mcp-tools';
-import { resourceMetadataUrl, resourceUri } from '#/modules/oauth-server/resources';
+import { protectedResourceMetadata, resourceMetadataUrl } from '#/modules/oauth-server/resources';
 import { defaultHook } from '#/utils/default-hook';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(mcpRoutes.getMcpProtectedResourceMetadata, async (ctx) => {
   const { tenantId, organizationId } = ctx.req.valid('param');
-  const ref = { face: 'mcp', tenantId: tenantId.toLowerCase(), organizationId } as const;
-  return ctx.json(
-    {
-      resource: resourceUri(ref),
-      authorization_servers: [appConfig.oauthUrl],
-      scopes_supported: [...accessScopes.all],
-      bearer_methods_supported: ['header'],
-      resource_documentation: `${appConfig.frontendUrl}/docs`,
-    },
-    200,
-  );
+  return ctx.json(protectedResourceMetadata({ face: 'mcp', tenantId: tenantId.toLowerCase(), organizationId }), 200);
 });
 
 // biome-ignore lint/suspicious/noExplicitAny: JSON-RPC bodies are dynamic and notifications return 202 with no body

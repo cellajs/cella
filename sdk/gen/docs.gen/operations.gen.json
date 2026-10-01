@@ -1684,7 +1684,7 @@
     "hasParams": true,
     "hasRequestBody": false,
     "hasResponseBody": true,
-    "hasExample": false,
+    "hasExample": true,
     "extensions": {
       "xGuard": ["serviceEnabled(oauth)", "publicGuard"],
       "xRateLimiter": [],
@@ -1982,7 +1982,7 @@
     "hasParams": true,
     "hasRequestBody": false,
     "hasResponseBody": true,
-    "hasExample": false,
+    "hasExample": true,
     "extensions": {
       "xGuard": ["serviceEnabled(mcp)", "publicGuard"],
       "xRateLimiter": [],

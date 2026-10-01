@@ -1903,7 +1903,15 @@
           }
         },
         "required": ["resource", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"],
-        "description": "RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts."
+        "description": "RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.",
+        "example": {
+          "resource": "http://localhost:3000/api/t/m5jfjs",
+          "authorization_servers": ["http://localhost:3000/oauth"],
+          "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+          "bearer_methods_supported": ["header"],
+          "resource_documentation": "http://localhost:3000/docs"
+        },
+        "x-tags": ["oauth-server", "cella"]
       },
       "Organization": {
         "type": "object",
@@ -8709,6 +8717,13 @@
             "description": "Protected resource metadata",
             "content": {
               "application/json": {
+                "example": {
+                  "resource": "http://localhost:3000/api/t/m5jfjs",
+                  "authorization_servers": ["http://localhost:3000/oauth"],
+                  "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+                  "bearer_methods_supported": ["header"],
+                  "resource_documentation": "http://localhost:3000/docs"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ProtectedResourceMetadata"
                 }
@@ -11193,6 +11208,13 @@
             "description": "Protected resource metadata",
             "content": {
               "application/json": {
+                "example": {
+                  "resource": "http://localhost:3000/mcp/5pooo8/8c598ff2-1070-4bfe-af42-de4764db5aba/mcp",
+                  "authorization_servers": ["http://localhost:3000/oauth"],
+                  "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+                  "bearer_methods_supported": ["header"],
+                  "resource_documentation": "http://localhost:3000/docs"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ProtectedResourceMetadata"
                 }
