@@ -1,6 +1,5 @@
 import { type ComponentProps, useEffect, useRef, useState } from 'react';
 import { isProgrammaticScroll } from '~/hooks/use-scroll-spy-store';
-import { cn } from '~/utils/cn';
 
 /** Nearest scrolling ancestor of `node`, or `window` when none is found before `document.body`. */
 export function getScrollParent(node: HTMLElement): HTMLElement | Window {
@@ -27,8 +26,6 @@ type StickyBoxProps = Omit<ComponentProps<'div'>, 'ref'> & {
   enabled?: boolean;
   /** Hide the bar while scrolling down and reveal it while scrolling up. */
   hideWhenOutOfView?: boolean;
-  /** Classes for the zero-height sentinel that marks the bar's natural top, e.g. `my-2` margin. */
-  placeholderClassName?: string;
   /** CSS custom property the bar publishes its height to on the parent, e.g. `--sticky-stack-nav`. */
   publishVar?: string;
 };
@@ -49,7 +46,6 @@ export function StickyBox({
   publishVar,
   children,
   className,
-  placeholderClassName,
   style,
   ...rest
 }: StickyBoxProps) {
@@ -206,7 +202,7 @@ export function StickyBox({
   // Only the sentinel precedes the bar, so its sticky containing block is the caller's parent
   return (
     <>
-      <div ref={sentinelRef} aria-hidden className={cn('pointer-events-none -mb-px h-px', placeholderClassName)} />
+      <div ref={sentinelRef} aria-hidden className="pointer-events-none -mb-px h-px" />
       <div ref={barRef} className={className} data-sticky={stuck} style={barStyle} {...rest}>
         {children}
       </div>

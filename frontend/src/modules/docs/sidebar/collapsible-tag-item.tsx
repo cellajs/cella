@@ -33,7 +33,10 @@ type CollapsibleTagItemProps<T> = {
   tag: { name: string; count: number };
   items: T[];
   isExpanded: boolean;
+  /** The tag or one of its items is in view: highlights the row. */
   isActive: boolean;
+  /** The tag's own section is current, not one of its items. */
+  isAtTag: boolean;
   activeItemIndex: number;
   layoutId: string;
   renderItem: (item: T, index: number, isActive: boolean) => ReactNode;
@@ -48,6 +51,7 @@ function CollapsibleTagItemBase<T>({
   items,
   isExpanded,
   isActive,
+  isAtTag,
   activeItemIndex,
   layoutId,
   renderItem,
@@ -58,9 +62,9 @@ function CollapsibleTagItemBase<T>({
   const isMobile = useBreakpointBelow('md', false);
   const { linkTo, getSearch, getHash, triggerClassName } = tagTypeConfig[type];
   const hash = getHash(tag.name);
-  // Collapsing is a re-click on the section you are already reading. While expanded but scrolled
+  // Collapsing is a re-click at the tag itself. While expanded but at one of its items or scrolled
   // elsewhere, the click jumps to this section and leaves it open.
-  const collapseOnClick = isExpanded && isActive;
+  const collapseOnClick = isExpanded && isAtTag;
 
   return (
     <Collapsible open={isExpanded}>
@@ -115,6 +119,7 @@ function collapsibleTagItemEqual<T>(prev: CollapsibleTagItemProps<T>, next: Coll
   return (
     prev.type === next.type &&
     prev.isActive === next.isActive &&
+    prev.isAtTag === next.isAtTag &&
     prev.isExpanded === next.isExpanded &&
     prev.activeItemIndex === next.activeItemIndex &&
     prev.tag === next.tag &&

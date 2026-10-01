@@ -115,7 +115,6 @@ export type {
   ApiKey,
   Attachment,
   BadRequestError,
-  BooleanQueryValue,
   ChannelBase,
   CheckEmailData,
   CheckEmailError,

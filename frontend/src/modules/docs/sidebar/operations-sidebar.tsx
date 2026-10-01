@@ -32,7 +32,8 @@ export function OperationsSidebar({ activeTag }: OperationsSidebarProps) {
         const isExpanded = activeTag === tag.name;
         // Only pass items for expanded tag to avoid mounting all operations upfront
         const tagOperations = isExpanded ? (operationsByTag[tag.name] ?? []) : [];
-        const isActive = hash === `tag/${tag.name}` || hash?.startsWith(`tag/${tag.name}/`);
+        const isAtTag = hash === `tag/${tag.name}`;
+        const isActive = isAtTag || hash?.startsWith(`tag/${tag.name}/`);
         const activeOperationIndex = tagOperations.findIndex((op) => op.hash === hash);
 
         return (
@@ -44,6 +45,7 @@ export function OperationsSidebar({ activeTag }: OperationsSidebarProps) {
             isExpanded={isExpanded}
             layoutId={layoutId}
             isActive={isActive}
+            isAtTag={isAtTag}
             activeItemIndex={activeOperationIndex}
             renderItem={renderItem}
             itemKey={itemKey}

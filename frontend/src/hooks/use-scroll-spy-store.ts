@@ -9,6 +9,8 @@ let initTime = 0;
 let pendingScrollTarget: string | null = null;
 let scrollSettleTimer = 0;
 let savedSection = ''; // Preserved across quick re-registrations (effect re-runs)
+// Section a scroll was sent to: stays current until the user scrolls, even where the page can't bring it up to the trigger line
+let pinnedSection = '';
 
 // Subscribers for useSyncExternalStore
 const listeners = new Set<() => void>();
@@ -41,7 +43,7 @@ const canWriteHash = () => Date.now() > hashWriteBlockedUntil && initTime && Dat
 
 export const isProgrammaticScroll = () => Date.now() < hashWriteBlockedUntil;
 
-/** Within this many px of the top, no section counts as anchored. */
+/** Within this many px of the top the page counts as unscrolled: the topmost section is current and the hash is dropped. */
 const TOP_THRESHOLD = 64;
 
 let topWatchTarget: HTMLElement | Window | null = null;
@@ -64,8 +66,9 @@ const syncHash = (id: string) => {
   else if (location.hash !== `#${id}`) history.replaceState(null, '', `#${id}`);
 };
 
-/** The observer misses the final stretch back to the top, so watch scroll directly; this only clears the hash. */
-const onScrollNearTop = () => {
+/** A user scroll releases the pin. The observer misses the final stretch back to the top, so this also clears the hash there. */
+const onScroll = () => {
+  if (!isProgrammaticScroll()) pinnedSection = '';
   if (topWatchFrame) return;
   topWatchFrame = requestAnimationFrame(() => {
     topWatchFrame = 0;
@@ -81,13 +84,13 @@ const watchScroller = () => {
   const next: HTMLElement | Window = !scroller || isRootScroller(scroller) ? window : scroller;
   if (next === topWatchTarget) return;
 
-  topWatchTarget?.removeEventListener('scroll', onScrollNearTop);
+  topWatchTarget?.removeEventListener('scroll', onScroll);
   topWatchTarget = next;
-  topWatchTarget.addEventListener('scroll', onScrollNearTop, { passive: true });
+  topWatchTarget.addEventListener('scroll', onScroll, { passive: true });
 };
 
 const unwatchScroller = () => {
-  topWatchTarget?.removeEventListener('scroll', onScrollNearTop);
+  topWatchTarget?.removeEventListener('scroll', onScroll);
   topWatchTarget = null;
   cancelAnimationFrame(topWatchFrame);
   topWatchFrame = 0;
@@ -110,19 +113,24 @@ const blockHashWrites = (ms: number) => {
   }, ms + 50);
 };
 
-/** Picks the last anchor to have crossed a trigger line near the top of the viewport. */
+/** Picks the pinned section while in view, else the topmost one at the top, else the last anchor past a trigger line near the top. Null while none is in view. */
 const getBestSection = (): string | null => {
   const visible = [...sections.entries()].filter(([, r]) => r > 0);
   if (!visible.length) return null;
+  if (pinnedSection && visible.some(([id]) => id === pinnedSection)) return pinnedSection;
 
   const triggerY = window.innerHeight * 0.25;
 
-  const withPositions = visible
-    .map(([id]) => ({
-      id,
-      top: document.getElementById(`${SPY_PREFIX}${id}`)?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY,
-    }))
+  // Every rendered anchor counts, not only those in view: after a long scroll the current section's anchor sits above the viewport
+  const withPositions = [...sections.keys()]
+    .flatMap((id) => {
+      const el = document.getElementById(`${SPY_PREFIX}${id}`);
+      return el?.getClientRects().length ? [{ id, top: el.getBoundingClientRect().top }] : [];
+    })
     .sort((a, b) => a.top - b.top);
+
+  // Nothing is scrolled to yet, even when a short intro puts later anchors past the trigger
+  if (isAtTop()) return withPositions[0].id;
 
   const pastTrigger = withPositions.filter(({ top }) => top <= triggerY);
   if (pastTrigger.length) return pastTrigger[pastTrigger.length - 1].id;
@@ -200,6 +208,7 @@ export const registerSections = (ids: string[]) => {
   const inInitWindow = Date.now() - initTime < 500;
   if (hash && sections.has(hash) && currentSection !== hash && (inInitWindow || !currentSection)) {
     currentSection = hash;
+    pinnedSection = hash;
     syncActiveDOM();
     notify();
     blockHashWrites(1000);
@@ -223,6 +232,7 @@ export const unregisterSections = (ids: string[]) => {
     observer?.disconnect();
     observer = null;
     unwatchScroller();
+    pinnedSection = '';
     savedSection = currentSection;
     if (currentSection !== '') {
       currentSection = '';
@@ -258,6 +268,7 @@ const performScroll = (el: HTMLElement, id: string) => {
   const smooth = Math.abs(delta) < window.innerHeight * 2;
 
   blockHashWrites(smooth ? 1200 : 500);
+  pinnedSection = id;
 
   if (location.hash !== `#${id}`) {
     history.replaceState(null, '', `#${id}`);

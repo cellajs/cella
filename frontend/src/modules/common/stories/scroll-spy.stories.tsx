@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { createRootRoute, createRoute, createRouter, Link, Outlet, RouterProvider } from '@tanstack/react-router';
 import { BookmarkIcon, InfoIcon, SettingsIcon, ShieldIcon, Trash2Icon } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
+import { expect, waitFor } from 'storybook/test';
 import { useScrollSpy } from '~/hooks/use-scroll-spy';
 import { getSection, scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { Button } from '~/modules/ui/button';
@@ -314,4 +315,75 @@ export const WithRouter: Story = {
 /** Interactive test: scroll-to buttons, cycle test, and state checker. */
 export const Interactive: Story = {
   render: () => <WithRouterWrapper label="Interactive Test" showTests />,
+};
+
+// ─── Section rules ───────────────────────────────────────────────────────────
+
+const ruleIds = ['intro', 'first', 'pinned', 'next'];
+
+/** Two short anchors at the top and two near the end, so each pair sits past the trigger line together. */
+const RulesPage = () => {
+  useScrollSpy(ruleIds);
+  return (
+    <div>
+      <div id="spy-intro" className="h-10">
+        intro
+      </div>
+      <div id="spy-first" className="h-10">
+        first
+      </div>
+      <div className="h-[250vh]" />
+      <div id="spy-pinned" className="h-10">
+        pinned
+      </div>
+      <div id="spy-next" className="h-10">
+        next
+      </div>
+      <div className="h-screen" />
+    </div>
+  );
+};
+
+/** A section a scroll was sent to stays current while its neighbour is past the trigger too; back at the top, the topmost wins. */
+export const SectionRules: Story = {
+  render: () => <RulesPage />,
+  play: async () => {
+    scrollToSectionById('pinned');
+    await waitFor(() => expect(getSection()).toBe('pinned'));
+
+    // Past the programmatic block (an instant scroll blocks 500ms) and its re-evaluation
+    await new Promise((resolve) => setTimeout(resolve, 700));
+    await expect(getSection()).toBe('pinned');
+
+    // A user scroll releases the pin; at the top, 'first' is past the trigger too but 'intro' is current
+    window.scrollTo({ top: 0, behavior: 'instant' });
+    await waitFor(() => expect(getSection()).toBe('intro'));
+  },
+};
+
+const articleIds = ['article', 'first-heading', 'last-heading'];
+
+/** A docs page shape: a section wrapping the whole article, two headings, and a long last section. */
+const ArticlePage = () => {
+  useScrollSpy(articleIds);
+  return (
+    <div id="spy-article">
+      <div className="h-[50vh]" />
+      <h2 id="spy-first-heading">first heading</h2>
+      <div className="h-screen" />
+      <h2 id="spy-last-heading">last heading</h2>
+      <div className="h-[300vh]" />
+    </div>
+  );
+};
+
+/** After a jump past every heading, the last heading above stays current, even while the article is still in view. */
+export const LongJump: Story = {
+  render: () => <ArticlePage />,
+  play: async () => {
+    await waitFor(() => expect(getSection()).toBe('article'));
+
+    window.scrollTo({ top: document.documentElement.scrollHeight, behavior: 'instant' });
+    await waitFor(() => expect(getSection()).toBe('last-heading'));
+  },
 };

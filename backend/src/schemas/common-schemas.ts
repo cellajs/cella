@@ -2,19 +2,15 @@ import { z } from '@hono/zod-openapi';
 import { type TOptions, t } from 'i18next';
 import { appConfig } from 'shared';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
-import { schemaTags } from '#/core/openapi-helpers';
 import { maxLength } from '#/db/utils/constraints';
 
 export { maxLength };
 
+// Unnamed so it inlines into each query param and never surfaces as a component schema in the docs.
 export const booleanTransformSchema = z
   .union([z.enum(['true', 'false']), z.boolean()])
   .default('false')
-  .transform((value) => value === true || value === 'true')
-  .openapi('BooleanQueryValue', {
-    description: 'Boolean query value accepted as a boolean or its lowercase string representation.',
-    'x-tags': schemaTags('base', 'cella'),
-  });
+  .transform((value) => value === true || value === 'true');
 
 export const entityTypeSchema = z.enum(appConfig.entityTypes);
 

@@ -137,3 +137,31 @@ export const Legal: Story = {
     await expect(termsCookies.contains(bars(canvasElement)[0])).toBe(true);
   },
 };
+
+const legalIds = ['overview', 'introduction', 'cookies'];
+
+function LegalSpyPage() {
+  useScrollSpy(legalIds);
+  return <SpyPage ids={legalIds} aside={<LegalAside subjects={subjects} currentSubject={'terms' as LegalSubject} />} />;
+}
+
+/** Away from its overview a subject click scrolls back there and keeps the subject open; at the overview it collapses. */
+export const LegalSubjectReclick: Story = {
+  render: () => <LegalSpyPage />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const termsLink = (await canvas.findByText(/terms_of_use/)).closest('a') as HTMLElement;
+    const [termsCookies] = canvasElement.querySelectorAll<HTMLElement>('[data-spy-link="cookies"]');
+
+    await userEvent.click(within(termsCookies).getByRole('link', { name: 'Cookies' }));
+    await waitFor(() => expect(getSection()).toBe('cookies'));
+
+    await userEvent.click(termsLink);
+    await expect(termsLink).toHaveAttribute('aria-expanded', 'true');
+    await waitFor(() => expect(getSection()).toBe('overview'));
+    await waitFor(() => expect(termsCookies).toHaveAttribute('data-active', 'false'));
+
+    await userEvent.click(termsLink);
+    await waitFor(() => expect(termsLink).toHaveAttribute('aria-expanded', 'false'));
+  },
+};

@@ -37,7 +37,7 @@ export const productBaseSchema = z
     keywords: z.string(),
   })
   .openapi('ProductBase', {
-    description: 'Base schema for content entities with creator tracking (e.g. page, attachment).',
+    description: 'Base schema for content entities with creator tracking (e.g. attachment).',
     example: mockProductBase(),
     'x-tags': schemaTags('base', 'entities', 'cella'),
   });

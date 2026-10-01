@@ -2,14 +2,19 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { Suspense } from 'react';
 import type { GenComponentSchema, GenOperationDetail, GenOperationSummary, GenResponseSummary } from 'sdk/docs-types';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import { getSection } from '~/hooks/use-scroll-spy-store';
+import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { getSection, isProgrammaticScroll } from '~/hooks/use-scroll-spy-store';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { OperationExamples } from '~/modules/docs/operations/operation-examples';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
 import { TagSchemasTable } from '~/modules/docs/schemas/tag-schemas-table';
+import { CollapsibleTagItem } from '~/modules/docs/sidebar/collapsible-tag-item';
 import { OperationItem } from '~/modules/docs/sidebar/operation-item';
+import { PageBranch, type PageNode } from '~/modules/docs/sidebar/page-tree-item';
 import { SchemaItem } from '~/modules/docs/sidebar/schema-item';
 import { TagOperationsTable } from '~/modules/docs/tag-operations-table';
+import { type DocPage, PAGE_SECTION_ID } from '~/modules/page/content';
+import { SidebarMenu } from '~/modules/ui/sidebar';
 import { getRouter } from '~/routes/-router-instance';
 import { withApp } from '~/stories/with-app';
 
@@ -189,6 +194,96 @@ export const SidebarItems: Story = {
       await expect(sidebarOnClose).toHaveBeenCalledTimes(2);
       await expect(getRouter().state.location.hash).toBe('');
     });
+  },
+};
+
+const renderOperation = (op: GenOperationSummary, _index: number, isActive: boolean) => <OperationItem operation={op} isActive={isActive} />;
+
+/** An expanded tag's link collapses it (drops operationTag) only at the tag itself, not while one of its operations is current. */
+export const TagItemReclick: Story = {
+  render: () => (
+    <SidebarMenu className="w-64">
+      {(['me', 'users'] as const).map((name) => (
+        <CollapsibleTagItem
+          key={name}
+          type="operations"
+          tag={{ name, count: operations.length }}
+          items={operations}
+          isExpanded
+          isActive
+          isAtTag={name === 'users'}
+          activeItemIndex={name === 'me' ? 1 : -1}
+          layoutId={name}
+          renderItem={renderOperation}
+          itemKey={(op) => `${name}-${op.hash}`}
+        />
+      ))}
+    </SidebarMenu>
+  ),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(await canvas.findByRole('button', { name: /^me/ })).toHaveAttribute('href', '/docs/operations?q=keep&operationTag=me#tag/me');
+    await expect(canvas.getByRole('button', { name: /^users/ })).toHaveAttribute('href', '/docs/operations?q=keep#tag/users');
+  },
+};
+
+const docPage = (id: string, name: string, parentId: string | null = null): DocPage => ({
+  id,
+  parentId,
+  name,
+  displayOrder: 0,
+  renderMode: 'default',
+  draft: false,
+  hidden: false,
+  depth: parentId ? 1 : 0,
+  headings: [],
+});
+
+const guideNode: PageNode = { page: docPage('guide', 'Guide'), children: [{ page: docPage('guide/setup', 'Setup', 'guide'), children: [] }] };
+const guideExpanded = new Set(['guide']);
+const pageSpyIds = [PAGE_SECTION_ID, 'later'];
+const pageOnToggle = fn();
+
+/** The page section wraps the content, as on a docs page, with a heading section far below the fold. */
+function PageTreeSpyPage() {
+  useScrollSpy(pageSpyIds);
+  return (
+    <div className="flex">
+      <SidebarMenu className="sticky top-0 h-screen w-64 shrink-0">
+        <PageBranch node={guideNode} variant="parent" activePageId="guide" expandedIds={guideExpanded} onToggle={pageOnToggle} />
+      </SidebarMenu>
+      <div id={`spy-${PAGE_SECTION_ID}`} className="flex-1">
+        <div className="h-[150vh]" />
+        <div id="spy-later" className="h-10">
+          later
+        </div>
+        <div className="h-screen" />
+      </div>
+    </div>
+  );
+}
+
+/** On an open parent page, a click further down scrolls back to the page itself; there, the next click collapses it. */
+export const PageBranchReclick: Story = {
+  beforeEach: () => {
+    pageOnToggle.mockClear();
+  },
+  render: () => <PageTreeSpyPage />,
+  play: async ({ canvasElement }) => {
+    const guide = await within(canvasElement).findByRole('link', { name: 'Guide' });
+
+    // The store is shared across stories: a previous story's click scroll may still hold section updates
+    await waitFor(() => expect(isProgrammaticScroll()).toBe(false), { timeout: 2000 });
+    document.getElementById('spy-later')?.scrollIntoView({ behavior: 'instant' });
+    await waitFor(() => expect(getSection()).toBe('later'));
+
+    await userEvent.click(guide);
+    await waitFor(() => expect(getSection()).toBe(PAGE_SECTION_ID));
+    await expect(pageOnToggle).not.toHaveBeenCalled();
+
+    await userEvent.click(guide);
+    await expect(pageOnToggle).toHaveBeenCalledWith('guide');
   },
 };
 

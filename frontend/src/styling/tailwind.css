@@ -239,6 +239,11 @@
   @apply max-sm:text-md;
 }
 
+/* Open Sans descenders reach 0.24em, past the bottom of typography's 1.11 h1 line box; 1.3 contains them. */
+.prose h1:not(:where(.not-prose, .not-prose *)) {
+  line-height: 1.3;
+}
+
 /* Prose links follow the app-wide link affordance: small offset, faded underline that
    strengthens on hover. currentColor keeps it correct for any link color in both themes. */
 .prose a:not(:where(.not-prose, .not-prose *)) {

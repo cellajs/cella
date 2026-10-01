@@ -28,7 +28,8 @@ export function SchemasSidebar({ activeTag }: SchemasSidebarProps) {
     <SidebarMenu className="gap-1 p-0 pt-1">
       {schemaTags.map((tag) => {
         const tagSchemas = schemasByTag[tag.name] ?? [];
-        const isActive = hash === tag.name || tagSchemas.some((s) => s.ref.replace(/^#/, '') === hash);
+        const isAtTag = hash === tag.name;
+        const isActive = isAtTag || tagSchemas.some((s) => s.ref.replace(/^#/, '') === hash);
         const activeSchemaIndex = tagSchemas.findIndex((s) => s.ref.replace(/^#/, '') === hash);
 
         return (
@@ -40,6 +41,7 @@ export function SchemasSidebar({ activeTag }: SchemasSidebarProps) {
             isExpanded={activeTag === tag.name}
             layoutId={layoutId}
             isActive={isActive}
+            isAtTag={isAtTag}
             activeItemIndex={activeSchemaIndex}
             renderItem={renderItem}
             itemKey={itemKey}
