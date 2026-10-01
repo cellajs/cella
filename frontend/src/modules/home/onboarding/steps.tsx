@@ -36,7 +36,10 @@ export function Onboarding({ onboarding = 'start', setOnboardingState, createdOr
 
   const [organization, setOrganization] = useState<Organization | null>(createdOrganization);
 
-  const animateClass = `transition-all will-change-transform duration-500 ease-out ${hasStarted ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
+  const animateClass = cn(
+    'transition-all duration-500 ease-out will-change-transform',
+    hasStarted ? 'opacity-100' : 'translate-y-4 scale-95 opacity-0',
+  );
 
   const orgQuery = useInfiniteQuery(organizationsListQueryOptions({ relatableUserId: user.id }));
   const organizations = flattenInfiniteData<Organization>(orgQuery.data);

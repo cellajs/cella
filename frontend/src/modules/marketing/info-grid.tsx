@@ -5,6 +5,7 @@ import { ExpandableList } from '~/modules/common/expandable-list';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Badge } from '~/modules/ui/badge';
 import { useUIStore } from '~/modules/ui/ui-store';
+import { cn } from '~/utils/cn';
 
 export type InfoGridItem<C extends string = string> = {
   id: string;
@@ -30,12 +31,12 @@ function InfoTile({ id, namespace, layers, image, invertClassName, tileClassName
 
   if (image) {
     return (
-      <div className={`relative overflow-hidden rounded-lg ${tileClassName} p-2`}>
+      <div className={cn('relative overflow-hidden rounded-lg p-2', tileClassName)}>
         <div className="flex h-44 flex-col justify-between gap-2 rounded-md p-6">
           <img
             src={`/static/marketing/features/${id}.svg`}
             alt={t(title)}
-            className={`mb-2 h-8 w-8 object-contain ${invertClassName ?? ''}`}
+            className={cn('mb-2 h-8 w-8 object-contain', invertClassName)}
             loading="lazy"
           />
           <h3 className="font-medium">{t(title)}</h3>
@@ -46,7 +47,7 @@ function InfoTile({ id, namespace, layers, image, invertClassName, tileClassName
   }
 
   return (
-    <div className={`rounded-lg ${tileClassName} p-6`}>
+    <div className={cn('rounded-lg p-6', tileClassName)}>
       <div className="flex flex-wrap items-center gap-2">
         <h3 className="font-medium">{t(title)}</h3>
         {layers?.map((layer) => (
@@ -133,7 +134,7 @@ export function InfoGrid<C extends string>({
   }
 
   return (
-    <div className={`mx-auto grid max-w-5xl justify-center gap-4 ${className}`}>
+    <div className={cn('mx-auto grid max-w-5xl justify-center gap-4', className)}>
       {expandable ? (
         <ExpandableList<InfoGridItem<C>>
           items={items}

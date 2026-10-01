@@ -6,6 +6,7 @@ import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 export interface PageCoverProps {
@@ -51,7 +52,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
   return (
     <div
       data-url={!!url}
-      className={`relative flex h-32 bg-center bg-cover ${numberToColorClass(id)} min-h-40 data-[url=true]:h-[20vw] sm:min-w-52`}
+      className={cn('relative flex h-32 bg-center bg-cover', numberToColorClass(id), 'min-h-40 data-[url=true]:h-[20vw] sm:min-w-52')}
       style={coverUrl ? { backgroundImage: `url(${coverUrl})` } : {}}
     >
       {canUpdate && appConfig.has.uploadEnabled && (

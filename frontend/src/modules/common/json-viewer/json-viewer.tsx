@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { cn } from '~/utils/cn';
 import { JsonViewerContext, type JsonViewerContextValue } from './context';
 import { JsonNode } from './json-node';
 import type { DataType, JsonViewerProps } from './types';
@@ -150,7 +151,7 @@ export function JsonViewer({
       <div
         ref={containerRef}
         data-openapi-mode={openapiMode}
-        className={`group/jv font-mono text-gray-900 text-sm leading-relaxed dark:text-gray-100 ${className || ''}`}
+        className={cn('group/jv font-mono text-gray-900 text-sm leading-relaxed dark:text-gray-100', className)}
       >
         <JsonNode value={value} path={[]} keyName={rootName} depth={0} />
       </div>

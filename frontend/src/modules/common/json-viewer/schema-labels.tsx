@@ -1,3 +1,5 @@
+import { cn } from '~/utils/cn';
+
 interface SchemaLabelsProps {
   typeValue: string | string[] | null;
   refValue: string | null;
@@ -36,7 +38,7 @@ export function SchemaLabels({ typeValue, refValue, contentTypeValue, hasAnyOf, 
     <>
       {typeValues.map((type, index) => (
         <span key={type}>
-          <span className={`ml-0.5 rounded px-1 py-0.5 font-medium text-xs opacity-70 ${theme.schemaType} ${getTypeColorClass(type, theme)}`}>
+          <span className={cn('ml-0.5 rounded px-1 py-0.5 font-medium text-xs opacity-70', theme.schemaType, getTypeColorClass(type, theme))}>
             {type}
           </span>
           {index < typeValues.length - 1 && <span className="mx-1 opacity-50">|</span>}

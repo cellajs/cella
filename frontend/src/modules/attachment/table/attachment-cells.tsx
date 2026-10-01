@@ -13,6 +13,7 @@ import { MediaThumbnail } from '~/modules/common/media-thumbnail';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 interface ThumbnailCellProps {
   row: Attachment;
@@ -71,7 +72,7 @@ function SyncStatusBadge({ attachmentId }: { attachmentId: string }) {
 
   return (
     <div
-      className={`absolute -right-0.5 -bottom-0.5 rounded-full p-0.5 ${isFailed ? 'bg-destructive' : 'bg-muted-foreground'}`}
+      className={cn('absolute -right-0.5 -bottom-0.5 rounded-full p-0.5', isFailed ? 'bg-destructive' : 'bg-muted-foreground')}
       data-tooltip="true"
       data-tooltip-content={tooltip}
     >

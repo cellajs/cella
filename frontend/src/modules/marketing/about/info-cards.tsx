@@ -5,6 +5,7 @@ import { CountryFlag } from '~/modules/common/country-flag';
 import { cards } from '~/modules/marketing/marketing-config';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
 import { useUIStore } from '~/modules/ui/ui-store';
+import { cn } from '~/utils/cn';
 
 export interface InfoCard {
   name: string;
@@ -38,7 +39,7 @@ export function InfoCards() {
                 <img
                   src={`/static/marketing/integrations/${id}.svg`}
                   alt={name}
-                  className={`h-8 w-8 object-contain ${invert && mode === 'dark' && 'invert'}`}
+                  className={cn('h-8 w-8 object-contain', invert && mode === 'dark' && 'invert')}
                   loading="lazy"
                 />
                 <span className="ml-4 font-semibold">{name}</span>

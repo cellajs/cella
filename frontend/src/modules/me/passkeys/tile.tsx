@@ -7,6 +7,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useCurrentUser } from '~/modules/user/user-store';
+import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
 
 interface PasskeyTileProps {
@@ -60,7 +61,7 @@ export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPassk
             >
               <div className="group-data-[expanded=true]/tile:hidden">More</div>
               <div className="group-data-[expanded=false]/tile:hidden">Less</div>
-              <ChevronDownIcon className={`icon-xs ml-1 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+              <ChevronDownIcon className={cn('icon-xs ml-1 transition-transform', expanded && 'rotate-180')} />
             </Button>
           </div>
         </div>

@@ -6,6 +6,7 @@ import { dateColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
+import { cn } from '~/utils/cn';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -23,7 +24,7 @@ export const useColumns = () => {
           {t(`c:${type}`)}
           {type === 'waitlist' && (
             <TooltipButton toolTipContent={t(`c:${wasInvited ? 'pending' : 'not_processed'}`)} disabled={type !== 'waitlist'}>
-              <Badge className={`h-2 w-2 justify-center p-0 ${wasInvited ? 'bg-yellow-400' : 'bg-gray-400'}`} />
+              <Badge className={cn('h-2 w-2 justify-center p-0', wasInvited ? 'bg-yellow-400' : 'bg-gray-400')} />
             </TooltipButton>
           )}
         </div>

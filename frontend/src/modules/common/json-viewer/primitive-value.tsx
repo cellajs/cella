@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { cn } from '~/utils/cn';
 import { highlightText, JSON_SCHEMA_TYPES } from './utils';
 
 interface InlinePrimitiveValueProps {
@@ -88,7 +89,7 @@ export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength,
                 : str === 'null'
                   ? theme.null
                   : 'text-purple-600 dark:text-purple-400'; // for array/object
-        return <span className={`${baseClass} ${theme.schemaType} ${typeClass}`}>{str}</span>;
+        return <span className={cn(baseClass, theme.schemaType, typeClass)}>{str}</span>;
       }
 
       const shouldTruncate = str.length > collapseStringsAfterLength;
@@ -98,7 +99,7 @@ export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength,
       return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: developer-facing JSON viewer; expanding a truncated string is a visual mouse affordance.
         <span
-          className={`${baseClass} inline-block max-w-[600px] align-top ${shouldTruncate ? 'cursor-pointer' : ''}`}
+          className={cn(baseClass, 'inline-block max-w-[600px] align-top', shouldTruncate && 'cursor-pointer')}
           onClick={shouldTruncate ? () => setIsExpanded(!isExpanded) : undefined}
           title={shouldTruncate ? (isExpanded ? 'Click to collapse' : 'Click to expand') : undefined}
         >
@@ -128,9 +129,9 @@ export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength,
       );
     }
     case 'null':
-      return <span className={`${baseClass} ${theme.null}`}>null</span>;
+      return <span className={cn(baseClass, theme.null)}>null</span>;
     case 'undefined':
-      return <span className={`${baseClass} ${theme.null}`}>undefined</span>;
+      return <span className={cn(baseClass, theme.null)}>undefined</span>;
     default:
       return <span className={baseClass}>{String(value)}</span>;
   }

@@ -8,6 +8,7 @@ import { openExamplesSheet } from '~/modules/docs/operations/operation-examples'
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
+import { cn } from '~/utils/cn';
 import { getMethodColor } from '../../helpers/get-method-color';
 
 export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: string[] = []) => {
@@ -80,7 +81,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         sortable: true,
         width: 80,
         renderCell: ({ row }) => (
-          <Badge variant="secondary" className={`bg-transparent font-mono text-xs uppercase shadow-none ${getMethodColor(row.method)}`}>
+          <Badge variant="secondary" className={cn('bg-transparent font-mono text-xs uppercase shadow-none', getMethodColor(row.method))}>
             {row.method.toUpperCase()}
           </Badge>
         ),

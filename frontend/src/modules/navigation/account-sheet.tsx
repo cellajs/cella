@@ -14,6 +14,7 @@ import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { useCurrentUser, useUserStore } from '~/modules/user/user-store';
+import { cn } from '~/utils/cn';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
@@ -92,9 +93,10 @@ export function AccountSheet() {
       </div>
       <button type="button" tabIndex={-1} onClick={openProfile} className="relative mt-3 w-full">
         <div
-          className={`relative h-32 bg-center bg-cover shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-all duration-300 ${
-            user.bannerUrl ? '' : numberToColorClass(user.id)
-          }`}
+          className={cn(
+            'relative h-32 bg-center bg-cover shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-all duration-300',
+            !user.bannerUrl && numberToColorClass(user.id),
+          )}
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
         >
           <motion.div

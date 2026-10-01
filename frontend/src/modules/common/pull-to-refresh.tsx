@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useUIStore } from '~/modules/ui/ui-store';
+import { cn } from '~/utils/cn';
 
 // Hold the indicator still briefly, then glide it off-screen (ms).
 const exitHold = 100;
@@ -197,7 +198,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
       className="fixed inset-x-1/2 top-0 z-300 h-8 w-8 -translate-x-1/2"
     >
       <svg
-        className={`h-8 w-8 ${isActive ? 'animate-spin' : ''}`}
+        className={cn('h-8 w-8', isActive && 'animate-spin')}
         viewBox="0 0 40 40"
         style={isActive ? { transition: 'none' } : { transform: `rotate(${pullPosition * 2}deg)`, transition: 'transform 0.1s ease-out' }}
       >

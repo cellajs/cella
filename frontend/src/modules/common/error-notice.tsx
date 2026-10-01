@@ -9,6 +9,7 @@ import { type ErrorNoticeError, getErrorInfo, handleAskForHelp } from '~/modules
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 import type { BoundaryType } from '~/routes/types';
+import { cn } from '~/utils/cn';
 
 export type { ErrorNoticeError } from '~/modules/common/error-helpers';
 
@@ -79,7 +80,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                     className="flex w-full items-center whitespace-pre-wrap text-red-600"
                   >
                     <span>{showError ? t('c:hide_details') : t('c:show_details')}</span>
-                    {<ChevronUpIcon className={`ml-2 transition-transform ${showError ? 'rotate-0' : 'rotate-180'}`} />}
+                    {<ChevronUpIcon className={cn('ml-2 transition-transform', showError ? 'rotate-0' : 'rotate-180')} />}
                   </Button>
                 )}
 

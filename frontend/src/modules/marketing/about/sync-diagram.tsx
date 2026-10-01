@@ -6,6 +6,7 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
 import { ToggleGroup, ToggleGroupItem } from '~/modules/ui/toggle-group';
+import { cn } from '~/utils/cn';
 
 type SyncMode = 'rest' | 'cdc' | 'yjs';
 
@@ -505,7 +506,7 @@ export function SyncDiagram() {
           return (
             <motion.div
               key={key}
-              className={`absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-2 ${y < 50 ? 'flex-col-reverse' : 'flex-col'}`}
+              className={cn('absolute flex -translate-x-1/2 -translate-y-1/2 items-center gap-2', y < 50 ? 'flex-col-reverse' : 'flex-col')}
               style={{ left: `${x}%`, top: `${y}%` }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}

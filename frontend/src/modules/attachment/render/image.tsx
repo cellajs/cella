@@ -77,7 +77,7 @@ export function ReactPanZoom({ image, alt, showButtons, imageClassName, onPanSta
         <div className="flex h-full w-full items-center justify-center" style={layerStyle}>
           <img
             style={{ transform: `rotate(${rotation * 90}deg)` }}
-            className={cn(imageClassName, 'object-contain', backdropDismiss ? 'pointer-events-auto max-h-full max-w-full' : 'h-full w-full')}
+            className={cn('object-contain', backdropDismiss ? 'pointer-events-auto max-h-full max-w-full' : 'h-full w-full', imageClassName)}
             src={image}
             alt={alt}
           />

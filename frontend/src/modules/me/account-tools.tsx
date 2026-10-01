@@ -23,6 +23,7 @@ import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { useCurrentUser } from '~/modules/user/user-store';
+import { cn } from '~/utils/cn';
 
 const enabledStrategies = appConfig.enabledAuthStrategies;
 
@@ -150,7 +151,7 @@ export function AccountAuthenticationCard() {
                         <img
                           src={`/static/auth/${provider.id}-icon.svg`}
                           alt={provider.id}
-                          className={`mr-2 size-4 ${provider.id === 'github' ? invertClass : ''}`}
+                          className={cn('mr-2 size-4', provider.id === 'github' && invertClass)}
                           loading="lazy"
                         />
                         <CheckIcon strokeWidth={3} className="size-4.5 text-success" />
@@ -170,7 +171,7 @@ export function AccountAuthenticationCard() {
                       <img
                         src={`/static/auth/${provider.id}-icon.svg`}
                         alt={provider.id}
-                        className={`mr-2 size-4 ${provider.id === 'github' ? invertClass : ''}`}
+                        className={cn('mr-2 size-4', provider.id === 'github' && invertClass)}
                         loading="lazy"
                       />
                       {`${t('c:add')} ${provider.name} ${t('c:account').toLowerCase()}`}

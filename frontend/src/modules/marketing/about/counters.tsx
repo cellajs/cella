@@ -5,6 +5,7 @@ import { useInView } from '~/hooks/use-in-view';
 import { counts } from '~/modules/marketing/marketing-config';
 import { publicCountsQueryOptions } from '~/modules/marketing/query';
 import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
+import { cn } from '~/utils/cn';
 
 export function useCountUp(start: number, end: number, duration = 1500) {
   const [value, setValue] = useState(start);
@@ -28,7 +29,16 @@ function CountUp({ start, end }: { start: number; end: number }) {
   return <>{value.toLocaleString()}</>;
 }
 
-const countsLength = counts.length;
+// Literal class names so Tailwind generates them; an app with more counters than listed falls back to four columns
+const lgGridCols: Record<number, string> = {
+  1: 'lg:grid-cols-1',
+  2: 'lg:grid-cols-2',
+  3: 'lg:grid-cols-3',
+  4: 'lg:grid-cols-4',
+  5: 'lg:grid-cols-5',
+  6: 'lg:grid-cols-6',
+};
+const countsGridClass = lgGridCols[counts.length] ?? 'lg:grid-cols-4';
 
 export function Counters() {
   const { t } = useTranslation();
@@ -37,7 +47,7 @@ export function Counters() {
   const { data } = useQuery(publicCountsQueryOptions());
 
   return (
-    <div ref={ref} className={`mx-auto grid grid-cols-2 gap-4 md:max-w-5xl lg:grid-cols-${countsLength}`}>
+    <div ref={ref} className={cn('mx-auto grid grid-cols-2 gap-4 md:max-w-5xl', countsGridClass)}>
       {inView &&
         counts.map(({ id, title, icon: Icon }) => {
           const countValue = data?.[id] ?? 0;

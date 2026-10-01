@@ -28,13 +28,13 @@ export function Hero({ title, text, children, chips }: HeroProps) {
       }
     : undefined;
   const sectionClass = 'rich-gradient relative flex min-h-[90vh] items-center justify-center space-y-6 py-24 px-4 lg:py-32';
-  const headerClass = `transition-all will-change-transform duration-500 ease-out ${inView ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
+  const headerClass = cn('transition-all duration-500 ease-out will-change-transform', inView ? 'opacity-100' : 'translate-y-4 scale-95 opacity-0');
 
   return (
     <section id="spy-welcome" className={sectionClass}>
       <header ref={ref} className={cn('container flex max-w-4xl flex-col items-center gap-4 text-center', headerClass)}>
         <h1 className="mb-6 font-heading text-3xl leading-10 sm:mt-6 sm:text-4xl sm:leading-13 md:text-5xl md:leading-18 lg:text-6xl">
-          <span className={`bg-linear-to-br ${gradientClass} bg-clip-text font-bold`} style={gradientStyle}>
+          <span className={cn('bg-linear-to-br', gradientClass, 'bg-clip-text font-bold')} style={gradientStyle}>
             {t(title)}
           </span>
         </h1>
@@ -65,7 +65,7 @@ export function BackgroundCurve({ height = 'clamp(3rem, 8vw, 8rem)', position = 
     <svg
       viewBox="0 0 800 100"
       preserveAspectRatio="none"
-      className={`pointer-events-none absolute inset-x-0 w-full ${isTop ? '-top-px' : '-bottom-px'}`}
+      className={cn('pointer-events-none absolute inset-x-0 w-full', isTop ? '-top-px' : '-bottom-px')}
       style={{ height: `calc(${height} + 1px)` }}
       aria-hidden="true"
     >

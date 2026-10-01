@@ -34,7 +34,7 @@ function ThemeDropdownContent({ items, isMobile }: { items: ThemeItem[]; isMobil
               </span>
               {item.label}
             </span>
-            <CheckIcon className={`text-success ${item.checked ? 'visible' : 'invisible'}`} />
+            <CheckIcon className={cn('text-success', item.checked ? 'visible' : 'invisible')} />
           </DropdownActionItem>
         </div>
       ))}

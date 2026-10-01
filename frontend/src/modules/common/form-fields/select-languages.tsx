@@ -5,6 +5,7 @@ import { appConfig, type Language } from 'shared';
 import { useMeasure } from '~/hooks/use-measure';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 interface SelectLanguagesProps {
   value: Language[];
@@ -56,7 +57,7 @@ function SelectLanguagesContent({ initialValue, onChange, triggerWidth = 240 }: 
             <div className="flex flex-nowrap items-center truncate">
               <span className="truncate">{option.label}</span>
             </div>
-            <CheckIcon strokeWidth={3} className={`text-success ${!selected.includes(option.value) && 'invisible'}`} />
+            <CheckIcon strokeWidth={3} className={cn('text-success', !selected.includes(option.value) && 'invisible')} />
           </div>
         ))}
       </div>

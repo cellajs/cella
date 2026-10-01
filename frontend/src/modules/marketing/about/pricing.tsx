@@ -10,6 +10,7 @@ import { pricingPlans } from '~/modules/marketing/marketing-config';
 import { WaitlistForm } from '~/modules/requests/waitlist-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 export interface PricingPlan {
   id: string;
@@ -50,7 +51,7 @@ export function Pricing() {
   const layoutClass = isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3';
 
   return (
-    <div className={`mx-auto mt-8 max-w-7xl ${layoutClass} gap-8`}>
+    <div className={cn('mx-auto mt-8 max-w-7xl', layoutClass, 'gap-8')}>
       {pricingPlans.map(({ id, borderColor, featureCount, popular, discount, action }, planIndex) => {
         const title = `about:pricing.title_${planIndex + 1}` as TKey;
         const text = `about:pricing.text_${planIndex + 1}` as TKey;
@@ -61,9 +62,11 @@ export function Pricing() {
         return (
           <div
             key={id}
-            className={`relative flex flex-col justify-between rounded-lg border bg-card p-6 ${borderColor} ${
-              isFlexLayout ? 'w-full md:w-1/2 lg:w-1/3' : 'w-full'
-            }`}
+            className={cn(
+              'relative flex flex-col justify-between rounded-lg border bg-card p-6',
+              borderColor,
+              isFlexLayout ? 'w-full md:w-1/2 lg:w-1/3' : 'w-full',
+            )}
           >
             {popular && (
               <Badge size="sm" className="absolute top-0 left-1/2 -translate-x-2/4 -translate-y-2/4 px-4 py-1 text-center">
@@ -81,7 +84,7 @@ export function Pricing() {
                     {discount}
                   </Badge>
                 )}
-                <span className={`font-bold text-3xl ${discount ? 'mr-2 line-through' : 'mr-1'}`}>{t(price)}</span>
+                <span className={cn('font-bold text-3xl', discount ? 'mr-2 line-through' : 'mr-1')}>{t(price)}</span>
                 <span>/ {t('c:year')}</span>
               </div>
 

@@ -1,5 +1,6 @@
 import { ChevronRightIcon } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
+import { cn } from '~/utils/cn';
 import { CollapsedPreview } from './collapsed-preview';
 import { useJsonViewerContext } from './context';
 import { CopyButton } from './copy-button';
@@ -104,7 +105,7 @@ export const JsonNode = memo(
               (typeof keyName === 'number' ? (
                 <span className={theme.index}>{keyName}</span>
               ) : (
-                <span className={`font-medium ${theme.key}`}>{showKeyQuotes ? `"${keyName}"` : keyName}</span>
+                <span className={cn('font-medium', theme.key)}>{showKeyQuotes ? `"${keyName}"` : keyName}</span>
               ))}
             {keyName !== false && <span className="mr-1 opacity-70">:</span>}
             <CustomComponent value={value} path={path} />
@@ -264,7 +265,7 @@ export const JsonNode = memo(
     const hasNestedObjects =
       openapiMode === 'schema' && !isArray ? entries.some(([, val]) => val !== null && typeof val === 'object' && !Array.isArray(val)) : true;
 
-    const bracketClass = `font-medium ${theme.bracket} group-data-[openapi-mode=schema]/jv:hidden`;
+    const bracketClass = cn('font-medium', theme.bracket, 'group-data-[openapi-mode=schema]/jv:hidden');
 
     if (isEmpty) {
       return (
@@ -320,7 +321,10 @@ export const JsonNode = memo(
         {!hideExpandHeader && (
           // biome-ignore lint/a11y/useKeyWithClickEvents: developer-facing JSON tree viewer; expand/collapse is a visual affordance for mouse users.
           <div
-            className={`group/node -mx-1 -my-px inline-flex items-center gap-0.5 rounded px-1 py-px ${isExpandable ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5' : 'pointer-events-none'}`}
+            className={cn(
+              'group/node -mx-1 -my-px inline-flex items-center gap-0.5 rounded px-1 py-px',
+              isExpandable ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5' : 'pointer-events-none',
+            )}
             style={{ paddingLeft }}
             onClick={
               isExpandable
@@ -335,8 +339,8 @@ export const JsonNode = memo(
                 : undefined
             }
           >
-            <span className={`inline-flex h-4 w-4 shrink-0 items-center justify-center ${isExpandable ? 'opacity-60' : '-ml-3.5 opacity-0'}`}>
-              <ChevronRightIcon className={`icon-sm transition-transform ${isExpanded ? 'rotate-90' : 'rotate-0'}`} />
+            <span className={cn('inline-flex h-4 w-4 shrink-0 items-center justify-center', isExpandable ? 'opacity-60' : '-ml-3.5 opacity-0')}>
+              <ChevronRightIcon className={cn('icon-sm transition-transform', isExpanded ? 'rotate-90' : 'rotate-0')} />
             </span>
             <KeyRenderer {...keyProps} />
             {keyName !== false && <span className="mr-1 opacity-70">:</span>}
