@@ -156,7 +156,7 @@ const racingOnRow = async <T>(tokenId: string, redeem: () => Promise<T>): Promis
   const redeeming = redeem();
   await vi.waitFor(async () => {
     const { rows } = await db.execute<{ waiting: number }>(
-      sql`select count(*)::int as waiting from pg_stat_activity where wait_event_type = 'Lock' and query ilike 'update "tokens"%'`,
+      sql`select count(*)::int as waiting from pg_stat_activity where datname = current_database() and wait_event_type = 'Lock' and query ilike 'update "tokens"%'`,
     );
     expect(rows[0].waiting).toBe(2);
   });

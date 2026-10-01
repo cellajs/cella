@@ -76,7 +76,7 @@ A branch that adds migrations runs its suite against a throwaway database (`DB_T
 
 Coverage excludes `*.test.ts`, `tests/**` and mocks, so placement does not change coverage numbers.
 
-**Backend specifics.** Test env vars (secrets, `DATABASE_URL`, `NODE_ENV=test`) are preset in [backend/vitest.config.ts](../backend/vitest.config.ts). Do not load `.env` in tests. Backend tests run serially (`fileParallelism: false`) against a shared test database prepared by [backend/tests/global-setup.ts](../backend/tests/global-setup.ts). Never assume an empty database. Use the `#/` import alias as in source.
+**Backend specifics.** Test env vars (secrets, `DATABASE_URL`, `NODE_ENV=test`) are preset in [backend/vitest.config.ts](../backend/vitest.config.ts). Do not load `.env` in tests. Backend test files run in parallel, each vitest worker on its own database (`backend_worker_<n>` in the test container), so files never see each other's rows. [backend/tests/global-setup.ts](../backend/tests/global-setup.ts) creates these once and migrates them with the shared database the yjs and cdc tests use. Tests that open their own connection take the URL from `shared/test-db`, which points at the worker's database. Never assume an empty database: a worker's database keeps the rows of earlier files and runs. Clean up with `clearDatabase()`: it deletes the rows, since `TRUNCATE` costs ~400ms a call. Server-wide views (`pg_stat_activity`, `pg_locks`) show every worker, so a query on them filters on `datname = current_database()`. Use the `#/` import alias as in source.
 
 **New packages.** Register a new workspace package with tests in the root [vitest.config.ts](../vitest.config.ts): add it to `projects` and the `coverage.include` globs.
 

@@ -27,11 +27,12 @@ export default defineConfig({
     clearMocks: true,
     testTimeout: 30000,
     hookTimeout: 30000,
-    fileParallelism: false,
     pool: 'threads',
     include: includePatterns,
     exclude: excludePatterns,
     env: {
+      // Files run in parallel, each worker on its own database (tests/global-setup.ts, tests/setup.ts).
+      TEST_DB_PER_WORKER: 'true',
       PINO_LOG_LEVEL: 'silent',
       NODE_ENV: 'test',
       COOKIE_SECRET: 'test-cookie-secret-for-unit-tests',

@@ -1,9 +1,11 @@
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import pg from 'pg';
-import { testDatabaseUrl } from 'shared/test-db';
+import { testDatabaseUrl, testWorkerDatabase, withDatabase } from 'shared/test-db';
+import type { TestProject } from 'vitest/node';
 import { crossMark, startSpinner, succeedSpinner } from '#/utils/console';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -11,14 +13,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATABASE_URL = testDatabaseUrl;
 /** Arbitrary advisory lock key shared by every backend test run against the test database. */
 const testRunLockKey = 7_365_224;
+// Resolve from __dirname so Vitest workspace cwd does not affect migration lookup.
+const migrationsFolder = path.resolve(__dirname, '../drizzle');
 
 /**
- * Global test setup: provisions the RLS roles, then migrates. The order matters: the RLS,
- * trigger and grant blocks need the roles at migration time, and the verify block aborts the
- * migration without them. Nothing here repairs catalog state after the migration; the schema
- * the tests inspect is the schema the migration produced.
+ * Global test setup: provisions the RLS roles, then creates and migrates the test databases. The order matters: the RLS,
+ * trigger and grant blocks need the roles at migration time, and the verify block aborts the migration without them.
+ * Nothing here repairs catalog state after the migration; the schema the tests inspect is the schema the migration
+ * produced.
  */
-export default async function globalSetup() {
+export default async function globalSetup(project: TestProject) {
   if (!DATABASE_URL) {
     console.error(`\n${crossMark}  Backend tests require a database: DATABASE_URL not set`);
     console.error('   Run `pnpm docker:test` (or `pnpm dev`) to start Postgres, then run tests again.\n');
@@ -66,19 +70,26 @@ export default async function globalSetup() {
       ELSE
         ALTER ROLE admin_role NOBYPASSRLS;
       END IF;
-      GRANT USAGE ON SCHEMA public TO runtime_role;
-      GRANT ALL ON SCHEMA public TO admin_role;
     END $$;
   `);
 
+  // Backend test files run in parallel, each worker on its own database (tests/setup.ts); the shared one stays for the yjs
+  // and cdc integration tests. VITEST_POOL_ID runs from 1 to `maxWorkers`, which defaults to one less than the cores.
+  // Created once and then migrated in place, like the shared one.
+  const workers = Number(project.config.maxWorkers || project.globalConfig.maxWorkers) || os.availableParallelism();
+  const workerDatabases = Array.from({ length: workers }, (_, i) => testWorkerDatabase(i + 1));
+  const { rows: existing } = await pool.query<{ datname: string }>('SELECT datname FROM pg_database WHERE datname = ANY($1)', [workerDatabases]);
+  for (const database of workerDatabases) {
+    if (!existing.some((row) => row.datname === database)) await pool.query(`CREATE DATABASE "${database}"`);
+  }
+  await pool.end();
+
   const spinner = startSpinner('Running database migrations...');
 
-  const db = drizzle({ client: pool });
-  // Resolve from __dirname so Vitest workspace cwd does not affect migration lookup.
-  const migrationsFolder = path.resolve(__dirname, '../drizzle');
-
+  const urls = [DATABASE_URL, ...workerDatabases.map((database) => withDatabase(DATABASE_URL, database))];
+  let results: Awaited<ReturnType<typeof prepareDatabase>>[];
   try {
-    await migrate(db, { migrationsFolder, migrationsSchema: 'drizzle-backend' });
+    results = await Promise.all(urls.map(prepareDatabase));
     succeedSpinner('Migrations complete');
   } catch (error) {
     spinner.fail('Migration failed');
@@ -86,27 +97,43 @@ export default async function globalSetup() {
     process.exit(1);
   }
 
-  // A volume migrated before the roles existed keeps its degraded catalog (migrations do not
-  // re-run) and RLS-dependent tests would pass vacuously on it, so the setup refuses such a volume.
-  const { rows } = await pool.query<{ enabled: boolean; forced: boolean; granted: boolean; owner: string }>(`
-    SELECT relrowsecurity AS enabled,
-           relforcerowsecurity AS forced,
-           has_table_privilege('runtime_role', 'public.yjs_documents', 'SELECT') AS granted,
-           pg_get_userbyid(relowner) AS owner
-    FROM pg_class WHERE relname = 'yjs_documents' AND relnamespace = 'public'::regnamespace
-  `);
-  const state = rows[0];
-  if (!state?.enabled || state.forced || !state.granted || state.owner !== 'admin_role') {
-    console.error(`\n${crossMark}  Test database was migrated without the RLS roles (yjs_documents: ${JSON.stringify(state)})`);
+  const degraded = results.filter((result) => result !== null);
+  for (const found of degraded) {
+    console.error(
+      `\n${crossMark}  Test database ${found.database} was migrated without the RLS roles (yjs_documents: ${JSON.stringify(found.state)})`,
+    );
     console.error('   Reset the test volume: `pnpm docker:test:reset && pnpm docker:test`, then run tests again.\n');
-    await pool.end();
-    process.exit(1);
   }
-
-  await pool.end();
+  if (degraded.length) process.exit(1);
 
   // Closing the session releases the lock for the next waiting run.
   return async () => {
     await lockClient.end();
   };
+}
+
+/**
+ * Grants the roles the public schema, migrates, and checks the catalog of one test database. A database migrated before
+ * the roles existed keeps its degraded catalog (migrations do not re-run) and RLS-dependent tests would pass vacuously on
+ * it, so its RLS state is returned for the setup to refuse.
+ */
+async function prepareDatabase(url: string) {
+  const pool = new pg.Pool({ connectionString: url });
+  try {
+    await pool.query('GRANT USAGE ON SCHEMA public TO runtime_role; GRANT ALL ON SCHEMA public TO admin_role;');
+    await migrate(drizzle({ client: pool }), { migrationsFolder, migrationsSchema: 'drizzle-backend' });
+
+    const { rows } = await pool.query<{ enabled: boolean; forced: boolean; granted: boolean; owner: string }>(`
+      SELECT relrowsecurity AS enabled,
+             relforcerowsecurity AS forced,
+             has_table_privilege('runtime_role', 'public.yjs_documents', 'SELECT') AS granted,
+             pg_get_userbyid(relowner) AS owner
+      FROM pg_class WHERE relname = 'yjs_documents' AND relnamespace = 'public'::regnamespace
+    `);
+    const state = rows[0];
+    if (state?.enabled && !state.forced && state.granted && state.owner === 'admin_role') return null;
+    return { database: new URL(url).pathname.slice(1), state };
+  } finally {
+    await pool.end();
+  }
 }

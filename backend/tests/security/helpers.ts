@@ -1,13 +1,14 @@
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { generatePasskeyChallenge, signInWithPasskey } from 'sdk';
 import { type EntityActionPermissions, type EntityRole, getEntityPolicies, getPolicyPermissions, policyMatrix } from 'shared';
 import { afterEach, beforeEach, expect } from 'vitest';
-import { baseDb as db, getAdminDb } from '#/db/db';
+import { baseDb as db } from '#/db/db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession, setCookiePair } from '../helpers';
 import { type PasskeyAssertion, softwarePasskey } from '../software-passkey';
 import { createAppClient, type TestResult } from '../test-client';
+import { emptyTables } from '../test-utils';
 
 export interface TestTenant {
   tenantId: string;
@@ -52,13 +53,25 @@ export async function createOrgUser(_call: Call, tenantId: string, organizationI
   return { id: user.id, email, sessionCookie };
 }
 
-/** Truncates tenant-scoped and auth tables on the admin connection (runtime_role holds no TRUNCATE). */
+/** Empties tenant-scoped and auth tables and everything that references them. */
 export async function clearSecurityTestData() {
-  await getAdminDb('test cleanup').execute(sql`TRUNCATE TABLE
-    sessions, tokens, passkeys, identities, emails,
-    memberships, inactive_memberships, organizations, tenants, users, api_keys, service_accounts, actors,
-    oidc_payloads, oauth_clients
-    CASCADE`);
+  await emptyTables([
+    'sessions',
+    'tokens',
+    'passkeys',
+    'identities',
+    'emails',
+    'memberships',
+    'inactive_memberships',
+    'organizations',
+    'tenants',
+    'users',
+    'api_keys',
+    'service_accounts',
+    'actors',
+    'oidc_payloads',
+    'oauth_clients',
+  ]);
 }
 
 /**
