@@ -51,7 +51,7 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
   if (form.loading) return null;
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <FormField
           control={form.control}
           name="emails"

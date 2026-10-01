@@ -65,7 +65,7 @@ export function OAuthProviders({ authStep = 'signIn' }: { authStep: AuthStep }) 
   if (appConfig.enabledOAuthProviders.length < 1) return null;
 
   return (
-    <div data-mode={mode} className="group flex flex-col space-y-2">
+    <div data-mode={mode} className="group flex flex-col gap-2">
       {appConfig.enabledOAuthProviders.map((provider) => {
         const providerData = mapOAuthProviders.find((p): p is OAuthProvider & { id: typeof provider } => p.id === provider);
 

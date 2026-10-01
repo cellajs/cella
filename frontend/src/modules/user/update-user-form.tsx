@@ -82,7 +82,7 @@ export function UpdateUserForm({ user, callback, sheet: isSheet, compact, childr
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex w-full flex-col gap-6">
         <AvatarFormField form={form} label={children ? '' : t('c:profile_picture')} type="user" name="thumbnailUrl" entity={user} />
         {isSelf && (
           <div className="grid gap-6 sm:grid-cols-2 sm:gap-4">

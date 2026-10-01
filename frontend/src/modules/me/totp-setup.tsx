@@ -68,7 +68,7 @@ export function SetupTotp() {
   };
 
   return (
-    <div className="group flex flex-col space-y-2">
+    <div className="group flex flex-col gap-2">
       <div className="flex items-center justify-center gap-2">
         <CircleAlertIcon className="size-3.5 shrink-0 text-amber-500" />
         <div className="text-muted-foreground text-sm">

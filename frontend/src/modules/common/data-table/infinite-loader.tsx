@@ -49,7 +49,7 @@ function AllLoaded() {
 
 function Loading() {
   return (
-    <div className="relative top-4 mb-10 flex h-0 w-full animate-pulse items-center justify-center space-x-1 opacity-50">
+    <div className="relative top-4 mb-10 flex h-0 w-full animate-pulse items-center justify-center gap-1 opacity-50">
       <span className="sr-only">Loading...</span>
       <div className="h-1 w-3 animate-bounce rounded-full bg-foreground [animation-delay:-0.3s]" />
       <div className="h-1 w-3 animate-bounce rounded-full bg-foreground [animation-delay:-0.15s]" />

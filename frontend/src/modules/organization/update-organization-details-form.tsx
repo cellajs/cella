@@ -79,7 +79,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <Suspense fallback={<Spinner className="my-16 size-6 opacity-50" noDelay />}>
           <BlockNoteContentFormField
             control={form.control}

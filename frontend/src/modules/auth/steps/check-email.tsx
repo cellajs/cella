@@ -52,7 +52,7 @@ export function CheckEmailStep() {
       <h1 className="mt-4 pb-2 text-center text-2xl">{title}</h1>
 
       {emailEnabled && (
-        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="space-y-4">
+        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
           <FormField
             control={form.control}
             name="email"

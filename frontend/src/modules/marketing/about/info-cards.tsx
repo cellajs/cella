@@ -21,7 +21,7 @@ export function InfoCards() {
 
   return (
     <ScrollArea className="w-full" horizontalScroll>
-      <div className="flex w-max space-x-4 px-2 py-8">
+      <div className="flex w-max gap-4 px-2 py-8">
         {cards.map(({ url, id, name, invert, country }) => {
           const text = `about:cards.${id}.text` as TKey;
           const purpose = `about:cards.${id}.purpose` as TKey;
@@ -35,7 +35,7 @@ export function InfoCards() {
               key={id}
               className="group focus-effect relative flex h-96 w-64 shrink-0 flex-col justify-between rounded-lg border p-5 hover:cursor-pointer hover:border-primary hover:ring-4 hover:ring-primary/10 active:translate-y-[.05rem] sm:w-80"
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <img
                   src={`/static/marketing/integrations/${id}.svg`}
                   alt={name}

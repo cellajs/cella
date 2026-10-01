@@ -136,7 +136,7 @@ export function SignInStep() {
       )}
 
       {(emailEnabled || isMagicLinkEnabled) && (
-        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="mt-0! flex flex-col gap-4">
+        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
           <FormField
             control={form.control}
             name="email"

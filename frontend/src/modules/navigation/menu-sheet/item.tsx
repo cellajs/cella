@@ -58,7 +58,7 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
       activeOptions={{ exact: false, includeHash: false, includeSearch: isSubitem }}
       activeProps={{ 'data-link-active': true }}
       className={cn(
-        'group/menu-sheet-item relative flex h-12 w-full items-start justify-start space-x-1 rounded-sm p-0 ring-2 ring-transparent ring-inset focus:outline-hidden focus-visible:ring-foreground data-[subitem=true]:h-10 sm:hover:bg-accent/30 sm:hover:text-accent-foreground',
+        'group/menu-sheet-item relative flex h-12 w-full items-start justify-start gap-1 rounded-sm p-0 ring-2 ring-transparent ring-inset focus:outline-hidden focus-visible:ring-foreground data-[subitem=true]:h-10 sm:hover:bg-accent/30 sm:hover:text-accent-foreground',
         'data-[link-active=true]:ring-transparent data-[link-active=true]:focus-visible:ring-foreground',
         className,
       )}
