@@ -8,13 +8,10 @@ import { deleteMyMembership } from '#/modules/me/me-queries';
 import { log } from '#/utils/logger';
 
 export async function deleteMyMembershipOp(ctx: UserContext, entityType: ChannelEntityType, entityId: string) {
-  const user = ctx.var.user;
-
   const entity = await resolveEntity(ctx, { entityType, identifier: entityId });
   if (!entity) throw new AppError(404, 'not_found', 'warn', { entityType });
 
   await deleteMyMembership({ var: { ...ctx.var, db: baseDb } }, { channelId: entity.id });
-
-  await invalidateCache.user(baseDb, user.id);
+  invalidateCache.user(ctx.var.user.id);
   log.info('User left entity');
 }

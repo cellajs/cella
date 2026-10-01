@@ -11,17 +11,13 @@ import { baseDb } from '#/db/db';
 import { env } from '#/env';
 import { appErrorHandler } from '#/lib/error';
 import { type HealthComponent, mapDatabaseComponent, rollupStatus } from '#/lib/health-helpers';
-import { authInvalidationHealth } from '#/middlewares/guard/invalidation-listener';
 import { limiterScope } from '#/middlewares/rate-limiter/helpers';
 import { createInteractionsApp } from '#/modules/oauth-server/interactions';
 import { signingKeysTable } from '#/modules/oauth-server/signing-keys-db';
 
 export const OAUTH_MOUNT = '/oauth';
 
-/**
- * The `?depth=full` diagnostics, in the API's component shape: the store answers, a signing key exists and this
- * process hears auth invalidations; any of them missing is a 503.
- */
+/** The `?depth=full` diagnostics, in the API's component shape: the store answers and a signing key exists, else 503. */
 async function probeHealth(): Promise<{ httpStatus: number; body: unknown }> {
   const components: Record<string, HealthComponent> = {};
   const startedAt = Date.now();
@@ -38,7 +34,6 @@ async function probeHealth(): Promise<{ httpStatus: number; body: unknown }> {
   components.signingKey = signingKey
     ? { status: 'healthy', checkedVia: 'local' }
     : { status: 'unhealthy', checkedVia: 'local', reason: 'signing_key_missing' };
-  components.authInvalidation = authInvalidationHealth();
   const status = rollupStatus(components, new Set(Object.keys(components)));
   return { httpStatus: status === 'unhealthy' ? 503 : 200, body: { status, uptime: Math.floor(process.uptime()), components } };
 }

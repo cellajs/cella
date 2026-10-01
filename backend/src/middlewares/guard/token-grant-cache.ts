@@ -1,45 +1,44 @@
 import { TTLCache } from '#/lib/ttl-cache';
 import type { UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
 import type { VerifiedAccessToken } from '#/modules/oauth-server/verify-access-token';
-import type { ApiKeyModel } from '#/modules/service-accounts/api-keys-db';
-import type { ApiKeyRefusal } from '#/modules/service-accounts/helpers/api-key';
-import type { ServiceAccountModel } from '#/modules/service-accounts/service-accounts-db';
 import type { UserModel } from '#/modules/user/user-db';
 
-/**
- * The grant policy's answer on an access token's grant or API key, with the row the token's actor is built from. A
- * service token's entry holds its key and account: `apiKeyRefusal` answers at every use, since a key expires
- * unannounced.
- */
-export type TokenGrantEntry =
-  | { refusal: UserGrantRefusal | ApiKeyRefusal | 'grant_revoked' }
-  | { refusal: null; kind: 'user'; user: UserModel }
-  | { refusal: null; kind: 'service'; account: ServiceAccountModel; apiKey: Pick<ApiKeyModel, 'revokedAt' | 'expiresAt'> };
+/** The grant policy's answer on a person's live grant in one tenant, with the user row the token's actor is built from. */
+export type TokenGrantEntry = { refusal: UserGrantRefusal } | { refusal: null; user: UserModel };
 
-/** A verdict with the tenant and client its token names, so a change to either finds every verdict it affects. */
+/**
+ * A verdict with the tenant and client its token names, so a change to either finds every verdict it affects, and the
+ * bindings version it was reached at, since the policy asks whether the user is a member of the tenant.
+ */
 interface CachedVerdict {
   entry: TokenGrantEntry;
   tenantId: string;
   clientId: string;
+  bindingsVersion: string;
 }
 
+type UserToken = Extract<VerifiedAccessToken, { kind: 'user' }>;
+
 /**
- * Keyed `<actor id>:<grant id>:<tenant>` or `<actor id>:<key id>`, so every verdict about one actor, or on one grant,
- * drops by prefix. Whatever ends a grant or key, or changes the user, the account, an installation or a tenant's
- * policy, drops the verdicts it affects in every process through `auth_invalidate`.
+ * Keyed `<user id>:<grant id>:<tenant>`, so every verdict about one user, or on one grant, drops by prefix. The guard
+ * reads the grant and the bindings version at every use; the rest of what this caches (the user row, an installed app,
+ * the tenant's policy) is dropped here at once by `invalidateCache` and holds for at most 15 seconds in other processes.
  */
-const tokenGrantCache = new TTLCache<CachedVerdict>({ maxSize: 5000, defaultTtl: 30_000 });
+const tokenGrantCache = new TTLCache<CachedVerdict>({ maxSize: 5000, defaultTtl: 15_000 });
 
-const keyOf = (token: VerifiedAccessToken) =>
-  token.kind === 'user' ? `${token.actorId}:${token.grantId}:${token.tenantId}` : `${token.actorId}:${token.keyId}`;
+const keyOf = (token: UserToken) => `${token.actorId}:${token.grantId}:${token.tenantId}`;
 
-export const getTokenGrantCache = (token: VerifiedAccessToken): TokenGrantEntry | undefined => tokenGrantCache.get(keyOf(token))?.entry;
-
-export const setTokenGrantCache = (token: VerifiedAccessToken, entry: TokenGrantEntry): void => {
-  tokenGrantCache.set(keyOf(token), { entry, tenantId: token.tenantId, clientId: token.clientId });
+/** The cached verdict when it was reached at the bindings version the request read. */
+export const getTokenGrantCache = (token: UserToken, bindingsVersion: string): TokenGrantEntry | undefined => {
+  const cached = tokenGrantCache.get(keyOf(token));
+  return cached?.bindingsVersion === bindingsVersion ? cached.entry : undefined;
 };
 
-/** After a change to an actor's user row, memberships, account, keys or grants. */
+export const setTokenGrantCache = (token: UserToken, bindingsVersion: string, entry: TokenGrantEntry): void => {
+  tokenGrantCache.set(keyOf(token), { entry, tenantId: token.tenantId, clientId: token.clientId, bindingsVersion });
+};
+
+/** After a change to a user's row. */
 export const invalidateTokenGrantsByActor = (actorId: string): void => {
   tokenGrantCache.invalidateByPrefix(`${actorId}:`);
 };
@@ -53,6 +52,3 @@ export const invalidateTokenGrant = (accountId: string, grantId: string): void =
 export const invalidateTokenGrantsByTenant = (tenantId: string, clientId?: string): void => {
   tokenGrantCache.invalidateWhere((verdict) => verdict.tenantId === tenantId && (clientId === undefined || verdict.clientId === clientId));
 };
-
-/** Drops every verdict: a process whose invalidation channel reconnects may have missed messages. */
-export const clearTokenGrantCache = (): void => tokenGrantCache.clear();

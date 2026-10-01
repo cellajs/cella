@@ -37,11 +37,8 @@ export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUs
     updatedAt: getIsoDate(),
     updatedBy: user.id,
   };
-  const updatedUser = await ctx.var.db.transaction(async (tx) => {
-    const updated = await updateUser({ var: { db: tx } }, { id: targetUser.id, values });
-    await invalidateCache.user(tx, updated.id);
-    return updated;
-  });
+  const updatedUser = await updateUser(ctx, { id: targetUser.id, values });
+  invalidateCache.user(updatedUser.id);
   log.info('User updated', { userId: updatedUser.id });
 
   // Re-select to include the user_counters subqueries

@@ -47,7 +47,7 @@ The scope vocabulary is derived from the policy matrix, never listed by hand: ev
 
 ### Tokens
 
-Access tokens are RS256 JWTs the OAuth face signs: `sub` is the actor, `actor_kind` says which kind, `tenant_id` and the audience name one tenant's resource (the REST API of that tenant, or one organization's MCP endpoint), `scope` is the mask. A guard verifies the signature locally against a cached keystore (no token row, no call back to the authorization server) and then loads the actor: a cached read for a user, one row read for a service account. The audience check means a token can never cross tenants. Tokens live an hour; refresh tokens rotate.
+Access tokens are RS256 JWTs the OAuth face signs: `sub` is the actor, `actor_kind` says which kind, `tenant_id` and the audience name one tenant's resource (the REST API of that tenant, or one organization's MCP endpoint), `scope` is the mask. A guard verifies the signature locally against a cached keystore (no token row, no call back to the authorization server) and then reads what the token rests on at every request: the grant and the user's bindings version for a user, the key and its account for a service account. The audience check means a token can never cross tenants. Tokens live an hour; refresh tokens rotate.
 
 ### Guards
 

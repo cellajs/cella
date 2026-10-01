@@ -13,7 +13,9 @@ const backendMountPath = new URL(appConfig.backendUrl).pathname.replace(/\/$/, '
 export const BACKEND_PORT = Number(process.env.PORT ?? appConfig.devPorts.api);
 export const BASE_URL = `http://localhost:${BACKEND_PORT}${backendMountPath}`;
 
-export const CDC_HEALTH_URL = `http://localhost:${appConfig.devPorts.cdcHealth}/health?depth=full`;
+// biome-ignore lint/style/noProcessEnv: bench reads the cdc worker's CDC_HEALTH_PORT override like the worker does.
+export const CDC_HEALTH_PORT = Number(process.env.CDC_HEALTH_PORT ?? appConfig.devPorts.cdcHealth);
+export const CDC_HEALTH_URL = `http://localhost:${CDC_HEALTH_PORT}/health?depth=full`;
 
 export const SESSION_COOKIE_NAME = `${appConfig.slug}-session-${appConfig.cookieVersion}`;
 

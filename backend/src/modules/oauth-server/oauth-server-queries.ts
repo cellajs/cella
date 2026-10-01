@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { and, eq, inArray, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { oidcPayloadsTable } from '#/modules/oauth-server/oidc-payloads-db';
@@ -52,6 +53,21 @@ export async function findConsentOfUser(ctx: DbContext, { grantId, userId }: { g
     .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId), eq(oidcPayloadsTable.accountId, userId)))
     .limit(1);
   return grant;
+}
+
+/**
+ * What a person's token rests on at each use: the user's bindings version while the grant it names exists, undefined
+ * once the grant is gone (revoked, replayed, refused at refresh, or the account deleted).
+ */
+export async function findLiveGrantBindings(ctx: DbContext, { grantId, userId }: { grantId: string; userId: string }) {
+  // The text columns take any claim as it came; the stored account id is a user's, so the cast that joins it holds.
+  const [live] = await ctx.var.db
+    .select({ bindingsVersion: actorsTable.bindingsVersion })
+    .from(oidcPayloadsTable)
+    .innerJoin(actorsTable, eq(actorsTable.id, sql`${oidcPayloadsTable.accountId}::uuid`))
+    .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId), eq(oidcPayloadsTable.accountId, userId)))
+    .limit(1);
+  return live;
 }
 
 interface DeleteProviderSessionsOfUserOpts {

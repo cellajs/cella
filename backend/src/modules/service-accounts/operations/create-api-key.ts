@@ -36,9 +36,9 @@ export async function createApiKeyOp(ctx: UserContext, serviceAccountId: string,
       expiresAt: input.expiresAt,
       createdBy: ctx.var.actor.id,
     });
-    await invalidateCache.serviceAccount(tx, account);
     return key;
   });
+  invalidateCache.serviceAccount(account);
 
   log.info('ApiKey issued', { keyId: issued.apiKey.id, serviceAccountId: account.id });
   return { ...issued.apiKey, secret: issued.secret };

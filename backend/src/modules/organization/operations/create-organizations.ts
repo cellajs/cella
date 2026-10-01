@@ -72,9 +72,7 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
   const membershipInserts = organizationRecords.map((org) => ({ userId: user.id, createdBy: user.id, role: 'admin' as const, entity: org }));
 
   const createdMemberships = await insertMemberships({ var: { db } }, { items: membershipInserts });
-
-  // Invalidate membership cache so subsequent requests see the new membership
-  await invalidateCache.user(db, user.id);
+  invalidateCache.user(user.id);
 
   const counts = buildZeroCounts('organization');
 

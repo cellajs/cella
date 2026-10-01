@@ -10,7 +10,7 @@ export interface ApiKeyCacheEntry {
 
 const apiKeyCache = new TTLCache<ApiKeyCacheEntry>({
   maxSize: 5000,
-  defaultTtl: 60_000, // 1 min, security-sensitive: a revoke or disable is also invalidated explicitly
+  defaultTtl: 60_000, // 1 min: keys are used and revoked in the API process, which drops them at the revoke or disable
   onDispose: (hash, entry) => {
     const hashes = accountIndex.get(entry.account.id);
     if (hashes) {
@@ -39,8 +39,4 @@ export const setApiKeyCache = (hash: string, entry: ApiKeyCacheEntry): void => {
 export const invalidateApiKeyCacheByAccount = (accountId: string): void => {
   for (const hash of accountIndex.get(accountId) ?? []) apiKeyCache.delete(hash);
   accountIndex.delete(accountId);
-};
-export const clearApiKeyCache = (): void => {
-  apiKeyCache.clear();
-  accountIndex.clear();
 };

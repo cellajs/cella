@@ -10,14 +10,15 @@ import ora from 'ora';
 import pg from 'pg';
 import { pc } from 'shared/cli-utils/colors';
 import { printHeader } from 'shared/cli-utils/display';
+import { BENCH_UUID_PREFIX } from 'shared/utils/bench-identity';
 import { createBenchProcessEnv, DB_URL } from './config';
 import { isPostgresReady, isServiceHealthy, SERVICES } from './preflight';
 
 const __dirname = import.meta.dirname ?? dirname(fileURLToPath(import.meta.url));
 const BENCH_ROOT = resolve(__dirname, '..');
 
-/** Cooldown between scenarios in `--all` mode so load settles between runs. */
-const PAUSE_SECONDS = 5;
+/** Cooldown between scenarios in `--all` mode: after a saturating scenario, 5s left sse-fanout's p95 ten times higher. */
+const PAUSE_SECONDS = 15;
 
 // ── CLI args ───────────────────────────────────────────────────────────────
 
@@ -112,10 +113,11 @@ async function assertInfrastructureReady(): Promise<void> {
   spinner.succeed('infrastructure ready');
 }
 
+/** Password attempts and every budget keyed by a bench user: per-user limits (stream connects, sync reads) span runs. */
 async function clearRateLimits(): Promise<void> {
   const pool = new pg.Pool({ connectionString: DB_URL });
   try {
-    await pool.query("DELETE FROM rate_limits WHERE key LIKE 'password_%'");
+    await pool.query("DELETE FROM rate_limits WHERE key LIKE 'password_%' OR strpos(key, $1) > 0", [BENCH_UUID_PREFIX]);
   } catch {
     // Table may not exist on first run
   } finally {
@@ -505,11 +507,7 @@ async function main() {
 
   if (seedPromise) await seedPromise;
 
-  // ── 3. Clear rate limits ──
-
-  await clearRateLimits();
-
-  // ── 4. Run scenario(s) ──
+  // ── 3. Run scenario(s), each from cleared rate limits ──
 
   const toRun = all ? scenarios : [selected];
   // --all prints one combined summary; a single scenario stays verbose with live output and a comparison table.
@@ -522,6 +520,7 @@ async function main() {
   try {
     for (let i = 0; i < toRun.length; i++) {
       const name = toRun[i];
+      await clearRateLimits();
       const result = await runScenario(name, { short, quiet });
       results.push({ name, result });
       if (result.exitCode !== 0) failureCode = result.exitCode;

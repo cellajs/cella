@@ -127,7 +127,8 @@ describe('Organizations of another user (relatableUserId)', async () => {
     // The target archived Alpha, holds another role there, and put Bravo first in their menu.
     await createOrgMembership(target.id, alpha, previewedRole, 2, true);
     await createOrgMembership(target.id, bravo, memberRole, 1);
-    for (const user of [viewer, target]) await invalidateCache.user(db, user.id);
+    // Rows written directly: drop the cached sessions as a membership operation does.
+    for (const user of [viewer, target]) invalidateCache.user(user.id);
     const pair = [alpha.id, bravo.id];
 
     const listFor = (query: Record<string, string>, as: { sessionCookie: string } = viewer) =>

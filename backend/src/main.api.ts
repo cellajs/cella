@@ -12,7 +12,6 @@ import { startGeoipRefresh } from '#/lib/geoip';
 import { serveApi, serveInternal } from '#/lib/listeners';
 import { stopPgBoss } from '#/lib/pg-boss';
 import { otel } from '#/lib/tracing';
-import { listenForAuthInvalidation } from '#/middlewares/guard/invalidation-listener';
 import { registerCacheInvalidation } from '#/middlewares/product-cache/cache-invalidation';
 import { baseApp as app } from '#/routes';
 import { timestamp } from '#/utils/console';
@@ -23,7 +22,7 @@ otel.verifyConnection();
 
 let server: import('@hono/node-server').ServerType | undefined;
 let internalListener: ReturnType<typeof serveInternal> | undefined;
-/** Stops what this process starts besides its listeners: the auth invalidation listener and the GeoIP refresh. */
+/** Stops what this process starts besides its listeners: the GeoIP refresh. */
 const stops: (() => unknown)[] = [];
 
 const startTunnel = appConfig.mode === 'tunnel' ? (await import('../scripts/start-tunnel')).startTunnel : () => null;
@@ -61,7 +60,6 @@ const main = async () => {
   }
 
   registerCacheInvalidation();
-  stops.push(listenForAuthInvalidation());
 
   // Per process, not a scheduled job: every replica keeps its own GeoIP copy current.
   stops.push(startGeoipRefresh());

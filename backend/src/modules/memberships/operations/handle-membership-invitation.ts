@@ -75,9 +75,7 @@ export async function handleMembershipInvitationOp(
       await deleteInvitationTokens({ var: { db: tx } }, { inactiveMembershipIds: [inactiveMembership.id] });
     }
   });
-
-  // The guards cache the user's memberships: the next request sees the new one, in-app and by token alike.
-  if (acceptOrReject === 'accept') await invalidateCache.user(baseDb, userId);
+  if (acceptOrReject === 'accept') invalidateCache.user(userId);
 
   const organizationId = inactiveMembership.organizationId;
   if (!organizationId) throw new AppError(500, 'server_error', 'error', { entityType: 'organization' });

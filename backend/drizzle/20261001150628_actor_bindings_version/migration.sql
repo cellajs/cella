@@ -1,0 +1,1 @@
+ALTER TABLE "actors" ADD COLUMN "bindings_version" uuid DEFAULT gen_random_uuid() NOT NULL;

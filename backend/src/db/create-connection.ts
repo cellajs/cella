@@ -38,7 +38,7 @@ export const createPgConnection = (url: string, { max, sslCa, debug = false, con
       connectionTimeoutMillis,
       max,
       ssl: verifiedPostgresSsl(url, sslCa),
-      // Long-lived pooled connections (the auth invalidation LISTEN, the job lock) sit idle for minutes.
+      // Long-lived pooled connections (the job lock) sit idle for minutes.
       keepAlive: true,
       keepAliveInitialDelayMillis: KEEP_ALIVE_IDLE_MS,
     },

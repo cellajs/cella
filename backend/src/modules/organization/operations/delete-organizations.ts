@@ -11,7 +11,7 @@ export async function deleteOrganizationsOp(ctx: UserContext, ids: string[], ten
 
   await deleteOrganizationsByIds(ctx, { ids: allowedIds });
 
-  for (const id of allowedIds) await invalidateCache.org(ctx.var.db, tenantId, id);
+  for (const id of allowedIds) invalidateCache.org(tenantId, id);
 
   log.info('Organizations deleted', { count: allowedIds.length, ids: allowedIds });
 

@@ -15,6 +15,7 @@ import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-ac
 import { readOwnSession, setUserSession } from '#/modules/auth/general/helpers/session';
 import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accept-invitation-token';
 import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
+import '#/modules/auth/general/session-listeners';
 import { dropHeldMagicLink } from '#/modules/auth/magic/helpers/magic-link-browser';
 import { sessionsTable } from '#/modules/auth/sessions-db';
 import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
