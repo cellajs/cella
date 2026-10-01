@@ -11,12 +11,7 @@ interface BoardPanelHeaderProps {
 
 export function BoardPanelHeader({ leading, title, actions, isCollapsed, className }: BoardPanelHeaderProps) {
   return (
-    <div
-      className={cn(
-        'space-between z-50 flex min-h-13 flex-row items-center gap-2 rounded-lg rounded-b-none border border-b-0 p-2 max-sm:hidden',
-        className,
-      )}
-    >
+    <div className={cn('z-50 flex min-h-13 flex-row items-center gap-2 rounded-lg rounded-b-none border border-b-0 p-2 max-sm:hidden', className)}>
       {leading}
       {!isCollapsed && title}
       {!isCollapsed && actions && (

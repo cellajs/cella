@@ -21,7 +21,7 @@ function FooterLinks() {
       <ul className="grid grid-cols-2 gap-8 sm:grid-cols-3">
         {footerSections.map((section) => (
           <li key={section.title} className={section.hideOnMobile ? 'max-sm:hidden' : ''}>
-            <div className="font-display font-semibold text-sm text-white/40 tracking-wider">{t(section.title as TKey)}</div>
+            <div className="font-heading font-semibold text-sm text-white/40 tracking-wider">{t(section.title as TKey)}</div>
 
             <ul className="mt-4 text-sm text-white/90">
               {section.links.map((link) => {
@@ -68,7 +68,7 @@ export function MarketingFooter() {
           <div className="grid grid-cols-1 gap-x-8 gap-y-16 lg:grid-cols-2">
             <FooterLinks />
             <div className="">
-              <div className="font-display font-semibold text-sm text-white/50 tracking-wider">{t('c:request_info')}</div>
+              <div className="font-heading font-semibold text-sm text-white/50 tracking-wider">{t('c:request_info')}</div>
               <div className="mt-4 text-sm text-white/90">{t('c:request_info.text', { appName: appConfig.name })}</div>
               <SubscribeNewsletterForm />
             </div>

@@ -15,13 +15,13 @@ export function DeviceFrame({ type, inView, renderCarousel }: DeviceFrameProps) 
           <div className="absolute -inset-s-4 top-32 h-12 w-1 rounded-s-lg bg-gray-300 dark:bg-gray-800" />
           <div className="absolute -inset-s-4 top-44 h-12 w-1 rounded-s-lg bg-gray-300 dark:bg-gray-800" />
           <div className="absolute -inset-e-4 top-36 h-16 w-1 rounded-e-lg bg-gray-300 dark:bg-gray-800" />
-          <div className="h-full w-full cursor-pointer rounded-8 bg-white dark:bg-gray-800">{inView && renderCarousel('rounded-[2rem]')}</div>
+          <div className="h-full w-full cursor-pointer rounded-4xl bg-white dark:bg-gray-800">{inView && renderCarousel('rounded-[2rem]')}</div>
         </div>
       );
     case 'pc':
       return (
         <div className="w-full">
-          <div className="bord er-gray-400/75 relative mx-auto mb-[.05rem] aspect-video max-w-[85%] rounded-t-xl border-4 dark:border-gray-700">
+          <div className="relative mx-auto mb-[.05rem] aspect-video max-w-[85%] rounded-t-xl border-4 border-gray-400/75 dark:border-gray-700">
             <div className="h-full w-full cursor-pointer rounded-lg bg-background">{inView && renderCarousel('rounded-t-[.5rem]')}</div>
           </div>
           <div className="relative mx-auto h-3 rounded-t-sm rounded-b-xl bg-gray-300 md:h-4 dark:bg-gray-800">

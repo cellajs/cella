@@ -27,13 +27,13 @@ export function MenuSheetItems({ data, type, isArchived, options, className }: M
       <div className="flex items-center">
         <Button ref={buttonRef} className="w-full" variant="ghost" onClick={() => options.createAction?.(buttonRef)}>
           <PlusIcon className="icon-sm" />
-          <span className="ml-1 text-light text-sm">
+          <span className="ml-1 text-sm">
             {t('c:create_your_first')} {t(type).toLowerCase()}
           </span>
         </Button>
       </div>
     ) : (
-      <li className="py-2 text-center text-light text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t(type).toLowerCase() })}</li>
+      <li className="py-2 text-center text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t(type).toLowerCase() })}</li>
     );
 
   const renderItems = () => {

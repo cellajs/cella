@@ -85,7 +85,7 @@ export function UserCombobox({ value, onValueChange, channel }: Props) {
         render={
           <button
             type="button"
-            className="hover:transparent relative flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1 rounded-md border border-input bg-background p-1.5 pr-10 text-left active:translate-y-0!"
+            className="relative flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1 rounded-md border border-input bg-background p-1.5 pr-10 text-left active:translate-y-0!"
           />
         }
       >

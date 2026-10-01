@@ -79,7 +79,7 @@ export function HeaderCell<R, SR>({
     column,
     'border-t-0',
     column.headerCellClass,
-    { 'cursor-pointer': sortable, 'touch-action-none': resizable, 'opacity-40': isDragging, 'z-3': column.frozen },
+    { 'cursor-pointer': sortable, 'touch-none': resizable, 'opacity-40': isDragging, 'z-3': column.frozen },
     // aria-selected is never true without cell selection, so the focus outline comes from :focus-visible.
     !isCellSelectionEnabled && 'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-solid focus-visible:-outline-offset-2',
   );

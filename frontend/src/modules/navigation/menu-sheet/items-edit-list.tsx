@@ -11,7 +11,7 @@ export function MenuSheetItemsEdit({ data, isArchived, options }: { data: UserMe
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
 
   if (options && data.length === 0) {
-    return <li className="py-2 text-center text-light text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: options.entityType })}</li>;
+    return <li className="py-2 text-center text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: options.entityType })}</li>;
   }
 
   const filteredItems = data

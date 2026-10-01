@@ -21,7 +21,7 @@ export function Why() {
             return (
               <div className="w-full" key={item.id}>
                 <div className="group mb-12 flex">
-                  <div className="mr-4 flex h-8 w-full max-w-8 items-center justify-center rounded-full border-2 border-primary font-semibold text-l group-hover:bg-transparent md:-mt-2 md:h-12 md:max-w-12 md:text-1xl">
+                  <div className="mr-4 flex h-8 w-full max-w-8 items-center justify-center rounded-full border-2 border-primary font-semibold text-lg group-hover:bg-transparent md:-mt-2 md:h-12 md:max-w-12 md:text-xl">
                     {index + 1}
                   </div>
                   <div className="w-full">

@@ -27,7 +27,7 @@ export function ChannelGridTile({ entity }: { entity: ChannelTileEntity }) {
           className="group tile-link relative w-full focus-visible:outline-none focus-visible:ring-0"
         >
           <div
-            className={`relative flex aspect-3/1 min-h-30 w-full flex-col bg-center bg-cover bg-opacity-80 ${
+            className={`relative flex aspect-3/1 min-h-30 w-full flex-col bg-center bg-cover ${
               entity.bannerUrl ? '' : numberToColorClass(entity.id)
             }`}
             style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}

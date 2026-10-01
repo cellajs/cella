@@ -78,11 +78,11 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
         data-started={hasStarted}
         data-collapsed={isCollapsed}
         data-overlay={isOverlay}
-        className="linear fixed inset-y-0 left-0 z-100 w-(--sidebar-w) border-r-0 transition-[width] duration-200 focus-view:hidden focus:outline-none data-[started=false]:-translate-x-full"
+        className="fixed inset-y-0 left-0 z-100 w-(--sidebar-w) border-r-0 transition-[width] duration-200 ease-linear focus-view:hidden focus:outline-none data-[started=false]:-translate-x-full"
       >
         <FocusTarget target="sidebar" />
         <div className="relative flex h-full flex-row">
-          <div className="linear flex h-full w-(--icon-bar-w) flex-col overflow-hidden transition-[width] duration-200">
+          <div className="flex h-full w-(--icon-bar-w) flex-col overflow-hidden transition-[width] duration-200 ease-linear">
             <SidebarContent className="gap-1">
               <SidebarGroup className="p-0">
                 <SidebarGroupContent>

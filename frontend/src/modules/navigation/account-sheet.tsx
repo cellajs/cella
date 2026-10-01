@@ -92,7 +92,7 @@ export function AccountSheet() {
       </div>
       <button type="button" tabIndex={-1} onClick={openProfile} className="relative mt-3 w-full">
         <div
-          className={`relative h-32 bg-center bg-cover bg-opacity-80 shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-all duration-300 hover:bg-opacity-50 ${
+          className={`relative h-32 bg-center bg-cover shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-all duration-300 ${
             user.bannerUrl ? '' : numberToColorClass(user.id)
           }`}
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}

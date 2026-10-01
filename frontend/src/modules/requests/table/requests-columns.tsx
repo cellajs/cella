@@ -19,7 +19,7 @@ export const useColumns = () => {
       resizable: true,
       width: 160,
       renderCell: ({ row: { type, wasInvited } }) => (
-        <div className="flew-row flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {t(`c:${type}`)}
           {type === 'waitlist' && (
             <TooltipButton toolTipContent={t(`c:${wasInvited ? 'pending' : 'not_processed'}`)} disabled={type !== 'waitlist'}>

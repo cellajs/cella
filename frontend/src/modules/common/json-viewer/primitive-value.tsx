@@ -70,7 +70,7 @@ interface PrimitiveValueProps {
 
 export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength, searchText, openapiMode }: PrimitiveValueProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const baseClass = 'break-word whitespace-pre-line';
+  const baseClass = 'wrap-break-word whitespace-pre-line';
 
   switch (type) {
     case 'string': {

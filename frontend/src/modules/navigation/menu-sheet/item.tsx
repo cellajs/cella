@@ -85,7 +85,7 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
             'truncate pt-1 text-md leading-5 transition-spacing duration-100 ease-in-out group-hover/menuItem:delay-300',
             'pt-3.5 group-data-[subitem=true]/menuItem:pt-2',
             isSubitem ? 'sm:group-hover/menuItem:pt-[0.06rem]!' : 'sm:group-hover/menuItem:pt-[0.3rem]!',
-            'group-data-[link-active=true]/menuItem:font-medium group-data-[subitem=true]/menuItem:font-base group-data-[subitem=true]/menuItem:text-sm',
+            'group-data-[link-active=true]/menuItem:font-medium group-data-[subitem=true]/menuItem:text-sm',
           )}
         >
           {item.name}
