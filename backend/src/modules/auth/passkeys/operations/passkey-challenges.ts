@@ -5,22 +5,29 @@ import {
   verifyAuthenticationResponse,
   verifyRegistrationResponse,
 } from '@simplewebauthn/server';
-import { and, eq, lt, or } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb as db } from '#/db/db';
+import { baseDb } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { type PasskeyChallengePurpose, passkeyChallengesTable } from '#/modules/auth/passkeys/passkey-challenges-db';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
+import type { PasskeyChallengePurpose } from '#/modules/auth/passkeys/passkey-challenges-db';
+import {
+  deletePasskeyChallenge,
+  deleteStalePasskeyChallenges,
+  findPasskeyByCredentialId,
+  insertPasskeyChallenge,
+  updatePasskeyCounter,
+} from '#/modules/auth/passkeys/passkeys-queries';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { getIsoDate } from '#/utils/iso-date';
 import { createDate, TimeSpan } from '#/utils/time-span';
 
 const relyingPartyId = appConfig.mode === 'development' ? 'localhost' : appConfig.domain;
 const expectedOrigin = appConfig.frontendUrl;
+
+/** Factor checks read and write on the base pool, whatever the route's context holds. */
+const dbCtx = { var: { db: baseDb } };
 
 /** How long a challenge can be answered; its cookie and its row expire together. */
 const challengeLifetime = new TimeSpan(5, 'm');
@@ -41,14 +48,13 @@ interface IssuePasskeyChallengeOpts {
  * @returns The challenge, 32 random bytes as base64url: the value the WebAuthn options take as they are.
  */
 export const issuePasskeyChallenge = async (ctx: Context<Env>, { purpose, userId }: IssuePasskeyChallengeOpts) => {
-  const expired = lt(passkeyChallengesTable.expiresAt, getIsoDate());
   const previous = await getAuthCookie(ctx, 'passkey-challenge');
-  await db.delete(passkeyChallengesTable).where(previous ? or(eq(passkeyChallengesTable.challengeHash, hashToken(previous)), expired) : expired);
+  await deleteStalePasskeyChallenges(dbCtx, { previousHash: previous ? hashToken(previous) : undefined });
 
   const challenge = Buffer.from(getRandomValues(new Uint8Array(32))).toString('base64url');
-  await db
-    .insert(passkeyChallengesTable)
-    .values({ challengeHash: hashToken(challenge), purpose, userId: userId ?? null, expiresAt: createDate(challengeLifetime) });
+  await insertPasskeyChallenge(dbCtx, {
+    values: { challengeHash: hashToken(challenge), purpose, userId: userId ?? null, expiresAt: createDate(challengeLifetime) },
+  });
   await setAuthCookie(ctx, 'passkey-challenge', challenge, challengeLifetime);
 
   return challenge;
@@ -66,14 +72,7 @@ const consumeChallenge = async (ctx: Context<Env>, purpose: PasskeyChallengePurp
   deleteAuthCookie(ctx, 'passkey-challenge');
   if (!challenge) throw verificationFailed();
 
-  const [issued] = await db
-    .delete(passkeyChallengesTable)
-    .where(eq(passkeyChallengesTable.challengeHash, hashToken(challenge)))
-    .returning({
-      purpose: passkeyChallengesTable.purpose,
-      userId: passkeyChallengesTable.userId,
-      expiresAt: passkeyChallengesTable.expiresAt,
-    });
+  const issued = await deletePasskeyChallenge(dbCtx, { challengeHash: hashToken(challenge) });
   if (!issued || issued.purpose !== purpose || isExpiredDate(issued.expiresAt)) throw verificationFailed();
   if (issued.userId && issued.userId !== userId) throw verificationFailed();
 
@@ -118,9 +117,7 @@ interface VerifyPasskeyAssertionOpts {
 
 /**
  * Verifies a passkey (WebAuthn) authentication response against the challenge of `purpose` this browser holds, which is
- * spent first: signature, relying party, origin, user verification and signature counter. The new counter is stored
- * only while the stored one is still lower (or both are 0, for an authenticator without a counter), so of two copies
- * of one authenticator answering at once, one fails.
+ * spent first: signature, relying party, origin, user verification and signature counter, which only moves forward.
  * @returns The id of the account the passkey belongs to.
  * @throws AppError 401 `passkey_verification_failed`, or 404 `passkey_not_found` for a credential that is not
  *   registered (to the account `userId` names).
@@ -128,11 +125,7 @@ interface VerifyPasskeyAssertionOpts {
 export const verifyPasskeyAssertion = async (ctx: Context<Env>, { assertion, purpose, userId }: VerifyPasskeyAssertionOpts): Promise<string> => {
   const challenge = await consumeChallenge(ctx, purpose, userId);
 
-  const [passkey] = await db
-    .select()
-    .from(passkeysTable)
-    .where(and(eq(passkeysTable.credentialId, assertion.id), userId ? eq(passkeysTable.userId, userId) : undefined))
-    .limit(1);
+  const passkey = await findPasskeyByCredentialId(dbCtx, { credentialId: assertion.id, userId });
   if (!passkey) throw new AppError(404, 'passkey_not_found', 'warn');
 
   // The library throws for most mismatches (challenge, origin, relying party, flags, counter) and answers false for a
@@ -149,13 +142,7 @@ export const verifyPasskeyAssertion = async (ctx: Context<Env>, { assertion, pur
   });
   if (!verified) throw verificationFailed();
 
-  const { newCounter } = authenticationInfo;
-  const counterAdvances = newCounter > 0 ? lt(passkeysTable.counter, newCounter) : eq(passkeysTable.counter, 0);
-  const [stored] = await db
-    .update(passkeysTable)
-    .set({ counter: newCounter })
-    .where(and(eq(passkeysTable.id, passkey.id), counterAdvances))
-    .returning({ id: passkeysTable.id });
+  const stored = await updatePasskeyCounter(dbCtx, { id: passkey.id, counter: authenticationInfo.newCounter });
   if (!stored) throw verificationFailed();
 
   return passkey.userId;

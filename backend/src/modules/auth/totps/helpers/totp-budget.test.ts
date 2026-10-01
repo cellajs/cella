@@ -12,7 +12,7 @@ vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) =>
 );
 vi.mock('#/modules/auth/general/helpers/send-account-security-email', () => ({ sendAccountSecurityEmail: vi.fn() }));
 
-const { verifyTotp } = await import('#/modules/auth/totps/helpers/totps');
+const { verifyTotp } = await import('#/modules/auth/totps/operations/verify-totp');
 const { sendAccountSecurityEmail } = await import('#/modules/auth/general/helpers/send-account-security-email');
 const { appErrorHandler } = await import('#/lib/error');
 
