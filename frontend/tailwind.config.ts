@@ -2,6 +2,29 @@ import typographyPlugin from '@tailwindcss/typography';
 import { appConfig } from 'shared';
 import type { Config } from 'tailwindcss';
 import animatePlugin from 'tailwindcss-animate';
+
+type PluginApi = { addVariant: (name: string, variant: unknown) => void; addComponents: (components: unknown, options?: unknown) => void };
+
+// Typography guards every prose rule with `[class~="not-prose"] *`. An attribute selector in ancestor position makes any
+// class change on an ancestor (a body class, the theme class) restyle all prose; `.not-prose` matches the same elements.
+const rewriteNotProse = (value: unknown): unknown => {
+  if (typeof value === 'string') return value.replaceAll('[class~="not-prose"]', '.not-prose');
+  if (Array.isArray(value)) return value.map(rewriteNotProse);
+  if (value && typeof value === 'object') return Object.fromEntries(Object.entries(value).map(([k, v]) => [rewriteNotProse(k), rewriteNotProse(v)]));
+  return value;
+};
+
+const typography = typographyPlugin();
+const classSelectorTypographyPlugin = {
+  config: typography.config,
+  handler: (api: PluginApi) =>
+    typography.handler({
+      ...api,
+      addVariant: (name: string, variant: unknown) => api.addVariant(name, rewriteNotProse(variant)),
+      addComponents: (components: unknown, options?: unknown) => api.addComponents(rewriteNotProse(components), options),
+    } as never),
+};
+
 /** @type {Config} */
 
 export default {
@@ -155,5 +178,5 @@ export default {
       },
     },
   },
-  plugins: [animatePlugin, typographyPlugin],
+  plugins: [animatePlugin, classSelectorTypographyPlugin],
 } satisfies Config;

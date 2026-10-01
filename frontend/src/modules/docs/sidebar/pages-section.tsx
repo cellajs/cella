@@ -37,7 +37,7 @@ export function PagesSection({ label, onClose }: PagesSectionProps) {
       <SidebarGroupContent>
         {/* Inner SidebarGroup matches the API reference wrappers so bullets and guideline align */}
         <SidebarGroup className="p-1 pt-0">
-          <PagesSidebar onClose={onClose} />
+          <PagesSidebar />
         </SidebarGroup>
       </SidebarGroupContent>
     </SidebarGroup>

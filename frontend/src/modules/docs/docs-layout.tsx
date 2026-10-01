@@ -6,7 +6,7 @@ import type { CSSProperties } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
-import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
+import { useScrolledPast } from '~/hooks/use-scrolled-past';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { tagsQueryOptions } from '~/modules/docs/query';
 import { toggleDocsSearch } from '~/modules/docs/search/open-docs-search';
@@ -26,8 +26,7 @@ function DocsLayout() {
   // Resizable sidebar width (desktop only); main content uses window scroll offset by the same CSS variable
   const [resizedSidebarWidth, setResizedSidebarWidth] = useState<number | null>(null);
 
-  const { scrollTop } = useScrollVisibility(!isDesktop);
-  const showScrollTop = scrollTop > 300;
+  const showScrollTop = useScrolledPast(300, !isDesktop);
 
   const startSidebarResize = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -51,8 +50,7 @@ function DocsLayout() {
 
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);
 
-  const sheets = useSheeter((state) => state.sheets);
-  const sidebarOpen = sheets.some((s) => s.id === 'docs-sidebar');
+  const sidebarOpen = useSheeter((state) => state.sheets.some((s) => s.id === 'docs-sidebar'));
 
   const sidebarContent = <DocsSidebar tags={tags} />;
 
