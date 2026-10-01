@@ -28,7 +28,8 @@ const inboxStrategies: AuthStrategy[] = ['magic', 'email'];
 const NOTICE_BUDGET = 3;
 const NOTICE_WINDOW = new TimeSpan(24, 'h');
 
-const strategyLabels: Record<AuthStrategy, string> = {
+/** Sign-in methods as people read them; a provider identity's issuer is its strategy slug. */
+export const strategyLabels: Record<AuthStrategy, string> = {
   passkey: 'Passkey',
   totp: 'Authenticator app',
   github: 'GitHub',

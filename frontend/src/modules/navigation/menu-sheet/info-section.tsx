@@ -7,7 +7,9 @@ import { appConfig } from 'shared';
 import { contactFormHandler } from '~/modules/common/contact-form/contact-form-handler';
 import { handleAskForHelp } from '~/modules/common/error-helpers';
 import { type HealthStatus, healthQueryOptions } from '~/modules/navigation/menu-sheet/query';
+import { type GradedStatusEntry, gradeStatusEntries } from '~/modules/navigation/menu-sheet/status-entries';
 import { Button } from '~/modules/ui/button';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { cn } from '~/utils/cn';
 
 const statusStyleMap: Record<HealthStatus, { dot: string; pulse: string }> = {
@@ -16,21 +18,43 @@ const statusStyleMap: Record<HealthStatus, { dot: string; pulse: string }> = {
   unhealthy: { dot: 'bg-destructive', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--destructive)_50%,transparent)]' },
 };
 
-function StatusCard({ label, status }: { label: string; status: HealthStatus }) {
+const statusCardClass = 'flex items-center gap-2 rounded-md border border-dashed px-4 py-2 text-left text-xs';
+
+function StatusDot({ status }: { status: HealthStatus }) {
   return (
-    <div className="flex items-center gap-2 rounded-md border border-dashed px-4 py-2">
-      <span
-        className={cn(
-          'inline-block size-2 shrink-0 animate-[status-pulse_3.5s_ease-in-out_infinite] rounded-full',
-          statusStyleMap[status].dot,
-          statusStyleMap[status].pulse,
+    <span
+      className={cn(
+        'inline-block size-2 shrink-0 animate-[status-pulse_3.5s_ease-in-out_infinite] rounded-full',
+        statusStyleMap[status].dot,
+        statusStyleMap[status].pulse,
+      )}
+      aria-hidden="true"
+    />
+  );
+}
+
+/** One status entry; hover or focus shows what it covers and, when not healthy, which check failed and why. */
+function StatusEntryCard({ graded: { entry, status, component, reason } }: { graded: GradedStatusEntry }) {
+  const { t } = useTranslation();
+
+  return (
+    <HoverCard>
+      <HoverCardTrigger render={<button type="button" />} className={cn(statusCardClass, 'focus-effect')}>
+        <StatusDot status={status} />
+        <span className="min-w-0">{t(entry.label)}</span>
+      </HoverCardTrigger>
+      <HoverCardContent side="top" className="flex w-60 flex-col gap-1 p-3">
+        <p className="font-medium">{t(entry.label)}</p>
+        <p className="text-muted-foreground text-xs">{t(entry.description)}</p>
+        {status !== 'healthy' && (
+          <p className="mt-1 flex items-center gap-2 text-xs">
+            <StatusDot status={status} />
+            {t(`c:${status}`)}
+            {component && <span className="truncate font-mono text-muted-foreground">{reason ? `${component}: ${reason}` : component}</span>}
+          </p>
         )}
-        aria-hidden="true"
-      />
-      <div className="min-w-0">
-        <p className="text-xs">{label}</p>
-      </div>
-    </div>
+      </HoverCardContent>
+    </HoverCard>
   );
 }
 
@@ -38,9 +62,9 @@ export function InfoContent() {
   const { t } = useTranslation();
   const supportRef = useRef<HTMLButtonElement | null>(null);
   const contactRef = useRef<HTMLButtonElement | null>(null);
-  const { data: health, isError } = useQuery(healthQueryOptions());
-  const statusServices = Object.entries(health?.components ?? {}).filter(([, component]) => component.label);
-  const allHealthy = !isError && health?.status === 'healthy';
+  const { data: health, isError, isPending } = useQuery(healthQueryOptions());
+  const statusEntries = isPending ? [] : gradeStatusEntries(isError ? undefined : health);
+  const allHealthy = statusEntries.length > 0 && statusEntries.every(({ status }) => status === 'healthy');
 
   const hasStatusPage = !!appConfig.statusUrl?.trim();
 
@@ -84,12 +108,13 @@ export function InfoContent() {
           )}
         </div>
         <div className={cn('gap-2 pt-1', allHealthy ? 'flex flex-col' : 'grid grid-cols-2')}>
-          {isError ? (
-            <StatusCard label="API" status="unhealthy" />
-          ) : allHealthy ? (
-            <StatusCard label={t('c:all_systems_healthy')} status="healthy" />
+          {allHealthy ? (
+            <div className={statusCardClass}>
+              <StatusDot status="healthy" />
+              {t('c:all_systems_healthy')}
+            </div>
           ) : (
-            statusServices.map(([key, component]) => <StatusCard key={key} label={component.label ?? key} status={component.status} />)
+            statusEntries.map((graded) => <StatusEntryCard key={graded.entry.id} graded={graded} />)
           )}
         </div>
       </div>

@@ -3,13 +3,12 @@ import type { ReactNode } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
-import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { type InternalSheet, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from '~/modules/ui/sheet';
 import { cn } from '~/utils/cn';
 
-export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
+export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExited?: () => void }) {
   const {
     id,
     modal,
@@ -25,7 +24,6 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
     closeSheetOnEsc = true,
     disablePointerDismissal,
     container,
-    skipAnimation,
     contentKey,
     autoScrollOnDrag,
   } = sheet;
@@ -33,18 +31,14 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
   const isMobile = useBreakpointBelow('sm', false);
   const containerElement = container?.ref?.current ?? null;
 
-  // The sheet slides out before its entry is removed; onClose still runs as the close starts.
-  const { close: closeSheet, onOpenChangeComplete } = useRemoveAfterExit(
-    () => {
-      useSheeter.getState().update(sheet.id, { open: false, onClose: undefined });
-      sheet.onClose?.();
+  // The provider keeps the removed sheet rendered until it has slid out
+  const closeSheet = () => {
+    useSheeter.getState().remove(sheet.id);
 
-      // Closing the sheet closes the dialogs it opened
-      const dialogs = useDialoger.getState().dialogs.filter((d) => d.open);
-      for (const dialog of dialogs) useDialoger.getState().remove(dialog.id);
-    },
-    () => useSheeter.getState().remove(sheet.id),
-  );
+    // Closing the sheet closes the dialogs it opened
+    const dialogs = useDialoger.getState().dialogs.filter((d) => d.open);
+    for (const dialog of dialogs) useDialoger.getState().remove(dialog.id);
+  };
 
   const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string; event?: Event }) => {
     if (!nextOpen && eventDetails.reason === 'escape-key') {
@@ -82,14 +76,21 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
     } else closeSheet();
   };
 
-  // Resolved at close time: a trigger inside a grid is replaced by a new node once cell edit mode ends.
-  const finalFocus = triggerRef ? () => triggerRef.current ?? true : undefined;
+  // Resolved once the exit ends: a trigger inside a grid is replaced by a new node once cell edit mode ends. Focus that
+  // left the sheet while it slid out (a focus bridge, the page after a route change) stays where it went.
+  const finalFocus = triggerRef
+    ? () => {
+        const active = document.activeElement;
+        if (active && active !== document.body && !document.getElementById(String(id))?.contains(active)) return false;
+        return triggerRef.current ?? true;
+      }
+    : undefined;
 
   return (
     <Sheet
       open={open}
       onOpenChange={onOpenChange}
-      onOpenChangeComplete={onOpenChangeComplete}
+      onOpenChangeComplete={(isOpen) => !isOpen && onExited?.()}
       modal={modal}
       disablePointerDismissal={disablePointerDismissal}
     >
@@ -98,7 +99,7 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
         side={side}
         overlay={modal === true}
         container={containerElement}
-        className={cn(className, 'items-start', containerElement && 'z-40', skipAnimation && 'duration-0!')}
+        className={cn(className, 'items-start', containerElement && 'z-40')}
         initialFocus={isMobile ? false : undefined}
         finalFocus={finalFocus}
         autoScrollOnDrag={autoScrollOnDrag}
@@ -113,19 +114,29 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
   );
 }
 
-/** Slides in new content when `contentKey` changes; without a key the content renders as is. */
+/** Ref callback that starts mounting content at the top of its sheet's scroll container; stable, so only mounts call it. */
+function scrollToTop(element: HTMLElement | null) {
+  const scroller = element?.closest('[data-slot="scroll-area-viewport"], [data-slot="drawer-content"]');
+  if (scroller) scroller.scrollTop = 0;
+}
+
+/**
+ * Slides in new content when `contentKey` changes; without a key the content renders as is. The old content leaves
+ * first, at its own scroll position, and the new content then starts at the top.
+ */
 export function ContentKeyTransition({ contentKey, children }: { contentKey?: string; children: ReactNode }) {
   if (!contentKey) return children;
 
   return (
-    <AnimatePresence mode="popLayout" initial={false}>
+    <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={contentKey}
+        ref={scrollToTop}
         className="flex flex-1 flex-col"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        transition={{ duration: 0.15 }}
+        transition={{ duration: 0.1 }}
       >
         {children}
       </motion.div>

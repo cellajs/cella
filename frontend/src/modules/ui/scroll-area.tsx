@@ -60,6 +60,7 @@ export function ScrollArea({
   return (
     <ScrollAreaPrimitive.Root data-slot="scroll-area" className={cn('relative', className)} {...props}>
       <ScrollAreaPrimitive.Viewport
+        data-slot="scroll-area-viewport"
         id={id ? `${id}-viewport` : undefined}
         ref={viewportRef}
         className={cn(

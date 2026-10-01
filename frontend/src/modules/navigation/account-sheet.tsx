@@ -14,6 +14,7 @@ import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { useCurrentUser, useUserStore } from '~/modules/user/user-store';
+import { fallbackContentRef } from '~/utils/fallback-content-ref';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
 type AccountButtonProps = { icon: IconComponent; label: string; id: string; action: string } & (
@@ -71,17 +72,25 @@ export function AccountSheet() {
     firstRow?.focus();
   }, []);
 
+  // Unless the nav is kept open, the nav sheets (this one, or the menu with this one stacked on it in a floating-nav
+  // layout) close like they do for the links below; the profile sheet then returns focus to the nav button
+  const openProfile = () => {
+    if (!useNavigationStore.getState().keepNavOpen) {
+      const navTrigger = useSheeter.getState().get('nav-sheet')?.triggerRef.current;
+      if (navTrigger instanceof HTMLButtonElement) fallbackContentRef.current = navTrigger;
+      // Blurred, so the profile sheet does not stash this sheet's button as its trigger
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+      useSheeter.getState().remove();
+    }
+    navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: user.id }), resetScroll: false });
+  };
+
   return (
     <NavSheetFrame ref={buttonWrapper} panels>
       <div className="flex items-center justify-between px-3 pt-3">
         <h2 className="p-2 font-semibold text-base">{t('c:account')}</h2>
       </div>
-      <button
-        type="button"
-        tabIndex={-1}
-        onClick={() => navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: user.id }), resetScroll: false })}
-        className="relative mt-3 w-full"
-      >
+      <button type="button" tabIndex={-1} onClick={openProfile} className="relative mt-3 w-full">
         <div
           className={`relative h-32 bg-center bg-cover bg-opacity-80 shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-all duration-300 hover:bg-opacity-50 ${
             user.bannerUrl ? '' : numberToColorClass(user.id)
@@ -110,7 +119,7 @@ export function AccountSheet() {
           size="lg"
           id="btn-profile"
           className="focus-effect w-full justify-start text-left hover:bg-accent/50"
-          onClick={() => navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: user.id }), resetScroll: false })}
+          onClick={openProfile}
         >
           <UserRoundIcon className="mr-2 size-4" aria-hidden="true" />
           {t('c:view_resource', { resource: t('c:profile').toLowerCase() })}

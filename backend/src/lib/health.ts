@@ -16,7 +16,7 @@ import {
   mapProbeComponent,
   rollupStatus,
 } from '#/lib/health-helpers';
-import { extractMcpDetails, extractYjsDetails, probeWorker, workerUrls } from '#/lib/health-probe';
+import { extractMcpDetails, extractOauthDetails, extractYjsDetails, probeWorker, workerUrls } from '#/lib/health-probe';
 import { mapJobsComponent, readJobsHealth } from '#/lib/jobs-health';
 import { getBackendJobs } from '#/lib/module';
 import { authInvalidationHealth } from '#/middlewares/guard/invalidation-listener';
@@ -83,7 +83,7 @@ async function buildJobsComponent(): Promise<HealthComponent> {
 
 /**
  * Aggregates every dependency and sibling worker into a uniform `component` keyed by name. The api process grades
- * itself, checks the database and its auth invalidation listener, reads the pushed CDC report, probes yjs/mcp and
+ * itself, checks the database and its auth invalidation listener, reads the pushed CDC report, probes yjs/mcp/oauth and
  * reads the job store; the mcp worker grades the same three and reports itself; the jobs worker grades itself, the
  * database and the store.
  */
@@ -91,24 +91,27 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
   const components: Record<string, HealthComponent> = {};
 
   const dbCheck = await checkDatabase();
-  components.api = { ...mapApiComponent(getEventLoopLagMs(), process.memoryUsage()), label: 'API' };
-  components.database = { ...mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs), label: 'Database' };
+  components.api = mapApiComponent(getEventLoopLagMs(), process.memoryUsage());
+  components.database = mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs);
   // The jobs worker serves no request, so it holds no guard cache that an invalidation would have to reach.
-  if (env.MODE !== 'jobs') components.authInvalidation = { ...authInvalidationHealth(), label: 'Auth invalidation' };
+  if (env.MODE !== 'jobs') components.authInvalidation = authInvalidationHealth();
 
   if (env.MODE === 'mcp') {
-    components.mcp = { ...buildMcpSelfComponent(), label: 'MCP' };
+    components.mcp = buildMcpSelfComponent();
   } else if (env.MODE === 'jobs') {
-    components.jobs = { ...(await buildJobsComponent()), label: 'Jobs' };
+    components.jobs = await buildJobsComponent();
   } else {
-    if (appConfig.services.cdc.enabled !== false) components.cdc = { ...buildCdcComponent(), label: 'CDC' };
+    if (appConfig.services.cdc.enabled !== false) components.cdc = buildCdcComponent();
 
     const workerChecks = await Promise.all([
       appConfig.services.yjs.enabled !== false
-        ? probeWorker(workerUrls.yjs).then((result) => ['yjs', { ...mapProbeComponent(result, extractYjsDetails), label: 'YJS' }] as const)
+        ? probeWorker(workerUrls.yjs).then((result) => ['yjs', mapProbeComponent(result, extractYjsDetails)] as const)
         : Promise.resolve(null),
       appConfig.services.mcp.enabled !== false
-        ? probeWorker(workerUrls.mcp).then((result) => ['mcp', { ...mapProbeComponent(result, extractMcpDetails), label: 'MCP' }] as const)
+        ? probeWorker(workerUrls.mcp).then((result) => ['mcp', mapProbeComponent(result, extractMcpDetails)] as const)
+        : Promise.resolve(null),
+      appConfig.services.oauth.enabled !== false
+        ? probeWorker(workerUrls.oauth).then((result) => ['oauth', mapProbeComponent(result, extractOauthDetails)] as const)
         : Promise.resolve(null),
     ]);
 
@@ -118,7 +121,7 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
       components[name] = component;
     }
 
-    if (appConfig.services.jobs.enabled !== false) components.jobs = { ...(await buildJobsComponent()), label: 'Jobs' };
+    if (appConfig.services.jobs.enabled !== false) components.jobs = await buildJobsComponent();
   }
 
   const status = rollupStatus(components, CRITICAL_COMPONENTS);

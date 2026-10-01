@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 
 export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
 
-export type HealthComponent = { status: HealthStatus; label?: string };
+export type HealthComponent = { status: HealthStatus; reason?: string };
 
 export type HealthResponse = { status: HealthStatus; components: Record<string, HealthComponent> };
 
@@ -12,7 +12,8 @@ const HEALTH_POLL_MS = 30_000;
 
 async function fetchHealth(signal?: AbortSignal): Promise<HealthResponse> {
   const response = await fetch(HEALTH_URL, { cache: 'no-store', signal });
-  if (!response.ok) throw new Error(`Health check failed: ${response.status}`);
+  // A 503 still carries the diagnostics: it names which critical component is down.
+  if (!response.ok && response.status !== 503) throw new Error(`Health check failed: ${response.status}`);
   return (await response.json()) as HealthResponse;
 }
 

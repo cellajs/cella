@@ -38,7 +38,7 @@ export function FocusBridge({ direction, className }: FocusBridgeProps) {
   const handleClick = () => {
     if (direction !== 'to-sheet' && !useNavigationStore.getState().keepNavOpen) {
       useSheeter.getState().remove('nav-sheet');
-      // Waits for @base-ui's finalFocus restoration to complete.
+      // Waits a frame for the closing sheet to release the page; its finalFocus then leaves focus on the target.
       requestAnimationFrame(() => focusById(targets[direction]));
       return;
     }

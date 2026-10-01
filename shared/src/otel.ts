@@ -6,7 +6,7 @@ import { HttpInstrumentation } from '@opentelemetry/instrumentation-http';
 import { PgInstrumentation } from '@opentelemetry/instrumentation-pg';
 import { UndiciInstrumentation } from '@opentelemetry/instrumentation-undici';
 import { resourceFromAttributes } from '@opentelemetry/resources';
-import { LoggerProvider, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
+import { LoggerProvider, type LogRecordExporter, SimpleLogRecordProcessor } from '@opentelemetry/sdk-logs';
 import type { MeterProvider } from '@opentelemetry/sdk-metrics';
 import { PeriodicExportingMetricReader, MeterProvider as SdkMeterProvider } from '@opentelemetry/sdk-metrics';
 import { NodeSDK } from '@opentelemetry/sdk-node';
@@ -180,21 +180,33 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
       return;
     }
     try {
-      const verifyLogProvider = new LoggerProvider({
-        resource,
-        processors: [new SimpleLogRecordProcessor({ exporter: logExporter })],
+      // The processor neither awaits its export nor surfaces failures (they go to OTel's silent global
+      // error handler), so the probe taps the exporter callback to read the real result.
+      const result = await new Promise<{ code: number; error?: Error }>((resolve) => {
+        const probeExporter: LogRecordExporter = {
+          export: (records, done) =>
+            logExporter.export(records, (exportResult) => {
+              done(exportResult);
+              resolve(exportResult);
+            }),
+          forceFlush: () => Promise.resolve(),
+          shutdown: () => Promise.resolve(),
+        };
+        const verifyLogProvider = new LoggerProvider({
+          resource,
+          processors: [new SimpleLogRecordProcessor({ exporter: probeExporter })],
+        });
+        verifyLogProvider.getLogger(serviceName).emit({
+          // Matches pino-opentelemetry-transport (lowercase label plus numeric severity), so Maple
+          // groups these probes with application logs. 9 is OTel SeverityNumber.INFO, inlined to
+          // avoid a runtime dependency on @opentelemetry/api-logs.
+          severityNumber: 9,
+          severityText: 'info',
+          body: `[otel] ${serviceName} initialized`,
+        });
       });
-      const logger = verifyLogProvider.getLogger(serviceName);
-      logger.emit({
-        // Matches pino-opentelemetry-transport (lowercase label plus numeric severity), so Maple
-        // groups these probes with application logs. 9 is OTel SeverityNumber.INFO, inlined to
-        // avoid a runtime dependency on @opentelemetry/api-logs.
-        severityNumber: 9,
-        severityText: 'info',
-        body: `[otel] ${serviceName} initialized`,
-      });
-      await verifyLogProvider.forceFlush();
-      console.info(`[otel] ${serviceName}: Connected to ingest`);
+      // Silent on success; 0 is ExportResultCode.SUCCESS, inlined like the severity above.
+      if (result.code !== 0) throw result.error ?? new Error('export rejected');
     } catch (err) {
       console.error(`[otel] ${serviceName}: Failed to export to ingest:`, err instanceof Error ? err.message : err);
     }

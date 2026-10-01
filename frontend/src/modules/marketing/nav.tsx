@@ -42,7 +42,6 @@ export function MarketingNav() {
           <Link
             to={url}
             hash={hash}
-            replace={location.pathname === '/about'}
             draggable={false}
             onClick={(e) => {
               if (!hash) {

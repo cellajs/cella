@@ -13,8 +13,6 @@ import { toggleDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { ScrollArea } from '~/modules/ui/scroll-area';
-import { useUIStore } from '~/modules/ui/ui-store';
-import { cn } from '~/utils/cn';
 
 const MIN_SIDEBAR_WIDTH = 220;
 const MAX_SIDEBAR_WIDTH = 400;
@@ -22,7 +20,6 @@ const MAX_SIDEBAR_WIDTH = 400;
 function DocsLayout() {
   const navigate = useNavigate();
   const isDesktop = useBreakpointAbove('md');
-  const focusView = useUIStore((state) => state.focusView);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
 
@@ -117,7 +114,7 @@ function DocsLayout() {
     return (
       <div>
         <FloatingNav items={floatingNavItems} bodyClass="docs-floating-nav" resetTrigger={sidebarOpen} />
-        <main className="pt-4 pb-[70vh]">
+        <main className="focus-view-scope pt-4 pb-[70vh]">
           <Outlet />
         </main>
       </div>
@@ -128,18 +125,16 @@ function DocsLayout() {
 
   return (
     <div className="contents [--docs-sidebar-width:clamp(220px,24vw,288px)]" style={sidebarWidthStyle}>
-      {!focusView && (
-        <aside ref={sidebarRef} className="fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width) bg-background">
-          <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
-          <button
-            type="button"
-            aria-label="Resize sidebar"
-            onPointerDown={startSidebarResize}
-            className="absolute top-0 right-0 z-30 h-full w-px cursor-col-resize bg-border transition-colors after:absolute after:inset-y-0 after:-right-1.5 after:w-3 after:content-[''] hover:bg-primary/50 focus-visible:bg-primary"
-          />
-        </aside>
-      )}
-      <main className={cn('pb-[70vh]', !focusView && 'ml-(--docs-sidebar-width)')}>
+      <aside ref={sidebarRef} className="fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width) bg-background focus-view:hidden">
+        <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
+        <button
+          type="button"
+          aria-label="Resize sidebar"
+          onPointerDown={startSidebarResize}
+          className="absolute top-0 right-0 z-30 h-full w-px cursor-col-resize bg-border transition-colors after:absolute after:inset-y-0 after:-right-1.5 after:w-3 after:content-[''] hover:bg-primary/50 focus-visible:bg-primary"
+        />
+      </aside>
+      <main className="focus-view-scope ml-(--docs-sidebar-width) pb-[70vh] focus-view:ml-0">
         <Outlet />
       </main>
     </div>

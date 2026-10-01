@@ -203,6 +203,8 @@ describe('OAuth Authentication', async () => {
       expect(token.email).toBe('github-user@example.com');
       const [refreshed] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, identity.id));
       expect(refreshed.email).toBe('github-user@example.com');
+      // An identity on an account reads as connecting, under the provider's name.
+      expect(mailsTo('github-user@example.com').at(-1)?.statics).toMatchObject({ isNewUser: false, providerName: 'GitHub' });
     });
 
     it('should redirect to email verification for unverified OAuth account', async () => {
@@ -822,6 +824,8 @@ describe('OAuth Authentication', async () => {
           pendingSignUp: expect.objectContaining({ issuer: 'github', subject: 'github-user-id' }),
         }),
       ]);
+      // The mail asks to finish signing up, not to connect a provider to an account the visitor does not have.
+      expect(mailsTo(providerEmail).at(-1)?.statics).toMatchObject({ isNewUser: true, providerName: 'GitHub' });
     });
 
     it('creates the account once the mailed link and the same provider account prove it (positive control)', async () => {

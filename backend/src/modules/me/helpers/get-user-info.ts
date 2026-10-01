@@ -5,7 +5,7 @@ import type { DbContext, Env } from '#/core/context';
 import { devicesTable } from '#/modules/auth/devices-db';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
-import { sessionsTable } from '#/modules/auth/sessions-db';
+import { sessionSafeColumns, sessionsTable } from '#/modules/auth/sessions-db';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import type { sessionSchema } from '#/modules/me/me-schema';
 import { TimeSpan } from '#/utils/time-span';
@@ -43,7 +43,7 @@ export const getUserSessions = async (ctx: Context<Env>, userId: string): Promis
   // Compared in SQL: the columns are timestamps without zone, which JavaScript would parse as local time.
   const revokedSince = new Date(Date.now() - REVOKED_SESSION_WINDOW.milliseconds()).toISOString();
   const getSessions = db
-    .select()
+    .select(sessionSafeColumns)
     .from(sessionsTable)
     .where(and(eq(sessionsTable.userId, userId), or(isNull(sessionsTable.revokedAt), gt(sessionsTable.revokedAt, revokedSince))))
     .orderBy(desc(sessionsTable.createdAt));
@@ -57,7 +57,7 @@ export const getUserSessions = async (ctx: Context<Env>, userId: string): Promis
   const [sessions, newDevices] = await Promise.all([getSessions, getNewDevices]);
   const newDeviceHashes = new Set(newDevices.map(({ deviceIdHash }) => deviceIdHash));
 
-  return sessions.map(({ secret, ...session }) => ({
+  return sessions.map((session) => ({
     ...session,
     isCurrent: session.id === ctx.var.sessionId,
     isNewDevice: session.deviceIdHash !== null && newDeviceHashes.has(session.deviceIdHash),

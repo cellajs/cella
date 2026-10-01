@@ -36,6 +36,7 @@ beforeEach(async () => {
 afterEach(async () => {
   await act(async () => root.unmount());
   container.remove();
+  Reflect.deleteProperty(Element.prototype, 'getAnimations');
 });
 
 /** Presses Escape inside the open popup, the way Base UI's dismiss handling expects it. */
@@ -46,6 +47,33 @@ async function pressEscape() {
   });
   // Base UI reports the close once exit animations finish (none run in jsdom).
   await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
+}
+
+/** Holds Base UI exits until the returned function runs: jsdom has no getAnimations, so an exit otherwise ends at once. */
+function holdExits() {
+  let finish = () => {};
+  const finished = new Promise<void>((resolve) => {
+    finish = resolve;
+  });
+  let held = true;
+  Object.defineProperty(Element.prototype, 'getAnimations', { configurable: true, value: () => (held ? [{ finished }] : []) });
+
+  return async () => {
+    held = false;
+    finish();
+    // Base UI checks animations on the next frame
+    await act(async () => new Promise((resolve) => setTimeout(resolve, 50)));
+  };
+}
+
+/** Opens a sheet with a focusable button inside, returning focus to `trigger` on close. */
+async function openSheetWithButton(trigger: HTMLElement) {
+  await act(async () => {
+    useSheeter
+      .getState()
+      .create(<button type="button">Inside</button>, { id: 'sheet', side: 'left', triggerRef: { current: trigger }, title: 'Sheet' });
+  });
+  (document.querySelector('[role="dialog"] button') as HTMLElement).focus();
 }
 
 describe('overlay exit', () => {
@@ -74,6 +102,72 @@ describe('overlay exit', () => {
 
     expect(useSheeter.getState().sheets.map((s) => [s.id, s.open])).toEqual([['nav-sheet', false]]);
     expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['a store remove', () => useSheeter.getState().remove('sheet')],
+    ['a route change', () => useSheeter.getState().removeOnRouteChange({ isCleanup: true })],
+  ])('keeps a sheet closed by %s rendered until its exit ends, without holding the UI lock', async (_, close) => {
+    const onClose = vi.fn();
+    await act(async () => {
+      useSheeter.getState().create(<p>Sheet body</p>, { id: 'sheet', side: 'left', triggerRef: createRef(), title: 'Sheet', onClose });
+    });
+    const sheet = document.querySelector('[role="dialog"]') as HTMLElement;
+    const endExit = holdExits();
+
+    await act(async () => close());
+
+    expect(useSheeter.getState().sheets).toEqual([]);
+    expect(onClose).toHaveBeenCalledTimes(1);
+    expect(useUIStore.getState().uiLocks).not.toContain('sheeter');
+    expect(document.body.classList.contains('sheeter-open')).toBe(false);
+    expect(sheet.isConnected).toBe(true);
+    expect(sheet.hasAttribute('data-closed')).toBe(true);
+
+    await endExit();
+    expect(sheet.isConnected).toBe(false);
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('reopens a sheet created again with the same id while it slides out', async () => {
+    const create = () => useSheeter.getState().create(<p>Sheet body</p>, { id: 'sheet', side: 'left', triggerRef: createRef(), title: 'Sheet' });
+    await act(async () => create());
+    const endExit = holdExits();
+
+    await act(async () => useSheeter.getState().remove('sheet'));
+    await act(async () => create());
+    await endExit();
+
+    const sheets = document.querySelectorAll('[role="dialog"]');
+    expect(sheets).toHaveLength(1);
+    expect(sheets[0].hasAttribute('data-open')).toBe(true);
+  });
+
+  it('leaves focus where it moved while the sheet slid out', async () => {
+    const trigger = document.createElement('button');
+    const target = document.createElement('button');
+    document.body.append(trigger, target);
+    await openSheetWithButton(trigger);
+    const endExit = holdExits();
+
+    await act(async () => useSheeter.getState().remove('sheet'));
+    target.focus();
+    await endExit();
+
+    expect(document.activeElement).toBe(target);
+    trigger.remove();
+    target.remove();
+  });
+
+  it('returns focus to the trigger when a sheet is dismissed from inside', async () => {
+    const trigger = document.createElement('button');
+    document.body.append(trigger);
+    await openSheetWithButton(trigger);
+
+    await pressEscape();
+
+    expect(document.activeElement).toBe(trigger);
+    trigger.remove();
   });
 
   it('removes a dismissed dialog after its exit and then runs onClose once', async () => {
