@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { UserContext } from '#/core/context';
 import type { MutationPayload } from '#/lib/mutation-bus';
 import type { NotificationSource } from '../notification-sources';
-import { deriveMentions } from './derive-mentions';
+import { deriveMentions, prepareMentions } from './derive-mentions';
 
 // Rows whose stored mentions are stale (body carries none), so a derivation that runs must write
 // an empty set without touching the permission engine.
@@ -52,5 +52,18 @@ describe('deriveMentions deriveFrom', () => {
 
   it('skips rows whose body did not change between before and after', async () => {
     expect(await run('both', { before: [staleRow], after: [staleRow] })).toBe(0);
+  });
+});
+
+describe('prepareMentions', () => {
+  it('returns the derived column for the op to write, per row, only where the set changes', async () => {
+    const source: NotificationSource = {
+      entityType: 'attachment',
+      declaration: {},
+      mentionable: true,
+      deriveFrom: 'both',
+    };
+    const current = { ...staleRow, id: 'row-2', mentions: [] };
+    expect(await prepareMentions({ after: [staleRow, current] }, source)).toEqual([{ mentions: [] }, undefined]);
   });
 });

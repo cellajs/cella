@@ -1,7 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import type { ActorContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
-import { dispatchMutation } from '#/lib/mutation-bus';
+import { dispatchMutation, prepareMutation } from '#/lib/mutation-bus';
 import { updateAttachment } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentUpdateStxBodySchema } from '#/modules/attachment/attachment-schema';
 import { withAuditUser } from '#/modules/user/helpers/audit-user';
@@ -46,9 +46,20 @@ export async function updateAttachmentOp(
       updatedBy: actorId,
       ...(resolved.changed ? { stx: resolved.stx } : {}),
     };
-    const updated = await updateAttachment(txCtx, { id, values });
+    // Server-derived columns (mentions) join this statement, so the edit stays one CDC activity.
+    const [derived] = await prepareMutation(txCtx, 'attachment.updated', {
+      before: [entity],
+      after: [{ ...entity, ...values }],
+      materialized,
+    });
+    const updated = await updateAttachment(txCtx, { id, values: { ...values, ...derived } });
     // Inside the transaction, `before`/`after` index-aligned as the mutation bus contract requires.
-    await dispatchMutation(txCtx, 'attachment.updated', { before: [entity], after: [updated], materialized });
+    await dispatchMutation(txCtx, 'attachment.updated', {
+      before: [entity],
+      after: [updated],
+      materialized,
+      prepared: true,
+    });
     return updated;
   });
 

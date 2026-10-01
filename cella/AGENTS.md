@@ -123,7 +123,7 @@ Model: [Sync engine](./SYNC_ENGINE.md).
 Relationships between products are data, never permission indirection (permissions and public read flow through the hierarchy's channel columns). Exactly two mechanisms:
 
 1. **`productEmbeddings` host id arrays**: an id array column on the host product's table, declared in `appConfig.productEmbeddings`. All embedding machinery (CDC cleanup, owned-embedding GC, ref counters, SSE propagation hints, client cache patching) is config-driven. Engine code never changes. `lifecycle: 'shared'` (default): embedded rows live independently, dead references are stripped from hosts. `lifecycle: 'owned'`: the CDC worker soft-deletes rows no live host references.
-2. **The mutation bus** (`defineBackendModule` + `onMutation`/`dispatchMutation`): lifecycle side effects an embedding cannot express (e.g. seeding rows on `project.created`). Handlers run synchronously, optionally inside the write transaction.
+2. **The mutation bus** (`defineBackendModule` + `onMutation`/`dispatchMutation`): lifecycle side effects an embedding cannot express (e.g. seeding rows on `project.created`). Handlers run synchronously, optionally inside the write transaction. `prepareMutation` runs before the write and returns server-owned columns (derived mentions) for the op to write in the same statement, so one edit stays one CDC activity.
 
 A child-side host FK (nullable `<host>Id` column on one product pointing at another) is deprecated: invisible to sync views, CDC, propagation hints and counters. Conversion guide: `cella/migrations/20260730T1009-owned-host-embedding/`.
 

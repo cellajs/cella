@@ -5,16 +5,17 @@ import { textFromDocument } from 'shared/blocknote';
 import type { DbOrTx } from '#/db/db';
 import type { mentionableColumns, productColumns } from '#/db/utils/product-columns';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
+import { stripChangedFields } from '#/db/utils/strip-changed-fields';
 import type { BackendModule, ModuleNotifications, NotificationSubjectRow } from '#/lib/module';
 import { onBackendModuleRegister } from '#/lib/module';
-import { registerMutationHandler } from '#/lib/mutation-bus';
+import { registerMutationHandler, registerPrepareHandler } from '#/lib/mutation-bus';
 import { getEntityTable } from '#/tables';
 import { log } from '#/utils/logger';
-import { deriveMentions } from './operations/derive-mentions';
+import { deriveMentions, prepareMentions } from './operations/derive-mentions';
 
 /** A product table as `productColumns` and the opt-in `mentionableColumns` shape it. */
 type ProductTable = AnyPgTable &
-  Record<keyof Pick<ReturnType<typeof productColumns>, 'id' | 'name' | 'description' | 'deletedAt'>, PgColumn> &
+  Record<keyof Pick<ReturnType<typeof productColumns>, 'id' | 'name' | 'description' | 'deletedAt' | 'stx'>, PgColumn> &
   Partial<Record<keyof typeof mentionableColumns, PgColumn>>;
 
 /** One registered source: the module's declaration plus the two facts settled at registration. */
@@ -43,12 +44,17 @@ onBackendModuleRegister((module) => {
   const source = registeredSource(module, module.productEntity);
   sources.set(module.productEntity, source);
 
-  // Mentions derive in the writing transaction, so the stored `mentions` column is server-owned.
+  // Mentions derive in the writing transaction, so the stored `mentions` column is server-owned. A
+  // table-stored set joins the write itself when the op prepares it; a custom writer stores it after.
   if (source.mentionable) {
+    const inRow = !source.declaration.writeMentions && productTable(source.entityType).mentions !== undefined;
     for (const action of ['created', 'updated'] as const) {
-      registerMutationHandler(`${module.productEntity}.${action}` as TrackedEventType, (ctx, payload) =>
-        deriveMentions(ctx, payload, source),
-      );
+      const event = `${module.productEntity}.${action}` as TrackedEventType;
+      if (inRow) registerPrepareHandler(event, async (_ctx, payload) => prepareMentions(payload, source));
+      registerMutationHandler(event, async (ctx, payload) => {
+        if (inRow && payload.prepared) return;
+        await deriveMentions(ctx, payload, source);
+      });
     }
   }
 });
@@ -79,7 +85,11 @@ export async function loadSubjectRows(source: NotificationSource, tx: DbOrTx, id
   return rows as NotificationSubjectRow[];
 }
 
-/** Persists the server-derived mention set; false when neither the declaration nor the table can. */
+/**
+ * Persists the server-derived mention set after the write; false when neither the declaration nor
+ * the table can. The table write is server-driven, so it strips the client's `changedFields` and
+ * the CDC worker attributes it to the columns it changes.
+ */
 export async function writeSubjectMentions(source: NotificationSource, tx: DbOrTx, id: string, mentions: string[]) {
   if (source.declaration.writeMentions) {
     await source.declaration.writeMentions(tx, id, mentions);
@@ -87,7 +97,10 @@ export async function writeSubjectMentions(source: NotificationSource, tx: DbOrT
   }
   const table = productTable(source.entityType);
   if (!table.mentions) return false;
-  await tx.update(table).set({ mentions }).where(eq(table.id, id));
+  await tx
+    .update(table)
+    .set({ mentions, stx: stripChangedFields(table.stx) })
+    .where(eq(table.id, id));
   return true;
 }
 

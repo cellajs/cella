@@ -87,8 +87,11 @@ export interface NotificationCandidate {
  * The fan-out runs off the CDC activity stream, but mention derivation listens on the mutation
  * bus, so the module's create and update ops must `dispatchMutation(txCtx, '<type>.created' |
  * '<type>.updated', { before, after })` inside the write transaction (`materialized: true` for
- * Yjs materialization); see the attachment ops for the shape. Deep links need no declaration:
- * emails and push carry the subject's location for the frontend `/n` route.
+ * Yjs materialization). Ops that first call `prepareMutation` with the rows about to be written,
+ * write the columns it returns and dispatch with `prepared: true` store the mentions in the edit's
+ * own statement (one CDC activity per edit); without it the mentions follow in a second update.
+ * See the attachment ops for the shape. Deep links need no declaration: emails and push carry the
+ * subject's location for the frontend `/n` route.
  */
 export interface ModuleNotifications {
   /** Server-side mention derivation and mention fan-out; defaults to whether the table has a `mentions` column. */
@@ -101,7 +104,7 @@ export interface ModuleNotifications {
   deriveFrom?: 'client' | 'materialized' | 'both';
   /** Batch-load audience-bearing subject rows for the given ids; drop drafts and deleted rows here. */
   loadRows?: (tx: DbOrTx, ids: string[]) => Promise<NotificationSubjectRow[]>;
-  /** Persist the server-derived mention set for one row. */
+  /** Persist the server-derived mention set for one row after the write; a product-row write strips `changedFields`. */
   writeMentions?: (tx: DbOrTx, id: string, mentions: string[]) => Promise<void>;
   /** Recipients beyond mentions (thread participants, assignees, ...) with their notification type. */
   resolveRecipients?: (tx: DbOrTx, row: NotificationSubjectRow) => Promise<NotificationCandidate[]>;
