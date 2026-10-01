@@ -62,11 +62,16 @@ export function DropdownerDropdown({ dropdown }: { dropdown: InternalDropdown })
   return <PanelDropdown dropdown={dropdown} triggerEl={triggerEl} />;
 }
 
+/** Closes the dropdown unless it was already swapped for another (e.g. a menu item opening a confirmation panel). */
+function removeIfCurrent(key: number) {
+  if (useDropdowner.getState().dropdown?.key === key) useDropdowner.getState().remove();
+}
+
 function MenuDropdown({ dropdown, triggerEl }: { dropdown: InternalDropdown; triggerEl: HTMLElement }) {
   const triggerFocusRef = useLatestRef(triggerEl);
 
   const onOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) useDropdowner.getState().remove();
+    if (!nextOpen) removeIfCurrent(dropdown.key);
   };
 
   return (
@@ -89,7 +94,7 @@ function PanelDropdown({ dropdown, triggerEl }: { dropdown: InternalDropdown; tr
   const triggerFocusRef = useLatestRef(triggerEl);
 
   const onOpenChange = (nextOpen: boolean) => {
-    if (!nextOpen) useDropdowner.getState().remove();
+    if (!nextOpen) removeIfCurrent(dropdown.key);
   };
 
   return (
