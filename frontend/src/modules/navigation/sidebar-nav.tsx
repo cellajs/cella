@@ -101,7 +101,9 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
               </SidebarGroup>
             </SidebarContent>
             <SidebarFooter className="gap-2 p-0">
-              <Suspense>{DebugDropdown ? <DebugDropdown className="mx-2" /> : null}</Suspense>
+              <Suspense>
+                <DebugDropdown className="mx-2" />
+              </Suspense>
               <SidebarMenu className="gap-1">
                 <StopImpersonation isCollapsed={!isExpanded} />
                 {getFooterNavItems().map((navItem: NavItem) => (

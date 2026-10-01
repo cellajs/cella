@@ -2,7 +2,8 @@ import { Link } from '@tanstack/react-router';
 import { ChevronDownIcon } from 'lucide-react';
 import { useId } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
-import type { DocPage } from '~/modules/page/content';
+import { getSection, scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { type DocPage, PAGE_SECTION_ID } from '~/modules/page/content';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
@@ -64,11 +65,13 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
               onToggle(page.id);
               return;
             }
-            // Collapsing is a re-click on the page you are already on. From anywhere else the
-            // click navigates here (the branch has its own page) and leaves the subtree open.
+            // Collapsing is a re-click at the top of the page you are on. Further down that page the click scrolls back up,
+            // and from another page it navigates here; both leave the subtree open.
             if (hasChildren && isExpanded && isActive) {
               e.preventDefault();
-              onToggle(page.id);
+              if (getSection() === PAGE_SECTION_ID) return onToggle(page.id);
+              scrollToSectionById(PAGE_SECTION_ID);
+              closeDocsSidebarAfterNavigation(e.currentTarget);
               return;
             }
             if (hasChildren && !isExpanded) onToggle(page.id);

@@ -45,7 +45,7 @@ export const zChannelBase = z.object({
 });
 
 /**
- * Base schema for content entities with creator tracking (e.g. page, attachment).
+ * Base schema for content entities with creator tracking (e.g. attachment).
  */
 export const zProductBase = z.object({
   id: z.string(),
@@ -84,11 +84,6 @@ export const zStxBase = z.object({
   fieldTimestamps: z.record(z.string(), z.string()),
   replayed: z.boolean().optional(),
 });
-
-/**
- * Boolean query value accepted as a boolean or its lowercase string representation.
- */
-export const zBooleanQueryValue = z.union([z.enum(['true', 'false']), z.boolean()]).default('false');
 
 /**
  * Realtime notification delivered via SSE for entity and membership changes.
@@ -1407,7 +1402,10 @@ export const zSendNewsletterBody = z.object({
 });
 
 export const zSendNewsletterQuery = z.object({
-  toSelf: zBooleanQueryValue.optional(),
+  toSelf: z
+    .union([z.enum(['true', 'false']), z.boolean()])
+    .optional()
+    .default('false'),
 });
 
 /**
@@ -1516,7 +1514,10 @@ export const zGetUserPath = z.object({
 });
 
 export const zGetUserQuery = z.object({
-  slug: zBooleanQueryValue.optional(),
+  slug: z
+    .union([z.enum(['true', 'false']), z.boolean()])
+    .optional()
+    .default('false'),
 });
 
 /**
@@ -1652,7 +1653,10 @@ export const zGetOrganizationPath = z.object({
 });
 
 export const zGetOrganizationQuery = z.object({
-  slug: zBooleanQueryValue.optional(),
+  slug: z
+    .union([z.enum(['true', 'false']), z.boolean()])
+    .optional()
+    .default('false'),
   include: z.string().optional(),
 });
 
@@ -1867,7 +1871,10 @@ export const zUpdateAttachmentPath = z.object({
 });
 
 export const zUpdateAttachmentQuery = z.object({
-  fullResponse: zBooleanQueryValue.optional(),
+  fullResponse: z
+    .union([z.enum(['true', 'false']), z.boolean()])
+    .optional()
+    .default('false'),
 });
 
 /**

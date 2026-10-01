@@ -647,7 +647,7 @@
           }
         },
         "required": ["id", "name", "createdAt", "updatedAt", "description", "createdBy", "updatedBy", "entityType", "keywords"],
-        "description": "Base schema for content entities with creator tracking (e.g. page, attachment).",
+        "description": "Base schema for content entities with creator tracking (e.g. attachment).",
         "example": {
           "id": "7e460470-da58-4733-a7ff-0d31897ecf8d",
           "createdAt": "2024-07-02T14:28:38.152Z",
@@ -764,20 +764,6 @@
           "sourceId": "7762c287-9155-4500-95f3-d63ec6185e0c",
           "fieldTimestamps": {}
         },
-        "x-tags": ["base", "cella"]
-      },
-      "BooleanQueryValue": {
-        "anyOf": [
-          {
-            "type": "string",
-            "enum": ["true", "false"]
-          },
-          {
-            "type": "boolean"
-          }
-        ],
-        "default": "false",
-        "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
         "x-tags": ["base", "cella"]
       },
       "StreamNotification": {
@@ -7973,10 +7959,18 @@
         "parameters": [
           {
             "schema": {
-              "$ref": "#/components/schemas/BooleanQueryValue"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": ["true", "false"]
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "default": "false"
             },
             "required": false,
-            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
             "name": "toSelf",
             "in": "query"
           }
@@ -8623,10 +8617,18 @@
           },
           {
             "schema": {
-              "$ref": "#/components/schemas/BooleanQueryValue"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": ["true", "false"]
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "default": "false"
             },
             "required": false,
-            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
             "name": "slug",
             "in": "query"
           }
@@ -9593,10 +9595,18 @@
           },
           {
             "schema": {
-              "$ref": "#/components/schemas/BooleanQueryValue"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": ["true", "false"]
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "default": "false"
             },
             "required": false,
-            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
             "name": "slug",
             "in": "query"
           },
@@ -11060,10 +11070,18 @@
           },
           {
             "schema": {
-              "$ref": "#/components/schemas/BooleanQueryValue"
+              "anyOf": [
+                {
+                  "type": "string",
+                  "enum": ["true", "false"]
+                },
+                {
+                  "type": "boolean"
+                }
+              ],
+              "default": "false"
             },
             "required": false,
-            "description": "Boolean query value accepted as a boolean or its lowercase string representation.",
             "name": "fullResponse",
             "in": "query"
           }

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router';
 import { SearchIcon } from 'lucide-react';
-import { Suspense, useRef } from 'react';
+import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GenTagSummary } from 'sdk/docs-types';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -14,9 +14,6 @@ import { UserTheme } from '~/modules/me/user-theme';
 import { docsConfig } from '~/modules/page/content';
 import { Button } from '~/modules/ui/button';
 import { SidebarContent } from '~/modules/ui/sidebar';
-import { lazyNamed } from '~/utils/lazy-named';
-
-const DebugDropdown = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown') : () => null;
 
 interface DocsSidebarProps {
   tags: GenTagSummary[];
@@ -35,7 +32,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
   };
 
   return (
-    <SidebarContent className="min-h-dvh flex-none overflow-visible bg-card pt-2 pb-24">
+    <SidebarContent className="min-h-dvh flex-none overflow-visible bg-card pt-2 pb-12">
       <div aria-hidden="true" className="sticky top-0 z-20 -mb-4 h-2 shrink-0 bg-card" data-slot="sticky-mask" />
 
       <div className="my-2 flex items-center gap-2 px-4 pt-2">
@@ -87,8 +84,6 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
               return null;
           }
         })}
-
-      <Suspense>{DebugDropdown ? <DebugDropdown className="absolute bottom-0 m-1" /> : null}</Suspense>
     </SidebarContent>
   );
 }

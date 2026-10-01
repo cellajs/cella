@@ -2927,7 +2927,7 @@ export const updateUser = <ThrowOnError extends boolean = true>(
  * **POST /system/newsletter** ·· [sendNewsletter](https://www.cellajs.com/docs/operations?operationTag=system#tag/system/POST/system/newsletter) ·· [sendNewsletter](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/system/newsletter) ·· _system_cella_
  *
  * @param {sendNewsletterData} options
- * @param {any=} options.query.toself - `any` (optional)
+ * @param {enum | boolean=} options.query.toself - `enum | boolean` (optional)
  * @param {any[]=} options.body.organizationIds - `any[]` (optional)
  * @param {any[]=} options.body.roles - `any[]` (optional)
  * @param {string=} options.body.subject - `string` (optional)
@@ -3143,7 +3143,7 @@ export const getUsers = <ThrowOnError extends boolean = true>(
  *
  * @param {getUserData} options
  * @param {string} options.path.relatableuserid - `string`
- * @param {any=} options.query.slug - `any` (optional)
+ * @param {enum | boolean=} options.query.slug - `enum | boolean` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
 export const getUser = <ThrowOnError extends boolean = true>(
@@ -3336,7 +3336,7 @@ export const getOrganizations = <ThrowOnError extends boolean = true>(
  * @param {getOrganizationData} options
  * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.id - `string`
- * @param {any=} options.query.slug - `any` (optional)
+ * @param {enum | boolean=} options.query.slug - `enum | boolean` (optional)
  * @param {string=} options.query.include - `string` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
  */
@@ -3713,7 +3713,7 @@ export const getAttachment = <ThrowOnError extends boolean = true>(
  * @param {string} options.path.tenantid - `string`
  * @param {string} options.path.organizationid - `string`
  * @param {string} options.path.id - `string`
- * @param {any=} options.query.fullresponse - `any` (optional)
+ * @param {enum | boolean=} options.query.fullresponse - `enum | boolean` (optional)
  * @param {object=} options.body.ops - `object` (optional)
  * @param {any=} options.body.stx - `any` (optional)
  * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429

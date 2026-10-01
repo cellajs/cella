@@ -8,7 +8,7 @@ import { normalizeOpenApiDocument, validateOpenApiDocument } from '#/core/openap
 import { getExtensionValueMetadata } from '#/core/x-middleware';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { membershipBaseSchema } from '#/modules/memberships/memberships-schema';
-import { booleanTransformSchema, errorResponses, productBaseSchema, registerAllErrorResponses } from '#/schemas';
+import { errorResponses, productBaseSchema, registerAllErrorResponses } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 import { streamNotificationSchema } from '#/schemas/stream-schemas';
@@ -82,7 +82,6 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   registry.register('ProductBase', productBaseSchema);
   registry.register('MembershipBase', membershipBaseSchema);
   registry.register('StxBase', stxBaseSchema);
-  registry.register('BooleanQueryValue', booleanTransformSchema);
   registry.register('StreamNotification', streamNotificationSchema);
 
   registerAllErrorResponses(registry, errorResponses);

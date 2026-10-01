@@ -5,10 +5,9 @@
 
 import { useEffect, useState } from 'react';
 import { isDebugMode } from '~/env';
-import { clearSpans, getSpanStats, type SpanData, subscribeToSpans } from '~/lib/tracing';
+import { clearSpans, getSpanStats, getSpans, type SpanData, subscribeToSpans } from '~/lib/tracing';
 
 interface SyncDevtoolsState {
-  isOpen: boolean;
   activeTab: 'spans' | 'stats' | 'timeline';
   filter: string;
 }
@@ -269,21 +268,21 @@ function TimelineView({ spans }: { spans: SpanData[] }) {
 }
 
 interface SyncDevtoolsProps {
-  isOpen: boolean;
   onClose: () => void;
 }
 
-export function SyncDevtools({ isOpen, onClose }: SyncDevtoolsProps) {
-  const [state, setState] = useState<SyncDevtoolsState>({ isOpen: true, activeTab: 'spans', filter: '' });
+export function SyncDevtools({ onClose }: SyncDevtoolsProps) {
+  const [state, setState] = useState<SyncDevtoolsState>({ activeTab: 'spans', filter: '' });
 
-  const [spans, setSpans] = useState<SpanData[]>([]);
+  // Mounted only while open, so seed from the buffer: subscribers get no replay
+  const [spans, setSpans] = useState<SpanData[]>(getSpans);
 
   useEffect(() => {
     const unsubscribe = subscribeToSpans(setSpans);
     return unsubscribe;
   }, []);
 
-  if (!isDebugMode || !isOpen) return null;
+  if (!isDebugMode) return null;
 
   return (
     <div style={styles.container}>

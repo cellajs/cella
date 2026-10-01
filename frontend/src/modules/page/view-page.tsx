@@ -3,22 +3,16 @@ import { Link, notFound } from '@tanstack/react-router';
 import { ChevronRightIcon } from 'lucide-react';
 import { type ComponentType, lazy, Suspense, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
-import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { RegisterSpySections } from '~/hooks/use-scroll-spy';
 import { Spinner } from '~/modules/common/spinner';
 import type { DocPage } from '~/modules/page/content';
-import { getChildDocPages, getDocPage, getDocPageLoader, getResolvedDocPageComponent } from '~/modules/page/content';
+import { getChildDocPages, getDocPage, getDocPageLoader, getResolvedDocPageComponent, PAGE_SECTION_ID } from '~/modules/page/content';
 import { mdxComponents } from '~/modules/page/mdx-components';
 import { TocAside } from '~/modules/page/toc-aside';
 import { dateShort } from '~/utils/date-short';
 
 interface ViewPageProps {
   slug: string;
-}
-
-/** Mounts after the lazy body inside the Suspense boundary: the spy only observes heading elements that exist at registration time. */
-function RegisterSpySections({ ids }: { ids: string[] }) {
-  useScrollSpy(ids);
-  return null;
 }
 
 /** Render modes: `default` full content, `overview` intro plus child page list, `nodeOnly` child navigation only. */
@@ -35,7 +29,8 @@ function ViewPage({ slug }: ViewPageProps) {
 
   // The aside lists h2 only; deeper levels stay reachable through anchors.
   const tocHeadings = useMemo(() => (page?.headings ?? []).filter((h) => h.depth === 2), [page]);
-  const tocIds = useMemo(() => tocHeadings.map((h) => h.id), [tocHeadings]);
+  // The page section comes first, so the intro above the first heading counts as the page itself
+  const spyIds = useMemo(() => [PAGE_SECTION_ID, ...tocHeadings.map((h) => h.id)], [tocHeadings]);
 
   if (!page || !Content) throw notFound();
 
@@ -46,7 +41,7 @@ function ViewPage({ slug }: ViewPageProps) {
     <div className="container">
       <div className="mx-auto flex max-w-4xl justify-center gap-10 lg:max-w-292">
         <div className="min-w-0 max-w-208 flex-1">
-          <div className="prose dark:prose-invert max-w-none **:[[id^=spy-]]:scroll-mt-4">
+          <div id={`spy-${PAGE_SECTION_ID}`} className="prose dark:prose-invert max-w-none **:[[id^=spy-]]:scroll-mt-4">
             <h1 className="pt-6">{page.name}</h1>
             {page.updatedAt && <PageUpdatedAt updatedAt={page.updatedAt} />}
 
@@ -55,7 +50,7 @@ function ViewPage({ slug }: ViewPageProps) {
                 <MDXProvider components={mdxComponents}>
                   <Content />
                 </MDXProvider>
-                <RegisterSpySections key={slug} ids={tocIds} />
+                <RegisterSpySections key={slug} ids={spyIds} />
               </Suspense>
             )}
 
@@ -65,7 +60,7 @@ function ViewPage({ slug }: ViewPageProps) {
                   <MDXProvider components={mdxComponents}>
                     <Content />
                   </MDXProvider>
-                  <RegisterSpySections key={slug} ids={tocIds} />
+                  <RegisterSpySections key={slug} ids={spyIds} />
                 </Suspense>
                 <ChildPagesList parentSlug={slug} />
               </>

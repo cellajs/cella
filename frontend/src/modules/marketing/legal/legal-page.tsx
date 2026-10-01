@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { usePreloadLazyComponents } from '~/hooks/use-preload-lazy-components';
-import { useScrollSpy } from '~/hooks/use-scroll-spy';
+import { RegisterSpySections } from '~/hooks/use-scroll-spy';
 import { type LegalSubject, legalConfig } from '~/modules/auth/legal/legal-config';
 import { SimpleHeader } from '~/modules/common/simple-header';
 import { MarketingLayout } from '~/modules/marketing/layout';
@@ -18,8 +18,6 @@ export function LegalPage() {
   const { subject: currentSubject } = useParams({ from: '/_public/_marketing/legal/$subject' });
 
   const sectionIds = useMemo(() => legalConfig[currentSubject as LegalSubject]?.sections.map((s: { id: string }) => s.id) || [], [currentSubject]);
-
-  useScrollSpy(sectionIds);
 
   // Preloaded on mount so switching subject renders without a lazy chunk fetch.
   const lazyComponents = useMemo(() => subjects.map(({ id }) => legalConfig[id].component), [subjects]);
@@ -47,6 +45,8 @@ export function LegalPage() {
                 >
                   <h2 className="pt-8 pb-4 font-bold text-2xl">{t(legalConfig[id].label)}</h2>
                   <Component />
+                  {/* The lazy text suspends inside MarketingLayout; registering here waits for its sections */}
+                  <RegisterSpySections ids={sectionIds} />
                 </div>
               )
             );

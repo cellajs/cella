@@ -1,21 +1,14 @@
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { appConfig } from 'shared';
+import { create } from 'zustand';
 import { SyncDevtools } from '~/modules/common/devtools';
 import { Button } from '~/modules/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import { queryClient } from '~/query/query-client';
 import { router } from '~/routes/router';
 import { cn } from '~/utils/cn';
-
-interface DebugItem {
-  url?: string;
-  id: string;
-  icon: string;
-  parent?: string;
-  element?: string;
-}
 
 interface DebugDropdownProps {
   className?: string;
@@ -25,14 +18,9 @@ interface DebugDropdownProps {
 const drizzleStudioPort = Number(new URL(appConfig.backendUrl).port) + 983;
 const drizzleStudioUrl = `https://local.drizzle.studio?port=${drizzleStudioPort}`;
 
-const debugOptions: DebugItem[] = [
-  { id: 'drizzle-studio', icon: '💦', url: drizzleStudioUrl },
-  { id: 'storybook', icon: '📖', url: 'http://localhost:6006/' },
-  { id: 'tanstack-router', icon: '🌴', parent: '.TanStackRouterDevtools', element: ':scope > button' },
-  { id: 'react-query', icon: '📡', parent: '.tsqd-parent-container', element: '.tsqd-open-btn' },
-  { id: 'react-scan', icon: '⏱️' },
-  { id: 'sync-devtools', icon: '⚡' },
-];
+const reactScanKey = 'react-scan-enabled';
+
+const useSyncDevtoolsStore = create<{ open: boolean }>(() => ({ open: false }));
 
 /** Imported on demand so react-scan and its bundled Preact stay out of the eager chunk graph. */
 const runScan = async (enabled: boolean) => {
@@ -40,64 +28,63 @@ const runScan = async (enabled: boolean) => {
   scan({ showToolbar: enabled, enabled });
 };
 
-function DebugDropdown({ className }: DebugDropdownProps) {
-  const [syncDevtoolsOpen, setSyncDevtoolsOpen] = useState(false);
+// The library panels open through their own toggle buttons, which tailwind.css hides
+const clickHidden = (selector: string) => document.querySelector<HTMLElement>(selector)?.click();
 
-  const debugToggle = (item: DebugItem) => {
-    if (item.id === 'sync-devtools') {
-      setSyncDevtoolsOpen((prev) => !prev);
-      return;
-    }
-
-    if (item.url) return window.open(item.url, '_self');
-
-    if (item.id === 'react-scan') {
-      const prev = localStorage.getItem('react-scan-enabled') === 'true';
-      const enable = !prev;
-      localStorage.setItem('react-scan-enabled', JSON.stringify(enable));
+const debugOptions = [
+  { id: 'drizzle-studio', icon: '💦', onSelect: () => window.open(drizzleStudioUrl, '_self') },
+  { id: 'storybook', icon: '📖', onSelect: () => window.open('http://localhost:6006/', '_self') },
+  { id: 'tanstack-router', icon: '🌴', onSelect: () => clickHidden('.TanStackRouterDevtools > button') },
+  { id: 'react-query', icon: '📡', onSelect: () => clickHidden('.tsqd-parent-container .tsqd-open-btn') },
+  {
+    id: 'react-scan',
+    icon: '⏱️',
+    onSelect: () => {
+      const enable = localStorage.getItem(reactScanKey) !== 'true';
+      localStorage.setItem(reactScanKey, String(enable));
       void runScan(enable);
-      return;
-    }
+    },
+  },
+  { id: 'sync-devtools', icon: '⚡', onSelect: () => useSyncDevtoolsStore.setState((state) => ({ open: !state.open })) },
+];
 
-    if (!item.parent || !item.element) return;
-
-    const parent = document.querySelector<HTMLElement>(item.parent);
-    if (!parent) return;
-
-    const htmlElement = parent.querySelector<HTMLButtonElement>(item.element);
-    if (!htmlElement) return;
-
-    htmlElement.click();
-  };
+/**
+ * Devtools panels, mounted once at the root. Inside a sheet, the drawer's transform would contain their
+ * fixed-position panels and add blank scroll to it.
+ */
+function Devtools() {
+  const syncDevtoolsOpen = useSyncDevtoolsStore((state) => state.open);
 
   useEffect(() => {
-    const enabled = localStorage.getItem('react-scan-enabled') === 'true';
-    if (enabled) {
-      void runScan(true);
-    }
+    if (localStorage.getItem(reactScanKey) === 'true') void runScan(true);
   }, []);
 
   return (
     <>
       <TanStackRouterDevtools router={router} />
       <ReactQueryDevtools client={queryClient} />
-      <SyncDevtools isOpen={syncDevtoolsOpen} onClose={() => setSyncDevtoolsOpen(false)} />
-
-      <DropdownMenu>
-        <DropdownMenuTrigger render={<Button variant="ghost" className={cn('h-12 w-12', className)} aria-label="toggle debug toolbar" />}>
-          🐞
-        </DropdownMenuTrigger>
-        <DropdownMenuContent side="right" align="end" sideOffset={24} positionerClassName="z-300" className="w-48 p-1">
-          {debugOptions.map((item) => (
-            <DropdownMenuItem key={item.id} onClick={() => debugToggle(item)}>
-              <span className="mr-2">{item.icon}</span>
-              <span>{item.id}</span>
-            </DropdownMenuItem>
-          ))}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {syncDevtoolsOpen && <SyncDevtools onClose={() => useSyncDevtoolsStore.setState({ open: false })} />}
     </>
   );
 }
 
-export { DebugDropdown };
+/** 🐞 menu that toggles the panels mounted by `Devtools` and links to local dev tools. */
+function DebugDropdown({ className }: DebugDropdownProps) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger render={<Button variant="ghost" className={cn('h-12 w-12', className)} aria-label="toggle debug toolbar" />}>
+        🐞
+      </DropdownMenuTrigger>
+      <DropdownMenuContent side="right" align="end" sideOffset={24} positionerClassName="z-300" className="w-48 p-1">
+        {debugOptions.map(({ id, icon, onSelect }) => (
+          <DropdownMenuItem key={id} onClick={onSelect}>
+            <span className="mr-2">{icon}</span>
+            <span>{id}</span>
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+export { DebugDropdown, Devtools };

@@ -47,7 +47,7 @@ export type ChannelBase = {
 };
 
 /**
- * Base schema for content entities with creator tracking (e.g. page, attachment).
+ * Base schema for content entities with creator tracking (e.g. attachment).
  */
 export type ProductBase = {
   id: string;
@@ -100,11 +100,6 @@ export type StxBase = {
    */
   replayed?: boolean;
 };
-
-/**
- * Boolean query value accepted as a boolean or its lowercase string representation.
- */
-export type BooleanQueryValue = 'true' | 'false' | boolean;
 
 /**
  * Realtime notification delivered via SSE for entity and membership changes.
@@ -4075,10 +4070,7 @@ export type SendNewsletterData = {
   };
   path?: never;
   query?: {
-    /**
-     * Boolean query value accepted as a boolean or its lowercase string representation.
-     */
-    toSelf?: BooleanQueryValue;
+    toSelf?: 'true' | 'false' | boolean;
   };
   url: '/system/newsletter';
 };
@@ -4366,10 +4358,7 @@ export type GetUserData = {
     relatableUserId: string;
   };
   query?: {
-    /**
-     * Boolean query value accepted as a boolean or its lowercase string representation.
-     */
-    slug?: BooleanQueryValue;
+    slug?: 'true' | 'false' | boolean;
   };
   url: '/users/users/{relatableUserId}';
 };
@@ -4681,10 +4670,7 @@ export type GetOrganizationData = {
     id: string;
   };
   query?: {
-    /**
-     * Boolean query value accepted as a boolean or its lowercase string representation.
-     */
-    slug?: BooleanQueryValue;
+    slug?: 'true' | 'false' | boolean;
     include?: string;
   };
   url: '/{tenantId}/organizations/{id}';
@@ -5159,10 +5145,7 @@ export type UpdateAttachmentData = {
     id: string;
   };
   query?: {
-    /**
-     * Boolean query value accepted as a boolean or its lowercase string representation.
-     */
-    fullResponse?: BooleanQueryValue;
+    fullResponse?: 'true' | 'false' | boolean;
   };
   url: '/{tenantId}/{organizationId}/attachments/{id}';
 };

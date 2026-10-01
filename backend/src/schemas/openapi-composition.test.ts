@@ -10,7 +10,6 @@ import { nullableStxBaseSchema, stxBaseSchema } from './sync-transaction-schemas
 const registry = new OpenAPIRegistry();
 registry.register('UserMinimalBase', userMinimalBaseSchema);
 registry.register('StxBase', stxBaseSchema);
-registry.register('BooleanQueryValue', booleanTransformSchema);
 registry.register(
   'ReusableUnionFixture',
   z.object({ user: nullableUserMinimalBaseSchema, stx: nullableStxBaseSchema, flag: booleanTransformSchema.optional() }),
@@ -32,7 +31,7 @@ describe('OpenAPI composition conventions', () => {
     };
     expect(schemas).toMatchObject({
       ReusableUnionFixture: {
-        properties: { user: nullableUserRef, stx: nullableStxRef, flag: { $ref: '#/components/schemas/BooleanQueryValue' } },
+        properties: { user: nullableUserRef, stx: nullableStxRef },
       },
       StreamNotification: { properties: { stx: nullableStxRef } },
     });
@@ -41,12 +40,13 @@ describe('OpenAPI composition conventions', () => {
     expect(Object.keys(schemas).filter((name) => name.startsWith('Nullable'))).toEqual([]);
   });
 
-  it('references genuinely reusable unions by name', () => {
+  it('inlines the boolean query helper instead of exposing it as a component schema', () => {
     expect(schemas).toMatchObject({
-      BooleanQueryValue: {
-        anyOf: [{ type: 'string', enum: ['true', 'false'] }, { type: 'boolean' }],
+      ReusableUnionFixture: {
+        properties: { flag: { anyOf: [{ type: 'string', enum: ['true', 'false'] }, { type: 'boolean' }] } },
       },
     });
+    expect(schemas).not.toHaveProperty('BooleanQueryValue');
   });
 
   it('uses nullable type arrays for inline primitives and objects', () => {

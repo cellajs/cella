@@ -82,6 +82,12 @@ export type DocPage = {
 /** DOM id prefix the mdx pipeline (rehype-slug) puts on heading ids; spy store convention. */
 const HEADING_ID_PREFIX = 'spy-';
 
+/**
+ * Spy section of the page itself: the article wraps every heading, so it is current until the first heading takes over.
+ * Heading slugs never contain a slash, so it can't clash with one (pages do have an `## Overview` heading).
+ */
+export const PAGE_SECTION_ID = 'page/intro';
+
 // Frontmatter and headings come from a build-time index (vite/docs-frontmatter.ts); importing page modules for it would pull every page body into this chunk.
 const metaModules = docsFrontmatter;
 const componentModules = import.meta.glob<ComponentType>('/src/content/docs/**/*.{md,mdx}', { import: 'default' });

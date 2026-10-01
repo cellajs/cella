@@ -48,10 +48,10 @@ function OperationsPage() {
   return (
     <div>
       <div className="container">
-        <DocsPageHeader title={t('c:operation', { count: 2 })} />
+        <DocsPageHeader title={t('c:operation', { count: 2 })} className="pb-2" />
       </div>
 
-      <StickyBox className="z-10 bg-background/60 backdrop-blur-xs" placeholderClassName="my-2" hideWhenOutOfView>
+      <StickyBox className="z-10 bg-background/60 backdrop-blur-xs" hideWhenOutOfView>
         <div className="container flex items-center gap-3 py-3">
           <ViewModeToggle />
 

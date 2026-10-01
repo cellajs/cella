@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { nanoid } from 'shared/utils/nanoid';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useCurrentSection } from '~/hooks/use-scroll-spy';
+import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import type { TKey } from '~/lib/i18n-locales';
 import type { LegalSubject } from '~/modules/auth/legal/legal-config';
 import type { LegalSection } from '~/modules/auth/legal/legal-types';
@@ -29,6 +30,8 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
   const { t } = useTranslation();
 
   const isMobile = useBreakpointBelow('sm');
+  // Below `md` the aside stacks above the legal text, so a height animation would relayout the text every frame
+  const isStacked = useBreakpointBelow('md', false);
 
   const [layoutId] = useState(() => nanoid());
 
@@ -54,9 +57,17 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
         const isActive = id === currentSubject;
         const isExpanded = expanded === id;
         const subjectSections = sections.filter((s) => s.label);
+        // Collapsing is a re-click at the subject's overview. Further down, the link scrolls back up and the subject stays open.
+        const isAtSubject = isActive && currentSection === 'overview';
 
         return (
-          <Collapsible key={id} open={isExpanded} onOpenChange={() => toggleExpanded(id)}>
+          <Collapsible
+            key={id}
+            open={isExpanded}
+            onOpenChange={(open) => {
+              if (open || isAtSubject) toggleExpanded(id);
+            }}
+          >
             <div className="group/subject relative" data-active={isActive} data-expanded={isExpanded}>
               <div className="pointer-events-none absolute top-4.5 bottom-3 left-2.5 hidden flex-col items-center group-data-[expanded=true]/subject:flex">
                 <div className="w-px flex-1 bg-muted-foreground/30" />
@@ -70,6 +81,10 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                     hashScrollIntoView={{ behavior: 'instant' }}
                     resetScroll={true}
                     draggable={false}
+                    // A link to the current subject only changes the hash, which doesn't scroll
+                    onClick={() => {
+                      if (isActive && !isAtSubject) requestAnimationFrame(() => scrollToSectionById('overview'));
+                    }}
                     className={cn(
                       buttonVariants({ variant: 'ghost' }),
                       'group h-8 w-full pl-5 text-left font-normal opacity-80',
@@ -82,7 +97,11 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                 <span className="truncate">{t(label)}</span>
                 <ChevronDownIcon className="invisible ml-auto size-4 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/subject:rotate-180" />
               </CollapsibleTrigger>
-              <CollapsibleContent keepMounted className="overflow-hidden data-closed:hidden">
+              {/* keepMounted preserves the data-spy-active marks the scroll spy sets on rows outside React */}
+              <CollapsibleContent
+                keepMounted
+                className={cn('overflow-hidden', !isStacked && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}
+              >
                 <div className="relative flex flex-col px-0 py-1">
                   {subjectSections.map(({ id: sectionId, label: sectionLabel }) => (
                     <SpyNavItem

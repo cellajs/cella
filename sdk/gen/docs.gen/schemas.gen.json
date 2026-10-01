@@ -271,7 +271,7 @@
       "module": ["entities"],
       "owner": ["cella"]
     },
-    "description": "Base schema for content entities with creator tracking (e.g. page, attachment).",
+    "description": "Base schema for content entities with creator tracking (e.g. attachment).",
     "example": {
       "id": "7e460470-da58-4733-a7ff-0d31897ecf8d",
       "createdAt": "2024-07-02T14:28:38.152Z",
@@ -1956,25 +1956,6 @@
       "severity": "warn",
       "timestamp": "2025-01-01T12:00:00.000Z"
     }
-  },
-  {
-    "name": "BooleanQueryValue",
-    "ref": "#/components/schemas/BooleanQueryValue",
-    "schema": {
-      "anyOf": [
-        {
-          "type": "string",
-          "enum": ["true", "false"]
-        },
-        { "type": "boolean" }
-      ]
-    },
-    "schemaTag": "base",
-    "tagsByKind": {
-      "schema": ["base"],
-      "owner": ["cella"]
-    },
-    "description": "Boolean query value accepted as a boolean or its lowercase string representation."
   },
   {
     "name": "ConflictError",
