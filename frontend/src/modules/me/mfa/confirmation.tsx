@@ -1,8 +1,9 @@
 import { ShieldCheckIcon, ShieldMinusIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
+import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useToggleMfaMutation } from '~/modules/me/query';
-import { Button, SubmitButton } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 
 /** Confirms turning MFA on or off; a session that is not stepped up first proves the user's second factor. */
 export function ConfirmMfaToggle({ mfaRequired }: { mfaRequired: boolean }) {

@@ -1,13 +1,13 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import type { TKey } from '~/lib/i18n-locales';
-import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/ui/combobox';
+import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/common/form-fields/select-combobox/combobox-select';
 
 /**
  * A searchable dropdown component built on base-ui Combobox.
  */
 const meta = {
-  title: 'ui/Combobox',
+  title: 'common/ComboboxSelect',
   component: ComboboxSelect,
   tags: ['autodocs'],
   parameters: { layout: 'centered' },
