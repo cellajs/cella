@@ -35,8 +35,5 @@ export const stepUpEmail = defineEmailTemplate<StepUpStatic, EmailRecipient & { 
       />
     );
   },
-  preview: {
-    statics: { stepUpUrl: 'https://example.com/step-up', name: 'Emily' },
-    recipient: {},
-  },
+  preview: { statics: { stepUpUrl: 'https://example.com/step-up', name: 'Emily' }, recipient: {} },
 });

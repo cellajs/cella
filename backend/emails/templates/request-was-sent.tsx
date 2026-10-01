@@ -15,12 +15,7 @@ interface RequestResponseStatic {
 export const requestResponseEmail = defineEmailTemplate<RequestResponseStatic>()({
   translate(lng, { type }) {
     return {
-      subject: i18n.t('backend:email.request.subject', {
-        lng,
-        appName: appConfig.name,
-        requestType: type,
-        ...plainText,
-      }),
+      subject: i18n.t('backend:email.request.subject', { lng, appName: appConfig.name, requestType: type, ...plainText }),
       headerHtml: i18n.t(`backend:email.${type}_request.title`, { lng }),
       bodyHtml: i18n.t(`backend:email.${type}_request.text`, { lng, appName: appConfig.name }),
       supportText: i18n.t('backend:email.support_email', { lng }),
@@ -29,8 +24,5 @@ export const requestResponseEmail = defineEmailTemplate<RequestResponseStatic>()
   component({ subject, headerHtml, bodyHtml, supportText }) {
     return <EmailMessage previewText={subject} headerHtml={headerHtml} bodyHtml={bodyHtml} supportText={supportText} />;
   },
-  preview: {
-    statics: { type: 'contact', message: null },
-    recipient: {},
-  },
+  preview: { statics: { type: 'contact', message: null }, recipient: {} },
 });

@@ -78,12 +78,7 @@ const toPascalCase = (str: string): string => {
 };
 
 /** Error responses (status >= 400) resolve by responseName, success responses by operationId + 'Response'. */
-export const getZodCodeForResponse = (
-  zodIndex: DefinitionIndex,
-  operationId: string,
-  status: number,
-  responseName?: string,
-): string => {
+export const getZodCodeForResponse = (zodIndex: DefinitionIndex, operationId: string, status: number, responseName?: string): string => {
   const isError = status >= 400;
   const schemaName = isError && responseName ? responseName : `${toPascalCase(operationId)}Response`;
   const name = `z${schemaName}`;
@@ -112,9 +107,7 @@ export const getTypeCodeForResponse = (typesIndex: DefinitionIndex, operationId:
 /** Combines the available Path / Query / Body schemas: zod.gen.ts has no composite `Data` schema. */
 export const getZodCodeForRequest = (zodIndex: DefinitionIndex, operationId: string): string => {
   const base = `z${toPascalCase(operationId)}`;
-  const parts = (['Path', 'Query', 'Body'] as const)
-    .map((part) => zodIndex.get(`${base}${part}`))
-    .filter((def): def is string => Boolean(def));
+  const parts = (['Path', 'Query', 'Body'] as const).map((part) => zodIndex.get(`${base}${part}`)).filter((def): def is string => Boolean(def));
 
   if (parts.length === 0) {
     return `// No request schemas (${base}Path / ${base}Query / ${base}Body) found in zod.gen.ts`;

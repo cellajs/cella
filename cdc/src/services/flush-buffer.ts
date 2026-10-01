@@ -52,9 +52,7 @@ export class FlushBuffer {
 
     // Safety cap.
     if (this.pending.length >= RESOURCE_LIMITS.buffers.maxBufferedEvents) {
-      log.trace('Flush buffer hit size cap, flushing immediately', {
-        count: this.pending.length,
-      });
+      log.trace('Flush buffer hit size cap, flushing immediately', { count: this.pending.length });
       await this.flush();
       return;
     }
@@ -95,9 +93,7 @@ export class FlushBuffer {
         else groups.set(key, [event]);
       }
 
-      const results = await Promise.allSettled(
-        [...groups.values()].map((groupEvents) => this.processEvents(groupEvents)),
-      );
+      const results = await Promise.allSettled([...groups.values()].map((groupEvents) => this.processEvents(groupEvents)));
 
       for (const result of results) {
         if (result.status === 'rejected') {
@@ -111,10 +107,7 @@ export class FlushBuffer {
       metrics.recordFlush(events.length, performance.now() - flushStart);
 
       if (events.length > 1) {
-        log.trace('Flush buffer batch processed', {
-          totalEvents: events.length,
-          groups: groups.size,
-        });
+        log.trace('Flush buffer batch processed', { totalEvents: events.length, groups: groups.size });
       }
     } finally {
       this.flushing = false;

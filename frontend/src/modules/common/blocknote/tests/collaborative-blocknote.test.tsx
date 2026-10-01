@@ -15,9 +15,7 @@ const connection = { provider: {}, fragment: {}, synced: true, stopped: false, r
 vi.mock('~/modules/common/blocknote/yjs-connections', () => ({
   useYjsConnection: (editSessionId: string | undefined) => (editSessionId ? { ...connection } : null),
 }));
-vi.mock('~/modules/common/blocknote/hooks/use-yjs-token', () => ({
-  useYjsToken: () => ({ token: 'token', refused: false }),
-}));
+vi.mock('~/modules/common/blocknote/hooks/use-yjs-token', () => ({ useYjsToken: () => ({ token: 'token', refused: false }) }));
 vi.mock('~/hooks/use-online-manager', () => ({ useOnlineManager: () => true }));
 vi.mock('~/modules/user/user-store', () => ({ useCurrentUser: () => ({ name: 'Editor' }) }));
 vi.mock('~/modules/common/spinner', () => ({ Spinner: () => null }));

@@ -48,10 +48,7 @@ export const Button: JsxEmailComponent<ButtonProps> = ({
     width: '100%',
   } as const;
 
-  const borderStyles = {
-    border: `${borderSize}px solid ${borderColor}`,
-    msoBorderAlt: 'none',
-  };
+  const borderStyles = { border: `${borderSize}px solid ${borderColor}`, msoBorderAlt: 'none' };
 
   const propStyles = {
     ...(borderColor ? borderStyles : {}),
@@ -60,14 +57,7 @@ export const Button: JsxEmailComponent<ButtonProps> = ({
   };
 
   return (
-    <table
-      width="100%"
-      border={0}
-      cellPadding={0}
-      cellSpacing={0}
-      style={{ borderCollapse: 'collapse' }}
-      role="presentation"
-    >
+    <table width="100%" border={0} cellPadding={0} cellSpacing={0} style={{ borderCollapse: 'collapse' }} role="presentation">
       <tr>
         <td align={align}>
           {/* VML Fallback for mso clients; raw HTML, so the link and text are escaped here */}
@@ -97,10 +87,7 @@ export const Button: JsxEmailComponent<ButtonProps> = ({
               cellPadding={0}
               cellSpacing={0}
               role="presentation"
-              style={{
-                border: `${borderSize ?? '0'}px solid ${borderColor ?? 'inherit'}`,
-                borderRadius,
-              }}
+              style={{ border: `${borderSize ?? '0'}px solid ${borderColor ?? 'inherit'}`, borderRadius }}
             >
               <tr>
                 <td
@@ -108,13 +95,7 @@ export const Button: JsxEmailComponent<ButtonProps> = ({
                   bgcolor={backgroundColor}
                   width={width}
                   height={height}
-                  style={{
-                    borderRadius,
-                    height,
-                    maxWidth: width,
-                    textAlign: 'center',
-                    width,
-                  }}
+                  style={{ borderRadius, height, maxWidth: width, textAlign: 'center', width }}
                 >
                   <a
                     href={href}
@@ -133,16 +114,7 @@ export const Button: JsxEmailComponent<ButtonProps> = ({
               </tr>
             </table>
           ) : (
-            <a
-              href={href}
-              style={{
-                ...baseStyles,
-                ...propStyles,
-                ...style,
-                ...(withBackground ? {} : { msoHide: 'all' }),
-              }}
-              {...props}
-            >
+            <a href={href} style={{ ...baseStyles, ...propStyles, ...style, ...(withBackground ? {} : { msoHide: 'all' }) }} {...props}>
               {children}
             </a>
           )}

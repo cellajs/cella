@@ -33,10 +33,7 @@ export const notificationListQuerySchema = z.object({
   before: z.string().optional().describe('createdAt of the last row of the previous page'),
 });
 
-export const notificationListResponseSchema = z.object({
-  items: notificationSchema.array(),
-  unreadCount: z.number().int().min(0),
-});
+export const notificationListResponseSchema = z.object({ items: notificationSchema.array(), unreadCount: z.number().int().min(0) });
 
 /** Omitting both marks every unread notification read. */
 export const markReadBodySchema = z.object({
@@ -44,14 +41,8 @@ export const markReadBodySchema = z.object({
   contextId: validIdSchema.optional().describe('Mark everything sharing one context read'),
 });
 
-export const markReadResponseSchema = z.object({
-  updated: z.number().int().min(0),
-});
+export const markReadResponseSchema = z.object({ updated: z.number().int().min(0) });
 
-export const preferencesSchema = z.object({
-  mentionEmail: z.boolean(),
-  commentEmail: z.boolean(),
-  digest: z.enum(digestFrequencies),
-});
+export const preferencesSchema = z.object({ mentionEmail: z.boolean(), commentEmail: z.boolean(), digest: z.enum(digestFrequencies) });
 
 export const updatePreferencesBodySchema = preferencesSchema.partial();

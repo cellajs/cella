@@ -161,14 +161,10 @@ const generate = async () => {
     await createClient(createOpenApiConfig(tempOutputPath));
 
     // The temp folder is gitignored, so `--vcs-use-ignore-file=false` keeps biome from skipping it and leaving hey-api's raw output; a non-zero exit is fine, zero files processed is not.
-    const biomeResult = spawnSync(
-      'pnpm',
-      ['biome', 'check', '--write', '--vcs-use-ignore-file=false', tempOutputPath],
-      {
-        cwd: rootDir,
-        encoding: 'utf-8',
-      },
-    );
+    const biomeResult = spawnSync('pnpm', ['biome', 'check', '--write', '--vcs-use-ignore-file=false', tempOutputPath], {
+      cwd: rootDir,
+      encoding: 'utf-8',
+    });
     const biomeOutput = `${biomeResult.stdout ?? ''}${biomeResult.stderr ?? ''}`;
     if (biomeResult.error || /No files were processed/.test(biomeOutput)) {
       console.warn(
@@ -182,9 +178,7 @@ const generate = async () => {
     if (!changed) {
       saveSpecHash();
       const elapsed = ((performance.now() - startTime) / 1000).toFixed(2);
-      console.info(
-        `${timestamp()} [Openapi gen] ${checkMark} Generated SDK unchanged: keeping existing output (${elapsed}s)`,
-      );
+      console.info(`${timestamp()} [Openapi gen] ${checkMark} Generated SDK unchanged: keeping existing output (${elapsed}s)`);
       return;
     }
 
@@ -198,9 +192,7 @@ const generate = async () => {
       }
 
       const newFiles = new Set(getFilesRecursively(tempPath).map((f) => f.slice(tempPath.length)));
-      const oldFiles = existsSync(finalPath)
-        ? getFilesRecursively(finalPath).map((f) => f.slice(finalPath.length))
-        : [];
+      const oldFiles = existsSync(finalPath) ? getFilesRecursively(finalPath).map((f) => f.slice(finalPath.length)) : [];
 
       // Overwrites existing files atomically per file.
       cpSync(tempPath, finalPath, { recursive: true });
@@ -274,10 +266,7 @@ if (watchMode) {
     console.warn(`${timestamp()} ${crossMark} openapi.cache.json not found. Run \`pnpm sdk\` first.`);
   }
 
-  const watcher = chokidar.watch(specPath, {
-    ignoreInitial: true,
-    awaitWriteFinish: { stabilityThreshold: 150, pollInterval: 50 },
-  });
+  const watcher = chokidar.watch(specPath, { ignoreInitial: true, awaitWriteFinish: { stabilityThreshold: 150, pollInterval: 50 } });
 
   watcher.on('change', () => {
     void triggerGeneration();

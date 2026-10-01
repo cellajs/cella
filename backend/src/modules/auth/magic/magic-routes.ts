@@ -14,8 +14,7 @@ const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [magicLinkLimiter, spamLimiter],
     middleware: isNoBot,
     summary: 'Send magic link',
-    description:
-      'Sends a magic link sign-in email to the specified address. Always returns 204 to prevent email enumeration.',
+    description: 'Sends a magic link sign-in email to the specified address. Always returns 204 to prevent email enumeration.',
     request: { body: jsonBody(magicLinkBodySchema) },
     responses: { 204: { description: 'Magic link email sent (or silently ignored if email not found)' } },
   }),
@@ -27,12 +26,7 @@ const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Get pending magic link',
     description:
       'For a magic link opened in a browser that did not request it: the address it signs in, so the holder can recognize the account before confirming.',
-    responses: {
-      200: json(
-        'The full address the held link signs in, as the confirm page shows it',
-        z.object({ email: z.string() }),
-      ),
-    },
+    responses: { 200: json('The full address the held link signs in, as the confirm page shows it', z.object({ email: z.string() })) },
   }),
   confirmMagicLink: xRoute({
     method: 'post',

@@ -3,14 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { attachmentsDb } from '../offline/attachments-db';
 
 // Mock external deps
-vi.mock('shared', async () => ({
-  appConfig: (await import('./test-setup')).mockAttachmentAppConfig,
-}));
+vi.mock('shared', async () => ({ appConfig: (await import('./test-setup')).mockAttachmentAppConfig }));
 
 vi.mock('../offline/storage-service', () => ({
-  attachmentStorage: {
-    getStoredVariants: vi.fn().mockResolvedValue([]),
-  },
+  attachmentStorage: { getStoredVariants: vi.fn().mockResolvedValue([]) },
 }));
 
 import { bindLocalUserDb } from '~/query/local-user-db';

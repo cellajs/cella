@@ -86,15 +86,7 @@ export const createLogger = ({
   // Console target: human-readable pretty in dev, raw JSON on stdout in production/containers.
   const consoleTarget: pino.TransportTargetOptions = isProduction
     ? { target: 'pino/file', options: { destination: 1 } }
-    : {
-        target: 'pino-pretty',
-        options: {
-          colorize: true,
-          singleLine: true,
-          ignore: 'pid,hostname',
-          ...transportOptions,
-        },
-      };
+    : { target: 'pino-pretty', options: { colorize: true, singleLine: true, ignore: 'pid,hostname', ...transportOptions } };
 
   // pino-opentelemetry-transport runs in a worker thread with its own OTLP exporter, so it needs
   // the endpoint and ingest key passed explicitly. Enabled in dev too, so logs reach Maple in the
@@ -113,10 +105,7 @@ export const createLogger = ({
               recordProcessorType: 'batch',
               exporterOptions: {
                 protocol: 'http',
-                httpExporterOptions: {
-                  url: MAPLE_LOGS_INGEST_URL,
-                  headers: { 'x-maple-ingest-key': mapleSecretIngestKey },
-                },
+                httpExporterOptions: { url: MAPLE_LOGS_INGEST_URL, headers: { 'x-maple-ingest-key': mapleSecretIngestKey } },
               },
             },
           },
@@ -126,22 +115,14 @@ export const createLogger = ({
   // Without OTel: raw stdout in production (no worker thread), pretty transport in dev.
   const destination =
     injectedDestination ??
-    (otelTarget
-      ? pino.transport({ targets: [consoleTarget, otelTarget] })
-      : isProduction
-        ? undefined
-        : pino.transport(consoleTarget));
+    (otelTarget ? pino.transport({ targets: [consoleTarget, otelTarget] }) : isProduction ? undefined : pino.transport(consoleTarget));
 
   return pino(
     {
       level: level ?? (isTest ? 'silent' : 'info'),
       // Pino convention: an Error under `err` (or `error`) expands to { type, message, stack }, keeping nested
       // `cause` chains, which is where Drizzle puts pg errors. A logged `url` goes through `scrubUrl`.
-      serializers: {
-        err: serializeError,
-        error: serializeError,
-        url: (url: unknown) => (typeof url === 'string' ? scrubUrl(url) : url),
-      },
+      serializers: { err: serializeError, error: serializeError, url: (url: unknown) => (typeof url === 'string' ? scrubUrl(url) : url) },
       // Tag each line with the active OTel span so Maple joins logs to traces, including those
       // started by the frontend's traceparent.
       mixin() {

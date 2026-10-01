@@ -8,29 +8,13 @@ import { MarketingLayout } from '~/modules/marketing/layout';
 type ContactMethod = { icon: typeof MapPinIcon; title: TKey; link: string; textKey?: TKey; text?: string };
 
 const methods: ContactMethod[] = [
-  {
-    icon: MapPinIcon,
-    title: 'c:visit',
-    link: appConfig.company.googleMapsUrl,
-    text: appConfig.company.streetAddress,
-  },
+  { icon: MapPinIcon, title: 'c:visit', link: appConfig.company.googleMapsUrl, text: appConfig.company.streetAddress },
   { icon: MailIcon, title: 'c:email', link: `mailto:${appConfig.company.email}`, text: appConfig.company.email },
 ];
 
 if (appConfig.company.scheduleCallUrl)
-  methods.push({
-    icon: CalendarCheckIcon,
-    title: 'c:book',
-    link: appConfig.company.scheduleCallUrl,
-    textKey: 'c:schedule_call.text',
-  });
-if (appConfig.company.tel)
-  methods.push({
-    icon: PhoneCallIcon,
-    title: 'c:call',
-    link: `tel:${appConfig.company.tel}`,
-    text: appConfig.company.tel,
-  });
+  methods.push({ icon: CalendarCheckIcon, title: 'c:book', link: appConfig.company.scheduleCallUrl, textKey: 'c:schedule_call.text' });
+if (appConfig.company.tel) methods.push({ icon: PhoneCallIcon, title: 'c:call', link: `tel:${appConfig.company.tel}`, text: appConfig.company.tel });
 
 export function ContactPage() {
   const { t } = useTranslation();
@@ -38,9 +22,7 @@ export function ContactPage() {
   return (
     <MarketingLayout title="c:contact_us">
       <div className="container pt-20 pb-16">
-        <h1 className="mb-4 text-center font-semibold text-3xl sm:text-left md:text-4xl">
-          {t('c:leave_message.text')}
-        </h1>
+        <h1 className="mb-4 text-center font-semibold text-3xl sm:text-left md:text-4xl">{t('c:leave_message.text')}</h1>
         <p className="mb-8 text-center text-muted-foreground sm:text-left sm:text-lg">{t('c:contact_us.text')}</p>
         <ContactForm />
       </div>

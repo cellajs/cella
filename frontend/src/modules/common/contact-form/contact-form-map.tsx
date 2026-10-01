@@ -1,12 +1,4 @@
-import {
-  AdvancedMarker,
-  APIProvider,
-  ControlPosition,
-  Map as GMap,
-  InfoWindow,
-  MapControl,
-  useAdvancedMarkerRef,
-} from '@vis.gl/react-google-maps';
+import { AdvancedMarker, APIProvider, ControlPosition, Map as GMap, InfoWindow, MapControl, useAdvancedMarkerRef } from '@vis.gl/react-google-maps';
 import { ArrowUpRightIcon, MilestoneIcon, MinusIcon, PlusIcon, XIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useState } from 'react';
@@ -19,26 +11,11 @@ import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
 import Logo from '/static/common/logo/logo-icon-only.svg';
 
-type MapConfig = {
-  id: string;
-  label: string;
-  mapId?: string;
-  mapTypeId?: string;
-};
+type MapConfig = { id: string; label: string; mapId?: string; mapTypeId?: string };
 
 const mapStyles: MapConfig[] = [
-  {
-    id: 'light',
-    label: 'Light',
-    mapId: '49ae42fed52588c3',
-    mapTypeId: 'roadmap',
-  },
-  {
-    id: 'dark',
-    label: 'Dark',
-    mapId: '739af084373f96fe',
-    mapTypeId: 'roadmap',
-  },
+  { id: 'light', label: 'Light', mapId: '49ae42fed52588c3', mapTypeId: 'roadmap' },
+  { id: 'dark', label: 'Dark', mapId: '739af084373f96fe', mapTypeId: 'roadmap' },
 ];
 
 function MarkerWithInfoWindow({ position }: { position: { lat: number; lng: number } }) {
@@ -80,22 +57,13 @@ function MarkerWithInfoWindow({ position }: { position: { lat: number; lng: numb
   );
 }
 
-type CustomZoomControlProps = {
-  controlPosition: ControlPosition;
-  zoom: number;
-  onZoomChange: (zoom: number) => void;
-};
+type CustomZoomControlProps = { controlPosition: ControlPosition; zoom: number; onZoomChange: (zoom: number) => void };
 
 function CustomZoomControl({ controlPosition, zoom, onZoomChange }: CustomZoomControlProps) {
   return (
     <MapControl position={controlPosition}>
       <div className="m-2 flex flex-col p-1">
-        <Button
-          onClick={() => onZoomChange(zoom + 0.5)}
-          size="micro"
-          variant="outlineGhost"
-          className="rounded-b-none border-b-0"
-        >
+        <Button onClick={() => onZoomChange(zoom + 0.5)} size="micro" variant="outlineGhost" className="rounded-b-none border-b-0">
           <PlusIcon className="icon-sm" />
         </Button>
         <Button onClick={() => onZoomChange(zoom - 0.5)} size="micro" variant="outlineGhost" className="rounded-t-none">
@@ -143,11 +111,7 @@ function ContactFormMap() {
                     defaultZoom={appConfig.company.mapZoom}
                   >
                     <MarkerWithInfoWindow position={appConfig.company.coordinates} />
-                    <CustomZoomControl
-                      controlPosition={ControlPosition.LEFT_BOTTOM}
-                      zoom={zoom}
-                      onZoomChange={setZoom}
-                    />
+                    <CustomZoomControl controlPosition={ControlPosition.LEFT_BOTTOM} zoom={zoom} onZoomChange={setZoom} />
                   </GMap>
                 </motion.div>
               )}

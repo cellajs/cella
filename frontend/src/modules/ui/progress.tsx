@@ -2,11 +2,7 @@ import { Progress as ProgressPrimitive } from '@base-ui/react/progress';
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
-export function Progress({
-  className,
-  value,
-  ...props
-}: React.ComponentProps<typeof ProgressPrimitive.Root> & { value?: number }) {
+export function Progress({ className, value, ...props }: React.ComponentProps<typeof ProgressPrimitive.Root> & { value?: number }) {
   return (
     <ProgressPrimitive.Root
       data-slot="progress"

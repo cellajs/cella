@@ -96,23 +96,9 @@ export const useColumns = () => {
         const variant = row.status === 'active' ? 'success' : row.status === 'suspended' ? 'warning' : 'plain';
         return <Badge variant={variant}>{t(`c:${row.status}`)}</Badge>;
       },
-      renderEditCell: (props) => (
-        <RenderEnumSelect
-          {...props}
-          field="status"
-          options={statusOptions}
-          renderOption={(status) => t(`c:${status}`)}
-        />
-      ),
+      renderEditCell: (props) => <RenderEnumSelect {...props} field="status" options={statusOptions} renderOption={(status) => t(`c:${status}`)} />,
     },
-    {
-      key: 'name',
-      name: t('c:name'),
-      sortable: true,
-      resizable: true,
-      minWidth: 180,
-      placeholderValue: '-',
-    },
+    { key: 'name', name: t('c:name'), sortable: true, resizable: true, minWidth: 180, placeholderValue: '-' },
     ellipsisColumn<TenantWithOrganization>(() => [
       {
         label: t('c:edit'),

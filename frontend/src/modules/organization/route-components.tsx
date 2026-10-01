@@ -9,10 +9,7 @@ import { lazyNamed } from '~/utils/lazy-named';
 const OrganizationPage = lazyNamed(() => import('~/modules/organization/organization-page'), 'OrganizationPage');
 const MembersTable = lazyNamed(() => import('~/modules/memberships/members-table/members-table'), 'MembersTable');
 const AttachmentsTable = lazyNamed(() => import('~/modules/attachment/table/attachments-table'), 'AttachmentsTable');
-const OrganizationSettings = lazyNamed(
-  () => import('~/modules/organization/organization-settings'),
-  'OrganizationSettings',
-);
+const OrganizationSettings = lazyNamed(() => import('~/modules/organization/organization-settings'), 'OrganizationSettings');
 
 const orgRouteApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization');
 const orgMembersApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/members');

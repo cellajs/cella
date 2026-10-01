@@ -134,10 +134,7 @@ describe('runtime secret schema alignment', () => {
         if (!(service in envSources)) continue;
         const source = envSources[service as keyof typeof envSources];
         expect(source, `missing env schema fixture for ${service}`).toBeTruthy();
-        expect(
-          source,
-          `${secret.envVar} must be declared in ${service}/src/env.ts when assigned to ${service}`,
-        ).toContain(`${secret.envVar}:`);
+        expect(source, `${secret.envVar} must be declared in ${service}/src/env.ts when assigned to ${service}`).toContain(`${secret.envVar}:`);
       }
     }
   });

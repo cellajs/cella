@@ -12,8 +12,7 @@ import { clearSecurityTestData, insertPasskey, passkeysOf } from './helpers';
 import { insertStaleSession, insertSteppedUpSession } from './session-helpers';
 
 const mfaRequiredOf = async (userId: string) =>
-  (await db.select({ mfaRequired: usersTable.mfaRequired }).from(usersTable).where(eq(usersTable.id, userId)))[0]
-    ?.mfaRequired;
+  (await db.select({ mfaRequired: usersTable.mfaRequired }).from(usersTable).where(eq(usersTable.id, userId)))[0]?.mfaRequired;
 
 /**
  * Turning MFA on or off changes how the account is protected, so a session alone must never be enough: the session
@@ -26,10 +25,7 @@ describe('MFA toggle step-up', async () => {
   afterEach(async () => await clearSecurityTestData());
 
   /** A TOTP holder with a session that stepped up `via` a factor; `steppedUp: false` gives a stale session alone. */
-  async function totpUserWithSession(
-    mfaRequired: boolean,
-    { withPasskey = true, steppedUp = true, via = 'totp' as StepUpProof } = {},
-  ) {
+  async function totpUserWithSession(mfaRequired: boolean, { withPasskey = true, steppedUp = true, via = 'totp' as StepUpProof } = {}) {
     const user = await createTotpUser(`mfa-${nanoid(8)}@security-test.com`);
     if (!mfaRequired) await db.update(usersTable).set({ mfaRequired: false }).where(eq(usersTable.id, user.id));
     const passkey = withPasskey ? await insertPasskey(user) : undefined;
@@ -84,8 +80,6 @@ describe('MFA toggle step-up', async () => {
     // Stepped up with the passkey: a step-up counts while its factor is held, and the authenticator app goes first.
     const off = await totpUserWithSession(false, { via: 'passkey' });
     expect((await call(deleteTotp, { headers: off.headers })).response.status).toBe(204);
-    expect((await call(deletePasskey, { path: { id: off.passkey!.id }, headers: off.headers })).response.status).toBe(
-      204,
-    );
+    expect((await call(deletePasskey, { path: { id: off.passkey!.id }, headers: off.headers })).response.status).toBe(204);
   });
 });

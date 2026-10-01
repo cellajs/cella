@@ -9,8 +9,7 @@ dayjs.extend(localizedFormat);
 type Row = Record<string, any>;
 
 /** A date as an export writes it, for a column's `exportValue`; a missing date stays missing. */
-export const exportDate = (date?: string | number | Date | null) =>
-  date ? dayjs.utc(date).local().format('lll') : null;
+export const exportDate = (date?: string | number | Date | null) => (date ? dayjs.utc(date).local().format('lll') : null);
 
 /** Exports visible table columns/rows to a downloadable CSV file. */
 export async function exportToCsv<R extends Row>(columns: ColumnOrColumnGroup<R>[], rows: R[], fileName: string) {
@@ -25,22 +24,13 @@ export async function exportToCsv<R extends Row>(columns: ColumnOrColumnGroup<R>
 }
 
 /** Exports visible table columns/rows to a PDF styled for `mode`, with a page-name and export-date header. */
-export async function exportToPdf<R extends Row>(
-  columns: ColumnOrColumnGroup<R>[],
-  rows: R[],
-  fileName: string,
-  pageName: string,
-  mode: Mode,
-) {
+export async function exportToPdf<R extends Row>(columns: ColumnOrColumnGroup<R>[], rows: R[], fileName: string, pageName: string, mode: Mode) {
   const preparedColumns = columns.filter((column) => filterColumns(column));
   const head = [preparedColumns.map((column) => String(column.name))];
   const body = formatBodyData(rows, preparedColumns);
 
   const [{ jsPDF }, autoTable] = await Promise.all([import('jspdf'), (await import('jspdf-autotable')).default]);
-  const doc = new jsPDF({
-    orientation: 'l',
-    unit: 'px',
-  });
+  const doc = new jsPDF({ orientation: 'l', unit: 'px' });
 
   const exportDate = dayjs().format('lll');
   const exportInfo = `Exported from page: ${pageName}\nExport Date: ${exportDate}`;
@@ -55,16 +45,8 @@ export async function exportToPdf<R extends Row>(
     body,
     startY: 40,
     horizontalPageBreak: true,
-    styles: {
-      cellPadding: 1.5,
-      fontSize: 10,
-      cellWidth: 'wrap',
-      textColor,
-      fillColor: backgroundColor,
-    },
-    bodyStyles: {
-      fillColor: backgroundColor,
-    },
+    styles: { cellPadding: 1.5, fontSize: 10, cellWidth: 'wrap', textColor, fillColor: backgroundColor },
+    bodyStyles: { fillColor: backgroundColor },
     alternateRowStyles: { fillColor: alternateBackgroundColor },
     tableWidth: 'wrap',
   });

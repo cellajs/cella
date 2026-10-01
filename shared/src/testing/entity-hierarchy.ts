@@ -103,12 +103,7 @@ export const buildTestEntityHierarchyPlan = ({
     }
 
     const idKey = appConfig.entityIdColumnKeys[channelType];
-    return {
-      channelType,
-      id,
-      idKey,
-      columnName: toColumnName(idKey),
-    };
+    return { channelType, id, idKey, columnName: toColumnName(idKey) };
   });
 
   return {

@@ -7,20 +7,13 @@ import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from 
 
 /** A BlockNote document of one paragraph, as the relay materializes it. */
 export const paragraph = (text: string) =>
-  JSON.stringify([
-    { id: generateId(), type: 'paragraph', props: {}, content: [{ type: 'text', text, styles: {} }], children: [] },
-  ]);
+  JSON.stringify([{ id: generateId(), type: 'paragraph', props: {}, content: [{ type: 'text', text, styles: {} }], children: [] }]);
 
 /**
  * An attachment in an organization. Attachments sit under RLS, so the row is arranged and read back on the admin
  * connection: under runtime_role a check on the test's own connection would pass vacuously.
  */
-export async function seedAttachment(opts: {
-  tenantId: string;
-  organizationId: string;
-  createdBy: string;
-  description: string;
-}) {
+export async function seedAttachment(opts: { tenantId: string; organizationId: string; createdBy: string; description: string }) {
   const id = generateId();
   const plan = await seedAttachmentHome({ id: opts.organizationId, tenantId: opts.tenantId }, opts.createdBy);
   const row = buildInsertableProduct(

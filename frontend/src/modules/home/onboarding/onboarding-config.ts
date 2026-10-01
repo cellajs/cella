@@ -20,19 +20,9 @@ const isFounder = ({ hasOrganizations, hasInvitations }: OnboardingContext) => !
  */
 export function getOnboardingSteps(ctx: OnboardingContext): StepItem[] {
   const steps: OnboardingStep[] = [
-    {
-      id: 'invitations',
-      label: i18n.t('c:pending_invitations'),
-      optional: true,
-      when: ({ hasInvitations }) => hasInvitations,
-    },
+    { id: 'invitations', label: i18n.t('c:pending_invitations'), optional: true, when: ({ hasInvitations }) => hasInvitations },
     { id: 'profile', label: i18n.t('c:tune_profile'), optional: true, when: () => true },
-    {
-      id: 'organization',
-      label: i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() }),
-      optional: true,
-      when: isFounder,
-    },
+    { id: 'organization', label: i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() }), optional: true, when: isFounder },
     { id: 'invitation', label: i18n.t('c:invite_others'), optional: true, when: isFounder },
   ];
 

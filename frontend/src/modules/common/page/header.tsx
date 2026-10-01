@@ -7,13 +7,7 @@ import { appConfig } from 'shared';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { PageCover, type PageCoverProps } from '~/modules/common/page/cover';
 import type { EnrichedChannel } from '~/modules/entities/types';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbSeparator,
-} from '~/modules/ui/breadcrumb';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
 
 type PageHeaderProps = Omit<PageCoverProps, 'id' | 'url'> & {
@@ -45,9 +39,7 @@ export function PageHeader({ entity, panel, parents, parent, ...coverProps }: Pa
           type={entity.entityType}
           url={entity.thumbnailUrl}
           className={
-            entity.entityType === 'user'
-              ? 'mx-3 -mt-13 h-26 w-26 rounded-full text-4xl shadow-[0_0_0_4px_rgba(0,0,0,0.1)]'
-              : 'm-2 h-12 w-12 text-xl'
+            entity.entityType === 'user' ? 'mx-3 -mt-13 h-26 w-26 rounded-full text-4xl shadow-[0_0_0_4px_rgba(0,0,0,0.1)]' : 'm-2 h-12 w-12 text-xl'
           }
         />
 
@@ -77,9 +69,7 @@ export function PageHeader({ entity, panel, parents, parent, ...coverProps }: Pa
                 })}
                 <BreadcrumbItem className="flex items-center text-foreground/70">
                   <span>{t(`c:${entity.entityType}`).toLowerCase()}</span>
-                  {appConfig.mode === 'development' && (
-                    <span className="ml-2 text-foreground/40 text-xs max-sm:hidden">{entity.id}</span>
-                  )}
+                  {appConfig.mode === 'development' && <span className="ml-2 text-foreground/40 text-xs max-sm:hidden">{entity.id}</span>}
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

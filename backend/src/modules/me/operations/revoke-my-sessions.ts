@@ -10,18 +10,8 @@ export async function revokeMySessionsOp(ctx: UserContext, ids: string[]) {
   const { user, sessionId: currentSessionId } = ctx.var;
 
   const [others, own] = await Promise.all([
-    revokeSessions(ctx, {
-      userId: user.id,
-      sessionIds: ids.filter((id) => id !== currentSessionId),
-      reason: 'other_session',
-      by: user.id,
-    }),
-    revokeSessions(ctx, {
-      userId: user.id,
-      sessionIds: ids.filter((id) => id === currentSessionId),
-      reason: 'sign_out',
-      by: user.id,
-    }),
+    revokeSessions(ctx, { userId: user.id, sessionIds: ids.filter((id) => id !== currentSessionId), reason: 'other_session', by: user.id }),
+    revokeSessions(ctx, { userId: user.id, sessionIds: ids.filter((id) => id === currentSessionId), reason: 'sign_out', by: user.id }),
   ]);
   const data = [...others, ...own];
   const revokedIds = data.map((session) => session.id);

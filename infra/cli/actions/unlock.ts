@@ -9,10 +9,7 @@ export async function runUnlock(context: InfraContext): Promise<void> {
   const targetStack = stackNameFor(context);
 
   // The admin application key, as Apply and the deploy lock with: the state bucket admits only the admin and CI deploy applications, any other key 403s here.
-  const { accessKey, secretKey } = await keyPairOrPrompt(
-    resolveOperatorIdentity().admin,
-    'Scaleway admin application key',
-  );
+  const { accessKey, secretKey } = await keyPairOrPrompt(resolveOperatorIdentity().admin, 'Scaleway admin application key');
 
   const s3 = await makeControlClient(appConfig.s3.region, accessKey, secretKey);
   const held = await peekLock(s3, stateBucket(appConfig.slug), lockKey(targetStack));
@@ -24,9 +21,7 @@ export async function runUnlock(context: InfraContext): Promise<void> {
   }
   const removed = await forceUnlock(s3, stateBucket(appConfig.slug), lockKey(targetStack));
   if (removed) {
-    console.info(
-      `${pc.green('✓')} Cleared lock held by ${pc.cyan(removed.owner)} (operation: ${removed.operation}, since ${removed.acquiredAt}).`,
-    );
+    console.info(`${pc.green('✓')} Cleared lock held by ${pc.cyan(removed.owner)} (operation: ${removed.operation}, since ${removed.acquiredAt}).`);
   } else {
     console.info(`${pc.dim('No lock present for')} ${targetStack}.`);
   }

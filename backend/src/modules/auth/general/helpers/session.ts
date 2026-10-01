@@ -174,10 +174,10 @@ export const createSession = async (
 
   // lastSignInAt lives in user_counters to avoid CDC noise on the users table
   const lastSignInAt = getIsoDate();
-  await db.insert(userCountersTable).values({ userId: user.id, lastSignInAt }).onConflictDoUpdate({
-    target: userCountersTable.userId,
-    set: { lastSignInAt },
-  });
+  await db
+    .insert(userCountersTable)
+    .values({ userId: user.id, lastSignInAt })
+    .onConflictDoUpdate({ target: userCountersTable.userId, set: { lastSignInAt } });
 
   return { sessionId, sessionToken, timeSpan, newDevice };
 };
@@ -186,12 +186,7 @@ export const createSession = async (
  * Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. An impersonation
  * gets a cookie of its own, layered over the admin's session cookie, which stays: stopping returns the browser to it.
  */
-export const setUserSession = async (
-  ctx: Context<Env>,
-  user: UserModel,
-  strategy: AuthStrategy,
-  type: SessionTypes = 'regular',
-): Promise<void> => {
+export const setUserSession = async (ctx: Context<Env>, user: UserModel, strategy: AuthStrategy, type: SessionTypes = 'regular'): Promise<void> => {
   const isSystemAdmin = await db
     .select()
     .from(systemRolesTable)
@@ -205,13 +200,7 @@ export const setUserSession = async (
 
   const context = await collectSignInContext(ctx, type);
   const impersonatorSessionId = type === 'impersonation' ? ctx.var.sessionId : null;
-  const { sessionToken, timeSpan, newDevice } = await createSession(
-    user,
-    context,
-    strategy,
-    type,
-    impersonatorSessionId,
-  );
+  const { sessionToken, timeSpan, newDevice } = await createSession(user, context, strategy, type, impersonatorSessionId);
 
   if (type === 'impersonation') await setAuthCookie(ctx, 'impersonation', sessionToken, timeSpan);
   else {
@@ -242,12 +231,7 @@ export const readSession = async (sessionToken: string): Promise<SessionCacheEnt
 
   // The role is read whatever the address, so the cached entry is right for every request that hits it.
   const [result] = await db
-    .select({
-      session: sessionFactColumns,
-      revokedAt: sessionsTable.revokedAt,
-      user: userSelect,
-      systemRole: systemRolesTable.role,
-    })
+    .select({ session: sessionFactColumns, revokedAt: sessionsTable.revokedAt, user: userSelect, systemRole: systemRolesTable.role })
     .from(sessionsTable)
     .innerJoin(usersTable, eq(sessionsTable.userId, usersTable.id))
     .leftJoin(systemRolesTable, eq(systemRolesTable.userId, usersTable.id))
@@ -290,10 +274,7 @@ export const readOwnSession = async (sessionToken: string | undefined): Promise<
  * @throws AppError 401 without a session cookie, for an unknown, revoked or expired token, or an impersonation that
  *   this browser's own session does not back.
  */
-export const resolveSession = async (
-  ctx: Context,
-  { clearOnError = false }: { clearOnError?: boolean } = {},
-): Promise<SessionCacheEntry> => {
+export const resolveSession = async (ctx: Context, { clearOnError = false }: { clearOnError?: boolean } = {}): Promise<SessionCacheEntry> => {
   const sessionToken = await getAuthCookie(ctx, 'session');
   const impersonationToken = await getAuthCookie(ctx, 'impersonation');
 
@@ -329,5 +310,4 @@ export const resolveSession = async (
  * expired or revoked token), while a failed read stays the request's failure, so the database being away never reads
  * as signed out.
  */
-export const findSession = (ctx: Context): Promise<SessionCacheEntry | null> =>
-  resolveSession(ctx).catch(refusalAsNull);
+export const findSession = (ctx: Context): Promise<SessionCacheEntry | null> => resolveSession(ctx).catch(refusalAsNull);

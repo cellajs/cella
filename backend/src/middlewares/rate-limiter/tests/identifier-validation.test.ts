@@ -7,9 +7,7 @@ import { memoryStores } from './memory-stores';
 
 // Undo the setup.ts mock: these tests need the real rateLimiter to derive the key.
 vi.unmock('#/middlewares/rate-limiter/core');
-vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) =>
-  (await import('./memory-stores')).memoryStoresMock(importOriginal),
-);
+vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => (await import('./memory-stores')).memoryStoresMock(importOriginal));
 
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
 const { subjectSegment } = await import('#/middlewares/rate-limiter/helpers');

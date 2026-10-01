@@ -18,10 +18,7 @@ export function parseServiceUrls(raw: string): ServiceUrlRow[] {
  * names that same loader reads, keeping the deploy pipeline authoritative for
  * public URLs.
  */
-export function frontendBuildEnv(
-  mode: string,
-  raw: string,
-): Record<'APP_MODE' | 'BACKEND_URL' | 'FRONTEND_URL', string> {
+export function frontendBuildEnv(mode: string, raw: string): Record<'APP_MODE' | 'BACKEND_URL' | 'FRONTEND_URL', string> {
   const rows = parseServiceUrls(raw);
   const backendUrl = rows.find((row) => row.service === 'backend')?.public_url;
   const frontendUrl = rows.find((row) => row.service === 'frontend')?.public_url;
@@ -32,8 +29,7 @@ export function frontendBuildEnv(
 export async function main(argv = process.argv.slice(2)): Promise<void> {
   const mode = getFlag(argv, '--mode');
   const servicesJson = getFlag(argv, '--services-json');
-  if (!mode || !servicesJson)
-    throw new Error('Usage: print-frontend-build-env.ts --mode <environment> --services-json <enabled_services_json>');
+  if (!mode || !servicesJson) throw new Error('Usage: print-frontend-build-env.ts --mode <environment> --services-json <enabled_services_json>');
   for (const [key, value] of Object.entries(frontendBuildEnv(mode, servicesJson))) {
     console.info(`${key}=${value}`);
   }

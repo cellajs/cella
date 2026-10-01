@@ -19,10 +19,7 @@ export function Switch({ className, thumb, ...props }: SwitchProps) {
       {thumb ? (
         <SwitchPrimitive.Thumb
           render={React.cloneElement(thumb, {
-            className: cn(
-              'transition-transform data-checked:translate-x-[calc(100%-2px)] data-unchecked:translate-x-0',
-              thumb.props.className,
-            ),
+            className: cn('transition-transform data-checked:translate-x-[calc(100%-2px)] data-unchecked:translate-x-0', thumb.props.className),
           })}
         />
       ) : (

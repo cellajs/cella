@@ -4,12 +4,7 @@ import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { Export } from '~/modules/common/data-table/export';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import { TableCount } from '~/modules/common/data-table/table-count';
-import {
-  FilterBarActions,
-  FilterBarFilters,
-  FilterBarSearch,
-  TableFilterBar,
-} from '~/modules/common/data-table/table-filter-bar';
+import { FilterBarActions, FilterBarFilters, FilterBarSearch, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
@@ -86,12 +81,7 @@ export function TableBarShell<TRow extends Record<string, unknown>>(props: Table
           <div className="sm:grow" />
 
           <FilterBarSearch>
-            <TableSearch
-              name={props.searchName}
-              value={searchVars.q}
-              setQuery={onSearch}
-              allowOfflineSearch={props.allowOfflineSearch}
-            />
+            <TableSearch name={props.searchName} value={searchVars.q} setQuery={onSearch} allowOfflineSearch={props.allowOfflineSearch} />
           </FilterBarSearch>
           {props.filters && <FilterBarFilters>{props.filters}</FilterBarFilters>}
         </TableFilterBar>

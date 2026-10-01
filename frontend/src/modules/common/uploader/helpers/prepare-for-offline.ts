@@ -83,8 +83,6 @@ export const prepareFilesForOffline: PrepareFilesForOffline = async (files, toke
     bytes_received: localFiles.reduce((total, file) => total + (file.size || 0), 0),
     bytes_expected: localFiles.reduce((total, file) => total + (file.size || 0), 0),
     uploads: localFiles,
-    results: {
-      [templateKey]: localFiles,
-    },
+    results: { [templateKey]: localFiles },
   };
 };

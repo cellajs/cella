@@ -28,11 +28,7 @@ export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> 
   // serving zone's project when records live in a shared parent zone (staging
   // on the production apex). Never org-wide: a compromised CI key must not be
   // able to rewrite unrelated zones.
-  const dnsProjectIds = await resolveDnsProjectIds(
-    { secretKey: opts.callerSecretKey },
-    opts.dnsZone ?? '',
-    opts.projectId,
-  );
+  const dnsProjectIds = await resolveDnsProjectIds({ secretKey: opts.callerSecretKey }, opts.dnsZone ?? '', opts.projectId);
   return provisionScopedKey(opts, {
     suffix: 'ci-deploy',
     appDescription: 'Non-human principal for GitHub Actions CI deployments',
@@ -42,9 +38,7 @@ export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> 
     // unconditioned: the resource.id condition 403s real api-key mints on
     // live Scaleway (disproven 2026-08-10; see CI_KEY_MINT_PERMISSION_SETS).
     buildRules: ({ projectId, organizationId }) =>
-      CI_RULE_SHAPES.filter(
-        (shape) => shape.id !== 'key-mint' || (opts.keyMintAppIds && opts.keyMintAppIds.length > 0),
-      ).map((shape) =>
+      CI_RULE_SHAPES.filter((shape) => shape.id !== 'key-mint' || (opts.keyMintAppIds && opts.keyMintAppIds.length > 0)).map((shape) =>
         shape.scope === 'project'
           ? { permission_set_names: [...shape.permissionSets], project_ids: [projectId] }
           : shape.scope === 'dns-projects'
@@ -82,9 +76,7 @@ if (isMain(import.meta.url)) {
 
   const divider = pc.dim(DIVIDER);
   console.info(`\n${divider}`);
-  console.info(
-    `${checkMark} ${pc.bold(pc.greenBright('CI key created.'))} ${pc.dim(`access key ${result.accessKey}`)}\n`,
-  );
+  console.info(`${checkMark} ${pc.bold(pc.greenBright('CI key created.'))} ${pc.dim(`access key ${result.accessKey}`)}\n`);
 
   // The secret key must stay off stdout (terminal scrollback, CI transcripts);
   // push it straight to the GitHub Environment via gh.
@@ -92,12 +84,7 @@ if (isMain(import.meta.url)) {
   const synced = await syncGithubEnvironment({
     repoRoot: process.cwd(),
     environment,
-    ciKey: {
-      accessKey: result.accessKey,
-      secretKey: result.secretKey,
-      projectId,
-      organizationId: result.organizationId,
-    },
+    ciKey: { accessKey: result.accessKey, secretKey: result.secretKey, projectId, organizationId: result.organizationId },
   });
   if (synced) {
     console.info(

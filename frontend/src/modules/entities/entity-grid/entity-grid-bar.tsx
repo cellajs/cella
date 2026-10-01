@@ -5,12 +5,7 @@ import type { ChannelEntityType } from 'shared';
 import type { TKey } from '~/lib/i18n-locales';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import { TableCount } from '~/modules/common/data-table/table-count';
-import {
-  FilterBarActions,
-  FilterBarFilters,
-  FilterBarSearch,
-  TableFilterBar,
-} from '~/modules/common/data-table/table-filter-bar';
+import { FilterBarActions, FilterBarFilters, FilterBarSearch, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableSearch } from '~/modules/common/data-table/table-search';
 import { FocusView } from '~/modules/common/focus-view';
 import { SelectRole } from '~/modules/common/form-fields/select-role';
@@ -19,17 +14,9 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { GRID_PREVIEW_LIMIT } from '~/modules/entities/entity-grid/grid';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
-type EntityGridBarSearch = {
-  q?: string;
-  sort?: string;
-  role?: string;
-};
+type EntityGridBarSearch = { q?: string; sort?: string; role?: string };
 
-export type EntityGridSortOption = {
-  name: TKey;
-  icon: IconComponent;
-  value: string;
-};
+export type EntityGridSortOption = { name: TKey; icon: IconComponent; value: string };
 
 const entityGridSortOptions: readonly EntityGridSortOption[] = [
   { name: 'c:alphabetical', icon: ArrowDownAZIcon, value: 'name' },
@@ -85,8 +72,7 @@ export function EntityGridBar({
 
   const onSearch = (searchString: string) => setSearch({ q: searchString });
   const onSortChange = (sort: string) => setSearch({ sort });
-  const onRoleChange = (role?: string) =>
-    setSearch({ role: role === 'all' ? undefined : (role as EntityGridBarSearch['role']) });
+  const onRoleChange = (role?: string) => setSearch({ role: role === 'all' ? undefined : (role as EntityGridBarSearch['role']) });
 
   const onResetFilters = () => setSearch({ q: '' });
 
@@ -102,19 +88,9 @@ export function EntityGridBar({
           <TableSearch name="entitySearch" value={q} setQuery={onSearch} />
         </FilterBarSearch>
         <FilterBarFilters>
-          <SelectSort
-            value={sort ?? sortOptions[0].value}
-            onChange={onSortChange}
-            className="h-10"
-            sortOptions={sortOptions}
-          />
+          <SelectSort value={sort ?? sortOptions[0].value} onChange={onSortChange} className="h-10" sortOptions={sortOptions} />
           {roleFilter && (
-            <SelectRole
-              entityType={entityType}
-              value={role === undefined ? 'all' : role}
-              onChange={onRoleChange}
-              className="h-10 sm:min-w-32"
-            />
+            <SelectRole entityType={entityType} value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
           )}
         </FilterBarFilters>
       </TableFilterBar>

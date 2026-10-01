@@ -17,11 +17,7 @@ describe('cross-site form posts', async () => {
   const formPost = (path: string, cookie: string, origin?: string) =>
     app.request(path, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Cookie: cookie,
-        ...(origin === undefined ? {} : { Origin: origin }),
-      },
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookie, ...(origin === undefined ? {} : { Origin: origin }) },
       body: '',
     });
 

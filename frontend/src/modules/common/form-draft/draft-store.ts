@@ -44,12 +44,7 @@ export const useDraftStore = create<DraftStoreState>()(
         },
         isFormDirty: (key: string) => !!get().dirtyForms[key],
       }),
-      {
-        version: 1,
-        name: 'drafts',
-        skipHydration: true,
-        storage: createJSONStorage(() => idbKvStorage('drafts')),
-      },
+      { version: 1, name: 'drafts', skipHydration: true, storage: createJSONStorage(() => idbKvStorage('drafts')) },
     ),
   ),
 );

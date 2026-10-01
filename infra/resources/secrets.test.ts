@@ -59,9 +59,7 @@ describe('secrets module', () => {
     );
     const relayKey = yjsTokenVerifyKey(String(versionData['secret-version-yjs-token-public-key']));
     expect(verifyYjsToken(token, relayKey).ok).toBe(true);
-    const randoms = h.resources
-      .filter((r) => r.type === 'random:index/randomPassword:RandomPassword')
-      .map((r) => r.name);
+    const randoms = h.resources.filter((r) => r.type === 'random:index/randomPassword:RandomPassword').map((r) => r.name);
     expect(randoms).not.toContain('generated-yjs-token-public-key');
     expect(randoms).not.toContain('generated-yjs-token-private-key');
   });

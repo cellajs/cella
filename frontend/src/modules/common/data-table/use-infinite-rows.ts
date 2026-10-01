@@ -1,9 +1,4 @@
-import {
-  type InfiniteData,
-  type QueryKey,
-  type UseInfiniteQueryOptions,
-  useInfiniteQuery,
-} from '@tanstack/react-query';
+import { type InfiniteData, type QueryKey, type UseInfiniteQueryOptions, useInfiniteQuery } from '@tanstack/react-query';
 import type { QueryData } from '~/query/types';
 
 /** Flattens a paged list query into table rows; fetchMore does nothing while a page loads or when none is left. */
@@ -17,10 +12,7 @@ export function useInfiniteRows<TRow, TError, TQueryKey extends QueryKey, TPageP
     error,
     fetchNextPage,
     hasNextPage,
-  } = useInfiniteQuery({
-    ...options,
-    select: ({ pages }) => pages.flatMap(({ items }) => items),
-  });
+  } = useInfiniteQuery({ ...options, select: ({ pages }) => pages.flatMap(({ items }) => items) });
 
   // A new function on every render: useFetchMoreOnDemand re-runs its effect when it changes.
   const fetchMore = async () => {

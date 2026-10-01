@@ -34,45 +34,28 @@ export interface MaterializeDescriptionResult {
  * entity, through the entity's materializer, which runs the normal update operation and its permission check. When
  * no editor may, the write is refused (403) and the relay keeps the edits.
  */
-export async function materializeDescriptionOp(
-  input: MaterializeDescriptionInput,
-): Promise<MaterializeDescriptionResult> {
+export async function materializeDescriptionOp(input: MaterializeDescriptionInput): Promise<MaterializeDescriptionResult> {
   const { entityType } = input;
   if (!isProduct(entityType)) {
-    throw new AppError(400, 'invalid_request', 'warn', {
-      meta: { reason: `Unknown entity type: ${entityType}` },
-    });
+    throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: `Unknown entity type: ${entityType}` } });
   }
 
   const materializer = getYjsMaterializer(entityType);
   if (!materializer) {
-    throw new AppError(400, 'invalid_request', 'warn', {
-      meta: { reason: `No Yjs materializer registered for ${entityType}` },
-    });
+    throw new AppError(400, 'invalid_request', 'warn', { meta: { reason: `No Yjs materializer registered for ${entityType}` } });
   }
 
-  const row = await tenantReadById(input.tenantId, (tx) =>
-    resolveEntity({ var: { db: tx } }, { entityType, identifier: input.entityId }),
-  );
+  const row = await tenantReadById(input.tenantId, (tx) => resolveEntity({ var: { db: tx } }, { entityType, identifier: input.entityId }));
   if (!row || row.tenantId !== input.tenantId) {
     throw new AppError(410, 'not_found', 'warn', { entityType, meta: { reason: 'The entity is gone' } });
   }
   if (row.organizationId !== input.organizationId) {
-    throw new AppError(403, 'forbidden', 'warn', {
-      entityType,
-      meta: { reason: 'Organization does not match the entity' },
-    });
+    throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { reason: 'Organization does not match the entity' } });
   }
 
-  const { description, sanitized, invalidUrls } = sanitizeBlockMediaUrls(input.description, {
-    organizationId: row.organizationId,
-  });
+  const { description, sanitized, invalidUrls } = sanitizeBlockMediaUrls(input.description, { organizationId: row.organizationId });
   if (sanitized) {
-    log.warn('Yjs materialization sanitized untrusted media URLs', {
-      entityType,
-      entityId: input.entityId,
-      invalidUrls,
-    });
+    log.warn('Yjs materialization sanitized untrusted media URLs', { entityType, entityId: input.entityId, invalidUrls });
   }
 
   const [users, memberships] = await Promise.all([
@@ -115,8 +98,5 @@ export async function materializeDescriptionOp(
     }
   }
 
-  throw new AppError(403, 'forbidden', 'warn', {
-    entityType,
-    meta: { reason: 'No editor in the log may still update the entity' },
-  });
+  throw new AppError(403, 'forbidden', 'warn', { entityType, meta: { reason: 'No editor in the log may still update the entity' } });
 }

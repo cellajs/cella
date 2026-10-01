@@ -27,9 +27,5 @@ export function useRovingTabIndex(isSelected: boolean) {
 
   const isFocusable = isSelected && !isChildFocused;
 
-  return {
-    tabIndex: isFocusable ? 0 : -1,
-    childTabIndex: isSelected ? 0 : -1,
-    onFocus: isSelected ? onFocus : undefined,
-  };
+  return { tabIndex: isFocusable ? 0 : -1, childTabIndex: isSelected ? 0 : -1, onFocus: isSelected ? onFocus : undefined };
 }

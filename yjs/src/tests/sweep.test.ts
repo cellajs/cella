@@ -23,10 +23,7 @@ beforeEach(() => {
 
 describe('runStartupSweep', () => {
   it('must not delete the document rows it writes: every unwritten log goes through the shared routine, and the rows stay', async () => {
-    vi.mocked(listStaleDocs).mockResolvedValueOnce([
-      staleRow(),
-      staleRow({ entityId: 'entity-2', organizationId: null }),
-    ]);
+    vi.mocked(listStaleDocs).mockResolvedValueOnce([staleRow(), staleRow({ entityId: 'entity-2', organizationId: null })]);
 
     await runStartupSweep();
 
@@ -46,15 +43,8 @@ describe('runStartupSweep', () => {
   });
 
   it('keeps the log when it was not written or compaction throws', async () => {
-    vi.mocked(listStaleDocs).mockResolvedValueOnce([
-      staleRow(),
-      staleRow({ entityId: 'entity-2' }),
-      staleRow({ entityId: 'entity-3' }),
-    ]);
-    vi.mocked(compactDocument)
-      .mockResolvedValueOnce('retry')
-      .mockResolvedValueOnce('permanent')
-      .mockRejectedValueOnce(new Error('db down'));
+    vi.mocked(listStaleDocs).mockResolvedValueOnce([staleRow(), staleRow({ entityId: 'entity-2' }), staleRow({ entityId: 'entity-3' })]);
+    vi.mocked(compactDocument).mockResolvedValueOnce('retry').mockResolvedValueOnce('permanent').mockRejectedValueOnce(new Error('db down'));
     await runStartupSweep();
     expect(deleteDoc).not.toHaveBeenCalled();
   });

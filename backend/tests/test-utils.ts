@@ -10,11 +10,7 @@ import { overrideConfig } from './fixtures';
 type AuthStrategy = 'passkey' | 'oauth' | 'totp' | 'magic';
 type OAuthProvider = 'github' | 'google' | 'microsoft';
 
-type ConfigOverride = {
-  enabledAuthStrategies?: AuthStrategy[];
-  enabledOAuthProviders?: OAuthProvider[];
-  selfRegistration?: boolean;
-};
+type ConfigOverride = { enabledAuthStrategies?: AuthStrategy[]; enabledOAuthProviders?: OAuthProvider[]; selfRegistration?: boolean };
 
 /** TRUNCATE CASCADE on the admin connection (runtime_role holds no TRUNCATE), plus a mock-enforcer reset so unique values do not conflict across tests. */
 export async function clearDatabase() {
@@ -98,10 +94,7 @@ export const sessionMock = async (importOriginal: () => Promise<object>) => ({
   ...(await importOriginal()),
   setUserSession: vi.fn().mockImplementation(async (ctx, _user, _provider) => {
     const sessionToken = 'mock-session-token';
-    ctx.res.headers.append(
-      'set-cookie',
-      `${mockCookieName('session')}=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`,
-    );
+    ctx.res.headers.append('set-cookie', `${mockCookieName('session')}=${sessionToken}; Path=/; HttpOnly; SameSite=Lax`);
     return sessionToken;
   }),
   resolveSession: vi.fn().mockResolvedValue({ user: { id: 'test-user-id' }, session: { id: 'test-session-id' } }),

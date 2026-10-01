@@ -30,12 +30,7 @@ export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
   const { url } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });
 
   const handleClick = () => {
-    navigate({
-      to: '.',
-      replace: false,
-      resetScroll: false,
-      search: openAttachmentDialogSearch(id, groupId),
-    });
+    navigate({ to: '.', replace: false, resetScroll: false, search: openAttachmentDialogSearch(id, groupId) });
   };
 
   const preview = <MediaThumbnail name={filename} url={url} contentType={contentType} />;

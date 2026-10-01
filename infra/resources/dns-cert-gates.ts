@@ -46,9 +46,7 @@ const dnsPropagationProvider: pulumi.dynamic.ResourceProvider = {
       if (dnsAnswersSatisfy(answersPerResolver, inputs.expectedIp)) {
         return { id: `${inputs.fqdn}=${inputs.expectedIp}`, outs: inputs };
       }
-      lastSeen = PUBLIC_RESOLVERS.map(
-        (server, i) => `${server}→[${answersPerResolver[i]!.join(',') || 'NXDOMAIN'}]`,
-      ).join(' ');
+      lastSeen = PUBLIC_RESOLVERS.map((server, i) => `${server}→[${answersPerResolver[i]!.join(',') || 'NXDOMAIN'}]`).join(' ');
       await sleep(POLL_INTERVAL_MS);
     }
     throw new Error(
@@ -59,11 +57,7 @@ const dnsPropagationProvider: pulumi.dynamic.ResourceProvider = {
 
 /** Blocks until `fqdn` resolves to `expectedIp` on public resolvers. Create-only. */
 export class DnsPropagationGate extends pulumi.dynamic.Resource {
-  constructor(
-    name: string,
-    args: { fqdn: pulumi.Input<string>; expectedIp: pulumi.Input<string> },
-    opts?: pulumi.CustomResourceOptions,
-  ) {
+  constructor(name: string, args: { fqdn: pulumi.Input<string>; expectedIp: pulumi.Input<string> }, opts?: pulumi.CustomResourceOptions) {
     super(dnsPropagationProvider, name, args, opts);
   }
 }
@@ -76,15 +70,12 @@ interface CertGateState {
 const certReadyProvider: pulumi.dynamic.ResourceProvider = {
   async create(inputs: CertGateState) {
     const [zone, certId] = inputs.certificateId.split('/');
-    if (!zone || !certId)
-      throw new Error(`CertReadyGate: certificate id '${inputs.certificateId}' is not '<zone>/<uuid>'`);
+    if (!zone || !certId) throw new Error(`CertReadyGate: certificate id '${inputs.certificateId}' is not '<zone>/<uuid>'`);
     const secretKey = process.env.SCW_SECRET_KEY;
     if (!secretKey) throw new Error('CertReadyGate: SCW_SECRET_KEY is not set in the deploy environment');
     const deadline = Date.now() + CERT_TIMEOUT_MS;
     while (true) {
-      const res = await fetch(`https://api.scaleway.com/lb/v1/zones/${zone}/certificates/${certId}`, {
-        headers: { 'X-Auth-Token': secretKey },
-      });
+      const res = await fetch(`https://api.scaleway.com/lb/v1/zones/${zone}/certificates/${certId}`, { headers: { 'X-Auth-Token': secretKey } });
       if (!res.ok) throw new Error(`CertReadyGate: GET certificate ${certId} → ${res.status}: ${await res.text()}`);
       const cert = (await res.json()) as { status: string; status_details?: string };
       if (certVerdict(cert.status, cert.status_details) === 'ready') {

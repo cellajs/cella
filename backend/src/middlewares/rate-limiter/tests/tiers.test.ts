@@ -8,9 +8,7 @@ import { memoryStores } from './memory-stores';
 
 // Undo the setup.ts mock: these tests drive the real middleware against in-memory stores.
 vi.unmock('#/middlewares/rate-limiter/core');
-vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) =>
-  (await import('./memory-stores')).memoryStoresMock(importOriginal),
-);
+vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => (await import('./memory-stores')).memoryStoresMock(importOriginal));
 
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
 const { checkRateLimitStatus, subjectSegment } = await import('#/middlewares/rate-limiter/helpers');
@@ -24,8 +22,7 @@ function guardedRoute(mode: RateLimitMode, answer: (ctx: Context<Env>) => Respon
   const app = new Hono<Env>();
   app.onError(appErrorHandler);
   app.post('/attempt', limiter, answer);
-  const attempt = (ip: string) =>
-    app.request('http://localhost/attempt', { method: 'POST', headers: { 'x-forwarded-for': ip } });
+  const attempt = (ip: string) => app.request('http://localhost/attempt', { method: 'POST', headers: { 'x-forwarded-for': ip } });
   return { limiter, attempt };
 }
 

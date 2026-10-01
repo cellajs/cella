@@ -39,10 +39,7 @@ const rowReadSubject = (event: AppStreamProductEvent): SubjectForPermission | nu
       row,
     });
   } catch {
-    log.error('Malformed stream event: missing ancestor scope', {
-      entityType: event.entityType,
-      subjectId: event.subjectId,
-    });
+    log.error('Malformed stream event: missing ancestor scope', { entityType: event.entityType, subjectId: event.subjectId });
     return null;
   }
 };
@@ -59,15 +56,10 @@ export function rowReadDecisions(subscribers: readonly SubscriberAccess[], event
       memberships: subscriber.memberships,
       scopes: null,
     }));
-    const results = checkAccessFanout(accesses, 'read', subject, {
-      onInvalidMembership: 'deny',
-    });
+    const results = checkAccessFanout(accesses, 'read', subject, { onInvalidMembership: 'deny' });
     return results.map((result) => result.allowed);
   } catch {
-    log.error('Stream read decision failed; denying all', {
-      entityType: subject.entityType,
-      subjectId: subject.id,
-    });
+    log.error('Stream read decision failed; denying all', { entityType: subject.entityType, subjectId: subject.id });
     return subscribers.map(() => false);
   }
 }
@@ -78,10 +70,7 @@ export function canReceiveProductEvent(subscriber: SubscriberAccess, event: AppS
 }
 
 /** subjectId and every context id column come from the row, so re-parenting evaluates correctly. */
-export const rowScopedEvent = (
-  event: AppStreamProductEvent,
-  rowData: Record<string, unknown>,
-): AppStreamProductEvent => {
+export const rowScopedEvent = (event: AppStreamProductEvent, rowData: Record<string, unknown>): AppStreamProductEvent => {
   const overrides: Record<string, unknown> = { rowData };
   if (typeof rowData.id === 'string') overrides.subjectId = rowData.id;
   for (const channelType of appConfig.channelEntityTypes) {
@@ -130,9 +119,7 @@ export const dispatchToAppStream = createStreamDispatcher<AppStreamSubscriber, A
 });
 
 /** The (currentRow, oldRow) pairs of an event's moved rows, single or batch. */
-const movedRows = (
-  event: AppStreamProductEvent,
-): Array<{ rowData: Record<string, unknown>; movedFrom: Record<string, unknown> }> => {
+const movedRows = (event: AppStreamProductEvent): Array<{ rowData: Record<string, unknown>; movedFrom: Record<string, unknown> }> => {
   if (event.batchRows?.length) {
     return event.batchRows
       .filter((row): row is ActivityBatchRow & { movedFrom: Record<string, unknown> } => !!row.movedFrom)

@@ -5,9 +5,5 @@ import { Text as JsxText } from './primitives';
  * with our preferred email typography defaults.
  */
 export const EmailText = ({ style, ...props }: React.ComponentProps<typeof JsxText>) => (
-  <JsxText
-    disableDefaultStyle
-    style={{ fontSize: '0.875rem', lineHeight: '1.3rem', margin: '0.5rem 0', ...style }}
-    {...props}
-  />
+  <JsxText disableDefaultStyle style={{ fontSize: '0.875rem', lineHeight: '1.3rem', margin: '0.5rem 0', ...style }} {...props} />
 );

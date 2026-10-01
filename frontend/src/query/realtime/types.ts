@@ -29,9 +29,7 @@ export type EntityNotification = StreamNotification & { kind: 'product'; product
 export type MembershipNotification = StreamNotification & { kind: 'membership'; resourceType: 'membership' };
 
 /** Discriminated on `kind`, so the entity and membership branches are exhaustive and the compiler proves which fields each carries. */
-export type AppStreamNotification = (EntityNotification | MembershipNotification) & {
-  _trace?: StreamTraceContext;
-};
+export type AppStreamNotification = (EntityNotification | MembershipNotification) & { _trace?: StreamTraceContext };
 
 export interface UseAppStreamOptions extends BaseStreamOptions {}
 

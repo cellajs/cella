@@ -10,10 +10,7 @@ import { cn } from '~/utils/cn';
 import { useSheeter } from '../../common/sheeter/use-sheeter';
 import { ActiveIndicator } from './active-indicator';
 
-export type PageNode = {
-  page: DocPage;
-  children: PageNode[];
-};
+export type PageNode = { page: DocPage; children: PageNode[] };
 
 type PageBranchProps = {
   node: PageNode;
@@ -39,10 +36,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
 
   return (
     <Collapsible open={hasChildren && isExpanded}>
-      <SidebarMenuItem
-        className={cn('relative', isRoot ? 'group/page-root' : 'group/page-parent')}
-        data-expanded={isExpanded}
-      >
+      <SidebarMenuItem className={cn('relative', isRoot ? 'group/page-root' : 'group/page-parent')} data-expanded={isExpanded}>
         {/* Vertical guideline (parent tier only), reads expanded state from the row scope */}
         {!isRoot && hasChildren && (
           <div className="pointer-events-none absolute top-8 bottom-2 left-2.5 hidden w-px bg-muted-foreground/30 group-data-[expanded=true]/page-parent:block" />
@@ -90,9 +84,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
             <ChevronDownIcon
               className={cn(
                 'ml-auto size-4 shrink-0 opacity-40 transition-transform duration-200',
-                isRoot
-                  ? 'group-data-[expanded=true]/page-root:rotate-180'
-                  : 'group-data-[expanded=true]/page-parent:rotate-180',
+                isRoot ? 'group-data-[expanded=true]/page-root:rotate-180' : 'group-data-[expanded=true]/page-parent:rotate-180',
               )}
             />
           )}
@@ -119,12 +111,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
               <div className="relative flex flex-col px-0 py-0.5">
                 <ActiveIndicator activeIndex={activeChildIndex} layoutId={layoutId} isMobile={isMobile} />
                 {children.map((child) => (
-                  <PageLeaf
-                    key={child.page.id}
-                    page={child.page}
-                    isActive={child.page.id === activePageId}
-                    onClose={onClose}
-                  />
+                  <PageLeaf key={child.page.id} page={child.page} isActive={child.page.id === activePageId} onClose={onClose} />
                 ))}
               </div>
             )}
@@ -177,8 +164,7 @@ export function buildPageNodeTree(pages: DocPage[]): PageNode[] {
   }
   for (const arr of byParent.values()) arr.sort((a, b) => a.displayOrder - b.displayOrder);
 
-  const build = (parentId: string | null): PageNode[] =>
-    (byParent.get(parentId) ?? []).map((page) => ({ page, children: build(page.id) }));
+  const build = (parentId: string | null): PageNode[] => (byParent.get(parentId) ?? []).map((page) => ({ page, children: build(page.id) }));
 
   return build(null);
 }

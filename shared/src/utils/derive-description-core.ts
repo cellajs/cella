@@ -4,12 +4,7 @@ import { isUuid } from './entity-id.ts';
 import { getInlineTextFromBlock, getSearchableTextFromBlocks, mediaBlockTypes } from './text-from-block.ts';
 
 /** Tolerant of custom block types. */
-export type DescriptionBlock = {
-  type: string;
-  props?: Record<string, unknown>;
-  content?: unknown[];
-  children?: DescriptionBlock[];
-};
+export type DescriptionBlock = { type: string; props?: Record<string, unknown>; content?: unknown[]; children?: DescriptionBlock[] };
 
 export type DescriptionCounts = {
   expandable: boolean;

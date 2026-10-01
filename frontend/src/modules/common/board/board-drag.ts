@@ -2,23 +2,14 @@ import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge
 import type { KeyboardEvent } from 'react';
 import { createContext, useContext } from 'react';
 
-export type PanelReorderDragData = {
-  dragItem: true;
-  type: 'panelReorder';
-  panelId: string;
-};
+export type PanelReorderDragData = { dragItem: true; type: 'panelReorder'; panelId: string };
 
 export const isPanelReorderDragData = (data: Record<string | symbol, unknown>): data is PanelReorderDragData => {
   return data.dragItem === true && data.type === 'panelReorder' && typeof data.panelId === 'string';
 };
 
 /** Compute new panel order after dragging sourceId relative to targetId. Returns null if unchanged. */
-export function reorderPanels(
-  currentOrder: string[],
-  sourceId: string,
-  targetId: string,
-  edge: Edge | null,
-): string[] | null {
+export function reorderPanels(currentOrder: string[], sourceId: string, targetId: string, edge: Edge | null): string[] | null {
   const fromIndex = currentOrder.indexOf(sourceId);
   const toIndex = currentOrder.indexOf(targetId);
   if (fromIndex === -1 || toIndex === -1) return null;

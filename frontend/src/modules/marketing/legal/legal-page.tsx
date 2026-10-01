@@ -15,20 +15,13 @@ export function LegalPage() {
 
   const subjects = useMemo(
     () =>
-      objectEntries(legalConfig).map(([subject]) => ({
-        id: subject,
-        label: legalConfig[subject].label,
-        sections: legalConfig[subject].sections,
-      })),
+      objectEntries(legalConfig).map(([subject]) => ({ id: subject, label: legalConfig[subject].label, sections: legalConfig[subject].sections })),
     [],
   );
 
   const { subject: currentSubject } = useParams({ from: '/_public/_marketing/legal/$subject' });
 
-  const sectionIds = useMemo(
-    () => legalConfig[currentSubject as LegalSubject]?.sections.map((s: { id: string }) => s.id) || [],
-    [currentSubject],
-  );
+  const sectionIds = useMemo(() => legalConfig[currentSubject as LegalSubject]?.sections.map((s: { id: string }) => s.id) || [], [currentSubject]);
 
   useScrollSpy(sectionIds);
 

@@ -7,13 +7,7 @@ import {
   defaultBlockSpecs,
   type StyleSchema,
 } from '@blocknote/core';
-import {
-  checklistItemConfig,
-  codeBlockConfig,
-  mentionConfig,
-  notifyConfig,
-  withAttachmentRef,
-} from './blocknote-schema-configs';
+import { checklistItemConfig, codeBlockConfig, mentionConfig, notifyConfig, withAttachmentRef } from './blocknote-schema-configs';
 
 type MentionImplementation = CustomInlineContentImplementation<typeof mentionConfig, StyleSchema>;
 /** BlockNote's `HTMLElement` plus the two members used here, spelled out because workers compile without the DOM lib. */
@@ -66,7 +60,5 @@ export const serverBlockNoteSchema = BlockNoteSchema.create().extend({
     // No highlighter server-side: only the node spec matters.
     codeBlock: createCodeBlockSpec(codeBlockConfig),
   },
-  inlineContentSpecs: {
-    mention: createInlineContentSpec(mentionConfig, { render: renderMention }),
-  },
+  inlineContentSpecs: { mention: createInlineContentSpec(mentionConfig, { render: renderMention }) },
 });

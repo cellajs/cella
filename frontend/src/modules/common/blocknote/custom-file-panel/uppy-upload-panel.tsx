@@ -15,10 +15,7 @@ import { isSystemUploadTemplate } from 'shared/utils/upload-visibility';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { parseUploadedAttachments } from '~/modules/attachment/helpers/parse-uploaded';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
-import {
-  attachmentBlockProps,
-  storedFileBlockProps,
-} from '~/modules/common/blocknote/custom-file-panel/file-block-props';
+import { attachmentBlockProps, storedFileBlockProps } from '~/modules/common/blocknote/custom-file-panel/file-block-props';
 import { focusEditor } from '~/modules/common/blocknote/helpers/focus';
 import type { BaseUppyFilePanelProps, CustomBlockNoteEditor } from '~/modules/common/blocknote/types';
 import { Spinner } from '~/modules/common/spinner';
@@ -32,22 +29,10 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import '~/modules/common/uploader/uppy-styles';
 
 const basicBlockTypes = {
-  image: {
-    allowedFileTypes: ['image/*'],
-    plugins: ['image-editor', 'screen-capture', 'webcam', 'url'],
-  },
-  video: {
-    allowedFileTypes: ['video/*'],
-    plugins: ['screen-capture', 'webcam', 'url'],
-  },
-  audio: {
-    allowedFileTypes: ['audio/*'],
-    plugins: ['audio', 'screen-capture', 'webcam', 'url'],
-  },
-  file: {
-    allowedFileTypes: ['*/*'],
-    plugins: ['screen-capture', 'webcam', 'url'],
-  },
+  image: { allowedFileTypes: ['image/*'], plugins: ['image-editor', 'screen-capture', 'webcam', 'url'] },
+  video: { allowedFileTypes: ['video/*'], plugins: ['screen-capture', 'webcam', 'url'] },
+  audio: { allowedFileTypes: ['audio/*'], plugins: ['audio', 'screen-capture', 'webcam', 'url'] },
+  file: { allowedFileTypes: ['*/*'], plugins: ['screen-capture', 'webcam', 'url'] },
 };
 
 /** Read an image blob's intrinsic pixel size by decoding it locally; returns null when it cannot decode. */
@@ -56,10 +41,7 @@ const measureImageBlobSize = (blob: Blob): Promise<{ width: number; height: numb
     const url = URL.createObjectURL(blob);
     const image = new Image();
     image.onload = () => {
-      const size =
-        image.naturalWidth > 0 && image.naturalHeight > 0
-          ? { width: image.naturalWidth, height: image.naturalHeight }
-          : null;
+      const size = image.naturalWidth > 0 && image.naturalHeight > 0 ? { width: image.naturalWidth, height: image.naturalHeight } : null;
       URL.revokeObjectURL(url);
       resolve(size);
     };
@@ -111,12 +93,7 @@ export function UppyFilePanel({
   }, [blockId]);
 
   const uppyOptions: CustomUppyOpt = useMemo(
-    () => ({
-      restrictions: {
-        ...appConfig.uppy.defaultRestrictions,
-        allowedFileTypes: basicBlockTypes[blockType].allowedFileTypes,
-      },
-    }),
+    () => ({ restrictions: { ...appConfig.uppy.defaultRestrictions, allowedFileTypes: basicBlockTypes[blockType].allowedFileTypes } }),
     [blockType],
   );
 

@@ -11,8 +11,7 @@ import { getEntityTable } from '#/tables';
 import { log } from '#/utils/logger';
 
 /** A product table as `productColumns` shapes it. */
-type ProductTable = AnyPgTable &
-  Record<keyof Pick<ReturnType<typeof productColumns>, 'id' | 'name' | 'description' | 'deletedAt'>, PgColumn>;
+type ProductTable = AnyPgTable & Record<keyof Pick<ReturnType<typeof productColumns>, 'id' | 'name' | 'description' | 'deletedAt'>, PgColumn>;
 
 /** One registered source: the product it covers and the module's declaration. */
 export interface NotificationSource {

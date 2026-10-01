@@ -18,11 +18,7 @@ const organizationId = 'org-1';
  */
 describe('product canonical options cache under a splice-able home key', () => {
   const cases = [
-    {
-      name: 'attachment at org depth',
-      queryKey: attachmentsCanonicalOptions({ tenantId, organizationId }).queryKey,
-      home: organizationId,
-    },
+    { name: 'attachment at org depth', queryKey: attachmentsCanonicalOptions({ tenantId, organizationId }).queryKey, home: organizationId },
   ];
 
   it.each(cases)('$name', ({ queryKey, home }) => {
@@ -31,8 +27,6 @@ describe('product canonical options cache under a splice-able home key', () => {
 
   // Negative control: an extra scope segment makes the splice skip the key without reporting it.
   it('rejects a key with an extra scope segment', () => {
-    expect(
-      matchesCanonicalHome(['attachment', 'list', 'canonical', organizationId, 'extra-1'], organizationId, 'extra-1'),
-    ).toBe(false);
+    expect(matchesCanonicalHome(['attachment', 'list', 'canonical', organizationId, 'extra-1'], organizationId, 'extra-1')).toBe(false);
   });
 });

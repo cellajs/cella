@@ -34,13 +34,7 @@ export function ChannelGridTile({ entity }: { entity: ChannelTileEntity }) {
           >
             <div className="grow" />
             <div className="flex min-h-14 w-full items-center gap-3 bg-background/50 px-4 py-2 backdrop-blur-xs transition-colors group-hover:bg-background/70">
-              <EntityAvatar
-                className="h-10 w-10"
-                type={entity.entityType}
-                id={entity.id}
-                name={entity.name}
-                url={entity.thumbnailUrl}
-              />
+              <EntityAvatar className="h-10 w-10" type={entity.entityType} id={entity.id} name={entity.name} url={entity.thumbnailUrl} />
               <div className="flex grow flex-col gap-0.5 truncate">
                 <div className="truncate font-semibold text-sm leading-5">{entity.name}</div>
                 <div className="inline-flex items-center gap-2 text-sm">

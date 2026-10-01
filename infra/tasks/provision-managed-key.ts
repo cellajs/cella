@@ -45,11 +45,7 @@ function runtimeSecretById(id: string): RuntimeSecretDefinition {
 export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Promise<ProvisionManagedKeyResult> {
   const { definition } = opts;
   const log = opts.log ?? defaultLog;
-  const client = createSecretManagerClient({
-    secretKey: opts.callerSecretKey,
-    region: opts.region,
-    projectId: opts.projectId,
-  });
+  const client = createSecretManagerClient({ secretKey: opts.callerSecretKey, region: opts.region, projectId: opts.projectId });
 
   const targets = (Object.entries(definition.assign) as [MintedKeyField, string][]).map(([field, secretId]) => ({
     field,
@@ -76,9 +72,7 @@ export async function provisionManagedKey(opts: ProvisionManagedKeyOptions): Pro
       suffix: definition.suffix,
       appDescription: definition.appDescription,
       policyDescription: definition.policyDescription,
-      buildRules: ({ projectId }) => [
-        { permission_set_names: [...definition.permissionSets], project_ids: [projectId] },
-      ],
+      buildRules: ({ projectId }) => [{ permission_set_names: [...definition.permissionSets], project_ids: [projectId] }],
       mintKey: true,
     },
   );

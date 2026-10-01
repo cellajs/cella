@@ -14,8 +14,7 @@ export interface ConsentDetails {
 }
 
 /** The interaction routes live on the authorization server, outside the OpenAPI spec, so no SDK function exists. */
-const interactionUrl = (uid: string, suffix: string) =>
-  `${appConfig.oauthUrl}/interaction/${encodeURIComponent(uid)}/${suffix}`;
+const interactionUrl = (uid: string, suffix: string) => `${appConfig.oauthUrl}/interaction/${encodeURIComponent(uid)}/${suffix}`;
 
 async function request<T>(url: string, init?: RequestInit): Promise<T> {
   const response = await clientConfig.fetch(url, init);

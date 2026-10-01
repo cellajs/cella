@@ -14,9 +14,7 @@ describe('scrubUrl', () => {
     });
 
     it('redacts the token segment inside a full URL and keeps the origin', () => {
-      expect(scrubUrl('https://api.example.com/auth/invoke-token/magic/tok_123')).toBe(
-        'https://api.example.com/auth/invoke-token/magic/[REDACTED]',
-      );
+      expect(scrubUrl('https://api.example.com/auth/invoke-token/magic/tok_123')).toBe('https://api.example.com/auth/invoke-token/magic/[REDACTED]');
     });
 
     it('redacts the token segment behind a mount prefix, in any case, and keeps what follows', () => {
@@ -42,9 +40,7 @@ describe('scrubUrl', () => {
     });
 
     it('redacts provider and OIDC token query keys', () => {
-      const scrubbed = scrubUrl(
-        '/x?access_token=a1&id_token=b1&refresh_token=c1&code_verifier=d1&id_token_hint=e1&client_secret=f1',
-      );
+      const scrubbed = scrubUrl('/x?access_token=a1&id_token=b1&refresh_token=c1&code_verifier=d1&id_token_hint=e1&client_secret=f1');
       for (const secret of ['a1', 'b1', 'c1', 'd1', 'e1', 'f1']) expect(scrubbed).not.toContain(secret);
     });
 
@@ -52,8 +48,7 @@ describe('scrubUrl', () => {
       const scrubbed = scrubUrl(
         'https://bucket.s3.example.com/k?X-Amz-Credential=cred1&X-Amz-Signature=sig1&X-Amz-Security-Token=st1&X-Amz-Expires=900&AWSAccessKeyId=ak1&Signature=sig2&sig=sig3&X-Goog-Signature=sig4',
       );
-      for (const secret of ['cred1', 'sig1', 'st1', 'ak1', 'sig2', 'sig3', 'sig4'])
-        expect(scrubbed).not.toContain(secret);
+      for (const secret of ['cred1', 'sig1', 'st1', 'ak1', 'sig2', 'sig3', 'sig4']) expect(scrubbed).not.toContain(secret);
       expect(scrubbed).toContain('X-Amz-Expires=900');
     });
 
@@ -78,14 +73,10 @@ describe('scrubUrl', () => {
 
   describe('userinfo', () => {
     it('redacts the credentials part of a URL and keeps host and path', () => {
-      expect(scrubUrl('postgresql://app:hunter2@10.0.0.5:5432/db?sslmode=require')).toBe(
-        'postgresql://[REDACTED]@10.0.0.5:5432/db?sslmode=require',
-      );
+      expect(scrubUrl('postgresql://app:hunter2@10.0.0.5:5432/db?sslmode=require')).toBe('postgresql://[REDACTED]@10.0.0.5:5432/db?sslmode=require');
       // Built at run time: a literal here reads as a leaked token to secret scanners.
       const githubToken = ['ghs', 'abc'].join('_');
-      expect(scrubUrl(`https://x-access-token:${githubToken}@github.com/o/r.git`)).toBe(
-        'https://[REDACTED]@github.com/o/r.git',
-      );
+      expect(scrubUrl(`https://x-access-token:${githubToken}@github.com/o/r.git`)).toBe('https://[REDACTED]@github.com/o/r.git');
     });
 
     it('leaves an at sign outside the authority alone', () => {

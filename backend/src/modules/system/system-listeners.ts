@@ -6,11 +6,7 @@ import { findUserById } from '#/modules/user/user-queries';
 import { utcStamp } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
-const securityEmailType = {
-  create: 'system-role-granted',
-  update: 'system-role-changed',
-  delete: 'system-role-revoked',
-} as const;
+const securityEmailType = { create: 'system-role-granted', update: 'system-role-changed', delete: 'system-role-revoked' } as const;
 
 /**
  * Every CDC-observed system-role change drops the user's cached sessions in every process, so the role (and the

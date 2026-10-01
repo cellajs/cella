@@ -9,19 +9,8 @@ import {
   organizationUpdateBodySchema,
   organizationWithMembershipSchema,
 } from '#/modules/organization/organization-schema';
-import {
-  batchResponseSchema,
-  idsBodySchema,
-  paginationSchema,
-  slugIncludeQuerySchema,
-  tenantIdParamSchema,
-  tenantOnlyParamSchema,
-} from '#/schemas';
-import {
-  mockBatchOrganizationsResponse,
-  mockOrganizationResponse,
-  mockPaginatedOrganizationsResponse,
-} from './organization-mocks';
+import { batchResponseSchema, idsBodySchema, paginationSchema, slugIncludeQuerySchema, tenantIdParamSchema, tenantOnlyParamSchema } from '#/schemas';
+import { mockBatchOrganizationsResponse, mockOrganizationResponse, mockPaginatedOrganizationsResponse } from './organization-mocks';
 
 const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], {
   createOrganizations: xRoute({
@@ -32,13 +21,7 @@ const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], 
     summary: 'Create organizations',
     description: 'Creates one or more new organizations within a tenant.',
     request: { params: tenantOnlyParamSchema, body: jsonBody(organizationCreateBodySchema) },
-    responses: {
-      201: json(
-        'Organizations were created',
-        batchResponseSchema(organizationWithMembershipSchema),
-        mockBatchOrganizationsResponse(),
-      ),
-    },
+    responses: { 201: json('Organizations were created', batchResponseSchema(organizationWithMembershipSchema), mockBatchOrganizationsResponse()) },
   }),
   getOrganizations: xRoute({
     method: 'get',
@@ -47,9 +30,7 @@ const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], 
     summary: 'Get list of organizations',
     description: 'Returns a list of organizations.',
     request: { query: organizationListQuerySchema },
-    responses: {
-      200: json('Organizations', paginationSchema(organizationSchema), mockPaginatedOrganizationsResponse()),
-    },
+    responses: { 200: json('Organizations', paginationSchema(organizationSchema), mockPaginatedOrganizationsResponse()) },
   }),
   getOrganization: xRoute({
     method: 'get',

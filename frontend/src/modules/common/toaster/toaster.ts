@@ -49,10 +49,4 @@ function show(type?: ToastSeverity) {
 }
 
 /** Shows a toast and returns its id: `toaster(message)` plain, `toaster.<severity>(message)` with an icon. */
-export const toaster = Object.assign(show(), {
-  success: show('success'),
-  info: show('info'),
-  warning: show('warning'),
-  error: show('error'),
-  close,
-});
+export const toaster = Object.assign(show(), { success: show('success'), info: show('info'), warning: show('warning'), error: show('error'), close });

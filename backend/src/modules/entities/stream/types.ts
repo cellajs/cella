@@ -27,15 +27,10 @@ export interface DispatcherConfig<T extends CursoredSubscriber, E extends Activi
 }
 
 /** Event with subjectId and organizationId already narrowed to strings. */
-export type EntityScopedEvent<E extends ActivityEvent = ActivityEvent> = E & {
-  subjectId: string;
-  organizationId: string;
-};
+export type EntityScopedEvent<E extends ActivityEvent = ActivityEvent> = E & { subjectId: string; organizationId: string };
 
 /** Product entity event routed via the app (authenticated) stream. */
-export type AppStreamProductEvent = EntityScopedEvent<
-  ActivityEvent & { entityType: ProductEntityType } & Partial<ChannelIdColumns>
->;
+export type AppStreamProductEvent = EntityScopedEvent<ActivityEvent & { entityType: ProductEntityType } & Partial<ChannelIdColumns>>;
 
 export type AppStreamMembershipEvent = EntityScopedEvent<ActivityEvent & { resourceType: 'membership' }>;
 

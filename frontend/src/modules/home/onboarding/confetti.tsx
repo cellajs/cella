@@ -12,10 +12,7 @@ export function Confetti({ fire, options }: ConfettiProps) {
 
   useEffect(() => {
     if (canvasRef.current) {
-      confettiInstance.current = confetti.create(canvasRef.current, {
-        resize: true,
-        useWorker: true,
-      });
+      confettiInstance.current = confetti.create(canvasRef.current, { resize: true, useWorker: true });
     }
 
     return () => {
@@ -25,20 +22,9 @@ export function Confetti({ fire, options }: ConfettiProps) {
 
   useEffect(() => {
     if (fire && confettiInstance.current) {
-      confettiInstance.current({
-        ...options,
-        spread: 200,
-        origin: { y: 0.45 },
-        particleCount: 200,
-        startVelocity: 25,
-      });
+      confettiInstance.current({ ...options, spread: 200, origin: { y: 0.45 }, particleCount: 200, startVelocity: 25 });
     }
   }, [fire, options]);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }}
-    />
-  );
+  return <canvas ref={canvasRef} style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, pointerEvents: 'none' }} />;
 }

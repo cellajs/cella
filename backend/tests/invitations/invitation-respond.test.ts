@@ -11,10 +11,7 @@ import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 import { createInvitation, readMembersAs } from './helpers';
 
-setTestConfig({
-  enabledAuthStrategies: ['passkey'],
-  selfRegistration: true,
-});
+setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
 
 afterEach(async () => await clearDatabase());
 
@@ -28,10 +25,7 @@ describe('Invitation response', async () => {
   async function respondToInvitation(inactiveMembershipId: string, action: 'accept' | 'reject', sessionCookie: string) {
     return await call(handleMembershipInvitation, {
       path: { id: inactiveMembershipId, acceptOrReject: action },
-      headers: {
-        ...defaultHeaders,
-        Cookie: sessionCookie,
-      },
+      headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
   }
 
@@ -57,10 +51,7 @@ describe('Invitation response', async () => {
     expect(memberships[0].organizationId).toBe(organization.id);
     expect(memberships[0].role).toBe(memberRole);
 
-    const remainingInactive = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
+    const remainingInactive = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
     expect(remainingInactive).toHaveLength(0);
   });
 
@@ -126,10 +117,7 @@ describe('Invitation response', async () => {
     const memberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, invitedUser.id));
     expect(memberships).toHaveLength(0);
 
-    const rejectedInactive = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
+    const rejectedInactive = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id!));
     expect(rejectedInactive).toHaveLength(1);
     expect(rejectedInactive[0].rejectedAt).toBeDefined();
   });
@@ -145,20 +133,11 @@ describe('Invitation response', async () => {
       role: memberRole,
     });
 
-    const { response: res } = await respondToInvitation(
-      inactiveMembership.id,
-      'reject',
-      await createTestSession(invitedUser),
-    );
+    const { response: res } = await respondToInvitation(inactiveMembership.id, 'reject', await createTestSession(invitedUser));
     expect(res.status).toBe(200);
 
-    expect(
-      await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, inactiveMembership.id)),
-    ).toHaveLength(0);
-    const { response, error } = await call(invokeToken, {
-      path: { type: 'invitation', token: rawToken },
-      headers: defaultHeaders,
-    });
+    expect(await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, inactiveMembership.id))).toHaveLength(0);
+    const { response, error } = await call(invokeToken, { path: { type: 'invitation', token: rawToken }, headers: defaultHeaders });
     await expectRefusal({ response, error }, 401, 'invitation_not_found');
   });
 
@@ -170,10 +149,7 @@ describe('Invitation response', async () => {
 
     const { response: res } = await call(handleMembershipInvitation, {
       path: { id: '00000000-0000-0000-0000-000000000000', acceptOrReject: 'accept' },
-      headers: {
-        ...defaultHeaders,
-        Cookie: sessionCookie,
-      },
+      headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
 
     expect(res.status).toBe(404);
@@ -194,22 +170,14 @@ describe('Invitation response', async () => {
       boundTo: invitedUser.id,
       role: memberRole,
     });
-    const unbound = await createInvitation({
-      organization,
-      email: 'nobody@example.com',
-      createdBy: invitedUser.id,
-      role: memberRole,
-    });
+    const unbound = await createInvitation({ organization, email: 'nobody@example.com', createdBy: invitedUser.id, role: memberRole });
 
     for (const { inactiveMembership } of [bound, unbound]) {
       const { response: res } = await respondToInvitation(inactiveMembership.id, 'accept', attackerSession);
       expect(res.status).toBe(404);
     }
 
-    const attackerMemberships = await db
-      .select()
-      .from(membershipsTable)
-      .where(eq(membershipsTable.userId, attacker.id));
+    const attackerMemberships = await db.select().from(membershipsTable).where(eq(membershipsTable.userId, attacker.id));
     expect(attackerMemberships).toHaveLength(0);
 
     const stillInactive = await db.select().from(inactiveMembershipsTable);

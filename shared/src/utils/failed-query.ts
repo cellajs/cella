@@ -7,8 +7,7 @@ export const redactedFailedQuery = `${failedQueryPrefix}[REDACTED]`;
 const failedQueryPattern = /Failed query: [\s\S]*?\nparams: [\s\S]*?(?=\n {4}at |$)/g;
 
 /** True for the message of Drizzle's `DrizzleQueryError`, which carries the SQL and every value the query bound. */
-export const isFailedQueryMessage = (message: string): boolean =>
-  message.startsWith(failedQueryPrefix) && message.includes('\nparams: ');
+export const isFailedQueryMessage = (message: string): boolean => message.startsWith(failedQueryPrefix) && message.includes('\nparams: ');
 
 /**
  * Replaces the SQL and bound values of every failed query quoted in a text, such as a stack an error took over from a

@@ -34,21 +34,11 @@ import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import {
-  assumeMemberAttachmentPolicy,
-  clearSecurityTestData,
-  createOrgUser,
-  createSecondOrg,
-  createTestTenant,
-  type TestTenant,
-} from './helpers';
+import { assumeMemberAttachmentPolicy, clearSecurityTestData, createOrgUser, createSecondOrg, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-const renameStx = () => ({
-  ...mockStxBase(`stx:${generateId()}`),
-  fieldTimestamps: { name: generateServerHLC('test-client') },
-});
+const renameStx = () => ({ ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { name: generateServerHLC('test-client') } });
 
 type Session = { sessionCookie: string };
 const notFound = { status: 404, type: 'not_found' };
@@ -85,12 +75,9 @@ describe('Cross-organization API isolation', async () => {
   const invitedByAttacker = 'cross-org-newcomer@security-test.com';
 
   const headers = (as: Session) => ({ ...defaultHeaders, Cookie: as.sessionCookie });
-  const attachmentRow = async (id: string) =>
-    (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
-  const organizationRow = async (id: string) =>
-    (await db.select().from(organizationsTable).where(eq(organizationsTable.id, id)))[0];
-  const membershipRow = async (id: string) =>
-    (await db.select().from(membershipsTable).where(eq(membershipsTable.id, id)))[0];
+  const attachmentRow = async (id: string) => (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
+  const organizationRow = async (id: string) => (await db.select().from(organizationsTable).where(eq(organizationsTable.id, id)))[0];
+  const membershipRow = async (id: string) => (await db.select().from(membershipsTable).where(eq(membershipsTable.id, id)))[0];
 
   beforeAll(async () => {
     tenant = await createTestTenant(call, 'org-isolation');
@@ -126,9 +113,8 @@ describe('Cross-organization API isolation', async () => {
       .select({ id: membershipsTable.id })
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, userB.id), eq(membershipsTable.channelId, orgB.id)));
-    invitationB = (
-      await createInvitation({ organization: orgB, email: 'cross-org-invitee@security-test.com', createdBy: userB.id })
-    ).inactiveMembership;
+    invitationB = (await createInvitation({ organization: orgB, email: 'cross-org-invitee@security-test.com', createdBy: userB.id }))
+      .inactiveMembership;
   });
 
   afterAll(async () => {
@@ -139,8 +125,7 @@ describe('Cross-organization API isolation', async () => {
   const rows: Row[] = [
     {
       route: 'getAttachments',
-      attempt: (as) =>
-        call(getAttachments, { path: { tenantId: tenant.tenantId, organizationId: orgB.id }, headers: headers(as) }),
+      attempt: (as) => call(getAttachments, { path: { tenantId: tenant.tenantId, organizationId: orgB.id }, headers: headers(as) }),
     },
     {
       route: 'createAttachments',
@@ -153,17 +138,12 @@ describe('Cross-organization API isolation', async () => {
     },
     {
       route: 'getOrganization',
-      attempt: (as) =>
-        call(getOrganization, { path: { tenantId: tenant.tenantId, id: orgB.id }, headers: headers(as) }),
+      attempt: (as) => call(getOrganization, { path: { tenantId: tenant.tenantId, id: orgB.id }, headers: headers(as) }),
     },
     {
       route: 'updateOrganization',
       attempt: (as) =>
-        call(updateOrganization, {
-          path: { tenantId: tenant.tenantId, id: orgB.id },
-          body: { name: 'Hijacked' },
-          headers: headers(as),
-        }),
+        call(updateOrganization, { path: { tenantId: tenant.tenantId, id: orgB.id }, body: { name: 'Hijacked' }, headers: headers(as) }),
       unchanged: async () => expect((await organizationRow(orgB.id)).name).toBe(orgB.name),
     },
     {
@@ -255,9 +235,7 @@ describe('Cross-organization API isolation', async () => {
           headers: headers(as),
         }),
       unchanged: async () =>
-        expect(
-          await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, invitedByAttacker)),
-        ).toHaveLength(0),
+        expect(await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, invitedByAttacker))).toHaveLength(0),
     },
     {
       route: 'resendPendingInvitation',
@@ -270,15 +248,11 @@ describe('Cross-organization API isolation', async () => {
     },
   ];
 
-  it.each(rows)(
-    "must not reach org B via $route on tenant A's path",
-    async ({ attempt, refusal = notFound, unchanged }) => {
-      // The organization is resolved inside the URL's tenant: a role in org B does not carry it over either.
-      for (const attacker of [tenant, insider])
-        await expectRefusal(await attempt(attacker), refusal.status, refusal.type);
-      await unchanged?.();
-    },
-  );
+  it.each(rows)("must not reach org B via $route on tenant A's path", async ({ attempt, refusal = notFound, unchanged }) => {
+    // The organization is resolved inside the URL's tenant: a role in org B does not carry it over either.
+    for (const attacker of [tenant, insider]) await expectRefusal(await attempt(attacker), refusal.status, refusal.type);
+    await unchanged?.();
+  });
 
   it("must not delete org B's attachment via a batch on tenant A's path that also names the caller's own", async () => {
     for (const attacker of [tenant, insider]) {
@@ -313,9 +287,7 @@ describe('Cross-organization API isolation', async () => {
     expect(await listedFor(tenant)).not.toContain(userB.id);
 
     // Positive control: the member of both organizations shares one with user B.
-    expect(
-      (await call(getUser, { path: { relatableUserId: userB.id }, headers: headers(insider) })).response.status,
-    ).toBe(200);
+    expect((await call(getUser, { path: { relatableUserId: userB.id }, headers: headers(insider) })).response.status).toBe(200);
     expect(await listedFor(insider)).toContain(userB.id);
   });
 
@@ -341,10 +313,7 @@ describe('Cross-organization API isolation', async () => {
     ]) {
       expect((await call(getAttachments, { path, headers: headers(insider) })).response.status).toBe(200);
     }
-    const { response } = await call(getOrganization, {
-      path: { tenantId: orgB.tenantId, id: orgB.id },
-      headers: headers(userB),
-    });
+    const { response } = await call(getOrganization, { path: { tenantId: orgB.tenantId, id: orgB.id }, headers: headers(userB) });
     expect(response.status).toBe(200);
   });
 });

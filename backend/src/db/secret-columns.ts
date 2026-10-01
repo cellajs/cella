@@ -39,9 +39,6 @@ export const secretColumnPattern = /(hash|secret|jwk|token|password)$/i;
 export type SecretColumnTable = keyof typeof secretColumns;
 
 /** The secret column names of a table, `never` for a table without any. */
-export type SecretColumnsOf<TName extends string> = TName extends SecretColumnTable
-  ? (typeof secretColumns)[TName][number]
-  : never;
+export type SecretColumnsOf<TName extends string> = TName extends SecretColumnTable ? (typeof secretColumns)[TName][number] : never;
 
-export const secretColumnsOf = (tableName: string): readonly string[] =>
-  (secretColumns as Record<string, readonly string[]>)[tableName] ?? [];
+export const secretColumnsOf = (tableName: string): readonly string[] => (secretColumns as Record<string, readonly string[]>)[tableName] ?? [];

@@ -1,24 +1,7 @@
-import {
-  createTotp,
-  generatePasskeyChallenge,
-  generateTotpKey,
-  github,
-  google,
-  microsoft,
-  signInWithTotp,
-  toggleMfa,
-} from 'sdk';
+import { createTotp, generatePasskeyChallenge, generateTotpKey, github, google, microsoft, signInWithTotp, toggleMfa } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { defaultHeaders } from '../fixtures';
-import {
-  authCookie,
-  createMfaToken,
-  createTestSession,
-  createTestUser,
-  createTotpUser,
-  type ErrorResponse,
-  expectRefusal,
-} from '../helpers';
+import { authCookie, createMfaToken, createTestSession, createTestUser, createTotpUser, type ErrorResponse, expectRefusal } from '../helpers';
 import { passkeySignIn } from '../security/helpers';
 import { softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
@@ -30,11 +13,7 @@ afterEach(async () => {
 
 describe('oauth strategy disabled', async () => {
   beforeAll(() => {
-    setTestConfig({
-      enabledAuthStrategies: ['passkey', 'totp'],
-      enabledOAuthProviders: [],
-      selfRegistration: true,
-    });
+    setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'], enabledOAuthProviders: [], selfRegistration: true });
   });
   const call = await createAppClient();
 
@@ -52,11 +31,7 @@ describe('oauth strategy disabled', async () => {
 // OAuth provider configuration: only GitHub enabled.
 describe('oauth provider configuration', async () => {
   beforeAll(() => {
-    setTestConfig({
-      enabledAuthStrategies: ['oauth'],
-      enabledOAuthProviders: ['github'],
-      selfRegistration: true,
-    });
+    setTestConfig({ enabledAuthStrategies: ['oauth'], enabledOAuthProviders: ['github'], selfRegistration: true });
   });
   const call = await createAppClient();
 
@@ -80,18 +55,12 @@ describe('oauth provider configuration', async () => {
 
 describe('passkey strategy disabled', async () => {
   beforeAll(() => {
-    setTestConfig({
-      enabledAuthStrategies: ['oauth', 'totp'],
-      selfRegistration: true,
-    });
+    setTestConfig({ enabledAuthStrategies: ['oauth', 'totp'], selfRegistration: true });
   });
   const call = await createAppClient();
 
   it('should reject passkey generation', async () => {
-    const { response: res, error } = await call(generatePasskeyChallenge, {
-      body: { type: 'registration' },
-      headers: defaultHeaders,
-    });
+    const { response: res, error } = await call(generatePasskeyChallenge, { body: { type: 'registration' }, headers: defaultHeaders });
     await expectRefusal({ response: res, error }, 400, 'forbidden_strategy');
   });
 
@@ -103,10 +72,7 @@ describe('passkey strategy disabled', async () => {
 
 describe('totp strategy disabled', async () => {
   beforeAll(() => {
-    setTestConfig({
-      enabledAuthStrategies: ['oauth', 'passkey'],
-      selfRegistration: true,
-    });
+    setTestConfig({ enabledAuthStrategies: ['oauth', 'passkey'], selfRegistration: true });
   });
   const call = await createAppClient();
 
@@ -137,10 +103,7 @@ describe('totp strategy disabled', async () => {
 
 describe('all strategies disabled', async () => {
   beforeAll(() => {
-    setTestConfig({
-      enabledAuthStrategies: [],
-      selfRegistration: true,
-    });
+    setTestConfig({ enabledAuthStrategies: [], selfRegistration: true });
   });
   const call = await createAppClient();
 

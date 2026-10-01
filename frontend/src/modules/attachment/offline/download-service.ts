@@ -251,9 +251,7 @@ class AttachmentDownloadService {
         console.debug(`[DownloadService] Completed downloading attachment ${attachmentId}`);
       } else {
         await downloadQueue.transition(attachmentId, 'failed');
-        console.debug(
-          `[DownloadService] No variants downloaded for ${attachmentId}, marked as failed${authFailed ? ' (auth)' : ''}`,
-        );
+        console.debug(`[DownloadService] No variants downloaded for ${attachmentId}, marked as failed${authFailed ? ' (auth)' : ''}`);
       }
     } catch (error) {
       console.error(`[DownloadService] Failed to download ${attachmentId}:`, error);
@@ -261,11 +259,7 @@ class AttachmentDownloadService {
     }
   }
 
-  private async downloadVariant(
-    attachment: Attachment,
-    variant: CloudFileVariant,
-    organizationId: string,
-  ): Promise<VariantResult> {
+  private async downloadVariant(attachment: Attachment, variant: CloudFileVariant, organizationId: string): Promise<VariantResult> {
     // This attachment has no object for this variant.
     if (!getVariantKey(attachment, variant)) return 'skipped';
 
@@ -297,9 +291,7 @@ class AttachmentDownloadService {
 
       const blob = await response.blob();
       const contentType =
-        variant === 'converted' && attachment.convertedContentType
-          ? attachment.convertedContentType
-          : attachment.contentType || blob.type;
+        variant === 'converted' && attachment.convertedContentType ? attachment.convertedContentType : attachment.contentType || blob.type;
 
       await attachmentStorage.storeDownloadBlobWithVariant(attachment.id, variant, organizationId, blob, contentType);
 

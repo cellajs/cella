@@ -18,10 +18,7 @@ import {
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
-setTestConfig({
-  enabledAuthStrategies: ['passkey'],
-  selfRegistration: true,
-});
+setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
 
 afterEach(async () => await clearDatabase());
 
@@ -30,40 +27,24 @@ describe('Membership Invitation', async () => {
 
   const createOrgAndAdmin = async () => {
     const organization = await createTestOrganization();
-    const user = await createOrganizationAdminUser(
-      'admin@example.com',
-      organization.id,
-      adminRole,
-      organization.tenantId,
-    );
+    const user = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
 
     const sessionCookie = await createTestSession(user);
 
     return { organization, sessionCookie };
   };
 
-  const makeInviteRequest = async (
-    tenantId: string,
-    organizationId: string,
-    inviteData: any,
-    sessionCookie: string | null,
-  ) => {
+  const makeInviteRequest = async (tenantId: string, organizationId: string, inviteData: any, sessionCookie: string | null) => {
     return await call(membershipInvite, {
       path: { tenantId, organizationId },
       body: inviteData,
       query: { entityId: organizationId, entityType: 'organization' as const },
-      headers: {
-        ...defaultHeaders,
-        Cookie: sessionCookie || '',
-      },
+      headers: { ...defaultHeaders, Cookie: sessionCookie || '' },
     });
   };
 
   const getInactiveMemberships = async (organizationId: string) => {
-    return await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.organizationId, organizationId));
+    return await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.organizationId, organizationId));
   };
 
   it('should invite new users to organization', async () => {
@@ -169,20 +150,10 @@ describe('Membership Invitation', async () => {
 
     const inviteData = { emails: ['user@example.com'], role: memberRole };
 
-    const { response: firstRes } = await makeInviteRequest(
-      organization.tenantId,
-      organization.id,
-      inviteData,
-      sessionCookie,
-    );
+    const { response: firstRes } = await makeInviteRequest(organization.tenantId, organization.id, inviteData, sessionCookie);
     expect(firstRes.status).toBe(200);
 
-    const { response: secondRes, data } = await makeInviteRequest(
-      organization.tenantId,
-      organization.id,
-      inviteData,
-      sessionCookie,
-    );
+    const { response: secondRes, data } = await makeInviteRequest(organization.tenantId, organization.id, inviteData, sessionCookie);
     expect(secondRes.status).toBe(200);
 
     const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };

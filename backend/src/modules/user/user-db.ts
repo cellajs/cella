@@ -46,10 +46,7 @@ export const usersTable = snakeCase.table(
     index('users_name_index').on(table.name.desc()),
     index('users_email_index').on(table.email.desc()),
     index('users_created_at_index').on(table.createdAt.desc()),
-    foreignKey({
-      columns: [table.updatedBy],
-      foreignColumns: [table.id],
-    }),
+    foreignKey({ columns: [table.updatedBy], foreignColumns: [table.id] }),
   ],
 );
 

@@ -29,9 +29,7 @@ function SearchResultsSkeleton() {
   const { hasStarted } = useMountedState();
 
   return (
-    <div
-      className={`flex flex-col gap-4 p-4 transition-opacity duration-300 ${hasStarted ? 'opacity-100' : 'opacity-0'}`}
-    >
+    <div className={`flex flex-col gap-4 p-4 transition-opacity duration-300 ${hasStarted ? 'opacity-100' : 'opacity-0'}`}>
       {Array.from({ length: 3 }).map((_, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder.
         <div key={i} className="flex items-center gap-3 py-1.5">
@@ -55,8 +53,7 @@ export function AppSearch() {
   const debouncedSearchValue = useDebounce(searchValue, 300, { immediateValue: '' });
   // Group collapse state lives here so it persists across reloads while typing; it resets with the dialog.
   const [collapsedTypes, setCollapsedTypes] = useState<Partial<Record<string, boolean>>>({});
-  const toggleCollapsed = (entityType: string) =>
-    setCollapsedTypes((prev) => ({ ...prev, [entityType]: !prev[entityType] }));
+  const toggleCollapsed = (entityType: string) => setCollapsedTypes((prev) => ({ ...prev, [entityType]: !prev[entityType] }));
 
   const recentSearches = useNavigationStore((state) => state.recentSearches);
 
@@ -80,10 +77,7 @@ export function AppSearch() {
     });
   };
 
-  const userQ = useInfiniteQuery({
-    ...usersListQueryOptions({ q: debouncedSearchValue }),
-    enabled: debouncedSearchValue.length > 0,
-  });
+  const userQ = useInfiniteQuery({ ...usersListQueryOptions({ q: debouncedSearchValue }), enabled: debouncedSearchValue.length > 0 });
 
   const channelResults = Object.fromEntries(
     Object.entries(channelListQueriesByType).map(([entityType, queryOptions]) => [
@@ -115,9 +109,7 @@ export function AppSearch() {
   const hasQuery = debouncedSearchValue.length > 0;
   const isQueryFetching = hasQuery && (userQ.isFetching || Object.values(channelResults).some((q) => q.isFetching));
   const isFetching = isDebouncePending || isQueryFetching;
-  const isLoading =
-    searchValue.length > 0 &&
-    (isDebouncePending || userQ.isLoading || Object.values(channelResults).some((q) => q.isLoading));
+  const isLoading = searchValue.length > 0 && (isDebouncePending || userQ.isLoading || Object.values(channelResults).some((q) => q.isLoading));
 
   const onSelectItem = (item: EnrichedChannel | UserBase) => {
     updateRecentSearches(searchValue);
@@ -179,9 +171,7 @@ export function AppSearch() {
             ) : (
               <div className="p-1">
                 {(() => {
-                  const firstWithResults = searchableEntityTypes.find(
-                    (entityType) => (data[entityType] ?? []).length > 0,
-                  );
+                  const firstWithResults = searchableEntityTypes.find((entityType) => (data[entityType] ?? []).length > 0);
                   return searchableEntityTypes.map((entityType) => (
                     <SearchResultBlock
                       key={entityType}

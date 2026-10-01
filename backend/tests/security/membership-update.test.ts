@@ -39,10 +39,7 @@ describe('Membership updates', async () => {
         headers: { ...defaultHeaders, Cookie: as.sessionCookie },
       });
     const updateRaw = (as: { sessionCookie: string }, membershipId: string, body: Record<string, unknown>) =>
-      rawJsonRequest(`/${org.tenantId}/${org.id}/memberships/${membershipId}`, as.sessionCookie, {
-        method: 'PUT',
-        body,
-      });
+      rawJsonRequest(`/${org.tenantId}/${org.id}/memberships/${membershipId}`, as.sessionCookie, { method: 'PUT', body });
     return { org, admin, member, membershipOf, update, updateRaw };
   }
 

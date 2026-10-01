@@ -13,10 +13,7 @@ export const spanStore = createSpanStore({ maxSpans: 500 });
 
 if (!mapleEnabled) {
   const provider = new WebTracerProvider({
-    resource: resourceFromAttributes({
-      [ATTR_SERVICE_NAME]: `${appConfig.slug}-frontend`,
-      'deployment.environment.name': appConfig.mode,
-    }),
+    resource: resourceFromAttributes({ [ATTR_SERVICE_NAME]: `${appConfig.slug}-frontend`, 'deployment.environment.name': appConfig.mode }),
     spanProcessors: [createSpanStoreProcessor({ store: spanStore })],
   });
 
@@ -27,9 +24,7 @@ if (!mapleEnabled) {
     registerInstrumentations({
       instrumentations: [
         new FetchInstrumentation({
-          propagateTraceHeaderCorsUrls: [
-            new RegExp(`^${appConfig.backendUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(/|$)`),
-          ],
+          propagateTraceHeaderCorsUrls: [new RegExp(`^${appConfig.backendUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(/|$)`)],
         }),
       ],
     });

@@ -14,8 +14,7 @@ const ambiguousSeparators = /\\|%5c|%2f/i;
 const malformedPercent = /%(?![0-9a-f]{2})/i;
 
 /** Decodes each `%XX` for the deny check only; the returned path keeps its encoding. */
-const decodePercents = (value: string) =>
-  value.replace(/%([0-9a-f]{2})/gi, (_match, hex: string) => String.fromCharCode(Number.parseInt(hex, 16)));
+const decodePercents = (value: string) => value.replace(/%([0-9a-f]{2})/gi, (_match, hex: string) => String.fromCharCode(Number.parseInt(hex, 16)));
 
 const isDenied = (pathname: string, denyPrefixes: readonly string[]) => {
   const path = decodePercents(pathname).toLowerCase();

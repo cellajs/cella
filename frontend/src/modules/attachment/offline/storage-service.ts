@@ -119,8 +119,7 @@ class AttachmentStorageService {
     const rawKey = makeBlobKey(attachmentId, 'raw');
     try {
       // Never evict raw without a durable variant stored: a resource with no cloud key would become unresolvable.
-      const hasDurable =
-        (await this.hasVariant(attachmentId, 'original')) || (await this.hasVariant(attachmentId, 'converted'));
+      const hasDurable = (await this.hasVariant(attachmentId, 'original')) || (await this.hasVariant(attachmentId, 'converted'));
       if (!hasDurable) {
         console.debug(`[AttachmentStorage] Skipped raw eviction for ${attachmentId}: no durable variant stored`);
         return false;

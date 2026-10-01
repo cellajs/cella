@@ -9,12 +9,7 @@ interface MentionStatic {
 }
 
 /** Per-recipient props of an instant email about one subject: the mention mail and the comment mail. */
-export type SubjectEmailRecipient = EmailRecipient & {
-  subjectTitle: string;
-  excerpt: string;
-  link: string;
-  unsubscribeLink: string;
-};
+export type SubjectEmailRecipient = EmailRecipient & { subjectTitle: string; excerpt: string; link: string; unsubscribeLink: string };
 
 interface SubjectEmailProps extends Omit<SubjectEmailRecipient, keyof EmailRecipient> {
   previewText: string;

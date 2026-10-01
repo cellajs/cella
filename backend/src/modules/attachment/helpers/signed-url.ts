@@ -21,11 +21,7 @@ function getS3Client(): S3Client {
     });
   }
 
-  s3Client = new S3Client({
-    region: appConfig.s3.region,
-    endpoint: `https://${appConfig.s3.host}`,
-    credentials: { accessKeyId, secretAccessKey },
-  });
+  s3Client = new S3Client({ region: appConfig.s3.region, endpoint: `https://${appConfig.s3.host}`, credentials: { accessKeyId, secretAccessKey } });
 
   return s3Client;
 }
@@ -41,10 +37,7 @@ interface GetUrlOptions {
  * presigned for `expiresIn` seconds (default 24h). A `blob:` key names no stored object, only a
  * browser's local file: it throws, and is never signed or turned into a bucket URL.
  */
-export async function getSignedUrlFromKey(
-  Key: string,
-  { publicBucket, bucketName, expiresIn = 86400 }: GetUrlOptions,
-): Promise<string> {
+export async function getSignedUrlFromKey(Key: string, { publicBucket, bucketName, expiresIn = 86400 }: GetUrlOptions): Promise<string> {
   if (Key.startsWith('blob:')) {
     throw new AppError(500, 'server_error', 'error', { message: 'A blob: key names no stored object to sign' });
   }

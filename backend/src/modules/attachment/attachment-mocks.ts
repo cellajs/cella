@@ -1,12 +1,5 @@
 import { faker } from '@faker-js/faker';
-import {
-  generateMockEntityChannelIdColumns,
-  mockBatchResponse,
-  mockNanoid,
-  mockPaginated,
-  mockProductColumns,
-  withFakerSeed,
-} from '#/mocks';
+import { generateMockEntityChannelIdColumns, mockBatchResponse, mockNanoid, mockPaginated, mockProductColumns, withFakerSeed } from '#/mocks';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
 import { mockAuditUsers } from '#/schemas/entity-base-mocks';
 

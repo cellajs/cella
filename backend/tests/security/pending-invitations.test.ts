@@ -61,12 +61,7 @@ describe('Pending invitations list', async () => {
 
     const account = await createTestUser(accountPrimary);
     await db.update(usersTable).set({ thumbnailUrl: accountAvatar }).where(eq(usersTable.id, account.id));
-    await db.insert(emailsTable).values({
-      email: accountAlternate,
-      userId: account.id,
-      verified: true,
-      verifiedAt: mockPastIsoDate(),
-    });
+    await db.insert(emailsTable).values({ email: accountAlternate, userId: account.id, verified: true, verifiedAt: mockPastIsoDate() });
 
     const { response } = await invite([accountAlternate, newcomer]);
     expect(response.status).toBe(200);
@@ -120,9 +115,7 @@ describe('Pending invitations list', async () => {
   it('must not link another address to a member via the membershipInvite response', async () => {
     // A second address the member proved: the inviter knows members only by their listed address.
     const memberAlternate = 'pending-member-alternate@security-test.com';
-    await db
-      .insert(emailsTable)
-      .values({ email: memberAlternate, userId: member.id, verified: true, verifiedAt: mockPastIsoDate() });
+    await db.insert(emailsTable).values({ email: memberAlternate, userId: member.id, verified: true, verifiedAt: mockPastIsoDate() });
 
     const toMemberAlternate = await invite([memberAlternate]);
     const toNewcomer = await invite(['pending-newcomer-3@security-test.com']);

@@ -8,9 +8,7 @@ const { authenticateRouteSearchParamsSchema } = await import('~/modules/auth/sea
 
 describe('resolvePostAuthRedirect', () => {
   it('follows a same-origin deep link with its query and hash (positive control)', () => {
-    expect(resolvePostAuthRedirect('/acme/organization/members?q=a%26b#row')).toBe(
-      '/acme/organization/members?q=a%26b#row',
-    );
+    expect(resolvePostAuthRedirect('/acme/organization/members?q=a%26b#row')).toBe('/acme/organization/members?q=a%26b#row');
   });
 
   it('prefers the invitation resume path when a token is in hand', () => {

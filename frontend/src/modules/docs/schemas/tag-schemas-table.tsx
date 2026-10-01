@@ -53,12 +53,5 @@ function useColumns(tagName: string, tagKinds: string[]): ColumnOrColumnGroup<Ge
 export function TagSchemasTable({ schemas, tagName, tagKinds, onPrerender }: TagSchemasTableProps) {
   const columns = useColumns(tagName, tagKinds);
 
-  return (
-    <TagTable<GenComponentSchema>
-      rows={schemas}
-      columns={columns}
-      rowKeyGetter={(row) => row.name}
-      onPrerender={onPrerender}
-    />
-  );
+  return <TagTable<GenComponentSchema> rows={schemas} columns={columns} rowKeyGetter={(row) => row.name} onPrerender={onPrerender} />;
 }

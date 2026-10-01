@@ -8,8 +8,7 @@ import { gte, lte } from 'drizzle-orm';
 export function parseSeqCursor(raw: string | undefined): { gte?: number; lte?: number } | undefined {
   if (!raw) return undefined;
   const parts = raw.split(',').map(Number);
-  if (parts.length === 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1]))
-    return { gte: parts[0], lte: parts[1] };
+  if (parts.length === 2 && Number.isFinite(parts[0]) && Number.isFinite(parts[1])) return { gte: parts[0], lte: parts[1] };
   return undefined;
 }
 

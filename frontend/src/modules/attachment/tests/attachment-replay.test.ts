@@ -9,19 +9,9 @@ const { createAttachments, updateAttachment, deleteAttachments } = vi.hoisted(()
   deleteAttachments: vi.fn(async (_req: Req) => undefined),
 }));
 
-vi.mock('sdk', () => ({
-  createAttachments,
-  updateAttachment,
-  deleteAttachments,
-  getAttachment: vi.fn(),
-  getAttachments: vi.fn(),
-}));
+vi.mock('sdk', () => ({ createAttachments, updateAttachment, deleteAttachments, getAttachment: vi.fn(), getAttachments: vi.fn() }));
 
-import {
-  createAttachmentsMutationFn,
-  deleteAttachmentsMutationFn,
-  updateAttachmentMutationFn,
-} from '~/modules/attachment/query-mutations';
+import { createAttachmentsMutationFn, deleteAttachmentsMutationFn, updateAttachmentMutationFn } from '~/modules/attachment/query-mutations';
 
 const ctx = { tenantId: 'ten-1', organizationId: 'org-1' };
 
@@ -71,11 +61,7 @@ describe('attachment offline-replay mutation functions', () => {
 
   it('replay reuses the stx persisted in variables: same mutationId and HLCs, no restamp (D4)', async () => {
     updateAttachment.mockClear();
-    const persistedStx = {
-      mutationId: 'original-mutation-id',
-      sourceId: 'tab-1',
-      fieldTimestamps: { name: '1710500000123:0001:abcde' },
-    };
+    const persistedStx = { mutationId: 'original-mutation-id', sourceId: 'tab-1', fieldTimestamps: { name: '1710500000123:0001:abcde' } };
     await updateAttachmentMutationFn({ ...ctx, id: 'att-1', ops: { name: 'Renamed' }, stx: persistedStx });
 
     // Idempotency + intent-time LWW: the replayed request is byte-identical to the original.

@@ -15,9 +15,7 @@ const meta = {
       <AvatarFallback>CN</AvatarFallback>
     </Avatar>
   ),
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
 } satisfies Meta<typeof Avatar>;
 
 export default meta;

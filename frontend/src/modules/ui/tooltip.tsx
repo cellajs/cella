@@ -2,25 +2,14 @@ import { Tooltip as TooltipPrimitive } from '@base-ui/react/tooltip';
 import type { ComponentPropsWithoutRef, ReactNode, RefAttributes } from 'react';
 import { cn } from '~/utils/cn';
 
-export function TooltipProvider({
-  delay = 200,
-  timeout = 400,
-  ...props
-}: {
-  children: ReactNode;
-  delay?: number;
-  timeout?: number;
-}) {
+export function TooltipProvider({ delay = 200, timeout = 400, ...props }: { children: ReactNode; delay?: number; timeout?: number }) {
   return <TooltipPrimitive.Provider data-slot="tooltip-provider" delay={delay} timeout={timeout} {...props} />;
 }
 
 export function Tooltip({
   disableHoverablePopup,
   ...props
-}: Omit<TooltipPrimitive.Root.Props, 'children'> & {
-  children?: ReactNode;
-  disableHoverablePopup?: boolean;
-}) {
+}: Omit<TooltipPrimitive.Root.Props, 'children'> & { children?: ReactNode; disableHoverablePopup?: boolean }) {
   return <TooltipPrimitive.Root data-slot="tooltip" disableHoverablePopup={disableHoverablePopup} {...props} />;
 }
 

@@ -11,10 +11,7 @@ interface DocsSearchStoreState {
  * and idb no-ops while signed out, which would drop history for anonymous visitors.
  */
 export const useDocsSearchStore = create<DocsSearchStoreState>()(
-  persist(() => ({ recentSearches: [] as string[] }), {
-    name: 'docs-search',
-    storage: createJSONStorage(() => localStorage),
-  }),
+  persist(() => ({ recentSearches: [] as string[] }), { name: 'docs-search', storage: createJSONStorage(() => localStorage) }),
 );
 
 export const deleteRecentSearch = (value: string) => {

@@ -1,12 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { getTableName, type InferSelectModel, type Table } from 'drizzle-orm';
-import {
-  type BuildRefine,
-  type BuildSchema,
-  type CreateSelectSchema,
-  createSchemaFactory,
-  type NoUnknownKeys,
-} from 'drizzle-orm/zod';
+import { type BuildRefine, type BuildSchema, type CreateSelectSchema, createSchemaFactory, type NoUnknownKeys } from 'drizzle-orm/zod';
 import { type SecretColumnsOf, secretColumnsOf } from '#/db/secret-columns';
 
 const factory = createSchemaFactory({ zodInstance: z });

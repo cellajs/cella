@@ -18,12 +18,5 @@ export function TenantsTableBar({ queryKey, searchVars, setSearch, columns, setC
   const total = useListQueryTotal(queryKey);
   const barFilters = useTableBarFilters({ searchVars, setSearch, reset: { q: '' } });
 
-  return (
-    <TableBarShell
-      {...barFilters}
-      {...{ searchVars, total, columns, setColumns }}
-      label="c:tenant"
-      searchName="tenant-search"
-    />
-  );
+  return <TableBarShell {...barFilters} {...{ searchVars, total, columns, setColumns }} label="c:tenant" searchName="tenant-search" />;
 }

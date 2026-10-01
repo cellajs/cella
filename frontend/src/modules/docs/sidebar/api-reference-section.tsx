@@ -40,11 +40,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
   const hasOperationSearchParams = !!activeOperationTag || !!searchParams.q;
   const hasSchemasSearchParams = !!activeSchemaTag;
   const [forcedCollapsed, setForcedCollapsed] = useState<string | null>(
-    isOperationsRoute && !hasOperationSearchParams
-      ? 'operations'
-      : isSchemasRoute && !hasSchemasSearchParams
-        ? 'schemas'
-        : null,
+    isOperationsRoute && !hasOperationSearchParams ? 'operations' : isSchemasRoute && !hasSchemasSearchParams ? 'schemas' : null,
   );
 
   const prefetchOperations = () => {
@@ -93,9 +89,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
               >
                 <span>{t('c:operation', { count: 2 })}</span>
                 {(!isListMode || expandedSection !== 'operations' || forcedCollapsed === 'operations') && (
-                  <span className="ml-2 text-muted-foreground/90 text-xs">
-                    {tags.reduce((sum, tag) => sum + tag.count, 0)}
-                  </span>
+                  <span className="ml-2 text-muted-foreground/90 text-xs">{tags.reduce((sum, tag) => sum + tag.count, 0)}</span>
                 )}
                 <ChevronDownIcon
                   className={cn(
@@ -106,10 +100,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
               </CollapsibleTrigger>
             </SidebarMenuItem>
             <CollapsibleContent
-              className={cn(
-                'overflow-hidden',
-                !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down',
-              )}
+              className={cn('overflow-hidden', !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}
             >
               <SidebarGroupContent>
                 <Suspense fallback={null}>
@@ -158,10 +149,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
               </CollapsibleTrigger>
             </SidebarMenuItem>
             <CollapsibleContent
-              className={cn(
-                'overflow-hidden',
-                !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down',
-              )}
+              className={cn('overflow-hidden', !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}
             >
               <SidebarGroupContent>
                 <Suspense fallback={null}>

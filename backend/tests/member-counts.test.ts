@@ -35,11 +35,7 @@ describe('member counts (include=counts)', async () => {
 
     // The member authors rows in the organization, at the channels the product type lives under.
     const adminDb = getAdminDb('test setup');
-    const plan = buildTestEntityHierarchyPlan({
-      entityType: statType,
-      organizationId: tenant.organization.id,
-      makeChannelId: () => generateId(),
-    });
+    const plan = buildTestEntityHierarchyPlan({ entityType: statType, organizationId: tenant.organization.id, makeChannelId: () => generateId() });
     await seedEntityHierarchy(adminDb, plan, { tenantId: tenant.tenantId, createdBy: memberId, slugPrefix: label });
     const table = getEntityTable(statType);
     const rows = Array.from({ length: authored }, (_, index) =>

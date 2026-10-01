@@ -1,19 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('shared', () => ({
-  appConfig: { backendUrl: 'http://api.test', slug: 'test' },
-}));
+vi.mock('shared', () => ({ appConfig: { backendUrl: 'http://api.test', slug: 'test' } }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
 vi.mock('~/lib/tracing', () => ({ reportCriticalError: vi.fn() }));
 vi.mock('~/query/basic/sync-stale-config', () => ({ setSyncStreamHealthy: vi.fn() }));
 vi.mock('~/query/realtime/sync-store', () => ({
   syncStore: {
-    getState: () => ({
-      cursor: null,
-      setCursor: vi.fn(),
-      setLastSyncAt: vi.fn(),
-      getCatchupViews: () => [],
-    }),
+    getState: () => ({ cursor: null, setCursor: vi.fn(), setLastSyncAt: vi.fn(), getCatchupViews: () => [] }),
   },
 }));
 vi.mock('./app-stream-handler', () => ({ handleAppStreamNotification: vi.fn() }));
@@ -91,11 +84,7 @@ class FakeEventSource {
 }
 
 vi.stubGlobal('EventSource', FakeEventSource);
-vi.stubGlobal('document', {
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-  visibilityState: 'visible',
-});
+vi.stubGlobal('document', { addEventListener: vi.fn(), removeEventListener: vi.fn(), visibilityState: 'visible' });
 
 const { StreamManager } = await import('./stream-store');
 
@@ -104,10 +93,7 @@ const tick = () => new Promise((r) => setTimeout(r, 0));
 
 let managerCount = 0;
 
-function createHarness(overrides?: {
-  fetchAndProcessCatchup?: (cursor: string | null) => Promise<string | null>;
-  useTabCoordination?: boolean;
-}) {
+function createHarness(overrides?: { fetchAndProcessCatchup?: (cursor: string | null) => Promise<string | null>; useTabCoordination?: boolean }) {
   const order: string[] = [];
   const processed: unknown[] = [];
   let resolveCatchup: ((cursor: string | null) => void) | undefined;
@@ -293,18 +279,15 @@ describe('StreamManager server-sent errors', () => {
     return h;
   };
 
-  it.each(['session_replaced', 'access_changed'])(
-    'reconnects after %s: the browser still holds a session',
-    async (code) => {
-      const h = await closedByServer(code);
+  it.each(['session_replaced', 'access_changed'])('reconnects after %s: the browser still holds a session', async (code) => {
+    const h = await closedByServer(code);
 
-      await vi.advanceTimersByTimeAsync(FIRST_RECONNECT_MS);
+    await vi.advanceTimersByTimeAsync(FIRST_RECONNECT_MS);
 
-      expect(FakeEventSource.instances).toHaveLength(2);
-      expect(h.es.readyState).toBe(FakeEventSource.OPEN);
-      h.manager.disconnect();
-    },
-  );
+    expect(FakeEventSource.instances).toHaveLength(2);
+    expect(h.es.readyState).toBe(FakeEventSource.OPEN);
+    h.manager.disconnect();
+  });
 
   it('stays closed after unauthorized: the session is gone, and the next request signs the user out', async () => {
     const h = await closedByServer('unauthorized');

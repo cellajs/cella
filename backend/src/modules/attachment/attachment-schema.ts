@@ -3,10 +3,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { evolutionContract } from '#/core/schema-evolution/evolution-contract';
 import { createInsertSchema, createSelectSchema, describeFields } from '#/db/utils/drizzle-schema';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import {
-  attachmentPlacementFieldsSchema,
-  validateAttachmentPlacement,
-} from '#/modules/attachment/helpers/attachment-placement';
+import { attachmentPlacementFieldsSchema, validateAttachmentPlacement } from '#/modules/attachment/helpers/attachment-placement';
 import { productViewCountSchema } from '#/modules/entities/entities-schema';
 import { batchResponseSchema, maxLength, paginationQuerySchema, stxBaseSchema, validUuidSchema } from '#/schemas';
 import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
@@ -29,14 +26,8 @@ const attachmentFieldDescriptions = {
 } as const;
 
 const keysRefinement = { keys: attachmentKeysSchema };
-const attachmentInsertSchema = describeFields(
-  createInsertSchema(attachmentsTable, keysRefinement),
-  attachmentFieldDescriptions,
-);
-const attachmentSelectSchema = describeFields(
-  createSelectSchema(attachmentsTable, keysRefinement),
-  attachmentFieldDescriptions,
-);
+const attachmentInsertSchema = describeFields(createInsertSchema(attachmentsTable, keysRefinement), attachmentFieldDescriptions);
+const attachmentSelectSchema = describeFields(createSelectSchema(attachmentsTable, keysRefinement), attachmentFieldDescriptions);
 
 export const attachmentSchema = z
   .object({
@@ -120,19 +111,10 @@ export const attachmentVariantSchema = z.enum(['original', 'preview', 'thumbnail
  */
 export const presignedUrlsBodySchema = z.object({
   items: z
-    .array(
-      z.object({
-        attachmentId: validUuidSchema,
-        variant: attachmentVariantSchema.default('original'),
-      }),
-    )
+    .array(z.object({ attachmentId: validUuidSchema, variant: attachmentVariantSchema.default('original') }))
     .min(1)
     .max(50),
 });
 
 /** Missing and denied ids collapse into one `rejectedIds` list, so the two are indistinguishable. */
-export const presignedUrlItemSchema = z.object({
-  attachmentId: validUuidSchema,
-  variant: attachmentVariantSchema,
-  url: z.string(),
-});
+export const presignedUrlItemSchema = z.object({ attachmentId: validUuidSchema, variant: attachmentVariantSchema, url: z.string() });

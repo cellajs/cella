@@ -3,11 +3,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import type { IconComponent } from '~/modules/common/icons/types';
 import type { DocRenderMode } from '~/modules/page/content';
 
-export const renderModeIcons: Record<DocRenderMode, IconComponent> = {
-  default: FileTextIcon,
-  overview: LayoutListIcon,
-  nodeOnly: WorkflowIcon,
-};
+export const renderModeIcons: Record<DocRenderMode, IconComponent> = { default: FileTextIcon, overview: LayoutListIcon, nodeOnly: WorkflowIcon };
 
 /** Literal keys (not a template literal) so the typed-key check and the dead-key sweep both see them. */
 const renderModeLabelKeys = {

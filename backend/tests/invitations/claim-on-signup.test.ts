@@ -24,12 +24,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
   /** Invites `invitedEmail` to a fresh organization through the API, as that organization's admin. */
   const inviteToNewOrganization = async (index: number) => {
     const organization = await createTestOrganization();
-    const admin = await createOrganizationAdminUser(
-      `admin${index}@example.com`,
-      organization.id,
-      adminRole,
-      organization.tenantId,
-    );
+    const admin = await createOrganizationAdminUser(`admin${index}@example.com`, organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
 
     const { response } = await call(membershipInvite, {
@@ -43,8 +38,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
     return organization;
   };
 
-  const pendingFor = (email: string) =>
-    db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, email));
+  const pendingFor = (email: string) => db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, email));
   const tokensFor = (email: string) => db.select().from(tokensTable).where(eq(tokensTable.email, email));
   const newcomer = { email: invitedEmail, slug: 'newcomer', name: 'Newcomer', firstName: 'Newcomer' };
 
@@ -65,13 +59,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
     const organization = await createTestOrganization();
     const user = await handleCreateUser({ var: { db } }, { newUser: newcomer, via: 'magic' });
     // Opening the emailed link binds the invitation and its token to the account that proved the address.
-    await createInvitation({
-      organization,
-      email: invitedEmail,
-      createdBy: user.id,
-      boundTo: user.id,
-      token: 'invoked',
-    });
+    await createInvitation({ organization, email: invitedEmail, createdBy: user.id, boundTo: user.id, token: 'invoked' });
 
     await markEmailVerified(db, { userId: user.id, email: invitedEmail, via: 'magic' });
 
@@ -93,9 +81,10 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
     const newUser = { email: 'taken@example.com', slug: 'taken', name: 'Taken', firstName: 'Taken' };
     await handleCreateUser({ var: { db } }, { newUser, via: 'magic' });
 
-    await expect(
-      handleCreateUser({ var: { db } }, { newUser: { ...newUser, slug: 'taken-2' }, via: 'magic' }),
-    ).rejects.toMatchObject({ status: 409, type: 'email_exists' });
+    await expect(handleCreateUser({ var: { db } }, { newUser: { ...newUser, slug: 'taken-2' }, via: 'magic' })).rejects.toMatchObject({
+      status: 409,
+      type: 'email_exists',
+    });
   });
 
   it('does not disguise another failure as a taken address', async () => {

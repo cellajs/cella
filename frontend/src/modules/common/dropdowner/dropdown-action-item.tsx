@@ -18,15 +18,7 @@ interface Props {
   closeOnSelect?: boolean;
 }
 
-export function DropdownActionItem({
-  isMobile,
-  onSelect,
-  icon: Icon,
-  children,
-  variant = 'secondary',
-  className,
-  closeOnSelect = true,
-}: Props) {
+export function DropdownActionItem({ isMobile, onSelect, icon: Icon, children, variant = 'secondary', className, closeOnSelect = true }: Props) {
   if (isMobile) {
     return (
       <div className="sm:p-1">
@@ -44,8 +36,7 @@ export function DropdownActionItem({
       onClick={onSelect}
       className={cn(
         'relative flex min-h-10 w-full cursor-default select-none items-center gap-2 rounded-sm px-2 py-1.5 text-sm outline-hidden data-highlighted:bg-accent data-highlighted:text-accent-foreground',
-        variant === 'destructive' &&
-          'text-destructive data-highlighted:bg-destructive data-highlighted:text-destructive-foreground',
+        variant === 'destructive' && 'text-destructive data-highlighted:bg-destructive data-highlighted:text-destructive-foreground',
         className,
       )}
     >

@@ -16,10 +16,7 @@ vi.mock('shared', async (importOriginal) => {
     .build();
   return {
     ...actual,
-    appConfig: {
-      channelEntityTypes: hierarchy.channelTypes,
-      entityIdColumnKeys: hierarchy.idColumnKeys,
-    },
+    appConfig: { channelEntityTypes: hierarchy.channelTypes, entityIdColumnKeys: hierarchy.idColumnKeys },
     hierarchy,
     isChannel: hierarchy.isChannel,
     isProduct: hierarchy.isProduct,

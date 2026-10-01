@@ -10,18 +10,10 @@ interface Props {
 
 export function DropIndicator({ edge, className = '', gap = 0 }: Props) {
   const dropIndicatorEdgeStyles = {
-    top: {
-      top: `${-gap / 2}rem`,
-    },
-    bottom: {
-      bottom: `${-gap / 2}rem`,
-    },
-    left: {
-      left: `${-gap / 2}rem`,
-    },
-    right: {
-      right: `${-gap / 2}rem`,
-    },
+    top: { top: `${-gap / 2}rem` },
+    bottom: { bottom: `${-gap / 2}rem` },
+    left: { left: `${-gap / 2}rem` },
+    right: { right: `${-gap / 2}rem` },
   };
 
   return (

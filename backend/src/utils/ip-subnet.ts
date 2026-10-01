@@ -40,9 +40,7 @@ const expandIPv6 = (ip: string): string[] | null => {
   const tailGroups = tail ? tail.split(':') : [];
   const missing = 8 - headGroups.length - tailGroups.length;
   if (missing < 0) return null;
-  return [...headGroups, ...Array(missing).fill('0'), ...tailGroups].map((g) =>
-    g.toLowerCase().replace(/^0+(?=.)/, ''),
-  );
+  return [...headGroups, ...Array(missing).fill('0'), ...tailGroups].map((g) => g.toLowerCase().replace(/^0+(?=.)/, ''));
 };
 
 /**

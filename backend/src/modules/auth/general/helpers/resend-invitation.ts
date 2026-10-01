@@ -43,10 +43,7 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: TokenRecor
         .for('update');
       if (!invitation) return null;
 
-      const entity = await resolveEntity(txCtx, {
-        entityType: invitation.channelType,
-        identifier: invitation.channelId,
-      });
+      const entity = await resolveEntity(txCtx, { entityType: invitation.channelType, identifier: invitation.channelId });
       if (!entity) return null;
 
       // The new token replaces every older token of the invitation.

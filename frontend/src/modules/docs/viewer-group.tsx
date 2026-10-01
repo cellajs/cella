@@ -24,52 +24,15 @@ interface ViewerGroupProps {
   defaultViewMode?: SchemaViewMode;
 }
 
-export function ViewerGroup({
-  schema,
-  zodCode,
-  typeCode,
-  example,
-  defaultInspectDepth = 5,
-  defaultViewMode = 'format',
-}: ViewerGroupProps) {
+export function ViewerGroup({ schema, zodCode, typeCode, example, defaultInspectDepth = 5, defaultViewMode = 'format' }: ViewerGroupProps) {
   const { t } = useTranslation();
   const [viewMode, setViewMode] = useState<SchemaViewMode>(defaultViewMode);
 
-  const toggleItems: {
-    value: SchemaViewMode;
-    icon: typeof TextAlignStartIcon;
-    label: string;
-    ariaLabel: string;
-    show: boolean;
-  }[] = [
-    {
-      value: 'format',
-      icon: TextAlignStartIcon,
-      label: t('c:docs.format'),
-      ariaLabel: t('c:docs.view_format'),
-      show: true,
-    },
-    {
-      value: 'example',
-      icon: BirdIcon,
-      label: t('c:example'),
-      ariaLabel: t('c:docs.view_example'),
-      show: example !== undefined,
-    },
-    {
-      value: 'zod',
-      icon: BracesIcon,
-      label: t('c:docs.zod'),
-      ariaLabel: t('c:docs.view_zod'),
-      show: !!zodCode,
-    },
-    {
-      value: 'type',
-      icon: FileTypeIcon,
-      label: t('c:type'),
-      ariaLabel: t('c:docs.view_type'),
-      show: !!typeCode,
-    },
+  const toggleItems: { value: SchemaViewMode; icon: typeof TextAlignStartIcon; label: string; ariaLabel: string; show: boolean }[] = [
+    { value: 'format', icon: TextAlignStartIcon, label: t('c:docs.format'), ariaLabel: t('c:docs.view_format'), show: true },
+    { value: 'example', icon: BirdIcon, label: t('c:example'), ariaLabel: t('c:docs.view_example'), show: example !== undefined },
+    { value: 'zod', icon: BracesIcon, label: t('c:docs.zod'), ariaLabel: t('c:docs.view_zod'), show: !!zodCode },
+    { value: 'type', icon: FileTypeIcon, label: t('c:type'), ariaLabel: t('c:docs.view_type'), show: !!typeCode },
   ];
 
   return (
@@ -85,12 +48,7 @@ export function ViewerGroup({
         {toggleItems
           .filter((item) => item.show)
           .map(({ value, icon: Icon, label, ariaLabel }) => (
-            <ToggleGroupItem
-              key={value}
-              value={value}
-              aria-label={ariaLabel}
-              className="opacity-50 hover:opacity-70 data-pressed:opacity-100"
-            >
+            <ToggleGroupItem key={value} value={value} aria-label={ariaLabel} className="opacity-50 hover:opacity-70 data-pressed:opacity-100">
               <Icon className="mr-1.5 h-4 w-4" />
               <span className="text-xs lowercase">{label}</span>
             </ToggleGroupItem>

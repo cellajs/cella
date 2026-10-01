@@ -34,11 +34,7 @@ export async function resendPendingInvitationOp(ctx: UserContext, id: string) {
 }
 
 /** The invitation email without a token, as an invitation to an address held by an account is first sent. */
-async function remindInvitee(
-  ctx: UserContext,
-  invitation: InactiveMembershipModel,
-  entity: EntityModel<ChannelEntityType>,
-): Promise<void> {
+async function remindInvitee(ctx: UserContext, invitation: InactiveMembershipModel, entity: EntityModel<ChannelEntityType>): Promise<void> {
   // Replies reach the inviter, as on the first invitation.
   const sender = await findUserById(ctx, { id: invitation.createdBy });
   await sendInvitationMails(ctx, {

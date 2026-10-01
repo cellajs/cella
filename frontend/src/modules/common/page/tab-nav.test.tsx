@@ -23,14 +23,7 @@ defineFrontendModule({
   description: 'Registry tab test module.',
   tools: [
     { slot: 'organization.tabs', id: 'reports', label: key('c:reports'), order: 15, render: () => null },
-    {
-      slot: 'organization.tabs',
-      id: 'reports-admin',
-      label: key('c:reports'),
-      order: 16,
-      visibleTo: ['organization.admin'],
-      render: () => null,
-    },
+    { slot: 'organization.tabs', id: 'reports-admin', label: key('c:reports'), order: 16, visibleTo: ['organization.admin'], render: () => null },
     { slot: 'system.tabs', id: 'audit', label: key('c:audit'), order: 5, render: () => null },
   ],
 });
@@ -66,11 +59,7 @@ describe('resolveNavTabs merges route-file and registry tabs', () => {
     expect(reports?.path).toBe('/org/$tool');
     // The registry tab preserves the surface's own params and sets only the host's $tool id
     const params = reports?.params as (prev: Record<string, string>) => Record<string, string>;
-    expect(params({ tenantId: 't', organizationSlug: 'o' })).toEqual({
-      tenantId: 't',
-      organizationSlug: 'o',
-      tool: 'reports',
-    });
+    expect(params({ tenantId: 't', organizationSlug: 'o' })).toEqual({ tenantId: 't', organizationSlug: 'o', tool: 'reports' });
   });
 
   it('hides tabs whose requires/visibleTo condition is unmet', () => {

@@ -29,10 +29,7 @@ export function ScrollArea({
   React.useEffect(() => {
     if (!autoScrollOnDrag || !viewportRef.current) return;
     const axis = typeof autoScrollOnDrag === 'string' ? autoScrollOnDrag : undefined;
-    return autoScrollForElements({
-      element: viewportRef.current,
-      ...(axis && { getAllowedAxis: () => axis }),
-    });
+    return autoScrollForElements({ element: viewportRef.current, ...(axis && { getAllowedAxis: () => axis }) });
   }, [autoScrollOnDrag, viewportRef]);
 
   // Base UI's content ResizeObserver cannot fire while the content div is height-pinned to 100%, so a subtree
@@ -70,14 +67,7 @@ export function ScrollArea({
           viewportClassName,
         )}
       >
-        <ScrollAreaPrimitive.Content
-          style={{
-            display: 'flex',
-            flexDirection: 'column',
-            height: '100%',
-            minWidth: horizontalScroll ? undefined : 0,
-          }}
-        >
+        <ScrollAreaPrimitive.Content style={{ display: 'flex', flexDirection: 'column', height: '100%', minWidth: horizontalScroll ? undefined : 0 }}>
           {children}
         </ScrollAreaPrimitive.Content>
       </ScrollAreaPrimitive.Viewport>

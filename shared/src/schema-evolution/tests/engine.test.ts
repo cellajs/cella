@@ -83,11 +83,7 @@ describe('normalizeOps (server seam)', () => {
 
 describe('migrateCachedEntity (client boot)', () => {
   it('renames a cached row and its stx timestamps forward', async () => {
-    const migrated = await migrateCachedEntity(
-      'attachment',
-      { id: '1', name: 'pic', stx: { fieldTimestamps: { name: 't1' } } },
-      0,
-    );
+    const migrated = await migrateCachedEntity('attachment', { id: '1', name: 'pic', stx: { fieldTimestamps: { name: 't1' } } }, 0);
     expect(migrated).toEqual({ id: '1', title: 'pic', stx: { fieldTimestamps: { title: 't1' } } });
   });
 
@@ -113,11 +109,7 @@ describe('downgradeEntity (Phase 2)', () => {
 
 describe('migrateQueuedMutation (client replay)', () => {
   it('rewrites ops + stx keys forward', () => {
-    const rewritten = migrateQueuedMutation(
-      'attachment',
-      { ops: { name: 'x' }, stx: { fieldTimestamps: { name: 't' } } },
-      0,
-    );
+    const rewritten = migrateQueuedMutation('attachment', { ops: { name: 'x' }, stx: { fieldTimestamps: { name: 't' } } }, 0);
     expect(rewritten).toEqual({ ops: { title: 'x' }, stx: { fieldTimestamps: { title: 't' } } });
   });
 
@@ -161,19 +153,12 @@ describe('normalizeOps unknown-field handling', () => {
   });
 
   it('passes unmappable fields through under ignore', () => {
-    const { ops, unknownFields } = normalizeOps(
-      'attachment',
-      { name: 'x', bogus: 1 },
-      {},
-      { canonicalKeys, unknownFieldHandling: 'ignore' },
-    );
+    const { ops, unknownFields } = normalizeOps('attachment', { name: 'x', bogus: 1 }, {}, { canonicalKeys, unknownFieldHandling: 'ignore' });
     expect(unknownFields).toEqual(['bogus']);
     expect(ops).toEqual({ title: 'x', name: 'x', bogus: 1 });
   });
 
   it('throws under fail', () => {
-    expect(() => normalizeOps('attachment', { bogus: 1 }, {}, { canonicalKeys, unknownFieldHandling: 'fail' })).toThrow(
-      /unmappable fields.*bogus/,
-    );
+    expect(() => normalizeOps('attachment', { bogus: 1 }, {}, { canonicalKeys, unknownFieldHandling: 'fail' })).toThrow(/unmappable fields.*bogus/);
   });
 });

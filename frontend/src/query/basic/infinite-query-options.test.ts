@@ -4,10 +4,7 @@ import { baseInfiniteQueryOptions } from './infinite-query-options';
 
 const { getNextPageParam } = baseInfiniteQueryOptions;
 
-const page = (count: number, total: number): QueryData<unknown> => ({
-  items: Array.from({ length: count }, (_, i) => i),
-  total,
-});
+const page = (count: number, total: number): QueryData<unknown> => ({ items: Array.from({ length: count }, (_, i) => i), total });
 
 const next = (pages: QueryData<unknown>[]): PageParams | undefined | null =>
   getNextPageParam(pages[pages.length - 1], pages, { page: 0, offset: 0 }, []);

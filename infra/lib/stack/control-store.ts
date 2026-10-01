@@ -64,13 +64,7 @@ async function getObjectText(s3: S3Like, bucket: string, key: string): Promise<{
 }
 
 /** PUT a JSON object body with optional conditional-write headers. */
-async function putJsonObject(
-  s3: S3Like,
-  bucket: string,
-  key: string,
-  body: string,
-  opts: ConditionalWrite,
-): Promise<{ etag?: string }> {
+async function putJsonObject(s3: S3Like, bucket: string, key: string, body: string, opts: ConditionalWrite): Promise<{ etag?: string }> {
   const { PutObjectCommand } = await s3sdk();
   const res = await s3.send(
     new PutObjectCommand({
@@ -135,8 +129,7 @@ function parseServiceRollout(slug: string, value: unknown): ServiceRollout {
   if (!isRecord(value)) throw new Error(`control: rollout['${slug}'] must be an object`);
   const { active, pendingSha, seq } = value;
   if (typeof seq !== 'number') throw new Error(`control: rollout['${slug}'].seq must be a number`);
-  if (pendingSha !== undefined && typeof pendingSha !== 'string')
-    throw new Error(`control: rollout['${slug}'].pendingSha must be a string`);
+  if (pendingSha !== undefined && typeof pendingSha !== 'string') throw new Error(`control: rollout['${slug}'].pendingSha must be a string`);
   const out: ServiceRollout = { seq };
   if (active !== undefined) out.active = parseGenRef(slug, 'active', active);
   if (pendingSha !== undefined) out.pendingSha = pendingSha;
@@ -152,20 +145,17 @@ export function parseControlState(text: string): ControlState {
     throw new Error(`control: not valid JSON (${errorMessage(err)})`);
   }
   if (!isRecord(raw)) throw new Error('control: root must be an object');
-  if (raw.schemaVersion !== 2)
-    throw new Error(`control: unsupported schemaVersion ${String(raw.schemaVersion)} (expected 2)`);
+  if (raw.schemaVersion !== 2) throw new Error(`control: unsupported schemaVersion ${String(raw.schemaVersion)} (expected 2)`);
 
   const bootstrap: BootstrapState = {};
   if (raw.bootstrap !== undefined) {
     if (!isRecord(raw.bootstrap)) throw new Error('control: bootstrap must be an object');
     if (raw.bootstrap.completedAt !== undefined) {
-      if (typeof raw.bootstrap.completedAt !== 'string')
-        throw new Error('control: bootstrap.completedAt must be a string');
+      if (typeof raw.bootstrap.completedAt !== 'string') throw new Error('control: bootstrap.completedAt must be a string');
       bootstrap.completedAt = raw.bootstrap.completedAt;
     }
     if (raw.bootstrap.computeDeferredSince !== undefined) {
-      if (typeof raw.bootstrap.computeDeferredSince !== 'string')
-        throw new Error('control: bootstrap.computeDeferredSince must be a string');
+      if (typeof raw.bootstrap.computeDeferredSince !== 'string') throw new Error('control: bootstrap.computeDeferredSince must be a string');
       bootstrap.computeDeferredSince = raw.bootstrap.computeDeferredSince;
     }
   }
@@ -207,11 +197,7 @@ export function promote(current: ServiceRollout | undefined, resolved: { id: str
 }
 
 /** Read the control object. Returns the empty state and no etag when the object does not exist yet. */
-export async function readControlState(
-  s3: S3Like,
-  bucket: string,
-  key: string,
-): Promise<{ state: ControlState; etag?: string }> {
+export async function readControlState(s3: S3Like, bucket: string, key: string): Promise<{ state: ControlState; etag?: string }> {
   const { body, etag } = await getObjectText(s3, bucket, key);
   return { state: body ? parseControlState(body) : emptyControlState(), etag };
 }
@@ -269,10 +255,7 @@ export interface ControlContext {
  * Resolve a stack's control-object context from the environment: sets APP_MODE from the stack's short name, builds the S3 client, derives bucket and keys. Returns null when no credentials are present.
  * The AWS_* pair takes precedence: the state bucket's deny-by-default policy admits the state-backend identity, which the SCW provider key need not carry.
  */
-export async function controlContextForStack(
-  stack: string,
-  log: (msg: string) => void = console.warn,
-): Promise<ControlContext | null> {
+export async function controlContextForStack(stack: string, log: (msg: string) => void = console.warn): Promise<ControlContext | null> {
   const fromAws = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY);
   const accessKey = fromAws ? process.env.AWS_ACCESS_KEY_ID : process.env.SCW_ACCESS_KEY;
   const secretKey = fromAws ? process.env.AWS_SECRET_ACCESS_KEY : process.env.SCW_SECRET_KEY;
@@ -329,13 +312,7 @@ function parseLockInfo(text: string): LockInfo | undefined {
   }
   if (!isRecord(raw)) return undefined;
   const { owner, operation, acquiredAt, expiresAt } = raw;
-  if (
-    typeof owner !== 'string' ||
-    typeof operation !== 'string' ||
-    typeof acquiredAt !== 'string' ||
-    typeof expiresAt !== 'string'
-  )
-    return undefined;
+  if (typeof owner !== 'string' || typeof operation !== 'string' || typeof acquiredAt !== 'string' || typeof expiresAt !== 'string') return undefined;
   return { owner, operation, acquiredAt, expiresAt };
 }
 
@@ -400,14 +377,7 @@ export type RenewResult = { renewed: true; info: LockInfo } | { renewed: false; 
  * Extend our own lock's expiry under `If-Match`, so a live holder keeps a short lease alive and a dead one lets it lapse within one TTL.
  * A lock that is missing, owned by someone else, or replaced between read and write is reported as not renewed and never overwritten.
  */
-export async function renewLock(
-  s3: S3Like,
-  bucket: string,
-  key: string,
-  owner: string,
-  ttlMs: number,
-  now = Date.now(),
-): Promise<RenewResult> {
+export async function renewLock(s3: S3Like, bucket: string, key: string, owner: string, ttlMs: number, now = Date.now()): Promise<RenewResult> {
   const { info, etag } = await readLock(s3, bucket, key);
   if (!info || info.owner !== owner) return { renewed: false, held: info };
   const next: LockInfo = { ...info, expiresAt: new Date(now + ttlMs).toISOString() };

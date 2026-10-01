@@ -49,18 +49,12 @@ describe('parseBootPlanJson', () => {
   });
 
   it('rejects empty release commands', () => {
-    expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command: [] } }))).toThrow(
-      /non-empty command array/,
-    );
-    expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command: ['docker', ''] } }))).toThrow(
-      /empty or non-string/,
-    );
+    expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command: [] } }))).toThrow(/non-empty command array/);
+    expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command: ['docker', ''] } }))).toThrow(/empty or non-string/);
   });
 
   it('rejects paths outside allowed boot locations', () => {
-    expect(() => parseBootPlanJson(plan({ docker: { composeFile: '/tmp/compose.yml' } }))).toThrow(
-      /outside the allowed/,
-    );
+    expect(() => parseBootPlanJson(plan({ docker: { composeFile: '/tmp/compose.yml' } }))).toThrow(/outside the allowed/);
   });
 
   it('must not write outside the boot paths via dot segments or doubled slashes', () => {
@@ -78,9 +72,7 @@ describe('parseBootPlanJson', () => {
   });
 
   it("must not read or write an /etc directory other than the plan's own", () => {
-    const credentials = (scwAccessKeyFile: string) => ({
-      credentials: { scwAccessKeyFile, scwSecretKeyFile: '/etc/cella/scw-secret-key' },
-    });
+    const credentials = (scwAccessKeyFile: string) => ({ credentials: { scwAccessKeyFile, scwSecretKeyFile: '/etc/cella/scw-secret-key' } });
     expect(() => parseBootPlanJson(plan(credentials('/etc/ssh/x')))).toThrow(/outside the allowed/);
     expect(() => parseBootPlanJson(plan(credentials('/etc/runtime-secrets/x')))).toThrow(/outside the allowed/);
     const handoff = (cacheFile: string) => ({ serviceKeyHandoff: { secretId: 's', cacheFile } });

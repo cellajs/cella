@@ -228,9 +228,7 @@ li:has(.is-focused) {
 .bn-file-block-content-wrapper:has(> .bn-visual-media-wrapper > .bn-visual-media[style*="aspect-ratio"]) {
   max-width: 100%;
 }
-.bn-file-block-content-wrapper[style*="fit-content"]:has(
-  > .bn-visual-media-wrapper > .bn-visual-media[style*="aspect-ratio"]
-) {
+.bn-file-block-content-wrapper[style*="fit-content"]:has(> .bn-visual-media-wrapper > .bn-visual-media[style*="aspect-ratio"]) {
   width: 100% !important;
 }
 

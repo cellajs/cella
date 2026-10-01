@@ -37,11 +37,7 @@ export function GroupedColumnHeaderCell<R, SR>({
       aria-selected={isCellSelected}
       tabIndex={tabIndex}
       className={cn('rdg-cell', column.headerCellClass)}
-      style={{
-        ...getHeaderCellStyle(column, rowIdx, rowSpan),
-        gridColumnStart: index,
-        gridColumnEnd: index + colSpan,
-      }}
+      style={{ ...getHeaderCellStyle(column, rowIdx, rowSpan), gridColumnStart: index, gridColumnEnd: index + colSpan }}
       onFocus={onFocus}
       onMouseDown={onMouseDown}
     >

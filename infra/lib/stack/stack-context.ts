@@ -24,10 +24,7 @@ export interface StackContext {
  * APP_MODE, which the config reads during module evaluation, then the config itself. `log` receives the env-file notices; silent by default
  * so machine output (`status --json`) stays parseable.
  */
-export async function loadStackContext(
-  environment: Environment,
-  log?: (message: string) => void,
-): Promise<StackContext> {
+export async function loadStackContext(environment: Environment, log?: (message: string) => void): Promise<StackContext> {
   const envWarnings = loadModeEnvFile(environment, log);
   const stackPath = resolve(infraDir, `Pulumi.${environment}.yaml`);
   const stackYaml = existsSync(stackPath) ? readFileSync(stackPath, 'utf8') : undefined;

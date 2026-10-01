@@ -119,11 +119,8 @@ export async function pollForVersion(opts: PollOptions): Promise<PollOutcome> {
           log(`Reconciler reported a terminal rollout failure for ${expectedSha} (exit ${roll.exitCode}): ${reason}`);
           return { ok: false, attempts: i, lastStatus, lastVersion, failReason: reason };
         }
-        const where =
-          roll.result === 'failed' ? `retrying after ${roll.reason ?? 'failure'}` : `phase=${roll.phase ?? '<none>'}`;
-        log(
-          `Attempt ${i}/${attempts}: reconciler ${where} status=${result.status || '<none>'} served=${result.version ?? '<missing>'}`,
-        );
+        const where = roll.result === 'failed' ? `retrying after ${roll.reason ?? 'failure'}` : `phase=${roll.phase ?? '<none>'}`;
+        log(`Attempt ${i}/${attempts}: reconciler ${where} status=${result.status || '<none>'} served=${result.version ?? '<missing>'}`);
       } else {
         log(`Attempt ${i}/${attempts}: status=${result.status || '<none>'} served=${result.version ?? '<missing>'}`);
       }
@@ -148,9 +145,7 @@ export function parseArgs(argv: string[]): CliArgs {
   const url = getFlag(argv, '--url');
   const sha = getFlag(argv, '--sha');
   if (!url || !sha) {
-    throw new Error(
-      'Usage: wait-for-version.ts --url <health-url> --sha <git-sha> [--attempts N] [--interval ms] [--timeout ms]',
-    );
+    throw new Error('Usage: wait-for-version.ts --url <health-url> --sha <git-sha> [--attempts N] [--interval ms] [--timeout ms]');
   }
 
   return {

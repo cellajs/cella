@@ -31,16 +31,12 @@ const modeBound = {
  */
 function loadEnv(vars: Record<string, string>) {
   const absent = Object.fromEntries(modeSecretNames.map((name) => [name, '']));
-  const result = spawnSync(
-    process.execPath,
-    ['--import', 'tsx', '--input-type=module', '-e', "await import('./src/env.ts')"],
-    {
-      cwd: backendDir,
-      env: { PATH: process.env.PATH ?? '', NODE_ENV: 'test', ...absent, ...vars },
-      encoding: 'utf8',
-      timeout: 20_000,
-    },
-  );
+  const result = spawnSync(process.execPath, ['--import', 'tsx', '--input-type=module', '-e', "await import('./src/env.ts')"], {
+    cwd: backendDir,
+    env: { PATH: process.env.PATH ?? '', NODE_ENV: 'test', ...absent, ...vars },
+    encoding: 'utf8',
+    timeout: 20_000,
+  });
   return { status: result.status, output: `${result.stdout}${result.stderr}` };
 }
 
@@ -90,14 +86,7 @@ const strong = () => randomBytes(24).toString('base64url');
 const boot = async (mode: 'production' | 'development', overrides: Record<string, string>) => {
   // Vitest sets VITEST, and MODE for its own use.
   const { VITEST: _vitest, MODE: _mode, ...inherited } = process.env;
-  const env = {
-    ...inherited,
-    NODE_ENV: mode,
-    APP_MODE: mode,
-    COOKIE_SECRET: strong(),
-    UNSUBSCRIBE_SECRET: strong(),
-    ...overrides,
-  };
+  const env = { ...inherited, NODE_ENV: mode, APP_MODE: mode, COOKIE_SECRET: strong(), UNSUBSCRIBE_SECRET: strong(), ...overrides };
   try {
     const script = "import('./src/env.ts').then(() => console.info('env loaded'))";
     const { stdout } = await promisify(execFile)(tsx, ['-e', script], { cwd: backendDir, env });
@@ -116,8 +105,8 @@ const boot = async (mode: 'production' | 'development', overrides: Record<string
 describe('secret env validation', () => {
   it('must not boot with an empty or short cookie secret entry', async () => {
     const refused = await Promise.all(
-      [',', ' ', `${strong()},`, `${strong()}, ,${strong()}`, 'short-secret', `${strong()},short-secret`].map(
-        (COOKIE_SECRET) => boot('production', { COOKIE_SECRET }),
+      [',', ' ', `${strong()},`, `${strong()}, ,${strong()}`, 'short-secret', `${strong()},short-secret`].map((COOKIE_SECRET) =>
+        boot('production', { COOKIE_SECRET }),
       ),
     );
 

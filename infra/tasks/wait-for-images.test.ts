@@ -36,29 +36,13 @@ describe('waitForImages', () => {
       // backend appears on its 2nd check; everything else immediately
       return !(calls === 1);
     });
-    const out = await waitForImages({
-      registry: 'r',
-      namespace: 'n',
-      tag: TAG,
-      inspect,
-      attempts: 3,
-      sleep: noSleep,
-      log: noLog,
-    });
+    const out = await waitForImages({ registry: 'r', namespace: 'n', tag: TAG, inspect, attempts: 3, sleep: noSleep, log: noLog });
     expect(out.ok).toBe(true);
   });
 
   it('reports images that never appear', async () => {
     const inspect = vi.fn(async (ref: string) => !ref.includes('/yjs:'));
-    const out = await waitForImages({
-      registry: 'r',
-      namespace: 'n',
-      tag: TAG,
-      inspect,
-      attempts: 2,
-      sleep: noSleep,
-      log: noLog,
-    });
+    const out = await waitForImages({ registry: 'r', namespace: 'n', tag: TAG, inspect, attempts: 2, sleep: noSleep, log: noLog });
     expect(out.ok).toBe(false);
     expect(out.missing).toEqual(['r/n/yjs:abc1234']);
   });
@@ -72,15 +56,7 @@ describe('waitForImages', () => {
 
   it('waits only for the explicit services override', async () => {
     const inspect = vi.fn(async (_ref: string) => true);
-    await waitForImages({
-      registry: 'r',
-      namespace: 'n',
-      tag: TAG,
-      inspect,
-      services: ['backend', 'cdc', 'frontend'],
-      sleep: noSleep,
-      log: noLog,
-    });
+    await waitForImages({ registry: 'r', namespace: 'n', tag: TAG, inspect, services: ['backend', 'cdc', 'frontend'], sleep: noSleep, log: noLog });
     const inspectedRefs = inspect.mock.calls.map((c) => c[0]);
     expect(inspectedRefs).toEqual(['r/n/backend:abc1234', 'r/n/cdc:abc1234', 'r/n/frontend:abc1234']);
     expect(inspectedRefs.some((ref) => ref.includes('/yjs:'))).toBe(false);
@@ -107,15 +83,8 @@ describe('parseArgs', () => {
   });
 
   it('parses a build matrix JSON override', () => {
-    const matrix = JSON.stringify([
-      { service: 'backend' },
-      { service: 'mcp' },
-      { service: 'frontend' },
-      { service: 'bogus' },
-    ]);
+    const matrix = JSON.stringify([{ service: 'backend' }, { service: 'mcp' }, { service: 'frontend' }, { service: 'bogus' }]);
     expect(imageServicesFromBuildMatrix(matrix)).toEqual(['backend', 'frontend']);
-    expect(
-      parseArgs(['--registry', 'rg.x', '--ns', 'cella', '--tag', TAG, '--build-images-json', matrix]).services,
-    ).toEqual(['backend', 'frontend']);
+    expect(parseArgs(['--registry', 'rg.x', '--ns', 'cella', '--tag', TAG, '--build-images-json', matrix]).services).toEqual(['backend', 'frontend']);
   });
 });

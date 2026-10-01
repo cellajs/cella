@@ -5,13 +5,7 @@ import { cn } from '~/utils/cn';
 
 /** One-time code field on Base UI's OTPField: one input per slot, Field-aware, `autoComplete="one-time-code"` by default. */
 export function InputOTP({ className, ...props }: OTPField.Root.Props) {
-  return (
-    <OTPField.Root
-      data-slot="input-otp"
-      className={cn('flex items-center gap-2 data-disabled:opacity-50', className)}
-      {...props}
-    />
-  );
+  return <OTPField.Root data-slot="input-otp" className={cn('flex items-center gap-2 data-disabled:opacity-50', className)} {...props} />;
 }
 
 export function InputOTPGroup({ className, ...props }: React.ComponentProps<'div'>) {

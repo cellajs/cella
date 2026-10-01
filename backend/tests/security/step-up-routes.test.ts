@@ -36,14 +36,7 @@ import { softwarePasskey } from '../software-passkey';
 import { createAppClient, type TestResult } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, insertPasskey, passkeyChallenge, passkeysOf } from './helpers';
-import {
-  asSession,
-  insertImpersonation,
-  insertSession,
-  insertStaleSession,
-  stepUpByEmail,
-  type TestSession,
-} from './session-helpers';
+import { asSession, insertImpersonation, insertSession, insertStaleSession, stepUpByEmail, type TestSession } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'oauth', 'magic'], enabledOAuthProviders: ['github'] });
 
@@ -67,9 +60,7 @@ describe('account-security routes need a step-up', async () => {
   };
 
   const stepUpWithTotp = async (session: TestSession) =>
-    expect((await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers })).response.status).toBe(
-      204,
-    );
+    expect((await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers })).response.status).toBe(204);
 
   it('must not add a passkey via a stale session', async () => {
     const user = await totpHolder('add-passkey');
@@ -102,9 +93,7 @@ describe('account-security routes need a step-up', async () => {
     expect(await passkeysOf(user.id)).toHaveLength(1);
 
     await stepUpWithTotp(session);
-    expect((await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers })).response.status).toBe(
-      204,
-    );
+    expect((await call(deletePasskey, { path: { id: passkey.id }, headers: session.headers })).response.status).toBe(204);
     expect(await passkeysOf(user.id)).toHaveLength(0);
   });
 
@@ -152,9 +141,7 @@ describe('account-security routes need a step-up', async () => {
     expect(await mfaOf()).toBe(false);
 
     await stepUpWithTotp(session);
-    expect((await call(toggleMfa, { body: { mfaRequired: true }, headers: session.headers })).response.status).toBe(
-      200,
-    );
+    expect((await call(toggleMfa, { body: { mfaRequired: true }, headers: session.headers })).response.status).toBe(200);
     expect(await mfaOf()).toBe(true);
   });
 
@@ -259,10 +246,7 @@ describe('account-security routes need a step-up', async () => {
 
     const admin = await createSystemAdminUser('key-impersonator@security-test.com');
     const impersonation = await insertImpersonation(await insertSession(admin), minting.admin);
-    for (const attempt of [
-      await minting.createAccount(impersonation),
-      await minting.createKey(impersonation, accountId),
-    ]) {
+    for (const attempt of [await minting.createAccount(impersonation), await minting.createKey(impersonation, accountId)]) {
       await expectRefusal(attempt, 403, 'impersonation_forbidden');
     }
     expect(await minting.accounts()).toHaveLength(1);

@@ -47,8 +47,7 @@ const TOP_THRESHOLD = 64;
 let topWatchTarget: HTMLElement | Window | null = null;
 let topWatchFrame = 0;
 
-const scrollTopOf = (target: HTMLElement | Window) =>
-  target === window ? window.scrollY : (target as HTMLElement).scrollTop;
+const scrollTopOf = (target: HTMLElement | Window) => (target === window ? window.scrollY : (target as HTMLElement).scrollTop);
 
 const isAtTop = () => scrollTopOf(topWatchTarget ?? window) <= TOP_THRESHOLD;
 
@@ -77,9 +76,7 @@ const onScrollNearTop = () => {
 
 /** Point the top watcher at the sections' scroller (window when that is the document scroller). */
 const watchScroller = () => {
-  const anchor = [...sections.keys()]
-    .map((id) => document.getElementById(`${SPY_PREFIX}${id}`))
-    .find((el): el is HTMLElement => el !== null);
+  const anchor = [...sections.keys()].map((id) => document.getElementById(`${SPY_PREFIX}${id}`)).find((el): el is HTMLElement => el !== null);
   const scroller = anchor ? findScrollParent(anchor) : null;
   const next: HTMLElement | Window = !scroller || isRootScroller(scroller) ? window : scroller;
   if (next === topWatchTarget) return;
@@ -121,10 +118,7 @@ const getBestSection = (): string | null => {
   const triggerY = window.innerHeight * 0.25;
 
   const withPositions = visible
-    .map(([id]) => ({
-      id,
-      top: document.getElementById(`${SPY_PREFIX}${id}`)?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY,
-    }))
+    .map(([id]) => ({ id, top: document.getElementById(`${SPY_PREFIX}${id}`)?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY }))
     .sort((a, b) => a.top - b.top);
 
   const pastTrigger = withPositions.filter(({ top }) => top <= triggerY);
@@ -239,8 +233,7 @@ export const unregisterSections = (ids: string[]) => {
 };
 
 /** The document owns the scroller, so scroll events land on window. */
-const isRootScroller = (el: HTMLElement) =>
-  el === document.scrollingElement || el === document.documentElement || el === document.body;
+const isRootScroller = (el: HTMLElement) => el === document.scrollingElement || el === document.documentElement || el === document.body;
 
 /** Find the nearest scrollable ancestor (overflow-y auto/scroll with actual overflow), else the document scroller. */
 const findScrollParent = (el: HTMLElement): HTMLElement => {

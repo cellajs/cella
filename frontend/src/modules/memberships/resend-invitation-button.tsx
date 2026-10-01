@@ -23,11 +23,7 @@ export function ResendInvitationButton({ resendData, wrapperClassName, buttonPro
   const { t } = useTranslation();
   const [disabledResend, setDisabledResend] = useState(false);
 
-  const { mutate: resend, isPending } = useMutation<
-    ResendInvitationWithTokenResponse,
-    ApiError,
-    ResendInvitationWithTokenData['body']
-  >({
+  const { mutate: resend, isPending } = useMutation<ResendInvitationWithTokenResponse, ApiError, ResendInvitationWithTokenData['body']>({
     mutationFn: (body) => resendInvitationWithToken({ body }),
     onSuccess: () => {
       useDialoger.getState().remove();
@@ -52,10 +48,7 @@ export function ResendInvitationButton({ resendData, wrapperClassName, buttonPro
   };
 
   return (
-    <TooltipButton
-      className={wrapperClassName}
-      toolTipContent={disabledResend ? t('c:retry_resend_invitation.text') : t('c:resend_invitation.text')}
-    >
+    <TooltipButton className={wrapperClassName} toolTipContent={disabledResend ? t('c:retry_resend_invitation.text') : t('c:resend_invitation.text')}>
       <Button
         {...buttonProps}
         className="max-sm:w-full"

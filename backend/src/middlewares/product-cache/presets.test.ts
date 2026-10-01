@@ -4,19 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const productCacheGet = vi.fn();
 const productCacheSet = vi.fn();
 vi.mock('./app-product-cache', () => ({
-  productCache: {
-    get: (...a: unknown[]) => productCacheGet(...a),
-    set: (...a: unknown[]) => productCacheSet(...a),
-  },
+  productCache: { get: (...a: unknown[]) => productCacheGet(...a), set: (...a: unknown[]) => productCacheSet(...a) },
 }));
 const checkAccess = vi.fn();
 vi.mock('#/permissions', () => ({ checkAccess: (...a: unknown[]) => checkAccess(...a) }));
 const accessFrom = vi.fn((): Record<string, unknown> => ({}));
 vi.mock('#/permissions/access', () => ({ accessFrom: () => accessFrom() }));
 const buildSubjectFromEntity = vi.fn((..._a: unknown[]) => ({}));
-vi.mock('#/permissions/build-subject', () => ({
-  buildSubjectFromEntity: (...a: unknown[]) => buildSubjectFromEntity(...a),
-}));
+vi.mock('#/permissions/build-subject', () => ({ buildSubjectFromEntity: (...a: unknown[]) => buildSubjectFromEntity(...a) }));
 
 const { productCache } = await import('./presets');
 

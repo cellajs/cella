@@ -15,10 +15,7 @@ import { getRandomColor } from '~/utils/random-color';
 // BlockNote's props are a union (filePanel variants), so Omit must distribute over it
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
 
-type PassthroughProps = DistributiveOmit<
-  ComponentProps<typeof BlockNote>,
-  'collaboration' | 'defaultValue' | 'updateData' | 'onBeforeLoad' | 'id'
->;
+type PassthroughProps = DistributiveOmit<ComponentProps<typeof BlockNote>, 'collaboration' | 'defaultValue' | 'updateData' | 'onBeforeLoad' | 'id'>;
 
 type CollaborativeBlockNoteProps = PassthroughProps & {
   entityType: ProductEntityType;
@@ -60,13 +57,7 @@ export function CollaborativeBlockNote({
   const isOnline = useOnlineManager();
   const wantsCollaboration = appConfig.services.yjs.enabled && !!appConfig.yjsUrl && isOnline && canEdit;
   // The token names this entity only; the relay closes the socket when it expires, and the refreshed token reconnects it.
-  const { token: yjsToken, refused } = useYjsToken({
-    entityType,
-    entityId,
-    tenantId,
-    organizationId,
-    enabled: wantsCollaboration,
-  });
+  const { token: yjsToken, refused } = useYjsToken({ entityType, entityId, tenantId, organizationId, enabled: wantsCollaboration });
   const canCollaborate = wantsCollaboration && !!yjsToken;
 
   // Once collaborative, hold the connection across an offline blip: releasing it lets the grace period destroy the shared doc under a mounted editor.
@@ -110,13 +101,7 @@ export function CollaborativeBlockNote({
 
   const collaborationBundle =
     collaborative && yjsConn
-      ? {
-          provider: yjsConn.provider,
-          fragment: yjsConn.fragment,
-          user: { name: user.name, color: userColorRef.current },
-          entityType,
-          entityId,
-        }
+      ? { provider: yjsConn.provider, fragment: yjsConn.fragment, user: { name: user.name, color: userColorRef.current }, entityType, entityId }
       : undefined;
 
   // A reseeded document syncs afresh: the editor comes back on the new fragment once it did.
@@ -156,9 +141,5 @@ export function CollaborativeBlockNote({
   );
 
   // The upload dialog renders above the editor so it survives an editor remount.
-  return uploadHostProps ? (
-    <UploadHostProvider baseFilePanelProps={uploadHostProps}>{editor}</UploadHostProvider>
-  ) : (
-    editor
-  );
+  return uploadHostProps ? <UploadHostProvider baseFilePanelProps={uploadHostProps}>{editor}</UploadHostProvider> : editor;
 }

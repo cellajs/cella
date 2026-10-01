@@ -36,10 +36,7 @@ describe('TOTP replay', async () => {
   /** A second-factor challenge of its own, as each sign-in gets one, answered with `code`. */
   const answerChallenge = async (user: { id: string; email: string }, code: string) => {
     const mfaToken = await createMfaToken(user);
-    const result = await call(signInWithTotp, {
-      body: { code },
-      headers: { ...defaultHeaders, Cookie: authCookie('confirm-mfa', mfaToken) },
-    });
+    const result = await call(signInWithTotp, { body: { code }, headers: { ...defaultHeaders, Cookie: authCookie('confirm-mfa', mfaToken) } });
     return { ...result, mfaToken };
   };
 

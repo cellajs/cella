@@ -8,9 +8,7 @@ export function resolveProjectId(): string | undefined {
   const repo = process.env.SCW_PROJECT_ID?.trim() || undefined;
   const ecosystem = process.env.SCW_DEFAULT_PROJECT_ID?.trim() || undefined;
   if (repo && ecosystem && repo !== ecosystem) {
-    throw new Error(
-      `SCW_PROJECT_ID (${repo}) and SCW_DEFAULT_PROJECT_ID (${ecosystem}) disagree: unset one so they match.`,
-    );
+    throw new Error(`SCW_PROJECT_ID (${repo}) and SCW_DEFAULT_PROJECT_ID (${ecosystem}) disagree: unset one so they match.`);
   }
   return repo ?? ecosystem;
 }
@@ -23,9 +21,7 @@ export function resolveOrganizationIdFromEnv(env: NodeJS.ProcessEnv = process.en
   const repo = env.SCW_ORGANIZATION_ID?.trim() || undefined;
   const ecosystem = env.SCW_DEFAULT_ORGANIZATION_ID?.trim() || undefined;
   if (repo && ecosystem && repo !== ecosystem) {
-    throw new Error(
-      `SCW_ORGANIZATION_ID (${repo}) and SCW_DEFAULT_ORGANIZATION_ID (${ecosystem}) disagree: unset one so they match.`,
-    );
+    throw new Error(`SCW_ORGANIZATION_ID (${repo}) and SCW_DEFAULT_ORGANIZATION_ID (${ecosystem}) disagree: unset one so they match.`);
   }
   return ecosystem ?? repo;
 }

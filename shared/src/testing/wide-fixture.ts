@@ -34,15 +34,7 @@ export const wideHierarchy = createEntityHierarchy(wideRoles)
   .product('attachment', { parent: 'project' })
   .build();
 
-export const wideEntityTypes: readonly WideEntityType[] = [
-  'user',
-  'organization',
-  'workspace',
-  'project',
-  'task',
-  'label',
-  'attachment',
-];
+export const wideEntityTypes: readonly WideEntityType[] = ['user', 'organization', 'workspace', 'project', 'task', 'label', 'attachment'];
 
 /** Actions keep their hierarchy-independent app defaults. */
 export const wideOverrides: HierarchyOverrides = { hierarchy: wideHierarchy };
@@ -61,11 +53,7 @@ export type WidePolicyCallback = (config: WidePolicyConfiguration) => void;
 
 /** Keeps the app-config casts in this file. */
 export const configureWidePermissions = (callback: WidePolicyCallback): PermissionsConfigResult =>
-  configurePermissions(
-    wideEntityTypes as unknown as readonly EntityType[],
-    callback as unknown as PolicyCallback,
-    wideOverrides,
-  );
+  configurePermissions(wideEntityTypes as unknown as readonly EntityType[], callback as unknown as PolicyCallback, wideOverrides);
 
 export const wideMembership = (channelType: WideChannelType, channelId: string, role: WideRole): AccessMembership =>
   ({ channelType, channelId, role }) as unknown as AccessMembership;
@@ -79,17 +67,12 @@ export const wideSubject = (input: {
 }): SubjectForPermission => ({ ...input }) as unknown as SubjectForPermission;
 
 /** For the engine's `publicGrants` option. */
-export const widePublicGrants = (grants: Partial<Record<WideEntityType, true>>): PublicReadGrants =>
-  grants as PublicReadGrants;
+export const widePublicGrants = (grants: Partial<Record<WideEntityType, true>>): PublicReadGrants => grants as PublicReadGrants;
 
 /** Keyed by the wide vocabulary, so tests read `.task` cast-free. */
 export type WideCanMap = Partial<Record<WideEntityType, Record<EntityActionType, CanState>>>;
 
-export const computeWideCan = (
-  channelType: WideChannelType,
-  membership: AccessMembership | undefined | null,
-  policies: PolicyMatrix,
-): WideCanMap =>
+export const computeWideCan = (channelType: WideChannelType, membership: AccessMembership | undefined | null, policies: PolicyMatrix): WideCanMap =>
   computeCan(
     channelType as unknown as Parameters<typeof computeCan>[0],
     membership as unknown as Parameters<typeof computeCan>[1],

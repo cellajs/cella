@@ -31,8 +31,6 @@ describe('deepestAncestorExpr', () => {
       .product('item', { parent: 'project', nullableAncestors: ['project', 'courseSection'] })
       .build();
 
-    expect(deepestAncestorExpr('item', 't', h)).toBe(
-      'COALESCE(t.project_id, t.course_section_id, t.course_id, t.organization_id)',
-    );
+    expect(deepestAncestorExpr('item', 't', h)).toBe('COALESCE(t.project_id, t.course_section_id, t.course_id, t.organization_id)');
   });
 });

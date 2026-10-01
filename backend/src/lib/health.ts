@@ -44,13 +44,7 @@ async function checkDatabase(): Promise<{ connected: boolean; latencyMs: number 
 function buildCdcComponent(): HealthComponent {
   const socket = cdcWebSocketServer.getHealthStatus();
   const report = cdcWebSocketServer.getWorkerHealth();
-  const worker = report
-    ? {
-        ...report.payload,
-        receivedAt: report.receivedAt.toISOString(),
-        ageMs: Date.now() - report.receivedAt.getTime(),
-      }
-    : null;
+  const worker = report ? { ...report.payload, receivedAt: report.receivedAt.toISOString(), ageMs: Date.now() - report.receivedAt.getTime() } : null;
   const component = mapCdcComponent(
     {
       cdcConnected: socket.cdcConnected,
@@ -105,14 +99,10 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
 
     const workerChecks = await Promise.all([
       appConfig.services.yjs.enabled !== false
-        ? probeWorker(workerUrls.yjs).then(
-            (result) => ['yjs', { ...mapProbeComponent(result, extractYjsDetails), label: 'YJS' }] as const,
-          )
+        ? probeWorker(workerUrls.yjs).then((result) => ['yjs', { ...mapProbeComponent(result, extractYjsDetails), label: 'YJS' }] as const)
         : Promise.resolve(null),
       appConfig.services.mcp.enabled !== false
-        ? probeWorker(workerUrls.mcp).then(
-            (result) => ['mcp', { ...mapProbeComponent(result, extractMcpDetails), label: 'MCP' }] as const,
-          )
+        ? probeWorker(workerUrls.mcp).then((result) => ['mcp', { ...mapProbeComponent(result, extractMcpDetails), label: 'MCP' }] as const)
         : Promise.resolve(null),
     ]);
 

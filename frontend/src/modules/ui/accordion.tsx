@@ -7,24 +7,11 @@ export function Accordion({ ...props }: AccordionPrimitive.Root.Props) {
   return <AccordionPrimitive.Root data-slot="accordion" {...props} />;
 }
 
-export function AccordionItem({
-  className,
-  ...props
-}: AccordionPrimitive.Item.Props & React.RefAttributes<HTMLDivElement>) {
-  return (
-    <AccordionPrimitive.Item
-      data-slot="accordion-item"
-      className={cn('border-b last:border-b-0', className)}
-      {...props}
-    />
-  );
+export function AccordionItem({ className, ...props }: AccordionPrimitive.Item.Props & React.RefAttributes<HTMLDivElement>) {
+  return <AccordionPrimitive.Item data-slot="accordion-item" className={cn('border-b last:border-b-0', className)} {...props} />;
 }
 
-export function AccordionTrigger({
-  className,
-  children,
-  ...props
-}: AccordionPrimitive.Trigger.Props & React.RefAttributes<HTMLButtonElement>) {
+export function AccordionTrigger({ className, children, ...props }: AccordionPrimitive.Trigger.Props & React.RefAttributes<HTMLButtonElement>) {
   return (
     <AccordionPrimitive.Header className="group flex">
       <AccordionPrimitive.Trigger
@@ -42,11 +29,7 @@ export function AccordionTrigger({
   );
 }
 
-export function AccordionContent({
-  className,
-  children,
-  ...props
-}: AccordionPrimitive.Panel.Props & React.RefAttributes<HTMLDivElement>) {
+export function AccordionContent({ className, children, ...props }: AccordionPrimitive.Panel.Props & React.RefAttributes<HTMLDivElement>) {
   return (
     <AccordionPrimitive.Panel
       data-slot="accordion-content"

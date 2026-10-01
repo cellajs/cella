@@ -2,9 +2,7 @@ import { appConfig } from 'shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getPresignedUrlBatched = vi.fn(async (attachmentId: string) => `https://signed.example.test/${attachmentId}`);
-vi.mock('~/modules/attachment/presign-batch', () => ({
-  getPresignedUrlBatched: (attachmentId: string) => getPresignedUrlBatched(attachmentId),
-}));
+vi.mock('~/modules/attachment/presign-batch', () => ({ getPresignedUrlBatched: (attachmentId: string) => getPresignedUrlBatched(attachmentId) }));
 vi.mock('~/modules/attachment/offline/storage-service', () => ({
   attachmentStorage: { getSharedBlobUrl: async () => null, createBlobUrlWithVariant: async () => null },
 }));

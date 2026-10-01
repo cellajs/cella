@@ -42,19 +42,7 @@ export const withMargin = (props: Margin) => {
   return mergedStyles;
 };
 
-export const Heading: JsxEmailComponent<HeadingProps> = ({
-  as: Tag = 'h1',
-  children,
-  style,
-  m,
-  mx,
-  my,
-  mt,
-  mr,
-  mb,
-  ml,
-  ...props
-}) => (
+export const Heading: JsxEmailComponent<HeadingProps> = ({ as: Tag = 'h1', children, style, m, mx, my, mt, mr, mb, ml, ...props }) => (
   <Tag {...props} style={{ ...withMargin({ m, mb, ml, mr, mt, mx, my }), ...style }}>
     {children}
   </Tag>

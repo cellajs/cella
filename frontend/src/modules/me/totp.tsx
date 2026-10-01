@@ -61,14 +61,7 @@ export function Totp() {
         </div>
       )}
       {hasTotp ? (
-        <Button
-          key="deleteTotp"
-          type="button"
-          variant="plain"
-          loading={isPending}
-          disabled={user.mfaRequired}
-          onClick={handleDeleteTOTP}
-        >
+        <Button key="deleteTotp" type="button" variant="plain" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTOTP}>
           <TrashIcon className="mr-2 size-4" />
           <span>{t('c:delete')}</span>
         </Button>

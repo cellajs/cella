@@ -17,8 +17,7 @@ const placementKeys = hierarchy
   .map((type) => appConfig.entityIdColumnKeys[type]) as readonly string[];
 
 // Placement keys keep the row's own nullability: a strict ancestor stays `string`, so an optimistic row validates.
-export type CreateAttachmentInput = (Omit<CreateAttachmentItem, 'stx' | PlacementKey> &
-  Partial<Pick<Attachment, PlacementKey>>)[];
+export type CreateAttachmentInput = (Omit<CreateAttachmentItem, 'stx' | PlacementKey> & Partial<Pick<Attachment, PlacementKey>>)[];
 type UpdateAttachmentFields = UpdateAttachmentData['body']['ops'];
 export type UpdateAttachmentVars = { id: string; ops: UpdateAttachmentFields };
 
@@ -42,12 +41,7 @@ export async function updateAttachmentMutationFn({ tenantId, organizationId, id,
   return updateAttachment({ path: { tenantId, organizationId, id }, body: { ops, stx: effectiveStx } });
 }
 
-export async function deleteAttachmentsMutationFn({
-  tenantId,
-  organizationId,
-  attachments,
-  stx,
-}: DeleteAttachmentVars) {
+export async function deleteAttachmentsMutationFn({ tenantId, organizationId, attachments, stx }: DeleteAttachmentVars) {
   const ids = attachments.map((a) => a.id);
   const effectiveStx = stx ?? createStxForDelete();
   return deleteAttachments({ path: { tenantId, organizationId }, body: { ids, stx: effectiveStx } });

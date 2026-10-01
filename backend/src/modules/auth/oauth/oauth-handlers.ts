@@ -18,11 +18,7 @@ import {
   microsoftAuth,
   OAuthCodeExchangeError,
 } from '#/modules/auth/oauth/helpers/providers';
-import {
-  type TransformedUser,
-  transformGithubUserData,
-  transformSocialUserData,
-} from '#/modules/auth/oauth/helpers/transform-user-data';
+import { type TransformedUser, transformGithubUserData, transformSocialUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
 import { authOAuthRoutes } from '#/modules/auth/oauth/oauth-routes';
 import type { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
 import { issueCookieToken } from '#/modules/auth/tokens/token-lifecycle';
@@ -74,10 +70,7 @@ const oauthProviders = {
 } satisfies Record<BaseOAuthProviders, OAuthProviderEntry>;
 
 /** Sends the browser to the provider with a fresh `state`, plus a PKCE verifier and a nonce for a `pkce` provider. */
-const startOAuth = async (
-  ctx: Context<Env, string, { out: { query: z.infer<typeof oauthQuerySchema> } }>,
-  provider: BaseOAuthProviders,
-) => {
+const startOAuth = async (ctx: Context<Env, string, { out: { query: z.infer<typeof oauthQuerySchema> } }>, provider: BaseOAuthProviders) => {
   const { client, scopes, pkce } = oauthProviders[provider];
   const state = generateRandomState();
   const flow = pkce ? { codeVerifier: generateRandomCodeVerifier(), nonce: generateRandomNonce() } : undefined;
@@ -90,10 +83,7 @@ const startOAuth = async (
  * Resumes the round trip `state` names: exchanges the code (with the stored verifier and nonce for a `pkce` provider),
  * reads the provider's profile and hands it to the flow the state cookie holds.
  */
-const finishOAuth = async (
-  ctx: Context<Env, string, { out: { query: z.infer<typeof oauthCallbackQuerySchema> } }>,
-  provider: BaseOAuthProviders,
-) => {
+const finishOAuth = async (ctx: Context<Env, string, { out: { query: z.infer<typeof oauthCallbackQuerySchema> } }>, provider: BaseOAuthProviders) => {
   const { code, state, error } = ctx.req.valid('query');
   const { client, pkce, fetchUser } = oauthProviders[provider];
   const strategy = provider as EnabledOAuthProvider;
@@ -124,10 +114,7 @@ const finishOAuth = async (
     if (error instanceof AppError) throw error;
 
     const type = error instanceof OAuthCodeExchangeError ? 'invalid_credentials' : 'oauth_failed';
-    throw new AppError(401, type, 'error', {
-      meta: { strategy },
-      ...(error instanceof Error ? { originalError: error } : {}),
-    });
+    throw new AppError(401, type, 'error', { meta: { strategy }, ...(error instanceof Error ? { originalError: error } : {}) });
   }
 };
 
@@ -138,13 +125,7 @@ app.openapi(authOAuthRoutes.startOAuthConnect, async (ctx) => {
 
   // The provider's callback is a navigation from another site: this Lax cookie's token is what names the account. It
   // serves only while the session that asked lives, so a sign-out (here or elsewhere) ends a connect left half-way.
-  await issueCookieToken(ctx, {
-    type: 'oauth-connect',
-    userId: user.id,
-    email: user.email,
-    createdBy: user.id,
-    sessionId: session.id,
-  });
+  await issueCookieToken(ctx, { type: 'oauth-connect', userId: user.id, email: user.email, createdBy: user.id, sessionId: session.id });
 
   return ctx.body(null, 204);
 });

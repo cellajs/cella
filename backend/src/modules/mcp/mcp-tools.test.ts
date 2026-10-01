@@ -32,10 +32,7 @@ const thingRoutes = createXRoutes(['things'], {
     xGuard: [publicGuard],
     xTool: tool('attachment'),
     summary: 'Create things',
-    request: {
-      params: z.object({ tenantId: z.string(), organizationId: z.string() }),
-      body: jsonBody(z.array(itemSchema)),
-    },
+    request: { params: z.object({ tenantId: z.string(), organizationId: z.string() }), body: jsonBody(z.array(itemSchema)) },
     responses: { 201: json('Created', z.any()) },
   }),
   refuseThing: xRoute({
@@ -52,10 +49,7 @@ const thingRoutes = createXRoutes(['things'], {
 const things = new OpenAPIHono<Env>({ defaultHook });
 // Each handler answers with what the route received, so a test sees the request the tool sent.
 things.openapi(thingRoutes.listThings, (ctx) =>
-  ctx.json(
-    { params: ctx.req.valid('param'), query: ctx.req.valid('query'), ip: ctx.req.header('x-forwarded-for') },
-    200,
-  ),
+  ctx.json({ params: ctx.req.valid('param'), query: ctx.req.valid('query'), ip: ctx.req.header('x-forwarded-for') }, 200),
 );
 things.openapi(thingRoutes.createThings, (ctx) => ctx.json(ctx.req.valid('json'), 201));
 things.openapi(thingRoutes.refuseThing, (ctx) => {
@@ -70,10 +64,7 @@ const tools = buildMcpTools(app);
 /** The MCP request a tool call runs inside: its organization, its client address, no bindings. */
 const ctx = {
   var: { tenantId: 'tenant-1', organizationId: 'org-1' },
-  req: {
-    url: 'http://localhost/tenant-1/org-1/mcp',
-    header: (name: string) => (name === 'x-forwarded-for' ? '203.0.113.7' : undefined),
-  },
+  req: { url: 'http://localhost/tenant-1/org-1/mcp', header: (name: string) => (name === 'x-forwarded-for' ? '203.0.113.7' : undefined) },
   env: undefined,
 } as unknown as Context<Env>;
 
@@ -87,21 +78,13 @@ describe('buildMcpTools', () => {
   it("derives the input from params minus the route's own ids plus the query, and runs the route", async () => {
     const list = named('listThings');
     expect(list.scope).toBe('attachment:read');
-    expect(Object.keys((list.descriptor.inputSchema as { properties: object }).properties)).toEqual([
-      'id',
-      'q',
-      'limit',
-    ]);
+    expect(Object.keys((list.descriptor.inputSchema as { properties: object }).properties)).toEqual(['id', 'q', 'limit']);
 
     // The route parses the raw query itself, so its coercions apply; the organization comes from the MCP request.
     const outcome = await list.call(ctx, { id: 'a/b', q: 'hi', limit: '5' });
     expect(outcome).toEqual({
       ok: true,
-      output: {
-        params: { tenantId: 'tenant-1', organizationId: 'org-1', id: 'a/b' },
-        query: { q: 'hi', limit: 5 },
-        ip: '203.0.113.7',
-      },
+      output: { params: { tenantId: 'tenant-1', organizationId: 'org-1', id: 'a/b' }, query: { q: 'hi', limit: 5 }, ip: '203.0.113.7' },
     });
     await expect(list.call(ctx, { id: 'thing-1', limit: 'five' })).rejects.toBeInstanceOf(z.ZodError);
   });
@@ -109,11 +92,7 @@ describe('buildMcpTools', () => {
   it('nests an array body under items and rebuilds the sync transaction per item', async () => {
     const create = named('createThings');
     expect(create.scope).toBe('attachment:write');
-    expect(create.descriptor.annotations).toMatchObject({
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: false,
-    });
+    expect(create.descriptor.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: false, idempotentHint: false });
     expect(Object.keys((create.descriptor.inputSchema as { properties: object }).properties)).toEqual(['items']);
 
     // A sync transaction the model sends is replaced by the server's own, item by item.

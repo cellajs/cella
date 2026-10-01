@@ -34,12 +34,7 @@ describe('postMaterialize', () => {
     expect(String(url).startsWith(appConfig.backendUrl)).toBe(false);
     expect(init.headers['x-yjs-relay-secret']).toBe('test-yjs-relay-secret-for-unit-tests');
     expect(init.headers).not.toHaveProperty('x-yjs-secret');
-    expect(JSON.parse(init.body)).toMatchObject({
-      entityType: ctx.entityType,
-      entityId: ctx.entityId,
-      tenantId: ctx.tenantId,
-      editors: ['user-1'],
-    });
+    expect(JSON.parse(init.body)).toMatchObject({ entityType: ctx.entityType, entityId: ctx.entityId, tenantId: ctx.tenantId, editors: ['user-1'] });
   });
 
   it('classifies a rejected request as permanent, and refusals that can change and 5xx as retry', async () => {

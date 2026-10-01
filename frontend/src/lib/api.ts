@@ -12,9 +12,7 @@ export const clientConfig = {
 };
 
 /** SDK API-error payload with a required, Hono-branded status and optional synthesized fields. */
-export type ApiErrorInit = Partial<Omit<ApiErrorPayload, 'status'>> & {
-  status: ClientErrorStatusCode | ServerErrorStatusCode;
-};
+export type ApiErrorInit = Partial<Omit<ApiErrorPayload, 'status'>> & { status: ClientErrorStatusCode | ServerErrorStatusCode };
 
 export class ApiError extends Error implements ApiErrorInit {
   name: string;

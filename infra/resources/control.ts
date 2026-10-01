@@ -1,12 +1,6 @@
 import * as pulumi from '@pulumi/pulumi';
 import { makeS3Client } from '../lib/scaleway/s3-client';
-import {
-  type ControlState,
-  controlKey,
-  emptyControlState,
-  readControlState,
-  stateBucket,
-} from '../lib/stack/control-store';
+import { type ControlState, controlKey, emptyControlState, readControlState, stateBucket } from '../lib/stack/control-store';
 import { errorMessage } from '../lib/utils/errors';
 import { mode, naming, region } from '../pulumi-context';
 

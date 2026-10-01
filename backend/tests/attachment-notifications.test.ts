@@ -62,10 +62,7 @@ const paragraphWithText = (text: string) => ({
   children: [],
 });
 
-const updateStx = () => ({
-  ...mockStxBase(`stx:${generateId()}`),
-  fieldTimestamps: { description: generateServerHLC('test-client') },
-});
+const updateStx = () => ({ ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { description: generateServerHLC('test-client') } });
 
 const nullAncestorScopes = Object.fromEntries(
   appConfig.channelEntityTypes
@@ -92,10 +89,7 @@ describe('Attachment mentions (template notification source)', async () => {
     });
 
   const storedKeywords = async () => {
-    const [row] = await db
-      .select({ keywords: attachmentsTable.keywords })
-      .from(attachmentsTable)
-      .where(eq(attachmentsTable.id, attachmentId));
+    const [row] = await db.select({ keywords: attachmentsTable.keywords }).from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId));
     return row.keywords;
   };
 
@@ -133,27 +127,14 @@ describe('Attachment mentions (template notification source)', async () => {
   beforeAll(async () => {
     tenant = await createTestTenant(call, 'attachment-mentions');
     // The role that reads every attachment under any app's permission matrix; the stranger covers the drop path.
-    member = await createOrgUser(
-      call,
-      tenant.tenantId,
-      tenant.organization.id,
-      'attachment-mentions-member',
-      adminRole,
-    );
+    member = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'attachment-mentions-member', adminRole);
     stranger = await createTestUser('attachment-mentions-stranger@security-test.com');
 
     plan = await seedAttachmentHome({ id: tenant.organization.id, tenantId: tenant.tenantId }, tenant.user.id);
 
     const row = buildInsertableProduct(
       'attachment',
-      {
-        id: attachmentId,
-        tenantId: tenant.tenantId,
-        ...plan.channelIdColumns,
-        createdBy: tenant.user.id,
-        updatedBy: null,
-        deletedBy: null,
-      },
+      { id: attachmentId, tenantId: tenant.tenantId, ...plan.channelIdColumns, createdBy: tenant.user.id, updatedBy: null, deletedBy: null },
       attachmentId,
     );
     await insertAttachmentRow(row);
@@ -167,9 +148,7 @@ describe('Attachment mentions (template notification source)', async () => {
   });
 
   it('re-derives the keywords search column from the description on both write paths', async () => {
-    const result = await putDescription(
-      JSON.stringify([paragraphWithText('quarterly budget'), paragraphWithMentions([member.id])]),
-    );
+    const result = await putDescription(JSON.stringify([paragraphWithText('quarterly budget'), paragraphWithMentions([member.id])]));
     expect(result.response.status).toBe(200);
     expect(await storedKeywords()).toContain('quarterly budget');
 
@@ -236,10 +215,7 @@ describe('Attachment mentions (template notification source)', async () => {
   });
 
   it('lists the inbox row with the actor, channel and subject the card sentence needs', async () => {
-    const result = await call(getNotifications, {
-      query: { limit: 10 },
-      headers: { ...defaultHeaders, Cookie: member.sessionCookie },
-    });
+    const result = await call(getNotifications, { query: { limit: 10 }, headers: { ...defaultHeaders, Cookie: member.sessionCookie } });
     expect(result.response.status).toBe(200);
     // The test client types the body loosely; the SDK response type names the fields under test.
     const [row] = (result.data as GetNotificationsResponse | undefined)?.items ?? [];
@@ -274,21 +250,13 @@ describe('Attachment mentions (template notification source)', async () => {
     });
     const anHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     await db.insert(notificationsTable).values(Array.from({ length: 201 }, () => mentionOf(unverified.id, anHourAgo)));
-    const [fresh] = await db
-      .insert(notificationsTable)
-      .values(mentionOf(member.id, new Date()))
-      .returning({ id: notificationsTable.id });
+    const [fresh] = await db.insert(notificationsTable).values(mentionOf(member.id, new Date())).returning({ id: notificationsTable.id });
 
     await sendPendingInstantEmails(tenant.organization.id);
     await sendPendingInstantEmails(tenant.organization.id);
 
     const emailedAt = async (id: string) =>
-      (
-        await db
-          .select({ emailedAt: notificationsTable.emailedAt })
-          .from(notificationsTable)
-          .where(eq(notificationsTable.id, id))
-      )[0]?.emailedAt;
+      (await db.select({ emailedAt: notificationsTable.emailedAt }).from(notificationsTable).where(eq(notificationsTable.id, id)))[0]?.emailedAt;
     expect(await emailedAt(fresh.id)).not.toBeNull();
     // The unmailable rows are settled too, so no later pass reads them again.
     const backlog = await db
@@ -309,15 +277,7 @@ describe('Attachment mentions (template notification source)', async () => {
       subjectIds.push(id);
       const row = buildInsertableProduct(
         'attachment',
-        {
-          id,
-          tenantId: tenant.tenantId,
-          ...plan.channelIdColumns,
-          description,
-          createdBy: tenant.user.id,
-          updatedBy: null,
-          deletedBy: null,
-        },
+        { id, tenantId: tenant.tenantId, ...plan.channelIdColumns, description, createdBy: tenant.user.id, updatedBy: null, deletedBy: null },
         id,
       );
       await insertAttachmentRow(row);
@@ -334,13 +294,7 @@ describe('Attachment mentions (template notification source)', async () => {
       updatedEvent(tenant.user.id, { subjectId, type: 'attachment.created', action: 'create', changedFields: null });
 
     beforeAll(async () => {
-      other = await createOrgUser(
-        call,
-        tenant.tenantId,
-        tenant.organization.id,
-        'attachment-mentions-other',
-        adminRole,
-      );
+      other = await createOrgUser(call, tenant.tenantId, tenant.organization.id, 'attachment-mentions-other', adminRole);
     });
 
     afterAll(async () => {
@@ -443,14 +397,7 @@ describe('Attachment mentions (template notification source)', async () => {
     beforeAll(async () => {
       const row = buildInsertableProduct(
         'attachment',
-        {
-          id: replySubjectId,
-          tenantId: tenant.tenantId,
-          ...plan.channelIdColumns,
-          createdBy: tenant.user.id,
-          updatedBy: null,
-          deletedBy: null,
-        },
+        { id: replySubjectId, tenantId: tenant.tenantId, ...plan.channelIdColumns, createdBy: tenant.user.id, updatedBy: null, deletedBy: null },
         replySubjectId,
       );
       await insertAttachmentRow(row);

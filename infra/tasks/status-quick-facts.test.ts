@@ -5,12 +5,7 @@ import { formatQuickFacts, type QuickFacts } from './status';
 const strip = (lines: string[]) => lines.map((line) => stripVTControlCharacters(line));
 const T = Date.parse('2026-09-24T12:00:00Z');
 
-const adminKey = {
-  accessKey: 'SCWADMIN',
-  bearer: 'application' as const,
-  name: 'cella-production-admin',
-  bearerId: 'a',
-};
+const adminKey = { accessKey: 'SCWADMIN', bearer: 'application' as const, name: 'cella-production-admin', bearerId: 'a' };
 
 describe('formatQuickFacts', () => {
   it('reports a free lock, the live rollout and a healthy admin key', () => {
@@ -34,20 +29,9 @@ describe('formatQuickFacts', () => {
 
   it('warns about a held lock, a CI key in the admin slot and an imminent expiry', () => {
     const facts: QuickFacts = {
-      lock: {
-        owner: 'operator:flip',
-        operation: 'apply',
-        acquiredAt: '2026-09-24T11:50:00.000Z',
-        expiresAt: '2026-09-24T12:03:00.000Z',
-      },
+      lock: { owner: 'operator:flip', operation: 'apply', acquiredAt: '2026-09-24T11:50:00.000Z', expiresAt: '2026-09-24T12:03:00.000Z' },
       key: {
-        desc: {
-          accessKey: 'SCWCI',
-          bearer: 'application',
-          name: 'cella-production-ci-deploy',
-          bearerId: 'c',
-          expiresAt: '2026-09-24T14:00:00Z',
-        },
+        desc: { accessKey: 'SCWCI', bearer: 'application', name: 'cella-production-ci-deploy', bearerId: 'c', expiresAt: '2026-09-24T14:00:00Z' },
         role: 'ci-deploy',
         slot: 'admin',
       },
@@ -74,11 +58,7 @@ describe('formatQuickFacts', () => {
     const lines = strip(
       formatQuickFacts(
         {
-          key: {
-            desc: { ...adminKey, accessKey: 'SCWCI', name: 'cella-production-ci-deploy' },
-            role: 'ci-deploy',
-            slot: 'ambient',
-          },
+          key: { desc: { ...adminKey, accessKey: 'SCWCI', name: 'cella-production-ci-deploy' }, role: 'ci-deploy', slot: 'ambient' },
           unavailable: [],
         },
         { now: T, configured: 'ambient' },

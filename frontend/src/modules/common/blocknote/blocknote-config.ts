@@ -1,17 +1,8 @@
-import {
-  BlockNoteSchema,
-  createCodeBlockSpec,
-  type Dictionary,
-  defaultBlockSpecs,
-  defaultStyleSpecs,
-} from '@blocknote/core';
+import { BlockNoteSchema, createCodeBlockSpec, type Dictionary, defaultBlockSpecs, defaultStyleSpecs } from '@blocknote/core';
 import type { DefaultSuggestionItem } from '@blocknote/core/extensions';
 import { blockTypeSelectItems, type DefaultReactSuggestionItem, getDefaultReactSlashMenuItems } from '@blocknote/react';
 import { codeBlockConfig, withAttachmentRef } from 'shared/utils/blocknote-schema-configs';
-import {
-  checklistItemBlock,
-  getChecklistSlashItem,
-} from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
+import { checklistItemBlock, getChecklistSlashItem } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
 import { MentionSchema } from '~/modules/common/blocknote/custom-elements/mention/mention';
 import { getSlashNotifySlashItem, notifyBlock } from '~/modules/common/blocknote/custom-elements/notify/notify-block';
 import { baseBlockNoteTypeToKeys } from '~/modules/common/blocknote/type-to-keys';
@@ -51,9 +42,7 @@ const withImageBox = (spec: typeof defaultBlockSpecs.image) => {
   type ToExternalHTML = NonNullable<typeof spec.implementation.toExternalHTML>;
   // render/toExternalHTML read a `this` context (blockContentDOMAttributes, propSchema), so keep them methods and forward it.
   const baseRender = spec.implementation.render as (...args: Parameters<Render>) => ReturnType<Render>;
-  const baseToExternalHTML = spec.implementation.toExternalHTML as
-    | ((...args: Parameters<ToExternalHTML>) => ReturnType<ToExternalHTML>)
-    | undefined;
+  const baseToExternalHTML = spec.implementation.toExternalHTML as ((...args: Parameters<ToExternalHTML>) => ReturnType<ToExternalHTML>) | undefined;
 
   return {
     ...spec,
@@ -89,37 +78,19 @@ export const customSchema = BlockNoteSchema.create({ styleSpecs: safeStyleSpecs 
   inlineContentSpecs: { mention: MentionSchema },
 });
 
-export const customBlockTypeSwitchItems: CustomBlockTypes[] = [
-  'heading',
-  'paragraph',
-  'bulletListItem',
-  'numberedListItem',
-  'checklistItem',
-];
+export const customBlockTypeSwitchItems: CustomBlockTypes[] = ['heading', 'paragraph', 'bulletListItem', 'numberedListItem', 'checklistItem'];
 
 export const getSideMenuItems = (dict: Dictionary) => [...blockTypeSelectItems(dict)];
 
 // Indexed items (max 9 for quick number-based selection)
-export const customSlashIndexedItems: SlashIndexedItems = [
-  'image',
-  'video',
-  'file',
-  'bulletListItem',
-  'numberedListItem',
-  'checklistItem',
-  'notify',
-];
+export const customSlashIndexedItems: SlashIndexedItems = ['image', 'video', 'file', 'bulletListItem', 'numberedListItem', 'checklistItem', 'notify'];
 
 export const getSlashMenuItems = (
   editor: CustomBlockNoteEditor,
   allowedTypes: CustomBlockTypes[],
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>,
 ): DefaultReactSuggestionItem[] => {
-  const baseItems = [
-    ...getDefaultReactSlashMenuItems(editor),
-    getSlashNotifySlashItem(editor),
-    getChecklistSlashItem(editor),
-  ];
+  const baseItems = [...getDefaultReactSlashMenuItems(editor), getSlashNotifySlashItem(editor), getChecklistSlashItem(editor)];
 
   const { heading, ...restTypeToKeys } = { ...baseBlockNoteTypeToKeys };
   const filteredHeading = heading.filter((key) => {
@@ -128,10 +99,7 @@ export const getSlashMenuItems = (
     return headingLevels.includes(level as (typeof headingLevels)[number]);
   });
 
-  const allowedTypeToKeys = {
-    ...restTypeToKeys,
-    heading: filteredHeading,
-  };
+  const allowedTypeToKeys = { ...restTypeToKeys, heading: filteredHeading };
 
   const filteredTypeToKeys = Object.fromEntries(
     Object.entries(allowedTypeToKeys).filter(([type]) => allowedTypes.includes(type as CustomBlockTypes)),

@@ -10,9 +10,7 @@ import { useCurrentUser } from '~/modules/user/user-store';
 function WelcomePage() {
   const user = useCurrentUser();
 
-  const [onboarding, setOnboardingState] = useState<OnboardingStates>(
-    user.userFlags.finishedOnboarding ? 'completed' : 'start',
-  );
+  const [onboarding, setOnboardingState] = useState<OnboardingStates>(user.userFlags.finishedOnboarding ? 'completed' : 'start');
   const [createdOrganization, setCreatedOrganization] = useState<Organization | null>(null);
 
   const onOpenChange = (nextOpen: boolean, eventDetails: { reason: string }) => {

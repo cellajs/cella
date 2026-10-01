@@ -88,10 +88,7 @@ interface RolloutRow {
 export function parseDeployArgs(argv: string[]): DeployOptions {
   const mode = getFlag(argv, '--mode');
   const sha = getFlag(argv, '--sha');
-  if (!mode || !sha)
-    throw new Error(
-      'Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--dist <dir>] [--git-ref <ref>] [--defer-reap]',
-    );
+  if (!mode || !sha) throw new Error('Usage: deploy.ts --mode <staging|production> --sha <git-sha> [--dist <dir>] [--git-ref <ref>] [--defer-reap]');
   if (sha === 'latest' || sha.endsWith(':latest')) throw new Error(`Refusing to deploy non-pinned image tag '${sha}'`);
   return {
     mode,
@@ -108,8 +105,7 @@ async function loadDeployEnvFromConfig(opts: DeployOptions): Promise<Record<Allo
   process.env.APP_MODE = opts.mode;
   const { loadEngineConfig } = await import('../config/engine-config');
   const appConfig = await loadEngineConfig();
-  if (appConfig.mode !== opts.mode)
-    throw new Error(`Mode mismatch: requested "${opts.mode}" but loaded config is "${appConfig.mode}"`);
+  if (appConfig.mode !== opts.mode) throw new Error(`Mode mismatch: requested "${opts.mode}" but loaded config is "${appConfig.mode}"`);
   return buildDeployEnv(appConfig, { imageTag: opts.sha });
 }
 
@@ -148,10 +144,7 @@ export async function runDeploy(
       fx.info(`[deploy] ${title}: ok (${seconds}s)`);
     } catch (err) {
       span?.end('error', { message: errorMessage(err) });
-      const failAttrs: { step: string; error: string; 'error.stack'?: string } = {
-        step: title,
-        error: errorMessage(err),
-      };
+      const failAttrs: { step: string; error: string; 'error.stack'?: string } = { step: title, error: errorMessage(err) };
       if (err instanceof Error && err.stack) failAttrs['error.stack'] = err.stack.slice(0, 4000);
       telemetry?.event(deployEvents.stepFailed, failAttrs, { severity: 'error', ctx: span?.ctx });
       throw err;
@@ -164,24 +157,18 @@ export async function runDeploy(
   let outcome: 'ok' | 'error' = 'ok';
   try {
     await step('Ensure Pulumi state bucket', () => fx.task('ensure-state-bucket'));
-    await step('Login to S3 state backend', () =>
-      fx.exec('pulumi', ['login', stateBackendUrl(env.state_bucket, env.region)]),
-    );
+    await step('Login to S3 state backend', () => fx.exec('pulumi', ['login', stateBackendUrl(env.state_bucket, env.region)]));
     await step('Select stack', () => fx.exec('pulumi', ['stack', 'select', stack]));
     await step('Acquire stack lock', async () => {
       lease = await fx.lease(stack, 'deploy');
     });
     await step('Pre-install Pulumi providers', () => fx.task('install-pulumi-providers'));
     // Privileged changes (a database privilege, a VM policy rule) need an operator Apply first: fail here, in seconds, with that command.
-    await step('Preflight privileged changes', () =>
-      fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]),
-    );
+    await step('Preflight privileged changes', () => fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]));
 
     const registry = `rg.${env.region}.scw.cloud`;
     await step('Login to container registry', () =>
-      fx.exec('docker', ['login', registry, '-u', 'nologin', '--password-stdin'], {
-        stdin: process.env.SCW_SECRET_KEY ?? '',
-      }),
+      fx.exec('docker', ['login', registry, '-u', 'nologin', '--password-stdin'], { stdin: process.env.SCW_SECRET_KEY ?? '' }),
     );
 
     // Images and frontend converge concurrently: images build (with --build) or wait for CI's registry pushes, while the frontend builds and uploads hashed assets.
@@ -226,9 +213,7 @@ export async function runDeploy(
           }),
         );
       }
-      await step('Upload frontend assets', () =>
-        fx.uploadAssets({ distDir, bucket: env.frontend_bucket, region: env.region }),
-      );
+      await step('Upload frontend assets', () => fx.uploadAssets({ distDir, bucket: env.frontend_bucket, region: env.region }));
     })();
     const [imagesOutcome, frontendOutcome] = await Promise.allSettled([imagesReady, frontendReady]);
     for (const settled of [imagesOutcome, frontendOutcome]) {
@@ -240,14 +225,7 @@ export async function runDeploy(
     if (env.public_bucket) {
       await step('Ensure GeoIP data', async () => {
         try {
-          await fx.task('geoip-refresh', [
-            '--bucket',
-            env.public_bucket,
-            '--region',
-            env.region,
-            '--max-age-days',
-            '35',
-          ]);
+          await fx.task('geoip-refresh', ['--bucket', env.public_bucket, '--region', env.region, '--max-age-days', '35']);
         } catch (err) {
           fx.info(`[deploy] GeoIP data refresh skipped: ${errorMessage(err)}`);
         }
@@ -270,12 +248,7 @@ export async function runDeploy(
     });
     await step('Verify VM IAM grants', async () => {
       // One assertion per principal: exact sets AND exact path condition; a dormant principal must also hold no key.
-      const rows = JSON.parse(env.vm_assert_json) as Array<{
-        app: string;
-        sets: string[];
-        condition: string;
-        dormant?: boolean;
-      }>;
+      const rows = JSON.parse(env.vm_assert_json) as Array<{ app: string; sets: string[]; condition: string; dormant?: boolean }>;
       for (const row of rows) {
         await fx.task('assert-vm-grants', [
           '--application-name',
@@ -321,9 +294,7 @@ export async function runDeploy(
     } catch (err) {
       telemetry?.event(deployEvents.rolloutFailed, { error: errorMessage(err) }, { severity: 'error' });
       fx.info('[deploy] rollout failed; collecting boot diagnostics');
-      await fx
-        .bootDiagnostics(startedAtIso)
-        .catch((diagErr) => fx.info(`[deploy] boot diagnostics failed: ${errorMessage(diagErr)}`));
+      await fx.bootDiagnostics(startedAtIso).catch((diagErr) => fx.info(`[deploy] boot diagnostics failed: ${errorMessage(diagErr)}`));
       throw err;
     }
 
@@ -339,9 +310,7 @@ export async function runDeploy(
 
     // Strictly after rollout verification, so users only load the new entry files once every service serves the new release. Skipped for a frontend-less registry.
     if (env.frontend_bucket) {
-      await step('Publish frontend entry files', () =>
-        fx.publishEntryFiles({ distDir, bucket: env.frontend_bucket, region: env.region }),
-      );
+      await step('Publish frontend entry files', () => fx.publishEntryFiles({ distDir, bucket: env.frontend_bucket, region: env.region }));
     }
     await step('Smoke tests', () =>
       fx.task('smoke', [
@@ -423,10 +392,7 @@ export async function reapMain(argv = process.argv.slice(2)): Promise<void> {
  * GitHub token) before `env` layers on top, so an untrusted build (the frontend Vite plugin graph) cannot read them;
  * without it the child inherits the whole environment.
  */
-export function execEnv(
-  parentEnv: NodeJS.ProcessEnv,
-  opts: { env?: Record<string, string>; secretless?: boolean },
-): NodeJS.ProcessEnv {
+export function execEnv(parentEnv: NodeJS.ProcessEnv, opts: { env?: Record<string, string>; secretless?: boolean }): NodeJS.ProcessEnv {
   const baseEnv = opts.secretless ? scrubSecretEnv(parentEnv) : parentEnv;
   return opts.env ? { ...baseEnv, ...opts.env } : baseEnv;
 }
@@ -527,8 +493,7 @@ function createRealEffects(): DeployEffects {
           console.info(
             `[${operation}] stack locked by ${held.owner} (${held.operation}, since ${held.acquiredAt}); waiting up to ${Math.ceil(remainingMs / 60_000)} min`,
           ),
-        onRenewFailed: (reason, lost) =>
-          console.warn(`[${operation}] lease renewal failed: ${reason}${lost ? ' (lock lost)' : ''}`),
+        onRenewFailed: (reason, lost) => console.warn(`[${operation}] lease renewal failed: ${reason}${lost ? ' (lock lost)' : ''}`),
       });
       if (!result.acquired) {
         throw new Error(
@@ -573,13 +538,7 @@ function createRealEffects(): DeployEffects {
     },
     rollout: (argv) => runWavedRolloutCli(argv),
     async verifyVersion(url, sha) {
-      const out = await pollForVersion({
-        url,
-        expectedSha: sha,
-        probe: createFetchProbe(8000),
-        attempts: 40,
-        intervalMs: 3000,
-      });
+      const out = await pollForVersion({ url, expectedSha: sha, probe: createFetchProbe(8000), attempts: 40, intervalMs: 3000 });
       return out.ok;
     },
     publishEntryFiles: publishEntryFilesToBucket,

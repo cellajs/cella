@@ -68,22 +68,13 @@ app.openapi(authStepUpRoutes.sendStepUpLink, async (ctx) => {
 
   const { token, rawToken } = await issueToken(
     { var: { db: baseDb } },
-    {
-      type: 'step-up',
-      userId: user.id,
-      email: user.email,
-      createdBy: user.id,
-      sessionId: session.id,
-      redirectPath: isValidRedirectPath(redirect),
-    },
+    { type: 'step-up', userId: user.id, email: user.email, createdBy: user.id, sessionId: session.id, redirectPath: isValidRedirectPath(redirect) },
   );
   // Opening the link stamps this session only in this browser.
   await rememberLinkRequest(ctx, 'step-up', token.id);
 
   const stepUpUrl = tokenLinkUrl('step-up', rawToken);
-  mailer.prepareEmails(stepUpEmail, { stepUpUrl, name: user.name }, [
-    { email: user.email, lng: user.language ?? appConfig.defaultLanguage },
-  ]);
+  mailer.prepareEmails(stepUpEmail, { stepUpUrl, name: user.name }, [{ email: user.email, lng: user.language ?? appConfig.defaultLanguage }]);
 
   if (appConfig.mode === 'development') console.info(`[step-up] ${user.email} ${stepUpUrl}`);
   log.info('Step-up link sent', { tokenId: token.id });

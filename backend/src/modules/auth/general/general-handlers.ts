@@ -95,12 +95,7 @@ app.openapi(authGeneralRoutes.stopImpersonation, async (ctx) => {
     .where(eq(sessionsTable.id, session.impersonatorSessionId));
   if (!admin) throw new AppError(401, 'unauthorized', 'warn');
 
-  await revokeSessions(ctx, {
-    userId: session.userId,
-    sessionIds: [session.id],
-    reason: 'impersonation_stopped',
-    by: admin.userId,
-  });
+  await revokeSessions(ctx, { userId: session.userId, sessionIds: [session.id], reason: 'impersonation_stopped', by: admin.userId });
 
   // The admin's session cookie never left this browser: without the impersonation cookie it authenticates again.
   deleteAuthCookie(ctx, 'impersonation');
@@ -144,12 +139,7 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
 
   const { session: currentSession } = await readOwnSession(sessionToken);
 
-  await revokeSessions(ctx, {
-    userId: currentSession.userId,
-    sessionIds: [currentSession.id],
-    reason: 'sign_out',
-    by: currentSession.userId,
-  });
+  await revokeSessions(ctx, { userId: currentSession.userId, sessionIds: [currentSession.id], reason: 'sign_out', by: currentSession.userId });
   log.info('User signed out', { userId: currentSession.userId });
 
   return ctx.body(null, 204);

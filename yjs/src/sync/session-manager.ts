@@ -1,11 +1,6 @@
 import type { WebSocket } from 'ws';
 import type { DocKey, DocScope } from '../constants';
-import {
-  YJS_AWARENESS_MAX_CLIENTS,
-  YJS_CLEANUP_DELAY_MS,
-  YJS_CLEANUP_MAX_ATTEMPTS,
-  YJS_LIVE_TOUCH_MS,
-} from '../constants';
+import { YJS_AWARENESS_MAX_CLIENTS, YJS_CLEANUP_DELAY_MS, YJS_CLEANUP_MAX_ATTEMPTS, YJS_LIVE_TOUCH_MS } from '../constants';
 import { deleteDoc, touchDoc } from '../data/storage';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';

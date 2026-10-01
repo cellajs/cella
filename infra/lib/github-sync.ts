@@ -13,12 +13,7 @@ export interface GithubSyncOptions {
   repoRoot: string;
   environment: Environment;
   /** Stack-scoped secrets to write. Skip the section by passing undefined. */
-  ciKey?: {
-    accessKey: string;
-    secretKey: string;
-    projectId: string;
-    organizationId: string;
-  };
+  ciKey?: { accessKey: string; secretKey: string; projectId: string; organizationId: string };
   /** The stack's Pulumi passphrase; written as `PULUMI_CONFIG_PASSPHRASE`. */
   passphrase?: string;
   /** Injected for testability. Returns the spawn exit status. `input`, when set,
@@ -28,9 +23,7 @@ export interface GithubSyncOptions {
 }
 
 /** The `gh secret set` name/value pairs a sync would write. Pure. */
-export function githubSecretEntries(
-  opts: Pick<GithubSyncOptions, 'ciKey' | 'passphrase'>,
-): Array<[name: string, value: string]> {
+export function githubSecretEntries(opts: Pick<GithubSyncOptions, 'ciKey' | 'passphrase'>): Array<[name: string, value: string]> {
   const entries: Array<[string, string]> = [];
   if (opts.ciKey) {
     entries.push(
@@ -62,13 +55,10 @@ export async function syncGithubEnvironment(opts: GithubSyncOptions): Promise<bo
 
   if (spawnSync('gh', ['auth', 'status'], { stdio: 'ignore' }).status !== 0) return false;
 
-  const originUrl =
-    spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: opts.repoRoot, encoding: 'utf8' }).stdout?.trim() ?? '';
+  const originUrl = spawnSync('git', ['remote', 'get-url', 'origin'], { cwd: opts.repoRoot, encoding: 'utf8' }).stdout?.trim() ?? '';
   const ownerRepo = parseGithubOriginRepo(originUrl);
   if (!ownerRepo) {
-    console.warn(
-      `  ${warningMark} Could not parse GitHub repo from \`git remote get-url origin\`; skipping GitHub sync.`,
-    );
+    console.warn(`  ${warningMark} Could not parse GitHub repo from \`git remote get-url origin\`; skipping GitHub sync.`);
     return false;
   }
 

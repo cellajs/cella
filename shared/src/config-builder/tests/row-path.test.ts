@@ -6,13 +6,7 @@ import { pathHomeId, pathSegments, pathStartsWith } from '../row-path.ts';
 describe('row-path (materialized id-path rule)', () => {
   const h = deepHierarchy;
 
-  const fullDepthRow = {
-    id: 'i1',
-    projectId: 'p1',
-    courseSectionId: 's1',
-    courseId: 'c1',
-    organizationId: 'o1',
-  };
+  const fullDepthRow = { id: 'i1', projectId: 'p1', courseSectionId: 's1', courseId: 'c1', organizationId: 'o1' };
 
   describe('computeProductPath', () => {
     it('joins non-null ancestors root-first', () => {
@@ -50,15 +44,11 @@ describe('row-path (materialized id-path rule)', () => {
 
     it('appends own id to the ancestor chain', () => {
       expect(h.computeChannelPath('course', { id: 'c1', organizationId: 'o1' })).toBe('o1/c1');
-      expect(
-        h.computeChannelPath('project', { id: 'p1', courseSectionId: 's1', courseId: 'c1', organizationId: 'o1' }),
-      ).toBe('o1/c1/s1/p1');
+      expect(h.computeChannelPath('project', { id: 'p1', courseSectionId: 's1', courseId: 'c1', organizationId: 'o1' })).toBe('o1/c1/s1/p1');
     });
 
     it('skips null intermediate ancestors (org-level project)', () => {
-      expect(
-        h.computeChannelPath('project', { id: 'p1', courseSectionId: null, courseId: null, organizationId: 'o1' }),
-      ).toBe('o1/p1');
+      expect(h.computeChannelPath('project', { id: 'p1', courseSectionId: null, courseId: null, organizationId: 'o1' })).toBe('o1/p1');
     });
 
     it('is null without the organization or own id', () => {

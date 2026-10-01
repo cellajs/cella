@@ -62,11 +62,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     expect(event.type).toBe('membership.created');
     expect(event.resourceType).toBe('membership');
     expect(event.subjectId).toBe(membershipData.id);
-    expect(event.rowData).toMatchObject({
-      channelType: 'organization',
-      channelId: testOrg.id,
-      organizationId: testOrg.id,
-    });
+    expect(event.rowData).toMatchObject({ channelType: 'organization', channelId: testOrg.id, organizationId: testOrg.id });
   });
 
   it("must not leave a runtime-created organization's counters row without its path", async () => {
@@ -85,14 +81,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     const attachmentId = crypto.randomUUID();
     const attachment = buildInsertableProduct(
       'attachment',
-      {
-        id: attachmentId,
-        tenantId: testOrg.tenantId,
-        ...plan.channelIdColumns,
-        createdBy: testUser.id,
-        updatedBy: testUser.id,
-        seq: 0,
-      },
+      { id: attachmentId, tenantId: testOrg.tenantId, ...plan.channelIdColumns, createdBy: testUser.id, updatedBy: testUser.id, seq: 0 },
       'cdc-seq-test-attachment',
     );
     await db.insert(attachmentsTable).values(attachment as never);

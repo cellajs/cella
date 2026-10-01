@@ -29,11 +29,7 @@ export interface Subprocessor {
   categoriesOfPersonalData: string[];
   purposes: string[];
   country: string;
-  dpa: {
-    signed: boolean;
-    effectiveDate: string;
-    url: string;
-  };
+  dpa: { signed: boolean; effectiveDate: string; url: string };
   optional?: boolean;
 }
 

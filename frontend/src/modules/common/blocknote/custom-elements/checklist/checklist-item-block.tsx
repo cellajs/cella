@@ -60,10 +60,7 @@ const checklistExtensions = createExtension({
   // The default schema keeps BlockNote's own checkListItem, whose shortcuts and input rules match the same keys
   // and text; running first makes them create this block.
   runsBefore: ['check-list-item-shortcuts'],
-  keyboardShortcuts: {
-    Enter: ({ editor }) => handleChecklistItemEnter(editor),
-    'Mod-Shift-9': ({ editor }) => convertToChecklistItem(editor),
-  },
+  keyboardShortcuts: { Enter: ({ editor }) => handleChecklistItemEnter(editor), 'Mod-Shift-9': ({ editor }) => convertToChecklistItem(editor) },
   inputRules: [
     {
       find: /^\s?\[\s*]\s$/,
@@ -88,13 +85,7 @@ export const checklistItemBlock = createReactBlockSpec(
       return (
         <div className="checklist-item" data-checked={isChecked}>
           <div contentEditable={false} className="checklist-checkbox-wrapper">
-            <input
-              type="checkbox"
-              checked={isChecked}
-              readOnly
-              data-checkbox-id={block.props.checkboxId}
-              className="checklist-checkbox"
-            />
+            <input type="checkbox" checked={isChecked} readOnly data-checkbox-id={block.props.checkboxId} className="checklist-checkbox" />
           </div>
           <p className={`checklist-content ${isChecked ? 'checklist-checked' : ''}`} ref={contentRef} />
         </div>
@@ -108,10 +99,7 @@ export const getChecklistSlashItem = (editor: CustomBlockNoteEditor) => ({
   title: 'Todos',
   key: 'checklistItem',
   onItemClick: () => {
-    insertOrUpdateBlockForSlashMenu(editor, {
-      type: 'checklistItem' as const,
-      props: { checkboxId: nanoid(12) },
-    });
+    insertOrUpdateBlockForSlashMenu(editor, { type: 'checklistItem' as const, props: { checkboxId: nanoid(12) } });
   },
   aliases: ['checklist', 'checkbox', 'todo', 'task', 'check', 'todos'],
   group: 'Basic blocks',

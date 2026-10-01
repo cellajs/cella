@@ -98,12 +98,7 @@ function CollapsibleTagItemBase<T>({
           </span>
           <ChevronDownIcon className="invisible ml-auto size-4 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/tag:rotate-180" />
         </CollapsibleTrigger>
-        <CollapsibleContent
-          className={cn(
-            'overflow-hidden',
-            !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down',
-          )}
-        >
+        <CollapsibleContent className={cn('overflow-hidden', !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}>
           <div className="relative flex flex-col px-0 py-1">
             <ActiveIndicator activeIndex={activeItemIndex} layoutId={layoutId} isMobile={isMobile} />
             {items.map((item, index) => (
@@ -128,7 +123,4 @@ function collapsibleTagItemEqual<T>(prev: CollapsibleTagItemProps<T>, next: Coll
 }
 
 // memo doesn't preserve generics, so we cast
-export const CollapsibleTagItem = memo(
-  CollapsibleTagItemBase,
-  collapsibleTagItemEqual,
-) as typeof CollapsibleTagItemBase;
+export const CollapsibleTagItem = memo(CollapsibleTagItemBase, collapsibleTagItemEqual) as typeof CollapsibleTagItemBase;

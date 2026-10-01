@@ -10,10 +10,7 @@ import { createTestClient, sdk } from './test-client';
 type Fetch = (request: Request) => Response | Promise<Response>;
 
 /** What the worker hands `serve` and its shutdown hook, so the test opens no port and stops what the worker starts. */
-const worker = vi.hoisted(() => ({
-  fetch: undefined as Fetch | undefined,
-  cleanup: undefined as (() => Promise<void>) | undefined,
-}));
+const worker = vi.hoisted(() => ({ fetch: undefined as Fetch | undefined, cleanup: undefined as (() => Promise<void>) | undefined }));
 
 vi.mock('@hono/node-server', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@hono/node-server')>()),
@@ -58,8 +55,6 @@ describe('MCP worker folded into the API process', () => {
       headers: defaultHeaders,
     });
     expect(response.status).toBe(200);
-    expect(data).toMatchObject({
-      resource: resourceUri({ face: 'mcp', tenantId: org.tenantId, organizationId: org.id }),
-    });
+    expect(data).toMatchObject({ resource: resourceUri({ face: 'mcp', tenantId: org.tenantId, organizationId: org.id }) });
   });
 });

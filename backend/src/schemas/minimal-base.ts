@@ -7,13 +7,7 @@ import { mockOrganizationMinimalBase, mockUserMinimalBase } from './entity-base-
  * `entityType`. Its own file, so references can be imported without the full entity schemas.
  */
 const minimalBaseSchema = <T extends string>(entityType: T) =>
-  z.object({
-    id: z.string(),
-    name: z.string(),
-    slug: z.string(),
-    thumbnailUrl: z.string().nullable(),
-    entityType: z.literal(entityType),
-  });
+  z.object({ id: z.string(), name: z.string(), slug: z.string(), thumbnailUrl: z.string().nullable(), entityType: z.literal(entityType) });
 
 /** Minimal user schema for references (e.g. createdBy, updatedBy). */
 export const userMinimalBaseSchema = minimalBaseSchema('user').openapi('UserMinimalBase', {

@@ -103,13 +103,9 @@ describe('step-up dialog', () => {
     openStepUpDialog(['sign_in']).catch(() => {});
     const container = document.createElement('div');
     root = createRoot(container);
-    await act(async () =>
-      root?.render(<QueryClientProvider client={new QueryClient()}>{seen.dialog}</QueryClientProvider>),
-    );
+    await act(async () => root?.render(<QueryClientProvider client={new QueryClient()}>{seen.dialog}</QueryClientProvider>));
 
-    const signInAgain = [...container.querySelectorAll('button')].find((button) =>
-      button.textContent?.includes('c:sign_in_again'),
-    );
+    const signInAgain = [...container.querySelectorAll('button')].find((button) => button.textContent?.includes('c:sign_in_again'));
     await act(async () => signInAgain?.click());
 
     const signIn = `navigated to /auth/authenticate?redirect=${encodeURIComponent('/settings/security?tab=mfa')}`;
@@ -117,9 +113,7 @@ describe('step-up dialog', () => {
     const ended = seen.calls.indexOf('session ended');
     expect(ended).toBeGreaterThan(-1);
     // What needs the session goes while it lasts.
-    expect(seen.calls.slice(0, ended)).toEqual(
-      expect.arrayContaining(['push subscription dropped', 'seen marks sent']),
-    );
+    expect(seen.calls.slice(0, ended)).toEqual(expect.arrayContaining(['push subscription dropped', 'seen marks sent']));
     // The same person signs in again: their local database stays.
     expect(seen.calls).toContain('client state cleared (wipe: false)');
   });

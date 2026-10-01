@@ -60,20 +60,12 @@ export const collectedData: CollectedDataCategory[] = [
   {
     label: 'User-generated content',
     description: 'Content you or your organization members create, upload or share through the Service, including:',
-    items: [
-      'Tasks, projects and workspace data',
-      'Attachments (images, files, videos)',
-      'Profile information (name, avatar, biography)',
-    ],
+    items: ['Tasks, projects and workspace data', 'Attachments (images, files, videos)', 'Profile information (name, avatar, biography)'],
   },
   {
     label: 'Automatically collected data',
     description: 'When you interact with the Service we automatically collect:',
-    items: [
-      'Browser type and version',
-      'Anonymized count of pages and data requested',
-      'Anonymized IP addresses (for rate limiting and security)',
-    ],
+    items: ['Browser type and version', 'Anonymized count of pages and data requested', 'Anonymized IP addresses (for rate limiting and security)'],
   },
 ];
 
@@ -89,11 +81,7 @@ export const subprocessors: Subprocessor[] = [
     categoriesOfPersonalData: ['Contact data', 'Identifiers', 'Customer content and files'],
     purposes: ['Service hosting and data storage', 'Backup and availability', 'Content delivery'],
     country: 'France',
-    dpa: {
-      signed: true,
-      effectiveDate: '2022-07-01',
-      url: 'https://www.scaleway.com/en/terms-and-conditions/data-processing-agreement/',
-    },
+    dpa: { signed: true, effectiveDate: '2022-07-01', url: 'https://www.scaleway.com/en/terms-and-conditions/data-processing-agreement/' },
   },
   {
     slug: 'brevo',
@@ -105,11 +93,7 @@ export const subprocessors: Subprocessor[] = [
     categoriesOfPersonalData: ['Email addresses', 'Names', 'Email content'],
     purposes: ['Transactional email delivery', 'Email deliverability tracking'],
     country: 'France',
-    dpa: {
-      signed: true,
-      effectiveDate: '2023-01-01',
-      url: 'https://www.brevo.com/legal/termsofuse/#data-processing-agreement',
-    },
+    dpa: { signed: true, effectiveDate: '2023-01-01', url: 'https://www.brevo.com/legal/termsofuse/#data-processing-agreement' },
   },
   {
     slug: 'transloadit',
@@ -121,11 +105,7 @@ export const subprocessors: Subprocessor[] = [
     categoriesOfPersonalData: ['Uploaded files', 'File metadata'],
     purposes: ['File transformation and validation', 'Image processing'],
     country: 'Germany',
-    dpa: {
-      signed: true,
-      effectiveDate: '2023-01-01',
-      url: 'https://transloadit.com/legal/dpa/',
-    },
+    dpa: { signed: true, effectiveDate: '2023-01-01', url: 'https://transloadit.com/legal/dpa/' },
     optional: true,
   },
   {
@@ -138,11 +118,7 @@ export const subprocessors: Subprocessor[] = [
     categoriesOfPersonalData: ['Email addresses', 'Support messages', 'Browser and page context'],
     purposes: ['Customer support', 'Bug reporting and feedback'],
     country: 'Austria',
-    dpa: {
-      signed: true,
-      effectiveDate: '2023-01-01',
-      url: 'https://gleap.io/privacy-policy/',
-    },
+    dpa: { signed: true, effectiveDate: '2023-01-01', url: 'https://gleap.io/privacy-policy/' },
     optional: true,
   },
 ];

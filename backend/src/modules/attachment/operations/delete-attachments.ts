@@ -6,10 +6,7 @@ import { splitByPermission } from '#/permissions/split-by-permission';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
-export async function deleteAttachmentsOp(
-  ctx: ActorContext,
-  ids: string[],
-): Promise<{ data: []; rejectedIds: string[] }> {
+export async function deleteAttachmentsOp(ctx: ActorContext, ids: string[]): Promise<{ data: []; rejectedIds: string[] }> {
   const { allowedIds, rejectedIds } = await splitByPermission(ctx, 'delete', 'attachment', ids);
   const deletedAt = getIsoDate();
   const deletedBy = ctx.var.actor.id;

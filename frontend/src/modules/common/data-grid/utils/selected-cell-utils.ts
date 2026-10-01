@@ -7,11 +7,7 @@ interface IsSelectedCellEditableOpts<R, SR> {
   rows: readonly R[];
 }
 
-export function isSelectedCellEditable<R, SR>({
-  selectedPosition,
-  columns,
-  rows,
-}: IsSelectedCellEditableOpts<R, SR>): boolean {
+export function isSelectedCellEditable<R, SR>({ selectedPosition, columns, rows }: IsSelectedCellEditableOpts<R, SR>): boolean {
   const column = columns[selectedPosition.idx];
   const row = rows[selectedPosition.rowIdx];
   return isCellEditableUtil(column, row);
@@ -19,10 +15,7 @@ export function isSelectedCellEditable<R, SR>({
 
 // https://github.com/vercel/next.js/issues/56480
 export function isCellEditableUtil<R, SR>(column: CalculatedColumn<R, SR>, row: R): boolean {
-  return (
-    column.renderEditCell != null &&
-    (typeof column.editable === 'function' ? column.editable(row) : column.editable) !== false
-  );
+  return column.renderEditCell != null && (typeof column.editable === 'function' ? column.editable(row) : column.editable) !== false;
 }
 
 interface GetNextSelectedCellPositionOpts<R, SR> {
@@ -51,10 +44,7 @@ function getSelectedCellColSpan<R, SR>({
   mainHeaderRowIdx,
   lastFrozenColumnIndex,
   column,
-}: Pick<
-  GetNextSelectedCellPositionOpts<R, SR>,
-  'rows' | 'topSummaryRows' | 'bottomSummaryRows' | 'lastFrozenColumnIndex' | 'mainHeaderRowIdx'
-> & {
+}: Pick<GetNextSelectedCellPositionOpts<R, SR>, 'rows' | 'topSummaryRows' | 'bottomSummaryRows' | 'lastFrozenColumnIndex' | 'mainHeaderRowIdx'> & {
   rowIdx: number;
   column: CalculatedColumn<R, SR>;
 }) {
@@ -64,10 +54,7 @@ function getSelectedCellColSpan<R, SR>({
   }
 
   if (topSummaryRows && rowIdx > mainHeaderRowIdx && rowIdx <= topSummaryRowsCount + mainHeaderRowIdx) {
-    return getColSpan(column, lastFrozenColumnIndex, {
-      type: 'SUMMARY',
-      row: topSummaryRows[rowIdx + topSummaryRowsCount],
-    });
+    return getColSpan(column, lastFrozenColumnIndex, { type: 'SUMMARY', row: topSummaryRows[rowIdx + topSummaryRowsCount] });
   }
 
   if (rowIdx >= 0 && rowIdx < rows.length) {
@@ -76,20 +63,13 @@ function getSelectedCellColSpan<R, SR>({
   }
 
   if (bottomSummaryRows) {
-    return getColSpan(column, lastFrozenColumnIndex, {
-      type: 'SUMMARY',
-      row: bottomSummaryRows[rowIdx - rows.length],
-    });
+    return getColSpan(column, lastFrozenColumnIndex, { type: 'SUMMARY', row: bottomSummaryRows[rowIdx - rows.length] });
   }
 
   return undefined;
 }
 
-function findNextFocusableColumn<R, SR>(
-  columns: readonly CalculatedColumn<R, SR>[],
-  startIdx: number,
-  direction: 1 | -1,
-): number {
+function findNextFocusableColumn<R, SR>(columns: readonly CalculatedColumn<R, SR>[], startIdx: number, direction: 1 | -1): number {
   let idx = startIdx;
   const maxIdx = columns.length - 1;
 
@@ -256,13 +236,7 @@ interface CanExitGridOpts {
   shiftKey: boolean;
 }
 
-export function canExitGrid({
-  maxColIdx,
-  minRowIdx,
-  maxRowIdx,
-  selectedPosition: { rowIdx, idx },
-  shiftKey,
-}: CanExitGridOpts): boolean {
+export function canExitGrid({ maxColIdx, minRowIdx, maxRowIdx, selectedPosition: { rowIdx, idx }, shiftKey }: CanExitGridOpts): boolean {
   const atLastCellInRow = idx === maxColIdx;
   const atFirstCellInRow = idx === 0;
   const atLastRow = rowIdx === maxRowIdx;

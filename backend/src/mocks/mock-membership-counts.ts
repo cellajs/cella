@@ -16,9 +16,5 @@ export const generateMockMembershipCounts = (key: string) =>
       total += count;
     }
 
-    return {
-      ...roleCounts,
-      pending: faker.number.int({ min: 0, max: 50 }),
-      total,
-    };
+    return { ...roleCounts, pending: faker.number.int({ min: 0, max: 50 }), total };
   });

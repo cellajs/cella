@@ -1,25 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
-import {
-  type ComponentIssue,
-  componentSeverity,
-  formatComponentIssues,
-  unhealthyComponents,
-} from '../lib/health-components';
-import {
-  extractEntryAsset,
-  type HttpResponse,
-  hasHashedAsset,
-  isHtmlDocument,
-  main,
-  missingSecurityHeaders,
-  parseArgs,
-  runSmoke,
-} from './smoke';
+import { type ComponentIssue, componentSeverity, formatComponentIssues, unhealthyComponents } from '../lib/health-components';
+import { extractEntryAsset, type HttpResponse, hasHashedAsset, isHtmlDocument, main, missingSecurityHeaders, parseArgs, runSmoke } from './smoke';
 
 const SHA = 'abc1234';
 
-const HASHED_HTML =
-  '<!doctype html><html><head><script type="module" src="/assets/index-abc123.js"></script></head><body></body></html>';
+const HASHED_HTML = '<!doctype html><html><head><script type="module" src="/assets/index-abc123.js"></script></head><body></body></html>';
 
 /** A /health?depth=full body where every component is healthy. */
 const HEALTHY_COMPONENTS = JSON.stringify({
@@ -131,9 +116,7 @@ describe('unhealthyComponents', () => {
     expect(unhealthyComponents('not json')).toEqual([{ name: '<body>', status: 'unparseable' }]);
   });
   it('fails loudly when components are missing', () => {
-    expect(unhealthyComponents(JSON.stringify({ status: 'healthy' }))).toEqual([
-      { name: '<components>', status: 'missing' },
-    ]);
+    expect(unhealthyComponents(JSON.stringify({ status: 'healthy' }))).toEqual([{ name: '<components>', status: 'missing' }]);
   });
 });
 
@@ -167,20 +150,14 @@ describe('runSmoke', () => {
   function healthyGet(url: string): Promise<HttpResponse> {
     if (url.endsWith('/openapi.json')) return Promise.resolve(res({ body: '{}' }));
     if (url.includes('/health?depth=full')) return Promise.resolve(res({ body: HEALTHY_COMPONENTS }));
-    if (url.endsWith('/health'))
-      return Promise.resolve(res({ status: 204, ok: true, headers: new Headers({ 'x-app-version': SHA }) }));
+    if (url.endsWith('/health')) return Promise.resolve(res({ status: 204, ok: true, headers: new Headers({ 'x-app-version': SHA }) }));
     if (url.includes('/__smoke_')) return Promise.resolve(res({ body: '<html><body>app</body></html>' }));
     // frontend root (used by both check 1 and check 5)
     return Promise.resolve(res({ body: HASHED_HTML, headers: secureHeaders() }));
   }
 
   it('passes every check against a healthy deployment', async () => {
-    const results = await runSmoke({
-      defaultRouteUrl: 'https://app',
-      primaryUrl: 'https://api',
-      expectedSha: SHA,
-      get: healthyGet,
-    });
+    const results = await runSmoke({ defaultRouteUrl: 'https://app', primaryUrl: 'https://api', expectedSha: SHA, get: healthyGet });
     expect(results).toHaveLength(6);
     expect(results.every((r) => r.status === 'ok')).toBe(true);
   });
@@ -226,15 +203,8 @@ describe('runSmoke', () => {
 
   it('flags a stale service SHA without short-circuiting other checks', async () => {
     const get = (url: string) =>
-      url === 'https://api/health'
-        ? Promise.resolve(res({ status: 204, headers: new Headers({ 'x-app-version': 'old9999' }) }))
-        : healthyGet(url);
-    const results = await runSmoke({
-      defaultRouteUrl: 'https://app',
-      primaryUrl: 'https://api',
-      expectedSha: SHA,
-      get,
-    });
+      url === 'https://api/health' ? Promise.resolve(res({ status: 204, headers: new Headers({ 'x-app-version': 'old9999' }) })) : healthyGet(url);
+    const results = await runSmoke({ defaultRouteUrl: 'https://app', primaryUrl: 'https://api', expectedSha: SHA, get });
 
     const sha = results.find((r) => r.name === 'primary reports deployed SHA');
     expect(sha?.status).toBe('fail');
@@ -245,15 +215,8 @@ describe('runSmoke', () => {
 
   it('reports missing security headers', async () => {
     const get = (url: string) =>
-      url === 'https://app/'
-        ? Promise.resolve(res({ body: HASHED_HTML, headers: secureHeaders({}, ['X-Frame-Options']) }))
-        : healthyGet(url);
-    const results = await runSmoke({
-      defaultRouteUrl: 'https://app',
-      primaryUrl: 'https://api',
-      expectedSha: SHA,
-      get,
-    });
+      url === 'https://app/' ? Promise.resolve(res({ body: HASHED_HTML, headers: secureHeaders({}, ['X-Frame-Options']) })) : healthyGet(url);
+    const results = await runSmoke({ defaultRouteUrl: 'https://app', primaryUrl: 'https://api', expectedSha: SHA, get });
 
     const sec = results.find((r) => r.name === 'security headers present');
     expect(sec?.status).toBe('fail');
@@ -261,14 +224,8 @@ describe('runSmoke', () => {
   });
 
   it('captures a thrown fetch error as a failed check', async () => {
-    const get = (url: string) =>
-      url.endsWith('/openapi.json') ? Promise.reject(new Error('ECONNREFUSED')) : healthyGet(url);
-    const results = await runSmoke({
-      defaultRouteUrl: 'https://app',
-      primaryUrl: 'https://api',
-      expectedSha: SHA,
-      get,
-    });
+    const get = (url: string) => (url.endsWith('/openapi.json') ? Promise.reject(new Error('ECONNREFUSED')) : healthyGet(url));
+    const results = await runSmoke({ defaultRouteUrl: 'https://app', primaryUrl: 'https://api', expectedSha: SHA, get });
 
     const api = results.find((r) => r.name === 'primary /openapi.json reachable');
     expect(api?.status).toBe('fail');
@@ -276,25 +233,15 @@ describe('runSmoke', () => {
   });
 
   it('flags a non-ok openapi response', async () => {
-    const get = (url: string) =>
-      url.endsWith('/openapi.json') ? Promise.resolve(res({ status: 404, ok: false })) : healthyGet(url);
-    const results = await runSmoke({
-      defaultRouteUrl: 'https://app',
-      primaryUrl: 'https://api',
-      expectedSha: SHA,
-      get,
-    });
+    const get = (url: string) => (url.endsWith('/openapi.json') ? Promise.resolve(res({ status: 404, ok: false })) : healthyGet(url));
+    const results = await runSmoke({ defaultRouteUrl: 'https://app', primaryUrl: 'https://api', expectedSha: SHA, get });
     expect(results.find((r) => r.name === 'primary /openapi.json reachable')?.status).toBe('fail');
   });
 
   it('retries the component check and passes once the cdc worker reconnects', async () => {
     const reconnecting = JSON.stringify({
       status: 'unhealthy',
-      components: {
-        api: { status: 'healthy' },
-        database: { status: 'healthy' },
-        cdc: { status: 'unhealthy', reason: 'worker_disconnected' },
-      },
+      components: { api: { status: 'healthy' }, database: { status: 'healthy' }, cdc: { status: 'unhealthy', reason: 'worker_disconnected' } },
     });
     let depthFullCalls = 0;
     const get = (url: string) => {
@@ -422,10 +369,7 @@ describe('parseArgs', () => {
       { service: 'backend', health_url: 'https://api' },
       { service: 'cdc', health_url: '' },
     ]);
-    expect(
-      parseArgs(['--frontend', 'https://app', '--backend', 'https://api', '--sha', SHA, '--services-json', matrix])
-        .services,
-    ).toEqual([
+    expect(parseArgs(['--frontend', 'https://app', '--backend', 'https://api', '--sha', SHA, '--services-json', matrix]).services).toEqual([
       { service: 'backend', health_url: 'https://api', public_url: undefined },
       { service: 'cdc', health_url: '', public_url: undefined },
     ]);
@@ -443,37 +387,17 @@ describe('parseArgs', () => {
     // Without --primary: the first non-default-route service with a health URL.
     expect(parseArgs(['--sha', SHA, '--services-json', matrix])).toMatchObject({ primaryUrl: 'https://api' });
     // Frontend-less matrix: no defaultRouteUrl, checks 1/4/5 will skip.
-    const apiOnly = JSON.stringify([
-      { service: 'api', public_url: 'https://api', health_url: 'https://api', lb_route: 'path' },
-    ]);
+    const apiOnly = JSON.stringify([{ service: 'api', public_url: 'https://api', health_url: 'https://api', lb_route: 'path' }]);
     expect(parseArgs(['--sha', SHA, '--services-json', apiOnly]).defaultRouteUrl).toBeUndefined();
   });
 
   it('honours an explicit --timeout', () => {
-    const args = parseArgs([
-      '--frontend',
-      'https://app',
-      '--backend',
-      'https://api',
-      '--sha',
-      SHA,
-      '--timeout',
-      '5000',
-    ]);
+    const args = parseArgs(['--frontend', 'https://app', '--backend', 'https://api', '--sha', SHA, '--timeout', '5000']);
     expect(args.timeoutMs).toBe(5000);
   });
 
   it('parses --dist', () => {
-    const args = parseArgs([
-      '--frontend',
-      'https://app',
-      '--backend',
-      'https://api',
-      '--sha',
-      SHA,
-      '--dist',
-      '/x/index.html',
-    ]);
+    const args = parseArgs(['--frontend', 'https://app', '--backend', 'https://api', '--sha', SHA, '--dist', '/x/index.html']);
     expect(args.dist).toBe('/x/index.html');
   });
 
@@ -491,16 +415,7 @@ describe('main', () => {
     const fetchSpy = vi.spyOn(globalThis, 'fetch');
 
     await expect(
-      main([
-        '--frontend',
-        'https://app',
-        '--backend',
-        'https://api',
-        '--sha',
-        SHA,
-        '--dist',
-        '/nonexistent/does-not-exist.html',
-      ]),
+      main(['--frontend', 'https://app', '--backend', 'https://api', '--sha', SHA, '--dist', '/nonexistent/does-not-exist.html']),
     ).rejects.toThrow(/Could not read/);
 
     expect(fetchSpy).not.toHaveBeenCalled();

@@ -33,10 +33,6 @@ onBackendModuleRegister((module) => {
 });
 
 /** Awaits handlers in registration order, rejecting on the first error. Pass a transactional ctx to join the write. */
-export async function dispatchMutation(
-  ctx: ActorContext,
-  event: TrackedEventType,
-  payload: MutationPayload = {},
-): Promise<void> {
+export async function dispatchMutation(ctx: ActorContext, event: TrackedEventType, payload: MutationPayload = {}): Promise<void> {
   for (const handler of handlers.get(event) ?? []) await handler(ctx, payload);
 }

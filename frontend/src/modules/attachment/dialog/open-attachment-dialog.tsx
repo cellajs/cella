@@ -16,9 +16,7 @@ export const openAttachmentDialog = ({ attachmentIndex, attachments, triggerRef 
     </div>,
     attachmentDialogOptions({
       id: 'attachment-dialog',
-      triggerRef: triggerRef || {
-        current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
-      },
+      triggerRef: triggerRef || { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null },
     }),
   );
 };

@@ -1,11 +1,6 @@
 import { healthContract } from '../../../config/health.config';
 import { createFetchGet } from '../../../tasks/smoke';
-import {
-  type ComponentIssue,
-  componentSeverity,
-  formatComponentIssues,
-  unhealthyComponents,
-} from '../../health-components';
+import { type ComponentIssue, componentSeverity, formatComponentIssues, unhealthyComponents } from '../../health-components';
 import { deployedServices, serviceEndpoints } from '../../services';
 import { check, diagAction } from '../check';
 import type { Check, StatusProvider } from '../types';
@@ -30,9 +25,7 @@ function componentsCheck(facts: ComponentsFact, mode: string): Check {
       : components.error(`HTTP ${facts.httpStatus} with no component issue at ${facts.url}`, diagAction(mode));
   }
   const detail = formatComponentIssues(facts.issues);
-  return componentSeverity(facts.issues) === 'warn'
-    ? components.warn(detail)
-    : components.error(detail, diagAction(mode));
+  return componentSeverity(facts.issues) === 'warn' ? components.warn(detail) : components.error(detail, diagAction(mode));
 }
 
 export const componentsProvider: StatusProvider<ComponentsFact> = {

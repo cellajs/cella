@@ -30,23 +30,11 @@ export function planCertRepairs(stateCerts: StateCert[], liveById: Map<string, L
     if (!zone || !certId) continue;
     const live = liveById.get(cert.id);
     if (live === 'missing') {
-      repairs.push({
-        urn: cert.urn,
-        zone,
-        certId,
-        deleteLive: false,
-        reason: 'live certificate gone; pruning stale state entry',
-      });
+      repairs.push({ urn: cert.urn, zone, certId, deleteLive: false, reason: 'live certificate gone; pruning stale state entry' });
       continue;
     }
     if (live && live.status === 'error') {
-      repairs.push({
-        urn: cert.urn,
-        zone,
-        certId,
-        deleteLive: true,
-        reason: `status=error${live.statusDetails ? ` (${live.statusDetails})` : ''}`,
-      });
+      repairs.push({ urn: cert.urn, zone, certId, deleteLive: true, reason: `status=error${live.statusDetails ? ` (${live.statusDetails})` : ''}` });
     }
   }
   return repairs;
@@ -54,11 +42,7 @@ export function planCertRepairs(stateCerts: StateCert[], liveById: Map<string, L
 
 /** Certificates currently in the stack's Pulumi state. */
 function certsInState(stack: string): StateCert[] {
-  const result = spawnSync('pulumi', ['stack', 'export', '--stack', stack], {
-    cwd: infraDir,
-    encoding: 'utf8',
-    maxBuffer: 64 * 1024 * 1024,
-  });
+  const result = spawnSync('pulumi', ['stack', 'export', '--stack', stack], { cwd: infraDir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   if (result.status !== 0) throw new Error(`pulumi stack export failed: ${result.stderr}`);
   const deployment = JSON.parse(result.stdout) as {
     deployment?: { resources?: Array<{ urn: string; type: string; id?: string }> };
@@ -102,10 +86,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   for (const repair of repairs) {
     console.info(`repair-certs: ${repair.certId}: ${repair.reason}`);
-    const stateDelete = spawnSync('pulumi', ['state', 'delete', repair.urn, '--stack', stack, '--yes'], {
-      cwd: infraDir,
-      encoding: 'utf8',
-    });
+    const stateDelete = spawnSync('pulumi', ['state', 'delete', repair.urn, '--stack', stack, '--yes'], { cwd: infraDir, encoding: 'utf8' });
     if (stateDelete.status !== 0) {
       // A dependent (attached frontend) still references it: leave the live
       // object alone too: never delete TLS material something may serve.
@@ -115,14 +96,8 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
       continue;
     }
     if (repair.deleteLive) {
-      await scwSend(
-        auth,
-        'DELETE',
-        `https://api.scaleway.com/lb/v1/zones/${repair.zone}/certificates/${repair.certId}`,
-      );
-      console.info(
-        `repair-certs: deleted errored certificate ${repair.certId}; the next pulumi up recreates it behind the DNS gate.`,
-      );
+      await scwSend(auth, 'DELETE', `https://api.scaleway.com/lb/v1/zones/${repair.zone}/certificates/${repair.certId}`);
+      console.info(`repair-certs: deleted errored certificate ${repair.certId}; the next pulumi up recreates it behind the DNS gate.`);
     }
   }
 }

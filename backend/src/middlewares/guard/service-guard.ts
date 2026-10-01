@@ -21,8 +21,7 @@ export const unauthorized = (reason: string) => new AppError(401, 'unauthorized'
 /** The route's tenant and organization ids as the URL carries them; every machine guard binds the key or token to them. */
 export function routeTarget(ctx: Context<Env>): { tenantId: string; organizationId?: string } {
   const tenantId = ctx.req.param('tenantId')?.toLowerCase();
-  if (!tenantId)
-    throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing tenantId parameter' } });
+  if (!tenantId) throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing tenantId parameter' } });
   return { tenantId, organizationId: ctx.req.param('organizationId') };
 }
 
@@ -32,11 +31,7 @@ export function routeTarget(ctx: Context<Env>): { tenantId: string; organization
  * grant, and only while the grant policy holds the grant or API key it names. Tokens and keys never carry system
  * admin: that stays with a session and its IP allow-list.
  */
-export async function setActorFromToken(
-  ctx: Context<Env>,
-  jwt: string,
-  scope: { tenantId: string; organizationId?: string },
-): Promise<void> {
+export async function setActorFromToken(ctx: Context<Env>, jwt: string, scope: { tenantId: string; organizationId?: string }): Promise<void> {
   const token = await verifyAccessToken(jwt, scope);
   const grant = await resolveTokenGrant(token);
   if (grant.refusal !== null) throw unauthorized(grant.refusal);
@@ -50,13 +45,7 @@ export async function setActorFromToken(
     ctx.set('actor', { kind: 'user', id: user.id, bindings: memberships, scopes: token.scopes });
   } else {
     const { account } = grant;
-    ctx.set('actor', {
-      kind: 'service',
-      id: account.id,
-      tenantId: account.tenantId,
-      bindings: account.bindings,
-      scopes: token.scopes,
-    });
+    ctx.set('actor', { kind: 'service', id: account.id, tenantId: account.tenantId, bindings: account.bindings, scopes: token.scopes });
   }
   ctx.set('isSystemAdmin', false);
   ctx.set('db', baseDb);
@@ -79,17 +68,12 @@ async function loadTokenGrant(token: VerifiedAccessToken): Promise<TokenGrantEnt
   if (token.kind === 'user') {
     // A revoked grant, or one a replayed code or refresh token revoked, is deleted: its tokens stop with it.
     const grant = await findConsentOfUser({ var: { db: baseDb } }, { grantId: token.grantId, userId: token.actorId });
-    const refusal = grant
-      ? await grantRefusal({ userId: token.actorId, clientId: token.clientId, tenantId: token.tenantId })
-      : 'grant_revoked';
+    const refusal = grant ? await grantRefusal({ userId: token.actorId, clientId: token.clientId, tenantId: token.tenantId }) : 'grant_revoked';
     const [user] = refusal ? [] : await baseDb.select().from(usersTable).where(eq(usersTable.id, token.actorId));
     entry = user ? { refusal: null, kind: 'user', user } : { refusal: refusal ?? 'unknown_user' };
   } else {
     // The key the token was minted with, which must belong to the token's account.
-    const found = await findApiKeyWithAccount(
-      { var: { db: baseDb } },
-      { key: { id: token.keyId }, actorId: token.actorId },
-    );
+    const found = await findApiKeyWithAccount({ var: { db: baseDb } }, { key: { id: token.keyId }, actorId: token.actorId });
     entry = found ? { refusal: null, kind: 'service', ...found } : { refusal: 'invalid_api_key' };
   }
   setTokenGrantCache(token, entry);
@@ -117,8 +101,7 @@ export const serviceGuard = xMiddleware(
     type: 'x-guard',
     security: [{ apiKey: [] }, { oauth2: [] }],
     name: 'service',
-    description:
-      'Requires a secret API key or an access token and sets the service account or the consenting user as the actor',
+    description: 'Requires a secret API key or an access token and sets the service account or the consenting user as the actor',
   },
   async (ctx, next) => {
     const target = routeTarget(ctx);
@@ -131,10 +114,7 @@ export const serviceGuard = xMiddleware(
     const raw = apiKeyFrom(ctx);
     if (!raw) {
       // RFC 9728: the challenge names where the API face publishes its metadata.
-      ctx.header(
-        'WWW-Authenticate',
-        `Bearer resource_metadata="${resourceMetadataUrl({ face: 'api', tenantId: target.tenantId })}"`,
-      );
+      ctx.header('WWW-Authenticate', `Bearer resource_metadata="${resourceMetadataUrl({ face: 'api', tenantId: target.tenantId })}"`);
       throw unauthorized('missing_api_key');
     }
 
@@ -150,13 +130,7 @@ export const serviceGuard = xMiddleware(
     if (refusal) throw unauthorized(refusal);
     const { apiKey, account } = resolved;
 
-    ctx.set('actor', {
-      kind: 'service',
-      id: account.id,
-      tenantId: account.tenantId,
-      bindings: account.bindings,
-      scopes: apiKey.scopes,
-    });
+    ctx.set('actor', { kind: 'service', id: account.id, tenantId: account.tenantId, bindings: account.bindings, scopes: apiKey.scopes });
     ctx.set('isSystemAdmin', false);
     ctx.set('db', baseDb);
 

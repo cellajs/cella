@@ -22,8 +22,7 @@ export function planForService(serviceFlag: string, healthUrl?: string): Rollout
 
   // A singleVM host folding a stop-first worker replaces its VM within the provisioning update: the LB pool moves straight to [new] and there is no displaced generation left to drain.
   const exclusive =
-    definition.replacementStrategy !== 'stop-first' &&
-    effectiveStrategy(appConfig.services, appConfig.singleVM, definition) === 'stop-first';
+    definition.replacementStrategy !== 'stop-first' && effectiveStrategy(appConfig.services, appConfig.singleVM, definition) === 'stop-first';
 
   const plan: RolloutServicePlan = {
     service,
@@ -35,8 +34,7 @@ export function planForService(serviceFlag: string, healthUrl?: string): Rollout
   if (exclusive) plan.exclusive = true;
 
   if (definition.replacementStrategy !== 'stop-first') {
-    if (!definition.lbRoute)
-      throw new Error(`Service '${service}' is not exclusive and has no LB route; no deploy path is defined.`);
+    if (!definition.lbRoute) throw new Error(`Service '${service}' is not exclusive and has no LB route; no deploy path is defined.`);
     if (!plan.healthUrl) throw new Error(`Service '${service}' has no health URL.`);
   }
 
@@ -46,10 +44,7 @@ export function planForService(serviceFlag: string, healthUrl?: string): Rollout
   const repointKeys: string[] = [];
   if (definition.primaryRollout && appConfig.singleVM) {
     repointKeys.push(
-      ...[
-        ...coHostedServices(appConfig.services, appConfig.singleVM),
-        ...collocatedServices(appConfig.services, appConfig.singleVM),
-      ]
+      ...[...coHostedServices(appConfig.services, appConfig.singleVM), ...collocatedServices(appConfig.services, appConfig.singleVM)]
         .filter((follower) => follower.lbRoute)
         .map((follower) => follower.slug),
     );

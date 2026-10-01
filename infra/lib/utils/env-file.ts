@@ -18,8 +18,6 @@ export function writeEnvVar(path: string, key: string, value: string): void {
   const existing = existsSync(path) ? readFileSync(path, 'utf8') : '';
   const line = `${key}=${value}`;
   const re = new RegExp(`^${escapeRegExp(key)}=.*$`, 'm');
-  const next = re.test(existing)
-    ? existing.replace(re, line)
-    : `${existing}${existing.endsWith('\n') || existing === '' ? '' : '\n'}${line}\n`;
+  const next = re.test(existing) ? existing.replace(re, line) : `${existing}${existing.endsWith('\n') || existing === '' ? '' : '\n'}${line}\n`;
   writeFileSync(path, next);
 }

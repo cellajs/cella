@@ -43,9 +43,7 @@ export const managedKeys: ManagedKeyDefinition[] = Object.entries(managedKeysCon
 
 // Fail fast at load time: a misconfiguration here becomes a bad IAM call or a mis-seeded secret at setup.
 {
-  const operatorSecretIds = new Set(
-    runtimeSecrets.filter((secret) => secret.valueSource === 'operator').map((secret) => secret.id),
-  );
+  const operatorSecretIds = new Set(runtimeSecrets.filter((secret) => secret.valueSource === 'operator').map((secret) => secret.id));
   const seenSuffixes = new Set<string>();
   const seenSecretIds = new Set<string>();
   for (const key of managedKeys) {
@@ -58,9 +56,7 @@ export const managedKeys: ManagedKeyDefinition[] = Object.entries(managedKeysCon
     }
     const assigned = Object.entries(key.assign) as [MintedKeyField, RuntimeSecretId][];
     if (assigned.length === 0) {
-      throw new Error(
-        `managed-keys.config: key '${key.id}' assigns no runtime secret: set assign.accessKey and/or assign.secretKey.`,
-      );
+      throw new Error(`managed-keys.config: key '${key.id}' assigns no runtime secret: set assign.accessKey and/or assign.secretKey.`);
     }
     for (const [field, secretId] of assigned) {
       if (!operatorSecretIds.has(secretId)) {

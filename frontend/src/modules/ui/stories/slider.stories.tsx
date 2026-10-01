@@ -9,11 +9,7 @@ const meta = {
   component: Slider,
   tags: ['autodocs'],
   argTypes: {},
-  args: {
-    defaultValue: [33],
-    max: 100,
-    step: 1,
-  },
+  args: { defaultValue: [33], max: 100, step: 1 },
 } satisfies Meta<typeof Slider>;
 
 export default meta;
@@ -29,16 +25,10 @@ export const Default: Story = {};
  * Reversed slider direction.
  */
 export const Inverted: Story = {
-  args: {
-    style: { direction: 'rtl' },
-  },
+  args: { style: { direction: 'rtl' } },
 };
 
 /**
  * Use the `disabled` prop to disable the slider.
  */
-export const Disabled: Story = {
-  args: {
-    disabled: true,
-  },
-};
+export const Disabled: Story = { args: { disabled: true } };

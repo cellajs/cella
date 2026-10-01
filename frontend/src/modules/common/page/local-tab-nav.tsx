@@ -76,9 +76,7 @@ export function LocalTabNav({ tabs, activeId, onTabChange, title, avatar, classN
                   className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary"
                 />
               )}
-              {isActive && !hasStarted && (
-                <span className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary" />
-              )}
+              {isActive && !hasStarted && <span className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary" />}
             </button>
           );
         })}

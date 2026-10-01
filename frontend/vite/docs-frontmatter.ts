@@ -79,10 +79,7 @@ const LIST_ITEM_BOUNDARY = /\n(?=[ \t]*(?:[-*+]|\d+\.)[ \t])/;
  * Extract headings and sections with one slugger so anchors and duplicate suffixes agree.
  * Optionally strip the repository document H1 to match rendering.
  */
-export function extractStructure(
-  source: string,
-  { stripLeadingH1 = false } = {},
-): { headings: DocHeading[]; sections: DocSection[] } {
+export function extractStructure(source: string, { stripLeadingH1 = false } = {}): { headings: DocHeading[]; sections: DocSection[] } {
   const body = source.replace(FRONTMATTER_BLOCK, '').replace(FENCED_CODE_BLOCK, '');
   const slugger = new GithubSlugger();
   const headings: DocHeading[] = [];
@@ -160,10 +157,7 @@ export function pageStructure(file: string, source: string): { headings: DocHead
   const imported = importTargets(file, source)
     .filter((target) => existsSync(target))
     .map((target) => extractStructure(readFileSync(target, 'utf8'), { stripLeadingH1: true }));
-  return {
-    headings: [...own.headings, ...imported.flatMap((s) => s.headings)],
-    sections: [...own.sections, ...imported.flatMap((s) => s.sections)],
-  };
+  return { headings: [...own.headings, ...imported.flatMap((s) => s.headings)], sections: [...own.sections, ...imported.flatMap((s) => s.sections)] };
 }
 
 /** Exposes page metadata and search text as virtual modules without importing page components. */
@@ -194,10 +188,7 @@ export function docsFrontmatter(): Plugin {
       const { draft, hidden } = (frontmatter ?? {}) as { draft?: boolean; hidden?: boolean };
       if (/^index\.mdx?$/.test(relative) || draft || hidden) continue;
       // Bare anchor ids: consumers navigate via hashes, which drop the DOM prefix.
-      sectionEntries.push([
-        key,
-        sections.map((s) => ({ ...s, headingId: s.headingId ? s.headingId.replace(ID_PREFIX, '') : null })),
-      ] as const);
+      sectionEntries.push([key, sections.map((s) => ({ ...s, headingId: s.headingId ? s.headingId.replace(ID_PREFIX, '') : null }))] as const);
     }
 
     return { index: Object.fromEntries(entries), sections: Object.fromEntries(sectionEntries), targets };
@@ -215,8 +206,7 @@ export function docsFrontmatter(): Plugin {
     },
     load(id) {
       if (id === RESOLVED_ID) return `export const docsIndex = ${JSON.stringify(buildIndex().index)};`;
-      if (id === SECTIONS_RESOLVED_ID)
-        return `export const docsSectionsIndex = ${JSON.stringify(buildIndex().sections)};`;
+      if (id === SECTIONS_RESOLVED_ID) return `export const docsSectionsIndex = ${JSON.stringify(buildIndex().sections)};`;
     },
     // Dev: re-emit the index when a page or an imported repo doc changes the index
     // (frontmatter or headings). Body-only edits are left to normal per-module HMR.

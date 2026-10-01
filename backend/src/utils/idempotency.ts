@@ -18,23 +18,13 @@ type ProductTable = PgTable & { stx: PgColumn; createdBy: PgColumn; tenantId: Pg
  * the lookup takes the caller's own rows in the request scope: a replay by another actor finds nothing and creates
  * its own rows.
  */
-export async function checkIdempotency<T extends ProductTable>(
-  ctx: ActorContext,
-  table: T,
-  stxId: string,
-): Promise<InferSelectModel<T>[] | null> {
+export async function checkIdempotency<T extends ProductTable>(ctx: ActorContext, table: T, stxId: string): Promise<InferSelectModel<T>[] | null> {
   if (!(await isTransactionProcessed(stxId))) return null;
   const batch = await tenantRead(ctx, (readCtx) =>
     readCtx.var.db
       .select()
       .from(table as PgTable)
-      .where(
-        and(
-          sql`${table.stx}->>'mutationId' = ${stxId}`,
-          eq(table.createdBy, ctx.var.actor.id),
-          requestScopeWhere(ctx, table),
-        ),
-      ),
+      .where(and(sql`${table.stx}->>'mutationId' = ${stxId}`, eq(table.createdBy, ctx.var.actor.id), requestScopeWhere(ctx, table))),
   );
   return batch.length > 0 ? (batch as InferSelectModel<T>[]) : null;
 }

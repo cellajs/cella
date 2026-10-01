@@ -71,10 +71,7 @@ export function MembersTableBar({
           <Trans
             t={t}
             i18nKey="c:confirm.remove_members"
-            values={{
-              entityType: channel.entityType,
-              emails: selected.map((member) => member.email).join(', '),
-            }}
+            values={{ entityType: channel.entityType, emails: selected.map((member) => member.email).join(', ') }}
           />
         ),
       },
@@ -117,11 +114,7 @@ export function MembersTableBar({
       {...{ searchVars, total, columns, setColumns }}
       label="c:member"
       searchName="memberSearch"
-      actions={
-        canUpdate && (
-          <TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />
-        )
-      }
+      actions={canUpdate && <TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />}
       countExtra={canUpdate && !barFilters.isFiltered && <PendingMembershipsCount channel={channel} />}
       filters={
         <SelectRole
@@ -132,11 +125,7 @@ export function MembersTableBar({
         />
       }
       // Export is gated like the other admin actions in this bar; row selection needs the same grant
-      export={
-        !isSheet && canUpdate
-          ? { filename: `${entityType} members`, selectedRows: selected, fetchRows: fetchExport }
-          : undefined
-      }
+      export={!isSheet && canUpdate ? { filename: `${entityType} members`, selectedRows: selected, fetchRows: fetchExport } : undefined}
       focusView={!isSheet}
       selection={{
         count: selected.length,

@@ -43,17 +43,12 @@ interface IssuePasskeyChallengeOpts {
 export const issuePasskeyChallenge = async (ctx: Context<Env>, { purpose, userId }: IssuePasskeyChallengeOpts) => {
   const expired = lt(passkeyChallengesTable.expiresAt, getIsoDate());
   const previous = await getAuthCookie(ctx, 'passkey-challenge');
-  await db
-    .delete(passkeyChallengesTable)
-    .where(previous ? or(eq(passkeyChallengesTable.challengeHash, hashToken(previous)), expired) : expired);
+  await db.delete(passkeyChallengesTable).where(previous ? or(eq(passkeyChallengesTable.challengeHash, hashToken(previous)), expired) : expired);
 
   const challenge = Buffer.from(getRandomValues(new Uint8Array(32))).toString('base64url');
-  await db.insert(passkeyChallengesTable).values({
-    challengeHash: hashToken(challenge),
-    purpose,
-    userId: userId ?? null,
-    expiresAt: createDate(challengeLifetime),
-  });
+  await db
+    .insert(passkeyChallengesTable)
+    .values({ challengeHash: hashToken(challenge), purpose, userId: userId ?? null, expiresAt: createDate(challengeLifetime) });
   await setAuthCookie(ctx, 'passkey-challenge', challenge, challengeLifetime);
 
   return challenge;
@@ -74,11 +69,7 @@ const consumeChallenge = async (ctx: Context<Env>, purpose: PasskeyChallengePurp
   const [issued] = await db
     .delete(passkeyChallengesTable)
     .where(eq(passkeyChallengesTable.challengeHash, hashToken(challenge)))
-    .returning({
-      purpose: passkeyChallengesTable.purpose,
-      userId: passkeyChallengesTable.userId,
-      expiresAt: passkeyChallengesTable.expiresAt,
-    });
+    .returning({ purpose: passkeyChallengesTable.purpose, userId: passkeyChallengesTable.userId, expiresAt: passkeyChallengesTable.expiresAt });
   if (!issued || issued.purpose !== purpose || isExpiredDate(issued.expiresAt)) throw verificationFailed();
   if (issued.userId && issued.userId !== userId) throw verificationFailed();
 
@@ -111,11 +102,7 @@ export const verifyPasskeyRegistration = async (ctx: Context<Env>, attestation: 
   if (!verified || !registrationInfo) throw registrationFailed();
 
   const { credential } = registrationInfo;
-  return {
-    credentialId: credential.id,
-    publicKey: Buffer.from(credential.publicKey).toString('base64url'),
-    counter: credential.counter,
-  };
+  return { credentialId: credential.id, publicKey: Buffer.from(credential.publicKey).toString('base64url'), counter: credential.counter };
 };
 
 interface VerifyPasskeyAssertionOpts {
@@ -134,10 +121,7 @@ interface VerifyPasskeyAssertionOpts {
  * @throws AppError 401 `passkey_verification_failed`, or 404 `passkey_not_found` for a credential that is not
  *   registered (to the account `userId` names).
  */
-export const verifyPasskeyAssertion = async (
-  ctx: Context<Env>,
-  { assertion, purpose, userId }: VerifyPasskeyAssertionOpts,
-): Promise<string> => {
+export const verifyPasskeyAssertion = async (ctx: Context<Env>, { assertion, purpose, userId }: VerifyPasskeyAssertionOpts): Promise<string> => {
   const challenge = await consumeChallenge(ctx, purpose, userId);
 
   const [passkey] = await db
@@ -154,11 +138,7 @@ export const verifyPasskeyAssertion = async (
     expectedChallenge: challenge,
     expectedOrigin,
     expectedRPID: relyingPartyId,
-    credential: {
-      id: passkey.credentialId,
-      publicKey: new Uint8Array(Buffer.from(passkey.publicKey, 'base64url')),
-      counter: passkey.counter,
-    },
+    credential: { id: passkey.credentialId, publicKey: new Uint8Array(Buffer.from(passkey.publicKey, 'base64url')), counter: passkey.counter },
     requireUserVerification: true,
   }).catch((error: unknown) => {
     throw verificationFailed(error);
@@ -169,12 +149,7 @@ export const verifyPasskeyAssertion = async (
   const [stored] = await db
     .update(passkeysTable)
     .set({ counter: newCounter })
-    .where(
-      and(
-        eq(passkeysTable.id, passkey.id),
-        newCounter > 0 ? lt(passkeysTable.counter, newCounter) : eq(passkeysTable.counter, 0),
-      ),
-    )
+    .where(and(eq(passkeysTable.id, passkey.id), newCounter > 0 ? lt(passkeysTable.counter, newCounter) : eq(passkeysTable.counter, 0)))
     .returning({ id: passkeysTable.id });
   if (!stored) throw verificationFailed();
 

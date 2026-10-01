@@ -1,13 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // Mocks must precede the import of the module under test.
-vi.mock('../pipeline/process-events', () => ({
-  processEvents: vi.fn(),
-}));
+vi.mock('../pipeline/process-events', () => ({ processEvents: vi.fn() }));
 
-vi.mock('../services/catchup-recovery', () => ({
-  runPostCatchupRecovery: vi.fn(),
-}));
+vi.mock('../services/catchup-recovery', () => ({ runPostCatchupRecovery: vi.fn() }));
 
 vi.mock('../pipeline/parse-message', () => ({
   parseMessage: vi.fn(() => ({
@@ -32,12 +28,7 @@ vi.mock('../pipeline/parse-message', () => ({
 }));
 
 vi.mock('../network/websocket-client', () => ({
-  wsClient: {
-    isConnected: vi.fn(() => true),
-    connect: vi.fn(),
-    send: vi.fn(() => true),
-    setCallbacks: vi.fn(),
-  },
+  wsClient: { isConnected: vi.fn(() => true), connect: vi.fn(), send: vi.fn(() => true), setCallbacks: vi.fn() },
 }));
 
 import { handleDataMessage } from '../pipeline/handle-message';

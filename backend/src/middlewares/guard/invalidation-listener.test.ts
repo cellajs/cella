@@ -21,17 +21,10 @@ const adminDb = getAdminDb('test publish');
 
 /** A message from another process: published on another connection, so only the LISTEN path can drop this one's entries. */
 const publishElsewhere = (payload: unknown) =>
-  adminDb.execute(
-    sql`select pg_notify('auth_invalidate', ${typeof payload === 'string' ? payload : JSON.stringify(payload)})`,
-  );
+  adminDb.execute(sql`select pg_notify('auth_invalidate', ${typeof payload === 'string' ? payload : JSON.stringify(payload)})`);
 
 /** A person's access token as the guard verified it: under a grant, for one tenant, from one client. */
-const userToken = (
-  actorId: string,
-  grantId = 'grant',
-  tenantId = 'tenant',
-  clientId = 'client',
-): VerifiedAccessToken => ({
+const userToken = (actorId: string, grantId = 'grant', tenantId = 'tenant', clientId = 'client'): VerifiedAccessToken => ({
   kind: 'user',
   actorId,
   grantId,
@@ -49,8 +42,7 @@ const serviceToken = (accountId: string, keyId: string): VerifiedAccessToken => 
   scopes: [],
 });
 // The caches hold what the guards hand them; a stub with the id is enough to find and drop the entries.
-const cacheVerdict = (token: VerifiedAccessToken) =>
-  setTokenGrantCache(token, { refusal: null, kind: 'user', user: { id: token.actorId } as never });
+const cacheVerdict = (token: VerifiedAccessToken) => setTokenGrantCache(token, { refusal: null, kind: 'user', user: { id: token.actorId } as never });
 
 /** Caches a session, memberships and an access-token verdict for a user, as the guards do on a request. */
 const cacheUser = (userId: string) => {
@@ -67,10 +59,7 @@ const cachedFor = (userId: string) => ({
 
 /** Caches a service account's API key and client, and a verdict on a token minted with the key. */
 const cacheServiceAccount = (accountId: string) => {
-  setApiKeyCache(`${accountId}-hash`, {
-    apiKey: { id: `${accountId}-key` } as never,
-    account: { id: accountId } as never,
-  });
+  setApiKeyCache(`${accountId}-hash`, { apiKey: { id: `${accountId}-key` } as never, account: { id: accountId } as never });
   clientCache.set(accountId, { client_id: accountId, client_kind: 'service' });
   cacheVerdict(serviceToken(accountId, `${accountId}-key`));
 };
@@ -108,9 +97,7 @@ describe('auth_invalidate listener', () => {
 
     await publishElsewhere({ user: 'ended' });
 
-    await vi.waitFor(() =>
-      expect(cachedFor('ended')).toEqual({ session: false, memberships: false, tokenGrant: false }),
-    );
+    await vi.waitFor(() => expect(cachedFor('ended')).toEqual({ session: false, memberships: false, tokenGrant: false }));
     expect(cachedFor('bystander')).toEqual({ session: true, memberships: true, tokenGrant: true });
   });
 
@@ -205,10 +192,7 @@ describe('auth_invalidate listener', () => {
     );
     cacheServiceAccount('in-gap-account');
 
-    await vi.waitFor(() => expect(cachedForAccount('in-gap-account').apiKey).toBe(false), {
-      timeout: 10_000,
-      interval: 100,
-    });
+    await vi.waitFor(() => expect(cachedForAccount('in-gap-account').apiKey).toBe(false), { timeout: 10_000, interval: 100 });
     expect(cachedForAccount('in-gap-account')).toEqual({ apiKey: false, client: false, tokenGrant: false });
   });
 });

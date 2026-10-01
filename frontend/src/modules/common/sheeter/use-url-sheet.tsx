@@ -65,12 +65,7 @@ export function useUrlSheet(config: UseUrlSheetConfig) {
     };
 
     queueMicrotask(() => {
-      useSheeter.getState().create(renderContent(value, organizationId), {
-        id,
-        triggerRef: fallbackContentRef,
-        onClose: handleClose,
-        ...options,
-      });
+      useSheeter.getState().create(renderContent(value, organizationId), { id, triggerRef: fallbackContentRef, onClose: handleClose, ...options });
     });
 
     return () => {

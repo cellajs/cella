@@ -14,13 +14,7 @@ interface ExpandableListProps<T> {
   expandText: TKey;
 }
 
-export function ExpandableList<T>({
-  items,
-  renderItem,
-  initialDisplayCount,
-  alwaysShowAll = false,
-  expandText,
-}: ExpandableListProps<T>) {
+export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwaysShowAll = false, expandText }: ExpandableListProps<T>) {
   const { t } = useTranslation();
   const [expanded, setExpanded] = useState(alwaysShowAll);
   const hasExpandedOnce = useRef(false);

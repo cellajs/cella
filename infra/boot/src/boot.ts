@@ -54,11 +54,7 @@ export async function waitForPrivateNetwork(opts: WaitForPrivateNetworkOptions):
 async function writeAppFiles(plan: BootPlan): Promise<void> {
   await writeFileMode(plan.docker.composeFile, plan.files.compose, 0o600);
   await writeFileMode('/opt/app/.env', plan.files.env, 0o600);
-  await writeFileMode(
-    '/etc/runtime-secrets/manifest.json',
-    JSON.stringify(plan.files.runtimeSecretManifest, null, 2),
-    0o600,
-  );
+  await writeFileMode('/etc/runtime-secrets/manifest.json', JSON.stringify(plan.files.runtimeSecretManifest, null, 2), 0o600);
 }
 
 async function dockerLogin(plan: BootPlan, secretKey: string, exec: ExecFn): Promise<void> {
@@ -72,16 +68,10 @@ function startServices(plan: BootPlan): [string, ...string[]] {
 }
 
 async function pullImage(plan: BootPlan, exec: ExecFn): Promise<void> {
-  await retry(
-    () =>
-      mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'pull', ...startServices(plan)], {
-        cwd: '/opt/app',
-      }),
-    {
-      attempts: plan.timeouts.pullAttempts,
-      delayMs: plan.timeouts.pullRetrySeconds * 1000,
-    },
-  );
+  await retry(() => mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'pull', ...startServices(plan)], { cwd: '/opt/app' }), {
+    attempts: plan.timeouts.pullAttempts,
+    delayMs: plan.timeouts.pullRetrySeconds * 1000,
+  });
 }
 
 async function runReleaseCommand(plan: BootPlan, exec: ExecFn): Promise<void> {
@@ -98,28 +88,16 @@ async function startService(plan: BootPlan, exec: ExecFn): Promise<void> {
   await mustExec(
     exec,
     'docker',
-    [
-      'compose',
-      '--profile',
-      plan.profile,
-      'up',
-      '-d',
-      '--wait',
-      '--wait-timeout',
-      String(startupTimeoutSeconds),
-      ...startServices(plan),
-    ],
+    ['compose', '--profile', plan.profile, 'up', '-d', '--wait', '--wait-timeout', String(startupTimeoutSeconds), ...startServices(plan)],
     { cwd: '/opt/app' },
   );
 }
 
 /** Best-effort tail of the app container's stdout/stderr, secret-scrubbed at capture so the telemetry body and boot-diag upload only ever see the scrubbed form. */
 async function captureServiceLogs(plan: BootPlan, exec: ExecFn): Promise<string> {
-  const res = await exec(
-    'docker',
-    ['compose', '--profile', plan.profile, 'logs', '--no-color', '--tail', '200', ...startServices(plan)],
-    { cwd: '/opt/app' },
-  );
+  const res = await exec('docker', ['compose', '--profile', plan.profile, 'logs', '--no-color', '--tail', '200', ...startServices(plan)], {
+    cwd: '/opt/app',
+  });
   return scrubSecretLines((res.stdout || res.stderr || '').trim());
 }
 
@@ -136,9 +114,7 @@ export async function boot(opts: BootOptions): Promise<void> {
   const plan = parseBootPlanJson(await readFile(opts.planPath, 'utf-8'), opts.planPath);
   // Learns every secret value as boot handles it; the console, telemetry and the diagnostics upload all redact through it.
   const redactor = createSecretRedactor();
-  const logger = createJsonLogger({ service: plan.service, release: plan.releaseSha }, (line) =>
-    console.info(redactor.redact(line)),
-  );
+  const logger = createJsonLogger({ service: plan.service, release: plan.releaseSha }, (line) => console.info(redactor.redact(line)));
   const accessKey = await readKeyFile(plan.credentials.scwAccessKeyFile);
   const secretKey = await readKeyFile(plan.credentials.scwSecretKeyFile);
   redactor.add(accessKey, secretKey);
@@ -157,11 +133,7 @@ export async function boot(opts: BootOptions): Promise<void> {
     try {
       await run();
     } catch (err) {
-      telemetry.event(
-        bootEvents.stepFailed,
-        { service: plan.service, step, error: errorMessage(err) },
-        { severity: 'error', ctx: bootSpan.ctx },
-      );
+      telemetry.event(bootEvents.stepFailed, { service: plan.service, step, error: errorMessage(err) }, { severity: 'error', ctx: bootSpan.ctx });
       throw err;
     }
     telemetry.event(
@@ -174,9 +146,7 @@ export async function boot(opts: BootOptions): Promise<void> {
   let appLogs: string | undefined;
 
   try {
-    await phase('wait-private-network', () =>
-      waitForPrivateNetwork({ exec, timeoutSeconds: plan.timeouts.privateNetworkSeconds }),
-    );
+    await phase('wait-private-network', () => waitForPrivateNetwork({ exec, timeoutSeconds: plan.timeouts.privateNetworkSeconds }));
     await phase('write-app-files', () => writeAppFiles(plan));
     await phase('docker-login', () => dockerLogin(plan, secretKey, exec));
     // Swap the baked boot key for the real service key via the single-access handoff bundle, cache-first on reboots.
@@ -184,11 +154,7 @@ export async function boot(opts: BootOptions): Promise<void> {
     let serviceKey = { accessKey, secretKey };
     if (plan.serviceKeyHandoff) {
       await phase('fetch-service-key', async () => {
-        serviceKey = await fetchServiceKey({
-          handoff: plan.serviceKeyHandoff!,
-          bootSecretKey: secretKey,
-          region: plan.region,
-        });
+        serviceKey = await fetchServiceKey({ handoff: plan.serviceKeyHandoff!, bootSecretKey: secretKey, region: plan.region });
         redactor.add(serviceKey.accessKey, serviceKey.secretKey);
       });
     }
@@ -199,20 +165,14 @@ export async function boot(opts: BootOptions): Promise<void> {
         region: plan.region,
         outputPath: '/opt/app/.env.runtime',
         // REQ-20: the backend signs S3 requests with its own service key.
-        extraLines: plan.exportS3Env
-          ? [`S3_ACCESS_KEY_ID=${serviceKey.accessKey}`, `S3_ACCESS_KEY_SECRET=${serviceKey.secretKey}`]
-          : [],
+        extraLines: plan.exportS3Env ? [`S3_ACCESS_KEY_ID=${serviceKey.accessKey}`, `S3_ACCESS_KEY_SECRET=${serviceKey.secretKey}`] : [],
       });
       redactor.add(...delivered);
     });
     // Export only where the plan declares a sink (config/telemetry.config.ts on the engine side); no vendor endpoint is baked into the boot runner.
     const sink = plan.telemetry;
     const sinkKey = sink ? await sinkKeyFromRuntimeEnv('/opt/app/.env.runtime', sink.keyEnvVar) : undefined;
-    if (sink && sinkKey)
-      telemetry.configureExport({
-        endpoint: sink.endpoint,
-        headers: { [sink.keyHeader]: sinkKey },
-      });
+    if (sink && sinkKey) telemetry.configureExport({ endpoint: sink.endpoint, headers: { [sink.keyHeader]: sinkKey } });
     await phase('pull-image', () => pullImage(plan, exec));
     await phase('release-command', () => runReleaseCommand(plan, exec));
     await phase('start-service', () => startService(plan, exec));

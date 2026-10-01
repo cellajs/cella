@@ -29,8 +29,7 @@ const router = createRouter({
 
 setRouter(router);
 
-const getBoundary = (matches?: { staticData: { boundary?: BoundaryType } }[]) =>
-  matches?.findLast((m) => m.staticData.boundary)?.staticData.boundary;
+const getBoundary = (matches?: { staticData: { boundary?: BoundaryType } }[]) => matches?.findLast((m) => m.staticData.boundary)?.staticData.boundary;
 
 const cleanupOnBoundaryChange = (current?: BoundaryType, pending?: BoundaryType) => {
   if (!current || !pending || current === pending) return;

@@ -80,12 +80,7 @@ export function MenuSectionButton({
                 className="shrink-0 max-sm:hidden"
               >
                 <TooltipButton toolTipContent={t('c:manage_content')} side="bottom" sideOffset={10}>
-                  <Button
-                    className="w-10 px-2 shadow-none"
-                    variant={isEditing ? 'plain' : 'ghost'}
-                    size="icon"
-                    onClick={() => toggleIsEditing()}
-                  >
+                  <Button className="w-10 px-2 shadow-none" variant={isEditing ? 'plain' : 'ghost'} size="icon" onClick={() => toggleIsEditing()}>
                     <Settings2Icon className="icon-lg" />
                   </Button>
                 </TooltipButton>

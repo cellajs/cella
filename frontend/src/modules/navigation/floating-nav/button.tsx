@@ -25,14 +25,7 @@ interface FloatingNavButtonProps {
   direction?: 'left' | 'right';
 }
 
-export function FloatingNavButton({
-  id,
-  icon: Icon,
-  onClick,
-  ariaLabel,
-  className,
-  direction = 'right',
-}: FloatingNavButtonProps) {
+export function FloatingNavButton({ id, icon: Icon, onClick, ariaLabel, className, direction = 'right' }: FloatingNavButtonProps) {
   // A tap that interrupts a momentum scroll cancels the fling, and the browser suppresses its click,
   // so touch taps run on touchend. preventDefault there stops the synthesized click entirely, since
   // it would otherwise hit-test against whatever onClick just mounted (e.g. a drawer overlay) and

@@ -24,9 +24,7 @@ describe('isUploadCandidate (failed-upload retry policy, D7)', () => {
   });
 
   it('a failed blob without bookkeeping (legacy rows) is retried', () => {
-    expect(isUploadCandidate({ uploadStatus: 'failed', uploadAttempts: undefined, nextRetryAt: null }, 3, NOW)).toBe(
-      true,
-    );
+    expect(isUploadCandidate({ uploadStatus: 'failed', uploadAttempts: undefined, nextRetryAt: null }, 3, NOW)).toBe(true);
   });
 
   it('other statuses (uploaded, local-only, uploading) never retry', () => {

@@ -35,11 +35,7 @@ interface BrevoPlaceholders {
  * @param placeholders - The placeholders the mailer put there itself.
  * @param format - `html` for the body and HTML params, `text` for the subject.
  */
-export function neutralizeBrevoTags(
-  content: string,
-  { params, htmlParams = [] }: BrevoPlaceholders,
-  format: 'html' | 'text',
-): string {
+export function neutralizeBrevoTags(content: string, { params, htmlParams = [] }: BrevoPlaceholders, format: 'html' | 'text'): string {
   const brace = format === 'html' ? '&#123;' : '{\u200B';
   return content.replace(BREVO_TAG_OPENER, (match, key: string | undefined, safe: string | undefined) => {
     const ownPlaceholder = key !== undefined && (safe ? htmlParams.includes(key) : params.includes(key));
@@ -52,10 +48,7 @@ export function neutralizeBrevoTags(
  * local render would apply, and with no tag opener left in it: pongo2 never parses a printed value, and nothing here
  * depends on that.
  */
-const withSafeHtmlParams = (
-  params: Record<string, unknown>,
-  htmlParams: Partial<Record<string, SafeHtmlPolicy>>,
-): Record<string, unknown> =>
+const withSafeHtmlParams = (params: Record<string, unknown>, htmlParams: Partial<Record<string, SafeHtmlPolicy>>): Record<string, unknown> =>
   Object.fromEntries(
     Object.entries(params).map(([key, value]) => {
       const policy = htmlParams[key];
@@ -133,9 +126,7 @@ export const mailer: Mailer = {
       for (const [key, policy] of Object.entries(declaredHtmlParams)) htmlParams[paramKey(key)] = policy;
 
       // Translate once per language
-      const translated = template.translate(lng, staticProps, (key) =>
-        brevoPlaceholder(paramKey(String(key)), htmlParams),
-      );
+      const translated = template.translate(lng, staticProps, (key) => brevoPlaceholder(paramKey(String(key)), htmlParams));
       const { subject, ...componentProps } = translated;
 
       // Determine per-recipient keys (everything beyond email/lng)
@@ -179,10 +170,7 @@ export const mailer: Mailer = {
         htmlContent: neutralizeBrevoTags(html, placeholders, 'html'),
         sender: { email: appConfig.senderEmail },
         replyTo: { email: replyTo || appConfig.supportEmail },
-        messageVersions: versions.map((version) => ({
-          ...version,
-          params: withSafeHtmlParams(version.params, htmlParams),
-        })),
+        messageVersions: versions.map((version) => ({ ...version, params: withSafeHtmlParams(version.params, htmlParams) })),
       });
     } catch (err) {
       log.warn('Failed to send email batch', { err });

@@ -7,8 +7,7 @@ const isStringArray = (value: AttributeValue): value is (string | null | undefin
   Array.isArray(value) && value.some((item: unknown) => typeof item === 'string');
 
 /** An error message: a failed query's whole message goes, since its values may span any number of lines. */
-const scrubMessage = (message: string): string =>
-  isFailedQueryMessage(message) ? redactedFailedQuery : scrubText(message);
+const scrubMessage = (message: string): string => (isFailedQueryMessage(message) ? redactedFailedQuery : scrubText(message));
 
 /** Scrubs every string and string-array value in place. */
 function scrubAttributes(attributes: Attributes): void {

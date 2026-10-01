@@ -21,9 +21,7 @@ const validateSchemaTags = (doc: Record<string, unknown>) => {
     if (!Array.isArray(tags)) throw new Error(`Schema "${name}" has non-array x-tags`);
     for (const t of tags) {
       if (typeof t !== 'string' || !known.has(t)) {
-        throw new Error(
-          `Schema "${name}" references unknown x-tag "${String(t)}". Register it in openapi-tag-registry.ts.`,
-        );
+        throw new Error(`Schema "${name}" references unknown x-tag "${String(t)}". Register it in openapi-tag-registry.ts.`);
       }
     }
   }

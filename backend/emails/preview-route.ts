@@ -5,8 +5,7 @@ import { renderEmailPreview } from './render-preview';
 
 const app = new Hono();
 
-const isPreviewName = (value: string): value is (typeof emailPreviewNames)[number] =>
-  Object.hasOwn(emailPreviewFixtures, value);
+const isPreviewName = (value: string): value is (typeof emailPreviewNames)[number] => Object.hasOwn(emailPreviewFixtures, value);
 
 app.get('/', (c) => {
   const rows = emailPreviewNames

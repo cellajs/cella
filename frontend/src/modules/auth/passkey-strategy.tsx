@@ -42,12 +42,7 @@ export function PasskeyStrategy({ type }: PasskeyStrategyProps) {
 
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
-      <Button
-        type="button"
-        variant={type === 'mfa' ? 'default' : 'plain'}
-        onClick={() => passkeyAuth()}
-        className="w-full gap-1.5 truncate"
-      >
+      <Button type="button" variant={type === 'mfa' ? 'default' : 'plain'} onClick={() => passkeyAuth()} className="w-full gap-1.5 truncate">
         <FingerprintPatternIcon />
         <span className="truncate">
           {t('c:sign_in')} {t('c:with').toLowerCase()} {t('c:passkey').toLowerCase()}

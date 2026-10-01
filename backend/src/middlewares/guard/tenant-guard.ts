@@ -42,8 +42,7 @@ export const tenantGuard = xMiddleware(
     const tenantId = rawTenantId.toLowerCase();
 
     const actor = ctx.var.actor;
-    if (!actor)
-      throw new AppError(401, 'unauthorized', 'warn', { message: 'tenantGuard requires userGuard or serviceGuard' });
+    if (!actor) throw new AppError(401, 'unauthorized', 'warn', { message: 'tenantGuard requires userGuard or serviceGuard' });
 
     // A service actor's tenant comes from its key, never from the URL: the two must agree, checked before any lookup
     // so a key learns nothing about other tenants.

@@ -18,9 +18,7 @@ interface RevokeGrantOpts {
 export async function revokeGrant(ctx: DbContext, { grantId, withTokens = true }: RevokeGrantOpts): Promise<void> {
   const revoked = await ctx.var.db.transaction(async (tx) => {
     const txCtx = { var: { db: tx } };
-    const accountId = withTokens
-      ? await deleteConsentWithTokens(txCtx, { grantId })
-      : await deleteGrant(txCtx, { grantId });
+    const accountId = withTokens ? await deleteConsentWithTokens(txCtx, { grantId }) : await deleteGrant(txCtx, { grantId });
     if (!accountId) return null;
     const invalidation: AuthInvalidation = { grant: { accountId, grantId } };
     await publishAuthInvalidation(tx, invalidation);

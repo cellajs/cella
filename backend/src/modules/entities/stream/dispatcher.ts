@@ -33,16 +33,9 @@ export function createStreamDispatcher<T extends CursoredSubscriber, E extends A
 
     await Promise.allSettled(
       eligible.map((subscriber) =>
-        sendNotificationToSubscriber(subscriber, event, notification, transformNotification, preSerialized).catch(
-          (error) => {
-            log.error('Failed to dispatch stream event', {
-              subscriberId: subscriber.id,
-              activityId: event.id,
-              channel,
-              error,
-            });
-          },
-        ),
+        sendNotificationToSubscriber(subscriber, event, notification, transformNotification, preSerialized).catch((error) => {
+          log.error('Failed to dispatch stream event', { subscriberId: subscriber.id, activityId: event.id, channel, error });
+        }),
       ),
     );
   };

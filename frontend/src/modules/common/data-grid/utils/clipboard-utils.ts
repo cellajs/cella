@@ -12,11 +12,7 @@ export function cellValueToText(value: unknown): string {
 }
 
 /** Serializes a cell range to TSV, the standard spreadsheet clipboard format. */
-export function serializeCellsToTSV<R, SR>(
-  range: CellRange,
-  rows: readonly R[],
-  columns: readonly CalculatedColumn<R, SR>[],
-): string {
+export function serializeCellsToTSV<R, SR>(range: CellRange, rows: readonly R[], columns: readonly CalculatedColumn<R, SR>[]): string {
   const normalized = normalizeCellRange(range);
   const lines: string[] = [];
 
@@ -49,11 +45,7 @@ export function parseTSVToCells(tsv: string): string[][] {
 }
 
 /** Serializes cells to an HTML table, for rich paste targets. */
-export function serializeCellsToHTML<R, SR>(
-  range: CellRange,
-  rows: readonly R[],
-  columns: readonly CalculatedColumn<R, SR>[],
-): string {
+export function serializeCellsToHTML<R, SR>(range: CellRange, rows: readonly R[], columns: readonly CalculatedColumn<R, SR>[]): string {
   const normalized = normalizeCellRange(range);
   let html = '<table>';
 

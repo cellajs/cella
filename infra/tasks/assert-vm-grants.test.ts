@@ -11,11 +11,7 @@ function makeFetch(routes: Array<{ match: string; body: unknown; status?: number
     const route = routes.find((r) => url.includes(r.match));
     const status = route?.status ?? (route ? 200 : 599);
     const body = route ? JSON.stringify(route.body) : `no mock for ${url}`;
-    return {
-      ok: status >= 200 && status < 300,
-      status,
-      text: async () => body,
-    };
+    return { ok: status >= 200 && status < 300, status, text: async () => body };
   });
 }
 
@@ -120,20 +116,12 @@ describe('assertVmGrants', () => {
     const secretRule = { permission_set_names: ['SecretManagerReadOnly', 'SecretManagerSecretAccess'], condition };
 
     // The second policy's secret rule without the condition fails the check; a registry-only rule needs no condition.
-    const widened = await grants([
-      secretRule,
-      { permission_set_names: ['ContainerRegistryReadOnly', 'SecretManagerSecretAccess'] },
-    ]);
+    const widened = await grants([secretRule, { permission_set_names: ['ContainerRegistryReadOnly', 'SecretManagerSecretAccess'] }]);
     expect(widened.ok).toBe(false);
-    expect(widened.unconditionedSecretRules).toEqual([
-      "console-added [ContainerRegistryReadOnly, SecretManagerSecretAccess] condition='(none)'",
-    ]);
+    expect(widened.unconditionedSecretRules).toEqual(["console-added [ContainerRegistryReadOnly, SecretManagerSecretAccess] condition='(none)'"]);
     const wider = await grants([
       secretRule,
-      {
-        permission_set_names: ['ContainerRegistryReadOnly', 'SecretManagerSecretAccess'],
-        condition: `${condition} || true`,
-      },
+      { permission_set_names: ['ContainerRegistryReadOnly', 'SecretManagerSecretAccess'], condition: `${condition} || true` },
     ]);
     expect(wider.ok).toBe(false);
     expect(wider.unconditionedSecretRules).toHaveLength(1);
@@ -212,10 +200,7 @@ describe('assertVmGrants', () => {
       {
         match: '/iam/v1alpha1/rules?policy_id=pol-2',
         body: {
-          rules: [
-            { permission_set_names: ['SecretManagerReadOnly'] },
-            { permission_set_names: ['SecretManagerSecretAccess'] },
-          ],
+          rules: [{ permission_set_names: ['SecretManagerReadOnly'] }, { permission_set_names: ['SecretManagerSecretAccess'] }],
         },
       },
     ]);
@@ -322,10 +307,7 @@ describe('assertVmGrants', () => {
   });
 
   it('throws a useful error on a Scaleway error response', async () => {
-    const fetchImpl = makeFetch([
-      NO_GROUPS,
-      { match: '/iam/v1alpha1/policies?', body: { message: 'forbidden' }, status: 403 },
-    ]);
+    const fetchImpl = makeFetch([NO_GROUPS, { match: '/iam/v1alpha1/policies?', body: { message: 'forbidden' }, status: 403 }]);
 
     await expect(assertVmGrants({ ...baseOpts, fetchImpl })).rejects.toThrow(/403.*forbidden/);
   });

@@ -26,9 +26,7 @@ export function DataTableSkeleton({
   const effectiveColumnCount = isMobile ? Math.min(columnCount, 3) : columnCount;
 
   return (
-    <div
-      className={`w-full space-y-3 overflow-auto transition-opacity duration-500 ${hasMounted ? 'opacity-100' : 'opacity-0'}`}
-    >
+    <div className={`w-full space-y-3 overflow-auto transition-opacity duration-500 ${hasMounted ? 'opacity-100' : 'opacity-0'}`}>
       <Table>
         <TableHeader>
           {Array.from({ length: 1 }).map((_, i) => (
@@ -36,10 +34,7 @@ export function DataTableSkeleton({
               {Array.from({ length: effectiveColumnCount }).map((_, j) => (
                 <TableHead
                   key={j.toString()}
-                  style={{
-                    width: cellsWidths[j] ? cellsWidths[j] : 'auto',
-                    minWidth: shrinkTable ? cellsWidths[j] : 'auto',
-                  }}
+                  style={{ width: cellsWidths[j] ? cellsWidths[j] : 'auto', minWidth: shrinkTable ? cellsWidths[j] : 'auto' }}
                 >
                   <Skeleton className={'mt-2 mb-2 w-full'} style={{ height: `${renderCellHeight}px` }} />
                 </TableHead>
@@ -53,10 +48,7 @@ export function DataTableSkeleton({
               {Array.from({ length: effectiveColumnCount }).map((_, j) => (
                 <TableCell
                   key={j.toString()}
-                  style={{
-                    width: cellsWidths[j] ? cellsWidths[j] : 'auto',
-                    minWidth: shrinkTable ? cellsWidths[j] : 'auto',
-                  }}
+                  style={{ width: cellsWidths[j] ? cellsWidths[j] : 'auto', minWidth: shrinkTable ? cellsWidths[j] : 'auto' }}
                 >
                   <Skeleton className={'w-full'} style={{ height: `${renderCellHeight}px` }} />
                 </TableCell>

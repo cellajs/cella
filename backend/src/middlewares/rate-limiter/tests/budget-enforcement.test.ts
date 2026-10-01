@@ -6,9 +6,7 @@ import { memoryStores } from './memory-stores';
 
 // Undo the setup.ts mock: these tests drive the real middleware against in-memory stores, end to end
 vi.unmock('#/middlewares/rate-limiter/core');
-vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) =>
-  (await import('./memory-stores')).memoryStoresMock(importOriginal),
-);
+vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => (await import('./memory-stores')).memoryStoresMock(importOriginal));
 
 // Must import AFTER mocks are set up
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');

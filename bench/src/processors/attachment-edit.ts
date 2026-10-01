@@ -24,20 +24,12 @@ function hlcTimestamp(sourceId: string, counter = 0): string {
 }
 
 /** Builds attachment name-edit payloads and sets Artillery context variables. */
-export function buildAttachmentEditPayload(
-  context: { vars: Record<string, unknown> },
-  _events: unknown,
-  done: () => void,
-) {
+export function buildAttachmentEditPayload(context: { vars: Record<string, unknown> }, _events: unknown, done: () => void) {
   const userIndex = (context.vars.userIndex as number) ?? 0;
   const aId = attachmentId(userIndex % TOTAL_ATTACHMENTS);
   const sourceId = uuidv7();
 
-  const stx: StxPayload = {
-    mutationId: uuidv7(),
-    sourceId,
-    fieldTimestamps: { name: hlcTimestamp(sourceId) },
-  };
+  const stx: StxPayload = { mutationId: uuidv7(), sourceId, fieldTimestamps: { name: hlcTimestamp(sourceId) } };
 
   context.vars.tenantId = TENANT_ID;
   context.vars.orgId = ORG_ID;

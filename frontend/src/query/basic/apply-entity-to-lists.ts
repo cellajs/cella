@@ -16,11 +16,7 @@ export function resolveHomeChannelId(entityType: string, entity: ItemData): stri
 }
 
 /** Excludes filtered keys, whose server predicates cannot be reproduced locally. */
-export function matchesCanonicalHome(
-  queryKey: readonly unknown[],
-  organizationId: string,
-  homeChannelId: string,
-): boolean {
+export function matchesCanonicalHome(queryKey: readonly unknown[], organizationId: string, homeChannelId: string): boolean {
   return queryKey.length === 4 && queryKey[2] === organizationId && queryKey[3] === homeChannelId;
 }
 
@@ -75,8 +71,7 @@ export function spliceEntityIntoListCaches(
       continue;
     }
 
-    const isHomeList =
-      !!organizationId && !!homeChannelId && matchesCanonicalHome(queryKey, organizationId, homeChannelId);
+    const isHomeList = !!organizationId && !!homeChannelId && matchesCanonicalHome(queryKey, organizationId, homeChannelId);
     seen = seen || !!cachedItem;
     spliced ||= !cachedItem && isHomeList;
     change(queryKey, [entity], cachedItem || !isHomeList ? 'update' : 'create');

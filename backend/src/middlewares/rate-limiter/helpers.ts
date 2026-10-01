@@ -6,12 +6,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { env } from '#/env';
-import type {
-  Identifiers,
-  LimiterStore,
-  RateLimiterHandler,
-  RateLimitIdentifier,
-} from '#/middlewares/rate-limiter/types';
+import type { Identifiers, LimiterStore, RateLimiterHandler, RateLimitIdentifier } from '#/middlewares/rate-limiter/types';
 import { rateLimitsTable } from '#/modules/auth/rate-limits-db';
 import { getIp } from '#/utils/get-ip';
 import { hashRateLimitSubject } from '#/utils/hash-pii';
@@ -56,10 +51,7 @@ export const getRateLimiterInstance = ({ inMemoryBlock = true, ...options }: Rat
       insuranceLimiter: insurance,
       // Both blocks last blockDuration: an in-memory block without a duration of its own ends with the window, and the
       // library then skips the database block every process reads. A zero blockDuration blocks for the rest of the window.
-      ...(inMemoryBlock && {
-        inMemoryBlockOnConsumed: options.points,
-        inMemoryBlockDuration: options.blockDuration,
-      }),
+      ...(inMemoryBlock && { inMemoryBlockOnConsumed: options.points, inMemoryBlockDuration: options.blockDuration }),
     });
     insurances.set(instance, insurance);
   }
@@ -88,11 +80,7 @@ export const openBucket = async (store: LimiterStore, rateLimitKey: string, dura
   await db
     .insert(rateLimitsTable)
     .values({ key: store.getKey(rateLimitKey), points: 0, expire })
-    .onConflictDoUpdate({
-      target: rateLimitsTable.key,
-      set: { points: 0, expire },
-      setWhere: lte(rateLimitsTable.expire, now),
-    });
+    .onConflictDoUpdate({ target: rateLimitsTable.key, set: { points: 0, expire }, setWhere: lte(rateLimitsTable.expire, now) });
 };
 
 /**
@@ -140,9 +128,7 @@ export const reserveAttempt = async (
   store: LimiterStore,
   rateLimitKey: string,
   limits: { points: number; duration: number },
-): Promise<
-  { granted: true; store: LimiterStore; state: RateLimiterRes } | { granted: false; state: RateLimiterRes }
-> => {
+): Promise<{ granted: true; store: LimiterStore; state: RateLimiterRes } | { granted: false; state: RateLimiterRes }> => {
   let holder = store;
   let taken: RateLimiterRes | null;
   try {
@@ -170,13 +156,7 @@ export const refundAttempt = async (store: LimiterStore, rateLimitKey: string) =
     await db
       .update(rateLimitsTable)
       .set({ points: sql`${rateLimitsTable.points} - 1` })
-      .where(
-        and(
-          eq(rateLimitsTable.key, store.getKey(rateLimitKey)),
-          gt(rateLimitsTable.points, 0),
-          gt(rateLimitsTable.expire, new Date()),
-        ),
-      );
+      .where(and(eq(rateLimitsTable.key, store.getKey(rateLimitKey)), gt(rateLimitsTable.points, 0), gt(rateLimitsTable.expire, new Date())));
     return;
   }
   // In memory a bucket reset or expired since reads back below zero: the point goes back where it came from.
@@ -190,24 +170,13 @@ export const refundAttempt = async (store: LimiterStore, rateLimitKey: string) =
  * reopen it.
  * @returns Whether the bucket was spent and is blocked now.
  */
-export const blockSpentBucket = async (
-  store: LimiterStore,
-  rateLimitKey: string,
-  points: number,
-  blockSeconds: number,
-): Promise<boolean> => {
+export const blockSpentBucket = async (store: LimiterStore, rateLimitKey: string, points: number, blockSeconds: number): Promise<boolean> => {
   const now = new Date();
   if (store instanceof RateLimiterDrizzle) {
     const blocked = await db
       .update(rateLimitsTable)
       .set({ expire: new Date(now.getTime() + blockSeconds * 1000) })
-      .where(
-        and(
-          eq(rateLimitsTable.key, store.getKey(rateLimitKey)),
-          gte(rateLimitsTable.points, points),
-          gt(rateLimitsTable.expire, now),
-        ),
-      )
+      .where(and(eq(rateLimitsTable.key, store.getKey(rateLimitKey)), gte(rateLimitsTable.points, points), gt(rateLimitsTable.expire, now)))
       .returning({ key: rateLimitsTable.key });
     return blocked.length > 0;
   }
@@ -254,10 +223,7 @@ const identifierReaders = {
   tenantId: (ctx) => ctx.var.tenantId || null,
 } satisfies Record<RateLimitIdentifier, (ctx: Context<Env>) => string | null | Promise<string | null>>;
 
-export const extractIdentifiers = async (
-  ctx: Context<Env>,
-  identifiersToExtract: RateLimitIdentifier[],
-): Promise<Identifiers> => {
+export const extractIdentifiers = async (ctx: Context<Env>, identifiersToExtract: RateLimitIdentifier[]): Promise<Identifiers> => {
   const results: Identifiers = { email: null, ip: null, userId: null, actorId: null, tenantId: null };
   for (const identifier of identifiersToExtract) results[identifier] = await identifierReaders[identifier](ctx);
   return results;

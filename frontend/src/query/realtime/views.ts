@@ -1,11 +1,4 @@
-import {
-  hierarchy as appHierarchy,
-  type EntityHierarchy,
-  getEntityPolicies,
-  getPolicyPermissions,
-  type PolicyMatrix,
-  policyMatrix,
-} from 'shared';
+import { hierarchy as appHierarchy, type EntityHierarchy, getEntityPolicies, getPolicyPermissions, type PolicyMatrix, policyMatrix } from 'shared';
 
 /** Grant-boundary view shape (cursor is owned by the sync store, not the derivation). */
 export interface DerivedSyncView {
@@ -53,8 +46,7 @@ export function deriveGrantBoundaryViews({
     const ancestors = hierarchy.getOrderedAncestors(entityType);
     const homeLevel = ancestors.find((a) => a !== 'organization') ?? 'organization';
     // Mirrors the engine's isHomeScopedGrant; the hierarchy-compiled set is always present.
-    const isSubtreeGrant = (channelType: string, role: string) =>
-      channelType === homeLevel || elevatedGrants.has(`${channelType}:${role}`);
+    const isSubtreeGrant = (channelType: string, role: string) => channelType === homeLevel || elevatedGrants.has(`${channelType}:${role}`);
 
     for (const m of memberships) {
       if (!ancestors.includes(m.channelType)) continue;

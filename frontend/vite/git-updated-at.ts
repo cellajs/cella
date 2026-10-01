@@ -47,10 +47,7 @@ export function createUpdatedAtResolver(fromDir: string): UpdatedAtResolver {
     try {
       // execFile (not a shell) so paths need no quoting; `--` guards paths that look like flags.
       iso =
-        execFileSync('git', ['log', '-1', '--format=%cI', '--', file], {
-          cwd: repoRoot ?? undefined,
-          stdio: ['ignore', 'pipe', 'ignore'],
-        })
+        execFileSync('git', ['log', '-1', '--format=%cI', '--', file], { cwd: repoRoot ?? undefined, stdio: ['ignore', 'pipe', 'ignore'] })
           .toString()
           .trim() || undefined;
     } catch {
@@ -78,10 +75,7 @@ export function createUpdatedAtResolver(fromDir: string): UpdatedAtResolver {
 function detectRepoRoot(fromDir: string): string | null {
   try {
     return (
-      execFileSync('git', ['rev-parse', '--show-toplevel'], {
-        cwd: fromDir,
-        stdio: ['ignore', 'pipe', 'ignore'],
-      })
+      execFileSync('git', ['rev-parse', '--show-toplevel'], { cwd: fromDir, stdio: ['ignore', 'pipe', 'ignore'] })
         .toString()
         .trim() || null
     );

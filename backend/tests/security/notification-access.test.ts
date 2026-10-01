@@ -14,13 +14,7 @@ import { adminDb, mailsTo } from '../helpers';
 import { attachmentBody, seedAttachmentHome } from '../hierarchy-helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import {
-  assumeMemberAttachmentPolicy,
-  clearSecurityTestData,
-  createOrgUser,
-  createTestTenant,
-  type TestTenant,
-} from './helpers';
+import { assumeMemberAttachmentPolicy, clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
@@ -62,10 +56,7 @@ describe('Notification access', async () => {
   };
 
   const inbox = async (as: { sessionCookie: string }) => {
-    const { data, response } = await call(getNotifications, {
-      query: { limit: 30 },
-      headers: { ...defaultHeaders, Cookie: as.sessionCookie },
-    });
+    const { data, response } = await call(getNotifications, { query: { limit: 30 }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
     expect(response.status).toBe(200);
     return data as GetNotificationsResponse;
   };
@@ -90,10 +81,7 @@ describe('Notification access', async () => {
     });
     expect(response.status).toBe(201);
     await adminDb.update(attachmentsTable).set({ name: 'Old item' }).where(eq(attachmentsTable.id, attachmentIds.old));
-    await adminDb
-      .update(attachmentsTable)
-      .set({ name: 'Fresh item' })
-      .where(eq(attachmentsTable.id, attachmentIds.fresh));
+    await adminDb.update(attachmentsTable).set({ name: 'Fresh item' }).where(eq(attachmentsTable.id, attachmentIds.fresh));
 
     const now = noon();
     // The leaver was told about an item while a member; a daily digest and mention mails are on for both users.
@@ -106,30 +94,16 @@ describe('Notification access', async () => {
     ]);
 
     // The leaver leaves; afterwards the item and the organization are renamed.
-    await db
-      .delete(membershipsTable)
-      .where(and(eq(membershipsTable.userId, leaver.id), eq(membershipsTable.organizationId, tenant.organization.id)));
-    await adminDb
-      .update(attachmentsTable)
-      .set({ name: 'Renamed secret plan' })
-      .where(eq(attachmentsTable.id, attachmentIds.secret));
-    await db
-      .update(organizationsTable)
-      .set({ name: 'Renamed organization' })
-      .where(eq(organizationsTable.id, tenant.organization.id));
+    await db.delete(membershipsTable).where(and(eq(membershipsTable.userId, leaver.id), eq(membershipsTable.organizationId, tenant.organization.id)));
+    await adminDb.update(attachmentsTable).set({ name: 'Renamed secret plan' }).where(eq(attachmentsTable.id, attachmentIds.secret));
+    await db.update(organizationsTable).set({ name: 'Renamed organization' }).where(eq(organizationsTable.id, tenant.organization.id));
   });
 
   // Each test starts from unmailed, undigested rows and users who never had a digest.
   beforeEach(async () => {
     const users = [leaver.id, stayer.id];
-    await db
-      .update(notificationsTable)
-      .set({ emailedAt: null, digestedAt: null, readAt: null })
-      .where(inArray(notificationsTable.userId, users));
-    await db
-      .update(notificationPreferencesTable)
-      .set({ lastDigestAt: null })
-      .where(inArray(notificationPreferencesTable.userId, users));
+    await db.update(notificationsTable).set({ emailedAt: null, digestedAt: null, readAt: null }).where(inArray(notificationsTable.userId, users));
+    await db.update(notificationPreferencesTable).set({ lastDigestAt: null }).where(inArray(notificationPreferencesTable.userId, users));
   });
 
   afterAll(async () => {

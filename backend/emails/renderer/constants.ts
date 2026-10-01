@@ -60,19 +60,4 @@ export const BooleanAttributes = new Set([
 export const EmptyObject = Object.freeze({});
 
 // https://www.w3.org/TR/html/syntax.html#void-elements
-export const VoidElements = new Set([
-  'area',
-  'base',
-  'br',
-  'col',
-  'embed',
-  'hr',
-  'img',
-  'input',
-  'link',
-  'meta',
-  'param',
-  'source',
-  'track',
-  'wbr',
-]);
+export const VoidElements = new Set(['area', 'base', 'br', 'col', 'embed', 'hr', 'img', 'input', 'link', 'meta', 'param', 'source', 'track', 'wbr']);

@@ -15,13 +15,7 @@ import type {
   Omit,
   TileSide,
 } from '../types';
-import {
-  breakpointOrder,
-  clampColumnWidth,
-  resolveMergeRule,
-  resolveModeOverrides,
-  warnInvalidMergeRule,
-} from '../utils/grid-utils';
+import { breakpointOrder, clampColumnWidth, resolveMergeRule, resolveModeOverrides, warnInvalidMergeRule } from '../utils/grid-utils';
 
 type Mutable<T> = {
   -readonly [P in keyof T]: T[P] extends ReadonlyArray<infer V> ? Mutable<V>[] : T[P];
@@ -111,11 +105,7 @@ export function useCalculatedColumns<R, SR>({
 
     collectColumns(rawColumns, 1);
 
-    function collectColumns(
-      rawColumns: readonly ColumnOrColumnGroup<R, SR>[],
-      level: number,
-      parent?: MutableCalculatedColumnParent<R, SR>,
-    ) {
+    function collectColumns(rawColumns: readonly ColumnOrColumnGroup<R, SR>[], level: number, parent?: MutableCalculatedColumnParent<R, SR>) {
       for (const rawColumn of rawColumns) {
         // Reactive hide flag, such as a column-visibility toggle: excluded like a failing breakpoint.
         if (rawColumn.hidden) continue;
@@ -225,12 +215,7 @@ export function useCalculatedColumns<R, SR>({
       }
     }
 
-    return {
-      columns,
-      colSpanColumns,
-      lastFrozenColumnIndex,
-      headerRowsCount,
-    };
+    return { columns, colSpanColumns, lastFrozenColumnIndex, headerRowsCount };
   }, [
     rawColumns,
     defaultWidth,
@@ -299,22 +284,10 @@ export function useCalculatedColumns<R, SR>({
     return { templateColumns, layoutCssVars, totalFrozenColumnWidth };
   }, [getColumnWidth, columns, lastFrozenColumnIndex]);
 
-  return {
-    columns,
-    colSpanColumns,
-    templateColumns,
-    layoutCssVars,
-    headerRowsCount,
-    lastFrozenColumnIndex,
-    totalFrozenColumnWidth,
-  };
+  return { columns, colSpanColumns, templateColumns, layoutCssVars, headerRowsCount, lastFrozenColumnIndex, totalFrozenColumnWidth };
 }
 
-function updateColumnParent<R, SR>(
-  column: MutableCalculatedColumn<R, SR> | MutableCalculatedColumnParent<R, SR>,
-  index: number,
-  level: number,
-) {
+function updateColumnParent<R, SR>(column: MutableCalculatedColumn<R, SR> | MutableCalculatedColumnParent<R, SR>, index: number, level: number) {
   if (level < column.level) {
     column.level = level;
   }

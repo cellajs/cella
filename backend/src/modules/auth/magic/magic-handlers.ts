@@ -55,11 +55,7 @@ app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
 
   const magicLinkUrl = tokenLinkUrl('magic', rawToken);
 
-  const staticProps = {
-    magicLinkUrl,
-    name: existingUser?.name ?? slugFromEmail(normalizedEmail),
-    isNewUser: !existingUser,
-  };
+  const staticProps = { magicLinkUrl, name: existingUser?.name ?? slugFromEmail(normalizedEmail), isNewUser: !existingUser };
   const recipients = [{ email: normalizedEmail, lng: existingUser?.language ?? appConfig.defaultLanguage }];
 
   mailer.prepareEmails(magicLinkEmail, staticProps, recipients);

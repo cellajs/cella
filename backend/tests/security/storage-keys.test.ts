@@ -29,11 +29,8 @@ describe('Attachment storage keys', async () => {
   let attackerPlan: TestEntityHierarchyPlan;
 
   /** A create body in the attacker's organization; `claims` are storage fields the client may send, the server decides. */
-  const bodyFor = (
-    id: string,
-    keys: { original: string; preview?: string },
-    claims: { bucketName?: string; publicBucket?: boolean } = {},
-  ) => attachmentBody(id, attackerPlan, { keys, ...claims });
+  const bodyFor = (id: string, keys: { original: string; preview?: string }, claims: { bucketName?: string; publicBucket?: boolean } = {}) =>
+    attachmentBody(id, attackerPlan, { keys, ...claims });
 
   const create = (body: Record<string, unknown>) =>
     call(createAttachments, {
@@ -50,8 +47,7 @@ describe('Attachment storage keys', async () => {
     });
 
   const rowExists = async (id: string) =>
-    (await adminDb.select({ id: attachmentsTable.id }).from(attachmentsTable).where(eq(attachmentsTable.id, id)))
-      .length > 0;
+    (await adminDb.select({ id: attachmentsTable.id }).from(attachmentsTable).where(eq(attachmentsTable.id, id))).length > 0;
 
   const storageOf = async (id: string) =>
     (
@@ -66,10 +62,7 @@ describe('Attachment storage keys', async () => {
   beforeAll(async () => {
     victim = await createTestTenant(call, 'storage-victim');
     attacker = await createTestTenant(call, 'storage-attacker');
-    attackerPlan = await seedAttachmentHome(
-      { id: attacker.organization.id, tenantId: attacker.tenantId },
-      attacker.user.id,
-    );
+    attackerPlan = await seedAttachmentHome({ id: attacker.organization.id, tenantId: attacker.tenantId }, attacker.user.id);
   });
 
   afterAll(async () => await clearSecurityTestData());
@@ -83,9 +76,7 @@ describe('Attachment storage keys', async () => {
 
   it('must not reach outside the prefix via dot segments or a variant key', async () => {
     const traversal = generateId();
-    const dots = await create(
-      bodyFor(traversal, { original: `${attacker.organization.id}/../${keyOf(victim, 'x.pdf')}` }),
-    );
+    const dots = await create(bodyFor(traversal, { original: `${attacker.organization.id}/../${keyOf(victim, 'x.pdf')}` }));
     expect(dots.response.status).toBe(400);
 
     const variant = generateId();
@@ -111,10 +102,7 @@ describe('Attachment storage keys', async () => {
   });
 
   it('must not sign a blob: key via getPresignedUrls', async () => {
-    for (const planted of [
-      `blob:/../${keyOf(victim, 'contract.pdf')}`,
-      'blob:http://localhost:3000/0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c',
-    ]) {
+    for (const planted of [`blob:/../${keyOf(victim, 'contract.pdf')}`, 'blob:http://localhost:3000/0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c']) {
       const id = generateId();
       expect((await create(bodyFor(id, { original: keyOf(attacker, 'own.pdf') }))).response.status).toBe(201);
       await adminDb

@@ -13,11 +13,7 @@ registry.register('StxBase', stxBaseSchema);
 registry.register('BooleanQueryValue', booleanTransformSchema);
 registry.register(
   'ReusableUnionFixture',
-  z.object({
-    user: nullableUserMinimalBaseSchema,
-    stx: nullableStxBaseSchema,
-    flag: booleanTransformSchema.optional(),
-  }),
+  z.object({ user: nullableUserMinimalBaseSchema, stx: nullableStxBaseSchema, flag: booleanTransformSchema.optional() }),
 );
 registry.register('UploadToken', uploadTokenSchema);
 registry.register('StreamNotification', streamNotificationSchema);
@@ -36,17 +32,9 @@ describe('OpenAPI composition conventions', () => {
     };
     expect(schemas).toMatchObject({
       ReusableUnionFixture: {
-        properties: {
-          user: nullableUserRef,
-          stx: nullableStxRef,
-          flag: { $ref: '#/components/schemas/BooleanQueryValue' },
-        },
+        properties: { user: nullableUserRef, stx: nullableStxRef, flag: { $ref: '#/components/schemas/BooleanQueryValue' } },
       },
-      StreamNotification: {
-        properties: {
-          stx: nullableStxRef,
-        },
-      },
+      StreamNotification: { properties: { stx: nullableStxRef } },
     });
 
     // Nullable wrappers must not surface as named component schemas (SDK/docs export noise).

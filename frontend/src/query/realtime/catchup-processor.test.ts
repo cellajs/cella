@@ -30,14 +30,9 @@ vi.mock('shared', async (importOriginal) => {
   };
 });
 
-vi.mock('~/modules/common/blocknote/yjs-editor', () => ({
-  isYjsEditorActive: () => false,
-  getYjsOwnedFields: () => [],
-}));
+vi.mock('~/modules/common/blocknote/yjs-editor', () => ({ isYjsEditorActive: () => false, getYjsOwnedFields: () => [] }));
 
-vi.mock('~/query/offline', () => ({
-  sourceId: 'test-source',
-}));
+vi.mock('~/query/offline', () => ({ sourceId: 'test-source' }));
 
 // Real propagation, observed: the deferral tests assert when it runs relative to the delta fetch.
 const propagateEmbeddingsSpy = vi.fn();
@@ -111,11 +106,7 @@ describe('catchup processor (view-driven)', () => {
 
     syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
-    queryClient.setQueryData(keys.detail.byId('attachment-1'), {
-      id: 'attachment-1',
-      organizationId: 'org-1',
-      name: 'stale',
-    });
+    queryClient.setQueryData(keys.detail.byId('attachment-1'), { id: 'attachment-1', organizationId: 'org-1', name: 'stale' });
     queryClient.setQueryData(keys.list.org('org-1'), {
       items: [{ id: 'attachment-1', organizationId: 'org-1', name: 'stale' }],
       total: 1,
@@ -145,12 +136,7 @@ describe('catchup processor (view-driven)', () => {
 
     syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 10);
-    queryClient.setQueryData(keys.detail.byId('att-proj'), {
-      id: 'att-proj',
-      organizationId: 'org-1',
-      projectId: 'proj-9',
-      name: 'stale',
-    });
+    queryClient.setQueryData(keys.detail.byId('att-proj'), { id: 'att-proj', organizationId: 'org-1', projectId: 'proj-9', name: 'stale' });
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
     await processAppCatchup(okViewResponse(12, 2));
@@ -240,9 +226,7 @@ describe('catchup processor (view-driven)', () => {
     await processAppCatchup(okViewResponse(6, 0, 'org-caughtup:attachment'));
 
     expect(deltaFetch).not.toHaveBeenCalled();
-    expect(invalidateSpy).not.toHaveBeenCalledWith(
-      expect.objectContaining({ queryKey: keys.list.org('org-caughtup') }),
-    );
+    expect(invalidateSpy).not.toHaveBeenCalledWith(expect.objectContaining({ queryKey: keys.list.org('org-caughtup') }));
     expect(syncStore.getState().getOrgSeq('org-caughtup', 'attachment')).toBe(6);
   });
 
@@ -306,22 +290,16 @@ describe('catchup processor (view-driven)', () => {
 
     // First sight: count recorded, no comparison, no invalidation from integrity.
     await processAppCatchup(okViewResponse(6, 5));
-    const callsAfterFirst = invalidateSpy.mock.calls.filter(
-      (c) => JSON.stringify(c[0]?.queryKey) === JSON.stringify(keys.list.org('org-1')),
-    ).length;
+    const callsAfterFirst = invalidateSpy.mock.calls.filter((c) => JSON.stringify(c[0]?.queryKey) === JSON.stringify(keys.list.org('org-1'))).length;
 
     // Same count again: still no signal.
     await processAppCatchup(okViewResponse(6, 5));
-    const callsAfterSecond = invalidateSpy.mock.calls.filter(
-      (c) => JSON.stringify(c[0]?.queryKey) === JSON.stringify(keys.list.org('org-1')),
-    ).length;
+    const callsAfterSecond = invalidateSpy.mock.calls.filter((c) => JSON.stringify(c[0]?.queryKey) === JSON.stringify(keys.list.org('org-1'))).length;
     expect(callsAfterSecond).toBe(callsAfterFirst);
 
     // Count changed while frontier did not: drift → invalidate.
     await processAppCatchup(okViewResponse(6, 7));
-    const callsAfterThird = invalidateSpy.mock.calls.filter(
-      (c) => JSON.stringify(c[0]?.queryKey) === JSON.stringify(keys.list.org('org-1')),
-    ).length;
+    const callsAfterThird = invalidateSpy.mock.calls.filter((c) => JSON.stringify(c[0]?.queryKey) === JSON.stringify(keys.list.org('org-1'))).length;
     expect(callsAfterThird).toBeGreaterThan(callsAfterSecond);
   });
 });
@@ -430,13 +408,7 @@ describe('catchup → fetch prioritizer fold', () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
-    const hint = {
-      embeddedProduct: 'attachment',
-      hostProduct: 'attachment',
-      hostColumn: 'labels',
-      update: ['host-1'],
-      remove: [],
-    };
+    const hint = { embeddedProduct: 'attachment', hostProduct: 'attachment', hostColumn: 'labels', update: ['host-1'], remove: [] };
     const response = { ...okViewResponse(9), changes: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
     await processAppCatchup(response);
 
@@ -462,13 +434,7 @@ describe('catchup → fetch prioritizer fold', () => {
     syncStore.getState().setOrgSeq('org-1', 'attachment', 4);
     queryClient.setQueryData(keys.list.org('org-1'), { items: [], total: 0 });
 
-    const hint = {
-      embeddedProduct: 'attachment',
-      hostProduct: 'attachment',
-      hostColumn: 'labels',
-      update: ['host-1'],
-      remove: [],
-    };
+    const hint = { embeddedProduct: 'attachment', hostProduct: 'attachment', hostColumn: 'labels', update: ['host-1'], remove: [] };
     const response = { ...okViewResponse(9), changes: { 'org-1': { propagation: [hint] } } } as PostAppCatchupResponse;
     await processAppCatchup(response);
 

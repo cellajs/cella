@@ -29,10 +29,7 @@ describe('createFetchProbe', () => {
   it('surfaces a thrown request as status 0', async () => {
     vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('network')));
 
-    expect(await createFetchProbe(1000)('https://www.example.dev/api/health')).toEqual({
-      status: 0,
-      version: undefined,
-    });
+    expect(await createFetchProbe(1000)('https://www.example.dev/api/health')).toEqual({ status: 0, version: undefined });
   });
 });
 
@@ -105,21 +102,8 @@ describe('pollForVersion', () => {
 
   it('fast-fails with the reconciler reason on a terminal rollout failure (exit 5)', async () => {
     const probe = vi.fn(async (): Promise<ProbeResult> => ({ status: 502, version: undefined }));
-    const status = vi.fn(() => ({
-      desired: SHA,
-      result: 'failed',
-      exitCode: '5',
-      reason: 'bluegreen_rolled_back slot=green',
-    }));
-    const out = await pollForVersion({
-      url: 'x',
-      expectedSha: SHA,
-      probe,
-      attempts: 10,
-      sleep: noSleep,
-      log: noLog,
-      status,
-    });
+    const status = vi.fn(() => ({ desired: SHA, result: 'failed', exitCode: '5', reason: 'bluegreen_rolled_back slot=green' }));
+    const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 10, sleep: noSleep, log: noLog, status });
     expect(out.ok).toBe(false);
     expect(out.attempts).toBe(1);
     expect(out.failReason).toBe('bluegreen_rolled_back slot=green');
@@ -136,15 +120,7 @@ describe('pollForVersion', () => {
     const probe = vi.fn(async () => results[i++]!);
     // pull_exhausted is exit 3: NOT terminal; the next tick self-heals.
     const status = vi.fn(() => ({ desired: SHA, result: 'failed', exitCode: '3', reason: 'pull_exhausted' }));
-    const out = await pollForVersion({
-      url: 'x',
-      expectedSha: SHA,
-      probe,
-      attempts: 5,
-      sleep: noSleep,
-      log: noLog,
-      status,
-    });
+    const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 5, sleep: noSleep, log: noLog, status });
     expect(out.ok).toBe(true);
     expect(out.attempts).toBe(2);
     expect(out.failReason).toBeUndefined();
@@ -153,15 +129,7 @@ describe('pollForVersion', () => {
   it('ignores a failed status for a different sha (stale prior deploy)', async () => {
     const probe = vi.fn(async (): Promise<ProbeResult> => ({ status: 204, version: 'oldsha' }));
     const status = vi.fn(() => ({ desired: 'someother', result: 'failed', exitCode: '5', reason: 'old failure' }));
-    const out = await pollForVersion({
-      url: 'x',
-      expectedSha: SHA,
-      probe,
-      attempts: 3,
-      sleep: noSleep,
-      log: noLog,
-      status,
-    });
+    const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 3, sleep: noSleep, log: noLog, status });
     expect(out.ok).toBe(false);
     expect(out.failReason).toBeUndefined();
     expect(probe).toHaveBeenCalledTimes(3);
@@ -175,15 +143,7 @@ describe('pollForVersion', () => {
     let i = 0;
     const probe = vi.fn(async () => results[i++]!);
     const status = vi.fn(() => ({ desired: SHA, result: 'rolling', phase: 'probing' }));
-    const out = await pollForVersion({
-      url: 'x',
-      expectedSha: SHA,
-      probe,
-      attempts: 5,
-      sleep: noSleep,
-      log: noLog,
-      status,
-    });
+    const out = await pollForVersion({ url: 'x', expectedSha: SHA, probe, attempts: 5, sleep: noSleep, log: noLog, status });
     expect(out.ok).toBe(true);
     expect(out.attempts).toBe(2);
   });

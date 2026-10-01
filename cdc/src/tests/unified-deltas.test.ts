@@ -78,11 +78,7 @@ describe('membership count deltas (via computeBatchUnifiedDeltas)', () => {
 describe('computeBatchUnifiedDeltas', () => {
   it('batch of 5 attachment creates in same org: accumulates deltas', () => {
     const events = Array.from({ length: 5 }, (_, i) =>
-      changeEvent({
-        tableMeta: attachmentEntry(),
-        action: 'create',
-        rowData: { id: `att-${i}`, organizationId: 'org-1' },
-      }),
+      changeEvent({ tableMeta: attachmentEntry(), action: 'create', rowData: { id: `att-${i}`, organizationId: 'org-1' } }),
     );
 
     const plan = computeBatchUnifiedDeltas(events);
@@ -149,11 +145,7 @@ describe('computeBatchUnifiedDeltas', () => {
 
   it("one sequence group per organization, holding that organization's events alone", () => {
     const events = Array.from({ length: 3 }, (_, i) =>
-      changeEvent({
-        tableMeta: attachmentEntry(),
-        action: 'create',
-        rowData: { id: `att-${i}`, organizationId: `org-${i}` },
-      }),
+      changeEvent({ tableMeta: attachmentEntry(), action: 'create', rowData: { id: `att-${i}`, organizationId: `org-${i}` } }),
     );
 
     const plan = computeBatchUnifiedDeltas(events);
@@ -172,33 +164,17 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
 
   it('attachment create stamps e:li:h:attachment with the row createdAt at the home key', () => {
     const plan = computeBatchUnifiedDeltas([
-      changeEvent({
-        tableMeta: attachmentEntry(),
-        action: 'create',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt },
-      }),
+      changeEvent({ tableMeta: attachmentEntry(), action: 'create', rowData: { id: 'att-1', organizationId: 'org-1', createdAt } }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
-      'e:c:attachment': 1,
-      'e:c:h:attachment': 1,
-      'e:li:h:attachment': createdAtMs,
-    });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:c:attachment': 1, 'e:c:h:attachment': 1, 'e:li:h:attachment': createdAtMs });
   });
 
   it('two creates in one batch max-merge the stamp (timestamps must not sum)', () => {
     const laterCreatedAt = '2026-07-02T10:00:00.000Z';
     const plan = computeBatchUnifiedDeltas([
-      changeEvent({
-        tableMeta: attachmentEntry(),
-        action: 'create',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt: laterCreatedAt },
-      }),
-      changeEvent({
-        tableMeta: attachmentEntry(),
-        action: 'create',
-        rowData: { id: 'att-2', organizationId: 'org-1', createdAt },
-      }),
+      changeEvent({ tableMeta: attachmentEntry(), action: 'create', rowData: { id: 'att-1', organizationId: 'org-1', createdAt: laterCreatedAt } }),
+      changeEvent({ tableMeta: attachmentEntry(), action: 'create', rowData: { id: 'att-2', organizationId: 'org-1', createdAt } }),
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
@@ -211,11 +187,7 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
   it('missing createdAt falls back to Date.now()', () => {
     const before = Date.now();
     const plan = computeBatchUnifiedDeltas([
-      changeEvent({
-        tableMeta: attachmentEntry(),
-        action: 'create',
-        rowData: { id: 'att-1', organizationId: 'org-1' },
-      }),
+      changeEvent({ tableMeta: attachmentEntry(), action: 'create', rowData: { id: 'att-1', organizationId: 'org-1' } }),
     ]);
     const after = Date.now();
 
@@ -227,11 +199,7 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
   it('a row created directly published stamps li: from publishedAt', () => {
     const publishedAt = '2026-07-01T10:00:00.500Z';
     const plan = computeBatchUnifiedDeltas([
-      changeEvent({
-        tableMeta: attachmentEntry(),
-        action: 'create',
-        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt },
-      }),
+      changeEvent({ tableMeta: attachmentEntry(), action: 'create', rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt } }),
     ]);
 
     expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
@@ -252,9 +220,7 @@ describe('activity stamps (e:li:h:{type} / e:lu:h:{type})', () => {
       }),
     ]);
 
-    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({
-      'e:lu:h:attachment': Date.parse(updatedAt),
-    });
+    expect(plan.countDeltasByChannelKey.get('org-1')).toEqual({ 'e:lu:h:attachment': Date.parse(updatedAt) });
   });
 
   it('update with missing updatedAt falls back to Date.now()', () => {
@@ -312,14 +278,7 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
       changeEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
-        rowData: {
-          id: 'att-1',
-          organizationId: 'org-1',
-          createdAt,
-          updatedAt: publishedAt,
-          publishedAt,
-          deletedAt: null,
-        },
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, updatedAt: publishedAt, publishedAt, deletedAt: null },
       }),
     ]);
 
@@ -349,13 +308,7 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
       changeEvent({
         tableMeta: attachmentEntry(),
         action: 'create',
-        rowData: {
-          id: 'att-1',
-          organizationId: 'org-1',
-          createdAt,
-          publishedAt,
-          deletedAt: '2026-07-03T10:00:00.000Z',
-        },
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: '2026-07-03T10:00:00.000Z' },
       }),
     ]);
 
@@ -368,13 +321,7 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
       changeEvent({
         tableMeta: attachmentEntry(),
         action: 'update',
-        rowData: {
-          id: 'att-1',
-          organizationId: 'org-1',
-          createdAt,
-          publishedAt,
-          deletedAt: '2026-07-05T10:00:00.000Z',
-        },
+        rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: '2026-07-05T10:00:00.000Z' },
         oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
       }),
     ]);
@@ -388,13 +335,7 @@ describe('draft lifecycle count deltas (publication row filter delivery)', () =>
         tableMeta: attachmentEntry(),
         action: 'update',
         rowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: null },
-        oldRowData: {
-          id: 'att-1',
-          organizationId: 'org-1',
-          createdAt,
-          publishedAt,
-          deletedAt: '2026-07-05T10:00:00.000Z',
-        },
+        oldRowData: { id: 'att-1', organizationId: 'org-1', createdAt, publishedAt, deletedAt: '2026-07-05T10:00:00.000Z' },
       }),
     ]);
 

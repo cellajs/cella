@@ -29,10 +29,7 @@ vi.mock('shared/schema-evolution', () => ({
   }),
 }));
 
-vi.stubGlobal('window', {
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-});
+vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
 
 const sessionStorageMap = new Map<string, string>();
 vi.stubGlobal('sessionStorage', {

@@ -5,10 +5,7 @@ import { withSuspense } from '~/routes/-route-utils';
 import { appTitle } from '~/utils/app-title';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const OperationsTable = lazyNamed(
-  () => import('~/modules/docs/operations/operations-table/operations-table'),
-  'OperationsTable',
-);
+const OperationsTable = lazyNamed(() => import('~/modules/docs/operations/operations-table/operations-table'), 'OperationsTable');
 
 /** Sibling view of the operations route: the trailing underscore keeps it un-nested. */
 export const Route = createFileRoute('/_public/_content/docs/operations_/table')({

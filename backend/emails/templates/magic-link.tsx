@@ -37,8 +37,5 @@ export const magicLinkEmail = defineEmailTemplate<MagicLinkStatic, EmailRecipien
       />
     );
   },
-  preview: {
-    statics: { magicLinkUrl: 'https://example.com/magic', name: 'Emily', isNewUser: false },
-    recipient: {},
-  },
+  preview: { statics: { magicLinkUrl: 'https://example.com/magic', name: 'Emily', isNewUser: false }, recipient: {} },
 });

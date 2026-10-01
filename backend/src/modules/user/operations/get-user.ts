@@ -33,8 +33,7 @@ export async function getUserOp(ctx: UserContext, relatableUserId: string, opts:
 
   const targetUser = await findUserByFilters(ctx, { filters });
 
-  if (!targetUser)
-    throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: relatableUserId } });
+  if (!targetUser) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { user: relatableUserId } });
 
   return targetUser;
 }

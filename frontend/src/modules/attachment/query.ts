@@ -12,11 +12,7 @@ import type {
   UpdateAttachmentFullVars,
   UpdateAttachmentVars,
 } from '~/modules/attachment/query-mutations';
-import {
-  createAttachmentsMutationFn,
-  deleteAttachmentsMutationFn,
-  updateAttachmentMutationFn,
-} from '~/modules/attachment/query-mutations';
+import { createAttachmentsMutationFn, deleteAttachmentsMutationFn, updateAttachmentMutationFn } from '~/modules/attachment/query-mutations';
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
@@ -45,8 +41,7 @@ const keys = {
   ...baseKeys,
   list: {
     ...baseKeys.list,
-    filtered: (organizationId: string, filters: AttachmentFilters) =>
-      ['attachment', 'list', organizationId, filters] as const,
+    filtered: (organizationId: string, filters: AttachmentFilters) => ['attachment', 'list', organizationId, filters] as const,
   },
 };
 // Placement seam: a narrowed delta fetch names the covering home channel; org-wide passes none.
@@ -84,31 +79,18 @@ export const attachmentsListQueryOptions = (params: AttachmentsListParams) => {
   return infiniteQueryOptions({
     queryKey: keys.list.filtered(organizationId, filters),
     ...offsetPaging(limit, (offset, signal) =>
-      getAttachments({
-        path: { tenantId, organizationId },
-        query: { ...filters, ...pageQuery(limit, offset) },
-        signal,
-      }),
+      getAttachments({ path: { tenantId, organizationId }, query: { ...filters, ...pageQuery(limit, offset) }, signal }),
     ),
     meta: { persist: false },
     staleTime: syncStaleTime,
   });
 };
 
-export const attachmentsCanonicalOptions = ({
-  organizationId,
-  tenantId,
-}: {
-  organizationId: string;
-  tenantId: string;
-}) => {
+export const attachmentsCanonicalOptions = ({ organizationId, tenantId }: { organizationId: string; tenantId: string }) => {
   return queryOptions({
     queryKey: keys.list.home(organizationId),
     queryFn: async () => {
-      return fetchAllPages(
-        ({ limit, offset }) => getAttachments({ path: { tenantId, organizationId }, query: { limit, offset } }),
-        1000,
-      );
+      return fetchAllPages(({ limit, offset }) => getAttachments({ path: { tenantId, organizationId }, query: { limit, offset } }), 1000);
     },
     staleTime: syncStaleTime,
   });
@@ -130,11 +112,7 @@ export function useAttachmentActivityFeed(tenantId: string, organizationId: stri
   return data ?? [];
 }
 
-export function useGroupAttachments(
-  tenantId: string | undefined,
-  organizationId: string | undefined,
-  groupId: string | undefined,
-) {
+export function useGroupAttachments(tenantId: string | undefined, organizationId: string | undefined, groupId: string | undefined) {
   const { data } = useQuery({
     ...attachmentsCanonicalOptions({ organizationId: organizationId!, tenantId: tenantId! }),
     enabled: !!tenantId && !!organizationId && !!groupId,
@@ -169,8 +147,7 @@ const attachmentCreateOptions = (
   },
   onError: (_err, variables, context) => {
     handleError('create');
-    if (context?.optimisticAttachments)
-      cacheRemove(keys.list.org(variables.organizationId), context.optimisticAttachments);
+    if (context?.optimisticAttachments) cacheRemove(keys.list.org(variables.organizationId), context.optimisticAttachments);
   },
   onSuccess: (result, variables, context) => {
     const orgKey = keys.list.org(variables.organizationId);
@@ -178,8 +155,7 @@ const attachmentCreateOptions = (
     insertEntitiesIntoHome(queryClient, result.data);
   },
   onSettled: (_data, error, variables) => {
-    if (error)
-      invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.org(variables.organizationId));
+    if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.org(variables.organizationId));
   },
 });
 
@@ -219,8 +195,7 @@ const attachmentUpdateOptions = (
     syncEntityToCache({ entity: merged, listKey: orgKey, detailKey, queryClient });
   },
   onSettled: (_data, error, variables) => {
-    if (error)
-      invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.org(variables.organizationId));
+    if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.org(variables.organizationId));
   },
 });
 
@@ -252,13 +227,10 @@ const attachmentDeleteOptions = (
     const rejectedSet = new Set(rejectedIds);
     const rejectedAttachments = variables.attachments.filter((a) => rejectedSet.has(a.id));
     insertEntitiesIntoHome(queryClient, rejectedAttachments);
-    toaster.info(
-      i18n.t('c:resources_delete_denied', { count: rejectedIds.length, total: variables.attachments.length }),
-    );
+    toaster.info(i18n.t('c:resources_delete_denied', { count: rejectedIds.length, total: variables.attachments.length }));
   },
   onSettled: (_data, error, variables) => {
-    if (error)
-      invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.org(variables.organizationId));
+    if (error) invalidateIfLastMutation(queryClient, attachmentsMutationKeyBase, keys.list.org(variables.organizationId));
   },
 });
 

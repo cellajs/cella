@@ -24,21 +24,11 @@ export interface ResetDatabasePlan {
   // Injected effects
   findInstance: (name: string) => Promise<RdbInstance | undefined>;
   listDatabases: (instanceId: string) => Promise<RdbDatabase[]>;
-  createBackup: (input: {
-    instanceId: string;
-    databaseName: string;
-    name: string;
-    expiresAt?: string;
-  }) => Promise<RdbBackup>;
+  createBackup: (input: { instanceId: string; databaseName: string; name: string; expiresAt?: string }) => Promise<RdbBackup>;
   waitForBackup: (backupId: string) => Promise<RdbBackup>;
   deleteDatabase: (instanceId: string, name: string) => Promise<void>;
   createDatabase: (instanceId: string, name: string) => Promise<RdbDatabase>;
-  setPrivilege: (
-    instanceId: string,
-    databaseName: string,
-    userName: string,
-    permission: RdbPermission,
-  ) => Promise<void>;
+  setPrivilege: (instanceId: string, databaseName: string, userName: string, permission: RdbPermission) => Promise<void>;
   /** Typed confirmation. Returning false aborts before anything is touched. */
   confirm: (target: ResetTarget) => Promise<boolean>;
   log: (message: string) => void;
@@ -116,9 +106,7 @@ export async function sequenceDatabaseReset(plan: ResetDatabasePlan): Promise<Re
     plan.log(`${checkMark} Deleted database ${plan.databaseName}`);
   } catch (error) {
     // Nothing was destroyed if the delete itself failed, so this stays a normal error.
-    throw new Error(
-      `Failed to delete '${plan.databaseName}': ${error instanceof Error ? error.message : String(error)}`,
-    );
+    throw new Error(`Failed to delete '${plan.databaseName}': ${error instanceof Error ? error.message : String(error)}`);
   }
 
   try {

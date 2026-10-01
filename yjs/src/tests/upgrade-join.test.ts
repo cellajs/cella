@@ -25,12 +25,7 @@ vi.mock('../data/permissions', () => ({
     const gate = gates.get(userId) ?? { delayMs: 0, allowed: true };
     if (gate.delayMs) await new Promise((resolve) => setTimeout(resolve, gate.delayMs));
     if (!gate.allowed || requested.tenantId !== 'tenant-1') return null;
-    return {
-      entityType: requested.entityType,
-      entityId: requested.entityId,
-      tenantId: 'tenant-1',
-      organizationId: 'org-1',
-    };
+    return { entityType: requested.entityType, entityId: requested.entityId, tenantId: 'tenant-1', organizationId: 'org-1' };
   }),
 }));
 // A test holds appends open to leave frames waiting in a socket's queue.
@@ -38,10 +33,7 @@ let appendHold: ReturnType<typeof deferred> | null = null;
 const storage = fakeStorage((call) => (call === 'appendUpdate' ? appendHold?.promise : undefined));
 vi.mock('../data/storage', () => storage);
 vi.mock('../data/entity-content', () => ({ loadEntityDescription: vi.fn(async () => null) }));
-vi.mock('../sync/materialize', () => ({
-  postMaterialize: vi.fn(async () => 'ok'),
-  stateToBlocksJson: vi.fn(() => '[]'),
-}));
+vi.mock('../sync/materialize', () => ({ postMaterialize: vi.fn(async () => 'ok'), stateToBlocksJson: vi.fn(() => '[]') }));
 vi.mock('../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
 
 const { getCollab } = await import('../sync/session-manager');

@@ -29,10 +29,7 @@ export function UserProfilePage({ user, organizationId, isSheet }: Props) {
   const updateUser = useUserUpdateMutation();
 
   const coverUpdateCallback = (bannerUrl: string) => {
-    const callbacks = {
-      onSuccess: () => toaster.success(t('c:success.upload_cover')),
-      onError: () => toaster.error(t('error:image_upload_failed')),
-    };
+    const callbacks = { onSuccess: () => toaster.success(t('c:success.upload_cover')), onError: () => toaster.error(t('error:image_upload_failed')) };
 
     if (isSelf) {
       updateSelf.mutate({ bannerUrl }, callbacks);

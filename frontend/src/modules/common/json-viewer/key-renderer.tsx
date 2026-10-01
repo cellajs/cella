@@ -5,23 +5,10 @@ interface KeyRendererProps {
   isObjectValue: boolean;
   hasSelfRequired: boolean;
   openapiMode?: 'spec' | 'schema';
-  theme: {
-    key: string;
-    index: string;
-    required: string;
-    searchMatch: string;
-  };
+  theme: { key: string; index: string; required: string; searchMatch: string };
 }
 
-export function KeyRenderer({
-  keyName,
-  showKeyQuotes,
-  searchText,
-  isObjectValue,
-  hasSelfRequired,
-  openapiMode,
-  theme,
-}: KeyRendererProps) {
+export function KeyRenderer({ keyName, showKeyQuotes, searchText, isObjectValue, hasSelfRequired, openapiMode, theme }: KeyRendererProps) {
   if (keyName === false || keyName === undefined) return null;
 
   const keyStr = String(keyName);
@@ -30,9 +17,7 @@ export function KeyRenderer({
   // Dictionary key from additionalProperties, written as [key].
   const isDictionaryKey = openapiMode === 'schema' && keyStr.startsWith('[') && keyStr.endsWith(']');
 
-  const requiredLabel = hasSelfRequired && (
-    <span className={`ml-1.5 rounded px-1 py-0.5 font-medium text-xs ${theme.required}`}>required</span>
-  );
+  const requiredLabel = hasSelfRequired && <span className={`ml-1.5 rounded px-1 py-0.5 font-medium text-xs ${theme.required}`}>required</span>;
 
   if (typeof keyName === 'number') {
     return <span className={theme.index}>{keyName}</span>;

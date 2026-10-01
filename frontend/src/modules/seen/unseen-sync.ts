@@ -16,19 +16,14 @@ export function noteUnseenReconciled(): void {
 }
 
 /** Badge deltas for a synced seq range: new-and-unseen rows +1, tombstoned-and-unseen rows -1, under the server's `findUnseenCountsByUser` filters. */
-export function ingestSyncedRows(
-  productType: ProductEntityType,
-  fallbackChannelId: string,
-  rows: { id: string; [key: string]: unknown }[],
-): void {
+export function ingestSyncedRows(productType: ProductEntityType, fallbackChannelId: string, rows: { id: string; [key: string]: unknown }[]): void {
   if (!isSeenTracked(productType)) return;
   const cutoff = Date.now() - seenWindowMs;
 
   for (const row of rows) {
     // Recency is `publishedAt ?? createdAt`, matching the server's unseen window key: publishing an old draft counts as new.
     const recencySource =
-      (typeof row.publishedAt === 'string' ? row.publishedAt : undefined) ??
-      (typeof row.createdAt === 'string' ? row.createdAt : undefined);
+      (typeof row.publishedAt === 'string' ? row.publishedAt : undefined) ?? (typeof row.createdAt === 'string' ? row.createdAt : undefined);
     const recencyAt = recencySource ? Date.parse(recencySource) : Number.NaN;
     if (Number.isNaN(recencyAt) || recencyAt <= cutoff) continue;
     if (!matchesUnseenFilters(productType, row)) continue;
@@ -38,8 +33,7 @@ export function ingestSyncedRows(
 
     if (typeof row.deletedAt === 'string' && row.deletedAt.length > 0) {
       // Decrement only rows the current count can include: counted here, or in the server baseline.
-      if (!seen && (countedIds.has(row.id) || recencyAt <= lastReconcileAt))
-        applyUnseenDelta(channelId, productType, -1);
+      if (!seen && (countedIds.has(row.id) || recencyAt <= lastReconcileAt)) applyUnseenDelta(channelId, productType, -1);
       countedIds.delete(row.id);
     } else if (recencyAt > lastReconcileAt && !seen && !countedIds.has(row.id)) {
       countedIds.add(row.id);
@@ -56,11 +50,7 @@ export function subscribeUnseenSync(): () => void {
 }
 
 /** Removal without a tombstone row: a locally-seen entity nets 0 (total −1, seen −1); an unseen one decrements. */
-export function applyUnfetchableRemovalUnseen(
-  productType: ProductEntityType,
-  entityId: string,
-  channelId: string | null,
-): void {
+export function applyUnfetchableRemovalUnseen(productType: ProductEntityType, entityId: string, channelId: string | null): void {
   if (!isSeenTracked(productType)) return;
   countedIds.delete(entityId);
   if (isSeenLocally(entityId)) return;

@@ -106,13 +106,7 @@ export const resolveChannelCollectionReadScope = (
   organizationId: string,
   actor: PredicateActor,
 ): ChannelCollectionReadScope =>
-  resolveChannelCollectionReadScopeForPolicies({
-    policies: policyMatrix,
-    memberships,
-    channelType,
-    organizationId,
-    actor,
-  });
+  resolveChannelCollectionReadScopeForPolicies({ policies: policyMatrix, memberships, channelType, organizationId, actor });
 
 /** The table columns a channel list query exposes to compile the scope into SQL. */
 export interface ChannelListReadColumns {
@@ -132,10 +126,7 @@ export interface ChannelListReadColumns {
  * membership join ON (never WHERE), map the nested membership only when its id is non-NULL, and
  * expect membership-sourced sort columns NULL for discovery rows (ASC puts NULLs last, members first).
  */
-export const buildChannelListReadWhere = (
-  scope: ChannelCollectionReadScope,
-  columns: ChannelListReadColumns,
-): CollectionReadWhere => {
+export const buildChannelListReadWhere = (scope: ChannelCollectionReadScope, columns: ChannelListReadColumns): CollectionReadWhere => {
   if (scope.orgWide === 'all') return { kind: 'all' };
 
   const branches: SQL[] = [isNotNull(columns.membershipUserId)];

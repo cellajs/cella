@@ -3,9 +3,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { ApiError } from 'sdk';
 import type { ColumnOrColumnGroup as GridColumnOrColumnGroup } from '~/modules/common/data-grid';
 
-export type BaseTableSearchVariables<T> = T & {
-  limit: number;
-};
+export type BaseTableSearchVariables<T> = T & { limit: number };
 
 /** Grid columns narrowed to keyed entries for table chrome; the grid filters hidden entries. */
 export type ColumnOrColumnGroup<TData> = GridColumnOrColumnGroup<TData> & {

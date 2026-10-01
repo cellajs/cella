@@ -2,12 +2,7 @@ import { and, eq, inArray } from 'drizzle-orm';
 import { baseDb } from '#/db/db';
 import { type SessionEndReason, sessionsTable } from '#/modules/auth/sessions-db';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
-import {
-  type BaseStreamSubscriber,
-  type StreamErrorPayload,
-  streamSubscriberManager,
-  writeError,
-} from '#/modules/entities/stream';
+import { type BaseStreamSubscriber, type StreamErrorPayload, streamSubscriberManager, writeError } from '#/modules/entities/stream';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { log } from '#/utils/logger';
@@ -18,9 +13,7 @@ const endingsWithSuccessor = new Set<SessionEndReason>(['replaced', 'impersonati
 
 /** What a stream bound to an ended session hears: reconnect with the newer session, or the session is gone for good. */
 export const streamErrorForEnding = (reason: SessionEndReason): StreamErrorPayload =>
-  endingsWithSuccessor.has(reason)
-    ? { code: 'session_replaced', message: 'Session replaced' }
-    : { code: 'unauthorized', message: 'Session revoked' };
+  endingsWithSuccessor.has(reason) ? { code: 'session_replaced', message: 'Session replaced' } : { code: 'unauthorized', message: 'Session revoked' };
 
 /** How long a close waits for the client to take its error event. */
 const ERROR_WRITE_TIMEOUT_MS = 1000;
@@ -39,10 +32,7 @@ async function closeAppStream(subscriber: AppStreamSubscriber, payload: StreamEr
 }
 
 /** Closes streams side by side, so a client that stopped reading holds up none of the others. */
-export async function closeAppStreams(
-  closings: { subscriber: AppStreamSubscriber; payload: StreamErrorPayload }[],
-  failure: string,
-): Promise<void> {
+export async function closeAppStreams(closings: { subscriber: AppStreamSubscriber; payload: StreamErrorPayload }[], failure: string): Promise<void> {
   await Promise.allSettled(
     closings.map(({ subscriber, payload }) =>
       closeAppStream(subscriber, payload).catch((error) => log.error(failure, { error, subscriberId: subscriber.id })),
@@ -60,10 +50,7 @@ const SWEEP_INTERVAL_MS = 60_000;
 let sweepTimer: ReturnType<typeof setInterval> | null = null;
 let sweeping = false;
 
-type SessionState = Pick<
-  typeof sessionsTable.$inferSelect,
-  'userId' | 'revokedAt' | 'revocationReason' | 'expiresAt' | 'impersonatorSessionId'
->;
+type SessionState = Pick<typeof sessionsTable.$inferSelect, 'userId' | 'revokedAt' | 'revocationReason' | 'expiresAt' | 'impersonatorSessionId'>;
 
 /** Why a stream must close now, or null while its session still holds what the stream was opened with. */
 const staleStreamError = (
@@ -84,10 +71,7 @@ const staleStreamError = (
   }
   // The stream reads as system admin while the user holds the role and it connected from an allowed address.
   if (subscriber.isSystemAdmin !== (subscriber.systemAccessAllowed && systemAdmins.has(subscriber.userId))) {
-    return {
-      code: 'access_changed',
-      message: subscriber.isSystemAdmin ? 'System role removed' : 'System role granted',
-    };
+    return { code: 'access_changed', message: subscriber.isSystemAdmin ? 'System role removed' : 'System role granted' };
   }
   return null;
 };
@@ -116,16 +100,11 @@ export async function sweepAppStreamSessions(): Promise<void> {
   if (subscribers.length === 0) return;
 
   const sessions = await readSessionStates([...new Set(subscribers.map((subscriber) => subscriber.sessionId))]);
-  const impersonatorIds = [
-    ...new Set(sessions.flatMap((s) => (s.impersonatorSessionId ? [s.impersonatorSessionId] : []))),
-  ];
+  const impersonatorIds = [...new Set(sessions.flatMap((s) => (s.impersonatorSessionId ? [s.impersonatorSessionId] : [])))];
   const impersonators = impersonatorIds.length === 0 ? [] : await readSessionStates(impersonatorIds);
 
   const adminIds = [
-    ...new Set([
-      ...subscribers.filter((s) => s.isSystemAdmin || s.systemAccessAllowed).map((s) => s.userId),
-      ...impersonators.map((s) => s.userId),
-    ]),
+    ...new Set([...subscribers.filter((s) => s.isSystemAdmin || s.systemAccessAllowed).map((s) => s.userId), ...impersonators.map((s) => s.userId)]),
   ];
   const admins =
     adminIds.length === 0

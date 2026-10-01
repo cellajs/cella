@@ -9,9 +9,7 @@ import { getSchemaDefaults } from '../create-optimistic';
  */
 describe('getSchemaDefaults', () => {
   it('defaults each primitive to its empty value', () => {
-    const defaults = getSchemaDefaults(
-      z.object({ name: z.string(), count: z.number(), big: z.bigint(), flag: z.boolean() }),
-    );
+    const defaults = getSchemaDefaults(z.object({ name: z.string(), count: z.number(), big: z.bigint(), flag: z.boolean() }));
     expect(defaults).toEqual({ name: '', count: 0, big: 0, flag: false });
   });
 
@@ -36,9 +34,7 @@ describe('getSchemaDefaults', () => {
   });
 
   it('recurses into nested objects and tuples', () => {
-    const defaults = getSchemaDefaults(
-      z.object({ nested: z.object({ inner: z.string() }), pair: z.tuple([z.string(), z.number()]) }),
-    );
+    const defaults = getSchemaDefaults(z.object({ nested: z.object({ inner: z.string() }), pair: z.tuple([z.string(), z.number()]) }));
     expect(defaults).toEqual({ nested: { inner: '' }, pair: ['', 0] });
   });
 
@@ -48,16 +44,12 @@ describe('getSchemaDefaults', () => {
   });
 
   it('prefers the null member of a union, else the first', () => {
-    const defaults = getSchemaDefaults(
-      z.object({ maybe: z.union([z.string(), z.null()]), either: z.union([z.number(), z.boolean()]) }),
-    );
+    const defaults = getSchemaDefaults(z.object({ maybe: z.union([z.string(), z.null()]), either: z.union([z.number(), z.boolean()]) }));
     expect(defaults).toEqual({ maybe: null, either: 0 });
   });
 
   it('unwraps optional, nullable, and default wrappers', () => {
-    const defaults = getSchemaDefaults(
-      z.object({ maybe: z.string().optional(), empty: z.string().nullable(), preset: z.string().default('seed') }),
-    );
+    const defaults = getSchemaDefaults(z.object({ maybe: z.string().optional(), empty: z.string().nullable(), preset: z.string().default('seed') }));
     expect(defaults).toEqual({ maybe: '', empty: null, preset: 'seed' });
   });
 

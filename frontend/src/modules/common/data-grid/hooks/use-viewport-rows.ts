@@ -13,14 +13,7 @@ interface ViewportRowsArgs<R> {
   measured: boolean;
 }
 
-export function useViewportRows<R>({
-  rows,
-  rowHeight,
-  clientHeight,
-  scrollTop,
-  enableVirtualization,
-  measured,
-}: ViewportRowsArgs<R>) {
+export function useViewportRows<R>({ rows, rowHeight, clientHeight, scrollTop, enableVirtualization, measured }: ViewportRowsArgs<R>) {
   const { totalRowHeight, gridTemplateRows, getRowTop, getRowHeight, findRowIdx } = useMemo(() => {
     if (typeof rowHeight === 'number') {
       return {
@@ -52,10 +45,7 @@ export function useViewportRows<R>({
     const rowPositions = rows.map((row, index) => {
       const currentRowHeight = rowHeight(row);
 
-      const position = {
-        top: totalRowHeight,
-        height: currentRowHeight,
-      };
+      const position = { top: totalRowHeight, height: currentRowHeight };
       totalRowHeight += currentRowHeight;
 
       if (currentHeight === null) {
@@ -123,13 +113,5 @@ export function useViewportRows<R>({
     }
   }
 
-  return {
-    rowOverscanStartIdx,
-    rowOverscanEndIdx,
-    totalRowHeight,
-    gridTemplateRows,
-    getRowTop,
-    getRowHeight,
-    findRowIdx,
-  };
+  return { rowOverscanStartIdx, rowOverscanEndIdx, totalRowHeight, gridTemplateRows, getRowTop, getRowHeight, findRowIdx };
 }

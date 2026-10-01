@@ -85,8 +85,7 @@ function StepUpDialog({ methods, onStepUp }: StepUpDialogProps) {
   }
 
   // An impersonation never steps up: the admin acts as the user, not on how the account is protected.
-  if (methods.length === 0)
-    return <p className="text-muted-foreground text-sm">{t('error:impersonation_forbidden.text')}</p>;
+  if (methods.length === 0) return <p className="text-muted-foreground text-sm">{t('error:impersonation_forbidden.text')}</p>;
 
   return (
     <div className="flex flex-col gap-2">

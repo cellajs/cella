@@ -10,11 +10,7 @@ function urlBase64ToUint8Array(base64: string): Uint8Array {
 }
 
 const pushSupported = () =>
-  appConfig.has.push &&
-  typeof window !== 'undefined' &&
-  'serviceWorker' in navigator &&
-  'PushManager' in window &&
-  'Notification' in window;
+  appConfig.has.push && typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
 
 /** Drops this browser's push subscription on the server (needs the session) and in the push service. `ready` never resolves without a registered worker (dev), hence `getRegistration`. */
 export async function disablePushSubscription(): Promise<void> {

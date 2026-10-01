@@ -29,11 +29,7 @@ export function LinksSection({ label, onClose }: LinksSectionProps) {
       <SidebarGroupContent>
         <SidebarGroup className="flex flex-col gap-1 p-1 pt-0">
           {hasStatusPage && (
-            <Button
-              variant="ghost"
-              className={rowClass}
-              onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}
-            >
+            <Button variant="ghost" className={rowClass} onClick={() => window.open(appConfig.statusUrl, '_blank', 'noopener,noreferrer')}>
               {t('c:status')}
             </Button>
           )}
@@ -42,19 +38,11 @@ export function LinksSection({ label, onClose }: LinksSectionProps) {
             {t('c:contact_us')}
           </Button>
 
-          <Button
-            variant="ghost"
-            className={rowClass}
-            render={<Link to="/auth/authenticate" preload={false} draggable={false} onClick={onClose} />}
-          >
+          <Button variant="ghost" className={rowClass} render={<Link to="/auth/authenticate" preload={false} draggable={false} onClick={onClose} />}>
             {t('c:sign_in')}
           </Button>
 
-          <Button
-            variant="ghost"
-            className={rowClass}
-            render={<Link to="/docs/overview" draggable={false} onClick={onClose} />}
-          >
+          <Button variant="ghost" className={rowClass} render={<Link to="/docs/overview" draggable={false} onClick={onClose} />}>
             openapi.json
           </Button>
 

@@ -13,10 +13,7 @@ import { cn } from '~/utils/cn';
 const statusStyleMap: Record<HealthStatus, { dot: string; pulse: string }> = {
   healthy: { dot: 'bg-success', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--success)_50%,transparent)]' },
   degraded: { dot: 'bg-warning', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--warning)_50%,transparent)]' },
-  unhealthy: {
-    dot: 'bg-destructive',
-    pulse: '[--status-pulse-color:color-mix(in_oklch,var(--destructive)_50%,transparent)]',
-  },
+  unhealthy: { dot: 'bg-destructive', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--destructive)_50%,transparent)]' },
 };
 
 function StatusCard({ label, status }: { label: string; status: HealthStatus }) {
@@ -51,39 +48,21 @@ export function InfoContent() {
     <div className="flex flex-col gap-6 pt-3 pb-8">
       <div className="flex flex-col gap-1">
         <h3 className="px-4 font-medium text-muted-foreground/70 text-sm lowercase">{t('c:support')}</h3>
-        <Button
-          variant="ghost"
-          className="w-full justify-start px-3.5 text-left"
-          render={<Link to={appConfig.aboutUrl} draggable={false} />}
-        >
+        <Button variant="ghost" className="w-full justify-start px-3.5 text-left" render={<Link to={appConfig.aboutUrl} draggable={false} />}>
           <InfoIcon className="mr-2 size-4" aria-hidden="true" />
           {t('c:about')}
         </Button>
-        <Button
-          variant="ghost"
-          className="w-full justify-start px-3.5 text-left"
-          render={<Link to="/docs" draggable={false} />}
-        >
+        <Button variant="ghost" className="w-full justify-start px-3.5 text-left" render={<Link to="/docs" draggable={false} />}>
           <BookOpenIcon className="mr-2 size-4" aria-hidden="true" />
           {t('c:api_docs')}
         </Button>
         {appConfig.has.chatSupport && (
-          <Button
-            ref={supportRef}
-            variant="ghost"
-            className="w-full justify-start px-3.5 text-left"
-            onClick={() => handleAskForHelp(supportRef)}
-          >
+          <Button ref={supportRef} variant="ghost" className="w-full justify-start px-3.5 text-left" onClick={() => handleAskForHelp(supportRef)}>
             <LifeBuoyIcon className="mr-2 size-4" aria-hidden="true" />
             {t('c:support')}
           </Button>
         )}
-        <Button
-          ref={contactRef}
-          variant="ghost"
-          className="w-full justify-start px-3.5 text-left"
-          onClick={() => contactFormHandler(contactRef)}
-        >
+        <Button ref={contactRef} variant="ghost" className="w-full justify-start px-3.5 text-left" onClick={() => contactFormHandler(contactRef)}>
           <MailIcon className="mr-2 size-4" aria-hidden="true" />
           {t('c:contact_us')}
         </Button>
@@ -110,9 +89,7 @@ export function InfoContent() {
           ) : allHealthy ? (
             <StatusCard label={t('c:all_systems_healthy')} status="healthy" />
           ) : (
-            statusServices.map(([key, component]) => (
-              <StatusCard key={key} label={component.label ?? key} status={component.status} />
-            ))
+            statusServices.map(([key, component]) => <StatusCard key={key} label={component.label ?? key} status={component.status} />)
           )}
         </div>
       </div>

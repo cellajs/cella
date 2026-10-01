@@ -10,10 +10,7 @@ export type TestResult<TData = unknown, TError = unknown> =
 /** SDK client wired to Hono's in-process app.fetch(); no HTTP server. */
 export function createTestClient(app: AppLike): Client {
   return createClient(
-    createConfig({
-      baseUrl: 'http://localhost',
-      fetch: ((req: Request | string | URL) => app.fetch(req as Request)) as typeof fetch,
-    }),
+    createConfig({ baseUrl: 'http://localhost', fetch: ((req: Request | string | URL) => app.fetch(req as Request)) as typeof fetch }),
   );
 }
 

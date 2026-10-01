@@ -1,15 +1,6 @@
 import type { Meta, StoryContext, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
-import {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-} from '~/modules/ui/drawer';
+import { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger } from '~/modules/ui/drawer';
 
 /**
  * A drawer component for React.
@@ -18,10 +9,7 @@ const meta = {
   title: 'ui/Drawer',
   component: Drawer,
   tags: ['autodocs'],
-  args: {
-    onOpenChange: fn(),
-    onOpenChangeComplete: fn(),
-  },
+  args: { onOpenChange: fn(), onOpenChangeComplete: fn() },
   render: (args) => (
     <Drawer {...args}>
       <DrawerTrigger>Open</DrawerTrigger>
@@ -37,9 +25,7 @@ const meta = {
       </DrawerContent>
     </Drawer>
   ),
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
 } satisfies Meta<typeof Drawer>;
 
 export default meta;

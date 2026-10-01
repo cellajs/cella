@@ -28,10 +28,7 @@ export const appServices = defineServices({
     s3Access: true,
     // Per-service VM size (required on every service).
     instanceType: { production: 'DEV1-S', staging: 'DEV1-S' },
-    env: {
-      FRONTEND_URL: '${FRONTEND_URL}',
-      BACKEND_URL: '${BACKEND_URL}',
-    },
+    env: { FRONTEND_URL: '${FRONTEND_URL}', BACKEND_URL: '${BACKEND_URL}' },
   },
 
   cdc: {
@@ -47,15 +44,9 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process, which then holds the same slot.
     coHosted: true,
-    env: {
-      BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}',
-      BACKEND_URL: '${BACKEND_URL}',
-      CDC_HEALTH_PORT: '4001',
-    },
+    env: { BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}', BACKEND_URL: '${BACKEND_URL}', CDC_HEALTH_PORT: '4001' },
     // The worker derives its socket's address from the backend's internal listener, dialed through the LB's private internal frontend: the address survives backend cutovers, the LB stays inside the private network the listener admits, and mark-down kills sessions so cdc re-dials.
-    bindings: {
-      BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}',
-    },
+    bindings: { BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}' },
   },
 
   yjs: {
@@ -78,15 +69,9 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process; the LB still routes to the host VM.
     coHosted: true,
-    env: {
-      BACKEND_URL: '${BACKEND_URL}',
-      BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}',
-      YJS_PORT: '4002',
-    },
+    env: { BACKEND_URL: '${BACKEND_URL}', BACKEND_INTERNAL_URL: '${BACKEND_INTERNAL_URL}', YJS_PORT: '4002' },
     // Materialize calls go to the backend's internal listener through the LB's private internal frontend, never the public API.
-    bindings: {
-      BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}',
-    },
+    bindings: { BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}' },
   },
 
   mcp: {
@@ -106,17 +91,9 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process; the LB still routes to the host VM.
     coHosted: true,
-    env: {
-      MODE: 'mcp',
-      PORT: '4003',
-      FRONTEND_URL: '${FRONTEND_URL}',
-      BACKEND_URL: '${BACKEND_URL}',
-      MCP_URL: '${MCP_URL}',
-    },
+    env: { MODE: 'mcp', PORT: '4003', FRONTEND_URL: '${FRONTEND_URL}', BACKEND_URL: '${BACKEND_URL}', MCP_URL: '${MCP_URL}' },
     // The worker's own public URL, host-routed through the LB.
-    bindings: {
-      MCP_URL: '@{self.url}',
-    },
+    bindings: { MCP_URL: '@{self.url}' },
   },
 
   oauth: {
@@ -136,17 +113,9 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process; the LB still routes to the host VM.
     coHosted: true,
-    env: {
-      MODE: 'oauth',
-      PORT: '4004',
-      FRONTEND_URL: '${FRONTEND_URL}',
-      BACKEND_URL: '${BACKEND_URL}',
-      OAUTH_URL: '${OAUTH_URL}',
-    },
+    env: { MODE: 'oauth', PORT: '4004', FRONTEND_URL: '${FRONTEND_URL}', BACKEND_URL: '${BACKEND_URL}', OAUTH_URL: '${OAUTH_URL}' },
     // The issuer URL, host-routed through the LB.
-    bindings: {
-      OAUTH_URL: '@{self.url}',
-    },
+    bindings: { OAUTH_URL: '@{self.url}' },
   },
 
   jobs: {
@@ -162,12 +131,7 @@ export const appServices = defineServices({
     instanceType: 'DEV1-S',
     // singleVM folds it into the backend process, which then runs cron and the queue workers itself.
     coHosted: true,
-    env: {
-      MODE: 'jobs',
-      PORT: '4006',
-      FRONTEND_URL: '${FRONTEND_URL}',
-      BACKEND_URL: '${BACKEND_URL}',
-    },
+    env: { MODE: 'jobs', PORT: '4006', FRONTEND_URL: '${FRONTEND_URL}', BACKEND_URL: '${BACKEND_URL}' },
   },
 
   frontend: {
@@ -187,10 +151,7 @@ export const appServices = defineServices({
     // singleVM runs the Caddy container on the host VM, since a non-Node runtime cannot fold in-process; its LB pool follows the host cutover.
     placement: 'host',
     instanceType: 'DEV1-S',
-    env: {
-      FRONTEND_CSP: '${FRONTEND_CSP}',
-      ORIGIN_HOST: '${ORIGIN_HOST}',
-    },
+    env: { FRONTEND_CSP: '${FRONTEND_CSP}', ORIGIN_HOST: '${ORIGIN_HOST}' },
   },
 });
 

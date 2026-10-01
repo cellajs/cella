@@ -16,9 +16,9 @@ describe('frontendBuildEnv', () => {
   });
 
   it('throws when required public URLs are absent', () => {
-    expect(() =>
-      frontendBuildEnv('production', JSON.stringify([{ service: 'backend', public_url: 'https://api.example' }])),
-    ).toThrow(/frontend\/backend/);
+    expect(() => frontendBuildEnv('production', JSON.stringify([{ service: 'backend', public_url: 'https://api.example' }]))).toThrow(
+      /frontend\/backend/,
+    );
   });
 });
 

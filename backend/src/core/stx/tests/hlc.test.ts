@@ -6,11 +6,7 @@ describe('HLC wire format', () => {
   afterEach(() => _resetHLC());
 
   it('parses canonical timestamps', () => {
-    expect(parseHLC('1700000000000:0007:0abcd')).toEqual({
-      timestamp: 1700000000000n,
-      counter: 7n,
-      source: '0abcd',
-    });
+    expect(parseHLC('1700000000000:0007:0abcd')).toEqual({ timestamp: 1700000000000n, counter: 7n, source: '0abcd' });
     expect(isValidHLC('1700000000000:0007:0abcd')).toBe(true);
   });
 

@@ -6,24 +6,8 @@ import { testDatabaseUrl } from 'shared/test-db';
 import { buildTestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import type { DocScope } from '../../constants';
-import {
-  buildSyncUpdate,
-  createSignedToken,
-  mapUpdate,
-  openSocket,
-  readMap,
-  startRelayServer,
-  until,
-} from '../helpers';
-import {
-  cleanupSeed,
-  seedAttachment,
-  seedEntityHierarchy,
-  seedMembership,
-  seedOrg,
-  seedUser,
-  storedState,
-} from './seed';
+import { buildSyncUpdate, createSignedToken, mapUpdate, openSocket, readMap, startRelayServer, until } from '../helpers';
+import { cleanupSeed, seedAttachment, seedEntityHierarchy, seedMembership, seedOrg, seedUser, storedState } from './seed';
 
 // The real upgrade handler, authorization, relay and storage over the real database (runtime_role); only the
 // backend's materialize route and the connection limiter are stubbed.
@@ -37,11 +21,7 @@ const tenantId = 'yjs-revoke-tenant';
 const organizationId = '50000000-0000-4000-a000-000000000001';
 const member = randomUUID();
 const attachmentId = randomUUID();
-const plan = buildTestEntityHierarchyPlan({
-  entityType: 'attachment',
-  organizationId,
-  makeChannelId: () => randomUUID(),
-});
+const plan = buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId, makeChannelId: () => randomUUID() });
 const scope: DocScope = { entityType: 'attachment', entityId: attachmentId, tenantId, organizationId };
 
 let admin: pg.Client;

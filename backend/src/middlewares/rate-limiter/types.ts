@@ -35,11 +35,7 @@ export interface Tier extends Bucket {
   resetsOnSuccess: boolean;
 }
 
-type LimiterStatusLists = {
-  successStatusCodes?: number[];
-  failStatusCodes?: number[];
-  ignoredStatusCodes?: number[];
-};
+type LimiterStatusLists = { successStatusCodes?: number[]; failStatusCodes?: number[]; ignoredStatusCodes?: number[] };
 
 export type RateLimitOptions = Partial<BucketLimits> & LimiterStatusLists;
 

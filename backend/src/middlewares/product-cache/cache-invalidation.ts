@@ -16,11 +16,7 @@ function handleActivityEvent(event: ActivityEvent): void {
   const invalidated = productCache.invalidateProduct(entityType, subjectId);
 
   if (invalidated) {
-    log.debug('Entity cache invalidated', {
-      entityType,
-      subjectId,
-      action,
-    });
+    log.debug('Entity cache invalidated', { entityType, subjectId, action });
   }
 }
 

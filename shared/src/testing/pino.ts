@@ -11,6 +11,4 @@ export const createMockLog = <TMock>(fn: () => TMock): MockLog<TMock> => ({
   fatal: fn(),
 });
 
-export const createMockPinoModule = <TMock>(fn: () => TMock) => ({
-  log: createMockLog(fn),
-});
+export const createMockPinoModule = <TMock>(fn: () => TMock) => ({ log: createMockLog(fn) });

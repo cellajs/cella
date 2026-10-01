@@ -84,9 +84,7 @@ function DebugDropdown({ className }: DebugDropdownProps) {
       <SyncDevtools isOpen={syncDevtoolsOpen} onClose={() => setSyncDevtoolsOpen(false)} />
 
       <DropdownMenu>
-        <DropdownMenuTrigger
-          render={<Button variant="ghost" className={cn('h-12 w-12', className)} aria-label="toggle debug toolbar" />}
-        >
+        <DropdownMenuTrigger render={<Button variant="ghost" className={cn('h-12 w-12', className)} aria-label="toggle debug toolbar" />}>
           🐞
         </DropdownMenuTrigger>
         <DropdownMenuContent side="right" align="end" sideOffset={24} positionerClassName="z-300" className="w-48 p-1">

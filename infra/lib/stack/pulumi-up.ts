@@ -32,18 +32,14 @@ export function pulumiConfigSet(
 /** Remove one stack config key. Best-effort: a missing key is not an error here. */
 export function pulumiConfigRm(env: NodeJS.ProcessEnv, stack: string, key: string): void {
   const result = spawnSync('pulumi', ['config', 'rm', key, '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
-  if (result.status !== 0)
-    console.warn(`${warningMark} pulumi config rm ${key} exited ${result.status} (already unset?): continuing.`);
+  if (result.status !== 0) console.warn(`${warningMark} pulumi config rm ${key} exited ${result.status} (already unset?): continuing.`);
 }
 
 function waitForExitCode(child: ReturnType<typeof spawn>): Promise<number> {
   return new Promise((resolve) => child.once('close', (code) => resolve(code ?? 1)));
 }
 
-export type PermissionHint =
-  | { kind: 'privileged'; resource: string }
-  | { kind: 'ci-grantable'; resource: string }
-  | undefined;
+export type PermissionHint = { kind: 'privileged'; resource: string } | { kind: 'ci-grantable'; resource: string } | undefined;
 
 /** Classify a Scaleway "insufficient permissions: write <resource>" diagnostic in pulumi-up stderr as privileged or CI-grantable. */
 export function classifyPermissionError(stderr: string): PermissionHint {
@@ -79,11 +75,7 @@ export function parseOrphanedDeletes(output: string): string[] {
 export function pruneOrphanedDeletes(urns: string[], stack: string, cwd: string, env: NodeJS.ProcessEnv): boolean {
   let ok = true;
   for (const urn of urns) {
-    const res = spawnSync('pulumi', ['state', 'delete', urn, '--stack', stack, '--yes'], {
-      cwd,
-      env,
-      encoding: 'utf8',
-    });
+    const res = spawnSync('pulumi', ['state', 'delete', urn, '--stack', stack, '--yes'], { cwd, env, encoding: 'utf8' });
     if (res.status === 0) {
       console.info(`  pruned ${urn}`);
     } else {
@@ -124,20 +116,11 @@ export function pulumiUpArgs(stack: string, opts: PulumiUpOptions = {}): string[
 }
 
 /** Run `pulumi up --yes --non-interactive` in `cwd`. `configFile` swaps the stack config for the DB-exposure overlay; a non-zero exit prints a permission hint when stderr indicates one. */
-export async function runPulumiUpWithHint(
-  stack: string,
-  cwd: string,
-  env: NodeJS.ProcessEnv,
-  opts: PulumiUpOptions = {},
-): Promise<PulumiUpResult> {
+export async function runPulumiUpWithHint(stack: string, cwd: string, env: NodeJS.ProcessEnv, opts: PulumiUpOptions = {}): Promise<PulumiUpResult> {
   const args = pulumiUpArgs(stack, opts);
   console.info(`\n→ pulumi up (base infra)\n  $ pulumi ${args.join(' ')}`);
   // stdout is teed, not inherited, so the Diagnostics section reaches parseOrphanedDeletes; --non-interactive already forces the plain display, so piping changes nothing for the operator.
-  const child = spawn('pulumi', args, {
-    cwd,
-    env,
-    stdio: ['inherit', 'pipe', 'pipe'],
-  });
+  const child = spawn('pulumi', args, { cwd, env, stdio: ['inherit', 'pipe', 'pipe'] });
   let stdoutBuf = '';
   child.stdout?.on('data', (chunk: Buffer) => {
     stdoutBuf += chunk.toString();
@@ -158,9 +141,7 @@ export async function runPulumiUpWithHint(
   if (exitCode !== 0) {
     const dup = classifyDuplicateSecretError(`${stdoutBuf}\n${stderrBuf}`);
     if (dup) {
-      console.error(
-        `\n${warningMark} ${pc.bold('State hint:')} a secret container exists in Scaleway but is missing from Pulumi state.`,
-      );
+      console.error(`\n${warningMark} ${pc.bold('State hint:')} a secret container exists in Scaleway but is missing from Pulumi state.`);
       console.error('  Adopt it into state, then re-run:');
       console.error(
         `  ${pc.cyan(`pulumi import scaleway:secrets/secret:Secret secret-${dup.name ?? '<secret-name>'} <region>/<secret-uuid> --stack ${stack} --yes`)}`,

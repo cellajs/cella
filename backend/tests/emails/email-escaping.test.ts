@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { describeDigestRow } from '#/modules/notification/digest/build-digest';
 import { mentionEmail } from '#/modules/notification/emails/mention-email';
-import {
-  magicLinkEmail,
-  memberAddedEmail,
-  memberInviteEmail,
-  memberInviteWithTokenEmail,
-  systemInviteEmail,
-} from '../../emails';
+import { magicLinkEmail, memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail, systemInviteEmail } from '../../emails';
 import { EmailButton } from '../../emails/components';
 import { render } from '../../emails/renderer/render';
 import { memberRole } from '../fixtures';
@@ -97,11 +91,7 @@ describe('email plain-text parts keep names as typed', () => {
   });
 
   it('escapes a greeting name once', async () => {
-    const translated = magicLinkEmail.translate('en', {
-      magicLinkUrl: link,
-      name: "O'Brien & <Co>",
-      isNewUser: false,
-    });
+    const translated = magicLinkEmail.translate('en', { magicLinkUrl: link, name: "O'Brien & <Co>", isNewUser: false });
     expect(translated.hiText).toBe("Hi O'Brien & <Co>,");
 
     const html = await render(magicLinkEmail.component({ ...translated }));

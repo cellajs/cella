@@ -43,16 +43,7 @@ export const config = {
   entityActions: ['create', 'read', 'update', 'delete'] as const,
 
   /** Resource types that are not entities but have activities logged */
-  resourceTypes: [
-    'request',
-    'membership',
-    'inactive_membership',
-    'tenant',
-    'system_role',
-    'service_account',
-    'api_key',
-    'oauth_client',
-  ] as const,
+  resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant', 'system_role', 'service_account', 'api_key', 'oauth_client'] as const,
 
   /**
    * Product embeddings: declares which product entities are embedded as ID arrays inside
@@ -80,9 +71,7 @@ export const config = {
       serviceAccount: 20,
       apiKey: 100,
     },
-    rateLimits: {
-      apiPointsPerHour: 1000,
-    },
+    rateLimits: { apiPointsPerHour: 1000 },
   } as const,
 
   // System roles
@@ -122,16 +111,7 @@ export const config = {
    * with the dev `frontendUrl` port (unique per app) so parallel local stacks never collide.
    * `frontend` is the Vite fallback for when `frontendUrl` carries no port (tunnel mode).
    */
-  devPorts: {
-    frontend: 3000,
-    api: 4000,
-    cdcHealth: 4001,
-    yjs: 4002,
-    mcp: 4003,
-    oauth: 4004,
-    internal: 4005,
-    jobs: 4006,
-  },
+  devPorts: { frontend: 3000, api: 4000, cdcHealth: 4001, yjs: 4002, mcp: 4003, oauth: 4004, internal: 4005, jobs: 4006 },
   /**
    * Per-service toggles: `enabled` controls whether the service is wired up. Each service's
    * public URL is derived from the URL family above.
@@ -224,11 +204,7 @@ export const config = {
   maxSessionsPerUser: 10,
 
   /** TOTP configuration for MFA */
-  totp: {
-    intervalInSeconds: 30,
-    gracePeriodInSeconds: 60,
-    digits: 6,
-  },
+  totp: { intervalInSeconds: 30, gracePeriodInSeconds: 60, digits: 6 },
 
   // API configuration
 
@@ -244,15 +220,7 @@ export const config = {
    * Default page sizes for list endpoints. Backend enforces max 1000.
    * Must include 'default' key as fallback.
    */
-  requestLimits: {
-    default: 40,
-    users: 100,
-    members: 40,
-    organizations: 40,
-    requests: 40,
-    attachments: 40,
-    pendingMemberships: 20,
-  },
+  requestLimits: { default: 40, users: 100, members: 40, organizations: 40, requests: 40, attachments: 40, pendingMemberships: 20 },
 
   /** Max JSON body size in bytes */
   jsonBodyLimit: 1 * 1024 * 1024,
@@ -264,10 +232,7 @@ export const config = {
   // Storage & uploads (S3)
 
   /** S3-compatible storage configuration. Only region and host are required; the rest is derived from the slug. */
-  s3: {
-    region: '',
-    host: '',
-  } as S3ConfigInput,
+  s3: { region: '', host: '' } as S3ConfigInput,
 
   /** Upload template IDs for Transloadit processing pipelines */
   uploadTemplateIds: ['avatar', 'cover', 'attachment', 'newsletter'] as const,
@@ -321,22 +286,10 @@ export const config = {
   themeColor: '#26262b',
   /** Theme configuration for UI components */
   theme: {
-    navigation: {
-      hasSidebarTextLabels: false,
-      sidebarWidthExpanded: '16rem',
-      sidebarWidthCollapsed: '4rem',
-      sheetPanelWidth: '20rem',
-    },
+    navigation: { hasSidebarTextLabels: false, sidebarWidthExpanded: '16rem', sidebarWidthCollapsed: '4rem', sheetPanelWidth: '20rem' },
     colors: {},
     strokeWidth: 1.5,
-    screenSizes: {
-      xs: '420px',
-      sm: '640px',
-      md: '768px',
-      lg: '1024px',
-      xl: '1280px',
-      '2xl': '1400px',
-    },
+    screenSizes: { xs: '420px', sm: '640px', md: '768px', lg: '1024px', xl: '1280px', '2xl': '1400px' },
   } as const,
   /** Placeholder background colors for avatars without images */
   placeholderColors: [
@@ -359,10 +312,7 @@ export const config = {
   /** Available language codes - first is fallback */
   languages: ['en', 'nl'] as const,
   /** Common reference data */
-  c: {
-    countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'],
-    timezones: [],
-  },
+  c: { countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'], timezones: [] },
 
   // Company details
 
@@ -386,18 +336,13 @@ export const config = {
     element: '',
     githubUrl: '',
     mapZoom: 4,
-    coordinates: {
-      lat: 0,
-      lng: 0,
-    },
+    coordinates: { lat: 0, lng: 0 },
   },
 
   // User defaults
 
   /** Default user flags applied to new users */
-  defaultUserFlags: {
-    finishedOnboarding: false,
-  },
+  defaultUserFlags: { finishedOnboarding: false },
 
   // Organization defaults
 

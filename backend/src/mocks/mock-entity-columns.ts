@@ -52,10 +52,7 @@ type MockProductColumns<T extends ProductEntityType> = MockTenantEntityColumns<T
 type MockProductColumnOptions = Partial<Omit<MockProductColumns<ProductEntityType>, 'entityType'>>;
 
 /** Mirrors `productColumns`. Entity-specific and hierarchy-derived columns stay in the owning module. */
-export const mockProductColumns = <T extends ProductEntityType>(
-  entityType: T,
-  options: MockProductColumnOptions = {},
-): MockProductColumns<T> => {
+export const mockProductColumns = <T extends ProductEntityType>(entityType: T, options: MockProductColumnOptions = {}): MockProductColumns<T> => {
   const createdBy = options.createdBy === undefined ? mockUuid() : options.createdBy;
   return {
     ...mockTenantEntityColumns(entityType, options),
@@ -88,10 +85,7 @@ type MockChannelColumnOptions = Partial<Omit<MockChannelColumns<ChannelEntityTyp
 };
 
 /** Mirrors `channelColumns` including the generated path; `channelIds` only feeds the DB path rule. */
-export const mockChannelColumns = <T extends ChannelEntityType>(
-  entityType: T,
-  options: MockChannelColumnOptions = {},
-): MockChannelColumns<T> => {
+export const mockChannelColumns = <T extends ChannelEntityType>(entityType: T, options: MockChannelColumnOptions = {}): MockChannelColumns<T> => {
   const base = mockTenantEntityColumns(entityType, options);
   return {
     ...base,

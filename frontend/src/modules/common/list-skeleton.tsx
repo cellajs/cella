@@ -15,13 +15,7 @@ export function ListSkeleton({ count = 3, cardHeight = 160, className }: ListSke
   const { hasStarted } = useMountedState();
 
   return (
-    <div
-      className={cn(
-        'flex flex-col gap-4 transition-opacity duration-300',
-        hasStarted ? 'opacity-100' : 'opacity-0',
-        className,
-      )}
-    >
+    <div className={cn('flex flex-col gap-4 transition-opacity duration-300', hasStarted ? 'opacity-100' : 'opacity-0', className)}>
       {Array.from({ length: count }).map((_, index) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static keys are fine here as this is a skeleton
         <Skeleton key={index} className="w-full rounded-lg" style={{ height: `${cardHeight}px` }} />

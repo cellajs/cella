@@ -25,10 +25,7 @@ export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPassk
   const DeviceIcon = passkey.deviceType === 'desktop' ? MonitorIcon : SmartphoneIcon;
 
   return (
-    <Card
-      className="group/tile w-full py-0 transition-all sm:py-0 sm:has-[button:focus]:ring-2"
-      data-expanded={expanded}
-    >
+    <Card className="group/tile w-full py-0 transition-all sm:py-0 sm:has-[button:focus]:ring-2" data-expanded={expanded}>
       <CardContent className="flex gap-2 p-2! sm:gap-3 sm:p-3! lg:items-center">
         <DeviceIcon className="size-4 max-sm:mt-0.5 sm:h-8 sm:w-8" strokeWidth={1.5} />
 
@@ -47,16 +44,10 @@ export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPassk
             <p className="truncate" aria-describedby={t('c:created_at')}>
               {dateShort(passkey.createdAt)}
             </p>
-            <p
-              className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline"
-              aria-describedby="OS"
-            >
+            <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby="OS">
               {passkey.deviceOs}
             </p>
-            <p
-              className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline"
-              aria-describedby={t('c:browser')}
-            >
+            <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby={t('c:browser')}>
               {passkey.browser}
             </p>
 

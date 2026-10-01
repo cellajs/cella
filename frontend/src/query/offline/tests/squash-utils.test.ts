@@ -9,25 +9,14 @@ function stxWith(fieldTimestamps: Record<string, string> = {}): StxBase {
 }
 
 /** Creates a queued, offline-parked mutation. Coalescing only runs while offline, so the client stays offline until afterEach restores it. */
-function queuePausedMutation(
-  queryClient: QueryClient,
-  mutationKey: readonly unknown[],
-  variables: Record<string, unknown> | unknown[],
-): void {
+function queuePausedMutation(queryClient: QueryClient, mutationKey: readonly unknown[], variables: Record<string, unknown> | unknown[]): void {
   onlineManager.setOnline(false);
-  const observer = new MutationObserver(queryClient, {
-    mutationKey,
-    mutationFn: async (_vars: Record<string, unknown>) => ({}),
-  });
+  const observer = new MutationObserver(queryClient, { mutationKey, mutationFn: async (_vars: Record<string, unknown>) => ({}) });
   observer.mutate(variables as Record<string, unknown>).catch(() => {});
 }
 
 /** Creates an in-flight (pending, not paused) mutation that never resolves. networkMode 'always' keeps it active while the client is offline, modelling a request on the wire. */
-function queueInFlightMutation(
-  queryClient: QueryClient,
-  mutationKey: readonly unknown[],
-  variables: Record<string, unknown>,
-): () => void {
+function queueInFlightMutation(queryClient: QueryClient, mutationKey: readonly unknown[], variables: Record<string, unknown>): () => void {
   let resolve: () => void;
   const neverResolve = new Promise<Record<string, unknown>>((r) => {
     resolve = () => r({});
@@ -62,13 +51,7 @@ describe('squashPendingMutation', () => {
 
   it('returns new fields when no paused mutation exists', () => {
     onlineManager.setOnline(false);
-    const result = squashPendingMutation(
-      queryClient,
-      mutationKey,
-      'entity-1',
-      { name: 'New' },
-      stxWith({ name: 't1' }),
-    );
+    const result = squashPendingMutation(queryClient, mutationKey, 'entity-1', { name: 'New' }, stxWith({ name: 't1' }));
     expect(result.ops).toEqual({ name: 'New' });
     expect(result.stx.fieldTimestamps).toEqual({ name: 't1' });
   });
@@ -85,10 +68,7 @@ describe('squashPendingMutation', () => {
   });
 
   it('merges ops from a paused mutation into the new one and removes it from the cache', () => {
-    queuePausedMutation(queryClient, mutationKey, {
-      id: 'entity-1',
-      ops: { name: 'Old', description: 'Desc' },
-    });
+    queuePausedMutation(queryClient, mutationKey, { id: 'entity-1', ops: { name: 'Old', description: 'Desc' } });
     const cache = queryClient.getMutationCache();
     expect(cache.findAll({ mutationKey }).filter((m) => m.state.isPaused)).toHaveLength(1);
 
@@ -108,38 +88,18 @@ describe('squashPendingMutation', () => {
 
   it('preserves the inherited field timestamp for a field this edit does not touch (LWW by intent time)', () => {
     // A queued edit set `name` at t1 and the new edit changes only `description` at t2: the merged request must keep name@t1, or an older name edit could beat a newer one.
-    queuePausedMutation(queryClient, mutationKey, {
-      id: 'entity-1',
-      ops: { name: 'Old name' },
-      stx: stxWith({ name: 't1' }),
-    });
+    queuePausedMutation(queryClient, mutationKey, { id: 'entity-1', ops: { name: 'Old name' }, stx: stxWith({ name: 't1' }) });
 
-    const result = squashPendingMutation(
-      queryClient,
-      mutationKey,
-      'entity-1',
-      { description: 'New desc' },
-      stxWith({ description: 't2' }),
-    );
+    const result = squashPendingMutation(queryClient, mutationKey, 'entity-1', { description: 'New desc' }, stxWith({ description: 't2' }));
 
     expect(result.ops).toEqual({ name: 'Old name', description: 'New desc' });
     expect(result.stx.fieldTimestamps).toEqual({ name: 't1', description: 't2' });
   });
 
   it('the incoming edit wins the timestamp for an overwritten field', () => {
-    queuePausedMutation(queryClient, mutationKey, {
-      id: 'entity-1',
-      ops: { name: 'Old name' },
-      stx: stxWith({ name: 't1' }),
-    });
+    queuePausedMutation(queryClient, mutationKey, { id: 'entity-1', ops: { name: 'Old name' }, stx: stxWith({ name: 't1' }) });
 
-    const result = squashPendingMutation(
-      queryClient,
-      mutationKey,
-      'entity-1',
-      { name: 'New name' },
-      stxWith({ name: 't2' }),
-    );
+    const result = squashPendingMutation(queryClient, mutationKey, 'entity-1', { name: 'New name' }, stxWith({ name: 't2' }));
 
     expect(result.ops).toEqual({ name: 'New name' });
     expect(result.stx.fieldTimestamps).toEqual({ name: 't2' });

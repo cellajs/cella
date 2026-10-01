@@ -43,12 +43,7 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
   const slugFiltered = filterWithRejection(items, (item) => slugAvailability.get(item.slug) === true, 'slug_exists');
 
   // Clamp to the available slots: the hard 1:1 cap binds system admins too, so no bypass here.
-  const restrictionFiltered = takeWithRestriction(
-    slugFiltered.items,
-    availableSlots,
-    'org_limit_reached',
-    slugFiltered.rejectionState,
-  );
+  const restrictionFiltered = takeWithRestriction(slugFiltered.items, availableSlots, 'org_limit_reached', slugFiltered.rejectionState);
 
   const itemsToCreate = restrictionFiltered.items;
   const rejectionState = restrictionFiltered.rejectionState;
@@ -71,17 +66,9 @@ export async function createOrganizationsOp(ctx: UserContext, rawItems: CreateOr
     })),
   });
 
-  log.info('Organizations created', {
-    count: organizationRecords.length,
-    ids: organizationRecords.map((org) => org.id),
-  });
+  log.info('Organizations created', { count: organizationRecords.length, ids: organizationRecords.map((org) => org.id) });
 
-  const membershipInserts = organizationRecords.map((org) => ({
-    userId: user.id,
-    createdBy: user.id,
-    role: 'admin' as const,
-    entity: org,
-  }));
+  const membershipInserts = organizationRecords.map((org) => ({ userId: user.id, createdBy: user.id, role: 'admin' as const, entity: org }));
 
   const createdMemberships = await insertMemberships({ var: { db } }, { items: membershipInserts });
 

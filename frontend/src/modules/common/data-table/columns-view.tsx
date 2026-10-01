@@ -5,13 +5,7 @@ import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '~/modules/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuCheckboxItem, DropdownMenuContent, DropdownMenuSeparator, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 
 interface Props<TData> {
   columns: ColumnOrColumnGroup<TData>[];
@@ -25,10 +19,7 @@ export function ColumnsView<TData>({ columns, setColumns, className = '', childr
   const [columnSearch, setColumnSearch] = useState('');
 
   const filteredColumns = columns.filter(
-    (column) =>
-      typeof column.name === 'string' &&
-      column.name &&
-      column.name.toLocaleLowerCase().includes(columnSearch.toLocaleLowerCase()),
+    (column) => typeof column.name === 'string' && column.name && column.name.toLocaleLowerCase().includes(columnSearch.toLocaleLowerCase()),
   );
 
   return (
@@ -39,9 +30,7 @@ export function ColumnsView<TData>({ columns, setColumns, className = '', childr
     >
       <TooltipButton className={className} toolTipContent={t('c:columns_view')}>
         <DropdownMenuTrigger render={<Button variant="outline" className="relative flex" />}>
-          {filteredColumns.some((column) => column.hidden) && (
-            <Badge className="absolute -top-1 -right-1 z-10 flex h-2 w-2 justify-center p-0" />
-          )}
+          {filteredColumns.some((column) => column.hidden) && <Badge className="absolute -top-1 -right-1 z-10 flex h-2 w-2 justify-center p-0" />}
           <SlidersHorizontalIcon className="size-4" />
           <span className="ml-1 max-xl:hidden">{t('c:view')}</span>
         </DropdownMenuTrigger>
@@ -52,18 +41,7 @@ export function ColumnsView<TData>({ columns, setColumns, className = '', childr
             key={column.key}
             className="min-h-8"
             checked={!column.hidden}
-            onCheckedChange={() =>
-              setColumns((columns) =>
-                columns.map((c) =>
-                  c.name === column.name
-                    ? {
-                        ...c,
-                        hidden: !c.hidden,
-                      }
-                    : c,
-                ),
-              )
-            }
+            onCheckedChange={() => setColumns((columns) => columns.map((c) => (c.name === column.name ? { ...c, hidden: !c.hidden } : c)))}
           >
             {column.name}
           </DropdownMenuCheckboxItem>

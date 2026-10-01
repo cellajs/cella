@@ -29,10 +29,7 @@ export function Pricing() {
 
   const buttonRefs = useRef<Array<RefObject<HTMLButtonElement | null>>>(pricingPlans.map(() => createRef()));
 
-  const handleActionClick = (
-    action: 'sign_in' | 'contact_us' | 'waitlist_request',
-    buttonRef: RefObject<HTMLButtonElement | null>,
-  ) => {
+  const handleActionClick = (action: 'sign_in' | 'contact_us' | 'waitlist_request', buttonRef: RefObject<HTMLButtonElement | null>) => {
     if (action === 'contact_us') return contactFormHandler(buttonRef);
 
     if (action === 'sign_in') {
@@ -51,9 +48,7 @@ export function Pricing() {
   };
 
   return (
-    <div
-      className={`mx-auto mt-8 max-w-7xl ${isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3'} gap-8`}
-    >
+    <div className={`mx-auto mt-8 max-w-7xl ${isFlexLayout ? 'flex flex-col justify-center md:flex-row' : 'grid grid-cols-1 md:grid-cols-3'} gap-8`}>
       {pricingPlans.map(({ id, borderColor, featureCount, popular, discount, action }, planIndex) => {
         const title = `about:pricing.title_${planIndex + 1}` as TKey;
         const text = `about:pricing.text_${planIndex + 1}` as TKey;
@@ -69,10 +64,7 @@ export function Pricing() {
             }`}
           >
             {popular && (
-              <Badge
-                size="sm"
-                className="absolute top-0 left-1/2 -translate-x-2/4 -translate-y-2/4 px-4 py-1 text-center"
-              >
+              <Badge size="sm" className="absolute top-0 left-1/2 -translate-x-2/4 -translate-y-2/4 px-4 py-1 text-center">
                 🚀 {t('about:pricing.popular')}
               </Badge>
             )}

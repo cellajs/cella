@@ -27,14 +27,8 @@ export const execCommand: ExecFn = (command, args, opts = {}) =>
     else child.stdin.end();
   });
 
-export async function mustExec(
-  exec: ExecFn,
-  command: string,
-  args: string[],
-  opts?: { cwd?: string; input?: string },
-): Promise<ExecResult> {
+export async function mustExec(exec: ExecFn, command: string, args: string[], opts?: { cwd?: string; input?: string }): Promise<ExecResult> {
   const result = await exec(command, args, opts);
-  if (result.code !== 0)
-    throw new Error(`${command} ${args.join(' ')} failed with exit ${result.code}: ${result.stderr || result.stdout}`);
+  if (result.code !== 0) throw new Error(`${command} ${args.join(' ')} failed with exit ${result.code}: ${result.stderr || result.stdout}`);
   return result;
 }

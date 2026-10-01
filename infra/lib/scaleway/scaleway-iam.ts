@@ -81,10 +81,7 @@ export async function resolveOrganizationId(secretKey: string, projectId: string
 }
 
 /** Provision (or rotate) a scoped IAM application, policy and API key. Scaleway reveals `secret_key` only at creation, so the caller must persist it immediately. */
-export async function provisionScopedKey(
-  opts: ProvisionScopedKeyOptions,
-  config: ScopedKeyConfig,
-): Promise<ScopedKeyResult> {
+export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config: ScopedKeyConfig): Promise<ScopedKeyResult> {
   const { callerSecretKey, projectId, slug, mode } = opts;
   const log = opts.log ?? ((msg) => console.info(msg));
 
@@ -109,11 +106,9 @@ export async function provisionScopedKey(
 
   // Per-mode IAM group is organizational only (carries no grants): console navigation, and teardown enumerates its members.
   if (mode) {
-    await ensureGroupMembership({ callerSecretKey, organizationId, slug, mode, applicationId: app.id, log }).catch(
-      (error) => {
-        log(`  ${tildeMark} Group enrollment skipped: ${error instanceof Error ? error.message : String(error)}`);
-      },
-    );
+    await ensureGroupMembership({ callerSecretKey, organizationId, slug, mode, applicationId: app.id, log }).catch((error) => {
+      log(`  ${tildeMark} Group enrollment skipped: ${error instanceof Error ? error.message : String(error)}`);
+    });
   }
 
   // Recreate managed policies so rules match current permissions; skip when Pulumi owns the policy, to avoid races and duplicates.
@@ -162,11 +157,7 @@ export async function provisionScopedKey(
   // Mint before purging: Scaleway reveals each secret only at creation, and purge-then-mint leaves the principal keyless when the mint fails.
   const apiKey = await createApiKey(
     { secretKey: callerSecretKey },
-    {
-      applicationId: app.id,
-      description: `${config.suffix}: rotated ${new Date().toISOString().slice(0, 10)}`,
-      defaultProjectId: projectId,
-    },
+    { applicationId: app.id, description: `${config.suffix}: rotated ${new Date().toISOString().slice(0, 10)}`, defaultProjectId: projectId },
   );
   log(`  ${changeMark} Created API key: ${apiKey.access_key}`);
 
@@ -182,20 +173,11 @@ export async function provisionScopedKey(
     log(`  ${tildeMark} Cannot list API keys (IAMManager without IAMReadOnly): skipping the orphan purge`);
   }
 
-  return {
-    accessKey: apiKey.access_key,
-    secretKey: apiKey.secret_key,
-    applicationId: app.id,
-    organizationId,
-  };
+  return { accessKey: apiKey.access_key, secretKey: apiKey.secret_key, applicationId: app.id, organizationId };
 }
 
 /** Find an IAM policy id by exact name within an organization. Detects an orphaned policy that must be adopted into Pulumi state. */
-export async function findPolicyIdByName(
-  secretKey: string,
-  organizationId: string,
-  name: string,
-): Promise<string | undefined> {
+export async function findPolicyIdByName(secretKey: string, organizationId: string, name: string): Promise<string | undefined> {
   const { policies } = await scwFetch<{ policies: ScwPolicy[] }>(
     { secretKey },
     'GET',
@@ -309,12 +291,7 @@ export async function deleteApplicationCascade(opts: {
 }
 
 /** Delete the per-mode IAM group (after its members are gone). */
-export async function deleteGroup(opts: {
-  callerSecretKey: string;
-  organizationId: string;
-  slug: string;
-  mode: string;
-}): Promise<void> {
+export async function deleteGroup(opts: { callerSecretKey: string; organizationId: string; slug: string; mode: string }): Promise<void> {
   const group = await findGroup(opts.callerSecretKey, opts.organizationId, principalNames(opts.slug, opts.mode).group);
   if (group) await scwSend({ secretKey: opts.callerSecretKey }, 'DELETE', `${IAM_BASE}/groups/${group.id}`);
 }

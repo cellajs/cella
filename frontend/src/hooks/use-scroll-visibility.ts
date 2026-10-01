@@ -58,8 +58,7 @@ export const useScrollVisibility = (enabled = true, containerRef?: RefObject<HTM
       return;
     }
 
-    const getScrollHeight = () =>
-      container instanceof Window ? document.documentElement.scrollHeight : container.scrollHeight;
+    const getScrollHeight = () => (container instanceof Window ? document.documentElement.scrollHeight : container.scrollHeight);
 
     // Sync baselines with the actual position to handle restored scroll on page reload
     const initialY = container instanceof Window ? container.scrollY : container.scrollTop;

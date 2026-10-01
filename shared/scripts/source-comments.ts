@@ -131,11 +131,7 @@ export function sourceComments(file: string, source: string, tokenBoundaries = f
         ? [/\/\*[\s\S]*?\*\//g, /--[^\n]*/g]
         : [/^[\t ]*#[^\n]*/gm];
   const comments = patterns.flatMap((pattern) =>
-    [...source.matchAll(pattern)].map((match) => ({
-      offset: match.index,
-      end: match.index + match[0].length,
-      text: match[0],
-    })),
+    [...source.matchAll(pattern)].map((match) => ({ offset: match.index, end: match.index + match[0].length, text: match[0] })),
   );
   if (extension !== '.yaml' && extension !== '.yml') return comments;
   return [...comments, ...yamlTrailingComments(source)].sort((a, b) => a.offset - b.offset);

@@ -13,10 +13,7 @@ class FakeLocks {
   private queues = new Map<string, Array<() => void>>();
 
   request(name: string, optionsOrCb: unknown, maybeCb?: (lock: unknown) => unknown): Promise<unknown> {
-    const opts = (typeof optionsOrCb === 'object' && optionsOrCb !== null ? optionsOrCb : {}) as {
-      ifAvailable?: boolean;
-      signal?: AbortSignal;
-    };
+    const opts = (typeof optionsOrCb === 'object' && optionsOrCb !== null ? optionsOrCb : {}) as { ifAvailable?: boolean; signal?: AbortSignal };
     const cb = (typeof optionsOrCb === 'function' ? optionsOrCb : maybeCb) as (lock: unknown) => unknown;
 
     if (opts.ifAvailable) {

@@ -54,30 +54,23 @@ export function buildDeployEnv(appConfig: Cfg, opts: { imageTag?: string } = {})
   }));
   const primaryServices = enabled.filter((service) => service.primaryRollout);
   if (primaryServices.length > 1) {
-    throw new Error(
-      `At most one enabled service may set primaryRollout: true (${primaryServices.map((service) => service.slug).join(', ')})`,
-    );
+    throw new Error(`At most one enabled service may set primaryRollout: true (${primaryServices.map((service) => service.slug).join(', ')})`);
   }
   const primaryService = primaryServices[0];
   // Include only services that own VM generations; single-VM workers cut over with their host.
   // This mirrors the compute resource set.
-  const deployedSlugs = new Set(
-    deployedServices(appConfig.services, appConfig.singleVM).map((service) => service.slug),
-  );
+  const deployedSlugs = new Set(deployedServices(appConfig.services, appConfig.singleVM).map((service) => service.slug));
   const rolloutRows = enabledServiceRows.filter((item) => deployedSlugs.has(item.service));
   const primaryRollout = primaryService
-    ? rolloutRows
-        .filter((item) => item.service === primaryService.slug)
-        .map(({ service, health_url }) => ({ service, health_url }))
+    ? rolloutRows.filter((item) => item.service === primaryService.slug).map(({ service, health_url }) => ({ service, health_url }))
     : [];
-  const restRollout = (
-    primaryService ? rolloutRows.filter((item) => item.service !== primaryService.slug) : rolloutRows
-  ).map(({ service, health_url }) => ({ service, health_url }));
+  const restRollout = (primaryService ? rolloutRows.filter((item) => item.service !== primaryService.slug) : rolloutRows).map(
+    ({ service, health_url }) => ({ service, health_url }),
+  );
   const buildImages = enabled
     .filter((service) => !service.reusesImageOf)
     .map((service) => {
-      if (!service.dockerfile)
-        throw new Error(`Service '${service.slug}' builds its own image but has no dockerfile in services.config.ts`);
+      if (!service.dockerfile) throw new Error(`Service '${service.slug}' builds its own image but has no dockerfile in services.config.ts`);
       return { service: service.slug, dockerfile: service.dockerfile, target: service.target ?? '' };
     });
 

@@ -45,8 +45,7 @@ describe('brute-force budgets', async () => {
     const owner = await createTestUser(`magic-limit-${nanoid(8)}@security-test.com`.toLowerCase());
     const other = await createTestUser(`magic-other-${nanoid(8)}@security-test.com`.toLowerCase());
     /** A request for a link to `email`, each from a client address of its own: the budget is the mailbox's. */
-    const request = async (email: string) =>
-      (await call(sendMagicLink, { body: { email }, headers: fromIp(randomIp()) })).response;
+    const request = async (email: string) => (await call(sendMagicLink, { body: { email }, headers: fromIp(randomIp()) })).response;
 
     for (let attempt = 0; attempt < 2; attempt++) expect((await request(owner.email)).status).toBe(204);
 
@@ -78,9 +77,7 @@ describe('brute-force budgets', async () => {
     const user = await createTotpUser(`step-up-limit-ok-${nanoid(8)}@security-test.com`);
     const session = await insertSession(user);
 
-    expect(
-      (await call(stepUp, { body: { totpCode: wrongTotpCode() }, headers: session.headers })).response.status,
-    ).toBe(401);
+    expect((await call(stepUp, { body: { totpCode: wrongTotpCode() }, headers: session.headers })).response.status).toBe(401);
     const { response } = await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers });
     expect(response.status).toBe(204);
   });
@@ -116,8 +113,7 @@ describe('brute-force budgets', async () => {
   it('must not resume looking up addresses via check-email when the window ends inside the block', async () => {
     const ip = randomIp();
     const known = await createTestUser(`blocked-${nanoid(6)}@security-test.com`.toLowerCase());
-    const lookup = async () =>
-      (await call(checkEmail, { body: { email: known.email }, headers: fromIp(ip) })).response.status;
+    const lookup = async () => (await call(checkEmail, { body: { email: known.email }, headers: fromIp(ip) })).response.status;
     const minutes = (count: number) => count * 60 * 1000;
 
     // Only the clock moves: 30 lookups an hour, then a 30-minute block from the lookup past the budget.
@@ -181,18 +177,12 @@ describe('brute-force budgets', async () => {
 
     // One wrong code from each of five addresses: every IP budget stays far from its limit.
     for (let attempt = 0; attempt < 5; attempt++) {
-      const { response } = await call(signInWithTotp, {
-        body: { code: wrongTotpCode() },
-        headers: { ...fromIp(randomIp()), Cookie: cookie },
-      });
+      const { response } = await call(signInWithTotp, { body: { code: wrongTotpCode() }, headers: { ...fromIp(randomIp()), Cookie: cookie } });
       expect(response.status).toBe(401);
     }
 
     // The account's own budget is spent: refused even with the right code, from yet another address.
-    const { response } = await call(signInWithTotp, {
-      body: { code: totpCode() },
-      headers: { ...fromIp(randomIp()), Cookie: cookie },
-    });
+    const { response } = await call(signInWithTotp, { body: { code: totpCode() }, headers: { ...fromIp(randomIp()), Cookie: cookie } });
     expect(response.status).toBe(429);
     expect(cookieChange(response, 'session')).toBeUndefined();
     // The owner hears of it once, when the budget ran out.
@@ -204,16 +194,10 @@ describe('brute-force budgets', async () => {
     const cookie = authCookie('confirm-mfa', await createMfaToken(user));
 
     for (let attempt = 0; attempt < 4; attempt++) {
-      const { response } = await call(signInWithTotp, {
-        body: { code: wrongTotpCode() },
-        headers: { ...fromIp(randomIp()), Cookie: cookie },
-      });
+      const { response } = await call(signInWithTotp, { body: { code: wrongTotpCode() }, headers: { ...fromIp(randomIp()), Cookie: cookie } });
       expect(response.status).toBe(401);
     }
-    const { response } = await call(signInWithTotp, {
-      body: { code: totpCode() },
-      headers: { ...fromIp(randomIp()), Cookie: cookie },
-    });
+    const { response } = await call(signInWithTotp, { body: { code: totpCode() }, headers: { ...fromIp(randomIp()), Cookie: cookie } });
     expect(response.status).toBe(204);
     expect(lockoutMailsTo(user.email)).toHaveLength(0);
   });
@@ -226,10 +210,7 @@ describe('brute-force budgets', async () => {
     // this size overlaps the attempts closely enough that a budget counted by read-then-write lets more through.
     const statuses = await Promise.all(
       Array.from({ length: 20 }, async () => {
-        const { response } = await call(signInWithTotp, {
-          body: { code: wrongTotpCode() },
-          headers: { ...fromIp(randomIp()), Cookie: cookie },
-        });
+        const { response } = await call(signInWithTotp, { body: { code: wrongTotpCode() }, headers: { ...fromIp(randomIp()), Cookie: cookie } });
         return response.status;
       }),
     );
@@ -238,10 +219,7 @@ describe('brute-force budgets', async () => {
     // One lockout, one mail.
     expect(lockoutMailsTo(user.email)).toHaveLength(1);
 
-    const { response } = await call(signInWithTotp, {
-      body: { code: totpCode() },
-      headers: { ...fromIp(randomIp()), Cookie: cookie },
-    });
+    const { response } = await call(signInWithTotp, { body: { code: totpCode() }, headers: { ...fromIp(randomIp()), Cookie: cookie } });
     expect(response.status).toBe(429);
     expect(cookieChange(response, 'session')).toBeUndefined();
   });
@@ -270,8 +248,7 @@ describe('brute-force budgets', async () => {
   it('answers a browser navigation past its budget with a redirect to the error page, never JSON', async () => {
     const ip = randomIp();
     /** A token link opened with a guessed token: a failure the link's budget counts. */
-    const open = async () =>
-      (await call(invokeToken, { path: { type: 'invitation', token: nanoid(40) }, headers: fromIp(ip) })).response;
+    const open = async () => (await call(invokeToken, { path: { type: 'invitation', token: nanoid(40) }, headers: fromIp(ip) })).response;
 
     for (let attempt = 0; attempt < 10; attempt++) expect((await open()).status).not.toBe(429);
     // Tests read the refusal as JSON, like every other error.

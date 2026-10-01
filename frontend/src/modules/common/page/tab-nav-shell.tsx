@@ -5,12 +5,7 @@ import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { StickyBox } from '~/modules/common/sticky-box';
 import { cn } from '~/utils/cn';
 
-export type TabNavAvatar = {
-  id: string;
-  thumbnailUrl?: string | null;
-  name: string;
-  type?: EntityType;
-};
+export type TabNavAvatar = { id: string; thumbnailUrl?: string | null; name: string; type?: EntityType };
 
 interface Props {
   title?: string;
@@ -31,10 +26,7 @@ export function TabNavShell({ title, avatar, className, children }: Props) {
   return (
     <StickyBox
       publishVar="--sticky-stack-nav"
-      className={cn(
-        'group/sticky @container/tab-nav z-80 grid grid-cols-[1fr_auto_1fr] border-b bg-background/75 backdrop-blur-xs',
-        className,
-      )}
+      className={cn('group/sticky @container/tab-nav z-80 grid grid-cols-[1fr_auto_1fr] border-b bg-background/75 backdrop-blur-xs', className)}
     >
       <div className="col-start-1 hidden min-w-max items-center starting:opacity-0 transition-opacity duration-300 @2xl:group-data-[sticky=true]/sticky:flex">
         {avatar && (

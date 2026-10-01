@@ -4,11 +4,7 @@ import { resolve } from 'node:path';
 import { syncGithubEnvironment } from '../../lib/github-sync';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import {
-  generatePassphrase,
-  supportsStdinPassphraseRotation,
-  verifyStackPassphrase,
-} from '../../lib/stack/pulumi-passphrase';
+import { generatePassphrase, supportsStdinPassphraseRotation, verifyStackPassphrase } from '../../lib/stack/pulumi-passphrase';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
 import {
@@ -50,18 +46,10 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
 
   const oldPassphrase = await resolveVerifiedPassphrase(context.stackYaml);
 
-  const { accessKey, secretKey } = await keyPairOrPrompt(
-    resolveOperatorIdentity().admin,
-    'Scaleway admin application key',
-  );
+  const { accessKey, secretKey } = await keyPairOrPrompt(resolveOperatorIdentity().admin, 'Scaleway admin application key');
   const targetStack = stackNameFor(context);
 
-  const env = buildProviderEnv(infraDir, {
-    accessKey,
-    secretKey,
-    projectId: context.projectId,
-    passphrase: oldPassphrase,
-  });
+  const env = buildProviderEnv(infraDir, { accessKey, secretKey, projectId: context.projectId, passphrase: oldPassphrase });
   pulumiLoginAndSelect(infraDir, env, context.appConfig, targetStack);
 
   // Hold the stack lock across the re-encryption: a CI deploy reading state mid-rotation would decrypt against the wrong passphrase.
@@ -75,24 +63,17 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
 
   // Shown and stored BEFORE the rotation runs, so a crash right after `change-secrets-provider` cannot leave state encrypted with a passphrase nobody has seen.
   const newPassphrase = generatePassphrase();
-  await confirmPassphraseStored(
-    newPassphrase,
-    `New Pulumi passphrase ${pc.dim('(takes effect after the re-encryption below)')}`,
-  );
+  await confirmPassphraseStored(newPassphrase, `New Pulumi passphrase ${pc.dim('(takes effect after the re-encryption below)')}`);
 
   console.info(
     `\n→ Re-encrypt stack secrets\n  $ pulumi stack change-secrets-provider passphrase --stack ${targetStack} ${pc.dim('(new passphrase piped on stdin)')}`,
   );
-  const rotate = spawnSync(
-    'pulumi',
-    ['stack', 'change-secrets-provider', 'passphrase', '--stack', targetStack, '--non-interactive'],
-    {
-      cwd: infraDir,
-      env,
-      input: `${newPassphrase}\n`,
-      stdio: ['pipe', 'inherit', 'inherit'],
-    },
-  );
+  const rotate = spawnSync('pulumi', ['stack', 'change-secrets-provider', 'passphrase', '--stack', targetStack, '--non-interactive'], {
+    cwd: infraDir,
+    env,
+    input: `${newPassphrase}\n`,
+    stdio: ['pipe', 'inherit', 'inherit'],
+  });
   if (rotate.status !== 0) {
     await stackLock.release();
     console.error(
@@ -121,9 +102,7 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
     );
     process.exit(1);
   }
-  console.info(
-    `${checkMark} Stack re-encrypted: ${pc.cyan(`Pulumi.${stackShort}.yaml`)} verifies against the new passphrase.`,
-  );
+  console.info(`${checkMark} Stack re-encrypted: ${pc.cyan(`Pulumi.${stackShort}.yaml`)} verifies against the new passphrase.`);
 
   const synced = await syncGithubEnvironment({
     repoRoot: new URL('..', `file://${infraDir}/`).pathname,
@@ -140,7 +119,5 @@ export async function runRotatePassphrase(context: InfraContext): Promise<void> 
       ? `  2. GitHub Environment secret ${pc.bold('PULUMI_CONFIG_PASSPHRASE')} updated.`
       : `  2. ${warningMark} GitHub sync skipped: update ${pc.bold('PULUMI_CONFIG_PASSPHRASE')} in the ${context.environment} GitHub Environment before the next deploy.`,
   );
-  console.info(
-    `  ${pc.dim('A CI deploy started before this rotation may fail once; re-run it after updating the secret.')}`,
-  );
+  console.info(`  ${pc.dim('A CI deploy started before this rotation may fail once; re-run it after updating the secret.')}`);
 }

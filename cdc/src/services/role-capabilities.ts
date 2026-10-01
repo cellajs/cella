@@ -29,13 +29,7 @@ export function getRoleCapabilities(): RoleCapabilities | null {
  */
 export async function probeRoleCapabilities(): Promise<RoleCapabilities | null> {
   try {
-    const result = await cdcDb.execute<{
-      role: string;
-      superuser: boolean;
-      bypass_rls: boolean;
-      replication: boolean;
-      rls_blocked_tables: string[];
-    }>(
+    const result = await cdcDb.execute<{ role: string; superuser: boolean; bypass_rls: boolean; replication: boolean; rls_blocked_tables: string[] }>(
       sql`SELECT r.rolname AS role, r.rolsuper AS superuser, r.rolbypassrls AS bypass_rls, r.rolreplication AS replication,
             COALESCE(
               (SELECT array_agg(c.relname::text ORDER BY c.relname) FROM pg_class c
@@ -56,12 +50,7 @@ export async function probeRoleCapabilities(): Promise<RoleCapabilities | null> 
       replication: row.superuser || row.replication,
     };
     if (!current.rlsBypass || !current.replication) {
-      log.error(
-        'CDC database role cannot bypass RLS on every table or open the slot; seq stamping or replication will fail',
-        {
-          ...current,
-        },
-      );
+      log.error('CDC database role cannot bypass RLS on every table or open the slot; seq stamping or replication will fail', { ...current });
     }
     return current;
   } catch (err) {

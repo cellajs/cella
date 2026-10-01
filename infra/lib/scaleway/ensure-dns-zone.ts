@@ -24,20 +24,13 @@ async function listZones(secretKey: string, projectId: string | undefined, domai
   // active for record management, which is org-wide by permission set.
   const projectFilter = projectId ? `project_id=${projectId}&` : '';
   const url = `${BASE}/dns-zones/?${projectFilter}domain=${encodeURIComponent(domain)}&page_size=100&_=${Date.now()}`;
-  const res = await fetch(url, {
-    headers: { 'X-Auth-Token': secretKey, 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
-    cache: 'no-store',
-  });
+  const res = await fetch(url, { headers: { 'X-Auth-Token': secretKey, 'Cache-Control': 'no-cache', Pragma: 'no-cache' }, cache: 'no-store' });
   if (!res.ok) throw new Error(`GET dns-zones failed: ${res.status} ${await res.text()}`);
   const body = (await res.json()) as { dns_zones?: DnsZone[] };
   return body.dns_zones ?? [];
 }
 
-async function registerExternal(
-  secretKey: string,
-  projectId: string,
-  domain: string,
-): Promise<{ created: boolean; alreadyInProcess: boolean }> {
+async function registerExternal(secretKey: string, projectId: string, domain: string): Promise<{ created: boolean; alreadyInProcess: boolean }> {
   const res = await fetch(`${BASE}/external-domains`, {
     method: 'POST',
     headers: { 'X-Auth-Token': secretKey, 'Content-Type': 'application/json' },
@@ -60,8 +53,7 @@ export async function ensureDnsZone(opts: {
 }): Promise<{ status: 'active' | 'pending' | 'skipped' }> {
   const { secretKey, projectId, domain } = opts;
 
-  const findApex = (zones: DnsZone[]) =>
-    zones.find((z) => z.domain === domain && (z.subdomain === '' || z.subdomain == null));
+  const findApex = (zones: DnsZone[]) => zones.find((z) => z.domain === domain && (z.subdomain === '' || z.subdomain == null));
 
   let zones = await listZones(secretKey, projectId, domain);
   let apex = findApex(zones);
@@ -75,9 +67,7 @@ export async function ensureDnsZone(opts: {
   // re-register it; record management only needs org-wide DNS permission.
   const orgApex = findApex(await listZones(secretKey, undefined, domain));
   if (orgApex?.status === 'active') {
-    console.info(
-      `  ${tildeMark} DNS zone ${pc.cyan(domain)} is active in a sibling project: reusing it (org-shared zone)`,
-    );
+    console.info(`  ${tildeMark} DNS zone ${pc.cyan(domain)} is active in a sibling project: reusing it (org-shared zone)`);
     return { status: 'active' };
   }
 
@@ -98,13 +88,9 @@ export async function ensureDnsZone(opts: {
   console.info('  A second email will arrive once ownership is validated: then recheck below.\n');
 
   while (true) {
-    const action = nonInteractive()
-      ? false
-      : await confirm({ message: 'Recheck DNS zone status now? (No = skip and continue)', default: true });
+    const action = nonInteractive() ? false : await confirm({ message: 'Recheck DNS zone status now? (No = skip and continue)', default: true });
     if (!action) {
-      console.info(
-        `  ${warningMark} Skipped. Pulumi will fail on DNS records until validation completes: re-run pnpm infra to retry.`,
-      );
+      console.info(`  ${warningMark} Skipped. Pulumi will fail on DNS records until validation completes: re-run pnpm infra to retry.`);
       return { status: 'skipped' };
     }
     const freshZones = await listZones(secretKey, projectId, domain);
@@ -113,9 +99,7 @@ export async function ensureDnsZone(opts: {
       console.info(`  ${checkMark} DNS zone ${pc.cyan(domain)} is active`);
       return { status: 'active' };
     }
-    console.info(
-      `  ${tildeMark} Still ${pc.yellow(fresh?.status ?? 'pending')}${fresh?.message ? `: ${fresh.message}` : ''}`,
-    );
+    console.info(`  ${tildeMark} Still ${pc.yellow(fresh?.status ?? 'pending')}${fresh?.message ? `: ${fresh.message}` : ''}`);
     if (process.env.SCW_DEBUG === '1' || process.env.DEBUG === '1') {
       console.info(`  ${tildeMark} Raw zones matching ${domain}:`);
       console.info(`     ${pc.dim(JSON.stringify(freshZones, null, 2))}`);

@@ -109,16 +109,7 @@ export const zStreamNotification = z.object({
   action: z.enum(['create', 'update', 'delete', 'moveOut']),
   productType: z.enum(['attachment']).nullable(),
   resourceType: z
-    .enum([
-      'request',
-      'membership',
-      'inactive_membership',
-      'tenant',
-      'system_role',
-      'service_account',
-      'api_key',
-      'oauth_client',
-    ])
+    .enum(['request', 'membership', 'inactive_membership', 'tenant', 'system_role', 'service_account', 'api_key', 'oauth_client'])
     .nullable(),
   subjectId: z.string().nullable(),
   organizationId: z.string().nullable(),
@@ -277,9 +268,7 @@ export const zMeAuthData = z.object({
       expiresAt: z.string(),
       revokedAt: z.string().nullable(),
       revokedBy: z.uuid().nullable(),
-      revocationReason: z
-        .enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped'])
-        .nullable(),
+      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped']).nullable(),
       impersonatorSessionId: z.uuid().nullable(),
       steppedUpAt: z.string().nullable(),
       steppedUpVia: z.enum(['passkey', 'totp', 'email']).nullable(),
@@ -539,9 +528,7 @@ export const zApiKey = z.object({
   name: z.string().max(255),
   prefix: z.string().max(255),
   last4: z.string().max(4),
-  scopes: z
-    .array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write']))
-    .nullable(),
+  scopes: z.array(z.enum(['organization:read', 'organization:write', 'attachment:read', 'attachment:write'])).nullable(),
   expiresAt: z.string().nullable(),
   revokedAt: z.string().nullable(),
   revokedBy: z.uuid().nullable(),
@@ -1135,9 +1122,7 @@ export const zRevokeMySessionsResponse = z.object({
       expiresAt: z.string(),
       revokedAt: z.string().nullable(),
       revokedBy: z.uuid().nullable(),
-      revocationReason: z
-        .enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped'])
-        .nullable(),
+      revocationReason: z.enum(['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped']).nullable(),
       impersonatorSessionId: z.uuid().nullable(),
       steppedUpAt: z.string().nullable(),
       steppedUpVia: z.enum(['passkey', 'totp', 'email']).nullable(),
@@ -2030,10 +2015,7 @@ export const zGetMembersPath = z.object({
 
 export const zGetMembersQuery = z.object({
   q: z.string().max(255).optional(),
-  sort: z
-    .enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'lastPostedAt'])
-    .optional()
-    .default('lastSeenAt'),
+  sort: z.enum(['id', 'name', 'email', 'role', 'createdAt', 'lastSeenAt', 'lastPostedAt']).optional().default('lastSeenAt'),
   order: z.enum(['asc', 'desc']).optional().default('desc'),
   offset: z.string().regex(/^\d+$/).optional(),
   limit: z.string().regex(/^\d+$/).optional(),

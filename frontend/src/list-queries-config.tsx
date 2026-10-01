@@ -12,9 +12,7 @@ import type { BuildEntitySyncQueriesParams, ChannelListQueryMap, EntitySyncQuery
  * mid-cycle, for example during Vite HMR before the entity query module has initialized. See the
  * circular import chain via `~/query/realtime`.
  */
-export const channelListQueriesByType = {
-  organization: (params) => organizationsListQueryOptions(params),
-} satisfies ChannelListQueryMap;
+export const channelListQueriesByType = { organization: (params) => organizationsListQueryOptions(params) } satisfies ChannelListQueryMap;
 
 /** Pure mapping: React Query owns staleness. */
 export const buildEntitySyncQueries = ({

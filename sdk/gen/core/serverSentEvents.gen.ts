@@ -102,10 +102,7 @@ export function createSseClient<TData = unknown>({
 
       attempt++;
 
-      const headers =
-        options.headers instanceof Headers
-          ? options.headers
-          : new Headers(options.headers as Record<string, string> | undefined);
+      const headers = options.headers instanceof Headers ? options.headers : new Headers(options.headers as Record<string, string> | undefined);
 
       if (lastEventId !== undefined) {
         headers.set('Last-Event-ID', lastEventId);

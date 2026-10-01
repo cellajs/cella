@@ -11,9 +11,7 @@ import {
 } from '../tests/helpers/pulumi-mock';
 
 // A new generation refuses to plan without a pinnable boot image; the registry lookup is a network call, so it answers a fixed digest here.
-vi.mock('../lib/scaleway/boot-image', () => ({
-  resolveBootImage: async () => ({ image: 'infra-boot', digest: `sha256:${'a'.repeat(64)}` }),
-}));
+vi.mock('../lib/scaleway/boot-image', () => ({ resolveBootImage: async () => ({ image: 'infra-boot', digest: `sha256:${'a'.repeat(64)}` }) }));
 
 /** The deploy's minted keys, as tasks/mint-generation-keys.ts writes them for the Pulumi program. */
 const keys = {

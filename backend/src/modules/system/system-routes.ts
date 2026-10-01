@@ -16,16 +16,9 @@ const systemRoutes = createXRoutes(['system', 'cella'], {
     xGuard: [userGuard, sysAdminGuard],
     xRateLimiter: [spamLimiter, bulkPointsLimiter],
     summary: 'Invite to system',
-    description:
-      'Invites one or more users to the system via email. Can be used to onboard system level users or admins.',
+    description: 'Invites one or more users to the system via email. Can be used to onboard system level users or admins.',
     request: { body: jsonBody(inviteBodySchema) },
-    responses: {
-      200: json(
-        'Invitations are sent',
-        batchResponseSchema().extend({ invitesSentCount: z.number() }),
-        mockSystemInviteResponse(),
-      ),
-    },
+    responses: { 200: json('Invitations are sent', batchResponseSchema().extend({ invitesSentCount: z.number() }), mockSystemInviteResponse()) },
   }),
   deleteUsers: xRoute({
     method: 'delete',

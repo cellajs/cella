@@ -3,13 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { signYjsToken, verifyYjsToken, yjsTokenPublicKey, yjsTokenSigningKey, yjsTokenVerifyKey } from './yjs-token';
 
 const material = 'backend-key-material-of-at-least-32-chars';
-const claims = {
-  userId: 'user-1',
-  entityType: 'attachment',
-  entityId: 'entity-1',
-  tenantId: 'tenant-1',
-  organizationId: 'org-1',
-};
+const claims = { userId: 'user-1', entityType: 'attachment', entityId: 'entity-1', tenantId: 'tenant-1', organizationId: 'org-1' };
 
 describe('yjs token keys', () => {
   it('verifies with the public key what the key material signs (positive control)', () => {
@@ -26,10 +20,7 @@ describe('yjs token keys', () => {
 
   it('must not verify a token signed from other key material', () => {
     const token = signYjsToken(claims, yjsTokenSigningKey(`${material}x`), 60_000);
-    expect(verifyYjsToken(token, yjsTokenVerifyKey(yjsTokenPublicKey(material)))).toEqual({
-      ok: false,
-      reason: 'bad_signature',
-    });
+    expect(verifyYjsToken(token, yjsTokenVerifyKey(yjsTokenPublicKey(material)))).toEqual({ ok: false, reason: 'bad_signature' });
   });
 
   it('must not let the public key sign a token', () => {

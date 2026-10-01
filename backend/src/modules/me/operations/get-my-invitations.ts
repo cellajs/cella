@@ -9,10 +9,7 @@ export async function getMyInvitationsOp(ctx: UserContext) {
 
   const allMemberships = rawItems.map((item) => item.inactiveMembership);
   const populatedMemberships = await withAuditUsers(ctx, allMemberships);
-  const items = rawItems.map((item, i) => ({
-    ...item,
-    inactiveMembership: populatedMemberships[i],
-  }));
+  const items = rawItems.map((item, i) => ({ ...item, inactiveMembership: populatedMemberships[i] }));
   const total = items.length;
 
   return { items, total };

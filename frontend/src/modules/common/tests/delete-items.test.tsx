@@ -37,9 +37,7 @@ vi.mock('~/modules/common/dialoger/use-dialoger', () => {
   const useDialoger = (select: (s: typeof state) => unknown) => select(state);
   return { useDialoger: Object.assign(useDialoger, { getState: () => state }) };
 });
-vi.mock('~/modules/common/toaster/toaster', () => ({
-  toaster: { warning: (message: string) => seen.events.push(`warning ${message}`) },
-}));
+vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { warning: (message: string) => seen.events.push(`warning ${message}`) } }));
 vi.mock('~/modules/user/query', () => ({ useUserDeleteMutation: deleteMutation }));
 vi.mock('~/modules/organization/query', () => ({ useOrganizationDeleteMutation: deleteMutation }));
 vi.mock('~/modules/requests/query', () => ({ useDeleteRequestMutation: deleteMutation }));
@@ -119,24 +117,17 @@ describe('DeleteUsers', () => {
 
 describe('DeleteOrganizations', () => {
   it('deletes by id within the tenant, closes the dialog and then reports success', async () => {
-    const form = await render(
-      <DeleteOrganizations dialog tenantId="tenant-1" organizations={organizations} callback={callback} />,
-    );
+    const form = await render(<DeleteOrganizations dialog tenantId="tenant-1" organizations={organizations} callback={callback} />);
 
     await act(async () => form.onDelete());
 
-    expect(seen.mutations).toEqual([
-      { path: { tenantId: 'tenant-1' }, body: { ids: ['o1'] }, organizations },
-      { callbackData: organizations },
-    ]);
+    expect(seen.mutations).toEqual([{ path: { tenantId: 'tenant-1' }, body: { ids: ['o1'] }, organizations }, { callbackData: organizations }]);
     expect(seen.events).toEqual(['close', 'callback success']);
   });
 
   it('sends while offline and reports success without closing outside a dialog', async () => {
     onlineManager.setOnline(false);
-    const form = await render(
-      <DeleteOrganizations tenantId="tenant-1" organizations={organizations} callback={callback} />,
-    );
+    const form = await render(<DeleteOrganizations tenantId="tenant-1" organizations={organizations} callback={callback} />);
 
     await act(async () => form.onDelete());
 
@@ -145,16 +136,12 @@ describe('DeleteOrganizations', () => {
   });
 
   it('cancel closes only in a dialog, then settles', async () => {
-    const inDialog = await render(
-      <DeleteOrganizations dialog tenantId="tenant-1" organizations={organizations} callback={callback} />,
-    );
+    const inDialog = await render(<DeleteOrganizations dialog tenantId="tenant-1" organizations={organizations} callback={callback} />);
     await act(async () => inDialog.onCancel());
     expect(seen.events).toEqual(['close', 'callback settle']);
 
     seen.events.length = 0;
-    const inline = await render(
-      <DeleteOrganizations tenantId="tenant-1" organizations={organizations} callback={callback} />,
-    );
+    const inline = await render(<DeleteOrganizations tenantId="tenant-1" organizations={organizations} callback={callback} />);
     await act(async () => inline.onCancel());
     expect(seen.events).toEqual(['callback settle']);
   });

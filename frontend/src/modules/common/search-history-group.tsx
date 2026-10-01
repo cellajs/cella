@@ -19,11 +19,7 @@ export function SearchHistoryGroup({ searches, onRemove }: SearchHistoryGroupPro
     <ComboboxGroup className="p-1">
       <ComboboxGroupLabel>{t('c:history')}</ComboboxGroupLabel>
       {searches.map((search, index) => (
-        <ComboboxItem
-          key={search}
-          value={{ kind: 'history', value: search } as HistoryEntry}
-          className="justify-between"
-        >
+        <ComboboxItem key={search} value={{ kind: 'history', value: search } as HistoryEntry} className="justify-between">
           <div className="flex items-center gap-2">
             <HistoryIcon className="size-4 shrink-0 text-muted-foreground" />
             <span className="truncate font-medium">{search}</span>

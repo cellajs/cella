@@ -29,11 +29,7 @@ async function probeHealth(): Promise<{ httpStatus: number; body: unknown }> {
   try {
     await baseDb.execute(sql`select 1`);
     components.database = mapDatabaseComponent(true, Date.now() - startedAt);
-    const [key] = await baseDb
-      .select({ id: signingKeysTable.id })
-      .from(signingKeysTable)
-      .where(eq(signingKeysTable.status, 'current'))
-      .limit(1);
+    const [key] = await baseDb.select({ id: signingKeysTable.id }).from(signingKeysTable).where(eq(signingKeysTable.status, 'current')).limit(1);
     signingKey = key !== undefined;
   } catch {
     // The store did not answer, or the key query it reached first did not: reported below.
@@ -44,10 +40,7 @@ async function probeHealth(): Promise<{ httpStatus: number; body: unknown }> {
     : { status: 'unhealthy', checkedVia: 'local', reason: 'signing_key_missing' };
   components.authInvalidation = authInvalidationHealth();
   const status = rollupStatus(components, new Set(Object.keys(components)));
-  return {
-    httpStatus: status === 'unhealthy' ? 503 : 200,
-    body: { status, uptime: Math.floor(process.uptime()), components },
-  };
+  return { httpStatus: status === 'unhealthy' ? 503 : 200, body: { status, uptime: Math.floor(process.uptime()), components } };
 }
 
 type Listener = (req: IncomingMessage, res: ServerResponse) => void;
@@ -82,12 +75,7 @@ export function createOauthListener(provider: Provider): Listener {
 
   return (req, res) => {
     const url = req.url ?? '/';
-    if (
-      url === '/health' ||
-      url.startsWith('/health?') ||
-      url === `${OAUTH_MOUNT}/health` ||
-      url.startsWith(`${OAUTH_MOUNT}/health?`)
-    ) {
+    if (url === '/health' || url.startsWith('/health?') || url === `${OAUTH_MOUNT}/health` || url.startsWith(`${OAUTH_MOUNT}/health?`)) {
       req.url = url.replace(OAUTH_MOUNT, '');
       health(req, res);
       return;

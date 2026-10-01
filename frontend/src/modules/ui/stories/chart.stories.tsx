@@ -12,14 +12,8 @@ const multiSeriesData = [
 ];
 
 const multiSeriesConfig = {
-  desktop: {
-    label: 'Desktop',
-    color: 'var(--chart-1)',
-  },
-  mobile: {
-    label: 'Mobile',
-    color: 'var(--chart-2)',
-  },
+  desktop: { label: 'Desktop', color: 'var(--chart-1)' },
+  mobile: { label: 'Mobile', color: 'var(--chart-2)' },
 } satisfies ChartConfig;
 
 const singleSeriesData = [
@@ -29,21 +23,10 @@ const singleSeriesData = [
 ];
 
 const singleSeriesConfig = {
-  visitors: {
-    label: 'Visitors',
-  },
-  chrome: {
-    label: 'Chrome',
-    color: 'var(--chart-1)',
-  },
-  safari: {
-    label: 'Safari',
-    color: 'var(--chart-2)',
-  },
-  other: {
-    label: 'Other',
-    color: 'var(--chart-5)',
-  },
+  visitors: { label: 'Visitors' },
+  chrome: { label: 'Chrome', color: 'var(--chart-1)' },
+  safari: { label: 'Safari', color: 'var(--chart-2)' },
+  other: { label: 'Other', color: 'var(--chart-5)' },
 } satisfies ChartConfig;
 
 /**
@@ -67,55 +50,18 @@ type Story = StoryObj<typeof meta>;
  * Combine multiple Area components to create a stacked area chart.
  */
 export const StackedAreaChart: Story = {
-  args: {
-    config: multiSeriesConfig,
-  },
+  args: { config: multiSeriesConfig },
   render: (args) => (
     <ChartContainer {...args}>
-      <AreaChart
-        accessibilityLayer
-        data={multiSeriesData}
-        margin={{
-          left: 12,
-          right: 12,
-        }}
-      >
+      <AreaChart accessibilityLayer data={multiSeriesData} margin={{ left: 12, right: 12 }}>
         <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="month"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          tickFormatter={(value) => value.slice(0, 3)}
-        />
+        <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value.slice(0, 3)} />
         <ChartTooltip
           cursor={false}
-          content={
-            <ChartTooltipContent
-              indicator="dot"
-              payload={[]}
-              coordinate={{ x: 0, y: 0 }}
-              activeIndex={null}
-              accessibilityLayer={false}
-            />
-          }
+          content={<ChartTooltipContent indicator="dot" payload={[]} coordinate={{ x: 0, y: 0 }} activeIndex={null} accessibilityLayer={false} />}
         />
-        <Area
-          dataKey="mobile"
-          type="natural"
-          fill="var(--color-mobile)"
-          fillOpacity={0.4}
-          stroke="var(--color-mobile)"
-          stackId="a"
-        />
-        <Area
-          dataKey="desktop"
-          type="natural"
-          fill="var(--color-desktop)"
-          fillOpacity={0.4}
-          stroke="var(--color-desktop)"
-          stackId="a"
-        />
+        <Area dataKey="mobile" type="natural" fill="var(--color-mobile)" fillOpacity={0.4} stroke="var(--color-mobile)" stackId="a" />
+        <Area dataKey="desktop" type="natural" fill="var(--color-desktop)" fillOpacity={0.4} stroke="var(--color-desktop)" stackId="a" />
       </AreaChart>
     </ChartContainer>
   ),
@@ -125,31 +71,15 @@ export const StackedAreaChart: Story = {
  * Combine multiple Bar components to create a stacked bar chart.
  */
 export const StackedBarChart: Story = {
-  args: {
-    config: multiSeriesConfig,
-  },
+  args: { config: multiSeriesConfig },
   render: (args) => (
     <ChartContainer {...args}>
       <BarChart accessibilityLayer data={multiSeriesData}>
         <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="month"
-          tickLine={false}
-          tickMargin={10}
-          axisLine={false}
-          tickFormatter={(value) => value.slice(0, 3)}
-        />
+        <XAxis dataKey="month" tickLine={false} tickMargin={10} axisLine={false} tickFormatter={(value) => value.slice(0, 3)} />
         <ChartTooltip
           cursor={false}
-          content={
-            <ChartTooltipContent
-              indicator="dashed"
-              payload={[]}
-              coordinate={{ x: 0, y: 0 }}
-              activeIndex={null}
-              accessibilityLayer={false}
-            />
-          }
+          content={<ChartTooltipContent indicator="dashed" payload={[]} coordinate={{ x: 0, y: 0 }} activeIndex={null} accessibilityLayer={false} />}
         />
         <Bar dataKey="desktop" fill="var(--color-desktop)" radius={4} />
         <Bar dataKey="mobile" fill="var(--color-mobile)" radius={4} />
@@ -162,38 +92,15 @@ export const StackedBarChart: Story = {
  * Combine multiple Line components to create a single line chart.
  */
 export const MultiLineChart: Story = {
-  args: {
-    config: multiSeriesConfig,
-  },
+  args: { config: multiSeriesConfig },
   render: (args) => (
     <ChartContainer {...args}>
-      <LineChart
-        accessibilityLayer
-        data={multiSeriesData}
-        margin={{
-          left: 12,
-          right: 12,
-        }}
-      >
+      <LineChart accessibilityLayer data={multiSeriesData} margin={{ left: 12, right: 12 }}>
         <CartesianGrid vertical={false} />
-        <XAxis
-          dataKey="month"
-          tickLine={false}
-          axisLine={false}
-          tickMargin={8}
-          tickFormatter={(value) => value.slice(0, 3)}
-        />
+        <XAxis dataKey="month" tickLine={false} axisLine={false} tickMargin={8} tickFormatter={(value) => value.slice(0, 3)} />
         <ChartTooltip
           cursor={false}
-          content={
-            <ChartTooltipContent
-              hideLabel
-              payload={[]}
-              coordinate={{ x: 0, y: 0 }}
-              activeIndex={null}
-              accessibilityLayer={false}
-            />
-          }
+          content={<ChartTooltipContent hideLabel payload={[]} coordinate={{ x: 0, y: 0 }} activeIndex={null} accessibilityLayer={false} />}
         />
         <Line dataKey="desktop" type="natural" stroke="var(--color-desktop)" strokeWidth={2} dot={false} />
         <Line dataKey="mobile" type="natural" stroke="var(--color-mobile)" strokeWidth={2} dot={false} />
@@ -206,9 +113,7 @@ export const MultiLineChart: Story = {
  * Combine Pie and Label components to create a doughnut chart.
  */
 export const DoughnutChart: Story = {
-  args: {
-    config: singleSeriesConfig,
-  },
+  args: { config: singleSeriesConfig },
   render: (args) => {
     const totalVisitors = singleSeriesData.reduce((acc, curr) => acc + curr.visitors, 0);
     return (
@@ -216,15 +121,7 @@ export const DoughnutChart: Story = {
         <PieChart>
           <ChartTooltip
             cursor={false}
-            content={
-              <ChartTooltipContent
-                hideLabel
-                payload={[]}
-                coordinate={{ x: 0, y: 0 }}
-                activeIndex={null}
-                accessibilityLayer={false}
-              />
-            }
+            content={<ChartTooltipContent hideLabel payload={[]} coordinate={{ x: 0, y: 0 }} activeIndex={null} accessibilityLayer={false} />}
           />
           <Pie data={singleSeriesData} dataKey="visitors" nameKey="browser" innerRadius={48} strokeWidth={5}>
             <Label

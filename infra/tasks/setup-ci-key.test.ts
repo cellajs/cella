@@ -48,17 +48,9 @@ describe('setupCiKey', () => {
         body: { policies: [{ id: 'pol-1', name: 'demo-production-ci-deploy-policy' }] },
       },
       { method: 'DELETE', match: '/iam/v1alpha1/policies/pol-1', body: {} },
-      {
-        method: 'POST',
-        match: '/iam/v1alpha1/policies',
-        body: { id: 'pol-1', name: 'demo-production-ci-deploy-policy' },
-      },
+      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-1', name: 'demo-production-ci-deploy-policy' } },
       { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
-      {
-        method: 'POST',
-        match: '/iam/v1alpha1/api-keys',
-        body: { access_key: 'SCWNEW', secret_key: 'sekret', application_id: 'app-1' },
-      },
+      { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCWNEW', secret_key: 'sekret', application_id: 'app-1' } },
     ]);
     vi.stubGlobal('fetch', fn);
 
@@ -75,11 +67,7 @@ describe('setupCiKey', () => {
     // API key request includes today's date in description.
     const apiKeyCall = calls.find((c) => c.url.endsWith('/api-keys') && c.init.method === 'POST')!;
     const body = JSON.parse(apiKeyCall.init.body as string);
-    expect(body).toMatchObject({
-      application_id: 'app-1',
-      default_project_id: 'proj-1',
-      description: expect.stringContaining('2026-05-22'),
-    });
+    expect(body).toMatchObject({ application_id: 'app-1', default_project_id: 'proj-1', description: expect.stringContaining('2026-05-22') });
 
     // Auth header propagated.
     expect((apiKeyCall.init.headers as Record<string, string>)['X-Auth-Token']).toBe('caller-secret');
@@ -88,11 +76,7 @@ describe('setupCiKey', () => {
   it('creates application + policy when neither exists', async () => {
     const { fn, calls } = makeFetch([
       { method: 'GET', match: '/iam/v1alpha1/applications?', body: { applications: [] } },
-      {
-        method: 'POST',
-        match: '/iam/v1alpha1/applications',
-        body: { id: 'app-new', name: 'demo-production-ci-deploy' },
-      },
+      { method: 'POST', match: '/iam/v1alpha1/applications', body: { id: 'app-new', name: 'demo-production-ci-deploy' } },
       {
         method: 'GET',
         match: '/iam/v1alpha1/groups?',
@@ -100,17 +84,9 @@ describe('setupCiKey', () => {
       },
       { method: 'POST', match: '/iam/v1alpha1/groups/grp-1/add-member', body: { id: 'grp-1' } },
       { method: 'GET', match: '/iam/v1alpha1/policies?', body: { policies: [] } },
-      {
-        method: 'POST',
-        match: '/iam/v1alpha1/policies',
-        body: { id: 'pol-new', name: 'demo-production-ci-deploy-policy' },
-      },
+      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-new', name: 'demo-production-ci-deploy-policy' } },
       { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
-      {
-        method: 'POST',
-        match: '/iam/v1alpha1/api-keys',
-        body: { access_key: 'SCWNEW', secret_key: 'sekret', application_id: 'app-new' },
-      },
+      { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCWNEW', secret_key: 'sekret', application_id: 'app-new' } },
     ]);
     vi.stubGlobal('fetch', fn);
 
@@ -120,10 +96,7 @@ describe('setupCiKey', () => {
     expect(fn).toHaveBeenCalledTimes(8);
 
     const appCreate = calls.find((c) => c.url.endsWith('/applications') && c.init.method === 'POST')!;
-    expect(JSON.parse(appCreate.init.body as string)).toMatchObject({
-      name: 'demo-production-ci-deploy',
-      organization_id: 'org-1',
-    });
+    expect(JSON.parse(appCreate.init.body as string)).toMatchObject({ name: 'demo-production-ci-deploy', organization_id: 'org-1' });
 
     const policyCreate = calls.find((c) => c.url.endsWith('/policies') && c.init.method === 'POST')!;
     const policyBody = JSON.parse(policyCreate.init.body as string);
@@ -159,26 +132,16 @@ describe('setupCiKey', () => {
         body: { policies: [{ id: 'pol-1', name: 'demo-production-ci-deploy-policy' }] },
       },
       { method: 'DELETE', match: '/iam/v1alpha1/policies/pol-1', body: {} },
-      {
-        method: 'POST',
-        match: '/iam/v1alpha1/policies',
-        body: { id: 'pol-1', name: 'demo-production-ci-deploy-policy' },
-      },
+      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-1', name: 'demo-production-ci-deploy-policy' } },
       { method: 'GET', match: '/iam/v1alpha1/api-keys?', body: { api_keys: [] } },
-      {
-        method: 'POST',
-        match: '/iam/v1alpha1/api-keys',
-        body: { access_key: 'SCW', secret_key: 's', application_id: 'app-1' },
-      },
+      { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCW', secret_key: 's', application_id: 'app-1' } },
     ]);
     vi.stubGlobal('fetch', fn);
 
     await setupCiKey({ ...baseOpts, organizationId: undefined });
 
     // Subsequent applications/policies list calls should carry the resolved org id.
-    const scopedCalls = calls.filter(
-      (c) => c.init.method === 'GET' && (c.url.includes('/applications?') || c.url.includes('/policies?')),
-    );
+    const scopedCalls = calls.filter((c) => c.init.method === 'GET' && (c.url.includes('/applications?') || c.url.includes('/policies?')));
     expect(scopedCalls.length).toBeGreaterThan(0);
     for (const c of scopedCalls) {
       expect(c.url).toContain('organization_id=org-resolved');
@@ -199,11 +162,7 @@ describe('setupCiKey', () => {
         body: { policies: [{ id: 'pol-1', name: 'demo-production-ci-deploy-policy' }] },
       },
       { method: 'DELETE', match: '/iam/v1alpha1/policies/pol-1', body: {} },
-      {
-        method: 'POST',
-        match: '/iam/v1alpha1/policies',
-        body: { id: 'pol-1', name: 'demo-production-ci-deploy-policy' },
-      },
+      { method: 'POST', match: '/iam/v1alpha1/policies', body: { id: 'pol-1', name: 'demo-production-ci-deploy-policy' } },
       {
         method: 'GET',
         match: '/iam/v1alpha1/api-keys?',
@@ -211,21 +170,14 @@ describe('setupCiKey', () => {
       },
       { method: 'DELETE', match: '/iam/v1alpha1/api-keys/SCWOLD1', body: {} },
       { method: 'DELETE', match: '/iam/v1alpha1/api-keys/SCWOLD2', body: {} },
-      {
-        method: 'POST',
-        match: '/iam/v1alpha1/api-keys',
-        body: { access_key: 'SCWNEW', secret_key: 'sekret', application_id: 'app-1' },
-      },
+      { method: 'POST', match: '/iam/v1alpha1/api-keys', body: { access_key: 'SCWNEW', secret_key: 'sekret', application_id: 'app-1' } },
     ]);
     vi.stubGlobal('fetch', fn);
 
     await setupCiKey(baseOpts);
 
     const apiKeyDeletes = calls.filter((c) => c.init.method === 'DELETE' && c.url.includes('/api-keys/'));
-    expect(apiKeyDeletes.map((c) => c.url)).toEqual([
-      expect.stringContaining('/api-keys/SCWOLD1'),
-      expect.stringContaining('/api-keys/SCWOLD2'),
-    ]);
+    expect(apiKeyDeletes.map((c) => c.url)).toEqual([expect.stringContaining('/api-keys/SCWOLD1'), expect.stringContaining('/api-keys/SCWOLD2')]);
     const mintIndex = calls.findIndex((c) => c.init.method === 'POST' && c.url.endsWith('/api-keys'));
     const firstDeleteIndex = calls.findIndex((c) => c.init.method === 'DELETE' && c.url.includes('/api-keys/'));
     expect(mintIndex).toBeGreaterThanOrEqual(0);
@@ -234,12 +186,7 @@ describe('setupCiKey', () => {
 
   it('throws with a useful message on Scaleway error responses', async () => {
     const { fn } = makeFetch([
-      {
-        method: 'GET',
-        match: '/iam/v1alpha1/applications?',
-        body: { message: 'forbidden', type: 'permissions_denied' },
-        status: 403,
-      },
+      { method: 'GET', match: '/iam/v1alpha1/applications?', body: { message: 'forbidden', type: 'permissions_denied' }, status: 403 },
     ]);
     vi.stubGlobal('fetch', fn);
 

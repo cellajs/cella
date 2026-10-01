@@ -13,15 +13,7 @@ import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { hashDeviceIdForUser } from '#/utils/hash-pii';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import {
-  authCookie,
-  createMfaToken,
-  createTestSession,
-  createTestUser,
-  createTotpUser,
-  sentMails,
-  setCookiePair,
-} from '../helpers';
+import { authCookie, createMfaToken, createTestSession, createTestUser, createTotpUser, sentMails, setCookiePair } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
@@ -53,11 +45,7 @@ const notices = () =>
     .filter((statics) => statics.type === 'new-sign-in');
 
 /** A full sign-in without a request: the session, then the notice its new device calls for. */
-const signIn = async (
-  user: Awaited<ReturnType<typeof createTestUser>>,
-  context: SignInContext,
-  strategy: AuthStrategy = 'passkey',
-) => {
+const signIn = async (user: Awaited<ReturnType<typeof createTestUser>>, context: SignInContext, strategy: AuthStrategy = 'passkey') => {
   const { newDevice } = await createSession(user, context, strategy);
   if (newDevice) await notifyNewSignIn({ user, context, strategy, newDevice });
   return newDevice;
@@ -112,12 +100,7 @@ describe('new sign-in notice', () => {
     await signIn(user, browser());
 
     expect(notices()).toHaveLength(1);
-    expect(notices()[0].details).toMatchObject({
-      browser: 'Firefox',
-      os: 'macOS',
-      country: 'Netherlands',
-      strategy: 'Passkey',
-    });
+    expect(notices()[0].details).toMatchObject({ browser: 'Firefox', os: 'macOS', country: 'Netherlands', strategy: 'Passkey' });
     expect(notices()[0].details.accountUrl).toMatch(/\/account$/);
     expect(notices()[0].details.timestamp).toMatch(/^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC$/);
 
@@ -138,22 +121,19 @@ describe('new sign-in notice', () => {
     expect(await devicesOf(user.id)).toHaveLength(1);
   });
 
-  it.each(['magic', 'email'] as const)(
-    'enrolls but does not mail a %s sign-in, which went through the inbox',
-    async (strategy) => {
-      const user = await createTestUser(signUpUser.email);
-      await seedEarlierSignIn(user.id);
-      const context = browser();
+  it.each(['magic', 'email'] as const)('enrolls but does not mail a %s sign-in, which went through the inbox', async (strategy) => {
+    const user = await createTestUser(signUpUser.email);
+    await seedEarlierSignIn(user.id);
+    const context = browser();
 
-      await signIn(user, context, strategy);
-      // The browser proved itself through the inbox, so a later passkey sign-in from it is familiar.
-      const later = await signIn(user, context, 'passkey');
+    await signIn(user, context, strategy);
+    // The browser proved itself through the inbox, so a later passkey sign-in from it is familiar.
+    const later = await signIn(user, context, 'passkey');
 
-      expect(later).toBeNull();
-      expect(notices()).toHaveLength(0);
-      expect(await devicesOf(user.id)).toHaveLength(1);
-    },
-  );
+    expect(later).toBeNull();
+    expect(notices()).toHaveLength(0);
+    expect(await devicesOf(user.id)).toHaveLength(1);
+  });
 
   it('never enrolls or mails an impersonation session', async () => {
     const user = await createTestUser(signUpUser.email);
@@ -192,10 +172,7 @@ describe('new sign-in notice through the sign-in endpoint', async () => {
   const signInWithMfa = async (user: { id: string; email: string }, deviceCookie?: string) => {
     const mfaToken = await createMfaToken(user);
     const cookies = [authCookie('confirm-mfa', mfaToken), deviceCookie].filter(Boolean).join('; ');
-    const { response } = await call(signInWithTotp, {
-      body: { code: '123456' },
-      headers: { ...defaultHeaders, Cookie: cookies },
-    });
+    const { response } = await call(signInWithTotp, { body: { code: '123456' }, headers: { ...defaultHeaders, Cookie: cookies } });
     expect(response.status).toBe(204);
     return setCookiePair(response, 'device-id');
   };
@@ -221,9 +198,7 @@ describe('sessions list flags sessions from a new browser', async () => {
   const call = await createAppClient();
 
   const sessionsOf = async (user: { id: string }) => {
-    const { data, response } = await call(getMyAuth, {
-      headers: { ...defaultHeaders, Cookie: await createTestSession(user) },
-    });
+    const { data, response } = await call(getMyAuth, { headers: { ...defaultHeaders, Cookie: await createTestSession(user) } });
     expect(response.status).toBe(200);
     // The test client types data as unknown; the SDK already consumed the body.
     return (data as MeAuthData).sessions;

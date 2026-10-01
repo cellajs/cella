@@ -64,13 +64,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Mention edit activity', async
 
     const row = buildInsertableProduct(
       'attachment',
-      {
-        id: attachmentId,
-        tenantId: tenant.tenantId,
-        ...plan.channelIdColumns,
-        createdBy: tenant.user.id,
-        updatedBy: null,
-      },
+      { id: attachmentId, tenantId: tenant.tenantId, ...plan.channelIdColumns, createdBy: tenant.user.id, updatedBy: null },
       attachmentId,
     );
     await insertAttachmentRow({ ...row, deletedBy: null });
@@ -78,10 +72,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Mention edit activity', async
     // The insert's seq stamp marks the worker as caught up with the row.
     await waitFor(
       async () => {
-        const [stamped] = await db
-          .select({ seq: attachmentsTable.seq })
-          .from(attachmentsTable)
-          .where(eq(attachmentsTable.id, attachmentId));
+        const [stamped] = await db.select({ seq: attachmentsTable.seq }).from(attachmentsTable).where(eq(attachmentsTable.id, attachmentId));
         return (stamped?.seq ?? 0) > 0;
       },
       15_000,

@@ -26,8 +26,7 @@ const entityRoutes = createXRoutes(['entities', 'cella'], {
     xGuard: [userGuard],
     xRateLimiter: [streamConnectLimiter],
     summary: 'App event SSE stream',
-    description:
-      'SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.',
+    description: 'SSE stream for membership and entity notifications affecting the current user. Sends lightweight notifications.',
     responses: { 200: { description: 'SSE stream started', content: { 'text/event-stream': { schema: z.any() } } } },
   }),
 

@@ -72,12 +72,7 @@ describe('last organization admin', async () => {
   it('must not leave an organization without an admin via its only admin leaving', async () => {
     const { org, admin, headers, membershipOf } = await orgWithOneAdmin();
 
-    await expectLastAdmin(
-      await call(deleteMyMembership, {
-        query: { entityId: org.id, entityType: 'organization' },
-        headers: headers(admin),
-      }),
-    );
+    await expectLastAdmin(await call(deleteMyMembership, { query: { entityId: org.id, entityType: 'organization' }, headers: headers(admin) }));
     expect(await membershipOf(admin.id)).toBeDefined();
   });
 

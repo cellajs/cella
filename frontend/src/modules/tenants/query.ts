@@ -27,10 +27,7 @@ type TenantsListParams = TenantFilters & { limit?: number };
 
 /** Tenants are resources, not entities, so their query keys are defined manually. */
 const tenantQueryKeys = {
-  list: {
-    base: ['tenant', 'list'] as const,
-    filtered: (filters: TenantFilters) => ['tenant', 'list', filters] as const,
-  },
+  list: { base: ['tenant', 'list'] as const, filtered: (filters: TenantFilters) => ['tenant', 'list', filters] as const },
   selfCreate: ['tenant', 'self-create'] as const,
   update: ['tenant', 'update'] as const,
 };
@@ -48,9 +45,7 @@ export const tenantsListQueryOptions = (params: TenantsListParams) => {
 
   return infiniteQueryOptions({
     queryKey: tenantQueryKeys.list.filtered(filters),
-    ...offsetPaging(limit, (offset, signal) =>
-      getTenants({ query: { ...filters, ...pageQuery(limit, offset) }, signal }),
-    ),
+    ...offsetPaging(limit, (offset, signal) => getTenants({ query: { ...filters, ...pageQuery(limit, offset) }, signal })),
     refetchOnMount: true,
   });
 };

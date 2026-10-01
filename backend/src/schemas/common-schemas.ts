@@ -48,14 +48,9 @@ export const entityIdParamSchema = z.object({ id: validIdSchema });
 /** True resolves the entity by slug, not by ID. */
 export const slugQuerySchema = z.object({ slug: booleanTransformSchema.optional() });
 
-export const tenantIdParamSchema = z.object({
-  tenantId: validIdSchema,
-  id: validIdSchema,
-});
+export const tenantIdParamSchema = z.object({ tenantId: validIdSchema, id: validIdSchema });
 
-export const tenantOnlyParamSchema = z.object({
-  tenantId: validIdSchema,
-});
+export const tenantOnlyParamSchema = z.object({ tenantId: validIdSchema });
 
 export const inOrgParamSchema = z.object({ organizationId: validIdSchema });
 
@@ -63,27 +58,14 @@ export const idInOrgParamSchema = z.object({ id: validIdSchema, organizationId: 
 
 // Tenant-scoped param schemas (for RLS-enabled routes)
 
-export const tenantOrgParamSchema = z.object({
-  tenantId: validIdSchema,
-  organizationId: validIdSchema,
-});
+export const tenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema });
 
-export const idInTenantOrgParamSchema = z.object({
-  tenantId: validIdSchema,
-  organizationId: validIdSchema,
-  id: validIdSchema,
-});
+export const idInTenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema, id: validIdSchema });
 
-export const userIdInTenantOrgParamSchema = z.object({
-  tenantId: validIdSchema,
-  organizationId: validIdSchema,
-  userId: validIdSchema,
-});
+export const userIdInTenantOrgParamSchema = z.object({ tenantId: validIdSchema, organizationId: validIdSchema, userId: validIdSchema });
 
 /** Cross-tenant routes with a relatability check. */
-export const relatableUserIdParamSchema = z.object({
-  relatableUserId: validIdSchema,
-});
+export const relatableUserIdParamSchema = z.object({ relatableUserId: validIdSchema });
 
 export const entityWithTypeQuerySchema = z.object({ entityId: validIdSchema, entityType: channelEntityTypeSchema });
 
@@ -113,10 +95,10 @@ export const paginationQuerySchema = z.object({
   sort: z.enum(['createdAt']).default('createdAt'),
   order: z.enum(['asc', 'desc']).default('desc'),
   offset: integerQuerySchema(0, translatedError('error:invalid_offset')),
-  limit: integerQuerySchema(
-    appConfig.requestLimits.default,
+  limit: integerQuerySchema(appConfig.requestLimits.default, translatedError('error:invalid_limit', { max: limitMax })).refine(
+    (value) => value > 0 && value <= limitMax,
     translatedError('error:invalid_limit', { max: limitMax }),
-  ).refine((value) => value > 0 && value <= limitMax, translatedError('error:invalid_limit', { max: limitMax })),
+  ),
   /** Org-sequence delta filter: bounded inclusive range "51,150" (seq >= 51 AND <= 150). */
   seqCursor: seqCursorSchema.optional(),
 });
@@ -127,9 +109,7 @@ export const excludeArchivedQuerySchema = z
   .transform((val) => val === 'true');
 
 /** True returns fully hydrated relations. */
-export const fullResponseQuerySchema = z.object({
-  fullResponse: booleanTransformSchema.optional(),
-});
+export const fullResponseQuerySchema = z.object({ fullResponse: booleanTransformSchema.optional() });
 
 export const includeOptions = ['counts', 'membership', 'members'] as const;
 export type IncludeOption = (typeof includeOptions)[number];
@@ -141,10 +121,7 @@ export const includeQuerySchema = z
   .transform((val) => (val ? val.split(',').map((s) => s.trim()) : []))
   .pipe(z.array(z.enum(includeOptions)));
 
-export const slugIncludeQuerySchema = z.object({
-  slug: booleanTransformSchema.optional(),
-  include: includeQuerySchema,
-});
+export const slugIncludeQuerySchema = z.object({ slug: booleanTransformSchema.optional(), include: includeQuerySchema });
 
 export const idsBodySchema = (maxItems = 50) =>
   z.object({
@@ -161,12 +138,7 @@ export const idsWithStxBodySchema = (maxItems = 50) =>
       .array(z.string())
       .min(1, translatedError('error:invalid_min_items', { min: 'one', name: 'ID' }))
       .max(maxItems, translatedError('error:invalid_max_items', { max: maxItems, name: 'ID' })),
-    stx: z
-      .object({
-        mutationId: z.string(),
-        sourceId: z.string(),
-      })
-      .optional(),
+    stx: z.object({ mutationId: z.string(), sourceId: z.string() }).optional(),
   });
 
 // Common headers schemas
@@ -182,20 +154,14 @@ export const locationSchema = z.object({ Location: z.string() });
 export const refineWithType = <T>(check: (val: T) => boolean, errorType: string) => {
   return (val: T, ctx: z.RefinementCtx) => {
     if (!check(val)) {
-      ctx.addIssue({
-        code: 'custom',
-        message: t(`error:${errorType}`),
-        input: val,
-        params: { type: errorType },
-      });
+      ctx.addIssue({ code: 'custom', message: t(`error:${errorType}`), input: val, params: { type: errorType } });
     }
   };
 };
 
 export const validUuidSchema = z.string().uuid(translatedError('error:invalid_id'));
 
-export const noDuplicateSlugsRefine = (items: { slug: string }[]) =>
-  new Set(items.map((i) => i.slug)).size === items.length;
+export const noDuplicateSlugsRefine = (items: { slug: string }[]) => new Set(items.map((i) => i.slug)).size === items.length;
 
 /** Scheme and host are case-insensitive; userinfo, path, query and fragment are not, so they keep their case. */
 const lowercaseSchemeAndHost = (url: string) => {
@@ -228,15 +194,11 @@ export const validEmailSchema = z
     z
       .email(translatedError('error:invalid_email'))
       .min(4, translatedError('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }))
-      .max(
-        maxLength.field,
-        translatedError('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field }),
-      ),
+      .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Email', min: 4, max: maxLength.field })),
   )
   .openapi({ type: 'string', format: 'email', minLength: 4, maxLength: maxLength.field });
 
-const canonicalDomainPattern =
-  /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
+const canonicalDomainPattern = /^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/;
 export const validDomainSchema = z
   .string()
   .trim()
@@ -245,19 +207,10 @@ export const validDomainSchema = z
     z
       .string()
       .min(4, translatedError('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
-      .max(
-        maxLength.field,
-        translatedError('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }),
-      )
+      .max(maxLength.field, translatedError('error:invalid_between_num', { name: 'Domain', min: 4, max: maxLength.field }))
       .regex(canonicalDomainPattern, translatedError('error:invalid_domain')),
   )
-  .openapi({
-    type: 'string',
-    format: 'hostname',
-    minLength: 4,
-    maxLength: maxLength.field,
-    pattern: canonicalDomainPattern.source,
-  });
+  .openapi({ type: 'string', format: 'hostname', minLength: 4, maxLength: maxLength.field, pattern: canonicalDomainPattern.source });
 
 export const validSlugSchema = z
   .string()

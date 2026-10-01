@@ -15,12 +15,5 @@ interface PagesTableBarProps {
 export function PagesTableBar({ total, searchVars, setSearch, columns, setColumns }: PagesTableBarProps) {
   const barFilters = useTableBarFilters({ searchVars, setSearch, reset: { q: '' } });
 
-  return (
-    <TableBarShell
-      {...barFilters}
-      {...{ searchVars, total, columns, setColumns }}
-      label="c:page"
-      searchName="pageSearch"
-    />
-  );
+  return <TableBarShell {...barFilters} {...{ searchVars, total, columns, setColumns }} label="c:page" searchName="pageSearch" />;
 }

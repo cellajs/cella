@@ -14,11 +14,7 @@ import { buildCollectionReadWhere } from '#/permissions/row-predicates';
 import { getEntityTable } from '#/tables';
 import { log } from '#/utils/logger';
 
-type OrgScopedEntityTable = AnyPgTable & {
-  id: PgColumn;
-  organizationId: PgColumn;
-  createdAt: PgColumn;
-};
+type OrgScopedEntityTable = AnyPgTable & { id: PgColumn; organizationId: PgColumn; createdAt: PgColumn };
 
 export const trackedProductTypes = appConfig.seenTrackedProductTypes;
 const trackedProductTypeSet = new Set<string>(trackedProductTypes);
@@ -38,9 +34,7 @@ export const homeChannelColumn = (productType: SeenTrackedProductType): PgColumn
   const table = getEntityTable(productType);
   const columns = getColumns(table) as Record<string, PgColumn | undefined>;
   const parent = hierarchy.getParent(productType);
-  const parentColumn = parent
-    ? columns[appConfig.entityIdColumnKeys[parent as keyof typeof appConfig.entityIdColumnKeys]]
-    : undefined;
+  const parentColumn = parent ? columns[appConfig.entityIdColumnKeys[parent as keyof typeof appConfig.entityIdColumnKeys]] : undefined;
   const column = parentColumn ?? columns.organizationId;
   if (!column) throw new Error(`[Seen] No sub-context column for "${productType}"`);
   return column;
@@ -55,9 +49,7 @@ export async function markSeenOp(ctx: UserContext, entityIds: string[], productT
   const user = ctx.var.user;
   const organization = ctx.var.organization;
 
-  log.debug(
-    `markSeen: ${productType} x${entityIds.length} for org ${organization.id.slice(0, 8)} by ${user.id.slice(0, 8)}`,
-  );
+  log.debug(`markSeen: ${productType} x${entityIds.length} for org ${organization.id.slice(0, 8)} by ${user.id.slice(0, 8)}`);
 
   if (!isTrackedProductType(productType)) {
     log.debug(`markSeen: skipping non-tracked type "${productType}"`);
@@ -77,11 +69,7 @@ export async function markSeenOp(ctx: UserContext, entityIds: string[], productT
   const scopeWhere = buildCollectionReadWhere(readFilter, entityTable, homeChannelColumn(productType), actor);
   if (scopeWhere.kind === 'none') return { newCount: 0 };
 
-  const filters: SQL[] = [
-    inArray(orgTable.id, entityIds),
-    eq(orgTable.organizationId, organization.id),
-    gt(seenRecencySql(orgTable), windowCutoff),
-  ];
+  const filters: SQL[] = [inArray(orgTable.id, entityIds), eq(orgTable.organizationId, organization.id), gt(seenRecencySql(orgTable), windowCutoff)];
   const { deletedAt } = getColumns(entityTable) as Record<string, PgColumn | undefined>;
   if (deletedAt) filters.push(isNull(deletedAt));
   const draftVisible = draftVisibleRowsPredicate(entityTable, user.id);

@@ -79,9 +79,7 @@ export const configurePermissions = (
 
   const { entityActions, channelEntityTypes, getRoles } = resolveHierarchy(overrides);
 
-  const permissionableTypes = entityTypes.filter(
-    (type): type is ChannelEntityType | ProductEntityType => type !== 'user',
-  );
+  const permissionableTypes = entityTypes.filter((type): type is ChannelEntityType | ProductEntityType => type !== 'user');
 
   for (const entityType of permissionableTypes) {
     const entries: PolicyEntry[] = [];
@@ -109,11 +107,7 @@ export const configurePermissions = (
 };
 
 /** No public read grants. For tests and callers driving the engine with synthetic policies. */
-export const configurePolicyMatrix = (
-  entityTypes: readonly EntityType[],
-  callback: PolicyCallback,
-  overrides?: HierarchyOverrides,
-): PolicyMatrix => {
+export const configurePolicyMatrix = (entityTypes: readonly EntityType[], callback: PolicyCallback, overrides?: HierarchyOverrides): PolicyMatrix => {
   return configurePermissions(entityTypes, callback, overrides).policyMatrix;
 };
 
@@ -127,11 +121,7 @@ export const getEntityPolicies = (entityType: string, policies: PolicyMatrix): E
 };
 
 /** A channel/role pair with no entry yields `undefined`, which callers read as denied. */
-export const getPolicyPermissions = (
-  policies: EntityPolicies,
-  channelType: string,
-  role: string,
-): EntityActionPermissions | undefined => {
+export const getPolicyPermissions = (policies: EntityPolicies, channelType: string, role: string): EntityActionPermissions | undefined => {
   const entry = policies.find((p) => p.channelType === channelType && p.role === role);
   return entry?.permissions;
 };

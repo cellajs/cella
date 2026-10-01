@@ -8,15 +8,7 @@ import { appConfig } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
-import {
-  AcceptInvitationStep,
-  CheckEmailStep,
-  InviteOnlyStep,
-  MagicLinkSentStep,
-  SignInStep,
-  SignUpStep,
-  WaitlistStep,
-} from '~/modules/auth/steps';
+import { AcceptInvitationStep, CheckEmailStep, InviteOnlyStep, MagicLinkSentStep, SignInStep, SignUpStep, WaitlistStep } from '~/modules/auth/steps';
 import { useGetTokenData } from '~/modules/auth/use-get-token-data';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -56,11 +48,7 @@ export function AuthenticatePage() {
   const { data: signedInUser } = useQuery({ ...meQueryOptions(), enabled: false });
 
   // A signed-in visitor gets this page's own notice for a spent token, so the global toast stays quiet for them.
-  const {
-    data: tokenData,
-    isLoading,
-    isError: isTokenError,
-  } = useGetTokenData('invitation', tokenId, !!tokenId, !!signedInUser);
+  const { data: tokenData, isLoading, isError: isTokenError } = useGetTokenData('invitation', tokenId, !!tokenId, !!signedInUser);
 
   const {
     data: healthData,
@@ -69,8 +57,7 @@ export function AuthenticatePage() {
   } = useQuery({
     queryKey: ['auth', 'health'],
     // Combine the query signal with a hard timeout so an unreachable backend fails deterministically.
-    queryFn: ({ signal }) =>
-      getAuthHealth({ signal: AbortSignal.any([signal, AbortSignal.timeout(HEALTH_TIMEOUT_MS)]) }),
+    queryFn: ({ signal }) => getAuthHealth({ signal: AbortSignal.any([signal, AbortSignal.timeout(HEALTH_TIMEOUT_MS)]) }),
     staleTime: 0,
     refetchOnMount: 'always',
     retry: false,

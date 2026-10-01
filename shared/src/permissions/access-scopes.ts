@@ -19,11 +19,7 @@ export interface AccessScopes {
   /** The scopes in a space-separated `scope` value that this vocabulary knows; anything else is dropped. */
   parse: (value: string | undefined | null) => AccessScope[];
   /** Whether a key's or token's scopes cover the action. An unscoped one (`null` or absent) always does. */
-  allows: (
-    scopes: readonly AccessScope[] | null | undefined,
-    entityType: EntityType,
-    action: EntityActionType,
-  ) => boolean;
+  allows: (scopes: readonly AccessScope[] | null | undefined, entityType: EntityType, action: EntityActionType) => boolean;
 }
 
 /**

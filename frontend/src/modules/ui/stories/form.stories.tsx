@@ -22,19 +22,10 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-const formSchema = z.object({
-  username: z.string().min(6, {
-    message: 'Username must be at least 6 characters.',
-  }),
-});
+const formSchema = z.object({ username: z.string().min(6, { message: 'Username must be at least 6 characters.' }) });
 
 function ProfileForm(args: Story['args']) {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      username: '',
-    },
-  });
+  const form = useForm<z.infer<typeof formSchema>>({ resolver: zodResolver(formSchema), defaultValues: { username: '' } });
   function onSubmit(values: z.infer<typeof formSchema>) {
     action('onSubmit')(values);
   }
@@ -48,11 +39,7 @@ function ProfileForm(args: Story['args']) {
             <FormItem>
               <FormLabel help="This is your public display name.">Username</FormLabel>
               <FormControl>
-                <input
-                  className="w-full rounded-md border border-input bg-background px-3 py-2"
-                  placeholder="username"
-                  {...field}
-                />
+                <input className="w-full rounded-md border border-input bg-background px-3 py-2" placeholder="username" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -79,11 +66,7 @@ export const ShouldSucceedOnSubmit: Story = {
 
     await step('Click the submit button', async () => {
       await userEvent.click(await canvas.findByRole('button', { name: /submit/i }));
-      expect(
-        await canvas.queryByText(/username must be at least 6 characters/i, {
-          exact: true,
-        }),
-      ).toBeNull();
+      expect(await canvas.queryByText(/username must be at least 6 characters/i, { exact: true })).toBeNull();
     });
   },
 };
@@ -98,11 +81,7 @@ export const ShouldWarnOnSubmit: Story = {
 
     await step('Click the submit button', async () => {
       await userEvent.click(await canvas.findByRole('button', { name: /submit/i }));
-      expect(
-        await canvas.queryByText(/username must be at least 6 characters/i, {
-          exact: true,
-        }),
-      ).toBeVisible();
+      expect(await canvas.queryByText(/username must be at least 6 characters/i, { exact: true })).toBeVisible();
     });
   },
 };

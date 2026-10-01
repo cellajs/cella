@@ -11,11 +11,7 @@ const MODULE_TAG = `${ENTITY_TYPE}s`; // e.g. 'users'
 // Hand-owned fixtures isolate parser transformations from ordinary API contract churn.
 describe('parseOpenApiSpec', () => {
   it('handles minimal spec', () => {
-    const minimalSpec: OpenApiSpec = {
-      openapi: '3.1.0',
-      info: { title: 'Minimal API', version: '1.0.0' },
-      paths: {},
-    };
+    const minimalSpec: OpenApiSpec = { openapi: '3.1.0', info: { title: 'Minimal API', version: '1.0.0' }, paths: {} };
 
     const result = parseOpenApiSpec(minimalSpec);
 
@@ -55,10 +51,7 @@ describe('parseOpenApiSpec', () => {
           },
           AuditRecord: {
             type: 'object',
-            properties: {
-              createdBy: { $ref: '#/components/schemas/NullableUserMinimal' },
-              source: { $ref: '#/components/schemas/StringOrNumber' },
-            },
+            properties: { createdBy: { $ref: '#/components/schemas/NullableUserMinimal' }, source: { $ref: '#/components/schemas/StringOrNumber' } },
             required: ['createdBy'],
           },
         },
@@ -77,10 +70,7 @@ describe('parseOpenApiSpec', () => {
     expect(schemas.NullableUserMinimal.schema.oneOf?.[1]).toMatchObject({
       type: 'object',
       ref: '#/components/schemas/UserMinimal',
-      properties: {
-        id: { type: 'string', required: true },
-        name: { type: 'string', required: true },
-      },
+      properties: { id: { type: 'string', required: true }, name: { type: 'string', required: true } },
     });
     expect(schemas.AuditRecord.schema.properties?.source).toMatchObject({
       required: false,
@@ -154,13 +144,7 @@ describe('parseOpenApiSpec', () => {
 
     const schemas = Object.fromEntries(parseOpenApiSpec(spec).schemas.map((schema) => [schema.name, schema]));
 
-    expect(schemas.Ids.schema).toEqual({
-      type: 'array',
-      minItems: 1,
-      itemType: 'string',
-      format: 'uuid',
-      maxLength: 36,
-    });
+    expect(schemas.Ids.schema).toEqual({ type: 'array', minItems: 1, itemType: 'string', format: 'uuid', maxLength: 36 });
     expect(schemas.Rows.schema).toEqual({
       type: 'array',
       itemType: 'object',
@@ -215,9 +199,7 @@ describe('parseOpenApiSpec', () => {
             operationId: 'getUsers',
             summary: 'Get all users',
             tags: ['users'],
-            responses: {
-              '200': { description: 'Success' },
-            },
+            responses: { '200': { description: 'Success' } },
           },
         },
       },
@@ -226,19 +208,9 @@ describe('parseOpenApiSpec', () => {
     const result = parseOpenApiSpec(spec);
 
     expect(result.operations).toHaveLength(1);
-    expect(result.operations[0]).toMatchObject({
-      id: 'getUsers',
-      method: 'get',
-      path: '/users',
-      tags: ['users'],
-      summary: 'Get all users',
-    });
+    expect(result.operations[0]).toMatchObject({ id: 'getUsers', method: 'get', path: '/users', tags: ['users'], summary: 'Get all users' });
     expect(result.tags).toHaveLength(1);
-    expect(result.tags[0]).toMatchObject({
-      name: 'users',
-      description: 'User operations',
-      count: 1,
-    });
+    expect(result.tags[0]).toMatchObject({ name: 'users', description: 'User operations', count: 1 });
   });
 });
 
@@ -313,19 +285,11 @@ describe('parseOpenApiSpec, golden fixture', () => {
 
   it('produces a deterministic operation hash and capability flags', () => {
     expect(getUsers?.hash).toBe(`tag/${MODULE_TAG}/GET/users`);
-    expect(getUsers).toMatchObject({
-      hasParams: true,
-      hasRequestBody: false,
-      hasResponseBody: true,
-      hasExample: true,
-      deprecated: false,
-    });
+    expect(getUsers).toMatchObject({ hasParams: true, hasRequestBody: false, hasResponseBody: true, hasExample: true, deprecated: false });
   });
 
   it('extracts x-extensions declared in info onto operations', () => {
-    expect(result.info.extensions).toEqual([
-      { key: 'x-guard', id: 'xGuard', description: 'Route guards', kind: 'middleware' },
-    ]);
+    expect(result.info.extensions).toEqual([{ key: 'x-guard', id: 'xGuard', description: 'Route guards', kind: 'middleware' }]);
     expect(getUsers?.extensions).toEqual({ xGuard: ['isAuthenticated'] });
   });
 

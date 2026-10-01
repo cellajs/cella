@@ -6,7 +6,4 @@ export const attachmentsSearchDefaults = { q: '', sort: 'createdAt', order: 'des
 
 export const attachmentsRouteSearchParamsSchema = zGetAttachmentsQuery
   .pick({ q: true, sort: true, order: true })
-  .extend({
-    attachmentDialogId: z.string().optional(),
-    groupId: z.string().optional(),
-  });
+  .extend({ attachmentDialogId: z.string().optional(), groupId: z.string().optional() });

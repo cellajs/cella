@@ -12,10 +12,7 @@ export const useSortColumns = (sort: Sort | undefined, order: Order | undefined,
 
   const setSortColumns = (newSortColumns: SortColumn[]) => {
     if (newSortColumns.length === 0) return setSearch({ sort: undefined, order: undefined });
-    setSearch({
-      sort: newSortColumns[0].columnKey,
-      order: newSortColumns[0].direction === 'ASC' ? 'asc' : 'desc',
-    });
+    setSearch({ sort: newSortColumns[0].columnKey, order: newSortColumns[0].direction === 'ASC' ? 'asc' : 'desc' });
   };
 
   return { sortColumns, setSortColumns };

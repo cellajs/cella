@@ -100,10 +100,7 @@ describe('dispatchMoveOuts', () => {
     await dispatchMoveOuts(
       updateEvent({
         rowData: row('att-1', { publishedAt: null }),
-        movedFrom: row('att-1', {
-          publishedAt: '2026-07-01T00:00:00Z',
-          createdBy: 'member-user',
-        }),
+        movedFrom: row('att-1', { publishedAt: '2026-07-01T00:00:00Z', createdBy: 'member-user' }),
       }),
     );
 
@@ -127,10 +124,7 @@ describe('dispatchMoveOuts', () => {
     // Positive control: both rows are authored by the reader, so both locations are readable
     // under a read:'own' policy. Without that authorship the assertion could pass vacuously.
     await dispatchMoveOuts(
-      updateEvent({
-        rowData: row('att-1', { createdBy: 'member-user' }),
-        movedFrom: row('att-1', { createdBy: 'member-user' }),
-      }),
+      updateEvent({ rowData: row('att-1', { createdBy: 'member-user' }), movedFrom: row('att-1', { createdBy: 'member-user' }) }),
     );
 
     expect(member.received).toHaveLength(0);
@@ -159,17 +153,10 @@ describe('dispatchMoveOuts', () => {
           {
             seq: 8,
             rowData: row('att-2', { publishedAt: null }),
-            movedFrom: row('att-2', {
-              publishedAt: '2026-07-01T00:00:00Z',
-              createdBy: 'member-user',
-            }),
+            movedFrom: row('att-2', { publishedAt: '2026-07-01T00:00:00Z', createdBy: 'member-user' }),
           },
           // Moved but still readable: routed by the normal update, no moveOut.
-          {
-            seq: 9,
-            rowData: row('att-3', { createdBy: 'member-user' }),
-            movedFrom: row('att-3', { createdBy: 'member-user' }),
-          },
+          { seq: 9, rowData: row('att-3', { createdBy: 'member-user' }), movedFrom: row('att-3', { createdBy: 'member-user' }) },
           // Not moved at all.
           { seq: 10, rowData: row('att-4') },
         ],

@@ -1,11 +1,6 @@
 import { createCipheriv, pbkdf2Sync, randomBytes } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
-import {
-  __testing,
-  generatePassphrase,
-  supportsStdinPassphraseRotation,
-  verifyStackPassphrase,
-} from './pulumi-passphrase';
+import { __testing, generatePassphrase, supportsStdinPassphraseRotation, verifyStackPassphrase } from './pulumi-passphrase';
 
 const { PBKDF2_ITERATIONS, KEY_LEN, GCM_TAG_LEN, decryptV1, deriveKey } = __testing;
 
@@ -43,13 +38,8 @@ function buildStackYaml(passphrase: string, entries: Record<string, string>): st
 describe('pulumi-passphrase round-trip', () => {
   it('decrypts values written with the same algorithm', () => {
     const passphrase = 'correct horse battery staple';
-    const yaml = buildStackYaml(passphrase, {
-      'infra:cookieSecret': 'COOKIE-PLAIN',
-      'scaleway:secretKey': 'SCWSECRET',
-    });
-    expect(
-      __testing.decryptStackSecretsFromText(yaml, passphrase, ['infra:cookieSecret', 'scaleway:secretKey']),
-    ).toEqual({
+    const yaml = buildStackYaml(passphrase, { 'infra:cookieSecret': 'COOKIE-PLAIN', 'scaleway:secretKey': 'SCWSECRET' });
+    expect(__testing.decryptStackSecretsFromText(yaml, passphrase, ['infra:cookieSecret', 'scaleway:secretKey'])).toEqual({
       'infra:cookieSecret': 'COOKIE-PLAIN',
       'scaleway:secretKey': 'SCWSECRET',
     });
@@ -62,15 +52,11 @@ describe('pulumi-passphrase round-trip', () => {
 
   it('throws "Bad passphrase" on wrong passphrase', () => {
     const yaml = buildStackYaml('right', { 'infra:cookieSecret': 'C' });
-    expect(() => __testing.decryptStackSecretsFromText(yaml, 'wrong', ['infra:cookieSecret'])).toThrow(
-      /Bad passphrase/,
-    );
+    expect(() => __testing.decryptStackSecretsFromText(yaml, 'wrong', ['infra:cookieSecret'])).toThrow(/Bad passphrase/);
   });
 
   it('throws on missing encryptionsalt header', () => {
-    expect(() => __testing.decryptStackSecretsFromText('config:\n  infra:x: y', 'p', ['infra:x'])).toThrow(
-      /No encryptionsalt/,
-    );
+    expect(() => __testing.decryptStackSecretsFromText('config:\n  infra:x: y', 'p', ['infra:x'])).toThrow(/No encryptionsalt/);
   });
 
   it('GCM auth tag rejects tampered ciphertext', () => {

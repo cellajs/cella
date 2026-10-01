@@ -12,8 +12,7 @@ export class StepUpDismissed extends Error {
 }
 
 /** Whether the server refused an action until the user proves it's them again. */
-export const isStepUpRequired = (error: unknown): error is ApiError =>
-  error instanceof ApiError && error.type === 'step_up_required';
+export const isStepUpRequired = (error: unknown): error is ApiError => error instanceof ApiError && error.type === 'step_up_required';
 
 const methodsOf = (error: ApiError): StepUpMethod[] => {
   const methods = error.meta?.methods;
@@ -25,10 +24,7 @@ const methodsOf = (error: ApiError): StepUpMethod[] => {
  * user can offer, and once it resolves the action runs one more time. Every other failure, and a rejected `stepUp`,
  * reaches the caller.
  */
-export const retryAfterStepUp = async <T>(
-  action: () => Promise<T>,
-  stepUp: (methods: StepUpMethod[]) => Promise<void>,
-): Promise<T> => {
+export const retryAfterStepUp = async <T>(action: () => Promise<T>, stepUp: (methods: StepUpMethod[]) => Promise<void>): Promise<T> => {
   try {
     return await action();
   } catch (error) {

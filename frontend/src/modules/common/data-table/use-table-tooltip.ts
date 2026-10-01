@@ -8,10 +8,7 @@ const skipDelayWindow = 500;
 const positionTooltip = (reference: HTMLElement, tooltip: HTMLElement, gap = 4) => {
   const rect = reference.getBoundingClientRect();
   const tooltipRect = tooltip.getBoundingClientRect();
-  Object.assign(tooltip.style, {
-    left: `${rect.right + gap}px`,
-    top: `${rect.top + (rect.height - tooltipRect.height) / 2}px`,
-  });
+  Object.assign(tooltip.style, { left: `${rect.right + gap}px`, top: `${rect.top + (rect.height - tooltipRect.height) / 2}px` });
 };
 
 /** Data grid tooltip driven by DOM listeners outside React, so hovering never re-renders the grid. */

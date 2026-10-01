@@ -4,10 +4,7 @@ import { queryClient } from '~/query/query-client';
 import { flattenInfiniteData } from './flatten';
 
 /** Checks the detail cache first, then list caches. The matcher is an id or a predicate. */
-export function findInCache<T extends { id: string }>(
-  entityType: string,
-  matcher: string | ((item: T) => boolean),
-): T | undefined {
+export function findInCache<T extends { id: string }>(entityType: string, matcher: string | ((item: T) => boolean)): T | undefined {
   if (typeof matcher === 'string') {
     const detailKey: QueryKey = [entityType, 'detail', matcher];
     const detail = queryClient.getQueryData<T>(detailKey);

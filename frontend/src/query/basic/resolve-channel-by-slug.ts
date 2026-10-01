@@ -5,11 +5,7 @@ import { queryClient } from '~/query/query-client';
 import { redirectOnMissing } from '~/utils/redirect-on-missing';
 import { rewriteUrlToSlug } from '~/utils/rewrite-url-to-slug';
 
-type ResolveChannelBySlugConfig<
-  T extends { id: string; slug: string },
-  P extends Record<string, string>,
-  TQueryKey extends QueryKey,
-> = {
+type ResolveChannelBySlugConfig<T extends { id: string; slug: string }, P extends Record<string, string>, TQueryKey extends QueryKey> = {
   /** Route param value, either the entity's id or its slug. */
   idOrSlug: string;
   tenantId: string;
@@ -35,11 +31,9 @@ type ResolveChannelBySlugConfig<
  * Resolves a channel entity from a route param that may be an id or a slug.
  * Reads the list cache, seeds and reads the detail cache, fetches by slug when no id is cached, redirects to /home when nothing resolves, and rewrites the URL to the canonical slug.
  */
-export async function resolveChannelBySlug<
-  T extends { id: string; slug: string },
-  P extends Record<string, string>,
-  TQueryKey extends QueryKey,
->(config: ResolveChannelBySlugConfig<T, P, TQueryKey>): Promise<T> {
+export async function resolveChannelBySlug<T extends { id: string; slug: string }, P extends Record<string, string>, TQueryKey extends QueryKey>(
+  config: ResolveChannelBySlugConfig<T, P, TQueryKey>,
+): Promise<T> {
   const {
     idOrSlug,
     tenantId,

@@ -55,11 +55,7 @@ export async function withSpan<T>(name: string, attrs: SpanAttrs, fn: (ctx: Trac
   return tracer.startActiveSpan(name, async (span) => {
     applyAttrs(span, attrs);
     try {
-      const ctx: TraceContext = {
-        traceId: span.spanContext().traceId,
-        spanId: span.spanContext().spanId,
-        cdcTimestamp: Date.now(),
-      };
+      const ctx: TraceContext = { traceId: span.spanContext().traceId, spanId: span.spanContext().spanId, cdcTimestamp: Date.now() };
       const result = await fn(ctx);
       span.setStatus({ code: SpanStatusCode.OK });
       return result;
@@ -77,11 +73,7 @@ export function withSpanSync<T>(name: string, attrs: SpanAttrs, fn: (ctx: TraceC
   const span = tracer.startSpan(name);
   applyAttrs(span, attrs);
   try {
-    const ctx: TraceContext = {
-      traceId: span.spanContext().traceId,
-      spanId: span.spanContext().spanId,
-      cdcTimestamp: Date.now(),
-    };
+    const ctx: TraceContext = { traceId: span.spanContext().traceId, spanId: span.spanContext().spanId, cdcTimestamp: Date.now() };
     const result = fn(ctx);
     span.setStatus({ code: SpanStatusCode.OK });
     return result;

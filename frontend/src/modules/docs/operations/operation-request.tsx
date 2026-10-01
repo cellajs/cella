@@ -4,12 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { GenOperationDetail } from 'sdk/docs-types';
 import { Button } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
-import {
-  getTypeCodeForRequest,
-  getZodCodeForRequest,
-  typesIndexQueryOptions,
-  zodIndexQueryOptions,
-} from '../helpers/extract-types';
+import { getTypeCodeForRequest, getZodCodeForRequest, typesIndexQueryOptions, zodIndexQueryOptions } from '../helpers/extract-types';
 import { ViewerGroup } from '../viewer-group';
 
 interface OperationRequestProps {

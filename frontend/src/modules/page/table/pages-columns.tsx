@@ -88,9 +88,7 @@ export function usePagesTableColumns() {
       minBreakpoint: 'md',
       resizable: true,
       width: 140,
-      renderCell: ({ row }) => (
-        <Badge variant={row.draft ? 'secondary' : 'success'}>{t(`c:${row.draft ? 'draft' : 'published'}`)}</Badge>
-      ),
+      renderCell: ({ row }) => <Badge variant={row.draft ? 'secondary' : 'success'}>{t(`c:${row.draft ? 'draft' : 'published'}`)}</Badge>,
       ...(canEditDocs && {
         editable: true,
         editorOptions: enumSelectEditorOptions,
@@ -139,8 +137,5 @@ export function usePagesTableColumns() {
   const [columns, setColumns] = useState(configs);
 
   // Stable array identity: DataGrid passes it to memoized Row/Cell, and a fresh array re-renders every visible row.
-  return {
-    columns,
-    setColumns,
-  };
+  return { columns, setColumns };
 }

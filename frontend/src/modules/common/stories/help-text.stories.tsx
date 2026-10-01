@@ -1,12 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { HelpText } from '~/modules/common/help-text';
 
-const meta = {
-  title: 'common/HelpText',
-  component: HelpText,
-  tags: ['autodocs'],
-  parameters: { layout: 'centered' },
-} satisfies Meta<typeof HelpText>;
+const meta = { title: 'common/HelpText', component: HelpText, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
+  typeof HelpText
+>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

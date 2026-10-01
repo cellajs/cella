@@ -16,15 +16,7 @@ export function Stepper({ children, className, initialStep = 0, steps, onClickSt
   );
 
   return (
-    <StepperContext.Provider
-      value={{
-        steps,
-        activeStep,
-        onClickStep,
-        nextStep: () => setActiveStep((prev) => prev + 1),
-        setStep: setActiveStep,
-      }}
-    >
+    <StepperContext.Provider value={{ steps, activeStep, onClickStep, nextStep: () => setActiveStep((prev) => prev + 1), setStep: setActiveStep }}>
       <div
         className={cn(
           'flex w-full flex-col flex-wrap [--step-gap:0.5rem] [--step-icon-size:2rem]',
@@ -78,11 +70,7 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
             data-clickable={clickable}
             onClick={() => onClickStep?.(index, setStep)}
           >
-            {isCompletedStep ? (
-              <Check className="size-4" />
-            ) : (
-              <span className="text-center font-medium text-md">{index + 1}</span>
-            )}
+            {isCompletedStep ? <Check className="size-4" /> : <span className="text-center font-medium text-md">{index + 1}</span>}
           </Button>
           {!!label && (
             <div
@@ -95,9 +83,7 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
           )}
         </div>
       )}
-      <div
-        className={cn(index !== steps.length - 1 && 'min-h-4', 'max-sm:relative max-sm:z-1 sm:ps-(--step-icon-size)')}
-      >
+      <div className={cn(index !== steps.length - 1 && 'min-h-4', 'max-sm:relative max-sm:z-1 sm:ps-(--step-icon-size)')}>
         <Collapsible open={isCurrentStep}>
           <CollapsibleContent className="overflow-hidden data-closed:animate-collapsible-up data-open:animate-collapsible-down">
             {children}

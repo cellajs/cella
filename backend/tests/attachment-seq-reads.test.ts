@@ -14,13 +14,7 @@ import { setTestConfig } from './test-utils';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-const attachmentIds = {
-  seq10: generateId(),
-  seq20: generateId(),
-  seq30Deleted: generateId(),
-  seq40: generateId(),
-  seq50: generateId(),
-};
+const attachmentIds = { seq10: generateId(), seq20: generateId(), seq30Deleted: generateId(), seq40: generateId(), seq50: generateId() };
 
 const daysAgo = (days: number) => new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
 
@@ -49,16 +43,7 @@ describe('Attachment seq reads', async () => {
       // Audit users beyond createdBy are nulled: the mock's random ids reference no users rows.
       buildInsertableProduct(
         'attachment',
-        {
-          id,
-          tenantId: tenant.tenantId,
-          ...plan.channelIdColumns,
-          createdBy: tenant.user.id,
-          updatedBy: null,
-          deletedBy: null,
-          seq,
-          ...extra,
-        },
+        { id, tenantId: tenant.tenantId, ...plan.channelIdColumns, createdBy: tenant.user.id, updatedBy: null, deletedBy: null, seq, ...extra },
         key,
       );
     const rows = [

@@ -38,10 +38,7 @@ export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
         onClick={stopImpersonation}
         className="group linear h-14 w-full justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 hover:bg-background/30 focus-visible:ring-offset-0 data-[collapsed=true]:w-16"
       >
-        <UserXIcon
-          className="size-5 min-h-5 min-w-5 shrink-0 transition-transform group-hover:scale-110"
-          strokeWidth={1.8}
-        />
+        <UserXIcon className="size-5 min-h-5 min-w-5 shrink-0 transition-transform group-hover:scale-110" strokeWidth={1.8} />
         {hasSidebarTextLabels && (
           <span className="linear w-auto overflow-hidden whitespace-nowrap pl-1.5 font-medium opacity-100 transition-[opacity,width] duration-200 group-data-[collapsed=true]:w-0 group-data-[collapsed=true]:opacity-0">
             {t('c:stop_impersonation')}

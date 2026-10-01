@@ -128,8 +128,7 @@ export const useColumns = () => {
       hidden: true,
       minWidth: 160,
       placeholderValue: '-',
-      renderCell: ({ row, tabIndex }) =>
-        row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
       exportValue: (row) => row.createdBy?.name,
     },
     // Dynamic membership count columns from role config
@@ -142,11 +141,7 @@ export const useColumns = () => {
       maxWidth: 140,
       renderCell: ({ row }: { row: EnrichedOrganization }) => (
         <>
-          {role === 'admin' ? (
-            <ShieldIcon className="mr-2 opacity-50" />
-          ) : (
-            <UserRoundIcon className="mr-2 opacity-50" />
-          )}
+          {role === 'admin' ? <ShieldIcon className="mr-2 opacity-50" /> : <UserRoundIcon className="mr-2 opacity-50" />}
           {row.included.counts?.membership[role] ?? '-'}
         </>
       ),

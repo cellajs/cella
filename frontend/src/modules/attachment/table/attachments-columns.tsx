@@ -61,12 +61,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
         minWidth: 180,
         renderCell: ({ row }) => (
           <>
-            <SeenMark
-              productId={row.id}
-              tenantId={channel.tenantId}
-              organizationId={channel.id}
-              productType="attachment"
-            />
+            <SeenMark productId={row.id} tenantId={channel.tenantId} organizationId={channel.id} productType="attachment" />
             <span className="truncate font-medium">{row.name || '-'}</span>
           </>
         ),
@@ -133,9 +128,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
         resizable: true,
         minWidth: 140,
         renderCell: ({ row }) => (
-          <span className="truncate underline-offset-4 group-hover:underline">
-            {row.filename || <span className="text-muted">-</span>}
-          </span>
+          <span className="truncate underline-offset-4 group-hover:underline">{row.filename || <span className="text-muted">-</span>}</span>
         ),
       },
       {
@@ -144,9 +137,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
         minBreakpoint: 'md',
         width: 100,
         renderCell: ({ row }) => (
-          <div className="group relative inline-flex h-full w-full items-center gap-1 opacity-50">
-            {formatBytes(row.size)}
-          </div>
+          <div className="group relative inline-flex h-full w-full items-center gap-1 opacity-50">{formatBytes(row.size)}</div>
         ),
       },
       {
@@ -177,8 +168,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
         hidden: true,
         minWidth: 160,
         placeholderValue: '-',
-        renderCell: ({ row, tabIndex }) =>
-          row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
+        renderCell: ({ row, tabIndex }) => row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
       },
       {
         key: 'updatedAt',
@@ -194,8 +184,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
         hidden: true,
         width: 160,
         placeholderValue: '-',
-        renderCell: ({ row, tabIndex }) =>
-          row.updatedBy && <UserCell compactable user={row.updatedBy} tabIndex={tabIndex} />,
+        renderCell: ({ row, tabIndex }) => row.updatedBy && <UserCell compactable user={row.updatedBy} tabIndex={tabIndex} />,
       },
     ],
     [canUpdate, deleteState, channelId, userId, isSheet],

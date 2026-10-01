@@ -780,10 +780,7 @@
           },
           "contentType": "application/json"
         },
-        "example": {
-          "totpUri": "otpauth://totp/App:user@example.com?secret=EXAMPLE-BASE32-KEY&issuer=App",
-          "manualKey": "EXAMPLE-BASE32-KEY"
-        }
+        "example": { "totpUri": "otpauth://totp/App:user@example.com?secret=EXAMPLE-BASE32-KEY&issuer=App", "manualKey": "EXAMPLE-BASE32-KEY" }
       },
       {
         "status": 400,

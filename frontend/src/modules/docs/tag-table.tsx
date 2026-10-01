@@ -33,10 +33,7 @@ export function TagHashLink({ tagParam, tagName, hash, tabIndex, className, ...p
       resetScroll={false}
       draggable={false}
       tabIndex={tabIndex}
-      className={cn(
-        'truncate font-mono text-sm decoration-foreground/30 underline-offset-3 hover:underline',
-        className,
-      )}
+      className={cn('truncate font-mono text-sm decoration-foreground/30 underline-offset-3 hover:underline', className)}
       {...props}
     />
   );

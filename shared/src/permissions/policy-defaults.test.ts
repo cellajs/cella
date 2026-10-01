@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { EntityType } from '../../types.ts';
-import {
-  configureWidePermissions,
-  wideEntityTypes,
-  wideHierarchy,
-  wideMembership,
-  wideOverrides,
-  wideSubject,
-} from '../testing/wide-fixture.ts';
+import { configureWidePermissions, wideEntityTypes, wideHierarchy, wideMembership, wideOverrides, wideSubject } from '../testing/wide-fixture.ts';
 import { getAllDecisions } from './engine/check.ts';
 import { configurePermissions } from './policy-matrix.ts';
 
@@ -27,10 +20,7 @@ describe('missing policy rows', () => {
     const decision = getAllDecisions(
       policyMatrix,
       [wideMembership('organization', 'org1', 'member')],
-      wideSubject({
-        entityType: 'attachment',
-        channelIds: { organization: 'org1', project: 'project1' },
-      }),
+      wideSubject({ entityType: 'attachment', channelIds: { organization: 'org1', project: 'project1' } }),
       { ...wideOverrides },
     );
 

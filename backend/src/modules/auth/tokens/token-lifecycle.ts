@@ -9,12 +9,7 @@ import { baseDb, type DbOrTx, type Tx } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { findSession } from '#/modules/auth/general/helpers/session';
 import { sessionsTable } from '#/modules/auth/sessions-db';
-import {
-  type CookieTokenType,
-  type LinkTokenType,
-  type TokenReplacement,
-  tokenPolicies,
-} from '#/modules/auth/tokens/token-policies';
+import { type CookieTokenType, type LinkTokenType, type TokenReplacement, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { type TokenRecord, tokenColumns } from '#/modules/auth/tokens/tokens-queries';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens-db';
 import { findUserByEmail } from '#/modules/user/user-queries';
@@ -25,19 +20,12 @@ import { createDate } from '#/utils/time-span';
 
 /** What a new token records besides its secret and expiry, which issuing sets. */
 export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
-  Partial<
-    Pick<
-      InsertTokenModel,
-      'userId' | 'createdBy' | 'identityId' | 'inactiveMembershipId' | 'redirectPath' | 'pendingSignUp' | 'sessionId'
-    >
-  >;
+  Partial<Pick<InsertTokenModel, 'userId' | 'createdBy' | 'identityId' | 'inactiveMembershipId' | 'redirectPath' | 'pendingSignUp' | 'sessionId'>>;
 
 /** The subject each replacement rule names; undefined replaces nothing. See `tokenReplacements`. */
 const replacementSubjects = {
   'address-or-account': (token) =>
-    token.userId
-      ? or(eq(tokensTable.email, token.email), eq(tokensTable.userId, token.userId))
-      : eq(tokensTable.email, token.email),
+    token.userId ? or(eq(tokensTable.email, token.email), eq(tokensTable.userId, token.userId)) : eq(tokensTable.email, token.email),
   identity: ({ identityId, pendingSignUp }) => {
     if (identityId) return eq(tokensTable.identityId, identityId);
     if (!pendingSignUp) return undefined;
@@ -68,10 +56,7 @@ const replacedBy = (token: NewToken): SQL | undefined => {
  * @returns Per token, in the given order: the stored row and the raw value. The raw value exists only here; it goes
  *   into the link or cookie that carries the token.
  */
-export const issueTokens = async (
-  ctx: DbContext,
-  tokens: NewToken[],
-): Promise<{ token: TokenRecord; rawToken: string }[]> => {
+export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{ token: TokenRecord; rawToken: string }[]> => {
   if (!tokens.length) return [];
   const { db } = ctx.var;
 
@@ -124,8 +109,7 @@ export const issueCookieToken = async (ctx: Context<Env>, token: NewToken & { ty
 };
 
 /** An expired token's refusal names it by id, so an error page can offer a new link; never by its raw value. */
-const expired = (token: TokenRecord) =>
-  new AppError(401, `${token.type}_expired`, 'warn', { meta: { tokenId: token.id } });
+const expired = (token: TokenRecord) => new AppError(401, `${token.type}_expired`, 'warn', { meta: { tokenId: token.id } });
 
 /**
  * Refuses a link that belongs to another account than the one this browser is signed in to. A link issued without an
@@ -188,9 +172,7 @@ export const findLinkToken = async ({ type, rawToken }: LinkTokenOpts): Promise<
 
 /** Deletes the unopened link a raw value names, so neither its URL nor a confirmation page can redeem it any more. */
 export const withdrawLinkToken = async ({ type, rawToken }: LinkTokenOpts) => {
-  await baseDb
-    .delete(tokensTable)
-    .where(and(eq(tokensTable.secret, hashToken(rawToken)), eq(tokensTable.type, type), isNull(tokensTable.invokedAt)));
+  await baseDb.delete(tokensTable).where(and(eq(tokensTable.secret, hashToken(rawToken)), eq(tokensTable.type, type), isNull(tokensTable.invokedAt)));
 };
 
 /**
@@ -203,10 +185,7 @@ export const withdrawLinkToken = async ({ type, rawToken }: LinkTokenOpts) => {
  * @throws AppError 401 `<type>_not_found`, 401 `<type>_expired` (expired, or redeemed by another browser), 409
  *   `user_mismatch` while signed in to another account, or what `claimOwner` throws.
  */
-export const invokeToken = async (
-  ctx: Context<Env>,
-  { type, rawToken, claimOwner }: InvokeTokenOpts,
-): Promise<TokenRecord> => {
+export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimOwner }: InvokeTokenOpts): Promise<TokenRecord> => {
   const { singleUseWindow } = tokenPolicies[type];
 
   const token = await findLinkToken({ type, rawToken });
@@ -245,11 +224,7 @@ export const invokeToken = async (
           const won = await redeem(tx);
           if (!won) return won;
           const userId = await claimOwner(tx, won);
-          const [owned] = await tx
-            .update(tokensTable)
-            .set({ userId })
-            .where(eq(tokensTable.id, won.id))
-            .returning(tokenColumns);
+          const [owned] = await tx.update(tokensTable).set({ userId }).where(eq(tokensTable.id, won.id)).returning(tokenColumns);
           return owned;
         });
 
@@ -280,8 +255,7 @@ export const requestedHere = async (ctx: Context<Env>, type: RequestedLinkType, 
   (await getAuthCookie(ctx, `${type}-requested`)) === tokenId;
 
 /** Drops the marker once the link is used: it has nothing left to say. */
-export const forgetLinkRequest = (ctx: Context<Env>, type: RequestedLinkType) =>
-  deleteAuthCookie(ctx, `${type}-requested`);
+export const forgetLinkRequest = (ctx: Context<Env>, type: RequestedLinkType) => deleteAuthCookie(ctx, `${type}-requested`);
 
 /**
  * Names the row a browser's cookie of `type` binds it to, by the hash of the cookie's value: after a link's redemption
@@ -351,9 +325,7 @@ const isLiveSession = async (db: DbOrTx, sessionId: string) => {
   const [live] = await db
     .select({ id: sessionsTable.id })
     .from(sessionsTable)
-    .where(
-      and(eq(sessionsTable.id, sessionId), isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, getIsoDate())),
-    )
+    .where(and(eq(sessionsTable.id, sessionId), isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, getIsoDate())))
     .limit(1);
   return !!live;
 };

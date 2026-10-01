@@ -8,18 +8,7 @@ const sideToSwipeDirection = { top: 'up', bottom: 'down', left: 'left', right: '
 
 export function SheeterDrawer({ sheet }: { sheet: InternalSheet }) {
   // Drawers on mobile are always modal (overlay + outside click to close)
-  const {
-    id,
-    side,
-    description,
-    title,
-    titleContent = title,
-    headerClassName,
-    className,
-    content,
-    contentKey,
-    open = true,
-  } = sheet;
+  const { id, side, description, title, titleContent = title, headerClassName, className, content, contentKey, open = true } = sheet;
 
   const updateSheet = sheeter.getState().update;
 

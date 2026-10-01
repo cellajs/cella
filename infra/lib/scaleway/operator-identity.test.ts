@@ -103,18 +103,13 @@ describe('resolveOperatorIdentity', () => {
 describe('describeKey / classifyPrincipal', () => {
   it('describes an application key and classifies engine applications by name', async () => {
     const fetchImpl = makeFetch([
-      {
-        match: '/api-keys/SCWCI',
-        body: { access_key: 'SCWCI', application_id: 'app-ci', expires_at: '2026-09-24T12:54:29Z' },
-      },
+      { match: '/api-keys/SCWCI', body: { access_key: 'SCWCI', application_id: 'app-ci', expires_at: '2026-09-24T12:54:29Z' } },
       { match: '/applications/app-ci', body: { name: 'cella-production-ci-deploy' } },
     ]);
     const desc = await describeKey({ accessKey: 'SCWCI', secretKey: 's' }, { fetchImpl });
     expect(desc).toMatchObject({ bearer: 'application', name: 'cella-production-ci-deploy', bearerId: 'app-ci' });
     expect(classifyPrincipal(desc, names)).toBe('ci-deploy');
-    expect(formatKeyLine(desc, 'ci-deploy')).toBe(
-      'SCWCI → cella-production-ci-deploy (CI deploy application, expires 2026-09-24 12:54 UTC)',
-    );
+    expect(formatKeyLine(desc, 'ci-deploy')).toBe('SCWCI → cella-production-ci-deploy (CI deploy application, expires 2026-09-24 12:54 UTC)');
     expect(hoursUntilExpiry(desc, Date.parse('2026-09-24T10:54:29Z'))).toBeCloseTo(2, 5);
   });
   it('classifies the admin, boot and VM applications and outside applications', () => {
@@ -143,12 +138,7 @@ describe('assertIamManager', () => {
       { match: '/api-keys/SCWU', body: { access_key: 'SCWU', user_id: 'u-1' } },
       { match: '/users/u-1', body: { email: 'flip@example.com', type: 'owner' } },
     ]);
-    const { role } = await assertIamManager({
-      pair: { accessKey: 'SCWU', secretKey: 's' },
-      names,
-      organizationId: org,
-      fetchImpl,
-    });
+    const { role } = await assertIamManager({ pair: { accessKey: 'SCWU', secretKey: 's' }, names, organizationId: org, fetchImpl });
     expect(role).toBe('owner');
   });
   it('rejects an application the engine created by name with the reason', async () => {
@@ -156,9 +146,9 @@ describe('assertIamManager', () => {
       { match: '/api-keys/SCWCI', body: { access_key: 'SCWCI', application_id: 'app-ci' } },
       { match: '/applications/app-ci', body: { name: 'cella-production-ci-deploy' } },
     ]);
-    await expect(
-      assertIamManager({ pair: { accessKey: 'SCWCI', secretKey: 's' }, names, organizationId: org, fetchImpl }),
-    ).rejects.toThrow(/CI deploy application.*not an Owner API key/);
+    await expect(assertIamManager({ pair: { accessKey: 'SCWCI', secretKey: 's' }, names, organizationId: org, fetchImpl })).rejects.toThrow(
+      /CI deploy application.*not an Owner API key/,
+    );
   });
   it('accepts an application holding IAMManager and rejects one without', async () => {
     const base = [
@@ -174,12 +164,7 @@ describe('assertIamManager', () => {
       { match: '/rules?policy_id=p-1', body: { rules: [{ permission_set_names: ['ProjectManager', 'IAMManager'] }] } },
     ]);
     await expect(
-      assertIamManager({
-        pair: { accessKey: 'SCWA', secretKey: 's' },
-        names,
-        organizationId: org,
-        fetchImpl: withGrant,
-      }),
+      assertIamManager({ pair: { accessKey: 'SCWA', secretKey: 's' }, names, organizationId: org, fetchImpl: withGrant }),
     ).resolves.toMatchObject({ role: 'application' });
     const withoutGrant = makeFetch([
       ...base,
@@ -190,18 +175,13 @@ describe('assertIamManager', () => {
       { match: '/rules?policy_id=p-1', body: { rules: [{ permission_set_names: ['IAMReadOnly'] }] } },
     ]);
     await expect(
-      assertIamManager({
-        pair: { accessKey: 'SCWA', secretKey: 's' },
-        names,
-        organizationId: org,
-        fetchImpl: withoutGrant,
-      }),
+      assertIamManager({ pair: { accessKey: 'SCWA', secretKey: 's' }, names, organizationId: org, fetchImpl: withoutGrant }),
     ).rejects.toThrow(/no IAMManager grant/);
   });
   it('explains a key that cannot read IAM at all', async () => {
     const fetchImpl = makeFetch([{ match: '/api-keys/SCWV', body: { message: 'permissions_denied' }, status: 403 }]);
-    await expect(
-      assertIamManager({ pair: { accessKey: 'SCWV', secretKey: 's' }, names, organizationId: org, fetchImpl }),
-    ).rejects.toThrow(/cannot describe itself in IAM/);
+    await expect(assertIamManager({ pair: { accessKey: 'SCWV', secretKey: 's' }, names, organizationId: org, fetchImpl })).rejects.toThrow(
+      /cannot describe itself in IAM/,
+    );
   });
 });

@@ -13,12 +13,7 @@ import { clearSecurityTestData } from './helpers';
 const cdn = appConfig.s3.publicCDNUrl;
 
 const imageUrlsOf = async (userId: string) =>
-  (
-    await db
-      .select({ thumbnailUrl: usersTable.thumbnailUrl, bannerUrl: usersTable.bannerUrl })
-      .from(usersTable)
-      .where(eq(usersTable.id, userId))
-  )[0];
+  (await db.select({ thumbnailUrl: usersTable.thumbnailUrl, bannerUrl: usersTable.bannerUrl }).from(usersTable).where(eq(usersTable.id, userId)))[0];
 
 /**
  * Avatars and banners render as `<img src>` in every viewer's browser. Only the app's own CDN may serve them, so a
@@ -39,10 +34,7 @@ describe('Profile image URLs', async () => {
   it('must not point an avatar or a banner at another host via a CDN-prefixed URL', async () => {
     const { user, headers } = await userWithSession();
 
-    for (const body of [
-      { thumbnailUrl: `${cdn}@evil.example/pixel.png` },
-      { bannerUrl: `${cdn}.evil.example/banner.png` },
-    ]) {
+    for (const body of [{ thumbnailUrl: `${cdn}@evil.example/pixel.png` }, { bannerUrl: `${cdn}.evil.example/banner.png` }]) {
       const { error, response } = await call(updateMe, { body, headers });
       await expectRefusal({ response, error }, 400, 'invalid_cdn_url', JSON.stringify(body));
     }
@@ -52,14 +44,8 @@ describe('Profile image URLs', async () => {
   it('stores an avatar and banner on the CDN, trimmed (positive control)', async () => {
     const { user, headers } = await userWithSession();
 
-    const { response } = await call(updateMe, {
-      body: { thumbnailUrl: ` ${cdn}/avatars/a.png `, bannerUrl: `${cdn}/banners/b.png` },
-      headers,
-    });
+    const { response } = await call(updateMe, { body: { thumbnailUrl: ` ${cdn}/avatars/a.png `, bannerUrl: `${cdn}/banners/b.png` }, headers });
     expect(response.status).toBe(200);
-    expect(await imageUrlsOf(user.id)).toEqual({
-      thumbnailUrl: `${cdn}/avatars/a.png`,
-      bannerUrl: `${cdn}/banners/b.png`,
-    });
+    expect(await imageUrlsOf(user.id)).toEqual({ thumbnailUrl: `${cdn}/avatars/a.png`, bannerUrl: `${cdn}/banners/b.png` });
   });
 });

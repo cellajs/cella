@@ -21,13 +21,7 @@ const UploadHostContext = createContext<UploadHostApi | null>(null);
 export const useUploadHost = () => useContext(UploadHostContext);
 
 /** Owns the Uppy dialog outside the editor subtree so a mid-upload remount cannot tear it down; a `FilePanelBridge` feeds it the active block and live editor. */
-export function UploadHostProvider({
-  baseFilePanelProps,
-  children,
-}: {
-  baseFilePanelProps: BaseUppyFilePanelProps;
-  children: ReactNode;
-}) {
+export function UploadHostProvider({ baseFilePanelProps, children }: { baseFilePanelProps: BaseUppyFilePanelProps; children: ReactNode }) {
   const [activeBlockId, setActiveBlockId] = useState<string | null>(null);
   const [handle, setHandle] = useState<EditorHandle | null>(null);
 

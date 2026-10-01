@@ -1,10 +1,6 @@
 import type { EntityType } from 'shared';
 
-type StandardEntityKeys<
-  E extends EntityType,
-  LF extends object = Record<string, never>,
-  SID extends string | number = string,
-> = {
+type StandardEntityKeys<E extends EntityType, LF extends object = Record<string, never>, SID extends string | number = string> = {
   all: [E];
   list: {
     base: [E, 'list'];
@@ -15,10 +11,7 @@ type StandardEntityKeys<
     /** Canonical home list: one flat list per home channel (org-homed rows: omit homeChannelId) */
     home: (organizationId: string, homeChannelId?: string) => [E, 'list', string, string];
   };
-  detail: {
-    base: [E, 'detail'];
-    byId: (id: SID) => [E, 'detail', SID];
-  };
+  detail: { base: [E, 'detail']; byId: (id: SID) => [E, 'detail', SID] };
   create: [E, 'create'];
   update: [E, 'update'];
   delete: [E, 'delete'];
@@ -26,34 +19,22 @@ type StandardEntityKeys<
 
 /** Identifies default-filter views eligible for the live canonical home list. Not valid when a feed's default response carries implicit server filters absent from delta rows. */
 export function isDefaultListView(filters: Record<string, unknown>, defaults: Record<string, unknown>): boolean {
-  return Object.entries(filters).every(
-    ([key, value]) => value === undefined || value === '' || value === defaults[key],
-  );
+  return Object.entries(filters).every(([key, value]) => value === undefined || value === '' || value === defaults[key]);
 }
 
 /** Prefix-matchable keys with one canonical list per effective home channel. Live sync splices that list; cross-home and server-filtered lists use filtered keys and invalidate. */
-export function createEntityKeys<
-  LF extends object,
-  SID extends string | number = string,
-  E extends EntityType = EntityType,
->(entityType: E): StandardEntityKeys<E, LF, SID> {
+export function createEntityKeys<LF extends object, SID extends string | number = string, E extends EntityType = EntityType>(
+  entityType: E,
+): StandardEntityKeys<E, LF, SID> {
   return {
     all: [entityType],
     list: {
       base: [entityType, 'list'],
       org: (organizationId: string) => [entityType, 'list', organizationId],
       filtered: (filters: LF) => [entityType, 'list', filters],
-      home: (organizationId: string, homeChannelId?: string) => [
-        entityType,
-        'list',
-        organizationId,
-        homeChannelId ?? organizationId,
-      ],
+      home: (organizationId: string, homeChannelId?: string) => [entityType, 'list', organizationId, homeChannelId ?? organizationId],
     },
-    detail: {
-      base: [entityType, 'detail'],
-      byId: (id: SID) => [entityType, 'detail', id],
-    },
+    detail: { base: [entityType, 'detail'], byId: (id: SID) => [entityType, 'detail', id] },
     create: [entityType, 'create'],
     update: [entityType, 'update'],
     delete: [entityType, 'delete'],

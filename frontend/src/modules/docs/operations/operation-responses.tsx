@@ -37,23 +37,14 @@ interface ResponsesAccordionProps {
   examplesOnly?: boolean;
 }
 
-export function ResponsesAccordion({
-  responses: allResponses,
-  schemas,
-  operationId,
-  zodIndex,
-  typesIndex,
-  examplesOnly,
-}: ResponsesAccordionProps) {
+export function ResponsesAccordion({ responses: allResponses, schemas, operationId, zodIndex, typesIndex, examplesOnly }: ResponsesAccordionProps) {
   const { t } = useTranslation();
 
   const responses = examplesOnly ? allResponses.filter((r) => r.example !== undefined) : allResponses;
 
   if (responses.length === 0) {
     return (
-      <div className="py-2 text-muted-foreground text-sm">
-        {examplesOnly ? t('c:docs.no_examples_defined') : t('c:docs.no_responses_defined')}
-      </div>
+      <div className="py-2 text-muted-foreground text-sm">{examplesOnly ? t('c:docs.no_examples_defined') : t('c:docs.no_responses_defined')}</div>
     );
   }
 
@@ -77,17 +68,13 @@ export function ResponsesAccordion({
                 <div
                   className={cn(
                     'grow text-sm',
-                    examplesOnly
-                      ? 'text-muted-foreground group-data-open:text-foreground'
-                      : 'text-foreground group-data-open:text-primary',
+                    examplesOnly ? 'text-muted-foreground group-data-open:text-foreground' : 'text-foreground group-data-open:text-primary',
                   )}
                 >
                   {response.description}
                 </div>
                 {response.name && (
-                  <span className="truncate rounded bg-muted px-2 py-0.5 font-mono text-muted-foreground text-xs max-md:hidden">
-                    {response.name}
-                  </span>
+                  <span className="truncate rounded bg-muted px-2 py-0.5 font-mono text-muted-foreground text-xs max-md:hidden">{response.name}</span>
                 )}
               </div>
             </AccordionTrigger>

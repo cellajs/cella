@@ -29,12 +29,7 @@ export const validateBlockMediaUrls = (blocksJson: string, ctx: MediaRefContext)
  * Refuses (400) a document whose media blocks reference anything but an attachment id, a storage key under
  * `organizationId` or a re-hosted asset.
  */
-export const assertBlockMediaUrls = (
-  blocksJson: string,
-  organizationId: string,
-  entityType: EntityType,
-  fieldName: string,
-) => {
+export const assertBlockMediaUrls = (blocksJson: string, organizationId: string, entityType: EntityType, fieldName: string) => {
   const result = validateBlockMediaUrls(blocksJson, { organizationId });
   if (!result.valid) {
     throw new AppError(400, 'invalid_request', 'warn', {

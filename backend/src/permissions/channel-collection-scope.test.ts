@@ -3,10 +3,7 @@ import { deepEntityTypes, deepHierarchy, deepOverrides } from 'shared/testing/de
 import { configurePolicyMatrix } from 'shared/testing/policies';
 import { describe, expect, it } from 'vitest';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
-import {
-  type ChannelCollectionReadScope,
-  resolveChannelCollectionReadScopeForPolicies,
-} from '#/permissions/channel-collection-scope';
+import { type ChannelCollectionReadScope, resolveChannelCollectionReadScopeForPolicies } from '#/permissions/channel-collection-scope';
 
 const ORG_ID = 'org-1';
 
@@ -54,17 +51,11 @@ describe('resolveChannelCollectionReadScope', () => {
 
   it('org-root grant with update sees everything; read-only sees published org-wide', () => {
     expect(resolve([membership('organization', ORG_ID, 'admin')])).toEqual({ orgWide: 'all', ancestorScopes: [] });
-    expect(resolve([membership('organization', ORG_ID, 'member')])).toEqual({
-      orgWide: 'published',
-      ancestorScopes: [],
-    });
+    expect(resolve([membership('organization', ORG_ID, 'member')])).toEqual({ orgWide: 'published', ancestorScopes: [] });
   });
 
   it('ancestor-level grants split managed (drafts visible) from published-only ids', () => {
-    const scope = resolve([
-      membership('course', 'course-1', 'staff'),
-      membership('courseSection', 'section-1', 'student'),
-    ]);
+    const scope = resolve([membership('course', 'course-1', 'staff'), membership('courseSection', 'section-1', 'student')]);
     expect(scope.orgWide).toBeNull();
     expect(scope.ancestorScopes).toEqual([
       { channelType: 'course', managedIds: ['course-1'], publishedIds: [] },

@@ -19,14 +19,7 @@ export type AuthStrategy = (typeof authStrategiesEnum)[number];
  * housekeeping during a sign-in: `session_cap` beyond `maxSessionsPerUser`. `replaced` by a newer session in the same
  * browser: a sign-in, or the mfa session that enabling MFA mints. `impersonation_stopped` when the admin stops.
  */
-export const sessionRevocationReasons = [
-  'sign_out',
-  'other_session',
-  'mfa_enabled',
-  'session_cap',
-  'replaced',
-  'impersonation_stopped',
-] as const;
+export const sessionRevocationReasons = ['sign_out', 'other_session', 'mfa_enabled', 'session_cap', 'replaced', 'impersonation_stopped'] as const;
 export type SessionRevocationReason = (typeof sessionRevocationReasons)[number];
 
 /** Why sessions end: a revocation, or `user_deleted`, whose delete takes the session rows along. */
@@ -84,9 +77,7 @@ export const sessionsTable = snakeCase.table(
     index('sessions_ip_subnet_hash_idx').on(table.ipSubnetHash),
     index('sessions_user_id_device_id_hash_idx').on(table.userId, table.deviceIdHash),
     // Impersonations are found by their admin's session when it ends or is deleted; other rows hold null.
-    index('sessions_impersonator_session_id_idx')
-      .on(table.impersonatorSessionId)
-      .where(sql`${table.impersonatorSessionId} is not null`),
+    index('sessions_impersonator_session_id_idx').on(table.impersonatorSessionId).where(sql`${table.impersonatorSessionId} is not null`),
   ],
 );
 

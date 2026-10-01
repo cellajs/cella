@@ -21,12 +21,7 @@ const LS = `
 
 describe('parseKeys', () => {
   it('extracts the 4th column as the object key', () => {
-    expect(parseKeys(LS)).toEqual([
-      'backend-stage-1-pull',
-      'backend-stage-2-up',
-      'backend-20260531T090009-boot.log',
-      'frontend-stage-1-pull',
-    ]);
+    expect(parseKeys(LS)).toEqual(['backend-stage-1-pull', 'backend-stage-2-up', 'backend-20260531T090009-boot.log', 'frontend-stage-1-pull']);
   });
 
   it('ignores blank lines and PRE directory rows', () => {
@@ -69,10 +64,7 @@ describe('selectDiagnostics', () => {
   });
 
   it('prefers the boot transcript over the sibling events bundle', () => {
-    const sel = selectDiagnostics(
-      ['backend-20260807T081154Z-boot.log', 'backend-20260807T081154Z-events.jsonl'],
-      'backend',
-    );
+    const sel = selectDiagnostics(['backend-20260807T081154Z-boot.log', 'backend-20260807T081154Z-events.jsonl'], 'backend');
     expect(sel.latestFull).toBe('backend-20260807T081154Z-boot.log');
   });
 
@@ -143,11 +135,8 @@ describe('renderDiagnostics', () => {
   it('prints a single no-diagnostics line for a service that owns nothing', () => {
     const logs: string[] = [];
     const cat = vi.fn(() => '');
-    renderDiagnostics(
-      'cdc',
-      { markers: [], stageDetailKeys: [], latestFull: undefined, failureKeys: [] },
-      { list: () => '', cat },
-      (m) => logs.push(m),
+    renderDiagnostics('cdc', { markers: [], stageDetailKeys: [], latestFull: undefined, failureKeys: [] }, { list: () => '', cat }, (m) =>
+      logs.push(m),
     );
 
     expect(logs).toEqual(['::warning::No boot diagnostics for cdc: nothing was ever uploaded for this service']);
@@ -157,12 +146,7 @@ describe('renderDiagnostics', () => {
   it('prints reconciler failure captures before the boot transcript', () => {
     const logs: string[] = [];
     const reader: DiagReader = { list: () => '', cat: (key) => `BODY(${key})` };
-    const sel = {
-      markers: [],
-      stageDetailKeys: [],
-      latestFull: undefined,
-      failureKeys: ['backend-pull-failed-20260602T094500Z.log'],
-    };
+    const sel = { markers: [], stageDetailKeys: [], latestFull: undefined, failureKeys: ['backend-pull-failed-20260602T094500Z.log'] };
 
     renderDiagnostics('backend', sel, reader, (m) => logs.push(m));
 
@@ -212,12 +196,7 @@ describe('renderDiagnostics', () => {
         return `BODY(${key})`;
       },
     };
-    const sel = {
-      markers: [],
-      stageDetailKeys: ['backend-stage-1-pull'],
-      latestFull: 'backend-20260531T090509-boot.log',
-      failureKeys: [],
-    };
+    const sel = { markers: [], stageDetailKeys: ['backend-stage-1-pull'], latestFull: 'backend-20260531T090509-boot.log', failureKeys: [] };
 
     renderDiagnostics('backend', sel, reader, (m) => logs.push(m), 'plain');
 
@@ -228,12 +207,7 @@ describe('renderDiagnostics', () => {
 });
 
 describe('summarizeBundles', () => {
-  const keys = [
-    'backend-stage-1-pull',
-    'backend-20260531T090509-boot.log',
-    'backend-failed-20260602T093000Z.log',
-    'cdc-stage-1-pull',
-  ];
+  const keys = ['backend-stage-1-pull', 'backend-20260531T090509-boot.log', 'backend-failed-20260602T093000Z.log', 'cdc-stage-1-pull'];
 
   it('counts owned objects and failure captures per service', () => {
     expect(summarizeBundles(keys, ['backend', 'cdc', 'yjs'])).toEqual([
@@ -269,11 +243,7 @@ describe('emptyBootDiagGuidance', () => {
 
 describe('parseArgs', () => {
   it('parses the required flags', () => {
-    expect(parseArgs(['--bucket', 'b', '--service', 'backend', '--region', 'fr-par'])).toEqual({
-      bucket: 'b',
-      service: 'backend',
-      region: 'fr-par',
-    });
+    expect(parseArgs(['--bucket', 'b', '--service', 'backend', '--region', 'fr-par'])).toEqual({ bucket: 'b', service: 'backend', region: 'fr-par' });
   });
 
   it.each([

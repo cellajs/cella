@@ -72,9 +72,7 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
           'random:index/randomPassword:RandomPassword': () => ({ result: `random-${args.name}` }),
           'scaleway:ipam/ip:Ip': () => ({ address: `10.0.0.${++ipamAddresses}/24` }),
           'scaleway:loadbalancers/loadBalancer:LoadBalancer': () => ({ ipAddress: '203.0.113.10' }),
-          'scaleway:registry/namespace:Namespace': () => ({
-            endpoint: `rg.nl-ams.scw.cloud/${String((args.inputs as { name?: string }).name)}`,
-          }),
+          'scaleway:registry/namespace:Namespace': () => ({ endpoint: `rg.nl-ams.scw.cloud/${String((args.inputs as { name?: string }).name)}` }),
         };
         const computed = computedByType[args.type]?.() ?? {};
         resources.push({
@@ -84,10 +82,7 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
           outputs: computed,
           provider: args.provider,
         });
-        return {
-          id: `${args.name}-id`,
-          state: { ...args.inputs, ...computed, id: `${args.name}-id` },
-        };
+        return { id: `${args.name}-id`, state: { ...args.inputs, ...computed, id: `${args.name}-id` } };
       },
       call(args) {
         // IAM data sources pulumi-context.ts derives identity ids from; deterministic stub ids let consuming modules render without talking to Scaleway.
@@ -96,12 +91,7 @@ export async function installPulumiMocks(opts: InstallOpts = {}): Promise<MockHa
           return { id: `${name}-id`, applicationId: `${name}-id`, name };
         }
         if (args.token.includes('getApiKey')) {
-          return {
-            id: 'mock-access-key',
-            applicationId: 'mock-application-id',
-            userId: 'mock-user-id',
-            defaultProjectId: 'mock-project-id',
-          };
+          return { id: 'mock-access-key', applicationId: 'mock-application-id', userId: 'mock-user-id', defaultProjectId: 'mock-project-id' };
         }
         // Secret Manager data sources: deterministic stubs so a module reading a secret container or version renders without talking to Scaleway.
         if (args.token.includes('getSecret')) {

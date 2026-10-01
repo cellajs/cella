@@ -48,10 +48,7 @@ function matchNullableReference(schema: OpenApiSchema, spec: OpenApiSpec): Nulla
 }
 
 /** Later schemas override earlier properties, required arrays are combined, and the first $ref becomes extendsRef. */
-function mergeAllOfSchemas(
-  allOfSchemas: readonly OpenApiSchema[],
-  spec: OpenApiSpec,
-): { mergedSchema: OpenApiSchema; extendsRef?: string } {
+function mergeAllOfSchemas(allOfSchemas: readonly OpenApiSchema[], spec: OpenApiSpec): { mergedSchema: OpenApiSchema; extendsRef?: string } {
   let extendsRef: string | undefined;
   const mergedProperties: Record<string, OpenApiSchema> = {};
   const mergedRequired: string[] = [];
@@ -130,14 +127,8 @@ function copyDefined<K extends keyof GenSchema>(source: GenSchema, target: GenSc
 }
 
 /** Dereferences $refs, folds the required array into inline flags, and keeps reference metadata on the resolved node. */
-function resolveNode(
-  schema: OpenApiSchema,
-  spec: OpenApiSpec,
-  opts: ResolveOptions,
-  visited: Set<string> = new Set(),
-): GenSchema {
-  const node = (type: GenSchema['type']): GenSchema =>
-    opts.required === undefined ? { type } : { type, required: opts.required };
+function resolveNode(schema: OpenApiSchema, spec: OpenApiSpec, opts: ResolveOptions, visited: Set<string> = new Set()): GenSchema {
+  const node = (type: GenSchema['type']): GenSchema => (opts.required === undefined ? { type } : { type, required: opts.required });
 
   if (schema.$ref) {
     if (visited.has(schema.$ref)) {
@@ -149,11 +140,7 @@ function resolveNode(
 
     const nullableAlias = opts.nested ? matchNullableReference(resolved, spec) : undefined;
     if (nullableAlias) {
-      return {
-        ...node(nullableAlias.type),
-        ...(resolved.description && { description: resolved.description }),
-        ref: schema.$ref,
-      };
+      return { ...node(nullableAlias.type), ...(resolved.description && { description: resolved.description }), ref: schema.$ref };
     }
 
     const result = resolveNode(resolved, spec, opts, new Set(visited).add(schema.$ref));
@@ -203,28 +190,14 @@ function resolveNode(
 
   // additionalProperties carries record/map types from z.record().
   if (schema.additionalProperties && typeof schema.additionalProperties === 'object') {
-    result.additionalProperties = resolveNode(
-      schema.additionalProperties,
-      spec,
-      { nested: true, required: false },
-      visited,
-    );
+    result.additionalProperties = resolveNode(schema.additionalProperties, spec, { nested: true, required: false }, visited);
   }
 
   if (schema.items) {
     // Array items carry no required flag; their scalar facets lift onto the array node.
     const item = resolveNode(schema.items, spec, { nested: true }, visited);
     result.itemType = item.type;
-    copyDefined(item, result, [
-      'enum',
-      'format',
-      'ref',
-      'refDescription',
-      'minimum',
-      'maximum',
-      'minLength',
-      'maxLength',
-    ]);
+    copyDefined(item, result, ['enum', 'format', 'ref', 'refDescription', 'minimum', 'maximum', 'minLength', 'maxLength']);
     if (item.properties || item.items || item.anyOf || item.oneOf) result.items = item;
   }
 

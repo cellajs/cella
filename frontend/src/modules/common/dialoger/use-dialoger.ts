@@ -2,11 +2,7 @@ import type { ReactNode, RefObject } from 'react';
 import { create } from 'zustand';
 import { blurAndStashTrigger, removeAndNotify, withDefaults } from '~/modules/common/overlay-store-helpers';
 
-type DialogContainerOptions = {
-  ref: RefObject<HTMLDivElement | null>;
-  overlay?: boolean;
-  overlayRef?: RefObject<HTMLDivElement | null>;
-};
+type DialogContainerOptions = { ref: RefObject<HTMLDivElement | null>; overlay?: boolean; overlayRef?: RefObject<HTMLDivElement | null> };
 
 export type TriggerRef = RefObject<HTMLButtonElement | HTMLAnchorElement | null>;
 
@@ -26,10 +22,7 @@ export type DialogData = {
   onClose?: (isCleanup?: boolean) => void;
 };
 
-export type InternalDialog = DialogData & {
-  open?: boolean;
-  content: ReactNode;
-};
+export type InternalDialog = DialogData & { open?: boolean; content: ReactNode };
 
 interface DialogStoreState {
   dialogs: InternalDialog[];
@@ -61,9 +54,7 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
   },
 
   update: (id, updates) => {
-    set((state) => ({
-      dialogs: state.dialogs.map((dialog) => (dialog.id === id ? { ...dialog, ...updates } : dialog)),
-    }));
+    set((state) => ({ dialogs: state.dialogs.map((dialog) => (dialog.id === id ? { ...dialog, ...updates } : dialog)) }));
   },
 
   remove: (id, opts) => {

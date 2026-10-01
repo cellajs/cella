@@ -20,11 +20,7 @@ export type MaterializeResult = 'ok' | 'gone' | 'permanent' | 'retry';
 const retryableStatuses: ReadonlySet<number> = new Set([401, 403, 404, 408, 409, 429]);
 
 /** POST blocks JSON to the materialize route on the backend's internal listener, authenticated by the relay secret; `editors` are the window's senders, newest first. */
-export async function postMaterialize(
-  scope: DocScope,
-  editors: string[],
-  description: string,
-): Promise<MaterializeResult> {
+export async function postMaterialize(scope: DocScope, editors: string[], description: string): Promise<MaterializeResult> {
   try {
     const res = await fetch(`${env.BACKEND_INTERNAL_URL}/internal/yjs/materialize`, {
       method: 'POST',

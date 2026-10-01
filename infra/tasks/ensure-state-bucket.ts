@@ -19,11 +19,7 @@ export type EnsureResult = 'exists' | 'created';
  * Report when an API key's preferred project would place the state bucket outside CI reach.
  * Scaleway Object Storage follows `default_project_id` regardless of cross-project IAM grants.
  */
-export function keyProjectMismatch(
-  keyProjectId: string,
-  expectedProjectId: string,
-  accessKey: string,
-): string | undefined {
+export function keyProjectMismatch(keyProjectId: string, expectedProjectId: string, accessKey: string): string | undefined {
   if (keyProjectId === expectedProjectId) return undefined;
   return (
     `API key ${accessKey} has preferred project ${keyProjectId}, but this app deploys to project ${expectedProjectId}. ` +
@@ -107,9 +103,7 @@ export async function hardenStateBucket(
     }
   };
 
-  await attempt('versioning', () =>
-    s3.send(new PutBucketVersioningCommand({ Bucket: bucketName, VersioningConfiguration: { Status: 'Enabled' } })),
-  );
+  await attempt('versioning', () => s3.send(new PutBucketVersioningCommand({ Bucket: bucketName, VersioningConfiguration: { Status: 'Enabled' } })));
   await attempt('encryption', () =>
     s3.send(
       new PutBucketEncryptionCommand({
@@ -132,12 +126,7 @@ export async function hardenStateBucket(
               Filter: { Prefix: '' },
               NoncurrentVersionExpiration: { NoncurrentDays: NONCURRENT_VERSION_RETENTION_DAYS },
             },
-            {
-              ID: 'purge-expired-delete-markers',
-              Status: 'Enabled',
-              Filter: { Prefix: '' },
-              Expiration: { ExpiredObjectDeleteMarker: true },
-            },
+            { ID: 'purge-expired-delete-markers', Status: 'Enabled', Filter: { Prefix: '' }, Expiration: { ExpiredObjectDeleteMarker: true } },
           ],
         },
       }),
@@ -146,9 +135,7 @@ export async function hardenStateBucket(
 
   if (applied.length > 0) log(`State bucket hardening applied: ${applied.join(', ')}`);
   if (denied.length > 0) {
-    log(
-      `State bucket hardening skipped (${denied.join(', ')}): bucket policy reserves bucket-config writes to the admin application.`,
-    );
+    log(`State bucket hardening skipped (${denied.join(', ')}): bucket policy reserves bucket-config writes to the admin application.`);
   }
   return { applied, denied };
 }

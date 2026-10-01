@@ -4,15 +4,9 @@ import { Skeleton } from '~/modules/ui/skeleton';
 /**
  * Use to show a placeholder while content is loading.
  */
-const meta = {
-  title: 'ui/Skeleton',
-  component: Skeleton,
-  tags: ['autodocs'],
-  argTypes: {},
-  parameters: {
-    layout: 'centered',
-  },
-} satisfies Meta<typeof Skeleton>;
+const meta = { title: 'ui/Skeleton', component: Skeleton, tags: ['autodocs'], argTypes: {}, parameters: { layout: 'centered' } } satisfies Meta<
+  typeof Skeleton
+>;
 
 export default meta;
 

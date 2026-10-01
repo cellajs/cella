@@ -3,9 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const execute = vi.fn();
 vi.mock('../lib/db', () => ({ cdcDb: { execute: (...args: unknown[]) => execute(...args) } }));
 
-const { getRoleCapabilities, probeRoleCapabilities, resetRoleCapabilities } = await import(
-  '../services/role-capabilities'
-);
+const { getRoleCapabilities, probeRoleCapabilities, resetRoleCapabilities } = await import('../services/role-capabilities');
 const { log } = await import('../lib/pino');
 
 const row = (overrides: Record<string, unknown> = {}) => ({
@@ -27,12 +25,7 @@ describe('probeRoleCapabilities', () => {
   it('accepts an owner without BYPASSRLS when no RLS table is forced or foreign-owned (the managed-provider shape)', async () => {
     execute.mockResolvedValue({ rows: [row()] });
 
-    await expect(probeRoleCapabilities()).resolves.toEqual({
-      role: 'admin_role',
-      rlsBypass: true,
-      rlsBlockedTables: [],
-      replication: true,
-    });
+    await expect(probeRoleCapabilities()).resolves.toEqual({ role: 'admin_role', rlsBypass: true, rlsBlockedTables: [], replication: true });
     expect(log.error).not.toHaveBeenCalled();
   });
 
@@ -70,12 +63,7 @@ describe('probeRoleCapabilities', () => {
       rows: [row({ role: 'postgres', superuser: true, replication: false, rls_blocked_tables: ['attachments'] })],
     });
 
-    await expect(probeRoleCapabilities()).resolves.toEqual({
-      role: 'postgres',
-      rlsBypass: true,
-      rlsBlockedTables: [],
-      replication: true,
-    });
+    await expect(probeRoleCapabilities()).resolves.toEqual({ role: 'postgres', rlsBypass: true, rlsBlockedTables: [], replication: true });
   });
 
   it('leaves the capabilities unknown when the probe fails', async () => {

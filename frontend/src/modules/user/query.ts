@@ -30,20 +30,12 @@ export const userQueryOptions = (id: string) =>
 
 export const usersListQueryOptions = (params: UsersListParams) => {
   const defaults = usersSearchDefaults;
-  const {
-    q = defaults.q,
-    sort = defaults.sort,
-    order = defaults.order,
-    role,
-    limit = appConfig.requestLimits.users,
-  } = params;
+  const { q = defaults.q, sort = defaults.sort, order = defaults.order, role, limit = appConfig.requestLimits.users } = params;
   const filters = { q, sort, order, role };
 
   return infiniteQueryOptions({
     queryKey: keys.list.filtered(filters),
-    ...offsetPaging(limit, (offset, signal) =>
-      getUsers({ query: { ...filters, ...pageQuery(limit, offset) }, signal }),
-    ),
+    ...offsetPaging(limit, (offset, signal) => getUsers({ query: { ...filters, ...pageQuery(limit, offset) }, signal })),
     refetchOnMount: true,
   });
 };

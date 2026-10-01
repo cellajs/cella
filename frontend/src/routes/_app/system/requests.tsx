@@ -9,10 +9,7 @@ const RequestsTable = lazyNamed(() => import('~/modules/requests/table/requests-
 export const Route = createFileRoute('/_app/system/requests')({
   validateSearch: requestsRouteSearchParamsSchema,
   search: { middlewares: [stripSearchParams(requestsSearchDefaults)] },
-  staticData: {
-    isAuth: true,
-    navTab: { id: 'requests', label: 'c:request_other', description: 'c:tab_requests.text' },
-  },
+  staticData: { isAuth: true, navTab: { id: 'requests', label: 'c:request_other', description: 'c:tab_requests.text' } },
   head: () => ({ meta: [{ title: appTitle('Requests') }] }),
   component: withSuspense(RequestsTable),
 });

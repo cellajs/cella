@@ -23,10 +23,6 @@ describe('bench scenarios (short)', () => {
     if (!ready) return;
 
     // The exact CLI path users run; a non-zero exit throws and fails the test.
-    execFileSync('tsx', ['src/bench-cli.ts', '--all', '--short'], {
-      cwd: BENCH_ROOT,
-      stdio: 'inherit',
-      env: createBenchProcessEnv(),
-    });
+    execFileSync('tsx', ['src/bench-cli.ts', '--all', '--short'], { cwd: BENCH_ROOT, stdio: 'inherit', env: createBenchProcessEnv() });
   }, 120_000);
 });

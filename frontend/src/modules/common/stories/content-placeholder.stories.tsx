@@ -14,19 +14,9 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  args: {
-    title: 'c:no_results' as TKey,
-    icon: InboxIcon,
-  },
-};
+export const Default: Story = { args: { title: 'c:no_results' as TKey, icon: InboxIcon } };
 
-export const SearchEmpty: Story = {
-  args: {
-    title: 'c:no_results' as TKey,
-    icon: SearchIcon,
-  },
-};
+export const SearchEmpty: Story = { args: { title: 'c:no_results' as TKey, icon: SearchIcon } };
 
 export const WithChildren: Story = {
   args: {
@@ -36,8 +26,4 @@ export const WithChildren: Story = {
   },
 };
 
-export const NoIcon: Story = {
-  args: {
-    title: 'c:no_results' as TKey,
-  },
-};
+export const NoIcon: Story = { args: { title: 'c:no_results' as TKey } };

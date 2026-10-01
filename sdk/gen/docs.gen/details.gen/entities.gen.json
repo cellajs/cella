@@ -200,11 +200,7 @@
               "items": {
                 "type": "object",
                 "properties": {
-                  "key": {
-                    "type": "string",
-                    "required": true,
-                    "description": "The client-supplied view key, echoed verbatim"
-                  },
+                  "key": { "type": "string", "required": true, "description": "The client-supplied view key, echoed verbatim" },
                   "status": {
                     "type": "string",
                     "required": true,

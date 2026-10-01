@@ -43,12 +43,7 @@ type MaxNineItems<T extends string> =
 export type SlashIndexedItems = MaxNineItems<CustomBlockTypes>;
 
 export type IconType = (
-  props: React.SVGAttributes<SVGElement> & {
-    children?: React.ReactNode;
-    size?: string | number;
-    color?: string;
-    title?: string;
-  },
+  props: React.SVGAttributes<SVGElement> & { children?: React.ReactNode; size?: string | number; color?: string; title?: string },
 ) => React.ReactElement;
 
 /** How an upload is referenced: by attachment id, or by cloud key when its upload template stores publicly (the template decides). */

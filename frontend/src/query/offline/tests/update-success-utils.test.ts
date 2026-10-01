@@ -3,9 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { syncEntityToCache } from '../update-success-utils';
 
 // Mock cacheUpdate so we can verify it's called
-vi.mock('~/query/basic/cache-mutations', () => ({
-  cacheUpdate: vi.fn(),
-}));
+vi.mock('~/query/basic/cache-mutations', () => ({ cacheUpdate: vi.fn() }));
 
 import { cacheUpdate } from '~/query/basic/cache-mutations';
 

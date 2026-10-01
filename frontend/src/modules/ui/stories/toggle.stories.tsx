@@ -10,17 +10,13 @@ const meta: Meta<typeof Toggle> = {
   component: Toggle,
   tags: ['autodocs'],
   argTypes: {
-    children: {
-      control: { disable: true },
-    },
+    children: { control: { disable: true } },
   },
   args: {
     children: <BoldIcon className="size-4" />,
     'aria-label': 'Toggle bold',
   },
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
 };
 export default meta;
 
@@ -60,27 +56,15 @@ export const WithText: Story = {
  * Use the `sm` size for a smaller toggle, suitable for interfaces needing
  * compact elements without sacrificing usability.
  */
-export const Small: Story = {
-  args: {
-    size: 'sm',
-  },
-};
+export const Small: Story = { args: { size: 'sm' } };
 
 /**
  * Use the `lg` size for a larger toggle, offering better visibility and
  * easier interaction for users.
  */
-export const Large: Story = {
-  args: {
-    size: 'lg',
-  },
-};
+export const Large: Story = { args: { size: 'lg' } };
 
 /**
  * Add the `disabled` prop to prevent interactions with the toggle.
  */
-export const Disabled: Story = {
-  args: {
-    disabled: true,
-  },
-};
+export const Disabled: Story = { args: { disabled: true } };

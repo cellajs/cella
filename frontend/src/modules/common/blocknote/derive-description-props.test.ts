@@ -13,9 +13,7 @@ describe('deriveDescriptionCounts', () => {
   it('counts checklist items and media blocks depth-first through nested children', () => {
     const description = JSON.stringify([
       block('paragraph', {}, [
-        block('checklistItem', { checkboxId: 'a', checked: true }, [
-          block('checklistItem', { checkboxId: 'b', checked: false }),
-        ]),
+        block('checklistItem', { checkboxId: 'a', checked: true }, [block('checklistItem', { checkboxId: 'b', checked: false })]),
         block('image', { url: 'https://x/img.png' }),
       ]),
       block('paragraph'),

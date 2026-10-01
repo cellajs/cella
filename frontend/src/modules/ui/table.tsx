@@ -18,22 +18,12 @@ export function TableBody({ className, ...props }: React.ComponentProps<'tbody'>
 }
 
 export function TableFooter({ className, ...props }: React.ComponentProps<'tfoot'>) {
-  return (
-    <tfoot
-      data-slot="table-footer"
-      className={cn('border-t bg-muted/50 font-medium [&>tr]:last:border-b-0', className)}
-      {...props}
-    />
-  );
+  return <tfoot data-slot="table-footer" className={cn('border-t bg-muted/50 font-medium [&>tr]:last:border-b-0', className)} {...props} />;
 }
 
 export function TableRow({ className, ...props }: React.ComponentProps<'tr'>) {
   return (
-    <tr
-      data-slot="table-row"
-      className={cn('border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted', className)}
-      {...props}
-    />
+    <tr data-slot="table-row" className={cn('border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted', className)} {...props} />
   );
 }
 
@@ -54,17 +44,12 @@ export function TableCell({ className, ...props }: React.ComponentProps<'td'>) {
   return (
     <td
       data-slot="table-cell"
-      className={cn(
-        'whitespace-nowrap p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]',
-        className,
-      )}
+      className={cn('whitespace-nowrap p-2 align-middle [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]', className)}
       {...props}
     />
   );
 }
 
 export function TableCaption({ className, ...props }: React.ComponentProps<'caption'>) {
-  return (
-    <caption data-slot="table-caption" className={cn('mt-4 text-muted-foreground text-sm', className)} {...props} />
-  );
+  return <caption data-slot="table-caption" className={cn('mt-4 text-muted-foreground text-sm', className)} {...props} />;
 }

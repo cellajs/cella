@@ -4,12 +4,7 @@ import type { GenOperationSummary } from 'sdk/docs-types';
 import { ColumnsView } from '~/modules/common/data-table/columns-view';
 import { TableBarContainer } from '~/modules/common/data-table/table-bar-container';
 import { TableCount } from '~/modules/common/data-table/table-count';
-import {
-  FilterBarActions,
-  FilterBarFilters,
-  FilterBarSearch,
-  TableFilterBar,
-} from '~/modules/common/data-table/table-filter-bar';
+import { FilterBarActions, FilterBarFilters, FilterBarSearch, TableFilterBar } from '~/modules/common/data-table/table-filter-bar';
 import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
@@ -36,14 +31,7 @@ const labelFor = (kind: string, value: string): string => {
   return cap;
 };
 
-export function OperationsTableBar({
-  total,
-  searchVars,
-  setSearch,
-  columns,
-  setColumns,
-  tagFilters,
-}: OperationsTableBarProps) {
+export function OperationsTableBar({ total, searchVars, setSearch, columns, setColumns, tagFilters }: OperationsTableBarProps) {
   const { t } = useTranslation();
   const { q, tag } = searchVars;
 
@@ -68,12 +56,7 @@ export function OperationsTableBar({
 
   const filterOptions = [
     { value: 'all', label: t('c:all') },
-    ...orderedKinds.flatMap((kind) =>
-      tagFilters[kind].map((value) => ({
-        value: `${kind}:${value}`,
-        label: labelFor(kind, value),
-      })),
-    ),
+    ...orderedKinds.flatMap((kind) => tagFilters[kind].map((value) => ({ value: `${kind}:${value}`, label: labelFor(kind, value) }))),
   ];
 
   return (

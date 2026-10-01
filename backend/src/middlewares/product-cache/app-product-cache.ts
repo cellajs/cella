@@ -4,10 +4,7 @@ import { log } from '#/utils/logger';
 
 const cacheTtl = 10 * 60 * 1000;
 
-const cacheConfig = {
-  maxSize: 5000,
-  defaultTtl: cacheTtl,
-};
+const cacheConfig = { maxSize: 5000, defaultTtl: cacheTtl };
 
 /** Enriched entity response, keyed by entity. */
 type CacheValue = Record<string, unknown>;

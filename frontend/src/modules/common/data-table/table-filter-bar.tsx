@@ -17,10 +17,7 @@ interface FilterBarChildProps {
   className?: string;
 }
 
-export const TableFilterBarContext = createContext<{
-  isFilterActive: boolean;
-  setFilterActive: (isActive: boolean) => void;
-}>({
+export const TableFilterBarContext = createContext<{ isFilterActive: boolean; setFilterActive: (isActive: boolean) => void }>({
   isFilterActive: false,
   setFilterActive: () => {},
 });
@@ -33,11 +30,7 @@ export function FilterBarActions({ children, className = '' }: FilterBarChildPro
     <motion.div
       animate={{ opacity: isFilterActive ? 0 : 1, x: isFilterActive ? -20 : 0 }}
       transition={{ duration: 0.15 }}
-      className={cn(
-        'flex items-center gap-3 max-sm:shrink-0',
-        className,
-        isFilterActive && 'max-sm:pointer-events-none',
-      )}
+      className={cn('flex items-center gap-3 max-sm:shrink-0', className, isFilterActive && 'max-sm:pointer-events-none')}
     >
       {children}
     </motion.div>
@@ -112,9 +105,7 @@ export function TableFilterBar({ onResetFilters, isFiltered, children }: TableFi
 
   return (
     <div className="flex w-full items-center gap-2 max-sm:relative max-sm:flex-1">
-      <TableFilterBarContext.Provider value={{ isFilterActive: effectiveFilterActive, setFilterActive }}>
-        {children}
-      </TableFilterBarContext.Provider>
+      <TableFilterBarContext.Provider value={{ isFilterActive: effectiveFilterActive, setFilterActive }}>{children}</TableFilterBarContext.Provider>
 
       <Button
         variant="secondary"

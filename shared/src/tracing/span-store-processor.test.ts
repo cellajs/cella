@@ -91,12 +91,7 @@ describe('createSpanStoreProcessor', () => {
 
     // startTime: 2 seconds + 500ms = 2500ms
     // endTime: 2 seconds + 600ms = 2600ms
-    processor.onEnd(
-      mockReadableSpan({
-        startTime: [2, 500_000_000],
-        endTime: [2, 600_000_000],
-      }),
-    );
+    processor.onEnd(mockReadableSpan({ startTime: [2, 500_000_000], endTime: [2, 600_000_000] }));
 
     const span = store.getSpans()[0];
     expect(span.startTime).toBe(2500);
@@ -122,17 +117,9 @@ describe('createSpanStoreProcessor', () => {
     const store = createSpanStore();
     const processor = createSpanStoreProcessor({ store });
 
-    processor.onEnd(
-      mockReadableSpan({
-        attributes: { lsn: '0/1234', count: 42, active: true },
-      }),
-    );
+    processor.onEnd(mockReadableSpan({ attributes: { lsn: '0/1234', count: 42, active: true } }));
 
-    expect(store.getSpans()[0].attributes).toEqual({
-      lsn: '0/1234',
-      count: 42,
-      active: true,
-    });
+    expect(store.getSpans()[0].attributes).toEqual({ lsn: '0/1234', count: 42, active: true });
   });
 
   it('converts span events', () => {

@@ -5,11 +5,7 @@ import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 
 type EntityTypeWithSlug = ChannelEntityType | 'user';
 
-export const generateUniqueSlug = async (
-  ctx: DbContext,
-  baseSlug: string,
-  entityType: EntityTypeWithSlug,
-): Promise<string> => {
+export const generateUniqueSlug = async (ctx: DbContext, baseSlug: string, entityType: EntityTypeWithSlug): Promise<string> => {
   if (await checkSlugAvailable(ctx, baseSlug, entityType)) return baseSlug;
 
   const withSuffix = `${baseSlug}-${nanoid(6)}`;

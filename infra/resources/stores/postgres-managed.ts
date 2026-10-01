@@ -13,25 +13,14 @@ export interface PostgresManagedConfig {
   /** Enable PostgreSQL logical replication via instance settings and expose the cdc connection string. Defaults to true. */
   logicalReplication?: boolean;
   /** Services consuming each role's DSN and the instance CA. When set the store owns the secret declarations; when omitted `runtime-secrets.config.ts` must declare them and the store only binds values. */
-  secretConsumers?: {
-    runtime?: readonly string[];
-    admin?: readonly string[];
-    cdc?: readonly string[];
-    ca?: readonly string[];
-  };
+  secretConsumers?: { runtime?: readonly string[]; admin?: readonly string[]; cdc?: readonly string[]; ca?: readonly string[] };
 }
 
 /**
  * Assemble a PostgreSQL DSN from plain string parts. User and password are percent-encoded so neither can break out of the userinfo segment.
  * Always pins `sslmode=require&uselibpqcompat=true`: Scaleway private endpoints use self-signed certs, so libpq-compat mode encrypts without cert verification.
  */
-export function formatPostgresUrl(
-  user: string,
-  pass: string,
-  host: string,
-  port: number | string,
-  database: string,
-): string {
+export function formatPostgresUrl(user: string, pass: string, host: string, port: number | string, database: string): string {
   return `postgresql://${encodeURIComponent(user)}:${encodeURIComponent(pass)}@${host}:${port}/${database}?sslmode=require&uselibpqcompat=true`;
 }
 
@@ -96,8 +85,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
     },
 
     provision(ctx: ProvisionContext): ProvisionedStore {
-      const { pulumi, scaleway, naming, region, isProduction, sizing, privateNetworkId, configuredOrRandomSecret } =
-        ctx;
+      const { pulumi, scaleway, naming, region, isProduction, sizing, privateNetworkId, configuredOrRandomSecret } = ctx;
 
       const infraConfig = new pulumi.Config('infra');
 
@@ -142,17 +130,11 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           volumeSizeInGb: dbVolumeSize,
           isHaCluster: false,
           disableBackup: !isProduction,
-          privateNetwork: {
-            pnId: privateNetworkId,
-            enableIpam: true,
-          },
+          privateNetwork: { pnId: privateNetworkId, enableIpam: true },
           settings: replicationSettings,
           loadBalancer: dbPublicEndpoint ? {} : undefined,
         },
-        {
-          deleteBeforeReplace: true,
-          protect: isProduction,
-        },
+        { deleteBeforeReplace: true, protect: isProduction },
       );
 
       if (acl?.ok) {
@@ -163,11 +145,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
         });
       }
 
-      const database = new scaleway.databases.Database('main-database', {
-        instanceId: instance.id,
-        name: dbSlug,
-        region,
-      });
+      const database = new scaleway.databases.Database('main-database', { instanceId: instance.id, name: dbSlug, region });
 
       // One user per role: admin_role runs migrations, seeds, system jobs and CDC; runtime_role serves app requests under RLS.
       // Scaleway's isAdmin grants REPLICATION but not BYPASSRLS (verified on production, 2026-09-04): admin_role bypasses RLS only as the owner of RLS-enabled, never-forced tables.
@@ -193,13 +171,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
 
       new scaleway.databases.Privilege(
         'admin-privilege',
-        {
-          instanceId: instance.id,
-          databaseName: database.name,
-          userName: adminUser.name,
-          permission: 'all',
-          region,
-        },
+        { instanceId: instance.id, databaseName: database.name, userName: adminUser.name, permission: 'all', region },
         { ignoreChanges: ['permission'] },
       );
 
@@ -214,13 +186,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
 
       new scaleway.databases.Privilege(
         'runtime-privilege',
-        {
-          instanceId: instance.id,
-          databaseName: database.name,
-          userName: runtimeUser.name,
-          permission: 'all',
-          region,
-        },
+        { instanceId: instance.id, databaseName: database.name, userName: runtimeUser.name, permission: 'all', region },
         { ignoreChanges: ['permission'] },
       );
 
@@ -236,9 +202,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
 
       /** Build a connection string for the private network endpoint. */
       function buildConnectionString(user: pulumi.Output<string>, pass: pulumi.Output<string>): pulumi.Output<string> {
-        return pulumi
-          .all([user, pass, ip, port, database.name])
-          .apply(([u, p, h, pt, db]) => formatPostgresUrl(u, p, h, pt, db));
+        return pulumi.all([user, pass, ip, port, database.name]).apply(([u, p, h, pt, db]) => formatPostgresUrl(u, p, h, pt, db));
       }
 
       // Admin connection for migrations, seeds, system jobs (owner bypass of RLS).

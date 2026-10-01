@@ -34,10 +34,8 @@
   background-image:
     radial-gradient(ellipse 55% 40% at 35% 35%, rgba(0, 0, 0, 0.4), rgba(0, 0, 0, 0) 70%),
     radial-gradient(ellipse 90% 80% at 65% 50%, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0) 70%),
-    linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(60, 0, 59, 1)),
-    linear-gradient(to top left, rgba(0, 0, 0, 0), rgba(15, 6, 86, 1)),
-    linear-gradient(to bottom right, rgba(0, 0, 0, 0), rgba(184, 144, 0, 1)),
-    linear-gradient(to top right, rgba(0, 0, 0, 0), rgba(11, 144, 122, 1));
+    linear-gradient(to bottom left, rgba(0, 0, 0, 0), rgba(60, 0, 59, 1)), linear-gradient(to top left, rgba(0, 0, 0, 0), rgba(15, 6, 86, 1)),
+    linear-gradient(to bottom right, rgba(0, 0, 0, 0), rgba(184, 144, 0, 1)), linear-gradient(to top right, rgba(0, 0, 0, 0), rgba(11, 144, 122, 1));
 }
 
 .rich-gradient:before {

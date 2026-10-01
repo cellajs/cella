@@ -7,11 +7,7 @@ import { isOriginIn } from './url-origin.ts';
  * document's own organization; re-hosted media by its URL on the asset CDN. Everything else, an external URL included,
  * is `invalid` and renders nothing.
  */
-export type MediaRef =
-  | { kind: 'attachment'; id: string }
-  | { kind: 'orgKey'; key: string }
-  | { kind: 'asset'; url: string }
-  | { kind: 'invalid' };
+export type MediaRef = { kind: 'attachment'; id: string } | { kind: 'orgKey'; key: string } | { kind: 'asset'; url: string } | { kind: 'invalid' };
 
 /** The document a reference sits in. */
 export interface MediaRefContext {

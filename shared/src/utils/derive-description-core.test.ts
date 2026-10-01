@@ -1,11 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  blockPlainText,
-  countDescriptionBlocks,
-  type DescriptionBlock,
-  deriveDocument,
-  findSummarySource,
-} from './derive-description-core.ts';
+import { blockPlainText, countDescriptionBlocks, type DescriptionBlock, deriveDocument, findSummarySource } from './derive-description-core.ts';
 
 const paragraph = (text: string): DescriptionBlock => ({
   type: 'paragraph',
@@ -19,10 +13,7 @@ const checklist = (checked: boolean, text = 'todo'): DescriptionBlock => ({
   content: [{ type: 'text', text }],
 });
 
-const media = (type: string, url: string, attachmentId = ''): DescriptionBlock => ({
-  type,
-  props: { url, attachmentId, name: 'file' },
-});
+const media = (type: string, url: string, attachmentId = ''): DescriptionBlock => ({ type, props: { url, attachmentId, name: 'file' } });
 
 describe('countDescriptionBlocks', () => {
   it('counts checkboxes, media blocks, and collects unique attachment ids in document order', () => {
@@ -46,9 +37,7 @@ describe('countDescriptionBlocks', () => {
   });
 
   it('walks nested children', () => {
-    const counts = countDescriptionBlocks([
-      { ...paragraph('parent'), children: [media('image', 'a-9', 'a-9'), checklist(true)] },
-    ]);
+    const counts = countDescriptionBlocks([{ ...paragraph('parent'), children: [media('image', 'a-9', 'a-9'), checklist(true)] }]);
     expect(counts.attachments).toEqual(['a-9']);
     expect(counts.checkboxCount).toBe(1);
     expect(counts.expandable).toBe(false);
@@ -107,19 +96,11 @@ describe('deriveDocument', () => {
       ]),
     );
     expect(derived.attachments).toEqual(['a-1', 'a-2']);
-    expect(derived.counts).toEqual({
-      expandable: true,
-      checkboxCount: 0,
-      checkedCount: 0,
-      attachmentCount: 4,
-      attachments: ['a-1', 'a-2'],
-    });
+    expect(derived.counts).toEqual({ expandable: true, checkboxCount: 0, checkedCount: 0, attachmentCount: 4, attachments: ['a-1', 'a-2'] });
   });
 
   it('counts checklist items, nested ones included', () => {
-    const { counts } = deriveDocument(
-      JSON.stringify([checklist(true), { ...checklist(false), children: [checklist(true)] }]),
-    );
+    const { counts } = deriveDocument(JSON.stringify([checklist(true), { ...checklist(false), children: [checklist(true)] }]));
     expect(counts).toMatchObject({ checkboxCount: 3, checkedCount: 2 });
   });
 
@@ -145,9 +126,7 @@ describe('deriveDocument', () => {
 
   it('ignores mention ids that are not UUIDs, so a hand-written node or attribute names no recipient', () => {
     expect(deriveDocument('<span data-mention-id="not-a-uuid">@ X</span>').mentions).toEqual([]);
-    expect(deriveDocument(JSON.stringify([{ type: 'paragraph', content: [mention('not-a-uuid')] }])).mentions).toEqual(
-      [],
-    );
+    expect(deriveDocument(JSON.stringify([{ type: 'paragraph', content: [mention('not-a-uuid')] }])).mentions).toEqual([]);
   });
 
   it('derives nothing from an empty, absent or malformed body, and never throws', () => {

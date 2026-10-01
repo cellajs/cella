@@ -8,9 +8,7 @@ import { collectingExporter, failedLookup } from './testing/telemetry.ts';
 
 /** Everything a span carries to the backend that could hold a string. */
 const exportedText = (spans: ReadableSpan[]) =>
-  JSON.stringify(
-    spans.map((span) => ({ name: span.name, attributes: span.attributes, events: span.events, status: span.status })),
-  );
+  JSON.stringify(spans.map((span) => ({ name: span.name, attributes: span.attributes, events: span.events, status: span.status })));
 
 describe('createOtelSDK', () => {
   afterEach(() => {
@@ -28,23 +26,14 @@ describe('createOtelSDK', () => {
       shutdown: vi.fn().mockResolvedValue(undefined),
     };
 
-    const otel = createOtelSDK({
-      serviceName: 'test-service',
-      spanProcessors: [mockProcessor],
-      autoInstrumentations: false,
-    });
+    const otel = createOtelSDK({ serviceName: 'test-service', spanProcessors: [mockProcessor], autoInstrumentations: false });
 
     expect(otel.sdk).toBeDefined();
   });
 
   it('normalizes metric interval below exporter timeout', () => {
     expect(() =>
-      createOtelSDK({
-        serviceName: 'test-service',
-        mapleSecretIngestKey: 'test-key',
-        metricIntervalMs: 1,
-        autoInstrumentations: false,
-      }),
+      createOtelSDK({ serviceName: 'test-service', mapleSecretIngestKey: 'test-key', metricIntervalMs: 1, autoInstrumentations: false }),
     ).not.toThrow();
   });
 
@@ -99,9 +88,7 @@ describe('createOtelSDK', () => {
         'http.request.header.referer': ['https://app.example.com/x?access_token=header_secret'],
       },
     });
-    span.addEvent('exception', {
-      'exception.message': 'fetch https://m.example/send?access_token=event_secret failed',
-    });
+    span.addEvent('exception', { 'exception.message': 'fetch https://m.example/send?access_token=event_secret failed' });
     span.setStatus({ code: SpanStatusCode.ERROR, message: 'unsubscribe /me/unsubscribe?token=status_secret' });
     span.end();
     await otel.shutdown();
@@ -155,9 +142,7 @@ describe('createOtelSDK', () => {
     const events = exported[0]?.events ?? [];
     expect(events.map((event) => event.attributes?.['exception.type'])).toEqual(['DrizzleQueryError', 'Error']);
     expect(events[0]?.attributes?.['exception.message']).toBe('Failed query: [REDACTED]');
-    expect(events[0]?.attributes?.['exception.stacktrace']).toMatch(
-      /^DrizzleQueryError: Failed query: \[REDACTED\]\n {4}at /,
-    );
+    expect(events[0]?.attributes?.['exception.stacktrace']).toMatch(/^DrizzleQueryError: Failed query: \[REDACTED\]\n {4}at /);
     expect(events[1]?.attributes?.['exception.message']).toBe('Could not sign in');
     expect(exported[0]?.status.message).toBe('Failed query: [REDACTED]');
   });
@@ -187,11 +172,7 @@ describe('createOtelSDK', () => {
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const { port } = server.address() as AddressInfo;
     const exported: ReadableSpan[] = [];
-    const otel = createOtelSDK({
-      serviceName: 'test-service',
-      traceExporter: collectingExporter(exported),
-      flushOnShutdown: true,
-    });
+    const otel = createOtelSDK({ serviceName: 'test-service', traceExporter: collectingExporter(exported), flushOnShutdown: true });
     otel.start();
 
     try {

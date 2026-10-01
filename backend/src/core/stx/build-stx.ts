@@ -27,10 +27,5 @@ export function buildStx(stx: StxBase, entity?: { stx: StxBase }, acceptedFieldN
   // Every user-driven update writes updatedAt, which is how the CDC worker tells user edits from its own writes.
   const changedFields = acceptedFieldNames && entity ? [...acceptedFieldNames, 'updatedAt'] : acceptedFieldNames;
 
-  return {
-    mutationId: stx.mutationId,
-    sourceId: stx.sourceId,
-    fieldTimestamps: mergedTimestamps,
-    ...(changedFields && { changedFields }),
-  };
+  return { mutationId: stx.mutationId, sourceId: stx.sourceId, fieldTimestamps: mergedTimestamps, ...(changedFields && { changedFields }) };
 }

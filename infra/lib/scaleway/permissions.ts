@@ -56,11 +56,7 @@ export const ADMIN_ORG_PERMISSION_SETS = ['IAMReadOnly'] as const;
 export const SERVICE_SECRET_PERMISSION_SETS = ['SecretManagerReadOnly', 'SecretManagerSecretAccess'] as const;
 
 /** Backend service app S3 signing sets for attachment uploads and presigned URLs. Granular object sets, NOT FullAccess; bucket policies scope which buckets. */
-export const BACKEND_S3_PERMISSION_SETS = [
-  'ObjectStorageObjectsRead',
-  'ObjectStorageObjectsWrite',
-  'ObjectStorageObjectsDelete',
-] as const;
+export const BACKEND_S3_PERMISSION_SETS = ['ObjectStorageObjectsRead', 'ObjectStorageObjectsWrite', 'ObjectStorageObjectsDelete'] as const;
 
 /** Boot application sets: pull images and write boot diagnostics. Its Secret Manager rule is separate and conditioned to the handoff folder (bootKeyCondition). */
 export const BOOT_PROJECT_PERMISSION_SETS = ['ContainerRegistryReadOnly', 'ObjectStorageObjectsWrite'] as const;

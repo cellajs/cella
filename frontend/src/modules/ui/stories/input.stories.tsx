@@ -12,15 +12,8 @@ const meta = {
   component: Input,
   tags: ['autodocs'],
   argTypes: {},
-  args: {
-    className: 'w-96',
-    type: 'email',
-    placeholder: 'Email',
-    disabled: false,
-  },
-  parameters: {
-    layout: 'centered',
-  },
+  args: { className: 'w-96', type: 'email', placeholder: 'Email', disabled: false },
+  parameters: { layout: 'centered' },
 } satisfies Meta<typeof Input>;
 
 export default meta;
@@ -36,9 +29,7 @@ export const Default: Story = {};
  * Use the `disabled` prop to make the input non-interactive and appears faded,
  * indicating that input is not currently accepted.
  */
-export const Disabled: Story = {
-  args: { disabled: true },
-};
+export const Disabled: Story = { args: { disabled: true } };
 
 /**
  * Use the `Label` component to includes a clear, descriptive label above or

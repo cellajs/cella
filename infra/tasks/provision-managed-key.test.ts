@@ -6,13 +6,9 @@ const getSecretByName = vi.fn();
 const putSecretValue = vi.fn();
 const provisionScopedKey = vi.fn();
 
-vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
-  createSecretManagerClient: () => ({ getSecretByName, putSecretValue }),
-}));
+vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({ createSecretManagerClient: () => ({ getSecretByName, putSecretValue }) }));
 
-vi.mock('../lib/scaleway/scaleway-iam', () => ({
-  provisionScopedKey: (...args: unknown[]) => provisionScopedKey(...args),
-}));
+vi.mock('../lib/scaleway/scaleway-iam', () => ({ provisionScopedKey: (...args: unknown[]) => provisionScopedKey(...args) }));
 
 function resetMocks() {
   getSecretByName.mockReset();
@@ -48,15 +44,9 @@ describe('provisionManagedKey', () => {
   it('mints a scoped key and writes both halves of an access/secret pair', async () => {
     resetMocks();
     getSecretByName.mockImplementation(
-      async (name: string) =>
-        ({ 'admin-email': { id: 'container-id' }, 'brevo-api-key': { id: 'container-secret' } })[name],
+      async (name: string) => ({ 'admin-email': { id: 'container-id' }, 'brevo-api-key': { id: 'container-secret' } })[name],
     );
-    provisionScopedKey.mockResolvedValue({
-      accessKey: 'AK',
-      secretKey: 'SK',
-      applicationId: 'app-pair',
-      organizationId: 'org-1',
-    });
+    provisionScopedKey.mockResolvedValue({ accessKey: 'AK', secretKey: 'SK', applicationId: 'app-pair', organizationId: 'org-1' });
     putSecretValue.mockResolvedValue({ revision: 1 });
 
     const result = await provisionManagedKey({ ...baseOptions, definition: pairKey });
@@ -70,24 +60,15 @@ describe('provisionManagedKey', () => {
     ]);
 
     // Access key → id container, secret key → secret container, each superseding prior versions.
-    expect(putSecretValue).toHaveBeenCalledWith(
-      expect.objectContaining({ secretId: 'container-id', value: 'AK', disablePrevious: true }),
-    );
-    expect(putSecretValue).toHaveBeenCalledWith(
-      expect.objectContaining({ secretId: 'container-secret', value: 'SK', disablePrevious: true }),
-    );
+    expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: 'container-id', value: 'AK', disablePrevious: true }));
+    expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: 'container-secret', value: 'SK', disablePrevious: true }));
     expect(result.applicationId).toBe('app-pair');
   });
 
   it('writes only the secret half for a single-token key (AI)', async () => {
     resetMocks();
     getSecretByName.mockResolvedValue({ id: 'container-ai' });
-    provisionScopedKey.mockResolvedValue({
-      accessKey: 'AK',
-      secretKey: 'SK',
-      applicationId: 'app-ai',
-      organizationId: 'org-1',
-    });
+    provisionScopedKey.mockResolvedValue({ accessKey: 'AK', secretKey: 'SK', applicationId: 'app-ai', organizationId: 'org-1' });
     putSecretValue.mockResolvedValue({ revision: 3 });
 
     await provisionManagedKey({ ...baseOptions, definition: aiKey });

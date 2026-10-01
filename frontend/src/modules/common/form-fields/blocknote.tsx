@@ -4,10 +4,7 @@ import type { BaseUppyFilePanelProps, CommonBlockNoteProps } from '~/modules/com
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
-type BaseBlockNoteProps = Omit<
-  CommonBlockNoteProps,
-  'defaultValue' | 'updateData' | 'filePanel' | 'baseFilePanelProps'
-> & {
+type BaseBlockNoteProps = Omit<CommonBlockNoteProps, 'defaultValue' | 'updateData' | 'filePanel' | 'baseFilePanelProps'> & {
   /** Omit to disable file/media uploads (the editor renders no file panel without it). */
   baseFilePanelProps?: BaseUppyFilePanelProps;
 };
@@ -49,11 +46,7 @@ function BlockNoteContentFormField<TFieldValues extends FieldValues>({
               </FormLabel>
             )}
             {/* The filePanel/baseFilePanelProps union needs two branches: a conditional spread widens it */}
-            {baseFilePanelProps ? (
-              <BlockNote {...editorProps} baseFilePanelProps={baseFilePanelProps} />
-            ) : (
-              <BlockNote {...editorProps} />
-            )}
+            {baseFilePanelProps ? <BlockNote {...editorProps} baseFilePanelProps={baseFilePanelProps} /> : <BlockNote {...editorProps} />}
             <FormMessage />
           </FormItem>
         );

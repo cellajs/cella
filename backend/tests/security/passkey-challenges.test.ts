@@ -6,16 +6,7 @@ import { baseDb as db } from '#/db/db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders } from '../fixtures';
-import {
-  authCookie,
-  cookieChange,
-  createMfaToken,
-  createTestSession,
-  createUser,
-  expectRefusal,
-  sessionsOf,
-  tokenRowOf,
-} from '../helpers';
+import { authCookie, cookieChange, createMfaToken, createTestSession, createUser, expectRefusal, sessionsOf, tokenRowOf } from '../helpers';
 import { type SoftwarePasskey, softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -38,8 +29,7 @@ vi.mock('@simplewebauthn/server', async (importOriginal) => {
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 
-const storedPasskey = async (credentialId: string) =>
-  (await db.select().from(passkeysTable).where(eq(passkeysTable.credentialId, credentialId)))[0];
+const storedPasskey = async (credentialId: string) => (await db.select().from(passkeysTable).where(eq(passkeysTable.credentialId, credentialId)))[0];
 
 afterEach(async () => {
   hooks.afterVerify = undefined;
@@ -76,9 +66,7 @@ describe('Passkey challenges', async () => {
 
     // Positive control: a fresh challenge signs in again.
     const fresh = await passkeyChallenge('authentication');
-    expect((await passkeySignIn(passkey.assert(fresh.challenge, { counter: 0 }), fresh.cookie)).response.status).toBe(
-      204,
-    );
+    expect((await passkeySignIn(passkey.assert(fresh.challenge, { counter: 0 }), fresh.cookie)).response.status).toBe(204);
     expect(await sessionsOf(user.id)).toHaveLength(2);
   });
 
@@ -99,11 +87,7 @@ describe('Passkey challenges', async () => {
 
     // Positive control: a challenge issued for this MFA challenge completes it.
     const mfaChallenge = await passkeyChallenge('mfa', mfaCookie);
-    const completed = await passkeySignIn(
-      passkey.assert(mfaChallenge.challenge, { counter: 1 }),
-      `${mfaCookie}; ${mfaChallenge.cookie}`,
-      'mfa',
-    );
+    const completed = await passkeySignIn(passkey.assert(mfaChallenge.challenge, { counter: 1 }), `${mfaCookie}; ${mfaChallenge.cookie}`, 'mfa');
     expect(completed.response.status).toBe(204);
     expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeUndefined();
   });
@@ -136,9 +120,7 @@ describe('Passkey challenges', async () => {
 
     // Positive control: a counter past the stored one signs in and is stored.
     const fresh = await passkeyChallenge('authentication');
-    expect((await passkeySignIn(passkey.assert(fresh.challenge, { counter: 6 }), fresh.cookie)).response.status).toBe(
-      204,
-    );
+    expect((await passkeySignIn(passkey.assert(fresh.challenge, { counter: 6 }), fresh.cookie)).response.status).toBe(204);
     expect((await storedPasskey(passkey.credentialId)).counter).toBe(6);
   });
 
@@ -158,9 +140,7 @@ describe('Passkey challenges', async () => {
     // Positive control: without a concurrent use, the next counter signs in.
     hooks.afterVerify = undefined;
     const fresh = await passkeyChallenge('authentication');
-    expect((await passkeySignIn(passkey.assert(fresh.challenge, { counter: 2 }), fresh.cookie)).response.status).toBe(
-      204,
-    );
+    expect((await passkeySignIn(passkey.assert(fresh.challenge, { counter: 2 }), fresh.cookie)).response.status).toBe(204);
   });
 
   it("must not register a passkey via another account's credential id", async () => {

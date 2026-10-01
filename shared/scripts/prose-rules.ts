@@ -18,13 +18,7 @@ export interface ProseRule {
 const agentWording = { level: 'review', docs: true, exclude: /^(?:cella\/migrations\/|infra\/|sdk\/gen\/)/ } as const;
 
 export const proseRules: ProseRule[] = [
-  {
-    name: 'em-dash',
-    pattern: /—/,
-    level: 'required',
-    message: 'split the sentence, use a colon, or drop the clause',
-    docs: true,
-  },
+  { name: 'em-dash', pattern: /—/, level: 'required', message: 'split the sentence, use a colon, or drop the clause', docs: true },
   {
     name: 'contrast-history',
     pattern: /\b(?:instead|rather than|as opposed to)\b/i,
@@ -105,33 +99,18 @@ export const proseRules: ProseRule[] = [
     ...agentWording,
     message: 'consider template, generated starting code, or the concrete setup step',
   },
-  {
-    name: 'threshold-metaphor',
-    pattern: /\bfloor\b/i,
-    ...agentWording,
-    message: 'when describing a threshold, prefer minimum or lower bound',
-  },
+  { name: 'threshold-metaphor', pattern: /\bfloor\b/i, ...agentWording, message: 'when describing a threshold, prefer minimum or lower bound' },
   {
     name: 'agent-emphasis',
     pattern: /\b(?:decisive|genuinely|cleanly|honest (?:answer|caveat|take))\b/i,
     ...agentWording,
     message: 'remove the emphasis or state the exact result or limitation',
   },
-  {
-    name: 'silent-behavior',
-    pattern: /\bsilent(?:ly)?\b/i,
-    ...agentWording,
-    message: 'state which error, log, record, or notification is absent',
-  },
+  { name: 'silent-behavior', pattern: /\bsilent(?:ly)?\b/i, ...agentWording, message: 'state which error, log, record, or notification is absent' },
 ];
 
 /** A finding for every match of `rule` in `text`; `locate` maps an index in `text` to its line and column in `file`. */
-export function ruleFindings(
-  rule: ProseRule,
-  file: string,
-  text: string,
-  locate: (index: number) => { line: number; column: number },
-): Finding[] {
+export function ruleFindings(rule: ProseRule, file: string, text: string, locate: (index: number) => { line: number; column: number }): Finding[] {
   if (rule.exclude?.test(file) || !rule.pattern.test(text)) return [];
   const pattern = new RegExp(rule.pattern.source, `${rule.pattern.flags}g`);
   return [...text.matchAll(pattern)].map((match) => ({

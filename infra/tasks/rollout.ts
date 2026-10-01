@@ -44,12 +44,7 @@ export interface RolloutRuntime {
  * Resolve the generation just provisioned for `sha`. Two generations share a sha when a redeploy keeps the sha but changes config, and the pending one is the id differing from the active.
  * A same-config redeploy collapses to the active id.
  */
-export function resolvePendingGen(
-  generations: GenerationMetadata[],
-  service: string,
-  sha: string,
-  activeId?: string,
-): GenerationMetadata {
+export function resolvePendingGen(generations: GenerationMetadata[], service: string, sha: string, activeId?: string): GenerationMetadata {
   const candidates = generations.filter((item) => item.service === service && item.sha === sha);
   const pending = candidates.find((item) => item.genId !== activeId) ?? candidates[0];
   if (!pending) throw new Error(`Could not resolve pending generation metadata for ${service} @ ${sha}`);
@@ -81,15 +76,10 @@ export async function activateService(
 
   // Serving generation before this deploy; empty on a first deploy or an exclusive host (whose old VM the provisioning update already destroyed), where the reconciler drives the LB straight to [new] once it is healthy.
   const activeRef = current?.active;
-  const oldGen =
-    activeRef && !plan.exclusive
-      ? generations.find((item) => item.service === service && item.genId === activeRef.id)
-      : undefined;
+  const oldGen = activeRef && !plan.exclusive ? generations.find((item) => item.service === service && item.genId === activeRef.id) : undefined;
   const oldIps = oldGen ? [oldGen.privateIp] : [];
 
-  rt.info(
-    `[deploy ${service}] reconciling LB: old=[${oldIps.join(',') || '<none>'}] -> new=[${target.privateIp}] (gen ${target.genId})`,
-  );
+  rt.info(`[deploy ${service}] reconciling LB: old=[${oldIps.join(',') || '<none>'}] -> new=[${target.privateIp}] (gen ${target.genId})`);
   const healthUrl = plan.healthUrl;
   const cutover = await sequenceCutover({
     service,
@@ -146,9 +136,7 @@ export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime
 
   // LB backend ids are only needed when a wave contains a start-first service; stop-first-only waves skip the stack-output read.
   const backendIdsFor = async (wave: RolloutServicePlan[]): Promise<Record<string, string>> =>
-    wave.some((item) => item.strategy !== 'stop-first' || (item.repointBackendKeys?.length ?? 0) > 0)
-      ? rt.readLbBackendIds()
-      : {};
+    wave.some((item) => item.strategy !== 'stop-first' || (item.repointBackendKeys?.length ?? 0) > 0) ? rt.readLbBackendIds() : {};
 
   if (plan.primary) {
     rt.info(`[rollout] wave 1: ${plan.primary.service}`);
@@ -165,9 +153,7 @@ export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime
     await rt.update(plan.rest.map((item) => item.service));
     const generations = await rt.readGenerations();
     const backendIds = await backendIdsFor(plan.rest);
-    const outcomes = await Promise.allSettled(
-      plan.rest.map((item) => activateService(item, sha, generations, backendIds, rt)),
-    );
+    const outcomes = await Promise.allSettled(plan.rest.map((item) => activateService(item, sha, generations, backendIds, rt)));
     const failures = outcomes.flatMap((outcome, index) =>
       outcome.status === 'rejected'
         ? [`${plan.rest[index]?.service}: ${outcome.reason instanceof Error ? outcome.reason.message : outcome.reason}`]

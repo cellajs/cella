@@ -72,9 +72,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
   const rows = orderBySlotConfig(candidates, draftOrder ? { order: draftOrder } : slotConfig).map((tab) => ({
     ...tab,
     name: t(tab.label, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' }),
-    description: tab.description
-      ? t(tab.description, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' })
-      : undefined,
+    description: tab.description ? t(tab.description, { resource: tab.resource ? t(tab.resource).toLowerCase() : '' }) : undefined,
     visible: !hidden.has(tab.id),
   }));
 

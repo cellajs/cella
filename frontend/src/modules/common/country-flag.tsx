@@ -15,9 +15,7 @@ export function CountryFlag({ countryCode, className, imgType = 'svg', width = 1
   if (countryCode.toLowerCase() === 'en') countryCode = 'gb';
 
   const flagUrl =
-    imgType === 'svg'
-      ? `/static/common/flags/${countryCode.toLowerCase()}.svg`
-      : `/static/common/flags/png/${countryCode.toLowerCase()}.png`;
+    imgType === 'svg' ? `/static/common/flags/${countryCode.toLowerCase()}.svg` : `/static/common/flags/png/${countryCode.toLowerCase()}.png`;
 
   if (!isOnline) return null;
   return (

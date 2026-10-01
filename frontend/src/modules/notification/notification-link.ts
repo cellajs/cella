@@ -13,10 +13,7 @@ export function getNotificationRoute(notification: LinkTarget): EntityRoute | nu
   const config = channelRouteConfig[notification.channelType];
   if (!config) return null;
 
-  const params: Record<string, string> = {
-    tenantId: notification.tenantId,
-    organizationSlug: notification.organizationId,
-  };
+  const params: Record<string, string> = { tenantId: notification.tenantId, organizationSlug: notification.organizationId };
   params[config.paramName] = notification.channelId;
 
   const entry: ChannelRouteEntry = config;

@@ -11,12 +11,7 @@ import type { UserWithCounters } from '#/modules/user/helpers/select';
  * Shared tail of every browser-navigated sign-in flow: start an MFA challenge when required, otherwise set the session,
  * then 302 to the resolved post-auth path. The redirect is carried into the MFA challenge so it survives it.
  */
-export const finishSignIn = async (
-  ctx: Context<Env>,
-  user: UserWithCounters,
-  strategy: AuthStrategy,
-  redirectPath?: string | null,
-) => {
+export const finishSignIn = async (ctx: Context<Env>, user: UserWithCounters, strategy: AuthStrategy, redirectPath?: string | null) => {
   const mfaRedirectPath = await initiateMfa(ctx, user);
 
   const resolvedPath = resolvePostAuthRedirectPath(user, { redirectPath, mfaPath: mfaRedirectPath });

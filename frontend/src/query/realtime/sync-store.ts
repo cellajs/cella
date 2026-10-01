@@ -136,9 +136,7 @@ export const syncStore = createStore<SyncStoreState>()(
             org.contexts[channelId][entityType] = seq;
           }),
         getChannelSeq: (orgId, channelId, entityType) =>
-          channelId === orgId
-            ? (get().orgs[orgId]?.seqs[entityType] ?? 0)
-            : (get().orgs[orgId]?.contexts[channelId]?.[entityType] ?? 0),
+          channelId === orgId ? (get().orgs[orgId]?.seqs[entityType] ?? 0) : (get().orgs[orgId]?.contexts[channelId]?.[entityType] ?? 0),
 
         declareSyncView: (key, view) =>
           set((s) => {
@@ -198,12 +196,7 @@ export const syncStore = createStore<SyncStoreState>()(
         name: 'sync',
         skipHydration: true,
         storage: createJSONStorage(() => idbKvStorage('sync')),
-        partialize: (state) => ({
-          cursor: state.cursor,
-          lastSyncAt: state.lastSyncAt,
-          orgs: state.orgs,
-          views: state.views,
-        }),
+        partialize: (state) => ({ cursor: state.cursor, lastSyncAt: state.lastSyncAt, orgs: state.orgs, views: state.views }),
       },
     ),
     { name: 'SyncStore', enabled: isDebugMode },

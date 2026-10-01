@@ -22,10 +22,7 @@ type RequestFilters = Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'off
 type RequestsListParams = RequestFilters & { limit?: number };
 
 export const requestsKeys = {
-  table: {
-    base: ['requests', 'table'] as const,
-    entries: (filters: RequestFilters) => [...requestsKeys.table.base, filters] as const,
-  },
+  table: { base: ['requests', 'table'] as const, entries: (filters: RequestFilters) => [...requestsKeys.table.base, filters] as const },
   approve: ['requests', 'approve'] as const,
   create: ['requests', 'create'] as const,
   delete: ['requests', 'delete'] as const,
@@ -41,10 +38,7 @@ const withDefaults = ({
 const fetchRequestsPage = (filters: RequestFilters, limit: number, offset: number, signal?: AbortSignal) =>
   getRequests({ query: { ...withDefaults(filters), ...pageQuery(limit, offset) }, signal });
 
-export const requestsListQueryOptions = ({
-  limit = appConfig.requestLimits.requests,
-  ...params
-}: RequestsListParams) => {
+export const requestsListQueryOptions = ({ limit = appConfig.requestLimits.requests, ...params }: RequestsListParams) => {
   const filters = withDefaults(params);
 
   return infiniteQueryOptions({
@@ -83,8 +77,5 @@ export const useDeleteRequestMutation = () => {
 };
 
 /** Fetch requests for table export. Bypasses cache; returns flat items. */
-export const fetchRequestsForExport = async ({
-  limit,
-  offset = 0,
-  ...filters
-}: RequestsListParams & { limit: number; offset?: number }) => (await fetchRequestsPage(filters, limit, offset)).items;
+export const fetchRequestsForExport = async ({ limit, offset = 0, ...filters }: RequestsListParams & { limit: number; offset?: number }) =>
+  (await fetchRequestsPage(filters, limit, offset)).items;

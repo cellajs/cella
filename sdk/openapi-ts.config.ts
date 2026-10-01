@@ -8,31 +8,15 @@ import { defineConfig as tsdocPlugin } from './src/plugins/tsdoc';
  * staging directory first so identical output does not trigger writes or HMR; the CLI targets `./gen` directly.
  */
 export const createOpenApiConfig = (outputPath: string): UserConfig => ({
-  input: {
-    path: '../backend/openapi.cache.json',
-    watch: false,
-  },
-  output: {
-    path: outputPath,
-    source: {
-      fileName: 'openapi',
-      path: outputPath,
-    },
-  },
-  parser: {
-    transforms: {
-      readWrite: false,
-    },
-  },
+  input: { path: '../backend/openapi.cache.json', watch: false },
+  output: { path: outputPath, source: { fileName: 'openapi', path: outputPath } },
+  parser: { transforms: { readWrite: false } },
   plugins: [
     tsdocPlugin(),
     openapiParserPlugin(),
     'zod',
     { name: '@hey-api/sdk', responseStyle: 'data', validator: 'zod' },
-    {
-      name: '@hey-api/client-fetch',
-      throwOnError: true,
-    },
+    { name: '@hey-api/client-fetch', throwOnError: true },
   ],
 });
 

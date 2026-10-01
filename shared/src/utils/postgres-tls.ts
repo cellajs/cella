@@ -43,15 +43,8 @@ const postgresHost = (connectionString: string): string | undefined => {
 
 // node-postgres omits the connection host from TLS identity checking, so Node would verify
 // against `localhost`. Pins verification to the dialed host, keeping CA-chain verification.
-export const verifiedPostgresSsl = (
-  connectionString: string,
-  ca: string | undefined,
-): VerifiedPostgresSslOptions | undefined => {
+export const verifiedPostgresSsl = (connectionString: string, ca: string | undefined): VerifiedPostgresSslOptions | undefined => {
   if (!ca) return undefined;
   const host = postgresHost(connectionString);
-  return {
-    ca,
-    rejectUnauthorized: true,
-    checkServerIdentity: host ? (_passedHost, cert) => tlsCheckServerIdentity(host, cert) : undefined,
-  };
+  return { ca, rejectUnauthorized: true, checkServerIdentity: host ? (_passedHost, cert) => tlsCheckServerIdentity(host, cert) : undefined };
 };

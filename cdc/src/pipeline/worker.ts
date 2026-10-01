@@ -11,20 +11,14 @@ import { createReplicationService, setupBackpressure, subscribeWithReconnect } f
 
 /** Start and stop for the CDC worker; pipeline stages are documented in @see cdc/README.md */
 export async function startCdcWorker(): Promise<void> {
-  log.info('CDC worker starting...', {
-    publicationName: CDC_PUBLICATION_NAME,
-    slotName: CDC_SLOT_NAME,
-  });
+  log.info('CDC worker starting...', { publicationName: CDC_PUBLICATION_NAME, slotName: CDC_SLOT_NAME });
 
   await probeRoleCapabilities();
 
   const service = createReplicationService();
   replicationState.service = service;
 
-  const plugin = new PgoutputPlugin({
-    protoVersion: 1,
-    publicationNames: [CDC_PUBLICATION_NAME],
-  });
+  const plugin = new PgoutputPlugin({ protoVersion: 1, publicationNames: [CDC_PUBLICATION_NAME] });
 
   setupBackpressure();
   wsClient.connect();

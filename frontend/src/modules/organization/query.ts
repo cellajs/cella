@@ -47,8 +47,7 @@ export const findOrganizationByIdOrSlug = (idOrSlug: string, tenantId: string) =
 export const organizationQueryOptions = (id: string, tenantId: string) =>
   queryOptions({
     queryKey: keys.detail.byId(id),
-    queryFn: async () =>
-      (await getOrganization({ path: { tenantId, id }, query: { include: 'counts' } })) as EnrichedOrganization,
+    queryFn: async () => (await getOrganization({ path: { tenantId, id }, query: { include: 'counts' } })) as EnrichedOrganization,
     placeholderData: () => findOrganizationByIdOrSlug(id, tenantId) as EnrichedOrganization | undefined,
     structuralSharing: preserveIncluded,
   });
@@ -67,22 +66,13 @@ const withDefaults = ({
   role,
 }: OrganizationsQuery) => ({ q, sort, order, relatableUserId, excludeArchived, role });
 
-const fetchOrganizationsPage = async (
-  query: OrganizationsQuery,
-  limit: number,
-  offset: number,
-  signal?: AbortSignal,
-) => {
+const fetchOrganizationsPage = async (query: OrganizationsQuery, limit: number, offset: number, signal?: AbortSignal) => {
   const result = await getOrganizations({ query: { ...query, ...pageQuery(limit, offset) }, signal });
   // Cache entries are populated by the enrichment pipeline (membership/can/ancestorSlugs).
   return result as { items: EnrichedOrganization[]; total: number };
 };
 
-export const organizationsListQueryOptions = ({
-  include,
-  limit = appConfig.requestLimits.organizations,
-  ...params
-}: OrganizationsListParams) => {
+export const organizationsListQueryOptions = ({ include, limit = appConfig.requestLimits.organizations, ...params }: OrganizationsListParams) => {
   // Queries with and without counts share one cache entry.
   const filters = withDefaults(params);
 
@@ -174,5 +164,4 @@ export const fetchOrganizationsForExport = async ({
   sort,
   order,
 }: Pick<OrganizationsQuery, 'q' | 'sort' | 'order'> & { limit: number; offset?: number }) =>
-  (await fetchOrganizationsPage({ ...withDefaults({ q, sort, order }), include: 'counts,membership' }, limit, offset))
-    .items;
+  (await fetchOrganizationsPage({ ...withDefaults({ q, sort, order }), include: 'counts,membership' }, limit, offset)).items;

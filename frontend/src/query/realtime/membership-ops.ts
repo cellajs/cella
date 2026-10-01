@@ -8,10 +8,7 @@ import { queryClient } from '~/query/query-client';
 
 function invalidateAllChannelDetails(): void {
   for (const channelType of appConfig.channelEntityTypes) {
-    queryClient.invalidateQueries({
-      predicate: (query) => query.queryKey[0] === channelType && query.queryKey[1] === 'detail',
-      refetchType: 'none',
-    });
+    queryClient.invalidateQueries({ predicate: (query) => query.queryKey[0] === channelType && query.queryKey[1] === 'detail', refetchType: 'none' });
   }
 }
 
@@ -30,18 +27,12 @@ export function invalidateMemberQueries(organizationId: string | null): void {
     queryClient.invalidateQueries({
       queryKey: memberQueryKeys.list.base,
       predicate: (query) =>
-        query.queryKey.some(
-          (k) =>
-            typeof k === 'object' && k !== null && (k as { organizationId?: string }).organizationId === organizationId,
-        ),
+        query.queryKey.some((k) => typeof k === 'object' && k !== null && (k as { organizationId?: string }).organizationId === organizationId),
       refetchType: 'active',
     });
   } else {
     // Catchup fallback: every member query.
-    queryClient.invalidateQueries({
-      queryKey: memberQueryKeys.list.base,
-      refetchType: 'active',
-    });
+    queryClient.invalidateQueries({ queryKey: memberQueryKeys.list.base, refetchType: 'active' });
   }
 }
 
@@ -52,10 +43,7 @@ export function invalidateMemberships(): void {
 
 /** fetchQuery deduplicates against an in-flight getMyMemberships, which invalidateQueries would not, avoiding a redundant fetch on app init. */
 export function fetchMemberships(): Promise<unknown> {
-  return queryClient.fetchQuery({
-    queryKey: meKeys.memberships,
-    queryFn: async ({ signal }) => getMyMemberships({ signal }),
-  });
+  return queryClient.fetchQuery({ queryKey: meKeys.memberships, queryFn: async ({ signal }) => getMyMemberships({ signal }) });
 }
 
 /** Called after membership updates, since a role change alters permissions. */

@@ -29,9 +29,7 @@ describe('generated sdk.gen.ts docs links', () => {
     const links = source.match(/https?:\/\/[^)\s]*\/docs\/operations\?operationTag=[^)\s]+/g) ?? [];
     expect(links.length).toBeGreaterThan(0);
     for (const link of links) {
-      expect(link).toMatch(
-        new RegExp(`^${escapeRegExp(config.frontendUrl)}/docs/operations\\?operationTag=[^#]+#tag/[^/]+/[A-Z]+/`),
-      );
+      expect(link).toMatch(new RegExp(`^${escapeRegExp(config.frontendUrl)}/docs/operations\\?operationTag=[^#]+#tag/[^/]+/[A-Z]+/`));
     }
   });
 });

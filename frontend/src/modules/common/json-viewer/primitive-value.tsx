@@ -62,27 +62,13 @@ export function InlinePrimitiveValue({ value, theme, searchText }: InlinePrimiti
 interface PrimitiveValueProps {
   value: unknown;
   type: string;
-  theme: {
-    string: string;
-    number: string;
-    boolean: string;
-    null: string;
-    schemaType: string;
-    searchMatch: string;
-  };
+  theme: { string: string; number: string; boolean: string; null: string; schemaType: string; searchMatch: string };
   collapseStringsAfterLength: number;
   searchText: string;
   openapiMode?: 'spec' | 'schema';
 }
 
-export function PrimitiveValue({
-  value,
-  type,
-  theme,
-  collapseStringsAfterLength,
-  searchText,
-  openapiMode,
-}: PrimitiveValueProps) {
+export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength, searchText, openapiMode }: PrimitiveValueProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const baseClass = 'break-word whitespace-pre-line';
 
@@ -117,11 +103,7 @@ export function PrimitiveValue({
           title={shouldTruncate ? (isExpanded ? 'Click to collapse' : 'Click to expand') : undefined}
         >
           <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span>
-          {isMatch ? (
-            highlightText(displayValue, searchText, theme.string, theme.searchMatch)
-          ) : (
-            <span className={theme.string}>{displayValue}</span>
-          )}
+          {isMatch ? highlightText(displayValue, searchText, theme.string, theme.searchMatch) : <span className={theme.string}>{displayValue}</span>}
           {!isExpanded && shouldTruncate && <span className="opacity-50">…</span>}
           <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span>
         </span>
@@ -132,11 +114,7 @@ export function PrimitiveValue({
       const isMatch = searchText && numStr.includes(searchText);
       return (
         <span className={baseClass}>
-          {isMatch ? (
-            highlightText(numStr, searchText, theme.number, theme.searchMatch)
-          ) : (
-            <span className={theme.number}>{numStr}</span>
-          )}
+          {isMatch ? highlightText(numStr, searchText, theme.number, theme.searchMatch) : <span className={theme.number}>{numStr}</span>}
         </span>
       );
     }
@@ -145,11 +123,7 @@ export function PrimitiveValue({
       const isMatch = searchText && boolStr.toLowerCase().includes(searchText.toLowerCase());
       return (
         <span className={baseClass}>
-          {isMatch ? (
-            highlightText(boolStr, searchText, theme.boolean, theme.searchMatch)
-          ) : (
-            <span className={theme.boolean}>{boolStr}</span>
-          )}
+          {isMatch ? highlightText(boolStr, searchText, theme.boolean, theme.searchMatch) : <span className={theme.boolean}>{boolStr}</span>}
         </span>
       );
     }

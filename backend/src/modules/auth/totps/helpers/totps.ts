@@ -14,11 +14,7 @@ const { intervalInSeconds, digits, gracePeriodInSeconds } = appConfig.totp;
 
 /** The account's stored Base32 secret. */
 const findStoredSecret = async (userId: string) => {
-  const [totp] = await db
-    .select({ secret: totpsTable.secret })
-    .from(totpsTable)
-    .where(eq(totpsTable.userId, userId))
-    .limit(1);
+  const [totp] = await db.select({ secret: totpsTable.secret }).from(totpsTable).where(eq(totpsTable.userId, userId)).limit(1);
   if (!totp) throw new AppError(404, 'not_found', 'warn');
 
   return decryptTotpSecret(totp.secret);

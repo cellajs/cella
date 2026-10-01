@@ -9,9 +9,7 @@ const NEVER: SQL = sql`false`;
 const resolveColumn = (table: AnyPgTable, columnName: string, conditionName: string): PgColumn => {
   const column = (table as unknown as Record<string, PgColumn | undefined>)[columnName];
   if (!column) {
-    throw new Error(
-      `[Permission] Row condition "${conditionName}" reads column "${columnName}" which does not exist on the queried table`,
-    );
+    throw new Error(`[Permission] Row condition "${conditionName}" reads column "${columnName}" which does not exist on the queried table`);
   }
   return column;
 };
@@ -73,10 +71,7 @@ export const buildCollectionReadWhere = (
   // HOME-scoped grants (non-elevated): the grant level's column matches AND every deeper ancestor column is NULL.
   for (const { channelType, channelIds, deeperChannels } of filter.homeScopes ?? []) {
     if (channelIds.length === 0) continue;
-    const scoped = and(
-      inArray(scopeColumn(channelType), channelIds),
-      ...deeperChannels.map((deeper) => isNull(scopeColumn(deeper))),
-    );
+    const scoped = and(inArray(scopeColumn(channelType), channelIds), ...deeperChannels.map((deeper) => isNull(scopeColumn(deeper))));
     if (scoped) clauses.push(scoped);
   }
 

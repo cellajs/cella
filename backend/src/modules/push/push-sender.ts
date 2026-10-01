@@ -23,17 +23,12 @@ export interface NotificationPushPayload {
 const CONCURRENCY = 8;
 
 /** Sending needs the flag AND both keys; either alone leaves the module receive-only. */
-export const isPushSendConfigured = (): boolean =>
-  appConfig.has.push && Boolean(env.VAPID_PUBLIC_KEY) && Boolean(env.VAPID_PRIVATE_KEY);
+export const isPushSendConfigured = (): boolean => appConfig.has.push && Boolean(env.VAPID_PUBLIC_KEY) && Boolean(env.VAPID_PRIVATE_KEY);
 
 let vapidApplied = false;
 function applyVapidDetails(): void {
   if (vapidApplied) return;
-  webpush.setVapidDetails(
-    env.VAPID_SUBJECT ?? appConfig.frontendUrl,
-    env.VAPID_PUBLIC_KEY as string,
-    env.VAPID_PRIVATE_KEY as string,
-  );
+  webpush.setVapidDetails(env.VAPID_SUBJECT ?? appConfig.frontendUrl, env.VAPID_PUBLIC_KEY as string, env.VAPID_PRIVATE_KEY as string);
   vapidApplied = true;
 }
 
@@ -54,11 +49,9 @@ export interface PushSendDeps {
 const defaultDeps: PushSendDeps = {
   send: async (subscription, payload) => {
     applyVapidDetails();
-    await webpush.sendNotification(
-      { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } },
-      payload,
-      { TTL: 60 * 60 * 24 },
-    );
+    await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, payload, {
+      TTL: 60 * 60 * 24,
+    });
   },
   findSubscriptions: (userIds) => findSubscriptionsByUserIds(userIds),
   pruneEndpoints: (endpoints) => deleteSubscriptionsByEndpoints(endpoints),
@@ -75,11 +68,7 @@ const defaultDeps: PushSendDeps = {
  * aborts the remaining batch (back off until the next event); other errors are logged per
  * endpoint and skipped.
  */
-export async function sendNotificationPush(
-  userIds: string[],
-  payload: NotificationPushPayload,
-  deps: PushSendDeps = defaultDeps,
-): Promise<void> {
+export async function sendNotificationPush(userIds: string[], payload: NotificationPushPayload, deps: PushSendDeps = defaultDeps): Promise<void> {
   try {
     const offline = userIds.filter((userId) => !deps.isOnline(userId));
     if (offline.length === 0) return;

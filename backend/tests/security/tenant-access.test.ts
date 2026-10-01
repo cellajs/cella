@@ -9,14 +9,7 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { defaultHeaders, memberRole } from '../fixtures';
-import {
-  createTestOrganization,
-  createTestSession,
-  createTestUser,
-  type ErrorResponse,
-  expectRefusal,
-  refusalOf,
-} from '../helpers';
+import { createTestOrganization, createTestSession, createTestUser, type ErrorResponse, expectRefusal, refusalOf } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant } from './helpers';
@@ -38,10 +31,7 @@ describe('Tenant access', async () => {
       headers: { ...defaultHeaders, Cookie: sessionCookie },
       body: JSON.stringify({ slug: 'tenant-access-free-slug', entityType: 'organization' }),
     });
-    return {
-      status: response.status,
-      error: response.status === 204 ? null : ((await response.json()) as ErrorResponse),
-    };
+    return { status: response.status, error: response.status === 204 ? null : ((await response.json()) as ErrorResponse) };
   };
 
   const setStatus = async (tenantId: string, status: 'active' | 'suspended') => {
@@ -69,9 +59,7 @@ describe('Tenant access', async () => {
     }
 
     const answers = await Promise.all(
-      [missingTenantId, inactive.tenantId, foreign.tenantId].map((tenantId) =>
-        checkSlug(tenantId, outsider.sessionCookie),
-      ),
+      [missingTenantId, inactive.tenantId, foreign.tenantId].map((tenantId) => checkSlug(tenantId, outsider.sessionCookie)),
     );
     for (const { status, error } of answers) await expectRefusal({ status, body: error }, 403, 'forbidden');
     const [missing, inactiveTenant, foreignTenant] = answers.map(({ error }) => refusalOf(error as ErrorResponse));
@@ -81,13 +69,7 @@ describe('Tenant access', async () => {
 
   it('tells a member that their tenant is inactive, and admits them while it is active (positive control)', async () => {
     const organization = await createTestOrganization();
-    const member = await createOrgUser(
-      call,
-      organization.tenantId,
-      organization.id,
-      'tenant-access-member',
-      memberRole,
-    );
+    const member = await createOrgUser(call, organization.tenantId, organization.id, 'tenant-access-member', memberRole);
     expect((await checkSlug(organization.tenantId, member.sessionCookie)).status).toBe(204);
 
     await setStatus(organization.tenantId, 'suspended');

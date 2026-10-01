@@ -51,13 +51,7 @@ export const matchTOTPStep = (
 };
 
 /** Builds an `otpauth://` provisioning URI for authenticator apps (QR code or deep link). */
-export const createTOTPKeyURI = (
-  issuer: string,
-  accountName: string,
-  key: Uint8Array,
-  periodInSeconds: number,
-  digits: number,
-): string => {
+export const createTOTPKeyURI = (issuer: string, accountName: string, key: Uint8Array, periodInSeconds: number, digits: number): string => {
   const params = new URLSearchParams({
     secret: encodeBase32UpperCaseNoPadding(key),
     issuer,

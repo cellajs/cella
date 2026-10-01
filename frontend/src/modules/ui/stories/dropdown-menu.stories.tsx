@@ -43,9 +43,7 @@ const meta = {
       </DropdownMenuContent>
     </DropdownMenu>
   ),
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
 } satisfies Meta<typeof DropdownMenu>;
 
 export default meta;

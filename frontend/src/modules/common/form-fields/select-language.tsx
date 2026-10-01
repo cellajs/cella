@@ -11,10 +11,7 @@ interface SelectLanguageProps {
 export function SelectLanguage({ value, options, onChange }: SelectLanguageProps) {
   const { t } = useTranslation();
 
-  const selectOptions = options.map((lang) => ({
-    value: lang,
-    label: t(`c:${lang}`),
-  }));
+  const selectOptions = options.map((lang) => ({ value: lang, label: t(`c:${lang}`) }));
 
   return (
     <ResponsiveSelect

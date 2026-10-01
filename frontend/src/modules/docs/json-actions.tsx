@@ -21,15 +21,7 @@ interface JsonActionsProps {
   viewerUrl?: string;
 }
 
-export function JsonActions({
-  url,
-  data,
-  filename = 'data.json',
-  resourceName,
-  className,
-  smallMode,
-  viewerUrl,
-}: JsonActionsProps) {
+export function JsonActions({ url, data, filename = 'data.json', resourceName, className, smallMode, viewerUrl }: JsonActionsProps) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
 

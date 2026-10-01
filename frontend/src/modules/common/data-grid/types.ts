@@ -38,9 +38,7 @@ export interface MergedSlot<TRow, TSummaryRow = unknown> {
   readonly className?: Maybe<string>;
 }
 
-export type MergedSlots<TRow, TSummaryRow = unknown> = Readonly<
-  Record<TileSide, readonly MergedSlot<TRow, TSummaryRow>[]>
->;
+export type MergedSlots<TRow, TSummaryRow = unknown> = Readonly<Record<TileSide, readonly MergedSlot<TRow, TSummaryRow>[]>>;
 
 export interface Position {
   readonly idx: number;
@@ -234,10 +232,7 @@ export interface CellRendererProps<TRow, TSummaryRow> extends BaseCellRendererPr
   onRowChange: (column: CalculatedColumn<TRow, TSummaryRow>, rowIdx: number, newRow: TRow) => void;
 }
 
-export type CellEvent<E extends React.SyntheticEvent<HTMLDivElement>> = E & {
-  preventGridDefault: () => void;
-  isGridDefaultPrevented: () => boolean;
-};
+export type CellEvent<E extends React.SyntheticEvent<HTMLDivElement>> = E & { preventGridDefault: () => void; isGridDefaultPrevented: () => boolean };
 
 export type CellMouseEvent = CellEvent<React.MouseEvent<HTMLDivElement>>;
 
@@ -269,9 +264,7 @@ export interface EditCellKeyDownArgs<TRow, TSummaryRow = unknown> {
   onClose: (commitChanges?: boolean, shouldFocusCell?: boolean) => void;
 }
 
-export type CellKeyDownArgs<TRow, TSummaryRow = unknown> =
-  | SelectCellKeyDownArgs<TRow, TSummaryRow>
-  | EditCellKeyDownArgs<TRow, TSummaryRow>;
+export type CellKeyDownArgs<TRow, TSummaryRow = unknown> = SelectCellKeyDownArgs<TRow, TSummaryRow> | EditCellKeyDownArgs<TRow, TSummaryRow>;
 
 export interface CellSelectArgs<TRow, TSummaryRow = unknown> {
   rowIdx: number;
@@ -279,9 +272,7 @@ export interface CellSelectArgs<TRow, TSummaryRow = unknown> {
   column: CalculatedColumn<TRow, TSummaryRow>;
 }
 
-export type CellMouseEventHandler<R, SR> = Maybe<
-  (args: CellMouseArgs<NoInfer<R>, NoInfer<SR>>, event: CellMouseEvent) => void
->;
+export type CellMouseEventHandler<R, SR> = Maybe<(args: CellMouseArgs<NoInfer<R>, NoInfer<SR>>, event: CellMouseEvent) => void>;
 
 export interface BaseRenderRowProps<TRow, TSummaryRow = unknown> extends BaseCellRendererProps<TRow, TSummaryRow> {
   viewportColumns: readonly CalculatedColumn<TRow, TSummaryRow>[];
@@ -342,10 +333,7 @@ export interface SortColumn {
 export type CellNavigationMode = 'NONE' | 'CHANGE_ROW';
 export type SortDirection = 'ASC' | 'DESC';
 
-export type ColSpanArgs<TRow, TSummaryRow> =
-  | { type: 'HEADER' }
-  | { type: 'ROW'; row: TRow }
-  | { type: 'SUMMARY'; row: TSummaryRow };
+export type ColSpanArgs<TRow, TSummaryRow> = { type: 'HEADER' } | { type: 'ROW'; row: TRow } | { type: 'SUMMARY'; row: TSummaryRow };
 
 export interface RenderSortIconProps {
   sortDirection: SortDirection | undefined;

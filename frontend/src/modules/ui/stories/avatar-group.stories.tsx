@@ -58,15 +58,9 @@ function GroupRender({ limit, className, peopleCount }: GroupStoryArgs) {
 }
 
 export const Default: Story = {
-  args: {
-    limit: 3,
-    peopleCount: 5,
-  },
+  args: { limit: 3, peopleCount: 5 },
   argTypes: {
-    peopleCount: {
-      control: { type: 'number', min: 1, max: 20 },
-      description: 'How many avatars to render',
-    },
+    peopleCount: { control: { type: 'number', min: 1, max: 20 }, description: 'How many avatars to render' },
   },
   render: (args) => <GroupRender {...args} />,
 };

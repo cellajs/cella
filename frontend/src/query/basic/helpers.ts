@@ -9,12 +9,7 @@ import { getQueryKeySortOrder } from './get-query-key-sort-order';
  * Applies create, update or remove to list data. Totals move only by rows that enter or leave, so a partial overlap
  * cannot drift them; new rows enter one page, the first when `insertOrder` lists newest first, else the last.
  */
-const changeListItems = (
-  data: BaseQueryItem<ItemData>,
-  items: ItemData[],
-  action: QueryDataActions,
-  insertOrder?: 'asc' | 'desc',
-) => {
+const changeListItems = (data: BaseQueryItem<ItemData>, items: ItemData[], action: QueryDataActions, insertOrder?: 'asc' | 'desc') => {
   const cachedIds = new Set(getQueryItems(data).map(({ id }) => id));
   const changedItems = items.filter(({ id }) => (action === 'create' ? !cachedIds.has(id) : cachedIds.has(id)));
   if (!changedItems.length) return data;
@@ -23,8 +18,7 @@ const changeListItems = (
     const insertPage = insertOrder === 'asc' && isInfiniteQueryData(data) ? data.pages.length - 1 : 0;
     return mapListItems(
       data,
-      (pageItems, index) =>
-        index === insertPage ? updateArrayItems(pageItems, changedItems, action, insertOrder) : pageItems,
+      (pageItems, index) => (index === insertPage ? updateArrayItems(pageItems, changedItems, action, insertOrder) : pageItems),
       changedItems.length,
     );
   }
@@ -32,8 +26,7 @@ const changeListItems = (
   const changedIds = new Set(changedItems.map(({ id }) => id));
   return mapListItems(
     data,
-    (pageItems) =>
-      pageItems.some(({ id }) => changedIds.has(id)) ? updateArrayItems(pageItems, items, action) : pageItems,
+    (pageItems) => (pageItems.some(({ id }) => changedIds.has(id)) ? updateArrayItems(pageItems, items, action) : pageItems),
     action === 'remove' ? -changedItems.length : 0,
   );
 };
@@ -41,10 +34,7 @@ const changeListItems = (
 /** Paged lists insert new rows in the key's createdAt order. */
 export const changeInfiniteQueryData = (queryKey: QueryKey, items: ItemData[], action: QueryDataActions) => {
   const { order } = getQueryKeySortOrder(queryKey);
-  queryClient.setQueryData<BaseQueryItem<ItemData>>(
-    queryKey,
-    (data) => data && changeListItems(data, items, action, order),
-  );
+  queryClient.setQueryData<BaseQueryItem<ItemData>>(queryKey, (data) => data && changeListItems(data, items, action, order));
 };
 
 /** Flat lists prepend new rows. */
@@ -53,12 +43,7 @@ export const changeQueryData = (queryKey: QueryKey, items: ItemData[], action: Q
 };
 
 // Apply create/update/remove to an items array, optionally inserting new items in `insertOrder`.
-const updateArrayItems = <T extends ItemData>(
-  items: T[],
-  dataItems: T[],
-  action: QueryDataActions,
-  insertOrder?: 'asc' | 'desc',
-) => {
+const updateArrayItems = <T extends ItemData>(items: T[], dataItems: T[], action: QueryDataActions, insertOrder?: 'asc' | 'desc') => {
   switch (action) {
     case 'create': {
       const existingIds = new Set(items.map(({ id }) => id));

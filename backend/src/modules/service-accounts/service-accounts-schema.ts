@@ -26,11 +26,7 @@ export const apiKeyParamSchema = idInTenantOrgParamSchema.extend({ keyId: validI
 
 /** `createdBy` / `updatedBy` stay actor ids: the audit-user hydration resolves users only (service badge is a follow-up). */
 export const serviceAccountSchema = z
-  .object({
-    ...createSelectSchema(serviceAccountsTable).shape,
-    status: z.enum(serviceAccountStatuses),
-    bindings: z.array(roleBindingSchema),
-  })
+  .object({ ...createSelectSchema(serviceAccountsTable).shape, status: z.enum(serviceAccountStatuses), bindings: z.array(roleBindingSchema) })
   .openapi('ServiceAccount', {
     description: 'The actor an API key runs as, with its role bindings.',
     example: mockServiceAccountResponse(),
@@ -76,15 +72,9 @@ export const createServiceAccountBodySchema = z.object({
   key: apiKeyInputSchema.optional(),
 });
 
-export const updateServiceAccountBodySchema = z.object({
-  name: validNameSchema.optional(),
-  status: z.enum(serviceAccountStatuses).optional(),
-});
+export const updateServiceAccountBodySchema = z.object({ name: validNameSchema.optional(), status: z.enum(serviceAccountStatuses).optional() });
 
-export const createServiceAccountResponseSchema = z.object({
-  serviceAccount: serviceAccountSchema,
-  apiKey: createdApiKeySchema.optional(),
-});
+export const createServiceAccountResponseSchema = z.object({ serviceAccount: serviceAccountSchema, apiKey: createdApiKeySchema.optional() });
 
 export const apiKeysResponseSchema = z.object({ items: z.array(apiKeySchema) });
 

@@ -3,12 +3,9 @@ import { SettingsIcon } from 'lucide-react';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 
-const meta = {
-  title: 'common/TooltipButton',
-  component: TooltipButton,
-  tags: ['autodocs'],
-  parameters: { layout: 'centered' },
-} satisfies Meta<typeof TooltipButton>;
+const meta = { title: 'common/TooltipButton', component: TooltipButton, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
+  typeof TooltipButton
+>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

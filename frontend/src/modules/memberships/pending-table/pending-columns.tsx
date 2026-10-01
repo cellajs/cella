@@ -20,11 +20,7 @@ export const useColumns = (path: { tenantId: string; organizationId: string }, c
       renderCell: ({ row, tabIndex }) => {
         if (!row.email) return null;
         return (
-          <a
-            href={`mailto:${row.email}`}
-            tabIndex={tabIndex}
-            className="truncate underline-offset-4 outline-0 ring-0 hover:underline"
-          >
+          <a href={`mailto:${row.email}`} tabIndex={tabIndex} className="truncate underline-offset-4 outline-0 ring-0 hover:underline">
             {row.email}
           </a>
         );
@@ -36,10 +32,7 @@ export const useColumns = (path: { tenantId: string; organizationId: string }, c
 
       width: 100,
       placeholderValue: '-',
-      renderCell: ({ row }) =>
-        row.role ? (
-          <div className="group relative inline-flex h-full w-full items-center gap-1">{t(row.role)}</div>
-        ) : null,
+      renderCell: ({ row }) => (row.role ? <div className="group relative inline-flex h-full w-full items-center gap-1">{t(row.role)}</div> : null),
     },
     dateColumn('createdAt', { name: t('c:invited_at') }),
     {
@@ -49,8 +42,7 @@ export const useColumns = (path: { tenantId: string; organizationId: string }, c
       minBreakpoint: 'md',
       minWidth: 160,
       placeholderValue: '-',
-      renderCell: ({ row, tabIndex }) =>
-        row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
+      renderCell: ({ row, tabIndex }) => row.createdBy && <UserCell compactable user={row.createdBy} tabIndex={tabIndex} />,
     },
   ];
 

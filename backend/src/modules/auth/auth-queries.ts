@@ -13,10 +13,7 @@ interface FindCredentialIdsByUserOpts {
 
 export const findCredentialIdsByUser = async (ctx: DbContext, { userId }: FindCredentialIdsByUserOpts) => {
   const { db } = ctx.var;
-  return db
-    .select({ credentialId: passkeysTable.credentialId })
-    .from(passkeysTable)
-    .where(eq(passkeysTable.userId, userId));
+  return db.select({ credentialId: passkeysTable.credentialId }).from(passkeysTable).where(eq(passkeysTable.userId, userId));
 };
 
 /**

@@ -40,11 +40,7 @@ const serverInfo = { name: `${appConfig.name} MCP`, version: appConfig.apiVersio
  * route's own handler. Returns `null` for notifications (messages without an `id`), which must not get a reply.
  * @see https://modelcontextprotocol.io
  */
-export async function handleMcpMessage(
-  ctx: Context<Env>,
-  message: JsonRpcMessage,
-  tools: readonly McpTool[],
-): Promise<JsonRpcResponse | null> {
+export async function handleMcpMessage(ctx: Context<Env>, message: JsonRpcMessage, tools: readonly McpTool[]): Promise<JsonRpcResponse | null> {
   const isNotification = message.id === undefined || message.id === null;
   const id = message.id ?? null;
   const respond = (result: unknown): JsonRpcResponse => ({ jsonrpc: '2.0', id, result });
@@ -86,14 +82,12 @@ export async function handleMcpMessage(
       if (!tool) return fail(-32602, `Unknown tool: ${name}`);
 
       // The mask (D2): a token names its scopes explicitly; a missing one is a step-up, never a silent denial.
-      if (!accessScopes.allows(ctx.var.actor.scopes, tool.entity, tool.action))
-        throw new InsufficientScopeError(tool.scope, id);
+      if (!accessScopes.allows(ctx.var.actor.scopes, tool.entity, tool.action)) throw new InsufficientScopeError(tool.scope, id);
 
       try {
         const outcome = await tool.call(ctx, message.params?.arguments);
         // Permission and domain failures are answers the model can act on, not transport errors.
-        if (!outcome.ok)
-          return respond({ content: [{ type: 'text', text: `${outcome.type}: ${outcome.message}` }], isError: true });
+        if (!outcome.ok) return respond({ content: [{ type: 'text', text: `${outcome.type}: ${outcome.message}` }], isError: true });
         const { output } = outcome;
         const text = typeof output === 'string' ? output : JSON.stringify(output ?? null);
         return respond({ content: [{ type: 'text', text }], structuredContent: output ?? undefined });
@@ -102,11 +96,7 @@ export async function handleMcpMessage(
         if (error instanceof z.ZodError) return fail(-32602, 'Invalid params', error.issues);
         // The call itself failed before the route answered. The model belongs to a third-party client, so a server
         // error reaches it without its internals, in every mode.
-        const { type, message } = toClientError(
-          error,
-          { tool: name, organizationId: ctx.var.organizationId },
-          { exposeServerMessage: false },
-        );
+        const { type, message } = toClientError(error, { tool: name, organizationId: ctx.var.organizationId }, { exposeServerMessage: false });
         return respond({ content: [{ type: 'text', text: `${type}: ${message}` }], isError: true });
       }
     }

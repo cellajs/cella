@@ -111,11 +111,7 @@ describe('resolvePlacementList', () => {
 
   it('drops entries whose required grant or visibleTo pair is absent', () => {
     expect(resolvePlacementList('host', items, { overrides: {} }).map((i) => i.id)).toEqual(['general', 'extra']);
-    const full = resolvePlacementList('host', items, {
-      overrides: {},
-      grants: ['delete'],
-      pairs: ['organization.admin'],
-    });
+    const full = resolvePlacementList('host', items, { overrides: {}, grants: ['delete'], pairs: ['organization.admin'] });
     expect(full.map((i) => i.id)).toEqual(['general', 'staff-only', 'extra', 'danger']);
   });
 
@@ -135,10 +131,7 @@ describe('resolvePlacementList', () => {
       grants: ['delete'],
       pairs: ['organization.admin'],
       overrides: {
-        host: {
-          general: { hidden: true },
-          danger: { order: 5 },
-        },
+        host: { general: { hidden: true }, danger: { order: 5 } },
       },
     });
     // locked 'general' still hidden by the code layer; 'danger' moved first by the order override

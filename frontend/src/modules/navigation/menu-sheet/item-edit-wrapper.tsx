@@ -51,22 +51,12 @@ export function MenuItemEditWrapper({
     if (!element) return;
     const data = getDraggableItemData(item, item.membership.displayOrder, 'menuItem', item.entityType);
     return combine(
-      draggable({
-        element,
-        dragHandle: element,
-        canDrag: () => !item.membership.archived,
-        getInitialData: () => data,
-      }),
+      draggable({ element, dragHandle: element, canDrag: () => !item.membership.archived, getInitialData: () => data }),
       dropTargetForElements({
         element,
         canDrop: ({ source }) => handleCanDrop(source.data as DragDropData),
         getIsSticky: () => true,
-        getData: ({ input }) =>
-          attachClosestEdge(data, {
-            element,
-            input,
-            allowedEdges: ['top', 'bottom'],
-          }),
+        getData: ({ input }) => attachClosestEdge(data, { element, input, allowedEdges: ['top', 'bottom'] }),
         onDrag: ({ self }) => setClosestEdge(extractClosestEdge(self.data)),
         onDrop: () => setClosestEdge(null),
         onDragLeave: () => setClosestEdge(null),

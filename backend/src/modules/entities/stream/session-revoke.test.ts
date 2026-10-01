@@ -14,13 +14,7 @@ const register = (sessionId: string) => {
     abort: () => (stream.aborted = true),
     close: async () => (stream.closed = true),
   });
-  const subscriber = {
-    id: sessionId,
-    stream,
-    userId: USER,
-    sessionId,
-    memberships: [],
-  } as unknown as AppStreamSubscriber;
+  const subscriber = { id: sessionId, stream, userId: USER, sessionId, memberships: [] } as unknown as AppStreamSubscriber;
   streamSubscriberManager.register(subscriber, [`user:${USER}`]);
   return stream;
 };

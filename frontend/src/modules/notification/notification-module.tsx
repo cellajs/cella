@@ -2,10 +2,7 @@ import { defineFrontendModule } from '~/lib/module';
 import { registerNotificationSyncListener } from '~/modules/notification/sync-listener';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const AccountNotificationsCard = lazyNamed(
-  () => import('~/modules/notification/account-notifications-card'),
-  'AccountNotificationsCard',
-);
+const AccountNotificationsCard = lazyNamed(() => import('~/modules/notification/account-notifications-card'), 'AccountNotificationsCard');
 
 // Module files are glob-imported eagerly at boot, so the inbox tracks synced rows before first render.
 registerNotificationSyncListener();

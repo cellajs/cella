@@ -18,8 +18,7 @@ function getErrorLocaleKey(error?: ErrorNoticeError, errorFromQuery?: string): s
 
   if (error instanceof SearchParamError) return 'invalid_param';
 
-  if (error instanceof ApiError)
-    return error.entityType && error.type ? `resource_${error.type}` : error.type || error.name;
+  if (error instanceof ApiError) return error.entityType && error.type ? `resource_${error.type}` : error.type || error.name;
 
   return error.name;
 }

@@ -2,12 +2,9 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 
-const meta = {
-  title: 'common/SelectLanguage',
-  component: SelectLanguage,
-  tags: ['autodocs'],
-  parameters: { layout: 'centered' },
-} satisfies Meta<typeof SelectLanguage>;
+const meta = { title: 'common/SelectLanguage', component: SelectLanguage, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
+  typeof SelectLanguage
+>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

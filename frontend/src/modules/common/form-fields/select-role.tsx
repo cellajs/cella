@@ -18,13 +18,7 @@ export function SelectRole({ entityType, onChange, value, className }: SelectRol
 
   const roleOptions = entityType ? hierarchy.getRoles(entityType) : appConfig.systemRoles;
 
-  const options = [
-    { value: 'all', label: t('c:all') },
-    ...roleOptions.map((role) => ({
-      value: role,
-      label: t(role),
-    })),
-  ];
+  const options = [{ value: 'all', label: t('c:all') }, ...roleOptions.map((role) => ({ value: role, label: t(role) }))];
 
   return (
     <ResponsiveSelect

@@ -20,10 +20,7 @@ type KeyScopes = NonNullable<ServiceAccountBody['key']>['scopes'];
 type OrgPath = { id: string; tenantId: string };
 
 /** A machine caller's headers: a bearer API key or access token, and neither Origin nor cookie, as a server sends. */
-export const bearerHeaders = (token: string) => ({
-  'Content-Type': 'application/json',
-  Authorization: `Bearer ${token}`,
-});
+export const bearerHeaders = (token: string) => ({ 'Content-Type': 'application/json', Authorization: `Bearer ${token}` });
 
 /**
  * A service account created in `org` by its admin through the route, with one live secret key; the key doubles as the
@@ -46,8 +43,7 @@ export async function serviceAccountWithKey(
 }
 
 /** Registers an OAuth app deployment-wide; registering it again keeps the first row. */
-export const registerApp = (app: typeof oauthClientsTable.$inferInsert) =>
-  db.insert(oauthClientsTable).values(app).onConflictDoNothing();
+export const registerApp = (app: typeof oauthClientsTable.$inferInsert) => db.insert(oauthClientsTable).values(app).onConflictDoNothing();
 
 /**
  * Installs a registered app in `org` as its admin does: a service account with the organization's least privileged
@@ -61,10 +57,7 @@ export async function installApp(org: OrgPath, adminCookie: string, clientId: st
     headers: { ...defaultHeaders, Cookie: adminCookie },
   });
   const installationId = (data as { serviceAccount: { id: string } }).serviceAccount.id;
-  await db
-    .update(serviceAccountsTable)
-    .set({ oauthClientId: clientId })
-    .where(eq(serviceAccountsTable.id, installationId));
+  await db.update(serviceAccountsTable).set({ oauthClientId: clientId }).where(eq(serviceAccountsTable.id, installationId));
   return installationId;
 }
 
@@ -99,10 +92,7 @@ export function serveClientMetadataDocuments(documents: Record<string, Record<st
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
     const document = documents[url];
     if (!document) return realFetch(input, init);
-    return new Response(JSON.stringify({ client_id: url, ...document }), {
-      status: 200,
-      headers: { 'content-type': 'application/json' },
-    });
+    return new Response(JSON.stringify({ client_id: url, ...document }), { status: 200, headers: { 'content-type': 'application/json' } });
   });
   return () => spy.mockRestore();
 }
@@ -169,16 +159,7 @@ export async function startAuthorization(issuer: string, input: AuthorizationInp
   const uid = /\/oauth\/interaction\/([^/?]+)/.exec(location)?.[1] ?? null;
   const redirect = location.startsWith(input.redirectUri) ? new URL(location).searchParams : null;
   if (redirect && redirect.get('state') !== state) throw new Error('state mismatch');
-  return {
-    browser,
-    verifier,
-    state,
-    status: start.status,
-    location,
-    uid,
-    redirect,
-    code: redirect?.get('code') ?? null,
-  };
+  return { browser, verifier, state, status: start.status, location, uid, redirect, code: redirect?.get('code') ?? null };
 }
 
 /**
@@ -196,8 +177,7 @@ export async function authorizationCode(
 
   const details = await fetch(`${origin}/oauth/interaction/${uid}/details`, { headers: { Cookie: jar.header() } });
   const consent = (await details.json()) as Record<string, unknown>;
-  if (details.status !== 200)
-    return { code: null, verifier, consent, failure: { status: details.status, body: consent } };
+  if (details.status !== 200) return { code: null, verifier, consent, failure: { status: details.status, body: consent } };
 
   const decision = await fetch(`${origin}/oauth/interaction/${uid}/consent`, {
     method: 'POST',
@@ -226,8 +206,7 @@ export async function authorizationCode(
     if (next.startsWith(input.redirectUri)) {
       const params = new URL(next).searchParams;
       if (params.get('state') !== state) throw new Error('state mismatch');
-      if (params.get('error'))
-        return { code: null, verifier, consent, failure: { status: 400, body: Object.fromEntries(params) } };
+      if (params.get('error')) return { code: null, verifier, consent, failure: { status: 400, body: Object.fromEntries(params) } };
       code = params.get('code');
     } else {
       location = next.startsWith('/') ? `${origin}${next}` : next;
@@ -262,11 +241,7 @@ export function exchangeCode(
 
 /** The refresh_token grant of a public client; the provider rotates the refresh token on every use. */
 export function refreshAccessToken(issuer: string, input: { clientId: string; refreshToken: string }) {
-  return tokenRequest(issuer, {
-    grant_type: 'refresh_token',
-    refresh_token: input.refreshToken,
-    client_id: input.clientId,
-  });
+  return tokenRequest(issuer, { grant_type: 'refresh_token', refresh_token: input.refreshToken, client_id: input.clientId });
 }
 
 /** Consent and code exchange in one go; a refusal on the way comes back as `status` and `body`. */

@@ -6,12 +6,7 @@ export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   autoResize?: boolean;
 }
 
-export function Textarea({
-  className,
-  autoResize = false,
-  ref,
-  ...props
-}: React.ComponentProps<'textarea'> & { autoResize?: boolean }) {
+export function Textarea({ className, autoResize = false, ref, ...props }: React.ComponentProps<'textarea'> & { autoResize?: boolean }) {
   const { areaRef } = useAutoResize(autoResize);
 
   // A caller's ref (e.g. react-hook-form's) and the auto-resize ref both need the node.

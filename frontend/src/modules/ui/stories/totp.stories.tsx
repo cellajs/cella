@@ -6,14 +6,7 @@ import { InputOTP, InputOTPGroup, InputOTPSeparator, InputOTPSlot } from '~/modu
 /**
  * One-time password (OTP) input components for secure authentication flows.
  */
-const meta: Meta = {
-  title: 'ui/TOTP',
-  component: InputOTP,
-  tags: ['autodocs'],
-  parameters: {
-    layout: 'centered',
-  },
-} satisfies Meta;
+const meta: Meta = { title: 'ui/TOTP', component: InputOTP, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta;
 
 export default meta;
 
@@ -215,9 +208,7 @@ export const AuthForm: Story = {
         </div>
 
         <div className="text-center">
-          <button className="text-muted-foreground text-sm underline hover:text-foreground">
-            Didn't receive a code? Resend
-          </button>
+          <button className="text-muted-foreground text-sm underline hover:text-foreground">Didn't receive a code? Resend</button>
         </div>
       </div>
     );
@@ -248,12 +239,7 @@ export const RecoveryCodes: Story = {
           {codes.map((code, index) => (
             <div key={index} className="flex items-center space-x-2">
               <span className="w-20 font-medium text-sm">Code {index + 1}:</span>
-              <InputOTP
-                length={8}
-                validationType="alphanumeric"
-                value={code}
-                onValueChange={(value) => handleCodeChange(index, value)}
-              >
+              <InputOTP length={8} validationType="alphanumeric" value={code} onValueChange={(value) => handleCodeChange(index, value)}>
                 <InputOTPGroup>
                   <InputOTPSlot />
                   <InputOTPSlot />

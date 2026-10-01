@@ -4,14 +4,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { mockApiError } from './api-error-mocks';
 import { entityTypeSchema } from './common-schemas';
 
-export const severityLevels = [
-  'fatal',
-  'error',
-  'warn',
-  'info',
-  'debug',
-  'trace',
-] as const satisfies readonly Severity[];
+export const severityLevels = ['fatal', 'error', 'warn', 'info', 'debug', 'trace'] as const satisfies readonly Severity[];
 
 /** OpenAPI represents this as a number with min and max. */
 const errorStatusCodeSchema = z
@@ -38,9 +31,7 @@ export const apiErrorSchema = z
     timestamp: z.string().optional(),
     userId: z.string().optional(),
     organizationId: z.string().optional(),
-    meta: z
-      .record(z.string(), z.union([z.number(), z.string(), z.array(z.string()), z.boolean(), z.null()]))
-      .optional(), // Optional structured metadata (e.g. retryAfter, slug, reason)
+    meta: z.record(z.string(), z.union([z.number(), z.string(), z.array(z.string()), z.boolean(), z.null()])).optional(), // Optional structured metadata (e.g. retryAfter, slug, reason)
   })
   .openapi('ApiError', {
     description: 'Standard error response returned by all API endpoints.',

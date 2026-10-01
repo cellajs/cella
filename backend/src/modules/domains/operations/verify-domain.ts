@@ -39,11 +39,7 @@ export async function verifyDomainOp(ctx: UserContext, id: string) {
   const values = { lastCheckedAt: now, ...(verified ? { verified: true, verifiedAt: now } : {}) };
   const updated = await updateDomain(ctx, { id, values });
 
-  log.info(`Domain verification ${verified ? 'succeeded' : 'failed'}`, {
-    tenantId,
-    domain: domain.domain,
-    verified,
-  });
+  log.info(`Domain verification ${verified ? 'succeeded' : 'failed'}`, { tenantId, domain: domain.domain, verified });
 
   const diagnostics = !verified ? { recordsFound, expectedToken: domain.verificationToken } : undefined;
   return { success: verified, domain: updated, ...(diagnostics && { diagnostics }) };

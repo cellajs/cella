@@ -5,15 +5,7 @@ import { pulumiConfigRm, pulumiConfigSet } from '../../lib/stack/pulumi-up';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
 import { infraDir } from '../../lib/utils/paths';
 import type { InfraContext } from '../shared';
-import {
-  DB_ACL_KEY,
-  DB_ENDPOINT_KEY,
-  detectPublicIp,
-  readDbCa,
-  readPublicDsn,
-  removeExposureOverlay,
-  writeExposureOverlay,
-} from './db-exposure';
+import { DB_ACL_KEY, DB_ENDPOINT_KEY, detectPublicIp, readDbCa, readPublicDsn, removeExposureOverlay, writeExposureOverlay } from './db-exposure';
 import { runPrivilegedConverge } from './privileged-converge';
 
 /**
@@ -29,9 +21,7 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
   console.info(pc.dim('\nSeed database: expose to your IP -> run backend seeds -> close the endpoint.\n'));
   const detected = await detectPublicIp();
   if (!detected) {
-    console.error(
-      `${crossMark} Could not detect your public IP; use "Expose database publicly" + manual seeding instead.`,
-    );
+    console.error(`${crossMark} Could not detect your public IP; use "Expose database publicly" + manual seeding instead.`);
     process.exit(1);
   }
   console.info(`Seeds run from this machine over a temporary endpoint restricted to ${pc.cyan(`${detected}/32`)}.`);
@@ -87,9 +77,7 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
         return true;
       },
       (err) => {
-        console.error(
-          `${warningMark} closing the endpoint failed: ${err instanceof Error ? err.message : String(err)}`,
-        );
+        console.error(`${warningMark} closing the endpoint failed: ${err instanceof Error ? err.message : String(err)}`);
         return false;
       },
     );

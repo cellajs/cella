@@ -38,10 +38,7 @@ const invitations = await import('~/modules/me/invitations-table/invitations-col
 const attachments = await import('~/modules/attachment/table/attachments-columns');
 const { exportToCsv } = await import('~/lib/export');
 
-type Column = { key: string; renderCell?: (props: { row: never; tabIndex: number }) => ReactNode } & Record<
-  string,
-  unknown
->;
+type Column = { key: string; renderCell?: (props: { row: never; tabIndex: number }) => ReactNode } & Record<string, unknown>;
 
 /** Runs a column hook inside a render and returns its columns. */
 function columnsOf(useHook: () => unknown): Column[] {
@@ -81,13 +78,7 @@ const channel = {
   can: { attachment: { delete: true } },
 } as never;
 
-const listedDate = {
-  sortable: true,
-  sortDescendingFirst: true,
-  minBreakpoint: 'md',
-  minWidth: 120,
-  placeholderValue: '-',
-};
+const listedDate = { sortable: true, sortDescendingFirst: true, minBreakpoint: 'md', minWidth: 120, placeholderValue: '-' };
 
 afterEach(() => {
   seen.options = [];
@@ -165,13 +156,7 @@ describe('date columns', () => {
       name: 'invitations invited, unsorted and nested',
       columns: () => columnsOf(invitations.useColumns),
       key: 'createdAt',
-      config: {
-        key: 'createdAt',
-        name: 'c:invited_at',
-        ...listedDate,
-        sortable: undefined,
-        sortDescendingFirst: undefined,
-      },
+      config: { key: 'createdAt', name: 'c:invited_at', ...listedDate, sortable: undefined, sortDescendingFirst: undefined },
       row: { inactiveMembership: { createdAt: created } },
       value: created,
     },
@@ -196,9 +181,7 @@ describe('date columns', () => {
 
     expect(configOf(col)).toEqual(config);
     expect(cellMarkup(col, row)).toBe(dateShort(value));
-    expect(cellMarkup(col, { ...row, createdAt: null, lastSeenAt: null })).toBe(
-      'inactiveMembership' in row ? dateShort(value) : '',
-    );
+    expect(cellMarkup(col, { ...row, createdAt: null, lastSeenAt: null })).toBe('inactiveMembership' in row ? dateShort(value) : '');
   });
 });
 

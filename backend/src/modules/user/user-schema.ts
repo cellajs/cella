@@ -5,21 +5,11 @@ import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schem
 import { memberCountsSchema } from '#/modules/memberships/helpers/member-counts';
 import { memberMembershipSchema } from '#/modules/memberships/memberships-schema';
 import { usersTable } from '#/modules/user/user-db';
-import {
-  languageSchema,
-  maxLength,
-  paginationQuerySchema,
-  validCDNUrlSchema,
-  validNameSchema,
-  validSlugSchema,
-} from '#/schemas';
+import { languageSchema, maxLength, paginationQuerySchema, validCDNUrlSchema, validNameSchema, validSlugSchema } from '#/schemas';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { mockUserResponse } from './user-mocks';
 
-export const enabledOAuthProvidersSchema = z.enum([...appConfig.enabledOAuthProviders] as [
-  EnabledOAuthProvider,
-  ...EnabledOAuthProvider[],
-]);
+export const enabledOAuthProvidersSchema = z.enum([...appConfig.enabledOAuthProviders] as [EnabledOAuthProvider, ...EnabledOAuthProvider[]]);
 
 export const userFlagsSchema = z.object(
   Object.keys(appConfig.defaultUserFlags).reduce(
@@ -31,11 +21,7 @@ export const userFlagsSchema = z.object(
   ),
 );
 
-export const userSchema = createSelectSchema(usersTable, {
-  email: z.email(),
-  language: languageSchema,
-  userFlags: userFlagsSchema,
-})
+export const userSchema = createSelectSchema(usersTable, { email: z.email(), language: languageSchema, userFlags: userFlagsSchema })
   .extend({
     // Timestamps from user_counters table (populated via subqueries in userSelect)
     lastSeenAt: z.string().nullable(),
@@ -49,9 +35,7 @@ export const userSchema = createSelectSchema(usersTable, {
   });
 
 /** Public user schema for cross-tenant and member-facing endpoints. Based on userBaseSchema + lastSeenAt. */
-export const memberUserSchema = userBaseSchema.extend({
-  lastSeenAt: z.string().nullable(),
-});
+export const memberUserSchema = userBaseSchema.extend({ lastSeenAt: z.string().nullable() });
 
 export const memberSchema = memberUserSchema.extend({
   membership: memberMembershipSchema,
@@ -68,16 +52,7 @@ export const userUpdateBodySchema = createInsertSchema(usersTable, {
   language: languageSchema,
   description: z.string().max(maxLength.html).nullable(),
 })
-  .pick({
-    bannerUrl: true,
-    description: true,
-    firstName: true,
-    lastName: true,
-    language: true,
-    newsletter: true,
-    thumbnailUrl: true,
-    slug: true,
-  })
+  .pick({ bannerUrl: true, description: true, firstName: true, lastName: true, language: true, newsletter: true, thumbnailUrl: true, slug: true })
   .partial();
 
 export const userListQuerySchema = paginationQuerySchema.extend({

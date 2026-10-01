@@ -10,9 +10,7 @@ const SelectValueContext = createContext<string | null | undefined>(undefined);
 
 // Override onValueChange to narrow Base UI's (string | null) to string for all consumers.
 // Pass `items` when labels differ from values: SelectValue reads them before the popup has ever mounted.
-type SelectProps = Omit<SelectPrimitive.Root.Props<string>, 'onValueChange'> & {
-  onValueChange?: (value: string) => void;
-};
+type SelectProps = Omit<SelectPrimitive.Root.Props<string>, 'onValueChange'> & { onValueChange?: (value: string) => void };
 
 function Select({ onValueChange, value, ...props }: SelectProps) {
   return (
@@ -40,10 +38,7 @@ function SelectTrigger({
   size = 'default',
   children,
   ...props
-}: SelectPrimitive.Trigger.Props &
-  React.RefAttributes<HTMLButtonElement> & {
-    size?: 'sm' | 'default';
-  }) {
+}: SelectPrimitive.Trigger.Props & React.RefAttributes<HTMLButtonElement> & { size?: 'sm' | 'default' }) {
   return (
     <SelectPrimitive.Trigger
       data-slot="select-trigger"
@@ -102,9 +97,7 @@ function SelectContent({
           {...props}
         >
           <SelectScrollUpButton />
-          <SelectPrimitive.List
-            className={cn('p-1', position === 'popper' && 'w-full min-w-(--anchor-width) scroll-my-1')}
-          >
+          <SelectPrimitive.List className={cn('p-1', position === 'popper' && 'w-full min-w-(--anchor-width) scroll-my-1')}>
             {children}
           </SelectPrimitive.List>
           <SelectScrollDownButton />
@@ -115,20 +108,10 @@ function SelectContent({
 }
 
 function SelectLabel({ className, ...props }: SelectPrimitive.GroupLabel.Props & React.RefAttributes<HTMLDivElement>) {
-  return (
-    <SelectPrimitive.GroupLabel
-      data-slot="select-label"
-      className={cn('px-2 py-1.5 text-muted-foreground text-xs', className)}
-      {...props}
-    />
-  );
+  return <SelectPrimitive.GroupLabel data-slot="select-label" className={cn('px-2 py-1.5 text-muted-foreground text-xs', className)} {...props} />;
 }
 
-function SelectItem({
-  className,
-  children,
-  ...props
-}: SelectPrimitive.Item.Props & React.RefAttributes<HTMLDivElement>) {
+function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Props & React.RefAttributes<HTMLDivElement>) {
   const selectValue = useContext(SelectValueContext);
   const isSelected = selectValue !== undefined && props.value !== undefined && selectValue === props.value;
 
@@ -150,23 +133,13 @@ function SelectItem({
   );
 }
 
-function SelectSeparator({
-  className,
-  ...props
-}: SelectPrimitive.Separator.Props & React.RefAttributes<HTMLHRElement>) {
+function SelectSeparator({ className, ...props }: SelectPrimitive.Separator.Props & React.RefAttributes<HTMLHRElement>) {
   return (
-    <SelectPrimitive.Separator
-      data-slot="select-separator"
-      className={cn('pointer-events-none -mx-1 my-1 h-px bg-border', className)}
-      {...props}
-    />
+    <SelectPrimitive.Separator data-slot="select-separator" className={cn('pointer-events-none -mx-1 my-1 h-px bg-border', className)} {...props} />
   );
 }
 
-function SelectScrollUpButton({
-  className,
-  ...props
-}: Partial<SelectPrimitive.ScrollUpArrow.Props> & React.RefAttributes<HTMLDivElement>) {
+function SelectScrollUpButton({ className, ...props }: Partial<SelectPrimitive.ScrollUpArrow.Props> & React.RefAttributes<HTMLDivElement>) {
   return (
     <SelectPrimitive.ScrollUpArrow
       data-slot="select-scroll-up-button"
@@ -178,10 +151,7 @@ function SelectScrollUpButton({
   );
 }
 
-function SelectScrollDownButton({
-  className,
-  ...props
-}: Partial<SelectPrimitive.ScrollDownArrow.Props> & React.RefAttributes<HTMLDivElement>) {
+function SelectScrollDownButton({ className, ...props }: Partial<SelectPrimitive.ScrollDownArrow.Props> & React.RefAttributes<HTMLDivElement>) {
   return (
     <SelectPrimitive.ScrollDownArrow
       data-slot="select-scroll-down-button"

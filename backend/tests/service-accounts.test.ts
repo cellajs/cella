@@ -44,18 +44,11 @@ describe('Service accounts and API keys', async () => {
     const ctx = await orgWithAdmin();
     const { data, response } = await call(createServiceAccount, {
       path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id },
-      body: {
-        name: 'CI bot',
-        role: opts.role ?? memberRole,
-        key: { name: 'deploy', scopes: opts.scopes ?? null, expiresAt: opts.expiresAt },
-      },
+      body: { name: 'CI bot', role: opts.role ?? memberRole, key: { name: 'deploy', scopes: opts.scopes ?? null, expiresAt: opts.expiresAt } },
       headers: ctx.headers,
     });
     expect(response.status).toBe(201);
-    const created = data as {
-      serviceAccount: { id: string };
-      apiKey: { id: string; secret: string; prefix: string };
-    };
+    const created = data as { serviceAccount: { id: string }; apiKey: { id: string; secret: string; prefix: string } };
     return { ...ctx, account: created.serviceAccount, apiKey: created.apiKey, key: created.apiKey.secret };
   }
 
@@ -82,19 +75,13 @@ describe('Service accounts and API keys', async () => {
       headers: member.headers,
     });
     await expectRefusal({ response, error }, 403, 'forbidden');
-    const accounts = await db
-      .select()
-      .from(serviceAccountsTable)
-      .where(eq(serviceAccountsTable.tenantId, member.org.tenantId));
+    const accounts = await db.select().from(serviceAccountsTable).where(eq(serviceAccountsTable.tenantId, member.org.tenantId));
     expect(accounts).toHaveLength(0);
   });
 
   it('authenticates a key as the service account and reads inside its organization', async () => {
     const { org, key } = await issueKey();
-    const { response } = await call(getAttachments, {
-      path: { tenantId: org.tenantId, organizationId: org.id },
-      headers: bearerHeaders(key),
-    });
+    const { response } = await call(getAttachments, { path: { tenantId: org.tenantId, organizationId: org.id }, headers: bearerHeaders(key) });
     expect(response.status).toBe(200);
   });
 
@@ -124,10 +111,7 @@ describe('Service accounts and API keys', async () => {
   it('rejects a revoked key, a browser origin, and a foreign tenant', async () => {
     const { org, key, account, apiKey, headers } = await issueKey();
 
-    const foreign = await call(getAttachments, {
-      path: { tenantId: 'other01', organizationId: org.id },
-      headers: bearerHeaders(key),
-    });
+    const foreign = await call(getAttachments, { path: { tenantId: 'other01', organizationId: org.id }, headers: bearerHeaders(key) });
     expect(foreign.response.status).toBe(403);
 
     const browser = await call(getAttachments, {
@@ -136,16 +120,10 @@ describe('Service accounts and API keys', async () => {
     });
     expect(browser.response.status).toBe(403);
 
-    const revoked = await call(revokeApiKey, {
-      path: { tenantId: org.tenantId, organizationId: org.id, id: account.id, keyId: apiKey.id },
-      headers,
-    });
+    const revoked = await call(revokeApiKey, { path: { tenantId: org.tenantId, organizationId: org.id, id: account.id, keyId: apiKey.id }, headers });
     expect(revoked.response.status).toBe(200);
 
-    const afterRevoke = await call(getAttachments, {
-      path: { tenantId: org.tenantId, organizationId: org.id },
-      headers: bearerHeaders(key),
-    });
+    const afterRevoke = await call(getAttachments, { path: { tenantId: org.tenantId, organizationId: org.id }, headers: bearerHeaders(key) });
     expect(afterRevoke.response.status).toBe(401);
   });
 
@@ -166,17 +144,11 @@ describe('Service accounts and API keys', async () => {
 
   it('lists accounts and their keys for an admin, never the hash or the plaintext', async () => {
     const { org, headers, account, key } = await issueKey();
-    const list = await call(getServiceAccounts, {
-      path: { tenantId: org.tenantId, organizationId: org.id },
-      headers,
-    });
+    const list = await call(getServiceAccounts, { path: { tenantId: org.tenantId, organizationId: org.id }, headers });
     expect(list.response.status).toBe(200);
     expect((list.data as { items: { id: string }[] }).items.map((item) => item.id)).toContain(account.id);
 
-    const keys = await call(getApiKeys, {
-      path: { tenantId: org.tenantId, organizationId: org.id, id: account.id },
-      headers,
-    });
+    const keys = await call(getApiKeys, { path: { tenantId: org.tenantId, organizationId: org.id, id: account.id }, headers });
     expect(keys.response.status).toBe(200);
     const serialized = JSON.stringify(keys.data);
     expect(serialized).not.toContain(key);
@@ -188,10 +160,7 @@ describe('Service accounts and API keys', async () => {
   it('must not accept a key that expired half an hour ago, nor refuse one with half an hour left', async () => {
     const halfAnHour = 30 * 60 * 1000;
     const read = async (issued: Awaited<ReturnType<typeof issueKey>>) =>
-      call(getAttachments, {
-        path: { tenantId: issued.org.tenantId, organizationId: issued.org.id },
-        headers: bearerHeaders(issued.key),
-      });
+      call(getAttachments, { path: { tenantId: issued.org.tenantId, organizationId: issued.org.id }, headers: bearerHeaders(issued.key) });
 
     const expired = await read(await issueKey({ expiresAt: new Date(Date.now() - halfAnHour).toISOString() }));
     expect(expired.response.status).toBe(401);
@@ -204,10 +173,7 @@ describe('Service accounts and API keys', async () => {
   it('refuses a key of a disabled account', async () => {
     const disabled = await issueKey();
     const readAsDisabled = () =>
-      call(getAttachments, {
-        path: { tenantId: disabled.org.tenantId, organizationId: disabled.org.id },
-        headers: bearerHeaders(disabled.key),
-      });
+      call(getAttachments, { path: { tenantId: disabled.org.tenantId, organizationId: disabled.org.id }, headers: bearerHeaders(disabled.key) });
     // A read first, so the key and its account are cached at the guard when the account is disabled.
     expect((await readAsDisabled()).response.status).toBe(200);
     const update = await call(updateServiceAccount, {
@@ -229,17 +195,9 @@ describe('Service accounts and API keys', async () => {
       .set({ restrictions: { ...tenant.restrictions, quotas: { ...tenant.restrictions.quotas, serviceAccount: 1 } } })
       .where(eq(tenantsTable.id, ctx.org.tenantId));
     const path = { tenantId: ctx.org.tenantId, organizationId: ctx.org.id };
-    const first = await call(createServiceAccount, {
-      path,
-      body: { name: 'one', role: memberRole },
-      headers: ctx.headers,
-    });
+    const first = await call(createServiceAccount, { path, body: { name: 'one', role: memberRole }, headers: ctx.headers });
     expect(first.response.status).toBe(201);
-    const second = await call(createServiceAccount, {
-      path,
-      body: { name: 'two', role: memberRole },
-      headers: ctx.headers,
-    });
+    const second = await call(createServiceAccount, { path, body: { name: 'two', role: memberRole }, headers: ctx.headers });
     expect(second.response.status).toBe(403);
   });
 
@@ -265,12 +223,7 @@ describe('Service accounts and API keys', async () => {
     });
     expect(crossed.response.status).toBe(404);
 
-    const path = {
-      tenantId: a.org.tenantId,
-      organizationId: a.org.id,
-      id: a.account.id,
-      keyId: a.apiKey.id,
-    };
+    const path = { tenantId: a.org.tenantId, organizationId: a.org.id, id: a.account.id, keyId: a.apiKey.id };
     expect((await call(revokeApiKey, { path, headers: a.headers })).response.status).toBe(200);
     const [{ revokedAt }] = await db.select().from(apiKeysTable).where(eq(apiKeysTable.id, a.apiKey.id));
     expect((await call(revokeApiKey, { path, headers: a.headers })).response.status).toBe(404);
@@ -281,10 +234,7 @@ describe('Service accounts and API keys', async () => {
   it('refuses a service account without a grant at the tenant door', async () => {
     const { org, account, key } = await issueKey();
     await db.update(serviceAccountsTable).set({ bindings: [] }).where(eq(serviceAccountsTable.id, account.id));
-    const { response, error } = await call(getAttachments, {
-      path: { tenantId: org.tenantId, organizationId: org.id },
-      headers: bearerHeaders(key),
-    });
+    const { response, error } = await call(getAttachments, { path: { tenantId: org.tenantId, organizationId: org.id }, headers: bearerHeaders(key) });
     expect(response.status).toBe(403);
     // tenantGuard's refusal, before any organization is resolved; orgGuard's would name the organization.
     expect((error as ErrorResponse).meta).toEqual({ resource: 'tenant' });

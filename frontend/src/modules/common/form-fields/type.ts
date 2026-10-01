@@ -4,13 +4,4 @@ export type BaseFormFieldProps<TFieldValues extends FieldValues> = {
   control: Control<TFieldValues>;
   name: Path<TFieldValues>;
   disabled?: boolean;
-} & (
-  | {
-      label: string;
-      required?: boolean;
-    }
-  | {
-      label?: never;
-      required?: never;
-    }
-);
+} & ({ label: string; required?: boolean } | { label?: never; required?: never });

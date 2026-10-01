@@ -20,12 +20,7 @@ export function IndicatorBar({ layoutId, animate = true, className, style }: Ind
   if (!animate) return <span className={barClassName} style={style} />;
 
   return (
-    <motion.span
-      layoutId={layoutId}
-      transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }}
-      className={barClassName}
-      style={style}
-    />
+    <motion.span layoutId={layoutId} transition={{ type: 'spring', stiffness: 300, damping: 30, mass: 0.8 }} className={barClassName} style={style} />
   );
 }
 

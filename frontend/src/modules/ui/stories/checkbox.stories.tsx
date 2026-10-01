@@ -11,19 +11,14 @@ const meta: Meta<typeof Checkbox> = {
   component: Checkbox,
   tags: ['autodocs'],
   argTypes: {},
-  args: {
-    id: 'terms',
-    disabled: false,
-  },
+  args: { id: 'terms', disabled: false },
   render: (args) => (
     <div className="flex space-x-2">
       <Checkbox {...args} />
       <Label htmlFor={args.id}>Accept terms and conditions</Label>
     </div>
   ),
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
 } satisfies Meta<typeof Checkbox>;
 
 export default meta;
@@ -38,12 +33,7 @@ export const Default: Story = {};
 /**
  * Use the `disabled` prop to disable the checkbox.
  */
-export const Disabled: Story = {
-  args: {
-    id: 'disabled-terms',
-    disabled: true,
-  },
-};
+export const Disabled: Story = { args: { id: 'disabled-terms', disabled: true } };
 
 export const ShouldToggleCheck: Story = {
   name: 'when the checkbox is clicked, should toggle between checked and not checked',

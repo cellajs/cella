@@ -27,10 +27,7 @@ export interface GetNotificationsInput {
 export async function getNotificationsOp(ctx: UserContext, input: GetNotificationsInput) {
   const userId = ctx.var.user.id;
 
-  const [rows, unreadCount] = await Promise.all([
-    findNotificationsByUser(ctx, { userId, ...input }),
-    countUnreadByUser(ctx, userId),
-  ]);
+  const [rows, unreadCount] = await Promise.all([findNotificationsByUser(ctx, { userId, ...input }), countUnreadByUser(ctx, userId)]);
 
   const readable = await findReadableSubjectIds(accessFrom(ctx), rows);
   const readableRows = rows.filter((row) => readable.has(row.subjectId));

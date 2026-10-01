@@ -60,20 +60,15 @@ export function SheetContent({
       finalFocus={finalFocus}
       className={cn(
         'flex flex-col bg-background shadow-lg focus-visible:outline-none',
-        !container &&
-          'fixed z-114 transition data-closed:animate-out data-open:animate-in data-closed:duration-300 data-open:duration-300',
+        !container && 'fixed z-114 transition data-closed:animate-out data-open:animate-in data-closed:duration-300 data-open:duration-300',
         !container &&
           side === 'right' &&
           'data-closed:slide-out-to-right data-open:slide-in-from-right inset-y-0 right-0 h-full w-[95vw] sm:w-[90vw] lg:max-w-4xl',
         !container &&
           side === 'left' &&
           'data-closed:slide-out-to-left data-open:slide-in-from-left inset-y-0 left-0 h-full w-[95vw] sm:w-[90vw] lg:max-w-4xl',
-        !container &&
-          side === 'top' &&
-          'data-closed:slide-out-to-top data-open:slide-in-from-top inset-x-0 top-0 h-auto',
-        !container &&
-          side === 'bottom' &&
-          'data-closed:slide-out-to-bottom data-open:slide-in-from-bottom inset-x-0 bottom-0 h-auto',
+        !container && side === 'top' && 'data-closed:slide-out-to-top data-open:slide-in-from-top inset-x-0 top-0 h-auto',
+        !container && side === 'bottom' && 'data-closed:slide-out-to-bottom data-open:slide-in-from-bottom inset-x-0 bottom-0 h-auto',
         container && 'relative h-full w-full',
         className,
       )}
@@ -97,20 +92,11 @@ export function SheetContent({
   );
 }
 
-export function SheetHeader({
-  className,
-  sticky,
-  children,
-  ...props
-}: React.ComponentProps<'div'> & { sticky?: boolean }) {
+export function SheetHeader({ className, sticky, children, ...props }: React.ComponentProps<'div'> & { sticky?: boolean }) {
   return (
     <div
       data-slot="sheet-header"
-      className={cn(
-        'group/header relative flex flex-col gap-1.5 p-4',
-        sticky && 'sticky top-0 z-10 bg-background/70 backdrop-blur-xs',
-        className,
-      )}
+      className={cn('group/header relative flex flex-col gap-1.5 p-4', sticky && 'sticky top-0 z-10 bg-background/70 backdrop-blur-xs', className)}
       {...props}
     >
       {children}
@@ -129,28 +115,10 @@ export function SheetFooter({ className, ...props }: React.ComponentProps<'div'>
   return <div data-slot="sheet-footer" className={cn('mt-auto flex flex-col gap-2 p-4', className)} {...props} />;
 }
 
-export function SheetTitle({
-  className,
-  ...props
-}: SheetPrimitive.Title.Props & React.RefAttributes<HTMLParagraphElement>) {
-  return (
-    <SheetPrimitive.Title
-      data-slot="sheet-title"
-      className={cn('font-semibold text-foreground', className)}
-      {...props}
-    />
-  );
+export function SheetTitle({ className, ...props }: SheetPrimitive.Title.Props & React.RefAttributes<HTMLParagraphElement>) {
+  return <SheetPrimitive.Title data-slot="sheet-title" className={cn('font-semibold text-foreground', className)} {...props} />;
 }
 
-export function SheetDescription({
-  className,
-  ...props
-}: SheetPrimitive.Description.Props & React.RefAttributes<HTMLParagraphElement>) {
-  return (
-    <SheetPrimitive.Description
-      data-slot="sheet-description"
-      className={cn('text-muted-foreground text-sm', className)}
-      {...props}
-    />
-  );
+export function SheetDescription({ className, ...props }: SheetPrimitive.Description.Props & React.RefAttributes<HTMLParagraphElement>) {
+  return <SheetPrimitive.Description data-slot="sheet-description" className={cn('text-muted-foreground text-sm', className)} {...props} />;
 }

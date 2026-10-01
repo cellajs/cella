@@ -20,9 +20,7 @@ const sdk = await import('sdk');
 const { usersListQueryOptions } = await import('~/modules/user/query');
 const { organizationsListQueryOptions, fetchOrganizationsForExport } = await import('~/modules/organization/query');
 const { tenantsListQueryOptions } = await import('~/modules/tenants/query');
-const { membersListQueryOptions, pendingMembershipsQueryOptions, fetchMembersForExport } = await import(
-  '~/modules/memberships/query'
-);
+const { membersListQueryOptions, pendingMembershipsQueryOptions, fetchMembersForExport } = await import('~/modules/memberships/query');
 const { requestsListQueryOptions, fetchRequestsForExport } = await import('~/modules/requests/query');
 const { attachmentsListQueryOptions } = await import('~/modules/attachment/query');
 const { syncStaleTime } = await import('~/query/basic/sync-stale-config');
@@ -77,14 +75,7 @@ const cases: {
     queryKey: [
       'organization',
       'list',
-      {
-        q: '',
-        sort: 'displayOrder',
-        order: 'asc',
-        relatableUserId: undefined,
-        excludeArchived: undefined,
-        role: undefined,
-      },
+      { q: '', sort: 'displayOrder', order: 'asc', relatableUserId: undefined, excludeArchived: undefined, role: undefined },
     ],
     request: {
       query: {
@@ -103,19 +94,9 @@ const cases: {
   },
   {
     name: 'organizations sorted by another column default to descending and keep include out of the key',
-    options: () =>
-      organizationsListQueryOptions({
-        sort: 'name',
-        relatableUserId: 'u1',
-        excludeArchived: 'true',
-        include: 'counts',
-      }),
+    options: () => organizationsListQueryOptions({ sort: 'name', relatableUserId: 'u1', excludeArchived: 'true', include: 'counts' }),
     sdkCall: vi.mocked(sdk.getOrganizations),
-    queryKey: [
-      'organization',
-      'list',
-      { q: '', sort: 'name', order: 'desc', relatableUserId: 'u1', excludeArchived: 'true', role: undefined },
-    ],
+    queryKey: ['organization', 'list', { q: '', sort: 'name', order: 'desc', relatableUserId: 'u1', excludeArchived: 'true', role: undefined }],
     request: {
       query: {
         q: '',
@@ -182,28 +163,9 @@ const cases: {
       'invites',
       'member',
       'list',
-      {
-        entityId: 'org-1',
-        entityType: 'organization',
-        tenantId: 'tenant-1',
-        organizationId: 'org-1',
-        q: '',
-        sort: 'createdAt',
-        order: 'desc',
-      },
+      { entityId: 'org-1', entityType: 'organization', tenantId: 'tenant-1', organizationId: 'org-1', q: '', sort: 'createdAt', order: 'desc' },
     ],
-    request: {
-      query: {
-        q: '',
-        sort: 'createdAt',
-        order: 'desc',
-        limit: '20',
-        entityId: 'org-1',
-        entityType: 'organization',
-        offset: '100',
-      },
-      path,
-    },
+    request: { query: { q: '', sort: 'createdAt', order: 'desc', limit: '20', entityId: 'org-1', entityType: 'organization', offset: '100' }, path },
     extra: { refetchOnMount: true },
   },
   {
@@ -253,14 +215,7 @@ describe('export fetchers', () => {
     await fetchOrganizationsForExport({ limit: 1000, offset: 2000 });
 
     expect(sdk.getOrganizations).toHaveBeenCalledWith({
-      query: {
-        limit: '1000',
-        q: '',
-        sort: 'displayOrder',
-        order: 'asc',
-        offset: '2000',
-        include: 'counts,membership',
-      },
+      query: { limit: '1000', q: '', sort: 'displayOrder', order: 'asc', offset: '2000', include: 'counts,membership' },
     });
   });
 
@@ -275,9 +230,7 @@ describe('export fetchers', () => {
   it('requests: search defaults fill the query', async () => {
     await fetchRequestsForExport({ limit: 1000 });
 
-    expect(sdk.getRequests).toHaveBeenCalledWith({
-      query: { q: '', sort: 'createdAt', order: 'desc', limit: '1000', offset: '0' },
-    });
+    expect(sdk.getRequests).toHaveBeenCalledWith({ query: { q: '', sort: 'createdAt', order: 'desc', limit: '1000', offset: '0' } });
   });
 
   it('members: the channel scopes the request, search defaults fill it and the rows include counts', async () => {

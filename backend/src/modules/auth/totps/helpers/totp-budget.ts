@@ -39,9 +39,6 @@ export const takeTotpAttempt = (ctx: Context<Env>, userId: string) => reserveTie
  */
 export const settleTotpAttempt = async (attempt: Reservation, user: TotpUser, verified: boolean) => {
   for (const { limits } of await settleTiers(attempt, verified ? 'success' : 'fail')) {
-    sendAccountSecurityEmail(user, 'totp-lockout', {
-      attempts: limits.points,
-      duration: Math.round(limits.blockDuration / 60),
-    });
+    sendAccountSecurityEmail(user, 'totp-lockout', { attempts: limits.points, duration: Math.round(limits.blockDuration / 60) });
   }
 };

@@ -3,9 +3,7 @@ import type { CdcOutboundMessage } from '../services/activity-service';
 
 type ActivityFieldsTolerant<T> = { [K in keyof T]?: T[K] };
 
-type WireConformanceTarget = Omit<CdcMessage, 'activity'> & {
-  activity: ActivityFieldsTolerant<CdcMessage['activity']>;
-};
+type WireConformanceTarget = Omit<CdcMessage, 'activity'> & { activity: ActivityFieldsTolerant<CdcMessage['activity']> };
 
 type Assert<T extends true> = T;
 

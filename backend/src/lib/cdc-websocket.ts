@@ -36,14 +36,7 @@ const cdcMessageSchema = z.object({
       }),
     )
     .optional(),
-  _trace: z
-    .object({
-      traceId: z.string(),
-      spanId: z.string(),
-      cdcTimestamp: z.number(),
-      lsn: z.string().optional(),
-    })
-    .optional(),
+  _trace: z.object({ traceId: z.string(), spanId: z.string(), cdcTimestamp: z.number(), lsn: z.string().optional() }).optional(),
 });
 
 export type CdcMessage = z.infer<typeof cdcMessageSchema>;
@@ -170,15 +163,8 @@ class CdcWebSocketServer {
 
       if (!result.success) {
         this._parseErrors++;
-        const preview = {
-          type: parsed?.activity?.type,
-          subjectId: parsed?.activity?.subjectId,
-          action: parsed?.activity?.action,
-        };
-        log.error('CDC message schema validation failed - message dropped', {
-          errors: result.error.issues,
-          preview,
-        });
+        const preview = { type: parsed?.activity?.type, subjectId: parsed?.activity?.subjectId, action: parsed?.activity?.action };
+        log.error('CDC message schema validation failed - message dropped', { errors: result.error.issues, preview });
         return;
       }
 
@@ -189,10 +175,7 @@ class CdcWebSocketServer {
       const { type } = message.activity;
       if (!isValidEventType(type)) {
         this._parseErrors++;
-        log.error('Unknown event type in CDC message - message dropped', {
-          type,
-          subjectId: message.activity.subjectId,
-        });
+        log.error('Unknown event type in CDC message - message dropped', { type, subjectId: message.activity.subjectId });
         return;
       }
 
@@ -222,10 +205,7 @@ class CdcWebSocketServer {
         trace: message._trace ?? null,
       } as ActivityEvent;
 
-      log.trace('CDC message processed', {
-        type: message.activity.type,
-        subjectId: message.activity.subjectId,
-      });
+      log.trace('CDC message processed', { type: message.activity.type, subjectId: message.activity.subjectId });
 
       activityBus.emit(activityEvent);
     } catch (err) {
@@ -243,10 +223,7 @@ class CdcWebSocketServer {
       // Clear entity caches after counter recalculation.
       productCache.clear();
 
-      log.info('CDC catchup complete: entity caches cleared', {
-        eventsProcessed,
-        catchupDurationMs,
-      });
+      log.info('CDC catchup complete: entity caches cleared', { eventsProcessed, catchupDurationMs });
       return;
     }
 
@@ -269,8 +246,7 @@ class CdcWebSocketServer {
         receivedAt: new Date().toISOString(),
       };
       this._lastLagAlert = alert;
-      if (alert.severity === 'wal_lag_unhealthy')
-        log.error('CDC WAL lag exceeded the backpressure limit', { ...alert });
+      if (alert.severity === 'wal_lag_unhealthy') log.error('CDC WAL lag exceeded the backpressure limit', { ...alert });
       else log.warn('CDC WAL lag above warning threshold', { ...alert });
       return;
     }

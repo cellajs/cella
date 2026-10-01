@@ -4,26 +4,15 @@ import type { ChannelEntityType, EntityType } from 'shared';
 /** Extract usable mutation variables from a generated *Data type (strips `url` and `path`). */
 export type MutationData<T> = Omit<T, 'url'>;
 
-export type QueryData<TItem> = {
-  items: TItem[];
-  total: number;
-};
+export type QueryData<TItem> = { items: TItem[]; total: number };
 
-export type PageParams = {
-  page: number;
-  offset: number;
-};
+export type PageParams = { page: number; offset: number };
 export type InfiniteQueryData<TItem, TPageParam = PageParams> = InfiniteData<QueryData<TItem>, TPageParam>;
 
 export type BaseQueryItem<TItem, TPageParam = PageParams> = QueryData<TItem> | InfiniteQueryData<TItem, TPageParam>;
-export type BaseQueryResponse<TItem, TPageParam = PageParams> = [
-  QueryKey,
-  BaseQueryItem<TItem, TPageParam> | undefined,
-];
+export type BaseQueryResponse<TItem, TPageParam = PageParams> = [QueryKey, BaseQueryItem<TItem, TPageParam> | undefined];
 
-export type ChannelQueryProp<TItem, TOptimisticId = undefined, TPageParam = PageParams> = TOptimisticId extends
-  | undefined
-  | null
+export type ChannelQueryProp<TItem, TOptimisticId = undefined, TPageParam = PageParams> = TOptimisticId extends undefined | null
   ? BaseQueryResponse<TItem, TPageParam>
   : [...BaseQueryResponse<TItem, TPageParam>, TOptimisticId];
 

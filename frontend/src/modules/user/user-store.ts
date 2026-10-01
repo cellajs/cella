@@ -38,16 +38,7 @@ export const useUserStore = create<UserStoreState>()(
       immer((set) => ({
         ...initStore,
         updateUser: (user) => {
-          set((state) => ({
-            user: {
-              ...state.user,
-              ...user,
-            },
-            lastUser: {
-              id: user.id,
-              email: user.email,
-            },
-          }));
+          set((state) => ({ user: { ...state.user, ...user }, lastUser: { id: user.id, email: user.email } }));
 
           i18n.changeLanguage(user.language || 'en');
         },
@@ -56,10 +47,7 @@ export const useUserStore = create<UserStoreState>()(
             state.user = user;
             if (skipLastUser) return;
 
-            state.lastUser = {
-              id: user.id,
-              email: user.email,
-            };
+            state.lastUser = { id: user.id, email: user.email };
           });
 
           i18n.changeLanguage(user.language || 'en');
@@ -71,10 +59,7 @@ export const useUserStore = create<UserStoreState>()(
         },
         setLastUser: (lastUser) => {
           set((state) => {
-            state.lastUser = {
-              id: lastUser.id,
-              email: lastUser.email,
-            };
+            state.lastUser = { id: lastUser.id, email: lastUser.email };
           });
         },
         setYjsToken: (key, token) => {
@@ -91,11 +76,7 @@ export const useUserStore = create<UserStoreState>()(
       {
         version: 1,
         name: `${appConfig.slug}-user`,
-        partialize: (state) => ({
-          user: state.user,
-          isSystemAdmin: state.isSystemAdmin,
-          lastUser: state.lastUser,
-        }),
+        partialize: (state) => ({ user: state.user, isSystemAdmin: state.isSystemAdmin, lastUser: state.lastUser }),
         storage: createJSONStorage(() => localStorage),
       },
     ),

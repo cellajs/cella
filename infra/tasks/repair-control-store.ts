@@ -1,10 +1,4 @@
-import {
-  type BootstrapState,
-  type ControlState,
-  controlActor,
-  controlContextForStack,
-  type ServiceRollout,
-} from '../lib/stack/control-store';
+import { type BootstrapState, type ControlState, controlActor, controlContextForStack, type ServiceRollout } from '../lib/stack/control-store';
 import { errorMessage } from '../lib/utils/errors';
 import { isRecord } from '../lib/utils/guards';
 import { runIfMain } from '../lib/utils/is-main';
@@ -37,8 +31,7 @@ export function repairControlDocument(raw: string | undefined): RepairResult {
     throw new Error(`control: not valid JSON (${errorMessage(err)})`);
   }
   if (!isRecord(doc)) throw new Error('control: root must be an object');
-  if (doc.schemaVersion !== 2)
-    throw new Error(`control: cannot repair schemaVersion ${String(doc.schemaVersion)} (expected 2)`);
+  if (doc.schemaVersion !== 2) throw new Error(`control: cannot repair schemaVersion ${String(doc.schemaVersion)} (expected 2)`);
 
   const bootstrap: BootstrapState = isRecord(doc.bootstrap) ? (doc.bootstrap as BootstrapState) : {};
   const rolloutIn = isRecord(doc.rollout) ? doc.rollout : {};

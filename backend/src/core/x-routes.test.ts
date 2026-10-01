@@ -50,10 +50,7 @@ describe('route helpers', () => {
       description: 'Thing',
       content: { 'application/json': { schema: itemSchema } },
     });
-    expect(routes.getThing.responses[200].content['application/json']).toEqual({
-      schema: itemSchema,
-      example: { id: 'a' },
-    });
+    expect(routes.getThing.responses[200].content['application/json']).toEqual({ schema: itemSchema, example: { id: 'a' } });
     expect(routes.createThing.request.body).toEqual({
       required: true,
       content: { 'application/json': { schema: itemSchema } },

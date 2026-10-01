@@ -30,17 +30,10 @@ const memberStatTable = (productType: MemberStatProductType): MemberStatTable =>
   entityTables[productType as keyof typeof entityTables] as unknown as MemberStatTable;
 
 /** Channel types a member row can carry a membership count for (all sub-organization channels). */
-const memberStatChannelTypes = hierarchy
-  .getOrderedDescendants('organization')
-  .filter((type): type is ChannelEntityType => isChannel(type));
+const memberStatChannelTypes = hierarchy.getOrderedDescendants('organization').filter((type): type is ChannelEntityType => isChannel(type));
 
 /** Rows a member gets credited for: live, published rows they created within the viewed scope. */
-const liveAuthoredWhere = (
-  productType: MemberStatProductType,
-  entityType: ChannelEntityType,
-  entityId: string,
-  organizationId: string,
-) => {
+const liveAuthoredWhere = (productType: MemberStatProductType, entityType: ChannelEntityType, entityId: string, organizationId: string) => {
   const t = memberStatTable(productType);
   const scope: (SQL | undefined)[] = [
     eq(t.createdBy, usersTable.id),
@@ -89,9 +82,7 @@ export const memberCountsSelect = (entityType: ChannelEntityType, entityId: stri
   });
 
   return {
-    memberships: sql<
-      Partial<Record<ChannelEntityType, number>>
-    >`json_build_object(${sql.join(membershipPairs, sql`, `)})`,
+    memberships: sql<Partial<Record<ChannelEntityType, number>>>`json_build_object(${sql.join(membershipPairs, sql`, `)})`,
     products: sql<Record<MemberStatProductType, number>>`json_build_object(${sql.join(productPairs, sql`, `)})`,
     activity: sql<Record<MemberStatProductType, number | null>>`json_build_object(${sql.join(activityPairs, sql`, `)})`,
   };

@@ -67,12 +67,7 @@ describe('docs search engine', () => {
 
   it('finds a page by title and puts the page row first', async () => {
     const rows = await engine.search('architecture');
-    expect(rows[0]).toMatchObject({
-      type: 'page',
-      pageId: 'architecture',
-      to: '/docs/page/$',
-      params: { _splat: 'architecture' },
-    });
+    expect(rows[0]).toMatchObject({ type: 'page', pageId: 'architecture', to: '/docs/page/$', params: { _splat: 'architecture' } });
     expect(rows[0].title).toContain('<mark>');
   });
 

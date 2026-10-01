@@ -32,11 +32,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
             {values.map((value: string) => {
               const meta = ext.values?.[value];
               const label = meta?.name ?? value;
-              const tooltipContent = meta?.description
-                ? `${value}: ${meta.description}`
-                : label !== value
-                  ? value
-                  : undefined;
+              const tooltipContent = meta?.description ? `${value}: ${meta.description}` : label !== value ? value : undefined;
               return (
                 <code
                   key={value}
@@ -84,10 +80,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         sortable: true,
         width: 80,
         renderCell: ({ row }) => (
-          <Badge
-            variant="secondary"
-            className={`bg-transparent font-mono text-xs uppercase shadow-none ${getMethodColor(row.method)}`}
-          >
+          <Badge variant="secondary" className={`bg-transparent font-mono text-xs uppercase shadow-none ${getMethodColor(row.method)}`}>
             {row.method.toUpperCase()}
           </Badge>
         ),
@@ -120,8 +113,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         width: 50,
         renderCell: ({ row, tabIndex }) => {
           // No response body means examples are not applicable
-          if (!row.hasResponseBody)
-            return <span className="block w-full text-center text-muted-foreground/50 text-xs">na</span>;
+          if (!row.hasResponseBody) return <span className="block w-full text-center text-muted-foreground/50 text-xs">na</span>;
           // Has response body but no example yet
           if (!row.hasExample) return <span className="block w-full text-center text-muted-foreground">-</span>;
           return (

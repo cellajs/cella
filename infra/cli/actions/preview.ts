@@ -6,13 +6,7 @@ import { PRIVILEGED_UP_ENV } from '../../lib/stack/privileged-up';
 import { pc, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import {
-  type InfraContext,
-  keyPairOrPrompt,
-  pulumiLoginAndSelect,
-  resolveVerifiedPassphrase,
-  stackNameFor,
-} from '../shared';
+import { type InfraContext, keyPairOrPrompt, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 
 /**
  * Read-only `pulumi preview` of what "Apply infra change" would apply, authenticating the provider from SCW_* env, not stack config, so it also
@@ -22,23 +16,16 @@ import {
  */
 export async function runPreview(context: InfraContext): Promise<void> {
   if (context.state !== 'bootstrapped') {
-    console.error(
-      `${warningMark} "Preview" requires a fully bootstrapped stack (state=${context.state}). Run Resume first.`,
-    );
+    console.error(`${warningMark} "Preview" requires a fully bootstrapped stack (state=${context.state}). Run Resume first.`);
     process.exit(1);
   }
-  console.info(
-    pc.dim('\nPreview: read-only `pulumi preview` with a Scaleway key (supplied via env). No changes are made.\n'),
-  );
+  console.info(pc.dim('\nPreview: read-only `pulumi preview` with a Scaleway key (supplied via env). No changes are made.\n'));
 
   const passphrase = await resolveVerifiedPassphrase(context.stackYaml);
 
   const { projectId, appConfig } = context;
 
-  const { accessKey, secretKey } = await keyPairOrPrompt(
-    resolveOperatorIdentity().admin,
-    'Scaleway admin application key',
-  );
+  const { accessKey, secretKey } = await keyPairOrPrompt(resolveOperatorIdentity().admin, 'Scaleway admin application key');
 
   const targetStack = stackNameFor(context);
 
@@ -60,18 +47,14 @@ export async function runPreview(context: InfraContext): Promise<void> {
   pulumiLoginAndSelect(infraDir, previewEnv, appConfig, targetStack);
 
   // --refresh reads every resource live first, so drift outside Pulumi (a rule re-scoped in the console) is part of the diff.
-  console.info(
-    `\n→ pulumi preview (what "Apply infra change" would apply)\n  $ pulumi preview --stack ${targetStack} --diff --refresh`,
-  );
+  console.info(`\n→ pulumi preview (what "Apply infra change" would apply)\n  $ pulumi preview --stack ${targetStack} --diff --refresh`);
   const preview = spawnSync('pulumi', ['preview', '--stack', targetStack, '--diff', '--refresh'], {
     cwd: infraDir,
     env: previewEnv,
     stdio: 'inherit',
   });
   if (preview.status !== 0) {
-    console.error(
-      `\n${warningMark} pulumi preview exited ${preview.status}. Check provider auth (SCW_* env) and the passphrase.`,
-    );
+    console.error(`\n${warningMark} pulumi preview exited ${preview.status}. Check provider auth (SCW_* env) and the passphrase.`);
     process.exit(preview.status ?? 1);
   }
   console.info(

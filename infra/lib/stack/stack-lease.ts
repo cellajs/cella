@@ -68,10 +68,7 @@ export async function acquireLease(opts: LeaseOptions): Promise<LeaseResult> {
       if (renewal.renewed) info = renewal.info;
       else {
         lost = true;
-        opts.onRenewFailed?.(
-          renewal.held ? `lock now held by ${renewal.held.owner} (${renewal.held.operation})` : 'lock object is gone',
-          true,
-        );
+        opts.onRenewFailed?.(renewal.held ? `lock now held by ${renewal.held.owner} (${renewal.held.operation})` : 'lock object is gone', true);
       }
     } catch (err) {
       opts.onRenewFailed?.(err instanceof Error ? err.message : String(err), false);
@@ -101,10 +98,7 @@ export async function acquireLease(opts: LeaseOptions): Promise<LeaseResult> {
  * Release the lease on SIGINT/SIGTERM before exiting, so a Ctrl-C at a prompt does not leave the stack locked for a full lifetime.
  * Returns the uninstaller; call it after a normal release.
  */
-export function installSignalRelease(
-  lease: StackLease,
-  opts: { exit?: (code: number) => void; log?: (msg: string) => void } = {},
-): () => void {
+export function installSignalRelease(lease: StackLease, opts: { exit?: (code: number) => void; log?: (msg: string) => void } = {}): () => void {
   const exit = opts.exit ?? ((code: number) => process.exit(code));
   const handlers = new Map<NodeJS.Signals, () => void>();
   for (const signal of ['SIGINT', 'SIGTERM'] as const) {

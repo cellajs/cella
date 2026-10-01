@@ -1,14 +1,5 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import {
-  applyHint,
-  classifyPreviewSteps,
-  formatPending,
-  isPrivilegedUrn,
-  main,
-  type PreviewStep,
-  readPath,
-  splitUrn,
-} from './preflight-privileged';
+import { applyHint, classifyPreviewSteps, formatPending, isPrivilegedUrn, main, type PreviewStep, readPath, splitUrn } from './preflight-privileged';
 
 const urn = (type: string, name: string) => `urn:pulumi:production::infra::${type}::${name}`;
 
@@ -83,9 +74,7 @@ describe('classifyPreviewSteps', () => {
     expect(readPath({ a: { b: [[1, 2]] } }, 'a.b[0][1]')).toBe(2);
   });
   it('formats the operator command with the mode', () => {
-    const text = formatPending('production', [
-      { op: 'create', resource: 'scaleway:databases/privilege:Privilege::p', paths: [] },
-    ]);
+    const text = formatPending('production', [{ op: 'create', resource: 'scaleway:databases/privilege:Privilege::p', paths: [] }]);
     expect(text).toContain('1 privileged change(s) pending');
     expect(text).toContain(applyHint('production'));
     expect(applyHint('staging')).toBe('pnpm infra --mode staging  →  Stack setup  →  Apply infra change');
@@ -115,9 +104,7 @@ describe('main', () => {
   });
 
   it('passes when every change is one a CI deploy applies', async () => {
-    await expect(run([{ op: 'create', urn: urn('scaleway:instance/server:Server', 'vm-backend-abc') }])).resolves.toBe(
-      undefined,
-    );
+    await expect(run([{ op: 'create', urn: urn('scaleway:instance/server:Server', 'vm-backend-abc') }])).resolves.toBe(undefined);
   });
 
   it('skips a mode without a set-up stack', async () => {

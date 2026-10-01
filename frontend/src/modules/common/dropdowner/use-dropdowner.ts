@@ -84,9 +84,7 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     const current = get().dropdown;
     if (!current) return;
 
-    set({
-      dropdown: { ...current, ...updates },
-    });
+    set({ dropdown: { ...current, ...updates } });
   },
 
   remove: () => {

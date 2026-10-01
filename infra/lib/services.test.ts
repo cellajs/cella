@@ -42,9 +42,7 @@ describe('service registry: enabledServices', () => {
   });
 
   it('toggles yjs and mcp independently', () => {
-    const yjsOnly = enabledServices({ yjs: { enabled: true }, mcp: { enabled: false }, oauth: { enabled: false } }).map(
-      (s) => s.slug,
-    );
+    const yjsOnly = enabledServices({ yjs: { enabled: true }, mcp: { enabled: false }, oauth: { enabled: false } }).map((s) => s.slug);
     expect(yjsOnly).toContain('yjs');
     expect(yjsOnly).not.toContain('mcp');
   });
@@ -115,15 +113,7 @@ describe('placeServices (placement is independent of enablement)', () => {
 
 describe('registry view: privileged IAM ignores enablement', () => {
   it('split-VM: every registry service owns a principal, whatever appConfig enables', () => {
-    expect(principalServices(false).map((s) => s.slug)).toEqual([
-      'backend',
-      'cdc',
-      'yjs',
-      'mcp',
-      'oauth',
-      'jobs',
-      'frontend',
-    ]);
+    expect(principalServices(false).map((s) => s.slug)).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'jobs', 'frontend']);
   });
 
   it('singleVM: only the host owns a principal', () => {
@@ -131,15 +121,7 @@ describe('registry view: privileged IAM ignores enablement', () => {
   });
 
   it('singleVM host scope unions every registry worker and collocated container, enabled or not', () => {
-    expect(principalSecretScopeSlugs(true, 'backend')).toEqual([
-      'backend',
-      'cdc',
-      'yjs',
-      'mcp',
-      'oauth',
-      'jobs',
-      'frontend',
-    ]);
+    expect(principalSecretScopeSlugs(true, 'backend')).toEqual(['backend', 'cdc', 'yjs', 'mcp', 'oauth', 'jobs', 'frontend']);
   });
 
   it('a non-host principal reads only its own folder', () => {
@@ -178,8 +160,7 @@ describe('service registry: lbRoute contract', () => {
 });
 
 describe('appStorageNeeds (P2 optional app storage)', () => {
-  const svc = (partial: { slug: string; lbRoute?: string; s3Access?: boolean }) =>
-    partial as unknown as ServiceDefinition;
+  const svc = (partial: { slug: string; lbRoute?: string; s3Access?: boolean }) => partial as unknown as ServiceDefinition;
 
   it("cella's registry needs everything: SPA bucket, upload buckets, browser origin", () => {
     const needs = appStorageNeeds(services);

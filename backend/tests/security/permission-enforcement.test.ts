@@ -62,17 +62,14 @@ describe('Member escalation over HTTP', async () => {
 
   const headers = (as: User) => ({ ...defaultHeaders, Cookie: as.sessionCookie });
   const counterpart = ({ admin, member }: Fixture, actor: User) => (actor.id === admin.id ? member : admin);
-  const attachmentRow = async (id: string) =>
-    (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
-  const organizationRow = async (id: string) =>
-    (await db.select().from(organizationsTable).where(eq(organizationsTable.id, id)))[0];
+  const attachmentRow = async (id: string) => (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
+  const organizationRow = async (id: string) => (await db.select().from(organizationsTable).where(eq(organizationsTable.id, id)))[0];
   const membershipsOf = (userId: string, organizationId: string) =>
     db
       .select()
       .from(membershipsTable)
       .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.organizationId, organizationId)));
-  const invitationsTo = (email: string) =>
-    db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, email));
+  const invitationsTo = (email: string) => db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.email, email));
 
   /** An organization with an admin, a member, the admin's attachment and a pending invitation. */
   const fixture = async (label: string): Promise<Fixture> => {
@@ -90,30 +87,15 @@ describe('Member escalation over HTTP', async () => {
       expect(response.status).toBe(201);
       return id;
     };
-    const { inactiveMembership } = await createInvitation({
-      organization: org,
-      email: `${label}-invitee@security-test.com`,
-      createdBy: admin.id,
-    });
-    return {
-      org,
-      admin,
-      member,
-      attachment: await attachmentOf(admin),
-      invitation: inactiveMembership.id,
-      attachmentOf,
-    };
+    const { inactiveMembership } = await createInvitation({ organization: org, email: `${label}-invitee@security-test.com`, createdBy: admin.id });
+    return { org, admin, member, attachment: await attachmentOf(admin), invitation: inactiveMembership.id, attachmentOf };
   };
 
   const rows: Row[] = [
     {
       act: 'update the organization',
       attempt: ({ org }, actor) =>
-        call(updateOrganization, {
-          path: { tenantId: org.tenantId, id: org.id },
-          body: { name: 'Hijacked' },
-          headers: headers(actor),
-        }),
+        call(updateOrganization, { path: { tenantId: org.tenantId, id: org.id }, body: { name: 'Hijacked' }, headers: headers(actor) }),
       unchanged: async ({ org }) => expect((await organizationRow(org.id)).name).toBe(org.name),
       okStatus: 200,
     },
@@ -126,17 +108,13 @@ describe('Member escalation over HTTP', async () => {
           body: { emails: [`newcomer-${actor.id}@security-test.com`], role: adminRole },
           headers: headers(actor),
         }),
-      unchanged: async ({ member }) =>
-        expect(await invitationsTo(`newcomer-${member.id}@security-test.com`)).toEqual([]),
+      unchanged: async ({ member }) => expect(await invitationsTo(`newcomer-${member.id}@security-test.com`)).toEqual([]),
       okStatus: 200,
     },
     {
       act: 're-send a pending invitation',
       attempt: ({ org, invitation }, actor) =>
-        call(resendPendingInvitation, {
-          path: { tenantId: org.tenantId, organizationId: org.id, id: invitation },
-          headers: headers(actor),
-        }),
+        call(resendPendingInvitation, { path: { tenantId: org.tenantId, organizationId: org.id, id: invitation }, headers: headers(actor) }),
       unchanged: async () => expect(mailer.prepareEmails).not.toHaveBeenCalled(),
       okStatus: 204,
     },

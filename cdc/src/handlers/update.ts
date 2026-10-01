@@ -53,11 +53,7 @@ export function handleUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpda
   if (!isSoftDeleteTransition(rowData, oldRowData) && isAlreadySoftDeleted(rowData, oldRowData)) return null;
 
   // User edits always include 'updatedAt', so an embedding-column-only change is CDC's own cleanup.
-  if (
-    userChangedFields &&
-    !userChangedFields.includes('updatedAt') &&
-    userChangedFields.every((k) => embeddingColumns.has(k))
-  ) {
+  if (userChangedFields && !userChangedFields.includes('updatedAt') && userChangedFields.every((k) => embeddingColumns.has(k))) {
     return null;
   }
 
@@ -68,9 +64,7 @@ export function handleUpdate(tableMeta: TableMeta, message: Pgoutput.MessageUpda
   const oldLocation = oldRowData ? rowLocationPath(tableMeta.type, oldRowData) : null;
   const newLocation = rowLocationPath(tableMeta.type, rowData);
   const movedFrom =
-    oldRowData && oldLocation !== null && newLocation !== null && oldLocation !== newLocation
-      ? pickPermissionRowData(oldRowData)
-      : null;
+    oldRowData && oldLocation !== null && newLocation !== null && oldLocation !== newLocation ? pickPermissionRowData(oldRowData) : null;
 
   // changedFields is computed, so the large columns can go: nothing downstream reads them.
   return {

@@ -65,10 +65,9 @@ const errorResponseOptions = [
 
 const errorBodySchema = (code: ErrorCode) => {
   const option = errorResponseOptions.find((o) => o.code === code);
-  return apiErrorSchema.extend({ status: z.literal(code) }).openapi(option?.name ?? 'Error', {
-    description: option?.schemaDescription,
-    'x-tags': schemaTags('errors', 'cella'),
-  });
+  return apiErrorSchema
+    .extend({ status: z.literal(code) })
+    .openapi(option?.name ?? 'Error', { description: option?.schemaDescription, 'x-tags': schemaTags('errors', 'cella') });
 };
 
 // Numeric-keyed map for registry work; no `ref` here.
@@ -107,12 +106,7 @@ export const errorResponseRefs = errorResponseOptions.reduce(
 ) as unknown as Record<ErrorCode, ZodBackedResponse>;
 
 // Registry helpers
-const registerResponseFromZod = (
-  registry: OpenAPIRegistry,
-  responseName: string,
-  schemaName: string,
-  response: ZodBackedResponse,
-) => {
+const registerResponseFromZod = (registry: OpenAPIRegistry, responseName: string, schemaName: string, response: ZodBackedResponse) => {
   const schema = response.content['application/json'].schema;
   registry.register(schemaName, schema);
   registry.registerComponent('responses', responseName, {

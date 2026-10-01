@@ -15,19 +15,14 @@ export const checklistItemConfig = {
  * The attachment entity a media block was uploaded as, so derivation and lifecycle code read an
  * id prop and never parse URLs. Media pasted as an external URL leaves it empty.
  */
-export const attachmentRefPropSchema = {
-  attachmentId: { default: '' as string },
-};
+export const attachmentRefPropSchema = { attachmentId: { default: '' as string } };
 
 /**
  * Pixel dimensions read from the source file at upload. Renderers pass them as the img
  * width/height attributes so the browser reserves the box before the image loads. Zero means
  * unknown, as for media pasted as an external URL.
  */
-export const mediaDimensionsPropSchema = {
-  width: { default: 0 as number },
-  height: { default: 0 as number },
-};
+export const mediaDimensionsPropSchema = { width: { default: 0 as number }, height: { default: 0 as number } };
 
 /**
  * Apply to the same specs on every schema that round-trips a shared Y.Doc (frontend editor and
@@ -35,10 +30,7 @@ export const mediaDimensionsPropSchema = {
  */
 export const withAttachmentRef = <S extends { config: { propSchema: Record<string, unknown> } }>(spec: S) => ({
   ...spec,
-  config: {
-    ...spec.config,
-    propSchema: { ...spec.config.propSchema, ...attachmentRefPropSchema, ...mediaDimensionsPropSchema },
-  },
+  config: { ...spec.config, propSchema: { ...spec.config.propSchema, ...attachmentRefPropSchema, ...mediaDimensionsPropSchema } },
 });
 
 /** Presentation (icons, colors) lives in the frontend's notify-options. */
@@ -56,11 +48,7 @@ export const notifyConfig = {
 
 export const mentionConfig = {
   type: 'mention' as const,
-  propSchema: {
-    id: { default: 'Unknown' },
-    slug: { default: 'Unknown' },
-    name: { default: 'Unknown' },
-  },
+  propSchema: { id: { default: 'Unknown' }, slug: { default: 'Unknown' }, name: { default: 'Unknown' } },
   content: 'none' as const,
 };
 

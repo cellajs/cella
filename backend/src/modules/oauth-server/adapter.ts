@@ -148,13 +148,7 @@ export class DrizzleAdapter implements Adapter {
     const [spent] = await baseDb
       .update(oidcPayloadsTable)
       .set({ consumedAt: getIsoDate() })
-      .where(
-        and(
-          eq(oidcPayloadsTable.type, this.name),
-          eq(oidcPayloadsTable.id, rowId),
-          isNull(oidcPayloadsTable.consumedAt),
-        ),
-      )
+      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, rowId), isNull(oidcPayloadsTable.consumedAt)))
       .returning({ id: oidcPayloadsTable.id });
     if (spent) return;
 
@@ -170,21 +164,14 @@ export class DrizzleAdapter implements Adapter {
   /** A grant the provider deletes itself (a revoked refresh token, a replayed code) takes its tokens' verdicts along. */
   async destroy(id: string): Promise<void> {
     if (this.name === 'Grant') return revokeGrant({ var: { db: baseDb } }, { grantId: id, withTokens: false });
-    await baseDb
-      .delete(oidcPayloadsTable)
-      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, this.rowId(id))));
+    await baseDb.delete(oidcPayloadsTable).where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.id, this.rowId(id))));
   }
 
   async revokeByGrantId(grantId: string): Promise<void> {
-    await baseDb
-      .delete(oidcPayloadsTable)
-      .where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.grantId, grantId)));
+    await baseDb.delete(oidcPayloadsTable).where(and(eq(oidcPayloadsTable.type, this.name), eq(oidcPayloadsTable.grantId, grantId)));
   }
 }
 
 function toPayload(row: typeof oidcPayloadsTable.$inferSelect): AdapterPayload {
-  return {
-    ...row.payload,
-    ...(row.consumedAt && { consumed: Math.floor(new Date(row.consumedAt).getTime() / 1000) }),
-  };
+  return { ...row.payload, ...(row.consumedAt && { consumed: Math.floor(new Date(row.consumedAt).getTime() / 1000) }) };
 }

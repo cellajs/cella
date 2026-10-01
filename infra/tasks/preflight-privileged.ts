@@ -12,12 +12,7 @@ import { getFlag } from './args';
  * Pulumi resource types only a privileged run (the Owner API key) may write: the database and its privileges, IAM, the VPC and private network, and the state bucket's
  * own policy (bucket-config writes on it are reserved to the admin application). Matched as URN-type prefixes; everything else a CI deploy applies itself.
  */
-const PRIVILEGED_URN_TYPES = [
-  'scaleway:databases/',
-  'scaleway:iam/',
-  'scaleway:network/vpc:',
-  'scaleway:network/privateNetwork:',
-] as const;
+const PRIVILEGED_URN_TYPES = ['scaleway:databases/', 'scaleway:iam/', 'scaleway:network/vpc:', 'scaleway:network/privateNetwork:'] as const;
 
 /** Resource names (the URN's last segment) that are privileged regardless of type. */
 const PRIVILEGED_URN_NAMES = new Set(['state-bucket-policy']);
@@ -69,21 +64,10 @@ export function isPrivilegedUrn(urn: string): boolean {
   return PRIVILEGED_URN_NAMES.has(name) || PRIVILEGED_URN_TYPES.some((prefix) => type.startsWith(prefix));
 }
 
-const MUTATING_OPS = new Set([
-  'create',
-  'update',
-  'replace',
-  'delete',
-  'create-replacement',
-  'delete-replaced',
-  'import',
-]);
+const MUTATING_OPS = new Set(['create', 'update', 'replace', 'delete', 'create-replacement', 'delete-replaced', 'import']);
 
 /** The privileged changes a preview would apply, i.e. the ones a CI deploy cannot make and an operator Apply must run first. */
-export function classifyPreviewSteps(steps: PreviewStep[]): {
-  privileged: PendingPrivilegedChange[];
-  ciApplicable: number;
-} {
+export function classifyPreviewSteps(steps: PreviewStep[]): { privileged: PendingPrivilegedChange[]; ciApplicable: number } {
   const privileged: PendingPrivilegedChange[] = [];
   let ciApplicable = 0;
   for (const step of steps) {
@@ -97,19 +81,14 @@ export function classifyPreviewSteps(steps: PreviewStep[]): {
     // A policy's rules carry no secret, and the old value is what Pulumi will overwrite: an update Scaleway never kept shows up here as stale outputs.
     const values =
       type.startsWith('scaleway:iam/') && paths.length > 0 && (step.oldState || step.newState)
-        ? paths.map((path) => ({
-            path,
-            old: readPath(step.oldState?.outputs, path),
-            new: readPath(step.newState?.inputs, path),
-          }))
+        ? paths.map((path) => ({ path, old: readPath(step.oldState?.outputs, path), new: readPath(step.newState?.inputs, path) }))
         : undefined;
     privileged.push({ op: step.op, resource: `${type}::${name}`, paths, ...(values ? { values } : {}) });
   }
   return { privileged, ciApplicable };
 }
 
-const showValue = (value: unknown): string =>
-  value === undefined ? '(unset)' : typeof value === 'string' ? value : JSON.stringify(value);
+const showValue = (value: unknown): string => (value === undefined ? '(unset)' : typeof value === 'string' ? value : JSON.stringify(value));
 
 /** The exact operator command for the mode. */
 export function applyHint(mode: string): string {
@@ -119,9 +98,7 @@ export function applyHint(mode: string): string {
 export function formatPending(mode: string, pending: PendingPrivilegedChange[]): string {
   const lines = [`✗ ${pending.length} privileged change(s) pending; a CI deploy cannot apply them:`];
   for (const change of pending) {
-    lines.push(
-      `  ${change.op.padEnd(7)} ${change.resource}${change.paths.length ? `  (${change.paths.join(', ')})` : ''}`,
-    );
+    lines.push(`  ${change.op.padEnd(7)} ${change.resource}${change.paths.length ? `  (${change.paths.join(', ')})` : ''}`);
     for (const value of change.values ?? []) {
       lines.push(`          ${value.path}: ${showValue(value.old)} → ${showValue(value.new)}`);
     }
@@ -131,10 +108,7 @@ export function formatPending(mode: string, pending: PendingPrivilegedChange[]):
 }
 
 /** `pulumi preview --json` under the privileged marker, so VM policy rules are diffed too. Read-only: the CI key can run it. */
-export async function runPrivilegedPreview(
-  stack: string,
-  env: NodeJS.ProcessEnv = process.env,
-): Promise<PreviewStep[]> {
+export async function runPrivilegedPreview(stack: string, env: NodeJS.ProcessEnv = process.env): Promise<PreviewStep[]> {
   const child = spawn('pulumi', ['preview', '--stack', stack, '--json', '--non-interactive'], {
     cwd: infraDir,
     env: { ...env, [PRIVILEGED_UP_ENV]: '1' },

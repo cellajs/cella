@@ -12,18 +12,13 @@ const buildRawSubject = (
     channelIds[ancestor] = `test-${ancestor}-id`;
   }
   if (overrides) Object.assign(channelIds, overrides);
-  return {
-    entityType,
-    id: 'test-id',
-    channelIds: channelIds as AncestorChannelIds,
-  };
+  return { entityType, id: 'test-id', channelIds: channelIds as AncestorChannelIds };
 };
 
 describe('shared validateAncestorScope', () => {
   const productWithAncestors = hierarchy.productTypes.find((t) => hierarchy.getOrderedAncestors(t).length > 0);
 
-  if (!productWithAncestors)
-    throw new Error('No product entity types with ancestors found: hierarchy config may be empty');
+  if (!productWithAncestors) throw new Error('No product entity types with ancestors found: hierarchy config may be empty');
 
   const firstAncestor = hierarchy.getOrderedAncestors(productWithAncestors)[0];
 

@@ -82,11 +82,7 @@ export class TTLCache<T> {
   }
 
   get stats(): { size: number; capacity: number; utilization: number } {
-    return {
-      size: this.cache.size,
-      capacity: this.maxSize,
-      utilization: this.cache.size / this.maxSize,
-    };
+    return { size: this.cache.size, capacity: this.maxSize, utilization: this.cache.size / this.maxSize };
   }
 
   /** Cancel the internal timer for graceful shutdown; entries stop expiring automatically. */

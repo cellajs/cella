@@ -8,11 +8,7 @@ import { textFromDocument } from 'shared/blocknote';
 import { isCDNUrl } from 'shared/utils/is-cdn-url';
 import { useLatestCallback, useLatestRef } from '~/hooks/use-latest-ref';
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
-import {
-  ATTACHMENT_DIALOG_PARAM,
-  attachmentDialogStageClassName,
-  clearAttachmentDialogSearchParams,
-} from '~/modules/attachment/dialog/params';
+import { ATTACHMENT_DIALOG_PARAM, attachmentDialogStageClassName, clearAttachmentDialogSearchParams } from '~/modules/attachment/dialog/params';
 import { FilePlaceholder } from '~/modules/attachment/file-placeholder';
 import { AttachmentRender } from '~/modules/attachment/render/attachment-render';
 import { CloseButton } from '~/modules/common/close-button';
@@ -52,22 +48,10 @@ interface CarouselPropsBase {
 }
 
 type CarouselProps =
-  | (CarouselPropsBase & {
-      isDialog: true;
-      saveInSearchParams: boolean;
-    })
-  | (CarouselPropsBase & {
-      isDialog?: false;
-      saveInSearchParams?: never;
-    });
+  | (CarouselPropsBase & { isDialog: true; saveInSearchParams: boolean })
+  | (CarouselPropsBase & { isDialog?: false; saveInSearchParams?: never });
 
-export function AttachmentsCarousel({
-  items,
-  isDialog = false,
-  itemIndex = 0,
-  saveInSearchParams = false,
-  classNameContainer,
-}: CarouselProps) {
+export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, saveInSearchParams = false, classNameContainer }: CarouselProps) {
   const navigate = useNavigate();
   const removeDialog = useDialoger((state) => state.remove);
   const { download, isInProgress } = useDownloader();
@@ -104,12 +88,7 @@ export function AttachmentsCarousel({
       return;
     }
 
-    navigate({
-      to: '.',
-      replace: true,
-      resetScroll: false,
-      search: (prev) => ({ ...prev, [ATTACHMENT_DIALOG_PARAM]: newItem.id }),
-    });
+    navigate({ to: '.', replace: true, resetScroll: false, search: (prev) => ({ ...prev, [ATTACHMENT_DIALOG_PARAM]: newItem.id }) });
   };
 
   const toggleWatchDrag = (enabled: boolean) => setWatchDrag(enabled && items.length > 1);
@@ -142,9 +121,7 @@ export function AttachmentsCarousel({
             {/* The visible name is the dialog's accessible name; with no name, a screen-reader-only title labels it. */}
             {currentItem.name ? (
               <DialogTitle className="ml-1 flex h-6 min-w-0 items-center gap-2 truncate text-base leading-6 tracking-tight max-sm:text-sm">
-                {currentItem.contentType && (
-                  <FilePlaceholder contentType={currentItem.contentType} className="icon-md shrink-0" strokeWidth={2} />
-                )}
+                {currentItem.contentType && <FilePlaceholder contentType={currentItem.contentType} className="icon-md shrink-0" strokeWidth={2} />}
                 <span className="truncate">{currentItem.name}</span>
               </DialogTitle>
             ) : (
@@ -200,11 +177,7 @@ export function AttachmentsCarousel({
                 className="-my-1 size-8 opacity-70 hover:opacity-100"
                 onClick={() => download(currentItem.url, currentItem.filename || 'file')}
               >
-                {isInProgress ? (
-                  <Spinner className="size-5 text-foreground/80" noDelay />
-                ) : (
-                  <DownloadIcon className="h-5 w-5" strokeWidth={1.5} />
-                )}
+                {isInProgress ? <Spinner className="size-5 text-foreground/80" noDelay /> : <DownloadIcon className="h-5 w-5" strokeWidth={1.5} />}
               </Button>
             )}
 

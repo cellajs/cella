@@ -95,9 +95,7 @@ export function DocsSearch() {
 
   // Scoped placeholder mirrors the active chip ("Search API reference...").
   const activeChipLabel = scopeChips.find((chip) => chip.value === scope)?.label;
-  const placeholder = activeChipLabel
-    ? t('c:placeholder.search_resource', { resource: activeChipLabel })
-    : t('c:docs.search.placeholder');
+  const placeholder = activeChipLabel ? t('c:placeholder.search_resource', { resource: activeChipLabel }) : t('c:docs.search.placeholder');
 
   return (
     <Combobox<SearchSelection>
@@ -124,9 +122,7 @@ export function DocsSearch() {
         {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h/overflow are neutralized */}
         <ScrollArea className="sm:h-[45vh]">
           <ComboboxList className="h-full max-h-none overflow-visible">
-            {results === null && recentSearches.length > 0 && (
-              <SearchHistoryGroup searches={recentSearches} onRemove={deleteRecentSearch} />
-            )}
+            {results === null && recentSearches.length > 0 && <SearchHistoryGroup searches={recentSearches} onRemove={deleteRecentSearch} />}
             {results === null && recentSearches.length === 0 && (
               <ContentPlaceholder icon={SearchIcon} title="c:docs.search.text" className="sm:h-[41vh]" />
             )}

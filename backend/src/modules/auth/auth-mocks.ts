@@ -2,10 +2,7 @@ import { faker } from '@faker-js/faker';
 import { mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
 
 export const mockPasskeyChallengeResponse = (key = 'passkey-challenge:default') =>
-  withFakerSeed(key, () => ({
-    challenge: faker.string.alphanumeric(43),
-    credentialIds: [faker.string.alphanumeric(32)],
-  }));
+  withFakerSeed(key, () => ({ challenge: faker.string.alphanumeric(43), credentialIds: [faker.string.alphanumeric(32)] }));
 
 export const mockPasskeyResponse = (key = 'passkey:default') =>
   withFakerSeed(key, () => {
@@ -13,13 +10,7 @@ export const mockPasskeyResponse = (key = 'passkey:default') =>
       { deviceName: 'MacBook Pro', deviceType: 'desktop', deviceOs: 'macOS', browser: 'Chrome' },
       { deviceName: 'iPhone', deviceType: 'mobile', deviceOs: 'iOS', browser: 'Safari' },
     ] as const);
-    return {
-      id: mockUuid(),
-      userId: mockUuid(),
-      ...device,
-      nameOnDevice: `${device.browser} on ${device.deviceName}`,
-      createdAt: mockPastIsoDate(),
-    };
+    return { id: mockUuid(), userId: mockUuid(), ...device, nameOnDevice: `${device.browser} on ${device.deviceName}`, createdAt: mockPastIsoDate() };
   });
 
 export const mockTotpKeyResponse = () => ({

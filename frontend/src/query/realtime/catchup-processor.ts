@@ -2,21 +2,12 @@ import type { GetMyMembershipsResponse, PostAppCatchupResponse } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
 import { meKeys } from '~/modules/me/query';
 import { seenKeys } from '~/modules/seen/helpers';
-import {
-  getEntityQueryKeys,
-  getRegisteredProductEntityTypes,
-  hasEntityQueryKeys,
-} from '~/query/basic/entity-query-registry';
+import { getEntityQueryKeys, getRegisteredProductEntityTypes, hasEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { isSyncDeliveryTrusted, setSyncDeliveryTrusted } from '~/query/basic/sync-stale-config';
 import { queryClient } from '~/query/query-client';
 import { syncStore } from '~/query/realtime/sync-store';
 import * as cacheOps from './cache-ops';
-import {
-  attachPendingPropagation,
-  enqueueCatchupRange,
-  flushChannelViewNow,
-  resetFetchPrioritizer,
-} from './fetch-prioritizer';
+import { attachPendingPropagation, enqueueCatchupRange, flushChannelViewNow, resetFetchPrioritizer } from './fetch-prioritizer';
 import * as membershipOps from './membership-ops';
 import { invalidateEmbeddedForHost, propagateEmbeddings } from './propagation';
 import { getSyncTier, getTenantIdForOrg } from './sync-priority';
@@ -134,8 +125,7 @@ export async function processAppCatchup(response: PostAppCatchupResponse, baseli
     if (!baselineOnly && propagation?.length) {
       for (const hint of propagation) {
         const embeddedProduct = hint.embeddedProduct as ProductEntityType;
-        const pending =
-          hasEntityQueryKeys(embeddedProduct) && attachPendingPropagation(embeddedProduct, organizationId, hint);
+        const pending = hasEntityQueryKeys(embeddedProduct) && attachPendingPropagation(embeddedProduct, organizationId, hint);
         if (!pending) propagateEmbeddings(hint);
       }
     }

@@ -47,11 +47,7 @@ describe('lookupIp', () => {
 describe('refreshGeoipDatabases', () => {
   it('downloads both databases from the source, remembers their etags and serves the new data', async () => {
     const fetchMock = vi.fn(async (url: string) =>
-      respond(
-        200,
-        archive(url.includes('country') ? 'country-v1' : 'asn-v1'),
-        `"v1-${url.includes('country') ? 'c' : 'a'}"`,
-      ),
+      respond(200, archive(url.includes('country') ? 'country-v1' : 'asn-v1'), `"v1-${url.includes('country') ? 'c' : 'a'}"`),
     );
     vi.stubGlobal('fetch', fetchMock);
 
@@ -104,9 +100,7 @@ describe('refreshGeoipDatabases', () => {
   it('replaces a database when its etag moved and reopens only that reader', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn(async (url: string) =>
-        url.includes('country') ? respond(200, archive('country-v2'), '"v2-c"') : respond(304),
-      ),
+      vi.fn(async (url: string) => (url.includes('country') ? respond(200, archive('country-v2'), '"v2-c"') : respond(304))),
     );
 
     expect(await refreshGeoipDatabases()).toEqual({ country: 'updated', asn: 'unchanged' });

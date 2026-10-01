@@ -19,9 +19,7 @@ describe('token policies', () => {
   });
 
   it('keeps an opened invitation usable through a magic-link sign-in to another account', () => {
-    expect(tokenPolicies.invitation.singleUseWindow.milliseconds()).toBeGreaterThan(
-      tokenPolicies.magic.ttl.milliseconds(),
-    );
+    expect(tokenPolicies.invitation.singleUseWindow.milliseconds()).toBeGreaterThan(tokenPolicies.magic.ttl.milliseconds());
   });
 
   it("sets each token type's cookie with its policy's SameSite", async () => {

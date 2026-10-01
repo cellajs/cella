@@ -4,15 +4,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it } from 'vitest';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
 import { defaultHeaders } from '../fixtures';
-import {
-  authCookie,
-  cookieChange,
-  cookiesAfter,
-  createTestUser,
-  expectRefusal,
-  insertTestToken,
-  tokenRow,
-} from '../helpers';
+import { authCookie, cookieChange, cookiesAfter, createTestUser, expectRefusal, insertTestToken, tokenRow } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -103,9 +95,7 @@ describe('Sign-out after a magic-link sign-in', async () => {
 
     // The owner signs in another way in this browser, and later signs out.
     const session = await insertSession(owner);
-    const signedOut = await call(signOut, {
-      headers: { ...defaultHeaders, Cookie: `${heldCookie}; ${session.cookie}` },
-    });
+    const signedOut = await call(signOut, { headers: { ...defaultHeaders, Cookie: `${heldCookie}; ${session.cookie}` } });
     expect(signedOut.response.status).toBe(204);
     expect(cookieChange(signedOut.response, 'magic-pending')).toBe('cleared');
     expect(await tokenRow(row.id)).toBeUndefined();
@@ -127,14 +117,8 @@ describe('Sign-out after a magic-link sign-in', async () => {
     const ownerLink = await requestedMagicLink(owner);
     const otherLink = await requestedMagicLink(other);
 
-    const ownerBrowser = cookiesAfter(
-      ownerLink.requestedHere,
-      (await openLink(ownerLink.raw, ownerLink.requestedHere)).response,
-    );
-    const otherBrowser = cookiesAfter(
-      otherLink.requestedHere,
-      (await openLink(otherLink.raw, otherLink.requestedHere)).response,
-    );
+    const ownerBrowser = cookiesAfter(ownerLink.requestedHere, (await openLink(ownerLink.raw, ownerLink.requestedHere)).response);
+    const otherBrowser = cookiesAfter(otherLink.requestedHere, (await openLink(otherLink.raw, otherLink.requestedHere)).response);
 
     expect((await call(signOut, { headers: { ...defaultHeaders, Cookie: ownerBrowser } })).response.status).toBe(204);
 

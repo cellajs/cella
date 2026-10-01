@@ -99,11 +99,7 @@ export function StickyBox({
         const barHeight = bar.offsetHeight;
         const scrollTop = scrollParent === window ? 0 : (scrollParent as HTMLElement).getBoundingClientRect().top;
         const barStyles = getComputedStyle(bar);
-        const stackPx = Math.max(
-          ...STACK_VARS.filter((v) => v !== publishVar).map(
-            (v) => Number.parseFloat(barStyles.getPropertyValue(v)) || 0,
-          ),
-        );
+        const stackPx = Math.max(...STACK_VARS.filter((v) => v !== publishVar).map((v) => Number.parseFloat(barStyles.getPropertyValue(v)) || 0));
         const stickyBottom = scrollTop + stackPx + offsetTop + barHeight;
         const spaceBelow = parentRect.bottom - stickyBottom;
         // Offset from the sentinel: at the release boundary it equals the stuck position exactly
@@ -192,11 +188,7 @@ export function StickyBox({
   // `top` must never transition: it would interpolate the stuck/released switch and park at stale offsets
   const consumedVars = STACK_VARS.filter((v) => v !== publishVar).map((v) => `var(${v}, 0px)`);
   const stackExpr = consumedVars.length > 1 ? `max(${consumedVars.join(', ')})` : (consumedVars[0] ?? '0px');
-  const barStyle: React.CSSProperties = {
-    ...style,
-    position: 'sticky',
-    top: `calc(${stackExpr} + ${offsetTop}px)`,
-  };
+  const barStyle: React.CSSProperties = { ...style, position: 'sticky', top: `calc(${stackExpr} + ${offsetTop}px)` };
   if (clampedTop !== null) {
     barStyle.position = 'relative';
     barStyle.top = clampedTop;

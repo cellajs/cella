@@ -44,9 +44,7 @@ describe('membership enrichment', () => {
   });
 
   it('enriches entity list when memberships are already cached', () => {
-    queryClient.setQueryData(['me', 'memberships'], {
-      items: [makeMembership('org-1'), makeMembership('org-2')],
-    });
+    queryClient.setQueryData(['me', 'memberships'], { items: [makeMembership('org-1'), makeMembership('org-2')] });
 
     unsubscribe = initChannelEnrichment();
 
@@ -118,9 +116,7 @@ describe('membership enrichment', () => {
 
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-fallback', membership }]));
 
-    queryClient.setQueryData(['me', 'memberships'], {
-      items: [makeMembership('other-org')],
-    });
+    queryClient.setQueryData(['me', 'memberships'], { items: [makeMembership('other-org')] });
 
     const data = queryClient.getQueryData(['organization', 'list']) as any;
     const item = data.pages[0].items[0];
@@ -131,9 +127,7 @@ describe('membership enrichment', () => {
   it('does not enrich non-context-entity queries', () => {
     unsubscribe = initChannelEnrichment();
 
-    queryClient.setQueryData(['me', 'memberships'], {
-      items: [makeMembership('org-1')],
-    });
+    queryClient.setQueryData(['me', 'memberships'], { items: [makeMembership('org-1')] });
 
     queryClient.setQueryData(['attachment', 'list'], makeInfiniteData([{ id: 'org-1' }]));
 
@@ -144,9 +138,7 @@ describe('membership enrichment', () => {
   it('handles entities without matching membership gracefully', () => {
     unsubscribe = initChannelEnrichment();
 
-    queryClient.setQueryData(['me', 'memberships'], {
-      items: [makeMembership('org-1')],
-    });
+    queryClient.setQueryData(['me', 'memberships'], { items: [makeMembership('org-1')] });
 
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1' }, { id: 'org-unknown' }]));
 

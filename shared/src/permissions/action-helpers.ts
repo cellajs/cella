@@ -8,14 +8,10 @@ export function createActionRecord<T>(valueFn: (action: EntityActionType) => T):
 }
 
 /** The secure-by-default base for building a permission record. */
-export const allActionsDenied = Object.freeze(createActionRecord(() => false as const)) as Readonly<
-  Record<EntityActionType, false>
->;
+export const allActionsDenied = Object.freeze(createActionRecord(() => false as const)) as Readonly<Record<EntityActionType, false>>;
 
 /** For system admin and other full-access cases. */
-export const allActionsAllowed = Object.freeze(createActionRecord(() => true as const)) as Readonly<
-  Record<EntityActionType, true>
->;
+export const allActionsAllowed = Object.freeze(createActionRecord(() => true as const)) as Readonly<Record<EntityActionType, true>>;
 
 /** The row's home channel id (its deepest non-null ancestor id) and the channel the can-map was computed for. */
 export type CanHome = { row: string | null; channel: string };
@@ -26,12 +22,7 @@ export type CanHome = { row: string | null; channel: string };
  * both, and a call without `home` denies them. The switch is exhaustive over {@link CanState}, so
  * adding a condition breaks the build here; the frontend never denies a new condition unnoticed.
  */
-export const resolveCan = (
-  permission: CanState | undefined,
-  entityCreatedBy?: string | null,
-  actorId?: string,
-  home?: CanHome,
-): boolean => {
+export const resolveCan = (permission: CanState | undefined, entityCreatedBy?: string | null, actorId?: string, home?: CanHome): boolean => {
   if (typeof permission !== 'string') return permission === true;
   const own = !!actorId && !!entityCreatedBy && entityCreatedBy === actorId;
   const atHome = !!home?.row && home.row === home.channel;

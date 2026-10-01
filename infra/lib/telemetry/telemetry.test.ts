@@ -59,9 +59,7 @@ describe('createTelemetry', () => {
     const tracesBody = JSON.parse(String(calls[0]?.[1]?.body));
     expect(tracesBody.resourceSpans[0].scopeSpans[0].spans[0].name).toBe('deploy staging');
     expect(calls[1]?.[0]).toBe('https://ingest.example/v1/logs');
-    expect(JSON.parse(String(calls[1]?.[1]?.body)).resourceLogs[0].scopeLogs[0].logRecords[0].eventName).toBe(
-      'deploy.started',
-    );
+    expect(JSON.parse(String(calls[1]?.[1]?.body)).resourceLogs[0].scopeLogs[0].logRecords[0].eventName).toBe('deploy.started');
   });
 
   it('joins a parent traceparent so children correlate to the CI trace', () => {
@@ -129,10 +127,7 @@ describe('createTelemetry', () => {
 
 describe('otlpConfigFromEnv', () => {
   it('prefers explicit OTLP env and parses headers', () => {
-    const config = otlpConfigFromEnv({
-      OTEL_EXPORTER_OTLP_ENDPOINT: 'https://col:4318/v1/',
-      OTEL_EXPORTER_OTLP_HEADERS: 'a=1,b=2',
-    });
+    const config = otlpConfigFromEnv({ OTEL_EXPORTER_OTLP_ENDPOINT: 'https://col:4318/v1/', OTEL_EXPORTER_OTLP_HEADERS: 'a=1,b=2' });
     expect(config).toEqual({ endpoint: 'https://col:4318/v1', headers: { a: '1', b: '2' } });
   });
 

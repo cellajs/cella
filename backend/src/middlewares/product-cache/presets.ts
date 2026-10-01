@@ -14,12 +14,7 @@ import { productCache as productCacheStore } from './app-product-cache';
  */
 export const productCache = (entityType: ProductEntityType): MiddlewareHandler<Env> =>
   xMiddleware(
-    {
-      functionName: 'productCache',
-      type: 'x-cache',
-      name: 'app',
-      description: 'Entity-keyed detail cache with per-request read authorization',
-    },
+    { functionName: 'productCache', type: 'x-cache', name: 'app', description: 'Entity-keyed detail cache with per-request read authorization' },
     async (ctx, next) => {
       const id = ctx.req.param('id');
       if (!id) {

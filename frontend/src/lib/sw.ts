@@ -1,17 +1,13 @@
 /// <reference lib="webworker" />
 import { CacheFirst, ExpirationPlugin, type PrecacheEntry, Serwist, StaleWhileRevalidate } from 'serwist';
 
-declare const self: ServiceWorkerGlobalScope & {
-  __WB_MANIFEST: (PrecacheEntry | string)[];
-};
+declare const self: ServiceWorkerGlobalScope & { __WB_MANIFEST: (PrecacheEntry | string)[] };
 
 declare const __BACKEND_URL__: string;
 
 // Excludes a same-origin backend prefix from the SPA navigation fallback so OAuth and downloads hit the network.
 const apiPathPrefix = new URL(__BACKEND_URL__, self.location.origin).pathname.replace(/\/+$/, '');
-const navigationDenylist = apiPathPrefix
-  ? [new RegExp(`^${apiPathPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`)]
-  : [];
+const navigationDenylist = apiPathPrefix ? [new RegExp(`^${apiPathPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`)] : [];
 
 // `skipWaiting: false` keeps the update prompt: Serwist listens for the client's `{type: 'SKIP_WAITING'}` message.
 const serwist = new Serwist({
@@ -29,8 +25,7 @@ const serwist = new Serwist({
     {
       // Docs files keep stable names per release; the app appends ?v=<sha> so each release keys fresh cache entries.
       matcher: ({ url }) =>
-        url.origin === self.location.origin &&
-        (url.pathname.startsWith('/static/docs.gen/') || url.pathname === '/static/openapi.json'),
+        url.origin === self.location.origin && (url.pathname.startsWith('/static/docs.gen/') || url.pathname === '/static/openapi.json'),
       handler: new StaleWhileRevalidate({
         cacheName: 'docs-gen',
         plugins: [new ExpirationPlugin({ maxEntries: 40 })],
@@ -49,11 +44,7 @@ const serwist = new Serwist({
 
 // English-only titles by design: the payload carries ids and a type, never localized content, so
 // the closed-app toast stays generic and the app renders the localized inbox on open.
-const pushTitles: Record<string, string> = {
-  mention: 'You were mentioned',
-  reply: 'New reply',
-  comment: 'New comment',
-};
+const pushTitles: Record<string, string> = { mention: 'You were mentioned', reply: 'New reply', comment: 'New comment' };
 
 /** { t: 'notif', activityId, channelId, type, url } from push-sender.ts; anything else is dropped. */
 interface NotificationPushData {

@@ -29,13 +29,7 @@ type Props = {
   isDisabled?: boolean;
 };
 
-export function PullToRefresh({
-  onRefresh,
-  isFetching = false,
-  refreshThreshold = 90,
-  maximumPullLength = 200,
-  isDisabled = false,
-}: Props) {
+export function PullToRefresh({ onRefresh, isFetching = false, refreshThreshold = 90, maximumPullLength = 200, isDisabled = false }: Props) {
   const [pullPosition, setPullPosition] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
 
@@ -198,20 +192,13 @@ export function PullToRefresh({
       onTransitionEnd={(e) => {
         if (isExiting && e.propertyName === 'opacity') setPhase('idle');
       }}
-      style={{
-        top,
-        opacity,
-        transition,
-      }}
+      style={{ top, opacity, transition }}
       className="fixed inset-x-1/2 z-300 h-8 w-8 -translate-x-1/2 bg-base-100"
     >
       <svg
         className={`h-8 w-8 ${isActive ? 'animate-spin' : ''}`}
         viewBox="0 0 40 40"
-        style={{
-          transform: isActive ? undefined : `rotate(${pullPosition * 2}deg)`,
-          transition: isActive ? 'none' : 'transform 0.1s ease-out',
-        }}
+        style={{ transform: isActive ? undefined : `rotate(${pullPosition * 2}deg)`, transition: isActive ? 'none' : 'transform 0.1s ease-out' }}
       >
         <title>Pull to refresh</title>
         <circle

@@ -29,8 +29,7 @@ export type AdminAppResult = ScopedKeyResult;
 export async function setupAdminApp(opts: SetupAdminAppOptions): Promise<AdminAppResult> {
   const result = await provisionScopedKey(opts, {
     suffix: 'admin',
-    appDescription:
-      'Human admin principal: bucket access + infra reads for day-2 operations (preview, teardown, recovery)',
+    appDescription: 'Human admin principal: bucket access + infra reads for day-2 operations (preview, teardown, recovery)',
     policyDescription: 'Admin policy: Object Storage full + read-only infra surfaces (auto-generated; no IAM write)',
     buildRules: ({ projectId, organizationId }) => [
       { permission_set_names: ADMIN_PROJECT_PERMISSION_SETS, project_ids: [projectId] },
@@ -38,11 +37,7 @@ export async function setupAdminApp(opts: SetupAdminAppOptions): Promise<AdminAp
     ],
   });
 
-  const client = createSecretManagerClient({
-    secretKey: opts.callerSecretKey,
-    region: opts.region,
-    projectId: opts.projectId,
-  });
+  const client = createSecretManagerClient({ secretKey: opts.callerSecretKey, region: opts.region, projectId: opts.projectId });
   const container = await client.ensureSecret({
     name: ADMIN_KEY_SECRET_NAME,
     // Engine folder: outside the VM secret condition, so a VM must never be

@@ -19,10 +19,7 @@ interface CountOrganizationsByTenantOpts {
 
 export const countOrganizationsByTenant = async (ctx: DbContext, { tenantId }: CountOrganizationsByTenantOpts) => {
   const { db } = ctx.var;
-  const [result] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(organizationsTable)
-    .where(eq(organizationsTable.tenantId, tenantId));
+  const [result] = await db.select({ count: sql<number>`count(*)::int` }).from(organizationsTable).where(eq(organizationsTable.tenantId, tenantId));
   return result?.count ?? 0;
 };
 
@@ -51,9 +48,7 @@ export const updateOrganization = async (ctx: ActorContext, { id, values }: Upda
 
   const updateData = {
     ...rest,
-    ...(organizationFlags && {
-      organizationFlags: mergeJsonbShallow(organizationsTable.organizationFlags, organizationFlags),
-    }),
+    ...(organizationFlags && { organizationFlags: mergeJsonbShallow(organizationsTable.organizationFlags, organizationFlags) }),
     ...(setupConfig && { setupConfig: mergeJsonbShallow(organizationsTable.setupConfig, setupConfig) }),
     // For toolsConfig each listed slot key replaces that slot's stored arrangement wholesale
     ...(toolsConfig && { toolsConfig: mergeJsonbShallow(organizationsTable.toolsConfig, toolsConfig) }),
@@ -73,9 +68,7 @@ interface DeleteOrganizationsByIdsOpts {
 
 export const deleteOrganizationsByIds = async (ctx: ActorContext, { ids }: DeleteOrganizationsByIdsOpts) => {
   const { db, tenantId } = ctx.var;
-  return db
-    .delete(organizationsTable)
-    .where(and(inArray(organizationsTable.id, ids), eq(organizationsTable.tenantId, tenantId)));
+  return db.delete(organizationsTable).where(and(inArray(organizationsTable.id, ids), eq(organizationsTable.tenantId, tenantId)));
 };
 
 interface FindOrganizationsPaginatedOpts {
@@ -95,19 +88,7 @@ interface FindOrganizationsPaginatedOpts {
 
 export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrganizationsPaginatedOpts) => {
   const { db } = ctx.var;
-  const {
-    isSystemAdmin,
-    targetUserId,
-    organizationIds,
-    q,
-    sort,
-    order,
-    offset,
-    limit,
-    excludeArchived,
-    role,
-    includeCounts,
-  } = opts;
+  const { isSystemAdmin, targetUserId, organizationIds, q, sort, order, offset, limit, excludeArchived, role, includeCounts } = opts;
 
   const entityType = 'organization';
 
@@ -162,10 +143,7 @@ export const findOrganizationsPaginated = async (ctx: DbContext, opts: FindOrgan
     : db.select(selectShape).from(organizationsTable).innerJoin(membershipsTable, membershipOn).$dynamic();
 
   if (countData) {
-    query = query.leftJoin(
-      channelCountersTable,
-      sql`${organizationsTable.id}::text = ${channelCountersTable.channelKey}`,
-    ) as typeof query;
+    query = query.leftJoin(channelCountersTable, sql`${organizationsTable.id}::text = ${channelCountersTable.channelKey}`) as typeof query;
   }
 
   const itemsQuery = query

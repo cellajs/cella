@@ -5,10 +5,7 @@ import { objectKeys } from '~/utils/object-keys';
 
 type RoutesById = keyof typeof router.routesById;
 
-type SearchParams = {
-  from?: RoutesById;
-  saveDataInSearch?: boolean;
-};
+type SearchParams = { from?: RoutesById; saveDataInSearch?: boolean };
 
 /** Query param state; with `saveDataInSearch` it reads and writes the URL. Routes own defaults and stripping. */
 export function useSearchParams<T extends Record<string, string | string[] | undefined>>(searchParams?: SearchParams) {
@@ -46,13 +43,7 @@ export function useSearchParams<T extends Record<string, string | string[] | und
 
     setCurrentSearch(updatedSearch);
     if (saveDataInSearch) {
-      navigate({
-        replace: true,
-        params,
-        resetScroll: false,
-        to: '.',
-        search: (prev) => ({ ...prev, ...updatedSearch }),
-      });
+      navigate({ replace: true, params, resetScroll: false, to: '.', search: (prev) => ({ ...prev, ...updatedSearch }) });
     }
   };
 

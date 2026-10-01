@@ -181,11 +181,7 @@ function parseBackendServers(payload: string): string[] {
   // The list may sit on the root or under a `backend` wrapper.
   const backend = isRecord(data.backend) ? data.backend : data;
   // The live zoned API names the list `pool`; older/provider shapes vary.
-  const direct =
-    stringArray(backend.pool) ??
-    stringArray(backend.server_ip) ??
-    stringArray(backend.server_ips) ??
-    stringArray(backend.serverIps);
+  const direct = stringArray(backend.pool) ?? stringArray(backend.server_ip) ?? stringArray(backend.server_ips) ?? stringArray(backend.serverIps);
   if (direct) return direct;
   if (Array.isArray(backend.servers)) {
     return backend.servers
@@ -205,10 +201,7 @@ export function createLbGetServers(opts: LbSetServersOptions): GetServersFn {
   const backendId = scalewayResourceId(opts.backendId);
   const url = `${LB_BASE}/zones/${opts.zone}/backends/${backendId}`;
   return async () => {
-    const res = await fetchImpl(url, {
-      method: 'GET',
-      headers: { 'X-Auth-Token': opts.secretKey, 'Content-Type': 'application/json' },
-    });
+    const res = await fetchImpl(url, { method: 'GET', headers: { 'X-Auth-Token': opts.secretKey, 'Content-Type': 'application/json' } });
     const body = await res.text();
     if (!res.ok) throw new Error(`ListBackendServers ${backendId} → ${res.status}: ${body}`);
     return parseBackendServers(body);
@@ -251,11 +244,7 @@ if (isMain(import.meta.url)) {
   const drainPolicy: DrainPolicy = drainPolicyRaw;
 
   const healthGate: HealthGateFn = async () => {
-    const outcome = await pollForVersion({
-      url: healthUrl,
-      expectedSha: sha,
-      probe: createFetchProbe(8000),
-    });
+    const outcome = await pollForVersion({ url: healthUrl, expectedSha: sha, probe: createFetchProbe(8000) });
     return outcome.ok;
   };
 
@@ -273,17 +262,7 @@ if (isMain(import.meta.url)) {
     getServers = createLbGetServers({ secretKey, zone, backendId });
   }
 
-  const result = await sequenceCutover({
-    service,
-    strategy,
-    drainPolicy,
-    oldIps,
-    newIps,
-    drainSeconds,
-    healthGate,
-    setServers,
-    getServers,
-  });
+  const result = await sequenceCutover({ service, strategy, drainPolicy, oldIps, newIps, drainSeconds, healthGate, setServers, getServers });
 
   if (!result.ok) {
     process.stderr.write(

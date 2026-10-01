@@ -17,17 +17,10 @@ import type { InviteFormValues, useInviteFormDraft } from '~/modules/user/invite
  * Sends an invite form as a membership invite to `channel`, or as a system invite without one. A sent invite calls
  * `onSent`, closes the dialog and reports how many addresses were invited and how many were not.
  */
-export function useInviteSubmit(
-  channel: EnrichedChannel | undefined,
-  isDialog: boolean | undefined,
-  onSent: () => void,
-) {
+export function useInviteSubmit(channel: EnrichedChannel | undefined, isDialog: boolean | undefined, onSent: () => void) {
   const { t } = useTranslation();
 
-  const onSuccess = (
-    { invitesSentCount, rejectedIds }: { rejectedIds: string[]; invitesSentCount: number },
-    emails: string[],
-  ) => {
+  const onSuccess = ({ invitesSentCount, rejectedIds }: { rejectedIds: string[]; invitesSentCount: number }, emails: string[]) => {
     onSent();
     if (isDialog) useDialoger.getState().remove();
 
@@ -35,8 +28,7 @@ export function useInviteSubmit(
       const resource = t('c:user', { count: invitesSentCount }).toLowerCase();
       toaster.success(t('c:success.resource_count_invited', { count: invitesSentCount, resource }));
     }
-    if (rejectedIds.length)
-      toaster.info(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }));
+    if (rejectedIds.length) toaster.info(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }));
   };
 
   const { mutate: membershipInvite, isPending } = useInviteMemberMutation();
@@ -71,15 +63,7 @@ interface InviteFormFooterProps {
 }
 
 /** Role choice for a channel invite, then the submit button with the address count. */
-export function InviteFormFooter({
-  form,
-  channel,
-  count,
-  isPending,
-  disabled,
-  onCancel,
-  children,
-}: InviteFormFooterProps) {
+export function InviteFormFooter({ form, channel, count, isPending, disabled, onCancel, children }: InviteFormFooterProps) {
   const { t } = useTranslation();
 
   return (
@@ -90,12 +74,7 @@ export function InviteFormFooter({
           name="role"
           render={({ field: { value, onChange } }) => (
             <FormItem className="ml-3 flex-row items-center gap-4">
-              <SelectRoleRadio
-                value={value}
-                onValueChange={onChange}
-                entityType={channel.entityType}
-                label={t('c:role')}
-              />
+              <SelectRoleRadio value={value} onValueChange={onChange} entityType={channel.entityType} label={t('c:role')} />
               <FormMessage />
             </FormItem>
           )}

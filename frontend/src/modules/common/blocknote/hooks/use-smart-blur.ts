@@ -1,9 +1,4 @@
-import {
-  FilePanelExtension,
-  FormattingToolbarExtension,
-  SideMenuExtension,
-  SuggestionMenu,
-} from '@blocknote/core/extensions';
+import { FilePanelExtension, FormattingToolbarExtension, SideMenuExtension, SuggestionMenu } from '@blocknote/core/extensions';
 import { useExtension, useExtensionState } from '@blocknote/react';
 import type { FocusEventHandler, RefObject } from 'react';
 import type { CustomBlockNoteEditor } from '~/modules/common/blocknote/types';

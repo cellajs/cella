@@ -28,26 +28,18 @@ describe('getValidChannel request scope', () => {
 
   it('compares nothing on a cross-tenant route that set no scope', async () => {
     vi.mocked(resolveEntity).mockResolvedValue(organization as never);
-    await expect(getValidChannel(ctx(), ORG, 'organization', 'read')).resolves.toEqual({
-      entity: organization,
-      membership: null,
-    });
+    await expect(getValidChannel(ctx(), ORG, 'organization', 'read')).resolves.toEqual({ entity: organization, membership: null });
   });
 
   it('reads a foreign-tenant channel as 404 without consulting the engine', async () => {
     vi.mocked(resolveEntity).mockResolvedValue({ ...organization, tenantId: 'tenant-b' } as never);
-    await expect(getValidChannel(ctx({ tenantId: TENANT }), ORG, 'organization', 'read')).rejects.toMatchObject({
-      status: 404,
-      type: 'not_found',
-    });
+    await expect(getValidChannel(ctx({ tenantId: TENANT }), ORG, 'organization', 'read')).rejects.toMatchObject({ status: 404, type: 'not_found' });
     expect(checkAccess).not.toHaveBeenCalled();
   });
 
   it('skips the organization comparison for the organization row, which carries no organizationId', async () => {
     vi.mocked(resolveEntity).mockResolvedValue(organization as never);
-    await expect(
-      getValidChannel(ctx({ tenantId: TENANT, organizationId: ORG }), ORG, 'organization', 'read'),
-    ).resolves.toEqual({
+    await expect(getValidChannel(ctx({ tenantId: TENANT, organizationId: ORG }), ORG, 'organization', 'read')).resolves.toEqual({
       entity: organization,
       membership: null,
     });
@@ -56,19 +48,17 @@ describe('getValidChannel request scope', () => {
   it('reads a sub-channel from another organization as 404', async () => {
     const foreign = { id: 'ch-1', entityType: 'channel', tenantId: TENANT, organizationId: 'org-b' };
     vi.mocked(resolveEntity).mockResolvedValue(foreign as never);
-    await expect(
-      getValidChannel(ctx({ tenantId: TENANT, organizationId: ORG }), 'ch-1', 'organization', 'read'),
-    ).rejects.toMatchObject({ status: 404, type: 'not_found' });
+    await expect(getValidChannel(ctx({ tenantId: TENANT, organizationId: ORG }), 'ch-1', 'organization', 'read')).rejects.toMatchObject({
+      status: 404,
+      type: 'not_found',
+    });
   });
 
   it('reads a channel the engine denies `read` on as 404, whatever the action asked', async () => {
     vi.mocked(resolveEntity).mockResolvedValue(organization as never);
     vi.mocked(checkAccess).mockReturnValue({ allowed: false, membership: null } as ReturnType<typeof checkAccess>);
     for (const action of ['read', 'update'] as const) {
-      await expect(getValidChannel(ctx({ tenantId: TENANT }), ORG, 'organization', action)).rejects.toMatchObject({
-        status: 404,
-        type: 'not_found',
-      });
+      await expect(getValidChannel(ctx({ tenantId: TENANT }), ORG, 'organization', action)).rejects.toMatchObject({ status: 404, type: 'not_found' });
     }
   });
 
@@ -92,14 +82,8 @@ describe('getValidChannel request scope', () => {
 
   it('resolveChannelInScope reads a missing and a foreign-tenant row as the same 404', async () => {
     vi.mocked(resolveEntity).mockResolvedValue(undefined as never);
-    await expect(resolveChannelInScope(ctx({ tenantId: TENANT }), ORG, 'organization')).rejects.toMatchObject({
-      status: 404,
-      type: 'not_found',
-    });
+    await expect(resolveChannelInScope(ctx({ tenantId: TENANT }), ORG, 'organization')).rejects.toMatchObject({ status: 404, type: 'not_found' });
     vi.mocked(resolveEntity).mockResolvedValue({ ...organization, tenantId: 'tenant-b' } as never);
-    await expect(resolveChannelInScope(ctx({ tenantId: TENANT }), ORG, 'organization')).rejects.toMatchObject({
-      status: 404,
-      type: 'not_found',
-    });
+    await expect(resolveChannelInScope(ctx({ tenantId: TENANT }), ORG, 'organization')).rejects.toMatchObject({ status: 404, type: 'not_found' });
   });
 });

@@ -11,17 +11,12 @@ import type { CarouselItemData } from '~/modules/attachment/attachments-carousel
 import { openAttachmentDialog } from '~/modules/attachment/dialog/open-attachment-dialog';
 import { resolveBlockNoteFileRef } from '~/modules/attachment/helpers/resolve-url';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
-import {
-  findClickedMedia,
-  getHeadlessEditor,
-  getParsedContent,
-} from '~/modules/common/blocknote/helpers/blocknote-helpers';
+import { findClickedMedia, getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/modules/ui/ui-store';
 
 // DOMPurify's default URI policy strips `blob:`, which this render needs for locally cached images; all other schemes keep the default.
-const ALLOWED_URI_REGEXP =
-  /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
+const ALLOWED_URI_REGEXP = /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
 
 /**
  * First-pass HTML (unresolved media refs) per organization and document string. Layout-identical to the
@@ -119,12 +114,7 @@ async function processBlocks(
           const resolvedUrl = await resolveUrl(rawUrl);
           props = { ...props, url: resolvedUrl };
 
-          media.push({
-            id: block.id,
-            url: resolvedUrl,
-            filename: ('name' in props ? (props.name as string) : '') || '',
-            contentType: block.type,
-          });
+          media.push({ id: block.id, url: resolvedUrl, filename: ('name' in props ? (props.name as string) : '') || '', contentType: block.type });
         }
 
         const children = block.children?.length ? await walk(block.children as CustomBlock[]) : block.children;
@@ -220,11 +210,7 @@ function BlockNoteFullHtml({
       renderState.mediaItems.findIndex(({ url }) => url === media.src),
     );
 
-    openAttachmentDialog({
-      attachmentIndex,
-      attachments: renderState.mediaItems,
-      triggerRef: containerRef as React.RefObject<null>,
-    });
+    openAttachmentDialog({ attachmentIndex, attachments: renderState.mediaItems, triggerRef: containerRef as React.RefObject<null> });
   };
 
   // Not `.bn-editor`: BlockNote's side-menu plugin scans those nodes and expects editor-only children such as `.bn-block-group`.

@@ -95,11 +95,7 @@ describe('hardenStateBucket', () => {
     expect(result.applied).toEqual(['versioning', 'encryption', 'lifecycle']);
     expect(result.denied).toEqual([]);
     const kinds = s3.send.mock.calls.map((c: [{ constructor: { name: string } }]) => c[0].constructor.name);
-    expect(kinds).toEqual([
-      'PutBucketVersioningCommand',
-      'PutBucketEncryptionCommand',
-      'PutBucketLifecycleConfigurationCommand',
-    ]);
+    expect(kinds).toEqual(['PutBucketVersioningCommand', 'PutBucketEncryptionCommand', 'PutBucketLifecycleConfigurationCommand']);
   });
 
   it('enables versioning and AES256 default encryption with the expected shapes', async () => {
@@ -114,20 +110,13 @@ describe('hardenStateBucket', () => {
     });
     expect(lifecycle).toMatchObject({
       LifecycleConfiguration: {
-        Rules: [
-          { NoncurrentVersionExpiration: { NoncurrentDays: 90 } },
-          { Expiration: { ExpiredObjectDeleteMarker: true } },
-        ],
+        Rules: [{ NoncurrentVersionExpiration: { NoncurrentDays: 90 } }, { Expiration: { ExpiredObjectDeleteMarker: true } }],
       },
     });
   });
 
   it('tolerates AccessDenied per call (policy-restricted CI key) and reports it', async () => {
-    const s3 = hardenClient([
-      'PutBucketVersioningCommand',
-      'PutBucketEncryptionCommand',
-      'PutBucketLifecycleConfigurationCommand',
-    ]);
+    const s3 = hardenClient(['PutBucketVersioningCommand', 'PutBucketEncryptionCommand', 'PutBucketLifecycleConfigurationCommand']);
     const result = await hardenStateBucket(s3, 'cella-pulumi-state', () => {});
     expect(result.applied).toEqual([]);
     expect(result.denied).toEqual(['versioning', 'encryption', 'lifecycle']);
@@ -165,24 +154,16 @@ describe('assertBucketProject', () => {
     ({ send: async () => ({ Owner: { ID: ownerId }, Buckets: buckets.map((Name) => ({ Name })) }) }) as never;
 
   it('passes when the bucket is visible in the expected project', async () => {
-    await expect(
-      assertBucketProject(listClient('proj-a:proj-a', ['cella-pulumi-state']), 'cella-pulumi-state', 'proj-a'),
-    ).resolves.toBeUndefined();
+    await expect(assertBucketProject(listClient('proj-a:proj-a', ['cella-pulumi-state']), 'cella-pulumi-state', 'proj-a')).resolves.toBeUndefined();
   });
 
   it('fails when the key operates in another project', async () => {
-    await expect(
-      assertBucketProject(
-        listClient('org-default:org-default', ['cella-pulumi-state']),
-        'cella-pulumi-state',
-        'proj-a',
-      ),
-    ).rejects.toThrow(/preferred project/);
+    await expect(assertBucketProject(listClient('org-default:org-default', ['cella-pulumi-state']), 'cella-pulumi-state', 'proj-a')).rejects.toThrow(
+      /preferred project/,
+    );
   });
 
   it('fails when the bucket is not visible from the expected project', async () => {
-    await expect(
-      assertBucketProject(listClient('proj-a:proj-a', ['other-bucket']), 'cella-pulumi-state', 'proj-a'),
-    ).rejects.toThrow(/not visible/);
+    await expect(assertBucketProject(listClient('proj-a:proj-a', ['other-bucket']), 'cella-pulumi-state', 'proj-a')).rejects.toThrow(/not visible/);
   });
 });

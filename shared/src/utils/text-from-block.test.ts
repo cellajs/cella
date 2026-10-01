@@ -1,18 +1,10 @@
 import type { Block } from '@blocknote/core';
 import { describe, expect, it } from 'vitest';
-import {
-  getSearchableTextFromBlock,
-  getSearchableTextFromUrl,
-  getTextFromBlock,
-  textFromDocument,
-  titleFromDocument,
-} from './text-from-block.ts';
+import { getSearchableTextFromBlock, getSearchableTextFromUrl, getTextFromBlock, textFromDocument, titleFromDocument } from './text-from-block.ts';
 
 describe('getSearchableTextFromUrl', () => {
   it('extracts host and path tokens but skips query strings and fragments', () => {
-    const text = getSearchableTextFromUrl(
-      'https://linear.app/acme/issue/SSD-123/haptic-feedback?token=secret&utm_source=test#details',
-    );
+    const text = getSearchableTextFromUrl('https://linear.app/acme/issue/SSD-123/haptic-feedback?token=secret&utm_source=test#details');
 
     expect(text).toContain('linear.app');
     expect(text).toContain('linear');
@@ -116,9 +108,7 @@ describe('titleFromDocument', () => {
   });
 
   it('reads block 0 whatever its type, since the title template is not enforced', () => {
-    expect(titleFromDocument(titled({ type: 'paragraph', content: [run('First line')], children: [] }))).toBe(
-      'First line',
-    );
+    expect(titleFromDocument(titled({ type: 'paragraph', content: [run('First line')], children: [] }))).toBe('First line');
   });
 
   it('leaves out the children of block 0, which are body', () => {

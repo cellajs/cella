@@ -18,8 +18,6 @@ export function extractStxData(row: RowData): StxBase | null {
     mutationId: stxObj.mutationId,
     sourceId: stxObj.sourceId,
     fieldTimestamps:
-      typeof stxObj.fieldTimestamps === 'object' && stxObj.fieldTimestamps !== null
-        ? (stxObj.fieldTimestamps as Record<string, string>)
-        : {},
+      typeof stxObj.fieldTimestamps === 'object' && stxObj.fieldTimestamps !== null ? (stxObj.fieldTimestamps as Record<string, string>) : {},
   };
 }

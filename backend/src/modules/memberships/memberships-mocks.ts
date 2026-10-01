@@ -123,10 +123,8 @@ export const mockChannelMembership = <T extends ChannelEntityType>(
 };
 
 /** Deterministic membership-base fragment. */
-export const mockMembershipBase = (
-  key = 'membership-base:default',
-  options: MockMembershipBaseOptions = {},
-): MembershipBase => withFakerSeed(key, () => generateMembershipBase(options));
+export const mockMembershipBase = (key = 'membership-base:default', options: MockMembershipBaseOptions = {}): MembershipBase =>
+  withFakerSeed(key, () => generateMembershipBase(options));
 
 /** Deterministic stored membership row. */
 export const mockMembership = (key = 'membership:default', options: MockMembershipBaseOptions = {}): MembershipModel =>
@@ -134,23 +132,14 @@ export const mockMembership = (key = 'membership:default', options: MockMembersh
     const createdAt = mockPastIsoDate();
     const base = generateMembershipBase(options);
 
-    return {
-      ...base,
-      createdAt,
-      createdBy: base.userId,
-      updatedAt: createdAt,
-      updatedBy: null,
-    };
+    return { ...base, createdAt, createdBy: base.userId, updatedAt: createdAt, updatedBy: null };
   });
 
 /** Membership response example; its wire shape matches the stored membership shape. */
 export const mockMembershipResponse = mockMembership;
 
 /** Deterministic stored inactive-membership row. */
-export const mockInactiveMembership = (
-  key = 'inactive-membership:default',
-  options: MockMembershipBaseOptions = {},
-): InactiveMembershipModel =>
+export const mockInactiveMembership = (key = 'inactive-membership:default', options: MockMembershipBaseOptions = {}): InactiveMembershipModel =>
   withFakerSeed(key, () => {
     const createdAt = mockPastIsoDate();
     const base = generateMembershipBase(options);
@@ -173,15 +162,9 @@ export const mockInactiveMembership = (
   });
 
 /** Inactive membership wire response with its creator hydrated. */
-export const mockInactiveMembershipResponse = (
-  key = 'inactive-membership:default',
-  options: MockMembershipBaseOptions = {},
-) => {
+export const mockInactiveMembershipResponse = (key = 'inactive-membership:default', options: MockMembershipBaseOptions = {}) => {
   const membership = mockInactiveMembership(key, options);
-  return {
-    ...membership,
-    createdBy: mockUserMinimalBase(`${key}:created-by`, membership.createdBy),
-  };
+  return { ...membership, createdBy: mockUserMinimalBase(`${key}:created-by`, membership.createdBy) };
 };
 
 /** Pending-invitation list row: the invited address, role and inviter, with no account fields. */
@@ -190,16 +173,11 @@ export const mockPendingMembershipResponse = (key = 'pending-membership:default'
   return { id, email, role, createdAt, createdBy };
 };
 
-export const mockPaginatedPendingMembershipsResponse = (count = 2) =>
-  mockPaginated(mockPendingMembershipResponse, count);
+export const mockPaginatedPendingMembershipsResponse = (count = 2) => mockPaginated(mockPendingMembershipResponse, count);
 
 export const mockMemberResponse = (key = 'member:default') => {
   const user = mockUserBase(`${key}:user`);
-  return {
-    ...user,
-    lastSeenAt: user.updatedAt,
-    membership: mockMembershipBase(`${key}:membership`, { userId: user.id }),
-  };
+  return { ...user, lastSeenAt: user.updatedAt, membership: mockMembershipBase(`${key}:membership`, { userId: user.id }) };
 };
 
 export const mockPaginatedMembersResponse = (count = 2) => mockPaginated(mockMemberResponse, count);

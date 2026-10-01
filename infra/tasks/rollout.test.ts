@@ -1,13 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { GenerationMetadata } from '../lib/generation-metadata';
 import type { ServiceRollout } from '../lib/stack/control-store';
-import {
-  activateService,
-  type RolloutRuntime,
-  type RolloutServicePlan,
-  resolvePendingGen,
-  runWavedRollout,
-} from './rollout';
+import { activateService, type RolloutRuntime, type RolloutServicePlan, resolvePendingGen, runWavedRollout } from './rollout';
 
 const SHA = 'sha-new';
 
@@ -110,11 +104,7 @@ function cellaFixture(): FakeOptions {
       gen('frontend', 'f-old', 'sha-old', '10.0.0.4'),
       gen('frontend', 'f-new', SHA, '10.0.0.5'),
     ],
-    active: {
-      backend: { id: 'b-old', sha: 'sha-old' },
-      cdc: { id: 'c-old', sha: 'sha-old' },
-      frontend: { id: 'f-old', sha: 'sha-old' },
-    },
+    active: { backend: { id: 'b-old', sha: 'sha-old' }, cdc: { id: 'c-old', sha: 'sha-old' }, frontend: { id: 'f-old', sha: 'sha-old' } },
     backendIds: { backend: 'b-bid', frontend: 'f-bid' },
     initialLb: { 'b-bid': ['10.0.0.1'], 'f-bid': ['10.0.0.4'] },
   };
@@ -179,9 +169,7 @@ describe('runWavedRollout sequencing', () => {
     fixture.unhealthyUrls = ['https://app/health'];
     const fake = makeFake(fixture);
 
-    await expect(
-      runWavedRollout({ sha: SHA, primary: backendPlan, rest: [cdcPlan, frontendPlan] }, fake.rt),
-    ).rejects.toThrow(/frontend/);
+    await expect(runWavedRollout({ sha: SHA, primary: backendPlan, rest: [cdcPlan, frontendPlan] }, fake.rt)).rejects.toThrow(/frontend/);
 
     // cdc still promoted; frontend not; no reap update after the failure.
     expect(fake.ops).toContain('promote:cdc:c-new');
@@ -195,10 +183,7 @@ describe('runWavedRollout sequencing', () => {
 
   it('skips the final reap update with skipFinalReap, still promoting every service', async () => {
     const fake = makeFake(cellaFixture());
-    await runWavedRollout(
-      { sha: SHA, primary: backendPlan, rest: [cdcPlan, frontendPlan], skipFinalReap: true },
-      fake.rt,
-    );
+    await runWavedRollout({ sha: SHA, primary: backendPlan, rest: [cdcPlan, frontendPlan], skipFinalReap: true }, fake.rt);
 
     // Wave-1 and wave-2 provisioning updates only: no trailing reap update.
     expect(fake.ops.filter((op) => op === 'update')).toHaveLength(2);
@@ -216,10 +201,7 @@ describe('runWavedRollout sequencing', () => {
   });
 
   it('drives the LB straight to [new] on a first deploy with no active generation', async () => {
-    const fake = makeFake({
-      generations: [gen('backend', 'b-new', SHA, '10.0.0.2')],
-      backendIds: { backend: 'b-bid' },
-    });
+    const fake = makeFake({ generations: [gen('backend', 'b-new', SHA, '10.0.0.2')], backendIds: { backend: 'b-bid' } });
     await runWavedRollout({ sha: SHA, primary: backendPlan, rest: [] }, fake.rt);
     expect(fake.lbHistory.get('b-bid')).toEqual([[], ['10.0.0.2']]);
   });
@@ -237,10 +219,7 @@ describe('runWavedRollout sequencing', () => {
   });
 
   it('skips the LB backend-ids read for an exclusive-only wave', async () => {
-    const fake = makeFake({
-      generations: [gen('cdc', 'c-new', SHA, '10.0.0.3')],
-      failBackendIdsRead: true,
-    });
+    const fake = makeFake({ generations: [gen('cdc', 'c-new', SHA, '10.0.0.3')], failBackendIdsRead: true });
     await runWavedRollout({ sha: SHA, rest: [cdcPlan] }, fake.rt);
     expect(fake.ops).toContain('promote:cdc:c-new');
   });
@@ -270,12 +249,7 @@ describe('activateService exclusive singleVM host', () => {
       backendIds: { backend: 'b-bid', frontend: 'f-bid' },
       initialLb: { 'b-bid': ['10.0.0.1'], 'f-bid': ['10.0.0.1'] },
     });
-    const plan: RolloutServicePlan = {
-      ...backendPlan,
-      exclusive: true,
-      drainSeconds: 0,
-      repointBackendKeys: ['frontend'],
-    };
+    const plan: RolloutServicePlan = { ...backendPlan, exclusive: true, drainSeconds: 0, repointBackendKeys: ['frontend'] };
     await activateService(plan, SHA, await fake.rt.readGenerations(), await fake.rt.readLbBackendIds(), fake.rt);
 
     // One LB write per pool: no [dead, new] overlap step, and the follower pool moves too.

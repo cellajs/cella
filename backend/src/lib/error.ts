@@ -38,11 +38,7 @@ const PG_ERROR_MAP: Record<string, { status: number; type: ErrorKey; message: st
 /** Named database constraints whose refusal is a rule the user can act on, mapped ahead of the generic code map. */
 const PG_CONSTRAINT_MAP: Record<string, { status: number; type: ErrorKey; message: string }> = {
   // Refused when an organization would be left without an admin.
-  [keepOrganizationAdminConstraint]: {
-    status: 409,
-    type: 'last_admin',
-    message: 'An organization keeps at least one admin',
-  },
+  [keepOrganizationAdminConstraint]: { status: 409, type: 'last_admin', message: 'An organization keeps at least one admin' },
 };
 
 type PgErrorInfo = { code: string; detail?: string; constraint?: string };
@@ -106,8 +102,7 @@ export function toClientError(
   { exposeServerMessage = exposesServerMessages() }: ToClientErrorOptions = {},
 ): ClientError {
   const fields = Object.fromEntries(Object.entries(logFields).filter(([, value]) => value !== undefined));
-  const hideIfServerError = (status: number, message: string) =>
-    status >= 500 && !exposeServerMessage ? 'Internal server error' : message;
+  const hideIfServerError = (status: number, message: string) => (status >= 500 && !exposeServerMessage ? 'Internal server error' : message);
 
   if (isPoolTimeoutError(err)) {
     log.error('Database pool exhausted', { err, ...fields });

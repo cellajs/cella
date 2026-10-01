@@ -42,10 +42,7 @@ describe('resolveDnsZoneProjectId', () => {
 describe('resolveDnsProjectIds', () => {
   it('returns app project + zone project when they differ', async () => {
     const fetchImpl = zonesFetch([{ domain: 'cella.dev', subdomain: '', project_id: 'proj-apex' }]);
-    await expect(resolveDnsProjectIds(auth(fetchImpl), 'staging.cella.dev', 'proj-app')).resolves.toEqual([
-      'proj-app',
-      'proj-apex',
-    ]);
+    await expect(resolveDnsProjectIds(auth(fetchImpl), 'staging.cella.dev', 'proj-app')).resolves.toEqual(['proj-app', 'proj-apex']);
   });
 
   it('deduplicates when the zone lives in the app project', async () => {

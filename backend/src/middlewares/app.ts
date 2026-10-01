@@ -32,13 +32,7 @@ app.use(
   }),
 );
 
-app.use(
-  '*',
-  httpInstrumentationMiddleware({
-    serviceName: appConfig.name,
-    serviceVersion: '1.0',
-  }),
-);
+app.use('*', httpInstrumentationMiddleware({ serviceName: appConfig.name, serviceVersion: '1.0' }));
 
 app.use('*', loggerMiddleware);
 

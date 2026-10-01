@@ -11,10 +11,7 @@ const meta = {
   component: Textarea,
   tags: ['autodocs'],
   argTypes: {},
-  args: {
-    placeholder: 'Type your message here.',
-    disabled: false,
-  },
+  args: { placeholder: 'Type your message here.', disabled: false },
 } satisfies Meta<typeof Textarea>;
 
 export default meta;
@@ -29,11 +26,7 @@ export const Default: Story = {};
 /**
  * Use the `disabled` prop to disable the textarea.
  */
-export const Disabled: Story = {
-  args: {
-    disabled: true,
-  },
-};
+export const Disabled: Story = { args: { disabled: true } };
 
 /**
  * Use the `Label` component to includes a clear, descriptive label above or

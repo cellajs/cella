@@ -4,14 +4,9 @@ import { describe, expect, it } from 'vitest';
 import { PUBLISHED_ROW_FILTER, publicationRowFilter } from './publication-filter';
 import { draftVisibleRowsPredicate, publishedRowsPredicate } from './published-predicate';
 
-const draftProduct = pgTable('test_pub_items', {
-  id: varchar('id').primaryKey(),
-  publishedAt: timestamp('published_at', { mode: 'string' }),
-});
+const draftProduct = pgTable('test_pub_items', { id: varchar('id').primaryKey(), publishedAt: timestamp('published_at', { mode: 'string' }) });
 
-const plainProduct = pgTable('test_pub_attachments', {
-  id: varchar('id').primaryKey(),
-});
+const plainProduct = pgTable('test_pub_attachments', { id: varchar('id').primaryKey() });
 
 const authoredDraftProduct = pgTable('test_pub_notes', {
   id: varchar('id').primaryKey(),
@@ -57,9 +52,7 @@ describe('draftVisibleRowsPredicate', () => {
   });
 
   it('shows drafts to nobody on a table without an author column, and filters nothing without drafts', () => {
-    expect(normalize(compile(draftVisibleRowsPredicate(draftProduct, 'author-1')).sql)).toBe(
-      'test_pub_items.published_at is not null',
-    );
+    expect(normalize(compile(draftVisibleRowsPredicate(draftProduct, 'author-1')).sql)).toBe('test_pub_items.published_at is not null');
     expect(draftVisibleRowsPredicate(plainProduct, 'author-1')).toBeUndefined();
   });
 });

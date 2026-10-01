@@ -73,28 +73,13 @@ export function MarketingNav() {
   };
 
   const floatingNavItems: FloatingNavItem[] = [
-    {
-      id: 'marketing-menu',
-      icon: MenuIcon,
-      onClick: () => setDrawerOpen((prev) => !prev),
-      ariaLabel: 'Toggle menu',
-      direction: 'left',
-    },
-    {
-      id: 'marketing-scroll-top',
-      icon: ArrowUpIcon,
-      onClick: scrollToTop,
-      ariaLabel: 'Scroll to top',
-      visible: showScrollTop,
-      direction: 'right',
-    },
+    { id: 'marketing-menu', icon: MenuIcon, onClick: () => setDrawerOpen((prev) => !prev), ariaLabel: 'Toggle menu', direction: 'left' },
+    { id: 'marketing-scroll-top', icon: ArrowUpIcon, onClick: scrollToTop, ariaLabel: 'Scroll to top', visible: showScrollTop, direction: 'right' },
   ];
 
   return (
     <>
-      {isMobile && (
-        <FloatingNav items={floatingNavItems} bodyClass="marketing-floating-nav" resetTrigger={drawerOpen} />
-      )}
+      {isMobile && <FloatingNav items={floatingNavItems} bodyClass="marketing-floating-nav" resetTrigger={drawerOpen} />}
 
       <header className="absolute top-2 z-20 h-16 w-full px-2 sm:top-4 lg:top-8 lg:px-4">
         <div className="mx-auto flex h-full max-w-336 items-center justify-between gap-2">
@@ -108,12 +93,7 @@ export function MarketingNav() {
             >
               <Logo height={36} />
 
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="12"
-                height="12"
-                className="absolute top-0.5 right-0.5 max-md:hidden"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="absolute top-0.5 right-0.5 max-md:hidden">
                 <title>We support Ukraine</title>
                 <g fill="none">
                   <path
@@ -128,9 +108,7 @@ export function MarketingNav() {
               </svg>
             </Link>
 
-            {marketingNavConfig?.length && (
-              <nav className="hidden h-full items-center gap-1 sm:flex md:gap-4">{renderNavItems()}</nav>
-            )}
+            {marketingNavConfig?.length && <nav className="hidden h-full items-center gap-1 sm:flex md:gap-4">{renderNavItems()}</nav>}
           </div>
 
           <div className="flex items-center gap-2 px-2">
@@ -167,15 +145,7 @@ export function MarketingNav() {
             <Button
               variant="ghost"
               size="lg"
-              render={
-                <Link
-                  to="/about"
-                  hash=""
-                  replace={location.pathname === '/about'}
-                  draggable={false}
-                  onClick={closeDrawer}
-                />
-              }
+              render={<Link to="/about" hash="" replace={location.pathname === '/about'} draggable={false} onClick={closeDrawer} />}
             >
               {t('c:about')}
             </Button>

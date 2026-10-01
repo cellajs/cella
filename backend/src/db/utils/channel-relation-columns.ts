@@ -23,8 +23,7 @@ export type ChannelTable = AnyPgTable & { id: PgColumn };
  * table and its products is harmless. The organization is not referenced here; organization-bound
  * tables declare `organizationForeignKey` (the composite `(tenant_id, organization_id)` key).
  */
-const referencedChannelId = (channelType: string): PgColumn =>
-  channelTables[channelType as keyof typeof channelTables]().id;
+const referencedChannelId = (channelType: string): PgColumn => channelTables[channelType as keyof typeof channelTables]().id;
 
 /** Strict ancestors are non-null columns, except declared `nullableAncestors`; `relatedChannels` are nullable. */
 export type ChannelRelationColumns<E extends string> = EntityIdColumns<
@@ -47,16 +46,11 @@ export const channelRelationColumns = <E extends ProductEntityType>(entityType: 
   const columns = {} as Record<string, NotNullUuid | NullableUuid>;
 
   for (const ancestor of hierarchy.getOrderedAncestors(entityType)) {
-    const column =
-      ancestor === 'organization'
-        ? uuid()
-        : uuid().references(() => referencedChannelId(ancestor), { onDelete: 'cascade' });
+    const column = ancestor === 'organization' ? uuid() : uuid().references(() => referencedChannelId(ancestor), { onDelete: 'cascade' });
     columns[appConfig.entityIdColumnKeys[ancestor]] = nullableAncestors.has(ancestor) ? column : column.notNull();
   }
   for (const related of hierarchy.getRelatedChannels(entityType)) {
-    columns[appConfig.entityIdColumnKeys[related]] = uuid().references(() => referencedChannelId(related), {
-      onDelete: 'set null',
-    });
+    columns[appConfig.entityIdColumnKeys[related]] = uuid().references(() => referencedChannelId(related), { onDelete: 'set null' });
   }
 
   return columns as ChannelRelationColumns<E>;
@@ -66,11 +60,7 @@ export const channelRelationColumns = <E extends ProductEntityType>(entityType: 
  * One index per sub-organization ancestor and related-channel column, named `<table>_<column>_index`,
  * for a product table's index list. Empty for org-homed products, so cella's own tables are unchanged.
  */
-export const channelRelationIndexes = (
-  tableName: string,
-  table: Record<string, unknown>,
-  entityType: ProductEntityType,
-) =>
+export const channelRelationIndexes = (tableName: string, table: Record<string, unknown>, entityType: ProductEntityType) =>
   [...hierarchy.getOrderedAncestors(entityType), ...hierarchy.getRelatedChannels(entityType)]
     .filter((type) => type !== 'organization')
     .map((type) => {
@@ -79,10 +69,7 @@ export const channelRelationIndexes = (
     });
 
 /** One nullable id column per sub-organization channel type: the channels a membership can be held at below the organization. */
-export type MembershipChannelColumns = EntityIdColumns<
-  Exclude<ChannelEntityType, 'organization'> & EntityType,
-  NullableUuid
->;
+export type MembershipChannelColumns = EntityIdColumns<Exclude<ChannelEntityType, 'organization'> & EntityType, NullableUuid>;
 
 /**
  * Sub-organization channel columns shared by the membership tables, from hierarchy config: one
@@ -95,9 +82,7 @@ export const membershipChannelColumns = (): MembershipChannelColumns => {
 
   for (const channelType of appConfig.channelEntityTypes) {
     if (channelType === 'organization') continue;
-    columns[appConfig.entityIdColumnKeys[channelType]] = uuid().references(() => referencedChannelId(channelType), {
-      onDelete: 'cascade',
-    });
+    columns[appConfig.entityIdColumnKeys[channelType]] = uuid().references(() => referencedChannelId(channelType), { onDelete: 'cascade' });
   }
 
   return columns as MembershipChannelColumns;
@@ -114,20 +99,14 @@ export const membershipChannelIndexes = (tableName: string, table: Record<string
     .map((channelType) => {
       const column = table[appConfig.entityIdColumnKeys[channelType]] as PgColumn;
       const channel = entityIdColumnName(channelType).replace(/_id$/, '');
-      return index(`${tableName}_${channel}_user_archived_idx`).on(
-        column,
-        table.userId as PgColumn,
-        table.archived as PgColumn,
-      );
+      return index(`${tableName}_${channel}_user_archived_idx`).on(column, table.userId as PgColumn, table.archived as PgColumn);
     });
 
 /** Nullable ancestor-context id columns for every product entity, for tables holding rows of several types. */
 export const activityChannelColumns = (): ActivityChannelColumns => {
   const columns = {} as Record<string, NullableUuid>;
 
-  for (const ctx of new Set(
-    appConfig.productEntityTypes.flatMap((entityType) => hierarchy.getOrderedAncestors(entityType)),
-  )) {
+  for (const ctx of new Set(appConfig.productEntityTypes.flatMap((entityType) => hierarchy.getOrderedAncestors(entityType)))) {
     columns[appConfig.entityIdColumnKeys[ctx]] = uuid();
   }
 

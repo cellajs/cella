@@ -1,15 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, userEvent, waitFor, within } from 'storybook/test';
-import {
-  Sheet,
-  SheetClose,
-  SheetContent,
-  SheetDescription,
-  SheetFooter,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from '~/modules/ui/sheet';
+import { Sheet, SheetClose, SheetContent, SheetDescription, SheetFooter, SheetHeader, SheetTitle, SheetTrigger } from '~/modules/ui/sheet';
 
 /**
  * Extends the Dialog component to display content that complements the main
@@ -20,16 +11,9 @@ const meta: Meta<typeof SheetContent> = {
   component: Sheet,
   tags: ['autodocs'],
   argTypes: {
-    side: {
-      options: ['top', 'bottom', 'left', 'right'],
-      control: {
-        type: 'radio',
-      },
-    },
+    side: { options: ['top', 'bottom', 'left', 'right'], control: { type: 'radio' } },
   },
-  args: {
-    side: 'right',
-  },
+  args: { side: 'right' },
   render: (args) => (
     <Sheet>
       <SheetTrigger>Open</SheetTrigger>
@@ -37,8 +21,7 @@ const meta: Meta<typeof SheetContent> = {
         <SheetHeader className="with-close-btn">
           <SheetTitle>Are you absolutely sure?</SheetTitle>
           <SheetDescription>
-            This action cannot be undone. This will permanently delete your account and remove your data from our
-            servers.
+            This action cannot be undone. This will permanently delete your account and remove your data from our servers.
           </SheetDescription>
         </SheetHeader>
         <SheetFooter>
@@ -48,9 +31,7 @@ const meta: Meta<typeof SheetContent> = {
       </SheetContent>
     </Sheet>
   ),
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
 } satisfies Meta<typeof SheetContent>;
 
 export default meta;

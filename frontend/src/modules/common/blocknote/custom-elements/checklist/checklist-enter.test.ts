@@ -4,8 +4,7 @@ import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import { handleChecklistItemEnter } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-block';
 
-const makeEditor = () =>
-  BlockNoteEditor.create({ schema: customSchema, _headless: true, extensions: [checkedExtension()] });
+const makeEditor = () => BlockNoteEditor.create({ schema: customSchema, _headless: true, extensions: [checkedExtension()] });
 
 describe('handleChecklistItemEnter', () => {
   // The handler defers caret placement with setTimeout; fake timers keep that DOM-only work off a torn-down headless editor.
@@ -14,9 +13,7 @@ describe('handleChecklistItemEnter', () => {
 
   it('splits a non-empty checklist item into two items with distinct checkboxIds', () => {
     const editor = makeEditor();
-    editor.replaceBlocks(editor.document, [
-      { type: 'checklistItem', props: { checkboxId: 'first' }, content: 'hello' },
-    ]);
+    editor.replaceBlocks(editor.document, [{ type: 'checklistItem', props: { checkboxId: 'first' }, content: 'hello' }]);
     editor.setTextCursorPosition(editor.document[0], 'end');
 
     const handled = handleChecklistItemEnter(editor);

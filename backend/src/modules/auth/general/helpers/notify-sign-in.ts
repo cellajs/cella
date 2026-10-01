@@ -2,10 +2,7 @@ import { and, eq, gt } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { baseDb as db } from '#/db/db';
 import { devicesTable } from '#/modules/auth/devices-db';
-import {
-  sendAccountSecurityEmail,
-  sendSecurityInboxEmail,
-} from '#/modules/auth/general/helpers/send-account-security-email';
+import { sendAccountSecurityEmail, sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import type { SignInContext } from '#/modules/auth/general/helpers/session';
 import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import type { UserModel } from '#/modules/user/user-db';
@@ -16,13 +13,7 @@ import { TimeSpan } from '#/utils/time-span';
 /** A browser the user had not signed in from, with the sign-in before this one (null for a brand-new account). */
 export type NewDevice = { deviceIdHash: string; previousSignInAt: string | null };
 
-type SignInNotice = {
-  user: UserModel;
-  isSystemAdmin: boolean;
-  context: SignInContext;
-  strategy: AuthStrategy;
-  newDevice: NewDevice | null;
-};
+type SignInNotice = { user: UserModel; isSystemAdmin: boolean; context: SignInContext; strategy: AuthStrategy; newDevice: NewDevice | null };
 
 /** These sign-ins went through the user's inbox: a second mail tells the owner nothing, and an intruder in the inbox deletes it. */
 const inboxStrategies: AuthStrategy[] = ['magic', 'email'];
@@ -54,11 +45,7 @@ const countryName = (code: string, language: string) => {
 export const notifySignIn = ({ user, isSystemAdmin, context, strategy, newDevice }: SignInNotice) => {
   // A system admin session goes to the security inbox. Skipped in development, where every local sign-in would mail it.
   if (isSystemAdmin && appConfig.mode !== 'development') {
-    sendSecurityInboxEmail('sysadmin-signin', {
-      email: user.email,
-      ip: context.rawIp ?? 'unknown',
-      timestamp: new Date().toISOString(),
-    });
+    sendSecurityInboxEmail('sysadmin-signin', { email: user.email, ip: context.rawIp ?? 'unknown', timestamp: new Date().toISOString() });
   }
 
   if (newDevice) void notifyNewSignIn({ user, context, strategy, newDevice });
@@ -78,10 +65,7 @@ export const notifyNewSignIn = async ({
 
   try {
     const since = new Date(Date.now() - NOTICE_WINDOW.milliseconds()).toISOString();
-    const sent = await db.$count(
-      devicesTable,
-      and(eq(devicesTable.userId, user.id), gt(devicesTable.notifiedAt, since)),
-    );
+    const sent = await db.$count(devicesTable, and(eq(devicesTable.userId, user.id), gt(devicesTable.notifiedAt, since)));
 
     if (sent >= NOTICE_BUDGET) {
       log.info('New sign-in notice skipped: daily budget spent', { userId: user.id });

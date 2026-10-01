@@ -4,12 +4,7 @@ import { useLayoutEffect } from 'react';
 const STICKY_CLASS = 'rdg-header-sticky';
 
 /** Pins measured header cells to the viewport with fixed positioning, syncing horizontal offsets in animation frames. */
-export function useStickyHeader(
-  gridRef: RefObject<HTMLDivElement | null>,
-  headerRowsCount: number,
-  headerRowHeight: number,
-  enabled: boolean,
-) {
+export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, headerRowsCount: number, headerRowHeight: number, enabled: boolean) {
   useLayoutEffect(() => {
     const grid = gridRef.current;
     if (!enabled || !grid || headerRowsCount === 0) return;

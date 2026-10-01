@@ -2,19 +2,12 @@ import { motion, useInView } from 'motion/react';
 import { useRef } from 'react';
 import { cn } from '~/utils/cn';
 
-type TextEffectProps = {
-  text: string;
-  className?: string;
-};
+type TextEffectProps = { text: string; className?: string };
 
 export function TextEffect({ text, className = '' }: TextEffectProps) {
   const variants = {
     hidden: { opacity: 0 },
-    show: (i: number) => ({
-      y: 0,
-      opacity: 1,
-      transition: { delay: i * 0.02 },
-    }),
+    show: (i: number) => ({ y: 0, opacity: 1, transition: { delay: i * 0.02 } }),
   };
 
   const letters = text.split('');

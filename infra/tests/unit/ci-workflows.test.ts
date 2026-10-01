@@ -61,9 +61,7 @@ describe('CI workflows', () => {
 
     // Positive control: the parser finds the jobs, and the secretless ones keep their cache.
     const pipeline = workflows.find(({ file }) => file === 'deploy-pipeline.yml')?.jobs;
-    expect(trustedJobs(pipeline ?? new Map())).toEqual(
-      new Set(['setup', 'build-images', 'build-boot-image', 'deploy', 'reap']),
-    );
+    expect(trustedJobs(pipeline ?? new Map())).toEqual(new Set(['setup', 'build-images', 'build-boot-image', 'deploy', 'reap']));
     expect(restoresCache(pipeline?.get('build-frontend') ?? '')).toBe(true);
   });
 

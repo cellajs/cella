@@ -8,11 +8,7 @@ import { appConfig, hierarchy, type ProductEntityType } from 'shared';
  * scope: folding the covering id into the permission scope would let an intermediate grant widen the read
  * past the requested subtree. Undefined for an org-homed entity or an absent channelId.
  */
-export function buildSubtreeCoverWhere(
-  table: AnyPgTable,
-  entityType: ProductEntityType,
-  channelId: string | undefined,
-): SQL | undefined {
+export function buildSubtreeCoverWhere(table: AnyPgTable, entityType: ProductEntityType, channelId: string | undefined): SQL | undefined {
   if (!channelId) return undefined;
 
   const columns = getTableColumns(table) as Record<string, PgColumn>;

@@ -5,10 +5,7 @@ export type HealthStatus = 'healthy' | 'degraded' | 'unhealthy';
 
 export type HealthComponent = { status: HealthStatus; label?: string };
 
-export type HealthResponse = {
-  status: HealthStatus;
-  components: Record<string, HealthComponent>;
-};
+export type HealthResponse = { status: HealthStatus; components: Record<string, HealthComponent> };
 
 const HEALTH_URL = `${appConfig.backendUrl}/health?depth=full`;
 const HEALTH_POLL_MS = 30_000;

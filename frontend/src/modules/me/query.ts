@@ -47,13 +47,8 @@ export const meKeys = {
   invites: ['me', 'invites'] as const,
   connectedApps: ['me', 'connected-apps'] as const,
   memberships: ['me', 'memberships'] as const,
-  register: {
-    passkey: ['me', 'register', 'passkey'] as const,
-  },
-  update: {
-    info: ['me', 'update', 'info'] as const,
-    flags: ['me', 'update', 'flags'] as const,
-  },
+  register: { passkey: ['me', 'register', 'passkey'] as const },
+  update: { info: ['me', 'update', 'info'] as const, flags: ['me', 'update', 'flags'] as const },
   delete: {
     passkey: ['me', 'delete', 'passkey'] as const,
     connectedApp: ['me', 'delete', 'connected-app'] as const,
@@ -67,11 +62,9 @@ export const meQueryOptions = () => queryOptions({ queryKey: meKeys.all, queryFn
 
 export const meAuthQueryOptions = () => queryOptions({ queryKey: meKeys.auth, queryFn: getAndSetMeAuthData });
 
-export const meConnectedAppsQueryOptions = () =>
-  queryOptions({ queryKey: meKeys.connectedApps, queryFn: () => getConnectedApps() });
+export const meConnectedAppsQueryOptions = () => queryOptions({ queryKey: meKeys.connectedApps, queryFn: () => getConnectedApps() });
 
-export const meInvitationsQueryOptions = () =>
-  queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
+export const meInvitationsQueryOptions = () => queryOptions({ queryKey: meKeys.invites, queryFn: () => getMyInvitations() });
 
 export const useUpdateSelfMutation = () => {
   return useMutation<User, ApiError, Omit<UpdateMeData['body'], 'role' | 'userFlags'>>({
@@ -118,10 +111,7 @@ export const useCreatePasskeyMutation = () => {
     onSuccess: (newPasskey) => {
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
-        return {
-          ...oldData,
-          passkeys: [newPasskey, ...oldData.passkeys],
-        };
+        return { ...oldData, passkeys: [newPasskey, ...oldData.passkeys] };
       });
       toaster.success(t('c:success.passkey_added'));
     },
@@ -141,10 +131,7 @@ export const useDeletePasskeyMutation = () => {
     onSuccess: (_data, { path: { id } }) => {
       queryClient.setQueryData<MeAuthData>(meKeys.auth, (oldData) => {
         if (!oldData) return oldData;
-        return {
-          ...oldData,
-          passkeys: oldData.passkeys.filter((passkey) => id !== passkey.id),
-        };
+        return { ...oldData, passkeys: oldData.passkeys.filter((passkey) => id !== passkey.id) };
       });
       toaster.success(t('c:success.delete_resource', { resource: t('c:passkey') }));
     },
@@ -184,11 +171,7 @@ const applyUpdatedSelf = (updatedUser: User) => {
 
 /** Source of truth for the current user's memberships in the frontend. */
 export const myMembershipsQueryOptions = () =>
-  queryOptions({
-    queryKey: meKeys.memberships,
-    queryFn: ({ signal }) => getMyMemberships({ signal }),
-    staleTime: 0,
-  });
+  queryOptions({ queryKey: meKeys.memberships, queryFn: ({ signal }) => getMyMemberships({ signal }), staleTime: 0 });
 
 /** Once an invitation is answered: refresh memberships so the menu rebuilds, drop the invite from cache, and say so. */
 const onInvitationSettled = async (settledEntity: { id: string }, action: 'accept' | 'reject') => {

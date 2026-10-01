@@ -18,10 +18,7 @@ export async function deleteMembershipsOp(ctx: UserContext, input: DeleteMembers
 
   const membershipIds = Array.isArray(ids) ? ids : [ids];
 
-  const targets = await findMembershipsByUserIdsAndChannel(ctx, {
-    userIds: membershipIds,
-    channelId: entity.id,
-  });
+  const targets = await findMembershipsByUserIdsAndChannel(ctx, { userIds: membershipIds, channelId: entity.id });
 
   const rejectedIds: string[] = [];
 
@@ -31,9 +28,7 @@ export async function deleteMembershipsOp(ctx: UserContext, input: DeleteMembers
 
   if (targets.length === 0) return { data: [] as never[], rejectedIds };
 
-  await deleteMembershipsByIds(ctx, {
-    ids: targets.map((target) => target.id),
-  });
+  await deleteMembershipsByIds(ctx, { ids: targets.map((target) => target.id) });
 
   for (const target of targets) await invalidateCache.user(ctx.var.db, target.userId);
 

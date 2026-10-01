@@ -1,15 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectLabel,
-  SelectSeparator,
-  SelectTrigger,
-  SelectValue,
-} from '~/modules/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '~/modules/ui/select';
 
 /** Value-to-label map: lets the trigger show the label before the popup has ever opened. */
 const items = {
@@ -37,9 +28,7 @@ const meta: Meta<typeof Select> = {
   component: Select,
   tags: ['autodocs'],
   argTypes: {},
-  args: {
-    onValueChange: fn(),
-  },
+  args: { onValueChange: fn() },
   render: (args) => (
     <Select items={items} {...args}>
       <SelectTrigger title="Select" className="w-96">
@@ -76,9 +65,7 @@ const meta: Meta<typeof Select> = {
       </SelectContent>
     </Select>
   ),
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
 } satisfies Meta<typeof Select>;
 
 export default meta;

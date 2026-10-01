@@ -41,10 +41,7 @@ export function getCountDeltas(
 
   // Memberships (active + inactive): counter deltas plus an org-level membership change signal.
   if (tableMeta.kind === 'resource' && (tableMeta.type === 'membership' || tableMeta.type === 'inactive_membership')) {
-    const delta =
-      tableMeta.type === 'membership'
-        ? getMembershipDelta(action, newRow, oldRow)
-        : getInactiveMembershipDelta(action, newRow, oldRow);
+    const delta = tableMeta.type === 'membership' ? getMembershipDelta(action, newRow, oldRow) : getInactiveMembershipDelta(action, newRow, oldRow);
     const deltas = delta ? [delta] : [];
     // Org-level signal on every membership activity (invitations included) so catchup screens
     // membership changes in O(1) without scanning activities.
@@ -60,11 +57,7 @@ export function getCountDeltas(
     // Creates/publishes and content updates stamp the home context only; deletes and restores do not.
     if (h.isProduct(tableMeta.type) && countAction !== null && countAction !== 'delete') {
       const stampKey =
-        action === 'create' && countAction === 'create'
-          ? `e:li:h:${tableMeta.type}`
-          : countAction === 'update'
-            ? `e:lu:h:${tableMeta.type}`
-            : null;
+        action === 'create' && countAction === 'create' ? `e:li:h:${tableMeta.type}` : countAction === 'update' ? `e:lu:h:${tableMeta.type}` : null;
       if (stampKey) {
         // e:li:h: prefers publishedAt so CDC and recalculation stamp the same instant; e:lu:h: is updatedAt.
         const stampSource = stampKey.startsWith('e:li:')
@@ -117,11 +110,7 @@ export function getCountDeltas(
  * (restore, publish), leave = delete (soft-delete, unpublish), stay inside = update, stay outside
  * = null (invisible to counters and stamps).
  */
-function deriveCountAction(
-  action: ActivityAction,
-  newRow: CdcRowData,
-  oldRow: CdcRowData | null,
-): ActivityAction | null {
+function deriveCountAction(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): ActivityAction | null {
   if (action === 'create') return isCountableRow(newRow) ? 'create' : null;
   if (action === 'delete') return isCountableRow(oldRow ?? newRow) ? 'delete' : null;
   // REPLICA IDENTITY FULL always carries the old row on updates; fallback only.
@@ -169,11 +158,7 @@ function getMembershipDelta(action: ActivityAction, newRow: CdcRowData, oldRow: 
   return null;
 }
 /** Inactive membership m:c:pending delta; only rows with rejectedAt null count as pending. */
-function getInactiveMembershipDelta(
-  action: ActivityAction,
-  newRow: CdcRowData,
-  oldRow: CdcRowData | null,
-): CountDelta | null {
+function getInactiveMembershipDelta(action: ActivityAction, newRow: CdcRowData, oldRow: CdcRowData | null): CountDelta | null {
   const channelId = getStringValue(newRow, 'channelId');
   if (!channelId) return null;
 

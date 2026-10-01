@@ -6,18 +6,10 @@ import { fetchServiceKey } from './service-key';
 
 const dir = mkdtempSync(join(tmpdir(), 'service-key-'));
 const pair = { accessKey: 'SCWAK', secretKey: 'sk' };
-const bundleResponse = () =>
-  new Response(JSON.stringify({ data: Buffer.from(JSON.stringify(pair), 'utf-8').toString('base64') }), {
-    status: 200,
-  });
+const bundleResponse = () => new Response(JSON.stringify({ data: Buffer.from(JSON.stringify(pair), 'utf-8').toString('base64') }), { status: 200 });
 
 function options(cacheFile: string, fetchImpl: (url: string, init?: RequestInit) => Promise<Response>) {
-  return {
-    handoff: { secretId: 'sec-1', cacheFile },
-    bootSecretKey: 'boot-secret',
-    region: 'nl-ams',
-    fetchImpl: fetchImpl as never,
-  };
+  return { handoff: { secretId: 'sec-1', cacheFile }, bootSecretKey: 'boot-secret', region: 'nl-ams', fetchImpl: fetchImpl as never };
 }
 
 describe('fetchServiceKey (single-access handoff)', () => {
@@ -49,18 +41,14 @@ describe('fetchServiceKey (single-access handoff)', () => {
 
   it('a failed fetch with NO cache is the interception security signal, not a retryable error', async () => {
     const cacheFile = join(dir, 'consumed.json');
-    await expect(
-      fetchServiceKey(options(cacheFile, async () => new Response('gone', { status: 404 }))),
-    ).rejects.toThrow(/SECURITY: service-key handoff fetch failed \(404\)/);
+    await expect(fetchServiceKey(options(cacheFile, async () => new Response('gone', { status: 404 })))).rejects.toThrow(
+      /SECURITY: service-key handoff fetch failed \(404\)/,
+    );
   });
 
   it('rejects a malformed bundle payload', async () => {
     const cacheFile = join(dir, 'malformed.json');
-    const badBundle = new Response(JSON.stringify({ data: Buffer.from('{"nope":true}', 'utf-8').toString('base64') }), {
-      status: 200,
-    });
-    await expect(fetchServiceKey(options(cacheFile, async () => badBundle))).rejects.toThrow(
-      /does not contain \{accessKey, secretKey\}/,
-    );
+    const badBundle = new Response(JSON.stringify({ data: Buffer.from('{"nope":true}', 'utf-8').toString('base64') }), { status: 200 });
+    await expect(fetchServiceKey(options(cacheFile, async () => badBundle))).rejects.toThrow(/does not contain \{accessKey, secretKey\}/);
   });
 });

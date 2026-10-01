@@ -10,13 +10,7 @@ import { adminRole, defaultHeaders } from '../fixtures';
 import { createOrganizationAdminUser, createSystemAdminUser, createTestSession, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
-import {
-  assumeMemberAttachmentPolicy,
-  clearSecurityTestData,
-  createOrgUser,
-  createTestTenant,
-  type TestTenant,
-} from './helpers';
+import { assumeMemberAttachmentPolicy, clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
 import { paragraph, seedAttachment } from './yjs-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
@@ -39,11 +33,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
   let otherTenantAttachment: Awaited<ReturnType<typeof seedAttachment>>;
 
   const tokenFor = (cookie: string, scope: { tenantId: string; organizationId: string }, entityId: string) =>
-    call(getYjsToken, {
-      path: scope,
-      query: { entityType: 'attachment', entityId },
-      headers: { ...defaultHeaders, Cookie: cookie },
-    });
+    call(getYjsToken, { path: scope, query: { entityType: 'attachment', entityId }, headers: { ...defaultHeaders, Cookie: cookie } });
 
   const ownScope = () => ({ tenantId: owner.tenantId, organizationId: owner.organization.id });
 
@@ -52,12 +42,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
     other = await createTestTenant(call, 'yjs-token-other');
     member = await createOrgUser(call, owner.tenantId, owner.organization.id, 'yjs-token-member');
     const attachmentIn = (tenant: TestTenant, createdBy: string) =>
-      seedAttachment({
-        tenantId: tenant.tenantId,
-        organizationId: tenant.organization.id,
-        createdBy,
-        description: paragraph('original'),
-      });
+      seedAttachment({ tenantId: tenant.tenantId, organizationId: tenant.organization.id, createdBy, description: paragraph('original') });
     ownersAttachment = await attachmentIn(owner, owner.user.id);
     membersAttachment = await attachmentIn(owner, member.id);
     otherTenantAttachment = await attachmentIn(other, other.user.id);
@@ -122,15 +107,8 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs token security', 
     expect(data).toBeUndefined();
 
     // Positive control: a system admin whose membership grants update gets one, as the relay would accept.
-    const member = await createOrganizationAdminUser(
-      'yjs-token-sysadmin-member@security-test.com',
-      owner.organization.id,
-      adminRole,
-      owner.tenantId,
-    );
-    await getAdminDb('yjs token test')
-      .insert(systemRolesTable)
-      .values({ id: member.id, userId: member.id, role: 'admin' });
+    const member = await createOrganizationAdminUser('yjs-token-sysadmin-member@security-test.com', owner.organization.id, adminRole, owner.tenantId);
+    await getAdminDb('yjs token test').insert(systemRolesTable).values({ id: member.id, userId: member.id, role: 'admin' });
     const memberCookie = await createTestSession(member);
     expect((await tokenFor(memberCookie, ownScope(), ownersAttachment.id)).response.status).toBe(200);
   });

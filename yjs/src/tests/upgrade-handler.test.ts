@@ -3,15 +3,7 @@ import type { Duplex } from 'node:stream';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocket as WsWebSocket } from 'ws';
-import {
-  createExpiredToken,
-  createSignedToken,
-  deferred,
-  openSocket,
-  recordCrashes,
-  startRelayServer,
-  until,
-} from './helpers';
+import { createExpiredToken, createSignedToken, deferred, openSocket, recordCrashes, startRelayServer, until } from './helpers';
 
 // The real upgrade handler over mocked collaborators: entity access is granted in the requested scope, the relay and session manager are inert.
 // `hold` keeps a verification pending until the test releases it; `error` makes it fail, as an unreachable database does.
@@ -38,8 +30,7 @@ vi.mock('../sync/relay', () => ({
     if (data[0] === 0xff) throw new Error('relay failure');
     return data.length === 0 ? null : data[0];
   },
-  refuseFrame: (_scope: unknown, _userId: string, ws: { close: (code: number, reason: string) => void }) =>
-    ws.close(4400, 'Malformed frame'),
+  refuseFrame: (_scope: unknown, _userId: string, ws: { close: (code: number, reason: string) => void }) => ws.close(4400, 'Malformed frame'),
   handleMessage: vi.fn(async (ctx: { scope: unknown }, _ws: unknown, data: Uint8Array) => {
     // A slow first frame: later frames must still apply after it, in order.
     if (data[2] === 1) await new Promise((resolve) => setTimeout(resolve, 30));
@@ -86,9 +77,7 @@ function connect(path: string): Promise<{ ws: WsWebSocket; closeCode?: number; c
 describe('setupUpgradeHandler', () => {
   it('closes an expired token after the handshake with 4001, so a browser client sees the code', async () => {
     const token = createExpiredToken('user-1');
-    const { closeCode, closeReason, error } = await connect(
-      `/entity-1?token=${token}&entityType=task&tenantId=tenant-1`,
-    );
+    const { closeCode, closeReason, error } = await connect(`/entity-1?token=${token}&entityType=task&tenantId=tenant-1`);
 
     expect(error).toBeUndefined();
     expect(closeCode).toBe(4001);
@@ -130,9 +119,7 @@ describe('setupUpgradeHandler', () => {
     const expiring = createSignedToken({ userId: 'user-1', exp: Date.now() + 400 });
     const lasting = createSignedToken({ userId: 'user-1' });
     const [short, long] = await Promise.all(
-      [expiring, lasting].map((token) =>
-        openSocket(`${baseUrl}/entity-1?token=${token}&entityType=task&tenantId=tenant-1`),
-      ),
+      [expiring, lasting].map((token) => openSocket(`${baseUrl}/entity-1?token=${token}&entityType=task&tenantId=tenant-1`)),
     );
 
     // The client refetches its token on 4001 and reconnects; revoked access gets no new token.
@@ -328,9 +315,7 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     verifyGate.allowed = false;
     const before = framesReceived;
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-denied' });
-    const { ws, closed } = await openSocket(
-      `${baseUrl}/entity-denied?token=${token}&entityType=task&tenantId=tenant-1`,
-    );
+    const { ws, closed } = await openSocket(`${baseUrl}/entity-denied?token=${token}&entityType=task&tenantId=tenant-1`);
     ws.send(new Uint8Array([0, 2, 5]));
     await until(() => framesReceived === before + 1);
 
@@ -346,9 +331,7 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     verifyGate.error = new Error('ECONNREFUSED');
     const before = framesReceived;
     const token = createSignedToken({ userId: 'user-1', entityId: 'entity-unavailable' });
-    const { ws, closed } = await openSocket(
-      `${baseUrl}/entity-unavailable?token=${token}&entityType=task&tenantId=tenant-1`,
-    );
+    const { ws, closed } = await openSocket(`${baseUrl}/entity-unavailable?token=${token}&entityType=task&tenantId=tenant-1`);
     ws.send(new Uint8Array([0, 2, 6]));
     await until(() => framesReceived === before + 1);
 

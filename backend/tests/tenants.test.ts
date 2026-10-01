@@ -56,10 +56,7 @@ describe('tenant responses with stored restrictions that lack a field', async ()
     expect(renamed.error).toBeUndefined();
     expect(requoted.error).toBeUndefined();
     expect((renamed.data as { restrictions: Restrictions }).restrictions).toEqual(defaultRestrictions());
-    expect((requoted.data as { restrictions: Restrictions }).restrictions).toEqual({
-      ...defaultRestrictions(),
-      quotas,
-    });
+    expect((requoted.data as { restrictions: Restrictions }).restrictions).toEqual({ ...defaultRestrictions(), quotas });
     // A restrictions update stores the full shape.
     const [stored] = await db.select().from(tenantsTable).where(eq(tenantsTable.id, tenant.id));
     expect(stored.restrictions).toEqual({ ...defaultRestrictions(), quotas });

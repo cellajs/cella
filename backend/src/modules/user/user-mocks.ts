@@ -49,18 +49,12 @@ const generateUser = ({ email: emailOverride, enforceUnique = false }: MockUserO
 };
 
 /** Generates a full insertable user while enforcing unique email and slug values. */
-export const mockUser = (overrides: Pick<MockUserOptions, 'email'> = {}): InsertUserModel =>
-  generateUser({ ...overrides, enforceUnique: true });
+export const mockUser = (overrides: Pick<MockUserOptions, 'email'> = {}): InsertUserModel => generateUser({ ...overrides, enforceUnique: true });
 
 export const mockUserResponse = (key = 'user:default'): UserWithCounters =>
   withFakerSeed(key, () => {
     const user = generateUser();
-    return {
-      ...user,
-      lastStartedAt: user.createdAt,
-      lastSignInAt: user.createdAt,
-      lastSeenAt: user.createdAt,
-    };
+    return { ...user, lastStartedAt: user.createdAt, lastSignInAt: user.createdAt, lastSeenAt: user.createdAt };
   });
 
 export interface UserListItem extends UserWithCounters {
@@ -93,10 +87,5 @@ export const mockAdmin = (id: string | undefined, email: string): InsertUserMode
 };
 
 export const mockEmail = (user: UserModel): InsertEmailModel => {
-  return {
-    email: user.email,
-    userId: user.id,
-    verified: true,
-    verifiedAt: mockPastIsoDate(),
-  };
+  return { email: user.email, userId: user.id, verified: true, verifiedAt: mockPastIsoDate() };
 };

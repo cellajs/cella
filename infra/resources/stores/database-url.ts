@@ -15,12 +15,7 @@ export interface DatabaseUrlConfig {
   /** Whether deploy gating treats an unset URL as fatal. Defaults to true. */
   required?: boolean;
   /** Optional CA certificate delivered with the URL, base64-encoded PEM kept single-line for `.env.runtime`. Provide when the external database uses a private CA. */
-  ca?: {
-    services?: readonly string[];
-    envVar?: string;
-    secretName?: string;
-    id?: string;
-  };
+  ca?: { services?: readonly string[]; envVar?: string; secretName?: string; id?: string };
 }
 
 /** External database store: provisions nothing and contributes an operator-supplied connection URL, plus an optional CA cert, as runtime secrets. Dialect-agnostic. */

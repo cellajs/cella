@@ -48,9 +48,7 @@ function grantableScopes(ctx: object, client: object): readonly AccessScope[] {
  * Claims this server adds to every access token; the guard reads them to build the actor, and asks the grant policy
  * about the grant (`gid`) or API key (`key_id`) the token rests on.
  */
-export type IssuedTokenClaims =
-  | { actor_kind: 'user'; tenant_id: string; gid: string }
-  | { actor_kind: 'service'; tenant_id: string; key_id: string };
+export type IssuedTokenClaims = { actor_kind: 'user'; tenant_id: string; gid: string } | { actor_kind: 'service'; tenant_id: string; key_id: string };
 
 /** The code or refresh token a grant is used through at the token endpoint, as `findAccount` receives it. */
 type GrantSource = { clientId?: string; grantId?: string; resource?: unknown };
@@ -66,9 +64,7 @@ async function accountMayUseGrant(sub: string, source: GrantSource | undefined):
     const [user] = await baseDb.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.id, sub)).limit(1);
     return !!user;
   }
-  const tenantIds = [source.resource]
-    .flat()
-    .map((uri) => (typeof uri === 'string' ? parseResource(uri)?.tenantId : null));
+  const tenantIds = [source.resource].flat().map((uri) => (typeof uri === 'string' ? parseResource(uri)?.tenantId : null));
   if (!tenantIds.every((tenantId): tenantId is string => !!tenantId)) return false;
 
   let refusal: string | null = null;
@@ -148,14 +144,8 @@ export async function createProvider(): Promise<Provider> {
           const resource = parseResource(resourceIndicator);
           if (!resource) throw new errors.InvalidTarget();
           // A service account acts in its own tenant: its token never names another tenant's resource.
-          if (clientKindOf(client) === 'service' && presentedKeys.get(ctx)?.tenantId !== resource.tenantId)
-            throw new errors.InvalidTarget();
-          return {
-            scope: grantableScopes(ctx, client).join(' '),
-            audience: resourceIndicator,
-            accessTokenFormat: 'jwt',
-            accessTokenTTL: HOUR,
-          };
+          if (clientKindOf(client) === 'service' && presentedKeys.get(ctx)?.tenantId !== resource.tenantId) throw new errors.InvalidTarget();
+          return { scope: grantableScopes(ctx, client).join(' '), audience: resourceIndicator, accessTokenFormat: 'jwt', accessTokenTTL: HOUR };
         },
       },
     },
@@ -179,8 +169,7 @@ export async function createProvider(): Promise<Provider> {
       // Same origin as the API: the interaction cookie is scoped to this path, and the page under it reads the session.
       url: (_ctx, interaction) => `/oauth/interaction/${interaction.uid}`,
     },
-    findAccount: async (_ctx, sub, token) =>
-      (await accountMayUseGrant(sub, token)) ? { accountId: sub, claims: async () => ({ sub }) } : undefined,
+    findAccount: async (_ctx, sub, token) => ((await accountMayUseGrant(sub, token)) ? { accountId: sub, claims: async () => ({ sub }) } : undefined),
     extraTokenClaims: (ctx, token) => {
       const aud = Array.isArray(token.aud) ? token.aud[0] : token.aud;
       const resource = parseResource(aud ?? '');
@@ -199,11 +188,7 @@ export async function createProvider(): Promise<Provider> {
     renderError: async (ctx, out, error) => {
       // A client's own mistake (bad PKCE, expired code, refusal) is request noise; only the server's faults are warnings.
       const level = ctx.status >= 500 ? 'warn' : 'info';
-      log[level]('OAuth server error', {
-        error: out.error,
-        description: out.error_description,
-        ...(level === 'warn' && { err: error }),
-      });
+      log[level]('OAuth server error', { error: out.error, description: out.error_description, ...(level === 'warn' && { err: error }) });
       ctx.type = 'json';
       ctx.body = out;
     },
@@ -214,17 +199,11 @@ export async function createProvider(): Promise<Provider> {
 
   // Secrets are never stored in plaintext: a registered app's secret is compared by hash, a service account's client
   // secret is any of its live secret keys, whose scopes then cap the token (`grantableScopes`).
-  provider.Client.prototype.compareClientSecret = async function compare(
-    this: { clientId: string; clientSecret?: string },
-    actual: string,
-  ) {
+  provider.Client.prototype.compareClientSecret = async function compare(this: { clientId: string; clientSecret?: string }, actual: string) {
     const presented = hashToken(actual);
     if (clientKindOf(this) === 'service') {
       // Read here, not from the cached client: a disabled account stops minting the moment it is disabled.
-      const found = await findApiKeyWithAccount(
-        { var: { db: baseDb } },
-        { key: { hash: presented }, actorId: this.clientId },
-      );
+      const found = await findApiKeyWithAccount({ var: { db: baseDb } }, { key: { hash: presented }, actorId: this.clientId });
       if (!found || apiKeyRefusal(found.apiKey, found.account)) return false;
       const { apiKey, account } = found;
       const ctx = Provider.ctx;

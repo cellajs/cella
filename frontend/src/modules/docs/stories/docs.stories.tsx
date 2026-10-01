@@ -46,17 +46,9 @@ const schema = (name: string, tagsByKind: Record<string, string[]> = {}): GenCom
   tagsByKind,
 });
 
-const schemas = [
-  schema('UserBase', { module: ['users'] }),
-  schema('SessionBase', { module: ['me'] }),
-  schema('BadRequestError'),
-];
+const schemas = [schema('UserBase', { module: ['users'] }), schema('SessionBase', { module: ['me'] }), schema('BadRequestError')];
 
-const response = (status: number, description: string, extra: Partial<GenResponseSummary> = {}) => ({
-  status,
-  description,
-  ...extra,
-});
+const response = (status: number, description: string, extra: Partial<GenResponseSummary> = {}) => ({ status, description, ...extra });
 
 const docsQueries = (details: GenOperationDetail[]): [readonly unknown[], unknown][] => [
   [['docs', 'schemas'], schemas],
@@ -165,12 +157,7 @@ export const SidebarItems: Story = {
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
     const openSidebarSheet = () =>
-      useSheeter.getState().create(null, {
-        id: 'docs-sidebar',
-        side: 'left',
-        triggerRef: { current: null },
-        onClose: sidebarOnClose,
-      });
+      useSheeter.getState().create(null, { id: 'docs-sidebar', side: 'left', triggerRef: { current: null }, onClose: sidebarOnClose });
 
     const getMe = await canvas.findByRole('link', { name: /^Get me\s*get$/ });
     const sessions = canvas.getByRole('link', { name: /^Get my sessions\s*get$/ });

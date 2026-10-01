@@ -17,11 +17,7 @@ type TableProps = {
 type BarProps = { selected?: Row[]; clearSelection?: () => void };
 
 /** Props of every render of the data table and the bar, newest last. */
-const seen = vi.hoisted(() => ({
-  table: [] as unknown[],
-  bar: [] as unknown[],
-  search: {} as Record<string, unknown>,
-}));
+const seen = vi.hoisted(() => ({ table: [] as unknown[], bar: [] as unknown[], search: {} as Record<string, unknown> }));
 
 /** Bumping `version` renames every row on the next fetch; while `hold` is pending, fetches wait for it. */
 const server = vi.hoisted(() => ({ version: 0, hold: undefined as Promise<void> | undefined }));
@@ -53,9 +49,7 @@ vi.mock('~/query/query-client', async () => {
   return { queryClient: new QueryClient({ defaultOptions: { queries } }) };
 });
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
-vi.mock('~/hooks/use-search-params', () => ({
-  useSearchParams: () => ({ search: seen.search, setSearch: vi.fn() }),
-}));
+vi.mock('~/hooks/use-search-params', () => ({ useSearchParams: () => ({ search: seen.search, setSearch: vi.fn() }) }));
 vi.mock('~/hooks/use-route-context', () => ({
   useOrganizationLayoutContext: () => ({ organization: { id: 'org-1', tenantId: 'tenant-1' } }),
 }));
@@ -145,9 +139,7 @@ describe.each(pagedTables)('$name table paging', ({ Table, props }) => {
 
     await act(async () => lastTable().fetchMore?.());
     await vi.waitFor(() => expect(ids(lastTable().rows)).toEqual(['r0', 'r1', 'r2', 'r3']));
-    expect(pagedFetch).toHaveBeenLastCalledWith(
-      expect.objectContaining({ query: expect.objectContaining({ offset: '2' }) }),
-    );
+    expect(pagedFetch).toHaveBeenLastCalledWith(expect.objectContaining({ query: expect.objectContaining({ offset: '2' }) }));
   });
 
   it('ignores fetchMore while a page is loading and once every page is in', async () => {
@@ -228,15 +220,12 @@ describe('filtered state', () => {
     { name: 'members by role', Table: MembersTable, search: { role: 'member' }, filtered: true, props: { channel } },
     { name: 'organizations by search', Table: OrganizationsTable, search: { q: 'x' }, filtered: true },
     { name: 'organizations ignore role', Table: OrganizationsTable, search: { role: 'admin' }, filtered: false },
-  ] as {
-    name: string;
-    Table: ComponentType<never>;
-    search: Record<string, unknown>;
-    filtered: boolean;
-    props?: Record<string, unknown>;
-  }[])('$name', async ({ Table, search, filtered, props }) => {
-    seen.search = search;
-    await render(Table as ComponentType<Record<string, unknown>>, props);
-    expect(lastTable().isFiltered).toBe(filtered);
-  });
+  ] as { name: string; Table: ComponentType<never>; search: Record<string, unknown>; filtered: boolean; props?: Record<string, unknown> }[])(
+    '$name',
+    async ({ Table, search, filtered, props }) => {
+      seen.search = search;
+      await render(Table as ComponentType<Record<string, unknown>>, props);
+      expect(lastTable().isFiltered).toBe(filtered);
+    },
+  );
 });

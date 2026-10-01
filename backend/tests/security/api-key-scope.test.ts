@@ -9,13 +9,7 @@ import { verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { adminRole } from '../fixtures';
 import { createTestOrganization } from '../helpers';
-import {
-  bearerHeaders,
-  clientCredentialsToken,
-  serviceAccountWithKey,
-  startTestOauthServer,
-  type TestOauthServer,
-} from '../oauth-helpers';
+import { bearerHeaders, clientCredentialsToken, serviceAccountWithKey, startTestOauthServer, type TestOauthServer } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
@@ -68,12 +62,9 @@ describe('API key scopes at the token endpoint', async () => {
 
   it('keeps read under a write scope: a write key may mint a read token', async () => {
     const account = await adminAccountWithKey(['attachment:write']);
-    const token = await verifyAccessToken(
-      await tokenFor(account, 'attachment:read attachment:write organization:read'),
-      {
-        tenantId: account.org.tenantId,
-      },
-    );
+    const token = await verifyAccessToken(await tokenFor(account, 'attachment:read attachment:write organization:read'), {
+      tenantId: account.org.tenantId,
+    });
     expect(token.scopes.sort()).toEqual(['attachment:read', 'attachment:write']);
   });
 

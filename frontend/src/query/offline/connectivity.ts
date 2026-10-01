@@ -89,10 +89,7 @@ export function forceOnline() {
   onlineManager.setOnline(true);
 }
 
-type AwaitRecoveryOptions = {
-  signal: AbortSignal;
-  factor?: number;
-};
+type AwaitRecoveryOptions = { signal: AbortSignal; factor?: number };
 
 /** Polls /health?depth=full with exponential backoff; full depth verifies DB connectivity, not only network reachability. */
 export async function awaitRecovery({ signal, factor = 1.5 }: AwaitRecoveryOptions): Promise<boolean> {

@@ -7,11 +7,7 @@ vi.mock('shared', async (importOriginal) => {
   const { deepHierarchy } = await import('shared/testing/deep-fixture');
   return {
     ...actual,
-    appConfig: {
-      ...actual.appConfig,
-      seenTrackedProductTypes: ['item'],
-      entityIdColumnKeys: deepHierarchy.idColumnKeys,
-    },
+    appConfig: { ...actual.appConfig, seenTrackedProductTypes: ['item'], entityIdColumnKeys: deepHierarchy.idColumnKeys },
     hierarchy: deepHierarchy,
   };
 });

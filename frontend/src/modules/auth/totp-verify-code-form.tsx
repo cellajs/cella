@@ -22,10 +22,7 @@ interface Props {
 export function TotpConfirmationForm({ onSubmit, onCancel, label, isPending }: Props) {
   const { t } = useTranslation();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { code: '' },
-  });
+  const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { code: '' } });
 
   const { isValid, isDirty } = useFormState({ control: form.control });
 

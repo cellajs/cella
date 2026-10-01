@@ -23,20 +23,14 @@ const buildAuditUserSelect = (aliasedTable: typeof createdByUser | typeof update
   entityType: sql<'user'>`'user'`,
 });
 
-export const auditUserSelect = {
-  createdBy: buildAuditUserSelect(createdByUser),
-  updatedBy: buildAuditUserSelect(updatedByUser),
-};
+export const auditUserSelect = { createdBy: buildAuditUserSelect(createdByUser), updatedBy: buildAuditUserSelect(updatedByUser) };
 
 /** Accepts both nullable (LEFT JOIN) and non-nullable shapes for audit user fields. */
 type LooseAuditUser = { [K in keyof UserMinimalBase]: UserMinimalBase[K] | null };
 type RawAuditRow = { createdBy: LooseAuditUser; updatedBy: LooseAuditUser };
 
 /** Entity with audit user fields resolved to full objects (or null). */
-type WithAuditUsers<T> = Omit<T, 'createdBy' | 'updatedBy'> & {
-  createdBy: UserMinimalBase | null;
-  updatedBy: UserMinimalBase | null;
-};
+type WithAuditUsers<T> = Omit<T, 'createdBy' | 'updatedBy'> & { createdBy: UserMinimalBase | null; updatedBy: UserMinimalBase | null };
 
 export function coalesceAuditUsers<T extends RawAuditRow>(rows: T[]): WithAuditUsers<T>[] {
   return rows.map(({ createdBy, updatedBy, ...rest }) => ({
@@ -46,16 +40,12 @@ export function coalesceAuditUsers<T extends RawAuditRow>(rows: T[]): WithAuditU
   }));
 }
 
-export const toUserMinimalBase = (
-  user: Pick<UserMinimalBase, 'id' | 'name' | 'slug' | 'thumbnailUrl'>,
-): UserMinimalBase => ({
+export const toUserMinimalBase = (user: Pick<UserMinimalBase, 'id' | 'name' | 'slug' | 'thumbnailUrl'>): UserMinimalBase => ({
   ...user,
   entityType: 'user',
 });
 
-type KnownUsersInput =
-  | Map<string, UserMinimalBase>
-  | { id: string; name: string; slug: string; thumbnailUrl: string | null };
+type KnownUsersInput = Map<string, UserMinimalBase> | { id: string; name: string; slug: string; thumbnailUrl: string | null };
 
 /**
  * Populates createdBy/updatedBy string IDs with UserMinimalBase objects. The columns hold any actor id; a

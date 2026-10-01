@@ -42,9 +42,7 @@ describe('Malformed ids in a path', async () => {
   });
 
   it('answers a well-formed id that names nothing with 404 (positive control)', async () => {
-    const { status } = await get(
-      `/${organization.tenantId}/${organization.id}/attachments/00000000-0000-4000-8000-000000000000`,
-    );
+    const { status } = await get(`/${organization.tenantId}/${organization.id}/attachments/00000000-0000-4000-8000-000000000000`);
     expect(status).toBe(404);
   });
 });

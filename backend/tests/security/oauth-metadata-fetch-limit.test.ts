@@ -4,13 +4,7 @@ import { clientMetadataFetchLimiter } from '#/middlewares/rate-limiter/limiters'
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { adminRole } from '../fixtures';
 import { CookieJar, createTestOrganization, expectRefusal } from '../helpers';
-import {
-  authorizationCodeToken,
-  installApp,
-  registerApp,
-  startTestOauthServer,
-  type TestOauthServer,
-} from '../oauth-helpers';
+import { authorizationCodeToken, installApp, registerApp, startTestOauthServer, type TestOauthServer } from '../oauth-helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData, createOrgUser } from './helpers';
 
@@ -57,11 +51,7 @@ describe('authorization server fetch budget', async () => {
       const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url;
       if (url === CIMD_ID || url === SECTOR_CLIENT_ID) {
         fetched.push(url);
-        const document = {
-          ...cimdDocument,
-          client_id: url,
-          ...(url === SECTOR_CLIENT_ID && { sector_identifier_uri: SECTOR_URI }),
-        };
+        const document = { ...cimdDocument, client_id: url, ...(url === SECTOR_CLIENT_ID && { sector_identifier_uri: SECTOR_URI }) };
         return new Response(JSON.stringify(document), { headers: { 'content-type': 'application/json' } });
       }
       if (url === SECTOR_URI) {
@@ -188,9 +178,7 @@ describe('authorization server fetch budget', async () => {
     try {
       const before = fetched.length;
       const details = (from: string) =>
-        fetch(`${origin()}/oauth/interaction/${uid}/details`, {
-          headers: { Cookie: browser.header(), 'x-forwarded-for': from },
-        });
+        fetch(`${origin()}/oauth/interaction/${uid}/details`, { headers: { Cookie: browser.header(), 'x-forwarded-for': from } });
 
       const refused = await details(ip);
       await expectRefusal(refused, 429, 'too_many_requests');
@@ -235,9 +223,7 @@ describe('authorization server fetch budget', async () => {
     const ip = randomIp();
     await spendBudget(ip);
 
-    const discovery = await fetch(`${oauth.issuer}/.well-known/oauth-authorization-server`, {
-      headers: { 'x-forwarded-for': ip },
-    });
+    const discovery = await fetch(`${oauth.issuer}/.well-known/oauth-authorization-server`, { headers: { 'x-forwarded-for': ip } });
     expect(discovery.status).toBe(200);
     expect((await fetch(`${oauth.issuer}/jwks`, { headers: { 'x-forwarded-for': ip } })).status).toBe(200);
   });

@@ -11,9 +11,7 @@ export function CallToAction() {
 
   return (
     <div className="mx-auto grid max-w-4xl text-center">
-      <p className="mb-12 font-semibold text-3xl leading-tight sm:text-4xl lg:text-5xl">
-        {t('about:call_to_action.intro')}
-      </p>
+      <p className="mb-12 font-semibold text-3xl leading-tight sm:text-4xl lg:text-5xl">{t('about:call_to_action.intro')}</p>
 
       <div className="z-10 mx-auto mt-6 mb-12 flex flex-col gap-4 sm:flex-row">
         <Button

@@ -38,9 +38,7 @@ export function Calendar({
   formatters,
   components,
   ...props
-}: React.ComponentProps<typeof DayPicker> & {
-  buttonVariant?: React.ComponentProps<typeof Button>['variant'];
-}) {
+}: React.ComponentProps<typeof DayPicker> & { buttonVariant?: React.ComponentProps<typeof Button>['variant'] }) {
   const defaultClassNames = getDefaultClassNames();
 
   return (
@@ -53,10 +51,7 @@ export function Calendar({
         className,
       )}
       captionLayout={captionLayout}
-      formatters={{
-        formatMonthDropdown: (date) => date.toLocaleString('default', { month: 'short' }),
-        ...formatters,
-      }}
+      formatters={{ formatMonthDropdown: (date) => date.toLocaleString('default', { month: 'short' }), ...formatters }}
       classNames={{
         root: cn('w-fit', defaultClassNames.root),
         months: cn('relative flex flex-col gap-4 md:flex-row', defaultClassNames.months),
@@ -72,14 +67,8 @@ export function Calendar({
           'size-(--cell-size) select-none p-0 aria-disabled:opacity-50',
           defaultClassNames.button_next,
         ),
-        month_caption: cn(
-          'flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)',
-          defaultClassNames.month_caption,
-        ),
-        dropdowns: cn(
-          'flex h-(--cell-size) w-full items-center justify-center gap-1.5 font-medium text-sm',
-          defaultClassNames.dropdowns,
-        ),
+        month_caption: cn('flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)', defaultClassNames.month_caption),
+        dropdowns: cn('flex h-(--cell-size) w-full items-center justify-center gap-1.5 font-medium text-sm', defaultClassNames.dropdowns),
         dropdown_root: cn(
           'relative rounded-md border border-input shadow-xs has-focus:border-ring has-focus:ring-2 has-focus:ring-ring',
           defaultClassNames.dropdown_root,
@@ -94,10 +83,7 @@ export function Calendar({
         ),
         month_grid: 'w-full border-collapse',
         weekdays: cn('flex', defaultClassNames.weekdays),
-        weekday: cn(
-          'flex-1 select-none rounded-md font-normal text-[0.8rem] text-muted-foreground',
-          defaultClassNames.weekday,
-        ),
+        weekday: cn('flex-1 select-none rounded-md font-normal text-[0.8rem] text-muted-foreground', defaultClassNames.weekday),
         week: cn('mt-2 flex w-full', defaultClassNames.week),
         week_number_header: cn('w-(--cell-size) select-none', defaultClassNames.week_number_header),
         week_number: cn('select-none text-[0.8rem] text-muted-foreground', defaultClassNames.week_number),
@@ -108,22 +94,13 @@ export function Calendar({
         range_start: cn('rounded-l-md bg-accent', defaultClassNames.range_start),
         range_middle: cn('rounded-none', defaultClassNames.range_middle),
         range_end: cn('rounded-r-md bg-accent', defaultClassNames.range_end),
-        today: cn(
-          'rounded-md bg-accent text-accent-foreground data-[selected=true]:rounded-none',
-          defaultClassNames.today,
-        ),
+        today: cn('rounded-md bg-accent text-accent-foreground data-[selected=true]:rounded-none', defaultClassNames.today),
         outside: cn('text-muted-foreground aria-selected:text-muted-foreground', defaultClassNames.outside),
         disabled: cn('text-muted-foreground opacity-50', defaultClassNames.disabled),
         hidden: cn('invisible', defaultClassNames.hidden),
         ...classNames,
       }}
-      components={{
-        Root: CalendarRoot,
-        Chevron: CalendarChevron,
-        DayButton: CalendarDayButton,
-        WeekNumber: CalendarWeekNumber,
-        ...components,
-      }}
+      components={{ Root: CalendarRoot, Chevron: CalendarChevron, DayButton: CalendarDayButton, WeekNumber: CalendarWeekNumber, ...components }}
       {...props}
     />
   );
@@ -143,9 +120,7 @@ function CalendarDayButton({ className, day, modifiers, ...props }: React.Compon
       variant="ghost"
       size="icon"
       data-day={day.date.toLocaleDateString()}
-      data-selected-single={
-        modifiers.selected && !modifiers.range_start && !modifiers.range_end && !modifiers.range_middle
-      }
+      data-selected-single={modifiers.selected && !modifiers.range_start && !modifiers.range_end && !modifiers.range_middle}
       data-range-start={modifiers.range_start}
       data-range-end={modifiers.range_end}
       data-range-middle={modifiers.range_middle}

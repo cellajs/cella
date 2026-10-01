@@ -59,10 +59,7 @@ function checkAppendOnly(files: string[]) {
     const rel = relative(repoRoot, abs);
     let firstCommit: string;
     try {
-      const log = execFileSync('git', ['log', '--diff-filter=A', '--follow', '--format=%H', '--', rel], {
-        cwd: repoRoot,
-        encoding: 'utf8',
-      })
+      const log = execFileSync('git', ['log', '--diff-filter=A', '--follow', '--format=%H', '--', rel], { cwd: repoRoot, encoding: 'utf8' })
         .trim()
         .split('\n')
         .filter(Boolean);
@@ -108,12 +105,7 @@ function checkExpandBeforeContract() {
     const fields = fieldsOf(lens.delta);
     const hasExpand = lenses
       .slice(0, i)
-      .some(
-        (prev) =>
-          prev.entityType === lens.entityType &&
-          prev.phase === 'expand' &&
-          fieldsOf(prev.delta).some((f) => fields.includes(f)),
-      );
+      .some((prev) => prev.entityType === lens.entityType && prev.phase === 'expand' && fieldsOf(prev.delta).some((f) => fields.includes(f)));
     if (!hasExpand) {
       failures.push(
         `Expand-before-contract violation: lens "${lens.id}" contracts ${lens.entityType} without a preceding expand lens on the same field.`,

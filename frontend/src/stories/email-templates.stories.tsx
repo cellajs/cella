@@ -50,19 +50,13 @@ const meta = {
   title: 'Emails/Email templates',
   component: EmailPreview,
   tags: ['!test', '!autodocs'],
-  parameters: {
-    layout: 'fullscreen',
-    chromatic: { disableSnapshot: true },
-  },
+  parameters: { layout: 'fullscreen', chromatic: { disableSnapshot: true } },
   argTypes: {
     name: { table: { disable: true } },
     lng: { options: appConfig.languages, control: { type: 'radio' } },
     placeholders: { control: 'boolean' },
   },
-  args: {
-    lng: appConfig.languages[0],
-    placeholders: false,
-  },
+  args: { lng: appConfig.languages[0], placeholders: false },
 } satisfies Meta<typeof EmailPreview>;
 
 export default meta;

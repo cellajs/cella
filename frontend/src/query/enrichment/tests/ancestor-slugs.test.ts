@@ -49,16 +49,10 @@ describe('ancestor slug enrichment', () => {
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
 
     queryClient.setQueryData(['me', 'memberships'], {
-      items: [
-        makeMembership('org-1'),
-        makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1' }),
-      ],
+      items: [makeMembership('org-1'), makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1' })],
     });
 
-    queryClient.setQueryData(
-      ['project', 'list'],
-      makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]),
-    );
+    queryClient.setQueryData(['project', 'list'], makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]));
 
     const data = queryClient.getQueryData(['project', 'list']) as any;
     const item = data.pages[0].items[0];
@@ -69,9 +63,7 @@ describe('ancestor slug enrichment', () => {
   it('does not set ancestorSlugs for the organization', () => {
     unsubscribe = initChannelEnrichment();
 
-    queryClient.setQueryData(['me', 'memberships'], {
-      items: [makeMembership('org-1')],
-    });
+    queryClient.setQueryData(['me', 'memberships'], { items: [makeMembership('org-1')] });
 
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
 
@@ -84,16 +76,10 @@ describe('ancestor slug enrichment', () => {
     unsubscribe = initChannelEnrichment();
 
     queryClient.setQueryData(['me', 'memberships'], {
-      items: [
-        makeMembership('org-1'),
-        makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1' }),
-      ],
+      items: [makeMembership('org-1'), makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1' })],
     });
 
-    queryClient.setQueryData(
-      ['project', 'list'],
-      makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]),
-    );
+    queryClient.setQueryData(['project', 'list'], makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]));
 
     let data = queryClient.getQueryData(['project', 'list']) as any;
     expect(data.pages[0].items[0].ancestorSlugs?.organization).toBe('org-1');
@@ -114,19 +100,11 @@ describe('ancestor slug enrichment', () => {
       items: [
         makeMembership('org-1'),
         makeMembership('ws-1', { channelType: 'workspace', organizationId: 'org-1', workspaceId: 'ws-1' }),
-        makeMembership('proj-1', {
-          channelType: 'project',
-          organizationId: 'org-1',
-          projectId: 'proj-1',
-          workspaceId: 'ws-1',
-        }),
+        makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1', workspaceId: 'ws-1' }),
       ],
     });
 
-    queryClient.setQueryData(
-      ['project', 'list'],
-      makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]),
-    );
+    queryClient.setQueryData(['project', 'list'], makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]));
 
     const data = queryClient.getQueryData(['project', 'list']) as any;
     const item = data.pages[0].items[0];
@@ -140,19 +118,11 @@ describe('ancestor slug enrichment', () => {
     queryClient.setQueryData(['me', 'memberships'], {
       items: [
         makeMembership('org-1'),
-        makeMembership('proj-1', {
-          channelType: 'project',
-          organizationId: 'org-1',
-          projectId: 'proj-1',
-          workspaceId: 'ws-1',
-        }),
+        makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1', workspaceId: 'ws-1' }),
       ],
     });
 
-    queryClient.setQueryData(
-      ['project', 'list'],
-      makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]),
-    );
+    queryClient.setQueryData(['project', 'list'], makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]));
 
     // Before workspace loads, falls back to ID
     let data = queryClient.getQueryData(['project', 'list']) as any;
@@ -171,16 +141,10 @@ describe('ancestor slug enrichment', () => {
     queryClient.setQueryData(['organization', 'list'], makeInfiniteData([{ id: 'org-1', slug: 'acme-corp' } as any]));
 
     queryClient.setQueryData(['me', 'memberships'], {
-      items: [
-        makeMembership('org-1'),
-        makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1' }),
-      ],
+      items: [makeMembership('org-1'), makeMembership('proj-1', { channelType: 'project', organizationId: 'org-1', projectId: 'proj-1' })],
     });
 
-    queryClient.setQueryData(
-      ['project', 'list'],
-      makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]),
-    );
+    queryClient.setQueryData(['project', 'list'], makeInfiniteData([{ id: 'proj-1', slug: 'my-project', organizationId: 'org-1' } as any]));
 
     const first = queryClient.getQueryData(['project', 'list']);
 

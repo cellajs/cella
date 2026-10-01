@@ -15,6 +15,4 @@ export type CreateClientConfig<T extends ClientOptions = ClientOptions2> = (
   override?: Config<ClientOptions & T>,
 ) => Config<Required<ClientOptions> & T>;
 
-export const client: Client = createClient(
-  createConfig<ClientOptions2>({ baseUrl: 'http://localhost:3000/api', throwOnError: true }),
-);
+export const client: Client = createClient(createConfig<ClientOptions2>({ baseUrl: 'http://localhost:3000/api', throwOnError: true }));

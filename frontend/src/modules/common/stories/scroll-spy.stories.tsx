@@ -30,15 +30,7 @@ const tabs: SidebarTab[] = [
 
 // ─── AsideAnchor (mirrors ~/modules/common/aside-anchor.tsx) ─────────────────
 
-const AsideAnchor = ({
-  id,
-  children,
-  extraOffset,
-}: {
-  id: string;
-  children?: React.ReactNode;
-  extraOffset?: boolean;
-}) => (
+const AsideAnchor = ({ id, children, extraOffset }: { id: string; children?: React.ReactNode; extraOffset?: boolean }) => (
   <div id={`spy-${id}-anchor-wrap`} className="last:mb-12 md:last:mb-[70vh]">
     <div id={`spy-${id}`} className={cn('absolute w-[.05rem]', extraOffset ? '-mt-16 h-16' : '-mt-8 h-8')} />
     {children}
@@ -53,8 +45,8 @@ const SectionCard = ({ id, title, lines = 8 }: { id: string; title: string; line
       <h2 className="mb-4 font-semibold text-xl">{title}</h2>
       {Array.from({ length: lines }, (_, i) => (
         <p key={i} className="mb-3 text-muted-foreground leading-relaxed">
-          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore
-          magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco.
+          Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim
+          veniam, quis nostrud exercitation ullamco.
         </p>
       ))}
     </div>
@@ -72,11 +64,7 @@ const SidebarWithRouter = () => (
         variant="ghost"
         size="lg"
         data-spy-link={id}
-        className={cn(
-          'w-full justify-start text-left hover:bg-accent/50',
-          id.includes('delete') && 'text-red-600',
-          'data-spy-active:bg-secondary',
-        )}
+        className={cn('w-full justify-start text-left hover:bg-accent/50', id.includes('delete') && 'text-red-600', 'data-spy-active:bg-secondary')}
         render={
           <Link
             to="."
@@ -199,11 +187,7 @@ const TestPanel = () => {
         <button type="button" className="rounded border px-2 py-1 text-xs hover:bg-accent/50" onClick={checkState}>
           Check state
         </button>
-        <button
-          type="button"
-          className="ml-auto rounded border px-2 py-1 text-xs hover:bg-accent/50"
-          onClick={() => setLog([])}
-        >
+        <button type="button" className="ml-auto rounded border px-2 py-1 text-xs hover:bg-accent/50" onClick={() => setLog([])}>
           Clear
         </button>
       </div>
@@ -212,10 +196,7 @@ const TestPanel = () => {
       <div ref={logRef} className="max-h-32 space-y-0.5 overflow-y-auto rounded bg-background/50 p-2 font-mono">
         {log.length === 0 && <div className="text-muted-foreground">Click a button or scroll manually…</div>}
         {log.map((entry, i) => (
-          <div
-            key={i}
-            className={entry.startsWith('✗') ? 'text-red-500' : entry.startsWith('✓') ? 'text-green-600' : ''}
-          >
+          <div key={i} className={entry.startsWith('✗') ? 'text-red-500' : entry.startsWith('✓') ? 'text-green-600' : ''}>
             {entry}
           </div>
         ))}
@@ -226,22 +207,12 @@ const TestPanel = () => {
 
 // ─── Full page layout ────────────────────────────────────────────────────────
 
-const ScrollSpyPage = ({
-  withRouter = true,
-  label,
-  showTests,
-}: {
-  withRouter?: boolean;
-  label?: string;
-  showTests?: boolean;
-}) => (
+const ScrollSpyPage = ({ withRouter = true, label, showTests }: { withRouter?: boolean; label?: string; showTests?: boolean }) => (
   <div className="min-h-svh bg-background text-foreground">
     {/* Sticky header */}
     <div className="sticky top-0 z-10 border-b bg-background/95 p-3 backdrop-blur">
       <h1 className="font-semibold text-base">{label ?? 'Scroll Spy Test'}</h1>
-      <p className="text-muted-foreground text-xs">
-        {withRouter ? 'TanStack Router (production-like)' : 'No Router (isolation)'}
-      </p>
+      <p className="text-muted-foreground text-xs">{withRouter ? 'TanStack Router (production-like)' : 'No Router (isolation)'}</p>
     </div>
 
     <div className="flex">
@@ -285,12 +256,7 @@ const createStoryRouter = (label: string, showTests?: boolean) => {
     ),
   });
 
-  const catchAllRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: '$',
-    staticData: { isAuth: false },
-    component: () => null,
-  });
+  const catchAllRoute = createRoute({ getParentRoute: () => rootRoute, path: '$', staticData: { isAuth: false }, component: () => null });
 
   return createRouter({
     routeTree: rootRoute.addChildren([catchAllRoute]),

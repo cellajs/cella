@@ -8,11 +8,7 @@ import { runPrivilegedConverge } from './privileged-converge';
  * It runs against a bootstrapped stack with live compute, so it must NOT set the computeDeferred marker, which belongs to the fresh-provision flow in setup.ts.
  */
 export async function runApply(context: InfraContext): Promise<void> {
-  console.info(
-    pc.dim(
-      '\nApply infra change: ensure registry IAM principals, preview the plan with your Owner API key, confirm, then pulumi up.\n',
-    ),
-  );
+  console.info(pc.dim('\nApply infra change: ensure registry IAM principals, preview the plan with your Owner API key, confirm, then pulumi up.\n'));
 
   console.warn(
     `${pc.yellow(pc.bold('⚠  Keep this run in the foreground.'))} ${pc.dim('If it is interrupted, re-run "Apply infra change" to converge.')}`,

@@ -26,12 +26,7 @@ export function isTransientError(error: unknown): boolean {
 }
 
 function hasErrorCode(value: unknown): value is { code: string } {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    'code' in value &&
-    typeof (value as { code: unknown }).code === 'string'
-  );
+  return typeof value === 'object' && value !== null && 'code' in value && typeof (value as { code: unknown }).code === 'string';
 }
 
 /** Reads the PostgreSQL error code, unwrapping Drizzle-wrapped errors via `.cause`. */
@@ -43,9 +38,7 @@ export function getErrorCode(error: unknown): string | null {
   return null;
 }
 
-type RetryResult<T> =
-  | { success: true; value: T; attempts: number }
-  | { success: false; error: Error; attempts: number; isTransient: boolean };
+type RetryResult<T> = { success: true; value: T; attempts: number } | { success: false; error: Error; attempts: number; isTransient: boolean };
 
 /**
  * Retries transient errors with exponential backoff.
@@ -67,10 +60,7 @@ export async function withRetry<T>(fn: () => Promise<T>, context: string): Promi
         break;
       }
 
-      const delay = Math.min(
-        RETRY_CONFIG.initialDelayMs * RETRY_CONFIG.backoffMultiplier ** (attempt - 1),
-        RETRY_CONFIG.maxDelayMs,
-      );
+      const delay = Math.min(RETRY_CONFIG.initialDelayMs * RETRY_CONFIG.backoffMultiplier ** (attempt - 1), RETRY_CONFIG.maxDelayMs);
 
       log.warn(`Transient error during ${context}, retrying...`, {
         attempt,
@@ -84,10 +74,5 @@ export async function withRetry<T>(fn: () => Promise<T>, context: string): Promi
     }
   }
 
-  return {
-    success: false,
-    error: lastError,
-    attempts: RETRY_CONFIG.maxAttempts,
-    isTransient: isLastErrorTransient,
-  };
+  return { success: false, error: lastError, attempts: RETRY_CONFIG.maxAttempts, isTransient: isLastErrorTransient };
 }

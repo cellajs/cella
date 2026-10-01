@@ -323,17 +323,7 @@
         "resourceType": {
           "type": ["string", "null"],
           "required": true,
-          "enum": [
-            "request",
-            "membership",
-            "inactive_membership",
-            "tenant",
-            "system_role",
-            "service_account",
-            "api_key",
-            "oauth_client",
-            null
-          ]
+          "enum": ["request", "membership", "inactive_membership", "tenant", "system_role", "service_account", "api_key", "oauth_client", null]
         },
         "subjectId": {
           "type": ["string", "null"],
@@ -566,11 +556,7 @@
           },
           "ref": "#/components/schemas/User"
         },
-        "isSystemAdmin": {
-          "type": "boolean",
-          "required": true,
-          "description": "Whether the current user has system admin privileges."
-        }
+        "isSystemAdmin": { "type": "boolean", "required": true, "description": "Whether the current user has system admin privileges." }
       }
     },
     "schemaTag": "data",
@@ -699,15 +685,7 @@
               "revocationReason": {
                 "type": ["string", "null"],
                 "required": true,
-                "enum": [
-                  "sign_out",
-                  "other_session",
-                  "mfa_enabled",
-                  "session_cap",
-                  "replaced",
-                  "impersonation_stopped",
-                  null
-                ]
+                "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", "impersonation_stopped", null]
               },
               "impersonatorSessionId": {
                 "type": ["string", "null"],
@@ -1473,11 +1451,7 @@
           "format": "uuid"
         },
         "createdAt": { "type": "string", "required": true },
-        "secret": {
-          "type": "string",
-          "required": true,
-          "description": "The plaintext API key; store it now, it is not shown again."
-        }
+        "secret": { "type": "string", "required": true, "description": "The plaintext API key; store it now, it is not shown again." }
       },
       "extendsRef": "#/components/schemas/ApiKey"
     },
@@ -1663,11 +1637,7 @@
           "type": ["string", "null"],
           "required": true
         },
-        "domainsCount": {
-          "type": "integer",
-          "required": true,
-          "description": "Number of domains claimed by this tenant"
-        }
+        "domainsCount": { "type": "integer", "required": true, "description": "Number of domains claimed by this tenant" }
       }
     },
     "schemaTag": "data",
@@ -1752,11 +1722,7 @@
           "type": ["string", "null"],
           "required": true
         },
-        "domainsCount": {
-          "type": "integer",
-          "required": true,
-          "description": "Number of domains claimed by this tenant"
-        },
+        "domainsCount": { "type": "integer", "required": true, "description": "Number of domains claimed by this tenant" },
         "organization": {
           "type": ["object", "null"],
           "required": true,

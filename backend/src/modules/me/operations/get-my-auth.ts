@@ -18,9 +18,7 @@ export async function getMyAuthOp(ctx: UserContext, { sessions }: GetMyAuthOpts)
   const { oauth, ...restInfo } = authInfo;
   const enabledOAuth = oauth
     .map(({ provider }) => provider)
-    .filter((provider): provider is EnabledOAuthProvider =>
-      appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider),
-    );
+    .filter((provider): provider is EnabledOAuthProvider => appConfig.enabledOAuthProviders.includes(provider as EnabledOAuthProvider));
 
   return { ...restInfo, enabledOAuth, sessions };
 }

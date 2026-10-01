@@ -1,11 +1,6 @@
 import { appConfig, type EntityRole } from 'shared';
 import { describe, expect, it } from 'vitest';
-import {
-  canReceiveProductEvent,
-  rowReadDecisions,
-  rowScopedEvent,
-  type SubscriberAccess,
-} from '#/modules/entities/helpers/dispatch-to-stream';
+import { canReceiveProductEvent, rowReadDecisions, rowScopedEvent, type SubscriberAccess } from '#/modules/entities/helpers/dispatch-to-stream';
 import type { AppStreamProductEvent } from '#/modules/entities/stream/types';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { memberRole } from '../../../../tests/fixtures';
@@ -97,11 +92,7 @@ describe('dispatch batch eligibility: deterministic splits', () => {
     // Org members hold read:'own': the row must be authored by the reader to be readable.
     const event = attachmentEvent(ORGS[0], { rowData: attachmentRow('att-1', ORGS[0], { createdBy: 'user-1' }) });
 
-    const clean: SubscriberAccess = {
-      userId: 'user-1',
-      isSystemAdmin: false,
-      memberships: [membership(ORGS[0], memberRole, 'user-1')],
-    };
+    const clean: SubscriberAccess = { userId: 'user-1', isSystemAdmin: false, memberships: [membership(ORGS[0], memberRole, 'user-1')] };
     // A granting membership plus a malformed one: the engine fail-closes just this access.
     const broken: SubscriberAccess = {
       userId: 'user-2',
@@ -154,10 +145,7 @@ describe('dispatch batch eligibility: randomized parity sweep', () => {
       );
       const event = attachmentEvent(eventOrg, {
         rowData: rows[0],
-        ...(rowCount > 1 && {
-          batchUntilSeq: rowCount,
-          batchRows: rows.map((rowData, i) => ({ seq: i + 1, rowData })),
-        }),
+        ...(rowCount > 1 && { batchUntilSeq: rowCount, batchRows: rows.map((rowData, i) => ({ seq: i + 1, rowData })) }),
       });
 
       const subscribers: SubscriberAccess[] = Array.from({ length: 60 }, () => {
@@ -166,17 +154,13 @@ describe('dispatch batch eligibility: randomized parity sweep', () => {
         return {
           userId,
           isSystemAdmin: random() < 0.05,
-          memberships: Array.from({ length: membershipCount }, () =>
-            membership(pick(ORGS), pick(roles), userId, random() < 0.05),
-          ),
+          memberships: Array.from({ length: membershipCount }, () => membership(pick(ORGS), pick(roles), userId, random() < 0.05)),
         };
       });
 
       const batch = batchDecisions(subscribers, event);
       for (const [index, subscriber] of subscribers.entries()) {
-        expect(batch[index], `seed=0x${SEED.toString(16)} iteration=${iteration} subscriber=${index}`).toBe(
-          singleDecision(subscriber, event),
-        );
+        expect(batch[index], `seed=0x${SEED.toString(16)} iteration=${iteration} subscriber=${index}`).toBe(singleDecision(subscriber, event));
       }
     }
   });

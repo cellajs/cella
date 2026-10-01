@@ -3,38 +3,21 @@ import { CircleCheckBigIcon, InfoIcon, TriangleAlertIcon } from 'lucide-react';
 import type { TKey } from '~/lib/i18n-locales';
 import { AlertBanner } from '~/modules/common/alerter/alert-banner';
 
-const meta = {
-  title: 'common/AlertBanner',
-  component: AlertBanner,
-  tags: ['autodocs'],
-  parameters: { layout: 'padded' },
-} satisfies Meta<typeof AlertBanner>;
+const meta = { title: 'common/AlertBanner', component: AlertBanner, tags: ['autodocs'], parameters: { layout: 'padded' } } satisfies Meta<
+  typeof AlertBanner
+>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Default: Story = {
-  args: {
-    id: 'story-default',
-    children: 'This is a default alert banner.',
-  },
-};
+export const Default: Story = { args: { id: 'story-default', children: 'This is a default alert banner.' } };
 
 export const WithTitle: Story = {
-  args: {
-    id: 'story-title',
-    title: 'Heads up!' as TKey,
-    children: 'Something important happened that you should know about.',
-  },
+  args: { id: 'story-title', title: 'Heads up!' as TKey, children: 'Something important happened that you should know about.' },
 };
 
 export const WithIcon: Story = {
-  args: {
-    id: 'story-icon',
-    icon: InfoIcon,
-    title: 'Information' as TKey,
-    children: 'This alert includes an icon for additional context.',
-  },
+  args: { id: 'story-icon', icon: InfoIcon, title: 'Information' as TKey, children: 'This alert includes an icon for additional context.' },
 };
 
 export const Destructive: Story = {
@@ -48,31 +31,13 @@ export const Destructive: Story = {
 };
 
 export const Success: Story = {
-  args: {
-    id: 'story-success',
-    variant: 'success',
-    icon: CircleCheckBigIcon,
-    title: 'Success' as TKey,
-    children: 'Your changes have been saved.',
-  },
+  args: { id: 'story-success', variant: 'success', icon: CircleCheckBigIcon, title: 'Success' as TKey, children: 'Your changes have been saved.' },
 };
 
 export const Warning: Story = {
-  args: {
-    id: 'story-warning',
-    variant: 'warning',
-    icon: TriangleAlertIcon,
-    title: 'Warning' as TKey,
-    children: 'This action cannot be undone.',
-  },
+  args: { id: 'story-warning', variant: 'warning', icon: TriangleAlertIcon, title: 'Warning' as TKey, children: 'This action cannot be undone.' },
 };
 
 export const Animated: Story = {
-  args: {
-    id: 'story-animated',
-    animate: true,
-    icon: InfoIcon,
-    title: 'Animated alert' as TKey,
-    children: 'This alert uses enter/exit animations.',
-  },
+  args: { id: 'story-animated', animate: true, icon: InfoIcon, title: 'Animated alert' as TKey, children: 'This alert uses enter/exit animations.' },
 };

@@ -127,50 +127,24 @@ export function UserCombobox({ value, onValueChange, channel }: Props) {
       </ComboboxPrimitive.Trigger>
 
       <ComboboxContent className="p-0">
-        <ComboboxSearchInput
-          value={searchQuery}
-          isSearching={isFetching}
-          placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })}
-        />
+        <ComboboxSearchInput value={searchQuery} isSearching={isFetching} placeholder={t('c:placeholder.type_input', { inputLabel: nameLabel })} />
         <ComboboxList className="h-full px-1">
           <AnimatePresence mode="wait">
             {!isFetching && !items.length ? (
-              <motion.div
-                key="empty-state"
-                initial="hidden"
-                animate="visible"
-                exit="exit"
-                variants={variants}
-                className="h-full"
-              >
+              <motion.div key="empty-state" initial="hidden" animate="visible" exit="exit" variants={variants} className="h-full">
                 {debouncedSearchQuery.length ? (
                   <ComboboxEmpty>
-                    <ContentPlaceholder
-                      icon={SearchIcon}
-                      title="c:no_resource_found"
-                      titleProps={{ resource: t('c:user_other').toLowerCase() }}
-                    />
+                    <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleProps={{ resource: t('c:user_other').toLowerCase() }} />
                   </ComboboxEmpty>
                 ) : (
                   <ComboboxEmpty>
-                    <ContentPlaceholder
-                      icon={UsersRoundIcon}
-                      title="c:invite_members_search.text"
-                      titleProps={{ appName: appConfig.name }}
-                    />
+                    <ContentPlaceholder icon={UsersRoundIcon} title="c:invite_members_search.text" titleProps={{ appName: appConfig.name }} />
                   </ComboboxEmpty>
                 )}
               </motion.div>
             ) : (
               items.length > 0 && (
-                <motion.div
-                  key="results"
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                  variants={variants}
-                  className="max-h-[30vh] overflow-y-auto"
-                >
+                <motion.div key="results" initial="hidden" animate="visible" exit="exit" variants={variants} className="max-h-[30vh] overflow-y-auto">
                   <ScrollArea>
                     {items.map(({ id, name, email, entityType, thumbnailUrl }) => {
                       const alreadyMember = existingMemberIds.has(id);
@@ -184,24 +158,14 @@ export function UserCombobox({ value, onValueChange, channel }: Props) {
                           className="group w-full justify-between"
                         >
                           <div className="group flex items-center space-x-2 outline-0 ring-0">
-                            <EntityAvatar
-                              type={entityType}
-                              className="h-8 w-8"
-                              id={id}
-                              name={name}
-                              url={thumbnailUrl}
-                            />
+                            <EntityAvatar type={entityType} className="h-8 w-8" id={id} name={name} url={thumbnailUrl} />
                             <span className="truncate font-medium underline-offset-4 group-hover:underline group-data-[already-member=true]:no-underline">
                               {isMobile ? email : name}
                             </span>
                           </div>
 
                           <div className="flex min-w-0 items-center gap-2">
-                            <Badge
-                              size="sm"
-                              variant="plain"
-                              className="hidden gap-1 group-data-[already-member=true]:flex"
-                            >
+                            <Badge size="sm" variant="plain" className="hidden gap-1 group-data-[already-member=true]:flex">
                               <UserIcon />
                               <span className="max-sm:hidden">{t('c:already_member')}</span>
                             </Badge>

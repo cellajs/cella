@@ -17,9 +17,7 @@ function maskMarkdownCode(source: string): string {
         return ' '.repeat(line.length);
       }
       if (inFence) return ' '.repeat(line.length);
-      return line
-        .replace(/\]\([^)]+\)/g, (match) => `]${' '.repeat(match.length - 1)}`)
-        .replace(/`[^`\n]*`/g, (match) => ' '.repeat(match.length));
+      return line.replace(/\]\([^)]+\)/g, (match) => `]${' '.repeat(match.length - 1)}`).replace(/`[^`\n]*`/g, (match) => ' '.repeat(match.length));
     })
     .join('\n');
 }

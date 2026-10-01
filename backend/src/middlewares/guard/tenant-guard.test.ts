@@ -14,14 +14,7 @@ const OTHER_TENANT_ID = 'tenant2';
 const tenantRow = (status = 'active') => ({ id: TENANT_ID, status, createdBy: 'founder', restrictions: {} }) as never;
 
 const membership = (tenantId: string) =>
-  ({
-    tenantId,
-    channelType: 'organization',
-    channelId: 'org-1',
-    organizationId: 'org-1',
-    role: 'member',
-    userId: 'u1',
-  }) as never;
+  ({ tenantId, channelType: 'organization', channelId: 'org-1', organizationId: 'org-1', role: 'member', userId: 'u1' }) as never;
 
 type Actor = { kind: 'user' | 'service'; id: string; bindings: unknown[]; scopes: null; tenantId?: string };
 
@@ -103,9 +96,7 @@ describe('tenantGuard', () => {
     expect(member.status).toBe(403);
     expect(member.meta).toEqual({ resource: 'tenant', tenantStatus: 'suspended' });
 
-    const outsider = await runExpectingError(
-      mockCtx({ actor: user([membership(OTHER_TENANT_ID)]), tenantId: TENANT_ID }),
-    );
+    const outsider = await runExpectingError(mockCtx({ actor: user([membership(OTHER_TENANT_ID)]), tenantId: TENANT_ID }));
     expect(outsider.status).toBe(403);
     expect(outsider.meta).toEqual({ resource: 'tenant' });
 

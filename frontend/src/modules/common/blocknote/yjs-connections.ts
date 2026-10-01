@@ -21,11 +21,7 @@ const MAX_BACKOFF_MS = 30_000;
 const MAX_TOKEN_FAILURES = 5;
 
 /** WebSocket close codes sent by the Yjs relay; the 4000-4999 range is reserved for application use. */
-const YJS_CLOSE = {
-  TOKEN_INVALID: 4001,
-  ACCESS_DENIED: 4003,
-  BAD_REQUEST: 4400,
-} as const;
+const YJS_CLOSE = { TOKEN_INVALID: 4001, ACCESS_DENIED: 4003, BAD_REQUEST: 4400 } as const;
 
 /** The relay's own message type next to y-websocket's sync (0) and awareness (1): the document's generation, sent before every handshake answer. Must match yjs/src/sync/relay.ts. */
 const YJS_MESSAGE_GENERATION = 4;
@@ -71,11 +67,7 @@ interface YjsSyncState {
   rebuilds: Record<string, number>;
 }
 
-const useYjsSyncStore = create<YjsSyncState>(() => ({
-  synced: {},
-  stopped: {},
-  rebuilds: {},
-}));
+const useYjsSyncStore = create<YjsSyncState>(() => ({ synced: {}, stopped: {}, rebuilds: {} }));
 
 /**
  * Ends a connection for good: no reconnect, and its editor turns read-only (useYjsConnection reports `stopped`), so
@@ -207,12 +199,7 @@ function unbindProvider(conn: YjsConnection) {
  * the new fragment once it synced (useYjsConnection reports `synced` false meanwhile), and the user is told when the
  * dropped document held edits, since the description they see next is the one written elsewhere.
  */
-function rebuildConnection(
-  editSessionId: string,
-  conn: YjsConnection,
-  entityType: ProductEntityType,
-  tenantId: string,
-) {
+function rebuildConnection(editSessionId: string, conn: YjsConnection, entityType: ProductEntityType, tenantId: string) {
   const { edited } = conn;
   unbindProvider(conn);
   Object.assign(conn, openDoc(editSessionId, entityType, tenantId), { generation: null, edited: false });
@@ -236,13 +223,7 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
     return existing;
   }
 
-  const conn: YjsConnection = {
-    ...openDoc(editSessionId, entityType, tenantId),
-    refCount: 1,
-    stopped: false,
-    generation: null,
-    edited: false,
-  };
+  const conn: YjsConnection = { ...openDoc(editSessionId, entityType, tenantId), refCount: 1, stopped: false, generation: null, edited: false };
   bindProvider(editSessionId, conn, entityType, tenantId);
   connections.set(editSessionId, conn);
   return conn;

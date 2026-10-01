@@ -16,10 +16,7 @@ const MAX_ENTRIES = 50_000;
 
 const WINDOW_MS = 60 * 60 * 1000;
 
-const cache = new TTLCache<PointsEntry>({
-  maxSize: MAX_ENTRIES,
-  defaultTtl: WINDOW_MS,
-});
+const cache = new TTLCache<PointsEntry>({ maxSize: MAX_ENTRIES, defaultTtl: WINDOW_MS });
 
 /**
  * Local consumption accrues as debt settled by `takeDebt`, so each process reaches the threshold before its first flush.

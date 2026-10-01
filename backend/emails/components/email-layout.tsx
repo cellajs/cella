@@ -24,21 +24,8 @@ export interface EmailLayoutProps {
 }
 
 /** The frame every email shares: optional avatar and header, the body panel, logo and footer. */
-export const EmailLayout = ({
-  previewText,
-  headerHtml,
-  avatarName,
-  wide,
-  headChildren,
-  unsubscribe,
-  supportText,
-  children,
-}: EmailLayoutProps) => (
-  <EmailContainer
-    previewText={previewText}
-    containerStyle={wide ? { maxWidth: '40rem' } : undefined}
-    headChildren={headChildren}
-  >
+export const EmailLayout = ({ previewText, headerHtml, avatarName, wide, headChildren, unsubscribe, supportText, children }: EmailLayoutProps) => (
+  <EmailContainer previewText={previewText} containerStyle={wide ? { maxWidth: '40rem' } : undefined} headChildren={headChildren}>
     {avatarName && (
       <Row style={avatarRowStyle}>
         <Column align="center">

@@ -55,21 +55,11 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
       {container?.overlay &&
         (container.overlayRef?.current ? (
           createPortal(
-            <div
-              className={cn(
-                'absolute inset-0 z-30 bg-background/75 duration-200',
-                open ? 'fade-in-0 animate-in' : 'fade-out-0 animate-out',
-              )}
-            />,
+            <div className={cn('absolute inset-0 z-30 bg-background/75 duration-200', open ? 'fade-in-0 animate-in' : 'fade-out-0 animate-out')} />,
             container.overlayRef.current,
           )
         ) : (
-          <div
-            className={cn(
-              'fixed inset-0 z-30 bg-background/75 duration-200',
-              open ? 'fade-in-0 animate-in' : 'fade-out-0 animate-out',
-            )}
-          />
+          <div className={cn('fixed inset-0 z-30 bg-background/75 duration-200', open ? 'fade-in-0 animate-in' : 'fade-out-0 animate-out')} />
         ))}
       <DialogContent
         id={String(id)}
@@ -81,12 +71,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
       >
         {/* An empty header would overlap the content, e.g. in the fullscreen attachment dialog */}
         {(title || description) && (
-          <DialogHeader
-            sticky
-            className={cn(
-              isMobile && drawerOnMobile ? headerClassName?.replace('with-close-btn', '') : headerClassName,
-            )}
-          >
+          <DialogHeader sticky className={cn(isMobile && drawerOnMobile ? headerClassName?.replace('with-close-btn', '') : headerClassName)}>
             {title && <DialogTitle className="h-6 leading-6">{titleContent}</DialogTitle>}
             {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>

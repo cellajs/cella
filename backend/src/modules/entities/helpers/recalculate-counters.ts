@@ -11,36 +11,23 @@ import { getEntityTable } from '#/tables';
 const tbl = (et: EntityType) => getTableName(getEntityTable(et));
 
 /** CDC decrements e:c: counters on soft-delete, so recalculation must exclude tombstones to agree. */
-const livePredicate = (et: EntityType, alias: string) =>
-  'deletedAt' in getColumns(getEntityTable(et)) ? ` AND ${alias}.deleted_at IS NULL` : '';
+const livePredicate = (et: EntityType, alias: string) => ('deletedAt' in getColumns(getEntityTable(et)) ? ` AND ${alias}.deleted_at IS NULL` : '');
 
 /** CDC never counts drafts, so recalculation must exclude them from the table to agree. */
 const publishedPredicate = (et: EntityType, alias: string) =>
   'publishedAt' in getColumns(getEntityTable(et)) ? ` AND ${alias}.published_at IS NOT NULL` : '';
 
 /** Matches CDC's `resolveChannelKey`; the hierarchy parameter lets tests use synthetic trees. */
-export const deepestAncestorExpr = (et: string, alias: string, h: EntityHierarchy = hierarchy) =>
-  h.deepestAncestorSql(et, alias);
+export const deepestAncestorExpr = (et: string, alias: string, h: EntityHierarchy = hierarchy) => h.deepestAncestorSql(et, alias);
 
 /** JSONB pair with a COUNT subquery: 'key', COALESCE((SELECT COUNT(*) …), 0) */
-const countPair = (key: string, from: string, where: string) =>
-  `'${key}', COALESCE((SELECT COUNT(*) FROM ${from} WHERE ${where}), 0)`;
+const countPair = (key: string, from: string, where: string) => `'${key}', COALESCE((SELECT COUNT(*) FROM ${from} WHERE ${where}), 0)`;
 
 /** Build JSONB pairs for membership counts: m:c:{role}…, m:c:total, m:c:pending */
 const membershipPairs = (alias: string, fk: string, ctxType: string, ctxRoles: readonly string[]) => [
-  ...ctxRoles.map((r) =>
-    countPair(
-      `m:c:${r}`,
-      'memberships cm',
-      `cm.${fk} = ${alias}.id AND cm.channel_type = '${ctxType}' AND cm.role = '${r}'`,
-    ),
-  ),
+  ...ctxRoles.map((r) => countPair(`m:c:${r}`, 'memberships cm', `cm.${fk} = ${alias}.id AND cm.channel_type = '${ctxType}' AND cm.role = '${r}'`)),
   countPair('m:c:total', 'memberships cm', `cm.${fk} = ${alias}.id AND cm.channel_type = '${ctxType}'`),
-  countPair(
-    'm:c:pending',
-    'inactive_memberships im',
-    `im.${fk} = ${alias}.id AND im.channel_type = '${ctxType}' AND im.rejected_at IS NULL`,
-  ),
+  countPair('m:c:pending', 'inactive_memberships im', `im.${fk} = ${alias}.id AND im.channel_type = '${ctxType}' AND im.rejected_at IS NULL`),
 ];
 
 /** Upsert a SELECT into channel_counters with JSONB || merge */
@@ -105,9 +92,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
   }
 
   // Rebuilt from the maximum stamped sequence; tombstones stay part of the frontier, as in CDC.
-  const sequenceMaxes = appConfig.productEntityTypes.map(
-    (et) => `COALESCE((SELECT MAX(t.seq) FROM ${tbl(et)} t WHERE t.organization_id = o.id), 0)`,
-  );
+  const sequenceMaxes = appConfig.productEntityTypes.map((et) => `COALESCE((SELECT MAX(t.seq) FROM ${tbl(et)} t WHERE t.organization_id = o.id), 0)`);
   if (sequenceMaxes.length > 0) {
     await upsertChannelCounters(
       db,
@@ -181,10 +166,7 @@ export const recalculateCounters = async (db: DbOrTx) => {
     const ctxExpr = deepestAncestorExpr(entityType, 't');
     if (!ctxExpr) continue;
     // COALESCE mirrors CDC's e:li:h: stamp source (publishedAt ?? createdAt).
-    const liSource =
-      'publishedAt' in getColumns(getEntityTable(entityType))
-        ? 'COALESCE(t.published_at, t.created_at)'
-        : 't.created_at';
+    const liSource = 'publishedAt' in getColumns(getEntityTable(entityType)) ? 'COALESCE(t.published_at, t.created_at)' : 't.created_at';
 
     await upsertChannelCounters(
       db,
@@ -252,12 +234,8 @@ export const recalculateCounters = async (db: DbOrTx) => {
     );
   }
 
-  const [{ channelRows }] = await db
-    .select({ channelRows: sql<number>`count(*)`.mapWith(Number) })
-    .from(channelCountersTable);
-  const [{ productRows }] = await db
-    .select({ productRows: sql<number>`count(*)`.mapWith(Number) })
-    .from(productCountersTable);
+  const [{ channelRows }] = await db.select({ channelRows: sql<number>`count(*)`.mapWith(Number) }).from(channelCountersTable);
+  const [{ productRows }] = await db.select({ productRows: sql<number>`count(*)`.mapWith(Number) }).from(productCountersTable);
 
   return { channelRows, productRows };
 };

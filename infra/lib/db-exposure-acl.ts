@@ -33,10 +33,7 @@ function checkEntry(entry: string, allowWide: boolean): EntryCheck {
     return { ok: false, reason: `'${cidr}' would expose the database to the entire internet` };
   }
   if (!allowWide && prefix < minPrefix) {
-    return {
-      ok: false,
-      reason: `'${cidr}' is wider than /${minPrefix}; set infra:dbPublicAclAllowWide=true to allow it`,
-    };
+    return { ok: false, reason: `'${cidr}' is wider than /${minPrefix}; set infra:dbPublicAclAllowWide=true to allow it` };
   }
   return { ok: true, cidr, size };
 }
@@ -68,10 +65,7 @@ export function parseAclInput(raw: string, allowWide = false): AclParse {
     cidrs.push(check.cidr);
     opened += check.size;
     if (opened > 2 ** 31) {
-      return {
-        ok: false,
-        reason: `'${cidrs.join(', ')}' together would expose the database to more than half of IPv4`,
-      };
+      return { ok: false, reason: `'${cidrs.join(', ')}' together would expose the database to more than half of IPv4` };
     }
   }
   return { ok: true, cidrs };

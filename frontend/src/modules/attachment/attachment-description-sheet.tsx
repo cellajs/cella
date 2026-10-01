@@ -35,9 +35,7 @@ function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
   // The map is the home channel's own, so the row is at home for a home-scoped grant.
   const canEdit = resolveCan(channel?.can?.attachment?.update, attachment.createdBy, { row: homeId, channel: homeId });
 
-  const membersQuery = useInfiniteQuery(
-    membersListQueryOptions({ entityId: homeId, entityType: homeType, tenantId, organizationId }),
-  );
+  const membersQuery = useInfiniteQuery(membersListQueryOptions({ entityId: homeId, entityType: homeType, tenantId, organizationId }));
   const members = flattenInfiniteData<Member>(membersQuery.data);
 
   const { mutateAsync } = useAttachmentUpdateMutation(tenantId, organizationId);
@@ -84,13 +82,6 @@ export function openAttachmentDescriptionSheet(attachment: Attachment, triggerRe
     <div className="container w-full sm:pl-8">
       <AttachmentDescriptionForm attachment={attachment} />
     </div>,
-    {
-      id: sheetId,
-      triggerRef,
-      side: 'right',
-      className: 'max-w-full lg:max-w-3xl',
-      title: attachment.name,
-      description: i18n.t('c:description'),
-    },
+    { id: sheetId, triggerRef, side: 'right', className: 'max-w-full lg:max-w-3xl', title: attachment.name, description: i18n.t('c:description') },
   );
 }

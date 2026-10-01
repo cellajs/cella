@@ -37,13 +37,7 @@ describe('dropdowner store', () => {
     const id = useDropdowner.getState().create('menu', data);
 
     expect(id).toBe('t1');
-    expect(useDropdowner.getState().get()).toMatchObject({
-      triggerId: 't1',
-      content: 'menu',
-      align: 'start',
-      modal: true,
-      kind: 'panel',
-    });
+    expect(useDropdowner.getState().get()).toMatchObject({ triggerId: 't1', content: 'menu', align: 'start', modal: true, kind: 'panel' });
     expect(isActive(data.triggerRef)).toBe(true);
   });
 
@@ -145,11 +139,7 @@ describe('dropdowner store', () => {
 
     useDropdowner.getState().remove();
 
-    expect(useDropdowner.getState()).toMatchObject({
-      dropdown: null,
-      lastRemovedTriggerId: 't1',
-      lastRemovedAt: 10_000,
-    });
+    expect(useDropdowner.getState()).toMatchObject({ dropdown: null, lastRemovedTriggerId: 't1', lastRemovedAt: 10_000 });
     expect(isActive(data.triggerRef)).toBe(false);
   });
 

@@ -16,10 +16,5 @@ export const deviceInfo = (ctx: Context<Env>) => {
     return device.type === 'wearable' || device.type === 'mobile' ? 'mobile' : 'desktop';
   };
 
-  return {
-    name: getName(),
-    type: getType(),
-    os: os.name || null,
-    browser: browser.name || null,
-  };
+  return { name: getName(), type: getType(), os: os.name || null, browser: browser.name || null };
 };

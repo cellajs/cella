@@ -23,10 +23,7 @@ export function WelcomeText({ invitations, onboardingToStepper }: WelcomeTextPro
     <div className="mx-auto flex max-w-4xl flex-col items-center space-y-6 p-8 text-center">
       <h1 className="font-bold text-2xl">{t('c:onboarding_welcome', { appName: appConfig.name })}</h1>
       <div className="pb-8 text-foreground/90 leading-7 md:text-2xl">
-        <TextEffect
-          text={text}
-          className="text-center font-medium text-2xl sm:text-4xl sm:leading-12 md:text-5xl md:leading-16"
-        />
+        <TextEffect text={text} className="text-center font-medium text-2xl sm:text-4xl sm:leading-12 md:text-5xl md:leading-16" />
       </div>
       <Button onClick={onboardingToStepper} className="max-sm:w-full">
         {t('c:get_started')}

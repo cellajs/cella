@@ -7,16 +7,7 @@ import type { DbOrTx } from '#/db/create-connection';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import type { DocScope } from '../../constants';
 import { db, withRlsTx } from '../../data/db';
-import {
-  appendUpdate,
-  compactState,
-  deleteDoc,
-  discardLogRows,
-  ensureDoc,
-  loadBase,
-  readLog,
-  touchDoc,
-} from '../../data/storage';
+import { appendUpdate, compactState, deleteDoc, discardLogRows, ensureDoc, loadBase, readLog, touchDoc } from '../../data/storage';
 import { mergeState } from '../../sync/document-state';
 import { mapUpdate, readMap, undecodableUpdate } from '../helpers';
 import { cleanupSeed, seedOrg } from './seed';
@@ -125,9 +116,7 @@ describe('6.1 Storage: session row, update log, compaction', () => {
   it('twenty concurrent appends all land, and compaction deletes only the rows it was given', async () => {
     const c = ctx(ids.compaction);
     const { generation } = await ensureDoc(c, null);
-    await Promise.all(
-      Array.from({ length: 20 }, (_, i) => appendUpdate(c, testUserId, mapUpdate(`k${i}`, i), generation)),
-    );
+    await Promise.all(Array.from({ length: 20 }, (_, i) => appendUpdate(c, testUserId, mapUpdate(`k${i}`, i), generation)));
     const rows = await readLog(c);
     expect(rows).toHaveLength(20);
 
@@ -187,14 +176,8 @@ describe('6.1 Storage: session row, update log, compaction', () => {
     // Selected by entity id alone on the relay's own (runtime role) pool, so the RLS policies alone decide what comes back.
     const rowsVisible = async (tenantId: string | null): Promise<[number, number]> => {
       const read = async (conn: DbOrTx): Promise<[number, number]> => {
-        const docs = await conn
-          .select({ id: yjsDocumentsTable.entityId })
-          .from(yjsDocumentsTable)
-          .where(eq(yjsDocumentsTable.entityId, ids.rls));
-        const log = await conn
-          .select({ id: yjsUpdatesTable.id })
-          .from(yjsUpdatesTable)
-          .where(eq(yjsUpdatesTable.entityId, ids.rls));
+        const docs = await conn.select({ id: yjsDocumentsTable.entityId }).from(yjsDocumentsTable).where(eq(yjsDocumentsTable.entityId, ids.rls));
+        const log = await conn.select({ id: yjsUpdatesTable.id }).from(yjsUpdatesTable).where(eq(yjsUpdatesTable.entityId, ids.rls));
         return [docs.length, log.length];
       };
       return tenantId === null ? read(db) : withRlsTx(tenantId, '', read);

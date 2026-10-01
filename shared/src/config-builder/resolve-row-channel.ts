@@ -25,11 +25,7 @@ export interface ResolvedAncestor {
 }
 
 /** All non-null ancestors of a row, most-specific → root. */
-export function resolveNonNullAncestors(
-  hierarchy: AncestorSource,
-  entityType: string,
-  row: Record<string, unknown>,
-): ResolvedAncestor[] {
+export function resolveNonNullAncestors(hierarchy: AncestorSource, entityType: string, row: Record<string, unknown>): ResolvedAncestor[] {
   const ancestors: ResolvedAncestor[] = [];
   for (const type of hierarchy.getOrderedAncestors(entityType)) {
     const idColumn = entityIdColumnKey(type);
@@ -40,11 +36,7 @@ export function resolveNonNullAncestors(
 }
 
 /** The row's effective home context id: deepest non-null ancestor. Null when every ancestor id is null. */
-export function resolveDeepestAncestorId(
-  hierarchy: AncestorSource,
-  entityType: string,
-  row: Record<string, unknown>,
-): string | null {
+export function resolveDeepestAncestorId(hierarchy: AncestorSource, entityType: string, row: Record<string, unknown>): string | null {
   for (const type of hierarchy.getOrderedAncestors(entityType)) {
     const id = row[entityIdColumnKey(type)];
     if (typeof id === 'string' && id) return id;

@@ -29,12 +29,7 @@ interface OnboardingProps {
   setCreatedOrganization: (organization: Organization | null) => void;
 }
 
-export function Onboarding({
-  onboarding = 'start',
-  setOnboardingState,
-  createdOrganization,
-  setCreatedOrganization,
-}: OnboardingProps) {
+export function Onboarding({ onboarding = 'start', setOnboardingState, createdOrganization, setCreatedOrganization }: OnboardingProps) {
   const user = useCurrentUser();
   const { hasStarted } = useMountedState();
   const { t } = useTranslation();
@@ -50,23 +45,14 @@ export function Onboarding({
 
   // Locked at mount so answering an invitation or creating an org mid-flow does not reshape the stepper. The welcome
   // route loads both queries first, so the lock sees real data.
-  const [steps] = useState(() =>
-    getOnboardingSteps({ hasOrganizations: organizations.length > 0, hasInvitations: invitations.length > 0 }),
-  );
+  const [steps] = useState(() => getOnboardingSteps({ hasOrganizations: organizations.length > 0, hasInvitations: invitations.length > 0 }));
 
   return (
     <div className="flex min-h-[90svh] flex-col items-center sm:min-h-svh">
       <div className="mt-auto mb-auto w-full">
-        {onboarding === 'start' && (
-          <WelcomeText invitations={invitations} onboardingToStepper={() => setOnboardingState('stepper')} />
-        )}
+        {onboarding === 'start' && <WelcomeText invitations={invitations} onboardingToStepper={() => setOnboardingState('stepper')} />}
         {onboarding === 'stepper' && (
-          <div
-            className={cn(
-              'mx-auto mt-0 flex max-w-3xl flex-col justify-center gap-4 px-4 py-8 sm:w-10/12',
-              animateClass,
-            )}
-          >
+          <div className={cn('mx-auto mt-0 flex max-w-3xl flex-col justify-center gap-4 px-4 py-8 sm:w-10/12', animateClass)}>
             {steps.length === 1 && <h2 className="flex justify-center font-semibold text-lg">{steps[0].label}</h2>}
             <Stepper
               initialStep={0}
@@ -77,12 +63,7 @@ export function Onboarding({
               orientation="vertical"
             >
               {steps.map(({ description, label, id }) => (
-                <Step
-                  key={id}
-                  label={label}
-                  isKeepError={id !== 'profile'}
-                  checkIcon={id === 'organization' && !organization ? XIcon : undefined}
-                >
+                <Step key={id} label={label} isKeepError={id !== 'profile'} checkIcon={id === 'organization' && !organization ? XIcon : undefined}>
                   <Card>
                     {description && (
                       <CardHeader>
@@ -112,9 +93,7 @@ export function Onboarding({
                           <StepperFooter setOnboardingState={setOnboardingState} />
                         </CreateOrganizationForm>
                       )}
-                      {id === 'organization' && !!organization && (
-                        <p className="font-normal text-sm opacity-80">{t('c:already_created_org.text')}</p>
-                      )}
+                      {id === 'organization' && !!organization && <p className="font-normal text-sm opacity-80">{t('c:already_created_org.text')}</p>}
                       {id === 'invitation' && organization && (
                         <InviteUsers channel={organization} mode="email">
                           <StepperFooter setOnboardingState={setOnboardingState} />

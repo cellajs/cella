@@ -1,23 +1,12 @@
 import { gzipSync } from 'node:zlib';
 import { describe, expect, it, vi } from 'vitest';
-import {
-  type GeoipManifest,
-  type GeoipRefreshPlan,
-  main,
-  monthOf,
-  sequenceGeoipRefresh,
-  verifyMmdbArchive,
-} from './geoip-refresh';
+import { type GeoipManifest, type GeoipRefreshPlan, main, monthOf, sequenceGeoipRefresh, verifyMmdbArchive } from './geoip-refresh';
 
 const NOW = new Date('2026-09-23T10:00:00Z');
 /** The smallest payload the verifier accepts: anything ending in the MMDB metadata marker. */
 const MMDB = gzipSync(Buffer.concat([Buffer.from('tree-and-data'), Buffer.from('\xab\xcd\xefMaxMind.com', 'latin1')]));
 
-const MANIFEST: GeoipManifest = {
-  month: '2026-08',
-  publishedAt: '2026-08-02T06:00:00Z',
-  months: { country: '2026-08', asn: '2026-08' },
-};
+const MANIFEST: GeoipManifest = { month: '2026-08', publishedAt: '2026-08-02T06:00:00Z', months: { country: '2026-08', asn: '2026-08' } };
 
 /** A plan whose effects all succeed for the target month, recording call order into `calls`. */
 function makePlan(overrides: Partial<GeoipRefreshPlan> = {}) {
@@ -75,10 +64,7 @@ describe('sequenceGeoipRefresh', () => {
   });
 
   it('skips a manifest younger than maxAgeDays, the deploy pipeline gate', async () => {
-    const { plan } = makePlan({
-      maxAgeDays: 35,
-      readManifest: async () => ({ ...MANIFEST, publishedAt: '2026-09-01T00:00:00Z' }),
-    });
+    const { plan } = makePlan({ maxAgeDays: 35, readManifest: async () => ({ ...MANIFEST, publishedAt: '2026-09-01T00:00:00Z' }) });
     const result = await sequenceGeoipRefresh(plan);
 
     expect(result).toMatchObject({ published: false, skipped: 'fresh' });
@@ -129,10 +115,7 @@ describe('sequenceGeoipRefresh', () => {
 describe('verifyMmdbArchive', () => {
   it('accepts a gzipped MMDB and refuses plain bytes', () => {
     expect(verifyMmdbArchive(new Uint8Array(MMDB))).toMatchObject({ ok: true });
-    expect(verifyMmdbArchive(new Uint8Array([1, 2, 3]))).toMatchObject({
-      ok: false,
-      reason: expect.stringMatching(/gzip/),
-    });
+    expect(verifyMmdbArchive(new Uint8Array([1, 2, 3]))).toMatchObject({ ok: false, reason: expect.stringMatching(/gzip/) });
   });
 });
 

@@ -8,15 +8,7 @@ import { log } from '#/utils/logger';
 
 type MatrixMsgTypes = 'm.text' | 'm.notice';
 
-export const sendMatrixMessage = async ({
-  msgtype,
-  textMessage,
-  html,
-}: {
-  msgtype: MatrixMsgTypes;
-  textMessage: string;
-  html?: string;
-}) => {
+export const sendMatrixMessage = async ({ msgtype, textMessage, html }: { msgtype: MatrixMsgTypes; textMessage: string; html?: string }) => {
   if (!env.ELEMENT_ROOM_ID || !env.ELEMENT_BOT_ACCESS_TOKEN) {
     log.info('Missing required Element env values (roomId and/or  botAccessToken).');
     return;

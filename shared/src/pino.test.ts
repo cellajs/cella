@@ -73,11 +73,7 @@ describe('failed queries in log lines', () => {
     expect(written).not.toContain(sql);
     // Positive control: the line keeps what Postgres said, under the error's own name, with its cause.
     const err = parsed()[0]?.err as LoggedError;
-    expect(err).toMatchObject({
-      type: 'DrizzleQueryError',
-      message: reason,
-      cause: { message: reason, code: '22021' },
-    });
+    expect(err).toMatchObject({ type: 'DrizzleQueryError', message: reason, cause: { message: reason, code: '22021' } });
     expect(err.stack).toMatch(/^DrizzleQueryError: invalid byte sequence .*\n {4}at /);
     expect(err).not.toHaveProperty('params');
     expect(err).not.toHaveProperty('query');
@@ -101,10 +97,7 @@ describe('failed queries in log lines', () => {
     expect(lines.join('\n')).not.toContain(secret);
     // Positive control: the reason, the code and the constraint stay.
     const err = parsed()[0]?.err as LoggedError;
-    expect(err).toMatchObject({
-      message: reason,
-      cause: { message: reason, code: '23505', constraint: 'emails_email_unique' },
-    });
+    expect(err).toMatchObject({ message: reason, cause: { message: reason, code: '23505', constraint: 'emails_email_unique' } });
   });
 
   it('must not log the values of a failed query via a wrapping error that took over its stack', () => {

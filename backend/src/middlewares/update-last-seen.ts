@@ -18,10 +18,7 @@ export const updateLastSeenAt = (userId: string): void => {
   const timestamp = getIsoDate();
   db.insert(userCountersTable)
     .values({ userId, lastSeenAt: timestamp })
-    .onConflictDoUpdate({
-      target: userCountersTable.userId,
-      set: { lastSeenAt: timestamp },
-    })
+    .onConflictDoUpdate({ target: userCountersTable.userId, set: { lastSeenAt: timestamp } })
     .catch(() => {
       // Reset memory on failure so next request retries
       lastSeenMemory.delete(userId);

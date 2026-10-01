@@ -29,13 +29,7 @@ let flushIntervalId: ReturnType<typeof setInterval> | null = null;
 interface SeenStoreState {
   flushedIds: Set<string>;
 
-  markProductSeen: (
-    tenantId: string,
-    organizationId: string,
-    channelId: string,
-    productType: ProductEntityType,
-    productId: string,
-  ) => void;
+  markProductSeen: (tenantId: string, organizationId: string, channelId: string, productType: ProductEntityType, productId: string) => void;
   startFlushInterval: () => void;
   stopFlushInterval: () => void;
   flush: () => Promise<void>;
@@ -89,10 +83,7 @@ export const seenStore = createStore<SeenStoreState>()(
             const { tenantId, organizationId, productType } = batch;
             try {
               const productIds = [...batch.productIds];
-              await markSeen({
-                path: { tenantId, organizationId },
-                body: { entityIds: productIds, entityType: productType },
-              });
+              await markSeen({ path: { tenantId, organizationId }, body: { entityIds: productIds, entityType: productType } });
 
               const flushedIds = new Set(get().flushedIds);
               for (const id of productIds) flushedIds.add(id);
@@ -124,10 +115,7 @@ export const seenStore = createStore<SeenStoreState>()(
         storage: createJSONStorage(() => idbKvStorage('seen')),
         // Sets serialize as arrays; insertion order (oldest first) survives the round-trip.
         partialize: (state) => ({ flushedIds: [...state.flushedIds] }),
-        merge: (persisted, current) => ({
-          ...current,
-          flushedIds: new Set((persisted as { flushedIds?: string[] })?.flushedIds ?? []),
-        }),
+        merge: (persisted, current) => ({ ...current, flushedIds: new Set((persisted as { flushedIds?: string[] })?.flushedIds ?? []) }),
       },
     ),
     { enabled: isDebugMode, name: 'seen store' },
@@ -146,10 +134,7 @@ export const setupSeenBeaconFlush = () => {
   const handler = () => {
     for (const batch of pending.values()) {
       const body = JSON.stringify({ entityIds: [...batch.productIds], entityType: batch.productType });
-      navigator.sendBeacon(
-        `/api/${batch.tenantId}/${batch.organizationId}/seen`,
-        new Blob([body], { type: 'application/json' }),
-      );
+      navigator.sendBeacon(`/api/${batch.tenantId}/${batch.organizationId}/seen`, new Blob([body], { type: 'application/json' }));
     }
   };
   window.addEventListener('beforeunload', handler);

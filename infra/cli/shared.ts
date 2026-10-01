@@ -86,9 +86,7 @@ export async function resolveVerifiedPassphrase(stackYaml?: string): Promise<str
   const fromEnv = process.env.PULUMI_CONFIG_PASSPHRASE;
   if (fromEnv && verifyStackPassphrase(stackYaml, fromEnv)) return fromEnv;
   if (fromEnv) {
-    console.warn(
-      `${warningMark} ${pc.yellow('PULUMI_CONFIG_PASSPHRASE in your environment does not match this stack: prompting instead.')}`,
-    );
+    console.warn(`${warningMark} ${pc.yellow('PULUMI_CONFIG_PASSPHRASE in your environment does not match this stack: prompting instead.')}`);
   }
 
   while (true) {
@@ -116,9 +114,7 @@ export async function confirmPassphraseStored(passphrase: string, heading: strin
  * Setup-time counterpart of `resolveVerifiedPassphrase`: an already-encrypting stack (or a set `PULUMI_CONFIG_PASSPHRASE`) defers to the verify/prompt flow.
  * A stack with nothing encrypted yet gets a generated passphrase, shown once via `confirmPassphraseStored`, and `generated` reports that to the caller.
  */
-export async function resolveOrCreatePassphrase(
-  stackYaml?: string,
-): Promise<{ passphrase: string; generated: boolean }> {
+export async function resolveOrCreatePassphrase(stackYaml?: string): Promise<{ passphrase: string; generated: boolean }> {
   const canVerify = !!stackYaml && /^encryptionsalt:/m.test(stackYaml);
   if (canVerify || process.env.PULUMI_CONFIG_PASSPHRASE) {
     return { passphrase: await resolveVerifiedPassphrase(stackYaml), generated: false };
@@ -141,10 +137,7 @@ export function stackNameFor(context: Pick<InfraContext, 'environment'>): string
 /** A key pair the resolver found in the env, else both halves prompted: the access key in clear, the secret key masked. `label` names the key (`Scaleway Owner API key`); `hint` says where to get one. */
 export async function keyPairOrPrompt(pair: KeyPair | undefined, label: string, hint?: string): Promise<KeyPair> {
   if (pair) return pair;
-  const accessKey = await input({
-    message: `${label}, access key${hint ? ` (${hint})` : ''}`,
-    validate: (value) => !!value.trim() || '(required)',
-  });
+  const accessKey = await input({ message: `${label}, access key${hint ? ` (${hint})` : ''}`, validate: (value) => !!value.trim() || '(required)' });
   const secretKey = await maskedSecret({ message: `${label}, secret key` });
   return { accessKey, secretKey };
 }
@@ -155,12 +148,7 @@ export function pulumiLoginUrl(appConfig: AppConfigType): string {
 }
 
 /** `pulumi login` (exits on failure) plus a best-effort `pulumi stack select` against the S3 state backend; the caller may still be about to init the stack. */
-export function pulumiLoginAndSelect(
-  infraDir: string,
-  env: NodeJS.ProcessEnv,
-  appConfig: AppConfigType,
-  targetStack: string,
-): void {
+export function pulumiLoginAndSelect(infraDir: string, env: NodeJS.ProcessEnv, appConfig: AppConfigType, targetStack: string): void {
   const login = spawnSync('pulumi', ['login', pulumiLoginUrl(appConfig)], { cwd: infraDir, env, stdio: 'inherit' });
   if (login.status !== 0) {
     console.error(
@@ -212,9 +200,7 @@ export async function acquireStackLockOrExit(opts: {
       );
     },
     onRenewFailed: (reason, lost) =>
-      console.warn(
-        `${warningMark} stack lease renewal failed (${reason})${lost ? ': this run no longer holds the lock' : ''}`,
-      ),
+      console.warn(`${warningMark} stack lease renewal failed (${reason})${lost ? ': this run no longer holds the lock' : ''}`),
   });
   if (!result.acquired) {
     console.error(
@@ -227,9 +213,7 @@ export async function acquireStackLockOrExit(opts: {
   return {
     release: async () => {
       uninstall();
-      await result.lease
-        .release()
-        .catch((e) => console.warn(`${warningMark} failed to release stack lock: ${errorMessage(e)}`));
+      await result.lease.release().catch((e) => console.warn(`${warningMark} failed to release stack lock: ${errorMessage(e)}`));
     },
   };
 }
@@ -240,20 +224,12 @@ export function createStepRunner(infraDir: string, defaultEnv: NodeJS.ProcessEnv
     label: string,
     cmd: string,
     args: string[],
-    run: (
-      cmd: string,
-      args: string[],
-      opts: { cwd: string; env: NodeJS.ProcessEnv; stdio: 'inherit' },
-    ) => { status: number | null },
+    run: (cmd: string, args: string[], opts: { cwd: string; env: NodeJS.ProcessEnv; stdio: 'inherit' }) => { status: number | null },
     opts: StepOptions = {},
   ): Promise<number> => {
     while (true) {
       console.info(`\n→ ${label}\n  $ ${cmd} ${args.join(' ')}`);
-      const { status } = run(cmd, args, {
-        cwd: opts.cwd ?? infraDir,
-        env: opts.env ?? defaultEnv,
-        stdio: 'inherit',
-      });
+      const { status } = run(cmd, args, { cwd: opts.cwd ?? infraDir, env: opts.env ?? defaultEnv, stdio: 'inherit' });
       if (status === 0) return 0;
       console.error(`\n${crossMark} ${label} failed (exit ${status}).`);
       if (!opts.retry || !(await confirm({ message: 'Retry?', default: true }))) {
@@ -266,11 +242,7 @@ export function createStepRunner(infraDir: string, defaultEnv: NodeJS.ProcessEnv
     label: string,
     cmd: string,
     args: string[],
-    run: (
-      cmd: string,
-      args: string[],
-      opts: { cwd: string; env: NodeJS.ProcessEnv; stdio: 'inherit' },
-    ) => { status: number | null },
+    run: (cmd: string, args: string[], opts: { cwd: string; env: NodeJS.ProcessEnv; stdio: 'inherit' }) => { status: number | null },
     opts: StepOptions = {},
   ) => {
     const code = await step(label, cmd, args, run, opts);

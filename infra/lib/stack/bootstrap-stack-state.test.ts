@@ -17,21 +17,15 @@ describe('detectStackState', () => {
   });
 
   it('bootstrapped: file records the bootstrapComplete breadcrumb', () => {
-    expect(detectStackState({ yamlText: 'config:\n  infra:bootstrapComplete: 2025-01-01T00:00:00.000Z\n' })).toBe(
-      'bootstrapped',
-    );
+    expect(detectStackState({ yamlText: 'config:\n  infra:bootstrapComplete: 2025-01-01T00:00:00.000Z\n' })).toBe('bootstrapped');
   });
 
   it('bootstrapped: legacy infra:vmAccessKey marker still detected (pre-Secret-Manager stacks)', () => {
-    expect(detectStackState({ yamlText: 'config:\n  infra:vmAccessKey:\n    secure: v1:ww0JDbm...\n' })).toBe(
-      'bootstrapped',
-    );
+    expect(detectStackState({ yamlText: 'config:\n  infra:vmAccessKey:\n    secure: v1:ww0JDbm...\n' })).toBe('bootstrapped');
   });
 
   it('bootstrapped: legacy infra:applicationId marker still detected', () => {
-    expect(
-      detectStackState({ yamlText: 'config:\n  infra:applicationId: 11111111-2222-3333-4444-555555555555\n' }),
-    ).toBe('bootstrapped');
+    expect(detectStackState({ yamlText: 'config:\n  infra:applicationId: 11111111-2222-3333-4444-555555555555\n' })).toBe('bootstrapped');
   });
 
   it('does not mistake a comment mentioning a marker for the real entry', () => {
@@ -54,15 +48,11 @@ describe('pickStackShort', () => {
 
 describe('extractComputeDeferredMarker', () => {
   it('reads the iso timestamp value', () => {
-    expect(extractComputeDeferredMarker('config:\n  bootstrap:computeDeferred: 2026-05-27T10:00:00.000Z\n')).toBe(
-      '2026-05-27T10:00:00.000Z',
-    );
+    expect(extractComputeDeferredMarker('config:\n  bootstrap:computeDeferred: 2026-05-27T10:00:00.000Z\n')).toBe('2026-05-27T10:00:00.000Z');
   });
 
   it('trims surrounding whitespace', () => {
-    expect(extractComputeDeferredMarker('config:\n  bootstrap:computeDeferred:   2026-05-27T10:00:00.000Z   \n')).toBe(
-      '2026-05-27T10:00:00.000Z',
-    );
+    expect(extractComputeDeferredMarker('config:\n  bootstrap:computeDeferred:   2026-05-27T10:00:00.000Z   \n')).toBe('2026-05-27T10:00:00.000Z');
   });
 
   it('returns undefined when absent', () => {
@@ -80,9 +70,7 @@ describe('detectComputeDeferred', () => {
   });
 
   it('returns the marker value when present', () => {
-    expect(detectComputeDeferred('config:\n  bootstrap:computeDeferred: 2026-05-27T10:00:00.000Z\n')).toBe(
-      '2026-05-27T10:00:00.000Z',
-    );
+    expect(detectComputeDeferred('config:\n  bootstrap:computeDeferred: 2026-05-27T10:00:00.000Z\n')).toBe('2026-05-27T10:00:00.000Z');
   });
 });
 

@@ -27,12 +27,7 @@ function ThemeDropdownContent({ items, isMobile }: { items: ThemeItem[]; isMobil
       {items.map((item) => (
         <div key={item.key}>
           {item.separator && <div className="my-1 border-t" />}
-          <DropdownActionItem
-            isMobile={isMobile}
-            variant="ghost"
-            className="w-full justify-between gap-4"
-            onSelect={item.onSelect}
-          >
+          <DropdownActionItem isMobile={isMobile} variant="ghost" className="w-full justify-between gap-4" onSelect={item.onSelect}>
             <span className="flex items-center gap-2">
               <span className={item.iconClass} style={item.iconStyle}>
                 <item.icon />

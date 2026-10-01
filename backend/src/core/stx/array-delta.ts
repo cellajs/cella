@@ -7,23 +7,15 @@ export const arrayDeltaSchema = <T extends z.ZodType<string>>(itemSchema: T, max
     .max(maxItems)
     .refine((items) => new Set(items).size === items.length, 'Delta items must be unique');
 
-  return z
-    .object({
-      add: itemsSchema.default([]),
-      remove: itemsSchema.default([]),
-    })
-    .superRefine(({ add, remove }, ctx) => {
-      const removed = new Set(remove);
-      if (add.some((item) => removed.has(item))) {
-        ctx.addIssue({ code: 'custom', message: 'The same item cannot be added and removed' });
-      }
-    });
+  return z.object({ add: itemsSchema.default([]), remove: itemsSchema.default([]) }).superRefine(({ add, remove }, ctx) => {
+    const removed = new Set(remove);
+    if (add.some((item) => removed.has(item))) {
+      ctx.addIssue({ code: 'custom', message: 'The same item cannot be added and removed' });
+    }
+  });
 };
 
-export type ArrayDelta = {
-  add: string[];
-  remove: string[];
-};
+export type ArrayDelta = { add: string[]; remove: string[] };
 
 /** Runtime check: is this value a set delta (`{ add, remove }`)? */
 export function isArrayDelta(value: unknown): value is ArrayDelta {

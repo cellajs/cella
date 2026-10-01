@@ -28,11 +28,7 @@ export async function selfCreateTenantOp(ctx: UserContext, input: SelfCreateTena
     return { ...orphanTenant, restrictions: normalizeRestrictions(orphanTenant.restrictions), domainsCount };
   }
 
-  const tenant = await createTenantForUser(db, {
-    name: input.name,
-    createdBy: user.id,
-    userEmail: user.email,
-  });
+  const tenant = await createTenantForUser(db, { name: input.name, createdBy: user.id, userEmail: user.email });
 
   const domainsCount = await countDomainsByTenant(ctx, { targetTenantId: tenant.id });
   return { ...tenant, domainsCount };

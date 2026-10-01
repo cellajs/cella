@@ -53,10 +53,7 @@ function pickNextAction(checks: Check[]): NextAction | undefined {
 }
 
 /** The pure envelope over evaluated checks: schema version, summary counts, and the highest-priority pending action. Never throws. */
-export function assembleReport(
-  session: Pick<ProbeSession, 'mode' | 'stackState'>,
-  checks: Check[],
-): Omit<StatusReport, 'generatedAt'> {
+export function assembleReport(session: Pick<ProbeSession, 'mode' | 'stackState'>, checks: Check[]): Omit<StatusReport, 'generatedAt'> {
   const summary: Record<CheckStatus, number> = { ok: 0, warn: 0, missing: 0, unknown: 0, error: 0 };
   for (const item of checks) summary[item.status]++;
   return {

@@ -44,9 +44,7 @@ export function ServiceAccountTile({ account, path }: ServiceAccountTileProps) {
             </Badge>
           )}
         </div>
-        {data && live.length === 0 && (
-          <p className="text-muted-foreground text-xs">{t('c:no_resource_yet', { resource: t('c:api_key_other') })}</p>
-        )}
+        {data && live.length === 0 && <p className="text-muted-foreground text-xs">{t('c:no_resource_yet', { resource: t('c:api_key_other') })}</p>}
         {live.map((apiKey) => (
           <div key={apiKey.id} className="flex items-center gap-3 text-sm">
             <KeyRoundIcon className="icon-sm shrink-0" />
@@ -59,13 +57,7 @@ export function ServiceAccountTile({ account, path }: ServiceAccountTileProps) {
             <span className="text-muted-foreground text-xs max-sm:hidden" aria-describedby={t('c:created_at')}>
               {dateShort(apiKey.createdAt)}
             </span>
-            <Button
-              variant="plain"
-              size="sm"
-              className="ml-auto"
-              loading={isPending}
-              onClick={() => handleRevoke(apiKey)}
-            >
+            <Button variant="plain" size="sm" className="ml-auto" loading={isPending} onClick={() => handleRevoke(apiKey)}>
               <UnplugIcon />
               <span className="ml-1 max-md:hidden">{t('c:revoke')}</span>
             </Button>

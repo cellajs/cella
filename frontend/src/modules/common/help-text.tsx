@@ -19,23 +19,10 @@ export function HelpText({ content, children, className, type }: HelpTextProps) 
       <div className={cn('mb-4 flex items-center gap-2', className)}>
         {children}
         <Popover>
-          <PopoverTrigger
-            render={
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-6 opacity-50 hover:opacity-100 active:translate-y-0!"
-              />
-            }
-          >
+          <PopoverTrigger render={<Button variant="ghost" size="icon" className="size-6 opacity-50 hover:opacity-100 active:translate-y-0!" />}>
             <CircleQuestionMarkIcon />
           </PopoverTrigger>
-          <PopoverContent
-            className="w-80 max-w-full text-muted-foreground text-sm"
-            align="start"
-            side="top"
-            collisionPadding={8}
-          >
+          <PopoverContent className="w-80 max-w-full text-muted-foreground text-sm" align="start" side="top" collisionPadding={8}>
             {content}
           </PopoverContent>
         </Popover>

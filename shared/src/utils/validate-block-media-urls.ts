@@ -24,9 +24,7 @@ export const childNodes = (node: DocumentNode): unknown[] => (Array.isArray(node
  * blanks it and the renderer drops it.
  */
 export const isRefusedMediaBlock = (node: DocumentNode, ctx: MediaRefContext): boolean =>
-  typeof node.type === 'string' &&
-  mediaBlockTypes.has(node.type) &&
-  !(isRecord(node.props) && isAcceptedMediaUrl(node.props.url, ctx));
+  typeof node.type === 'string' && mediaBlockTypes.has(node.type) && !(isRecord(node.props) && isAcceptedMediaUrl(node.props.url, ctx));
 
 /** A refused media block, to blank in place with {@link blankMediaReference}, and its reference for reports. */
 interface RefusedMediaBlock {
@@ -70,5 +68,4 @@ export const validateBlockMediaUrls = (blocks: unknown[], ctx: MediaRefContext):
 };
 
 /** Whether any media block of a document holds a reference the grammar refuses. */
-export const hasUntrustedMediaUrls = (blocks: unknown[], ctx: MediaRefContext): boolean =>
-  findRefusedMediaBlocks(blocks, ctx).length > 0;
+export const hasUntrustedMediaUrls = (blocks: unknown[], ctx: MediaRefContext): boolean => findRefusedMediaBlocks(blocks, ctx).length > 0;

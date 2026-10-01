@@ -5,11 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { Attachment } from 'sdk';
 import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
-import {
-  attachmentsCanonicalOptions,
-  attachmentsListQueryOptions,
-  useAttachmentUpdateMutation,
-} from '~/modules/attachment/query';
+import { attachmentsCanonicalOptions, attachmentsListQueryOptions, useAttachmentUpdateMutation } from '~/modules/attachment/query';
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
 import { AttachmentsTableBar } from '~/modules/attachment/table/attachments-bar';
 import { useColumns } from '~/modules/attachment/table/attachments-columns';
@@ -59,11 +55,7 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
   const columnsFromHook = useColumns(channel, isSheet);
   const [hiddenOverrides, setHiddenOverrides] = useState<Record<string, boolean>>({});
   const columns = useMemo(
-    () =>
-      columnsFromHook.map((col) => ({
-        ...col,
-        hidden: hiddenOverrides[col.key] ?? col.hidden,
-      })),
+    () => columnsFromHook.map((col) => ({ ...col, hidden: hiddenOverrides[col.key] ?? col.hidden })),
     [columnsFromHook, hiddenOverrides],
   );
   const setColumns: React.Dispatch<React.SetStateAction<ColumnOrColumnGroup<Attachment>[]>> = (updater) => {
@@ -81,24 +73,10 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
   // Default view (no search, default sort) reads the canonical org query that SyncService prefetches; any other filter uses the infinite query.
   const isDefaultView = isDefaultListView({ q, sort, order }, attachmentsSearchDefaults);
 
-  const canonicalOptions = attachmentsCanonicalOptions({
-    tenantId: channel.tenantId,
-    organizationId: channel.id,
-  });
-  const canonical = useQuery({
-    ...canonicalOptions,
-    enabled: isDefaultView,
-    select: selectDefaultViewRows,
-  });
+  const canonicalOptions = attachmentsCanonicalOptions({ tenantId: channel.tenantId, organizationId: channel.id });
+  const canonical = useQuery({ ...canonicalOptions, enabled: isDefaultView, select: selectDefaultViewRows });
 
-  const queryOptions = attachmentsListQueryOptions({
-    tenantId: channel.tenantId,
-    organizationId: channel.id,
-    q,
-    sort,
-    order,
-    limit,
-  });
+  const queryOptions = attachmentsListQueryOptions({ tenantId: channel.tenantId, organizationId: channel.id, q, sort, order, limit });
   const filtered = useInfiniteQuery({
     ...queryOptions,
     enabled: !isDefaultView,
@@ -125,11 +103,7 @@ function AttachmentsTable({ channel, canUpload, isSheet = false }: AttachmentsTa
   };
 
   const NoRowsComponent = (
-    <ContentPlaceholder
-      icon={PaperclipIcon}
-      title="c:no_resource_yet"
-      titleProps={{ resource: t('c:attachment_other').toLowerCase() }}
-    />
+    <ContentPlaceholder icon={PaperclipIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:attachment_other').toLowerCase() }} />
   );
 
   return (

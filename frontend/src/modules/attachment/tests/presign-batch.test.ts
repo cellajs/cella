@@ -1,29 +1,23 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const getPresignedUrls = vi.fn();
-vi.mock('sdk/sdk.gen', () => ({
-  getPresignedUrls: (...args: unknown[]) => getPresignedUrls(...args),
-}));
+vi.mock('sdk/sdk.gen', () => ({ getPresignedUrls: (...args: unknown[]) => getPresignedUrls(...args) }));
 
 vi.mock('~/query/local-user-storage', () => ({
   subscribeOwnerChange: () => () => {},
 }));
 
 const isOnline = vi.fn(() => true);
-vi.mock('@tanstack/react-query', () => ({
-  onlineManager: { isOnline: () => isOnline() },
-}));
+vi.mock('@tanstack/react-query', () => ({ onlineManager: { isOnline: () => isOnline() } }));
 
 const { getPresignedUrlBatched, PresignRejectedError, resetPresignBatch } = await import('../presign-batch');
 
 /** Echo-sign every requested pair, mirroring the server's happy path. */
 function signAllRequested() {
-  getPresignedUrls.mockImplementation(
-    async ({ body }: { body: { items: { attachmentId: string; variant: string }[] } }) => ({
-      data: body.items.map((item) => ({ ...item, url: `https://signed.example/${item.attachmentId}/${item.variant}` })),
-      rejectedIds: [],
-    }),
-  );
+  getPresignedUrls.mockImplementation(async ({ body }: { body: { items: { attachmentId: string; variant: string }[] } }) => ({
+    data: body.items.map((item) => ({ ...item, url: `https://signed.example/${item.attachmentId}/${item.variant}` })),
+    rejectedIds: [],
+  }));
 }
 
 const request = (id: string, variant: 'original' | 'thumbnail' | 'converted' = 'original') =>

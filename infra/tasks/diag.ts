@@ -1,13 +1,6 @@
 import { isMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
-import {
-  createAwsReader,
-  emptyBootDiagGuidance,
-  parseKeys,
-  renderDiagnostics,
-  selectDiagnostics,
-  summarizeBundles,
-} from './fetch-boot-diag';
+import { createAwsReader, emptyBootDiagGuidance, parseKeys, renderDiagnostics, selectDiagnostics, summarizeBundles } from './fetch-boot-diag';
 
 interface ResolvedTarget {
   bucket: string;
@@ -28,11 +21,7 @@ async function resolveTarget(mode: string): Promise<ResolvedTarget> {
 }
 
 /** Render the `--list` overview as an aligned plain-text table. */
-function printSummary(
-  keys: string[],
-  serviceNames: readonly string[],
-  log: (msg: string) => void = console.info,
-): void {
+function printSummary(keys: string[], serviceNames: readonly string[], log: (msg: string) => void = console.info): void {
   const rows = summarizeBundles(keys, serviceNames);
   const pad = (s: string, n: number) => s.padEnd(n);
   log(`${pad('service', 12)}${pad('bundles', 9)}${pad('failures', 10)}latest full`);
@@ -50,20 +39,12 @@ export function keyStampIso(key: string): string | undefined {
 }
 
 /** Re-ship black-box event JSONL to the configured OTLP backend (post-hoc replay). */
-async function replayEvents(
-  keys: string[],
-  services: readonly string[],
-  reader: { cat(key: string): string },
-  sinceIso?: string,
-): Promise<void> {
+async function replayEvents(keys: string[], services: readonly string[], reader: { cat(key: string): string }, sinceIso?: string): Promise<void> {
   const { otlpConfigFromEnv } = await import('../lib/telemetry/emitter');
   const { logsPayload } = await import('../lib/telemetry/otlp');
   const { telemetrySink } = await import('../config/telemetry.config');
   const config = otlpConfigFromEnv();
-  if (!config)
-    throw new Error(
-      `diag --replay needs an OTLP target: set OTEL_EXPORTER_OTLP_ENDPOINT or ${telemetrySink.keyEnvVar}`,
-    );
+  if (!config) throw new Error(`diag --replay needs an OTLP target: set OTEL_EXPORTER_OTLP_ENDPOINT or ${telemetrySink.keyEnvVar}`);
   const eventKeys = keys.filter((key) => {
     if (!key.endsWith('-events.jsonl') || !services.some((service) => key.includes(`/${service}-`))) return false;
     if (!sinceIso) return true;

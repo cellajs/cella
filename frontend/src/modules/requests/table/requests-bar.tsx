@@ -16,15 +16,7 @@ import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type RequestsTableBarProps = BaseTableBarProps<Request, RequestsRouteSearchParams>;
 
-export function RequestsTableBar({
-  selected,
-  queryKey,
-  searchVars,
-  setSearch,
-  columns,
-  setColumns,
-  clearSelection,
-}: RequestsTableBarProps) {
+export function RequestsTableBar({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: RequestsTableBarProps) {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
@@ -48,10 +40,7 @@ export function RequestsTableBar({
         const message =
           args.data.length === 1
             ? t('c:success.delete_resource', { resource: t('c:request') })
-            : t('c:success.delete_counted_resources', {
-                count: args.data.length,
-                resources: t('c:request_other').toLowerCase(),
-              });
+            : t('c:success.delete_counted_resources', { count: args.data.length, resources: t('c:request_other').toLowerCase() });
         toaster.success(message);
       }
       clearSelection();
@@ -73,10 +62,7 @@ export function RequestsTableBar({
     const waitlistRequests = selected.filter(({ type }) => type === 'waitlist');
     const emails = waitlistRequests.map(({ email }) => email);
 
-    const updatedWaitLists = waitlistRequests.map((reqInfo) => ({
-      ...reqInfo,
-      wasInvited: true,
-    }));
+    const updatedWaitLists = waitlistRequests.map((reqInfo) => ({ ...reqInfo, wasInvited: true }));
 
     approveRequests(
       { emails },
@@ -115,13 +101,7 @@ export function RequestsTableBar({
                 onClick={approveSelectedRequests}
               />
             )}
-            <TableBarButton
-              ref={deleteButtonRef}
-              variant="destructive"
-              icon={TrashIcon}
-              label="c:remove"
-              onClick={openDeleteDialog}
-            />
+            <TableBarButton ref={deleteButtonRef} variant="destructive" icon={TrashIcon} label="c:remove" onClick={openDeleteDialog} />
           </>
         ),
       }}

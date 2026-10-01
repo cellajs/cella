@@ -14,14 +14,7 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): Serv
       tenantId: mockTenantId(),
       name: `${faker.hacker.noun()} bot`,
       status: 'active',
-      bindings: [
-        {
-          channelType: 'organization',
-          channelId: organizationId,
-          organizationId,
-          role: hierarchy.getLeastPrivilegedRole('organization'),
-        },
-      ],
+      bindings: [{ channelType: 'organization', channelId: organizationId, organizationId, role: hierarchy.getLeastPrivilegedRole('organization') }],
       oauthClientId: null,
       createdBy: mockUuid(),
       createdAt,
@@ -50,9 +43,6 @@ export const mockApiKeyResponse = (key = 'apiKey:default'): ApiKeyModel =>
     createdAt: mockPastIsoDate(),
   }));
 
-export const mockCreatedApiKeyResponse = (key = 'createdApiKey:default') => ({
-  ...mockApiKeyResponse(key),
-  secret: exampleSecret,
-});
+export const mockCreatedApiKeyResponse = (key = 'createdApiKey:default') => ({ ...mockApiKeyResponse(key), secret: exampleSecret });
 
 export const mockPaginatedServiceAccountsResponse = (count = 2) => mockPaginated(mockServiceAccountResponse, count);

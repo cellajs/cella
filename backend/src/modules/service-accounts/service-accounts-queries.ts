@@ -102,11 +102,7 @@ export async function findApiKeyWithAccount(ctx: DbContext, { key, actorId }: Fi
 }
 
 export async function findApiKeysByActor(ctx: DbContext, { actorId }: { actorId: string }) {
-  return ctx.var.db
-    .select(apiKeySafeColumns)
-    .from(apiKeysTable)
-    .where(eq(apiKeysTable.actorId, actorId))
-    .orderBy(desc(apiKeysTable.createdAt));
+  return ctx.var.db.select(apiKeySafeColumns).from(apiKeysTable).where(eq(apiKeysTable.actorId, actorId)).orderBy(desc(apiKeysTable.createdAt));
 }
 
 interface ScheduleApiKeyExpiryOpts {

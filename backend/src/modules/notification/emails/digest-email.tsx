@@ -11,10 +11,7 @@ interface DigestStatic {
  * language and fills the rest through Brevo placeholders, which are strings only. It is a declared
  * HTML param: `renderSectionsHtml` escapes every user-derived fragment, and Brevo prints it as is.
  */
-type DigestRecipient = EmailRecipient & {
-  sectionsHtml: string;
-  unsubscribeLink: string;
-};
+type DigestRecipient = EmailRecipient & { sectionsHtml: string; unsubscribeLink: string };
 
 export const digestEmail = defineEmailTemplate<DigestStatic, DigestRecipient>()({
   translate(lng, { daily }) {

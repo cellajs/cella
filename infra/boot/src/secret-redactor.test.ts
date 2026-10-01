@@ -16,9 +16,7 @@ describe('createSecretRedactor', () => {
     const secret = 'p@ss/word"with\\quote';
     redactor.add(secret);
 
-    expect(redactor.redact(`https://x.example/cb?key=${encodeURIComponent(secret)}`)).not.toContain(
-      encodeURIComponent(secret),
-    );
+    expect(redactor.redact(`https://x.example/cb?key=${encodeURIComponent(secret)}`)).not.toContain(encodeURIComponent(secret));
     const jsonl = JSON.stringify({ body: `failed: ${secret}` });
     expect(jsonl).not.toContain(secret);
     expect(redactor.redact(jsonl)).toBe(JSON.stringify({ body: 'failed: [REDACTED]' }));
@@ -28,14 +26,10 @@ describe('createSecretRedactor', () => {
     const redactor = createSecretRedactor();
     redactor.add('postgresql://app:db-password-4711@10.0.0.5:5432/app?sslmode=require');
 
-    expect(redactor.redact('dial postgresql://app:db-password-4711@10.0.0.5:5432/app?sslmode=require')).toBe(
-      'dial [REDACTED]',
-    );
+    expect(redactor.redact('dial postgresql://app:db-password-4711@10.0.0.5:5432/app?sslmode=require')).toBe('dial [REDACTED]');
     expect(redactor.redact('auth failed for password db-password-4711')).toBe('auth failed for password [REDACTED]');
     // Userinfo goes whether or not the value is known: an admin DSN the boot runner never saw.
-    expect(redactor.redact('dial postgres://admin:unknown-pw@10.0.0.6/postgres')).toBe(
-      'dial postgres://[REDACTED]@10.0.0.6/postgres',
-    );
+    expect(redactor.redact('dial postgres://admin:unknown-pw@10.0.0.6/postgres')).toBe('dial postgres://[REDACTED]@10.0.0.6/postgres');
   });
 
   it('applies values added later to every later call', () => {

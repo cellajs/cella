@@ -52,9 +52,7 @@ export function OrganizationTabsCard({ organization }: { organization: EnrichedO
     <TabsArrangementCard
       entity={organization}
       parentRouteId="/_app/$tenantId/$organizationSlug/organization"
-      persist={(toolsConfig) =>
-        mutate({ path: { tenantId: organization.tenantId, id: organization.id }, body: { toolsConfig } })
-      }
+      persist={(toolsConfig) => mutate({ path: { tenantId: organization.tenantId, id: organization.id }, body: { toolsConfig } })}
     />
   );
 }

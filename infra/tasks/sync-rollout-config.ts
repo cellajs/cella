@@ -1,13 +1,7 @@
 import type { ServiceName } from '../compose/compose';
 import type { GenerationMetadata } from '../lib/generation-metadata';
 import { serviceNames } from '../lib/services';
-import {
-  controlActor,
-  controlContextForStack,
-  emptyRollout,
-  readControlState,
-  writeControlState,
-} from '../lib/stack/control-store';
+import { controlActor, controlContextForStack, emptyRollout, readControlState, writeControlState } from '../lib/stack/control-store';
 import { tryStackOutputRaw } from '../lib/stack/run-pulumi';
 import { isRecord } from '../lib/utils/guards';
 import { isMain } from '../lib/utils/is-main';
@@ -113,9 +107,7 @@ async function seedActivePointers(stack: string, seeds: Map<string, RolloutGener
     changed = true;
   }
   if (!changed) {
-    console.info(
-      '[sync-rollout-config] all services already have an active pointer or a pending deploy; nothing to seed',
-    );
+    console.info('[sync-rollout-config] all services already have an active pointer or a pending deploy; nothing to seed');
     return;
   }
   state.updatedAt = new Date().toISOString();

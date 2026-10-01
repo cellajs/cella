@@ -31,12 +31,7 @@ export class AppError extends Error {
   entityType?: ErrorSchemaType['entityType'];
   meta?: ErrorMeta;
 
-  constructor(
-    status: ErrorSchemaType['status'],
-    type: ErrorKey,
-    severity: ErrorSchemaType['severity'],
-    opts?: AppErrorOpts,
-  ) {
+  constructor(status: ErrorSchemaType['status'], type: ErrorKey, severity: ErrorSchemaType['severity'], opts?: AppErrorOpts) {
     const i18nOpts = { ns: ['appError', 'error'], defaultValue: opts?.name ?? 'Unknown error' };
     const messageFallback = opts?.message ?? i18n.t(type, i18nOpts);
     super(i18n.t(`${type}.text`, { ...i18nOpts, defaultValue: messageFallback }));

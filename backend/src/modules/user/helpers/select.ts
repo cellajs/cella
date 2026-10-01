@@ -7,11 +7,7 @@ import { userBaseSchema } from '#/schemas/user-schema-base';
 import { pick } from '#/utils/pick';
 
 /** User with timestamps from the user_counters table. */
-export type UserWithCounters = UserModel & {
-  lastSeenAt: string | null;
-  lastStartedAt: string | null;
-  lastSignInAt: string | null;
-};
+export type UserWithCounters = UserModel & { lastSeenAt: string | null; lastStartedAt: string | null; lastSignInAt: string | null };
 
 /** Merges userFlags with the defaults; timestamps come from user_counters subqueries to avoid CDC noise. */
 export const userSelect = (() => {

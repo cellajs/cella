@@ -29,13 +29,7 @@ const country: GeoipDatabase<CountryResponse> = {
   reader: null,
   warned: false,
 };
-const asn: GeoipDatabase<AsnResponse> = {
-  kind: 'asn',
-  path: env.GEOIP_ASN_DB_PATH,
-  object: 'dbip-asn-lite.mmdb.gz',
-  reader: null,
-  warned: false,
-};
+const asn: GeoipDatabase<AsnResponse> = { kind: 'asn', path: env.GEOIP_ASN_DB_PATH, object: 'dbip-asn-lite.mmdb.gz', reader: null, warned: false };
 
 /**
  * Where the DB-IP Lite databases (CC BY 4.0, attribution: IP geolocation by DB-IP, https://db-ip.com) are fetched
@@ -54,9 +48,7 @@ const loadReader = async <T extends MmdbResponse>(db: GeoipDatabase<T>): Promise
   if (db.reader) return db.reader;
   if (!existsSync(db.path)) {
     if (!db.warned) {
-      baseLog.warn(`GeoIP ${db.kind} database not found: ${db.kind} lookups disabled until the next refresh`, {
-        path: db.path,
-      });
+      baseLog.warn(`GeoIP ${db.kind} database not found: ${db.kind} lookups disabled until the next refresh`, { path: db.path });
       db.warned = true;
     }
     return null;
@@ -70,10 +62,7 @@ const loadReader = async <T extends MmdbResponse>(db: GeoipDatabase<T>): Promise
  * development substitutes a sample public address and the tile and the sign-in notice show a country. The raw
  * address the session stores its hashes of is never touched.
  */
-export const lookupTargetIp = (
-  ip: string | null | undefined,
-  { mode, sampleIp }: { mode: string; sampleIp: string },
-): string | null => {
+export const lookupTargetIp = (ip: string | null | undefined, { mode, sampleIp }: { mode: string; sampleIp: string }): string | null => {
   if (!ip) return null;
   if (mode === 'development' && sampleIp && !isPublicIp(ip)) return sampleIp;
   return ip;
@@ -83,17 +72,12 @@ export const lookupTargetIp = (
  * ISO-3166 alpha-2 country code and ASN for an IP; either is null when its database is missing or the IP is unknown.
  * Never throws, so auth and session paths can call it directly.
  */
-export const lookupIp = async (
-  ip: string | null | undefined,
-): Promise<{ country: string | null; asn: number | null }> => {
+export const lookupIp = async (ip: string | null | undefined): Promise<{ country: string | null; asn: number | null }> => {
   const target = lookupTargetIp(ip, { mode: appConfig.mode, sampleIp: env.GEOIP_DEV_SAMPLE_IP });
   if (!target) return { country: null, asn: null };
   try {
     const [countryReader, asnReader] = await Promise.all([loadReader(country), loadReader(asn)]);
-    return {
-      country: countryReader?.get(target)?.country?.iso_code ?? null,
-      asn: asnReader?.get(target)?.autonomous_system_number ?? null,
-    };
+    return { country: countryReader?.get(target)?.country?.iso_code ?? null, asn: asnReader?.get(target)?.autonomous_system_number ?? null };
   } catch (err) {
     baseLog.warn('GeoIP lookup failed', { err, ip: target });
     return { country: null, asn: null };
@@ -112,10 +96,7 @@ const readEtag = async (path: string): Promise<string | null> => {
  * Conditional download of one database: a 304 leaves the file alone, a 200 replaces it atomically (gunzip into a
  * temp file, rename) and drops the open reader so the next lookup opens the new data.
  */
-const refreshDatabase = async <T extends MmdbResponse>(
-  db: GeoipDatabase<T>,
-  source: string,
-): Promise<'updated' | 'unchanged' | 'failed'> => {
+const refreshDatabase = async <T extends MmdbResponse>(db: GeoipDatabase<T>, source: string): Promise<'updated' | 'unchanged' | 'failed'> => {
   const url = `${source}/${db.object}`;
   const etag = existsSync(db.path) ? await readEtag(db.path) : null;
   const tmp = `${db.path}.tmp`;
@@ -145,15 +126,10 @@ const refreshDatabase = async <T extends MmdbResponse>(
 };
 
 /** Fetches both databases from the source when they changed. Never throws. */
-export const refreshGeoipDatabases = async (): Promise<
-  Record<GeoipKind, 'updated' | 'unchanged' | 'failed' | 'off'>
-> => {
+export const refreshGeoipDatabases = async (): Promise<Record<GeoipKind, 'updated' | 'unchanged' | 'failed' | 'off'>> => {
   const source = geoipSourceUrl();
   if (!source) return { country: 'off', asn: 'off' };
-  const [countryResult, asnResult] = await Promise.all([
-    refreshDatabase(country, source),
-    refreshDatabase(asn, source),
-  ]);
+  const [countryResult, asnResult] = await Promise.all([refreshDatabase(country, source), refreshDatabase(asn, source)]);
   return { country: countryResult, asn: asnResult };
 };
 

@@ -34,8 +34,7 @@ try {
   // Surface wrapped driver errors so serial-only production failures retain TLS/auth detail.
   const cause = error instanceof Error ? error.cause : undefined;
   if (cause) {
-    const causeMsg =
-      cause instanceof Error ? `${cause.message}${cause.stack ? `\n${cause.stack}` : ''}` : String(cause);
+    const causeMsg = cause instanceof Error ? `${cause.message}${cause.stack ? `\n${cause.stack}` : ''}` : String(cause);
     console.error(pc.red(`${timestamp()} [migrate]   cause: ${causeMsg}`));
   }
   // Log to OTel because one-shot container output is not collected, then wait through the batch interval.

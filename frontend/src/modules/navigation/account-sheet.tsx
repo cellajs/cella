@@ -16,12 +16,10 @@ import { Button } from '~/modules/ui/button';
 import { useCurrentUser, useUserStore } from '~/modules/user/user-store';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
-type AccountButtonProps = {
-  icon: IconComponent;
-  label: string;
-  id: string;
-  action: string;
-} & ({ offlineAccess: false; isOnline: boolean } | { offlineAccess: true; isOnline?: never });
+type AccountButtonProps = { icon: IconComponent; label: string; id: string; action: string } & (
+  | { offlineAccess: false; isOnline: boolean }
+  | { offlineAccess: true; isOnline?: never }
+);
 
 function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action }: AccountButtonProps) {
   const { t } = useTranslation();
@@ -112,39 +110,16 @@ export function AccountSheet() {
           size="lg"
           id="btn-profile"
           className="focus-effect w-full justify-start text-left hover:bg-accent/50"
-          onClick={() =>
-            navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: user.id }), resetScroll: false })
-          }
+          onClick={() => navigate({ to: '.', search: (prev) => ({ ...prev, userSheetId: user.id }), resetScroll: false })}
         >
           <UserRoundIcon className="mr-2 size-4" aria-hidden="true" />
           {t('c:view_resource', { resource: t('c:profile').toLowerCase() })}
         </Button>
-        <AccountButton
-          offlineAccess={false}
-          isOnline={isOnline}
-          icon={SettingsIcon}
-          id="btn-account"
-          label={t('c:settings')}
-          action="/account"
-        />
+        <AccountButton offlineAccess={false} isOnline={isOnline} icon={SettingsIcon} id="btn-account" label={t('c:settings')} action="/account" />
         {isSystemAdmin && (
-          <AccountButton
-            offlineAccess={false}
-            isOnline={isOnline}
-            icon={WrenchIcon}
-            id="btn-system"
-            label={t('c:system_panel')}
-            action="/system"
-          />
+          <AccountButton offlineAccess={false} isOnline={isOnline} icon={WrenchIcon} id="btn-system" label={t('c:system_panel')} action="/system" />
         )}
-        <AccountButton
-          offlineAccess={false}
-          isOnline={isOnline}
-          icon={LogOutIcon}
-          id="btn-signout"
-          label={t('c:sign_out')}
-          action="/auth/sign-out"
-        />
+        <AccountButton offlineAccess={false} isOnline={isOnline} icon={LogOutIcon} id="btn-signout" label={t('c:sign_out')} action="/auth/sign-out" />
       </div>
     </NavSheetFrame>
   );

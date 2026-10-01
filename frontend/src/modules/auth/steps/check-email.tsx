@@ -29,10 +29,7 @@ export function CheckEmailStep() {
   const isMobile = window.innerWidth < 640;
   const title = appConfig.has.selfRegistration ? t('c:sign_in_or_up') : t('c:sign_in');
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { email: '' },
-  });
+  const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { email: '' } });
 
   // A browser that never signed in to the address gets the step that does not say whether it has an account.
   const { mutate: _checkEmail, isPending } = useMutation<CheckEmailResponse, ApiError, CheckEmailData['body']>({
@@ -63,14 +60,7 @@ export function CheckEmailStep() {
               // Custom css due to html injection by browser extensions
               <FormItem className="gap-0">
                 <FormControl>
-                  <Input
-                    {...field}
-                    className="h-12"
-                    type="email"
-                    autoFocus={!isMobile}
-                    autoComplete="email"
-                    placeholder={t('c:email')}
-                  />
+                  <Input {...field} className="h-12" type="email" autoFocus={!isMobile} autoComplete="email" placeholder={t('c:email')} />
                 </FormControl>
                 <FormMessage className="mt-2" />
               </FormItem>

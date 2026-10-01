@@ -32,10 +32,7 @@ export function serveApi(
   { fetch, port, hostname = '0.0.0.0' }: ListenOptions & { fetch: FetchHandler },
   onListening?: (info: AddressInfo) => void,
 ): ServerType {
-  const server = serve(
-    { fetch, hostname, port, serverOptions: { keepAlive: true, keepAliveTimeout: 30_000 } },
-    onListening,
-  );
+  const server = serve({ fetch, hostname, port, serverOptions: { keepAlive: true, keepAliveTimeout: 30_000 } }, onListening);
   if ('headersTimeout' in server) {
     server.headersTimeout = 60_000;
     server.requestTimeout = 30_000;

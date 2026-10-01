@@ -50,10 +50,7 @@ export function OnboardingCompleted() {
       {isExploding && <Confetti fire />}
 
       {user.userFlags.finishedOnboarding && (
-        <UndoIcon
-          strokeWidth={0.1}
-          className="-mt-52 -mb-12 size-100 rotate-30 scale-y-75 text-primary max-md:hidden md:-translate-x-24"
-        />
+        <UndoIcon strokeWidth={0.1} className="-mt-52 -mb-12 size-100 rotate-30 scale-y-75 text-primary max-md:hidden md:-translate-x-24" />
       )}
       <h1 className="font-bold text-3xl">{t('c:onboarding_completed')}</h1>
       <p className="max-w-md pb-8 text-foreground/90 text-xl md:text-2xl md:leading-9">

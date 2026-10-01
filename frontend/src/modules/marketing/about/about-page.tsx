@@ -78,16 +78,8 @@ export function AboutPage() {
               </Button>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="lg"
-            className="group max-sm:hidden"
-            onClick={() => scrollToSectionById('benefits')}
-            aria-label="Read more"
-          >
-            <span className="font-normal text-base opacity-70 group-hover:opacity-100">
-              {t('about:continue_below_fold')}
-            </span>
+          <Button variant="ghost" size="lg" className="group max-sm:hidden" onClick={() => scrollToSectionById('benefits')} aria-label="Read more">
+            <span className="font-normal text-base opacity-70 group-hover:opacity-100">{t('about:continue_below_fold')}</span>
             <ArrowDownIcon className="ml-2 animate-bounce opacity-70 group-hover:opacity-100" />
           </Button>
         </Hero>
@@ -98,34 +90,17 @@ export function AboutPage() {
         </AboutSection>
 
         {/* Stack */}
-        <AboutSection
-          key={'stack'}
-          sectionId="stack"
-          title="about:stack.title"
-          text="about:stack.text"
-          alternate={true}
-        >
+        <AboutSection key={'stack'} sectionId="stack" title="about:stack.title" text="about:stack.text" alternate={true}>
           <InfoGrid namespace="stack" items={stackItems} image expandable tileClassName="bg-background" />
         </AboutSection>
 
         {/* Integrations */}
-        <AboutSection
-          key={'integrations'}
-          sectionId="integrations"
-          title="about:integrations.title"
-          text="about:integrations.text"
-        >
+        <AboutSection key={'integrations'} sectionId="integrations" title="about:integrations.title" text="about:integrations.text">
           <InfoCards />
         </AboutSection>
 
         {/* Showcase */}
-        <AboutSection
-          key={'showcase'}
-          sectionId="showcase"
-          title="about:showcase.title"
-          text="about:showcase.text"
-          alternate
-        >
+        <AboutSection key={'showcase'} sectionId="showcase" title="about:showcase.title" text="about:showcase.text" alternate>
           <Showcase />
         </AboutSection>
 

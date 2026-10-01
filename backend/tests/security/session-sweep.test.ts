@@ -82,10 +82,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
   });
 
   it('must not keep streaming to a user deleted outside the API via their open stream', async () => {
-    const [user, bystander] = [
-      await createTestUser('removed@security-test.com'),
-      await createTestUser('bystander@security-test.com'),
-    ];
+    const [user, bystander] = [await createTestUser('removed@security-test.com'), await createTestUser('bystander@security-test.com')];
     const [removed, kept] = [await insertSession(user), await insertSession(bystander)];
     const removedStream = await openStream(user.id, removed);
     const keptStream = await openStream(bystander.id, kept);
@@ -100,10 +97,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
   });
 
   it('must not keep system-admin reads on a stream via a system role that was removed', async () => {
-    const [demoted, admin] = [
-      await createSystemAdminUser('demoted@security-test.com'),
-      await createSystemAdminUser('still-admin@security-test.com'),
-    ];
+    const [demoted, admin] = [await createSystemAdminUser('demoted@security-test.com'), await createSystemAdminUser('still-admin@security-test.com')];
     const [demotedSession, adminSession] = [await insertSession(demoted), await insertSession(admin)];
     const demotedStream = await openStream(demoted.id, demotedSession);
     const adminStream = await openStream(admin.id, adminSession);
@@ -119,10 +113,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
   });
 
   it('tells a stream to reconnect once its user gains the system role, so it gets system-admin reads', async () => {
-    const [promoted, regular] = [
-      await createTestUser('promoted@security-test.com'),
-      await createTestUser('regular@security-test.com'),
-    ];
+    const [promoted, regular] = [await createTestUser('promoted@security-test.com'), await createTestUser('regular@security-test.com')];
     const [promotedSession, regularSession] = [await insertSession(promoted), await insertSession(regular)];
     const promotedStream = await openStream(promoted.id, promotedSession);
     const regularStream = await openStream(regular.id, regularSession);
@@ -143,10 +134,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
 
     const admin = await createSystemAdminUser('remote-admin@security-test.com');
     const [adminSession, revoked] = [await insertSession(admin), await insertSession(admin)];
-    const fromElsewhere = (session: TestSession) => ({
-      ...session,
-      headers: { ...session.headers, 'x-forwarded-for': '10.0.0.2' },
-    });
+    const fromElsewhere = (session: TestSession) => ({ ...session, headers: { ...session.headers, 'x-forwarded-for': '10.0.0.2' } });
     const adminStream = await openStream(admin.id, fromElsewhere(adminSession));
     const revokedStream = await openStream(admin.id, fromElsewhere(revoked));
 
@@ -159,10 +147,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
   });
 
   it('must not stall the sweep of every stream via a client that stopped reading', async () => {
-    const [stalled, other] = [
-      await createTestUser('stalled@security-test.com'),
-      await createTestUser('other@security-test.com'),
-    ];
+    const [stalled, other] = [await createTestUser('stalled@security-test.com'), await createTestUser('other@security-test.com')];
     const [stalledSession, otherSession] = [await insertSession(stalled), await insertSession(other)];
     // Opened first, so the sweep meets it first.
     const stalledStream = await openUnreadStream(stalled.id, stalledSession);
@@ -226,11 +211,7 @@ describe('The stream sweep closes streams whose session no longer holds', () => 
       await createSystemAdminUser('impersonator@security-test.com'),
     ];
     const target = await createTestUser('impersonated@security-test.com');
-    const [demotedSession, expiringSession, adminSession] = [
-      await insertSession(demoted),
-      await insertSession(expiring),
-      await insertSession(admin),
-    ];
+    const [demotedSession, expiringSession, adminSession] = [await insertSession(demoted), await insertSession(expiring), await insertSession(admin)];
     const demotedStream = await openStream(target.id, await insertImpersonation(demotedSession, target));
     const expiringStream = await openStream(target.id, await insertImpersonation(expiringSession, target));
     const keptStream = await openStream(target.id, await insertImpersonation(adminSession, target));

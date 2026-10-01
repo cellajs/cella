@@ -10,12 +10,7 @@ export const memoryStores = new Map<string, RateLimiterMemory>();
  */
 export const memoryStoresMock = async (importOriginal: () => Promise<Record<string, unknown>>) => ({
   ...(await importOriginal()),
-  getRateLimiterInstance: (options: {
-    keyPrefix?: string;
-    points: number;
-    duration: number;
-    blockDuration?: number;
-  }) => {
+  getRateLimiterInstance: (options: { keyPrefix?: string; points: number; duration: number; blockDuration?: number }) => {
     const keyPrefix = options.keyPrefix ?? '';
     const existing = memoryStores.get(keyPrefix);
     if (existing) return existing;

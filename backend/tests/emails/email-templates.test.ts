@@ -33,9 +33,12 @@ describe('email translation fallback', () => {
 
 // The cast to the loose fixture type stops the heterogeneous defs collapsing
 // `translate`'s parameter to `never` across the union.
-const templateEntries = (Object.entries(emailPreviewFixtures) as [string, EmailPreviewFixture][]).map(
-  ([name, { def, statics, recipient }]) => ({ name, def, statics, recipient }),
-);
+const templateEntries = (Object.entries(emailPreviewFixtures) as [string, EmailPreviewFixture][]).map(([name, { def, statics, recipient }]) => ({
+  name,
+  def,
+  statics,
+  recipient,
+}));
 
 /** Catches broken components, runtime errors, and keys missing from every language. */
 describe('email template rendering', () => {
@@ -114,11 +117,7 @@ describe('new sign-in notice location line', () => {
   };
 
   it('names the country when GeoIP resolved one, escaped like every other detail', async () => {
-    const translated = accountSecurityEmail.translate('en', {
-      name: 'Emily',
-      type: 'new-sign-in',
-      details: { ...details, country: 'Nether<lands' },
-    });
+    const translated = accountSecurityEmail.translate('en', { name: 'Emily', type: 'new-sign-in', details: { ...details, country: 'Nether<lands' } });
     const html = await render(accountSecurityEmail.component(translated));
 
     expect(html).toContain('<strong>Location:</strong> Nether&lt;lands (approximate)');

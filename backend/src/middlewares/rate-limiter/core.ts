@@ -1,23 +1,10 @@
 import { RateLimiterRes } from 'rate-limiter-flexible';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
-import {
-  extractIdentifiers,
-  getRateLimiterInstance,
-  openBucket,
-  rateLimitError,
-  subjectSegment,
-} from '#/middlewares/rate-limiter/helpers';
+import { extractIdentifiers, getRateLimiterInstance, openBucket, rateLimitError, subjectSegment } from '#/middlewares/rate-limiter/helpers';
 import { restoreDebt, syncFromDb, takeDebt, tryFastConsume } from '#/middlewares/rate-limiter/points-cache';
 import { reserveTiers, settleTiers, slowTier } from '#/middlewares/rate-limiter/tiers';
-import type {
-  Outcome,
-  RateLimiterHandler,
-  RateLimiterOpts,
-  RateLimitKeyPart,
-  RateLimitMode,
-  Tier,
-} from '#/middlewares/rate-limiter/types';
+import type { Outcome, RateLimiterHandler, RateLimiterOpts, RateLimitKeyPart, RateLimitMode, Tier } from '#/middlewares/rate-limiter/types';
 import { log } from '#/utils/logger';
 
 export const defaultOptions = {
@@ -30,11 +17,7 @@ export const defaultOptions = {
 };
 
 /** Opens a bucket before its first consume; the store falls back to its in-memory insurance while the database is unreachable. */
-async function openBucketSafely(
-  store: ReturnType<typeof getRateLimiterInstance>,
-  rateLimitKey: string,
-  durationSeconds: number,
-) {
+async function openBucketSafely(store: ReturnType<typeof getRateLimiterInstance>, rateLimitKey: string, durationSeconds: number) {
   try {
     await openBucket(store, rateLimitKey, durationSeconds);
   } catch (err) {
@@ -54,12 +37,7 @@ async function openBucketSafely(
  * @param identifiers - Key parts or fallback chains composing the subject identifier.
  * @param opts - Limits and middleware metadata.
  */
-export const rateLimiter = (
-  mode: RateLimitMode,
-  key: string,
-  identifiers: RateLimitKeyPart[],
-  opts?: RateLimiterOpts,
-): RateLimiterHandler => {
+export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateLimitKeyPart[], opts?: RateLimiterOpts): RateLimiterHandler => {
   const { limits, functionName, name, description, getConsumePoints, getPointsBudget } = opts ?? {};
   const config = { ...defaultOptions, ...limits };
   const keyPrefix = `${key}_${mode}`;
@@ -67,9 +45,7 @@ export const rateLimiter = (
   const store = getRateLimiterInstance({ ...config, keyPrefix, inMemoryBlock: mode === 'limit' });
   /** The buckets a reserved attempt counts in: the route's own and, behind a failure budget, the 24-hour one. */
   const tiers: Tier[] =
-    mode === 'limit'
-      ? []
-      : [{ store, limits: config, counts: isFailMode ? 'fail' : 'success', resetsOnSuccess: mode === 'failseries' }];
+    mode === 'limit' ? [] : [{ store, limits: config, counts: isFailMode ? 'fail' : 'success', resetsOnSuccess: mode === 'failseries' }];
   if (isFailMode) tiers.push(slowTier(keyPrefix));
 
   const handler = xMiddleware(
@@ -103,10 +79,7 @@ export const rateLimiter = (
         // Clamp tenant budgets without mutating the shared prefix limiter; a zero tenant budget uses the global ceiling
         const consumePoints = getConsumePoints ? await getConsumePoints(ctx) : 1;
         const tenantBudget = getPointsBudget ? getPointsBudget(ctx) : null;
-        const effectiveBudget =
-          tenantBudget === null
-            ? config.points
-            : Math.min(tenantBudget > 0 ? tenantBudget : config.points, config.points);
+        const effectiveBudget = tenantBudget === null ? config.points : Math.min(tenantBudget > 0 ? tenantBudget : config.points, config.points);
 
         // Fast path: an in-process counter skips the DB while the key is well under budget.
         if (getPointsBudget && tryFastConsume(rateLimitKey, consumePoints, effectiveBudget) === 'allow') {

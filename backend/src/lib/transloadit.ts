@@ -22,11 +22,7 @@ export const getParams = (templateId: UploadTemplateId, sub: string) => {
   const { publicBucket, bucketName } = uploadStorage(templateId);
 
   return {
-    auth: {
-      key: authKey,
-      expires,
-      nonce,
-    },
+    auth: { key: authKey, expires, nonce },
     steps: {
       ':original': { robot: '/upload/handle' },
       // Inject steps based on template: avatar thumbnail, cover image, attachments ...

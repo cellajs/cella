@@ -12,9 +12,7 @@ import { maxLength } from '#/db/utils/constraints';
  * autosave and Yjs materialize writes, which have no user to report to, never fail on length. Empty when block 0 holds
  * no text (an image); the caller then keeps the previous name.
  */
-export const nameFromDocument = (description: string | null | undefined): string =>
-  deriveDocument(description).name.slice(0, maxLength.field).trim();
+export const nameFromDocument = (description: string | null | undefined): string => deriveDocument(description).name.slice(0, maxLength.field).trim();
 
 /** Search text for a stored document, capped at 900 characters. Block 0 already carries the title, so it is not prepended. One field of `deriveDocument`. */
-export const keywordsFromDocument = (description: string | null | undefined): string =>
-  deriveDocument(description).keywords;
+export const keywordsFromDocument = (description: string | null | undefined): string => deriveDocument(description).keywords;

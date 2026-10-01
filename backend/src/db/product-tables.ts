@@ -11,9 +11,7 @@ import type { PartitionConfig, ResolvableTable } from '#/tables';
  * would be a load-order cycle under drizzle-kit's per-file loading. `satisfies` makes a missing
  * product a compile error.
  */
-export const productTables = {
-  attachment: () => attachmentsTable,
-} satisfies Record<ProductEntityType, () => ResolvableTable>;
+export const productTables = { attachment: () => attachmentsTable } satisfies Record<ProductEntityType, () => ResolvableTable>;
 
 /** App partition entry: the Drizzle table stands in for `name`, so the parity test checks the same schema the migration converts. */
 export type AppPartitionConfig = Omit<PartitionConfig, 'name'> & { table: AnyPgTable };

@@ -17,9 +17,7 @@ export const sendAccountSecurityEmail = (
   log[type === 'new-sign-in' ? 'info' : 'warn'](`Security email: ${type}`, { email: recipient.email, ...details });
 
   mailer
-    .prepareEmails(accountSecurityEmail, { name: recipient.name ?? '', type, details }, [
-      { email: recipient.email, lng },
-    ])
+    .prepareEmails(accountSecurityEmail, { name: recipient.name ?? '', type, details }, [{ email: recipient.email, lng }])
     .catch((err) => log.error('Failed to send security email', { type, err }));
 };
 

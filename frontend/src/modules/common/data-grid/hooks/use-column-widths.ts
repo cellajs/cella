@@ -27,10 +27,7 @@ export function useColumnWidths<R, SR>(
   onColumnResize: Maybe<(column: CalculatedColumn<R, SR>, width: number) => void>,
   setColumnResizing: (isColumnResizing: boolean) => void,
 ) {
-  const [columnToAutoResize, setColumnToAutoResize] = useState<{
-    readonly key: string;
-    readonly width: 'max-content';
-  } | null>(null);
+  const [columnToAutoResize, setColumnToAutoResize] = useState<{ readonly key: string; readonly width: 'max-content' } | null>(null);
 
   const resizeSnapshotRef = useRef<ResizeSnapshot<R, SR> | null>(null);
 
@@ -104,10 +101,7 @@ export function useColumnWidths<R, SR>(
     for (const col of columns) {
       const w = redistributed.get(col.key);
       if (w !== undefined) {
-        newColumnWidths.set(col.key, {
-          type: col.key === column.key ? 'resized' : 'measured',
-          width: w,
-        });
+        newColumnWidths.set(col.key, { type: col.key === column.key ? 'resized' : 'measured', width: w });
       }
     }
 
@@ -131,21 +125,14 @@ export function useColumnWidths<R, SR>(
     onColumnWidthsChange(newColumnWidths);
   }
 
-  return {
-    gridTemplateColumns,
-    handleColumnResize,
-    handleColumnResizeEnd,
-  } as const;
+  return { gridTemplateColumns, handleColumnResize, handleColumnResizeEnd } as const;
 }
 
 /** Redistribute drag width through the nearest right column, then other columns within minimums. */
 function redistributeWidths<R, SR>(snapshot: ResizeSnapshot<R, SR>, rawWidth: number): Map<string, number> {
   const { resizingCol, initialWidth, allWidths, rightCols, leftCols } = snapshot;
 
-  const resizedWidth = max(
-    resizingCol.minWidth,
-    resizingCol.maxWidth != null ? min(rawWidth, resizingCol.maxWidth) : rawWidth,
-  );
+  const resizedWidth = max(resizingCol.minWidth, resizingCol.maxWidth != null ? min(rawWidth, resizingCol.maxWidth) : rawWidth);
   const delta = resizedWidth - initialWidth;
   const overflow = max(0, resizingCol.minWidth - rawWidth);
 
@@ -171,11 +158,7 @@ function redistributeWidths<R, SR>(snapshot: ResizeSnapshot<R, SR>, rawWidth: nu
 }
 
 /** Shrinks the nearest neighbor first, then the rest proportionally, and returns the amount actually shrunk. */
-function shrinkColumns<R, SR>(
-  cols: readonly CalculatedColumn<R, SR>[],
-  widths: Map<string, number>,
-  amount: number,
-): number {
+function shrinkColumns<R, SR>(cols: readonly CalculatedColumn<R, SR>[], widths: Map<string, number>, amount: number): number {
   if (cols.length === 0 || amount <= 0) return 0;
   let remaining = amount;
 
@@ -204,11 +187,7 @@ function shrinkColumns<R, SR>(
 }
 
 /** Grow columns equally by distributing `amount`. Reads current widths so growth stacks. */
-function growColumns<R, SR>(
-  cols: readonly CalculatedColumn<R, SR>[],
-  widths: Map<string, number>,
-  amount: number,
-): void {
+function growColumns<R, SR>(cols: readonly CalculatedColumn<R, SR>[], widths: Map<string, number>, amount: number): void {
   if (cols.length === 0 || amount <= 0) return;
   const share = amount / cols.length;
   for (const col of cols) {

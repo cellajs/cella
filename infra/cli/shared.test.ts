@@ -49,16 +49,12 @@ describe('inputOrDefault', () => {
   it('prefers the env var under --defaults', async () => {
     process.argv = ['node', 'infra-cli.ts', '--defaults'];
     vi.stubEnv('TEST_INPUT_VAR', 'from-env');
-    await expect(inputOrDefault({ message: 'name', envName: 'TEST_INPUT_VAR', default: 'fallback' })).resolves.toBe(
-      'from-env',
-    );
+    await expect(inputOrDefault({ message: 'name', envName: 'TEST_INPUT_VAR', default: 'fallback' })).resolves.toBe('from-env');
   });
 
   it('falls back to the default under --defaults when the env var is unset', async () => {
     process.argv = ['node', 'infra-cli.ts', '--defaults'];
-    await expect(inputOrDefault({ message: 'name', envName: 'TEST_INPUT_VAR', default: 'fallback' })).resolves.toBe(
-      'fallback',
-    );
+    await expect(inputOrDefault({ message: 'name', envName: 'TEST_INPUT_VAR', default: 'fallback' })).resolves.toBe('fallback');
   });
 
   it('resolves to empty string when neither env nor default is present', async () => {

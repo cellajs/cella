@@ -47,9 +47,7 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
   app.use(limiterScope);
 
   /** The provider lands the user-agent here; the React consent page takes over and calls the JSON routes below. */
-  app.get('/oauth/interaction/:uid', (c) =>
-    c.redirect(`${appConfig.frontendUrl}/auth/consent?uid=${c.req.param('uid')}`),
-  );
+  app.get('/oauth/interaction/:uid', (c) => c.redirect(`${appConfig.frontendUrl}/auth/consent?uid=${c.req.param('uid')}`));
 
   app.get('/oauth/interaction/:uid/details', async (c) => {
     const { signedIn, details } = await loadInteraction(provider, c);
@@ -86,10 +84,7 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
 
     // The browser's earlier grant for this client carries on only when it is this user's own.
     const existing = interaction.grantId ? await provider.Grant.find(interaction.grantId) : undefined;
-    const grant =
-      existing?.accountId === user.id && existing.clientId === clientId
-        ? existing
-        : new provider.Grant({ accountId: user.id, clientId });
+    const grant = existing?.accountId === user.id && existing.clientId === clientId ? existing : new provider.Grant({ accountId: user.id, clientId });
     // Entity scopes are both the provider's scopes and the resource's: the grant records them in both forms.
     const resource = String(interaction.params.resource);
     grant.addOIDCScope(details.scopes.join(' '));

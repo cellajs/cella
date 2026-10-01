@@ -5,11 +5,7 @@ export const keepOrganizationAdminConstraint = 'memberships_keep_org_admin';
 
 /** The triggers the membership rules create, each with its function: the side-effect verify block asserts them. */
 export const membershipRuleTriggers = [
-  {
-    tableName: 'memberships',
-    triggerName: keepOrganizationAdminConstraint,
-    functionName: keepOrganizationAdminConstraint,
-  },
+  { tableName: 'memberships', triggerName: keepOrganizationAdminConstraint, functionName: keepOrganizationAdminConstraint },
 ];
 
 /**

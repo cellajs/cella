@@ -4,11 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 import { type DialogData, useDialoger } from './use-dialoger';
 
-const dialog = (id: number | string, data: Partial<DialogData> = {}): DialogData => ({
-  id,
-  triggerRef: createRef(),
-  ...data,
-});
+const dialog = (id: number | string, data: Partial<DialogData> = {}): DialogData => ({ id, triggerRef: createRef(), ...data });
 
 const openIds = () => useDialoger.getState().dialogs.map((d) => d.id);
 
@@ -89,9 +85,7 @@ describe('dialoger store', () => {
   });
 
   it('keeps a dialog that onClose opens', () => {
-    useDialoger
-      .getState()
-      .create(null, dialog('a', { onClose: () => useDialoger.getState().create(null, dialog('b')) }));
+    useDialoger.getState().create(null, dialog('a', { onClose: () => useDialoger.getState().create(null, dialog('b')) }));
 
     useDialoger.getState().remove('a');
 

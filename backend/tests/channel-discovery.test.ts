@@ -64,12 +64,9 @@ let rowCounter = 0;
 
 const insertChannel = async (opts: { courseId?: string | null; published?: boolean } = {}) => {
   const id = `ch-${++rowCounter}`;
-  await seedDb.insert(channelsTable).values({
-    id,
-    organizationId: ORG_ID,
-    courseId: opts.courseId ?? null,
-    publishedAt: opts.published === false ? null : PUBLISHED_AT,
-  });
+  await seedDb
+    .insert(channelsTable)
+    .values({ id, organizationId: ORG_ID, courseId: opts.courseId ?? null, publishedAt: opts.published === false ? null : PUBLISHED_AT });
   return id;
 };
 
@@ -105,10 +102,7 @@ interface ListedRow {
 /** The list query as a consumer wires it: a LEFT join keyed on the caller's own membership, so discovery rows carry none. */
 const listChannels = async (userId: string, opts: ListOpts = {}): Promise<ListedRow[]> => {
   const actor: PredicateActor = { actorId: userId, isSystemAdmin: opts.isSystemAdmin ?? false, scopes: null };
-  const memberships = (await seedDb
-    .select()
-    .from(membershipsTable)
-    .where(eq(membershipsTable.userId, userId))) as unknown as MembershipBaseModel[]; // scratch rows carry the base shape
+  const memberships = (await seedDb.select().from(membershipsTable).where(eq(membershipsTable.userId, userId))) as unknown as MembershipBaseModel[]; // scratch rows carry the base shape
 
   const membershipKeyOn = and(
     eq(membershipsTable.channelId, channelsTable.id),

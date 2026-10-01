@@ -28,9 +28,7 @@ export function Uploader() {
     >
       <DialogContent className="h-[40vh] min-h-fit w-[90vw] xs:w-[80vw] max-w-xl md:max-w-2xl">
         <DialogHeader className="with-close-btn">
-          <DialogTitle className={uploaderData.title ? 'h-6 leading-6' : 'sr-only'}>
-            {uploaderData.title || t('c:upload')}
-          </DialogTitle>
+          <DialogTitle className={uploaderData.title ? 'h-6 leading-6' : 'sr-only'}>{uploaderData.title || t('c:upload')}</DialogTitle>
           {uploaderData.description && <DialogDescription>{uploaderData.description}</DialogDescription>}
         </DialogHeader>
         <Dashboard

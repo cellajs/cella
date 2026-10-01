@@ -1,12 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { DropIndicator } from '~/modules/common/drop-indicator';
 
-const meta = {
-  title: 'common/DropIndicator',
-  component: DropIndicator,
-  tags: ['autodocs'],
-  parameters: { layout: 'centered' },
-} satisfies Meta<typeof DropIndicator>;
+const meta = { title: 'common/DropIndicator', component: DropIndicator, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
+  typeof DropIndicator
+>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

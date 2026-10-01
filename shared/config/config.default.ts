@@ -44,16 +44,7 @@ export const config = {
    * Not entities, but activities are logged for them. Tenant- or system-owned rows only: rows a user owns
    * (sessions, identities, passkeys, emails) are self-audited through the account pages and notifications.
    */
-  resourceTypes: [
-    'request',
-    'membership',
-    'inactive_membership',
-    'tenant',
-    'system_role',
-    'service_account',
-    'api_key',
-    'oauth_client',
-  ] as const,
+  resourceTypes: ['request', 'membership', 'inactive_membership', 'tenant', 'system_role', 'service_account', 'api_key', 'oauth_client'] as const,
 
   /**
    * Product embeddings: declares which product entities are embedded as ID arrays inside
@@ -80,9 +71,7 @@ export const config = {
       serviceAccount: 20,
       apiKey: 100,
     },
-    rateLimits: {
-      apiPointsPerHour: 1000,
-    },
+    rateLimits: { apiPointsPerHour: 1000 },
   } as const,
 
   // System roles
@@ -155,16 +144,7 @@ export const config = {
    * `frontendUrl` carries no port (tunnel mode); otherwise the URL port wins. `internal` is the
    * backend's internal listener, which the cdc and yjs workers dial (`INTERNAL_PORT` overrides it).
    */
-  devPorts: {
-    frontend: 3000,
-    api: 4000,
-    cdcHealth: 4001,
-    yjs: 4002,
-    mcp: 4003,
-    oauth: 4004,
-    internal: 4005,
-    jobs: 4006,
-  },
+  devPorts: { frontend: 3000, api: 4000, cdcHealth: 4001, yjs: 4002, mcp: 4003, oauth: 4004, internal: 4005, jobs: 4006 },
 
   has: {
     pwa: true as boolean,
@@ -201,11 +181,7 @@ export const config = {
    */
   maxSessionsPerUser: 10,
 
-  totp: {
-    intervalInSeconds: 30,
-    gracePeriodInSeconds: 60,
-    digits: 6,
-  },
+  totp: { intervalInSeconds: 30, gracePeriodInSeconds: 60, digits: 6 },
 
   // API configuration
 
@@ -214,15 +190,7 @@ export const config = {
 
   // Request limits
 
-  requestLimits: {
-    default: 40,
-    users: 100,
-    members: 40,
-    organizations: 40,
-    requests: 40,
-    attachments: 40,
-    pendingMemberships: 20,
-  },
+  requestLimits: { default: 40, users: 100, members: 40, organizations: 40, requests: 40, attachments: 40, pendingMemberships: 20 },
 
   jsonBodyLimit: 1 * 1024 * 1024,
   fileUploadLimit: 20 * 1024 * 1024,
@@ -230,10 +198,7 @@ export const config = {
 
   // Storage & uploads (S3)
 
-  s3: {
-    region: 'nl-ams',
-    host: 's3.nl-ams.scw.cloud',
-  } as S3ConfigInput,
+  s3: { region: 'nl-ams', host: 's3.nl-ams.scw.cloud' } as S3ConfigInput,
 
   uploadTemplateIds: ['avatar', 'cover', 'attachment', 'newsletter'] as const,
 
@@ -278,22 +243,10 @@ export const config = {
 
   themeColor: '#26262b',
   theme: {
-    navigation: {
-      hasSidebarTextLabels: false,
-      sidebarWidthExpanded: '16rem',
-      sidebarWidthCollapsed: '4rem',
-      sheetPanelWidth: '20rem',
-    },
+    navigation: { hasSidebarTextLabels: false, sidebarWidthExpanded: '16rem', sidebarWidthCollapsed: '4rem', sheetPanelWidth: '20rem' },
     colors: {},
     strokeWidth: 1.5,
-    screenSizes: {
-      xs: '420px',
-      sm: '640px',
-      md: '768px',
-      lg: '1024px',
-      xl: '1280px',
-      '2xl': '1400px',
-    },
+    screenSizes: { xs: '420px', sm: '640px', md: '768px', lg: '1024px', xl: '1280px', '2xl': '1400px' },
   } as const,
   placeholderColors: [
     'bg-blue-300',
@@ -312,10 +265,7 @@ export const config = {
 
   defaultLanguage: 'en' as const,
   languages: ['en', 'nl'] as const,
-  c: {
-    countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'],
-    timezones: [],
-  },
+  c: { countries: ['fr', 'de', 'nl', 'ua', 'us', 'gb'], timezones: [] },
 
   // Company details
 
@@ -338,17 +288,12 @@ export const config = {
     element: 'https://matrix.to/#/!fvwljIbZIqzhNvjKvk:matrix.org',
     githubUrl: 'https://github.com/cellajs/cella',
     mapZoom: 4,
-    coordinates: {
-      lat: 51.92760809717153,
-      lng: 4.47421039909924,
-    },
+    coordinates: { lat: 51.92760809717153, lng: 4.47421039909924 },
   },
 
   // User defaults
 
-  defaultUserFlags: {
-    finishedOnboarding: false,
-  },
+  defaultUserFlags: { finishedOnboarding: false },
 
   // Organization defaults
 

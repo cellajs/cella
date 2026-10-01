@@ -11,11 +11,7 @@ export const isLocalBlobUrl = (key: string): boolean => {
   if (!key.startsWith('blob:')) return false;
   try {
     const url = new URL(key.slice('blob:'.length));
-    return (
-      (url.protocol === 'http:' || url.protocol === 'https:') &&
-      isUuid(url.pathname.slice(1)) &&
-      key === `blob:${url.origin}${url.pathname}`
-    );
+    return (url.protocol === 'http:' || url.protocol === 'https:') && isUuid(url.pathname.slice(1)) && key === `blob:${url.origin}${url.pathname}`;
   } catch {
     return false;
   }
@@ -30,9 +26,7 @@ const isLocalKey = (key: string) => key === '' || isLocalBlobUrl(key);
  * tenant's object.
  */
 export function namesOwnStorage(keys: AttachmentKeys, organizationId: string): boolean {
-  return Object.values(keys).every(
-    (key) => key === undefined || isLocalKey(key) || isOrganizationKey(key, organizationId),
-  );
+  return Object.values(keys).every((key) => key === undefined || isLocalKey(key) || isOrganizationKey(key, organizationId));
 }
 
 /**

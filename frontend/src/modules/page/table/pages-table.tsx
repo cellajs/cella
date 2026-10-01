@@ -71,9 +71,7 @@ function PagesTable() {
   const { filtered, rows } = useMemo(() => {
     const query = q?.trim().toLowerCase();
     const filtered = query
-      ? pages.filter((page) =>
-          [page.name, page.description, page.keywords, page.id].some((value) => value?.toLowerCase().includes(query)),
-        )
+      ? pages.filter((page) => [page.name, page.description, page.keywords, page.id].some((value) => value?.toLowerCase().includes(query)))
       : pages;
     return { filtered, rows: buildRows(filtered) };
   }, [q, pages, buildRows]);
@@ -99,13 +97,7 @@ function PagesTable() {
 
   return (
     <FocusViewContainer>
-      <PagesTableBar
-        total={filtered.length}
-        searchVars={search}
-        setSearch={setSearch}
-        columns={columns}
-        setColumns={setColumns}
-      />
+      <PagesTableBar total={filtered.length} searchVars={search} setSearch={setSearch} columns={columns} setColumns={setColumns} />
       <TreeProvider value={tree.context}>
         <DataTable
           rows={rows}
@@ -118,19 +110,13 @@ function PagesTable() {
           {...(canEditDocs && {
             enableDragAutoScroll: true,
             onRowsChange,
-            onRowReorder: (fromIdx: number, toIdx: number, edge: 'top' | 'bottom') =>
-              tree.onReorder(rows, fromIdx, toIdx, edge),
+            onRowReorder: (fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => tree.onReorder(rows, fromIdx, toIdx, edge),
             onRowReparent: (fromIdx: number, toIdx: number) => tree.onReparent(rows, fromIdx, toIdx),
-            canDropRow: (args: { fromIdx: number; toIdx: number; zone: 'top' | 'bottom' | 'center' }) =>
-              tree.canDrop(rows, args),
+            canDropRow: (args: { fromIdx: number; toIdx: number; zone: 'top' | 'bottom' | 'center' }) => tree.canDrop(rows, args),
             renderRowDragPreview,
           })}
           NoRowsComponent={
-            <ContentPlaceholder
-              icon={BirdIcon}
-              title="c:no_resource_yet"
-              titleProps={{ resource: t('c:page_other').toLowerCase() }}
-            />
+            <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:page_other').toLowerCase() }} />
           }
         />
       </TreeProvider>

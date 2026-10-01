@@ -25,9 +25,7 @@ export function formatJson(data: unknown, indent = 2): string {
       return `{ ${props.join(', ')} }`;
     }
 
-    const props = entries.map(
-      ([k, v]) => `${spacer.repeat(depth + 1)}${JSON.stringify(k)}: ${stringify(v, depth + 1)}`,
-    );
+    const props = entries.map(([k, v]) => `${spacer.repeat(depth + 1)}${JSON.stringify(k)}: ${stringify(v, depth + 1)}`);
     return `{\n${props.join(',\n')}\n${spacer.repeat(depth)}}`;
   };
 

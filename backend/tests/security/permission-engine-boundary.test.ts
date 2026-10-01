@@ -40,8 +40,7 @@ describe('permission engine boundary', () => {
 
     expect(
       offenders,
-      'getAllDecisions must be reached only via checkPermission (the actor-guarded wrapper). ' +
-        `Offending files:\n  ${offenders.join('\n  ')}`,
+      `getAllDecisions must be reached only via checkPermission (the actor-guarded wrapper). Offending files:\n  ${offenders.join('\n  ')}`,
     ).toEqual([]);
   });
 });

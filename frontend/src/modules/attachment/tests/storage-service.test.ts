@@ -2,9 +2,7 @@ import 'fake-indexeddb/auto';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type AttachmentBlob, attachmentsDb } from '../offline/attachments-db';
 
-vi.mock('shared', async () => ({
-  appConfig: (await import('./test-setup')).mockAttachmentAppConfig,
-}));
+vi.mock('shared', async () => ({ appConfig: (await import('./test-setup')).mockAttachmentAppConfig }));
 
 import { bindLocalUserDb } from '~/query/local-user-db';
 import { attachmentStorage } from '../offline/storage-service';

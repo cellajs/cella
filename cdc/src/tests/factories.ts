@@ -70,12 +70,7 @@ export function mockParseResult(
     type: `${type}.${overrides.action === 'delete' ? 'deleted' : 'created'}` as InsertActivityModel['type'],
   });
 
-  return {
-    activity,
-    rowData: { id: activity.subjectId ?? 'unknown' },
-    oldRowData: null,
-    tableMeta: tableMetaOf(kind, type),
-  };
+  return { activity, rowData: { id: activity.subjectId ?? 'unknown' }, oldRowData: null, tableMeta: tableMetaOf(kind, type) };
 }
 
 type Row = Record<string, unknown> & { id?: string };
@@ -123,18 +118,11 @@ export function mockPendingEvent(overrides: {
   organizationId?: string | null;
   tableMeta?: 'entity' | 'resource';
 }): PendingEvent {
-  return {
-    lsn: overrides.lsn,
-    result: mockParseResult(overrides),
-  };
+  return { lsn: overrides.lsn, result: mockParseResult(overrides) };
 }
 
 /** BatchEvent fixture. */
 export function mockBatchEvent(seq: number, subjectId = `entity-${seq}`): BatchEvent {
   const activity = mockCdcActivity({ subjectId });
-  return {
-    activity: { ...activity, id: `act-${seq}` } as InsertActivityModel & { id: string },
-    rowData: { id: subjectId, seq },
-    seq,
-  };
+  return { activity: { ...activity, id: `act-${seq}` } as InsertActivityModel & { id: string }, rowData: { id: subjectId, seq }, seq };
 }

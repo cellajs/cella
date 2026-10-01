@@ -9,9 +9,7 @@ describe('withoutFailedQuery', () => {
     const safe = withoutFailedQuery(error);
 
     expect(safe).toBeInstanceOf(Error);
-    expect(
-      JSON.stringify({ ...(safe as Error), message: (safe as Error).message, stack: (safe as Error).stack }),
-    ).not.toContain(secret);
+    expect(JSON.stringify({ ...(safe as Error), message: (safe as Error).message, stack: (safe as Error).stack })).not.toContain(secret);
     // Positive control: the name, the database's reason and the cause stay.
     expect(safe).toMatchObject({ name: 'DrizzleQueryError', message: reason, cause: error.cause });
     expect((safe as Error).stack).toMatch(new RegExp(`^DrizzleQueryError: ${reason}\n {4}at `));

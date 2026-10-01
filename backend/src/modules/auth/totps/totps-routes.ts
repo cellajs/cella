@@ -14,9 +14,7 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [singlePointsLimiter],
     summary: 'Generate TOTP key',
     description: 'Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.',
-    responses: {
-      200: json('Challenge created', z.object({ totpUri: z.string(), manualKey: z.string() }), mockTotpKeyResponse()),
-    },
+    responses: { 200: json('Challenge created', z.object({ totpUri: z.string(), manualKey: z.string() }), mockTotpKeyResponse()) },
   }),
   createTotp: xRoute({
     method: 'post',

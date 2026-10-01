@@ -23,23 +23,11 @@ export const MentionSchema = createReactInlineContentSpec(mentionConfig, {
   },
 });
 
-export const getMentionMenuItems = (
-  members: Member[],
-  editor: CustomBlockNoteEditor,
-): DefaultReactGridSuggestionItem[] => {
+export const getMentionMenuItems = (members: Member[], editor: CustomBlockNoteEditor): DefaultReactGridSuggestionItem[] => {
   return members.map((m) => ({
     id: m.id,
     onItemClick: () => {
-      editor.insertInlineContent([
-        {
-          type: 'mention',
-          props: {
-            name: m.name,
-            id: m.id,
-            slug: m.slug,
-          },
-        },
-      ]);
+      editor.insertInlineContent([{ type: 'mention', props: { name: m.name, id: m.id, slug: m.slug } }]);
     },
     icon: <EntityAvatar type="user" id={m.id} name={m.name} url={m.thumbnailUrl} className="h-5 w-5 text-xs" />,
   }));

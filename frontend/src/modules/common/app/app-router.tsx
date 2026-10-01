@@ -22,11 +22,7 @@ export function AppRouter() {
 
   return (
     <>
-      <PullToRefresh
-        onRefresh={() => handleRefresh()}
-        isFetching={fetchingCount > 0}
-        isDisabled={isRestoring || !isOnline}
-      />
+      <PullToRefresh onRefresh={() => handleRefresh()} isFetching={fetchingCount > 0} isDisabled={isRestoring || !isOnline} />
       <RouterProvider router={router} />
     </>
   );
