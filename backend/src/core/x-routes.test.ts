@@ -9,7 +9,6 @@ const itemSchema = z.object({ id: z.string() });
 describe('route helpers', () => {
   const routes = createXRoutes(['things', 'app'], {
     getThing: xRoute({
-      'x-service': 'yjs',
       method: 'get',
       path: '/{id}',
       xGuard: [publicGuard],
@@ -32,7 +31,7 @@ describe('route helpers', () => {
 
   it('names a route by its key, first, and places the module tags right before the summary', () => {
     const keys = Object.keys(routes.getThing).filter((key) => key !== 'security');
-    expect(keys.slice(0, 2)).toEqual(['operationId', 'x-service']);
+    expect(keys.slice(0, 2)).toEqual(['operationId', 'method']);
     expect(keys.indexOf('tags')).toBe(keys.indexOf('summary') - 1);
     expect(routes.getThing).toMatchObject({ operationId: 'getThing', tags: ['things', 'app'] });
   });

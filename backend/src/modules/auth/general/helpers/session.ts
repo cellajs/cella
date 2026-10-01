@@ -10,9 +10,9 @@ import { lookupIp } from '#/lib/geoip';
 import { getSessionCache, type SessionCacheEntry, setSessionCache } from '#/middlewares/guard/auth-cache';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import { enrollDevice } from '#/modules/auth/general/helpers/enroll-device';
 import { type NewDevice, notifySignIn } from '#/modules/auth/general/helpers/notify-sign-in';
+import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
 import { type AuthStrategy, type SessionTypes, sessionFactColumns, sessionsTable } from '#/modules/auth/sessions-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { userSelect } from '#/modules/user/helpers/select';
@@ -71,7 +71,7 @@ export const evictExcessSessions = async (userId: string): Promise<void> => {
   if (excess.length === 0) return;
 
   const sessionIds = excess.map((s) => s.id);
-  await endSessions({ var: { db } }, { userId, sessionIds, reason: 'session_cap', by: null });
+  await revokeSessions({ var: { db } }, { userId, sessionIds, reason: 'session_cap', by: null });
 };
 
 /** What the sign-in request says about the browser and the network. Raw IP and device id stay in memory; only their hashes are stored. */
@@ -161,7 +161,7 @@ export const createSession = async (
     // A3: a browser holds at most one live session, so repeated sign-ins do not stack up.
     if (session.deviceIdHash) {
       const sessionIds = (await liveOwnSessions(user.id, session.deviceIdHash)).map((s) => s.id);
-      await endSessions({ var: { db } }, { userId: user.id, sessionIds, reason: 'replaced', by: null });
+      await revokeSessions({ var: { db } }, { userId: user.id, sessionIds, reason: 'replaced', by: null });
     }
     await evictExcessSessions(user.id);
   }
@@ -228,7 +228,7 @@ export const setUserSession = async (
 /**
  * The live session a cookie's token names, with its user and whether the user holds the admin system role: from the
  * auth cache, keyed by the token's hash, or else from the database, which stores only that hash. A cached entry
- * answers only to the token itself and stops at the session's expiry; endings drop it through `endSessions`.
+ * answers only to the token itself and stops at the session's expiry; revocations drop it through `revokeSessions`.
  * @throws AppError 401 `no_session` for an unknown token, `session_revoked` or `session_expired`.
  */
 export const readSession = async (sessionToken: string): Promise<SessionCacheEntry> => {

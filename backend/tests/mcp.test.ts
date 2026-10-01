@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { getMcpProtectedResourceMetadata, handleMcp } from 'sdk';
 import { appConfig } from 'shared';
-import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { resourceUri } from '#/modules/oauth-server/resources';
 import { adminRole, defaultHeaders } from './fixtures';
@@ -32,6 +32,19 @@ type ToolResult = {
   structuredContent?: Record<string, unknown>;
   isError?: boolean;
 };
+
+/** Every limiter passes, as in every test, and counts the requests it charges by its key. */
+const charged = vi.hoisted(() => new Map<string, number>());
+vi.mock('#/middlewares/rate-limiter/core', () => ({
+  rateLimiter: (mode: string, key: string) =>
+    Object.assign(
+      async (_ctx: unknown, next: () => Promise<void>) => {
+        charged.set(key, (charged.get(key) ?? 0) + 1);
+        await next();
+      },
+      { keyPrefix: `${key}_${mode}`, buckets: [] },
+    ),
+}));
 
 const REDIRECT_URI = 'http://localhost:9999/callback';
 
@@ -161,6 +174,19 @@ describe('MCP on the substrate (Phase E)', async () => {
       'error="insufficient_scope", scope="attachment:write"',
     );
     expect(write.rpc.error).toMatchObject({ message: 'insufficient_scope', data: { scope: 'attachment:write' } });
+  });
+
+  it('counts a tool call once against the burst limit, at the route it runs', async () => {
+    const ctx = await serviceToken('attachment:read');
+    charged.clear();
+
+    // The endpoint's own requests have a bucket of their own.
+    expect((await rpc(ctx, 'tools/list')).response.status).toBe(200);
+    expect(Object.fromEntries(charged)).toEqual({ mcpRequest: 1 });
+
+    // The route charges what a REST request with the same token is charged: the burst once, plus its own limiters.
+    expect((await toolCall(ctx, 'getAttachments', {})).response.status).toBe(200);
+    expect(Object.fromEntries(charged)).toEqual({ mcpRequest: 2, serviceBurst: 1, syncRead: 1 });
   });
 
   it('showcase 3: a service account creates, reads, renames and deletes through the same tools', async () => {

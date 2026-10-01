@@ -7,10 +7,10 @@ import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import { linkHandlers } from '#/modules/auth/general/helpers/link-handlers';
 import { isRecognizedBrowser } from '#/modules/auth/general/helpers/recognized-browser';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
+import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { readOwnSession, setUserSession } from '#/modules/auth/general/helpers/session';
 import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accept-invitation-token';
@@ -95,7 +95,7 @@ app.openapi(authGeneralRoutes.stopImpersonation, async (ctx) => {
     .where(eq(sessionsTable.id, session.impersonatorSessionId));
   if (!admin) throw new AppError(401, 'unauthorized', 'warn');
 
-  await endSessions(ctx, {
+  await revokeSessions(ctx, {
     userId: session.userId,
     sessionIds: [session.id],
     reason: 'impersonation_stopped',
@@ -137,14 +137,14 @@ app.openapi(authGeneralRoutes.signOut, async (ctx) => {
     if (!(await getAuthCookie(ctx, 'session'))) return ctx.body(null, 204);
   }
 
-  // The browser's session cookie goes, and an impersonation layered on it, which `endSessions` ends with it.
+  // The browser's session cookie goes, and an impersonation layered on it, which `revokeSessions` revokes with it.
   const sessionToken = await getAuthCookie(ctx, 'session');
   deleteAuthCookie(ctx, 'session');
   if (await getAuthCookie(ctx, 'impersonation')) deleteAuthCookie(ctx, 'impersonation');
 
   const { session: currentSession } = await readOwnSession(sessionToken);
 
-  await endSessions(ctx, {
+  await revokeSessions(ctx, {
     userId: currentSession.userId,
     sessionIds: [currentSession.id],
     reason: 'sign_out',

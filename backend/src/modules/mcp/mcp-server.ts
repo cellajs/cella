@@ -1,9 +1,9 @@
 import { z } from '@hono/zod-openapi';
+import type { Context } from 'hono';
 import { accessScopes, appConfig } from 'shared';
-import type { OrgContext } from '#/core/context';
-import { getMcpTools } from '#/core/mcp-tool-registry';
+import type { Env } from '#/core/context';
 import { toClientError } from '#/lib/error';
-import { describeMcpTools } from '#/modules/mcp/tool-source';
+import type { McpTool } from '#/modules/mcp/mcp-tools';
 
 const PROTOCOL_VERSION = '2026-07-28';
 
@@ -36,11 +36,15 @@ const serverInfo = { name: `${appConfig.name} MCP`, version: appConfig.apiVersio
 
 /**
  * Model Context Protocol server over JSON-RPC 2.0 (Streamable HTTP, JSON responses): `initialize`, `tools/list`,
- * `tools/call`, `ping`. Tools are the routes carrying `x-tool`; the token's scopes gate execution. Returns `null`
- * for notifications (messages without an `id`), which must not get a reply.
+ * `tools/call`, `ping`. Tools are the routes carrying `xTool`; the token's scopes gate execution, and a call runs the
+ * route's own handler. Returns `null` for notifications (messages without an `id`), which must not get a reply.
  * @see https://modelcontextprotocol.io
  */
-export async function handleMcpMessage(ctx: OrgContext, message: JsonRpcMessage): Promise<JsonRpcResponse | null> {
+export async function handleMcpMessage(
+  ctx: Context<Env>,
+  message: JsonRpcMessage,
+  tools: readonly McpTool[],
+): Promise<JsonRpcResponse | null> {
   const isNotification = message.id === undefined || message.id === null;
   const id = message.id ?? null;
   const respond = (result: unknown): JsonRpcResponse => ({ jsonrpc: '2.0', id, result });
@@ -71,14 +75,14 @@ export async function handleMcpMessage(ctx: OrgContext, message: JsonRpcMessage)
       return respond({});
 
     case 'tools/list':
-      return respond({ tools: describeMcpTools(getMcpTools()) });
+      return respond({ tools: tools.map((tool) => tool.descriptor) });
 
     case 'tools/call': {
       if (isNotification) return null;
       const name = typeof message.params?.name === 'string' ? message.params.name : undefined;
       if (!name) return fail(-32602, 'Invalid params: missing tool name');
 
-      const tool = getMcpTools().find((candidate) => candidate.name === name);
+      const tool = tools.find((candidate) => candidate.name === name);
       if (!tool) return fail(-32602, `Unknown tool: ${name}`);
 
       // The mask (D2): a token names its scopes explicitly; a missing one is a step-up, never a silent denial.
@@ -86,14 +90,18 @@ export async function handleMcpMessage(ctx: OrgContext, message: JsonRpcMessage)
         throw new InsufficientScopeError(tool.scope, id);
 
       try {
-        const output = await tool.run(ctx, message.params?.arguments);
+        const outcome = await tool.call(ctx, message.params?.arguments);
+        // Permission and domain failures are answers the model can act on, not transport errors.
+        if (!outcome.ok)
+          return respond({ content: [{ type: 'text', text: `${outcome.type}: ${outcome.message}` }], isError: true });
+        const { output } = outcome;
         const text = typeof output === 'string' ? output : JSON.stringify(output ?? null);
         return respond({ content: [{ type: 'text', text }], structuredContent: output ?? undefined });
       } catch (error) {
         // The route's schemas refused the arguments: a JSON-RPC params error with the issues.
         if (error instanceof z.ZodError) return fail(-32602, 'Invalid params', error.issues);
-        // Permission and domain failures are answers the model can act on, not transport errors. The model belongs to
-        // a third-party client, so a server error reaches it without its internals, in every mode.
+        // The call itself failed before the route answered. The model belongs to a third-party client, so a server
+        // error reaches it without its internals, in every mode.
         const { type, message } = toClientError(
           error,
           { tool: name, organizationId: ctx.var.organizationId },
