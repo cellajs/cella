@@ -92,7 +92,7 @@ export function ApiReferenceSection({ label, tags }: ApiReferenceSectionProps) {
               >
                 <span>{t('c:operation', { count: 2 })}</span>
                 {(!isListMode || expandedSection !== 'operations' || forcedCollapsed === 'operations') && (
-                  <span className="ml-2 text-muted-foreground text-xs">{tags.reduce((sum, tag) => sum + tag.count, 0)}</span>
+                  <span className="text-muted-foreground text-xs">{tags.reduce((sum, tag) => sum + tag.count, 0)}</span>
                 )}
                 <ChevronDownIcon
                   className={cn(
@@ -139,7 +139,7 @@ export function ApiReferenceSection({ label, tags }: ApiReferenceSectionProps) {
               >
                 <span>{t('c:schema', { count: 2 })}</span>
                 {(expandedSection !== 'schemas' || forcedCollapsed === 'schemas') && schemas && (
-                  <span className="ml-2 text-muted-foreground text-xs">{schemas.length}</span>
+                  <span className="text-muted-foreground text-xs">{schemas.length}</span>
                 )}
                 <ChevronDownIcon
                   className={cn(
