@@ -200,7 +200,7 @@ describe('tailwind classes', () => {
   const stylesheet = lines("@import 'tailwindcss';", '@utility soft-text {', '  color: red;', '}', '.plain-marker {', '  color: red;', '}');
 
   const deadMessage =
-    'Tailwind compiles no CSS for it and no stylesheet or script selects it; fix the name, or add a marker class to markerClasses in shared/scripts/check-tailwind-classes.ts';
+    'Tailwind compiles no CSS for it and no stylesheet or script selects it; fix the name, or list it under markerClasses in shared/config/vocabulary-allowlist.ts';
   const dead = (at: string, className: string) => `  frontend/src/view.tsx:${at} [tailwind-class] "${className}": ${deadMessage}`;
 
   it('reports class names that compile to no CSS and that no stylesheet, script or selector uses', () => {

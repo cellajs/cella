@@ -17,7 +17,7 @@ const roots = process.argv.slice(2).filter((arg) => arg !== '--audit');
 const allowlist = await loadAllowlist();
 const files = repoFiles();
 const stores = frontendStores(files);
-const tailwind = await tailwindContext(files);
+const tailwind = await tailwindContext(files, allowlist.markerClasses);
 
 const findings: Finding[] = [];
 for (const file of files.filter((file) => isRequested(file, roots))) {

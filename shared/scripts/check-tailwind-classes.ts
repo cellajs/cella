@@ -13,6 +13,9 @@ import { parseSource } from './source-comments.ts';
 /** Class names no frontend stylesheet, script or class string selects, each with the reason it stays. */
 const markerClasses: Record<string, string> = {
   'not-prose': 'opts a subtree out of the typography plugin, whose prose rules exclude `.not-prose` descendants',
+  'is-selected': 'BoardPanel state for apps whose board selects items (hasSelection), a hook for their styles',
+  'docs-floating-nav': 'FloatingNav bodyClass on docs pages, a hook for app styles scoped to them',
+  'marketing-floating-nav': 'FloatingNav bodyClass on marketing pages, a hook for app styles scoped to them',
 };
 
 /** Third-party class prefixes: the library's own stylesheet or DOM code reads them. */
@@ -102,12 +105,12 @@ function usedClassNames(files: string[]): Set<string> {
 }
 
 /** The design system from the frontend stylesheet that imports Tailwind; undefined in a repo without one. */
-export async function tailwindContext(files: string[]): Promise<TailwindContext | undefined> {
+export async function tailwindContext(files: string[], appMarkerClasses: Record<string, string> = {}): Promise<TailwindContext | undefined> {
   const entry = files.filter(isFrontendStylesheet).find((file) => tailwindImport.test(readFileSync(join(repoRoot, file), 'utf8')));
   if (!entry) return undefined;
   const path = join(repoRoot, entry);
   const knownClasses = usedClassNames(files);
-  for (const name of Object.keys(markerClasses)) knownClasses.add(name);
+  for (const name of Object.keys({ ...markerClasses, ...appMarkerClasses })) knownClasses.add(name);
   const context: TailwindContext = { entry, knownClasses, compiles: new Map() };
   try {
     context.designSystem = await loadTailwindNode().__unstable__loadDesignSystem(readFileSync(path, 'utf8'), { base: dirname(path) });
@@ -315,7 +318,7 @@ function problem(context: TailwindContext, token: string): string | undefined {
   if (base !== token && (context.knownClasses.has(base) || groupPattern.test(base))) {
     return `${base} is a plain CSS class, so variants and ! do not apply to it; define it with @utility`;
   }
-  return 'Tailwind compiles no CSS for it and no stylesheet or script selects it; fix the name, or add a marker class to markerClasses in shared/scripts/check-tailwind-classes.ts';
+  return 'Tailwind compiles no CSS for it and no stylesheet or script selects it; fix the name, or list it under markerClasses in shared/config/vocabulary-allowlist.ts';
 }
 
 /**

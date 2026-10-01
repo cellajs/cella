@@ -31,6 +31,8 @@ export interface VocabularyAllowlist {
   prefixes: string[];
   /** Path prefixes the comment and doc checks skip, such as reference code the app keeps but does not maintain. */
   proseExclude?: string[];
+  /** Class names the app keeps as hooks with no Tailwind utility or stylesheet rule behind them, each with its reason. */
+  markerClasses?: Record<string, string>;
 }
 
 const templateAllowlist: VocabularyAllowlist = {
@@ -95,5 +97,6 @@ export async function loadAllowlist(repoRoot = defaultRepoRoot): Promise<Vocabul
     files: [...templateAllowlist.files, ...(app.files ?? [])],
     prefixes: [...templateAllowlist.prefixes, ...(app.prefixes ?? [])],
     proseExclude: app.proseExclude ?? [],
+    markerClasses: app.markerClasses ?? {},
   };
 }

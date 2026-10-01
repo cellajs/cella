@@ -26,6 +26,8 @@ pnpm lint:fix
 1. Buttons whose children are a fixed multi-column layout (not an icon and a label) add `gap-0`.
 2. Custom `JsonViewerTheme` objects add `structureType` (the array/object type color).
 3. Calls to `ApiReferenceSection` drop the `isMobile` prop.
+4. `pnpm style` now fails on class names that compile to no CSS: fix each one, or list a deliberate hook under
+   `markerClasses` in `shared/config/vocabulary-allowlist.ts` with its reason.
 
 ## Verify
 
