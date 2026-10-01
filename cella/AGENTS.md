@@ -165,7 +165,7 @@ A child-side host FK (nullable `<host>Id` column on one product pointing at anot
   Name modules for their domain role, not the primitive underneath (`tab-coordinator`, not `leader-lease`). When splitting a module, name the remainder deliberately, never payload plus generic verb.
 - **Docs headings**: `##` headings in `frontend/src/content/docs/**` and in any `.md` those pages import (`cella/*.md`, `bench/README.md`, `cdc/README.md`, `yjs/README.md`) max out at 25 rendered characters (the sidebar truncates longer ones). Measure rendered text, not markup. Only `##` is affected. `cella/CHANGELOG.md` is exempt.
 - Storybook: stories in `stories/` inside the module, named `<component-filename>.stories.tsx`.
-- UI primitives: Base UI (`@base-ui/react`), **not** Radix. Shadcn-style components in `frontend/src/modules/ui/` wrap Base UI.
+- UI primitives: Base UI (`@base-ui/react`), **not** Radix. Shadcn-style components in `frontend/src/modules/ui/` wrap Base UI. When porting from the shadcn registry, start from the base-vega style (closest to cella's sizing). Its `data-horizontal:`/`data-vertical:` variants, `no-scrollbar` and `var(--radius-md)` work as-is; drop the `cn-*` hook classes (shadcn style CSS, not shipped here) and check every state selector against the attributes Base UI emits.
 - Keep existing comment content intact unless cleanup is explicitly requested. Trimming to the comment budget is always in scope (an over-budget comment is a defect).
 - Console: `console.log` for temp debugging (remove before commit), `console.info` for logging, `console.debug` for dev (stripped in prod).
 - Links as buttons: `<Link>` with `buttonVariants()` for linkable actions. Allow new-tab opening for URL-targetable sheet content.

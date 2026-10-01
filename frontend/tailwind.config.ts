@@ -86,9 +86,9 @@ export default {
         },
       },
       borderRadius: {
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
+        lg: 'var(--radius-lg)',
+        md: 'var(--radius-md)',
+        sm: 'var(--radius-sm)',
       },
       keyframes: {
         'accordion-down': {
@@ -150,7 +150,7 @@ export default {
         'collapsible-up': 'collapsible-up 0.2s ease-out',
         heartbeat: 'heartbeat 1s infinite',
         hflip: 'flip-horizontal 2s infinite',
-        vflip: 'flip-certical 2s infinite',
+        vflip: 'flip-vertical 2s infinite',
         'status-pulse': 'status-pulse 2s ease-in-out infinite',
       },
     },
