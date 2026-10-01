@@ -76,7 +76,7 @@ li:has(.is-focused) {
   font-weight: inherit;
 }
 
-/* The `title` placeholder labels block 0 only. The chain outranks BlockNote's injected per-type rules by specificity. */
+/* `titlePlaceholder` labels block 0 only. The chain outranks BlockNote's injected per-type rules by specificity. */
 .bn-title-placeholder
   .bn-editor
   > .bn-block-group

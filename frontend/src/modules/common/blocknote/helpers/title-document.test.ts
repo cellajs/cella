@@ -1,29 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { emptyTitleDocument, splitTitleBlocks, titleDocumentHasBody, titleFromBlocks } from './title-document';
+import { emptyTitleDocument, splitTitleBlocks, titleDocumentHasBody } from './title-document';
 
 const text = (t: string) => ({ type: 'text', text: t, styles: {} });
 const heading = (t: string, level = 1) => ({ type: 'heading', props: { level }, content: t ? [text(t)] : [] });
 const paragraph = (t: string) => ({ type: 'paragraph', props: {}, content: t ? [text(t)] : [] });
 
-describe('titleFromBlocks', () => {
-  it('reads the first block text', () => {
-    expect(titleFromBlocks(JSON.stringify([heading('My item'), paragraph('body')]))).toBe('My item');
-  });
-
-  it('collects nested inline content (links)', () => {
-    const linked = {
-      type: 'heading',
-      props: { level: 1 },
-      content: [text('See '), { type: 'link', href: 'https://x', content: [text('this')] }],
-    };
-    expect(titleFromBlocks(JSON.stringify([linked]))).toBe('See this');
-  });
-
-  it('is empty for an empty seed document (any title level) and safe on garbage', () => {
-    expect(titleFromBlocks(emptyTitleDocument())).toBe('');
-    expect(titleFromBlocks(emptyTitleDocument(2))).toBe('');
-    expect(titleFromBlocks('not json')).toBe('');
-    expect(titleFromBlocks('[]')).toBe('');
+describe('emptyTitleDocument', () => {
+  it('seeds one empty heading at the given level, with no body', () => {
+    expect(JSON.parse(emptyTitleDocument(2))).toEqual([heading('', 2)]);
+    expect(titleDocumentHasBody(emptyTitleDocument())).toBe(false);
   });
 });
 

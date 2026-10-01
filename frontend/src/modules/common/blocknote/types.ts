@@ -83,12 +83,8 @@ export type CommonBlockNoteProps = {
   emojis?: boolean;
   excludeBlockTypes?: CustomBlockRegularTypes[];
   excludeFileBlockTypes?: CustomBlockFileTypes[];
-  /**
-   * Placeholder text layered over the locale's. As in BlockNote, a block-type key labels every empty block of
-   * that type, `default` the focused empty block and `emptyDocument` an empty document. `title` labels only an
-   * empty heading in block 0, so a title document's body headings keep their own label.
-   */
-  placeholders?: Partial<Record<CustomBlockTypes | 'default' | 'emptyDocument' | 'title', string>>;
+  /** Labels an empty heading in block 0, the title of a title document (helpers/title-document). */
+  titlePlaceholder?: string;
   extensions?: ExtensionFactoryInstance[];
   members?: Member[]; // for mentions
   onFocus?: () => void;

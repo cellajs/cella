@@ -22,7 +22,7 @@ import { CustomFormattingToolbar } from '~/modules/common/blocknote/custom-forma
 import { CustomSideMenu } from '~/modules/common/blocknote/custom-side-menu/side-menu';
 import { CustomSlashMenu } from '~/modules/common/blocknote/custom-slash-menu/slash-menu';
 import { findClickedMedia, getParsedContent, walkBlocks } from '~/modules/common/blocknote/helpers/blocknote-helpers';
-import { getDictionary, withPlaceholders } from '~/modules/common/blocknote/helpers/dictionary';
+import { getDictionary } from '~/modules/common/blocknote/helpers/dictionary';
 import { openAttachment } from '~/modules/common/blocknote/helpers/open-attachment';
 import { createResolveFileUrl } from '~/modules/common/blocknote/helpers/resolve-file-url';
 import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
@@ -91,7 +91,7 @@ function BlockNote({
   emojis = true,
   excludeBlockTypes,
   excludeFileBlockTypes,
-  placeholders,
+  titlePlaceholder,
   extensions,
   members, // for mentions
   filePanel,
@@ -133,7 +133,7 @@ function BlockNote({
     autofocus: autoFocus,
     heading: { levels: headingLevels },
     trailingBlock,
-    dictionary: withPlaceholders(getDictionary(), placeholders),
+    dictionary: getDictionary(),
     // Caller extensions come first: BlockNote keeps the first extension per key and drops later duplicates.
     extensions: [...(extensions ?? []), checkedExtension(), syntaxHighlighter],
     resolveFileUrl: createResolveFileUrl({ baseFilePanelProps }),
@@ -282,10 +282,10 @@ function BlockNote({
       editable={editable}
       autoFocus={autoFocus}
       ref={blockNoteRef}
-      className={`${dense ? 'bn-dense' : ''} ${placeholders?.title ? 'bn-title-placeholder' : ''} ${className}`}
+      className={`${dense ? 'bn-dense' : ''} ${titlePlaceholder ? 'bn-title-placeholder' : ''} ${className}`}
       // The block-0 title placeholder rides a CSS var: BlockNote's own placeholders are per block type (styles.css)
-      {...(placeholders?.title && {
-        style: { '--bn-title-placeholder': JSON.stringify(placeholders.title) } as React.CSSProperties,
+      {...(titlePlaceholder && {
+        style: { '--bn-title-placeholder': JSON.stringify(titlePlaceholder) } as React.CSSProperties,
       })}
       data-color-scheme={mode}
       shadCNComponents={shadCNComponents}

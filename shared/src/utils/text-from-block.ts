@@ -174,3 +174,17 @@ export const textFromDocument = (description: string | null | undefined): string
   const blocks = parseBlocks(description);
   return blocks ? blocks.map(getTextFromBlock).filter(Boolean).join(' ') : null;
 };
+
+/**
+ * A block's own inline text as the editor shows it: runs joined without a separator, so a style change mid-word
+ * adds no space. Children and media file names are left out; empty for a block without inline content.
+ */
+export const getInlineTextFromBlock = (block: { content?: unknown } | undefined): string =>
+  block && Array.isArray(block.content) ? block.content.map(inlineText).join('').trim() : '';
+
+/**
+ * Title of a stored title document: block 0's inline text, whatever its type. Empty when block 0 holds no inline
+ * content (an image moved to the top) or the input is not a block document.
+ */
+export const titleFromDocument = (description: string | null | undefined): string =>
+  getInlineTextFromBlock(parseBlocks(description)?.[0]);

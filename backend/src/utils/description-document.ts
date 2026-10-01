@@ -1,4 +1,4 @@
-import { getSearchableTextFromBlocks, getTextFromBlock, parseBlocks } from 'shared/blocknote';
+import { getSearchableTextFromBlocks, parseBlocks, titleFromDocument } from 'shared/blocknote';
 import { maxLength } from '#/db/utils/constraints';
 
 /**
@@ -8,15 +8,12 @@ import { maxLength } from '#/db/utils/constraints';
  */
 
 /**
- * Title text of a stored document: block 0's plain text, whatever its block type. It is clamped to the `name`
- * column so autosave and Yjs materialize writes, which have no user to report to, never fail on length. Empty when
- * the document is unparseable or starts with a block without text (an image); the caller then keeps the previous
- * name.
+ * `name` for a stored title document: `titleFromDocument`, clamped to the column so autosave and Yjs materialize
+ * writes, which have no user to report to, never fail on length. Empty when block 0 holds no text (an image); the
+ * caller then keeps the previous name.
  */
-export const nameFromDocument = (description: string | null | undefined): string => {
-  const [first] = parseBlocks(description) ?? [];
-  return first ? getTextFromBlock(first).trim().slice(0, maxLength.field).trim() : '';
-};
+export const nameFromDocument = (description: string | null | undefined): string =>
+  titleFromDocument(description).slice(0, maxLength.field).trim();
 
 /** Search text for a stored document, capped at 900 characters. Block 0 already carries the title, so it is not prepended. */
 export const keywordsFromDocument = (description: string | null | undefined): string =>

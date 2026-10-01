@@ -16,15 +16,13 @@ describe('nameFromDocument', () => {
     expect(nameFromDocument(doc('  padded  '))).toBe('padded');
   });
 
-  it('reads block 0 whatever its type, since the title template is not enforced', () => {
-    const paragraphFirst = JSON.stringify([
-      { type: 'paragraph', content: [{ type: 'text', text: 'First line', styles: {} }] },
-    ]);
-    expect(nameFromDocument(paragraphFirst)).toBe('First line');
-  });
-
   it('clamps to the name column length', () => {
     expect(nameFromDocument(doc('x'.repeat(300)))).toHaveLength(255);
+  });
+
+  it('is empty, so the caller keeps the previous name, when an image is moved to the top', () => {
+    const image = { type: 'image', props: { name: 'photo.png', url: 'https://x/photo.png' } };
+    expect(nameFromDocument(JSON.stringify([image, ...JSON.parse(doc('Title'))]))).toBe('');
   });
 
   it('is empty for a null, unparseable or non-array description', () => {
