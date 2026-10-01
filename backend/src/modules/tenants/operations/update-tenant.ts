@@ -1,22 +1,24 @@
 import type { z } from '@hono/zod-openapi';
+import { eq } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
-import { countDomainsByTenant, findTenantById, updateTenant } from '#/modules/tenants/tenants-queries';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { findTenant, updateTenant } from '#/modules/tenants/tenants-queries';
 import type { updateTenantBodySchema } from '#/modules/tenants/tenants-schema';
 import { log } from '#/utils/logger';
 
 type UpdateTenantInput = z.infer<typeof updateTenantBodySchema>;
 
 export async function updateTenantOp(ctx: UserContext, tenantId: string, updates: UpdateTenantInput) {
-  const existing = await findTenantById(ctx, { targetTenantId: tenantId });
+  const existing = await findTenant(ctx, { where: eq(tenantsTable.id, tenantId) });
   if (!existing) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'tenant' } });
 
   const { restrictions: restrictionsUpdate, ...otherUpdates } = updates;
 
-  // Deep-merge restrictions so partial updates don't clobber existing values; a stored row gains missing fields first
-  const current = normalizeRestrictions(existing.restrictions);
+  // Deep-merge restrictions so partial updates don't clobber existing values; `existing` already has every field
+  const current = existing.restrictions;
   const mergedRestrictions = restrictionsUpdate
     ? {
         quotas: { ...current.quotas, ...restrictionsUpdate.quotas },
@@ -30,12 +32,12 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
     ...(mergedRestrictions ? { restrictions: mergedRestrictions } : {}),
     updatedAt: new Date().toISOString(),
   };
-  const tenant = await updateTenant(ctx, { targetTenantId: tenantId, values });
+  const updated = await updateTenant(ctx, { targetTenantId: tenantId, values });
 
   invalidateCache.tenant(tenantId);
 
   log.info('Tenant updated', { tenantId, updates });
 
-  const domainsCount = await countDomainsByTenant(ctx, { targetTenantId: tenantId });
-  return { ...tenant, restrictions: normalizeRestrictions(tenant.restrictions), domainsCount };
+  // An update leaves the tenant's domains and organization as they were.
+  return { ...existing, ...updated, restrictions: normalizeRestrictions(updated.restrictions) };
 }

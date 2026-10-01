@@ -14,17 +14,6 @@ export const zUserMinimalBase = z.object({
 });
 
 /**
- * Minimal organization data for references.
- */
-export const zOrganizationMinimalBase = z.object({
-  id: z.string(),
-  name: z.string(),
-  slug: z.string(),
-  thumbnailUrl: z.string().nullable(),
-  entityType: z.enum(['organization']),
-});
-
-/**
  * Base user schema with essential fields for identification and display.
  */
 export const zUserBase = z.object({
@@ -374,16 +363,16 @@ export const zTenant = z.object({
   createdAt: z.string(),
   updatedAt: z.string().nullable(),
   domainsCount: z.int(),
+  organization: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      slug: z.string(),
+      thumbnailUrl: z.string().nullable(),
+      entityType: z.enum(['organization']),
+    })
+    .nullable(),
 });
-
-/**
- * A tenant together with the single organization it holds.
- */
-export const zTenantWithOrganization = zTenant.and(
-  z.object({
-    organization: zOrganizationMinimalBase.nullable(),
-  }),
-);
 
 export const zProtectedResourceMetadata = z.object({
   resource: z.string(),
@@ -1444,7 +1433,7 @@ export const zGetTenantsQuery = z.object({
  * Tenants list
  */
 export const zGetTenantsResponse = z.object({
-  items: z.array(zTenantWithOrganization),
+  items: z.array(zTenant),
   total: z.number(),
 });
 

@@ -1,6 +1,6 @@
 import type { QueryKey } from '@tanstack/react-query';
 import type { Dispatch, SetStateAction } from 'react';
-import type { TenantWithOrganization } from 'sdk';
+import type { Tenant } from 'sdk';
 import { TableBarShell, useTableBarFilters } from '~/modules/common/data-table/table-bar-shell';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import type { TenantsRouteSearchParams } from '~/modules/tenants/search-params-schemas';
@@ -8,8 +8,8 @@ import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 interface TenantsTableBarProps {
   queryKey: QueryKey;
-  columns: ColumnOrColumnGroup<TenantWithOrganization>[];
-  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<TenantWithOrganization>[]>>;
+  columns: ColumnOrColumnGroup<Tenant>[];
+  setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<Tenant>[]>>;
   searchVars: TenantsRouteSearchParams & { limit: number };
   setSearch: (newValues: Partial<TenantsRouteSearchParams>, saveSearch?: boolean) => void;
 }

@@ -1,6 +1,6 @@
 import { BuildingIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import type { TenantWithOrganization } from 'sdk';
+import type { Tenant } from 'sdk';
 import { appConfig } from 'shared';
 import { useSearchParams } from '~/hooks/use-search-params';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
@@ -15,7 +15,7 @@ import { useColumns } from '~/modules/tenants/table/tenants-columns';
 
 const LIMIT = appConfig.requestLimits.users; // Use users limit as fallback
 
-function rowKeyGetter(row: TenantWithOrganization) {
+function rowKeyGetter(row: Tenant) {
   return row.id;
 }
 
@@ -33,7 +33,7 @@ function TenantsTable() {
   const queryOptions = tenantsListQueryOptions({ ...search, limit });
   const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
 
-  const onRowsChange = (changedRows: TenantWithOrganization[], { indexes, column }: RowsChangeData<TenantWithOrganization>) => {
+  const onRowsChange = (changedRows: Tenant[], { indexes, column }: RowsChangeData<Tenant>) => {
     if (column.key !== 'status') return;
     for (const index of indexes) {
       const tenant = changedRows[index];
@@ -50,7 +50,7 @@ function TenantsTable() {
         searchVars={{ ...search, limit }}
         setSearch={setSearch}
       />
-      <DataTable<TenantWithOrganization>
+      <DataTable<Tenant>
         {...{
           rows,
           rowHeight: 52,

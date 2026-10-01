@@ -51,12 +51,7 @@ export {
   registerAllErrorResponses,
 } from './error-response-schemas';
 export { mapEntitiesToSchema } from './map-entities-to-schema';
-export {
-  nullableOrganizationMinimalBaseSchema,
-  nullableUserMinimalBaseSchema,
-  organizationMinimalBaseSchema,
-  userMinimalBaseSchema,
-} from './minimal-base';
+export { minimalBaseSchema, nullableUserMinimalBaseSchema, userMinimalBaseSchema } from './minimal-base';
 export {
   type AppCatchupResponse,
   appCatchupResponseSchema,

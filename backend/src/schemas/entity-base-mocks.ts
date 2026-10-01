@@ -50,18 +50,6 @@ export const mockUserMinimalBase = (key = 'user-minimal:default', id?: string) =
     ),
   );
 
-export const mockOrganizationMinimalBase = (key = 'organization-minimal:default', id?: string) =>
-  withFakerSeed(key, () =>
-    mockMinimalBase(
-      'organization' as const,
-      () => {
-        const name = faker.company.name();
-        return { name, slug: faker.helpers.slugify(name).toLowerCase() };
-      },
-      id,
-    ),
-  );
-
 /** Hydrates stored audit-user IDs to the minimal wire representation. */
 export const mockAuditUsers = (row: { createdBy: string | null; updatedBy: string | null }, key: string) => {
   const createdBy = row.createdBy ? mockUserMinimalBase(`${key}:created-by`, row.createdBy) : null;

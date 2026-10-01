@@ -501,37 +501,6 @@
         },
         "x-tags": ["base", "users", "cella"]
       },
-      "OrganizationMinimalBase": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "slug": {
-            "type": "string"
-          },
-          "thumbnailUrl": {
-            "type": ["string", "null"]
-          },
-          "entityType": {
-            "type": "string",
-            "enum": ["organization"]
-          }
-        },
-        "required": ["id", "name", "slug", "thumbnailUrl", "entityType"],
-        "description": "Minimal organization data for references.",
-        "example": {
-          "id": "a0e12a75-1f11-485a-a581-cfcf45f209ef",
-          "name": "Schuster Inc",
-          "slug": "schuster-inc",
-          "thumbnailUrl": null,
-          "entityType": "organization"
-        },
-        "x-tags": ["base", "organizations", "cella"]
-      },
       "UserBase": {
         "type": "object",
         "properties": {
@@ -1803,32 +1772,6 @@
         },
         "x-tags": ["data", "requests", "cella"]
       },
-      "TenantWithOrganization": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/Tenant"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "organization": {
-                "anyOf": [
-                  {
-                    "$ref": "#/components/schemas/OrganizationMinimalBase"
-                  },
-                  {
-                    "type": "null"
-                  }
-                ],
-                "description": "The organization this tenant holds, or null if none"
-              }
-            },
-            "required": ["organization"]
-          }
-        ],
-        "description": "A tenant together with the single organization it holds.",
-        "x-tags": ["data", "tenants", "cella"]
-      },
       "Tenant": {
         "type": "object",
         "properties": {
@@ -1905,6 +1848,29 @@
           "domainsCount": {
             "type": "integer",
             "description": "Number of domains claimed by this tenant"
+          },
+          "organization": {
+            "type": ["object", "null"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "thumbnailUrl": {
+                "type": ["string", "null"]
+              },
+              "entityType": {
+                "type": "string",
+                "enum": ["organization"]
+              }
+            },
+            "required": ["id", "name", "slug", "thumbnailUrl", "entityType"],
+            "description": "The organization this tenant holds, or null if none"
           }
         },
         "required": [
@@ -1919,7 +1885,8 @@
           "subscriptionPlan",
           "createdAt",
           "updatedAt",
-          "domainsCount"
+          "domainsCount",
+          "organization"
         ],
         "description": "A tenant representing an isolated data partition for multi-tenancy.",
         "x-tags": ["data", "tenants", "cella"]
@@ -8174,7 +8141,7 @@
                     "items": {
                       "type": "array",
                       "items": {
-                        "$ref": "#/components/schemas/TenantWithOrganization"
+                        "$ref": "#/components/schemas/Tenant"
                       }
                     },
                     "total": {

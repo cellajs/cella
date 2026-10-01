@@ -3,7 +3,7 @@ import { schemaTags } from '#/core/openapi-helpers';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
 import { authStrategiesEnum } from '#/modules/auth/sessions-db';
 import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
-import { nullableOrganizationMinimalBaseSchema, paginationQuerySchema, validNameSchema } from '#/schemas';
+import { minimalBaseSchema, paginationQuerySchema, validNameSchema } from '#/schemas';
 
 export type TenantStatus = (typeof tenantStatusValues)[number];
 
@@ -35,16 +35,10 @@ export const tenantSchema = z
       authStrategies: z.array(z.enum(authStrategiesEnum)),
     }).omit({ subscriptionData: true }).shape,
     domainsCount: z.number().int().describe('Number of domains claimed by this tenant'),
+    organization: minimalBaseSchema('organization').nullable().describe('The organization this tenant holds, or null if none'),
   })
   .openapi('Tenant', {
     description: 'A tenant representing an isolated data partition for multi-tenancy.',
-    'x-tags': schemaTags('data', 'tenants', 'cella'),
-  });
-
-export const tenantWithOrganizationSchema = tenantSchema
-  .extend({ organization: nullableOrganizationMinimalBaseSchema.describe('The organization this tenant holds, or null if none') })
-  .openapi('TenantWithOrganization', {
-    description: 'A tenant together with the single organization it holds.',
     'x-tags': schemaTags('data', 'tenants', 'cella'),
   });
 

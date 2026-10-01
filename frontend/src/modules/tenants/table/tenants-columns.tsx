@@ -3,7 +3,7 @@ import i18n from 'i18next';
 import { GlobeIcon, PencilIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Tenant, TenantWithOrganization } from 'sdk';
+import type { Tenant } from 'sdk';
 import { enumSelectEditorOptions, RenderEnumSelect } from '~/modules/common/data-grid/cell-renderers';
 import { dateColumn, ellipsisColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -40,7 +40,7 @@ export const openUpdateSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
 export const useColumns = () => {
   const { t } = useTranslation();
 
-  const columns: ColumnOrColumnGroup<TenantWithOrganization>[] = [
+  const columns: ColumnOrColumnGroup<Tenant>[] = [
     {
       key: 'id',
       name: t('c:id'),
@@ -99,7 +99,7 @@ export const useColumns = () => {
       renderEditCell: (props) => <RenderEnumSelect {...props} field="status" options={statusOptions} renderOption={(status) => t(`c:${status}`)} />,
     },
     { key: 'name', name: t('c:name'), sortable: true, resizable: true, minWidth: 180, placeholderValue: '-' },
-    ellipsisColumn<TenantWithOrganization>(() => [
+    ellipsisColumn<Tenant>(() => [
       {
         label: t('c:edit'),
         icon: PencilIcon,
@@ -144,5 +144,5 @@ export const useColumns = () => {
     dateColumn('createdAt', { name: t('c:created_at') }),
   ];
 
-  return useState<ColumnOrColumnGroup<TenantWithOrganization>[]>(columns);
+  return useState<ColumnOrColumnGroup<Tenant>[]>(columns);
 };
