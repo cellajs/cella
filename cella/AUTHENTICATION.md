@@ -18,7 +18,7 @@ actions that change how an account is protected first ask the session to prove i
 | Provider sign-in | An account at GitHub, Google or Microsoft, stored in `identities` by issuer and subject | `auth/oauth/` |
 | TOTP | A code from an authenticator app; a second factor only, never a first | `auth/totps/` |
 
-`appConfig.enabledAuthStrategies` says which methods are on. Every auth route declares its method with `x-strategy`, and a route of a method that is off answers 400 `forbidden_strategy` before any guard runs. The sign-in page starts by posting the address to `check-email`, which answers `recognized: true` only to a browser that has signed in to that account before (the signed `device-id` cookie plus a `devices` row); every other browser gets the neutral sign-in step, whether or not the address has an account.
+`appConfig.enabledAuthStrategies` says which methods are on. Every auth route leads its `xGuard` with the gate `strategyEnabled(<method>)`, so a route of a method that is off answers 400 `forbidden_strategy` before any other guard runs; deleting a passkey or TOTP carries no gate and stays reachable. The sign-in page starts by posting the address to `check-email`, which answers `recognized: true` only to a browser that has signed in to that account before (the signed `device-id` cookie plus a `devices` row); every other browser gets the neutral sign-in step, whether or not the address has an account.
 
 A magic-link or provider sign-in ends in `finishSignIn`: a session, or first an MFA challenge when the account requires one. A passkey sign-in sets the session at once. A system administrator signs in, and counts as one, only from an address in `SYSTEM_ADMIN_IP_ALLOWLIST`, which defaults to `none`.
 

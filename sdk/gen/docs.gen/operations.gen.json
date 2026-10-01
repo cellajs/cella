@@ -59,7 +59,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["strategyEnabled(per-request)", "publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
@@ -220,7 +220,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["strategyEnabled(magic)", "publicGuard"],
       "xRateLimiter": ["magicLinkLimiter", "spamLimiter"],
       "xCache": []
     },
@@ -243,7 +243,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["strategyEnabled(magic)", "publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
@@ -266,7 +266,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["strategyEnabled(magic)", "publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
@@ -289,7 +289,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["userGuard", "stepUpGuard"],
+      "xGuard": ["strategyEnabled(totp)", "userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -312,7 +312,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["userGuard", "stepUpGuard"],
+      "xGuard": ["strategyEnabled(totp)", "userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -358,7 +358,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["strategyEnabled(totp)", "publicGuard"],
       "xRateLimiter": ["totpVerificationLimiter"],
       "xCache": []
     },
@@ -381,7 +381,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["userGuard", "stepUpGuard"],
+      "xGuard": ["strategyEnabled(passkey)", "userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -427,7 +427,7 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["strategyEnabled(passkey)", "publicGuard"],
       "xRateLimiter": ["passkeyChallengeLimiter"],
       "xCache": []
     },
@@ -450,7 +450,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["strategyEnabled(passkey)", "publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
@@ -473,7 +473,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["userGuard", "stepUpGuard"],
+      "xGuard": ["strategyEnabled(oauth)", "userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
@@ -496,7 +496,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["strategyEnabled(github)", "publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     },
@@ -519,7 +519,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["strategyEnabled(google)", "publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     },
@@ -542,7 +542,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["strategyEnabled(microsoft)", "publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     },
@@ -565,7 +565,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["strategyEnabled(github)", "publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
@@ -588,7 +588,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["strategyEnabled(google)", "publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
@@ -611,7 +611,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["strategyEnabled(microsoft)", "publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
@@ -680,7 +680,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["userGuard", "noImpersonationGuard"],
+      "xGuard": ["strategyEnabled(passkey)", "userGuard", "noImpersonationGuard"],
       "xRateLimiter": ["passkeyChallengeLimiter"],
       "xCache": []
     },
@@ -1686,7 +1686,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["serviceEnabled(oauth)", "publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     },
@@ -1984,7 +1984,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["publicGuard"],
+      "xGuard": ["serviceEnabled(mcp)", "publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     },
@@ -2007,7 +2007,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["tokenGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["serviceEnabled(mcp)", "tokenGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": [],
       "xCache": []
     },
@@ -2352,7 +2352,7 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["serviceEnabled(yjs)", "userGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },

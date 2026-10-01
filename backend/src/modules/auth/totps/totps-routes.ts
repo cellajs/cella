@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { publicGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
+import { publicGuard, stepUpGuard, strategyEnabled, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter, totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTotpKeyResponse } from '#/modules/auth/auth-mocks';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
@@ -8,10 +8,9 @@ import { cookieSchema } from '#/schemas';
 
 const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
   generateTotpKey: xRoute({
-    'x-strategy': 'totp',
     method: 'post',
     path: '/totp/generate-key',
-    xGuard: [userGuard, stepUpGuard],
+    xGuard: [strategyEnabled('totp'), userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Generate TOTP key',
     description: 'Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.',
@@ -20,10 +19,9 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
     },
   }),
   createTotp: xRoute({
-    'x-strategy': 'totp',
     method: 'post',
     path: '/totp',
-    xGuard: [userGuard, stepUpGuard],
+    xGuard: [strategyEnabled('totp'), userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Set TOTP',
     description:
@@ -33,7 +31,6 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
     responses: { 201: { description: 'TOTP created' } },
   }),
   deleteTotp: xRoute({
-    'x-strategy': null,
     method: 'delete',
     path: '/totp',
     xGuard: [userGuard, stepUpGuard],
@@ -43,10 +40,9 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
     responses: { 204: { description: 'TOTP deleted' } },
   }),
   signInWithTotp: xRoute({
-    'x-strategy': 'totp',
     method: 'post',
     path: '/totp-verification',
-    xGuard: [publicGuard],
+    xGuard: [strategyEnabled('totp'), publicGuard],
     xRateLimiter: [totpVerificationLimiter],
     summary: 'Verify TOTP',
     description: 'Validates the TOTP code and completes TOTP based authentication.',
