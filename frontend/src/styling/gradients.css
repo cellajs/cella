@@ -34,12 +34,11 @@
   width: 100%;
   height: 100%;
   z-index: -2;
-  background-image: radial-gradient(circle 80vh at 40% 20%, var(--background), rgba(255, 255, 255, 0.4));
 }
 
+/* The base :before layer paints nothing itself; dark-gradient fills it below. */
 .dark .rich-gradient:before {
   opacity: 0.8;
-  background-image: radial-gradient(circle 90vh at 40% 40%, var(--background), rgba(255, 255, 255, 0));
 }
 
 .rich-gradient.dark-gradient:after {
