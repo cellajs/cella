@@ -93,6 +93,7 @@ const main = async () => {
         if (appConfig.services.mcp.enabled)
           await (await import('#/modules/mcp/worker/mcp-worker-entry')).startMcpWorker({
             port: appConfig.devPorts.mcp,
+            inProcess: true,
           });
         if (appConfig.services.oauth.enabled)
           await (await import('#/modules/oauth-server/worker/oauth-worker-entry')).startOauthServer({

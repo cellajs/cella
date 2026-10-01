@@ -6,14 +6,14 @@ try {
   process.loadEnvFile(new URL('../../backend/.env', import.meta.url));
 } catch {}
 
-/** Derived from `appConfig` and `backend/.env` so bench follows the app's port offset. Dev-only, local stack. */
+/** Derived from `appConfig.devPorts` and `backend/.env` so bench follows the app's port offset. Dev-only, local stack. */
 // Measures the backend port directly: the Vite proxy serializes requests and resets connections. The configured mount path is preserved so API routes resolve.
 const backendMountPath = new URL(appConfig.backendUrl).pathname.replace(/\/$/, '');
 // biome-ignore lint/style/noProcessEnv: bench reads the app's backend PORT from backend/.env here.
-export const BACKEND_PORT = Number(process.env.PORT ?? '4000');
+export const BACKEND_PORT = Number(process.env.PORT ?? appConfig.devPorts.api);
 export const BASE_URL = `http://localhost:${BACKEND_PORT}${backendMountPath}`;
 
-export const CDC_HEALTH_URL = `http://localhost:${BACKEND_PORT + 1}/health?depth=full`;
+export const CDC_HEALTH_URL = `http://localhost:${appConfig.devPorts.cdcHealth}/health?depth=full`;
 
 export const SESSION_COOKIE_NAME = `${appConfig.slug}-session-${appConfig.cookieVersion}`;
 

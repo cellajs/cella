@@ -220,7 +220,7 @@ describe('useMembershipsDeleteMutation', () => {
   type Variables = ReturnType<typeof variablesFor>;
   const options = () => optionsOf<Options<void, Variables, Context>>(useMembershipsDeleteMutation);
 
-  it('onMutate: drops the members from every list of the channel and lowers each total by the deleted count', async () => {
+  it('onMutate: drops the members from every list of the channel and lowers each total by the members it held', async () => {
     const before = seedMemberLists();
 
     const context = await options().onMutate(variablesFor('u2'));
@@ -230,8 +230,8 @@ describe('useMembershipsDeleteMutation', () => {
     expect(firstPageParam(readList(pagedKey))).toEqual({ page: 0, offset: 0 });
     expect(listItems(readList(roleKey))?.map((row) => row.id)).toEqual(['u1']);
     expect(readList(roleKey)).toMatchObject({ total: 1 });
-    // The total drops by the number of deleted members even in a list that did not hold them.
-    expect(readList(searchKey)).toEqual({ items: [member('u1')], total: 0 });
+    // A list that did not hold the deleted member keeps its total.
+    expect(readList(searchKey)).toEqual({ items: [member('u1')], total: 1 });
     expect(readList(otherChannelKey)).toBe(before.get(otherChannelKey));
 
     expect(context).toHaveLength(3);

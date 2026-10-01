@@ -166,7 +166,7 @@ export const useOrganizationDeleteMutation = () => {
   });
 };
 
-/** Fetch organizations for table export. Bypasses cache; returns flat items without counts. */
+/** Fetch organizations for table export. Bypasses cache; items carry their counts and the caller's membership. */
 export const fetchOrganizationsForExport = async ({
   limit,
   offset = 0,
@@ -174,4 +174,5 @@ export const fetchOrganizationsForExport = async ({
   sort,
   order,
 }: Pick<OrganizationsQuery, 'q' | 'sort' | 'order'> & { limit: number; offset?: number }) =>
-  (await fetchOrganizationsPage(withDefaults({ q, sort, order }), limit, offset)).items;
+  (await fetchOrganizationsPage({ ...withDefaults({ q, sort, order }), include: 'counts,membership' }, limit, offset))
+    .items;

@@ -7,22 +7,33 @@ import { healthApp } from '#/lib/health';
 import '#/lib/lens-telemetry'; // registers doba lens otel hooks
 import { app as middlewares } from '#/middlewares/app';
 
-const baseApp = new OpenAPIHono<Env>();
+/**
+ * A base app: global middlewares, health, the mount-prefix strip, not-found and error handling, with no module routes.
+ * Hono takes no routes after its first request, so a worker folded into the API process builds its own.
+ */
+export function createBaseApp() {
+  const app = new OpenAPIHono<Env>();
 
-// The load balancer preserves same-origin `/api` and `/mcp` prefixes; redispatch through `mount()` strips them.
-baseApp.mount('/api', (request, env, executionCtx) => baseApp.fetch(request, env, executionCtx));
-baseApp.mount('/mcp', (request, env, executionCtx) => baseApp.fetch(request, env, executionCtx));
+  // The load balancer preserves same-origin `/api` and `/mcp` prefixes; redispatch through `mount()` strips them.
+  app.mount('/api', (request, env, executionCtx) => app.fetch(request, env, executionCtx));
+  app.mount('/mcp', (request, env, executionCtx) => app.fetch(request, env, executionCtx));
 
-baseApp.get('/favicon.ico', (c) => c.redirect(`${appConfig.frontendUrl}/favicon.ico`, 301));
+  app.get('/favicon.ico', (c) => c.redirect(`${appConfig.frontendUrl}/favicon.ico`, 301));
 
-baseApp.route('/', middlewares);
+  app.route('/', middlewares);
 
-baseApp.route('/', healthApp);
+  app.route('/', healthApp);
 
-baseApp.notFound(() => {
-  throw new AppError(404, 'route_not_found', 'warn');
-});
+  app.notFound(() => {
+    throw new AppError(404, 'route_not_found', 'warn');
+  });
 
-baseApp.onError(appErrorHandler);
+  app.onError(appErrorHandler);
+
+  return app;
+}
+
+/** The API's app; `#/routes` mounts every module's routes on it. */
+const baseApp = createBaseApp();
 
 export { baseApp };

@@ -1,6 +1,7 @@
 import type { z } from '@hono/zod-openapi';
 import { eq, ilike, type SQL } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
+import { normalizeRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { findTenantsPaginated } from '#/modules/tenants/tenants-queries';
 import type { tenantListQuerySchema } from '#/modules/tenants/tenants-schema';
@@ -22,5 +23,6 @@ export async function getTenantsOp(ctx: UserContext, input: GetTenantsInput) {
 
   const { items, total } = await findTenantsPaginated(ctx, { filters: conditions, sort, order, limit, offset });
 
-  return { items, total };
+  // Stored rows can predate a restriction field; one such row must not fail the whole list.
+  return { items: items.map((item) => ({ ...item, restrictions: normalizeRestrictions(item.restrictions) })), total };
 }

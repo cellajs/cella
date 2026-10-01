@@ -34,7 +34,7 @@ const meta: Meta<typeof SheetContent> = {
     <Sheet>
       <SheetTrigger>Open</SheetTrigger>
       <SheetContent {...args}>
-        <SheetHeader>
+        <SheetHeader className="with-close-btn">
           <SheetTitle>Are you absolutely sure?</SheetTitle>
           <SheetDescription>
             This action cannot be undone. This will permanently delete your account and remove your data from our

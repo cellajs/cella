@@ -11,6 +11,9 @@ import { notificationTypes } from './notification-types';
 export const digestFrequencies = ['off', 'daily', 'weekly'] as const;
 export type DigestFrequency = (typeof digestFrequencies)[number];
 
+/** Cadence of a user without a preferences row, and the column default. */
+export const defaultDigestFrequency: DigestFrequency = 'weekly';
+
 /**
  * Per-recipient inbox rows for mentions and addressed activity, fanned out from the product
  * modules that declare a `notifications` source (see lib/module.ts). Ambient posts stay out:
@@ -77,7 +80,7 @@ export const notificationPreferencesTable = snakeCase.table('notification_prefer
   /** In-app delivery is never opt-out; only email is. */
   mentionEmail: boolean().notNull().default(true),
   commentEmail: boolean().notNull().default(false),
-  digest: varchar({ enum: digestFrequencies }).notNull().default('weekly'),
+  digest: varchar({ enum: digestFrequencies }).notNull().default(defaultDigestFrequency),
   /** Start of the next digest window. Null means "never digested", handled as the first run. */
   lastDigestAt: timestamp({ mode: 'string' }),
   updatedAt: timestampColumns.updatedAt,

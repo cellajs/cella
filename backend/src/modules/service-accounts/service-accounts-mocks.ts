@@ -1,5 +1,5 @@
 import { faker } from '@faker-js/faker';
-import { appConfig } from 'shared';
+import { appConfig, hierarchy } from 'shared';
 import { mockPaginated, mockPastIsoDate, mockTenantId, mockUuid, withFakerSeed } from '#/mocks';
 import type { ApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { checksumOf } from '#/modules/service-accounts/helpers/api-key';
@@ -14,7 +14,14 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): Serv
       tenantId: mockTenantId(),
       name: `${faker.hacker.noun()} bot`,
       status: 'active',
-      bindings: [{ channelType: 'organization', channelId: organizationId, organizationId, role: 'member' }],
+      bindings: [
+        {
+          channelType: 'organization',
+          channelId: organizationId,
+          organizationId,
+          role: hierarchy.getLeastPrivilegedRole('organization'),
+        },
+      ],
       oauthClientId: null,
       createdBy: mockUuid(),
       createdAt,

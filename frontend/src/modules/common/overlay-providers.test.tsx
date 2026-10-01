@@ -99,7 +99,7 @@ describe('overlay providers on a route change', () => {
     expect(sheetIds()).toEqual(['s']);
   });
 
-  it('dialoger closes every dialog and calls onClose without isCleanup', async () => {
+  it('dialoger closes every dialog and calls onClose with isCleanup', async () => {
     const onClose = vi.fn();
     await act(() => {
       useDialoger.getState().create(null, dialog('a', { onClose }));
@@ -109,7 +109,7 @@ describe('overlay providers on a route change', () => {
     await changeRoute(true);
 
     expect(dialogIds()).toEqual([]);
-    expect(onClose.mock.calls).toEqual([[undefined], [undefined]]);
+    expect(onClose.mock.calls).toEqual([[true], [true]]);
   });
 
   it('sheeter closes route-bound sheets with isCleanup and keeps the others', async () => {

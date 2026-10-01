@@ -9,14 +9,14 @@ const channelIds = Object.fromEntries(hierarchy.getOrderedAncestors('attachment'
 const homeType = hierarchy.getOrderedAncestors('attachment')[0];
 
 /**
- * The key or token mask over the app's own policy: an admin of the attachment's home channel may do everything with
- * attachments, so every denial below comes from `scopes` alone.
+ * The key or token mask over the app's own policy: the most privileged role of the attachment's home channel may do
+ * everything with attachments, so every denial below comes from `scopes` alone.
  */
 const membership: AccessMembership = {
   channelType: homeType,
   channelId: channelIds[homeType],
   organizationId: channelIds.organization,
-  role: 'admin',
+  role: hierarchy.getMostPrivilegedRole(homeType),
   userId: 'u1',
 } as AccessMembership;
 

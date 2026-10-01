@@ -68,7 +68,7 @@ export const useDialoger = create<DialogStoreState>((set, get) => ({
 
   remove: (id, opts) => {
     const { dialogs } = get();
-    const toRemove = id ? dialogs.filter((d) => d.id === id) : dialogs;
+    const toRemove = id === undefined ? dialogs : dialogs.filter((d) => d.id === id);
     removeAndNotify((remaining) => set({ dialogs: remaining }), dialogs, toRemove, opts);
   },
 

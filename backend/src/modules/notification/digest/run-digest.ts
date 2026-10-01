@@ -16,13 +16,19 @@ const WEEKLY_ISO_WEEKDAY = 5;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** How far back a digest window reaches at most: the cadence plus a day. */
+const MAX_WINDOW_DAYS = { daily: 2, weekly: 8 };
+
+const earliestStart = (cadence: keyof typeof MAX_WINDOW_DAYS, now: Date): Date =>
+  new Date(now.getTime() - MAX_WINDOW_DAYS[cadence] * DAY_MS);
+
 /**
  * Where a recipient's digest window starts: at the stored `lastDigestAt`, so a late or skipped run resumes where the
  * previous one stopped, but never further back than the cadence plus a day. A first digest, and the first after the
- * digest was off, cover recent rows only, never the whole inbox.
+ * digest was off, cover recent rows only, never the whole inbox. `findDueDigestRecipients` mirrors this in SQL.
  */
 const windowStart = (recipient: { digest: string; lastDigestAt: string | null }, now: Date): Date => {
-  const earliest = now.getTime() - (recipient.digest === 'weekly' ? 8 : 2) * DAY_MS;
+  const earliest = earliestStart(recipient.digest === 'weekly' ? 'weekly' : 'daily', now).getTime();
   const last = recipient.lastDigestAt ? new Date(recipient.lastDigestAt).getTime() : earliest;
   return new Date(Math.max(last, earliest));
 };
@@ -43,6 +49,7 @@ export async function runDigest(now: Date = new Date()): Promise<{ sent: number;
   const due = await findDueDigestRecipients(
     dayStart.toISOString(),
     isoWeekday(now) === WEEKLY_ISO_WEEKDAY,
+    { daily: earliestStart('daily', now).toISOString(), weekly: earliestStart('weekly', now).toISOString() },
     MAX_RECIPIENTS_PER_RUN,
   );
   if (due.length === 0) return { sent: 0, skipped: 0 };

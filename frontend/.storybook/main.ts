@@ -1,4 +1,5 @@
 import type { StorybookConfig } from '@storybook/react-vite';
+import tailwindcss from '@tailwindcss/vite';
 import { appConfig } from 'shared';
 import type { Plugin } from 'vite';
 import { docsFrontmatter } from '../vite/docs-frontmatter.ts';
@@ -44,7 +45,7 @@ const config: StorybookConfig = {
     };
     // Every virtual module the app imports must resolve: an unresolved import fails Vite's dependency scan, so
     // dependencies are found mid-run and each discovery reloads the tests.
-    config.plugins = [...(config.plugins ?? []), docsFrontmatter(), pwaRegisterStub];
+    config.plugins = [...(config.plugins ?? []), tailwindcss(), docsFrontmatter(), pwaRegisterStub];
     // The email stories render backend HTML: proxy the dev preview route so their fetch stays same-origin.
     config.server = {
       ...config.server,

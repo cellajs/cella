@@ -6,17 +6,6 @@ import { MAX_ZOOM, MIN_ZOOM } from '~/modules/attachment/render/image-zoom';
 const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300"><rect width="400" height="300" fill="#4f46e5"/></svg>`;
 const imageUrl = `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
 
-// The Storybook test build does not process Tailwind; these are the utilities the viewer's hit areas depend on.
-const layoutCss = `
-  .stage { width: 900px; height: 500px; }
-  .relative { position: relative; } .absolute { position: absolute; } .bottom-3 { bottom: 0.75rem; }
-  .left-1\\/2 { left: 50%; } .z-20 { z-index: 20; } .overflow-hidden { overflow: hidden; }
-  .flex { display: flex; } .items-center { align-items: center; } .justify-center { justify-content: center; }
-  .h-full { height: 100%; } .w-full { width: 100%; } .max-h-full { max-height: 100%; } .max-w-full { max-width: 100%; }
-  .object-contain { object-fit: contain; }
-  .pointer-events-none { pointer-events: none; } .pointer-events-auto { pointer-events: auto; }
-`;
-
 const onPanStateToggle = fn();
 const onBackdropClick = fn();
 
@@ -25,14 +14,9 @@ const meta = {
   title: 'attachment/ImageViewer',
   component: AttachmentRender,
   parameters: { layout: 'centered' },
-  decorators: [
-    (Story) => (
-      <>
-        <style>{layoutCss}</style>
-        <Story />
-      </>
-    ),
-  ],
+  // The viewer is a lazy chunk that a busy dev server can take seconds to transform; loading it before render keeps
+  // each first find inside its timeout.
+  loaders: [() => import('~/modules/attachment/render/image')],
   args: {
     type: 'image/svg+xml',
     url: imageUrl,
@@ -40,7 +24,7 @@ const meta = {
     imagePanZoom: true,
     showButtons: true,
     itemClassName: 'object-contain',
-    containerClassName: 'stage relative flex items-center justify-center overflow-hidden',
+    containerClassName: 'stage relative flex h-[500px] w-[900px] items-center justify-center overflow-hidden',
     onPanStateToggle,
     onBackdropClick,
   },
@@ -93,24 +77,26 @@ export const Viewer: Story = {
 
     await expect(panLayerOf(img)).toEqual({ scale: 1, x: 0, y: 0 });
 
+    // Wheel and mouse moves are continuous events: React commits them in a scheduler task that can land after the
+    // next frame, so every changed value is awaited.
     await step('wheel and trackpad pinch zoom exponentially around the centre', async () => {
       await wheel(img, -100);
-      await expect(panLayerOf(img).scale).toBeCloseTo(Math.exp(0.2), 3);
+      await waitFor(() => expect(panLayerOf(img).scale).toBeCloseTo(Math.exp(0.2), 3));
       await wheel(img, 100);
-      await expect(panLayerOf(img).scale).toBeCloseTo(1, 3);
+      await waitFor(() => expect(panLayerOf(img).scale).toBeCloseTo(1, 3));
       // A line-mode wheel counts 16 px per line
       await wheel(img, -3, { deltaMode: WheelEvent.DOM_DELTA_LINE });
-      await expect(panLayerOf(img).scale).toBeCloseTo(Math.exp(0.096), 3);
+      await waitFor(() => expect(panLayerOf(img).scale).toBeCloseTo(Math.exp(0.096), 3));
       await wheel(img, -10, { ctrlKey: true });
-      await expect(panLayerOf(img).scale).toBeCloseTo(Math.exp(0.116), 3);
+      await waitFor(() => expect(panLayerOf(img).scale).toBeCloseTo(Math.exp(0.116), 3));
       await expect(panLayerOf(img)).toMatchObject({ x: 0, y: 0 });
     });
 
     await step('wheel zoom stays within the floor and the ceiling', async () => {
       for (let i = 0; i < 12; i++) await wheel(img, -500);
-      await expect(panLayerOf(img).scale).toBe(MAX_ZOOM);
+      await waitFor(() => expect(panLayerOf(img).scale).toBe(MAX_ZOOM));
       for (let i = 0; i < 12; i++) await wheel(img, 500);
-      await expect(panLayerOf(img).scale).toBe(MIN_ZOOM);
+      await waitFor(() => expect(panLayerOf(img).scale).toBe(MIN_ZOOM));
     });
 
     await step('the zoom buttons step by 0.2', async () => {
@@ -140,14 +126,32 @@ export const Viewer: Story = {
       await expect(onPanStateToggle).toHaveBeenLastCalledWith(false);
 
       await drag(img, 40, 25);
-      await expect(panLayerOf(img)).toMatchObject({ x: 40, y: 25 });
+      await waitFor(() => expect(panLayerOf(img)).toMatchObject({ x: 40, y: 25 }));
       await drag(img, -10, 5);
-      await expect(panLayerOf(img)).toMatchObject({ x: 30, y: 30 });
+      await waitFor(() => expect(panLayerOf(img)).toMatchObject({ x: 30, y: 30 }));
 
       await userEvent.click(pan);
       await expect(onPanStateToggle).toHaveBeenLastCalledWith(true);
       await drag(img, 40, 25);
       await expect(panLayerOf(img)).toMatchObject({ x: 30, y: 30 });
+    });
+
+    await step('a drag released outside the viewport ends the pan', async () => {
+      await userEvent.click(pan);
+      const rect = img.getBoundingClientRect();
+      const start = { clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2 };
+      img.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true, ...start }));
+      await frame();
+      // The button comes up outside the viewport, which never sees that mouseup
+      document.body.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+      await frame();
+
+      // Back over the image with no button held, the pointer moves without dragging the image along
+      const back = { clientX: start.clientX + 40, clientY: start.clientY + 25 };
+      img.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true, ...back }));
+      await new Promise((resolve) => setTimeout(resolve, 100));
+      await expect(panLayerOf(img)).toMatchObject({ x: 30, y: 30 });
+      await userEvent.click(pan);
     });
 
     await step('reset restores zoom, offset and rotation', async () => {

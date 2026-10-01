@@ -1,4 +1,4 @@
-import { and, asc, desc, eq, gte, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, inArray, isNull, lt, or, sql } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { baseDb } from '#/db/db';
@@ -7,7 +7,12 @@ import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { toUserMinimalBase, type UserMinimalBase } from '#/modules/user/helpers/audit-user';
 import { usersTable } from '#/modules/user/user-db';
-import { type DigestFrequency, notificationPreferencesTable, notificationsTable } from './notification-db';
+import {
+  type DigestFrequency,
+  defaultDigestFrequency,
+  notificationPreferencesTable,
+  notificationsTable,
+} from './notification-db';
 import type { NotificationType } from './notification-types';
 
 /**
@@ -290,31 +295,58 @@ export async function stampEmailed(notificationIds: string[]): Promise<void> {
 
 // ── Digest ───────────────────────────────────────────────────────────────────
 
-/** Recipients whose digest is due: cadence on, verified address, not yet run for this window. */
-export async function findDueDigestRecipients(dayStart: string, includeWeekly: boolean, limit: number) {
-  const notRunThisWindow = or(
-    isNull(notificationPreferencesTable.lastDigestAt),
-    lt(notificationPreferencesTable.lastDigestAt, dayStart),
-  );
-
-  const cadences = [and(eq(notificationPreferencesTable.digest, 'daily'), notRunThisWindow)];
-  if (includeWeekly) cadences.push(and(eq(notificationPreferencesTable.digest, 'weekly'), notRunThisWindow));
+/**
+ * Recipients whose digest is due: verified address, cadence on (the default without a preferences row), not yet
+ * run today, and at least one row `findUndigestedNotifications` would return for the runner's window
+ * (`lastDigestAt`, no further back than `earliest` for the cadence; see run-digest.ts). A run walks only users
+ * with something to send.
+ */
+export async function findDueDigestRecipients(
+  dayStart: string,
+  includeWeekly: boolean,
+  earliest: Record<'daily' | 'weekly', string>,
+  limit: number,
+) {
+  const digest = sql<DigestFrequency>`coalesce(${notificationPreferencesTable.digest}, ${defaultDigestFrequency})`;
+  const cadences: DigestFrequency[] = includeWeekly ? ['daily', 'weekly'] : ['daily'];
+  const earliestForCadence = sql`case when ${digest} = 'weekly'
+    then ${earliest.weekly}::timestamp else ${earliest.daily}::timestamp end`;
+  // greatest() skips nulls: without a stamp the window starts at the earliest start.
+  const windowStart = sql`greatest(${notificationPreferencesTable.lastDigestAt}, ${earliestForCadence})`;
+  const hasUndigested = sql`exists (
+    select 1 from ${notificationsTable}
+    where ${notificationsTable.userId} = ${usersTable.id}
+      and ${notificationsTable.readAt} is null
+      and ${notificationsTable.emailedAt} is null
+      and ${notificationsTable.digestedAt} is null
+      and ${notificationsTable.createdAt} >= ${windowStart}
+      and ${recipientStillBelongs}
+  )`;
 
   return (
     baseDb
-      .selectDistinctOn([notificationPreferencesTable.userId], {
-        userId: notificationPreferencesTable.userId,
-        digest: notificationPreferencesTable.digest,
+      .selectDistinctOn([usersTable.id], {
+        userId: usersTable.id,
+        digest,
         lastDigestAt: notificationPreferencesTable.lastDigestAt,
         email: usersTable.email,
         language: usersTable.language,
       })
-      .from(notificationPreferencesTable)
-      .innerJoin(usersTable, eq(usersTable.id, notificationPreferencesTable.userId))
+      .from(usersTable)
       // Verified addresses only; mailing dormant and never-activated accounts helps no one.
       .innerJoin(emailsTable, and(eq(emailsTable.userId, usersTable.id), eq(emailsTable.verified, true)))
-      .where(and(ne(notificationPreferencesTable.digest, 'off'), or(...cadences)))
-      .orderBy(notificationPreferencesTable.userId)
+      .leftJoin(notificationPreferencesTable, eq(notificationPreferencesTable.userId, usersTable.id))
+      .where(
+        and(
+          inArray(digest, cadences),
+          or(
+            isNull(notificationPreferencesTable.lastDigestAt),
+            lt(notificationPreferencesTable.lastDigestAt, dayStart),
+          ),
+          hasUndigested,
+        ),
+      )
+      .orderBy(usersTable.id)
       .limit(limit)
   );
 }
@@ -355,10 +387,11 @@ export async function stampDigested(notificationIds: string[]): Promise<void> {
     .where(inArray(notificationsTable.id, notificationIds));
 }
 
+/** Upserts, so a user who never saved preferences gets a row with the defaults and the stamp. */
 export async function stampDigestRun(userIds: string[], ranAt: string): Promise<void> {
   if (userIds.length === 0) return;
   await baseDb
-    .update(notificationPreferencesTable)
-    .set({ lastDigestAt: ranAt })
-    .where(inArray(notificationPreferencesTable.userId, userIds));
+    .insert(notificationPreferencesTable)
+    .values(userIds.map((userId) => ({ userId, lastDigestAt: ranAt })))
+    .onConflictDoUpdate({ target: notificationPreferencesTable.userId, set: { lastDigestAt: ranAt } });
 }

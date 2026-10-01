@@ -148,18 +148,19 @@ export function DataTable<TData>({
 
   return (
     <div className={cn('mb-4 h-full w-full md:mb-8', className)}>
-      {isLoading || !rows ? (
+      {/* A failed first load has no rows, so the skeleton shows only while no error is known. */}
+      {(isLoading || !rows) && !error ? (
         <DataTableSkeleton
           cellsWidths={['3rem', '10rem', '4rem']}
           cellHeight={Number(rowHeight)}
           // Count only visible columns so the skeleton matches what the grid renders.
           columnCount={columns.filter((column) => !column.hidden).length}
         />
-      ) : error && rows.length === 0 ? (
+      ) : error && !rows?.length ? (
         <div className="flex h-full w-full flex-col items-center justify-center bg-background text-muted-foreground">
           <div className="my-8 text-center text-red-600 text-sm">{error.message}</div>
         </div>
-      ) : !rows.length ? (
+      ) : !rows?.length ? (
         <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />
       ) : (
         <div className="relative grid" ref={gridRef}>
