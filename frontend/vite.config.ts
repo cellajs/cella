@@ -24,6 +24,7 @@ import { appConfig } from '../shared/index.ts';
 import { docsEditor } from './vite/docs-editor.ts';
 import { docsFrontmatter } from './vite/docs-frontmatter.ts';
 import { localesPlugin } from './vite/locales-plugin.ts';
+import { reactCompilerGuard } from './vite/react-compiler-guard.ts';
 import { remarkLinkRepoPaths } from './vite/remark-link-repo-paths.ts';
 import { routerOptions } from './vite/router-options.ts';
 import { sdkWatch } from './vite/sdk-watch.ts';
@@ -361,7 +362,9 @@ const viteConfig = {
     // `*.svg?react` imports become React components (jsx only, no svgo pass). Must run before react().
     svgr({ include: '**/*.svg?react' }),
     react(),
-    babel({ presets: [reactCompilerPreset()], include: ['./src/**/*.{ts,tsx,js,jsx}'] }),
+    // A regex: the plugin matches `include` against absolute module ids, which a relative glob with braces never matches.
+    babel({ presets: [reactCompilerPreset()], include: [/[\\/]frontend[\\/]src[\\/].*\.[jt]sx?$/] }),
+    reactCompilerGuard(),
     tailwindcss(),
     // Locales pipeline: merges common.json + app.json into the runtime `c` namespace,
     // serves the result at /locales/{lng}/{ns}.json in dev and emits it into the build.
