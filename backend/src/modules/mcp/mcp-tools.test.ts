@@ -84,7 +84,7 @@ const named = (name: string): McpTool => {
 };
 
 describe('buildMcpTools', () => {
-  it("derives the input from params minus the route's own ids plus the query, and runs the route with them", async () => {
+  it("derives the input from params minus the route's own ids plus the query, and runs the route", async () => {
     const list = named('listThings');
     expect(list.scope).toBe('attachment:read');
     expect(Object.keys((list.descriptor.inputSchema as { properties: object }).properties)).toEqual([
@@ -93,7 +93,7 @@ describe('buildMcpTools', () => {
       'limit',
     ]);
 
-    // The route parses the raw query string itself, so its coercions apply; the organization comes from the MCP request.
+    // The route parses the raw query itself, so its coercions apply; the organization comes from the MCP request.
     const outcome = await list.call(ctx, { id: 'a/b', q: 'hi', limit: '5' });
     expect(outcome).toEqual({
       ok: true,

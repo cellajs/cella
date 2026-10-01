@@ -185,8 +185,9 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
 }
 
 /**
- * One tool per route carrying `xTool` (`x-tool` in the spec), read from the app's OpenAPI registry, where every mounted route has its full
- * path, operationId and request schemas. Calls go through `app`, so pass the app the routes are mounted on.
+ * One tool per route carrying `xTool` (`x-tool` in the spec), read from the app's OpenAPI registry, where every
+ * mounted route has its full path, operationId and request schemas. Calls go through `app`, so pass the app the
+ * routes are mounted on.
  */
 export function buildMcpTools(app: OpenAPIHono<Env>): McpTool[] {
   const tools: McpTool[] = [];

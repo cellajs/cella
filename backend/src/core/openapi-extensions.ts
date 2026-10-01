@@ -95,7 +95,7 @@ export const collectExtensionMiddleware = (config: Record<string, unknown>): Mid
     .filter(({ kind }) => kind === 'middleware')
     .flatMap(({ id }) => (config[id] as MiddlewareHandler<Env>[]) ?? []);
 
-/** The route prop ids of every extension (e.g. `['xGuard', 'xRateLimiter', 'xCache', 'xTool']`), kept out of the spec. */
+/** The route prop ids of every extension (`xGuard`, `xRateLimiter`, `xCache`, `xTool`), kept out of the spec. */
 export const getExtensionPropIds = (): string[] => Object.values(extensionMap).map(({ id }) => id);
 
 /** The metadata extensions a route declares, under their spec keys (`xTool` as `x-tool`). */
