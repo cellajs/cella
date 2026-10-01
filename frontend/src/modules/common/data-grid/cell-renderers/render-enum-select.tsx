@@ -104,7 +104,8 @@ export function RenderEnumSelect<TRow extends { id: string }, TValue extends str
         <PopoverContent
           anchor={anchor}
           align="start"
-          className="z-301 p-0"
+          positionerClassName="z-301"
+          className="p-0"
           // Skip restoration to the replaced anchor cell; EditCell focuses its new cell instance.
           finalFocus={false}
           style={{ width }}

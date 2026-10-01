@@ -65,7 +65,10 @@ export function ScrollArea({
       <ScrollAreaPrimitive.Viewport
         id={id ? `${id}-viewport` : undefined}
         ref={viewportRef}
-        className={cn('h-full w-full touch-manipulation rounded-[inherit] focus:outline-none', viewportClassName)}
+        className={cn(
+          'h-full w-full touch-manipulation rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-ring/50 focus-visible:ring-inset',
+          viewportClassName,
+        )}
       >
         <ScrollAreaPrimitive.Content
           style={{

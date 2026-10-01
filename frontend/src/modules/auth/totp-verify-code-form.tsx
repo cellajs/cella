@@ -5,7 +5,7 @@ import { zCreateTotpBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type z from 'zod';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { InputOTP, InputOTPGroup, InputOTPSlot } from '~/modules/ui/totp';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
@@ -44,32 +44,31 @@ export function TotpConfirmationForm({ onSubmit, onCancel, label, isPending }: P
         <FormField
           control={form.control}
           name="code"
-          render={({ field: { value, ...rest } }) => (
+          render={({ field: { value, onChange, onBlur, name, ref } }) => (
             <FormItem name="code" className="mb-6">
               {label && <FormLabel className="mb-1 justify-center text-center">{label}</FormLabel>}
-              <FormControl>
-                <InputOTP
-                  value={value || ''}
-                  {...rest}
-                  autoFocus
-                  disabled={isPending}
-                  inputMode="numeric"
-                  containerClassName="justify-center"
-                  maxLength={appConfig.totp.digits}
-                >
-                  <InputOTPGroup>
-                    {Array.from({ length: appConfig.totp.digits }).map((_, index) => (
-                      <InputOTPSlot
-                        // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length OTP slots, never reordered.
-                        key={index}
-                        inputMode="numeric"
-                        index={index}
-                        className="bg-background text-lg sm:h-12 sm:w-10"
-                      />
-                    ))}
-                  </InputOTPGroup>
-                </InputOTP>
-              </FormControl>
+              {/* OTPField reads the surrounding Field itself, so it binds to the form value directly. */}
+              <InputOTP
+                name={name}
+                value={value || ''}
+                onValueChange={onChange}
+                onBlur={onBlur}
+                disabled={isPending}
+                length={appConfig.totp.digits}
+                className="justify-center"
+              >
+                <InputOTPGroup>
+                  {Array.from({ length: appConfig.totp.digits }).map((_, index) => (
+                    <InputOTPSlot
+                      // biome-ignore lint/suspicious/noArrayIndexKey: fixed-length OTP slots, never reordered.
+                      key={index}
+                      ref={index === 0 ? ref : undefined}
+                      autoFocus={index === 0}
+                      className="text-lg sm:h-12 sm:w-10"
+                    />
+                  ))}
+                </InputOTPGroup>
+              </InputOTP>
               <FormMessage />
             </FormItem>
           )}

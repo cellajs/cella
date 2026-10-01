@@ -1,4 +1,5 @@
 import Dashboard from '@uppy/react/dashboard';
+import { useTranslation } from 'react-i18next';
 import { generateRestrictionNote } from '~/modules/common/uploader/helpers/restrictions-note';
 import { useUploader } from '~/modules/common/uploader/use-uploader';
 import { useUploadUppy } from '~/modules/common/uploader/use-uppy-upload';
@@ -8,6 +9,7 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import '~/modules/common/uploader/uppy-styles';
 
 export function Uploader() {
+  const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const remove = useUploader((state) => state.remove);
 
@@ -26,16 +28,11 @@ export function Uploader() {
     >
       <DialogContent className="h-[40vh] min-h-fit w-[90vw] xs:w-[80vw] max-w-xl md:max-w-2xl">
         <DialogHeader className="with-close-btn">
-          <DialogTitle className={`${uploaderData.title ? '' : 'hidden'} h-6 leading-6`}>
-            {uploaderData.title}
+          <DialogTitle className={uploaderData.title ? 'h-6 leading-6' : 'sr-only'}>
+            {uploaderData.title || t('c:upload')}
           </DialogTitle>
-          <DialogDescription className={`${uploaderData.description ? '' : 'hidden'}`}>
-            {uploaderData.description}
-          </DialogDescription>
+          {uploaderData.description && <DialogDescription>{uploaderData.description}</DialogDescription>}
         </DialogHeader>
-
-        {/* Guarantee an accessible name without a visible title */}
-        {!uploaderData.title && <DialogTitle className="hidden" />}
         <Dashboard
           uppy={uppy}
           autoOpen={['cover', 'avatar'].includes(uploaderData.templateId) ? 'imageEditor' : null}

@@ -10,7 +10,7 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import type { InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
 
 /**
@@ -90,8 +90,12 @@ export function InviteFormFooter({
           name="role"
           render={({ field: { value, onChange } }) => (
             <FormItem className="ml-3 flex-row items-center gap-4">
-              <FormLabel>{t('c:role')}</FormLabel>
-              <SelectRoleRadio value={value} onValueChange={onChange} entityType={channel.entityType} />
+              <SelectRoleRadio
+                value={value}
+                onValueChange={onChange}
+                entityType={channel.entityType}
+                label={t('c:role')}
+              />
               <FormMessage />
             </FormItem>
           )}

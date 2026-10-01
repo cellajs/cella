@@ -85,27 +85,44 @@ export interface ButtonProps
   render?: React.ReactElement;
 }
 
+/** `loading` disables the button and overlays a spinner on its hidden content, so the width stays put. Native buttons default to `type="button"`. */
 export function Button({
   className,
   variant,
   soft,
   size,
   render,
-  loading: _loading,
+  loading,
+  disabled,
   children,
   ...props
 }: React.ComponentProps<'button'> & ButtonProps) {
   const computedProps = {
     'data-slot': 'button',
     className: cn(buttonVariants({ variant, soft, size, className })),
+    disabled: disabled || loading,
+    'aria-busy': loading || undefined,
     ...props,
   };
 
+  const content = loading ? (
+    <span className="relative inline-flex items-center justify-center gap-[inherit]">
+      <span className="invisible inline-flex items-center gap-[inherit]">{children}</span>
+      <LoaderCircleIcon className="absolute inset-0 m-auto animate-spin" />
+    </span>
+  ) : (
+    children
+  );
+
   if (render) {
-    return <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot>;
+    return <Slot {...computedProps}>{React.cloneElement(render, undefined, content)}</Slot>;
   }
 
-  return <button {...computedProps}>{children}</button>;
+  return (
+    <button type="button" {...computedProps}>
+      {content}
+    </button>
+  );
 }
 
 type SubmitButtonProps = Omit<ButtonProps, 'type'> & {
@@ -155,6 +172,7 @@ export function SubmitButton({
       onClick={handleClick}
       disabled={isDisabled}
       aria-busy={loading || undefined}
+      loading={!icon && loading}
       className={cn(icon && 'gap-2', className)}
       {...props}
     >
@@ -163,11 +181,6 @@ export function SubmitButton({
           {resolvedIcon}
           {children}
         </>
-      ) : loading ? (
-        <span className="relative inline-flex items-center">
-          <span className="invisible">{children}</span>
-          <LoaderCircleIcon className="absolute inset-0 m-auto animate-spin" />
-        </span>
       ) : (
         <>
           {showOfflineWarning && <TriangleAlertIcon className="mr-2" />}

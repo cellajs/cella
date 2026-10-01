@@ -1,4 +1,5 @@
 import { useNavigate, useRouterState } from '@tanstack/react-router';
+import i18n from 'i18next';
 import { useEffect } from 'react';
 import { useBreakpointAbove, useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useHotkeys } from '~/hooks/use-hot-keys';
@@ -52,6 +53,8 @@ export function AppNav() {
       useSheeter.getState().replace(navItem.sheet(), {
         id: 'nav-sheet',
         triggerRef,
+        title: i18n.t(`c:${navItem.id}`),
+        headerClassName: 'hidden',
         side: sheetSide as 'left' | 'right',
         modal: 'trap-focus',
         // Outside-press is gated by `keepNavOpen` in the sheeter's onOpenChange; disabling it here suppresses the event entirely.

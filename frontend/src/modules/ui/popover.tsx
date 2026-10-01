@@ -20,10 +20,13 @@ export function PopoverContent({
   collisionPadding,
   finalFocus,
   container,
+  positionerClassName,
   children,
   ...props
 }: {
   className?: string;
+  /** Classes for the positioner, which owns the stacking layer: put z-index overrides here. */
+  positionerClassName?: string;
   align?: 'start' | 'center' | 'end';
   sideOffset?: number;
   side?: 'top' | 'bottom' | 'left' | 'right';
@@ -44,7 +47,7 @@ export function PopoverContent({
         alignOffset={alignOffset}
         anchor={anchor}
         collisionPadding={collisionPadding}
-        className="z-200"
+        className={cn('z-200', positionerClassName)}
       >
         <PopoverPrimitive.Popup
           data-slot="popover-content"

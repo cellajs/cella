@@ -182,6 +182,7 @@ export function AttachmentsCarousel({
               <Button
                 variant="ghost"
                 size="icon"
+                aria-label={i18n.t('c:open')}
                 className="-my-1 size-8 opacity-70 hover:opacity-100"
                 onClick={() => window.open(currentItem.url, '_blank')}
               >
@@ -195,6 +196,7 @@ export function AttachmentsCarousel({
                 variant="ghost"
                 size="icon"
                 disabled={isInProgress}
+                aria-label={i18n.t('c:download')}
                 className="-my-1 size-8 opacity-70 hover:opacity-100"
                 onClick={() => download(currentItem.url, currentItem.filename || 'file')}
               >

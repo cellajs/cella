@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { type TriggerRef, useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { DocsSearch } from '~/modules/docs/search/docs-search';
 
@@ -8,6 +9,7 @@ export function openDocsSearch(triggerRef: TriggerRef = hotkeyTriggerRef) {
   return useDialoger.getState().create(<DocsSearch />, {
     id: 'docs-search',
     triggerRef,
+    title: i18n.t('c:search'),
     className: 'sm:max-w-3xl p-0 border-0 mb-4',
     headerClassName: 'hidden',
     drawerOnMobile: false,

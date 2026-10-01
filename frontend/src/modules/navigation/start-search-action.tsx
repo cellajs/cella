@@ -11,6 +11,7 @@ export function startSearchAction(triggerRef: RefObject<HTMLButtonElement | null
   return useDialoger.getState().create(<AppSearch />, {
     id: 'search',
     triggerRef,
+    title: i18n.t('c:search'),
     className: 'sm:max-w-2xl p-0 border-0 mb-4',
     headerClassName: 'hidden',
     drawerOnMobile: false,

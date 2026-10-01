@@ -2,6 +2,7 @@ import { cva, type VariantProps } from 'class-variance-authority';
 import useEmblaCarousel, { type UseEmblaCarouselType } from 'embla-carousel-react';
 import { ArrowLeftIcon, ArrowRightIcon } from 'lucide-react';
 import * as React from 'react';
+import { useLatestRef } from '~/hooks/use-latest-ref';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
@@ -73,19 +74,8 @@ function Carousel({
     api?.scrollNext();
   };
 
-  const handleKeyDown = (event: KeyboardEvent) => {
-    if (event.key === 'ArrowLeft') {
-      event.preventDefault();
-      scrollPrev();
-    } else if (event.key === 'ArrowRight') {
-      event.preventDefault();
-      scrollNext();
-    }
-  };
-
   // setApi lives in a ref so an inline prop does not re-run this effect and re-register listeners.
-  const setApiRef = React.useRef(setApi);
-  setApiRef.current = setApi;
+  const setApiRef = useLatestRef(setApi);
   React.useEffect(() => {
     if (!api) return;
     setApiRef.current?.(api);
@@ -103,19 +93,27 @@ function Carousel({
     };
   }, [api, onSelect]);
 
-  const handleMouseEnter = () => {
-    if (api && !isDialog) document.addEventListener('keydown', handleKeyDown);
-  };
-
-  const handleMouseLeave = () => {
-    if (!isDialog) document.removeEventListener('keydown', handleKeyDown);
-  };
+  // Arrow keys page the carousel in a dialog, or while the pointer or focus is inside it; text fields keep their arrows.
+  const [pointerInside, setPointerInside] = React.useState(false);
+  const [focusInside, setFocusInside] = React.useState(false);
+  const arrowKeysActive = !!api && (isDialog || pointerInside || focusInside);
 
   React.useEffect(() => {
-    if (!api) return;
-    if (isDialog) document.addEventListener('keydown', handleKeyDown);
+    if (!api || !arrowKeysActive) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.target instanceof Element && event.target.closest('input, textarea, select, [contenteditable="true"]'))
+        return;
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        api.scrollPrev();
+      } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        api.scrollNext();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [api]);
+  }, [api, arrowKeysActive]);
 
   return (
     <CarouselContext.Provider
@@ -131,8 +129,12 @@ function Carousel({
       }}
     >
       <div
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
+        onMouseEnter={() => setPointerInside(true)}
+        onMouseLeave={() => setPointerInside(false)}
+        onFocus={() => setFocusInside(true)}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusInside(false);
+        }}
         className={cn('relative', className)}
         role="region"
         aria-roledescription="carousel"
@@ -257,11 +259,12 @@ function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
 
   React.useEffect(() => {
     if (!api) return;
-    setCurrent(api.selectedScrollSnap());
-    api.on('select', () => setCurrent(api.selectedScrollSnap()));
+    const onSelect = () => setCurrent(api.selectedScrollSnap());
+    onSelect();
+    api.on('select', onSelect);
 
     return () => {
-      api?.off('select', () => setCurrent(api.selectedScrollSnap()));
+      api.off('select', onSelect);
     };
   }, [api]);
 

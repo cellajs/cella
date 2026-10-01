@@ -26,10 +26,7 @@ function WelcomePage() {
   return (
     <>
       <Dialog open={onboarding !== 'completed'} onOpenChange={onOpenChange} defaultOpen={true}>
-        <DialogContent
-          aria-describedby={undefined}
-          className="mt-0 flex h-dvh max-h-none min-w-full flex-col overflow-y-auto rounded-none border-0 bg-background/75 p-0"
-        >
+        <DialogContent className="mt-0 flex h-dvh max-h-none min-w-full flex-col overflow-y-auto rounded-none border-0 bg-background/75 p-0">
           <span className="sr-only">
             <DialogTitle>Welcome</DialogTitle>
           </span>
