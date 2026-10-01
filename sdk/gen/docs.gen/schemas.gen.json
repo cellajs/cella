@@ -1967,7 +1967,6 @@
           "required": false,
           "enum": ["user", "organization", "attachment"]
         },
-        "logId": { "type": "string", "required": false },
         "requestId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
         "method": { "type": "string", "required": false },
@@ -2030,7 +2029,6 @@
           "required": false,
           "enum": ["user", "organization", "attachment"]
         },
-        "logId": { "type": "string", "required": false },
         "requestId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
         "method": { "type": "string", "required": false },
@@ -2114,7 +2112,6 @@
           "required": false,
           "enum": ["user", "organization", "attachment"]
         },
-        "logId": { "type": "string", "required": false },
         "requestId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
         "method": { "type": "string", "required": false },
@@ -2179,7 +2176,6 @@
           "required": false,
           "enum": ["user", "organization", "attachment"]
         },
-        "logId": { "type": "string", "required": false },
         "requestId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
         "method": { "type": "string", "required": false },
@@ -2244,7 +2240,6 @@
           "required": false,
           "enum": ["user", "organization", "attachment"]
         },
-        "logId": { "type": "string", "required": false },
         "requestId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
         "method": { "type": "string", "required": false },
@@ -2370,7 +2365,6 @@
           "required": false,
           "enum": ["user", "organization", "attachment"]
         },
-        "logId": { "type": "string", "required": false },
         "requestId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
         "method": { "type": "string", "required": false },
@@ -2435,7 +2429,6 @@
           "required": false,
           "enum": ["user", "organization", "attachment"]
         },
-        "logId": { "type": "string", "required": false },
         "requestId": { "type": "string", "required": false },
         "path": { "type": "string", "required": false },
         "method": { "type": "string", "required": false },

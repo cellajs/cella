@@ -207,7 +207,6 @@ export type ApiError = {
   status: number;
   severity: 'fatal' | 'error' | 'warn' | 'info' | 'debug' | 'trace';
   entityType?: 'user' | 'organization' | 'attachment';
-  logId?: string;
   requestId?: string;
   path?: string;
   method?: string;

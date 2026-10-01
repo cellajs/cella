@@ -62,9 +62,9 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
     // A /me or /me/menu probe without a valid session shows no error.
     if (isCasualSessionAttempt && statusCode === 401) return;
 
-    // The structured console.error is the Maple SDK's capture path, and logId ties the session timeline to the backend request log.
+    // The structured console.error is the Maple SDK's capture path, and requestId ties the session timeline to the backend request log.
     if (statusCode >= 500) {
-      console.error('[api]', error.type ?? 'server_error', { logId: error.logId, path: error.path, status: statusCode });
+      console.error('[api]', error.type ?? 'server_error', { requestId: error.requestId, path: error.path, status: statusCode });
     }
 
     // Honor opt-out from query/mutation `meta`; local handler will (or already did) show its own toast.
@@ -80,9 +80,9 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
         const minutes = Math.ceil(seconds / 60);
         description = i18n.t('c:retry_in_minutes', { count: minutes });
       }
-      // Error toasts show the correlation id so users can quote it to support.
-      else if (error.severity === 'error' && error.logId) {
-        description = `Log ID: ${error.logId}`;
+      // Error toasts show the request id so users can quote it to support.
+      else if (error.severity === 'error' && error.requestId) {
+        description = `${i18n.t('c:request_id')}: ${error.requestId}`;
       }
 
       const toastType = error.severity === 'error' ? 'error' : error.severity === 'warn' ? 'warning' : 'info';

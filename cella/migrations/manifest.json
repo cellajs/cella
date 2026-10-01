@@ -1652,6 +1652,24 @@
    "pnpm check"
   ],
   "summary": "The auth_invalidate LISTEN/NOTIFY channel, listenForAuthInvalidation and the authInvalidation health component are removed. Memberships are cached under actors.bindings_version, which a trigger on memberships replaces on every write, cascades included. Sessions (with the system role and that version) are cached 10 seconds per process: the writer drops them through invalidateCache.user and revokeSessions, the API process when CDC reports a user, membership or system role change. OAuth grants and the API keys behind service tokens are read per request. invalidateCache.* clears only this process, takes no db argument and is synchronous. loadMemberships moves to middlewares/guard/membership-cache and takes the bindings version from resolveSession (ResolvedSession replaces SessionCacheEntry). pnpm generate emits the column and the trigger."
+ },
+ {
+  "id": "20261001T1658-error-request-id",
+  "version": "next",
+  "title": "Error bodies carry one request id",
+  "kind": "manual",
+  "syncBreaking": true,
+  "clientCacheBump": false,
+  "script": null,
+  "roots": [
+   "backend/src",
+   "frontend/src"
+  ],
+  "requires": [
+   "pnpm sdk",
+   "pnpm check"
+  ],
+  "summary": "The ApiError body drops logId: requestId is the single id, equal to the X-Request-Id response header and the requestId on every log line of the request. The server generates it for every request and ignores an incoming X-Request-Id; the request span records it as http.response.header.x-request-id and log lines keep the trace id as trace_id. The frontend ApiError exposes requestId, and the error toast and details panel label it with c:request_id. Apps rename their own logId reads to requestId."
  }
  ]
 }

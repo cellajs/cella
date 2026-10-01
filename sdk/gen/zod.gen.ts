@@ -143,7 +143,6 @@ export const zApiError = z.object({
   status: z.int().gte(400).lte(599),
   severity: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']),
   entityType: z.enum(['user', 'organization', 'attachment']).optional(),
-  logId: z.string().optional(),
   requestId: z.string().optional(),
   path: z.string().optional(),
   method: z.string().optional(),

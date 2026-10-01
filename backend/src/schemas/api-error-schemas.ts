@@ -23,8 +23,7 @@ export const apiErrorSchema = z
     status: errorStatusCodeSchema,
     severity: z.enum(severityLevels),
     entityType: entityTypeSchema.optional(),
-    logId: z.string().optional(),
-    /** Request id, also sent as the `X-Request-Id` response header; quote it when reporting a failure. */
+    /** Request id, also sent as the `X-Request-Id` response header and logged with the request; quote it when reporting a failure. */
     requestId: z.string().optional(),
     path: z.string().optional(),
     method: z.string().optional(),
