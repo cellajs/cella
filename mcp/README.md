@@ -4,7 +4,7 @@ This document covers the MCP worker: the app's **Model Context Protocol endpoint
 
 ### TL;DR
 
-An AI client connects to `<mcpUrl>/<tenant>/<org>/mcp` with an access token from the OAuth worker and nothing else. MCP tools are ordinary routes that carry `x-tool`; their input comes from the route's request schema and they run the same operation the REST handler runs, as the person who consented or the service account behind the token. A call outside the token's scopes answers with the scope to step up to.
+An AI client connects to `<mcpUrl>/<tenant>/<org>/mcp` with an access token from the OAuth worker and nothing else. MCP tools are ordinary routes that carry `xTool`; their input comes from the route's request schema and a call runs the route itself, as the person who consented or the service account behind the token. A call outside the token's scopes answers with the scope to step up to.
 
 ## How it fits
 
@@ -14,14 +14,14 @@ AI client (Claude Desktop, VS Code, a CI job)
         ▼
 MCP endpoint  /<tenant>/<org>/mcp
   ├─ tokenGuard → tenantGuard → orgGuard
-  ├─ tools/list: every route registered through x-tool
-  └─ tools/call: scope check, input validation, the operation in-process
+  ├─ tools/list: every route that carries xTool
+  └─ tools/call: scope check, input validation, the route in-process
         │
         ▼
-operations (the same functions the REST handlers call)
+the route: its guards, limiters, cache and handler, as for a REST request
 ```
 
-The worker is a `MODE` of the backend image: its own process on `devPorts.mcp`, or folded into the API under `singleVM`; the reverse proxy routes `/mcp/*` to it. It mounts only the MCP routes of the shared app. Concepts and faces: [Interoperability](../cella/INTEROPERABILITY.md); tokens: [OAuth worker](../oauth/README.md).
+The worker is a `MODE` of the backend image: its own process on `devPorts.mcp`, or folded into the API under `singleVM`; the reverse proxy routes `/mcp/*` to it. It serves only the MCP routes; a tool call runs through the module routes mounted in the same process, which it never serves. Concepts and faces: [Interoperability](../cella/INTEROPERABILITY.md); tokens: [OAuth worker](../oauth/README.md).
 
 ## Discovery and tokens
 
@@ -36,21 +36,17 @@ A client follows the challenge to the OAuth worker, obtains consent and a token 
 
 ## MCP tools are routes
 
-A route opts in by carrying `x-tool` in its `xRoute` config:
+A route opts in by carrying `xTool` in its `xRoute` config, after its `xGuard`, `xRateLimiter` and `xCache`:
 
 ```ts
-'x-tool': {
-  enabled: true,
+xTool: {
   description: 'Rename an attachment or replace its description.',
   approvalRequired: true,
-  category: 'attachments',
   entity: 'attachment',
-  // The transaction is server-built, so field timestamps come from the server clock.
-  execute: (ctx, { params, body }) => updateAttachmentOp(ctx, params.id, body, { serverOrigin: true }),
 },
 ```
 
-`createXRoutes` registers the route in the MCP tool registry and keeps `execute` out of the OpenAPI spec. Everything else is derived:
+The OpenAPI spec shows it under `x-tool`; the MCP endpoint builds its tools from the mounted routes that carry it. Everything else is derived:
 
 | Tool field | Source |
 | --- | --- |
@@ -60,7 +56,7 @@ A route opts in by carrying `x-tool` in its `xRoute` config:
 | `annotations` | `readOnlyHint`, `destructiveHint`, `idempotentHint` from the method |
 | `_meta.scope` | The scope, so a client can ask for it up front |
 
-`tools/list` returns every tool, not only the ones the token may call, so a client can discover what to step up to. `tools/call` validates the arguments against the route's own schemas (a refusal is a JSON-RPC `-32602` with the issues), then runs `execute` with the request context. A permission or domain error from the operation comes back as a tool result with `isError`, which a model can act on; only transport-level faults are JSON-RPC errors. The template registers the five attachment routes (list, get, create, update, delete); an app adds `x-tool` to any route whose operation takes an `OrgContext`. "Every operation is a tool" is not the default on purpose.
+`tools/list` returns every tool, not only the ones the token may call, so a client can discover what to step up to. `tools/call` validates the arguments against the route's own schemas (a refusal is a JSON-RPC `-32602` with the issues), then sends the request through the app with the caller's token: the route's guards, limiters, cache and handler run as for a REST request, and its JSON answer is the result. A permission or domain error from the route comes back as a tool result with `isError`, which a model can act on; only transport-level faults are JSON-RPC errors. The template registers the five attachment routes (list, get, create, update, delete); an app adds `xTool` to any organization route that answers JSON. "Every operation is a tool" is not the default on purpose.
 
 ## Transport
 
@@ -70,7 +66,7 @@ JSON-RPC 2.0 over Streamable HTTP with JSON responses: `initialize` (echoes the 
 
 - **Needs the OAuth worker.** Without `services.oauth` no token can exist, so every call is a 401.
 - **One organization per endpoint.** The path binds the tenant and organization; the token's audience must be this organization's MCP resource or the tenant's REST API resource, never another tenant.
-- **In-process execution.** A tool call passes the MCP route's guards (`tokenGuard` applies the per-actor burst limiter), then the operation's own permission checks; it does not pass the REST route's limiter, cache or `x-service` gate.
+- **In-process requests.** The endpoint counts its own requests against `mcpRequestLimiter` (30 per second per account). A tool call then passes the route's own guards, limiters and cache, and counts once against the per-account burst limit there, as a REST request with the same token does. A server error reaches the model as `server_error` without its message.
 - **The AI key is unrelated.** `SCW_AI_API_KEY` switches on the app's own AI features (job queues); the MCP endpoint never needs it.
 - **Tool descriptions are model-facing English.** They are not translated.
 
@@ -92,4 +88,4 @@ Configuration and environment (the backend's `.env` and `appConfig`):
 | `DATABASE_URL`, `DATABASE_SSL_CA` | The runtime database role |
 | `SCW_AI_API_KEY` | Optional; the app's own AI features only |
 
-The backend counterpart in `backend/src/modules/mcp/` holds the JSON-RPC server, the routes and the descriptor builder; the registry is `backend/src/core/mcp-tool-registry.ts`; `mcp/src/mcp-worker.ts` is the development entry.
+The backend counterpart in `backend/src/modules/mcp/` holds the JSON-RPC server, the routes and the tools (`mcp-tools.ts`: built from the mounted routes, called through the app); `mcp/src/mcp-worker.ts` is the development entry.

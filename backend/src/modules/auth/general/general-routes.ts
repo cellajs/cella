@@ -1,7 +1,14 @@
 import { z } from '@hono/zod-openapi';
-import type { StrategyGate } from '#/core/openapi-extensions';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { crossTenantGuard, noImpersonationGuard, publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
+import {
+  crossTenantGuard,
+  noImpersonationGuard,
+  publicGuard,
+  type StrategyGate,
+  strategyEnabled,
+  sysAdminGuard,
+  userGuard,
+} from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
@@ -61,10 +68,9 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     },
   }),
   invokeToken: xRoute({
-    'x-strategy': magicLinkStrategy,
     method: 'get',
     path: '/invoke-token/{type}/{token}',
-    xGuard: [publicGuard],
+    xGuard: [strategyEnabled(magicLinkStrategy), publicGuard],
     xRateLimiter: [tokenLimiter('token')],
     middleware: isNoBot,
     summary: 'Invoke token session',

@@ -1500,6 +1500,40 @@
    "summary": "A new has.commentEmail config flag (default false) shows the comment email switch in account settings; every app adds it to shared/config/config.default.ts. Table exports write the columns the table shows and take a column's exportValue(row), with exportDate for dates and no date guessing, so app tables using Export export raw values until they set it. Notification links carry contextId (the pinned routes-config.tsx may pass it on), the instant email pass runs only after a mention, and the weekly digest reaches users without a preferences row. The tenants list normalizes stored restrictions, a failed first table load shows its error, createBaseApp builds a server app so the folded MCP worker serves its own, service-account bindings take any channel role, and changeArbitraryQueryData with its types is removed. Stories render with Tailwind. raak and projectcampus drop the fork markers these fixes supersede."
   },
   {
+   "id": "20261001T0605-route-extensions",
+   "version": "next",
+   "title": "Route extensions: gates in xGuard, xTool runs the route, revokeSessions",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests"
+   ],
+   "requires": [
+    "pnpm sdk",
+    "pnpm check"
+   ],
+   "summary": "Route props 'x-service' and 'x-strategy' are removed: their checks are gates leading xGuard, serviceEnabled(service) (404 while the service is off) and strategyEnabled(method) (400 while the sign-in method is off); routes reachable while their method is off carry no gate. 'x-tool' becomes xTool: { description, approvalRequired, entity } without enabled, category and execute, placed after xCache: an MCP tool call validates its arguments with the route's schemas and runs the route's own handler through the app with the caller's token, so the route's guards, limiters and cache apply. endSessions is revokeSessions (helpers/revoke-sessions.ts). Apps edit their own routes and calls by hand; no database change."
+  },
+  {
+   "id": "20261001T0644-title-document-template",
+   "version": "next",
+   "title": "Title documents: templated, not enforced",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "The BlockNote wrapper stops enforcing a title block: forcedTitle, forcedTitleExtension, the titleLevel menu filters, the block-0 drag-handle exclusion and the !important placeholder CSS are removed. Titled documents become a template: seed block 0 with emptyTitleDocument(level) and label it with the titlePlaceholder prop, which only an empty heading in block 0 shows. helpers/forced-title is renamed helpers/title-document; titleFromBlocks is replaced by titleFromDocument in shared/blocknote, which nameFromDocument uses too, so frontend and backend read the same title (block 0 inline text, no children or media file name). splitTitleBlocks keeps a non-text block 0 in the body, empty heading placeholders keep heading typography, and nameFromDocument clamps the derived name to 255 characters. Apps that passed forcedTitle swap it for titlePlaceholder and headingLevels without the title's level and above, keep required-title checks in their forms, switch titleFromBlocks imports to shared/blocknote, and drop any call-site code that re-adds a non-text block 0 to the split body."
+  },
+  {
    "id": "20261001T0710-mentions-from-body",
    "version": "next",
    "title": "Mentions read from the body, one document derivation, comment emails",

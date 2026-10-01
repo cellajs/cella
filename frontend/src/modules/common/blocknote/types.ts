@@ -83,8 +83,8 @@ export type CommonBlockNoteProps = {
   emojis?: boolean;
   excludeBlockTypes?: CustomBlockRegularTypes[];
   excludeFileBlockTypes?: CustomBlockFileTypes[];
-  /** Forced-title mode: block 0 is a heading acting as document title. `true` pins level 1; `{ level }` sets it lower. */
-  forcedTitle?: boolean | { level: TitleLevel };
+  /** Labels an empty heading in block 0, the title of a title document (helpers/title-document). */
+  titlePlaceholder?: string;
   extensions?: ExtensionFactoryInstance[];
   members?: Member[]; // for mentions
   onFocus?: () => void;
@@ -101,9 +101,7 @@ export type CustomBlockNoteMenuProps = {
   editor: CustomBlockNoteEditor;
   allowedTypes: CustomBlockTypes[];
   headingLevels: NonNullable<CommonBlockNoteProps['headingLevels']>;
-  /** Forced-title mode: menus hide headings at or above this level for body blocks and skip block 0 entirely. */
-  titleLevel?: TitleLevel;
 };
 
-/** Heading level a forced-title editor pins block 0 to. */
+/** Heading level of a title document's block 0 (helpers/title-document). */
 export type TitleLevel = 1 | 2 | 3;

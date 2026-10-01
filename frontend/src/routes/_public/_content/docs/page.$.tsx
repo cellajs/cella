@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { DocsPageComponent } from '~/modules/docs/page-route-components';
 import { ensureDocPageComponent, getDocPage } from '~/modules/page/content';
 import { createErrorComponent, createNotFoundComponent } from '~/routes/-route-utils';
-import { appTitle } from '~/utils/app-title';
+import { pageHead } from '~/utils/app-title';
 
 /** The splat param is the page slug and may contain slashes (e.g. architecture/sync-engine). */
 export const Route = createFileRoute('/_public/_content/docs/page/$')({
@@ -10,12 +10,7 @@ export const Route = createFileRoute('/_public/_content/docs/page/$')({
   // Title/description resolve synchronously from the docs metadata index (frontmatter)
   head: ({ params }) => {
     const page = getDocPage(params._splat ?? '');
-    return {
-      meta: [
-        { title: appTitle(page?.name ?? 'Docs') },
-        ...(page?.description ? [{ name: 'description', content: page.description }] : []),
-      ],
-    };
+    return pageHead(page?.name ?? 'Docs', page?.description);
   },
   // Resolve code-split MDX before mount to avoid a fallback flash.
   loader: async ({ params }) => {

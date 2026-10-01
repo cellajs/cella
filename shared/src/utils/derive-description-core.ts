@@ -1,7 +1,7 @@
 import type { Block } from '@blocknote/core';
 import { isRecord } from './as-record.ts';
 import { isUuid } from './entity-id.ts';
-import { getSearchableTextFromBlocks, getTextFromBlock, mediaBlockTypes } from './text-from-block.ts';
+import { getInlineTextFromBlock, getSearchableTextFromBlocks, mediaBlockTypes } from './text-from-block.ts';
 
 /** Tolerant of custom block types. */
 export type DescriptionBlock = {
@@ -88,7 +88,7 @@ export const blockPlainText = (block: DescriptionBlock): string =>
 
 /** Everything the app derives from one stored description. */
 export type DerivedDocument = {
-  /** Block 0's plain text, trimmed: the title of a document that keeps it there. */
+  /** Block 0's inline text (`titleFromDocument`): the title of a title document, empty when block 0 has none (an image). */
   name: string;
   /** Search text of every block, link and media URL terms included, whitespace-collapsed, at most 900 characters. */
   keywords: string;
@@ -152,11 +152,9 @@ export const deriveDocument = (description: string | null | undefined): DerivedD
   const parsed = description ? parseJson(description) : undefined;
   const blocks = Array.isArray(parsed) ? (parsed as DescriptionBlock[]) : [];
 
+  // The title rule of `titleFromDocument`: block 0's inline text, empty for a block without any (an image).
   const name = attempt(
-    () => {
-      const [first] = blocks;
-      return first ? getTextFromBlock(first as Block).trim() : '';
-    },
+    () => getInlineTextFromBlock(blocks[0]),
     () => '',
   );
   const keywords = attempt(

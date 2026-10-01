@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, xRoute } from '#/core/x-routes';
-import { orgGuard, tenantGuard, userGuard } from '#/middlewares/guard';
+import { orgGuard, serviceEnabled, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { productEntityTypeSchema, tenantOrgParamSchema, validIdSchema } from '#/schemas';
 
@@ -17,8 +17,7 @@ const yjsRoutes = createXRoutes(['yjs', 'cella'], {
   getYjsToken: xRoute({
     method: 'get',
     path: '/token',
-    'x-service': 'yjs',
-    xGuard: [userGuard, tenantGuard, orgGuard],
+    xGuard: [serviceEnabled('yjs'), userGuard, tenantGuard, orgGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Get Yjs token',
     description:

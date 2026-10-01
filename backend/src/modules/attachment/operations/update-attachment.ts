@@ -14,7 +14,7 @@ type UpdateAttachmentInput = z.infer<typeof attachmentUpdateStxBodySchema>;
 
 /**
  * Also the attachment's Yjs materializer: the relay calls it with `materialized` for a collaborative description.
- * `serverOrigin` stamps the fields with the server clock, for a transaction the server built (an MCP tool, the relay).
+ * `serverOrigin` stamps the fields with the server clock, for a transaction the server built (the Yjs relay).
  */
 export async function updateAttachmentOp(
   ctx: ActorContext,

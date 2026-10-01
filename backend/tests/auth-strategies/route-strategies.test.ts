@@ -6,9 +6,9 @@ import { authPasskeysRoutes } from '#/modules/auth/passkeys/passkeys-routes';
 import { authTotpsRoutes } from '#/modules/auth/totps/totps-routes';
 
 /**
- * Every route of a sign-in method declares its strategy, so switching the method off in `appConfig` refuses the route
- * before any handler runs. A route that stays reachable while its method is off (deleting a factor) says so with
- * `null` (`none` in the spec); an undeclared route fails here.
+ * Every route of a sign-in method leads its guard chain with that method's gate, so switching the method off in
+ * `appConfig` refuses the route before any handler runs. The routes that stay reachable while their method is off
+ * (deleting a factor) are listed here; any other route without the gate fails.
  */
 const strategyRoutes = {
   totp: authTotpsRoutes,
@@ -16,15 +16,26 @@ const strategyRoutes = {
   magic: authMagicLinkRoutes,
   oauth: authOAuthRoutes,
 };
+const reachableWhileOff = new Set(['deletePasskey', 'deleteTotp']);
 
-describe('auth routes declare their sign-in method', () => {
+const guardsOf = (route: object) => (route as { 'x-guard'?: string[] })['x-guard'] ?? [];
+
+describe('auth routes lead with their sign-in method gate', () => {
   for (const [method, routes] of Object.entries(strategyRoutes)) {
-    it.each(Object.entries(routes))(`${method}: %s declares x-strategy`, (_name, route) => {
-      expect(route).toHaveProperty('x-strategy');
+    const gated = Object.entries(routes).filter(([name]) => !reachableWhileOff.has(name));
+    it.each(gated)(`${method}: %s is gated first`, (_name, route) => {
+      expect(guardsOf(route)[0]).toMatch(/^strategyEnabled\(/);
     });
   }
 
+  it('leaves factor deletion reachable while its method is off', () => {
+    for (const name of reachableWhileOff) {
+      const route = { ...authPasskeysRoutes, ...authTotpsRoutes }[name as 'deletePasskey' | 'deleteTotp'];
+      expect(guardsOf(route).some((guard) => guard.startsWith('strategyEnabled('))).toBe(false);
+    }
+  });
+
   it('the token invoke route gates magic links per request', () => {
-    expect(authGeneralRoutes.invokeToken).toHaveProperty('x-strategy', 'per-request');
+    expect(guardsOf(authGeneralRoutes.invokeToken)[0]).toBe('strategyEnabled(per-request)');
   });
 });

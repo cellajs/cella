@@ -47,10 +47,22 @@ export const handleChecklistItemEnter = (editor: AnyBlockNoteEditor): boolean =>
   return true;
 };
 
+/** Turns the block at the cursor into a checklist item; returns false for blocks without inline content. */
+const convertToChecklistItem = (editor: AnyBlockNoteEditor): boolean => {
+  const { block } = editor.getTextCursorPosition();
+  if (editor.schema.blockSchema[block.type].content !== 'inline') return false;
+  editor.updateBlock(block, { type: 'checklistItem', props: { checkboxId: nanoid(12) } });
+  return true;
+};
+
 const checklistExtensions = createExtension({
   key: 'checklist-item-shortcuts' as const,
+  // The default schema keeps BlockNote's own checkListItem, whose shortcuts and input rules match the same keys
+  // and text; running first makes them create this block.
+  runsBefore: ['check-list-item-shortcuts'],
   keyboardShortcuts: {
     Enter: ({ editor }) => handleChecklistItemEnter(editor),
+    'Mod-Shift-9': ({ editor }) => convertToChecklistItem(editor),
   },
   inputRules: [
     {
@@ -59,7 +71,7 @@ const checklistExtensions = createExtension({
     },
     {
       find: /^\s?\[[Xx]]\s$/,
-      replace: () => ({ type: 'checklistItem' as const, props: { checkboxId: nanoid(12) } }),
+      replace: () => ({ type: 'checklistItem' as const, props: { checkboxId: nanoid(12), checked: true } }),
     },
   ],
 });
