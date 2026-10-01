@@ -75,7 +75,7 @@ function DrawerContent({
             data-slot="drawer-content"
             className={cn(
               // Popup is a flex child of Viewport and scrolls via overflow-y-auto.
-              'group/drawer-content flex touch-auto flex-col overflow-y-auto overscroll-contain bg-background focus-visible:outline-none',
+              'group/drawer-content flex touch-auto flex-col overflow-y-auto overscroll-contain bg-background focus-visible:outline-hidden',
               'transition-discrete transition-transform duration-300 ease-out will-change-transform',
               'data-swiping:select-none data-swiping:transition-none!',
               // Sizing by swipe direction (Viewport flex handles placement)

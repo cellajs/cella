@@ -4,7 +4,7 @@ import { useRovingTabIndex } from './hooks';
 import type { CalculatedColumn, CellMouseEventHandler, CellRendererProps, MergedSlots, TileSide } from './types';
 import { cn, createCellEvent, getCellClassname, getCellStyle, isCellEditableUtil } from './utils/grid-utils';
 
-const cellInRangeClassname = 'rdg-cell-in-range bg-primary/10 aria-selected:outline-none';
+const cellInRangeClassname = 'rdg-cell-in-range bg-primary/10 aria-selected:outline-hidden';
 const cellRangeTopClassname = 'rdg-cell-range-top border-t-2 border-t-primary';
 const cellRangeBottomClassname = 'rdg-cell-range-bottom border-b-2 border-b-primary';
 const cellRangeLeftClassname = 'rdg-cell-range-left border-l-2 border-l-primary';

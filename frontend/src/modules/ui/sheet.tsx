@@ -61,7 +61,7 @@ export function SheetContent({
       initialFocus={initialFocus}
       finalFocus={finalFocus}
       className={cn(
-        'flex flex-col bg-background shadow-lg focus-visible:outline-none',
+        'flex flex-col bg-background shadow-lg focus-visible:outline-hidden',
         !container && 'fixed z-114 transition data-closed:animate-out data-open:animate-in data-closed:duration-300 data-open:duration-300',
         !container &&
           side === 'right' &&

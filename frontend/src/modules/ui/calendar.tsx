@@ -70,7 +70,7 @@ export function Calendar({
         month_caption: cn('flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)', defaultClassNames.month_caption),
         dropdowns: cn('flex h-(--cell-size) w-full items-center justify-center gap-1.5 font-medium text-sm', defaultClassNames.dropdowns),
         dropdown_root: cn(
-          'relative rounded-md border border-input shadow-xs has-focus:border-ring has-focus:ring-2 has-focus:ring-ring',
+          'relative rounded-md border border-input shadow-xs sm:has-focus-visible:ring-2 sm:has-focus-visible:ring-ring sm:has-focus-visible:ring-offset-2 sm:has-focus-visible:ring-offset-background',
           defaultClassNames.dropdown_root,
         ),
         dropdown: cn('absolute inset-0 bg-popover opacity-0', defaultClassNames.dropdown),

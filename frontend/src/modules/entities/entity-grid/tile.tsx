@@ -25,7 +25,7 @@ export function ChannelGridTile({ entity }: { entity: ChannelTileEntity }) {
           params={params}
           search={search}
           {...pageTopHashNav}
-          className="group tile-link relative w-full focus-visible:outline-none focus-visible:ring-0"
+          className="group tile-link relative w-full focus-visible:outline-hidden focus-visible:ring-0"
         >
           <div
             className={cn('relative flex aspect-3/1 min-h-30 w-full flex-col bg-center bg-cover', !entity.bannerUrl && numberToColorClass(entity.id))}

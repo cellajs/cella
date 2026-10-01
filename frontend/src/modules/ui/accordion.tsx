@@ -17,7 +17,7 @@ export function AccordionTrigger({ className, children, ...props }: AccordionPri
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          'flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left font-medium text-sm decoration-foreground/20 underline-offset-3 outline-none transition-all hover:underline focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset group-active:decoration-foreground/50 data-disabled:pointer-events-none data-disabled:opacity-50 sm:px-3 [&[data-panel-open]>svg]:rotate-180',
+          'focus-effect flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left font-medium text-sm decoration-foreground/20 underline-offset-3 transition-all hover:underline group-active:decoration-foreground/50 data-disabled:pointer-events-none data-disabled:opacity-50 sm:px-3 [&[data-panel-open]>svg]:rotate-180',
           className,
         )}
         {...props}

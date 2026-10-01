@@ -44,9 +44,9 @@ export const SelectColumn: Column<any, any> = {
   minWidth: 35,
   maxWidth: 35,
   cellClass:
-    'rdg-cell-checkbox aria-selected:outline-none aria-selected:[&_[data-slot=checkbox]]:ring-2 aria-selected:[&_[data-slot=checkbox]]:ring-ring aria-selected:[&_[data-slot=checkbox]]:ring-offset-2 aria-selected:[&_[data-slot=checkbox]]:ring-offset-background aria-selected:[&_[data-slot=checkbox]]:rounded',
+    'rdg-cell-checkbox aria-selected:outline-hidden aria-selected:[&_[data-slot=checkbox]]:ring-2 aria-selected:[&_[data-slot=checkbox]]:ring-ring aria-selected:[&_[data-slot=checkbox]]:ring-offset-2 aria-selected:[&_[data-slot=checkbox]]:ring-offset-background aria-selected:[&_[data-slot=checkbox]]:rounded',
   headerCellClass:
-    'rdg-cell-checkbox aria-selected:outline-none aria-selected:[&_[data-slot=checkbox]]:ring-2 aria-selected:[&_[data-slot=checkbox]]:ring-ring aria-selected:[&_[data-slot=checkbox]]:ring-offset-2 aria-selected:[&_[data-slot=checkbox]]:ring-offset-background aria-selected:[&_[data-slot=checkbox]]:rounded',
+    'rdg-cell-checkbox aria-selected:outline-hidden aria-selected:[&_[data-slot=checkbox]]:ring-2 aria-selected:[&_[data-slot=checkbox]]:ring-ring aria-selected:[&_[data-slot=checkbox]]:ring-offset-2 aria-selected:[&_[data-slot=checkbox]]:ring-offset-background aria-selected:[&_[data-slot=checkbox]]:rounded',
   renderHeaderCell(props) {
     return <HeaderRenderer {...props} />;
   },

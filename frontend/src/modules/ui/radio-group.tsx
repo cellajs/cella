@@ -13,7 +13,7 @@ export function RadioGroupItem({ className, ...props }: React.ComponentProps<typ
     <Radio.Root
       data-slot="radio-group-item"
       className={cn(
-        'relative inline-flex aspect-square size-4 shrink-0 rounded-full border border-input text-primary shadow-xs outline-none transition-[color,box-shadow] focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-disabled:cursor-not-allowed data-disabled:opacity-50 dark:aria-invalid:ring-destructive/40',
+        'focus-effect relative inline-flex aspect-square size-4 shrink-0 rounded-full border border-input text-primary shadow-xs transition-[color,box-shadow] aria-invalid:border-destructive aria-invalid:ring-destructive/20 data-disabled:cursor-not-allowed data-disabled:opacity-50 dark:aria-invalid:ring-destructive/40',
         className,
       )}
       {...props}
