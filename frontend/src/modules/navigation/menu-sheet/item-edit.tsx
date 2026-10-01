@@ -46,11 +46,11 @@ export function MenuItemEdit({ item, icon: Icon }: MenuItemEditProps) {
     >
       {status === 'pending' && onlineManager.isOnline() && (
         <div className="absolute z-10">
-          <Spinner className="m-1 mr-3 h-10 w-10 p-1 text-black opacity-50 group-data-[submenu=false]/menu-options:mx-3 group-data-[submenu=false]/menu-options:my-2 group-data-[submenu=false]/menu-options:h-7 group-data-[submenu=false]/menu-options:w-7 group-data-[submenu=false]/menu-options:p-1" />
+          <Spinner className="m-1 mr-3 size-10 p-1 text-black opacity-50 group-data-[submenu=false]/menu-options:mx-3 group-data-[submenu=false]/menu-options:my-2 group-data-[submenu=false]/menu-options:size-7 group-data-[submenu=false]/menu-options:p-1" />
         </div>
       )}
       <EntityAvatar
-        className="m-2 mx-3 h-8 w-8 text-sm group-data-[submenu=false]/menu-options:mx-4 group-data-[submenu=false]/menu-options:my-1 group-data-[submenu=false]/menu-options:h-6 group-data-[submenu=false]/menu-options:w-6 group-data-[subitem=true]/options-item:text-xs group-data-[archived=true]/options-item:opacity-70"
+        className="m-2 mx-3 size-8 text-sm group-data-[submenu=false]/menu-options:mx-4 group-data-[submenu=false]/menu-options:my-1 group-data-[submenu=false]/menu-options:size-6 group-data-[subitem=true]/options-item:text-xs group-data-[archived=true]/options-item:opacity-70"
         type={item.entityType}
         id={item.id}
         icon={Icon}

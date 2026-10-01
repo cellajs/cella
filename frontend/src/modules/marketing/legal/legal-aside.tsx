@@ -93,7 +93,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                   />
                 }
               >
-                <div className="absolute left-[0.53rem] h-1 w-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/subject:bg-muted-foreground/60" />
+                <div className="absolute left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/subject:bg-muted-foreground/60" />
                 <span className="truncate">{t(label)}</span>
                 <ChevronDownIcon className="invisible ml-auto size-4 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/subject:rotate-180" />
               </CollapsibleTrigger>

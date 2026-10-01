@@ -36,7 +36,7 @@ function InfoTile({ id, namespace, layers, image, invertClassName, tileClassName
           <img
             src={`/static/marketing/features/${id}.svg`}
             alt={t(title)}
-            className={cn('mb-2 h-8 w-8 object-contain', invertClassName)}
+            className={cn('mb-2 size-8 object-contain', invertClassName)}
             loading="lazy"
           />
           <h3 className="font-medium">{t(title)}</h3>

@@ -24,7 +24,7 @@ export function OrganizationRouteComponent() {
   const tenantId = orgRouteApi.useRouteContext({ select: (c) => c.tenantId });
   const { data } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
   return (
-    <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
+    <Suspense fallback={<Spinner className="mt-[45vh] size-10" />}>
       <OrganizationPage key={data.id} organizationId={data.id} tenantId={tenantId} />
     </Suspense>
   );
@@ -69,7 +69,7 @@ export function OrganizationToolComponent() {
   const { tool } = orgToolApi.useParams();
   const { data } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
   return (
-    <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
+    <Suspense fallback={<Spinner className="mt-[45vh] size-10" />}>
       <SlotTabHost slot="organization.tabs" toolId={tool} context={data} />
     </Suspense>
   );

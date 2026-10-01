@@ -25,7 +25,7 @@ export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
   const navigate = useNavigate();
   const cellRef = useRef<HTMLButtonElement | null>(null);
 
-  const wrapClass = 'relative flex space-x-2 items-center justify-center w-full h-full';
+  const wrapClass = 'relative flex space-x-2 items-center justify-center size-full';
 
   // Table cells prefer the tiny thumbnail; non-image types have none and fall back to the mid-size preview.
   const { url } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });

@@ -22,7 +22,7 @@ export function DocsLandingPage() {
         <div className="prose dark:prose-invert max-w-none">
           <h1 className="pt-6">{docsConfig.title}</h1>
           {Content && (
-            <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" />}>
+            <Suspense fallback={<Spinner className="my-16 size-6 opacity-50" />}>
               <MDXProvider components={mdxComponents}>
                 <Content />
               </MDXProvider>

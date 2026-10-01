@@ -39,7 +39,7 @@ export function InfoCards() {
                 <img
                   src={`/static/marketing/integrations/${id}.svg`}
                   alt={name}
-                  className={cn('h-8 w-8 object-contain', invert && mode === 'dark' && 'invert')}
+                  className={cn('size-8 object-contain', invert && mode === 'dark' && 'invert')}
                   loading="lazy"
                 />
                 <span className="ml-4 font-semibold">{name}</span>

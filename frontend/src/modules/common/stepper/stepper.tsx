@@ -66,7 +66,7 @@ export function Step({ children, label, checkIcon: Check = CheckIcon, index = 0 
             tabIndex={clickable ? 0 : -1}
             className={cn(
               'pointer-events-none rounded-full p-0',
-              'h-(--step-icon-size) w-(--step-icon-size)',
+              'size-(--step-icon-size)',
               'flex items-center justify-center rounded-full border-2',
               'data-[clickable=true]:pointer-events-auto',
               'data-[active=true]:border-primary data-[active=true]:bg-primary data-[active=true]:text-primary-foreground',

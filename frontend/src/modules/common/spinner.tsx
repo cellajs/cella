@@ -7,7 +7,7 @@ export function Spinner({ className = '', noDelay = false }) {
 
   return (
     <div data-started={hasStarted} data-delay={noDelay} className="transition-all duration-300 data-[started=false]:data-[delay=false]:opacity-0">
-      <SpinnerIcon className={cn('mx-auto h-6 w-6 text-foreground opacity-50', className)} />
+      <SpinnerIcon className={cn('mx-auto size-6 text-foreground opacity-50', className)} />
     </div>
   );
 }

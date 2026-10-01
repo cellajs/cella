@@ -135,7 +135,7 @@ function DocsLayout() {
   return (
     <div ref={wrapperRef} className="contents [--docs-sidebar-width:clamp(220px,24vw,288px)]" style={sidebarWidthStyle}>
       <aside ref={sidebarRef} className="fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width) bg-background focus-view:hidden">
-        <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
+        <ScrollArea className="size-full">{sidebarContent}</ScrollArea>
         <button
           type="button"
           aria-label="Resize sidebar"

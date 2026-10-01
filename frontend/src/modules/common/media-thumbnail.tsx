@@ -20,7 +20,7 @@ export function MediaThumbnail({ url, contentType, name, className }: MediaThumb
   if (!isImage) return fallback;
 
   return (
-    <Avatar className={cn('h-8 w-8 rounded-md bg-muted', className)}>
+    <Avatar className={cn('size-8 rounded-md bg-muted', className)}>
       <AvatarImage
         src={url ?? undefined}
         alt={name}

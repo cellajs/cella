@@ -83,7 +83,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
           >
             {/* Leading dot (parent tier only) */}
             {!isRoot && (
-              <div className="absolute left-[0.53rem] h-1 w-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/page-parent:bg-muted-foreground/60" />
+              <div className="absolute left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/page-parent:bg-muted-foreground/60" />
             )}
             <span className="truncate">{page.name}</span>
             {hasChildren && (

@@ -13,7 +13,7 @@ export function AppRouter() {
   const isOnline = useOnlineManager();
 
   if (isRestoring && !isOnline) {
-    return <Spinner className="mt-[45vh] h-12 w-12" />;
+    return <Spinner className="mt-[45vh] size-12" />;
   }
 
   const handleRefresh = async () => {

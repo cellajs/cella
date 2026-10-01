@@ -125,7 +125,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
               className="justify-center opacity-60 hover:opacity-100"
               onClick={(e) => openExamplesSheet(row, e.currentTarget)}
             >
-              <BirdIcon className="h-4 w-4" />
+              <BirdIcon className="size-4" />
             </Button>
           );
         },

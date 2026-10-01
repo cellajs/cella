@@ -195,10 +195,10 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
         if (isExiting && e.propertyName === 'opacity') setPhase('idle');
       }}
       style={{ transform: `translateY(${offset}px)`, opacity, transition }}
-      className="fixed inset-x-1/2 top-0 z-300 h-8 w-8 -translate-x-1/2"
+      className="fixed inset-x-1/2 top-0 z-300 size-8 -translate-x-1/2"
     >
       <svg
-        className={cn('h-8 w-8', isActive && 'animate-spin')}
+        className={cn('size-8', isActive && 'animate-spin')}
         viewBox="0 0 40 40"
         style={isActive ? { transition: 'none' } : { transform: `rotate(${pullPosition * 2}deg)`, transition: 'transform 0.1s ease-out' }}
       >

@@ -30,7 +30,7 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: B
   if (readOnly) {
     return (
       <div className={cn('flex items-center gap-2', className)} {...compactTooltip}>
-        <EntityAvatar type="user" className="h-8 w-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
+        <EntityAvatar type="user" className="size-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
         <span className={cn('truncate', { [compactUserNameClass]: compactable })}>{user.name || '-'}</span>
       </div>
     );
@@ -58,7 +58,7 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: B
     >
       <EntityAvatar
         type="user"
-        className="h-8 w-8 group-active/cell-button:translate-y-[.05rem]"
+        className="size-8 group-active/cell-button:translate-y-[.05rem]"
         id={user.id}
         name={user.name}
         url={user.thumbnailUrl}

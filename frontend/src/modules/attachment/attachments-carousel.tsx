@@ -111,7 +111,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       isDialog={isDialog}
       opts={{ duration: 20, loop: true, startIndex: startIndexRef.current ?? 0, watchDrag }}
       plugins={isDialog ? [] : [Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })]}
-      className="group h-full w-full"
+      className="group size-full"
       setApi={handleSetApi}
     >
       {/* z-20 matches the zoom controls: at z-10 the viewer, a flex item with the same index, paints over the title. */}
@@ -139,14 +139,14 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 <span className="relative size-5">
                   <InfoIcon
                     className={cn(
-                      'absolute inset-0 h-5 w-5 transition-all duration-200 motion-reduce:transition-none',
+                      'absolute inset-0 size-5 transition-all duration-200 motion-reduce:transition-none',
                       descriptionOpen ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100',
                     )}
                     strokeWidth={1.5}
                   />
                   <ChevronUpIcon
                     className={cn(
-                      'absolute inset-0 h-5 w-5 transition-all duration-200 motion-reduce:transition-none',
+                      'absolute inset-0 size-5 transition-all duration-200 motion-reduce:transition-none',
                       descriptionOpen ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0',
                     )}
                     strokeWidth={1.5}
@@ -163,7 +163,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 className="-my-1 size-8 opacity-70 hover:opacity-100"
                 onClick={() => window.open(currentItem.url, '_blank')}
               >
-                <ExternalLinkIcon className="h-5 w-5" strokeWidth={1.5} />
+                <ExternalLinkIcon className="size-5" strokeWidth={1.5} />
               </Button>
             )}
 
@@ -177,7 +177,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 className="-my-1 size-8 opacity-70 hover:opacity-100"
                 onClick={() => download(currentItem.url, currentItem.filename || 'file')}
               >
-                {isInProgress ? <Spinner className="size-5 text-foreground/80" noDelay /> : <DownloadIcon className="h-5 w-5" strokeWidth={1.5} />}
+                {isInProgress ? <Spinner className="size-5 text-foreground/80" noDelay /> : <DownloadIcon className="size-5" strokeWidth={1.5} />}
               </Button>
             )}
 

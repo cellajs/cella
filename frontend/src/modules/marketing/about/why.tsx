@@ -44,7 +44,7 @@ export function Why() {
         </div>
       </div>
       <div className="w-full lg:w-7/12">
-        <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
+        <Suspense fallback={<Spinner className="mt-[45vh] size-10" />}>
           <DeviceMockup className="-top-2 lg:relative lg:ml-8 lg:w-[54vw]" type="pc" lightItems={whyLightSlides} darkItems={whyDarkSlides} />
         </Suspense>
       </div>

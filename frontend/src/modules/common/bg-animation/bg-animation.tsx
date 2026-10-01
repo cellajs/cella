@@ -33,9 +33,9 @@ export function BgAnimation() {
   return (
     <div
       data-waited={hasWaited}
-      className="fixed top-0 left-0 h-full w-full transition-opacity delay-1000 duration-1000 data-[waited=false]:opacity-0 data-[waited=true]:opacity-100"
+      className="fixed top-0 left-0 size-full transition-opacity delay-1000 duration-1000 data-[waited=false]:opacity-0 data-[waited=true]:opacity-100"
     >
-      <canvas id="animation-canvas" className="absolute z-[-1] h-full w-full opacity-30" />
+      <canvas id="animation-canvas" className="absolute z-[-1] size-full opacity-30" />
     </div>
   );
 }

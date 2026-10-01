@@ -14,7 +14,7 @@ export function UserSheet({ id, organizationId }: { id: string; organizationId: 
 
   const { data: user, isLoading, isError } = useQuery({ ...userQueryOptions(id) });
 
-  if (isLoading) return <Spinner className="mt-[45vh] h-10 w-10" />;
+  if (isLoading) return <Spinner className="mt-[45vh] size-10" />;
   if (isError) return <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed" />;
 
   if (!user)

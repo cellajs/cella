@@ -48,7 +48,7 @@ export function AttachmentRender({
   const isMobile = useBreakpointBelow('sm');
   const { download, isInProgress } = useDownloader();
 
-  if (!url) return <Spinner className="mt-[45vh] h-12 w-12" />;
+  if (!url) return <Spinner className="mt-[45vh] size-12" />;
 
   // Only the container itself is the backdrop: clicks on media or controls bubble here but fail the target check.
   const handleBackdropClick = onBackdropClick
@@ -72,7 +72,7 @@ export function AttachmentRender({
               backdropDismiss={!!onBackdropClick}
             />
           ) : (
-            <img src={url} alt={altName} className={cn(itemClassName, onBackdropClick ? 'max-h-full max-w-full' : 'h-full w-full')} />
+            <img src={url} alt={altName} className={cn(itemClassName, onBackdropClick ? 'max-h-full max-w-full' : 'size-full')} />
           ))}
         {type.includes('audio') && <RenderAudio src={url} className="mx-auto -mt-48 h-20 w-[80vw]" />}
         {type.includes('video') && <RenderVideo src={url} className="mx-auto max-h-full max-w-7xl" />}

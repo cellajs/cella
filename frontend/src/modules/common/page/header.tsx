@@ -39,7 +39,7 @@ export function PageHeader({ entity, panel, parents, parent, ...coverProps }: Pa
           type={entity.entityType}
           url={entity.thumbnailUrl}
           className={
-            entity.entityType === 'user' ? 'mx-3 -mt-13 h-26 w-26 rounded-full text-4xl shadow-[0_0_0_4px_rgba(0,0,0,0.1)]' : 'm-2 h-12 w-12 text-xl'
+            entity.entityType === 'user' ? 'mx-3 -mt-13 size-26 rounded-full text-4xl shadow-[0_0_0_4px_rgba(0,0,0,0.1)]' : 'm-2 size-12 text-xl'
           }
         />
 

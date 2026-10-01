@@ -25,7 +25,7 @@ export function ConfirmSignInPage() {
 
   const { data, isLoading, isError } = useQuery(pendingMagicLinkQueryOptions);
 
-  if (isLoading) return <Spinner className="h-10 w-10" />;
+  if (isLoading) return <Spinner className="size-10" />;
 
   if (isError || !data) {
     return (

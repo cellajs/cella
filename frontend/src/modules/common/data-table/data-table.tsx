@@ -141,7 +141,7 @@ export function DataTable<TData>({
   const renderers = useMemo(() => ({ renderRow, renderCell }), [renderRow, renderCell]);
 
   return (
-    <div className={cn('mb-4 h-full w-full md:mb-8', className)}>
+    <div className={cn('mb-4 size-full md:mb-8', className)}>
       {/* A failed first load has no rows, so the skeleton shows only while no error is known. */}
       {(isLoading || !rows) && !error ? (
         <DataTableSkeleton
@@ -151,7 +151,7 @@ export function DataTable<TData>({
           columnCount={columns.filter((column) => !column.hidden).length}
         />
       ) : error && !rows?.length ? (
-        <div className="flex h-full w-full flex-col items-center justify-center bg-background text-muted-foreground">
+        <div className="flex size-full flex-col items-center justify-center bg-background text-muted-foreground">
           <div className="my-8 text-center text-red-600 text-sm">{error.message}</div>
         </div>
       ) : !rows?.length ? (

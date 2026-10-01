@@ -30,7 +30,7 @@ export function Totp() {
     if (!steppedUp) return;
 
     useDialoger.getState().create(
-      <Suspense fallback={<Skeleton className="mx-auto my-3 h-72.75 w-72.75" />}>
+      <Suspense fallback={<Skeleton className="mx-auto my-3 size-72.75" />}>
         <SetupTotp />
       </Suspense>,
       {

@@ -88,8 +88,8 @@ function ContactFormMap() {
         <ErrorNotice boundary="app" error={error as ErrorNoticeError} resetErrorBoundary={resetErrorBoundary} />
       )}
     >
-      <div className="h-full w-full">
-        <div className="h-full w-full overflow-hidden rounded-sm bg-accent">
+      <div className="size-full">
+        <div className="size-full overflow-hidden rounded-sm bg-accent">
           <APIProvider apiKey={appConfig.googleMapsKey} libraries={['marker']}>
             <AnimatePresence>
               {hasStarted && (
@@ -99,7 +99,7 @@ function ContactFormMap() {
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   transition={{ duration: 0.5, delay: 1 }}
-                  className="h-full w-full"
+                  className="size-full"
                 >
                   <GMap
                     mapId={mapConfig.mapId || null}

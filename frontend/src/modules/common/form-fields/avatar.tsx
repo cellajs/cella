@@ -59,7 +59,7 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
         <FormItem>
           <FormLabel>{label}</FormLabel>
           <div className="flex gap-4">
-            <EntityAvatar type={type} className="h-16 w-16 text-3xl" id={entity.id} name={entity.name} url={url} />
+            <EntityAvatar type={type} className="size-16 text-3xl" id={entity.id} name={entity.name} url={url} />
 
             <div className="flex flex-col gap-2">
               {appConfig.has.uploadEnabled ? (

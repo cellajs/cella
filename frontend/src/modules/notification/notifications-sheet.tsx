@@ -78,7 +78,7 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
     <>
       <EntityAvatar
         type="user"
-        className={cn('h-8 w-8 shrink-0', notification.readAt && 'opacity-70')}
+        className={cn('size-8 shrink-0', notification.readAt && 'opacity-70')}
         id={actor?.id ?? 'unknown'}
         name={actor?.name ?? ''}
         url={actor?.thumbnailUrl ?? null}

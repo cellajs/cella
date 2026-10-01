@@ -19,7 +19,7 @@ export const toggleVariants = cva(
         xs: 'h-7 px-2',
         sm: 'h-9 px-2.5',
         lg: 'h-11 px-5',
-        tile: '!rounded-xl h-full w-full',
+        tile: '!rounded-xl size-full',
       },
     },
     defaultVariants: { variant: 'default', size: 'default' },

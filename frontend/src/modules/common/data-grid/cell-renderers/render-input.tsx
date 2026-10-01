@@ -8,7 +8,7 @@ export function EditCellInput({ className, type, ...props }: React.ComponentProp
       type={type}
       data-slot="edit-cell-input"
       className={cn(
-        'h-full w-full min-w-0 bg-transparent px-3 text-sm outline-hidden placeholder:text-muted-foreground',
+        'size-full min-w-0 bg-transparent px-3 text-sm outline-hidden placeholder:text-muted-foreground',
         'selection:bg-primary selection:text-primary-foreground',
         'disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50',
         className,

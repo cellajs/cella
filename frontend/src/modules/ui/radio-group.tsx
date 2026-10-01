@@ -18,7 +18,7 @@ export function RadioGroupItem({ className, ...props }: React.ComponentProps<typ
       )}
       {...props}
     >
-      <Radio.Indicator data-slot="radio-group-indicator" className="relative flex h-full w-full items-center justify-center">
+      <Radio.Indicator data-slot="radio-group-indicator" className="relative flex size-full items-center justify-center">
         <CircleIcon className="absolute top-1/2 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 fill-primary" />
       </Radio.Indicator>
     </Radio.Root>

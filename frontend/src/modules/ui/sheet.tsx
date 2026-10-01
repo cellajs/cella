@@ -71,12 +71,12 @@ export function SheetContent({
           'data-closed:slide-out-to-left data-open:slide-in-from-left inset-y-0 left-0 h-full w-[95vw] sm:w-[90vw] lg:max-w-4xl',
         !container && side === 'top' && 'data-closed:slide-out-to-top data-open:slide-in-from-top inset-x-0 top-0 h-auto',
         !container && side === 'bottom' && 'data-closed:slide-out-to-bottom data-open:slide-in-from-bottom inset-x-0 bottom-0 h-auto',
-        container && 'relative h-full w-full',
+        container && 'relative size-full',
         className,
       )}
       {...props}
     >
-      <ScrollArea className="h-full w-full" viewportClassName="touch-pan-y" autoScrollOnDrag={autoScrollOnDrag}>
+      <ScrollArea className="size-full" viewportClassName="touch-pan-y" autoScrollOnDrag={autoScrollOnDrag}>
         {children}
       </ScrollArea>
     </SheetPrimitive.Popup>

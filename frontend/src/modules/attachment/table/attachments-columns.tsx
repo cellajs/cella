@@ -133,7 +133,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
         minBreakpoint: 'md',
         width: 100,
         renderCell: ({ row }) => (
-          <div className="group relative inline-flex h-full w-full items-center gap-1 text-muted-foreground/70">{formatBytes(row.size)}</div>
+          <div className="group relative inline-flex size-full items-center gap-1 text-muted-foreground/70">{formatBytes(row.size)}</div>
         ),
       },
       {
@@ -147,7 +147,7 @@ export const useColumns = (channel: EnrichedChannel, isSheet: boolean) => {
 
           return (
             <span
-              className="inline-flex h-full w-full items-center"
+              className="inline-flex size-full items-center"
               data-tooltip={outsideSeenWindow ? 'true' : undefined}
               data-tooltip-content={outsideSeenWindow ? t('c:views_retention_hint') : undefined}
             >

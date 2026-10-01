@@ -54,7 +54,7 @@ export const useColumns = () => {
         >
           <EntityAvatar
             type="organization"
-            className="h-8 w-8 group-active/cell-button:translate-y-[.05rem]"
+            className="size-8 group-active/cell-button:translate-y-[.05rem]"
             id={row.id}
             name={row.name}
             url={row.thumbnailUrl}

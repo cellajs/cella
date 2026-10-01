@@ -302,7 +302,7 @@ export function SyncDiagram() {
       >
         {/* SVG overlay drawn in real pixel space and re-measured on resize. */}
         {geom && (
-          <svg className="absolute inset-0 h-full w-full" viewBox={`0 0 ${geom.width} ${geom.height}`} aria-hidden="true">
+          <svg className="absolute inset-0 size-full" viewBox={`0 0 ${geom.width} ${geom.height}`} aria-hidden="true">
             <title>Cella sync engine data flow</title>
 
             <g>

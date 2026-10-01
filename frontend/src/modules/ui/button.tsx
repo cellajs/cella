@@ -33,7 +33,7 @@ export const buttonVariants = cva(
         xs: 'h-8 gap-1.5 rounded-md px-2',
         sm: 'h-9 gap-1.5 rounded-md px-3',
         lg: 'h-11 rounded-md px-4',
-        icon: 'h-10 w-10',
+        icon: 'size-10',
         cell: 'h-full px-0 py-0',
         xl: 'h-14 rounded-lg px-6 text-lg',
         auto: 'h-auto',
