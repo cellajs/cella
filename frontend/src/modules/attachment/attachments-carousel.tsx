@@ -121,7 +121,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
             {/* The visible name is the dialog's accessible name; with no name, a screen-reader-only title labels it. */}
             {currentItem.name ? (
               <DialogTitle className="ml-1 flex h-6 min-w-0 items-center gap-2 truncate text-base leading-6 tracking-tight max-sm:text-sm">
-                {currentItem.contentType && <FilePlaceholder contentType={currentItem.contentType} className="icon-md shrink-0" strokeWidth={2} />}
+                {currentItem.contentType && <FilePlaceholder contentType={currentItem.contentType} className="size-4 shrink-0" strokeWidth={2} />}
                 <span className="truncate">{currentItem.name}</span>
               </DialogTitle>
             ) : (

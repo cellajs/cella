@@ -97,7 +97,7 @@ function MenuItemEditButton({ icon: Icon, title, onClick, subitem = false }: Men
       aria-label={`Click ${title}`}
       onClick={onClick}
     >
-      <Icon className={cn('mr-1.5', subitem ? 'icon-xs' : 'size-[0.8125rem]')} />
+      <Icon className={cn('mr-1.5', subitem ? 'size-3' : 'size-3.25')} />
       {title}
     </Button>
   );

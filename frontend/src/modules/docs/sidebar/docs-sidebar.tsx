@@ -63,7 +63,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
             aria-label={t('c:search')}
             onClick={() => openDocsSearch(searchTriggerRef)}
           >
-            <SearchIcon className="icon-lg" />
+            <SearchIcon className="size-5" />
           </Button>
           <UserTheme buttonClassName="size-9" />
         </div>

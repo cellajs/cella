@@ -101,7 +101,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       maxWidth: 32,
       cellClass: 'cursor-grab flex items-center justify-center',
       rowDragHandle: true,
-      renderCell: () => <GripVerticalIcon className="icon-sm text-muted-foreground/50" />,
+      renderCell: () => <GripVerticalIcon className="size-3.5 text-muted-foreground/50" />,
     },
     {
       key: 'label',
@@ -135,7 +135,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       headerCellClass: 'text-center',
       renderCell: ({ row }) =>
         row.locked ? (
-          <LockIcon className="icon-sm opacity-50" aria-label={t('c:locked')} />
+          <LockIcon className="size-3.5 opacity-50" aria-label={t('c:locked')} />
         ) : (
           <Switch checked={row.visible} onCheckedChange={(visible) => toggleHidden(row.id, visible)} />
         ),

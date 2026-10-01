@@ -26,7 +26,7 @@ export function MenuSheetItems({ data, type, isArchived, options, className }: M
     options?.createAction ? (
       <div className="flex items-center">
         <Button ref={buttonRef} className="w-full" variant="ghost" onClick={() => options.createAction?.(buttonRef)}>
-          <PlusIcon className="icon-sm" />
+          <PlusIcon className="size-3.5" />
           <span className="ml-1 text-sm">
             {t('c:create_your_first')} {t(type).toLowerCase()}
           </span>

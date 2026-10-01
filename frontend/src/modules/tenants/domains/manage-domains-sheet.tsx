@@ -45,7 +45,7 @@ export function ManageDomainsContent({ tenant }: ManageDomainsContentProps) {
 
       {isLoading && (
         <div className="flex justify-center py-4">
-          <LoaderCircleIcon className="icon-lg animate-spin text-muted-foreground" />
+          <LoaderCircleIcon className="size-5 animate-spin text-muted-foreground" />
         </div>
       )}
 

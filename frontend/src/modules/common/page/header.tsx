@@ -62,7 +62,7 @@ export function PageHeader({ entity, panel, parents, parent, ...coverProps }: Pa
                         </BreadcrumbLink>
                       </BreadcrumbItem>
                       <BreadcrumbSeparator className="text-foreground/50">
-                        <ChevronRightIcon className="icon-xs" />
+                        <ChevronRightIcon className="size-3" />
                       </BreadcrumbSeparator>
                     </Fragment>
                   );

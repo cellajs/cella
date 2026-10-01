@@ -47,7 +47,7 @@ export function ServiceAccountTile({ account, path }: ServiceAccountTileProps) {
         {data && live.length === 0 && <p className="text-muted-foreground text-xs">{t('c:no_resource_yet', { resource: t('c:api_key_other') })}</p>}
         {live.map((apiKey) => (
           <div key={apiKey.id} className="flex items-center gap-3 text-sm">
-            <KeyRoundIcon className="icon-sm shrink-0" />
+            <KeyRoundIcon className="size-3.5 shrink-0" />
             <div className="flex min-w-0 flex-1 flex-col">
               <span className="truncate">{apiKey.name}</span>
               <span className="truncate font-mono text-muted-foreground text-xs">

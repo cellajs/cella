@@ -70,7 +70,7 @@ export function SetupTotp() {
   return (
     <div className="group flex flex-col space-y-2">
       <div className="flex items-center justify-center gap-2">
-        <CircleAlertIcon className="icon-sm shrink-0 text-amber-500" />
+        <CircleAlertIcon className="size-3.5 shrink-0 text-amber-500" />
         <div className="text-muted-foreground text-sm">
           <span>{t('c:totp_manual.footer_description')}</span>
           <Button ref={triggerRef} variant="none" className="inline h-auto cursor-pointer p-0 underline" onClick={openManualKey}>
@@ -84,7 +84,7 @@ export function SetupTotp() {
         <div className="flex flex-col items-center gap-3 py-2">
           <p className="text-muted-foreground text-sm">{t('c:totp_qr.expired')}</p>
           <Button variant="plain" onClick={regenerate}>
-            <RefreshCwIcon className="icon-sm" />
+            <RefreshCwIcon className="size-3.5" />
             {t('c:refresh')}
           </Button>
         </div>

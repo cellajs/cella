@@ -69,7 +69,7 @@ export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
         aria-label="changeTheme"
         onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
       >
-        {mode === 'light' ? <SunIcon className="icon-lg" /> : <MoonIcon className="icon-lg" />}
+        {mode === 'light' ? <SunIcon className="size-5" /> : <MoonIcon className="size-5" />}
       </Button>
     );
   }
@@ -131,7 +131,7 @@ export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
       aria-label="Change theme"
       onClick={openDropdown}
     >
-      {mode === 'light' ? <SunIcon className="icon-lg" /> : <MoonIcon className="icon-lg" />}
+      {mode === 'light' ? <SunIcon className="size-5" /> : <MoonIcon className="size-5" />}
     </Button>
   );
 }

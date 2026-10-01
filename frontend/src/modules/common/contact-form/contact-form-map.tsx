@@ -35,7 +35,7 @@ function MarkerWithInfoWindow({ position }: { position: { lat: number; lng: numb
             <div className="flex items-center justify-between">
               <strong className="text-sm">{appConfig.company.name}</strong>
               <Button onClick={() => setInfowindowOpen(false)} size="micro" variant="ghost">
-                <XIcon className="icon-sm" />
+                <XIcon className="size-3.5" />
               </Button>
             </div>
             <span className="block">{appConfig.company.streetAddress}</span>
@@ -46,9 +46,9 @@ function MarkerWithInfoWindow({ position }: { position: { lat: number; lng: numb
               className="focus-effect mt-1 flex rounded-md p-1 font-semibold"
               rel="noreferrer"
             >
-              <MilestoneIcon strokeWidth={2.5} className="icon-xs mr-1" />
+              <MilestoneIcon strokeWidth={2.5} className="mr-1 size-3" />
               {t('c:get_directions')}
-              <ArrowUpRightIcon className="icon-xs ml-1 opacity-50" />
+              <ArrowUpRightIcon className="ml-1 size-3 opacity-50" />
             </a>
           </div>
         </InfoWindow>
@@ -64,10 +64,10 @@ function CustomZoomControl({ controlPosition, zoom, onZoomChange }: CustomZoomCo
     <MapControl position={controlPosition}>
       <div className="m-2 flex flex-col p-1">
         <Button onClick={() => onZoomChange(zoom + 0.5)} size="micro" variant="outlineGhost" className="rounded-b-none border-b-0">
-          <PlusIcon className="icon-sm" />
+          <PlusIcon className="size-3.5" />
         </Button>
         <Button onClick={() => onZoomChange(zoom - 0.5)} size="micro" variant="outlineGhost" className="rounded-t-none">
-          <MinusIcon className="icon-sm" />
+          <MinusIcon className="size-3.5" />
         </Button>
       </div>
     </MapControl>

@@ -96,7 +96,7 @@ export function Pricing() {
                 {Array.from({ length: featureCount }).map((_, featureIndex) => (
                   // biome-ignore lint/suspicious/noArrayIndexKey: list is static and will not be reordered
                   <li key={`${id}-${featureIndex}`} className="flex items-center text-sm">
-                    <CheckIcon className="icon-xl mr-2 p-1 text-sm text-success" />
+                    <CheckIcon className="mr-2 size-6 p-1 text-sm text-success" />
                     {t(`about:pricing.plan_${planIndex + 1}.${featureIndex + 1}` as TKey)}
                   </li>
                 ))}

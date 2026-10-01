@@ -195,7 +195,7 @@
                     "group": ["lucide-react"],
                     "importNamePattern": "([A-Za-z0-9]+Icon|LucideProps|LucideProvider)",
                     "invertImportNamePattern": true,
-                    "message": "Use the *Icon-suffixed lucide name (BellIcon, not Bell). Size icons with classes (icon-xs…icon-xl / size-*), never the `size` prop — the global svg.lucide rule overrides its px attributes."
+                    "message": "Use the *Icon-suffixed lucide name (BellIcon, not Bell). Size icons with size-* classes, never the `size` prop — the global svg.lucide rule overrides its px attributes."
                   }
                 ]
               }
@@ -236,7 +236,7 @@
                     "group": ["lucide-react"],
                     "importNamePattern": "([A-Za-z0-9]+Icon|LucideProps|LucideProvider)",
                     "invertImportNamePattern": true,
-                    "message": "Use the *Icon-suffixed lucide name (BellIcon, not Bell). Size icons with classes (icon-xs…icon-xl / size-*), never the `size` prop — the global svg.lucide rule overrides its px attributes."
+                    "message": "Use the *Icon-suffixed lucide name (BellIcon, not Bell). Size icons with size-* classes, never the `size` prop — the global svg.lucide rule overrides its px attributes."
                   }
                 ]
               }

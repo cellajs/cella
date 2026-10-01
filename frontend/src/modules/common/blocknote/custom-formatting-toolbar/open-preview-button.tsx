@@ -27,7 +27,7 @@ export function FileOpenPreviewButton() {
       onClick={() => openAttachment(editor, ref, blockUrl)}
       mainTooltip={'Open attachment preview'}
       label={'Open attachment preview'}
-      icon={<ScalingIcon className="icon-sm" />}
+      icon={<ScalingIcon className="size-3.5" />}
     />
   );
 }

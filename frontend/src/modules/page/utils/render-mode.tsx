@@ -24,7 +24,7 @@ export function RenderModeLabel({ mode, label, className = 'flex items-center ga
   const Icon = renderModeIcons[mode] ?? FileTextIcon;
   return (
     <span className={className}>
-      <Icon className="icon-sm shrink-0 text-muted-foreground" />
+      <Icon className="size-3.5 shrink-0 text-muted-foreground" />
       <span className="truncate">{label}</span>
     </span>
   );

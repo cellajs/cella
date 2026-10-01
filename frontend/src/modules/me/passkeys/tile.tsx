@@ -35,7 +35,7 @@ export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPassk
             <span className="text-sm max-sm:hidden">{passkey.deviceName || t('c:unknown_device')}</span>
             <TooltipButton toolTipContent={passkey.nameOnDevice} side="top">
               <Badge size="xs" variant="outline" className="max-w-48 truncate">
-                <KeyRoundIcon className="icon-xs shrink-0" />
+                <KeyRoundIcon className="size-3 shrink-0" />
                 <span className="truncate">{passkey.nameOnDevice}</span>
               </Badge>
             </TooltipButton>
@@ -61,7 +61,7 @@ export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPassk
             >
               <div className="group-data-[expanded=true]/tile:hidden">More</div>
               <div className="group-data-[expanded=false]/tile:hidden">Less</div>
-              <ChevronDownIcon className={cn('icon-xs ml-1 transition-transform', expanded && 'rotate-180')} />
+              <ChevronDownIcon className={cn('ml-1 size-3 transition-transform', expanded && 'rotate-180')} />
             </Button>
           </div>
         </div>

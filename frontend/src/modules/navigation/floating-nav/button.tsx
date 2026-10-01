@@ -70,7 +70,7 @@ export function FloatingNavButton({ id, icon: Icon, onClick, ariaLabel, classNam
       )}
       aria-label={ariaLabel ?? 'Navigate'}
     >
-      <Icon className="icon-xl" />
+      <Icon className="size-6" />
     </Button>
   );
 }

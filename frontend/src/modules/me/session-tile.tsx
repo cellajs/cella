@@ -53,7 +53,7 @@ export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending 
             <div className="flex items-center gap-2 empty:hidden">
               {session.type === 'mfa' && (
                 <Badge size="xs" variant="outline" className="border-green-600 text-green-600">
-                  <ShieldCheckIcon className="icon-xs" />
+                  <ShieldCheckIcon className="size-3" />
                   {t('c:mfa_short')}
                 </Badge>
               )}
@@ -119,7 +119,7 @@ export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending 
             >
               <div className="group-data-[expanded=true]/tile:hidden">More</div>
               <div className="group-data-[expanded=false]/tile:hidden">Less</div>
-              <ChevronDownIcon className={cn('icon-xs ml-1 transition-transform', expanded && 'rotate-180')} />
+              <ChevronDownIcon className={cn('ml-1 size-3 transition-transform', expanded && 'rotate-180')} />
             </Button>
           </div>
         </div>

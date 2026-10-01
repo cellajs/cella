@@ -20,7 +20,7 @@ export function CopyButton({ value }: CopyButtonProps) {
       onClick={handleCopy}
       title="Copy to clipboard"
     >
-      {copied ? <CheckIcon className="icon-xs" /> : <CopyIcon className="icon-xs" />}
+      {copied ? <CheckIcon className="size-3" /> : <CopyIcon className="size-3" />}
     </button>
   );
 }

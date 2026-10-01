@@ -135,7 +135,7 @@ export function MarketingNav() {
                 size="icon"
                 onClick={() => openInNewTab(appConfig.company.githubUrl)}
               >
-                <GithubIcon className="icon-xl" />
+                <GithubIcon className="size-6" />
               </Button>
             )}
 
@@ -169,7 +169,7 @@ export function MarketingNav() {
                   openInNewTab(appConfig.company.githubUrl);
                 }}
               >
-                <GithubIcon className="icon-xl mr-2" />
+                <GithubIcon className="mr-2 size-6" />
                 Github
               </Button>
             )}
