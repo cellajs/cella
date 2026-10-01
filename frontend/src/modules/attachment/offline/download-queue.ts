@@ -106,11 +106,7 @@ async function addNew(entries: DownloadQueueEntry[]): Promise<void> {
 }
 
 /** Whether an existing entry goes back to `pending`; other rows stay untouched so the table acts as the dedupe registry. */
-function shouldRevive(
-  entry: DownloadQueueEntry,
-  attachment: Attachment,
-  config: NonNullable<typeof appConfig.localBlobStorage>,
-): boolean {
+function shouldRevive(entry: DownloadQueueEntry, attachment: Attachment, config: NonNullable<typeof appConfig.localBlobStorage>): boolean {
   // Queued before its keys had synced; now they have.
   if (entry.status === 'skipped' && entry.skipReason === SKIP_REASON_NO_ORIGINAL_KEY && attachment.keys?.original) {
     return true;

@@ -50,9 +50,7 @@ export function ManageDomainsContent({ tenant }: ManageDomainsContentProps) {
       )}
 
       {!isLoading && domains.length === 0 && (
-        <p className="py-4 text-center text-muted-foreground text-sm">
-          {t('c:no_resource_yet', { resource: t('c:domain_other').toLowerCase() })}
-        </p>
+        <p className="py-4 text-center text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t('c:domain_other').toLowerCase() })}</p>
       )}
 
       <div className="space-y-2">

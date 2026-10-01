@@ -54,11 +54,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
   const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
 
   // SendIcon newsletter
-  const { mutate: _sendNewsletter, isPending } = useMutation<
-    SendNewsletterResponse,
-    ApiError,
-    MutationData<SendNewsletterData>
-  >({
+  const { mutate: _sendNewsletter, isPending } = useMutation<SendNewsletterResponse, ApiError, MutationData<SendNewsletterData>>({
     mutationFn: async ({ body, query }) => {
       return await sendNewsletter({ body, query });
     },
@@ -76,11 +72,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
     // @blocknote/core off the boot path for everyone who never opens this form.
     const { blocksToHTML } = await import('~/modules/common/blocknote/helpers/blocknote-helpers');
     // Set organizationIds here to avoind having them in draft & converting string blocks to HTML
-    const body = {
-      ...data,
-      organizationIds,
-      content: blocksToHTML(data.content),
-    };
+    const body = { ...data, organizationIds, content: blocksToHTML(data.content) };
     _sendNewsletter({ body, query: { toSelf: !!testOnly } });
   };
 
@@ -124,11 +116,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
             className:
               'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-effect disabled:cursor-not-allowed disabled:opacity-50',
             // Newsletter images go to the public bucket under the system prefix, where email clients load them.
-            baseFilePanelProps: {
-              mediaMode: 'public-no-attachment',
-              templateId: 'newsletter',
-              organizationId: systemUploadPrefix,
-            },
+            baseFilePanelProps: { mediaMode: 'public-no-attachment', templateId: 'newsletter', organizationId: systemUploadPrefix },
             excludeFileBlockTypes: ['video', 'audio', 'file'],
           }}
         />
@@ -163,22 +151,11 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
           <SubmitButton disabled={!canSend()} loading={isPending} icon={<SendIcon />}>
             {testOnly ? t('c:send_test_email') : t('c:send')}
           </SubmitButton>
-          <Button
-            type="reset"
-            variant="secondary"
-            className={isDirty() ? '' : 'invisible'}
-            aria-label={t('c:cancel')}
-            onClick={cancel}
-          >
+          <Button type="reset" variant="secondary" className={isDirty() ? '' : 'invisible'} aria-label={t('c:cancel')} onClick={cancel}>
             {t('c:cancel')}
           </Button>
           <div className="flex items-center gap-2 max-sm:mt-2">
-            <Checkbox
-              id="testOnly"
-              checked={testOnly}
-              onCheckedChange={(value) => setTestOnly(value)}
-              className="ml-4 size-4"
-            />
+            <Checkbox id="testOnly" checked={testOnly} onCheckedChange={(value) => setTestOnly(value)} className="ml-4 size-4" />
             <label htmlFor="testOnly" className="items-center text-sm">
               {t('c:test_email')}
             </label>

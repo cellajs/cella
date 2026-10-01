@@ -1,11 +1,7 @@
 import { type AncestorSource, entityIdColumnKey, entityIdColumnName } from './resolve-row-channel.ts';
 
 /** Organization-first path from the populated ancestor ids. Null when the organization id is missing. */
-export function computeAncestorPath(
-  hierarchy: AncestorSource,
-  entityType: string,
-  row: Record<string, unknown>,
-): string | null {
+export function computeAncestorPath(hierarchy: AncestorSource, entityType: string, row: Record<string, unknown>): string | null {
   // getOrderedAncestors is most-specific → organization; paths are organization-first.
   const [root, ...deeper] = [...hierarchy.getOrderedAncestors(entityType)].reverse();
   if (root === undefined) return null;
@@ -22,20 +18,12 @@ export function computeAncestorPath(
 }
 
 /** A product row's path: its non-null ancestor chain. */
-export function computeProductPath(
-  hierarchy: AncestorSource,
-  entityType: string,
-  row: Record<string, unknown>,
-): string | null {
+export function computeProductPath(hierarchy: AncestorSource, entityType: string, row: Record<string, unknown>): string | null {
   return computeAncestorPath(hierarchy, entityType, row);
 }
 
 /** A channel row's ancestor chain plus its own id; for the organization, just its own id. */
-export function computeChannelPath(
-  hierarchy: AncestorSource,
-  entityType: string,
-  row: Record<string, unknown>,
-): string | null {
+export function computeChannelPath(hierarchy: AncestorSource, entityType: string, row: Record<string, unknown>): string | null {
   const id = row.id;
   if (typeof id !== 'string' || !id) return null;
   const ancestors = computeAncestorPath(hierarchy, entityType, row);

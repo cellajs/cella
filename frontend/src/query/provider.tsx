@@ -8,13 +8,7 @@ import { initChannelEnrichment } from '~/query/enrichment/init-enrichment';
 import '~/query/local-user-storage';
 import { initMutationDefaults } from '~/query/mutation-registry';
 import { cleanupOrphanedSessions, persister, sessionPersister, shouldPersistQuery } from '~/query/persister';
-import {
-  markCacheRestored,
-  markReplayingMutations,
-  queryClient,
-  silentRevalidateOnReconnect,
-  updateStaleTime,
-} from '~/query/query-client';
+import { markCacheRestored, markReplayingMutations, queryClient, silentRevalidateOnReconnect, updateStaleTime } from '~/query/query-client';
 import { waitForActiveCatchup } from '~/query/realtime/stream-store';
 
 /** Idle scheduling with a ceiling, so a browser that never goes idle still starts the service. */

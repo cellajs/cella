@@ -35,9 +35,7 @@ export interface HeaderRowSelectionContextValue {
 
 export const HeaderRowSelectionContext = createContext<HeaderRowSelectionContextValue | undefined>(undefined);
 
-export const HeaderRowSelectionChangeContext = createContext<
-  ((selectRowEvent: SelectHeaderRowEvent) => void) | undefined
->(undefined);
+export const HeaderRowSelectionChangeContext = createContext<((selectRowEvent: SelectHeaderRowEvent) => void) | undefined>(undefined);
 
 export function useHeaderRowSelection() {
   const headerRowSelectionContext = useContext(HeaderRowSelectionContext);

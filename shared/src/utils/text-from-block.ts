@@ -3,13 +3,7 @@ import { isRecord } from './as-record.ts';
 
 export const mediaBlockTypes = new Set(['audio', 'video', 'image', 'file']);
 
-type InlineContentLike = {
-  type?: string;
-  text?: unknown;
-  href?: unknown;
-  content?: unknown;
-  props?: unknown;
-};
+type InlineContentLike = { type?: string; text?: unknown; href?: unknown; content?: unknown; props?: unknown };
 
 const COMMON_HOST_SUFFIXES = new Set(['com', 'org', 'net', 'io', 'app', 'dev', 'co', 'ai', 'nl']);
 
@@ -79,11 +73,7 @@ const contentText = (content: Block['content']): string => {
   if (content?.type === 'tableContent' && Array.isArray(content.rows)) {
     return collapseWhitespace(
       content.rows
-        .flatMap((row) =>
-          row.cells.map((cell) =>
-            'content' in cell && Array.isArray(cell.content) ? inlineContentText(cell.content) : '',
-          ),
-        )
+        .flatMap((row) => row.cells.map((cell) => ('content' in cell && Array.isArray(cell.content) ? inlineContentText(cell.content) : '')))
         .join(' '),
     );
   }
@@ -96,8 +86,7 @@ export const getTextFromBlock = (block: Block): string => {
 
   // Media blocks carry no inline content; their file name stands in.
   const props: unknown = block.props;
-  const mediaName =
-    mediaBlockTypes.has(block.type) && isRecord(props) && typeof props.name === 'string' ? props.name : '';
+  const mediaName = mediaBlockTypes.has(block.type) && isRecord(props) && typeof props.name === 'string' ? props.name : '';
   let text = contentText(content) || mediaName;
 
   if (Array.isArray(children)) {
@@ -132,9 +121,7 @@ export const getSearchableTextFromBlock = (block: Block): string => {
     parts.push(
       content.rows
         .flatMap((row) =>
-          row.cells.flatMap((cell) =>
-            'content' in cell && Array.isArray(cell.content) ? getSearchableTextFromInlineContent(cell.content) : '',
-          ),
+          row.cells.flatMap((cell) => ('content' in cell && Array.isArray(cell.content) ? getSearchableTextFromInlineContent(cell.content) : '')),
         )
         .filter(Boolean)
         .join(' '),
@@ -155,8 +142,7 @@ export const getSearchableTextFromBlock = (block: Block): string => {
     .trim();
 };
 
-export const getSearchableTextFromBlocks = (blocks: Block[]): string =>
-  blocks.map(getSearchableTextFromBlock).filter(Boolean).join(' ').trim();
+export const getSearchableTextFromBlocks = (blocks: Block[]): string => blocks.map(getSearchableTextFromBlock).filter(Boolean).join(' ').trim();
 
 /** Blocks of a stored document (`description` as composer output); null for absent, legacy HTML or malformed input. */
 export const parseBlocks = (description: string | null | undefined): Block[] | null => {
@@ -186,5 +172,4 @@ export const getInlineTextFromBlock = (block: { content?: unknown } | undefined)
  * Title of a stored title document: block 0's inline text, whatever its type. Empty when block 0 holds no inline
  * content (an image moved to the top) or the input is not a block document.
  */
-export const titleFromDocument = (description: string | null | undefined): string =>
-  getInlineTextFromBlock(parseBlocks(description)?.[0]);
+export const titleFromDocument = (description: string | null | undefined): string => getInlineTextFromBlock(parseBlocks(description)?.[0]);

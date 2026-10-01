@@ -4,12 +4,7 @@ import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import type { TraceContext } from '../lib/tracing';
 import { activityAttrs, cdcAttrs, cdcSpanNames, withSpan } from '../lib/tracing';
-import {
-  type BatchEvent,
-  generateActivityId,
-  sendBatchMessageToApi,
-  sendMessageToApi,
-} from '../services/activity-service';
+import { type BatchEvent, generateActivityId, sendBatchMessageToApi, sendMessageToApi } from '../services/activity-service';
 import { metrics } from '../services/cdc-metrics';
 import { circuitBreaker } from '../services/circuit-breaker';
 import { replicationState } from '../services/replication-state';
@@ -33,10 +28,7 @@ interface PreparedEvent {
 
 // Activity persistence
 
-function prepareActivity(
-  parseResult: ParseMessageResult,
-  lsn: string,
-): { activityWithId: BatchEvent['activity']; seq: number | undefined } {
+function prepareActivity(parseResult: ParseMessageResult, lsn: string): { activityWithId: BatchEvent['activity']; seq: number | undefined } {
   const activityId = generateActivityId(lsn);
   const activityWithId = { ...parseResult.activity, id: activityId };
   const seq = typeof parseResult.rowData.seq === 'number' ? parseResult.rowData.seq : undefined;
@@ -47,10 +39,7 @@ function prepareActivity(
  * Multi-row insert with retry, falling back to individual inserts.
  * @returns false when persistence failed, in which case the caller must skip deltas.
  */
-async function persistActivities(
-  infos: Array<{ activityWithId: BatchEvent['activity']; lsn: string }>,
-  tableName: string,
-): Promise<boolean> {
+async function persistActivities(infos: Array<{ activityWithId: BatchEvent['activity']; lsn: string }>, tableName: string): Promise<boolean> {
   if (infos.length === 1) {
     const { activityWithId, lsn } = infos[0];
     const insertResult = await withRetry(async () => {
@@ -71,11 +60,7 @@ async function persistActivities(
     }
 
     if (insertResult.attempts > 1) {
-      log.info('Activity insert succeeded after retry', {
-        activityId: activityWithId.id,
-        attempts: insertResult.attempts,
-        lsn,
-      });
+      log.info('Activity insert succeeded after retry', { activityId: activityWithId.id, attempts: insertResult.attempts, lsn });
     }
     return true;
   }
@@ -153,81 +138,66 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
     return;
   }
 
-  await withSpan(
-    cdcSpanNames.processWal,
-    cdcAttrs({ lsn: firstLsn, tag: action, table: tableName }),
-    async (traceCtx) => {
-      const startMs = performance.now();
+  await withSpan(cdcSpanNames.processWal, cdcAttrs({ lsn: firstLsn, tag: action, table: tableName }), async (traceCtx) => {
+    const startMs = performance.now();
 
-      // Pure: no side effects until applyBatchUnifiedDeltas below.
-      const batchPlan = computeBatchUnifiedDeltas(events);
+    // Pure: no side effects until applyBatchUnifiedDeltas below.
+    const batchPlan = computeBatchUnifiedDeltas(events);
 
-      const prepared = events.map(({ lsn, result }) => {
-        replicationState.lastLsn = lsn;
-        const { activityWithId, seq } = prepareActivity(result, lsn);
-        return { activityWithId, seq, lsn, rowData: result.rowData, movedFrom: result.movedFrom ?? null };
-      });
+    const prepared = events.map(({ lsn, result }) => {
+      replicationState.lastLsn = lsn;
+      const { activityWithId, seq } = prepareActivity(result, lsn);
+      return { activityWithId, seq, lsn, rowData: result.rowData, movedFrom: result.movedFrom ?? null };
+    });
 
-      // Persist first: a failure here leaves no deltas applied.
-      const persisted = await withSpan(
-        cdcSpanNames.createActivity,
-        activityAttrs(prepared[0].activityWithId),
-        async () => {
-          return persistActivities(
-            prepared.map(({ activityWithId, lsn }) => ({ activityWithId, lsn })),
-            tableName,
-          );
-        },
+    // Persist first: a failure here leaves no deltas applied.
+    const persisted = await withSpan(cdcSpanNames.createActivity, activityAttrs(prepared[0].activityWithId), async () => {
+      return persistActivities(
+        prepared.map(({ activityWithId, lsn }) => ({ activityWithId, lsn })),
+        tableName,
       );
+    });
 
-      if (!persisted) {
-        return;
-      }
+    if (!persisted) {
+      return;
+    }
 
-      await applyBatchUnifiedDeltas(batchPlan);
+    await applyBatchUnifiedDeltas(batchPlan);
 
-      // Mirror channel paths onto counters rows: the view-ancestry verification source.
-      await syncChannelPaths(events);
+    // Mirror channel paths onto counters rows: the view-ancestry verification source.
+    await syncChannelPaths(events);
 
-      const stamped = prepared.map((item) => ({
-        ...item,
-        seq: typeof item.rowData.seq === 'number' ? item.rowData.seq : item.seq,
-      }));
+    const stamped = prepared.map((item) => ({ ...item, seq: typeof item.rowData.seq === 'number' ? item.rowData.seq : item.seq }));
 
-      circuitBreaker.recordSuccess(tableName);
+    circuitBreaker.recordSuccess(tableName);
 
-      for (const { activityWithId, lsn } of stamped) {
-        log.trace('Activity created from CDC', {
-          type: activityWithId.type,
-          subjectId: activityWithId.subjectId,
-          activityId: activityWithId.id,
-          lsn,
-          ...(activityWithId.changedFields && { changedFields: activityWithId.changedFields }),
-        });
-      }
+    for (const { activityWithId, lsn } of stamped) {
+      log.trace('Activity created from CDC', {
+        type: activityWithId.type,
+        subjectId: activityWithId.subjectId,
+        activityId: activityWithId.id,
+        lsn,
+        ...(activityWithId.changedFields && { changedFields: activityWithId.changedFields }),
+      });
+    }
 
-      dispatchToApi(stamped, traceCtx);
+    dispatchToApi(stamped, traceCtx);
 
-      // Strip deleted embedded-entity ids from host-entity arrays.
-      const { tableMeta } = events[0].result;
-      if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && (action === 'update' || action === 'delete')) {
-        await cleanupEmbeddingReferences(tableMeta.type, action, events);
-      }
+    // Strip deleted embedded-entity ids from host-entity arrays.
+    const { tableMeta } = events[0].result;
+    if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && (action === 'update' || action === 'delete')) {
+      await cleanupEmbeddingReferences(tableMeta.type, action, events);
+    }
 
-      // Soft-delete embedded rows their host arrays stopped referencing; hard deletes ride FK cascades.
-      if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && action === 'update') {
-        await gcOwnedEmbeddedRows(tableMeta.type, events);
-      }
+    // Soft-delete embedded rows their host arrays stopped referencing; hard deletes ride FK cascades.
+    if (tableMeta.kind === 'entity' && isProduct(tableMeta.type) && action === 'update') {
+      await gcOwnedEmbeddedRows(tableMeta.type, events);
+    }
 
-      metrics.recordProcessing(events.length, performance.now() - startMs);
+    metrics.recordProcessing(events.length, performance.now() - startMs);
 
-      if (isBatch) {
-        log.trace('Batch processed', {
-          batchSize: events.length,
-          entityType: events[0].result.activity.entityType,
-          action,
-        });
-      }
-    },
-  );
+    if (isBatch) {
+      log.trace('Batch processed', { batchSize: events.length, entityType: events[0].result.activity.entityType, action });
+    }
+  });
 }

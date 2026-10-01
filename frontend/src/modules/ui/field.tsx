@@ -17,21 +17,13 @@ export function FieldSet({ className, ...props }: React.ComponentProps<'fieldset
   return (
     <fieldset
       data-slot="field-set"
-      className={cn(
-        'flex flex-col gap-6',
-        'has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3',
-        className,
-      )}
+      className={cn('flex flex-col gap-6', 'has-[>[data-slot=checkbox-group]]:gap-3 has-[>[data-slot=radio-group]]:gap-3', className)}
       {...props}
     />
   );
 }
 
-export function FieldLegend({
-  className,
-  variant = 'legend',
-  ...props
-}: React.ComponentProps<'legend'> & { variant?: 'legend' | 'label' }) {
+export function FieldLegend({ className, variant = 'legend', ...props }: React.ComponentProps<'legend'> & { variant?: 'legend' | 'label' }) {
   return (
     <legend
       data-slot="field-legend"
@@ -71,9 +63,7 @@ const fieldLayoutVariants = cva('group/field flex w-full gap-3 data-[invalid=tru
       ],
     },
   },
-  defaultVariants: {
-    orientation: 'vertical',
-  },
+  defaultVariants: { orientation: 'vertical' },
 });
 
 export function FieldLayout({
@@ -82,24 +72,12 @@ export function FieldLayout({
   ...props
 }: React.ComponentProps<'div'> & VariantProps<typeof fieldLayoutVariants>) {
   return (
-    <div
-      role="group"
-      data-slot="field"
-      data-orientation={orientation}
-      className={cn(fieldLayoutVariants({ orientation }), className)}
-      {...props}
-    />
+    <div role="group" data-slot="field" data-orientation={orientation} className={cn(fieldLayoutVariants({ orientation }), className)} {...props} />
   );
 }
 
 export function FieldContent({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="field-content"
-      className={cn('group/field-content flex flex-1 flex-col gap-1.5 leading-snug', className)}
-      {...props}
-    />
-  );
+  return <div data-slot="field-content" className={cn('group/field-content flex flex-1 flex-col gap-1.5 leading-snug', className)} {...props} />;
 }
 
 export function FieldLabel({ className, ...props }: React.ComponentProps<typeof Label>) {
@@ -121,10 +99,7 @@ export function FieldTitle({ className, ...props }: React.ComponentProps<'div'>)
   return (
     <div
       data-slot="field-label"
-      className={cn(
-        'flex w-fit items-center gap-2 font-medium text-sm leading-snug group-data-[disabled=true]/field:opacity-50',
-        className,
-      )}
+      className={cn('flex w-fit items-center gap-2 font-medium text-sm leading-snug group-data-[disabled=true]/field:opacity-50', className)}
       {...props}
     />
   );
@@ -134,13 +109,7 @@ export function FieldDescription({ className, ...props }: React.ComponentProps<'
   return <p data-slot="field-description" className={cn('text-muted-foreground text-sm', className)} {...props} />;
 }
 
-export function FieldSeparator({
-  children,
-  className,
-  ...props
-}: React.ComponentProps<'div'> & {
-  children?: React.ReactNode;
-}) {
+export function FieldSeparator({ children, className, ...props }: React.ComponentProps<'div'> & { children?: React.ReactNode }) {
   return (
     <div
       data-slot="field-separator"
@@ -150,10 +119,7 @@ export function FieldSeparator({
     >
       <Separator className="absolute inset-0 top-1/2" />
       {children && (
-        <span
-          className="relative mx-auto block w-fit bg-background px-2 text-muted-foreground"
-          data-slot="field-separator-content"
-        >
+        <span className="relative mx-auto block w-fit bg-background px-2 text-muted-foreground" data-slot="field-separator-content">
           {children}
         </span>
       )}
@@ -166,9 +132,7 @@ export function FieldError({
   children,
   errors,
   ...props
-}: React.ComponentProps<'div'> & {
-  errors?: Array<{ message?: string } | undefined>;
-}) {
+}: React.ComponentProps<'div'> & { errors?: Array<{ message?: string } | undefined> }) {
   const content = (() => {
     if (children) return children;
     if (!errors) return null;
@@ -187,12 +151,7 @@ export function FieldError({
   if (!content) return null;
 
   return (
-    <div
-      role="alert"
-      data-slot="field-error"
-      className={cn('font-normal text-destructive text-sm', className)}
-      {...props}
-    >
+    <div role="alert" data-slot="field-error" className={cn('font-normal text-destructive text-sm', className)} {...props}>
       {content}
     </div>
   );
@@ -210,38 +169,25 @@ interface FieldStateContextValue {
   error?: { message?: string };
 }
 
-const FieldStateContext = React.createContext<FieldStateContextValue>({
-  invalid: false,
-  isDirty: false,
-  isTouched: false,
-});
+const FieldStateContext = React.createContext<FieldStateContextValue>({ invalid: false, isDirty: false, isTouched: false });
 
 /** Read RHF field state from within a FormField render prop tree. */
 export function useFieldState() {
   return React.useContext(FieldStateContext);
 }
 
-type FormProps<
-  TFieldValues extends FieldValues,
-  TContext = unknown,
-  TTransformedValues extends FieldValues = TFieldValues,
-> = FormProviderProps<TFieldValues, TContext, TTransformedValues> & {
-  unsavedChanges?: boolean;
-  labelDirection?: LabelDirectionType;
-};
+type FormProps<TFieldValues extends FieldValues, TContext = unknown, TTransformedValues extends FieldValues = TFieldValues> = FormProviderProps<
+  TFieldValues,
+  TContext,
+  TTransformedValues
+> & { unsavedChanges?: boolean; labelDirection?: LabelDirectionType };
 
-export function Form<
-  TFieldValues extends FieldValues,
-  TContext = unknown,
-  TTransformedValues extends FieldValues = TFieldValues,
->({
+export function Form<TFieldValues extends FieldValues, TContext = unknown, TTransformedValues extends FieldValues = TFieldValues>({
   children,
   unsavedChanges,
   labelDirection = 'top',
   ...props
-}: FormProps<TFieldValues, TContext, TTransformedValues> & {
-  unsavedChanges?: boolean;
-}) {
+}: FormProps<TFieldValues, TContext, TTransformedValues> & { unsavedChanges?: boolean }) {
   return (
     <FormProvider {...props}>
       <LabelDirectionContext.Provider value={labelDirection}>{children}</LabelDirectionContext.Provider>
@@ -249,10 +195,10 @@ export function Form<
   );
 }
 
-export function FormField<
-  TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
->({ render, ...props }: ControllerProps<TFieldValues, TName>) {
+export function FormField<TFieldValues extends FieldValues = FieldValues, TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>>({
+  render,
+  ...props
+}: ControllerProps<TFieldValues, TName>) {
   const { getFieldState } = useFormContext();
   const formState = useFormState({ name: props.name });
 
@@ -263,12 +209,7 @@ export function FormField<
         const fieldState = getFieldState(props.name, formState);
         return (
           <FieldStateContext.Provider
-            value={{
-              invalid: fieldState.invalid,
-              isDirty: fieldState.isDirty,
-              isTouched: fieldState.isTouched,
-              error: fieldState.error,
-            }}
+            value={{ invalid: fieldState.invalid, isDirty: fieldState.isDirty, isTouched: fieldState.isTouched, error: fieldState.error }}
           >
             {render(renderProps)}
           </FieldStateContext.Provider>
@@ -382,13 +323,7 @@ export function FormMessage({ className, children, ...props }: React.ComponentPr
   if (!body) return null;
 
   return (
-    <Field.Error
-      match={!!error}
-      render={<p />}
-      data-slot="form-message"
-      className={cn('text-destructive text-sm', className)}
-      {...props}
-    >
+    <Field.Error match={!!error} render={<p />} data-slot="form-message" className={cn('text-destructive text-sm', className)} {...props}>
       {body}
     </Field.Error>
   );

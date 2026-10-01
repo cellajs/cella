@@ -45,8 +45,7 @@ function blobsToUploadInfo(blobs: AttachmentBlob[]): BlobUploadInfo {
 /** Reactive upload status; falls back to the default "uploaded" info with no id or no blob. */
 export function useBlobUploadStatus(attachmentId: string | null | undefined): BlobUploadInfo {
   const blobs = useLiveQuery(
-    () =>
-      attachmentId && getLocalUserDb() ? attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray() : [],
+    () => (attachmentId && getLocalUserDb() ? attachmentsDb.blobs.where('attachmentId').equals(attachmentId).toArray() : []),
     [attachmentId],
     [] as AttachmentBlob[],
   );

@@ -4,9 +4,7 @@ import type { ReactNode } from 'react';
 import { FormProvider, useForm } from 'react-hook-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 
-type StoryFormValues = {
-  title: string;
-};
+type StoryFormValues = { title: string };
 
 type InputStoryProps = {
   label: string;
@@ -35,11 +33,7 @@ function InputFormFieldStory({
   defaultValue = '',
   value,
 }: InputStoryProps) {
-  const form = useForm<StoryFormValues>({
-    defaultValues: {
-      title: defaultValue,
-    },
-  });
+  const form = useForm<StoryFormValues>({ defaultValues: { title: defaultValue } });
 
   return (
     <FormProvider {...form}>
@@ -63,73 +57,38 @@ function InputFormFieldStory({
   );
 }
 
-const meta = {
-  title: 'common/InputFormField',
-  component: InputFormField,
-  tags: ['autodocs'],
-  parameters: { layout: 'centered' },
-} satisfies Meta<typeof InputFormField<StoryFormValues>>;
+const meta = { title: 'common/InputFormField', component: InputFormField, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
+  typeof InputFormField<StoryFormValues>
+>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {
-  args: {
-    control: undefined as never,
-    name: 'title',
-    label: 'Title',
-  },
+  args: { control: undefined as never, name: 'title', label: 'Title' },
   render: function Render() {
     return <InputFormFieldStory label="Title" placeholder="Enter a title" />;
   },
 };
 
 export const WithDescription: Story = {
-  args: {
-    control: undefined as never,
-    name: 'title',
-    label: 'Email',
-    description: 'Used for notifications and account updates.',
-    type: 'email',
-  },
+  args: { control: undefined as never, name: 'title', label: 'Email', description: 'Used for notifications and account updates.', type: 'email' },
   render: function Render() {
     return (
-      <InputFormFieldStory
-        label="Email"
-        description="Used for notifications and account updates."
-        placeholder="hello@example.com"
-        type="email"
-      />
+      <InputFormFieldStory label="Email" description="Used for notifications and account updates." placeholder="hello@example.com" type="email" />
     );
   },
 };
 
 export const RequiredWithIcon: Story = {
-  args: {
-    control: undefined as never,
-    name: 'title',
-    label: 'Search',
-    required: true,
-  },
+  args: { control: undefined as never, name: 'title', label: 'Search', required: true },
   render: function Render() {
-    return (
-      <InputFormFieldStory
-        label="Search"
-        placeholder="Search records"
-        required
-        icon={<SearchIcon className="icon-sm" />}
-      />
-    );
+    return <InputFormFieldStory label="Search" placeholder="Search records" required icon={<SearchIcon className="icon-sm" />} />;
   },
 };
 
 export const Textarea: Story = {
-  args: {
-    control: undefined as never,
-    name: 'title',
-    label: 'Description',
-    type: 'textarea',
-  },
+  args: { control: undefined as never, name: 'title', label: 'Description', type: 'textarea' },
   render: function Render() {
     return (
       <InputFormFieldStory
@@ -144,26 +103,14 @@ export const Textarea: Story = {
 };
 
 export const Disabled: Story = {
-  args: {
-    control: undefined as never,
-    name: 'title',
-    label: 'Project name',
-    disabled: true,
-    value: 'Raak',
-  },
+  args: { control: undefined as never, name: 'title', label: 'Project name', disabled: true, value: 'Raak' },
   render: function Render() {
     return <InputFormFieldStory label="Project name" disabled value="Raak" icon={<MailIcon className="icon-sm" />} />;
   },
 };
 
 export const ReadOnly: Story = {
-  args: {
-    control: undefined as never,
-    name: 'title',
-    label: 'Slug',
-    readOnly: true,
-    value: 'story-input-field',
-  },
+  args: { control: undefined as never, name: 'title', label: 'Slug', readOnly: true, value: 'story-input-field' },
   render: function Render() {
     return <InputFormFieldStory label="Slug" readOnly value="story-input-field" inputClassName="font-mono" />;
   },

@@ -46,9 +46,7 @@ const spendConfirmMfaToken = async (ctx: Context<Env>) => {
 };
 
 /** A second factor offered for an MFA challenge: a code from the authenticator app, or a passkey response. */
-export type MfaProof =
-  | { strategy: 'totp'; code: string }
-  | { strategy: 'passkey'; assertion: AuthenticationResponseJSON };
+export type MfaProof = { strategy: 'totp'; code: string } | { strategy: 'passkey'; assertion: AuthenticationResponseJSON };
 
 /**
  * The only way out of an MFA challenge: reads the challenge this browser holds, verifies the offered factor for the
@@ -96,10 +94,7 @@ export const mfaFactorRules = {
 
   /** Run after deleting a factor, in the same `locked` transaction: refuses when MFA is on and a method is now gone. */
   async assertKeepsFactors(tx: DbOrTx, userId: string) {
-    const [user] = await tx
-      .select({ mfaRequired: usersTable.mfaRequired })
-      .from(usersTable)
-      .where(eq(usersTable.id, userId));
+    const [user] = await tx.select({ mfaRequired: usersTable.mfaRequired }).from(usersTable).where(eq(usersTable.id, userId));
     if (!user?.mfaRequired) return;
 
     const { passkey, totp } = await heldFactors({ var: { db: tx } }, userId);

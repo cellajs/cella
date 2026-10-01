@@ -12,10 +12,7 @@ const meta = {
   component: RadioGroup,
   tags: ['autodocs'],
   argTypes: {},
-  args: {
-    defaultValue: 'comfortable',
-    className: 'grid gap-2 grid-cols-[1rem_1fr] items-center',
-  },
+  args: { defaultValue: 'comfortable', className: 'grid gap-2 grid-cols-[1rem_1fr] items-center' },
   render: (args) => (
     <RadioGroup {...args}>
       <RadioGroupItem value="default" id="r1" />

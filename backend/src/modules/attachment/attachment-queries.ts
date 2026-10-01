@@ -6,10 +6,7 @@ import { attachmentsTable } from '#/modules/attachment/attachment-db';
 // Every read and write below carries the request's tenant + organization predicate, so the
 // result is the same with RLS bypassed; the RLS transaction wrappers stay the backstop.
 
-export const insertAttachments = async (
-  ctx: DbContext,
-  { attachments }: { attachments: (typeof attachmentsTable.$inferInsert)[] },
-) => {
+export const insertAttachments = async (ctx: DbContext, { attachments }: { attachments: (typeof attachmentsTable.$inferInsert)[] }) => {
   const { db } = ctx.var;
   return db.insert(attachmentsTable).values(attachments).onConflictDoNothing().returning();
 };
@@ -36,21 +33,12 @@ interface DeleteAttachmentsByIdsOpts {
 }
 
 /** Soft-deletes the rows and returns them, for the `attachment.deleted` event. */
-export const deleteAttachmentsByIds = async (
-  ctx: ActorContext,
-  { ids, deletedAt, deletedBy }: DeleteAttachmentsByIdsOpts,
-) => {
+export const deleteAttachmentsByIds = async (ctx: ActorContext, { ids, deletedAt, deletedBy }: DeleteAttachmentsByIdsOpts) => {
   const { db } = ctx.var;
   return db
     .update(attachmentsTable)
     .set({ deletedAt, deletedBy, updatedAt: deletedAt, updatedBy: deletedBy })
-    .where(
-      and(
-        inArray(attachmentsTable.id, ids),
-        requestScopeWhere(ctx, attachmentsTable),
-        isNull(attachmentsTable.deletedAt),
-      ),
-    )
+    .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)))
     .returning();
 };
 
@@ -64,11 +52,5 @@ export const findAttachmentsByIds = async (ctx: ActorContext, { ids }: FindAttac
   return db
     .select()
     .from(attachmentsTable)
-    .where(
-      and(
-        inArray(attachmentsTable.id, ids),
-        requestScopeWhere(ctx, attachmentsTable),
-        isNull(attachmentsTable.deletedAt),
-      ),
-    );
+    .where(and(inArray(attachmentsTable.id, ids), requestScopeWhere(ctx, attachmentsTable), isNull(attachmentsTable.deletedAt)));
 };

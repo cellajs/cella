@@ -23,10 +23,7 @@ export const stackProvider: StatusProvider<Record<string, never>> = {
       const compute = check('config.computeDeferred', 'Compute');
       checks.push(
         session.computeDeferredSince
-          ? compute.warn(
-              `deferred since ${session.computeDeferredSince}; the first deploy brings the VMs up`,
-              deployAction(session.mode),
-            )
+          ? compute.warn(`deferred since ${session.computeDeferredSince}; the first deploy brings the VMs up`, deployAction(session.mode))
           : compute.ok('declared (not deferred)'),
       );
     }
@@ -59,9 +56,7 @@ export const identityProvider: StatusProvider<IdentityFacts> = {
   evaluate(facts, session) {
     const project = check('identity.project', 'Scaleway project');
     const checks = [
-      session.projectId
-        ? project.ok(session.projectId)
-        : project.missing('SCW_PROJECT_ID not set; setup picks or creates the project', runSetup),
+      session.projectId ? project.ok(session.projectId) : project.missing('SCW_PROJECT_ID not set; setup picks or creates the project', runSetup),
     ];
     if (session.stackState === 'bootstrapped') {
       const admin = check('identity.adminApp', 'Admin app', 'scaleway');

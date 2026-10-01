@@ -46,16 +46,11 @@ describe('parseMessage: draft entrance guard', () => {
     const result = parseMessage(dmlMessage('insert', 'attachments', attachmentRow({ published_at: null })));
 
     expect(result).toBeNull();
-    expect(warn).toHaveBeenCalledWith(expect.stringContaining('publication row filter missing'), {
-      entityType: 'attachment',
-      action: 'create',
-    });
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('publication row filter missing'), { entityType: 'attachment', action: 'create' });
   });
 
   it('drops a draft product UPDATE and a draft hard-DELETE (old-row snapshot checked)', () => {
-    const update = parseMessage(
-      dmlMessage('update', 'attachments', attachmentRow({ published_at: null }), attachmentRow({ published_at: null })),
-    );
+    const update = parseMessage(dmlMessage('update', 'attachments', attachmentRow({ published_at: null }), attachmentRow({ published_at: null })));
     const del = parseMessage(dmlMessage('delete', 'attachments', attachmentRow({ published_at: null })));
 
     expect(update).toBeNull();
@@ -70,9 +65,7 @@ describe('parseMessage: draft entrance guard', () => {
   });
 
   it('passes a published product INSERT (the publish edge as delivered)', () => {
-    const result = parseMessage(
-      dmlMessage('insert', 'attachments', attachmentRow({ published_at: '2026-07-04T09:00:00.000Z' })),
-    );
+    const result = parseMessage(dmlMessage('insert', 'attachments', attachmentRow({ published_at: '2026-07-04T09:00:00.000Z' })));
 
     expect(result).not.toBeNull();
     expect(result?.activity.action).toBe('create');
@@ -80,9 +73,7 @@ describe('parseMessage: draft entrance guard', () => {
   });
 
   it('passes an unpublish-as-DELETE (old row is published)', () => {
-    const result = parseMessage(
-      dmlMessage('delete', 'attachments', attachmentRow({ published_at: '2026-07-04T09:00:00.000Z' })),
-    );
+    const result = parseMessage(dmlMessage('delete', 'attachments', attachmentRow({ published_at: '2026-07-04T09:00:00.000Z' })));
 
     expect(result).not.toBeNull();
     expect(result?.activity.action).toBe('delete');
@@ -90,12 +81,7 @@ describe('parseMessage: draft entrance guard', () => {
 
   it('never drops channel rows: channel publishedAt gates invitees, not replication', () => {
     const result = parseMessage(
-      dmlMessage('insert', 'organizations', {
-        id: 'org-1',
-        name: 'Org',
-        created_at: '2026-07-01T10:00:00.000Z',
-        published_at: null,
-      }),
+      dmlMessage('insert', 'organizations', { id: 'org-1', name: 'Org', created_at: '2026-07-01T10:00:00.000Z', published_at: null }),
     );
 
     expect(result).not.toBeNull();

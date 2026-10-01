@@ -3,13 +3,7 @@ import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { sysAdminGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { tenantOnlyParamSchema } from '#/schemas';
-import {
-  createDomainBodySchema,
-  domainParamSchema,
-  domainSchema,
-  domainWithTokenSchema,
-  verifyDomainResponseSchema,
-} from './domains-schema';
+import { createDomainBodySchema, domainParamSchema, domainSchema, domainWithTokenSchema, verifyDomainResponseSchema } from './domains-schema';
 
 export const domainRoutes = createXRoutes(['tenants', 'cella'], {
   getDomains: xRoute({
@@ -17,8 +11,7 @@ export const domainRoutes = createXRoutes(['tenants', 'cella'], {
     path: '/',
     xGuard: [userGuard, sysAdminGuard, tenantGuard],
     summary: 'List domains for a tenant',
-    description:
-      'Returns all domains belonging to a tenant, including verification tokens. System admin access required.',
+    description: 'Returns all domains belonging to a tenant, including verification tokens. System admin access required.',
     request: { params: tenantOnlyParamSchema },
     responses: { 200: json('List of domains', domainWithTokenSchema.array()) },
   }),
@@ -50,8 +43,7 @@ export const domainRoutes = createXRoutes(['tenants', 'cella'], {
     path: '/{id}',
     xGuard: [userGuard, sysAdminGuard, tenantGuard],
     summary: 'Get domain with verification token',
-    description:
-      'Returns a single domain including its verification token for DNS TXT setup. System admin access required.',
+    description: 'Returns a single domain including its verification token for DNS TXT setup. System admin access required.',
     request: { params: domainParamSchema },
     responses: { 200: json('Domain with verification token', domainWithTokenSchema) },
   }),

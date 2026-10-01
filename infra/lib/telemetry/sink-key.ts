@@ -16,10 +16,7 @@ export async function sinkIngestKeyFromSecretManager(): Promise<string | undefin
   if (!secretKey || !projectId) return undefined;
   const appConfig = engineConfig();
   const client = createSecretManagerClient({ secretKey, projectId, region: appConfig.s3.region });
-  const secret = await client.getSecretByName(
-    telemetrySink.keySecretName,
-    secretManagerPath(appConfig.slug, appConfig.mode),
-  );
+  const secret = await client.getSecretByName(telemetrySink.keySecretName, secretManagerPath(appConfig.slug, appConfig.mode));
   if (!secret) return undefined;
   const value = (await client.accessLatestValue(secret.id)).trim();
   return value || undefined;

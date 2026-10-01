@@ -44,9 +44,7 @@ describe('sanitizeBlockMediaUrls', () => {
 
   it('sanitizes nested children', () => {
     const bad = 'https://evil.example/x.mp4';
-    const description = JSON.stringify([
-      { ...paragraph(), children: [{ id: '3', type: 'video', props: { url: bad }, content: [], children: [] }] },
-    ]);
+    const description = JSON.stringify([{ ...paragraph(), children: [{ id: '3', type: 'video', props: { url: bad }, content: [], children: [] }] }]);
     const result = sanitizeBlockMediaUrls(description, ctx);
 
     expect(result.sanitized).toBe(true);

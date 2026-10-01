@@ -48,21 +48,10 @@ function upgradeStatus(port: number, target: string, headers: Headers): Promise<
 }
 
 /** A JSON POST with the request target sent exactly as given; resolves the status and the parsed body, if any. */
-function post(
-  port: number,
-  target: string,
-  body: unknown,
-  headers: Headers,
-): Promise<{ status: number; body?: unknown }> {
+function post(port: number, target: string, body: unknown, headers: Headers): Promise<{ status: number; body?: unknown }> {
   return new Promise((resolve, reject) => {
     const req = request(
-      {
-        host: '127.0.0.1',
-        port,
-        method: 'POST',
-        path: target,
-        headers: { 'content-type': 'application/json', ...headers },
-      },
+      { host: '127.0.0.1', port, method: 'POST', path: target, headers: { 'content-type': 'application/json', ...headers } },
       (res) => {
         let text = '';
         res.on('data', (chunk) => {
@@ -202,11 +191,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Internal listener', a
   });
 
   it('must not accept the CDC socket on the internal listener without its own secret', async () => {
-    const attempts: Headers[] = [
-      {},
-      { 'x-cdc-secret': `${modeSecret('CDC_SECRET')}x` },
-      { 'x-cdc-secret': modeSecret('YJS_RELAY_SECRET') },
-    ];
+    const attempts: Headers[] = [{}, { 'x-cdc-secret': `${modeSecret('CDC_SECRET')}x` }, { 'x-cdc-secret': modeSecret('YJS_RELAY_SECRET') }];
     for (const headers of attempts) {
       expect(await upgradeStatus(internalPort, '/internal/cdc', headers), JSON.stringify(headers)).toBe(401);
     }

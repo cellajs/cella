@@ -2,13 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import type { ProductEntityType } from 'shared';
 import { seenStore } from '~/modules/seen/seen-store';
 
-type SeenMeta = {
-  tenantId: string;
-  organizationId: string;
-  channelId: string;
-  productType: ProductEntityType;
-  productId: string;
-};
+type SeenMeta = { tenantId: string; organizationId: string; channelId: string; productType: ProductEntityType; productId: string };
 
 const elementMeta = new WeakMap<Element, SeenMeta>();
 const markedIds = new Set<string>();
@@ -105,7 +99,5 @@ export function SeenMark({ productId, tenantId, organizationId, channelId, produ
 
   if (markedIds.has(productId)) return null;
 
-  return (
-    <span ref={refCallback} data-entity-id={productId} aria-hidden className="pointer-events-none absolute inset-0" />
-  );
+  return <span ref={refCallback} data-entity-id={productId} aria-hidden className="pointer-events-none absolute inset-0" />;
 }

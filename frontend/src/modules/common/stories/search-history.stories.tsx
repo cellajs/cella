@@ -7,17 +7,12 @@ import { withApp } from '~/stories/with-app';
 const history = ['passkeys', 'sessions', 'tenants'];
 
 /** Recent searches of the app search: a numbered history group and an index shortcut. Docs search: docs-search.test.tsx. */
-const meta = {
-  title: 'common/SearchHistory',
-  decorators: [withApp],
-  parameters: { layout: 'padded' },
-} satisfies Meta;
+const meta = { title: 'common/SearchHistory', decorators: [withApp], parameters: { layout: 'padded' } } satisfies Meta;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const historyOption = (canvas: ReturnType<typeof within>, value: string) =>
-  canvas.getByRole('option', { name: new RegExp(`^${value}\\s*\\d`) });
+const historyOption = (canvas: ReturnType<typeof within>, value: string) => canvas.getByRole('option', { name: new RegExp(`^${value}\\s*\\d`) });
 
 export const AppSearchHistory: Story = {
   beforeEach: () => {

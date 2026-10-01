@@ -11,11 +11,7 @@ export interface MeResponse {
 }
 
 /** Session for auth data response (token already omitted by SessionModel) */
-export type MeSession = Omit<SessionModel, 'expiresAt'> & {
-  expiresAt: string;
-  isCurrent: boolean;
-  isNewDevice: boolean;
-};
+export type MeSession = Omit<SessionModel, 'expiresAt'> & { expiresAt: string; isCurrent: boolean; isNewDevice: boolean };
 
 export interface MeAuthResponse {
   enabledOAuth: EnabledOAuthProvider[];
@@ -29,11 +25,5 @@ export interface UploadTokenResponse {
   sub: string;
   s3: boolean;
   signature: string;
-  params: {
-    auth: {
-      key: string;
-      expires?: string;
-    };
-    [key: string]: unknown;
-  };
+  params: { auth: { key: string; expires?: string }; [key: string]: unknown };
 }

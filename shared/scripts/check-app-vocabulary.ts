@@ -21,11 +21,9 @@ const productNameAllowlist: VocabularyAllowlist = {
  * The app-side marker the cella-sync skill puts on intentional app edits: `// fork: <why>`, the css/md forms and a
  * ` * fork: <why>` line inside a JSDoc block.
  */
-const markerComment =
-  /\/\/[ \t]*fork:[^\n]*|\/\*[ \t]*fork:[\s\S]*?\*\/|<!--[ \t]*fork:[\s\S]*?-->|^[ \t]*\*[ \t]*fork:[^\n]*/gim;
+const markerComment = /\/\/[ \t]*fork:[^\n]*|\/\*[ \t]*fork:[\s\S]*?\*\/|<!--[ \t]*fork:[\s\S]*?-->|^[ \t]*\*[ \t]*fork:[^\n]*/gim;
 const sourceControlAdvice = 'use template/app terminology';
-const productNameAdvice =
-  'derive it from appConfig or use a neutral name; the product name is not an identifier or wire string';
+const productNameAdvice = 'derive it from appConfig or use a neutral name; the product name is not an identifier or wire string';
 
 /** Files and path prefixes (repo-root relative) exempt from the check. */
 export interface VocabularyAllowlist {
@@ -61,11 +59,7 @@ function isAllowed(file: string, allowlist: VocabularyAllowlist): boolean {
   return allowlist.files.includes(file) || allowlist.prefixes.some((prefix) => file.startsWith(prefix));
 }
 
-export function findAppVocabularyFindings(
-  file: string,
-  source: string,
-  allowlist: VocabularyAllowlist = templateAllowlist,
-): Finding[] {
+export function findAppVocabularyFindings(file: string, source: string, allowlist: VocabularyAllowlist = templateAllowlist): Finding[] {
   if (isAllowed(file, allowlist)) return [];
 
   const finding = (term: string) => ({ file, rule: 'source-control-term', term, message: sourceControlAdvice });
@@ -73,10 +67,7 @@ export function findAppVocabularyFindings(
   const scanned = source.replace(markerComment, (marker) => marker.replace(/[^\n]/g, ' '));
   return [
     ...[...file.matchAll(disallowedTerm)].map((match) => finding(match[0])),
-    ...[...scanned.matchAll(disallowedTerm)].map((match) => ({
-      ...finding(match[0]),
-      ...lineColumn(scanned, match.index),
-    })),
+    ...[...scanned.matchAll(disallowedTerm)].map((match) => ({ ...finding(match[0]), ...lineColumn(scanned, match.index) })),
   ];
 }
 

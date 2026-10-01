@@ -9,10 +9,7 @@ import { xMiddleware } from '#/core/x-middleware';
  * The sign-in method an auth route belongs to: a strategy, or `{ oauth: provider }` for one OAuth provider. A route
  * whose method depends on the request (a token's type) names it per request, `null` when that request has none.
  */
-export type StrategyGate =
-  | BaseAuthStrategies
-  | { oauth: BaseOAuthProviders }
-  | ((ctx: Context<Env>) => BaseAuthStrategies | null);
+export type StrategyGate = BaseAuthStrategies | { oauth: BaseOAuthProviders } | ((ctx: Context<Env>) => BaseAuthStrategies | null);
 
 const labelOf = (gate: StrategyGate): string => {
   if (typeof gate === 'function') return 'per-request';
@@ -39,10 +36,7 @@ export const strategyEnabled = (gate: StrategyGate) => {
     async (ctx, next) => {
       if (typeof gate === 'object') {
         const provider = gate.oauth;
-        if (
-          !appConfig.enabledAuthStrategies.includes('oauth') ||
-          !appConfig.enabledOAuthProviders.some((p) => p === provider)
-        ) {
+        if (!appConfig.enabledAuthStrategies.includes('oauth') || !appConfig.enabledOAuthProviders.some((p) => p === provider)) {
           throw new AppError(400, 'unsupported_oauth', 'error', { meta: { strategy: provider } });
         }
       } else {

@@ -45,13 +45,7 @@ export function InvitationsStep({ children }: { children?: ReactNode }) {
         {invitations.map(({ entity, inactiveMembership }) => (
           <li key={inactiveMembership.id} className="flex items-center gap-3 max-sm:flex-col max-sm:items-stretch">
             <div className="flex min-w-0 grow items-center gap-3">
-              <EntityAvatar
-                type={entity.entityType}
-                className="size-10 shrink-0"
-                id={entity.id}
-                name={entity.name}
-                url={entity.thumbnailUrl}
-              />
+              <EntityAvatar type={entity.entityType} className="size-10 shrink-0" id={entity.id} name={entity.name} url={entity.thumbnailUrl} />
               <p className="min-w-0 text-sm">
                 {t('c:invite_accept_as_account.text', {
                   inviterName: inactiveMembership.createdBy?.name ?? t('c:unknown'),

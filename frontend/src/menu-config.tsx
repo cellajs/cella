@@ -26,9 +26,7 @@ function createOrganizationAction(triggerRef: RefObject<HTMLButtonElement | null
     description: i18n.t('c:create_organization.text'),
     triggerRef,
     title: i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() }),
-    titleContent: (
-      <UnsavedBadge title={i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() })} />
-    ),
+    titleContent: <UnsavedBadge title={i18n.t('c:create_resource', { resource: i18n.t('c:organization').toLowerCase() })} />,
   });
 }
 

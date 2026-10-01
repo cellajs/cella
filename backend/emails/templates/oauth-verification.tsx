@@ -12,24 +12,14 @@ interface OAuthVerificationStatic {
   providerName: string;
 }
 
-export const oauthVerificationEmail = defineEmailTemplate<
-  OAuthVerificationStatic,
-  EmailRecipient & { email: string }
->()({
+export const oauthVerificationEmail = defineEmailTemplate<OAuthVerificationStatic, EmailRecipient & { email: string }>()({
   translate(lng, { name, verificationLink, providerEmail, providerName }, param = plainParam) {
     return {
       subject: i18n.t('backend:email.oauth_verification.subject', { lng, appName, ...plainText }),
       previewText: i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName, ...plainText }),
       headerHtml: i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName }),
       hiText: name ? i18n.t('backend:email.hi', { lng, name, ...plainText }) : '',
-      bodyHtml: i18n.t('backend:email.oauth_verification.text', {
-        lng,
-        appName,
-        email: param('email'),
-        providerEmail,
-        providerName,
-        name,
-      }),
+      bodyHtml: i18n.t('backend:email.oauth_verification.text', { lng, appName, email: param('email'), providerEmail, providerName, name }),
       buttonText: i18n.t('backend:email.oauth_verification.verify', { lng, providerName, ...plainText }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       verificationLink,
@@ -48,12 +38,7 @@ export const oauthVerificationEmail = defineEmailTemplate<
     );
   },
   preview: {
-    statics: {
-      verificationLink: 'https://example.com/verify',
-      name: 'Emily',
-      providerEmail: 'jane@gmail.com',
-      providerName: 'Google',
-    },
+    statics: { verificationLink: 'https://example.com/verify', name: 'Emily', providerEmail: 'jane@gmail.com', providerName: 'Google' },
     recipient: {},
   },
 });

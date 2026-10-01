@@ -11,18 +11,11 @@ const meta = {
   title: 'ui/ButtonGroup',
   component: ButtonGroup,
   tags: ['autodocs'],
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
   argTypes: {
-    orientation: {
-      control: 'select',
-      options: ['horizontal', 'vertical'],
-    },
+    orientation: { control: 'select', options: ['horizontal', 'vertical'] },
   },
-  args: {
-    orientation: 'horizontal',
-  },
+  args: { orientation: 'horizontal' },
 } satisfies Meta<typeof ButtonGroup>;
 
 export default meta;

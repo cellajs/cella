@@ -17,15 +17,7 @@ export interface LocalUserStore {
 }
 
 /** Persisted zustand stores living in `localUserDb.kv`, in-memory while signed out. Each exposes `reset()` for {@link unbind}; an app appends its own via {@link extraLocalUserStores}. */
-const localUserStores = [
-  seenStore,
-  syncStore,
-  useNavigationStore,
-  useDraftStore,
-  useAlertStore,
-  useBoardStore,
-  ...extraLocalUserStores,
-];
+const localUserStores = [seenStore, syncStore, useNavigationStore, useDraftStore, useAlertStore, useBoardStore, ...extraLocalUserStores];
 
 let boundOwner: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();

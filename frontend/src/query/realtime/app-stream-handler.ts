@@ -17,77 +17,72 @@ import type { AppStreamNotification } from './types';
 export function handleAppStreamNotification(notification: AppStreamNotification): void {
   const { subjectId, action, stx, organizationId, tenantId, channelType, seq, _trace } = notification;
 
-  withSpanSync(
-    syncSpanNames.messageProcess,
-    { entityType: notification.productType, action, entityId: subjectId, _trace },
-    () => {
-      // Checked before setOrgTenantId creates the entry: an org the sync store never saw means the SSE connection is not registered on its channel.
-      const isUnknownOrg = !!organizationId && !syncStore.getState().orgs[organizationId];
+  withSpanSync(syncSpanNames.messageProcess, { entityType: notification.productType, action, entityId: subjectId, _trace }, () => {
+    // Checked before setOrgTenantId creates the entry: an org the sync store never saw means the SSE connection is not registered on its channel.
+    const isUnknownOrg = !!organizationId && !syncStore.getState().orgs[organizationId];
 
-      if (organizationId && tenantId) {
-        syncStore.getState().setOrgTenantId(organizationId, tenantId);
+    if (organizationId && tenantId) {
+      syncStore.getState().setOrgTenantId(organizationId, tenantId);
+    }
+
+    // Announced before any tier decision, so state derived from synced entities can react even for scopes whose rows are only fetched when opened.
+    publishChangeEvent({
+      kind: notification.kind,
+      action,
+      entityType: notification.productType ?? notification.resourceType ?? null,
+      organizationId,
+      channelId: notification.channelId ?? null,
+      subjectId,
+    });
+
+    // Membership changes use targeted query invalidation, not the seq sync path.
+    if (notification.kind === 'membership') {
+      handleMembershipNotification(action, organizationId, channelType);
+      // A self-membership in a new org arrives on the user channel, so reconnect to register on that org channel. Imported dynamically because stream-store imports this module.
+      if (action === 'create' && isUnknownOrg) {
+        console.debug('[handleAppStreamNotification] Membership in unknown org, reconnecting stream');
+        void import('./stream-store').then((m) => m.appStreamManager.reconnect());
       }
+      return;
+    }
 
-      // Announced before any tier decision, so state derived from synced entities can react even for scopes whose rows are only fetched when opened.
-      publishChangeEvent({
-        kind: notification.kind,
-        action,
-        entityType: notification.productType ?? notification.resourceType ?? null,
-        organizationId,
-        channelId: notification.channelId ?? null,
-        subjectId,
-      });
+    // kind === 'product', so productType is narrowed to a product entity type.
+    const entityType = notification.productType;
+    if (!isProduct(entityType)) return console.error('Unknown entityType in app stream notification:', entityType);
 
-      // Membership changes use targeted query invalidation, not the seq sync path.
-      if (notification.kind === 'membership') {
-        handleMembershipNotification(action, organizationId, channelType);
-        // A self-membership in a new org arrives on the user channel, so reconnect to register on that org channel. Imported dynamically because stream-store imports this module.
-        if (action === 'create' && isUnknownOrg) {
-          console.debug('[handleAppStreamNotification] Membership in unknown org, reconnecting stream');
-          void import('./stream-store').then((m) => m.appStreamManager.reconnect());
-        }
-        return;
-      }
-
-      // kind === 'product', so productType is narrowed to a product entity type.
-      const entityType = notification.productType;
-      if (!isProduct(entityType)) return console.error('Unknown entityType in app stream notification:', entityType);
-
-      // Create, update, and soft-delete tombstones merge into prioritized lazy fetches; hard deletes have no fetchable row and take the invalidation path below.
-      if (action !== 'delete' && notification.batchUntilSeq && seq != null && organizationId) {
-        enqueueRange({
-          entityType,
-          organizationId,
-          tenantId: tenantId ?? null,
-          channelId: notification.channelId ?? null,
-          fromSeq: seq,
-          untilSeq: notification.batchUntilSeq,
-          isCreate: action === 'create',
-          spreadWindowMs: notification.spreadWindow ?? undefined,
-          propagation: notification.propagation ?? undefined,
-        });
-        return;
-      }
-
-      const keys = getEntityQueryKeys(entityType);
-      if (!organizationId || !subjectId)
-        return console.error('Missing organizationId/subjectId for product entity event:', entityType, subjectId);
-
-      handleEntityNotification(
+    // Create, update, and soft-delete tombstones merge into prioritized lazy fetches; hard deletes have no fetchable row and take the invalidation path below.
+    if (action !== 'delete' && notification.batchUntilSeq && seq != null && organizationId) {
+      enqueueRange({
         entityType,
-        subjectId,
-        action,
-        stx,
         organizationId,
-        tenantId,
-        seq ?? null,
-        notification.channelId ?? null,
-        keys,
-        notification.propagation,
-        notification.spreadWindow ?? null,
-      );
-    },
-  );
+        tenantId: tenantId ?? null,
+        channelId: notification.channelId ?? null,
+        fromSeq: seq,
+        untilSeq: notification.batchUntilSeq,
+        isCreate: action === 'create',
+        spreadWindowMs: notification.spreadWindow ?? undefined,
+        propagation: notification.propagation ?? undefined,
+      });
+      return;
+    }
+
+    const keys = getEntityQueryKeys(entityType);
+    if (!organizationId || !subjectId) return console.error('Missing organizationId/subjectId for product entity event:', entityType, subjectId);
+
+    handleEntityNotification(
+      entityType,
+      subjectId,
+      action,
+      stx,
+      organizationId,
+      tenantId,
+      seq ?? null,
+      notification.channelId ?? null,
+      keys,
+      notification.propagation,
+      notification.spreadWindow ?? null,
+    );
+  });
 }
 
 /** Targets invalidation by channelType: create and delete hit that channel list, update hits member queries and refreshes user data for role changes. */

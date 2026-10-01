@@ -9,14 +9,9 @@ const meta = {
   component: Label,
   tags: ['autodocs'],
   argTypes: {
-    children: {
-      control: { type: 'text' },
-    },
+    children: { control: { type: 'text' } },
   },
-  args: {
-    children: 'Your email address',
-    htmlFor: 'email',
-  },
+  args: { children: 'Your email address', htmlFor: 'email' },
 } satisfies Meta<typeof Label>;
 
 export default meta;

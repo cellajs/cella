@@ -94,30 +94,18 @@ export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending 
               </p>
             )}
             {session.authStrategy && (
-              <p
-                className="hidden truncate capitalize max-lg:group-data-[expanded=true]/tile:inline lg:inline"
-                aria-describedby={t('c:strategy')}
-              >
+              <p className="hidden truncate capitalize max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby={t('c:strategy')}>
                 {t(`c:${session.authStrategy}`)}
               </p>
             )}
-            <p
-              className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline"
-              aria-describedby="os"
-            >
+            <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby="os">
               {session.deviceOs}
             </p>
-            <p
-              className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline"
-              aria-describedby={t('c:browser')}
-            >
+            <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby={t('c:browser')}>
               {session.browser}
             </p>
             {countryName && (
-              <p
-                className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline"
-                aria-describedby={t('c:country')}
-              >
+              <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby={t('c:country')}>
                 {countryName}
               </p>
             )}
@@ -136,13 +124,7 @@ export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending 
         </div>
 
         {isLive && !session.isCurrent && handleRevoke && (
-          <Button
-            variant="plain"
-            size="sm"
-            className="ml-auto text-sm"
-            disabled={isPending}
-            onClick={() => handleRevoke([session.id])}
-          >
+          <Button variant="plain" size="sm" className="ml-auto text-sm" disabled={isPending} onClick={() => handleRevoke([session.id])}>
             <UnplugIcon />
             <span className="ml-1 max-md:hidden">{t('c:revoke')}</span>
           </Button>

@@ -71,11 +71,7 @@ export function useCopyPaste<R, SR>({
     if (rowIdx < 0 || rowIdx >= rows.length || idx < 0 || idx >= columns.length) {
       return null;
     }
-    return {
-      column: columns[idx],
-      row: rows[rowIdx],
-      rowIdx,
-    };
+    return { column: columns[idx], row: rows[rowIdx], rowIdx };
   }, [selectedPosition, rows, columns]);
 
   const handleCopy = useCallback(
@@ -125,13 +121,7 @@ export function useCopyPaste<R, SR>({
         const { idx, rowIdx } = selectedPosition;
         if (rowIdx < 0 || idx < 0) return;
 
-        const affectedCells: Array<{
-          row: R;
-          column: CalculatedColumn<R, SR>;
-          rowIdx: number;
-          colIdx: number;
-          value: string;
-        }> = [];
+        const affectedCells: Array<{ row: R; column: CalculatedColumn<R, SR>; rowIdx: number; colIdx: number; value: string }> = [];
 
         for (let r = 0; r < parsedCells.length; r++) {
           const targetRowIdx = rowIdx + r;
@@ -151,17 +141,10 @@ export function useCopyPaste<R, SR>({
           }
         }
 
-        const updatedRows = onPasteRange({
-          startPosition: { idx, rowIdx },
-          values: parsedCells,
-          affectedCells,
-        });
+        const updatedRows = onPasteRange({ startPosition: { idx, rowIdx }, values: parsedCells, affectedCells });
 
         if (updatedRows && onRowsChange) {
-          const updates = updatedRows.map((row, i) => ({
-            rowIdx: rowIdx + Math.floor(i / parsedCells[0].length),
-            row,
-          }));
+          const updates = updatedRows.map((row, i) => ({ rowIdx: rowIdx + Math.floor(i / parsedCells[0].length), row }));
           onRowsChange(updates);
           event.preventDefault();
         }
@@ -236,10 +219,5 @@ export function useCopyPaste<R, SR>({
     }
   }, [getSelectedCell, onPaste, onRowChange]);
 
-  return {
-    handleCopy,
-    handlePaste,
-    copyToClipboard,
-    pasteFromClipboard,
-  };
+  return { handleCopy, handlePaste, copyToClipboard, pasteFromClipboard };
 }

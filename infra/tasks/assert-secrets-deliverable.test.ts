@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { FetchLike } from '../lib/utils/fetch-like';
-import {
-  assertSecretsDeliverable,
-  type SecretToCheck,
-  serviceNamesFromServicesJson,
-} from './assert-secrets-deliverable';
+import { assertSecretsDeliverable, type SecretToCheck, serviceNamesFromServicesJson } from './assert-secrets-deliverable';
 
 const REGION = 'fr-par';
 const PROJECT = 'proj-1';
@@ -74,9 +70,7 @@ describe('assertSecretsDeliverable', () => {
       secrets: [{ envVar: 'DATABASE_SSL_CA', secretName: 'database-ssl-ca', required: false }],
       log: silent,
       // Stored as a raw multi-line PEM.
-      fetchImpl: fakeFetch({
-        'database-ssl-ca': { value: '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----' },
-      }),
+      fetchImpl: fakeFetch({ 'database-ssl-ca': { value: '-----BEGIN CERTIFICATE-----\nMIIB\n-----END CERTIFICATE-----' } }),
     });
     expect(res.ok).toBe(false);
     expect(res.offenders).toEqual([{ envVar: 'DATABASE_SSL_CA', secretName: 'database-ssl-ca', reason: 'multiline' }]);

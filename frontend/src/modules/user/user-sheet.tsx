@@ -12,24 +12,13 @@ export function UserSheet({ id, organizationId }: { id: string; organizationId: 
   const currentUser = useUserStore((state) => state.user);
   const isSelf = currentUser?.id === id;
 
-  const {
-    data: user,
-    isLoading,
-    isError,
-  } = useQuery({
-    ...userQueryOptions(id),
-  });
+  const { data: user, isLoading, isError } = useQuery({ ...userQueryOptions(id) });
 
   if (isLoading) return <Spinner className="mt-[45vh] h-10 w-10" />;
   if (isError) return <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed" />;
 
   if (!user)
-    return (
-      <ContentPlaceholder
-        icon={isOnline ? FlameKindlingIcon : WifiOffIcon}
-        title={`${isOnline ? 'error:no_user_found' : 'c:offline.text'}`}
-      />
-    );
+    return <ContentPlaceholder icon={isOnline ? FlameKindlingIcon : WifiOffIcon} title={`${isOnline ? 'error:no_user_found' : 'c:offline.text'}`} />;
 
   return <UserProfile user={user} organizationId={isSelf ? undefined : organizationId} isSheet />;
 }

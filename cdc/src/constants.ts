@@ -12,12 +12,7 @@ export const RESOURCE_LIMITS = {
   },
 
   // Retry configuration for transient errors
-  retry: {
-    maxAttempts: 3,
-    initialDelayMs: 100,
-    maxDelayMs: 5000,
-    backoffMultiplier: 2,
-  },
+  retry: { maxAttempts: 3, initialDelayMs: 100, maxDelayMs: 5000, backoffMultiplier: 2 },
 
   // Reconnection configuration
   reconnection: {

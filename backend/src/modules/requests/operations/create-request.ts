@@ -10,11 +10,7 @@ import { log } from '#/utils/logger';
 import { accountExistsEmail, requestInfoEmail, requestResponseEmail } from '../../../../emails';
 
 /** One account-exists mail per address a day, however often the waitlist form names it. */
-const accountExistsMails = getRateLimiterInstance({
-  keyPrefix: 'accountExistsMail',
-  points: 1,
-  duration: 60 * 60 * 24,
-});
+const accountExistsMails = getRateLimiterInstance({ keyPrefix: 'accountExistsMail', points: 1, duration: 60 * 60 * 24 });
 
 interface CreateRequestInput {
   email: string;
@@ -45,9 +41,7 @@ export async function createRequestOp(ctx: DbContext, input: CreateRequestInput)
       );
       if (mailToday) {
         mailer
-          .prepareEmails(accountExistsEmail, { name: existingUser.name }, [
-            { email: normalizedEmail, lng: existingUser.language },
-          ])
+          .prepareEmails(accountExistsEmail, { name: existingUser.name }, [{ email: normalizedEmail, lng: existingUser.language }])
           .catch((err) => log.error('Failed to send account-exists email', { err }));
       }
       return;

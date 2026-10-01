@@ -79,9 +79,7 @@ class CircuitBreaker {
       entry.state = 'open';
       entry.openedAt = Date.now();
       entry.skippedCount = 0;
-      log.warn(`Circuit OPEN for table '${tableName}': ${FAILURE_THRESHOLD} consecutive failures`, {
-        failureCount: entry.failureCount,
-      });
+      log.warn(`Circuit OPEN for table '${tableName}': ${FAILURE_THRESHOLD} consecutive failures`, { failureCount: entry.failureCount });
     }
   }
 
@@ -99,9 +97,7 @@ class CircuitBreaker {
     entry.openedAt = null;
 
     if (wasOpen) {
-      log.info(`Circuit CLOSED for table '${tableName}': recovered`, {
-        skippedCount: skipped,
-      });
+      log.info(`Circuit CLOSED for table '${tableName}': recovered`, { skippedCount: skipped });
     }
   }
 

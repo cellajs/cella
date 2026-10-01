@@ -1,39 +1,18 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { MediaThumbnail } from '~/modules/common/media-thumbnail';
 
-const meta = {
-  title: 'common/MediaThumbnail',
-  component: MediaThumbnail,
-  tags: ['autodocs'],
-  parameters: { layout: 'centered' },
-} satisfies Meta<typeof MediaThumbnail>;
+const meta = { title: 'common/MediaThumbnail', component: MediaThumbnail, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
+  typeof MediaThumbnail
+>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const WithImage: Story = {
-  args: {
-    name: 'Sample image',
-    url: 'https://picsum.photos/seed/cella/64',
-    contentType: 'image/jpeg',
-  },
-};
+export const WithImage: Story = { args: { name: 'Sample image', url: 'https://picsum.photos/seed/cella/64', contentType: 'image/jpeg' } };
 
-export const BrokenImage: Story = {
-  args: {
-    name: 'Broken image',
-    url: 'https://invalid.example.com/missing.jpg',
-    contentType: 'image/jpeg',
-  },
-};
+export const BrokenImage: Story = { args: { name: 'Broken image', url: 'https://invalid.example.com/missing.jpg', contentType: 'image/jpeg' } };
 
-export const NoUrl: Story = {
-  args: {
-    name: 'No url',
-    url: undefined,
-    contentType: 'image/png',
-  },
-};
+export const NoUrl: Story = { args: { name: 'No url', url: undefined, contentType: 'image/png' } };
 
 export const ContentTypeVariants: Story = {
   args: { name: 'variants', contentType: 'image/png' },

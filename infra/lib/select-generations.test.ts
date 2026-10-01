@@ -17,10 +17,7 @@ describe('selectGenerations', () => {
   });
 
   it('collapses an exclusive service to the pending generation during a deploy', () => {
-    const out = selectGenerations(entry({ active: { id: 'gen-old', sha: 'old', seq: 1 }, pendingSha: 'new' }), {
-      ...base,
-      exclusive: true,
-    });
+    const out = selectGenerations(entry({ active: { id: 'gen-old', sha: 'old', seq: 1 }, pendingSha: 'new' }), { ...base, exclusive: true });
     expect(out).toEqual([{ id: 'gen-new', sha: 'new' }]);
   });
 

@@ -1,13 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  type DeployEffects,
-  type DeployOptions,
-  execEnv,
-  parseDeployArgs,
-  parseReapArgs,
-  runDeploy,
-  runReap,
-} from './deploy-run';
+import { type DeployEffects, type DeployOptions, execEnv, parseDeployArgs, parseReapArgs, runDeploy, runReap } from './deploy-run';
 import type { AllowedKey } from './print-deploy-env';
 
 /** Cella-shaped deploy env table, injected in place of the shared config load. */
@@ -290,11 +282,7 @@ describe('runDeploy sequencing', () => {
     const { fx, grantArgs } = makeFake();
     await runDeploy(baseOpts, fx, fakeDeployEnv);
     const byApp = new Map(grantArgs.map((argv) => [argv[argv.indexOf('--application-name') + 1], argv]));
-    expect([...byApp.keys()]).toEqual([
-      'cella-production-vm-backend',
-      'cella-production-vm-yjs',
-      'cella-production-boot',
-    ]);
+    expect([...byApp.keys()]).toEqual(['cella-production-vm-backend', 'cella-production-vm-yjs', 'cella-production-boot']);
     expect(byApp.get('cella-production-vm-yjs')).toContain('--dormant');
     expect(byApp.get('cella-production-vm-backend')).not.toContain('--dormant');
     expect(byApp.get('cella-production-boot')).not.toContain('--dormant');
@@ -312,9 +300,7 @@ describe('runDeploy sequencing', () => {
 
   it('rejects production deploys from untrusted refs before touching anything', async () => {
     const { fx, ops } = makeFake();
-    await expect(runDeploy({ ...baseOpts, gitRef: 'refs/heads/feature' }, fx, fakeDeployEnv)).rejects.toThrow(
-      /only allowed/,
-    );
+    await expect(runDeploy({ ...baseOpts, gitRef: 'refs/heads/feature' }, fx, fakeDeployEnv)).rejects.toThrow(/only allowed/);
     expect(ops).toHaveLength(0);
   });
 
@@ -348,9 +334,7 @@ describe('runReap sequencing', () => {
 
   it('releases the lock when the update fails', async () => {
     const { fx, ops } = makeFake({ updateFails: true });
-    await expect(runReap({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv)).rejects.toThrow(
-      /stack update failed/,
-    );
+    await expect(runReap({ mode: 'production', sha: 'abc123' }, fx, fakeDeployEnv)).rejects.toThrow(/stack update failed/);
     expect(ops.at(-1)).toBe('lease:release');
   });
 });

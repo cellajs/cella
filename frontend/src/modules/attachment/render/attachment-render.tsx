@@ -72,11 +72,7 @@ export function AttachmentRender({
               backdropDismiss={!!onBackdropClick}
             />
           ) : (
-            <img
-              src={url}
-              alt={altName}
-              className={cn(itemClassName, onBackdropClick ? 'max-h-full max-w-full' : 'h-full w-full')}
-            />
+            <img src={url} alt={altName} className={cn(itemClassName, onBackdropClick ? 'max-h-full max-w-full' : 'h-full w-full')} />
           ))}
         {type.includes('audio') && <RenderAudio src={url} className="mx-auto -mt-48 h-20 w-[80vw]" />}
         {type.includes('video') && <RenderVideo src={url} className="mx-auto max-h-full max-w-7xl" />}
@@ -84,12 +80,7 @@ export function AttachmentRender({
         {!['image', 'audio', 'video', 'pdf'].some((k) => type.includes(k)) && (
           <ContentPlaceholder icon={getFileIcon(type)} title="c:download_to_view">
             {/* The URL is always fetchable: a CDN or presigned URL online, a local blob URL offline. */}
-            <Button
-              variant="plain"
-              className="mt-4"
-              disabled={isInProgress}
-              onClick={() => download(url, filename || 'file')}
-            >
+            <Button variant="plain" className="mt-4" disabled={isInProgress} onClick={() => download(url, filename || 'file')}>
               {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon className="size-4" />}
               <span className="ml-1">{t('c:download')}</span>
             </Button>

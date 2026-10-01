@@ -10,19 +10,9 @@ const meta = {
   title: 'ui/Combobox',
   component: ComboboxSelect,
   tags: ['autodocs'],
-  parameters: {
-    layout: 'centered',
-  },
-  argTypes: {
-    options: { control: 'object' },
-    value: { control: 'text' },
-    disabled: { control: 'boolean' },
-    renderAvatar: { control: 'boolean' },
-  },
-  args: {
-    disabled: false,
-    renderAvatar: false,
-  },
+  parameters: { layout: 'centered' },
+  argTypes: { options: { control: 'object' }, value: { control: 'text' }, disabled: { control: 'boolean' }, renderAvatar: { control: 'boolean' } },
+  args: { disabled: false, renderAvatar: false },
 } satisfies Meta<typeof ComboboxSelect>;
 
 export default meta;
@@ -77,13 +67,7 @@ export const WithAvatars: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <ComboboxSelect
-          {...args}
-          options={args.options}
-          value={value}
-          onChange={setValue}
-          renderAvatar={args.renderAvatar}
-        />
+        <ComboboxSelect {...args} options={args.options} value={value} onChange={setValue} renderAvatar={args.renderAvatar} />
       </div>
     );
   },
@@ -158,13 +142,7 @@ export const LargeOptions: Story = {
     const [value, setValue] = useState(args.value);
     return (
       <div className="w-80">
-        <ComboboxSelect
-          {...args}
-          options={args.options}
-          value={value}
-          onChange={setValue}
-          placeholders={placeholders}
-        />
+        <ComboboxSelect {...args} options={args.options} value={value} onChange={setValue} placeholders={placeholders} />
       </div>
     );
   },
@@ -188,11 +166,7 @@ export const CustomPlaceholders: Story = {
           options={args.options}
           value={value}
           onChange={setValue}
-          placeholders={{
-            trigger: 'c:select_resource' as TKey,
-            search: 'c:search' as TKey,
-            notFound: 'c:no_resource_found' as TKey,
-          }}
+          placeholders={{ trigger: 'c:select_resource' as TKey, search: 'c:search' as TKey, notFound: 'c:no_resource_found' as TKey }}
         />
       </div>
     );

@@ -3,13 +3,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { attachmentsDb } from '../offline/attachments-db';
 
 // Mock external deps before imports
-vi.mock('shared', async () => ({
-  appConfig: (await import('./test-setup')).mockAttachmentAppConfig,
-}));
+vi.mock('shared', async () => ({ appConfig: (await import('./test-setup')).mockAttachmentAppConfig }));
 
-vi.mock('@tanstack/react-query', () => ({
-  onlineManager: { isOnline: () => true },
-}));
+vi.mock('@tanstack/react-query', () => ({ onlineManager: { isOnline: () => true } }));
 
 vi.mock('../offline/storage-service', () => ({
   attachmentStorage: {
@@ -33,15 +29,10 @@ vi.mock('../query', () => ({
   attachmentQueryKeys: { list: { base: ['attachment', 'list'] }, delete: ['attachment', 'delete'] },
 }));
 
-vi.mock('~/query/basic/flatten', () => ({
-  flattenInfiniteData: vi.fn().mockReturnValue([]),
-}));
+vi.mock('~/query/basic/flatten', () => ({ flattenInfiniteData: vi.fn().mockReturnValue([]) }));
 
 vi.mock('~/query/query-client', () => ({
-  queryClient: {
-    getQueryCache: () => ({ subscribe: vi.fn() }),
-    getMutationCache: () => ({ subscribe: vi.fn() }),
-  },
+  queryClient: { getQueryCache: () => ({ subscribe: vi.fn() }), getMutationCache: () => ({ subscribe: vi.fn() }) },
 }));
 
 vi.mock('~/query/local-user-storage', () => ({
@@ -166,13 +157,7 @@ describe('downloadService: auth fail-fast (401/403)', () => {
 
   it('marks failed and stops fetching remaining variants on 403', async () => {
     vi.mocked(findAttachmentInCache).mockReturnValue(
-      makeAttachment({
-        keys: {
-          original: 'files/orig.png',
-          preview: 'files/thumb.png',
-          converted: 'files/conv.png',
-        },
-      }),
+      makeAttachment({ keys: { original: 'files/orig.png', preview: 'files/thumb.png', converted: 'files/conv.png' } }),
     );
 
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 403 }));
@@ -192,13 +177,7 @@ describe('downloadService: auth fail-fast (401/403)', () => {
 
   it('marks failed and stops fetching remaining variants on 401', async () => {
     vi.mocked(findAttachmentInCache).mockReturnValue(
-      makeAttachment({
-        keys: {
-          original: 'files/orig.png',
-          preview: 'files/thumb.png',
-          converted: 'files/conv.png',
-        },
-      }),
+      makeAttachment({ keys: { original: 'files/orig.png', preview: 'files/thumb.png', converted: 'files/conv.png' } }),
     );
 
     const fetchMock = vi.fn().mockResolvedValue(new Response(null, { status: 401 }));

@@ -89,8 +89,7 @@ export function renderSectionsHtml(sections: DigestSection[], lng: string): stri
   return sections
     .map((section) => {
       const items = section.lines.map((line) => `<li>${line}</li>`).join('');
-      const more =
-        section.overflow > 0 ? `<li>${i18n.t('c:email.digest_overflow', { lng, count: section.overflow })}</li>` : '';
+      const more = section.overflow > 0 ? `<li>${i18n.t('c:email.digest_overflow', { lng, count: section.overflow })}</li>` : '';
       return `<h3>${escapeString(section.channelName)}</h3><ul>${items}${more}</ul>`;
     })
     .join('');

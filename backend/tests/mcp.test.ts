@@ -21,17 +21,8 @@ import {
 import { clearSecurityTestData, createOrgUser } from './security/helpers';
 import { createAppClient } from './test-client';
 
-type Rpc = {
-  jsonrpc: '2.0';
-  id: number | null;
-  result?: Record<string, unknown>;
-  error?: { code: number; message: string; data?: unknown };
-};
-type ToolResult = {
-  content: { type: string; text: string }[];
-  structuredContent?: Record<string, unknown>;
-  isError?: boolean;
-};
+type Rpc = { jsonrpc: '2.0'; id: number | null; result?: Record<string, unknown>; error?: { code: number; message: string; data?: unknown } };
+type ToolResult = { content: { type: string; text: string }[]; structuredContent?: Record<string, unknown>; isError?: boolean };
 
 /** Every limiter passes, as in every test, and counts the requests it charges by its key. */
 const charged = vi.hoisted(() => new Map<string, number>());
@@ -118,8 +109,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     return { response, rpc: (data ?? error) as Rpc };
   }
 
-  const toolCall = (ctx: Parameters<typeof rpc>[0], name: string, args: unknown) =>
-    rpc(ctx, 'tools/call', { name, arguments: args });
+  const toolCall = (ctx: Parameters<typeof rpc>[0], name: string, args: unknown) => rpc(ctx, 'tools/call', { name, arguments: args });
   const toolResult = (reply: { rpc: Rpc }) => reply.rpc.result as ToolResult;
 
   it('publishes protected resource metadata and challenges a tokenless call with it', async () => {
@@ -138,9 +128,7 @@ describe('MCP on the substrate (Phase E)', async () => {
 
     const anonymous = await rpc({ org }, 'initialize');
     expect(anonymous.response.status).toBe(401);
-    expect(anonymous.response.headers.get('www-authenticate')).toBe(
-      `Bearer resource_metadata="${resource}/.well-known/oauth-protected-resource"`,
-    );
+    expect(anonymous.response.headers.get('www-authenticate')).toBe(`Bearer resource_metadata="${resource}/.well-known/oauth-protected-resource"`);
   });
 
   it('showcase 1: a read token lists and reads attachments, and is stepped up on a write', async () => {
@@ -151,13 +139,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     const list = await rpc(ctx, 'tools/list');
     const tools = (list.rpc.result as { tools: { name: string; _meta: { scope: string } }[] }).tools;
     expect(tools.map((tool) => tool.name)).toEqual(
-      expect.arrayContaining([
-        'getAttachments',
-        'getAttachment',
-        'createAttachments',
-        'updateAttachment',
-        'deleteAttachments',
-      ]),
+      expect.arrayContaining(['getAttachments', 'getAttachment', 'createAttachments', 'updateAttachment', 'deleteAttachments']),
     );
 
     // Query values are strings, as the route reads them.
@@ -165,14 +147,9 @@ describe('MCP on the substrate (Phase E)', async () => {
     expect(read.response.status).toBe(200);
     expect(toolResult(read).structuredContent).toMatchObject({ items: [], total: 0 });
 
-    const write = await toolCall(ctx, 'updateAttachment', {
-      id: '00000000-0000-4000-8000-000000000000',
-      ops: { name: 'x' },
-    });
+    const write = await toolCall(ctx, 'updateAttachment', { id: '00000000-0000-4000-8000-000000000000', ops: { name: 'x' } });
     expect(write.response.status).toBe(403);
-    expect(write.response.headers.get('www-authenticate')).toContain(
-      'error="insufficient_scope", scope="attachment:write"',
-    );
+    expect(write.response.headers.get('www-authenticate')).toContain('error="insufficient_scope", scope="attachment:write"');
     expect(write.rpc.error).toMatchObject({ message: 'insufficient_scope', data: { scope: 'attachment:write' } });
   });
 
@@ -191,9 +168,7 @@ describe('MCP on the substrate (Phase E)', async () => {
 
   it('showcase 3: a service account creates, reads, renames and deletes through the same tools', async () => {
     const ctx = await serviceToken('attachment:write');
-    const created = await toolCall(ctx, 'createAttachments', {
-      items: [buildItem('Build log', 'build.log', ctx)],
-    });
+    const created = await toolCall(ctx, 'createAttachments', { items: [buildItem('Build log', 'build.log', ctx)] });
     expect(created.rpc.error).toBeUndefined();
     expect(created.response.status).toBe(200);
     const result = created.rpc.result as ToolResult;
@@ -201,8 +176,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     const { data: items } = result.structuredContent as { data: { id: string; name: string }[] };
     expect(items).toHaveLength(1);
     // Provenance is the actor id; the wire shape hydrates users only (service badges are a UI follow-up).
-    const provenance = async (id: string) =>
-      (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
+    const provenance = async (id: string) => (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
     expect((await provenance(items[0].id)).createdBy).toBe(ctx.accountId);
 
     // `write` implies `read` (D2).
@@ -222,16 +196,10 @@ describe('MCP on the substrate (Phase E)', async () => {
 
   it('showcase 2: a person consents to a registered app, is refused a rename, steps up and renames as themselves', async () => {
     const reader = await userToken('attachment:read');
-    expect(reader.consent).toMatchObject({
-      client: { id: CLIENT_ID, kind: 'registered' },
-      scopes: ['attachment:read'],
-      refusal: null,
-    });
+    expect(reader.consent).toMatchObject({ client: { id: CLIENT_ID, kind: 'registered' }, scopes: ['attachment:read'], refusal: null });
 
     const seed = await serviceToken('attachment:write');
-    const created = await toolCall(seed, 'createAttachments', {
-      items: [buildItem('Thesis', 'thesis.pdf', seed)],
-    });
+    const created = await toolCall(seed, 'createAttachments', { items: [buildItem('Thesis', 'thesis.pdf', seed)] });
     expect(created.rpc.error).toBeUndefined();
     const { data: items } = toolResult(created).structuredContent as { data: { id: string }[] };
 
@@ -250,9 +218,7 @@ describe('MCP on the substrate (Phase E)', async () => {
     const writer = await userToken('attachment:read attachment:write', reader);
     const moved = await toolCall({ org: seed.org, jwt: seed.jwt }, 'getAttachment', { id: items[0].id });
     expect(moved.response.status).toBe(200);
-    const own = await toolCall(writer, 'createAttachments', {
-      items: [buildItem('Draft', 'draft.pdf', writer)],
-    });
+    const own = await toolCall(writer, 'createAttachments', { items: [buildItem('Draft', 'draft.pdf', writer)] });
     expect(own.rpc.error).toBeUndefined();
     expect(toolResult(own).isError).toBeUndefined();
     const mine = (toolResult(own).structuredContent as { data: { id: string }[] }).data[0];

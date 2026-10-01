@@ -14,10 +14,7 @@ const MAX_DEVICES_PER_USER = 50;
 export async function pruneDevices(now: Date = new Date()): Promise<number> {
   const seenBefore = new Date(now.getTime() - DEVICE_TTL.milliseconds()).toISOString();
 
-  const expired = await db
-    .delete(devicesTable)
-    .where(lt(devicesTable.lastSeenAt, seenBefore))
-    .returning({ userId: devicesTable.userId });
+  const expired = await db.delete(devicesTable).where(lt(devicesTable.lastSeenAt, seenBefore)).returning({ userId: devicesTable.userId });
 
   const excess = await db
     .delete(devicesTable)

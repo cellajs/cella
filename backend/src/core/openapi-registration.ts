@@ -29,12 +29,7 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
 
   const openApiConfig = {
     servers: [{ url: appConfig.backendUrl }],
-    info: {
-      title: `${appConfig.name} API`,
-      version: appConfig.apiVersion,
-      description: appConfig.apiDescription,
-      'x-extensions': extensions,
-    },
+    info: { title: `${appConfig.name} API`, version: appConfig.apiVersion, description: appConfig.apiDescription, 'x-extensions': extensions },
     openapi: '3.1.0',
     // Tag registry provides ordered tags with optional 3.2.0 fields (summary, parent, kind, externalDocs).
     tags: getRegisteredTags().map((t) => ({

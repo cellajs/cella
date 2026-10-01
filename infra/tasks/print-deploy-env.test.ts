@@ -51,24 +51,8 @@ describe('buildDeployEnv', () => {
           reuses_image_of: '',
           primary_rollout: true,
         },
-        {
-          service: 'cdc',
-          public_url: '',
-          health_url: '',
-          lb_route: '',
-          dockerfile: 'Dockerfile',
-          reuses_image_of: '',
-          primary_rollout: false,
-        },
-        {
-          service: 'jobs',
-          public_url: '',
-          health_url: '',
-          lb_route: '',
-          dockerfile: '',
-          reuses_image_of: 'backend',
-          primary_rollout: false,
-        },
+        { service: 'cdc', public_url: '', health_url: '', lb_route: '', dockerfile: 'Dockerfile', reuses_image_of: '', primary_rollout: false },
+        { service: 'jobs', public_url: '', health_url: '', lb_route: '', dockerfile: '', reuses_image_of: 'backend', primary_rollout: false },
         {
           service: 'frontend',
           public_url: 'https://www.cella.example',
@@ -152,9 +136,7 @@ describe('buildDeployEnv', () => {
       },
     };
     const services = JSON.parse(buildDeployEnv(cfg).enabled_services_json) as { service: string; public_url: string }[];
-    expect(services.find((service) => service.service === 'frontend')?.public_url).toBe(
-      'https://service-front.example',
-    );
+    expect(services.find((service) => service.service === 'frontend')?.public_url).toBe('https://service-front.example');
     expect(services.find((service) => service.service === 'backend')?.public_url).toBe('https://service-api.example');
   });
 });

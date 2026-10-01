@@ -12,16 +12,10 @@ export const secretsProvider: StatusProvider<SecretsFacts> = {
   async gather(session) {
     if (!session.scalewayKeyAvailable || !session.secretKey || !session.projectId) return undefined;
     try {
-      const client = createSecretManagerClient({
-        secretKey: session.secretKey,
-        region: session.appConfig.s3.region,
-        projectId: session.projectId,
-      });
+      const client = createSecretManagerClient({ secretKey: session.secretKey, region: session.appConfig.s3.region, projectId: session.projectId });
       const existing = await client.listSecretsUnder(secretManagerPath(session.appConfig.slug, session.mode));
       const versioned = new Set(existing.filter((s) => (s.version_count ?? 0) > 0).map((s) => s.name));
-      return operatorManagedRuntimeSecrets
-        .filter((s) => s.required && !versioned.has(s.secretName))
-        .map((s) => s.secretName);
+      return operatorManagedRuntimeSecrets.filter((s) => s.required && !versioned.has(s.secretName)).map((s) => s.secretName);
     } catch {
       return undefined;
     }

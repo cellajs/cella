@@ -14,16 +14,10 @@ import { getOrgCache, setOrgCache } from './org-cache';
  * the RLS transaction.
  */
 export const orgGuard = xMiddleware(
-  {
-    functionName: 'orgGuard',
-    type: 'x-guard',
-    name: 'org',
-    description: 'Validates organization membership within tenant context',
-  },
+  { functionName: 'orgGuard', type: 'x-guard', name: 'org', description: 'Validates organization membership within tenant context' },
   async (ctx, next) => {
     const organizationId = ctx.req.param('organizationId');
-    if (!organizationId)
-      throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing organizationId parameter' } });
+    if (!organizationId) throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing organizationId parameter' } });
 
     const db = ctx.var.db;
     // Role bindings of whoever is acting: a user's memberships, or a service account's stored bindings.
@@ -61,15 +55,11 @@ export const orgGuard = xMiddleware(
     // Deeper channel rows carry organizationId as an ancestor column, so a sub-channel member is
     // in the org. This guard only rejects callers with no foothold at all; the permission engine
     // does the fine-grained work.
-    const orgMembership =
-      memberships.find((m) => m.organizationId === organization.id && m.channelType === 'organization') || null;
+    const orgMembership = memberships.find((m) => m.organizationId === organization.id && m.channelType === 'organization') || null;
     const isInOrganization = orgMembership !== null || memberships.some((m) => m.organizationId === organization.id);
     if (!isSystemAdmin && !isInOrganization) throw missing();
     // A service account's binding is not a membership row; the organization-level membership is a user's only.
-    const orgWithMembership = {
-      ...organization,
-      membership: orgMembership && isMembershipRow(orgMembership) ? orgMembership : null,
-    };
+    const orgWithMembership = { ...organization, membership: orgMembership && isMembershipRow(orgMembership) ? orgMembership : null };
 
     // membership is the organization-level row: null for system admins, and for members who hold
     // rows only in channels below the organization

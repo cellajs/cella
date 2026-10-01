@@ -71,11 +71,7 @@ describe('migrateQueryState', () => {
   });
 
   it('migrates infinite { pages } shape', async () => {
-    const state = await migrateQueryState(
-      'attachment',
-      { data: { pages: [{ items: [{ id: '1', name: 'a' }] }], pageParams: [0] } },
-      0,
-    );
+    const state = await migrateQueryState('attachment', { data: { pages: [{ items: [{ id: '1', name: 'a' }] }], pageParams: [0] } }, 0);
     expect(state.data).toEqual({ pages: [{ items: [{ id: '1', title: 'a' }] }], pageParams: [0] });
   });
 
@@ -87,10 +83,7 @@ describe('migrateQueryState', () => {
 
 describe('migrateMutations', () => {
   it('rewrites variables for product-entity mutations', () => {
-    const result = migrateMutations(
-      [{ mutationKey: ['attachment', 'update'], state: { variables: { name: 'x' } } } as any],
-      0,
-    );
+    const result = migrateMutations([{ mutationKey: ['attachment', 'update'], state: { variables: { name: 'x' } } } as any], 0);
     expect(result[0].state.variables).toEqual({ title: 'x' });
   });
 

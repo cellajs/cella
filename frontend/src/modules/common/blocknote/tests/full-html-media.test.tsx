@@ -13,9 +13,7 @@ const getPresignedUrlBatched = vi.fn(async (attachmentId: string) => {
   await presignGate;
   return `https://signed.example.test/${attachmentId}`;
 });
-vi.mock('~/modules/attachment/presign-batch', () => ({
-  getPresignedUrlBatched: (attachmentId: string) => getPresignedUrlBatched(attachmentId),
-}));
+vi.mock('~/modules/attachment/presign-batch', () => ({ getPresignedUrlBatched: (attachmentId: string) => getPresignedUrlBatched(attachmentId) }));
 vi.mock('~/modules/attachment/offline/storage-service', () => ({
   attachmentStorage: { getSharedBlobUrl: async () => null, createBlobUrlWithVariant: async () => null },
 }));
@@ -83,11 +81,7 @@ describe('BlockNoteFullHtml media', () => {
     // A refused reference renders nothing at all: no image, no empty file placeholder.
     const imageBlockCount = () => container.querySelectorAll('[data-content-type="image"]').length;
 
-    await act(async () =>
-      root.render(
-        <BlockNoteFullHtml id="doc" defaultValue={document} tenantId="tenant-1" organizationId={organizationId} />,
-      ),
-    );
+    await act(async () => root.render(<BlockNoteFullHtml id="doc" defaultValue={document} tenantId="tenant-1" organizationId={organizationId} />));
     // First pass: the unresolved blocks, painted while the presign is pending.
     await vi.waitFor(() => expect(container.textContent).toContain('text survives'));
     expect(sourcesNow()).toEqual([ownKey, attachmentId]);
@@ -116,11 +110,7 @@ describe('BlockNoteFullHtml media', () => {
     ]);
     const watcher = watchImageSources(container);
 
-    await act(async () =>
-      root.render(
-        <BlockNoteFullHtml id="doc" defaultValue={document} tenantId="tenant-1" organizationId={organizationId} />,
-      ),
-    );
+    await act(async () => root.render(<BlockNoteFullHtml id="doc" defaultValue={document} tenantId="tenant-1" organizationId={organizationId} />));
     await vi.waitFor(() => expect(container.textContent).toContain('text survives'));
     watcher.stop();
 
@@ -154,14 +144,10 @@ describe('BlockNoteFullHtml: documents BlockNote cannot render', () => {
     paragraph('text survives'),
   ]);
   // Passes the block schema check: a paragraph whose inline node BlockNote does not know.
-  const unknownInline = JSON.stringify([
-    { id: 'inline', type: 'paragraph', props: {}, content: [{ type: 'x' }], children: [] },
-  ]);
+  const unknownInline = JSON.stringify([{ id: 'inline', type: 'paragraph', props: {}, content: [{ type: 'x' }], children: [] }]);
 
   it('must not blank a document via a block type outside the schema: its nested blocks and the rest render', async () => {
-    await act(async () =>
-      root.render(<BlockNoteFullHtml id="doc" defaultValue={unknownType} organizationId={organizationId} />),
-    );
+    await act(async () => root.render(<BlockNoteFullHtml id="doc" defaultValue={unknownType} organizationId={organizationId} />));
 
     await vi.waitFor(() => expect(container.textContent).toContain('text survives'));
     expect(container.textContent).toContain('nested survives');

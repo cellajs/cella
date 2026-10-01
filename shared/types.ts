@@ -44,11 +44,7 @@ export type ActivityAction = (typeof activityActions)[number];
 export const activityVerbs = ['created', 'updated', 'deleted'] as const;
 export type ActivityVerb = (typeof activityVerbs)[number];
 
-const actionVerbMap = {
-  create: 'created',
-  update: 'updated',
-  delete: 'deleted',
-} as const satisfies Record<ActivityAction, ActivityVerb>;
+const actionVerbMap = { create: 'created', update: 'updated', delete: 'deleted' } as const satisfies Record<ActivityAction, ActivityVerb>;
 
 export const actionToVerb = (action: ActivityAction): ActivityVerb => actionVerbMap[action];
 
@@ -121,9 +117,7 @@ export type RelatedChannelType<E extends string> = E extends keyof HierarchyRela
 type HierarchyNullableMap = typeof hierarchy._nullableMap;
 
 /** Variable-depth rows: `NullableAncestorType<'item'>` gives `'project' | 'courseSection'`. */
-export type NullableAncestorType<E extends string> = E extends keyof HierarchyNullableMap
-  ? HierarchyNullableMap[E]
-  : never;
+export type NullableAncestorType<E extends string> = E extends keyof HierarchyNullableMap ? HierarchyNullableMap[E] : never;
 
 export type EntityActionType = (typeof appConfig.entityActions)[number];
 

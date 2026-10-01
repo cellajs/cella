@@ -4,9 +4,7 @@ import { expect, it, vi } from 'vitest';
 
 vi.mock('shared', () => ({ appConfig: { slug: 'test' } }));
 
-const { bindLocalUserDb, deletedElsewhereListeners, getLocalUserDb, LocalUserDatabase } = await import(
-  '~/query/local-user-db'
-);
+const { bindLocalUserDb, deletedElsewhereListeners, getLocalUserDb, LocalUserDatabase } = await import('~/query/local-user-db');
 
 it('a delete from another tab closes for good, unbinds, notifies, and does not get recreated by a late write', async () => {
   const db = bindLocalUserDb('user-a');

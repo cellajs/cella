@@ -17,12 +17,7 @@ import { useUIStore } from '~/modules/ui/ui-store';
 function OperationsTable() {
   const { t } = useTranslation();
   const focusView = useUIStore((state) => state.focusView);
-  const { search, setSearch } = useSearchParams<{
-    q?: string;
-    sort?: string;
-    order?: 'asc' | 'desc';
-    tag?: string;
-  }>({
+  const { search, setSearch } = useSearchParams<{ q?: string; sort?: string; order?: 'asc' | 'desc'; tag?: string }>({
     from: '/_public/_content/docs/operations_/table',
   });
 

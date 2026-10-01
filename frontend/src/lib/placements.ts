@@ -68,10 +68,7 @@ export interface SlotContexts extends ChannelSettingsSlotContexts, ChannelTabsSl
 export type Slot = keyof SlotContexts & string;
 
 /** A tool in one slot: `render` takes the slot context, returns its full content unit, and lazy-loads heavy UI. */
-export type ToolFor<S extends Slot> = PlacementDescriptor & {
-  slot: S;
-  render: (context: SlotContexts[S]) => ReactNode;
-};
+export type ToolFor<S extends Slot> = PlacementDescriptor & { slot: S; render: (context: SlotContexts[S]) => ReactNode };
 
 export type Tool = { [S in Slot]: ToolFor<S> }[Slot];
 
@@ -127,10 +124,7 @@ export function getSlotDescriptors(slot: string): (PlacementDescriptor & { slot:
 }
 
 /** Stored ids first in stored order, unlisted placements appended by declared `order`, unmatched stored ids ignored. */
-export function orderBySlotConfig<T extends PlacementDescriptor & { order: number }>(
-  items: T[],
-  slotConfig?: SlotToolsConfig,
-): T[] {
+export function orderBySlotConfig<T extends PlacementDescriptor & { order: number }>(items: T[], slotConfig?: SlotToolsConfig): T[] {
   const stored = slotConfig?.order;
   if (!stored?.length) return [...items].sort((a, b) => a.order - b.order);
   const rank = new Map(stored.map((id, index) => [id, index]));

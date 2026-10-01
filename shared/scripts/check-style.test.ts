@@ -33,10 +33,7 @@ function makeRepo(files: Record<string, string>): string {
 }
 
 function run(root: string, ...args: string[]) {
-  const result = spawnSync(process.execPath, [join(root, 'shared/scripts/check-style.ts'), ...args], {
-    cwd: root,
-    encoding: 'utf8',
-  });
+  const result = spawnSync(process.execPath, [join(root, 'shared/scripts/check-style.ts'), ...args], { cwd: root, encoding: 'utf8' });
   return { status: result.status, stdout: result.stdout, stderr: result.stderr };
 }
 
@@ -81,8 +78,7 @@ afterAll(() => {
 const OK = '[style] OK, terminology, documentation, comments and frontend code follow the required style.';
 const placement =
   '  backend/src/long.ts:1:1 [detached-long-comment] 4 prose lines; move shared context to a README or attach a concise local constraint to a declaration';
-const storeRead =
-  '  frontend/src/comp.tsx:4:16 [store-selector] useCount() subscribes to every field; select the values this component reads';
+const storeRead = '  frontend/src/comp.tsx:4:16 [store-selector] useCount() subscribes to every field; select the values this component reads';
 const required = [
   placement,
   `  backend/src/rules.ts:1:8 [em-dash] "${dash}": split the sentence, use a colon, or drop the clause`,
@@ -109,23 +105,14 @@ const review = [
 
 describe('style check', () => {
   it('reports every required finding in file order, changelogs and infra wording excluded', () => {
-    expect(run(dirty)).toEqual({
-      status: 1,
-      stdout: '',
-      stderr: lines(`[style] ${required.length} finding(s):`, ...required),
-    });
+    expect(run(dirty)).toEqual({ status: 1, stdout: '', stderr: lines(`[style] ${required.length} finding(s):`, ...required) });
   });
 
   it('adds review markers in audit mode, comments only a token boundary reaches included', () => {
     expect(run(dirty, '--audit')).toEqual({
       status: 1,
       stdout: '',
-      stderr: lines(
-        `[style] ${required.length} finding(s):`,
-        ...required,
-        `[style:audit] ${review.length} review marker(s):`,
-        ...review,
-      ),
+      stderr: lines(`[style] ${required.length} finding(s):`, ...required, `[style:audit] ${review.length} review marker(s):`, ...review),
     });
   });
 
@@ -141,29 +128,21 @@ describe('style check', () => {
   });
 
   it('prints one line when clean, and the audit header with no markers', () => {
-    expect(run(clean, '--audit')).toEqual({
-      status: 0,
-      stdout: lines(OK),
-      stderr: lines('[style:audit] 0 review marker(s):'),
-    });
+    expect(run(clean, '--audit')).toEqual({ status: 0, stdout: lines(OK), stderr: lines('[style:audit] 0 review marker(s):') });
   });
 });
 
 describe('app-owned prose exclusions', () => {
   it('skip the listed path prefixes in comments and docs', () => {
     const root = makeRepo({
-      'shared/config/vocabulary-allowlist.ts':
-        "export const vocabularyAllowlist = { files: [], prefixes: [], proseExclude: ['reference/'] };\n",
+      'shared/config/vocabulary-allowlist.ts': "export const vocabularyAllowlist = { files: [], prefixes: [], proseExclude: ['reference/'] };\n",
       'reference/old.ts': `// ${dash}\n`,
       'reference/README.md': `${dash}\n`,
       'src/new.ts': `// ${dash}\n`,
     });
     try {
       expect(run(root).stderr).toBe(
-        lines(
-          '[style] 1 finding(s):',
-          `  src/new.ts:1:4 [em-dash] "${dash}": split the sentence, use a colon, or drop the clause`,
-        ),
+        lines('[style] 1 finding(s):', `  src/new.ts:1:4 [em-dash] "${dash}": split the sentence, use a colon, or drop the clause`),
       );
     } finally {
       rmSync(root, { recursive: true, force: true });

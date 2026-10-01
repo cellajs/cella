@@ -15,10 +15,7 @@ interface Props {
   form: UseFormReturn<any>;
   name: string;
   label: string;
-  entity: {
-    id?: string;
-    name?: string | null;
-  };
+  entity: { id?: string; name?: string | null };
   type: EntityAvatarProps['type'];
 }
 
@@ -68,9 +65,7 @@ export function AvatarFormField({ form, label, name, entity, type }: Props) {
               {appConfig.has.uploadEnabled ? (
                 <p className="text-xs sm:text-sm">{t('c:upload_img_max_10mb.text')}</p>
               ) : (
-                appConfig.mode === 'development' && (
-                  <p className="text-muted-foreground text-xs sm:text-sm">{t('c:restrict_image_upload')}</p>
-                )
+                appConfig.mode === 'development' && <p className="text-muted-foreground text-xs sm:text-sm">{t('c:restrict_image_upload')}</p>
               )}
               <div className="flex items-center gap-2">
                 {appConfig.has.uploadEnabled && (

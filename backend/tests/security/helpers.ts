@@ -1,12 +1,6 @@
 import { eq, sql } from 'drizzle-orm';
 import { generatePasskeyChallenge, signInWithPasskey } from 'sdk';
-import {
-  type EntityActionPermissions,
-  type EntityRole,
-  getEntityPolicies,
-  getPolicyPermissions,
-  policyMatrix,
-} from 'shared';
+import { type EntityActionPermissions, type EntityRole, getEntityPolicies, getPolicyPermissions, policyMatrix } from 'shared';
 import { afterEach, beforeEach, expect } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
@@ -48,13 +42,7 @@ export async function createSecondOrg() {
   return createTestOrganization();
 }
 
-export async function createOrgUser(
-  _call: Call,
-  tenantId: string,
-  organizationId: string,
-  label: string,
-  role: EntityRole = memberRole,
-) {
+export async function createOrgUser(_call: Call, tenantId: string, organizationId: string, label: string, role: EntityRole = memberRole) {
   const email = `${label}-user@security-test.com`;
 
   const user = await createOrganizationAdminUser(email, organizationId, role, tenantId);
@@ -110,11 +98,7 @@ export async function passkeyChallenge(type: 'authentication' | 'mfa' | 'registr
 }
 
 /** Answers a passkey challenge on the sign-in route from a browser holding `cookie`. */
-export async function passkeySignIn(
-  assertion: PasskeyAssertion,
-  cookie: string,
-  type: 'authentication' | 'mfa' = 'authentication',
-) {
+export async function passkeySignIn(assertion: PasskeyAssertion, cookie: string, type: 'authentication' | 'mfa' = 'authentication') {
   const call = await createAppClient();
   const headers = cookie ? { ...defaultHeaders, Cookie: cookie } : defaultHeaders;
   return call(signInWithPasskey, { body: { type, assertion }, headers });

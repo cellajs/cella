@@ -106,10 +106,7 @@ class AttachmentUploadService {
   private async uploadBlob(blob: AttachmentBlob): Promise<void> {
     await attachmentStorage.updateUploadStatus(blob.id, 'uploading');
 
-    const uppy = new Uppy({
-      autoProceed: false,
-      allowMultipleUploadBatches: false,
-    });
+    const uppy = new Uppy({ autoProceed: false, allowMultipleUploadBatches: false });
 
     try {
       uppy.use(Transloadit, {
@@ -128,12 +125,7 @@ class AttachmentUploadService {
         },
       });
 
-      uppy.addFile({
-        name: blob.filename || `${blob.id}.bin`,
-        type: blob.contentType,
-        data: blob.blob,
-        meta: { attachmentId: blob.id },
-      });
+      uppy.addFile({ name: blob.filename || `${blob.id}.bin`, type: blob.contentType, data: blob.blob, meta: { attachmentId: blob.id } });
 
       const result = await uppy.upload();
 

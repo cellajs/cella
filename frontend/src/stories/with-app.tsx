@@ -1,12 +1,6 @@
 import type { Decorator } from '@storybook/react-vite';
 import { QueryClientProvider, type QueryKey } from '@tanstack/react-query';
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRouter,
-  type RegisteredRouter,
-  RouterProvider,
-} from '@tanstack/react-router';
+import { createMemoryHistory, createRootRoute, createRouter, type RegisteredRouter, RouterProvider } from '@tanstack/react-router';
 import { createContext, type ReactNode, useContext, useState } from 'react';
 import { queryClient } from '~/query/query-client';
 import { setRouter } from '~/routes/-router-instance';

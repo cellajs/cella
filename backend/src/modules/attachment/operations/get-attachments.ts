@@ -8,11 +8,7 @@ import { requestScopeWhere } from '#/db/utils/request-scope';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import type { attachmentListQuerySchema } from '#/modules/attachment/attachment-schema';
 import { attachmentHomeColumnKey, resolveAttachmentHomeScope } from '#/modules/attachment/helpers/attachment-placement';
-import {
-  getOrganizationEntityCount,
-  productViewCountJoin,
-  productViewCountSelect,
-} from '#/modules/entities/entities-queries';
+import { getOrganizationEntityCount, productViewCountJoin, productViewCountSelect } from '#/modules/entities/entities-queries';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
 import { auditUserSelect, coalesceAuditUsers, createdByUser, updatedByUser } from '#/modules/user/helpers/audit-user';
 import { actorFrom } from '#/permissions/access';
@@ -39,12 +35,7 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
     actor,
     homeChannelId ? { homeChannelId } : undefined,
   );
-  const scopeWhere = buildCollectionReadWhere(
-    readFilter,
-    attachmentsTable,
-    attachmentsTable[attachmentHomeColumnKey],
-    actor,
-  );
+  const scopeWhere = buildCollectionReadWhere(readFilter, attachmentsTable, attachmentsTable[attachmentHomeColumnKey], actor);
 
   if (scopeWhere.kind === 'none') {
     return { items: [], total: 0 };
@@ -86,11 +77,7 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
         sort,
         order,
         fallback: ['createdAt', 'desc'],
-        columns: {
-          name: attachmentsTable.name,
-          createdAt: attachmentsTable.createdAt,
-          contentType: attachmentsTable.contentType,
-        },
+        columns: { name: attachmentsTable.name, createdAt: attachmentsTable.createdAt, contentType: attachmentsTable.contentType },
         tieBreaker: attachmentsTable.id,
       });
 
@@ -108,11 +95,7 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
     const whereClause = and(...filters);
 
     const itemsQuery = db
-      .select({
-        ...attachmentCols,
-        ...auditUserSelect,
-        viewCount: productViewCountSelect(),
-      })
+      .select({ ...attachmentCols, ...auditUserSelect, viewCount: productViewCountSelect() })
       .from(attachmentsTable)
       .leftJoin(productCountersTable, productViewCountJoin(attachmentsTable.id))
       .leftJoin(createdByUser, eq(createdByUser.id, attachmentsTable.createdBy))
@@ -125,10 +108,7 @@ export async function getAttachmentsOp(ctx: OrgContext, input: GetAttachmentsInp
     const totalSource: ListTotalSource = isDelta
       ? { kind: 'pageLength' }
       : counterEligible
-        ? {
-            kind: 'counter',
-            getTotal: () => getOrganizationEntityCount(readCtx, { organizationId, entityType: 'attachment' }),
-          }
+        ? { kind: 'counter', getTotal: () => getOrganizationEntityCount(readCtx, { organizationId, entityType: 'attachment' }) }
         : {
             kind: 'exact',
             getTotal: async () => {

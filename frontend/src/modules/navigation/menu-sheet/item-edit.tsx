@@ -29,11 +29,7 @@ export function MenuItemEdit({ item, icon: Icon }: MenuItemEditProps) {
     }
 
     const updatedMembership: MutationUpdateMembership = {
-      path: {
-        id: item.membership.id,
-        tenantId: item.tenantId,
-        organizationId: item.membership.organizationId,
-      },
+      path: { id: item.membership.id, tenantId: item.tenantId, organizationId: item.membership.organizationId },
       body: key === 'archived' ? { archived: !item.membership.archived } : { muted: !item.membership.muted },
       channelId: item.id,
       channelType: item.entityType,

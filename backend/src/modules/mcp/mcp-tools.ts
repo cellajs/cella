@@ -54,8 +54,7 @@ function splitStx(schema: z.ZodType): { modelSchema: z.ZodType; withServerStx: (
       withServerStx: (value) => {
         const record = value as Record<string, unknown>;
         const ops = record?.ops;
-        const stx =
-          ops && typeof ops === 'object' ? createServerStxStamping(ops as Record<string, unknown>) : createServerStx();
+        const stx = ops && typeof ops === 'object' ? createServerStxStamping(ops as Record<string, unknown>) : createServerStx();
         return { ...record, stx };
       },
     };
@@ -63,10 +62,7 @@ function splitStx(schema: z.ZodType): { modelSchema: z.ZodType; withServerStx: (
   if (schema instanceof z.ZodArray) {
     const inner = splitStx(schema.element as z.ZodType);
     if (inner.modelSchema !== schema.element) {
-      return {
-        modelSchema: z.array(inner.modelSchema),
-        withServerStx: (value) => (Array.isArray(value) ? value.map(inner.withServerStx) : value),
-      };
+      return { modelSchema: z.array(inner.modelSchema), withServerStx: (value) => (Array.isArray(value) ? value.map(inner.withServerStx) : value) };
     }
   }
   return { modelSchema: schema, withServerStx: (value) => value };
@@ -87,8 +83,7 @@ async function toOutcome(response: Response): Promise<McpToolOutcome> {
   const payload: unknown = response.status === 204 ? null : await response.json().catch(() => null);
   if (response.ok) return { ok: true, output: payload };
   const error = (payload ?? {}) as { type?: string; message?: string };
-  if (response.status >= 500)
-    return { ok: false, type: error.type ?? 'server_error', message: 'Internal server error' };
+  if (response.status >= 500) return { ok: false, type: error.type ?? 'server_error', message: 'Internal server error' };
   return { ok: false, type: error.type ?? 'error', message: error.message ?? response.statusText };
 }
 
@@ -98,9 +93,7 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
 
   const paramsSchema = route.request?.params;
   const params = anyObject(paramsSchema)
-    ? paramsSchema.omit(
-        Object.fromEntries(routeParams.filter((key) => key in paramsSchema.shape).map((key) => [key, true])),
-      )
+    ? paramsSchema.omit(Object.fromEntries(routeParams.filter((key) => key in paramsSchema.shape).map((key) => [key, true])))
     : z.object({});
   const querySchema = route.request?.query;
   const query = anyObject(querySchema) ? querySchema : z.object({});
@@ -110,8 +103,7 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
   const modelBody = body ? splitStx(body) : undefined;
   const bodyIsObject = anyObject(modelBody?.modelSchema);
   // A non-object body (a batch of items) nests under one key so it cannot collide with params or query.
-  const bodyKey =
-    modelBody && !bodyIsObject ? (modelBody.modelSchema instanceof z.ZodArray ? 'items' : 'body') : undefined;
+  const bodyKey = modelBody && !bodyIsObject ? (modelBody.modelSchema instanceof z.ZodArray ? 'items' : 'body') : undefined;
 
   const inputSchema = z.object({
     ...params.shape,
@@ -140,11 +132,8 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
     },
     call: async (ctx, args) => {
       const record = (args ?? {}) as Record<string, unknown>;
-      const pick = (keys: string[]) =>
-        Object.fromEntries(keys.filter((key) => key in record).map((key) => [key, record[key]]));
-      const rest = Object.fromEntries(
-        Object.entries(record).filter(([key]) => !paramKeys.includes(key) && !queryKeys.includes(key)),
-      );
+      const pick = (keys: string[]) => Object.fromEntries(keys.filter((key) => key in record).map((key) => [key, record[key]]));
+      const rest = Object.fromEntries(Object.entries(record).filter(([key]) => !paramKeys.includes(key) && !queryKeys.includes(key)));
       const rawParams = pick(paramKeys);
       const rawQuery = pick(queryKeys);
       const rawBody = modelBody ? modelBody.withServerStx(bodyKey ? rest[bodyKey] : rest) : undefined;
@@ -155,11 +144,7 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
       if (body) body.parse(rawBody);
 
       // The route parses the raw values again, as it parses any client's.
-      const values: Record<string, unknown> = {
-        ...rawParams,
-        tenantId: ctx.var.tenantId,
-        organizationId: ctx.var.organizationId,
-      };
+      const values: Record<string, unknown> = { ...rawParams, tenantId: ctx.var.tenantId, organizationId: ctx.var.organizationId };
       const path = route.path.replace(/\{(\w+)\}/g, (_, key: string) => encodeURIComponent(String(values[key] ?? '')));
       const search = new URLSearchParams();
       for (const [key, value] of Object.entries(rawQuery)) {
@@ -174,11 +159,7 @@ function buildTool(app: OpenAPIHono<Env>, route: RouteConfig, spec: XTool): McpT
         if (value) headers.set(header, value);
       }
 
-      const request = new Request(url, {
-        method,
-        headers,
-        body: rawBody === undefined ? undefined : JSON.stringify(rawBody),
-      });
+      const request = new Request(url, { method, headers, body: rawBody === undefined ? undefined : JSON.stringify(rawBody) });
       return toOutcome(await app.fetch(request, ctx.env));
     },
   };
@@ -197,8 +178,7 @@ export function buildMcpTools(app: OpenAPIHono<Env>): McpTool[] {
     const spec = route['x-tool'];
     if (!spec) continue;
     const tool = buildTool(app, route, spec);
-    if (tools.some((existing) => existing.name === tool.name))
-      throw new Error(`[MCP] Tool ${tool.name} is registered twice`);
+    if (tools.some((existing) => existing.name === tool.name)) throw new Error(`[MCP] Tool ${tool.name} is registered twice`);
     tools.push(tool);
   }
   return tools;

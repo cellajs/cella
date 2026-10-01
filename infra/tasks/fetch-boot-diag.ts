@@ -142,8 +142,7 @@ export function renderDiagnostics(
     }
   };
 
-  const owned =
-    (sel.failureKeys?.length ?? 0) + sel.markers.length + sel.stageDetailKeys.length + (sel.latestFull ? 1 : 0);
+  const owned = (sel.failureKeys?.length ?? 0) + sel.markers.length + sel.stageDetailKeys.length + (sel.latestFull ? 1 : 0);
   if (owned === 0) {
     warn(`No boot diagnostics for ${service}: nothing was ever uploaded for this service`);
     return;

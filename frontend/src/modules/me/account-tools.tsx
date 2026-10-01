@@ -76,10 +76,7 @@ export function AccountAuthenticationCard() {
     },
     onMutate: (provider) => setLoadingProvider(provider),
     onSuccess: (_data, provider) => {
-      const params = new URLSearchParams({
-        type: 'connect',
-        redirectAfter: window.location.pathname + window.location.hash,
-      });
+      const params = new URLSearchParams({ type: 'connect', redirectAfter: window.location.pathname + window.location.hash });
       window.location.assign(`${appConfig.backendAuthUrl}/${provider}?${params.toString()}`);
     },
     onError: () => setLoadingProvider(null),
@@ -213,11 +210,7 @@ export function AccountDeleteCard() {
   };
 
   return (
-    <ToolCard
-      label="c:delete_account"
-      description={t('c:delete_account.text', { appName: appConfig.name })}
-      className={cardClass}
-    >
+    <ToolCard label="c:delete_account" description={t('c:delete_account.text', { appName: appConfig.name })} className={cardClass}>
       <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
         <TrashIcon className="mr-2" />
         {t('c:delete_account')}

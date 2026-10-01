@@ -63,8 +63,7 @@ describe('validateStateBucketPolicy', () => {
       const kind = cmd.constructor.name;
       if (deny(kind, cmd.input ?? {})) throw denied();
       if (kind === 'PutObjectCommand') return { VersionId: 'v1' };
-      if (kind === 'ListObjectVersionsCommand')
-        return { Versions: [{ Key: 'probe', VersionId: 'v1' }], DeleteMarkers: [] };
+      if (kind === 'ListObjectVersionsCommand') return { Versions: [{ Key: 'probe', VersionId: 'v1' }], DeleteMarkers: [] };
       return {};
     });
     return { send } as any;

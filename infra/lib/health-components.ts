@@ -26,8 +26,7 @@ export function unhealthyComponents(body: string): ComponentIssue[] {
 
   const issues: ComponentIssue[] = [];
   for (const [name, component] of Object.entries(components)) {
-    if (component?.status !== 'healthy')
-      issues.push({ name, status: component?.status ?? 'unknown', reason: component?.reason });
+    if (component?.status !== 'healthy') issues.push({ name, status: component?.status ?? 'unknown', reason: component?.reason });
   }
   return issues;
 }

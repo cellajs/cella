@@ -5,14 +5,7 @@ import { Kbd, KbdGroup } from '~/modules/ui/kbd';
 /**
  * Keyboard key components for displaying keyboard shortcuts and hotkeys in documentation and UI.
  */
-const meta: Meta = {
-  title: 'ui/Kbd',
-  component: Kbd,
-  tags: ['autodocs'],
-  parameters: {
-    layout: 'centered',
-  },
-} satisfies Meta;
+const meta: Meta = { title: 'ui/Kbd', component: Kbd, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta;
 
 export default meta;
 

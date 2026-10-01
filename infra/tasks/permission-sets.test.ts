@@ -1,21 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import {
-  ORG_PERMISSION_SETS,
-  PROJECT_PERMISSION_SETS,
-  SERVICE_SECRET_PERMISSION_SETS,
-} from '../lib/scaleway/permissions';
+import { ORG_PERMISSION_SETS, PROJECT_PERMISSION_SETS, SERVICE_SECRET_PERMISSION_SETS } from '../lib/scaleway/permissions';
 
 // Exact snapshots make every CI privilege change reviewable. Explicit forbidden
 // permissions prevent the key from gaining IAM authority to escalate itself.
-const FORBIDDEN = [
-  'IAMManager',
-  'IAMFullAccess',
-  'ProjectManager',
-  'OrganizationManager',
-  'BillingManager',
-  'BillingFullAccess',
-  'AccountManager',
-];
+const FORBIDDEN = ['IAMManager', 'IAMFullAccess', 'ProjectManager', 'OrganizationManager', 'BillingManager', 'BillingFullAccess', 'AccountManager'];
 
 describe('CI key permission sets', () => {
   it('PROJECT_PERMISSION_SETS exact membership snapshot', () => {
@@ -66,9 +54,7 @@ describe('service VM key permission sets', () => {
     // SecretManagerSecretAccess reads (decrypts) secret values but grants no
     // write/escalation; everything else must be a plain `ReadOnly` grant.
     for (const p of SERVICE_SECRET_PERMISSION_SETS) {
-      expect(p, `service VM permission '${p}' must be ReadOnly or SecretManagerSecretAccess`).toMatch(
-        /(ReadOnly$|^SecretManagerSecretAccess$)/,
-      );
+      expect(p, `service VM permission '${p}' must be ReadOnly or SecretManagerSecretAccess`).toMatch(/(ReadOnly$|^SecretManagerSecretAccess$)/);
     }
   });
 });

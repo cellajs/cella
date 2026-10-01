@@ -119,10 +119,7 @@ const makeRandomizer = (seed: number) => {
     const channelTypes: WideChannelType[] = ['organization', 'workspace', 'project'];
     const organization = pick(ORGS);
     const createdBy = random() < 0.3 ? null : pick(USERS);
-    const row = {
-      createdBy,
-      ...(random() < 0.3 ? { publicAt: '2026-07-01T00:00:00Z' } : {}),
-    };
+    const row = { createdBy, ...(random() < 0.3 ? { publicAt: '2026-07-01T00:00:00Z' } : {}) };
 
     if (random() < 0.6) {
       return wideSubject({
@@ -153,11 +150,7 @@ const makeRandomizer = (seed: number) => {
       if (kind < 0.85) return wideMembership('project', pick(PROJECTS), pick(roles));
       return wideMembership('workspace', pick(WORKSPACES), pick(roles));
     });
-    return {
-      memberships,
-      actorId: pick(USERS),
-      isSystemAdmin: random() < 0.05,
-    };
+    return { memberships, actorId: pick(USERS), isSystemAdmin: random() < 0.05 };
   };
 
   return { random, pick, randomSubject, randomAccess };
@@ -169,11 +162,7 @@ describe('getDecisionsForAccesses ≍ mapped getAllDecisions', () => {
       const SEED = 0xacce55;
       const { randomSubject, randomAccess } = makeRandomizer(SEED);
       const { policyMatrix, publicReadGrants } = scenario.result;
-      const baseOptions = {
-        ...wideOverrides,
-        publicGrants: publicReadGrants,
-        elevatedGrants: scenario.elevatedGrants,
-      };
+      const baseOptions = { ...wideOverrides, publicGrants: publicReadGrants, elevatedGrants: scenario.elevatedGrants };
 
       for (let iteration = 0; iteration < 150; iteration++) {
         const subject = randomSubject();
@@ -198,12 +187,7 @@ describe('getDecisionsForAccesses ≍ mapped getAllDecisions', () => {
 
 describe('getDecisionsForAccesses: invalid memberships', () => {
   const { policyMatrix } = scenarios[0].result;
-  const subject = wideSubject({
-    entityType: 'task',
-    id: 'task-x',
-    channelIds: { organization: 'org1', project: 'proj1' },
-    row: { createdBy: null },
-  });
+  const subject = wideSubject({ entityType: 'task', id: 'task-x', channelIds: { organization: 'org1', project: 'proj1' }, row: { createdBy: null } });
   const valid: EngineAccess = { memberships: [wideMembership('project', 'proj1', 'member')], actorId: 'user1' };
   const invalid: EngineAccess = {
     memberships: [
@@ -215,18 +199,13 @@ describe('getDecisionsForAccesses: invalid memberships', () => {
 
   it("'deny' fail-closes just the invalid access, order-independent", () => {
     // invalid FIRST: a shared class would cache its deny onto the valid access
-    const decisions = getDecisionsForAccesses(policyMatrix, [invalid, valid], subject, {
-      ...wideOverrides,
-      onInvalidMembership: 'deny',
-    });
+    const decisions = getDecisionsForAccesses(policyMatrix, [invalid, valid], subject, { ...wideOverrides, onInvalidMembership: 'deny' });
     expect(decisions[0].can.read).toBe(false);
     expect(decisions[0].membership).toBeNull();
     expect(decisions[1].can.read).toBe(true);
   });
 
   it("default ('throw') surfaces the malformed membership like the single-access path", () => {
-    expect(() => getDecisionsForAccesses(policyMatrix, [invalid, valid], subject, { ...wideOverrides })).toThrow(
-      /Membership/,
-    );
+    expect(() => getDecisionsForAccesses(policyMatrix, [invalid, valid], subject, { ...wideOverrides })).toThrow(/Membership/);
   });
 });

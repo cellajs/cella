@@ -84,12 +84,7 @@ export function getTypeLabel(value: unknown, type: string): string {
 export const JSON_SCHEMA_TYPES = new Set(['string', 'number', 'integer', 'boolean', 'array', 'object', 'null']);
 
 /** Wraps search matches in Tailwind-styled spans carrying data-search-match for scroll-to-match. */
-export const highlightText = (
-  text: string,
-  searchText: string,
-  colorClass: string,
-  searchMatchClass: string,
-): ReactNode => {
+export const highlightText = (text: string, searchText: string, colorClass: string, searchMatchClass: string): ReactNode => {
   if (!searchText) return <span className={colorClass}>{text}</span>;
 
   const lowerText = text.toLowerCase();

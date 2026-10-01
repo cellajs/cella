@@ -58,19 +58,13 @@ export function OperationDetail({ operation, detail: detailProp, className }: Op
             {operation.summary}
             <HashUrlButton url={getHashUrl(operation.hash)} />
           </CardTitle>
-          <div className="shrink-0 px-2 py-0.5 font-mono text-muted-foreground text-sm max-sm:hidden">
-            {operation.id}
-          </div>
+          <div className="shrink-0 px-2 py-0.5 font-mono text-muted-foreground text-sm max-sm:hidden">{operation.id}</div>
         </div>
-        {operation.description && (
-          <CardDescription className="max-w-3xl whitespace-pre-line text-base">{operation.description}</CardDescription>
-        )}
+        {operation.description && <CardDescription className="max-w-3xl whitespace-pre-line text-base">{operation.description}</CardDescription>}
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex items-center gap-4 max-sm:flex-col max-sm:items-start max-sm:gap-1">
-          <Badge
-            className={`font-mono uppercase ${getMethodColor(operation.method)} rounded-none bg-transparent p-0 text-md shadow-none`}
-          >
+          <Badge className={`font-mono uppercase ${getMethodColor(operation.method)} rounded-none bg-transparent p-0 text-md shadow-none`}>
             {operation.method.toUpperCase()}
           </Badge>
           <code className="break-all font-mono opacity-70 sm:text-lg">{operation.path}</code>

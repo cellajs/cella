@@ -71,9 +71,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
                 transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
               >
                 <ChevronRightIcon className="opacity-50" />
-                <UnsavedBadge
-                  title={mode[0] === 'search' ? t('c:search') : mode[0] === 'bulk' ? t('c:email_bulk') : t('c:email')}
-                />
+                <UnsavedBadge title={mode[0] === 'search' ? t('c:search') : mode[0] === 'bulk' ? t('c:email_bulk') : t('c:email')} />
               </motion.span>
             )}
           </AnimatePresence>
@@ -92,13 +90,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
               onValueChange={(v) => updateMode(v as ('search' | 'email')[])}
               className="w-full items-stretch gap-2 py-3 max-sm:flex-col sm:h-40 sm:gap-3"
             >
-              <ToggleGroupItem
-                size="tile"
-                variant="tile"
-                value="email"
-                aria-label="Add by email"
-                className="w-auto grow py-6 sm:py-10"
-              >
+              <ToggleGroupItem size="tile" variant="tile" value="email" aria-label="Add by email" className="w-auto grow py-6 sm:py-10">
                 <AtSignIcon className="size-12" strokeWidth={1} />
                 <div className="flex flex-col truncate pl-3">
                   <p>{t('c:invite_by_email')}</p>
@@ -108,13 +100,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
                   </div>
                 </div>
               </ToggleGroupItem>
-              <ToggleGroupItem
-                size="tile"
-                variant="tile"
-                value="search"
-                aria-label="Search users"
-                className="w-auto grow py-6 sm:py-10"
-              >
+              <ToggleGroupItem size="tile" variant="tile" value="search" aria-label="Search users" className="w-auto grow py-6 sm:py-10">
                 <SearchIcon className="size-12" strokeWidth={1} />
                 <div className="flex flex-col truncate pl-3">
                   <div>{t('c:invite_by_name')}</div>
@@ -128,12 +114,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
           </motion.div>
         )}
         {inviteMode && (
-          <motion.div
-            key="invite-form"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="flex flex-col gap-4"
-          >
+          <motion.div key="invite-form" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="flex flex-col gap-4">
             <AlertBanner id={`invite_${inviteMode}`} variant="success" icon={InfoIcon}>
               {t(
                 inviteMode === 'search'

@@ -13,9 +13,7 @@ const registryInstanceType = (serviceName: ServiceName): string => {
   const size = servicesByName.get(serviceName)?.instanceType;
   const resolved = typeof size === 'string' ? size : size?.[deployMode];
   if (resolved === undefined)
-    throw new Error(
-      `Service '${serviceName}' has no instanceType for mode '${mode}' in the registry (config/services.config.ts).`,
-    );
+    throw new Error(`Service '${serviceName}' has no instanceType for mode '${mode}' in the registry (config/services.config.ts).`);
   return resolved;
 };
 

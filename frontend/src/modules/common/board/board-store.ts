@@ -32,14 +32,7 @@ interface BoardUIState {
 const initStore: Pick<
   BoardUIState,
   'panelCollapseState' | 'activeBoardId' | 'activeBoardType' | 'activePanelId' | 'boardLayouts' | 'boardPanelOrders'
-> = {
-  panelCollapseState: {},
-  activeBoardId: null,
-  activeBoardType: null,
-  activePanelId: null,
-  boardLayouts: {},
-  boardPanelOrders: {},
-};
+> = { panelCollapseState: {}, activeBoardId: null, activeBoardType: null, activePanelId: null, boardLayouts: {}, boardPanelOrders: {} };
 
 export const useBoardStore = create<BoardUIState>()(
   devtools(

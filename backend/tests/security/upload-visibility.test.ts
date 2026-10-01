@@ -40,9 +40,7 @@ describe('Upload visibility', async () => {
   /** Raw request: the client-chosen `publicBucket` is no longer part of the typed query. */
   const requestToken = async (query: Record<string, string>, cookie = tenant.sessionCookie) => {
     const response = await baseApp.fetch(
-      new Request(`http://localhost/me/upload-token?${new URLSearchParams(query)}`, {
-        headers: { ...defaultHeaders, Cookie: cookie },
-      }),
+      new Request(`http://localhost/me/upload-token?${new URLSearchParams(query)}`, { headers: { ...defaultHeaders, Cookie: cookie } }),
     );
     return { status: response.status, body: (await response.json()) as UploadTokenBody };
   };
@@ -58,11 +56,7 @@ describe('Upload visibility', async () => {
   });
 
   it('must not store a public file via choosing the public bucket for an attachment', async () => {
-    const { status, body } = await requestToken({
-      templateId: 'attachment',
-      organizationId: tenant.organization.id,
-      publicBucket: 'true',
-    });
+    const { status, body } = await requestToken({ templateId: 'attachment', organizationId: tenant.organization.id, publicBucket: 'true' });
 
     expect(status).toBe(200);
     expect(body.publicBucket).toBe(false);
@@ -75,10 +69,7 @@ describe('Upload visibility', async () => {
 
       expect(status, templateId).toBe(200);
       expect(body.publicBucket, templateId).toBe(true);
-      expect(body.params?.steps.exported, templateId).toMatchObject({
-        acl: 'public-read',
-        credentials: appConfig.s3.publicBucket,
-      });
+      expect(body.params?.steps.exported, templateId).toMatchObject({ acl: 'public-read', credentials: appConfig.s3.publicBucket });
     }
   });
 
@@ -115,10 +106,7 @@ describe('Upload visibility', async () => {
         const stored = [steps.exported?.use ?? []].flat();
         expect(stored.length).toBeGreaterThan(0);
         for (const step of stored) {
-          expect(steps[step], step).toMatchObject({
-            robot: '/image/resize',
-            format: expect.stringMatching(/^(?:jpg|png|webp)$/),
-          });
+          expect(steps[step], step).toMatchObject({ robot: '/image/resize', format: expect.stringMatching(/^(?:jpg|png|webp)$/) });
         }
       }
     });

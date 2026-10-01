@@ -13,15 +13,9 @@ export function NoRows({ isFiltered, isFetching, customComponent }: NoRowsProps)
   return (
     <div className="flex w-full flex-col items-center justify-center p-8">
       {isFiltered && !isFetching && (
-        <ContentPlaceholder
-          icon={SearchIcon}
-          title="c:no_resource_found"
-          titleProps={{ resource: t('c:results').toLowerCase() }}
-        />
+        <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleProps={{ resource: t('c:results').toLowerCase() }} />
       )}
-      {!isFiltered &&
-        !isFetching &&
-        (customComponent ?? t('c:no_resource_yet', { resource: t('c:results').toLowerCase() }))}
+      {!isFiltered && !isFetching && (customComponent ?? t('c:no_resource_yet', { resource: t('c:results').toLowerCase() }))}
     </div>
   );
 }

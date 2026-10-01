@@ -9,13 +9,7 @@ class MockProvider {
   synced = false;
   doc: MockDoc;
   /** Message type → handler, as y-websocket keeps them per provider; the relay's generation frame is type 4. */
-  messageHandlers: ((
-    encoder: unknown,
-    decoder: unknown,
-    provider: unknown,
-    emitSynced: boolean,
-    type: number,
-  ) => void)[] = [];
+  messageHandlers: ((encoder: unknown, decoder: unknown, provider: unknown, emitSynced: boolean, type: number) => void)[] = [];
   private listeners = new Map<string, Set<(...args: unknown[]) => void>>();
 
   constructor(_url: string, _room: string, doc: MockDoc, opts: { params: Record<string, string> }) {
@@ -75,9 +69,7 @@ vi.mock('@tanstack/react-query', () => ({
     },
   },
 }));
-vi.mock('~/query/query-client', () => ({
-  queryClient: { invalidateQueries: (...args: unknown[]) => invalidateQueries(...args) },
-}));
+vi.mock('~/query/query-client', () => ({ queryClient: { invalidateQueries: (...args: unknown[]) => invalidateQueries(...args) } }));
 vi.mock('~/modules/common/blocknote/query', () => ({ yjsTokenKeys: { entity: (...key: unknown[]) => key } }));
 vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
@@ -242,8 +234,7 @@ describe('yjs connection: token refusals', () => {
     await close(provider, 4001);
   };
   /** The refetch a refusal starts lands a new token before the next attempt. */
-  const fetchToken = (tokenKey: string, token: string) =>
-    act(async () => useUserStore.getState().setYjsToken(tokenKey, token));
+  const fetchToken = (tokenKey: string, token: string) => act(async () => useUserStore.getState().setYjsToken(tokenKey, token));
 
   it('must not stop syncing via an API outage at token refresh: an expired token refused again never counts', async () => {
     const { provider, state } = await mountConnection();

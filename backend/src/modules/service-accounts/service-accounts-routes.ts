@@ -46,9 +46,7 @@ export const serviceAccountRoutes = createXRoutes(['service-accounts', 'cella'],
     summary: 'Get service accounts',
     description: 'Lists the service accounts of this organization.',
     request: { params: tenantOrgParamSchema, query: serviceAccountListQuerySchema },
-    responses: {
-      200: json('Service accounts', paginationSchema(serviceAccountSchema), mockPaginatedServiceAccountsResponse()),
-    },
+    responses: { 200: json('Service accounts', paginationSchema(serviceAccountSchema), mockPaginatedServiceAccountsResponse()) },
   }),
   updateServiceAccount: xRoute({
     method: 'put',

@@ -10,9 +10,7 @@ import { CollapsibleTagItem } from './collapsible-tag-item';
 import { SchemaItem } from './schema-item';
 
 const itemKey = (schema: GenComponentSchema) => schema.name;
-const renderItem = (schema: GenComponentSchema, _index: number, isActive: boolean) => (
-  <SchemaItem schema={schema} isActive={isActive} />
-);
+const renderItem = (schema: GenComponentSchema, _index: number, isActive: boolean) => <SchemaItem schema={schema} isActive={isActive} />;
 
 interface SchemasSidebarProps {
   activeTag?: string;

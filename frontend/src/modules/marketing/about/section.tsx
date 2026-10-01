@@ -28,11 +28,7 @@ export function AboutSectionHeader({ title, text, textComponents, className = ''
 
   return (
     <div className={`mx-auto flex max-w-3xl flex-col justify-center gap-4 ${className}`.trim()}>
-      {title && (
-        <h2 className="font-heading font-semibold text-2xl leading-[1.1] sm:text-center sm:text-3xl md:text-4xl">
-          {t(title)}
-        </h2>
-      )}
+      {title && <h2 className="font-heading font-semibold text-2xl leading-[1.1] sm:text-center sm:text-3xl md:text-4xl">{t(title)}</h2>}
       {text && (
         <p className="text-muted-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
           <Trans i18nKey={text as never} components={textComponents} />
@@ -42,14 +38,7 @@ export function AboutSectionHeader({ title, text, textComponents, className = ''
   );
 }
 
-export function AboutSection({
-  title,
-  text,
-  textComponents,
-  sectionId,
-  children,
-  alternate = false,
-}: AboutSectionProps) {
+export function AboutSection({ title, text, textComponents, sectionId, children, alternate = false }: AboutSectionProps) {
   const backgroundClass = alternate ? 'bg-accent/40 dark:bg-transparent' : '';
 
   return (

@@ -5,8 +5,7 @@ import type { RenderRowProps } from './types';
 import { cn, getCellRangeBoundary, getColSpan, isCellInRange } from './utils/grid-utils';
 
 // Rows are real subgrid boxes: column tracks still resolve at the root grid, and the row has a hit-test box for drag and drop and row-wide indicators.
-const rowClassname =
-  'rdg-row group/row col-span-full grid grid-cols-subgrid aria-selected:bg-accent aria-selected:hover:bg-accent';
+const rowClassname = 'rdg-row group/row col-span-full grid grid-cols-subgrid aria-selected:bg-accent aria-selected:hover:bg-accent';
 
 function Row<R, SR>({
   className,
@@ -51,8 +50,7 @@ function Row<R, SR>({
 
     const position = { idx, rowIdx };
     const isInSelectedRange = selectedCellRange ? isCellInRange(position, selectedCellRange) : false;
-    const rangeBoundary =
-      isInSelectedRange && selectedCellRange ? getCellRangeBoundary(position, selectedCellRange) : undefined;
+    const rangeBoundary = isInSelectedRange && selectedCellRange ? getCellRangeBoundary(position, selectedCellRange) : undefined;
 
     if (isCellSelected && selectedCellEditor) {
       cells.push(selectedCellEditor);

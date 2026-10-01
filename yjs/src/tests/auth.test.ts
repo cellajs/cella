@@ -33,9 +33,10 @@ describe('verifyToken', () => {
   });
 
   it('must not accept a token signed with another Ed25519 key', () => {
-    expect(
-      verifyToken(createSignedToken({ userId: 'user-1', keyMaterial: 'another-key-material-of-32-characters' })),
-    ).toEqual({ ok: false, reason: 'bad_signature' });
+    expect(verifyToken(createSignedToken({ userId: 'user-1', keyMaterial: 'another-key-material-of-32-characters' }))).toEqual({
+      ok: false,
+      reason: 'bad_signature',
+    });
     const { privateKey } = generateKeyPairSync('ed25519');
     const payloadB64 = encode(claims());
     const foreign = sign(null, Buffer.from(payloadB64), privateKey).toString('base64url');
@@ -56,10 +57,7 @@ describe('verifyToken', () => {
     const [payloadB64, signature] = createSignedToken('user-1').split('.');
     const flipped = Buffer.from(signature, 'base64url');
     flipped[0] ^= 1;
-    expect(verifyToken(`${payloadB64}.${flipped.toString('base64url')}`)).toEqual({
-      ok: false,
-      reason: 'bad_signature',
-    });
+    expect(verifyToken(`${payloadB64}.${flipped.toString('base64url')}`)).toEqual({ ok: false, reason: 'bad_signature' });
     expect(verifyToken(`${payloadB64}.${signature.slice(0, 40)}`)).toEqual({ ok: false, reason: 'bad_signature' });
     expect(verifyToken(`${payloadB64}.`)).toEqual({ ok: false, reason: 'bad_signature' });
   });

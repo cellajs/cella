@@ -53,9 +53,7 @@ class WebSocketClient {
 
     this._state = 'connecting';
 
-    const headers: Record<string, string> = {
-      'x-cdc-secret': env.CDC_SECRET,
-    };
+    const headers: Record<string, string> = { 'x-cdc-secret': env.CDC_SECRET };
 
     if (!this.inGracePeriod()) {
       log.info('CDC WebSocket connecting...', { url: this.url, attempt: this.reconnectAttempt + 1 });
@@ -182,10 +180,7 @@ class WebSocketClient {
     this.reconnectAttempt++;
 
     if (!this.inGracePeriod()) {
-      log.info('CDC WebSocket scheduling reconnect', {
-        attempt: this.reconnectAttempt,
-        delayMs: delay,
-      });
+      log.info('CDC WebSocket scheduling reconnect', { attempt: this.reconnectAttempt, delayMs: delay });
     }
 
     this.reconnectTimeout = setTimeout(() => {

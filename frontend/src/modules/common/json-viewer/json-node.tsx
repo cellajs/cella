@@ -118,20 +118,9 @@ export const JsonNode = memo(
     const isObjectValue = valueType === 'object';
 
     const hasSelfRequired =
-      openapiMode === 'schema' &&
-      typeof value === 'object' &&
-      value !== null &&
-      (value as Record<string, unknown>).required === true;
+      openapiMode === 'schema' && typeof value === 'object' && value !== null && (value as Record<string, unknown>).required === true;
 
-    const keyProps = {
-      keyName,
-      showKeyQuotes,
-      searchText,
-      isObjectValue,
-      hasSelfRequired,
-      openapiMode,
-      theme,
-    };
+    const keyProps = { keyName, showKeyQuotes, searchText, isObjectValue, hasSelfRequired, openapiMode, theme };
 
     if (valueType !== 'object' && valueType !== 'array') {
       return (
@@ -169,8 +158,7 @@ export const JsonNode = memo(
       return null;
     })();
 
-    const canExtractLabels =
-      openapiMode === 'schema' && !isArray && !isInsideProperties && typeof value === 'object' && value !== null;
+    const canExtractLabels = openapiMode === 'schema' && !isArray && !isInsideProperties && typeof value === 'object' && value !== null;
     const valueObj = canExtractLabels ? (value as Record<string, unknown>) : null;
 
     // anyOf/oneOf render as a type label.
@@ -187,9 +175,7 @@ export const JsonNode = memo(
 
     // Rendered as a label and filtered out of the entries below.
     const contentTypeValue =
-      openapiMode === 'schema' && !isInsideProperties && valueObj && typeof valueObj.contentType === 'string'
-        ? valueObj.contentType
-        : null;
+      openapiMode === 'schema' && !isInsideProperties && valueObj && typeof valueObj.contentType === 'string' ? valueObj.contentType : null;
 
     // Rendered inline and filtered out of the entries below.
     const constraints = (() => {
@@ -213,15 +199,9 @@ export const JsonNode = memo(
 
     // Array schemas hoist items.properties.
     const isArraySchema =
-      openapiMode === 'schema' &&
-      !isArray &&
-      typeof value === 'object' &&
-      value !== null &&
-      (value as Record<string, unknown>).type === 'array';
+      openapiMode === 'schema' && !isArray && typeof value === 'object' && value !== null && (value as Record<string, unknown>).type === 'array';
 
-    const rawEntries = isArray
-      ? (value as unknown[]).map((v, i) => [i, v] as [number, unknown])
-      : Object.entries(value as Record<string, unknown>);
+    const rawEntries = isArray ? (value as unknown[]).map((v, i) => [i, v] as [number, unknown]) : Object.entries(value as Record<string, unknown>);
 
     // Hide schema keys promoted into labels and hoist array-item properties.
     const filteredEntries =
@@ -233,8 +213,7 @@ export const JsonNode = memo(
               key !== 'minLength' &&
               key !== 'maximum' &&
               key !== 'minimum' &&
-              (isInsideProperties ||
-                (key !== 'type' && key !== 'ref' && key !== 'contentType' && key !== 'additionalProperties')) &&
+              (isInsideProperties || (key !== 'type' && key !== 'ref' && key !== 'contentType' && key !== 'additionalProperties')) &&
               !(isArraySchema && key === 'items'),
           )
         : rawEntries;
@@ -283,9 +262,7 @@ export const JsonNode = memo(
 
     // Schema mode: an object is expandable only if it has nested object (not array) children; arrays are always expandable.
     const hasNestedObjects =
-      openapiMode === 'schema' && !isArray
-        ? entries.some(([, val]) => val !== null && typeof val === 'object' && !Array.isArray(val))
-        : true;
+      openapiMode === 'schema' && !isArray ? entries.some(([, val]) => val !== null && typeof val === 'object' && !Array.isArray(val)) : true;
 
     const bracketClass = `font-medium ${theme.bracket} group-data-[openapi-mode=schema]/jv:hidden`;
 
@@ -310,9 +287,7 @@ export const JsonNode = memo(
     }
 
     const isPrimitiveArray =
-      isArray &&
-      singleLineArrays &&
-      (value as unknown[]).every((item) => item === null || (typeof item !== 'object' && typeof item !== 'undefined'));
+      isArray && singleLineArrays && (value as unknown[]).every((item) => item === null || (typeof item !== 'object' && typeof item !== 'undefined'));
 
     if (isPrimitiveArray) {
       const items = value as unknown[];
@@ -360,9 +335,7 @@ export const JsonNode = memo(
                 : undefined
             }
           >
-            <span
-              className={`inline-flex h-4 w-4 shrink-0 items-center justify-center ${isExpandable ? 'opacity-60' : '-ml-3.5 opacity-0'}`}
-            >
+            <span className={`inline-flex h-4 w-4 shrink-0 items-center justify-center ${isExpandable ? 'opacity-60' : '-ml-3.5 opacity-0'}`}>
               <ChevronRightIcon className={`icon-sm transition-transform ${isExpanded ? 'rotate-90' : 'rotate-0'}`} />
             </span>
             <KeyRenderer {...keyProps} />

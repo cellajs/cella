@@ -12,11 +12,7 @@ export function LegalCrossLink({ subject, children }: { subject: LegalSubject; c
 
   if (navigateInDialog) {
     return (
-      <button
-        type="button"
-        className="cursor-pointer font-medium text-primary underline"
-        onClick={() => navigateInDialog(subject)}
-      >
+      <button type="button" className="cursor-pointer font-medium text-primary underline" onClick={() => navigateInDialog(subject)}>
         {children}
       </button>
     );

@@ -13,9 +13,7 @@ describe('deploy-rollout parseArgs', () => {
       { service: 'cdc', health_url: '' },
       { service: 'frontend', health_url: 'https://app' },
     ]);
-    expect(
-      parseArgs(['--stack', 'production', '--sha', 'abc123', '--primary-json', primary, '--rest-json', rest]),
-    ).toEqual({
+    expect(parseArgs(['--stack', 'production', '--sha', 'abc123', '--primary-json', primary, '--rest-json', rest])).toEqual({
       stack: 'production',
       sha: 'abc123',
       primary: [{ service: 'backend', health_url: 'https://api' }],
@@ -46,18 +44,9 @@ describe('buildWavedPlan', () => {
         { service: 'frontend', health_url: 'https://app' },
       ],
     });
-    expect(plan.primary).toMatchObject({
-      service: 'backend',
-      strategy: 'start-first',
-      drainSeconds: 10,
-      healthUrl: 'https://api/health',
-    });
+    expect(plan.primary).toMatchObject({ service: 'backend', strategy: 'start-first', drainSeconds: 10, healthUrl: 'https://api/health' });
     expect(plan.rest[0]).toMatchObject({ service: 'cdc', strategy: 'stop-first' });
-    expect(plan.rest[1]).toMatchObject({
-      service: 'frontend',
-      strategy: 'start-first',
-      healthUrl: 'https://app/health',
-    });
+    expect(plan.rest[1]).toMatchObject({ service: 'frontend', strategy: 'start-first', healthUrl: 'https://app/health' });
   });
 
   it('rejects more than one primary service', () => {
@@ -74,9 +63,7 @@ describe('buildWavedPlan', () => {
   });
 
   it('rejects an unknown service', () => {
-    expect(() => buildWavedPlan({ sha: 'abc123', primary: [], rest: [{ service: 'nope', health_url: '' }] })).toThrow(
-      /Unknown service/,
-    );
+    expect(() => buildWavedPlan({ sha: 'abc123', primary: [], rest: [{ service: 'nope', health_url: '' }] })).toThrow(/Unknown service/);
   });
 });
 

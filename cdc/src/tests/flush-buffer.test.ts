@@ -2,9 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockPendingEvent } from './factories';
 
 // Mock cdc-metrics to avoid db/env import chain
-vi.mock('../services/cdc-metrics', () => ({
-  metrics: { recordFlush: vi.fn() },
-}));
+vi.mock('../services/cdc-metrics', () => ({ metrics: { recordFlush: vi.fn() } }));
 
 import { FlushBuffer } from '../services/flush-buffer';
 import type { PendingEvent } from '../types';

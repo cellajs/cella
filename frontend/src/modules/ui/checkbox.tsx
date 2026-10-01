@@ -14,10 +14,7 @@ export function Checkbox({ className, ...props }: React.ComponentProps<typeof Ch
       )}
       {...props}
     >
-      <CheckboxPrimitive.Indicator
-        data-slot="checkbox-indicator"
-        className="flex items-center justify-center text-current transition-none"
-      >
+      <CheckboxPrimitive.Indicator data-slot="checkbox-indicator" className="flex items-center justify-center text-current transition-none">
         <CheckIcon className="mt-px size-4" />
       </CheckboxPrimitive.Indicator>
     </CheckboxPrimitive.Root>

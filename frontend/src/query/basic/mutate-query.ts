@@ -17,10 +17,7 @@ export const isInfiniteQueryData = <TItem>(data: unknown): data is InfiniteQuery
 };
 
 /** Visits every flat or paged list cached under `prefix`. */
-export function forEachListQuery<TItem = ItemData>(
-  prefix: QueryKey,
-  visit: (queryKey: QueryKey, data: BaseQueryItem<TItem>) => void,
-): void {
+export function forEachListQuery<TItem = ItemData>(prefix: QueryKey, visit: (queryKey: QueryKey, data: BaseQueryItem<TItem>) => void): void {
   for (const [queryKey, data] of queryClient.getQueriesData({ queryKey: prefix })) {
     if (isQueryData<TItem>(data) || isInfiniteQueryData<TItem>(data)) visit(queryKey, data);
   }
@@ -51,8 +48,6 @@ export function mapListItems<TItem>(
 }
 
 /** Matches every query whose key starts with `passedQueryKey`. */
-export const getSimilarQueries = <TItem, TPageParam = PageParams>(
-  passedQueryKey: QueryKey,
-): BaseQueryResponse<TItem, TPageParam>[] => {
+export const getSimilarQueries = <TItem, TPageParam = PageParams>(passedQueryKey: QueryKey): BaseQueryResponse<TItem, TPageParam>[] => {
   return queryClient.getQueriesData<BaseQueryItem<TItem, TPageParam>>({ queryKey: passedQueryKey });
 };

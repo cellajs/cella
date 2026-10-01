@@ -39,12 +39,8 @@ describe('resolveBootImage', () => {
   });
 
   it('surfaces a non-404 failure as-is', async () => {
-    const fetchImpl = vi.fn(
-      async () => ({ ok: false, status: 401, headers: new Map(), text: async () => 'unauthorized' }) as never,
-    );
-    await expect(resolveBootImage({ registry: REGISTRY, releaseSha: SHA, secretKey: 'x', fetchImpl })).rejects.toThrow(
-      /status 401/,
-    );
+    const fetchImpl = vi.fn(async () => ({ ok: false, status: 401, headers: new Map(), text: async () => 'unauthorized' }) as never);
+    await expect(resolveBootImage({ registry: REGISTRY, releaseSha: SHA, secretKey: 'x', fetchImpl })).rejects.toThrow(/status 401/);
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 });

@@ -49,18 +49,13 @@ describe('file operations', () => {
   it('resolves leaf and directory-page slugs', () => {
     expect(resolveSlugPath(contentDir, 'guides')).toBe(path.join(contentDir, 'guides.md'));
     expect(resolveSlugPath(contentDir, 'architecture')).toBe(path.join(contentDir, 'architecture', 'index.md'));
-    expect(resolveSlugPath(contentDir, 'architecture/overview')).toBe(
-      path.join(contentDir, 'architecture', 'overview.md'),
-    );
+    expect(resolveSlugPath(contentDir, 'architecture/overview')).toBe(path.join(contentDir, 'architecture', 'overview.md'));
     expect(resolveSlugPath(contentDir, 'missing')).toBeNull();
   });
 
   it('rewrites frontmatter fields and stamps updatedAt', () => {
     editDocPage(contentDir, 'guides', { title: 'Guides!', renderMode: 'overview', draft: true, displayOrder: 5 }, NOW);
-    const fm = parse(readFileSync(path.join(contentDir, 'guides.md'), 'utf8').split('---')[1]) as Record<
-      string,
-      unknown
-    >;
+    const fm = parse(readFileSync(path.join(contentDir, 'guides.md'), 'utf8').split('---')[1]) as Record<string, unknown>;
     expect(fm).toMatchObject({ title: 'Guides!', renderMode: 'overview', draft: true, order: 5, updatedAt: NOW });
   });
 

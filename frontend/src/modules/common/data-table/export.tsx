@@ -20,13 +20,7 @@ interface Props<TData> {
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: any is required here
-export function Export<R extends Record<string, any>>({
-  filename,
-  columns,
-  selectedRows,
-  fetchRows,
-  className = '',
-}: Props<R>) {
+export function Export<R extends Record<string, any>>({ filename, columns, selectedRows, fetchRows, className = '' }: Props<R>) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
   const mode = uiStore.getState().mode;
@@ -77,9 +71,7 @@ export function Export<R extends Record<string, any>>({
             <DropdownMenuItem onClick={() => exportSelected('csv')} disabled={selectedRows.length === 0}>
               <span>CSV</span>
               <span className="ml-2 text-xs opacity-75">
-                {selectedRows.length
-                  ? `${selectedRows.length} ${t('c:selected').toLowerCase()}`
-                  : t('c:no_selection').toLowerCase()}
+                {selectedRows.length ? `${selectedRows.length} ${t('c:selected').toLowerCase()}` : t('c:no_selection').toLowerCase()}
               </span>
             </DropdownMenuItem>
 
@@ -87,9 +79,7 @@ export function Export<R extends Record<string, any>>({
               <DropdownMenuItem onClick={() => exportSelected('pdf')} disabled={selectedRows.length === 0}>
                 <span>PDF</span>
                 <span className="ml-2 text-xs opacity-75">
-                  {selectedRows.length
-                    ? `${selectedRows.length} ${t('c:selected').toLowerCase()}`
-                    : t('c:no_selection').toLowerCase()}
+                  {selectedRows.length ? `${selectedRows.length} ${t('c:selected').toLowerCase()}` : t('c:no_selection').toLowerCase()}
                 </span>
               </DropdownMenuItem>
             )}

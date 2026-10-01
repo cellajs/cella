@@ -14,10 +14,7 @@ export interface HydrateRuntimeSecretsOptions {
   fetchImpl?: FetchLike;
 }
 
-async function readSecret(
-  opts: HydrateRuntimeSecretsOptions,
-  entry: RuntimeSecretManifestEntry,
-): Promise<string | null> {
+async function readSecret(opts: HydrateRuntimeSecretsOptions, entry: RuntimeSecretManifestEntry): Promise<string | null> {
   const fetchImpl = resolveFetch(opts.fetchImpl);
   // Manifest ids are `region/uuid` (Pulumi) or a bare uuid, so take the last segment and refuse to build a request URL from a blank id.
   const secretId = entry.secretId.split('/').at(-1);

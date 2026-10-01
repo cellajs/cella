@@ -11,9 +11,7 @@ const meta: Meta<typeof SelectEmails> = {
   title: 'common/SelectEmails',
   component: SelectEmails,
   tags: ['autodocs'],
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
   beforeEach: () => {
     const warning = spyOn(toaster, 'warning');
     return () => warning.mockRestore();
@@ -62,9 +60,7 @@ export const PasteMultiple: Story = {
     return (
       <div className="w-96">
         <SelectEmails emails={emails} onValueChange={setEmails} placeholder="Paste multiple emails..." />
-        <p className="mt-2 text-muted-foreground text-xs">
-          Try pasting: test1@example.com, test2@example.com; test3@example.com
-        </p>
+        <p className="mt-2 text-muted-foreground text-xs">Try pasting: test1@example.com, test2@example.com; test3@example.com</p>
       </div>
     );
   },
@@ -83,12 +79,7 @@ function InviteEmailsField({ initial = [] }: { initial?: string[] }) {
         setSubmits((count) => count + 1);
       }}
     >
-      <SelectEmails
-        placeholder="Add an email"
-        emails={emails}
-        onValueChange={setEmails}
-        inputProps={{ autoComplete: 'off' }}
-      />
+      <SelectEmails placeholder="Add an email" emails={emails} onValueChange={setEmails} inputProps={{ autoComplete: 'off' }} />
       <output>value: {JSON.stringify(emails)}</output>
       <p>submits: {submits}</p>
       <button type="submit">Invite</button>
@@ -112,8 +103,7 @@ export const ShouldCommitOnDelimiters: Story = {
     await userEvent.type(input, 'd@x.com ');
 
     await expect(canvas.getByText('value: ["a@x.com","b@x.com","c@x.com","d@x.com"]')).toBeVisible();
-    for (const email of ['a@x.com', 'b@x.com', 'c@x.com', 'd@x.com'])
-      await expect(canvas.getByText(email)).toBeVisible();
+    for (const email of ['a@x.com', 'b@x.com', 'c@x.com', 'd@x.com']) await expect(canvas.getByText(email)).toBeVisible();
     await expect(input).toHaveValue('');
     await expect(canvas.getByText('submits: 0')).toBeVisible();
   },

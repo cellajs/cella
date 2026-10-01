@@ -31,12 +31,7 @@ export async function getUsersOp(ctx: UserContext, input: GetUsersInput) {
   if (!isSystemAdmin) filters.push(sharesOrgFilter({ var: { db } }, { myOrgIds }));
   if (role) filters.push(eq(systemRolesTable.role, role));
   if (q) {
-    filters.push(
-      or(
-        ilike(usersTable.name, prepareStringForILikeFilter(q)),
-        ilike(usersTable.email, prepareStringForILikeFilter(q)),
-      )!,
-    );
+    filters.push(or(ilike(usersTable.name, prepareStringForILikeFilter(q)), ilike(usersTable.email, prepareStringForILikeFilter(q)))!);
   }
 
   const { items, total } = await findUsersPaginated(ctx, { filters, sort, order, limit, offset });

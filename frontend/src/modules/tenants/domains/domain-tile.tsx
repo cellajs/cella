@@ -1,13 +1,4 @@
-import {
-  BadgeCheckIcon,
-  CheckIcon,
-  ChevronDownIcon,
-  CopyIcon,
-  GlobeIcon,
-  LoaderCircleIcon,
-  SearchCheckIcon,
-  Trash2Icon,
-} from 'lucide-react';
+import { BadgeCheckIcon, CheckIcon, ChevronDownIcon, CopyIcon, GlobeIcon, LoaderCircleIcon, SearchCheckIcon, Trash2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { GetDomainResponse, VerifyDomainResponse } from 'sdk';
@@ -71,13 +62,7 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
 
           <div className="ml-auto flex shrink-0 items-center gap-1">
             {!domain.verified && (
-              <Button
-                variant="plain"
-                size="sm"
-                className="text-sm"
-                disabled={verifyMutation.isPending}
-                onClick={handleVerify}
-              >
+              <Button variant="plain" size="sm" className="text-sm" disabled={verifyMutation.isPending} onClick={handleVerify}>
                 {verifyMutation.isPending ? <LoaderCircleIcon className="animate-spin" /> : <SearchCheckIcon />}
                 <span className="ml-1 max-sm:hidden">{t('c:verify')}</span>
               </Button>
@@ -107,9 +92,7 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
         {!domain.verified && (
           <Collapsible>
             <CollapsibleTrigger
-              render={
-                <span className="flex cursor-pointer items-center gap-1 text-muted-foreground text-xs hover:text-foreground" />
-              }
+              render={<span className="flex cursor-pointer items-center gap-1 text-muted-foreground text-xs hover:text-foreground" />}
             >
               <ChevronDownIcon className="icon-sm in-data-panel-open:rotate-180 transition-transform" />
               {t('c:dns_instructions')}

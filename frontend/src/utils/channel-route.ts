@@ -27,11 +27,7 @@ export const getChannelRoute = (item: EnrichedChannel, isSubitem?: boolean): Ent
   // Subitem: render on the parent's page (param already set above) with this entity as search.
   const subitemOf = isSubitem ? entry.subitemOf : undefined;
   if (subitemOf && ancestorSlugs[subitemOf.entityType]) {
-    return {
-      to: channelRouteConfig[subitemOf.entityType].path,
-      params,
-      search: { [subitemOf.searchParam]: slug },
-    };
+    return { to: channelRouteConfig[subitemOf.entityType].path, params, search: { [subitemOf.searchParam]: slug } };
   }
 
   params[config.paramName] = slug;
@@ -42,8 +38,7 @@ export const getChannelRoute = (item: EnrichedChannel, isSubitem?: boolean): Ent
  * The org layout's slug rewrite redirects to the bare layout route, dropping any child path, so
  * routes below it need the real org slug; an id is only safe in the target entity's own param.
  */
-const orgSlugParam = (organizationId: string, tenantId: string) =>
-  findOrganizationByIdOrSlug(organizationId, tenantId)?.slug ?? organizationId;
+const orgSlugParam = (organizationId: string, tenantId: string) => findOrganizationByIdOrSlug(organizationId, tenantId)?.slug ?? organizationId;
 
 /**
  * Route to a channel fresh from a create response (no enrichment yet): the org slug comes from
@@ -54,10 +49,7 @@ export const getCreatedChannelRoute = (
   channel: { tenantId: string; organizationId: string; slug: string },
 ): EntityRoute => {
   const config = channelRouteConfig[entityType];
-  const params: Record<string, string> = {
-    tenantId: channel.tenantId,
-    organizationSlug: orgSlugParam(channel.organizationId, channel.tenantId),
-  };
+  const params: Record<string, string> = { tenantId: channel.tenantId, organizationSlug: orgSlugParam(channel.organizationId, channel.tenantId) };
   params[config.paramName] = channel.slug;
   return { to: config.path, params, search: {} };
 };

@@ -27,17 +27,9 @@ bindLocalUserDb('persister-test-user');
 describe('persister query filter', () => {
   it('must not persist the Yjs token or the pending magic link, while an ordinary query persists', async () => {
     const queryClient = new QueryClient();
-    const yjsToken = yjsTokenQueryOptions({
-      entityType: 'attachment',
-      entityId: 'attachment-1',
-      tenantId: 'tenant-1',
-      organizationId: 'org-1',
-    });
+    const yjsToken = yjsTokenQueryOptions({ entityType: 'attachment', entityId: 'attachment-1', tenantId: 'tenant-1', organizationId: 'org-1' });
     await queryClient.prefetchQuery({ ...yjsToken, queryFn: async () => 'a-bearer-token' });
-    await queryClient.prefetchQuery({
-      ...pendingMagicLinkQueryOptions,
-      queryFn: async () => ({ email: 'other@example.com' }),
-    });
+    await queryClient.prefetchQuery({ ...pendingMagicLinkQueryOptions, queryFn: async () => ({ email: 'other@example.com' }) });
     await queryClient.prefetchQuery({ queryKey: ['organization', 'list'], queryFn: async () => [] });
 
     const { queries } = dehydrate(queryClient, { shouldDehydrateQuery: shouldPersistQuery });
@@ -109,13 +101,7 @@ describe('persister per-tab mutation records (D5)', () => {
 
   it('absorbs and removes a DEAD tab record (age fallback without locks API)', async () => {
     const db = getLocalUserDb();
-    await db?.meta.put({
-      key: 'rq',
-      timestamp: Date.now(),
-      buster: '',
-      mutations: [],
-      channelQueries: [],
-    });
+    await db?.meta.put({ key: 'rq', timestamp: Date.now(), buster: '', mutations: [], channelQueries: [] });
     await db?.meta.put({
       key: 'rq:mut:dead-tab',
       timestamp: Date.now() - 3 * 60 * 60 * 1000, // older than the 2h orphan threshold
@@ -132,20 +118,8 @@ describe('persister per-tab mutation records (D5)', () => {
 
   it('leaves a fresh (assumed-live) foreign tab record alone', async () => {
     const db = getLocalUserDb();
-    await db?.meta.put({
-      key: 'rq',
-      timestamp: Date.now(),
-      buster: '',
-      mutations: [],
-      channelQueries: [],
-    });
-    await db?.meta.put({
-      key: 'rq:mut:other-live-tab',
-      timestamp: Date.now(),
-      buster: '',
-      mutations: [pausedMutation('other')],
-      channelQueries: [],
-    });
+    await db?.meta.put({ key: 'rq', timestamp: Date.now(), buster: '', mutations: [], channelQueries: [] });
+    await db?.meta.put({ key: 'rq:mut:other-live-tab', timestamp: Date.now(), buster: '', mutations: [pausedMutation('other')], channelQueries: [] });
 
     const restored = await persister.restoreClient();
 
@@ -165,13 +139,7 @@ describe('persister per-tab mutation records (D5)', () => {
 
   it('still restores mutations from the legacy shared-record shape', async () => {
     const db = getLocalUserDb();
-    await db?.meta.put({
-      key: 'rq',
-      timestamp: Date.now(),
-      buster: '',
-      mutations: [pausedMutation('legacy')],
-      channelQueries: [],
-    });
+    await db?.meta.put({ key: 'rq', timestamp: Date.now(), buster: '', mutations: [pausedMutation('legacy')], channelQueries: [] });
 
     const restored = await persister.restoreClient();
     expect(restored?.clientState.mutations).toHaveLength(1);

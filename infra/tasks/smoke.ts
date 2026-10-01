@@ -1,11 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { healthContract } from '../config/health.config';
-import {
-  type ComponentIssue,
-  componentSeverity,
-  formatComponentIssues,
-  unhealthyComponents,
-} from '../lib/health-components';
+import { type ComponentIssue, componentSeverity, formatComponentIssues, unhealthyComponents } from '../lib/health-components';
 import { sleep as defaultSleep } from '../lib/utils/cli-output';
 import { errorMessage } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
@@ -72,11 +67,7 @@ export function createFetchGet(timeoutMs: number): HttpGet {
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), timeoutMs);
     try {
-      const res = await fetch(url, {
-        signal: controller.signal,
-        redirect: 'follow',
-        headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
-      });
+      const res = await fetch(url, { signal: controller.signal, redirect: 'follow', headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' } });
       return { status: res.status, ok: res.ok, headers: res.headers, body: await res.text() };
     } finally {
       clearTimeout(timer);
@@ -148,20 +139,17 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
 
   // Require the exact local entry hash when available, otherwise any hashed entry asset. Skipped with the SPA and header checks when no default-route service exists.
   if (defaultRouteUrl)
-    await check(
-      opts.expectedAsset ? 'index.html references freshly built bundle' : 'index.html references hashed asset',
-      async () => {
-        const res = await get(`${defaultRouteUrl}/`);
-        const matched = opts.expectedAsset ? res.body.includes(opts.expectedAsset) : hasHashedAsset(res.body);
-        // Detail mirrors the branch that failed: a bad status, or a 200 whose HTML lacks the expected hashed entry asset.
-        const detail = !res.ok
-          ? `status=${res.status}`
-          : opts.expectedAsset
-            ? `served does not reference ${opts.expectedAsset}`
-            : 'no hashed entry asset found in served index.html';
-        return verdict(res.ok && matched, detail);
-      },
-    );
+    await check(opts.expectedAsset ? 'index.html references freshly built bundle' : 'index.html references hashed asset', async () => {
+      const res = await get(`${defaultRouteUrl}/`);
+      const matched = opts.expectedAsset ? res.body.includes(opts.expectedAsset) : hasHashedAsset(res.body);
+      // Detail mirrors the branch that failed: a bad status, or a 200 whose HTML lacks the expected hashed entry asset.
+      const detail = !res.ok
+        ? `status=${res.status}`
+        : opts.expectedAsset
+          ? `served does not reference ${opts.expectedAsset}`
+          : 'no hashed entry asset found in served index.html';
+      return verdict(res.ok && matched, detail);
+    });
 
   await check('primary /openapi.json reachable', async () => {
     const res = await get(`${primaryUrl}/openapi.json`);
@@ -169,17 +157,12 @@ export async function runSmoke(opts: SmokeOptions): Promise<SmokeResult[]> {
   });
 
   // Internal-only services have no health_url and are covered by the aggregate primary health.
-  const publicServices = (opts.services ?? [{ service: 'primary', health_url: primaryUrl }]).filter(
-    (service) => service.health_url,
-  );
+  const publicServices = (opts.services ?? [{ service: 'primary', health_url: primaryUrl }]).filter((service) => service.health_url);
   for (const service of publicServices) {
     await check(`${service.service} reports deployed SHA`, async () => {
       const res = await get(`${service.health_url}${healthContract.path}`);
       const version = res.headers.get(healthContract.versionHeader) ?? undefined;
-      return verdict(
-        isHealthy({ status: res.status, version }, expectedSha),
-        `served=${version ?? '<missing>'} expected=${expectedSha}`,
-      );
+      return verdict(isHealthy({ status: res.status, version }, expectedSha), `served=${version ?? '<missing>'} expected=${expectedSha}`);
     });
   }
 
@@ -238,10 +221,7 @@ interface CliArgs {
 }
 
 export function parseServicesJson(raw: string): Array<SmokeService & { public_url?: string; lb_route?: string }> {
-  return parseServiceRows(raw, '--services-json', {
-    required: ['service', 'health_url'],
-    optional: ['public_url', 'lb_route'],
-  });
+  return parseServiceRows(raw, '--services-json', { required: ['service', 'health_url'], optional: ['public_url', 'lb_route'] });
 }
 
 /** Parse `--key value` flags. Exported for testing. */
@@ -259,9 +239,7 @@ export function parseArgs(argv: string[]): CliArgs {
   const primaryUrl = getFlag(argv, '--backend') ?? primaryRow?.public_url;
   const sha = getFlag(argv, '--sha');
   if (!primaryUrl || !sha) {
-    throw new Error(
-      'Usage: smoke.ts [--frontend <url>] --backend <url> | --primary <slug> --sha <git-sha> [--services-json <json>] [--timeout ms]',
-    );
+    throw new Error('Usage: smoke.ts [--frontend <url>] --backend <url> | --primary <slug> --sha <git-sha> [--services-json <json>] [--timeout ms]');
   }
   const timeoutRaw = getFlag(argv, '--timeout');
   return {
@@ -290,8 +268,7 @@ export function resolveExpectedAsset(dist: string | undefined): string | undefin
   }
   const expectedAsset = extractEntryAsset(html);
   if (expectedAsset) console.info(`Expecting served index.html to reference: ${expectedAsset}`);
-  else
-    console.warn(`::warning::No hashed entry asset found in ${dist}; falling back to "references some hashed asset"`);
+  else console.warn(`::warning::No hashed entry asset found in ${dist}; falling back to "references some hashed asset"`);
   return expectedAsset;
 }
 
@@ -316,8 +293,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
 
   // GitHub has no yellow job outcome: a warning is a green job carrying an annotation, so only failures throw.
   const warned = results.filter((r) => r.status === 'warn');
-  if (warned.length > 0)
-    console.warn(`${warned.length} smoke check(s) warned (degraded components); deploy is not blocked`);
+  if (warned.length > 0) console.warn(`${warned.length} smoke check(s) warned (degraded components); deploy is not blocked`);
   const failed = results.filter((r) => r.status === 'fail');
   if (failed.length > 0) throw new Error(`${failed.length} smoke check(s) failed`);
 }

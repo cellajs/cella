@@ -6,11 +6,7 @@
  * @param what - Names the call in the error a timeout returns.
  * @returns Undefined when `pending` resolved in time; else its rejection, or an error saying `what` got no answer.
  */
-export async function withinTimeout(
-  pending: Promise<unknown>,
-  ms: number,
-  what = 'The call',
-): Promise<Error | undefined> {
+export async function withinTimeout(pending: Promise<unknown>, ms: number, what = 'The call'): Promise<Error | undefined> {
   let timer: NodeJS.Timeout | undefined;
   const timeout = new Promise<Error>((resolve) => {
     timer = setTimeout(() => resolve(new Error(`${what} got no answer within ${ms} ms`)), ms);

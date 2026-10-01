@@ -2,36 +2,20 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { BuildingIcon, ShieldCheckIcon, UserIcon } from 'lucide-react';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 
-const meta = {
-  title: 'common/EntityAvatar',
-  component: EntityAvatar,
-  tags: ['autodocs'],
-  parameters: { layout: 'centered' },
-} satisfies Meta<typeof EntityAvatar>;
+const meta = { title: 'common/EntityAvatar', component: EntityAvatar, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
+  typeof EntityAvatar
+>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const WithFallback: Story = {
-  args: { id: '1', name: 'Alice', type: 'user' },
-};
+export const WithFallback: Story = { args: { id: '1', name: 'Alice', type: 'user' } };
 
-export const WithImage: Story = {
-  args: {
-    id: '1',
-    name: 'Alice',
-    url: 'https://i.pravatar.cc/150?u=alice',
-    type: 'user',
-  },
-};
+export const WithImage: Story = { args: { id: '1', name: 'Alice', url: 'https://i.pravatar.cc/150?u=alice', type: 'user' } };
 
-export const WithIcon: Story = {
-  args: { icon: ShieldCheckIcon },
-};
+export const WithIcon: Story = { args: { icon: ShieldCheckIcon } };
 
-export const Organization: Story = {
-  args: { id: '2', name: 'Acme Corp', type: 'organization' },
-};
+export const Organization: Story = { args: { id: '2', name: 'Acme Corp', type: 'organization' } };
 
 export const Sizes: Story = {
   render: () => (

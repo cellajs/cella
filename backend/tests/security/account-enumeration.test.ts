@@ -50,12 +50,8 @@ describe('Account enumeration', async () => {
   it('must not learn whether an address has an account via the passkey challenge', async () => {
     const { account, stranger } = await accountAndStranger();
 
-    const forAccount = await challengeShape(
-      await post('/auth/passkey/generate-challenge', { type: 'authentication', email: account.email }),
-    );
-    const forStranger = await challengeShape(
-      await post('/auth/passkey/generate-challenge', { type: 'authentication', email: stranger }),
-    );
+    const forAccount = await challengeShape(await post('/auth/passkey/generate-challenge', { type: 'authentication', email: account.email }));
+    const forStranger = await challengeShape(await post('/auth/passkey/generate-challenge', { type: 'authentication', email: stranger }));
 
     expect(forAccount).toEqual(forStranger);
     expect(forAccount).toEqual({ status: 200, credentialIds: [] });
@@ -67,11 +63,7 @@ describe('Account enumeration', async () => {
     /** Answers a fresh challenge with a passkey no account holds, naming `email`. */
     const signInAs = async (email: string) => {
       const { challenge, cookie } = await passkeyChallenge('authentication');
-      const res = await post(
-        '/auth/passkey-verification',
-        { type: 'authentication', email, assertion: softwarePasskey().assert(challenge) },
-        cookie,
-      );
+      const res = await post('/auth/passkey-verification', { type: 'authentication', email, assertion: softwarePasskey().assert(challenge) }, cookie);
       const { type } = (await res.json()) as { type?: string };
       return { status: res.status, type };
     };

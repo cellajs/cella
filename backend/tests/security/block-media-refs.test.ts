@@ -19,18 +19,11 @@ import { clearSecurityTestData, createTestTenant, type TestTenant } from './help
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
-const imageBlock = (url: string) => ({
-  id: generateId(),
-  type: 'image',
-  props: { url, name: 'image.png', caption: '' },
-  content: [],
-  children: [],
-});
+const imageBlock = (url: string) => ({ id: generateId(), type: 'image', props: { url, name: 'image.png', caption: '' }, content: [], children: [] });
 
 const documentOf = (...urls: string[]) => JSON.stringify(urls.map(imageBlock));
 
-const urlsIn = (description: string | null) =>
-  (JSON.parse(description ?? '[]') as { props: { url: string } }[]).map((block) => block.props.url);
+const urlsIn = (description: string | null) => (JSON.parse(description ?? '[]') as { props: { url: string } }[]).map((block) => block.props.url);
 
 /**
  * A media block renders its `url` in every viewer's browser. It may name only an attachment id or a storage key under
@@ -81,8 +74,7 @@ describe('Block media references', async () => {
     return row?.description ?? null;
   };
 
-  const resetDescription = () =>
-    adminDb.update(attachmentsTable).set({ description: original }).where(eq(attachmentsTable.id, attachmentId));
+  const resetDescription = () => adminDb.update(attachmentsTable).set({ description: original }).where(eq(attachmentsTable.id, attachmentId));
 
   const storedWelcomeText = async () => {
     const [row] = await adminDb

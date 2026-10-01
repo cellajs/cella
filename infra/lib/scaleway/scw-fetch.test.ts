@@ -3,14 +3,8 @@ import { carriesSecretValues } from './scw-fetch';
 
 describe('carriesSecretValues', () => {
   it('flags Secret Manager endpoints (bodies carry base64 secret values)', () => {
-    expect(
-      carriesSecretValues('https://api.scaleway.com/secret-manager/v1beta1/regions/fr-par/secrets/uuid/versions'),
-    ).toBe(true);
-    expect(
-      carriesSecretValues(
-        'https://api.scaleway.com/secret-manager/v1beta1/regions/fr-par/secrets/uuid/versions/latest/access',
-      ),
-    ).toBe(true);
+    expect(carriesSecretValues('https://api.scaleway.com/secret-manager/v1beta1/regions/fr-par/secrets/uuid/versions')).toBe(true);
+    expect(carriesSecretValues('https://api.scaleway.com/secret-manager/v1beta1/regions/fr-par/secrets/uuid/versions/latest/access')).toBe(true);
   });
 
   it('flags IAM api-key endpoints (minting responses contain the secret key)', () => {

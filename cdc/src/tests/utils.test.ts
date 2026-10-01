@@ -104,11 +104,7 @@ describe('extractStxData', () => {
     const row = {
       stx: { mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { name: '100:0001:aaa' } },
     };
-    expect(extractStxData(row)).toEqual({
-      mutationId: 'mut-1',
-      sourceId: 'src-1',
-      fieldTimestamps: { name: '100:0001:aaa' },
-    });
+    expect(extractStxData(row)).toEqual({ mutationId: 'mut-1', sourceId: 'src-1', fieldTimestamps: { name: '100:0001:aaa' } });
   });
 
   it('should return null when stx is not present', () => {
@@ -124,9 +120,7 @@ describe('extractStxData', () => {
   });
 
   it('should default fieldTimestamps to empty object', () => {
-    const row = {
-      stx: { mutationId: 'mut-1', sourceId: 'src-1' },
-    };
+    const row = { stx: { mutationId: 'mut-1', sourceId: 'src-1' } };
     const result = extractStxData(row);
     expect(result?.fieldTimestamps).toEqual({});
   });

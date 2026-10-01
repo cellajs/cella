@@ -5,11 +5,7 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 
-export type EllipsisOption<T> = {
-  label: string;
-  icon: IconComponent;
-  onSelect: (row: T, triggerRef: RefObject<HTMLButtonElement | null>) => void;
-};
+export type EllipsisOption<T> = { label: string; icon: IconComponent; onSelect: (row: T, triggerRef: RefObject<HTMLButtonElement | null>) => void };
 
 interface Props<T> {
   row: T;
@@ -33,13 +29,7 @@ export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options
           {label}
         </DropdownActionItem>
       )),
-      {
-        id: 'row-dropdown',
-        triggerId: `ellipsis-${row.id}`,
-        triggerRef,
-        align: 'end',
-        kind: 'menu',
-      },
+      { id: 'row-dropdown', triggerId: `ellipsis-${row.id}`, triggerRef, align: 'end', kind: 'menu' },
     );
   };
 

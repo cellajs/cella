@@ -30,12 +30,7 @@ export const sleep = (ms: number): Promise<void> => new Promise((resolve) => set
 
 /** True when stderr is a TTY and the run is not automated; automation and piped output get a single static line. */
 function spinnerEnabled(): boolean {
-  return (
-    Boolean(process.stderr.isTTY) &&
-    process.env.INFRA_NON_INTERACTIVE !== '1' &&
-    process.env.CI !== 'true' &&
-    !process.env.GITHUB_ACTIONS
-  );
+  return Boolean(process.stderr.isTTY) && process.env.INFRA_NON_INTERACTIVE !== '1' && process.env.CI !== 'true' && !process.env.GITHUB_ACTIONS;
 }
 
 const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];

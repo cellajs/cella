@@ -7,8 +7,7 @@ vi.unmock('#/middlewares/rate-limiter/core');
 const { rateLimiter } = await import('#/middlewares/rate-limiter/core');
 const { chargeLimiter } = await import('#/middlewares/rate-limiter/helpers');
 
-const workLimiter = () =>
-  rateLimiter('limit', `scope_${nanoid(8)}`, ['ip'], { limits: { points: 3, duration: 60, blockDuration: 60 } });
+const workLimiter = () => rateLimiter('limit', `scope_${nanoid(8)}`, ['ip'], { limits: { points: 3, duration: 60, blockDuration: 60 } });
 
 /**
  * A limiter charged where the work it bounds starts, from code that has no request context of its own. The charge

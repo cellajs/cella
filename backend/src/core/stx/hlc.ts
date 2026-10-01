@@ -16,11 +16,7 @@ let lastCounter = 0n;
 export function parseHLC(value: string): ParsedHLC | null {
   const match = hlcPattern.exec(value);
   if (!match) return null;
-  return {
-    timestamp: BigInt(match[1]),
-    counter: BigInt(match[2]),
-    source: match[3],
-  };
+  return { timestamp: BigInt(match[1]), counter: BigInt(match[2]), source: match[3] };
 }
 
 export function isValidHLC(value: string): boolean {

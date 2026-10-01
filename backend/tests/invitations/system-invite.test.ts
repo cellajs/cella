@@ -9,10 +9,7 @@ import { createSystemAdminUser, createTestSession, createTestUser, mailedLink } 
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
-setTestConfig({
-  enabledAuthStrategies: ['passkey'],
-  selfRegistration: true,
-});
+setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
 
 afterEach(async () => await clearDatabase());
 
@@ -25,26 +22,16 @@ describe('System Invitation', async () => {
   }
 
   async function makeInviteRequest(emails: string[], sessionCookie: string) {
-    return await call(systemInvite, {
-      body: { emails },
-      headers: { ...defaultHeaders, Cookie: sessionCookie },
-    });
+    return await call(systemInvite, { body: { emails }, headers: { ...defaultHeaders, Cookie: sessionCookie } });
   }
 
   describe('Basic Functionality', () => {
     it('should invite new users successfully', async () => {
       const sessionCookie = await createAdminSession();
-      const { response: res, data } = await makeInviteRequest(
-        ['user1@example.com', 'user2@example.com'],
-        sessionCookie,
-      );
+      const { response: res, data } = await makeInviteRequest(['user1@example.com', 'user2@example.com'], sessionCookie);
 
       expect(res.status).toBe(200);
-      const response = data as {
-        data: any[];
-        rejectedIds: string[];
-        invitesSentCount: number;
-      };
+      const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
       expect(response.invitesSentCount).toBe(2);
       expect(response.rejectedIds).toHaveLength(0);
 
@@ -57,17 +44,10 @@ describe('System Invitation', async () => {
     it('should filter out existing users', async () => {
       await createTestUser('existing@example.com');
       const sessionCookie = await createAdminSession();
-      const { response: res, data } = await makeInviteRequest(
-        ['existing@example.com', 'newuser@example.com'],
-        sessionCookie,
-      );
+      const { response: res, data } = await makeInviteRequest(['existing@example.com', 'newuser@example.com'], sessionCookie);
 
       expect(res.status).toBe(200);
-      const response = data as {
-        data: any[];
-        rejectedIds: string[];
-        invitesSentCount: number;
-      };
+      const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
       expect(response.invitesSentCount).toBe(1); // Only new user
       expect(response.rejectedIds).toContain('existing@example.com');
     });
@@ -77,11 +57,7 @@ describe('System Invitation', async () => {
       const { response: res, data } = await makeInviteRequest(['user@example.com', 'user@example.com'], sessionCookie);
 
       expect(res.status).toBe(200);
-      const response = data as {
-        data: any[];
-        rejectedIds: string[];
-        invitesSentCount: number;
-      };
+      const response = data as { data: any[]; rejectedIds: string[]; invitesSentCount: number };
       expect(response.invitesSentCount).toBe(1); // Only one invitation sent
       expect(response.rejectedIds).toHaveLength(0);
     });

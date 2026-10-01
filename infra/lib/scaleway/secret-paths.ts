@@ -63,9 +63,7 @@ export function serviceKeyCondition(
     ),
   ].sort();
   // A folder under another granted folder is covered by it already.
-  const grantedShared = sharedPaths.filter(
-    (path) => !sharedPaths.some((other) => other !== path && path.startsWith(other)),
-  );
+  const grantedShared = sharedPaths.filter((path) => !sharedPaths.some((other) => other !== path && path.startsWith(other)));
   return [...scope.map((service) => serviceSecretPath(slug, mode, service)), ...grantedShared]
     .map((path) => `resource.name.startsWith("${path}")`)
     .join(' || ');

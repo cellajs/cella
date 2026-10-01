@@ -7,10 +7,7 @@ import { serializeArrayParam, serializeObjectParam, serializePrimitiveParam } fr
 import { getUrl } from '../core/utils.gen';
 import type { Client, ClientOptions, Config, RequestOptions } from './types.gen';
 
-export const createQuerySerializer = <T = unknown>({
-  parameters = {},
-  ...args
-}: QuerySerializerOptions = {}): ((queryParams: T) => string) => {
+export const createQuerySerializer = <T = unknown>({ parameters = {}, ...args }: QuerySerializerOptions = {}): ((queryParams: T) => string) => {
   const querySerializer = (queryParams: T): string => {
     const search: string[] = [];
     if (queryParams && typeof queryParams === 'object') {
@@ -149,10 +146,7 @@ export const buildUrl: Client['buildUrl'] = (options) =>
     baseUrl: options.baseUrl as string,
     path: options.path,
     query: options.query,
-    querySerializer:
-      typeof options.querySerializer === 'function'
-        ? options.querySerializer
-        : createQuerySerializer(options.querySerializer),
+    querySerializer: typeof options.querySerializer === 'function' ? options.querySerializer : createQuerySerializer(options.querySerializer),
     url: options.url,
   });
 

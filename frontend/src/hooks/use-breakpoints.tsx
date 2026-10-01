@@ -2,16 +2,12 @@ import { useSyncExternalStore } from 'react';
 import { appConfig } from 'shared';
 
 const breakpoints: { [key: string]: string } = appConfig.theme.screenSizes;
-const sortedBreakpoints = Object.keys(breakpoints).sort(
-  (a, b) => Number.parseInt(breakpoints[a], 10) - Number.parseInt(breakpoints[b], 10),
-);
+const sortedBreakpoints = Object.keys(breakpoints).sort((a, b) => Number.parseInt(breakpoints[a], 10) - Number.parseInt(breakpoints[b], 10));
 
 // One media query per breakpoint, so JS agrees with the CSS `md:` variants. `window.innerWidth` does not: on
 // mobile it can follow the visual viewport (pinch zoom, overflowing content) and flip layouts the CSS never flips.
 // jsdom has no matchMedia; tests fall back to innerWidth there.
-const mediaQueries = new Map(
-  sortedBreakpoints.map((bp) => [bp, window.matchMedia?.(`(min-width: ${breakpoints[bp]})`) ?? null] as const),
-);
+const mediaQueries = new Map(sortedBreakpoints.map((bp) => [bp, window.matchMedia?.(`(min-width: ${breakpoints[bp]})`) ?? null] as const));
 
 function matchesBreakpoint(bp: string) {
   const mql = mediaQueries.get(bp);
@@ -78,20 +74,12 @@ function getServerSnapshot() {
 type BreakpointKey = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
 
 export function useCurrentBreakpoint(enableReactivity = true): BreakpointKey {
-  const breakpointState = useSyncExternalStore(
-    enableReactivity ? subscribe : () => () => {},
-    getSnapshot,
-    getServerSnapshot,
-  );
+  const breakpointState = useSyncExternalStore(enableReactivity ? subscribe : () => () => {}, getSnapshot, getServerSnapshot);
   return breakpointState as BreakpointKey;
 }
 
 function useBreakpointState(enableReactivity = true) {
-  const breakpointState = useSyncExternalStore(
-    enableReactivity ? subscribe : () => () => {},
-    getSnapshot,
-    getServerSnapshot,
-  );
+  const breakpointState = useSyncExternalStore(enableReactivity ? subscribe : () => () => {}, getSnapshot, getServerSnapshot);
   return sortedBreakpoints.indexOf(breakpointState);
 }
 

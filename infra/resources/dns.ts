@@ -8,19 +8,7 @@ const appConfig = engineConfig();
 const managesZonePolicy = new URL(appConfig.frontendUrl).hostname === `www.${dnsZone}`;
 
 if (managesZonePolicy) {
-  new scaleway.domain.Record('caa-issue', {
-    dnsZone,
-    name: '',
-    type: 'CAA',
-    data: '0 issue "letsencrypt.org"',
-    ttl: 300,
-  });
+  new scaleway.domain.Record('caa-issue', { dnsZone, name: '', type: 'CAA', data: '0 issue "letsencrypt.org"', ttl: 300 });
 
-  new scaleway.domain.Record('caa-iodef', {
-    dnsZone,
-    name: '',
-    type: 'CAA',
-    data: `0 iodef "mailto:security@${dnsZone}"`,
-    ttl: 300,
-  });
+  new scaleway.domain.Record('caa-iodef', { dnsZone, name: '', type: 'CAA', data: `0 iodef "mailto:security@${dnsZone}"`, ttl: 300 });
 }

@@ -51,15 +51,11 @@ describe('OAuth authorization server', async () => {
     const response = await fetch(`${oauth.issuer}/.well-known/oauth-authorization-server`);
     expect(response.status).toBe(200);
     const metadata = (await response.json()) as Record<string, unknown>;
-    expect(metadata.grant_types_supported).toEqual(
-      expect.arrayContaining(['authorization_code', 'refresh_token', 'client_credentials']),
-    );
+    expect(metadata.grant_types_supported).toEqual(expect.arrayContaining(['authorization_code', 'refresh_token', 'client_credentials']));
     expect(metadata.code_challenge_methods_supported).toEqual(['S256']);
     expect(metadata.client_id_metadata_document_supported).toBe(true);
 
-    const jwks = await fetch(`${oauth.issuer}/jwks`).then(
-      (r) => r.json() as Promise<{ keys: { kid: string; d?: string }[] }>,
-    );
+    const jwks = await fetch(`${oauth.issuer}/jwks`).then((r) => r.json() as Promise<{ keys: { kid: string; d?: string }[] }>);
     expect(jwks.keys.length).toBeGreaterThanOrEqual(2);
     expect(jwks.keys.every((key) => !key.d)).toBe(true);
   });
@@ -72,12 +68,7 @@ describe('OAuth authorization server', async () => {
     expect(body.token_type).toBe('Bearer');
 
     const token = await verifyAccessToken(String(body.access_token), { tenantId: client.org.tenantId });
-    expect(token).toMatchObject({
-      kind: 'service',
-      actorId: client.clientId,
-      tenantId: client.org.tenantId,
-      scopes: ['attachment:read'],
-    });
+    expect(token).toMatchObject({ kind: 'service', actorId: client.clientId, tenantId: client.org.tenantId, scopes: ['attachment:read'] });
   });
 
   it('refuses a wrong client secret and a resource outside this deployment', async () => {
@@ -99,10 +90,7 @@ describe('OAuth authorization server', async () => {
     const { body } = await clientCredentials(client, { scope: 'attachment:read', resource });
     const jwt = String(body.access_token);
 
-    const read = await call(getAttachments, {
-      path: { tenantId: client.org.tenantId, organizationId: client.org.id },
-      headers: bearerHeaders(jwt),
-    });
+    const read = await call(getAttachments, { path: { tenantId: client.org.tenantId, organizationId: client.org.id }, headers: bearerHeaders(jwt) });
     expect(read.response.status).toBe(200);
 
     // The account is an admin, the token only carries attachment:read: under that mask it cannot read the
@@ -114,10 +102,7 @@ describe('OAuth authorization server', async () => {
     });
     expect(write.response.status).toBe(404);
 
-    const otherTenant = await call(getAttachments, {
-      path: { tenantId: 'other01', organizationId: client.org.id },
-      headers: bearerHeaders(jwt),
-    });
+    const otherTenant = await call(getAttachments, { path: { tenantId: 'other01', organizationId: client.org.id }, headers: bearerHeaders(jwt) });
     expect(otherTenant.response.status).toBe(401);
   });
 
@@ -145,10 +130,7 @@ describe('OAuth authorization server', async () => {
       });
       expect(result.consent).toMatchObject({ client: { id: clientId, kind: 'cimd' }, refusal: null });
       expect(result.status).toBe(200);
-      const token = await verifyAccessToken(String(result.body.access_token), {
-        tenantId: org.tenantId,
-        organizationId: org.id,
-      });
+      const token = await verifyAccessToken(String(result.body.access_token), { tenantId: org.tenantId, organizationId: org.id });
       expect(token).toMatchObject({ kind: 'user', actorId: user.id, clientId, scopes: ['attachment:read'] });
     } finally {
       restore();

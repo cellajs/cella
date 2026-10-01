@@ -7,9 +7,7 @@ import { secretColumnPattern, secretColumns, secretLookingColumns } from '#/db/s
 
 /** Every table in the schema, from the same files drizzle-kit reads (`backend/src/modules/** /*-db.ts`). */
 const modulesDir = path.resolve(import.meta.dirname, '../../../backend/src/modules');
-const dbFiles = readdirSync(modulesDir, { recursive: true, encoding: 'utf8' }).filter((file) =>
-  file.endsWith('-db.ts'),
-);
+const dbFiles = readdirSync(modulesDir, { recursive: true, encoding: 'utf8' }).filter((file) => file.endsWith('-db.ts'));
 
 const allTables = new Map<string, PgTable>();
 
@@ -22,8 +20,7 @@ beforeAll(async () => {
   }
 });
 
-const listed = (registry: Record<string, readonly string[]>, table: string, column: string): boolean =>
-  registry[table]?.includes(column) ?? false;
+const listed = (registry: Record<string, readonly string[]>, table: string, column: string): boolean => registry[table]?.includes(column) ?? false;
 
 describe('secretColumns registry', () => {
   it('sees the whole schema', () => {

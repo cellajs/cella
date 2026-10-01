@@ -14,13 +14,7 @@ const decode = (value: string) => Buffer.from(value, 'base64url');
 
 const deriveKey = (purpose: string): Buffer =>
   Buffer.from(
-    hkdfSync(
-      'sha256',
-      Buffer.from(env.DATA_ENCRYPTION_KEY, 'utf8'),
-      Buffer.from(HKDF_SALT, 'utf8'),
-      Buffer.from(purpose, 'utf8'),
-      KEY_BYTES,
-    ),
+    hkdfSync('sha256', Buffer.from(env.DATA_ENCRYPTION_KEY, 'utf8'), Buffer.from(HKDF_SALT, 'utf8'), Buffer.from(purpose, 'utf8'), KEY_BYTES),
   );
 
 export const isEncryptedData = (value: string): boolean => value.startsWith(`${VERSION}:`);
@@ -40,9 +34,7 @@ export const decryptData = (encryptedValue: string, purpose: string): string => 
     throw new Error('Invalid encrypted data format');
   }
 
-  const decipher = createDecipheriv(ALGORITHM, deriveKey(purpose), decode(encodedIv), {
-    authTagLength: AUTH_TAG_BYTES,
-  });
+  const decipher = createDecipheriv(ALGORITHM, deriveKey(purpose), decode(encodedIv), { authTagLength: AUTH_TAG_BYTES });
   decipher.setAuthTag(decode(encodedAuthTag));
 
   return Buffer.concat([decipher.update(decode(encodedCiphertext)), decipher.final()]).toString('utf8');

@@ -38,10 +38,7 @@ describe('Invitation token data', async () => {
     expect(response.status).toBe(200);
     expect((data as { userId: string }).userId).toBe(lateUser.id);
 
-    const [bound] = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    const [bound] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
     expect(bound.userId).toBe(lateUser.id);
 
     // The token survives: this flow's single-use cookie still points at it.
@@ -49,21 +46,14 @@ describe('Invitation token data', async () => {
     expect(keptToken.userId).toBe(lateUser.id);
 
     const sessionCookie = await createTestSession(lateUser);
-    const { data: invitations } = await call(getMyInvitations, {
-      headers: { ...defaultHeaders, Cookie: sessionCookie },
-    });
+    const { data: invitations } = await call(getMyInvitations, { headers: { ...defaultHeaders, Cookie: sessionCookie } });
     expect((invitations as { total: number }).total).toBe(1);
   });
 
   it("must not read another invitation's data via a browser that holds a different one", async () => {
     const organization = await createTestOrganization();
     const inviter = await createTestUser('inviter@example.com');
-    const held = await createInvitation({
-      token: 'invoked',
-      email: 'held@example.com',
-      organization,
-      createdBy: inviter.id,
-    });
+    const held = await createInvitation({ token: 'invoked', email: 'held@example.com', organization, createdBy: inviter.id });
     const other = await createInvitation({ email: 'other@example.com', organization, createdBy: inviter.id });
 
     const { response, error } = await call(getTokenData, {

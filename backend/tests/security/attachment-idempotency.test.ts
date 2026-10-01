@@ -41,11 +41,7 @@ describe('Idempotent attachment creates', async () => {
       stx: { mutationId, sourceId: 'idempotency-test', fieldTimestamps: {} },
     });
 
-  const create = async (
-    as: { sessionCookie: string },
-    body: ReturnType<typeof bodyFor>,
-    home: { id: string; tenantId: string } = organization,
-  ) => {
+  const create = async (as: { sessionCookie: string }, body: ReturnType<typeof bodyFor>, home: { id: string; tenantId: string } = organization) => {
     const { data, response } = await call(createAttachments, {
       path: { tenantId: home.tenantId, organizationId: home.id },
       body: [body] as never,
@@ -70,8 +66,7 @@ describe('Idempotent attachment creates', async () => {
       stx: { mutationId, sourceId: 'idempotency-test', fieldTimestamps: {} },
     });
 
-  const storedRow = async (id: string) =>
-    (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
+  const storedRow = async (id: string) => (await adminDb.select().from(attachmentsTable).where(eq(attachmentsTable.id, id)))[0];
 
   beforeAll(async () => {
     organization = await createTestOrganization();

@@ -9,23 +9,12 @@ const columns: ColumnOrColumnGroup<Row>[] = [{ key: 'name', name: 'Name' }];
 
 function Table({ rows, error, isLoading }: { rows?: Row[]; error?: Error; isLoading?: boolean }) {
   return (
-    <DataTable<Row>
-      columns={columns}
-      rows={rows}
-      error={error}
-      isLoading={isLoading}
-      rowKeyGetter={(row) => row.id}
-      hasNextPage={false}
-      readOnly
-    />
+    <DataTable<Row> columns={columns} rows={rows} error={error} isLoading={isLoading} rowKeyGetter={(row) => row.id} hasNextPage={false} readOnly />
   );
 }
 
 /** What a table shows for each query state: a skeleton while loading, the error of a failed first load, and rows. */
-const meta = {
-  title: 'common/data-table/DataTable',
-  component: Table,
-} satisfies Meta<typeof Table>;
+const meta = { title: 'common/data-table/DataTable', component: Table } satisfies Meta<typeof Table>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

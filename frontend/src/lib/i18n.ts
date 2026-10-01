@@ -18,9 +18,7 @@ const initOptions: InitOptions = {
   interpolation: {
     escapeValue: false, // React escapes by default
   },
-  react: {
-    useSuspense: false,
-  },
+  react: { useSuspense: false },
   defaultNS: 'c',
   backend: {
     // Processed namespaces (common + app merged into `c`), served by the vite plugin in dev and as build assets.

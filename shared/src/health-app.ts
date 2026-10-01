@@ -21,10 +21,7 @@ export const createHealthApp = ({ version, full }: HealthAppOptions): Hono => {
   // configuration untouched on every other route.
   app.use(
     '/health',
-    secureHeaders({
-      referrerPolicy: 'strict-origin-when-cross-origin',
-      strictTransportSecurity: 'max-age=31536000; includeSubDomains; preload',
-    }),
+    secureHeaders({ referrerPolicy: 'strict-origin-when-cross-origin', strictTransportSecurity: 'max-age=31536000; includeSubDomains; preload' }),
   );
 
   app.get('/health', async (c) => {

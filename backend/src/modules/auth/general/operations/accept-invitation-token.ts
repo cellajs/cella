@@ -15,22 +15,15 @@ export async function acceptInvitationTokenOp(ctx: UserContext, tokenRecord: Tok
   // A token already linked to a user is that user's alone; possession of the link changes nothing.
   if (tokenRecord.userId && tokenRecord.userId !== user.id) throw new AppError(409, 'user_mismatch', 'warn');
 
-  const entity = await handleMembershipInvitationOp(ctx, tokenRecord.inactiveMembershipId, 'accept', {
-    viaToken: true,
-  });
+  const entity = await handleMembershipInvitationOp(ctx, tokenRecord.inactiveMembershipId, 'accept', { viaToken: true });
 
   // Accepted by an account on another address than the one invited: tell the invited inbox, since it may not be theirs.
   if (tokenRecord.email !== user.email) {
-    log.warn('Invitation accepted by an account on another address', {
-      tokenId: tokenRecord.id,
-      invitedEmail: tokenRecord.email,
-      userId: user.id,
+    log.warn('Invitation accepted by an account on another address', { tokenId: tokenRecord.id, invitedEmail: tokenRecord.email, userId: user.id });
+    sendAccountSecurityEmail({ email: tokenRecord.email, name: slugFromEmail(tokenRecord.email) }, 'invitation-accepted-elsewhere', {
+      entityName: entity.name,
+      accountEmail: user.email,
     });
-    sendAccountSecurityEmail(
-      { email: tokenRecord.email, name: slugFromEmail(tokenRecord.email) },
-      'invitation-accepted-elsewhere',
-      { entityName: entity.name, accountEmail: user.email },
-    );
   }
 
   return entity;

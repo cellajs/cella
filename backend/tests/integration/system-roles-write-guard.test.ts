@@ -85,16 +85,12 @@ afterAll(async () => {
   });
 
   it('blocks runtime_role from updating a system role, even with the grant open', async () => {
-    const message = await rejectionMessage(
-      runtimeDb.execute(sql`UPDATE system_roles SET role = 'admin' WHERE user_id = ${TEST_USER}`),
-    );
+    const message = await rejectionMessage(runtimeDb.execute(sql`UPDATE system_roles SET role = 'admin' WHERE user_id = ${TEST_USER}`));
     expect(message).toMatch(/not writable by runtime_role/);
   });
 
   it('blocks runtime_role from deleting a system role, even with the grant open', async () => {
-    const message = await rejectionMessage(
-      runtimeDb.execute(sql`DELETE FROM system_roles WHERE user_id = ${TEST_USER}`),
-    );
+    const message = await rejectionMessage(runtimeDb.execute(sql`DELETE FROM system_roles WHERE user_id = ${TEST_USER}`));
     expect(message).toMatch(/not writable by runtime_role/);
 
     const survived = await adminDb.execute(sql`SELECT 1 FROM system_roles WHERE user_id = ${TEST_USER}`);
@@ -102,9 +98,7 @@ afterAll(async () => {
   });
 
   it('still lets the admin connection write system_roles (seeds must work)', async () => {
-    await expect(
-      adminDb.execute(sql`UPDATE system_roles SET role = 'admin' WHERE user_id = ${TEST_USER}`),
-    ).resolves.toBeDefined();
+    await expect(adminDb.execute(sql`UPDATE system_roles SET role = 'admin' WHERE user_id = ${TEST_USER}`)).resolves.toBeDefined();
   });
 
   it('does not break the ON DELETE CASCADE from users', async () => {

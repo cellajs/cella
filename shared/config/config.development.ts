@@ -6,11 +6,7 @@ export const development = {
   name: 'Cella DEVELOPMENT',
   slug: 'cella-development',
 
-  has: {
-    selfRegistration: true,
-    waitlist: true,
-    chatSupport: false,
-  },
+  has: { selfRegistration: true, waitlist: true, chatSupport: false },
 
   domain: '',
   // Same-origin in development too: the Vite dev server proxies /api, /yjs and /mcp
@@ -29,8 +25,5 @@ export const development = {
   // Leave empty locally so the contact-form map gracefully skips rendering. Set your own key to enable.
   googleMapsKey: '',
 
-  s3: {
-    publicBucket: 'cella-shared-public',
-    privateBucket: 'cella-shared-private',
-  },
+  s3: { publicBucket: 'cella-shared-public', privateBucket: 'cella-shared-private' },
 } satisfies DeepPartial<typeof _default>;

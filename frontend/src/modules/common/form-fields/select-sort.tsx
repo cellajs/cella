@@ -5,11 +5,7 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '~/modules/ui/select';
 import { cn } from '~/utils/cn';
 
-type SortOptionBase = {
-  name: TKey;
-  value: string;
-  icon: IconComponent;
-};
+type SortOptionBase = { name: TKey; value: string; icon: IconComponent };
 
 interface SelectSortProps<T extends readonly SortOptionBase[]> {
   sortOptions: T;
@@ -19,24 +15,14 @@ interface SelectSortProps<T extends readonly SortOptionBase[]> {
   iconOnly?: boolean;
 }
 
-export function SelectSort<T extends readonly SortOptionBase[]>({
-  sortOptions,
-  onChange,
-  value,
-  className,
-  iconOnly = true,
-}: SelectSortProps<T>) {
+export function SelectSort<T extends readonly SortOptionBase[]>({ sortOptions, onChange, value, className, iconOnly = true }: SelectSortProps<T>) {
   const { t } = useTranslation();
   const isOnline = useOnlineManager();
 
   const selected = sortOptions.find((option) => option.value === value) ?? sortOptions[0];
 
   return (
-    <Select
-      value={value}
-      onValueChange={onChange}
-      items={sortOptions.map((option) => ({ value: option.value, label: t(option.name) }))}
-    >
+    <Select value={value} onValueChange={onChange} items={sortOptions.map((option) => ({ value: option.value, label: t(option.name) }))}>
       <SelectTrigger
         disabled={!isOnline}
         aria-label={iconOnly ? `${t('c:sort')}: ${t(selected.name)}` : undefined}

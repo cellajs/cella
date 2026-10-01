@@ -20,12 +20,8 @@ export interface SelectGenerationsOptions {
 /** Generations the stack provisions for one service, deduplicated by id. The first entry is the binding target, and equal active/pending ids collapse to one VM. */
 export function selectGenerations(entry: ServiceRollout | undefined, opts: SelectGenerationsOptions): Generation[] {
   const activeRef = entry?.active;
-  const pending: Generation | undefined = entry?.pendingSha
-    ? { id: opts.genIdFor(entry.pendingSha), sha: entry.pendingSha }
-    : undefined;
-  const active: Generation | undefined = activeRef
-    ? { id: activeRef.id, sha: activeRef.sha, preexisting: true }
-    : undefined;
+  const pending: Generation | undefined = entry?.pendingSha ? { id: opts.genIdFor(entry.pendingSha), sha: entry.pendingSha } : undefined;
+  const active: Generation | undefined = activeRef ? { id: activeRef.id, sha: activeRef.sha, preexisting: true } : undefined;
 
   const generations: Generation[] = [];
   const seen = new Set<string>();

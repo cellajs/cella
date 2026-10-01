@@ -13,18 +13,10 @@ const asSystem = <T>(doc: DocKey, fn: (tx: Tx) => Promise<T>) => withRlsTx(doc.t
 
 /** `(entity_type, entity_id)` within the document's own tenant. */
 const docWhere = ({ entityType, entityId, tenantId }: DocKey) =>
-  and(
-    eq(yjsDocumentsTable.entityType, entityType),
-    eq(yjsDocumentsTable.entityId, entityId),
-    eq(yjsDocumentsTable.tenantId, tenantId),
-  );
+  and(eq(yjsDocumentsTable.entityType, entityType), eq(yjsDocumentsTable.entityId, entityId), eq(yjsDocumentsTable.tenantId, tenantId));
 
 const logWhere = ({ entityType, entityId, tenantId }: DocKey) =>
-  and(
-    eq(yjsUpdatesTable.entityType, entityType),
-    eq(yjsUpdatesTable.entityId, entityId),
-    eq(yjsUpdatesTable.tenantId, tenantId),
-  );
+  and(eq(yjsUpdatesTable.entityType, entityType), eq(yjsUpdatesTable.entityId, entityId), eq(yjsUpdatesTable.tenantId, tenantId));
 
 /** One appended client update, in arrival order. */
 export interface LogRow {
@@ -41,10 +33,7 @@ export interface BaseRow {
 
 const baseColumns = { state: yjsDocumentsTable.state, generation: yjsDocumentsTable.generation };
 
-const toBaseRow = (row: { state: Buffer; generation: string }): BaseRow => ({
-  state: new Uint8Array(row.state),
-  generation: row.generation,
-});
+const toBaseRow = (row: { state: Buffer; generation: string }): BaseRow => ({ state: new Uint8Array(row.state), generation: row.generation });
 
 /** The document row, or null when none exists: never seeded, or retired since. */
 export async function loadBase(doc: DocKey): Promise<BaseRow | null> {
@@ -60,14 +49,7 @@ export async function ensureDoc(scope: DocScope, seed: Uint8Array | null): Promi
   return asSystem(scope, async (tx) => {
     await tx
       .insert(yjsDocumentsTable)
-      .values({
-        entityType,
-        entityId,
-        tenantId,
-        organizationId,
-        state: seed ? Buffer.from(seed) : Buffer.alloc(0),
-        updatedAt: sql`now()`,
-      })
+      .values({ entityType, entityId, tenantId, organizationId, state: seed ? Buffer.from(seed) : Buffer.alloc(0), updatedAt: sql`now()` })
       .onConflictDoNothing({ target: [yjsDocumentsTable.entityType, yjsDocumentsTable.entityId] });
     const rows = await tx.select(baseColumns).from(yjsDocumentsTable).where(docWhere(scope));
     return toBaseRow(rows[0]);
@@ -81,12 +63,7 @@ export async function ensureDoc(scope: DocScope, seed: Uint8Array | null): Promi
  * retire that deletes the row waits for it and then deletes the log row too. False when no such row exists: the
  * document was retired or reseeded, and the update belongs to no history the next seed shares.
  */
-export async function appendUpdate(
-  scope: DocScope,
-  userId: string,
-  payload: Uint8Array,
-  generation: string,
-): Promise<boolean> {
+export async function appendUpdate(scope: DocScope, userId: string, payload: Uint8Array, generation: string): Promise<boolean> {
   const { entityType, entityId, tenantId, organizationId } = scope;
   return asSystem(scope, async (tx) => {
     const [row] = await tx
@@ -95,14 +72,9 @@ export async function appendUpdate(
       .where(and(docWhere(scope), eq(yjsDocumentsTable.generation, generation)))
       .for('key share');
     if (!row) return false;
-    await tx.insert(yjsUpdatesTable).values({
-      entityType,
-      entityId,
-      tenantId,
-      organizationId,
-      userId: userId || null,
-      payload: Buffer.from(payload),
-    });
+    await tx
+      .insert(yjsUpdatesTable)
+      .values({ entityType, entityId, tenantId, organizationId, userId: userId || null, payload: Buffer.from(payload) });
     return true;
   });
 }
@@ -124,12 +96,7 @@ export async function readLog(doc: DocKey): Promise<LogRow[]> {
  * merged into it, in one transaction. Rows appended meanwhile stay. False, with nothing changed, when the row of that
  * generation is gone: the document was retired or reseeded since the read.
  */
-export async function compactState(
-  doc: DocKey,
-  merged: Uint8Array,
-  logIds: number[],
-  generation: string,
-): Promise<boolean> {
+export async function compactState(doc: DocKey, merged: Uint8Array, logIds: number[], generation: string): Promise<boolean> {
   return asSystem(doc, async (tx) => {
     const updated = await tx
       .update(yjsDocumentsTable)

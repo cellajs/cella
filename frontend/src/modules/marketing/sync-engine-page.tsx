@@ -14,11 +14,7 @@ export function SyncEnginePage() {
 
   return (
     <MarketingLayout>
-      <AboutSection
-        title="about:selective_sync.title"
-        text="about:selective_sync.text"
-        textComponents={{ em: <em className="italic" /> }}
-      >
+      <AboutSection title="about:selective_sync.title" text="about:selective_sync.text" textComponents={{ em: <em className="italic" /> }}>
         <p className="mx-auto mb-6 max-w-3xl text-foreground leading-normal sm:text-lg sm:leading-7">
           <Trans
             t={t}

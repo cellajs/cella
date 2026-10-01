@@ -20,11 +20,7 @@ export interface TestSession {
   headers: Record<string, string>;
 }
 
-export const asSession = (id: string, cookie: string): TestSession => ({
-  id,
-  cookie,
-  headers: { ...defaultHeaders, Cookie: cookie },
-});
+export const asSession = (id: string, cookie: string): TestSession => ({ id, cookie, headers: { ...defaultHeaders, Cookie: cookie } });
 
 /** A live session row and the signed cookie that presents it; the options are `insertTestSession`'s. */
 export async function insertSession(
@@ -59,10 +55,7 @@ export async function askStepUpLink(session: TestSession, redirect?: string) {
 export async function openStepUpLink(rawToken: string, browser: string) {
   const call = await createAppClient();
   const marker = browser.split('; ').filter((pair) => pair.startsWith(`${authCookieName('step-up-requested')}=`));
-  return call(invokeToken, {
-    path: { type: 'step-up', token: rawToken },
-    headers: { ...defaultHeaders, Cookie: marker.join('; ') },
-  });
+  return call(invokeToken, { path: { type: 'step-up', token: rawToken }, headers: { ...defaultHeaders, Cookie: marker.join('; ') } });
 }
 
 /** A step-up through the emailed link, opened in the browser that asked; returns that browser's session. */
@@ -73,16 +66,13 @@ export async function stepUpByEmail(session: TestSession) {
 }
 
 /** GET /me from a browser holding `cookie`. */
-const meWith = async (cookie: string) =>
-  (await createAppClient())(getMe, { headers: { ...defaultHeaders, Cookie: cookie } });
+const meWith = async (cookie: string) => (await createAppClient())(getMe, { headers: { ...defaultHeaders, Cookie: cookie } });
 
 /** Warms the auth cache for a session: the next request hits the cached entry, not the database. */
-export const warmSession = async ({ cookie }: { cookie: string }) =>
-  expect((await meWith(cookie)).response.status).toBe(200);
+export const warmSession = async ({ cookie }: { cookie: string }) => expect((await meWith(cookie)).response.status).toBe(200);
 
 /** A browser holding `cookie` is refused as signed out, with this error type, one the client signs out on. */
-export const expectSignedOut = async (cookie: string, type: SessionLostType) =>
-  expectRefusal(await meWith(cookie), 401, type);
+export const expectSignedOut = async (cookie: string, type: SessionLostType) => expectRefusal(await meWith(cookie), 401, type);
 
 /** An impersonation of `target` layered on an admin's session, presented as the admin's browser does. */
 export async function insertImpersonation(admin: TestSession, target: { id: string }): Promise<TestSession> {

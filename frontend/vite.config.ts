@@ -31,12 +31,11 @@ import { sdkWatch } from './vite/sdk-watch.ts';
 // Repo docs (cella/*.md) start with an h1 for GitHub readers, but the docs page view
 // already renders the frontmatter title as h1. Drop the leading h1 when such a file
 // is compiled as page content. Content-root files are authored without an h1.
-const remarkStripRepoDocH1 =
-  () => (tree: { children: { type: string; depth?: number }[] }, file: { path?: string }) => {
-    if (!file.path || file.path.includes('/src/content/docs/')) return;
-    const index = tree.children.findIndex((node) => node.type === 'heading');
-    if (index !== -1 && tree.children[index].depth === 1) tree.children.splice(index, 1);
-  };
+const remarkStripRepoDocH1 = () => (tree: { children: { type: string; depth?: number }[] }, file: { path?: string }) => {
+  if (!file.path || file.path.includes('/src/content/docs/')) return;
+  const index = tree.children.findIndex((node) => node.type === 'heading');
+  if (index !== -1 && tree.children[index].depth === 1) tree.children.splice(index, 1);
+};
 
 const isStorybook = process.env.STORYBOOK === 'true';
 // `pnpm deps:bundle:analyze` sets this to emit a per-module treemap next to the build.
@@ -138,16 +137,10 @@ const viteConfig = {
     },
     // Tunnel mode: ngrok terminates TLS and forwards plain HTTP. Accept the public
     // Host header and point HMR websockets back at the public origin.
-    ...(isTunneled
-      ? { allowedHosts: [frontendUrl.hostname], hmr: { protocol: 'wss', host: frontendUrl.hostname, clientPort: 443 } }
-      : {}),
-    watch: {
-      ignored: ['**/backend/**', '**/sdk/**'],
-    },
+    ...(isTunneled ? { allowedHosts: [frontendUrl.hostname], hmr: { protocol: 'wss', host: frontendUrl.hostname, clientPort: 443 } } : {}),
+    watch: { ignored: ['**/backend/**', '**/sdk/**'] },
   },
-  preview: {
-    port: devPort,
-  },
+  preview: { port: devPort },
   build: {
     rollupOptions: {
       output: {
@@ -176,9 +169,7 @@ const viteConfig = {
                 // The oniguruma WASM engine is dynamically importable but unused: the app
                 // CSP has no 'unsafe-eval', so the JavaScript regex engine is always used
                 if (/node_modules[\\/]@shikijs[\\/]engine-oniguruma[\\/]/.test(id)) return 'grammars-wasm';
-                const m = id.match(
-                  /node_modules[\\/]@shikijs[\\/](langs|langs-precompiled|themes)[\\/]dist[\\/]([\w.+-]+?)\.m?js$/,
-                );
+                const m = id.match(/node_modules[\\/]@shikijs[\\/](langs|langs-precompiled|themes)[\\/]dist[\\/]([\w.+-]+?)\.m?js$/);
                 if (!m || m[2] === 'index') return null;
                 const variant = m[1] === 'langs-precompiled' ? 'pc-' : m[1] === 'themes' ? 'theme-' : '';
                 return `grammars-${variant}${m[2].replace(/[^\w-]/g, '-')}`;
@@ -196,11 +187,7 @@ const viteConfig = {
             { name: 'tanstack', test: /node_modules[\\/]@tanstack[\\/]/, minSize: 0 },
             { name: 'react', test: /node_modules[\\/](react|react-dom|scheduler)[\\/]/, minSize: 0 },
             { name: 'zod', test: /node_modules[\\/]zod[\\/]/, minSize: 0 },
-            {
-              name: 'motion',
-              test: /node_modules[\\/](motion|framer-motion|motion-dom|motion-utils)[\\/]/,
-              minSize: 0,
-            },
+            { name: 'motion', test: /node_modules[\\/](motion|framer-motion|motion-dom|motion-utils)[\\/]/, minSize: 0 },
             { name: 'forms', test: /node_modules[\\/](react-hook-form|@hookform)[\\/]/, minSize: 0 },
             // Tracing initialises during boot, so it is on the boot path by design.
             { name: 'otel', test: /node_modules[\\/]@opentelemetry[\\/]/, minSize: 0 },
@@ -244,11 +231,7 @@ const viteConfig = {
             // The shared workspace package holds appConfig and is imported from nearly every module.
             // blocknote-schema-configs.ts is the one exception: it imports @blocknote/core, so it is
             // left for the editor groups to capture.
-            {
-              name: 'shared-config',
-              test: (id: string) => /[\\/]shared[\\/]/.test(id) && !/blocknote-schema-configs/.test(id),
-              minSize: 0,
-            },
+            { name: 'shared-config', test: (id: string) => /[\\/]shared[\\/]/.test(id) && !/blocknote-schema-configs/.test(id), minSize: 0 },
             // The generated SDK client is read by the query registries during boot.
             { name: 'sdk-gen', test: /[\\/]sdk[\\/]gen[\\/]/, minSize: 0 },
             // App-wide primitives loaded on any real screen, plus the Yjs field registry that
@@ -256,8 +239,7 @@ const viteConfig = {
             {
               name: 'app-core',
               test: (id: string) =>
-                (/[\\/]src[\\/](hooks|utils|lib|query)[\\/]|[\\/]src[\\/]modules[\\/]ui[\\/]/.test(id) ||
-                  YJS_REGISTRY.test(id)) &&
+                (/[\\/]src[\\/](hooks|utils|lib|query)[\\/]|[\\/]src[\\/]modules[\\/]ui[\\/]/.test(id) || YJS_REGISTRY.test(id)) &&
                 !/[\\/]shared[\\/]/.test(id),
               minSize: 0,
             },
@@ -322,9 +304,7 @@ const viteConfig = {
     minify: isDev ? false : 'esbuild',
   },
   // Exclude workspace SDK from pre-bundling so regenerated types are picked up without restart
-  optimizeDeps: {
-    exclude: ['sdk'],
-  },
+  optimizeDeps: { exclude: ['sdk'] },
   clearScreen: false,
   plugins: [
     // Generates src/routes/routeTree.gen.ts from file-based routes. Must run before react().
@@ -350,11 +330,7 @@ const viteConfig = {
           // Autolink inline code that names a real repo file to its GitHub blob URL.
           [
             remarkLinkRepoPaths,
-            {
-              repoRoot: path.resolve(import.meta.dirname, '..'),
-              repoUrl: appConfig.company.githubUrl,
-              docRoutes: repoDocRoutes,
-            },
+            { repoRoot: path.resolve(import.meta.dirname, '..'), repoUrl: appConfig.company.githubUrl, docRoutes: repoDocRoutes },
           ],
         ],
         // Generate GitHub-compatible heading slugs with the scroll-spy's DOM prefix.
@@ -425,31 +401,17 @@ const viteConfig = {
       ? []
       : [
           terser({
-            compress: {
-              pure_funcs: ['console.debug'],
-            },
+            compress: { pure_funcs: ['console.debug'] },
           }) as Plugin,
         ]),
-    ...(isAnalyze
-      ? [
-          visualizer({
-            filename: 'stats/bundle.html',
-            template: 'treemap',
-            gzipSize: true,
-            brotliSize: true,
-          }) as Plugin,
-        ]
-      : []),
+    ...(isAnalyze ? [visualizer({ filename: 'stats/bundle.html', template: 'treemap', gzipSize: true, brotliSize: true }) as Plugin] : []),
   ],
   resolve: {
     // react + @mdx-js/react deduped so repo docs outside the frontend package (cella/*.md,
     // package READMEs compiled by the mdx plugin) resolve their jsx runtime and MDX
     // provider imports to the frontend's copies.
     dedupe: ['yjs', 'react', 'react-dom', '@mdx-js/react'],
-    alias: {
-      '#json': path.resolve(import.meta.dirname, '../json'),
-      '~': path.resolve(import.meta.dirname, './src'),
-    },
+    alias: { '#json': path.resolve(import.meta.dirname, '../json'), '~': path.resolve(import.meta.dirname, './src') },
   },
   define: {
     // The bundle re-evaluates shared/src/config-builder/app-config.ts in the
@@ -479,40 +441,17 @@ viteConfig.plugins?.push(
     strategies: 'injectManifest',
     srcDir: 'src/lib',
     filename: 'sw.ts',
-    devOptions: {
-      enabled: false,
-      navigateFallback: 'index.html',
-      suppressWarnings: true,
-    },
+    devOptions: { enabled: false, navigateFallback: 'index.html', suppressWarnings: true },
     manifest: {
       name: appConfig.name,
       short_name: appConfig.name,
       description: appConfig.description,
       theme_color: '#222222',
       icons: [
-        {
-          src: '/static/common/icons/favicon-192x192.png',
-          sizes: '192x192',
-          type: 'image/png',
-        },
-        {
-          src: '/static/common/icons/favicon-512x512.png',
-          sizes: '512x512',
-          type: 'image/png',
-          purpose: 'any',
-        },
-        {
-          src: '/static/common/icons/icon-512x512.svg',
-          sizes: '512x512',
-          type: 'image/svg+xml',
-          purpose: 'any',
-        },
-        {
-          src: '/static/common/icons/maskable-icon-512x512.png',
-          sizes: '512x512',
-          type: 'image/png',
-          purpose: 'maskable',
-        },
+        { src: '/static/common/icons/favicon-192x192.png', sizes: '192x192', type: 'image/png' },
+        { src: '/static/common/icons/favicon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+        { src: '/static/common/icons/icon-512x512.svg', sizes: '512x512', type: 'image/svg+xml', purpose: 'any' },
+        { src: '/static/common/icons/maskable-icon-512x512.png', sizes: '512x512', type: 'image/png', purpose: 'maskable' },
       ],
     },
     injectManifest: {
@@ -532,15 +471,7 @@ if (frontendUrl.protocol === 'https:' && !isTunneled) {
 
 // Enable additional plugins only in development mode
 if (appConfig.mode === 'development' && !isStorybook) {
-  viteConfig.plugins?.push(
-    sdkWatch(),
-    reactScan({
-      enable: false,
-      scanOptions: {
-        showToolbar: false,
-      },
-    }),
-  );
+  viteConfig.plugins?.push(sdkWatch(), reactScan({ enable: false, scanOptions: { showToolbar: false } }));
 }
 
 // https://vitejs.dev/config/

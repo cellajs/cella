@@ -133,13 +133,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
 
             {previousSlug && previousSlug !== slug && (
               <InputGroupAddon align="inline-end">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  aria-label={t('c:revert_handle')}
-                  onClick={revertSlug}
-                  className="h-full"
-                >
+                <Button variant="ghost" size="sm" aria-label={t('c:revert_handle')} onClick={revertSlug} className="h-full">
                   <UndoIcon /> <span className="ml-1 max-sm:hidden">{t('c:revert')}</span>
                 </Button>
               </InputGroupAddon>

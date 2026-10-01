@@ -118,9 +118,7 @@ function BlockNote({
 
   const defaultAllowedBlockTypes = Object.keys(customSchema.blockSpecs) as CustomBlockTypes[];
   const allowedBlockTypes = defaultAllowedBlockTypes.filter(
-    (type) =>
-      !excludeBlockTypes?.includes(type as CustomBlockRegularTypes) &&
-      !excludeFileBlockTypes?.includes(type as CustomBlockFileTypes),
+    (type) => !excludeBlockTypes?.includes(type as CustomBlockRegularTypes) && !excludeFileBlockTypes?.includes(type as CustomBlockFileTypes),
   );
 
   // Parse initial content once at creation time so the undo history starts clean
@@ -143,11 +141,7 @@ function BlockNote({
     collaboration
       ? withCollaboration({
           ...baseOptions,
-          collaboration: {
-            fragment: collaboration.fragment,
-            user: collaboration.user,
-            provider: collaboration.provider,
-          },
+          collaboration: { fragment: collaboration.fragment, user: collaboration.user, provider: collaboration.provider },
         })
       : baseOptions,
   );
@@ -161,12 +155,7 @@ function BlockNote({
         // Must match the collapsed summary source in deriveDescriptionProps.
         const doc = editor.document as CustomBlock[];
         const summaryBlock =
-          doc.find(
-            (b) =>
-              b.type !== 'checklistItem' &&
-              Array.isArray(b.content) &&
-              b.content.some((c) => 'text' in c && !!c.text.trim()),
-          ) ?? doc[0];
+          doc.find((b) => b.type !== 'checklistItem' && Array.isArray(b.content) && b.content.some((c) => 'text' in c && !!c.text.trim())) ?? doc[0];
         if (summaryBlock) editor.setTextCursorPosition(summaryBlock, 'end');
       },
       placeCursorAtPoint: (clientX, clientY) => {
@@ -197,9 +186,7 @@ function BlockNote({
 
   useYjsUndoManagerFix(editor, collaborative);
 
-  useYjsSseSuppression(
-    collaboration ? { entityType: collaboration.entityType, entityId: collaboration.entityId } : null,
-  );
+  useYjsSseSuppression(collaboration ? { entityType: collaboration.entityType, entityId: collaboration.entityId } : null);
 
   const checkUntrustedMedia = useUntrustedMediaWarning({ organizationId: baseFilePanelProps?.organizationId });
 
@@ -222,12 +209,7 @@ function BlockNote({
     handleUpdateData(editor);
   };
 
-  const handleKeyDown = useEditorKeyboard({
-    editor,
-    onEscapeClick,
-    onEnterClick,
-    commit: commitDocument,
-  });
+  const handleKeyDown = useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit: commitDocument });
 
   // A host dismissed by an outside press (a sheet) unmounts the editor while it still has focus, so
   // no blur fires; the cleanup commits what blur would have. Standalone only: the relay owns
@@ -284,9 +266,7 @@ function BlockNote({
       ref={blockNoteRef}
       className={`${dense ? 'bn-dense' : ''} ${titlePlaceholder ? 'bn-title-placeholder' : ''} ${className}`}
       // The block-0 title placeholder rides a CSS var: BlockNote's own placeholders are per block type (styles.css)
-      {...(titlePlaceholder && {
-        style: { '--bn-title-placeholder': JSON.stringify(titlePlaceholder) } as React.CSSProperties,
-      })}
+      {...(titlePlaceholder && { style: { '--bn-title-placeholder': JSON.stringify(titlePlaceholder) } as React.CSSProperties })}
       data-color-scheme={mode}
       shadCNComponents={shadCNComponents}
       sideMenu={false}

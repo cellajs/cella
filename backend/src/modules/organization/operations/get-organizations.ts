@@ -32,16 +32,12 @@ export async function getOrganizationsOp(ctx: UserContext, input: GetOrganizatio
   const targetUserId = relatableUserId ?? user.id;
   const ofAnotherUser = !!relatableUserId && relatableUserId !== user.id;
   // Another user's organizations are listed only where the caller is a member too; a system admin sees all of them.
-  const sharedWithCaller =
-    ofAnotherUser && !ctx.var.isSystemAdmin ? [...new Set(memberships.map((m) => m.organizationId))] : undefined;
+  const sharedWithCaller = ofAnotherUser && !ctx.var.isSystemAdmin ? [...new Set(memberships.map((m) => m.organizationId))] : undefined;
 
   // The listed user's archive and role are theirs alone: as a filter on another user's list they are refused, never
   // dropped. The menu-order default names the caller's own menu, so another user's list comes by name.
   if (ofAnotherUser && (role || excludeArchived)) {
-    throw new AppError(403, 'forbidden', 'warn', {
-      entityType: 'organization',
-      meta: { reason: 'other_user_membership' },
-    });
+    throw new AppError(403, 'forbidden', 'warn', { entityType: 'organization', meta: { reason: 'other_user_membership' } });
   }
 
   const includeCounts = include.includes('counts');

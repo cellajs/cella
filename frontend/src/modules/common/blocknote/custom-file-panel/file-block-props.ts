@@ -11,11 +11,7 @@ export type FileBlockProps = { name: string; url: string; attachmentId?: string;
  * An attachment as a block: referenced by id, or by cloud key in a public mode whose upload landed in the public bucket
  * (images the mid-size preview, other types the converted variant, never the full-size file).
  */
-export const attachmentBlockProps = (
-  attachment: Attachment,
-  isImage: boolean,
-  mediaMode: BlockNoteMediaMode,
-): FileBlockProps => {
+export const attachmentBlockProps = (attachment: Attachment, isImage: boolean, mediaMode: BlockNoteMediaMode): FileBlockProps => {
   const publicKey = isImage
     ? attachment.keys.preview || attachment.keys.converted || attachment.keys.original
     : attachment.keys.converted || attachment.keys.original;
@@ -24,10 +20,7 @@ export const attachmentBlockProps = (
 };
 
 /** Files a template without an attachment row stored: each block keeps the stored key of the exported image. */
-export const storedFileBlockProps = (
-  results: Partial<UploadedUppyFile<UploadTemplateId>>,
-  templateId: UploadTemplateId,
-): FileBlockProps[] => {
+export const storedFileBlockProps = (results: Partial<UploadedUppyFile<UploadTemplateId>>, templateId: UploadTemplateId): FileBlockProps[] => {
   const [exported] = uploadTemplates[templateId].use;
   return (results[exported] ?? []).map((file) => ({
     name: file.original_name ?? file.name ?? '',

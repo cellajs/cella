@@ -14,9 +14,7 @@ export async function runGeoipRefresh(context: InfraContext): Promise<void> {
   const { naming, region } = deriveInfra(context.appConfig);
   const bucket = naming.publicBucket;
 
-  console.info(
-    pc.dim('\nRefresh GeoIP data: download the DB-IP Lite databases and publish them to the public bucket.'),
-  );
+  console.info(pc.dim('\nRefresh GeoIP data: download the DB-IP Lite databases and publish them to the public bucket.'));
   console.info(
     `  bucket   ${pc.bold(bucket)} ${pc.dim(`(${region})`)}   prefix ${pc.bold(`${DEFAULT_PREFIX}/`)}   month ${pc.bold(monthOf(new Date()))}\n`,
   );
@@ -29,16 +27,11 @@ export async function runGeoipRefresh(context: InfraContext): Promise<void> {
     process.exit(1);
   }
 
-  const force = await confirmOrDefault({
-    message: 'Publish even when this month is already in the bucket?',
-    default: false,
-  });
+  const force = await confirmOrDefault({ message: 'Publish even when this month is already in the bucket?', default: false });
 
   try {
     await geoipRefresh(['--bucket', bucket, '--region', region, ...(force ? ['--force'] : [])], { key: admin });
-    console.info(
-      `\n${checkMark} ${pc.green('Done.')} ${pc.dim('Each API process re-checks the prefix daily and on boot.')}\n`,
-    );
+    console.info(`\n${checkMark} ${pc.green('Done.')} ${pc.dim('Each API process re-checks the prefix daily and on boot.')}\n`);
   } catch (error) {
     console.error(`\n${crossMark} GeoIP refresh failed: ${errorMessage(error)}\n`);
     process.exit(1);

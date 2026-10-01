@@ -32,12 +32,7 @@ describe('onError network error detection', () => {
   });
 
   it('should trigger the connectivity probe for the fetch failure of Chrome, Safari and Firefox, in any casing', () => {
-    const messages = [
-      'Failed to fetch',
-      'Load failed',
-      'NetworkError when attempting to fetch resource.',
-      'FAILED TO FETCH',
-    ];
+    const messages = ['Failed to fetch', 'Load failed', 'NetworkError when attempting to fetch resource.', 'FAILED TO FETCH'];
     for (const [i, message] of messages.entries()) {
       onError(new TypeError(message));
       expect(mockCheckConnectivity, message).toHaveBeenCalledTimes(i + 1);
@@ -52,11 +47,7 @@ describe('onError network error detection', () => {
   });
 
   it('should NOT trigger probe for ApiError (handled separately)', () => {
-    const apiError = new ApiError({
-      name: 'ApiError',
-      message: 'Server error',
-      status: 500,
-    } as any);
+    const apiError = new ApiError({ name: 'ApiError', message: 'Server error', status: 500 } as any);
     onError(apiError);
     expect(mockCheckConnectivity).not.toHaveBeenCalled();
   });

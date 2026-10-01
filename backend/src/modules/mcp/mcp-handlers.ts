@@ -2,12 +2,7 @@ import { OpenAPIHono } from '@hono/zod-openapi';
 import { accessScopes, appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { mcpRoutes } from '#/modules/mcp/mcp-routes';
-import {
-  handleMcpMessage,
-  InsufficientScopeError,
-  type JsonRpcMessage,
-  type JsonRpcResponse,
-} from '#/modules/mcp/mcp-server';
+import { handleMcpMessage, InsufficientScopeError, type JsonRpcMessage, type JsonRpcResponse } from '#/modules/mcp/mcp-server';
 import { getMcpTools } from '#/modules/mcp/mcp-tools';
 import { resourceMetadataUrl, resourceUri } from '#/modules/oauth-server/resources';
 import { defaultHook } from '#/utils/default-hook';
@@ -53,10 +48,7 @@ app.openapi(mcpRoutes.handleMcp, async (ctx): Promise<any> => {
     // Step-up (RFC 6750 §3.1): the client re-authorizes with the named scope and retries.
     const { tenantId, organizationId } = ctx.req.valid('param');
     const metadata = resourceMetadataUrl({ face: 'mcp', tenantId: tenantId.toLowerCase(), organizationId });
-    ctx.header(
-      'WWW-Authenticate',
-      `Bearer error="insufficient_scope", scope="${error.scope}", resource_metadata="${metadata}"`,
-    );
+    ctx.header('WWW-Authenticate', `Bearer error="insufficient_scope", scope="${error.scope}", resource_metadata="${metadata}"`);
     const response: JsonRpcResponse = {
       jsonrpc: '2.0',
       id: error.id,

@@ -14,10 +14,6 @@ import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
  */
 export async function retireYjsDocuments(db: DbOrTx, entityType: ProductEntityType, ids: string[]): Promise<void> {
   if (ids.length === 0) return;
-  await db
-    .delete(yjsDocumentsTable)
-    .where(and(eq(yjsDocumentsTable.entityType, entityType), inArray(yjsDocumentsTable.entityId, ids)));
-  await db
-    .delete(yjsUpdatesTable)
-    .where(and(eq(yjsUpdatesTable.entityType, entityType), inArray(yjsUpdatesTable.entityId, ids)));
+  await db.delete(yjsDocumentsTable).where(and(eq(yjsDocumentsTable.entityType, entityType), inArray(yjsDocumentsTable.entityId, ids)));
+  await db.delete(yjsUpdatesTable).where(and(eq(yjsUpdatesTable.entityType, entityType), inArray(yjsUpdatesTable.entityId, ids)));
 }

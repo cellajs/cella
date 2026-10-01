@@ -7,10 +7,7 @@ export function normalizeCellRange(range: CellRange): CellRange {
   const minRowIdx = Math.min(range.start.rowIdx, range.end.rowIdx);
   const maxRowIdx = Math.max(range.start.rowIdx, range.end.rowIdx);
 
-  return {
-    start: { idx: minIdx, rowIdx: minRowIdx },
-    end: { idx: maxIdx, rowIdx: maxRowIdx },
-  };
+  return { start: { idx: minIdx, rowIdx: minRowIdx }, end: { idx: maxIdx, rowIdx: maxRowIdx } };
 }
 
 export function isCellInRange(position: Position, range: CellRange): boolean {
@@ -99,10 +96,7 @@ export function expandRange(
 }
 
 /** Which range edges a cell sits on, for border styling. */
-export function getCellRangeBoundary(
-  position: Position,
-  range: CellRange,
-): { isTop: boolean; isBottom: boolean; isLeft: boolean; isRight: boolean } {
+export function getCellRangeBoundary(position: Position, range: CellRange): { isTop: boolean; isBottom: boolean; isLeft: boolean; isRight: boolean } {
   const normalized = normalizeCellRange(range);
 
   return {

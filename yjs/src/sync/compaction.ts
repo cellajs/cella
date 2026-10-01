@@ -52,13 +52,10 @@ export async function compactDocument(scope: DocScope, generation: string | null
   const { state, rejected } = mergeLog(base.state, logged);
   if (rejected.length > 0) {
     for (const row of rejected) {
-      log.error(
-        `Compaction: discarding log row ${row.id} of ${scope.entityType}:${scope.entityId}, which does not merge`,
-        {
-          userId: row.userId,
-          bytes: row.payload.length,
-        },
-      );
+      log.error(`Compaction: discarding log row ${row.id} of ${scope.entityType}:${scope.entityId}, which does not merge`, {
+        userId: row.userId,
+        bytes: row.payload.length,
+      });
     }
     await discardLogRows(
       scope,

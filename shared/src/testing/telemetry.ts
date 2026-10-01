@@ -44,16 +44,10 @@ class DrizzleQueryError extends Error {
  * `detail` does. The secret is built at run time: a test proves it never reaches its output.
  */
 export function failedLookup(
-  cause: (secret: string) => Error = () =>
-    Object.assign(new Error('invalid byte sequence for encoding "UTF8": 0x00'), { code: '22021' }),
+  cause: (secret: string) => Error = () => Object.assign(new Error('invalid byte sequence for encoding "UTF8": 0x00'), { code: '22021' }),
 ) {
   const secret = `secret_${randomUUID()}`;
   const sql = 'select "id" from "sessions" where "sessions"."secret" = $1';
   const failure = cause(secret);
-  return {
-    secret,
-    sql,
-    reason: failure.message,
-    error: new DrizzleQueryError(sql, [`${secret}\nsecond line`], failure),
-  };
+  return { secret, sql, reason: failure.message, error: new DrizzleQueryError(sql, [`${secret}\nsecond line`], failure) };
 }

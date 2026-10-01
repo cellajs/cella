@@ -26,18 +26,11 @@ function makeFetch(routes: Array<{ match: string; response: MockResponse }>): Fe
   });
 }
 
-const baseOpts = {
-  registry: 'rg.fr-par.scw.cloud/my-ns',
-  image: 'infra-boot',
-  tag: 'abc123',
-  secretKey: 'scw-secret',
-};
+const baseOpts = { registry: 'rg.fr-par.scw.cloud/my-ns', image: 'infra-boot', tag: 'abc123', secretKey: 'scw-secret' };
 
 describe('parseBearerChallenge', () => {
   it('parses realm, service, and scope from a bearer challenge', () => {
-    const parsed = parseBearerChallenge(
-      'Bearer realm="https://auth.example/token",service="registry",scope="repository:x:pull"',
-    );
+    const parsed = parseBearerChallenge('Bearer realm="https://auth.example/token",service="registry",scope="repository:x:pull"');
     expect(parsed).toEqual({ realm: 'https://auth.example/token', service: 'registry', scope: 'repository:x:pull' });
   });
 
@@ -50,16 +43,12 @@ describe('parseBearerChallenge', () => {
 
 describe('resolveImageDigest', () => {
   it('hashes the manifest bytes fetched with basic auth', async () => {
-    const fetchImpl = makeFetch([
-      { match: '/v2/my-ns/infra-boot/manifests/abc123', response: { status: 200, body: MANIFEST } },
-    ]);
+    const fetchImpl = makeFetch([{ match: '/v2/my-ns/infra-boot/manifests/abc123', response: { status: 200, body: MANIFEST } }]);
 
     await expect(resolveImageDigest({ ...baseOpts, fetchImpl })).resolves.toBe(MANIFEST_DIGEST);
     expect(fetchImpl).toHaveBeenCalledWith(
       'https://rg.fr-par.scw.cloud/v2/my-ns/infra-boot/manifests/abc123',
-      expect.objectContaining({
-        headers: expect.objectContaining({ Authorization: expect.stringMatching(/^Basic /) }),
-      }),
+      expect.objectContaining({ headers: expect.objectContaining({ Authorization: expect.stringMatching(/^Basic /) }) }),
     );
   });
 
@@ -73,10 +62,7 @@ describe('resolveImageDigest', () => {
             ok: false,
             status: 401,
             text: async () => '',
-            headers: {
-              get: (n: string) =>
-                n === 'www-authenticate' ? 'Bearer realm="https://auth.scw/token",service="registry"' : null,
-            },
+            headers: { get: (n: string) => (n === 'www-authenticate' ? 'Bearer realm="https://auth.scw/token",service="registry"' : null) },
           };
         }
         expect(init?.headers?.Authorization).toBe('Bearer tok-1');

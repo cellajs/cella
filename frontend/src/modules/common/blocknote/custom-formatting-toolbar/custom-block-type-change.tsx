@@ -42,9 +42,7 @@ export function CustomBlockTypeSelect({ headingLevels }: { headingLevels: Custom
 
   const selectedItem = filteredItems.find(
     (el) =>
-      el.type === currentBlock.type &&
-      el.props?.level === currentBlock.props.level &&
-      !!el.props?.isToggleable === currentBlock.props.isToggleable,
+      el.type === currentBlock.type && el.props?.level === currentBlock.props.level && !!el.props?.isToggleable === currentBlock.props.isToggleable,
   );
 
   const handleItemClick = (item: BlockTypeSelectItem) => {
@@ -81,24 +79,14 @@ export function CustomBlockTypeSelect({ headingLevels }: { headingLevels: Custom
   return (
     <Components.Generic.Menu.Root portalElement={portalElement}>
       <Components.Generic.Menu.Trigger>
-        <Components.FormattingToolbar.Button
-          className="bn-dropdown-button"
-          label={selectedItem?.name ?? ''}
-          mainTooltip="Select block type"
-        >
+        <Components.FormattingToolbar.Button className="bn-dropdown-button" label={selectedItem?.name ?? ''} mainTooltip="Select block type">
           {selectedItem && <selectedItem.icon />}
           <ChevronDownIcon />
         </Components.FormattingToolbar.Button>
       </Components.Generic.Menu.Trigger>
       <Components.Generic.Menu.Dropdown className="p-2">
         {fullItems.map(({ title, icon, isSelected, onClick }) => (
-          <Components.Generic.Menu.Item
-            className="bn-menu-item"
-            key={title}
-            onClick={onClick}
-            icon={icon}
-            checked={isSelected}
-          >
+          <Components.Generic.Menu.Item className="bn-menu-item" key={title} onClick={onClick} icon={icon} checked={isSelected}>
             {title}
           </Components.Generic.Menu.Item>
         ))}

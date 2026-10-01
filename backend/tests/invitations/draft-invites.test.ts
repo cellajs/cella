@@ -12,21 +12,12 @@ import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { hashToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
-import {
-  createOrganizationAdminUser,
-  createTestOrganization,
-  createTestSession,
-  createTestUser,
-  mailedLink,
-} from '../helpers';
+import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser, mailedLink } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
 // Whether an invite left as mail is the observable difference between a held and a dispatched invite.
-setTestConfig({
-  enabledAuthStrategies: ['passkey'],
-  selfRegistration: true,
-});
+setTestConfig({ enabledAuthStrategies: ['passkey'], selfRegistration: true });
 
 afterEach(async () => await clearDatabase());
 
@@ -40,24 +31,14 @@ describe('Draft context invite deferral', async () => {
 
   const createDraftOrgWorld = async () => {
     const organization = await createTestOrganization();
-    const admin = await createOrganizationAdminUser(
-      'admin@example.com',
-      organization.id,
-      adminRole,
-      organization.tenantId,
-    );
+    const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
     // The template always publishes at creation; draft state is an app-specific flow.
     await db.update(organizationsTable).set({ publishedAt: null }).where(eq(organizationsTable.id, organization.id));
     return { organization, admin, sessionCookie };
   };
 
-  const invite = async (
-    organization: { id: string; tenantId: string },
-    emails: string[],
-    role: EntityRole,
-    sessionCookie: string,
-  ) => {
+  const invite = async (organization: { id: string; tenantId: string }, emails: string[], role: EntityRole, sessionCookie: string) => {
     return await call(membershipInvite, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
       body: { emails, role },
@@ -114,13 +95,8 @@ describe('Draft context invite deferral', async () => {
     expect((before.data as { items: unknown[] }).items).toHaveLength(0);
 
     // An app's publish flow: stamp publishedAt, then release the held invites
-    await db
-      .update(organizationsTable)
-      .set({ publishedAt: new Date().toISOString() })
-      .where(eq(organizationsTable.id, organization.id));
-    await dispatchDeferredInvites(publisherContext(admin), {
-      channelIds: [organization.id],
-    });
+    await db.update(organizationsTable).set({ publishedAt: new Date().toISOString() }).where(eq(organizationsTable.id, organization.id));
+    await dispatchDeferredInvites(publisherContext(admin), { channelIds: [organization.id] });
 
     const after = await myInvitations();
     expect((after.data as { items: unknown[] }).items).toHaveLength(1);
@@ -159,13 +135,8 @@ describe('Draft context invite deferral', async () => {
     await invite(organization, ['deferred@example.com'], memberRole, sessionCookie);
     const [held] = await getInactiveRows(organization.id);
 
-    await db
-      .update(organizationsTable)
-      .set({ publishedAt: new Date().toISOString() })
-      .where(eq(organizationsTable.id, organization.id));
-    await dispatchDeferredInvites(publisherContext(admin), {
-      channelIds: [organization.id],
-    });
+    await db.update(organizationsTable).set({ publishedAt: new Date().toISOString() }).where(eq(organizationsTable.id, organization.id));
+    await dispatchDeferredInvites(publisherContext(admin), { channelIds: [organization.id] });
 
     const [dispatched] = await getInactiveRows(organization.id);
     const links = await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, held.id));
@@ -177,19 +148,12 @@ describe('Draft context invite deferral', async () => {
       headers: { ...defaultHeaders, Cookie: sessionCookie },
     });
     const listed = (data as { items: { id: string; email: string }[] }).items;
-    expect(listed.filter((item) => item.id === held.id)).toEqual([
-      expect.objectContaining({ email: 'deferred@example.com' }),
-    ]);
+    expect(listed.filter((item) => item.id === held.id)).toEqual([expect.objectContaining({ email: 'deferred@example.com' })]);
   });
 
   it('throttles reminder emails to once per 7 days on published contexts', async () => {
     const organization = await createTestOrganization();
-    const admin = await createOrganizationAdminUser(
-      'admin@example.com',
-      organization.id,
-      adminRole,
-      organization.tenantId,
-    );
+    const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
     const invitee = await createTestUser('pending@example.com');
 
@@ -204,10 +168,7 @@ describe('Draft context invite deferral', async () => {
 
     // The throttle check reads remindedAt, not the immutable createdAt.
     const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
-    await db
-      .update(inactiveMembershipsTable)
-      .set({ remindedAt: eightDaysAgo })
-      .where(eq(inactiveMembershipsTable.id, initial.id));
+    await db.update(inactiveMembershipsTable).set({ remindedAt: eightDaysAgo }).where(eq(inactiveMembershipsTable.id, initial.id));
     const [aged] = await getInactiveRows(organization.id);
 
     await invite(organization, [invitee.email], memberRole, sessionCookie);
@@ -219,22 +180,14 @@ describe('Draft context invite deferral', async () => {
 
   it('reminds a pending invitation to a new address as one to an account, minting no further link', async () => {
     const organization = await createTestOrganization();
-    const admin = await createOrganizationAdminUser(
-      'admin@example.com',
-      organization.id,
-      adminRole,
-      organization.tenantId,
-    );
+    const admin = await createOrganizationAdminUser('admin@example.com', organization.id, adminRole, organization.tenantId);
     const sessionCookie = await createTestSession(admin);
     const newcomer = 'newcomer@example.com';
 
     await invite(organization, [newcomer], memberRole, sessionCookie);
     const [initial] = await getInactiveRows(organization.id);
     const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
-    await db
-      .update(inactiveMembershipsTable)
-      .set({ remindedAt: eightDaysAgo })
-      .where(eq(inactiveMembershipsTable.id, initial.id));
+    await db.update(inactiveMembershipsTable).set({ remindedAt: eightDaysAgo }).where(eq(inactiveMembershipsTable.id, initial.id));
 
     const { data } = await invite(organization, [newcomer], memberRole, sessionCookie);
     expect(data).toMatchObject({ rejectedIds: [], invitesSentCount: 0 });

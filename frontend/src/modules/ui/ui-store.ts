@@ -34,10 +34,7 @@ interface UIStoreState {
 
 const browserMode = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
-const initStore: Pick<
-  UIStoreState,
-  'mode' | 'theme' | 'offlineAccess' | 'impersonating' | 'publicAlertsSeen' | 'focusView' | 'uiLocks'
-> = {
+const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'impersonating' | 'publicAlertsSeen' | 'focusView' | 'uiLocks'> = {
   mode: browserMode,
   theme: 'none',
   offlineAccess: false,
@@ -99,11 +96,7 @@ export const useUIStore = create<UIStoreState>()(
           });
         },
         // Partial reset (not `set(initStore)`): only session flags are cleared; mode/theme/uiLocks persist.
-        reset: () =>
-          set(() => ({
-            offlineAccess: false,
-            impersonating: false,
-          })),
+        reset: () => set(() => ({ offlineAccess: false, impersonating: false })),
       })),
       {
         version: 1,

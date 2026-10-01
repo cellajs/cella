@@ -8,12 +8,7 @@ export function Mention({ members, editor }: { members?: Member[]; editor: Custo
   return (
     <GridSuggestionMenuController
       triggerCharacter={'@'}
-      getItems={async () =>
-        getMentionMenuItems(members, editor).map((item) => ({
-          ...item,
-          title: item.id,
-        }))
-      }
+      getItems={async () => getMentionMenuItems(members, editor).map((item) => ({ ...item, title: item.id }))}
       columns={2}
       minQueryLength={0}
     />

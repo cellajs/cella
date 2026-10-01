@@ -33,9 +33,7 @@ export async function answerCatchupViews(
     }
   }
   const counterRows = nodeKeys.size > 0 ? await findChannelCountersByKeys(dbCtx, { keys: [...nodeKeys] }) : [];
-  const countersByNode = new Map(
-    counterRows.map((r) => [r.channelKey, { ...parseCounterCounts(r.counts), path: r.path }]),
-  );
+  const countersByNode = new Map(counterRows.map((r) => [r.channelKey, { ...parseCounterCounts(r.counts), path: r.path }]));
 
   // Authorize each pair at the view's depth, against the verified path when the row has one.
   const statuses = views.map((view) => {
@@ -110,9 +108,7 @@ export async function appCatchupOp(
   const changes: AppCatchupResponse['changes'] = {};
   for (const organizationId of organizationIdArray) {
     const { membership } = parseCounterCounts(allCounters.get(organizationId));
-    changes[organizationId] = {
-      signals: membership !== undefined ? { membership } : undefined,
-    };
+    changes[organizationId] = { signals: membership !== undefined ? { membership } : undefined };
   }
 
   // Embedding propagation hints: frontiers vs the client's org-view cursors.

@@ -9,13 +9,7 @@ import { makeDeepHierarchy } from '../../testing/deep-fixture.ts';
 describe('resolve-row-channel (deepest non-null ancestor rule)', () => {
   const h = makeDeepHierarchy(['project', 'courseSection']);
 
-  const fullDepthRow = {
-    id: 'i1',
-    projectId: 'p1',
-    courseSectionId: 's1',
-    courseId: 'c1',
-    organizationId: 'o1',
-  };
+  const fullDepthRow = { id: 'i1', projectId: 'p1', courseSectionId: 's1', courseId: 'c1', organizationId: 'o1' };
 
   describe('resolveNonNullAncestors', () => {
     it('returns all non-null ancestors most-specific first', () => {
@@ -29,11 +23,7 @@ describe('resolve-row-channel (deepest non-null ancestor rule)', () => {
 
     it('skips null ancestor ids (variable-depth row)', () => {
       const sectionRow = { ...fullDepthRow, projectId: null };
-      expect(h.resolveNonNullAncestors('item', sectionRow).map((a) => a.type)).toEqual([
-        'courseSection',
-        'course',
-        'organization',
-      ]);
+      expect(h.resolveNonNullAncestors('item', sectionRow).map((a) => a.type)).toEqual(['courseSection', 'course', 'organization']);
     });
 
     it('ignores non-string and empty ids', () => {
@@ -49,9 +39,7 @@ describe('resolve-row-channel (deepest non-null ancestor rule)', () => {
 
     it('falls through nullable ancestors to the effective home', () => {
       expect(h.resolveDeepestAncestorId('item', { ...fullDepthRow, projectId: null })).toBe('s1');
-      expect(h.resolveDeepestAncestorId('item', { ...fullDepthRow, projectId: null, courseSectionId: null })).toBe(
-        'c1',
-      );
+      expect(h.resolveDeepestAncestorId('item', { ...fullDepthRow, projectId: null, courseSectionId: null })).toBe('c1');
     });
 
     it('is null only when every ancestor id is null', () => {

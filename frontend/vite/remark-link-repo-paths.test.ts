@@ -92,16 +92,12 @@ describe('relative markdown links in repo docs', () => {
   }
 
   it('rewrites relative links in repo docs to GitHub blob URLs', () => {
-    expect(runLink('../shared/config/config.default.ts', repoDocFile).url).toBe(
-      `${repoUrl}/blob/main/shared/config/config.default.ts`,
-    );
+    expect(runLink('../shared/config/config.default.ts', repoDocFile).url).toBe(`${repoUrl}/blob/main/shared/config/config.default.ts`);
     expect(runLink('./ARCHITECTURE.md', repoDocFile).url).toBe(`${repoUrl}/blob/main/cella/ARCHITECTURE.md`);
   });
 
   it('keeps the hash fragment', () => {
-    expect(runLink('./ARCHITECTURE.md#anchor', repoDocFile).url).toBe(
-      `${repoUrl}/blob/main/cella/ARCHITECTURE.md#anchor`,
-    );
+    expect(runLink('./ARCHITECTURE.md#anchor', repoDocFile).url).toBe(`${repoUrl}/blob/main/cella/ARCHITECTURE.md#anchor`);
   });
 
   it('maps repository docs with first-class pages to internal docs routes', () => {

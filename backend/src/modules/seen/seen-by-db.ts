@@ -27,10 +27,7 @@ export const seenByTable = snakeCase.table(
     index('seen_by_user_channel_type_index').on(table.userId, table.channelId, table.productType),
     index('seen_by_product_id_index').on(table.productId),
     index('seen_by_tenant_id_index').on(table.tenantId),
-    foreignKey({
-      columns: [table.userId],
-      foreignColumns: [usersTable.id],
-    }).onDelete('cascade'),
+    foreignKey({ columns: [table.userId], foreignColumns: [usersTable.id] }).onDelete('cascade'),
   ],
 );
 

@@ -30,11 +30,7 @@ const baseActions = {
 };
 
 export const getImageEditorOptions = (mode: UploadTemplateId | undefined): ImageEditorOptions => {
-  const options: ImageEditorOptions = {
-    quality: 0.9,
-    actions: baseActions,
-    cropperOptions: baseCropperOptions,
-  };
+  const options: ImageEditorOptions = { quality: 0.9, actions: baseActions, cropperOptions: baseCropperOptions };
 
   if (!options.cropperOptions) return options;
 

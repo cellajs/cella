@@ -21,22 +21,12 @@ describe('Passkey verification', () => {
 
   const forgeries: [string, (passkey: SoftwarePasskey, challenge: string) => PasskeyAssertion][] = [
     ['a response to another challenge', (passkey) => passkey.assert(nanoid(43))],
-    [
-      'a response for another origin',
-      (passkey, challenge) => passkey.assert(challenge, { origin: 'https://evil.example' }),
-    ],
-    [
-      'a response for another relying party',
-      (passkey, challenge) => passkey.assert(challenge, { rpId: 'evil.example' }),
-    ],
+    ['a response for another origin', (passkey, challenge) => passkey.assert(challenge, { origin: 'https://evil.example' })],
+    ['a response for another relying party', (passkey, challenge) => passkey.assert(challenge, { rpId: 'evil.example' })],
     ['a response without user verification', (passkey, challenge) => passkey.assert(challenge, { flags: 0x01 })],
     [
       'a signature from another key',
-      (passkey, challenge) => ({
-        ...softwarePasskey().assert(challenge),
-        id: passkey.credentialId,
-        rawId: passkey.credentialId,
-      }),
+      (passkey, challenge) => ({ ...softwarePasskey().assert(challenge), id: passkey.credentialId, rawId: passkey.credentialId }),
     ],
   ];
 

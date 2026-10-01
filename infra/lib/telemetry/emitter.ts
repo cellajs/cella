@@ -52,11 +52,7 @@ export interface Telemetry {
     attrs: Record<Placeholders<T>, AttrValue> & Record<string, AttrValue>,
     opts?: { severity?: Severity; body?: string; ctx?: SpanContext },
   ): void;
-  event(
-    name: string,
-    attrs?: Record<string, AttrValue>,
-    opts?: { severity?: Severity; body?: string; ctx?: SpanContext },
-  ): void;
+  event(name: string, attrs?: Record<string, AttrValue>, opts?: { severity?: Severity; body?: string; ctx?: SpanContext }): void;
   /** Every buffered log record, JSONL-encoded: the black-box sink's exact payload. */
   eventsJsonl(): string;
   /** Attach or replace the OTLP export target after creation: the boot runner learns its ingest key only after secret hydration, and earlier records still export. */
@@ -81,16 +77,9 @@ export function createTelemetry(opts: TelemetryOptions): Telemetry {
   const exported = { spans: 0, records: 0 };
   const redact = opts.redact;
   const serialize = (value: unknown): string =>
-    JSON.stringify(
-      value,
-      redact ? (_key, item: unknown) => (typeof item === 'string' ? redact(item) : item) : undefined,
-    );
+    JSON.stringify(value, redact ? (_key, item: unknown) => (typeof item === 'string' ? redact(item) : item) : undefined);
 
-  const startSpan = (
-    name: string,
-    attrs: Record<string, AttrValue> = {},
-    parentCtx: SpanContext = rootCtx,
-  ): SpanHandle => {
+  const startSpan = (name: string, attrs: Record<string, AttrValue> = {}, parentCtx: SpanContext = rootCtx): SpanHandle => {
     const ctx: SpanContext = { traceId: parentCtx.traceId, spanId: newSpanId() };
     const startMs = now();
     let ended = false;
@@ -170,9 +159,7 @@ export function createTelemetry(opts: TelemetryOptions): Telemetry {
 }
 
 /** OTLP endpoint and headers from the environment: explicit OTLP vars win, and an app-configured sink ingest key implies that sink's endpoint. */
-export function otlpConfigFromEnv(
-  env: NodeJS.ProcessEnv = process.env,
-): { endpoint: string; headers: Record<string, string> } | undefined {
+export function otlpConfigFromEnv(env: NodeJS.ProcessEnv = process.env): { endpoint: string; headers: Record<string, string> } | undefined {
   const explicit = env.OTEL_EXPORTER_OTLP_ENDPOINT;
   if (explicit) {
     const headers: Record<string, string> = {};

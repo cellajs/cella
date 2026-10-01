@@ -17,9 +17,7 @@ export function normalizeCreateItem<T extends { stx: StxBase }>(entityType: Lens
 
 /** A required canonical field becomes an alias-or-canonical requirement; the static type is unchanged. */
 export function widenBodySchema<T extends z.ZodObject<z.ZodRawShape>>(entityType: LensEntityType, schema: T): T {
-  const pairs = Object.entries(widenedOpsKeyMap(entityType)).filter(
-    ([from, to]) => to in schema.shape && !(from in schema.shape),
-  );
+  const pairs = Object.entries(widenedOpsKeyMap(entityType)).filter(([from, to]) => to in schema.shape && !(from in schema.shape));
   if (pairs.length === 0) return schema;
 
   let widened: z.ZodObject<z.ZodRawShape> = schema;
@@ -35,11 +33,7 @@ export function widenBodySchema<T extends z.ZodObject<z.ZodRawShape>>(entityType
   return widened.superRefine((val: Record<string, unknown>, ctx) => {
     for (const [from, to] of requiredPairs) {
       if (val[from] === undefined && val[to] === undefined) {
-        ctx.addIssue({
-          code: 'custom',
-          message: `Either "${to}" or its legacy alias "${from}" must be provided`,
-          path: [to],
-        });
+        ctx.addIssue({ code: 'custom', message: `Either "${to}" or its legacy alias "${from}" must be provided`, path: [to] });
       }
     }
   }) as unknown as T;

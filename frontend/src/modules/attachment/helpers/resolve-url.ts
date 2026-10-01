@@ -1,12 +1,6 @@
 import type { Attachment } from 'sdk';
 import { parseMediaRef } from 'shared/utils/media-ref';
-import {
-  type CloudFileVariant,
-  getCloudUrl,
-  getPrivateFileUrlById,
-  getPublicFileUrl,
-  getVariantKey,
-} from '~/modules/attachment/file-url';
+import { type CloudFileVariant, getCloudUrl, getPrivateFileUrlById, getPublicFileUrl, getVariantKey } from '~/modules/attachment/file-url';
 import type { BlobVariant } from '~/modules/attachment/offline/attachments-db';
 import { downloadService } from '~/modules/attachment/offline/download-service';
 import { attachmentStorage } from '~/modules/attachment/offline/storage-service';
@@ -42,8 +36,7 @@ export async function resolveAttachmentUrl(
   if (!meta) return null;
 
   // Requested variant only when its key exists; private files pass id + variant since client keys are not trusted.
-  const effectiveVariant =
-    preferredVariant !== 'raw' && getVariantKey(meta, preferredVariant) ? preferredVariant : 'original';
+  const effectiveVariant = preferredVariant !== 'raw' && getVariantKey(meta, preferredVariant) ? preferredVariant : 'original';
   const fileUrl = await getCloudUrl({ ...meta, id: attachmentId }, effectiveVariant);
   if (!fileUrl) return null;
 

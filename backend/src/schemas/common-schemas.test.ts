@@ -31,17 +31,11 @@ describe('booleanTransformSchema', () => {
 
 describe('paginationQuerySchema', () => {
   it('applies pagination defaults when parameters are absent', () => {
-    expect(paginationQuerySchema.parse({})).toMatchObject({
-      offset: 0,
-      limit: appConfig.requestLimits.default,
-    });
+    expect(paginationQuerySchema.parse({})).toMatchObject({ offset: 0, limit: appConfig.requestLimits.default });
   });
 
   it('parses complete unsigned integer strings', () => {
-    expect(paginationQuerySchema.parse({ offset: '12', limit: '39' })).toMatchObject({
-      offset: 12,
-      limit: 39,
-    });
+    expect(paginationQuerySchema.parse({ offset: '12', limit: '39' })).toMatchObject({ offset: 12, limit: 39 });
   });
 
   it.each([
@@ -64,12 +58,9 @@ describe('paginationQuerySchema', () => {
     expect(paginationQuerySchema.parse({ seqCursor: '51,150' }).seqCursor).toBe('51,150');
   });
 
-  it.each(['51', '51,', 'a,150', '151,150', '0,9007199254740992'])(
-    'rejects invalid sequence cursor %s',
-    (seqCursor) => {
-      expect(paginationQuerySchema.safeParse({ seqCursor }).success).toBe(false);
-    },
-  );
+  it.each(['51', '51,', 'a,150', '151,150', '0,9007199254740992'])('rejects invalid sequence cursor %s', (seqCursor) => {
+    expect(paginationQuerySchema.safeParse({ seqCursor }).success).toBe(false);
+  });
 });
 
 describe('normalized input schemas', () => {
@@ -95,12 +86,8 @@ describe('normalized input schemas', () => {
 
 describe('validUrlSchema', () => {
   it('lowercases the scheme and host only: userinfo, path, query and fragment keep their case', () => {
-    expect(validUrlSchema.parse('https://Example.COM/Path/To?Q=Mixed#Frag')).toBe(
-      'https://example.com/Path/To?Q=Mixed#Frag',
-    );
-    expect(validUrlSchema.parse('https://User:Pass@Docs.Example.com:8443/A?b=C ')).toBe(
-      'https://User:Pass@docs.example.com:8443/A?b=C',
-    );
+    expect(validUrlSchema.parse('https://Example.COM/Path/To?Q=Mixed#Frag')).toBe('https://example.com/Path/To?Q=Mixed#Frag');
+    expect(validUrlSchema.parse('https://User:Pass@Docs.Example.com:8443/A?b=C ')).toBe('https://User:Pass@docs.example.com:8443/A?b=C');
     expect(validUrlSchema.parse('https://EXAMPLE.com')).toBe('https://example.com');
   });
 
@@ -114,15 +101,9 @@ describe('validation messages', () => {
 
   it('translates a message when a value fails, after i18n initialized', () => {
     expect(messageOf(paginationQuerySchema.safeParse({ offset: 'x' }))).toBe(i18n.t('error:invalid_offset'));
-    expect(messageOf(paginationQuerySchema.safeParse({ limit: '0' }))).toBe(
-      i18n.t('error:invalid_limit', { max: 1000 }),
-    );
-    expect(messageOf(validNameSchema.safeParse('x'))).toBe(
-      i18n.t('error:invalid_between_num', { name: 'Name', min: 2, max: 255 }),
-    );
+    expect(messageOf(paginationQuerySchema.safeParse({ limit: '0' }))).toBe(i18n.t('error:invalid_limit', { max: 1000 }));
+    expect(messageOf(validNameSchema.safeParse('x'))).toBe(i18n.t('error:invalid_between_num', { name: 'Name', min: 2, max: 255 }));
     expect(messageOf(validUrlSchema.safeParse('http://example.com'))).toBe(i18n.t('error:invalid_url'));
-    expect(messageOf(idsBodySchema().safeParse({ ids: [] }))).toBe(
-      i18n.t('error:invalid_min_items', { min: 'one', name: 'ID' }),
-    );
+    expect(messageOf(idsBodySchema().safeParse({ ids: [] }))).toBe(i18n.t('error:invalid_min_items', { min: 'one', name: 'ID' }));
   });
 });

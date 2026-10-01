@@ -16,9 +16,7 @@ import { Button } from '~/modules/ui/button';
 import { SidebarContent } from '~/modules/ui/sidebar';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const DebugDropdown = __DEV_TOOLS__
-  ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown')
-  : () => null;
+const DebugDropdown = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown') : () => null;
 
 interface DocsSidebarProps {
   tags: GenTagSummary[];

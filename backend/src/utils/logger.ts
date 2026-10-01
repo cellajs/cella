@@ -14,9 +14,7 @@ export const isBenchTraffic = (userId?: string, tenantId?: string) => {
 };
 
 /** Ambient log context: the live Hono ctx, or a synthetic { var } for worker jobs. */
-export type LogContext = {
-  var: Partial<Pick<Env['Variables'], 'tenantId' | 'userId' | 'organizationId' | 'requestId'>>;
-} | null;
+export type LogContext = { var: Partial<Pick<Env['Variables'], 'tenantId' | 'userId' | 'organizationId' | 'requestId'>> } | null;
 
 const logContextStorage = new AsyncLocalStorage<LogContext>();
 

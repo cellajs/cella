@@ -106,11 +106,7 @@ export class TransactionBuffer {
     }
 
     if (suppressedCount > 0) {
-      log.info('Suppressed cascaded delete events', {
-        suppressedCount,
-        processedCount: events.length,
-        deletedChannelIds,
-      });
+      log.info('Suppressed cascaded delete events', { suppressedCount, processedCount: events.length, deletedChannelIds });
     }
 
     if (events.length === 0) return;
@@ -129,13 +125,9 @@ export class TransactionBuffer {
 
     if (surviving.length > 0) {
       if (surviving.length > 1) {
-        const nonDeleteTypes = new Set(
-          surviving.filter((e) => e.result.activity.action !== 'delete').map((e) => e.result.tableMeta.type),
-        );
+        const nonDeleteTypes = new Set(surviving.filter((e) => e.result.activity.action !== 'delete').map((e) => e.result.tableMeta.type));
         if (nonDeleteTypes.size > 1) {
-          log.warn('Transaction contains non-delete mutations across types', {
-            types: [...nonDeleteTypes],
-          });
+          log.warn('Transaction contains non-delete mutations across types', { types: [...nonDeleteTypes] });
         }
       }
 
@@ -200,11 +192,7 @@ export class TransactionBuffer {
     }
 
     if (softSuppressedCount > 0) {
-      log.info('Suppressed soft cascade update events', {
-        softSuppressedCount,
-        deleteTypes: [...deleteTypes],
-        survivingCount: kept.length,
-      });
+      log.info('Suppressed soft cascade update events', { softSuppressedCount, deleteTypes: [...deleteTypes], survivingCount: kept.length });
     }
 
     return kept;
@@ -226,10 +214,7 @@ export class TransactionBuffer {
     this.clearTimeout();
     this.timeoutHandle = setTimeout(() => {
       if (this.activeXid !== null) {
-        log.warn('Transaction buffer timeout, flushing without filtering', {
-          xid: this.activeXid,
-          count: this.pendingEvents.length,
-        });
+        log.warn('Transaction buffer timeout, flushing without filtering', { xid: this.activeXid, count: this.pendingEvents.length });
         this.flushAll();
       }
     }, transactionTimeoutMs);

@@ -12,24 +12,10 @@ function quoteIdent(identifier: string) {
   return `"${identifier.replaceAll('"', '""')}"`;
 }
 
-export async function seedEntityHierarchy(
-  client: pg.Client,
-  plan: TestEntityHierarchyPlan,
-  tenantId: string,
-  createdBy: string,
-  slugPrefix: string,
-) {
+export async function seedEntityHierarchy(client: pg.Client, plan: TestEntityHierarchyPlan, tenantId: string, createdBy: string, slugPrefix: string) {
   for (const row of plan.seedChannelRows) {
     // Every ancestor id column is NOT NULL on nested channel tables, so seed all of them, not only the parent.
-    const columns = [
-      'id',
-      'tenant_id',
-      'entity_type',
-      'name',
-      'slug',
-      'created_by',
-      ...row.ancestorColumns.map((column) => column.columnName),
-    ];
+    const columns = ['id', 'tenant_id', 'entity_type', 'name', 'slug', 'created_by', ...row.ancestorColumns.map((column) => column.columnName)];
     const values = [
       row.id,
       tenantId,
@@ -67,14 +53,14 @@ export async function seedUser(client: pg.Client, id: string, suffix: string) {
 
 /** A tenant and its organization (one per tenant). */
 export async function seedOrg(client: pg.Client, tenantId: string, orgId: string, slug: string) {
-  await client.query('INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING', [
+  await client.query('INSERT INTO tenants (id, name) VALUES ($1, $2) ON CONFLICT (id) DO NOTHING', [tenantId, `Authz ${tenantId}`]);
+  await client.query('INSERT INTO organizations (id, tenant_id, slug, name, short_name) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING', [
+    orgId,
     tenantId,
-    `Authz ${tenantId}`,
+    slug,
+    `Authz ${slug}`,
+    slug.slice(0, 4),
   ]);
-  await client.query(
-    'INSERT INTO organizations (id, tenant_id, slug, name, short_name) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING',
-    [orgId, tenantId, slug, `Authz ${slug}`, slug.slice(0, 4)],
-  );
 }
 
 export async function seedMembership(
@@ -92,13 +78,7 @@ export async function seedMembership(
   );
 }
 
-export async function seedAttachment(
-  client: pg.Client,
-  id: string,
-  tenantId: string,
-  plan: TestEntityHierarchyPlan,
-  createdBy: string,
-) {
+export async function seedAttachment(client: pg.Client, id: string, tenantId: string, plan: TestEntityHierarchyPlan, createdBy: string) {
   const columns = [
     'id',
     'tenant_id',
@@ -125,10 +105,7 @@ export async function seedAttachment(
   ];
   const placeholders = values.map((_, i) => `$${i + 1}`).join(', ');
 
-  await client.query(
-    `INSERT INTO attachments (${columns.map(quoteIdent).join(', ')}) VALUES (${placeholders}) ON CONFLICT (id) DO NOTHING`,
-    values,
-  );
+  await client.query(`INSERT INTO attachments (${columns.map(quoteIdent).join(', ')}) VALUES (${placeholders}) ON CONFLICT (id) DO NOTHING`, values);
 }
 
 /**
@@ -137,11 +114,7 @@ export async function seedAttachment(
  */
 export async function cleanupSeed(
   client: pg.Client,
-  {
-    tenantIds,
-    userIds = [],
-    plans = [],
-  }: { tenantIds: string[]; userIds?: string[]; plans?: TestEntityHierarchyPlan[] },
+  { tenantIds, userIds = [], plans = [] }: { tenantIds: string[]; userIds?: string[]; plans?: TestEntityHierarchyPlan[] },
 ) {
   await client.query('BEGIN');
   for (const table of ['yjs_updates', 'yjs_documents', 'attachments', 'memberships']) {

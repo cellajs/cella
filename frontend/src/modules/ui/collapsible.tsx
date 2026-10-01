@@ -9,18 +9,9 @@ export function CollapsibleTrigger({
   nativeButton = !render,
   ...props
 }: CollapsiblePrimitive.Trigger.Props & React.RefAttributes<HTMLButtonElement>) {
-  return (
-    <CollapsiblePrimitive.Trigger
-      data-slot="collapsible-trigger"
-      nativeButton={nativeButton}
-      render={render}
-      {...props}
-    />
-  );
+  return <CollapsiblePrimitive.Trigger data-slot="collapsible-trigger" nativeButton={nativeButton} render={render} {...props} />;
 }
 
-export function CollapsibleContent({
-  ...props
-}: CollapsiblePrimitive.Panel.Props & React.RefAttributes<HTMLDivElement>) {
+export function CollapsibleContent({ ...props }: CollapsiblePrimitive.Panel.Props & React.RefAttributes<HTMLDivElement>) {
   return <CollapsiblePrimitive.Panel data-slot="collapsible-content" {...props} />;
 }

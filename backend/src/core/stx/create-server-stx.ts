@@ -5,11 +5,7 @@ import { generateServerHLC } from './hlc';
 
 /** Trusted server mutation metadata. Creates use it directly; `resolveServerUpdateOps` adds field timestamps. */
 export function createServerStx(): StxBase {
-  return {
-    mutationId: uuidv7(),
-    sourceId: 'server',
-    fieldTimestamps: {},
-  };
+  return { mutationId: uuidv7(), sourceId: 'server', fieldTimestamps: {} };
 }
 
 /**

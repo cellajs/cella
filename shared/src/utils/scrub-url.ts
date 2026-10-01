@@ -43,10 +43,7 @@ const toSecretPathPattern = (template: string): RegExp => {
 const secretPathPatterns = secretPathTemplates.map(toSecretPathPattern);
 
 /** A sensitive key opening a bare query string, or following `?`, `&` or `#`, with its value up to the next separator. */
-const sensitiveQueryPattern = new RegExp(
-  `(^|[?&#])(${sensitiveQueryKeys.map(escapeRegExp).join('|')})=[^&#\\s]*`,
-  'gi',
-);
+const sensitiveQueryPattern = new RegExp(`(^|[?&#])(${sensitiveQueryKeys.map(escapeRegExp).join('|')})=[^&#\\s]*`, 'gi');
 
 /** The userinfo of a URL authority (`scheme://user:password@`). */
 const userinfoPattern = /(:\/\/)[^/?#@\s]+@/g;

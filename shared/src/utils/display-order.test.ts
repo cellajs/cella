@@ -1,12 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  defaultOrder,
-  getEdgeOrder,
-  getNewItemOrder,
-  getOrderBetween,
-  getRelativeOrder,
-  orderGap,
-} from './display-order.ts';
+import { defaultOrder, getEdgeOrder, getNewItemOrder, getOrderBetween, getRelativeOrder, orderGap } from './display-order.ts';
 
 describe('getOrderBetween', () => {
   it('returns defaultOrder when both bounds are undefined', () => {

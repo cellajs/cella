@@ -7,9 +7,7 @@ import type { Middleware } from './utils.gen';
 
 export type ResponseStyle = 'data' | 'fields';
 
-export interface Config<T extends ClientOptions = ClientOptions>
-  extends Omit<RequestInit, 'body' | 'headers' | 'method'>,
-    CoreConfig {
+export interface Config<T extends ClientOptions = ClientOptions> extends Omit<RequestInit, 'body' | 'headers' | 'method'>, CoreConfig {
   /**
    * Base URL for all requests made by this client.
    */
@@ -131,12 +129,7 @@ export interface ClientOptions {
   throwOnError?: boolean;
 }
 
-type MethodFn = <
-  TData = unknown,
-  TError = unknown,
-  ThrowOnError extends boolean = false,
-  TResponseStyle extends ResponseStyle = 'fields',
->(
+type MethodFn = <TData = unknown, TError = unknown, ThrowOnError extends boolean = false, TResponseStyle extends ResponseStyle = 'fields'>(
   options: Omit<RequestOptions<TData, TResponseStyle, ThrowOnError>, 'method'>,
 ) => RequestResult<TData, TError, ThrowOnError, TResponseStyle>;
 
@@ -150,12 +143,7 @@ type SseFn = <
   options: Omit<RequestOptions<never, TResponseStyle, ThrowOnError>, 'method'>,
 ) => Promise<ServerSentEventsResult<TData>>;
 
-type RequestFn = <
-  TData = unknown,
-  TError = unknown,
-  ThrowOnError extends boolean = false,
-  TResponseStyle extends ResponseStyle = 'fields',
->(
+type RequestFn = <TData = unknown, TError = unknown, ThrowOnError extends boolean = false, TResponseStyle extends ResponseStyle = 'fields'>(
   options: Omit<RequestOptions<TData, TResponseStyle, ThrowOnError>, 'method'> &
     Pick<Required<RequestOptions<TData, TResponseStyle, ThrowOnError>>, 'method'>,
 ) => RequestResult<TData, TError, ThrowOnError, TResponseStyle>;

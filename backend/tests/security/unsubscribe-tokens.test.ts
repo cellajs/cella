@@ -22,20 +22,14 @@ import { clearSecurityTestData } from './helpers';
 
 /** A user created the way sign-up creates one, subscribed to the newsletter. */
 const signUp = async (label: string) => {
-  const user = await handleCreateUser(
-    { var: { db: baseDb } },
-    { newUser: mockUser({ email: `${label}@example.test` }), via: 'magic' },
-  );
+  const user = await handleCreateUser({ var: { db: baseDb } }, { newUser: mockUser({ email: `${label}@example.test` }), via: 'magic' });
   await adminDb.update(usersTable).set({ newsletter: true }).where(eq(usersTable.id, user.id));
   return user;
 };
 
 /** Everything an unsubscribe link may switch, read past RLS: the newsletter flag on the user and the email preferences. */
 const emailSettings = async (userId: string) => {
-  const [user] = await adminDb
-    .select({ newsletter: usersTable.newsletter })
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
+  const [user] = await adminDb.select({ newsletter: usersTable.newsletter }).from(usersTable).where(eq(usersTable.id, userId));
   const [preferences] = await adminDb
     .select({ digest: notificationPreferencesTable.digest, mentionEmail: notificationPreferencesTable.mentionEmail })
     .from(notificationPreferencesTable)
@@ -50,8 +44,7 @@ const openLink = async (link: string) => {
   return { status: response.status, location: new URL(response.headers.get('location') ?? '', appConfig.frontendUrl) };
 };
 
-const tokenOf = (userId: string, category: UnsubscribeCategory) =>
-  new URL(buildUnsubscribeLink(userId, category)).searchParams.get('token') ?? '';
+const tokenOf = (userId: string, category: UnsubscribeCategory) => new URL(buildUnsubscribeLink(userId, category)).searchParams.get('token') ?? '';
 
 const linkFor = (userId: string, category: UnsubscribeCategory, token: string) =>
   `/notifications/unsubscribe?user=${userId}&category=${category}&token=${token}`;
@@ -105,12 +98,7 @@ describe('Unsubscribe links', () => {
   it('must not skip a member who signed up long ago, and must not mail one who unsubscribed', async () => {
     const organization = await createTestOrganization();
     const member = async (label: string, newsletter: boolean) => {
-      const user = await createOrganizationAdminUser(
-        `${label}@example.test`,
-        organization.id,
-        memberRole,
-        organization.tenantId,
-      );
+      const user = await createOrganizationAdminUser(`${label}@example.test`, organization.id, memberRole, organization.tenantId);
       await adminDb.update(usersTable).set({ newsletter }).where(eq(usersTable.id, user.id));
       return user;
     };
@@ -122,12 +110,7 @@ describe('Unsubscribe links', () => {
     const response = await baseApp.request('/system/newsletter?toSelf=false', {
       method: 'POST',
       headers: { ...defaultHeaders, Cookie: await createTestSession(admin) },
-      body: JSON.stringify({
-        organizationIds: [organization.id],
-        roles: [memberRole],
-        subject: 'News',
-        content: '<p>News</p>',
-      }),
+      body: JSON.stringify({ organizationIds: [organization.id], roles: [memberRole], subject: 'News', content: '<p>News</p>' }),
     });
     expect(response.status).toBe(204);
 

@@ -55,14 +55,7 @@ export function InviteBulkEmailForm({ channel, dialog: isDialog, children }: Pro
           <FormField control={form.control} name="emails" render={() => <FormMessage />} />
         </FormItem>
 
-        <InviteFormFooter
-          form={form}
-          channel={channel}
-          count={emails.length}
-          isPending={isPending}
-          disabled={!emails.length}
-          onCancel={clear}
-        >
+        <InviteFormFooter form={form} channel={channel} count={emails.length} isPending={isPending} disabled={!emails.length} onCancel={clear}>
           {children}
         </InviteFormFooter>
       </form>

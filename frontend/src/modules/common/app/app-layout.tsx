@@ -17,10 +17,7 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 // Renders null until an upload is queued.
 // Both render null until something opens them, so each loads with that interaction.
-const AttachmentDialogHandler = lazyNamed(
-  () => import('~/modules/attachment/dialog/attachment-dialog-handler'),
-  'AttachmentDialogHandler',
-);
+const AttachmentDialogHandler = lazyNamed(() => import('~/modules/attachment/dialog/attachment-dialog-handler'), 'AttachmentDialogHandler');
 const Uploader = lazyNamed(() => import('~/modules/common/uploader/uploader'), 'Uploader');
 
 function AppLayout() {

@@ -19,10 +19,7 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
 
       width: 80,
       renderCell: ({ row }) => (
-        <Badge
-          variant="secondary"
-          className={`bg-transparent font-mono text-xs uppercase shadow-none ${getMethodColor(row.method)}`}
-        >
+        <Badge variant="secondary" className={`bg-transparent font-mono text-xs uppercase shadow-none ${getMethodColor(row.method)}`}>
           {row.method.toUpperCase()}
         </Badge>
       ),
@@ -33,15 +30,7 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       minWidth: 200,
 
       renderCell: ({ row, tabIndex }) => (
-        <TagHashLink
-          tagParam="operationTag"
-          tagName={tagName}
-          hash={row.hash}
-          tabIndex={tabIndex}
-          title={row.path}
-          dir="rtl"
-          className="text-left"
-        >
+        <TagHashLink tagParam="operationTag" tagName={tagName} hash={row.hash} tabIndex={tabIndex} title={row.path} dir="rtl" className="text-left">
           &lrm;{row.path}
         </TagHashLink>
       ),
@@ -60,13 +49,5 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
 export function TagOperationsTable({ operations, tagName, onPrerender }: TagOperationsTableProps) {
   const columns = useColumns(tagName);
 
-  return (
-    <TagTable<GenOperationSummary>
-      rows={operations}
-      columns={columns}
-      rowKeyGetter={(row) => row.hash}
-      hideHeader
-      onPrerender={onPrerender}
-    />
-  );
+  return <TagTable<GenOperationSummary> rows={operations} columns={columns} rowKeyGetter={(row) => row.hash} hideHeader onPrerender={onPrerender} />;
 }

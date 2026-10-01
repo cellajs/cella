@@ -22,10 +22,7 @@ export function DropdownSelectItem({ isMobile, selected, onSelect, icon, childre
       <span className="min-w-0 grow truncate text-left">{children}</span>
       <span
         aria-hidden="true"
-        className={cn(
-          'pointer-events-none ml-auto flex size-4 items-center justify-center text-success',
-          !selected && 'invisible',
-        )}
+        className={cn('pointer-events-none ml-auto flex size-4 items-center justify-center text-success', !selected && 'invisible')}
       >
         <CheckIcon className="size-4" />
       </span>

@@ -27,11 +27,7 @@ export const renderPlainText = async (component: React.ReactElement, options?: P
       { format: 'skip', selector: 'img' },
       { format: 'skip', selector: '[data-skip="true"]' },
       { options: { linkBrackets: false }, selector: 'a' },
-      {
-        format: 'raw',
-        options: {},
-        selector: 'jsx-email-raw',
-      },
+      { format: 'raw', options: {}, selector: 'jsx-email-raw' },
       ...(selectors || []),
     ],
     ...options,
@@ -39,16 +35,14 @@ export const renderPlainText = async (component: React.ReactElement, options?: P
 };
 
 export const render = async (component: React.ReactElement, options?: RenderOptions) => {
-  if (options?.plainText)
-    return renderPlainText(component, typeof options.plainText === 'object' ? options.plainText : {});
+  if (options?.plainText) return renderPlainText(component, typeof options.plainText === 'object' ? options.plainText : {});
 
   const html = await jsxToString(component);
   return processHtml(html);
 };
 
 const processHtml = async (html: string) => {
-  const docType =
-    '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">';
+  const docType = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">';
   const movePlugin = await getMovePlugin();
   const rawPlugin = await getRawPlugin();
   const conditionalPlugin = await getConditionalPlugin();
@@ -67,9 +61,7 @@ const processHtml = async (html: string) => {
     .use(stringify, {
       allowDangerousCharacters: true,
       allowDangerousHtml: true,
-      characterReferences: {
-        useNamedReferences: true,
-      },
+      characterReferences: { useNamedReferences: true },
       closeEmptyElements: true,
       collapseEmptyAttributes: true,
     })

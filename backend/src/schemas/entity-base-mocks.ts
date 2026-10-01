@@ -2,10 +2,7 @@ import { faker } from '@faker-js/faker';
 import { mockNanoid, mockTimestamps, mockUuid, withFakerSeed } from '#/mocks';
 
 /** Must be called within withFakerSeed() for deterministic output. */
-const mockEntityCore = () => ({
-  id: mockUuid(),
-  ...mockTimestamps(),
-});
+const mockEntityCore = () => ({ id: mockUuid(), ...mockTimestamps() });
 
 export const mockChannelBase = (key = 'context-entity:default') =>
   withFakerSeed(key, () => {
@@ -33,11 +30,7 @@ export const mockProductBase = (key = 'product-entity:default') =>
   }));
 
 /** Only the name and slug generation differs per entity type. Must be called within withFakerSeed(). */
-const mockMinimalBase = <T extends string>(
-  entityType: T,
-  naming: () => { name: string; slug: string },
-  id?: string,
-) => ({
+const mockMinimalBase = <T extends string>(entityType: T, naming: () => { name: string; slug: string }, id?: string) => ({
   id: id ?? mockUuid(),
   ...naming(),
   thumbnailUrl: null,
@@ -51,10 +44,7 @@ export const mockUserMinimalBase = (key = 'user-minimal:default', id?: string) =
       () => {
         const firstName = faker.person.firstName();
         const lastName = faker.person.lastName();
-        return {
-          name: `${firstName} ${lastName}`,
-          slug: faker.internet.username({ firstName, lastName }).toLowerCase(),
-        };
+        return { name: `${firstName} ${lastName}`, slug: faker.internet.username({ firstName, lastName }).toLowerCase() };
       },
       id,
     ),
@@ -75,12 +65,7 @@ export const mockOrganizationMinimalBase = (key = 'organization-minimal:default'
 /** Hydrates stored audit-user IDs to the minimal wire representation. */
 export const mockAuditUsers = (row: { createdBy: string | null; updatedBy: string | null }, key: string) => {
   const createdBy = row.createdBy ? mockUserMinimalBase(`${key}:created-by`, row.createdBy) : null;
-  const updatedBy =
-    row.updatedBy === row.createdBy
-      ? createdBy
-      : row.updatedBy
-        ? mockUserMinimalBase(`${key}:updated-by`, row.updatedBy)
-        : null;
+  const updatedBy = row.updatedBy === row.createdBy ? createdBy : row.updatedBy ? mockUserMinimalBase(`${key}:updated-by`, row.updatedBy) : null;
   return { createdBy, updatedBy };
 };
 

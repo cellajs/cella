@@ -4,14 +4,9 @@ import { orgGuard, serviceEnabled, tenantGuard, userGuard } from '#/middlewares/
 import { singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import { productEntityTypeSchema, tenantOrgParamSchema, validIdSchema } from '#/schemas';
 
-const yjsTokenQuerySchema = z.object({
-  entityType: productEntityTypeSchema,
-  entityId: validIdSchema,
-});
+const yjsTokenQuerySchema = z.object({ entityType: productEntityTypeSchema, entityId: validIdSchema });
 
-const yjsTokenResponseSchema = z.object({
-  token: z.string(),
-});
+const yjsTokenResponseSchema = z.object({ token: z.string() });
 
 const yjsRoutes = createXRoutes(['yjs', 'cella'], {
   getYjsToken: xRoute({

@@ -24,12 +24,7 @@ export function blurAndStashTrigger() {
  * Commits `items` without `toRemove`, then runs their onClose. The store updates first: a callback that
  * navigates from inside set() would interleave a router update with this one and render a stale frame.
  */
-export function removeAndNotify<T extends Closable>(
-  commit: (remaining: T[]) => void,
-  items: T[],
-  toRemove: T[],
-  opts?: { isCleanup?: boolean },
-) {
+export function removeAndNotify<T extends Closable>(commit: (remaining: T[]) => void, items: T[], toRemove: T[], opts?: { isCleanup?: boolean }) {
   if (!toRemove.length) return;
   commit(items.filter((item) => !toRemove.includes(item)));
   for (const item of toRemove) item.onClose?.(opts?.isCleanup);

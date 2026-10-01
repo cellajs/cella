@@ -8,11 +8,7 @@ import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
 import { completeMfaChallenge, mfaFactorRules, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import {
-  issuePasskeyChallenge,
-  verifyPasskeyAssertion,
-  verifyPasskeyRegistration,
-} from '#/modules/auth/passkeys/helpers/passkey';
+import { issuePasskeyChallenge, verifyPasskeyAssertion, verifyPasskeyRegistration } from '#/modules/auth/passkeys/helpers/passkey';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { authPasskeysRoutes } from '#/modules/auth/passkeys/passkeys-routes';
 import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
@@ -26,10 +22,7 @@ app.openapi(authPasskeysRoutes.createPasskey, async (ctx) => {
 
   const { attestation, nameOnDevice } = ctx.req.valid('json');
 
-  const { credentialId, publicKey, counter } = await verifyPasskeyRegistration(
-    ctx,
-    attestation as RegistrationResponseJSON,
-  );
+  const { credentialId, publicKey, counter } = await verifyPasskeyRegistration(ctx, attestation as RegistrationResponseJSON);
 
   const device = deviceInfo(ctx);
   const passkeyValue = {

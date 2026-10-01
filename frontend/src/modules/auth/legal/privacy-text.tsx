@@ -26,9 +26,8 @@ function PrivacyText() {
 
       <LegalSection id={s('introduction').id} label={s('introduction').label}>
         <p>
-          {company} ("we", "us", "our") operates {appName} (the "Service"). This Privacy Policy explains how we collect,
-          use and protect your information. By using the Service you accept this policy and our{' '}
-          <LegalCrossLink subject="terms">Terms of Use</LegalCrossLink>.
+          {company} ("we", "us", "our") operates {appName} (the "Service"). This Privacy Policy explains how we collect, use and protect your
+          information. By using the Service you accept this policy and our <LegalCrossLink subject="terms">Terms of Use</LegalCrossLink>.
         </p>
       </LegalSection>
 
@@ -62,8 +61,7 @@ function PrivacyText() {
         <p>We do not rent or sell personal information. We may share data only in these circumstances:</p>
         <ul className="my-2">
           <li>
-            <strong>Within your organization</strong>: content you contribute is visible to other members of your
-            organization.
+            <strong>Within your organization</strong>: content you contribute is visible to other members of your organization.
           </li>
           <li>
             <strong>Subprocessors</strong>: third-party services that process data on our behalf (listed below).
@@ -78,25 +76,21 @@ function PrivacyText() {
       </LegalSection>
 
       <LegalSection id={s('cookies').id} label={s('cookies').label}>
-        <p>
-          We use essential cookies for authentication and session management only. We do not use third-party advertising
-          or tracking cookies.
-        </p>
+        <p>We use essential cookies for authentication and session management only. We do not use third-party advertising or tracking cookies.</p>
       </LegalSection>
 
       <LegalSection id={s('data-retention').id} label={s('data-retention').label}>
         <p>
-          Account data is retained for as long as your account is active. When you delete your account, personal data is
-          removed from the Service immediately and permanently deleted from our database within 90 days. Your
-          organization may retain certain data for legal compliance purposes until they request its removal.
+          Account data is retained for as long as your account is active. When you delete your account, personal data is removed from the Service
+          immediately and permanently deleted from our database within 90 days. Your organization may retain certain data for legal compliance
+          purposes until they request its removal.
         </p>
       </LegalSection>
 
       <LegalSection id={s('security').id} label={s('security').label}>
         <p>
-          We implement industry-standard security measures including encryption in transit (TLS), permission-based
-          access controls and secure coding practices. However, no method of transmission or storage is 100% secure, and
-          we cannot guarantee absolute security. Contact us at{' '}
+          We implement industry-standard security measures including encryption in transit (TLS), permission-based access controls and secure coding
+          practices. However, no method of transmission or storage is 100% secure, and we cannot guarantee absolute security. Contact us at{' '}
           <a href={`mailto:${supportEmail}`} target="_blank" rel="noreferrer">
             {supportEmail}
           </a>{' '}
@@ -125,9 +119,8 @@ function PrivacyText() {
 
       <LegalSection id={s('changes').id} label={s('changes').label}>
         <p>
-          We may update this policy from time to time. For material changes we will provide at least two (2) weeks
-          advance notice via email or an announcement on the Service. Continued use after the notice period constitutes
-          acceptance.
+          We may update this policy from time to time. For material changes we will provide at least two (2) weeks advance notice via email or an
+          announcement on the Service. Continued use after the notice period constitutes acceptance.
         </p>
       </LegalSection>
 

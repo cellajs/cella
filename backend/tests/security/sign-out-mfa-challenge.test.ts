@@ -1,16 +1,7 @@
 import { getMe, signInWithTotp, signOut } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { defaultHeaders } from '../fixtures';
-import {
-  authCookie,
-  createMfaToken,
-  createTestSession,
-  createTotpUser,
-  expectRefusal,
-  sessionsOf,
-  tokenRowOf,
-  totpCode,
-} from '../helpers';
+import { authCookie, createMfaToken, createTestSession, createTotpUser, expectRefusal, sessionsOf, tokenRowOf, totpCode } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
@@ -34,9 +25,7 @@ describe('Sign-out with a pending MFA challenge', async () => {
     // Cache the session first, so the refusal below also proves the cache entry was dropped.
     expect((await call(getMe, { headers: sessionHeaders })).response.status).toBe(200);
 
-    const { response } = await call(signOut, {
-      headers: { ...defaultHeaders, Cookie: `${sessionCookie}; ${mfaCookie}` },
-    });
+    const { response } = await call(signOut, { headers: { ...defaultHeaders, Cookie: `${sessionCookie}; ${mfaCookie}` } });
     expect(response.status).toBe(204);
 
     const afterwards = await call(getMe, { headers: sessionHeaders });
@@ -44,17 +33,12 @@ describe('Sign-out with a pending MFA challenge', async () => {
 
     // The challenge is spent: its row is gone, and even the right code no longer completes it.
     expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeUndefined();
-    const completed = await call(signInWithTotp, {
-      body: { code: totpCode() },
-      headers: { ...defaultHeaders, Cookie: mfaCookie },
-    });
+    const completed = await call(signInWithTotp, { body: { code: totpCode() }, headers: { ...defaultHeaders, Cookie: mfaCookie } });
     await expectRefusal(completed, 401, 'confirm-mfa_not_found');
 
     // Only this browser signed out: exactly one session is revoked, and the user's other session still works.
     const sessions = await sessionsOf(user.id);
-    expect(sessions.filter((session) => session.revokedAt)).toEqual([
-      expect.objectContaining({ revokedBy: user.id, revocationReason: 'sign_out' }),
-    ]);
+    expect(sessions.filter((session) => session.revokedAt)).toEqual([expect.objectContaining({ revokedBy: user.id, revocationReason: 'sign_out' })]);
     const other = await call(getMe, { headers: { ...defaultHeaders, Cookie: otherSessionCookie } });
     expect(other.response.status).toBe(200);
   });
@@ -63,9 +47,7 @@ describe('Sign-out with a pending MFA challenge', async () => {
     const user = await createTotpUser('owner@security-test.com');
     const mfaToken = await createMfaToken(user);
 
-    const { response } = await call(signOut, {
-      headers: { ...defaultHeaders, Cookie: authCookie('confirm-mfa', mfaToken) },
-    });
+    const { response } = await call(signOut, { headers: { ...defaultHeaders, Cookie: authCookie('confirm-mfa', mfaToken) } });
 
     expect(response.status).toBe(204);
     expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeUndefined();

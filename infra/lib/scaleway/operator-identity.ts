@@ -34,12 +34,7 @@ export interface OperatorIdentity {
 }
 
 /** Like {@link envKeyPair}, but a half-set pair is reported through `warnings` and treated as absent: every pair is optional (actions prompt), so none may abort the CLI at startup. */
-function optionalKeyPair(
-  env: NodeJS.ProcessEnv,
-  accessVar: string,
-  secretVar: string,
-  warnings: string[],
-): KeyPair | undefined {
+function optionalKeyPair(env: NodeJS.ProcessEnv, accessVar: string, secretVar: string, warnings: string[]): KeyPair | undefined {
   try {
     return envKeyPair(env, accessVar, secretVar);
   } catch (error) {
@@ -82,9 +77,7 @@ export function resolveOperatorIdentity(env: NodeJS.ProcessEnv = process.env): O
       warnings.push('SCW_BOOTSTRAP_* is ignored because SCW_OWNER_* is set: remove the SCW_BOOTSTRAP_* pair.');
     } else {
       owner = { ...legacyOwner, source: 'SCW_BOOTSTRAP_*' };
-      warnings.push(
-        'SCW_BOOTSTRAP_* is read as SCW_OWNER_ACCESS_KEY / SCW_OWNER_SECRET_KEY (the Owner API key): rename it.',
-      );
+      warnings.push('SCW_BOOTSTRAP_* is read as SCW_OWNER_ACCESS_KEY / SCW_OWNER_SECRET_KEY (the Owner API key): rename it.');
     }
   }
 
@@ -117,19 +110,10 @@ export interface KeyDescription {
 export async function describeKey(pair: KeyPair, opts: { fetchImpl?: FetchLike } = {}): Promise<KeyDescription> {
   const auth: IamAuth = { secretKey: pair.secretKey, fetchImpl: resolveFetch(opts.fetchImpl) };
   const record = await getApiKey(auth, pair.accessKey);
-  const base = {
-    accessKey: pair.accessKey,
-    expiresAt: record.expires_at ?? undefined,
-    description: record.description || undefined,
-  };
+  const base = { accessKey: pair.accessKey, expiresAt: record.expires_at ?? undefined, description: record.description || undefined };
   if (record.user_id) {
     const user = await scwFetch<{ email?: string; type?: string }>(auth, 'GET', `${IAM_BASE}/users/${record.user_id}`);
-    return {
-      ...base,
-      bearer: user.type === 'owner' ? 'owner' : 'member',
-      name: user.email ?? record.user_id,
-      bearerId: record.user_id,
-    };
+    return { ...base, bearer: user.type === 'owner' ? 'owner' : 'member', name: user.email ?? record.user_id, bearerId: record.user_id };
   }
   if (record.application_id) {
     const app = await scwFetch<{ name?: string }>(auth, 'GET', `${IAM_BASE}/applications/${record.application_id}`);

@@ -14,10 +14,7 @@ type MemberInviteWithTokenRecipient = EmailRecipient & { name: string; inviteLin
 const appName = appConfig.name;
 
 /** For new users, who need the token; existing users get member-invite. */
-export const memberInviteWithTokenEmail = defineEmailTemplate<
-  MemberInviteWithTokenStatic,
-  MemberInviteWithTokenRecipient
->()({
+export const memberInviteWithTokenEmail = defineEmailTemplate<MemberInviteWithTokenStatic, MemberInviteWithTokenRecipient>()({
   translate(lng, { senderName, entityName, role }, param = plainParam) {
     return {
       subject: i18n.t('backend:email.member_invite.subject', { lng, entityName, ...plainText }),
@@ -31,17 +28,7 @@ export const memberInviteWithTokenEmail = defineEmailTemplate<
       senderName,
     };
   },
-  component({
-    previewText,
-    headerHtml,
-    hiText,
-    bodyHtml,
-    inviteExpires,
-    buttonText,
-    supportText,
-    senderName,
-    inviteLink,
-  }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, inviteExpires, buttonText, supportText, senderName, inviteLink }) {
     return (
       <EmailMessage
         previewText={previewText}

@@ -8,13 +8,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import type { TKey } from '~/lib/i18n-locales';
-import {
-  getSlotDescriptors,
-  isPlacementHidden,
-  type PlacementDescriptor,
-  type PlacementOverrides,
-  resolvePlacementList,
-} from '~/lib/placements';
+import { getSlotDescriptors, isPlacementHidden, type PlacementDescriptor, type PlacementOverrides, resolvePlacementList } from '~/lib/placements';
 import { type TabNavAvatar, TabNavShell } from '~/modules/common/page/tab-nav-shell';
 import { useScrollReset } from '~/modules/common/scroll-reset';
 import { getRouter } from '~/routes/-router-instance';
@@ -29,10 +23,7 @@ export type PageTab = {
   activeOptions?: LinkComponentProps['activeOptions'];
 };
 
-function hasRoute<TRoutes extends Record<string, AnyRoute>>(
-  routes: TRoutes,
-  routeId: string,
-): routeId is Extract<keyof TRoutes, string> {
+function hasRoute<TRoutes extends Record<string, AnyRoute>>(routes: TRoutes, routeId: string): routeId is Extract<keyof TRoutes, string> {
   return routeId in routes;
 }
 
@@ -83,12 +74,7 @@ export function getNavTabCandidates(parentRouteId: string): NavCandidate[] {
       const navTab = route.options?.staticData?.navTab;
       if (!navTab) return null;
       // Cast: PageTab link props are the loose LinkComponentProps; `true` inherits current params
-      return {
-        ...navTab,
-        order: navTab.order ?? 0,
-        path: route.fullPath as PageTab['path'],
-        params: true as PageTab['params'],
-      };
+      return { ...navTab, order: navTab.order ?? 0, path: route.fullPath as PageTab['path'], params: true as PageTab['params'] };
     })
     .filter((tab): tab is NavCandidate => tab !== null);
 
@@ -162,9 +148,7 @@ export function guardNavTabs(
   if (!needsLanding) {
     const candidates = getNavTabCandidates(parentRouteId);
     const toolId = (deepest.params as { tool?: string } | undefined)?.tool;
-    const target = toolId
-      ? candidates.find((tab) => tab.id === toolId)
-      : candidates.find((tab) => tab.path === deepest.fullPath);
+    const target = toolId ? candidates.find((tab) => tab.id === toolId) : candidates.find((tab) => tab.path === deepest.fullPath);
     needsLanding = target !== undefined && isPlacementHidden(getTabsHost(parentRouteId), target, { slotConfig });
   }
   if (!needsLanding) return;
@@ -188,9 +172,7 @@ export function useNavTabRedirect(parentRouteId: string, options: ResolveNavTabs
 
   const toolId = (leaf?.params as { tool?: string } | undefined)?.tool;
   const candidates = parentRouteId ? getNavTabCandidates(parentRouteId) : [];
-  const active = toolId
-    ? candidates.find((tab) => tab.id === toolId)
-    : candidates.find((tab) => tab.path === leaf?.fullPath);
+  const active = toolId ? candidates.find((tab) => tab.id === toolId) : candidates.find((tab) => tab.path === leaf?.fullPath);
 
   const disabled = active !== undefined && isPlacementHidden(getTabsHost(parentRouteId), active, options);
   const target = disabled ? resolveNavTabs(parentRouteId, options)[0] : undefined;
@@ -215,17 +197,7 @@ interface Props {
   className?: string;
 }
 
-export function PageTabNav({
-  tabs: explicitTabs,
-  parentRouteId,
-  grants,
-  pairs,
-  slotConfig,
-  title,
-  avatar,
-  fallbackToFirst,
-  className,
-}: Props) {
+export function PageTabNav({ tabs: explicitTabs, parentRouteId, grants, pairs, slotConfig, title, avatar, fallbackToFirst, className }: Props) {
   const { t } = useTranslation();
   const isMobile = useBreakpointBelow('sm', false);
   const { hasStarted } = useMountedState();
@@ -253,51 +225,44 @@ export function PageTabNav({
 
   return (
     <TabNavShell title={title} avatar={avatar} className={className}>
-      {tabs.map(
-        (
-          { id, path, label, search = {}, params = true, activeOptions = { exact: true, includeSearch: false } },
-          index,
-        ) => (
-          <Link
-            key={id}
-            id={`tab-${id}`}
-            ref={(el) => {
-              if (el) tabRefs.current[id] = el;
-            }}
-            resetScroll={false}
-            className="focus-effect group relative rounded-sm px-2 py-3 font-medium opacity-70 ring-inset ring-offset-0 transition-opacity last:mr-4 hover:opacity-100 data-[active=true]:opacity-100 lg:px-4"
-            to={path}
-            draggable={false}
-            data-active={fallbackToFirst && index === 0 ? true : undefined}
-            params={params}
-            search={search}
-            activeOptions={activeOptions}
-            activeProps={{ 'data-active': true }}
-            onClick={scrollToReset}
-          >
-            {({ isActive }) => {
-              const showAsActive = isActive || (fallbackToFirst && index === 0);
-              if (showAsActive) scrollTabIntoView(id);
+      {tabs.map(({ id, path, label, search = {}, params = true, activeOptions = { exact: true, includeSearch: false } }, index) => (
+        <Link
+          key={id}
+          id={`tab-${id}`}
+          ref={(el) => {
+            if (el) tabRefs.current[id] = el;
+          }}
+          resetScroll={false}
+          className="focus-effect group relative rounded-sm px-2 py-3 font-medium opacity-70 ring-inset ring-offset-0 transition-opacity last:mr-4 hover:opacity-100 data-[active=true]:opacity-100 lg:px-4"
+          to={path}
+          draggable={false}
+          data-active={fallbackToFirst && index === 0 ? true : undefined}
+          params={params}
+          search={search}
+          activeOptions={activeOptions}
+          activeProps={{ 'data-active': true }}
+          onClick={scrollToReset}
+        >
+          {({ isActive }) => {
+            const showAsActive = isActive || (fallbackToFirst && index === 0);
+            if (showAsActive) scrollTabIntoView(id);
 
-              return (
-                <>
-                  <span className="block group-active:translate-y-[.05rem]">{truncateMiddle(t(label), 20)}</span>
-                  {showAsActive && hasStarted && (
-                    <motion.span
-                      layoutId={layoutId}
-                      transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                      className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary"
-                    />
-                  )}
-                  {showAsActive && !hasStarted && (
-                    <span className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary" />
-                  )}
-                </>
-              );
-            }}
-          </Link>
-        ),
-      )}
+            return (
+              <>
+                <span className="block group-active:translate-y-[.05rem]">{truncateMiddle(t(label), 20)}</span>
+                {showAsActive && hasStarted && (
+                  <motion.span
+                    layoutId={layoutId}
+                    transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
+                    className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary"
+                  />
+                )}
+                {showAsActive && !hasStarted && <span className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary" />}
+              </>
+            );
+          }}
+        </Link>
+      ))}
     </TabNavShell>
   );
 }

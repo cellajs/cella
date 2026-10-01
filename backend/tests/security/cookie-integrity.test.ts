@@ -64,12 +64,8 @@ describe('cookie integrity', async () => {
 
     const name = `${appConfig.slug}-session-${appConfig.cookieVersion}`;
     const expiresAt = Math.floor(Date.now() / 1000) + 3600;
-    const mac = createHmac('sha256', 'an-attacker-secret')
-      .update(`${name}\n${expiresAt}\n${content}`)
-      .digest('base64url');
-    const { response } = await meWith(
-      `${authCookieName('session')}=${encodeURIComponent(`${content}.${expiresAt}.${mac}`)}`,
-    );
+    const mac = createHmac('sha256', 'an-attacker-secret').update(`${name}\n${expiresAt}\n${content}`).digest('base64url');
+    const { response } = await meWith(`${authCookieName('session')}=${encodeURIComponent(`${content}.${expiresAt}.${mac}`)}`);
     expect(response.status).toBe(401);
   });
 });

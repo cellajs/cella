@@ -1,15 +1,9 @@
 import { appConfig, hierarchy } from 'shared';
 import type { OtelSDKOptions } from 'shared/otel';
 
-export const defaultHeaders = {
-  'Content-Type': 'application/json',
-  'x-forwarded-for': '123.123.123.123',
-  Origin: appConfig.frontendUrl,
-};
+export const defaultHeaders = { 'Content-Type': 'application/json', 'x-forwarded-for': '123.123.123.123', Origin: appConfig.frontendUrl };
 
-export const signUpUser = {
-  email: 'test-user@example.com',
-};
+export const signUpUser = { email: 'test-user@example.com' };
 
 /**
  * The organization's most and least privileged roles, read from the hierarchy: `admin` and `member` in the template,

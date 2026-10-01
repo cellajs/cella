@@ -22,30 +22,20 @@ export function loadBaseEnvFiles(): void {
 }
 
 /** The names a mode env file used for the admin application key before 0.12: read as `SCW_ADMIN_*` with a rename warning, removed by the actions that write the admin key. */
-export const LEGACY_ADMIN_KEY_NAMES = [
-  'SCW_ACCESS_KEY',
-  'SCW_SECRET_KEY',
-  'SCW_STATE_ACCESS_KEY',
-  'SCW_STATE_SECRET_KEY',
-] as const;
+export const LEGACY_ADMIN_KEY_NAMES = ['SCW_ACCESS_KEY', 'SCW_SECRET_KEY', 'SCW_STATE_ACCESS_KEY', 'SCW_STATE_SECRET_KEY'] as const;
 
 /**
  * The values a parsed mode env file exports, and the warnings it earns. The provider's own `SCW_ACCESS_KEY` / `SCW_SECRET_KEY` never come from
  * the file: in it they meant the admin application key, which now travels as `SCW_ADMIN_*`, and in the process env they keep meaning the key the
  * process was started with (a CI runner, a shell export).
  */
-export function modeEnvValues(
-  parsed: Record<string, string>,
-  mode: string,
-): { values: Record<string, string>; warnings: string[] } {
+export function modeEnvValues(parsed: Record<string, string>, mode: string): { values: Record<string, string>; warnings: string[] } {
   const values = { ...parsed };
   const warnings: string[] = [];
   const legacy = ['SCW_ACCESS_KEY', 'SCW_SECRET_KEY'] as const;
   if (legacy.some((name) => name in values)) {
     if ('SCW_ADMIN_ACCESS_KEY' in values || 'SCW_ADMIN_SECRET_KEY' in values) {
-      warnings.push(
-        `infra/.env.${mode}: SCW_ACCESS_KEY / SCW_SECRET_KEY are ignored because SCW_ADMIN_* is set; remove them.`,
-      );
+      warnings.push(`infra/.env.${mode}: SCW_ACCESS_KEY / SCW_SECRET_KEY are ignored because SCW_ADMIN_* is set; remove them.`);
     } else {
       if (values.SCW_ACCESS_KEY !== undefined) values.SCW_ADMIN_ACCESS_KEY = values.SCW_ACCESS_KEY;
       if (values.SCW_SECRET_KEY !== undefined) values.SCW_ADMIN_SECRET_KEY = values.SCW_SECRET_KEY;
@@ -65,8 +55,7 @@ export function modeEnvValues(
 export function loadModeEnvFile(mode: string, log: (message: string) => void = () => {}): string[] {
   // A bare infra/.env is never read; naming the file that is read saves a round of prompts for the values it holds.
   const strayEnvPath = resolve(infraDir, '.env');
-  if (existsSync(strayEnvPath))
-    log(`${strayEnvPath} is not read: mode-scoped keys live in infra/.env.${mode} (infra/README.md, Key files).`);
+  if (existsSync(strayEnvPath)) log(`${strayEnvPath} is not read: mode-scoped keys live in infra/.env.${mode} (infra/README.md, Key files).`);
   const modeEnvPath = resolve(infraDir, `.env.${mode}`);
   if (!existsSync(modeEnvPath)) return [];
   const fileMode = statSync(modeEnvPath).mode;
@@ -81,18 +70,10 @@ export function loadModeEnvFile(mode: string, log: (message: string) => void = (
 }
 
 /** Minimal command runner, injectable for tests. */
-export type ExecLike = (
-  cmd: string,
-  args: string[],
-  input?: string,
-) => { status: number | null; stdout: string; stderr: string };
+export type ExecLike = (cmd: string, args: string[], input?: string) => { status: number | null; stdout: string; stderr: string };
 
 const defaultExec: ExecLike = (cmd, args, input) => {
-  const res = spawnSync(cmd, args, {
-    encoding: 'utf8',
-    input,
-    stdio: [input === undefined ? 'inherit' : 'pipe', 'pipe', 'pipe'],
-  });
+  const res = spawnSync(cmd, args, { encoding: 'utf8', input, stdio: [input === undefined ? 'inherit' : 'pipe', 'pipe', 'pipe'] });
   return { status: res.status, stdout: res.stdout ?? '', stderr: res.stderr ?? '' };
 };
 
@@ -111,12 +92,7 @@ export function parseSecretReference(
  * Resolve a secret reference to its value at load time, so a passphrase or key can live in the OS keychain or a password manager while the env file
  * holds only a pointer. A literal value passes through untouched. A reference that cannot be read throws with the command to fix it.
  */
-export function resolveSecretReference(
-  key: string,
-  value: string,
-  exec: ExecLike = defaultExec,
-  platform = process.platform,
-): string {
+export function resolveSecretReference(key: string, value: string, exec: ExecLike = defaultExec, platform = process.platform): string {
   const ref = parseSecretReference(value);
   if (!ref) return value;
   const fail = (what: string, detail: string) => new Error(`${key}: ${what} (${detail.trim() || 'no output'})`);
@@ -140,19 +116,12 @@ export function resolveSecretReference(
 }
 
 /** Write a secret into the OS keychain under `service`/`account`, replacing an existing entry. */
-export function storeInKeychain(
-  service: string,
-  account: string,
-  value: string,
-  exec: ExecLike = defaultExec,
-  platform = process.platform,
-): void {
+export function storeInKeychain(service: string, account: string, value: string, exec: ExecLike = defaultExec, platform = process.platform): void {
   const res =
     platform === 'darwin'
       ? exec('security', ['add-generic-password', '-U', '-s', service, '-a', account, '-w', value])
       : exec('secret-tool', ['store', `--label=${service} ${account}`, 'service', service, 'account', account], value);
-  if (res.status !== 0)
-    throw new Error(`keychain write for ${service}/${account} failed (${res.stderr.trim() || 'no output'})`);
+  if (res.status !== 0) throw new Error(`keychain write for ${service}/${account} failed (${res.stderr.trim() || 'no output'})`);
 }
 
 /** The reference `resolveSecretReference` reads back for a keychain entry. */
@@ -170,11 +139,7 @@ export function modeEnvPath(mode: string): string {
  * Values are written unquoted on one line each; a newline in a value is refused, as `isEnvFileDeliverable` would.
  * `remove` drops the named keys (superseded names); the ones actually found are returned.
  */
-export function writeEnvValues(
-  path: string,
-  values: Record<string, string>,
-  opts: { remove?: readonly string[] } = {},
-): string[] {
+export function writeEnvValues(path: string, values: Record<string, string>, opts: { remove?: readonly string[] } = {}): string[] {
   for (const [key, value] of Object.entries(values)) {
     if (/[\r\n]/.test(value)) throw new Error(`${key}: a value cannot span lines in ${path}`);
   }

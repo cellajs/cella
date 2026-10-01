@@ -22,11 +22,7 @@ export function ConnectedAppsList() {
   };
 
   if (!items.length)
-    return (
-      <p className="text-muted-foreground text-sm">
-        {t('c:no_resource_yet', { resource: t('c:connected_apps').toLowerCase() })}
-      </p>
-    );
+    return <p className="text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t('c:connected_apps').toLowerCase() })}</p>;
 
   return (
     <div className="flex flex-col gap-2">
@@ -38,18 +34,10 @@ export function ConnectedAppsList() {
               <span className="truncate font-medium">{app.clientName}</span>
               <div className="flex flex-wrap items-center gap-2">
                 <ScopeBadges scopes={app.scopes} />
-                <span className="text-muted-foreground text-xs">
-                  {t('c:connected_on', { date: dateShort(app.createdAt) })}
-                </span>
+                <span className="text-muted-foreground text-xs">{t('c:connected_on', { date: dateShort(app.createdAt) })}</span>
               </div>
             </div>
-            <Button
-              variant="plain"
-              size="sm"
-              className="ml-auto"
-              loading={isPending}
-              onClick={() => handleRevoke(app.id)}
-            >
+            <Button variant="plain" size="sm" className="ml-auto" loading={isPending} onClick={() => handleRevoke(app.id)}>
               <UnplugIcon />
               <span className="ml-1 max-md:hidden">{t('c:revoke')}</span>
             </Button>

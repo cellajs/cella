@@ -1,18 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 
 // The presigner signs locally (HMAC), so fake credentials produce a real URL offline.
-vi.mock('#/env', () => ({
-  env: { S3_ACCESS_KEY_ID: 'test-access-key', S3_ACCESS_KEY_SECRET: 'test-secret' },
-}));
+vi.mock('#/env', () => ({ env: { S3_ACCESS_KEY_ID: 'test-access-key', S3_ACCESS_KEY_SECRET: 'test-secret' } }));
 
 const { getSignedUrlFromKey } = await import('./signed-url');
 
 describe('getSignedUrlFromKey', () => {
   it('signs private keys with the default 24h expiry', async () => {
-    const url = await getSignedUrlFromKey('org/attachments/original/a.jpg', {
-      publicBucket: false,
-      bucketName: 'private-bucket',
-    });
+    const url = await getSignedUrlFromKey('org/attachments/original/a.jpg', { publicBucket: false, bucketName: 'private-bucket' });
 
     const parsed = new URL(url);
     expect(parsed.pathname).toContain('org/attachments/original/a.jpg');
@@ -22,11 +17,7 @@ describe('getSignedUrlFromKey', () => {
   });
 
   it('honors an explicit expiresIn', async () => {
-    const url = await getSignedUrlFromKey('key.png', {
-      publicBucket: false,
-      bucketName: 'private-bucket',
-      expiresIn: 300,
-    });
+    const url = await getSignedUrlFromKey('key.png', { publicBucket: false, bucketName: 'private-bucket', expiresIn: 300 });
     expect(new URL(url).searchParams.get('X-Amz-Expires')).toBe('300');
   });
 
@@ -36,15 +27,9 @@ describe('getSignedUrlFromKey', () => {
   });
 
   it('must not sign a blob: key, a local blob URL included', async () => {
-    for (const key of [
-      'blob:http://localhost:3000/0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c',
-      'blob:/../org/contract.pdf',
-    ]) {
+    for (const key of ['blob:http://localhost:3000/0199a1b2-c3d4-7e5f-8a6b-7c8d9e0f1a2c', 'blob:/../org/contract.pdf']) {
       for (const publicBucket of [false, true]) {
-        await expect(
-          getSignedUrlFromKey(key, { publicBucket, bucketName: 'private-bucket' }),
-          key,
-        ).rejects.toMatchObject({
+        await expect(getSignedUrlFromKey(key, { publicBucket, bucketName: 'private-bucket' }), key).rejects.toMatchObject({
           status: 500,
           type: 'server_error',
         });
@@ -58,9 +43,7 @@ describe('getSignedUrlFromKey', () => {
     vi.doMock('#/env', () => ({ env: { S3_ACCESS_KEY_ID: '', S3_ACCESS_KEY_SECRET: '' } }));
     const { getSignedUrlFromKey: signUnconfigured } = await import('./signed-url');
 
-    await expect(
-      signUnconfigured('key.png', { publicBucket: false, bucketName: 'private-bucket' }),
-    ).rejects.toMatchObject({
+    await expect(signUnconfigured('key.png', { publicBucket: false, bucketName: 'private-bucket' })).rejects.toMatchObject({
       status: 503,
       type: 'server_error',
     });

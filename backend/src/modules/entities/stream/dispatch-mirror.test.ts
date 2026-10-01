@@ -25,12 +25,7 @@ const membership = (organizationId: string, role: EntityRole, userId: string): M
   }) as unknown as MembershipBaseModel;
 
 /** Fake SSE subscriber capturing every notification written to its stream. */
-const fakeSubscriber = (
-  memberships: MembershipBaseModel[],
-  userId: string,
-  organizationIds: string[],
-  channelOrg: string,
-) => {
+const fakeSubscriber = (memberships: MembershipBaseModel[], userId: string, organizationIds: string[], channelOrg: string) => {
   const received: StreamNotification[] = [];
   const stream = {
     writeSSE: async ({ data }: { data: string }) => {
@@ -115,9 +110,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
 
     // Authored by the org member, so read stays granted under a row-conditional read:'own' grant.
     await dispatchToAppStream(
-      attachmentEvent(ORG_A, {
-        rowData: attachmentRow('attachment-1', ORG_A, { createdBy: 'member-user' }),
-      }) as AppStreamEvent,
+      attachmentEvent(ORG_A, { rowData: attachmentRow('attachment-1', ORG_A, { createdBy: 'member-user' }) }) as AppStreamEvent,
     );
 
     expect(member.received).toHaveLength(1); // org member: read granted
@@ -128,12 +121,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
 
   it('pings a subscriber who can read only a non-representative batch row', async () => {
     // A stale channel registration after membership removal: dispatch must still evaluate each row.
-    const { subscriber, received } = fakeSubscriber(
-      [membership(ORG_A, memberRole, 'moved-user')],
-      'moved-user',
-      [ORG_A, ORG_B],
-      ORG_B,
-    );
+    const { subscriber, received } = fakeSubscriber([membership(ORG_A, memberRole, 'moved-user')], 'moved-user', [ORG_A, ORG_B], ORG_B);
     streamSubscriberManager.register(subscriber);
 
     // The representative first row is in unreadable org B, the second in org A: representative-row
@@ -186,10 +174,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
       attachmentEvent(ORG_A, {
         type: 'attachment.deleted',
         action: 'delete',
-        rowData: attachmentRow('attachment-unpublished', ORG_A, {
-          createdBy: 'member-user',
-          publishedAt: '2026-07-04T09:00:00.000Z',
-        }),
+        rowData: attachmentRow('attachment-unpublished', ORG_A, { createdBy: 'member-user', publishedAt: '2026-07-04T09:00:00.000Z' }),
       }) as AppStreamEvent,
     );
 
@@ -204,10 +189,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
 
     await dispatchToAppStream(
       attachmentEvent(ORG_A, {
-        rowData: attachmentRow('attachment-published', ORG_A, {
-          createdBy: 'member-user',
-          publishedAt: '2026-07-04T09:00:00.000Z',
-        }),
+        rowData: attachmentRow('attachment-published', ORG_A, { createdBy: 'member-user', publishedAt: '2026-07-04T09:00:00.000Z' }),
       }) as AppStreamEvent,
     );
 
@@ -218,12 +200,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
     // Connected as a member of ORG_A only, so the new-org invite can arrive only via the user
     // channel. The bystander shares the org channel but must not receive that event.
     const joiner = fakeSubscriber([membership(ORG_A, memberRole, 'joiner-user')], 'joiner-user', [ORG_A], ORG_A);
-    const bystander = fakeSubscriber(
-      [membership(ORG_A, memberRole, 'bystander-user')],
-      'bystander-user',
-      [ORG_A],
-      ORG_A,
-    );
+    const bystander = fakeSubscriber([membership(ORG_A, memberRole, 'bystander-user')], 'bystander-user', [ORG_A], ORG_A);
     streamSubscriberManager.register(joiner.subscriber, ['user:joiner-user']);
     streamSubscriberManager.register(bystander.subscriber, ['user:bystander-user']);
 
@@ -237,14 +214,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
       subjectId: 'mem-new-org',
       tenantId: 'tenant-1',
       organizationId: ORG_B,
-      rowData: {
-        id: 'mem-new-org',
-        userId: 'joiner-user',
-        channelType: 'organization',
-        channelId: ORG_B,
-        organizationId: ORG_B,
-        role: memberRole,
-      },
+      rowData: { id: 'mem-new-org', userId: 'joiner-user', channelType: 'organization', channelId: ORG_B, organizationId: ORG_B, role: memberRole },
       seq: null,
       batchUntilSeq: null,
       propagation: null,
@@ -260,12 +230,7 @@ describe('dispatch mirror: org membership, live snapshots, batches', () => {
   });
 
   it('does not ping anyone for a batch with no readable rows', async () => {
-    const { subscriber, received } = fakeSubscriber(
-      [membership(ORG_A, memberRole, 'moved-user')],
-      'moved-user',
-      [ORG_A, ORG_B],
-      ORG_B,
-    );
+    const { subscriber, received } = fakeSubscriber([membership(ORG_A, memberRole, 'moved-user')], 'moved-user', [ORG_A, ORG_B], ORG_B);
     streamSubscriberManager.register(subscriber);
 
     await dispatchToAppStream(

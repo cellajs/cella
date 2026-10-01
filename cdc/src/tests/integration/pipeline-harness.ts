@@ -9,11 +9,7 @@ import { createReplicationService, ensureReplicationSlot, setupBackpressure } fr
 import { replicationState } from '../../services/replication-state';
 
 /** Poll a predicate until it holds or the deadline passes. */
-export async function waitFor(
-  predicate: () => boolean | Promise<boolean>,
-  timeoutMs: number,
-  label: string,
-): Promise<void> {
+export async function waitFor(predicate: () => boolean | Promise<boolean>, timeoutMs: number, label: string): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (await predicate()) return;
@@ -24,9 +20,7 @@ export async function waitFor(
 
 /** Whether the CDC replication slot is currently held by a connection. */
 export async function slotActive(): Promise<boolean> {
-  const res = await cdcDb.execute<{ active: boolean }>(
-    sql`SELECT active FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
-  );
+  const res = await cdcDb.execute<{ active: boolean }>(sql`SELECT active FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`);
   return res.rows[0]?.active ?? false;
 }
 
@@ -41,9 +35,7 @@ export interface CdcPipelineHarness {
  */
 export async function startCdcPipeline(): Promise<CdcPipelineHarness> {
   // Drop a leftover slot from a previous run; bail if one is actively held.
-  const existing = await cdcDb.execute<{ active: boolean }>(
-    sql`SELECT active FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
-  );
+  const existing = await cdcDb.execute<{ active: boolean }>(sql`SELECT active FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`);
   if (existing.rows[0]?.active) {
     throw new Error(`Replication slot '${CDC_SLOT_NAME}' is already active: another worker is using the test DB`);
   }
@@ -72,9 +64,7 @@ export async function startCdcPipeline(): Promise<CdcPipelineHarness> {
       await service.stop().catch(() => {});
       await drainBuffers().catch(() => {});
       // service.stop() releases the active flag; wait for it before dropping.
-      await waitFor(async () => !(await slotActive()), 10_000, `replication slot '${CDC_SLOT_NAME}' released`).catch(
-        () => {},
-      );
+      await waitFor(async () => !(await slotActive()), 10_000, `replication slot '${CDC_SLOT_NAME}' released`).catch(() => {});
       await cdcDb
         .execute(
           sql`SELECT pg_drop_replication_slot(${CDC_SLOT_NAME})

@@ -16,27 +16,17 @@ export const alertVariants = cva(
         secondary: 'bg-secondary text-secondary-foreground',
         warning: '[--intent-color:var(--warning)]',
       },
-      soft: {
-        true: '',
-        false: '',
-      },
+      soft: { true: '', false: '' },
     },
     // Solid fills gated on `soft: false`, so the soft form never emits `text-<intent>-foreground`
     compoundVariants: [
-      {
-        variant: ['brand', 'destructive', 'success', 'warning'],
-        soft: true,
-        className: 'soft-bg soft-border soft-text',
-      },
+      { variant: ['brand', 'destructive', 'success', 'warning'], soft: true, className: 'soft-bg soft-border soft-text' },
       { variant: 'brand', soft: false, className: 'bg-brand text-brand-foreground' },
       { variant: 'destructive', soft: false, className: 'bg-destructive text-destructive-foreground' },
       { variant: 'success', soft: false, className: 'bg-success text-success-foreground' },
       { variant: 'warning', soft: false, className: 'bg-warning text-warning-foreground' },
     ],
-    defaultVariants: {
-      variant: 'default',
-      soft: true,
-    },
+    defaultVariants: { variant: 'default', soft: true },
   },
 );
 
@@ -66,21 +56,9 @@ export function Alert({
 }
 
 export function AlertTitle({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="alert-title"
-      className={cn('col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight', className)}
-      {...props}
-    />
-  );
+  return <div data-slot="alert-title" className={cn('col-start-2 line-clamp-1 min-h-4 font-medium tracking-tight', className)} {...props} />;
 }
 
 export function AlertDescription({ className, ...props }: React.ComponentProps<'div'>) {
-  return (
-    <div
-      data-slot="alert-description"
-      className={cn('col-start-2 w-full justify-items-start gap-1 text-sm', className)}
-      {...props}
-    />
-  );
+  return <div data-slot="alert-description" className={cn('col-start-2 w-full justify-items-start gap-1 text-sm', className)} {...props} />;
 }

@@ -8,12 +8,7 @@ const accessScopes = deriveAccessScopes(matrix);
 
 describe('deriveAccessScopes', () => {
   it('derives a read and a write scope per entity type with a policy', () => {
-    expect(accessScopes.all).toEqual([
-      'attachment:read',
-      'attachment:write',
-      'organization:read',
-      'organization:write',
-    ]);
+    expect(accessScopes.all).toEqual(['attachment:read', 'attachment:write', 'organization:read', 'organization:write']);
   });
 
   it('derives nothing from a configuration without a single policy', () => {

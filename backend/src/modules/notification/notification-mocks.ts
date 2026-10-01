@@ -35,9 +35,7 @@ export function mockSeedNotification(
 ): InsertNotificationModel {
   const [deepest] = hierarchy.resolveNonNullAncestors(entityType, subject);
   const home =
-    deepest && isChannel(deepest.type)
-      ? { id: deepest.id, type: deepest.type }
-      : { id: subject.organizationId, type: 'organization' as const };
+    deepest && isChannel(deepest.type) ? { id: deepest.id, type: deepest.type } : { id: subject.organizationId, type: 'organization' as const };
   const createdAt = seedNotificationDate(subject.createdAt);
   return {
     userId,

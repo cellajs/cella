@@ -52,10 +52,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs document retireme
       .select({ generation: yjsDocumentsTable.generation })
       .from(yjsDocumentsTable)
       .where(eq(yjsDocumentsTable.entityId, attachment.id));
-    const log = await adminDb
-      .select({ id: yjsUpdatesTable.id })
-      .from(yjsUpdatesTable)
-      .where(eq(yjsUpdatesTable.entityId, attachment.id));
+    const log = await adminDb.select({ id: yjsUpdatesTable.id }).from(yjsUpdatesTable).where(eq(yjsUpdatesTable.entityId, attachment.id));
     return { docs: docs.length, log: log.length };
   };
 
@@ -64,10 +61,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs document retireme
       path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id: attachment.id },
       body: {
         ops: { description },
-        stx: {
-          ...mockStxBase(`stx:${generateId()}`),
-          fieldTimestamps: { description: generateServerHLC('test-client') },
-        },
+        stx: { ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { description: generateServerHLC('test-client') } },
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
@@ -109,11 +103,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs document retireme
 
   it("keeps the document across the relay's own write and an update that leaves the description as it is (positive control)", async () => {
     await seedDocument();
-    await materializeDescriptionOp({
-      ...scope(),
-      description: paragraph('written by the relay'),
-      editors: [tenant.user.id],
-    });
+    await materializeDescriptionOp({ ...scope(), description: paragraph('written by the relay'), editors: [tenant.user.id] });
     expect(await documentRows()).toEqual({ docs: 1, log: 1 });
 
     const stored = (await attachment.read())?.description;

@@ -17,9 +17,7 @@ const sharedPatterns = [String.raw`pg(?:\/|$)`, String.raw`@opentelemetry\/`, St
 export function keepOnDisk(packages: readonly string[]): { noExternal: RegExp[]; external: RegExp[] } {
   const patterns = [
     ...sharedPatterns,
-    ...['thread-stream', 'sonic-boom', 'jsdom', ...packages].map(
-      (name) => `${name.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}(?:\\/|$)`,
-    ),
+    ...['thread-stream', 'sonic-boom', 'jsdom', ...packages].map((name) => `${name.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}(?:\\/|$)`),
   ];
   return {
     // tsup's `noExternal` takes precedence over `external`, so the exceptions live in this negative

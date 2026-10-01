@@ -19,19 +19,13 @@ const CHECKSUM_LENGTH = 6;
 /** The wire tag of each key type: `<app>_sk_…` is a secret key, `<app>_pk_…` a publishable one. */
 const wireTags = { secret: 'sk', publishable: 'pk' } as const satisfies Record<ApiKeyType, string>;
 type WireTag = (typeof wireTags)[ApiKeyType];
-const typeOfTag = Object.fromEntries(Object.entries(wireTags).map(([type, tag]) => [tag, type])) as Record<
-  WireTag,
-  ApiKeyType
->;
+const typeOfTag = Object.fromEntries(Object.entries(wireTags).map(([type, tag]) => [tag, type])) as Record<WireTag, ApiKeyType>;
 
 /** `live` keys exist only in production; everything else mints `test` keys. */
 type KeyEnv = 'live' | 'test';
 
 /** What a well-formed key of this app says about itself, in the columns the apiKeys row stores. */
-export type ParsedApiKey = Pick<InsertApiKeyModel, 'prefix' | 'last4' | 'hash'> & {
-  type: ApiKeyType;
-  env: KeyEnv;
-};
+export type ParsedApiKey = Pick<InsertApiKeyModel, 'prefix' | 'last4' | 'hash'> & { type: ApiKeyType; env: KeyEnv };
 
 const toBase62 = (n: number, length: number): string => {
   let out = '';
@@ -52,9 +46,7 @@ const randomBase62 = (length: number): string => {
 
 export const checksumOf = (body: string): string => toBase62(crc32(body), CHECKSUM_LENGTH);
 
-const keyPattern = new RegExp(
-  `^${appConfig.slug}_(sk|pk)_(live|test)_([0-9A-Za-z]{${SECRET_LENGTH}})([0-9A-Za-z]{${CHECKSUM_LENGTH}})$`,
-);
+const keyPattern = new RegExp(`^${appConfig.slug}_(sk|pk)_(live|test)_([0-9A-Za-z]{${SECRET_LENGTH}})([0-9A-Za-z]{${CHECKSUM_LENGTH}})$`);
 
 /**
  * `<app>_sk_live_<32 base62><6 base62 crc32>`: scannable by prefix, checkable offline, dispatched on shape by the

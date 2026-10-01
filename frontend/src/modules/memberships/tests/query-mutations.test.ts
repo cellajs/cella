@@ -9,13 +9,8 @@ vi.mock('@tanstack/react-query', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@tanstack/react-query')>()),
   useMutation: (options: unknown) => options,
 }));
-vi.mock('i18next', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('i18next')>()),
-  t: (key: string) => key,
-}));
-vi.mock('~/modules/common/toaster/toaster', () => ({
-  toaster: { success: vi.fn(), error: vi.fn(), warning: vi.fn() },
-}));
+vi.mock('i18next', async (importOriginal) => ({ ...(await importOriginal<typeof import('i18next')>()), t: (key: string) => key }));
+vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { success: vi.fn(), error: vi.fn(), warning: vi.fn() } }));
 
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
@@ -23,9 +18,7 @@ const { queryClient } = await import('~/query/query-client');
 const { meKeys } = await import('~/modules/me/query');
 const { membersListQueryOptions } = await import('~/modules/memberships/query');
 const { toaster } = await import('~/modules/common/toaster/toaster');
-const { useChangeEntityRoleMutation, useMemberUpdateMutation, useMembershipsDeleteMutation } = await import(
-  '~/modules/memberships/query-mutations'
-);
+const { useChangeEntityRoleMutation, useMemberUpdateMutation, useMembershipsDeleteMutation } = await import('~/modules/memberships/query-mutations');
 
 type Options<TData, TVariables, TContext = unknown> = {
   onMutate: (variables: TVariables) => Promise<TContext>;
@@ -107,12 +100,9 @@ const otherChannelKey = [...membersListQueryOptions({ ...scope, entityId: 'org-2
 const member = (id: string, role: MembershipBase['role'] = 'member') =>
   ({ id, name: id, membership: membership(`m-${id}`, { userId: id, channelId: 'org-1', role }) }) as Member;
 
-type MemberList =
-  | { items: Member[]; total: number }
-  | { pages: { items: Member[]; total: number }[]; pageParams: unknown[] };
+type MemberList = { items: Member[]; total: number } | { pages: { items: Member[]; total: number }[]; pageParams: unknown[] };
 const readList = (key: readonly unknown[]) => queryClient.getQueryData<MemberList>(key);
-const listItems = (data?: MemberList) =>
-  data && 'pages' in data ? data.pages.flatMap((page) => page.items) : data?.items;
+const listItems = (data?: MemberList) => (data && 'pages' in data ? data.pages.flatMap((page) => page.items) : data?.items);
 const pageTotals = (data?: MemberList) => (data && 'pages' in data ? data.pages.map((page) => page.total) : []);
 const firstPageParam = (data?: MemberList) => (data && 'pages' in data ? data.pageParams[0] : undefined);
 
@@ -132,9 +122,7 @@ function seedMemberLists() {
   queryClient.setQueryData(roleKey, { items: [member('u1'), member('u2')], total: 2 });
   queryClient.setQueryData(otherChannelKey, { items: [member('u1')], total: 1 });
   queryClient.setQueryData(meKeys.memberships, { items: [membership('m-u1', { userId: 'u1', channelId: 'org-1' })] });
-  return new Map<readonly unknown[], MemberList | undefined>(
-    [pagedKey, searchKey, roleKey, otherChannelKey].map((key) => [key, readList(key)]),
-  );
+  return new Map<readonly unknown[], MemberList | undefined>([pagedKey, searchKey, roleKey, otherChannelKey].map((key) => [key, readList(key)]));
 }
 
 describe('useMemberUpdateMutation', () => {

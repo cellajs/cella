@@ -24,9 +24,7 @@ const BACKUP_RETENTION_DAYS = 7;
 
 /** Render live instance data so an incorrectly targeted RDB instance is visible before approval. */
 function describeTarget(target: ResetTarget, region: string): string {
-  const others = target.databases
-    .filter((database) => database.name !== target.databaseName)
-    .map((database) => database.name);
+  const others = target.databases.filter((database) => database.name !== target.databaseName).map((database) => database.name);
 
   return [
     '',
@@ -87,24 +85,19 @@ export async function runResetDatabase(context: InfraContext): Promise<void> {
       waitForBackup: (backupId) => waitForBackupReady(client, backupId),
       deleteDatabase: (instanceId, name) => client.deleteDatabase(instanceId, name),
       createDatabase: (instanceId, name) => client.createDatabase(instanceId, name),
-      setPrivilege: (instanceId, database, user, permission) =>
-        client.setPrivilege(instanceId, database, user, permission),
+      setPrivilege: (instanceId, database, user, permission) => client.setPrivilege(instanceId, database, user, permission),
       log: (message) => console.info(`  ${message}`),
 
       confirm: async (target) => {
         console.info(describeTarget(target, region));
-        const typed = await input({
-          message: `Type ${pc.bold(target.token)} to reset it, anything else to abort:`,
-        });
+        const typed = await input({ message: `Type ${pc.bold(target.token)} to reset it, anything else to abort:` });
         return typed.trim() === target.token;
       },
     });
 
     if (result.aborted) return;
 
-    console.info(
-      `\n${checkMark} ${pc.green(`${databaseName} recreated`)}: empty, with ${result.granted.join(' + ')} re-granted.`,
-    );
+    console.info(`\n${checkMark} ${pc.green(`${databaseName} recreated`)}: empty, with ${result.granted.join(' + ')} re-granted.`);
     console.info(`  ${pc.dim(`Backup retained ${BACKUP_RETENTION_DAYS} days: ${result.backupId}`)}\n`);
     console.info(serialConsoleSteps(databaseName));
     console.info(`\n  ${pc.dim(`Then confirm: curl ${appConfig.backendUrl}/health?depth=full`)}`);

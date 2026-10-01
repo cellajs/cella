@@ -62,12 +62,7 @@ async function resolveSecretIdByName(
  * Read a secret's latest version value as the VM would (base64-decoded payload).
  * Returns null when the secret has no accessible version (404 / NoSuchVersion).
  */
-async function readLatestSecretValue(
-  fetchImpl: FetchLike,
-  secretKey: string,
-  region: string,
-  secretId: string,
-): Promise<string | null> {
+async function readLatestSecretValue(fetchImpl: FetchLike, secretKey: string, region: string, secretId: string): Promise<string | null> {
   const url = `${SECRET_BASE}/regions/${region}/secrets/${secretId}/versions/latest/access`;
   const res = await fetchImpl(url, { method: 'GET', headers: { 'X-Auth-Token': secretKey } });
   const body = await res.text();
@@ -83,23 +78,14 @@ async function readLatestSecretValue(
  * Probe each secret and collect the ones that cannot be delivered to a VM. Pure
  * over the injected `fetchImpl`, so it is fully unit-testable.
  */
-export async function assertSecretsDeliverable(
-  opts: AssertSecretsDeliverableOptions,
-): Promise<AssertSecretsDeliverableResult> {
+export async function assertSecretsDeliverable(opts: AssertSecretsDeliverableOptions): Promise<AssertSecretsDeliverableResult> {
   const fetchImpl = resolveFetch(opts.fetchImpl);
   const log = opts.log ?? ((msg) => console.info(msg));
   const offenders: DeliverabilityOffender[] = [];
 
   for (const secret of opts.secrets) {
-    const secretId = await resolveSecretIdByName(
-      fetchImpl,
-      opts.secretKey,
-      opts.region,
-      opts.projectId,
-      secret.secretName,
-    );
-    const value =
-      secretId === null ? null : await readLatestSecretValue(fetchImpl, opts.secretKey, opts.region, secretId);
+    const secretId = await resolveSecretIdByName(fetchImpl, opts.secretKey, opts.region, opts.projectId, secret.secretName);
+    const value = secretId === null ? null : await readLatestSecretValue(fetchImpl, opts.secretKey, opts.region, secretId);
 
     if (value === null) {
       // Absent. Only a problem for required secrets (the sync skips an absent
@@ -117,9 +103,7 @@ export async function assertSecretsDeliverable(
 
   const ok = offenders.length === 0;
   if (ok) {
-    log(
-      `✓ Runtime secrets deliverable: all ${opts.secrets.length} probed secrets are single-line and present where required`,
-    );
+    log(`✓ Runtime secrets deliverable: all ${opts.secrets.length} probed secrets are single-line and present where required`);
   } else {
     log(`✗ Runtime secrets NOT deliverable: ${offenders.map((o) => `${o.envVar} (${o.reason})`).join(', ')}`);
   }
@@ -151,9 +135,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const projectId = getFlag(argv, '--project-id') ?? process.env.SCW_DEFAULT_PROJECT_ID;
   const servicesJson = getFlag(argv, '--services-json');
   const servicesArg = getFlag(argv, '--services');
-  const enabled = (
-    servicesJson ? serviceNamesFromServicesJson(servicesJson) : servicesArg ? servicesArg.split(',') : serviceNames
-  )
+  const enabled = (servicesJson ? serviceNamesFromServicesJson(servicesJson) : servicesArg ? servicesArg.split(',') : serviceNames)
     .map((s) => s.trim())
     .filter((s): s is ServiceName => (serviceNames as readonly string[]).includes(s));
 

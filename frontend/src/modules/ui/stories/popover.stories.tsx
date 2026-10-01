@@ -17,9 +17,7 @@ const meta = {
       <PopoverContent>Place content for the popover here.</PopoverContent>
     </Popover>
   ),
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
 } satisfies Meta<typeof Popover>;
 
 export default meta;

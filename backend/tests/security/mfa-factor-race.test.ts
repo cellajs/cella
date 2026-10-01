@@ -26,10 +26,7 @@ vi.mock('#/modules/me/me-queries', async (importOriginal) => {
 
 /** Whether MFA is on, and how many factors of each kind the account holds. */
 const stateOf = async (userId: string) => {
-  const [user] = await db
-    .select({ mfaRequired: usersTable.mfaRequired })
-    .from(usersTable)
-    .where(eq(usersTable.id, userId));
+  const [user] = await db.select({ mfaRequired: usersTable.mfaRequired }).from(usersTable).where(eq(usersTable.id, userId));
   const totps = await db.select().from(totpsTable).where(eq(totpsTable.userId, userId));
   const passkeys = await passkeysOf(userId);
   return { mfaRequired: user.mfaRequired, totps: totps.length, passkeys: passkeys.length };
@@ -76,10 +73,7 @@ describe('MFA factor rules under concurrent requests', async () => {
         .finally(() => {
           settled = true;
         });
-      await vi.waitFor(async () => expect(settled || (await aQueryWaitsForALock())).toBe(true), {
-        timeout: 5000,
-        interval: 10,
-      });
+      await vi.waitFor(async () => expect(settled || (await aQueryWaitsForALock())).toBe(true), { timeout: 5000, interval: 10 });
     };
     const enabled = await call(toggleMfa, { body: { mfaRequired: true }, headers });
 

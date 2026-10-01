@@ -57,9 +57,4 @@ function MdxTable(props: ComponentProps<'table'>) {
 }
 
 /** MDX overrides for docs bodies, provided via MDXProvider so they apply inside imported repo docs too. */
-export const mdxComponents = {
-  a: MdxLink,
-  h2: MdxHeading,
-  pre: CodeBlock,
-  table: MdxTable,
-};
+export const mdxComponents = { a: MdxLink, h2: MdxHeading, pre: CodeBlock, table: MdxTable };

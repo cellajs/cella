@@ -22,6 +22,4 @@ export const requestCreateBodySchema = z.object({
   message: z.string().max(maxLength.field).nullable(),
 });
 
-export const requestListQuerySchema = paginationQuerySchema.extend({
-  sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt'),
-});
+export const requestListQuerySchema = paginationQuerySchema.extend({ sort: z.enum(['id', 'email', 'type', 'createdAt']).default('createdAt') });

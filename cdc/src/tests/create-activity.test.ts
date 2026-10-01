@@ -13,12 +13,7 @@ describe('createActivity actor', () => {
   it('attributes an api_key create to createdBy', () => {
     const row = { id: 'k1', tenantId: 't1', createdBy: 'p-owner', revokedBy: null };
     const activity = createActivity(metaFor('api_keys'), row, 'create');
-    expect(activity).toMatchObject({
-      resourceType: 'api_key',
-      type: 'api_key.created',
-      tenantId: 't1',
-      userId: 'p-owner',
-    });
+    expect(activity).toMatchObject({ resourceType: 'api_key', type: 'api_key.created', tenantId: 't1', userId: 'p-owner' });
   });
 
   it('attributes an api_key revoke to revokedBy, not the key creator', () => {

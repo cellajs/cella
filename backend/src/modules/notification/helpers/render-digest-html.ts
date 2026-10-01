@@ -4,14 +4,7 @@ import { escapeString } from '../../../../emails/renderer/escape-string';
 // arbitrary markup would fight the template's styling. The text is escaped once, where it lands:
 // Brevo escapes a param it fills, the renderer escapes JSX text.
 const TAG = /<[^>]*>/g;
-const NAMED_ENTITIES: Record<string, string> = {
-  '&amp;': '&',
-  '&lt;': '<',
-  '&gt;': '>',
-  '&quot;': '"',
-  '&#39;': "'",
-  '&nbsp;': ' ',
-};
+const NAMED_ENTITIES: Record<string, string> = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };
 
 /** Strip markup, decode the entities a stored body carries, and collapse whitespace. */
 function htmlToPlainText(html: string): string {

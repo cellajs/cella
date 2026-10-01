@@ -69,13 +69,11 @@ export function SelectLanguages({ value, onChange }: SelectLanguagesProps) {
   const { ref: triggerRef, bounds } = useMeasure<HTMLButtonElement>();
 
   const openDropdown = () => {
-    useDropdowner
-      .getState()
-      .create(<SelectLanguagesContent initialValue={value} onChange={onChange} triggerWidth={bounds.width} />, {
-        id: 'select-languages',
-        triggerId: 'select-languages',
-        triggerRef,
-      });
+    useDropdowner.getState().create(<SelectLanguagesContent initialValue={value} onChange={onChange} triggerWidth={bounds.width} />, {
+      id: 'select-languages',
+      triggerId: 'select-languages',
+      triggerRef,
+    });
   };
 
   return (

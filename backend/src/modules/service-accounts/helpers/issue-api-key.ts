@@ -1,10 +1,5 @@
 import type { DbOrTx } from '#/db/db';
-import {
-  type ApiKeyModel,
-  apiKeySafeColumns,
-  apiKeysTable,
-  type InsertApiKeyModel,
-} from '#/modules/service-accounts/api-keys-db';
+import { type ApiKeyModel, apiKeySafeColumns, apiKeysTable, type InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
 import { generateApiKey } from '#/modules/service-accounts/helpers/api-key';
 
 type IssueInput = Pick<InsertApiKeyModel, 'actorId' | 'tenantId' | 'name' | 'scopes' | 'expiresAt' | 'createdBy'>;

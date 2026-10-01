@@ -76,10 +76,7 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{
-              height: { duration: 0.3 },
-              opacity: { delay: 0.3, duration: 0.2 },
-            }}
+            transition={{ height: { duration: 0.3 }, opacity: { delay: 0.3, duration: 0.2 } }}
             style={{ overflow: 'hidden' }}
           >
             <AlertBanner id="menu_management" variant="plain" icon={InfoIcon} animate>
@@ -104,12 +101,7 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
               <MenuSheetItems type={options.entityType} data={data} isArchived={false} options={options} />
             )}
             {!!data.length && (
-              <div
-                className="group/archived"
-                data-has-archived={!!archivedCount}
-                data-submenu={false}
-                data-archived-visible={isArchivedVisible}
-              >
+              <div className="group/archived" data-has-archived={!!archivedCount} data-submenu={false} data-archived-visible={isArchivedVisible}>
                 {(!!archivedCount || isEditing) && (
                   <SectionArchiveButton
                     archiveToggleClick={archiveToggleClick}

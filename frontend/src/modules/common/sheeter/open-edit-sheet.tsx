@@ -18,14 +18,7 @@ interface OpenEditSheetOptions {
 }
 
 /** Opens a right-side sheet that edits one resource: the form in a card, the title with an unsaved badge. */
-export function openEditSheet({
-  id,
-  resource,
-  triggerRef,
-  children,
-  after,
-  className = 'container w-full',
-}: OpenEditSheetOptions) {
+export function openEditSheet({ id, resource, triggerRef, children, after, className = 'container w-full' }: OpenEditSheetOptions) {
   const title = i18n.t('c:edit_resource', { resource: i18n.t(resource).toLowerCase() });
 
   useSheeter.getState().create(

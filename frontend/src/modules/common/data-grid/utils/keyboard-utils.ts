@@ -64,18 +64,12 @@ export function isDefaultCellInput(event: React.KeyboardEvent<HTMLDivElement>, i
 
 /** Allow Tab navigation from a sole input, textarea, or select inside the editor container. */
 export function onEditorNavigation({ key, target }: React.KeyboardEvent<HTMLDivElement>): boolean {
-  if (
-    key === 'Tab' &&
-    (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement)
-  ) {
+  if (key === 'Tab' && (target instanceof HTMLInputElement || target instanceof HTMLTextAreaElement || target instanceof HTMLSelectElement)) {
     return target.closest('.rdg-editor-container')?.querySelectorAll('input, textarea, select').length === 1;
   }
   return false;
 }
 
 export function getLeftRightKey() {
-  return {
-    leftKey: 'ArrowLeft',
-    rightKey: 'ArrowRight',
-  } as const;
+  return { leftKey: 'ArrowLeft', rightKey: 'ArrowRight' } as const;
 }

@@ -15,10 +15,7 @@ export interface RedisManagedConfig {
   /** Permit a public cluster endpoint, off by default: the provider-formatted `connectionString` prefers a public endpoint when one exists, which would make REDIS_URL internet-reachable. */
   allowPublicEndpoint?: boolean;
   /** Services consuming the connection URL and, with TLS, the cluster CA. When set, the store owns the secret declarations. */
-  secretConsumers?: {
-    url?: readonly string[];
-    ca?: readonly string[];
-  };
+  secretConsumers?: { url?: readonly string[]; ca?: readonly string[] };
 }
 
 /** Managed Scaleway Redis store: a cluster on the deployment's private network, binding its connection URL and TLS CA to runtime secrets. Pure at import time. */
@@ -98,11 +95,7 @@ export function redisManaged(config: RedisManagedConfig): StoreProvisioner {
       });
 
       return {
-        outputs: {
-          clusterId: cluster.id,
-          connectionString,
-          certificate: cluster.certificate,
-        },
+        outputs: { clusterId: cluster.id, connectionString, certificate: cluster.certificate },
         secretValues: {
           redisUrl: connectionString,
           ...(tls

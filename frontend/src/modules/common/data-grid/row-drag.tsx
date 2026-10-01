@@ -19,12 +19,7 @@ function isRowDragData(data: Record<string, unknown>): data is RowDragData {
 }
 
 /** Resolve the cursor's nearest allowed drop zone, or null when the row blocks all zones. */
-function resolveDropZone(
-  rectTop: number,
-  rectHeight: number,
-  clientY: number,
-  isZoneAllowed: (zone: DropZone) => boolean,
-): DropZone | null {
+function resolveDropZone(rectTop: number, rectHeight: number, clientY: number, isZoneAllowed: (zone: DropZone) => boolean): DropZone | null {
   const ratio = (clientY - rectTop) / rectHeight;
   // Preference order = natural zone first, then the closer of the two others.
   let preference: DropZone[];
@@ -37,12 +32,7 @@ function resolveDropZone(
 }
 
 /** Mutates drop-edge attributes without rerendering; a bottom edge may paint on the next row while the drop keeps the original zone. */
-function setRowDropEdge(
-  rowEl: HTMLElement,
-  zone: DropZone | null,
-  prevRowElRef: { current: HTMLElement | null },
-  allowRedirect = true,
-) {
+function setRowDropEdge(rowEl: HTMLElement, zone: DropZone | null, prevRowElRef: { current: HTMLElement | null }, allowRedirect = true) {
   let targetEl: HTMLElement | null = null;
   let attrValue: DropZone | null = null;
   if (zone !== null) {
@@ -142,10 +132,7 @@ export function RowDropTarget<R, SR>({ rowKey, config, renderRow, ...props }: Ro
         if (!isRowDragData(source.data)) return;
         const zone = (self.data as Record<string, unknown>).dropZone as DropZone | null;
         // Redirect bottom to the next row's top only when that row accepts this drag's `top` zone.
-        const allowRedirect =
-          zone !== 'bottom' || !canDropRow
-            ? true
-            : canDropRow({ fromIdx: source.data.rowIdx, toIdx: rowIdx + 1, zone: 'top' });
+        const allowRedirect = zone !== 'bottom' || !canDropRow ? true : canDropRow({ fromIdx: source.data.rowIdx, toIdx: rowIdx + 1, zone: 'top' });
         setRowDropEdge(el, zone, prevRowElRef, allowRedirect);
       },
       onDragLeave: () => {
@@ -172,14 +159,7 @@ export function RowDropTarget<R, SR>({ rowKey, config, renderRow, ...props }: Ro
 }
 
 /** Handle cells are the drag sources; the native drag preview is portaled into the browser's drag image. */
-export function RowDragCell<R, SR>({
-  rowIdx,
-  row,
-  column,
-  className,
-  config,
-  ...props
-}: CellRendererProps<R, SR> & { config: RowDragConfig<R> }) {
+export function RowDragCell<R, SR>({ rowIdx, row, column, className, config, ...props }: CellRendererProps<R, SR> & { config: RowDragConfig<R> }) {
   const ref = useRef<HTMLDivElement>(null);
   // `isDragging` flips twice per drag, so React state stays off the per-mousemove path.
   const [isDragging, setIsDragging] = useState(false);
@@ -193,11 +173,7 @@ export function RowDragCell<R, SR>({
       element: el,
       getInitialData: (): RowDragData => ({ type: ROW_DRAG_TYPE, rowIdx }),
       onGenerateDragPreview: ({ nativeSetDragImage }) => {
-        setCustomNativeDragPreview({
-          nativeSetDragImage,
-          getOffset: () => ({ x: 16, y: 16 }),
-          render: ({ container }) => setPreview({ container }),
-        });
+        setCustomNativeDragPreview({ nativeSetDragImage, getOffset: () => ({ x: 16, y: 16 }), render: ({ container }) => setPreview({ container }) });
       },
       onDragStart: () => setIsDragging(true),
       onDrop: () => {
@@ -220,14 +196,7 @@ export function RowDragCell<R, SR>({
 
   return (
     <>
-      <CellComponent
-        ref={ref}
-        rowIdx={rowIdx}
-        row={row}
-        column={column}
-        className={cn(className, { 'opacity-40': isDragging })}
-        {...props}
-      />
+      <CellComponent ref={ref} rowIdx={rowIdx} row={row} column={column} className={cn(className, { 'opacity-40': isDragging })} {...props} />
       {dragPreview}
     </>
   );

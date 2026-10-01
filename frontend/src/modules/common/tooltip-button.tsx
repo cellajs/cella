@@ -14,17 +14,7 @@ interface TooltipButtonProps {
 }
 
 export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps>(function TooltipButton(
-  {
-    children,
-    toolTipContent,
-    disabled,
-    side = 'bottom',
-    sideOffset = 8,
-    className,
-    hideWhenDetached,
-    portal = true,
-    ...props
-  },
+  { children, toolTipContent, disabled, side = 'bottom', sideOffset = 8, className, hideWhenDetached, portal = true, ...props },
   _ref,
 ) {
   if (disabled) return children;

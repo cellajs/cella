@@ -17,11 +17,7 @@ const sysAdminCheck: MiddlewareHandler = async (ctx, next) => {
 
   if (!isSystemAdmin) {
     const ip = getIp(ctx) ?? 'unknown';
-    sendSecurityInboxEmail('sysadmin-fail', {
-      ip,
-      route: scrubUrl(ctx.req.path),
-      timestamp: new Date().toISOString(),
-    });
+    sendSecurityInboxEmail('sysadmin-fail', { ip, route: scrubUrl(ctx.req.path), timestamp: new Date().toISOString() });
     throw new AppError(403, 'no_sysadmin', 'warn', { meta: { user: user.id } });
   }
 
@@ -38,11 +34,7 @@ const combinedMiddleware: MiddlewareHandler = every(
     { allowList },
     async (remote) => {
       const ip = remote.addr ?? 'unknown';
-      sendSecurityInboxEmail('sysadmin-fail', {
-        ip,
-        route: 'ip-restricted',
-        timestamp: new Date().toISOString(),
-      });
+      sendSecurityInboxEmail('sysadmin-fail', { ip, route: 'ip-restricted', timestamp: new Date().toISOString() });
       throw new AppError(403, 'forbidden', 'warn');
     },
   ),

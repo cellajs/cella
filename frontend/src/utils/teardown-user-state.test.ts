@@ -45,32 +45,29 @@ afterEach(async () => {
 });
 
 describe('teardownUserState', () => {
-  it.each([true, false])(
-    "must not carry one account's cache, queued edits or database over to the next (wipe: %s)",
-    async (wipe) => {
-      const user = { id: 'user-a', email: 'a@example.test' };
-      useUserStore.setState({ user: user as never, lastUser: user });
-      await bindLocalUserDb('user-a').kv.put({ key: 'k', value: 'v' });
-      queryClient.setQueryData(['thing', 'a'], { owner: 'user-a' });
-      await pauseMutation('user-a');
+  it.each([true, false])("must not carry one account's cache, queued edits or database over to the next (wipe: %s)", async (wipe) => {
+    const user = { id: 'user-a', email: 'a@example.test' };
+    useUserStore.setState({ user: user as never, lastUser: user });
+    await bindLocalUserDb('user-a').kv.put({ key: 'k', value: 'v' });
+    queryClient.setQueryData(['thing', 'a'], { owner: 'user-a' });
+    await pauseMutation('user-a');
 
-      await teardownUserState(wipe);
+    await teardownUserState(wipe);
 
-      // Nothing of the account stays in the query client, whichever way it left.
-      expect(queryClient.getQueryCache().getAll()).toEqual([]);
-      expect(queryClient.getMutationCache().getAll()).toEqual([]);
-      expect(useUserStore.getState().user).toBeNull();
-      // A hard sign-out deletes the database and the identity hint; a lost session keeps both for the same user's next sign-in.
-      expect(await Dexie.exists(dbName('user-a'))).toBe(!wipe);
-      expect(useUserStore.getState().lastUser).toEqual(wipe ? null : user);
-      if (wipe) expect(getLocalUserDb()).toBeNull();
+    // Nothing of the account stays in the query client, whichever way it left.
+    expect(queryClient.getQueryCache().getAll()).toEqual([]);
+    expect(queryClient.getMutationCache().getAll()).toEqual([]);
+    expect(useUserStore.getState().user).toBeNull();
+    // A hard sign-out deletes the database and the identity hint; a lost session keeps both for the same user's next sign-in.
+    expect(await Dexie.exists(dbName('user-a'))).toBe(!wipe);
+    expect(useUserStore.getState().lastUser).toEqual(wipe ? null : user);
+    if (wipe) expect(getLocalUserDb()).toBeNull();
 
-      // The next account signs in in this tab and the provider resumes what is paused: only its own edit is sent.
-      bindLocalUserDb('user-b');
-      await pauseMutation('user-b');
-      onlineManager.setOnline(true);
-      await queryClient.resumePausedMutations();
-      expect(sent).toEqual(['user-b']);
-    },
-  );
+    // The next account signs in in this tab and the provider resumes what is paused: only its own edit is sent.
+    bindLocalUserDb('user-b');
+    await pauseMutation('user-b');
+    onlineManager.setOnline(true);
+    await queryClient.resumePausedMutations();
+    expect(sent).toEqual(['user-b']);
+  });
 });

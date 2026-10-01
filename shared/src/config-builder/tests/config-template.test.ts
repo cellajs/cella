@@ -49,8 +49,7 @@ const intendedDifferences = [
   'clientCacheVersion',
 ];
 
-const isIntended = (path: string) =>
-  intendedDifferences.some((entry) => (entry.endsWith('.') ? path.startsWith(entry) : path === entry));
+const isIntended = (path: string) => intendedDifferences.some((entry) => (entry.endsWith('.') ? path.startsWith(entry) : path === entry));
 
 const loadTemplate = async (): Promise<unknown> => (await import(templateUrl.href)).config;
 

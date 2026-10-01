@@ -28,11 +28,7 @@ const docsTileSchema = z.object({
 export const docsSectionIds = ['apiReference', 'pages', 'links'] as const;
 export type DocsSectionId = (typeof docsSectionIds)[number];
 
-const docsSectionSchema = z.object({
-  id: z.enum(docsSectionIds),
-  label: z.string().min(1),
-  visible: z.boolean().default(true),
-});
+const docsSectionSchema = z.object({ id: z.enum(docsSectionIds), label: z.string().min(1), visible: z.boolean().default(true) });
 
 /** Global docs config, authored as the content root `index.mdx` frontmatter; tiles and sections render in array order. */
 const docsConfigSchema = z.object({
@@ -99,11 +95,7 @@ export function pathToSlug(path: string): string {
   return slug.replace(/\/$/, '');
 }
 
-function buildIndex(): {
-  pages: DocPage[];
-  loaders: Map<string, () => Promise<ComponentType>>;
-  config: DocsConfig;
-} {
+function buildIndex(): { pages: DocPage[]; loaders: Map<string, () => Promise<ComponentType>>; config: DocsConfig } {
   const slugs = new Set<string>();
   const parsed: { slug: string; path: string; meta: z.infer<typeof frontmatterSchema>; headings: DocHeading[] }[] = [];
   let config: DocsConfig | null = null;

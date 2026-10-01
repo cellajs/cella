@@ -52,12 +52,7 @@ export function PreferencesContent() {
         </div>
         {showDesktopMenuOption && (
           <div className="flex items-center gap-4 px-4">
-            <Switch
-              id="detailedMenu"
-              checked={detailedMenu}
-              onCheckedChange={toggleDetailedMenu}
-              aria-label={t('c:detailed_menu')}
-            />
+            <Switch id="detailedMenu" checked={detailedMenu} onCheckedChange={toggleDetailedMenu} aria-label={t('c:detailed_menu')} />
             <label htmlFor="detailedMenu" className="cursor-pointer select-none font-medium text-sm leading-none">
               {t('c:detailed_menu')}
             </label>

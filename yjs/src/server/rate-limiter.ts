@@ -14,11 +14,7 @@ const connectionLimiter = env.NODB
       points: 20, // 20 connections per minute per user
       duration: 60,
       blockDuration: 0, // No extra block: budget resets after the window
-      insuranceLimiter: new RateLimiterMemory({
-        keyPrefix: 'yjs_ws',
-        points: 20,
-        duration: 60,
-      }),
+      insuranceLimiter: new RateLimiterMemory({ keyPrefix: 'yjs_ws', points: 20, duration: 60 }),
       inMemoryBlockOnConsumed: 20,
     });
 

@@ -33,9 +33,7 @@ export async function startOauthServer(options: { port?: number; inProcess?: boo
   const provider = await createProvider();
   const server: Server = createServer(createOauthListener(provider));
 
-  server.listen(port, '0.0.0.0', () =>
-    baseLog.info(`OAuth server listening on port ${port} for ${appConfig.oauthUrl}`),
-  );
+  server.listen(port, '0.0.0.0', () => baseLog.info(`OAuth server listening on port ${port} for ${appConfig.oauthUrl}`));
 
   setupGracefulShutdown({
     name: 'oauth-server',

@@ -12,9 +12,7 @@ const meta = {
   subcomponents: { TabsList, TabsTrigger, TabsContent },
   tags: ['autodocs'],
   argTypes: {},
-  args: {
-    defaultValue: 'account',
-  },
+  args: { defaultValue: 'account' },
   render: (args) => (
     <div className="w-96">
       <Tabs {...args}>
@@ -27,9 +25,7 @@ const meta = {
       </Tabs>
     </div>
   ),
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
 } satisfies Meta<typeof Tabs>;
 
 export default meta;

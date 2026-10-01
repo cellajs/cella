@@ -5,8 +5,7 @@ import { retireYjsDocuments } from './operations/retire-yjs-documents';
 import { yjsHandlers } from './yjs-handlers';
 import { getYjsMaterializer } from './yjs-materializers';
 
-const idsOf = (rows: MutationPayload['before'] = []) =>
-  rows.flatMap((row) => (typeof row.id === 'string' ? [row.id] : []));
+const idsOf = (rows: MutationPayload['before'] = []) => rows.flatMap((row) => (typeof row.id === 'string' ? [row.id] : []));
 
 /**
  * A description written by anything but the relay (a REST update, an import) retires the collaborative document of

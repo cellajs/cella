@@ -55,8 +55,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
     // Maintenance mode
     if ([503, 502].includes(statusCode)) useAlertStore.getState().setDownAlert('maintenance');
     // Authentication service is unavailable
-    else if (statusCode === 500 && isCasualSessionAttempt)
-      return useAlertStore.getState().setDownAlert('auth_unavailable');
+    else if (statusCode === 500 && isCasualSessionAttempt) return useAlertStore.getState().setDownAlert('auth_unavailable');
     // Offline mode
     else if (statusCode === 504) return useAlertStore.getState().setDownAlert('offline');
 
@@ -65,11 +64,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
 
     // The structured console.error is the Maple SDK's capture path, and logId ties the session timeline to the backend request log.
     if (statusCode >= 500) {
-      console.error('[api]', error.type ?? 'server_error', {
-        logId: error.logId,
-        path: error.path,
-        status: statusCode,
-      });
+      console.error('[api]', error.type ?? 'server_error', { logId: error.logId, path: error.path, status: statusCode });
     }
 
     // Honor opt-out from query/mutation `meta`; local handler will (or already did) show its own toast.
@@ -95,9 +90,7 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
     }
 
     if (statusCode === 401 && isSessionLost(error) && !location.pathname.startsWith('/auth/')) {
-      const redirectOptions: { to: string; search?: { redirect: string } } = {
-        to: '/auth/authenticate',
-      };
+      const redirectOptions: { to: string; search?: { redirect: string } } = { to: '/auth/authenticate' };
 
       if (location.pathname) {
         const url = new URL(location.href);

@@ -21,5 +21,4 @@ export const setSyncDeliveryTrusted = (trusted: boolean): void => {
 export const isSyncDeliveryTrusted = (): boolean => syncDeliveryTrusted;
 
 /** For product entity queries covered by the catchup pipeline: Infinity while the stream is healthy and deliveries reconcile, otherwise the 5 minute fallback. */
-export const syncStaleTime = () =>
-  syncStreamHealthy && syncDeliveryTrusted ? syncTrustedStaleTime : syncFallbackStaleTime;
+export const syncStaleTime = () => (syncStreamHealthy && syncDeliveryTrusted ? syncTrustedStaleTime : syncFallbackStaleTime);

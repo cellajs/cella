@@ -42,10 +42,7 @@ export default async function globalSetup() {
   // runs take turns: this session holds an advisory lock until the teardown below ends it.
   const lockClient = new pg.Client({ connectionString: DATABASE_URL });
   await lockClient.connect();
-  const { rows: locked } = await lockClient.query<{ acquired: boolean }>(
-    'SELECT pg_try_advisory_lock($1) AS acquired',
-    [testRunLockKey],
-  );
+  const { rows: locked } = await lockClient.query<{ acquired: boolean }>('SELECT pg_try_advisory_lock($1) AS acquired', [testRunLockKey]);
   if (!locked[0]?.acquired) {
     console.info('Another backend test run is using the test database; waiting for it to finish...');
     await lockClient.query('SELECT pg_advisory_lock($1)', [testRunLockKey]);
@@ -100,9 +97,7 @@ export default async function globalSetup() {
   `);
   const state = rows[0];
   if (!state?.enabled || state.forced || !state.granted || state.owner !== 'admin_role') {
-    console.error(
-      `\n${crossMark}  Test database was migrated without the RLS roles (yjs_documents: ${JSON.stringify(state)})`,
-    );
+    console.error(`\n${crossMark}  Test database was migrated without the RLS roles (yjs_documents: ${JSON.stringify(state)})`);
     console.error('   Reset the test volume: `pnpm docker:test:reset && pnpm docker:test`, then run tests again.\n');
     await pool.end();
     process.exit(1);

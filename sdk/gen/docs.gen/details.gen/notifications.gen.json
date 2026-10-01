@@ -123,11 +123,7 @@
             "minimum": 1,
             "maximum": 100
           },
-          "before": {
-            "type": "string",
-            "required": false,
-            "description": "createdAt of the last row of the previous page"
-          }
+          "before": { "type": "string", "required": false, "description": "createdAt of the last row of the previous page" }
         }
       }
     }

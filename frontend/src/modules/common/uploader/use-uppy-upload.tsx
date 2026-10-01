@@ -30,27 +30,13 @@ export function useUploadUppy() {
     let isMounted = true;
     let localUppy: CustomUppy | null = null;
 
-    const {
-      templateId = 'attachment',
-      organizationId,
-      restrictions,
-      plugins = [],
-      statusEventHandler = {},
-    } = uploaderData;
+    const { templateId = 'attachment', organizationId, restrictions, plugins = [], statusEventHandler = {} } = uploaderData;
 
     const isUploadFullyEnabled = appConfig.has.uploadEnabled && onlineManager.isOnline();
 
-    const allowedFileTypes = onlineManager.isOnline()
-      ? (restrictions?.allowedFileTypes ?? uppyRestrictions.allowedFileTypes)
-      : ['image/*'];
+    const allowedFileTypes = onlineManager.isOnline() ? (restrictions?.allowedFileTypes ?? uppyRestrictions.allowedFileTypes) : ['image/*'];
 
-    const uppyOptions: CustomUppyOpt = {
-      restrictions: {
-        ...uppyRestrictions,
-        ...restrictions,
-        allowedFileTypes,
-      },
-    };
+    const uppyOptions: CustomUppyOpt = { restrictions: { ...uppyRestrictions, ...restrictions, allowedFileTypes } };
 
     const initializeUppy = async () => {
       try {
@@ -73,9 +59,7 @@ export function useUploadUppy() {
           .on('transloadit:complete', (assembly) => {
             if (assembly?.error) throw new Error(assembly?.error);
             console.info('Upload complete:', assembly);
-            Promise.resolve(
-              statusEventHandler.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>),
-            ).catch((err) => {
+            Promise.resolve(statusEventHandler.onComplete?.(assembly.results as UploadedUppyFile<UploadTemplateId>)).catch((err) => {
               console.error('onComplete handler failed:', err);
               toaster.error(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }));
             });

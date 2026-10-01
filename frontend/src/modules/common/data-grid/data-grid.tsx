@@ -253,9 +253,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   // defaults
   const baseRowHeight = rawRowHeight ?? 35;
-  const headerRowHeight = hideHeader
-    ? 0
-    : (rawHeaderRowHeight ?? (typeof baseRowHeight === 'number' ? baseRowHeight : 35));
+  const headerRowHeight = hideHeader ? 0 : (rawHeaderRowHeight ?? (typeof baseRowHeight === 'number' ? baseRowHeight : 35));
   const userRenderRow = renderers?.renderRow ?? defaultRenderRow;
   const userRenderCell = renderers?.renderCell ?? defaultRenderCell;
   // Latest refs keep the row-drag config stable when consumers pass non-memoized callbacks.
@@ -293,11 +291,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
   const renderCell = useMemo(() => {
     if (!rowDragConfig) return userRenderCell;
     return (key: Key, props: CellRendererProps<R, SR>) =>
-      props.column.rowDragHandle === true ? (
-        <RowDragCell<R, SR> key={key} {...props} config={rowDragConfig} />
-      ) : (
-        userRenderCell(key, props)
-      );
+      props.column.rowDragHandle === true ? <RowDragCell<R, SR> key={key} {...props} config={rowDragConfig} /> : userRenderCell(key, props);
   }, [rowDragConfig, userRenderCell]);
   const renderRow = useMemo(() => {
     if (!rowDragConfig) return userRenderRow;
@@ -318,10 +312,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   // 'compact' is the density toggle, 'mobile' is the xs breakpoint; columns key `modes` overrides off both.
   const isMobileBreakpoint = currentBreakpoint === 'xs';
-  const activeModes = useMemo<ActiveModes>(
-    () => ({ compact: isCompact ?? false, mobile: isMobileBreakpoint }),
-    [isCompact, isMobileBreakpoint],
-  );
+  const activeModes = useMemo<ActiveModes>(() => ({ compact: isCompact ?? false, mobile: isMobileBreakpoint }), [isCompact, isMobileBreakpoint]);
 
   // Disable row selection on the smallest breakpoint (xs) where checkboxes are hidden
   const effectiveSelectedRows = isMobileBreakpoint ? undefined : selectedRows;
@@ -364,25 +355,11 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   const { gridRef, viewportHeight, scrollTop, measured } = useGridDimensions(undefined, enableRowVirtualization);
 
-  const {
-    columns,
-    colSpanColumns,
-    lastFrozenColumnIndex,
-    headerRowsCount,
-    templateColumns,
-    layoutCssVars,
-    totalFrozenColumnWidth,
-  } = useCalculatedColumns({
-    rawColumns,
-    defaultColumnOptions,
-    getColumnWidth,
-    currentBreakpoint,
-    activeModes,
-  });
+  const { columns, colSpanColumns, lastFrozenColumnIndex, headerRowsCount, templateColumns, layoutCssVars, totalFrozenColumnWidth } =
+    useCalculatedColumns({ rawColumns, defaultColumnOptions, getColumnWidth, currentBreakpoint, activeModes });
 
   // Motion-animated reorder needs all four conditions: virtualized rows unmount mid-scroll and break FLIP, index keys defeat DOM persistence, transforms unstick frozen cells.
-  const animateReorder =
-    rowDragEnabled && !enableRowVirtualization && typeof rowKeyGetter === 'function' && lastFrozenColumnIndex === -1;
+  const animateReorder = rowDragEnabled && !enableRowVirtualization && typeof rowKeyGetter === 'function' && lastFrozenColumnIndex === -1;
 
   useStickyHeader(gridRef, headerRowsCount, headerRowHeight, enableStickyHeader);
 
@@ -422,9 +399,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     }
     const getRenderedWidth = (column: CalculatedColumn<R, unknown>) =>
       renderedColumnWidths.get(column.key) ?? (typeof column.width === 'number' ? column.width : column.minWidth);
-    return (row: R) =>
-      computeWrapTextRowHeight(scaledBase, columns as readonly CalculatedColumn<R, unknown>[], row, getRenderedWidth) +
-      slotExtra;
+    return (row: R) => computeWrapTextRowHeight(scaledBase, columns as readonly CalculatedColumn<R, unknown>[], row, getRenderedWidth) + slotExtra;
   }, [baseRowHeight, columns, isMobileBreakpoint, renderedColumnWidths]);
 
   const groupedColumnHeaderRowsCount = headerRowsCount - 1;
@@ -450,10 +425,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
   const headerSelectionValue = useMemo((): HeaderRowSelectionContextValue => {
     if (!isSelectable) {
-      return {
-        isRowSelected: false,
-        isIndeterminate: false,
-      };
+      return { isRowSelected: false, isIndeterminate: false };
     }
 
     let hasSelectedRow = false;
@@ -471,21 +443,10 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       }
     }
 
-    return {
-      isRowSelected: hasSelectedRow && !hasUnselectedRow,
-      isIndeterminate: hasSelectedRow && hasUnselectedRow,
-    };
+    return { isRowSelected: hasSelectedRow && !hasUnselectedRow, isIndeterminate: hasSelectedRow && hasUnselectedRow };
   }, [rows, effectiveSelectedRows, rowKeyGetter, isSelectable]);
 
-  const {
-    rowOverscanStartIdx,
-    rowOverscanEndIdx,
-    totalRowHeight,
-    gridTemplateRows,
-    getRowTop,
-    getRowHeight,
-    findRowIdx,
-  } = useViewportRows({
+  const { rowOverscanStartIdx, rowOverscanEndIdx, totalRowHeight, gridTemplateRows, getRowTop, getRowHeight, findRowIdx } = useViewportRows({
     rows,
     rowHeight,
     clientHeight,
@@ -498,15 +459,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     gridTemplateColumns,
     handleColumnResize,
     handleColumnResizeEnd: handleColumnResizeEndWidths,
-  } = useColumnWidths(
-    columns,
-    templateColumns,
-    gridRef,
-    columnWidths,
-    onColumnWidthsChange,
-    onColumnResize,
-    setColumnResizing,
-  );
+  } = useColumnWidths(columns, templateColumns, gridRef, columnWidths, onColumnWidthsChange, onColumnResize, setColumnResizing);
 
   const maxColIdx = columns.length - 1;
   const selectedCellIsWithinSelectionBounds = isCellWithinSelectionBounds(selectedPosition);
@@ -672,13 +625,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     }
   }, [selectedPosition.mode]);
 
-  useNearEnd({
-    totalRows: rows.length,
-    rowOverscanEndIdx,
-    measured,
-    onNearEndChange,
-    threshold: rawNearEndThreshold,
-  });
+  useNearEnd({ totalRows: rows.length, rowOverscanEndIdx, measured, onNearEndChange, threshold: rawNearEndThreshold });
 
   // event handlers
   function selectHeaderRow(args: SelectHeaderRowEvent) {
@@ -740,16 +687,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     if (onCellKeyDown && isRowIdxWithinViewportBounds(rowIdx)) {
       const row = rows[rowIdx];
       const cellEvent = createCellEvent(event);
-      onCellKeyDown(
-        {
-          mode: 'SELECT',
-          row,
-          column: columns[idx],
-          rowIdx,
-          selectCell,
-        },
-        cellEvent,
-      );
+      onCellKeyDown({ mode: 'SELECT', row, column: columns[idx], rowIdx, selectCell }, cellEvent);
       if (cellEvent.isGridDefaultPrevented()) return;
     }
 
@@ -785,10 +723,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     if (typeof onRowsChange !== 'function') return;
     if (row === rows[rowIdx]) return;
     const updatedRows = rows.with(rowIdx, row);
-    onRowsChange(updatedRows, {
-      indexes: [rowIdx],
-      column,
-    });
+    onRowsChange(updatedRows, { indexes: [rowIdx], column });
   }
 
   function commitEditorChanges() {
@@ -849,13 +784,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     }
 
     if (isCellEditable(selectedPosition) && isDefaultCellInput(event, onCellPaste != null)) {
-      setSelectedPosition(({ idx, rowIdx }) => ({
-        idx,
-        rowIdx,
-        mode: 'EDIT',
-        row,
-        originalRow: row,
-      }));
+      setSelectedPosition(({ idx, rowIdx }) => ({ idx, rowIdx, mode: 'EDIT', row, originalRow: row }));
     }
   }
 
@@ -936,15 +865,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
     const { key, shiftKey } = event;
     let cellNavigationMode: CellNavigationMode = 'NONE';
     if (key === 'Tab') {
-      if (
-        canExitGrid({
-          shiftKey,
-          maxColIdx,
-          minRowIdx,
-          maxRowIdx,
-          selectedPosition,
-        })
-      ) {
+      if (canExitGrid({ shiftKey, maxColIdx, minRowIdx, maxRowIdx, selectedPosition })) {
         commitEditorChanges();
         // Allow focus to leave the grid so the next control in the tab order can be focused
         return;
@@ -976,18 +897,11 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       isCellWithinBounds: isCellWithinSelectionBounds,
     });
 
-    selectCell(nextSelectedCellPosition, {
-      shouldFocusCell: true,
-      extendSelection: cellSelectionMode === 'cell-range' && shiftKey,
-    });
+    selectCell(nextSelectedCellPosition, { shouldFocusCell: true, extendSelection: cellSelectionMode === 'cell-range' && shiftKey });
   }
 
   function getCellEditor(rowIdx: number) {
-    if (
-      !isCellWithinViewportBounds(selectedPosition) ||
-      selectedPosition.rowIdx !== rowIdx ||
-      selectedPosition.mode === 'SELECT'
-    ) {
+    if (!isCellWithinViewportBounds(selectedPosition) || selectedPosition.rowIdx !== rowIdx || selectedPosition.mode === 'SELECT') {
       return;
     }
 
@@ -1043,18 +957,11 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
 
     const { idx: selectedIdx, rowIdx: selectedRowIdx } = selectedPosition;
 
-    const startRowIdx =
-      selectedCellIsWithinViewportBounds && selectedRowIdx < rowOverscanStartIdx
-        ? rowOverscanStartIdx - 1
-        : rowOverscanStartIdx;
-    const endRowIdx =
-      selectedCellIsWithinViewportBounds && selectedRowIdx > rowOverscanEndIdx
-        ? rowOverscanEndIdx + 1
-        : rowOverscanEndIdx;
+    const startRowIdx = selectedCellIsWithinViewportBounds && selectedRowIdx < rowOverscanStartIdx ? rowOverscanStartIdx - 1 : rowOverscanStartIdx;
+    const endRowIdx = selectedCellIsWithinViewportBounds && selectedRowIdx > rowOverscanEndIdx ? rowOverscanEndIdx + 1 : rowOverscanEndIdx;
 
     for (let viewportRowIdx = startRowIdx; viewportRowIdx <= endRowIdx; viewportRowIdx++) {
-      const isRowOutsideViewport =
-        viewportRowIdx === rowOverscanStartIdx - 1 || viewportRowIdx === rowOverscanEndIdx + 1;
+      const isRowOutsideViewport = viewportRowIdx === rowOverscanStartIdx - 1 || viewportRowIdx === rowOverscanEndIdx + 1;
       const rowIdx = isRowOutsideViewport ? selectedRowIdx : viewportRowIdx;
 
       let rowColumns = columns;
@@ -1144,8 +1051,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
       )}
       style={{
         // set scrollPadding to correctly position non-sticky cells after scrolling
-        scrollPaddingInlineStart:
-          selectedPosition.idx > lastFrozenColumnIndex ? `${totalFrozenColumnWidth}px` : undefined,
+        scrollPaddingInlineStart: selectedPosition.idx > lastFrozenColumnIndex ? `${totalFrozenColumnWidth}px` : undefined,
         scrollPaddingBlock: isRowIdxWithinViewportBounds(selectedPosition.rowIdx) ? `${headerRowsHeight}px` : undefined,
         gridTemplateColumns,
         gridTemplateRows: templateRows,

@@ -18,33 +18,14 @@ describe('parseAclInput: one entry', () => {
   });
 
   it('rejects malformed input', () => {
-    for (const entry of [
-      '203.0.113.7/33',
-      '203.0.113.7/24/8',
-      '',
-      'not-an-ip',
-      'not-an-ip/24',
-      '256.0.0.1',
-      '203.0.113',
-      '203.0.113.01',
-    ]) {
+    for (const entry of ['203.0.113.7/33', '203.0.113.7/24/8', '', 'not-an-ip', 'not-an-ip/24', '256.0.0.1', '203.0.113', '203.0.113.01']) {
       expect(parseAclInput(entry).ok, entry).toBe(false);
     }
   });
 
   it('refuses IPv6 entries, naming the reason: the Scaleway database ACL takes IPv4 only', () => {
-    for (const entry of [
-      '2001:db8::1',
-      '2001:db8:1234::/48',
-      '2001:db8::/32',
-      '::/0',
-      'fe80::1%eth0',
-      '2001:db8::/129',
-    ]) {
-      expect(parseAclInput(entry, true), entry).toMatchObject({
-        ok: false,
-        reason: expect.stringContaining('IPv4 only'),
-      });
+    for (const entry of ['2001:db8::1', '2001:db8:1234::/48', '2001:db8::/32', '::/0', 'fe80::1%eth0', '2001:db8::/129']) {
+      expect(parseAclInput(entry, true), entry).toMatchObject({ ok: false, reason: expect.stringContaining('IPv4 only') });
     }
   });
 
@@ -67,10 +48,7 @@ describe('parseAclInput: one entry', () => {
       expect(parseAclInput(entry, true).ok, entry).toBe(false);
     }
     // A mapped /112 is an IPv4 /16: wider than /24.
-    expect(parseAclInput('::ffff:198.51.0.0/112')).toMatchObject({
-      ok: false,
-      reason: expect.stringContaining('/24'),
-    });
+    expect(parseAclInput('::ffff:198.51.0.0/112')).toMatchObject({ ok: false, reason: expect.stringContaining('/24') });
     // Positive control: a narrow mapped range becomes the IPv4 range it names.
     expect(parseAclInput('::ffff:198.51.100.7')).toEqual({ ok: true, cidrs: ['198.51.100.7/32'] });
     expect(parseAclInput('::ffff:198.51.100.0/120')).toEqual({ ok: true, cidrs: ['198.51.100.0/24'] });
@@ -85,10 +63,7 @@ describe('parseAclInput: one entry', () => {
 
 describe('parseAclInput: the list', () => {
   it('parses and de-duplicates a comma-separated list', () => {
-    expect(parseAclInput('203.0.113.7, 198.51.100.0/24, 203.0.113.7/32')).toEqual({
-      ok: true,
-      cidrs: ['203.0.113.7/32', '198.51.100.0/24'],
-    });
+    expect(parseAclInput('203.0.113.7, 198.51.100.0/24, 203.0.113.7/32')).toEqual({ ok: true, cidrs: ['203.0.113.7/32', '198.51.100.0/24'] });
   });
 
   it('fails on the first invalid entry', () => {
@@ -105,18 +80,12 @@ describe('parseAclInput: the list', () => {
     expect(parseAclInput('0.0.0.1/1, 128.0.0.0/1', true).ok).toBe(false);
     // More than one entry could open: three quarters of IPv4, directly or through a mapped range.
     for (const acl of ['128.0.0.0/1, 64.0.0.0/2', '128.0.0.0/1, ::ffff:64.0.0.0/98']) {
-      expect(parseAclInput(acl, true), acl).toMatchObject({
-        ok: false,
-        reason: expect.stringContaining('more than half'),
-      });
+      expect(parseAclInput(acl, true), acl).toMatchObject({ ok: false, reason: expect.stringContaining('more than half') });
     }
   });
 
   it('accepts a wide range that stays within half of IPv4 (positive control)', () => {
     expect(parseAclInput('128.0.0.0/1', true)).toEqual({ ok: true, cidrs: ['128.0.0.0/1'] });
-    expect(parseAclInput('128.0.0.0/2, 64.0.0.0/2', true)).toEqual({
-      ok: true,
-      cidrs: ['128.0.0.0/2', '64.0.0.0/2'],
-    });
+    expect(parseAclInput('128.0.0.0/2, 64.0.0.0/2', true)).toEqual({ ok: true, cidrs: ['128.0.0.0/2', '64.0.0.0/2'] });
   });
 });

@@ -10,9 +10,7 @@ const pendingAddress = new Promise<pulumi.Output<string>>((resolve) => {
 });
 
 /** The LB's stable private-network IPv4 address (no CIDR suffix). */
-export const lbInternalAddress: pulumi.Output<string> = pulumi
-  .output(pendingAddress)
-  .apply((address) => address.split('/')[0] ?? address);
+export const lbInternalAddress: pulumi.Output<string> = pulumi.output(pendingAddress).apply((address) => address.split('/')[0] ?? address);
 
 /** Publish the LB private address; called exactly once by loadbalancer.ts. */
 export function publishLbInternalAddress(address: pulumi.Output<string>): void {

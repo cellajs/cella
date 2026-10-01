@@ -15,15 +15,7 @@ import { useListQueryTotal } from '~/query/basic/use-list-query-total';
 
 type UsersTableBarProps = BaseTableBarProps<BaseUser, UsersRouteSearchParams>;
 
-export function UsersTableBar({
-  selected,
-  queryKey,
-  searchVars,
-  setSearch,
-  columns,
-  setColumns,
-  clearSelection,
-}: UsersTableBarProps) {
+export function UsersTableBar({ selected, queryKey, searchVars, setSearch, columns, setColumns, clearSelection }: UsersTableBarProps) {
   const { t } = useTranslation();
   const createDialog = useDialoger((state) => state.create);
 
@@ -60,10 +52,7 @@ export function UsersTableBar({
         const message =
           args.data.length === 1
             ? t('c:success.delete_resource', { resource: t('c:user') })
-            : t('c:success.delete_counted_resources', {
-                count: args.data.length,
-                resources: t('c:user_other').toLowerCase(),
-              });
+            : t('c:success.delete_counted_resources', { count: args.data.length, resources: t('c:user_other').toLowerCase() });
         toaster.success(message);
       }
       clearSelection();
@@ -88,21 +77,11 @@ export function UsersTableBar({
       label="c:user"
       searchName="userSearch"
       actions={<TableBarButton ref={inviteButtonRef} icon={MailIcon} label="c:invite" onClick={openInviteDialog} />}
-      filters={
-        <SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />
-      }
+      filters={<SelectRole value={role === undefined ? 'all' : role} onChange={onRoleChange} className="h-10 sm:min-w-32" />}
       selection={{
         count: selected.length,
         onClear: clearSelection,
-        children: (
-          <TableBarButton
-            ref={deleteButtonRef}
-            variant="destructive"
-            onClick={openDeleteDialog}
-            icon={TrashIcon}
-            label="c:delete"
-          />
-        ),
+        children: <TableBarButton ref={deleteButtonRef} variant="destructive" onClick={openDeleteDialog} icon={TrashIcon} label="c:delete" />,
       }}
       // Container for the embedded invite dialog
       after={<div ref={inviteContainerRef} className="empty:hidden" />}

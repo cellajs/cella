@@ -18,17 +18,14 @@ const isoTime = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
 const utcTime = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2} UTC$/;
 
 /** The security mails handed to the mailer for the security inbox, with the recipient's language. */
-const inboxMails = () =>
-  mailsTo(appConfig.securityEmail).map(({ statics, recipient }) => ({ ...statics, lng: recipient.lng }));
+const inboxMails = () => mailsTo(appConfig.securityEmail).map(({ statics, recipient }) => ({ ...statics, lng: recipient.lng }));
 
 describe('security inbox mails', async () => {
   const call = await createAppClient();
 
   it('reports a refused system admin route with an ISO time', async () => {
     const user = await createTestUser(signUpUser.email);
-    const { response } = await call(getRequests, {
-      headers: { ...defaultHeaders, Cookie: await createTestSession(user) },
-    });
+    const { response } = await call(getRequests, { headers: { ...defaultHeaders, Cookie: await createTestSession(user) } });
 
     expect(response.status).toBe(403);
     expect(inboxMails()).toEqual([

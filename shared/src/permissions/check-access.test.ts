@@ -21,25 +21,14 @@ const membership: AccessMembership = {
 } as AccessMembership;
 
 const subject = (id = 'a1'): SubjectForPermission =>
-  ({
-    entityType: 'attachment',
-    id,
-    channelIds,
-    row: { createdBy: 'u1', publicAt: null },
-  }) as never;
+  ({ entityType: 'attachment', id, channelIds, row: { createdBy: 'u1', publicAt: null } }) as never;
 
-const admin = (scopes: readonly AccessScope[] | null): Access => ({
-  actorId: 'u1',
-  memberships: [membership],
-  scopes,
-});
+const admin = (scopes: readonly AccessScope[] | null): Access => ({ actorId: 'u1', memberships: [membership], scopes });
 
 describe('checkAccess with a scoped key or token', () => {
   it('an unscoped access (scopes null, what a session sets) keeps the grants', () => {
     expect(checkAccess(admin(null), 'update', subject()).allowed).toBe(true);
-    expect(checkAccess({ actorId: 'u1', memberships: [membership], scopes: null }, 'delete', subject()).allowed).toBe(
-      true,
-    );
+    expect(checkAccess({ actorId: 'u1', memberships: [membership], scopes: null }, 'delete', subject()).allowed).toBe(true);
   });
 
   it('a read scope reads and never writes', () => {
@@ -57,21 +46,14 @@ describe('checkAccess with a scoped key or token', () => {
   });
 
   it('must not let a system admin act beyond a scoped key or token: the mask applies to the bypass too', () => {
-    const systemAdmin = (scopes: readonly AccessScope[] | null): Access => ({
-      actorId: 'u1',
-      isSystemAdmin: true,
-      memberships: [],
-      scopes,
-    });
+    const systemAdmin = (scopes: readonly AccessScope[] | null): Access => ({ actorId: 'u1', isSystemAdmin: true, memberships: [], scopes });
     // Positive control: the bypass itself holds, with no membership at all.
     expect(checkAccess(systemAdmin(null), 'delete', subject()).allowed).toBe(true);
     expect(checkAccess(systemAdmin(['attachment:read']), 'read', subject()).allowed).toBe(true);
     expect(checkAccess(systemAdmin(['attachment:read']), 'delete', subject()).allowed).toBe(false);
     expect(checkAccess(systemAdmin(['organization:write']), 'read', subject()).allowed).toBe(false);
     // The batch and fan-out entry points mask the bypass alike.
-    expect(checkAccessBatch(systemAdmin(['attachment:read']), 'update', [subject()]).results.get('a1')?.allowed).toBe(
-      false,
-    );
+    expect(checkAccessBatch(systemAdmin(['attachment:read']), 'update', [subject()]).results.get('a1')?.allowed).toBe(false);
     expect(checkAccessFanout([systemAdmin(['attachment:read'])], 'update', subject())[0].allowed).toBe(false);
   });
 
@@ -91,11 +73,7 @@ describe('the mask applies per row in batch and fan-out', () => {
   });
 
   it('fan-out: each access carries its own mask', () => {
-    const results = checkAccessFanout(
-      [admin(null), admin(['attachment:read']), { anonymous: true }],
-      'update',
-      subject(),
-    );
+    const results = checkAccessFanout([admin(null), admin(['attachment:read']), { anonymous: true }], 'update', subject());
     expect(results.map((result) => result.allowed)).toEqual([true, false, false]);
   });
 });

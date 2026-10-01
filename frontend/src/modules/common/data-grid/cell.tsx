@@ -44,11 +44,7 @@ function Cell<R, SR>({
 
   const isEditable = isCellEditableUtil(column, row);
   // Explicit cursor so the hover affordance matches the editor: I-beam for free text, pointer for pickers.
-  const editorCursor = isEditable
-    ? column.editorOptions?.editorType === 'select'
-      ? 'cursor-pointer'
-      : 'cursor-text'
-    : undefined;
+  const editorCursor = isEditable ? (column.editorOptions?.editorType === 'select' ? 'cursor-pointer' : 'cursor-text') : undefined;
 
   className = getCellClassname(
     column,
@@ -122,10 +118,7 @@ function Cell<R, SR>({
       aria-readonly={!isEditable || undefined}
       tabIndex={effectiveTabIndex}
       className={className}
-      style={{
-        ...getCellStyle(column, colSpan),
-        ...style,
-      }}
+      style={{ ...getCellStyle(column, colSpan), ...style }}
       onClick={handleClick}
       onMouseDown={handleMouseDown}
       onDoubleClick={handleDoubleClick}
@@ -144,14 +137,7 @@ function Cell<R, SR>({
           onRowChange={onRowChange}
         />
       ) : (
-        renderCellContent(column, {
-          column,
-          row,
-          rowIdx,
-          isCellEditable: isEditable,
-          tabIndex: childTabIndex,
-          onRowChange: handleRowChange,
-        })
+        renderCellContent(column, { column, row, rowIdx, isCellEditable: isEditable, tabIndex: childTabIndex, onRowChange: handleRowChange })
       )}
       {isEditable && (
         <PencilIcon className="pointer-events-none absolute top-2 right-2 hidden size-3 text-muted-foreground sm:group-hover/cell:block" />
@@ -171,15 +157,7 @@ interface MergedCellContentProps<R, SR> {
 }
 
 /** Empty slots collapse and render no placeholder. */
-function MergedCellContent<R, SR>({
-  column,
-  slots,
-  row,
-  rowIdx,
-  isCellEditable,
-  tabIndex,
-  onRowChange,
-}: MergedCellContentProps<R, SR>) {
+function MergedCellContent<R, SR>({ column, slots, row, rowIdx, isCellEditable, tabIndex, onRowChange }: MergedCellContentProps<R, SR>) {
   function renderSide(side: TileSide, sideClassName: string) {
     const sideSlots = slots[side];
     if (sideSlots.length === 0) return null;
@@ -203,11 +181,7 @@ function MergedCellContent<R, SR>({
     if (children.every((child) => child === null)) return null;
 
     return (
-      <div
-        data-tile-slot={side}
-        data-is-compact="true"
-        className={cn('flex min-w-0 items-center gap-2', sideClassName)}
-      >
+      <div data-tile-slot={side} data-is-compact="true" className={cn('flex min-w-0 items-center gap-2', sideClassName)}>
         {children}
       </div>
     );
@@ -236,10 +210,7 @@ function MergedCellContent<R, SR>({
 }
 
 /** Renders cell content, falling back to placeholderValue when renderCell returns nullish */
-function renderCellContent<R, SR>(
-  column: CellRendererProps<R, SR>['column'],
-  props: Parameters<typeof column.renderCell>[0],
-) {
+function renderCellContent<R, SR>(column: CellRendererProps<R, SR>['column'], props: Parameters<typeof column.renderCell>[0]) {
   const content = column.renderCell(props);
   if (content == null && column.placeholderValue != null) {
     return <span className="text-muted-foreground/50">{column.placeholderValue}</span>;

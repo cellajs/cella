@@ -19,9 +19,7 @@ vi.mock('../../constants', async (importOriginal) => ({
   YJS_LIVE_TOUCH_MS: 100,
   YJS_CLEANUP_DELAY_MS: 500,
 }));
-vi.mock('../../data/permissions', () => ({
-  authorizeDoc: vi.fn(async (_userId: string, requested: DocScope) => requested),
-}));
+vi.mock('../../data/permissions', () => ({ authorizeDoc: vi.fn(async (_userId: string, requested: DocScope) => requested) }));
 vi.mock('../../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
 const materialized: { entityId: string; editedBy: string; description: string }[] = [];
 vi.mock('../../sync/materialize', async (importOriginal) => {
@@ -171,8 +169,7 @@ async function seedOrphan(entityId: string, edit: string) {
   );
 }
 
-const sessionRows = async (entityId: string) =>
-  (await admin.query('SELECT 1 FROM yjs_documents WHERE entity_id = $1', [entityId])).rowCount;
+const sessionRows = async (entityId: string) => (await admin.query('SELECT 1 FROM yjs_documents WHERE entity_id = $1', [entityId])).rowCount;
 
 /** The top-level children of the editor's fragment: one block group for one document, two when two histories were merged. */
 const blockGroups = (doc: Y.Doc) => doc.getXmlFragment('document-store').length;
@@ -205,9 +202,7 @@ describe('relay end to end', () => {
     text.insert(text.length, '!');
     await until(async () => (await readLog(ctx(ids.idle))).length >= 1);
     // A day passes with nothing more logged, so the row and its log look stale; the live session stamps its row meanwhile.
-    await admin.query("UPDATE yjs_documents SET updated_at = now() - interval '1 day' WHERE entity_id = $1", [
-      ids.idle,
-    ]);
+    await admin.query("UPDATE yjs_documents SET updated_at = now() - interval '1 day' WHERE entity_id = $1", [ids.idle]);
     await admin.query("UPDATE yjs_updates SET created_at = now() - interval '1 day' WHERE entity_id = $1", [ids.idle]);
     await seedOrphan(ids.orphan, 'orphaned');
     await sleep(1000);
@@ -230,9 +225,7 @@ describe('relay end to end', () => {
     doc.destroy();
 
     // Positive control: the orphan next to it, which no relay holds, is written; its log goes and its row stays.
-    expect(materialized.find((entry) => entry.entityId === ids.orphan)?.description).toContain(
-      'orphaned could you have a look?',
-    );
+    expect(materialized.find((entry) => entry.entityId === ids.orphan)?.description).toContain('orphaned could you have a look?');
     expect(await readLog(ctx(ids.orphan))).toEqual([]);
     expect(await sessionRows(ids.orphan)).toBe(1);
   });
@@ -248,9 +241,7 @@ describe('relay end to end', () => {
     provider.disconnect();
     await until(async () => getCollab(ctx(ids.survivor)) === undefined);
     expect(await sessionRows(ids.survivor)).toBe(1);
-    expect(materialized.filter((entry) => entry.entityId === ids.survivor).at(-1)?.description).toContain(
-      ' could you have a look? typed',
-    );
+    expect(materialized.filter((entry) => entry.entityId === ids.survivor).at(-1)?.description).toContain(' could you have a look? typed');
 
     text.insert(text.length, ' offline');
     provider.connect();
@@ -261,9 +252,7 @@ describe('relay end to end', () => {
     expect(textOf(Y.encodeStateAsUpdate(doc))).toBe(' could you have a look? typed offline');
     await until(async () => (await readLog(ctx(ids.survivor))).length >= 1);
     expect(await runCompaction(getCollab(ctx(ids.survivor))!)).toBe('ok');
-    expect(materialized.filter((entry) => entry.entityId === ids.survivor).at(-1)?.description).toContain(
-      ' could you have a look? typed offline',
-    );
+    expect(materialized.filter((entry) => entry.entityId === ids.survivor).at(-1)?.description).toContain(' could you have a look? typed offline');
     provider.destroy();
     doc.destroy();
   });

@@ -29,14 +29,9 @@ vi.mock('shared', async (importOriginal) => {
   };
 });
 
-vi.mock('~/modules/common/blocknote/yjs-editor', () => ({
-  isYjsEditorActive: () => false,
-  getYjsOwnedFields: () => [],
-}));
+vi.mock('~/modules/common/blocknote/yjs-editor', () => ({ isYjsEditorActive: () => false, getYjsOwnedFields: () => [] }));
 
-vi.mock('~/query/offline', () => ({
-  sourceId: 'test-source',
-}));
+vi.mock('~/query/offline', () => ({ sourceId: 'test-source' }));
 
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys, registerEqualityFilterKeys } = await import('~/query/basic/entity-query-registry');
@@ -56,13 +51,7 @@ describe('realtime cache ops', () => {
   it('removes tombstone rows returned by seq range fetch', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     registerEntityQueryKeys('attachment', keys, async () => ({
-      items: [
-        {
-          id: 'attachment-1',
-          organizationId: 'org-1',
-          deletedAt: '2026-06-16T20:00:00.000Z',
-        },
-      ],
+      items: [{ id: 'attachment-1', organizationId: 'org-1', deletedAt: '2026-06-16T20:00:00.000Z' }],
       total: 1,
     }));
 
@@ -215,11 +204,7 @@ describe('realtime cache ops', () => {
   it('reports overflow when the seq window overflows one response: no silent 1000-row delta cap', async () => {
     const keys = createEntityKeys<Record<string, never>>('attachment');
     // A full SYNC_CHUNK_SIZE response means more changes may remain beyond this window
-    const items = Array.from({ length: 1000 }, (_, i) => ({
-      id: `att-${i + 1}`,
-      organizationId: 'org-1',
-      seq: i + 1,
-    }));
+    const items = Array.from({ length: 1000 }, (_, i) => ({ id: `att-${i + 1}`, organizationId: 'org-1', seq: i + 1 }));
     registerEntityQueryKeys('attachment', keys, async () => ({ items, total: 1500 }));
 
     const { status } = await fetchRangeAndPatch('attachment', 'org-1', 'tenant-1', '1', keys);
@@ -264,8 +249,7 @@ describe('filtered list refetch for a new row', () => {
     }
   }
 
-  const isInvalidated = (filters: Record<string, unknown>) =>
-    queryClient.getQueryState(listKey(filters))?.isInvalidated;
+  const isInvalidated = (filters: Record<string, unknown>) => queryClient.getQueryState(listKey(filters))?.isInvalidated;
 
   const lists = {
     otherItem: { itemId: 'item-2' },

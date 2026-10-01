@@ -55,13 +55,7 @@ const pickCleanOrder = (prev: number, next: number, taken: Set<number>): number 
  * Order for inserting an item next to a target, from the drop edge. Pass `ascending = false` for
  * descending lists such as board columns.
  */
-export const getRelativeOrder = (
-  items: OrderedItem[],
-  targetOrder: number,
-  sourceId: string,
-  edge: string,
-  ascending = true,
-): number => {
+export const getRelativeOrder = (items: OrderedItem[], targetOrder: number, sourceId: string, edge: string, ascending = true): number => {
   const insertBefore = ascending ? edge === 'top' : edge === 'bottom';
 
   const sorted = items.filter((item) => item.id !== sourceId).toSorted((a, b) => a.displayOrder - b.displayOrder);
@@ -73,9 +67,7 @@ export const getRelativeOrder = (
     return insertBefore ? Math.floor(targetOrder) - orderGap : Math.ceil(targetOrder) + orderGap;
   }
 
-  const [prev, next] = insertBefore
-    ? [sorted[targetIdx - 1]?.displayOrder, targetOrder]
-    : [targetOrder, sorted[targetIdx + 1]?.displayOrder];
+  const [prev, next] = insertBefore ? [sorted[targetIdx - 1]?.displayOrder, targetOrder] : [targetOrder, sorted[targetIdx + 1]?.displayOrder];
 
   // One neighbor: extend past it to a clean integer, even when targetOrder is fractional.
   if (prev === undefined && next !== undefined) return Math.floor(next) - orderGap;

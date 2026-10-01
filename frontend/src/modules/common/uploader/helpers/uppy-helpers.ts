@@ -17,10 +17,7 @@ import { cleanFileName } from '~/utils/clean-file-name';
  * Local-first Uppy instance: the blob is stored in IndexedDB first, then uploaded when Transloadit
  * is configured and the app is online. Offline uploads queue as pending.
  */
-export const createBaseTransloaditUppy = async (
-  uppyOptions: CustomUppyOpt,
-  tokenQuery: UploadTokenQuery,
-): Promise<CustomUppy> => {
+export const createBaseTransloaditUppy = async (uppyOptions: CustomUppyOpt, tokenQuery: UploadTokenQuery): Promise<CustomUppy> => {
   let cloudToken: UploadToken | null = null;
   let hasCloudUpload = false;
 
@@ -88,10 +85,7 @@ export const createBaseTransloaditUppy = async (
     uppy.use(Transloadit, {
       waitForEncoding: true,
       alwaysRunAssembly: true,
-      assemblyOptions: {
-        params: cloudToken.params,
-        signature: cloudToken.signature,
-      },
+      assemblyOptions: { params: cloudToken.params, signature: cloudToken.signature },
     });
 
     uppy.on('transloadit:complete', async (assembly) => {

@@ -26,13 +26,7 @@ export const useColumns = () => {
 
         renderCell: ({ row }) => (
           <>
-            <EntityAvatar
-              type={row.entity.entityType}
-              className="h-8 w-8"
-              id={row.entity.id}
-              name={row.entity.name}
-              url={row.entity.thumbnailUrl}
-            />
+            <EntityAvatar type={row.entity.entityType} className="h-8 w-8" id={row.entity.id} name={row.entity.name} url={row.entity.thumbnailUrl} />
             <span className="ml-2 truncate font-medium">{row.entity.name || '-'}</span>
           </>
         ),
@@ -51,16 +45,10 @@ export const useColumns = () => {
         placeholderValue: '-',
         renderCell: ({ row }) =>
           row.inactiveMembership.role ? (
-            <div className="group relative inline-flex h-full w-full items-center gap-1">
-              {t(`c:${row.inactiveMembership.role}`)}
-            </div>
+            <div className="group relative inline-flex h-full w-full items-center gap-1">{t(`c:${row.inactiveMembership.role}`)}</div>
           ) : null,
       },
-      dateColumn<Invitation>('createdAt', {
-        name: t('c:invited_at'),
-        sortable: false,
-        get: (row) => row.inactiveMembership.createdAt,
-      }),
+      dateColumn<Invitation>('createdAt', { name: t('c:invited_at'), sortable: false, get: (row) => row.inactiveMembership.createdAt }),
       {
         key: 'createdBy',
         name: t('c:invited_by'),
@@ -69,9 +57,7 @@ export const useColumns = () => {
         minWidth: 160,
         placeholderValue: '-',
         renderCell: ({ row, tabIndex }) =>
-          row.inactiveMembership.createdBy && (
-            <UserCell compactable user={row.inactiveMembership.createdBy} tabIndex={tabIndex} />
-          ),
+          row.inactiveMembership.createdBy && <UserCell compactable user={row.inactiveMembership.createdBy} tabIndex={tabIndex} />,
       },
       {
         key: 'actions',
@@ -86,11 +72,7 @@ export const useColumns = () => {
                 key={action}
                 size="xs"
                 variant={variant}
-                onClick={() =>
-                  handleInvitation({
-                    path: { id: row.inactiveMembership.id, acceptOrReject: action },
-                  })
-                }
+                onClick={() => handleInvitation({ path: { id: row.inactiveMembership.id, acceptOrReject: action } })}
               >
                 {label}
               </Button>

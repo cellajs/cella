@@ -1,17 +1,7 @@
 import { signInWithTotp } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { defaultHeaders } from '../fixtures';
-import {
-  authCookie,
-  cookieChange,
-  createMfaToken,
-  createTotpUser,
-  expectRefusal,
-  sessionsOf,
-  tokenRowOf,
-  totpCode,
-  wrongTotpCode,
-} from '../helpers';
+import { authCookie, cookieChange, createMfaToken, createTotpUser, expectRefusal, sessionsOf, tokenRowOf, totpCode, wrongTotpCode } from '../helpers';
 import { type PasskeyAssertion, softwarePasskey } from '../software-passkey';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
@@ -28,8 +18,7 @@ afterEach(async () => await clearSecurityTestData());
 describe('Second-factor challenge', async () => {
   const call = await createAppClient();
 
-  const totpSignIn = (code: string, cookie: string) =>
-    call(signInWithTotp, { body: { code }, headers: { ...defaultHeaders, Cookie: cookie } });
+  const totpSignIn = (code: string, cookie: string) => call(signInWithTotp, { body: { code }, headers: { ...defaultHeaders, Cookie: cookie } });
 
   it("must not open a second session via a completed challenge's confirm-mfa cookie", async () => {
     const user = await createTotpUser('owner@security-test.com');
@@ -70,11 +59,7 @@ describe('Second-factor challenge', async () => {
     const mfaCookie = authCookie('confirm-mfa', await createMfaToken(user));
 
     const issued = await passkeyChallenge('mfa', mfaCookie);
-    const first = await passkeySignIn(
-      passkey.assert(issued.challenge, { counter: 1 }),
-      `${mfaCookie}; ${issued.cookie}`,
-      'mfa',
-    );
+    const first = await passkeySignIn(passkey.assert(issued.challenge, { counter: 1 }), `${mfaCookie}; ${issued.cookie}`, 'mfa');
     expect(first.response.status).toBe(204);
     expect(cookieChange(first.response, 'session')).toBe('set');
 
@@ -98,11 +83,7 @@ describe('Second-factor challenge', async () => {
     };
 
     // Signed by another key under this passkey's id.
-    const failed = await answer((challenge) => ({
-      ...softwarePasskey().assert(challenge),
-      id: passkey.credentialId,
-      rawId: passkey.credentialId,
-    }));
+    const failed = await answer((challenge) => ({ ...softwarePasskey().assert(challenge), id: passkey.credentialId, rawId: passkey.credentialId }));
     await expectRefusal(failed, 401, 'passkey_verification_failed');
     expect(cookieChange(failed.response, 'session')).toBeUndefined();
     expect(await tokenRowOf('confirm-mfa', mfaToken)).toBeDefined();

@@ -37,16 +37,7 @@ type BarArgs = {
   bar: 'users' | 'organizations' | 'tenants' | 'requests' | 'members' | 'attachments' | 'pages';
 };
 
-function Bar({
-  bar,
-  q,
-  role,
-  selected = [],
-  isSheet,
-  canUpdate = true,
-  setSearch,
-  clearSelection,
-}: BarArgs): ReactNode {
+function Bar({ bar, q, role, selected = [], isSheet, canUpdate = true, setSearch, clearSelection }: BarArgs): ReactNode {
   // The bars take generated row types; the stand-in rows carry only what the bars read.
   const common = {
     queryKey: listKey,
@@ -63,10 +54,8 @@ function Bar({
   if (bar === 'organizations') return <OrganizationsTableBar {...common} searchVars={searchVars} />;
   if (bar === 'tenants') return <TenantsTableBar {...common} searchVars={searchVars} />;
   if (bar === 'requests') return <RequestsTableBar {...common} searchVars={searchVars} />;
-  if (bar === 'members')
-    return <MembersTableBar {...common} searchVars={searchVars} channel={membersChannel} isSheet={isSheet} />;
-  if (bar === 'attachments')
-    return <AttachmentsTableBar {...common} searchVars={searchVars} channel={channel} isSheet={isSheet} canUpload />;
+  if (bar === 'members') return <MembersTableBar {...common} searchVars={searchVars} channel={membersChannel} isSheet={isSheet} />;
+  if (bar === 'attachments') return <AttachmentsTableBar {...common} searchVars={searchVars} channel={channel} isSheet={isSheet} canUpload />;
   return <PagesTableBar total={2} searchVars={{ q }} setSearch={setSearch} columns={[]} setColumns={() => {}} />;
 }
 
@@ -83,8 +72,7 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 const body = () => within(document.body);
-const searchInput = (canvasElement: HTMLElement, name: string) =>
-  canvasElement.querySelector(`input[name="${name}"]`) as HTMLInputElement | null;
+const searchInput = (canvasElement: HTMLElement, name: string) => canvasElement.querySelector(`input[name="${name}"]`) as HTMLInputElement | null;
 const hasIcon = (element: HTMLElement, icon: string) => !!element.querySelector(`.lucide-${icon}`);
 
 /** Resets through the count's clear button; the search resets before the selection clears. */

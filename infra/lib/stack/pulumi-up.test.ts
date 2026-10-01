@@ -25,10 +25,7 @@ describe('classifyDuplicateSecretError', () => {
 describe('parseOrphanedDeletes', () => {
   it('collects delete URNs whose provider returned a 404 not found', () => {
     const urn = 'urn:pulumi:production::infra::scaleway:secrets/secret:Secret::secret-admin-email';
-    const output = [
-      `error: deleting ${urn}: `,
-      '  * scaleway-sdk-go: http error 404 Not Found: resource not found',
-    ].join('\n');
+    const output = [`error: deleting ${urn}: `, '  * scaleway-sdk-go: http error 404 Not Found: resource not found'].join('\n');
     expect(parseOrphanedDeletes(output)).toEqual([urn]);
   });
 
@@ -40,18 +37,10 @@ describe('parseOrphanedDeletes', () => {
 
 describe('pulumiUpArgs', () => {
   it('is the plain non-interactive up by default', () => {
-    expect(pulumiUpArgs('organization/infra/production')).toEqual([
-      'up',
-      '--stack',
-      'organization/infra/production',
-      '--yes',
-      '--non-interactive',
-    ]);
+    expect(pulumiUpArgs('organization/infra/production')).toEqual(['up', '--stack', 'organization/infra/production', '--yes', '--non-interactive']);
   });
   it('adds the overlay, the skipped preview and the verbose engine flow for a debug capture', () => {
-    expect(
-      pulumiUpArgs('s', { configFile: '/tmp/overlay.yaml', skipPreview: true, debugLogPath: '/tmp/x.log' }),
-    ).toEqual([
+    expect(pulumiUpArgs('s', { configFile: '/tmp/overlay.yaml', skipPreview: true, debugLogPath: '/tmp/x.log' })).toEqual([
       'up',
       '--stack',
       's',

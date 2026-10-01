@@ -2,13 +2,7 @@ import type { Query } from '@tanstack/react-query';
 import type { MembershipBase } from 'sdk';
 import { type ChannelEntityType, hierarchy } from 'shared';
 import { enrichWithAncestorSlugs, type SlugIndex } from '~/query/enrichment/ancestor-slugs';
-import {
-  getCachedMemberships,
-  getChannelKeys,
-  getMenuParentTypes,
-  getRegisteredChannelEntities,
-  isMenuParentOf,
-} from '~/query/enrichment/helpers';
+import { getCachedMemberships, getChannelKeys, getMenuParentTypes, getRegisteredChannelEntities, isMenuParentOf } from '~/query/enrichment/helpers';
 import { enrichWithMembership } from '~/query/enrichment/membership';
 import { enrichWithPermissions } from '~/query/enrichment/permissions';
 import type { EnrichableChannel, InfiniteData } from '~/query/enrichment/types';
@@ -58,12 +52,7 @@ function enrichItem(
 }
 
 /** Returns the same reference when nothing changed. */
-function enrichListData(
-  data: InfiniteData,
-  memberships: MembershipBase[],
-  entityType: ChannelEntityType,
-  slugIndex: SlugIndex,
-): InfiniteData {
+function enrichListData(data: InfiniteData, memberships: MembershipBase[], entityType: ChannelEntityType, slugIndex: SlugIndex): InfiniteData {
   const ancestors = getExtendedAncestors(entityType);
   let dataChanged = false;
 

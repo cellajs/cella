@@ -13,10 +13,7 @@ function buildInitialMenu<const T extends readonly { entityType: ChannelEntityTy
 const baseMenu = buildInitialMenu(appConfig.menuStructure);
 
 /** Builds a user menu from a map of channel entity types to their items; `opts` enables detailed submenus. */
-export function buildMenu(
-  byType: Map<MenuSection['entityType'] | MenuSection['subentityType'], UserMenuItem[]>,
-  menuStructure: MenuSection[],
-) {
+export function buildMenu(byType: Map<MenuSection['entityType'] | MenuSection['subentityType'], UserMenuItem[]>, menuStructure: MenuSection[]) {
   const menu = { ...baseMenu };
 
   for (const section of menuStructure) {
@@ -38,10 +35,7 @@ export function buildMenu(
       (subsByParent.get(pid) ?? subsByParent.set(pid, []).get(pid)!).push(s);
     }
 
-    menu[section.entityType] = items.map((e) => ({
-      ...e,
-      submenu: subsByParent.get(e.id) ?? [],
-    }));
+    menu[section.entityType] = items.map((e) => ({ ...e, submenu: subsByParent.get(e.id) ?? [] }));
   }
 
   return menu;

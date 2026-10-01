@@ -1,25 +1,11 @@
 import { defineFrontendModule } from '~/lib/module';
-import {
-  dangerToolBase,
-  detailsToolBase,
-  generalToolBase,
-  tabsToolBase,
-} from '~/modules/entities/channel-settings-tools';
+import { dangerToolBase, detailsToolBase, generalToolBase, tabsToolBase } from '~/modules/entities/channel-settings-tools';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const OrganizationGeneralCard = lazyNamed(
-  () => import('~/modules/organization/settings-tools'),
-  'OrganizationGeneralCard',
-);
-const OrganizationDetailsCard = lazyNamed(
-  () => import('~/modules/organization/settings-tools'),
-  'OrganizationDetailsCard',
-);
+const OrganizationGeneralCard = lazyNamed(() => import('~/modules/organization/settings-tools'), 'OrganizationGeneralCard');
+const OrganizationDetailsCard = lazyNamed(() => import('~/modules/organization/settings-tools'), 'OrganizationDetailsCard');
 const OrganizationTabsCard = lazyNamed(() => import('~/modules/organization/settings-tools'), 'OrganizationTabsCard');
-const OrganizationDeleteCard = lazyNamed(
-  () => import('~/modules/organization/settings-tools'),
-  'OrganizationDeleteCard',
-);
+const OrganizationDeleteCard = lazyNamed(() => import('~/modules/organization/settings-tools'), 'OrganizationDeleteCard');
 const OrganizationsGrid = lazyNamed(() => import('~/modules/organization/organizations-grid'), 'OrganizationsGrid');
 
 defineFrontendModule({
@@ -55,11 +41,7 @@ defineFrontendModule({
       slot: 'user.profile',
       render: ({ user, isSheet }) => (
         <div className="container pt-4">
-          <OrganizationsGrid
-            fixedQuery={{ relatableUserId: user.id }}
-            saveDataInSearch={!isSheet}
-            focusView={!isSheet}
-          />
+          <OrganizationsGrid fixedQuery={{ relatableUserId: user.id }} saveDataInSearch={!isSheet} focusView={!isSheet} />
         </div>
       ),
     },

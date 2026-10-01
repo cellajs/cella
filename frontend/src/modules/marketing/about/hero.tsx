@@ -27,8 +27,7 @@ export function Hero({ title, text, children, chips }: HeroProps) {
           color-mix(in oklch, var(--primary), black 20%))`,
       }
     : undefined;
-  const sectionClass =
-    'rich-gradient relative flex min-h-[90vh] items-center justify-center space-y-6 py-24 px-4 lg:py-32';
+  const sectionClass = 'rich-gradient relative flex min-h-[90vh] items-center justify-center space-y-6 py-24 px-4 lg:py-32';
   const headerClass = `transition-all will-change-transform duration-500 ease-out ${inView ? 'opacity-100' : 'opacity-0 scale-95 translate-y-4'}`;
 
   return (
@@ -59,13 +58,7 @@ export function Hero({ title, text, children, chips }: HeroProps) {
 }
 
 /** Decorative SVG curve at a gradient section edge; `position` places it at the section top or bottom. */
-export function BackgroundCurve({
-  height = 'clamp(3rem, 8vw, 8rem)',
-  position = 'bottom',
-}: {
-  height?: string;
-  position?: 'top' | 'bottom';
-}) {
+export function BackgroundCurve({ height = 'clamp(3rem, 8vw, 8rem)', position = 'bottom' }: { height?: string; position?: 'top' | 'bottom' }) {
   const isTop = position === 'top';
 
   return (
@@ -76,10 +69,7 @@ export function BackgroundCurve({
       style={{ height: `calc(${height} + 1px)` }}
       aria-hidden="true"
     >
-      <path
-        fill="var(--background)"
-        d={isTop ? 'M 0 0 L 800 0 L 800 100 Q 400 20 0 100 Z' : 'M 0 100 L 0 0 Q 400 80 800 0 L 800 100 Z'}
-      />
+      <path fill="var(--background)" d={isTop ? 'M 0 0 L 800 0 L 800 100 Q 400 20 0 100 Z' : 'M 0 100 L 0 0 Q 400 80 800 0 L 800 100 Z'} />
     </svg>
   );
 }

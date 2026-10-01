@@ -217,11 +217,7 @@ export function localesPlugin(userOptions: LocalesPluginOptions = {}): Plugin {
         const langDir = path.join(options.outDir, lang.name);
         const files = await fsp.readdir(langDir);
         for (const file of files.filter((f) => f.endsWith('.json'))) {
-          this.emitFile({
-            type: 'asset',
-            fileName: `locales/${lang.name}/${file}`,
-            source: await fsp.readFile(path.join(langDir, file), 'utf8'),
-          });
+          this.emitFile({ type: 'asset', fileName: `locales/${lang.name}/${file}`, source: await fsp.readFile(path.join(langDir, file), 'utf8') });
         }
       }
     },
@@ -256,11 +252,7 @@ export function localesPlugin(userOptions: LocalesPluginOptions = {}): Plugin {
       }
 
       // Notify clients so i18next reloads HTTP-loaded resources
-      ctx.server.ws.send({
-        type: 'custom',
-        event: CUSTOM_EVENT,
-        data: { file: ctx.file },
-      });
+      ctx.server.ws.send({ type: 'custom', event: CUSTOM_EVENT, data: { file: ctx.file } });
     },
   };
 }

@@ -13,20 +13,10 @@ vi.mock('pg-logical-replication', async () => {
   return { LogicalReplicationService, PgoutputPlugin: class {} };
 });
 
-vi.mock('../lib/db', () => ({
-  cdcDb: { execute: vi.fn() },
-  buildVerifiedSsl: () => undefined,
-  stripSslParams: (url: string) => url,
-}));
+vi.mock('../lib/db', () => ({ cdcDb: { execute: vi.fn() }, buildVerifiedSsl: () => undefined, stripSslParams: (url: string) => url }));
 
 vi.mock('../network/websocket-client', () => ({
-  wsClient: {
-    isConnected: () => ws.connected,
-    inGracePeriod: () => false,
-    setCallbacks: vi.fn(),
-    connect: vi.fn(),
-    close: vi.fn(),
-  },
+  wsClient: { isConnected: () => ws.connected, inGracePeriod: () => false, setCallbacks: vi.fn(), connect: vi.fn(), close: vi.fn() },
 }));
 
 const { createReplicationService } = await import('../pipeline/replication');
@@ -83,12 +73,7 @@ describe('replication heartbeat acknowledgement', () => {
     };
 
     it.each([
-      {
-        case: 'confirms the keepalive position, one byte back because the client adds one',
-        acked: '0/AB',
-        keepalive: '0/1F0',
-        reply: '0/1EF',
-      },
+      { case: 'confirms the keepalive position, one byte back because the client adds one', acked: '0/AB', keepalive: '0/1F0', reply: '0/1EF' },
       { case: 'borrows from the high word at a segment boundary', acked: null, keepalive: '2/0', reply: '1/FFFFFFFF' },
       { case: 'never moves backwards', acked: '0/2F0', keepalive: '0/1F0', reply: '0/2F0' },
     ])('$case', async ({ acked, keepalive, reply }) => {

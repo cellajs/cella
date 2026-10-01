@@ -32,9 +32,7 @@ describe('declareViewsFromMemberships (template equivalence)', () => {
 
   it('derives NO registered views for org-homed template grants: catchup stays org-view-only', () => {
     registerEntityQueryKeys('attachment', createEntityKeys('attachment'));
-    queryClient.setQueryData(['me', 'memberships'], {
-      items: [orgMembership('org-1', 'admin'), orgMembership('org-2', 'member')],
-    });
+    queryClient.setQueryData(['me', 'memberships'], { items: [orgMembership('org-1', 'admin'), orgMembership('org-2', 'member')] });
     syncStore.getState().setOrgTenantId('org-1', 'tenant-1');
     syncStore.getState().setOrgSeq('org-1', 'attachment', 7);
 

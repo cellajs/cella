@@ -6,12 +6,7 @@ declare module 'react/jsx-runtime' {
   namespace JSX {
     interface IntrinsicElements {
       'jsx-email-raw': React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement> & {
-          dangerouslySetInnerHTML?: {
-            __html: string;
-          };
-          'data-skip'?: string;
-        },
+        React.HTMLAttributes<HTMLElement> & { dangerouslySetInnerHTML?: { __html: string }; 'data-skip'?: string },
         HTMLElement
       >;
     }

@@ -5,18 +5,11 @@ vi.mock('shared', () => ({
 }));
 
 const getPresignedUrlBatched = vi.fn().mockResolvedValue('https://signed.example/url');
-vi.mock('../presign-batch', () => ({
-  getPresignedUrlBatched: (...args: unknown[]) => getPresignedUrlBatched(...args),
-}));
+vi.mock('../presign-batch', () => ({ getPresignedUrlBatched: (...args: unknown[]) => getPresignedUrlBatched(...args) }));
 
 const { getCloudUrl } = await import('../file-url');
 
-const baseAttachment = {
-  id: 'att-1',
-  tenantId: 'tenant-1',
-  organizationId: 'org-1',
-  keys: { original: 'org/attachments/original/a.jpg' },
-};
+const baseAttachment = { id: 'att-1', tenantId: 'tenant-1', organizationId: 'org-1', keys: { original: 'org/attachments/original/a.jpg' } };
 
 describe('getCloudUrl public/private branch', () => {
   beforeEach(() => {

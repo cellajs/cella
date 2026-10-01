@@ -17,11 +17,7 @@ export async function runPostCatchupRecovery(): Promise<void> {
   // Phase 1: recalculate counters from the source-of-truth tables.
   try {
     const { channelRows, productRows } = await recalculateCounters(cdcDb);
-    log.info('Post-catchup counter recalculation complete', {
-      channelRows,
-      productRows,
-      durationMs: Math.round(performance.now() - startMs),
-    });
+    log.info('Post-catchup counter recalculation complete', { channelRows, productRows, durationMs: Math.round(performance.now() - startMs) });
   } catch (error) {
     log.error('Post-catchup counter recalculation failed', { err: error });
   }
@@ -39,8 +35,5 @@ export async function runPostCatchupRecovery(): Promise<void> {
 
   replicationState.resetCatchup();
 
-  log.info('Post-catchup recovery complete', {
-    totalDurationMs: Math.round(performance.now() - startMs),
-    eventsProcessed,
-  });
+  log.info('Post-catchup recovery complete', { totalDurationMs: Math.round(performance.now() - startMs), eventsProcessed });
 }

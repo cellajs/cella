@@ -1,22 +1,10 @@
 import type { Check, CheckStatus, CredentialTier, NextAction } from './types';
 
 /** The local setup/manage entrypoint. */
-export const runSetup: NextAction = {
-  description: 'Run the infra CLI (setup on a fresh stack, operator menu otherwise)',
-  command: 'pnpm infra',
-};
-export const installPulumi: NextAction = {
-  description: 'Install the Pulumi CLI',
-  command: 'brew install pulumi/tap/pulumi',
-};
-export const manageSecrets: NextAction = {
-  description: 'Set the missing runtime secret(s) via "Manage runtime secrets"',
-  command: 'pnpm infra',
-};
-export const unlock: NextAction = {
-  description: 'Clear the stale stack lock via "Unlock" (only when no run is in progress)',
-  command: 'pnpm infra',
-};
+export const runSetup: NextAction = { description: 'Run the infra CLI (setup on a fresh stack, operator menu otherwise)', command: 'pnpm infra' };
+export const installPulumi: NextAction = { description: 'Install the Pulumi CLI', command: 'brew install pulumi/tap/pulumi' };
+export const manageSecrets: NextAction = { description: 'Set the missing runtime secret(s) via "Manage runtime secrets"', command: 'pnpm infra' };
+export const unlock: NextAction = { description: 'Clear the stale stack lock via "Unlock" (only when no run is in progress)', command: 'pnpm infra' };
 
 /** Local, self-contained deploy of the current HEAD for a mode. */
 export function deployAction(mode: string): NextAction {
@@ -49,13 +37,7 @@ export function check(id: string, title: string, credential: CredentialTier = 'n
   const verdict =
     (status: CheckStatus): Verdict =>
     (detail, nextAction) => ({ id, title, status, detail, credential, ...(nextAction ? { nextAction } : {}) });
-  return {
-    ok: verdict('ok'),
-    warn: verdict('warn'),
-    missing: verdict('missing'),
-    error: verdict('error'),
-    unknown: verdict('unknown'),
-  };
+  return { ok: verdict('ok'), warn: verdict('warn'), missing: verdict('missing'), error: verdict('error'), unknown: verdict('unknown') };
 }
 
 /** Evaluate a `scaleway`-tier probe result: `unknown` without a key or
@@ -67,8 +49,7 @@ export function probed<T>(
   unknownDetail: string,
   evaluate: (value: T) => Check,
 ): Check {
-  if (!scalewayKeyAvailable)
-    return builder.unknown('no Scaleway key available to this run (SCW_ADMIN_*, SCW_* or AWS_*)');
+  if (!scalewayKeyAvailable) return builder.unknown('no Scaleway key available to this run (SCW_ADMIN_*, SCW_* or AWS_*)');
   if (value === undefined) return builder.unknown(unknownDetail);
   return evaluate(value);
 }

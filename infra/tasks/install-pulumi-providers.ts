@@ -10,10 +10,7 @@ export function scalewayProviderVersion(): string {
 }
 
 function install(version: string): boolean {
-  const res = spawnSync('pulumi', ['plugin', 'install', 'resource', 'scaleway', `v${version}`], {
-    stdio: 'inherit',
-    env: process.env,
-  });
+  const res = spawnSync('pulumi', ['plugin', 'install', 'resource', 'scaleway', `v${version}`], { stdio: 'inherit', env: process.env });
   return res.status === 0;
 }
 
@@ -24,11 +21,7 @@ export async function main(): Promise<void> {
       async () => {
         if (!install(version)) throw new Error('plugin install failed');
       },
-      {
-        attempts: 5,
-        delayMs: 15_000,
-        onRetry: (attempt) => console.warn(`plugin install attempt ${attempt} failed; retrying in 15s`),
-      },
+      { attempts: 5, delayMs: 15_000, onRetry: (attempt) => console.warn(`plugin install attempt ${attempt} failed; retrying in 15s`) },
     );
   } catch {
     throw new Error('Pulumi scaleway provider install failed after 5 attempts');

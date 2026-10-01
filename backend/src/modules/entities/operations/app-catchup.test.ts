@@ -14,14 +14,7 @@ const OTHER_ORG = 'org-catchup-other';
 const [productType] = appConfig.productEntityTypes;
 
 const orgAdmin: MembershipBaseModel[] = [
-  {
-    id: 'mem-1',
-    userId: 'actor',
-    channelType: 'organization',
-    channelId: ORG,
-    organizationId: ORG,
-    role: 'admin',
-  } as unknown as MembershipBaseModel,
+  { id: 'mem-1', userId: 'actor', channelType: 'organization', channelId: ORG, organizationId: ORG, role: 'admin' } as unknown as MembershipBaseModel,
 ];
 
 // A node below ORG whose counters row carries its verified path.
@@ -42,9 +35,7 @@ beforeAll(async () => {
 });
 
 afterAll(async () => {
-  await seedDb.execute(
-    sql.raw(`DELETE FROM channel_counters WHERE channel_key IN ('${ORG}', '${OTHER_ORG}', '${CHILD}')`),
-  );
+  await seedDb.execute(sql.raw(`DELETE FROM channel_counters WHERE channel_key IN ('${ORG}', '${OTHER_ORG}', '${CHILD}')`));
 });
 
 describe('answerCatchupViews', () => {
@@ -53,9 +44,7 @@ describe('answerCatchupViews', () => {
       { key: 'v1', organizationId: ORG, prefixes: [ORG], entityTypes: [productType], cursor: 30 },
     ]);
 
-    expect(answers).toEqual([
-      { key: 'v1', status: 'ok', frontiers: { [productType]: 37 }, counts: { [productType]: 12 } },
-    ]);
+    expect(answers).toEqual([{ key: 'v1', status: 'ok', frontiers: { [productType]: 37 }, counts: { [productType]: 12 } }]);
   });
 
   it('answers a view outside the caller memberships without leaking numbers', async () => {
@@ -104,14 +93,10 @@ describe('answerCatchupViews', () => {
       { key: 'v5', organizationId: ORG, prefixes: [`${ORG}/${CHILD}`], entityTypes: [productType], cursor: 0 },
     ]);
 
-    expect(answers).toEqual([
-      { key: 'v5', status: 'ok', frontiers: { [productType]: 21 }, counts: { [productType]: 3 } },
-    ]);
+    expect(answers).toEqual([{ key: 'v5', status: 'ok', frontiers: { [productType]: 21 }, counts: { [productType]: 3 } }]);
   });
 
   it('returns empty for no views', async () => {
-    expect(await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [])).toEqual(
-      [],
-    );
+    expect(await answerCatchupViews(orgAdmin, { actorId: 'actor', isSystemAdmin: false, scopes: null }, [])).toEqual([]);
   });
 });

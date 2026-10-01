@@ -45,16 +45,14 @@ async function request(auth: ScwAuth, method: string, url: string, body?: unknow
       {
         attempts: networkAttempts,
         delayMs: networkRetryDelayMs,
-        onRetry: (attempt, error) =>
-          console.warn(`[scw] ${method} ${url} attempt ${attempt} failed (${errorMessage(error)}); retrying`),
+        onRetry: (attempt, error) => console.warn(`[scw] ${method} ${url} attempt ${attempt} failed (${errorMessage(error)}); retrying`),
       },
     );
   } catch (err) {
     throw new Error(`Scaleway ${method} ${url} failed after ${networkAttempts} attempts: ${errorMessage(err)}`);
   }
   const text = await res.text();
-  if (DEBUG)
-    process.stderr.write(`[scw] ← ${res.status} ${carriesSecretValues(url) ? REDACTED : text.slice(0, 500)}\n`);
+  if (DEBUG) process.stderr.write(`[scw] ← ${res.status} ${carriesSecretValues(url) ? REDACTED : text.slice(0, 500)}\n`);
   if (!res.ok) throw new Error(`Scaleway ${method} ${url} → ${res.status}: ${text}`);
   return text;
 }

@@ -1,12 +1,9 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 
-const meta = {
-  title: 'common/UnsavedBadge',
-  component: UnsavedBadge,
-  tags: ['autodocs'],
-  parameters: { layout: 'centered' },
-} satisfies Meta<typeof UnsavedBadge>;
+const meta = { title: 'common/UnsavedBadge', component: UnsavedBadge, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
+  typeof UnsavedBadge
+>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -33,7 +30,4 @@ export const WithReactNodeTitle: Story = {
   ],
 };
 
-export const Hidden: Story = {
-  name: 'Without unsaved-changes context',
-  args: { title: 'Settings' },
-};
+export const Hidden: Story = { name: 'Without unsaved-changes context', args: { title: 'Settings' } };

@@ -23,11 +23,9 @@ describe('Catchup (view-driven, sequence)', async () => {
   beforeAll(async () => {
     tenant = await createTestTenant(call, 'catchup-baseline');
     otherOrgId = (await createTestOrganization()).id;
-    await db.insert(channelCountersTable).values({
-      channelKey: otherOrgId,
-      counts: { sequence: 9, 'e:f:attachment': 7, 'e:c:attachment': 3 },
-      path: otherOrgId,
-    });
+    await db
+      .insert(channelCountersTable)
+      .values({ channelKey: otherOrgId, counts: { sequence: 9, 'e:f:attachment': 7, 'e:c:attachment': 3 }, path: otherOrgId });
 
     const counts = {
       sequence: 50,
@@ -41,24 +39,16 @@ describe('Catchup (view-driven, sequence)', async () => {
     await db
       .insert(channelCountersTable)
       .values({ channelKey: tenant.organization.id, counts, path: tenant.organization.id })
-      .onConflictDoUpdate({
-        target: channelCountersTable.channelKey,
-        set: { counts, path: tenant.organization.id },
-      });
+      .onConflictDoUpdate({ target: channelCountersTable.channelKey, set: { counts, path: tenant.organization.id } });
   });
 
   afterAll(async () => {
-    await db
-      .delete(channelCountersTable)
-      .where(inArray(channelCountersTable.channelKey, [tenant.organization.id, otherOrgId]));
+    await db.delete(channelCountersTable).where(inArray(channelCountersTable.channelKey, [tenant.organization.id, otherOrgId]));
     await clearSecurityTestData();
   });
 
   it('returns the membership change signal without cursor (baseline)', async () => {
-    const result = await call(postAppCatchup, {
-      body: {},
-      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-    });
+    const result = await call(postAppCatchup, { body: {}, headers: { ...defaultHeaders, Cookie: tenant.sessionCookie } });
 
     expect(result.response.status).toBe(200);
     const { changes, cursor } = result.data as AppCatchupResponse;
@@ -76,15 +66,7 @@ describe('Catchup (view-driven, sequence)', async () => {
     const result = await call(postAppCatchup, {
       body: {
         cursor: '0-0',
-        views: [
-          {
-            key: `${orgId}:attachment`,
-            organizationId: orgId,
-            prefixes: [orgId],
-            entityTypes: ['attachment'],
-            cursor: 40,
-          },
-        ],
+        views: [{ key: `${orgId}:attachment`, organizationId: orgId, prefixes: [orgId], entityTypes: ['attachment'], cursor: 40 }],
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
@@ -106,14 +88,7 @@ describe('Catchup (view-driven, sequence)', async () => {
       body: {
         cursor: '0-0',
         views: [
-          {
-            key: `${orgId}:attachment:self`,
-            organizationId: orgId,
-            prefixes: [orgId],
-            entityTypes: ['attachment'],
-            depth: 'self',
-            cursor: 39,
-          },
+          { key: `${orgId}:attachment:self`, organizationId: orgId, prefixes: [orgId], entityTypes: ['attachment'], depth: 'self', cursor: 39 },
         ],
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
@@ -122,12 +97,7 @@ describe('Catchup (view-driven, sequence)', async () => {
     expect(result.response.status).toBe(200);
     const { views } = result.data as AppCatchupResponse;
     expect(views).toHaveLength(1);
-    expect(views![0]).toMatchObject({
-      key: `${orgId}:attachment:self`,
-      status: 'ok',
-      frontiers: { attachment: 40 },
-      counts: { attachment: 12 },
-    });
+    expect(views![0]).toMatchObject({ key: `${orgId}:attachment:self`, status: 'ok', frontiers: { attachment: 40 }, counts: { attachment: 12 } });
   });
 
   it('a claimed prefix that mismatches the verified path answers opaque, no numbers', async () => {
@@ -161,20 +131,8 @@ describe('Catchup (view-driven, sequence)', async () => {
       body: {
         cursor: '0-0',
         views: [
-          {
-            key: 'other:attachment',
-            organizationId: otherOrgId,
-            prefixes: [otherOrgId],
-            entityTypes: ['attachment'],
-            cursor: 0,
-          },
-          {
-            key: `${orgId}:attachment`,
-            organizationId: orgId,
-            prefixes: [orgId],
-            entityTypes: ['attachment'],
-            cursor: 42,
-          },
+          { key: 'other:attachment', organizationId: otherOrgId, prefixes: [otherOrgId], entityTypes: ['attachment'], cursor: 0 },
+          { key: `${orgId}:attachment`, organizationId: orgId, prefixes: [orgId], entityTypes: ['attachment'], cursor: 42 },
         ],
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },

@@ -116,9 +116,6 @@ interface CountDomainsByTenantOpts {
 
 export const countDomainsByTenant = async (ctx: DbContext, { targetTenantId }: CountDomainsByTenantOpts) => {
   const { db } = ctx.var;
-  const [{ domainsCount }] = await db
-    .select({ domainsCount: count() })
-    .from(domainsTable)
-    .where(eq(domainsTable.tenantId, targetTenantId));
+  const [{ domainsCount }] = await db.select({ domainsCount: count() }).from(domainsTable).where(eq(domainsTable.tenantId, targetTenantId));
   return domainsCount;
 };

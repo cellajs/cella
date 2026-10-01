@@ -14,10 +14,7 @@ interface Mutatable<TData, TVars> {
  * Prepares public input into durable variables once before execution: coalesced and empty async calls resolve immediately, synchronous calls issue nothing.
  * Compose over a plain mutation as `{ ...mutation, ...buildPreparedHandlers(mutation, prepare) }`.
  */
-export function buildPreparedHandlers<TData, TVars, TInput>(
-  mutation: Mutatable<TData, TVars>,
-  prepare: (input: TInput) => PreparedVars<TVars>,
-) {
+export function buildPreparedHandlers<TData, TVars, TInput>(mutation: Mutatable<TData, TVars>, prepare: (input: TInput) => PreparedVars<TVars>) {
   const mutate = (input: TInput, opts?: unknown) => {
     const prepared = prepare(input);
     if (prepared.kind === 'run') mutation.mutate(prepared.vars, opts);

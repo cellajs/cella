@@ -1,13 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import {
-  CalendarIcon,
-  ChevronUpIcon,
-  HouseIcon,
-  InboxIcon,
-  SearchIcon,
-  SettingsIcon,
-  UserRoundIcon,
-} from 'lucide-react';
+import { CalendarIcon, ChevronUpIcon, HouseIcon, InboxIcon, SearchIcon, SettingsIcon, UserRoundIcon } from 'lucide-react';
 import { userEvent } from 'storybook/test';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
 import {
@@ -33,27 +25,12 @@ const meta = {
   component: Sidebar,
   tags: ['autodocs'],
   argTypes: {
-    side: {
-      options: ['left', 'right'],
-      control: { type: 'radio' },
-    },
-    variant: {
-      options: ['sidebar', 'floating', 'inset'],
-      control: { type: 'radio' },
-    },
-    collapsible: {
-      options: ['offcanvas', 'icon', 'none'],
-      control: { type: 'radio' },
-    },
+    side: { options: ['left', 'right'], control: { type: 'radio' } },
+    variant: { options: ['sidebar', 'floating', 'inset'], control: { type: 'radio' } },
+    collapsible: { options: ['offcanvas', 'icon', 'none'], control: { type: 'radio' } },
   },
-  args: {
-    side: 'left',
-    variant: 'sidebar',
-    collapsible: 'icon',
-  },
-  parameters: {
-    layout: 'fullscreen',
-  },
+  args: { side: 'left', variant: 'sidebar', collapsible: 'icon' },
+  parameters: { layout: 'fullscreen' },
   decorators: [
     (Story) => (
       <SidebarWrapper>
@@ -73,31 +50,11 @@ type Story = StoryObj<typeof Sidebar>;
 
 // Menu items.
 const items = [
-  {
-    title: 'HomeIcon',
-    url: '#',
-    icon: HouseIcon,
-  },
-  {
-    title: 'InboxIcon',
-    url: '#',
-    icon: InboxIcon,
-  },
-  {
-    title: 'CalendarIcon',
-    url: '#',
-    icon: CalendarIcon,
-  },
-  {
-    title: 'SearchIcon',
-    url: '#',
-    icon: SearchIcon,
-  },
-  {
-    title: 'SettingsIcon',
-    url: '#',
-    icon: SettingsIcon,
-  },
+  { title: 'HomeIcon', url: '#', icon: HouseIcon },
+  { title: 'InboxIcon', url: '#', icon: InboxIcon },
+  { title: 'CalendarIcon', url: '#', icon: CalendarIcon },
+  { title: 'SearchIcon', url: '#', icon: SearchIcon },
+  { title: 'SettingsIcon', url: '#', icon: SettingsIcon },
 ];
 
 /**
@@ -169,9 +126,7 @@ export const ShouldCloseOpen: Story = {
   name: 'when clicking the trigger, should close and open the sidebar',
   tags: ['!dev', '!autodocs'],
   play: async ({ canvas, step }) => {
-    const sidebarBtn = await canvas.findByRole('button', {
-      name: /toggle/i,
-    });
+    const sidebarBtn = await canvas.findByRole('button', { name: /toggle/i });
     await step('close the sidebar', async () => {
       await userEvent.click(sidebarBtn);
     });

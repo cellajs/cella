@@ -25,21 +25,15 @@ describe('job declarations', () => {
   });
 
   it('rejects a cron expression the scheduler cannot evaluate', () => {
-    expect(() => validateJobDeclarations(preview, { jobs: [job('bad', 'every hour')], queues: [] })).toThrow(
-      /invalid cron/,
-    );
+    expect(() => validateJobDeclarations(preview, { jobs: [job('bad', 'every hour')], queues: [] })).toThrow(/invalid cron/);
   });
 
   it('rejects a name shared by a queue and a job', () => {
-    expect(() => validateJobDeclarations(preview, { jobs: [job('same')], queues: [queue('same')] })).toThrow(
-      /declared twice/,
-    );
+    expect(() => validateJobDeclarations(preview, { jobs: [job('same')], queues: [queue('same')] })).toThrow(/declared twice/);
   });
 
   it('rejects a dead-letter target that is not declared', () => {
-    expect(() =>
-      validateJobDeclarations(preview, { jobs: [], queues: [queue('deliver', { deadLetter: 'deliver.dead' })] }),
-    ).toThrow(/not declared/);
+    expect(() => validateJobDeclarations(preview, { jobs: [], queues: [queue('deliver', { deadLetter: 'deliver.dead' })] })).toThrow(/not declared/);
     expect(() =>
       validateJobDeclarations(preview, {
         jobs: [],

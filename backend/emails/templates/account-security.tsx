@@ -32,9 +32,7 @@ export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()
     const baseProps = { lng, appName: appConfig.name };
     // The location line exists only when a country is known; the text keys splice it in unescaped ({{- location}}), and
     // the country inside it was escaped when the line was translated.
-    const location = details?.country
-      ? i18n.t('backend:email.account_security.location', { ...baseProps, country: details.country })
-      : '';
+    const location = details?.country ? i18n.t('backend:email.account_security.location', { ...baseProps, country: details.country }) : '';
     return {
       subject: i18n.t(`backend:email.account_security.${type}.title`, { ...baseProps, ...details, ...plainText }),
       previewText: i18n.t('backend:email.account_security.preview', { ...baseProps, name, ...plainText }),
@@ -45,9 +43,7 @@ export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()
     };
   },
   component({ previewText, headerHtml, bodyHtml, supportText }) {
-    return (
-      <EmailMessage previewText={previewText} headerHtml={headerHtml} bodyHtml={bodyHtml} supportText={supportText} />
-    );
+    return <EmailMessage previewText={previewText} headerHtml={headerHtml} bodyHtml={bodyHtml} supportText={supportText} />;
   },
   preview: {
     statics: {

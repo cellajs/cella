@@ -7,10 +7,7 @@ import * as React from 'react';
 import { toggleVariants } from '~/modules/ui/toggle';
 import { cn } from '~/utils/cn';
 
-const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariants>>({
-  size: 'default',
-  variant: 'default',
-});
+const ToggleGroupContext = React.createContext<VariantProps<typeof toggleVariants>>({ size: 'default', variant: 'default' });
 
 interface ToggleGroupProps
   extends Omit<React.ComponentProps<typeof ToggleGroupPrimitive>, 'value' | 'defaultValue' | 'onValueChange'>,
@@ -21,28 +18,11 @@ interface ToggleGroupProps
   onValueChange?: (value: string | string[]) => void;
 }
 
-export function ToggleGroup({
-  className,
-  variant,
-  size,
-  children,
-  type = 'single',
-  value,
-  defaultValue,
-  onValueChange,
-  ...props
-}: ToggleGroupProps) {
+export function ToggleGroup({ className, variant, size, children, type = 'single', value, defaultValue, onValueChange, ...props }: ToggleGroupProps) {
   const multiple = type === 'multiple';
 
   const normalizedValue = value === undefined ? undefined : Array.isArray(value) ? value : value ? [value] : [];
-  const normalizedDefault =
-    defaultValue === undefined
-      ? undefined
-      : Array.isArray(defaultValue)
-        ? defaultValue
-        : defaultValue
-          ? [defaultValue]
-          : [];
+  const normalizedDefault = defaultValue === undefined ? undefined : Array.isArray(defaultValue) ? defaultValue : defaultValue ? [defaultValue] : [];
 
   const handleValueChange = onValueChange
     ? (groupValue: string[]) => {
@@ -83,19 +63,12 @@ export function ToggleGroupItem({
       data-variant={context.variant || variant}
       data-size={context.size || size}
       className={cn(
-        toggleVariants({
-          variant: context.variant || variant,
-          size: context.size || size,
-        }),
+        toggleVariants({ variant: context.variant || variant, size: context.size || size }),
         'min-w-0 flex-none shrink-0 rounded-none first:rounded-l-md last:rounded-r-md focus:z-10 focus-visible:z-10 data-[variant=outline]:border-l-0 data-[variant=outline]:first:border-l',
         className,
       )}
       nativeButton={!asChild}
-      render={
-        asChild && React.isValidElement(children)
-          ? (children as React.ReactElement<Record<string, unknown>>)
-          : undefined
-      }
+      render={asChild && React.isValidElement(children) ? (children as React.ReactElement<Record<string, unknown>>) : undefined}
       {...props}
     >
       {asChild ? undefined : children}

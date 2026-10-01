@@ -24,16 +24,8 @@ const attachmentA = randomUUID(); // tenantA / orgA, owned by userA
 const attachmentM = randomUUID(); // tenantA / orgA, owned by memberA
 const attachmentC = randomUUID(); // tenantB / orgC
 
-const hierarchyA = buildTestEntityHierarchyPlan({
-  entityType: 'attachment',
-  organizationId: orgA,
-  makeChannelId: () => randomUUID(),
-});
-const hierarchyC = buildTestEntityHierarchyPlan({
-  entityType: 'attachment',
-  organizationId: orgC,
-  makeChannelId: () => randomUUID(),
-});
+const hierarchyA = buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId: orgA, makeChannelId: () => randomUUID() });
+const hierarchyC = buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId: orgC, makeChannelId: () => randomUUID() });
 
 /** The document a token asks for: attachmentA in its own scope unless overridden. */
 function requested(overrides: Partial<DocScope>): DocScope {
@@ -70,11 +62,7 @@ describe('Local entity authorization (authorizeDoc)', () => {
   });
 
   afterAll(async () => {
-    await cleanupSeed(admin, {
-      tenantIds: [tenantA, tenantB],
-      userIds: [userA, userB, memberA],
-      plans: [hierarchyA, hierarchyC],
-    });
+    await cleanupSeed(admin, { tenantIds: [tenantA, tenantB], userIds: [userA, userB, memberA], plans: [hierarchyA, hierarchyC] });
     await admin.end();
   });
 
@@ -88,9 +76,7 @@ describe('Local entity authorization (authorizeDoc)', () => {
   });
 
   it('must not authorize a document via a tenant the user holds no membership in', async () => {
-    await expect(
-      authorizeDoc(userA, requested({ entityId: attachmentC, tenantId: tenantB, organizationId: orgC })),
-    ).resolves.toBeNull();
+    await expect(authorizeDoc(userA, requested({ entityId: attachmentC, tenantId: tenantB, organizationId: orgC }))).resolves.toBeNull();
   });
 
   it('must not authorize a row of another tenant than the token names, on a connection RLS does not bind (defense in depth)', async () => {
@@ -101,9 +87,7 @@ describe('Local entity authorization (authorizeDoc)', () => {
     vi.doMock('../../data/db', () => ({
       withRlsTx: <T>(tenantId: string, userId: string, fn: (tx: Tx) => Promise<T>) =>
         unbound.transaction(async (tx) => {
-          await tx.execute(
-            sql`SELECT set_config('app.tenant_id', ${tenantId}, true), set_config('app.user_id', ${userId}, true)`,
-          );
+          await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantId}, true), set_config('app.user_id', ${userId}, true)`);
           return fn(tx);
         }),
     }));
@@ -112,10 +96,7 @@ describe('Local entity authorization (authorizeDoc)', () => {
       const { authorizeDoc: authorizeUnbound } = await import('../../data/permissions');
       await expect(authorizeUnbound(userA, requested({ tenantId: tenantB, organizationId: orgA }))).resolves.toBeNull();
       // Positive control on the same pool: the token naming the row's own tenant is authorized.
-      await expect(authorizeUnbound(userA, requested({}))).resolves.toMatchObject({
-        tenantId: tenantA,
-        organizationId: orgA,
-      });
+      await expect(authorizeUnbound(userA, requested({}))).resolves.toMatchObject({ tenantId: tenantA, organizationId: orgA });
     } finally {
       vi.doUnmock('../../data/db');
       vi.resetModules();

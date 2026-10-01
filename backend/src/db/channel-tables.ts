@@ -10,6 +10,4 @@ import { organizationsTable } from '#/modules/organization/organization-db';
  * because drizzle-kit loads every `*-db.ts` in isolation and only sees this file's import graph.
  * `satisfies` makes a missing channel a compile error.
  */
-export const channelTables = {
-  organization: () => organizationsTable,
-} satisfies Record<ChannelEntityType, () => ChannelTable>;
+export const channelTables = { organization: () => organizationsTable } satisfies Record<ChannelEntityType, () => ChannelTable>;

@@ -10,11 +10,7 @@ export const buildZeroCounts = (entityType: ChannelEntityType, creatorRole = 'ad
     descendants.filter((descendant) => isProduct(descendant)),
     () => ({ created: null, updated: null }) as { created: number | null; updated: number | null },
   );
-  const membership = {
-    ...recordFromKeys(roles.all, (role) => (role === creatorRole ? 1 : 0)),
-    pending: 0,
-    total: 1,
-  };
+  const membership = { ...recordFromKeys(roles.all, (role) => (role === creatorRole ? 1 : 0)), pending: 0, total: 1 };
 
   return { membership, entities, entitiesSelf, activity };
 };

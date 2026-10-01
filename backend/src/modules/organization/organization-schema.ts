@@ -62,11 +62,7 @@ export const organizationWithMembershipSchema = organizationSchema.extend({
 
 /** Wire registration: lens-widened schemas bound to the organization entity at runtime. */
 export const organizationContract = evolutionContract.channel('organization', {
-  createItem: z.object({
-    id: validTempIdSchema,
-    name: validNameSchema,
-    slug: validSlugSchema,
-  }),
+  createItem: z.object({ id: validTempIdSchema, name: validNameSchema, slug: validSlugSchema }),
   updateBody: createInsertSchema(organizationsTable, {
     slug: validSlugSchema,
     name: validNameSchema,

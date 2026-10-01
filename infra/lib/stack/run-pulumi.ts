@@ -3,16 +3,10 @@ import { infraDir } from '../utils/paths';
 
 /** Run `pulumi <args>` in the infra dir, returning trimmed stdout. */
 export function runPulumi(args: string[], opts: { allowFailure?: boolean; env?: NodeJS.ProcessEnv } = {}): string {
-  const res = spawnSync('pulumi', args, {
-    cwd: infraDir,
-    env: opts.env ?? process.env,
-    encoding: 'utf-8',
-    stdio: ['inherit', 'pipe', 'pipe'],
-  });
+  const res = spawnSync('pulumi', args, { cwd: infraDir, env: opts.env ?? process.env, encoding: 'utf-8', stdio: ['inherit', 'pipe', 'pipe'] });
   if (res.stdout) process.stdout.write(res.stdout);
   if (res.stderr) process.stderr.write(res.stderr);
-  if (res.status !== 0 && !opts.allowFailure)
-    throw new Error(`pulumi ${args.join(' ')} failed with exit ${res.status}`);
+  if (res.status !== 0 && !opts.allowFailure) throw new Error(`pulumi ${args.join(' ')} failed with exit ${res.status}`);
   return res.stdout.trim();
 }
 

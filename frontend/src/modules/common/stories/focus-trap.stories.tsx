@@ -36,11 +36,7 @@ function TrapWithButtons({
       <fieldset className="flex flex-col gap-2 rounded border p-4">
         <legend className="font-medium text-sm">{label}</legend>
         {Array.from({ length: count }, (_, i) => (
-          <button
-            key={i}
-            type="button"
-            className="rounded border px-3 py-1.5 text-sm hover:bg-muted focus:outline-2 focus:outline-primary"
-          >
+          <button key={i} type="button" className="rounded border px-3 py-1.5 text-sm hover:bg-muted focus:outline-2 focus:outline-primary">
             Button {i + 1}
           </button>
         ))}
@@ -53,12 +49,7 @@ function ToggleTrap() {
   const [active, setActive] = useState(true);
   return (
     <div className="flex flex-col gap-4">
-      <button
-        type="button"
-        onClick={() => setActive(!active)}
-        className="rounded border px-3 py-1.5 text-sm"
-        data-testid="toggle"
-      >
+      <button type="button" onClick={() => setActive(!active)} className="rounded border px-3 py-1.5 text-sm" data-testid="toggle">
         Trap is {active ? 'active' : 'inactive'}
       </button>
       <TrapWithButtons active={active} label={active ? 'Active trap' : 'Inactive trap'} />
@@ -70,12 +61,7 @@ function InitialFocusTrap() {
   const [active, setActive] = useState(false);
   return (
     <div className="flex flex-col gap-4">
-      <button
-        type="button"
-        onClick={() => setActive(true)}
-        className="rounded border px-3 py-1.5 text-sm"
-        data-testid="activate"
-      >
+      <button type="button" onClick={() => setActive(true)} className="rounded border px-3 py-1.5 text-sm" data-testid="activate">
         Activate trap
       </button>
       {active && <TrapWithButtons active initialFocus label="Trap with initialFocus" />}
@@ -87,12 +73,7 @@ function ReturnFocusTrap() {
   const [active, setActive] = useState(false);
   return (
     <div className="flex flex-col gap-4">
-      <button
-        type="button"
-        onClick={() => setActive(!active)}
-        className="rounded border px-3 py-1.5 text-sm"
-        data-testid="toggle"
-      >
+      <button type="button" onClick={() => setActive(!active)} className="rounded border px-3 py-1.5 text-sm" data-testid="toggle">
         {active ? 'Deactivate' : 'Activate'} trap
       </button>
       {active && <TrapWithButtons active initialFocus returnFocus label="Trap with returnFocus" />}
@@ -114,12 +95,7 @@ function ContainFocusTrap() {
 function EscapeTrap() {
   return (
     <div className="flex flex-col gap-4">
-      <div
-        id="main-element"
-        tabIndex={-1}
-        className="rounded border p-2 text-sm focus:outline-2 focus:outline-primary"
-        data-testid="main"
-      >
+      <div id="main-element" tabIndex={-1} className="rounded border p-2 text-sm focus:outline-2 focus:outline-primary" data-testid="main">
         Main element (Escape target)
       </div>
       <FocusTrap active mainElementId="main-element">
@@ -138,12 +114,7 @@ function DisableInactiveTrap() {
   const [active, setActive] = useState(true);
   return (
     <div className="flex flex-col gap-4">
-      <button
-        type="button"
-        onClick={() => setActive(!active)}
-        className="rounded border px-3 py-1.5 text-sm"
-        data-testid="toggle"
-      >
+      <button type="button" onClick={() => setActive(!active)} className="rounded border px-3 py-1.5 text-sm" data-testid="toggle">
         Trap is {active ? 'active' : 'inactive'}
       </button>
       <TrapWithButtons active={active} disableInactive label={active ? 'Active' : 'Inactive (children disabled)'} />
@@ -153,13 +124,7 @@ function DisableInactiveTrap() {
 
 // Meta
 
-const meta = {
-  title: 'common/FocusTrap',
-  tags: ['autodocs'],
-  parameters: {
-    layout: 'centered',
-  },
-} satisfies Meta;
+const meta = { title: 'common/FocusTrap', tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta;
 
 export default meta;
 

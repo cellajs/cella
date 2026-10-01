@@ -65,9 +65,7 @@ describe('parseUploadedAttachments', () => {
   it('correlates converted and thumbnail variants back to the original by upload id', () => {
     const result = makeResult({
       ':original': [makeOriginal()],
-      converted_image: [
-        { original_id: 'upload-1', url: 'files/holiday.webp', mime: 'image/webp' } as unknown as UploadedFile,
-      ],
+      converted_image: [{ original_id: 'upload-1', url: 'files/holiday.webp', mime: 'image/webp' } as unknown as UploadedFile],
       thumb_image: [{ original_id: 'upload-1', url: 'files/holiday-thumb.png' } as unknown as UploadedFile],
     });
 

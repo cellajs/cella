@@ -8,12 +8,7 @@ import { clearApiKeyCache, invalidateApiKeyCacheByAccount } from './api-key-cach
 import { clearAuthCache, invalidateAuthCacheByUser } from './auth-cache';
 import { clearOrgCache, invalidateOrgCache, invalidateOrgCacheByTenant } from './org-cache';
 import { clearTenantCache, invalidateTenantCache } from './tenant-cache';
-import {
-  clearTokenGrantCache,
-  invalidateTokenGrant,
-  invalidateTokenGrantsByActor,
-  invalidateTokenGrantsByTenant,
-} from './token-grant-cache';
+import { clearTokenGrantCache, invalidateTokenGrant, invalidateTokenGrantsByActor, invalidateTokenGrantsByTenant } from './token-grant-cache';
 
 /** The Postgres channel every process with guard caches (api, mcp, oauth) listens on. */
 export const authInvalidateChannel = 'auth_invalidate';
@@ -109,10 +104,7 @@ function tenant(db: DbOrTx, tenantId: string): Promise<void> {
  * After a service account's status or keys change: its API keys, token verdicts and client drop, and for an installed
  * app the verdicts on its users' tokens in the tenant.
  */
-function serviceAccount(
-  db: DbOrTx,
-  { id, tenantId, oauthClientId }: Pick<ServiceAccountModel, 'id' | 'tenantId' | 'oauthClientId'>,
-): Promise<void> {
+function serviceAccount(db: DbOrTx, { id, tenantId, oauthClientId }: Pick<ServiceAccountModel, 'id' | 'tenantId' | 'oauthClientId'>): Promise<void> {
   return invalidate(db, { serviceAccount: { id, tenantId, clientId: oauthClientId } });
 }
 

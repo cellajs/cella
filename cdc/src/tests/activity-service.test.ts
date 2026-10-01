@@ -1,13 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { mockBatchEvent } from './factories';
 
-vi.mock('../network/websocket-client', () => ({
-  wsClient: { send: vi.fn(() => true) },
-}));
-vi.mock('shared/utils/nanoid', () => ({
-  nanoid: () => 'mock-token',
-  nanoidTenant: () => 'mock-t',
-}));
+vi.mock('../network/websocket-client', () => ({ wsClient: { send: vi.fn(() => true) } }));
+vi.mock('shared/utils/nanoid', () => ({ nanoid: () => 'mock-token', nanoidTenant: () => 'mock-t' }));
 
 import { wsClient } from '../network/websocket-client';
 import { generateActivityId, sendBatchMessageToApi } from '../services/activity-service';
@@ -59,9 +54,7 @@ describe('sendBatchMessageToApi', () => {
     const events = [mockBatchEvent(10), mockBatchEvent(12)];
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
 
-    const payload = vi.mocked(wsClient.send).mock.calls[0][0] as never as {
-      activity: { seq?: number; batchUntilSeq?: number; count?: number };
-    };
+    const payload = vi.mocked(wsClient.send).mock.calls[0][0] as never as { activity: { seq?: number; batchUntilSeq?: number; count?: number } };
     expect(payload.activity.seq).toBe(10);
     expect(payload.activity.batchUntilSeq).toBe(12);
     expect(payload.activity.count).toBe(2);
@@ -78,14 +71,12 @@ describe('sendBatchMessageToApi', () => {
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
 
     expect(wsClient.send).toHaveBeenCalledTimes(2);
-    const payloads = vi.mocked(wsClient.send).mock.calls.map(
-      (call) =>
-        call[0] as never as {
-          activity: { seq?: number; batchUntilSeq?: number };
-          rowData: Record<string, unknown>;
-          batchRows: { seq?: number }[];
-        },
-    );
+    const payloads = vi
+      .mocked(wsClient.send)
+      .mock.calls.map(
+        (call) =>
+          call[0] as never as { activity: { seq?: number; batchUntilSeq?: number }; rowData: Record<string, unknown>; batchRows: { seq?: number }[] },
+      );
     const orgA = payloads.find((p) => p.rowData.organizationId === 'org-a');
     const orgB = payloads.find((p) => p.rowData.organizationId === 'org-b');
 
@@ -107,15 +98,9 @@ describe('sendBatchMessageToApi', () => {
     ];
     sendBatchMessageToApi(events, { traceId: 'test', spanId: 'test' } as never);
 
-    const payload = vi.mocked(wsClient.send).mock.calls[0][0] as never as {
-      batchRows: { seq?: number; rowData: Record<string, unknown> }[];
-    };
+    const payload = vi.mocked(wsClient.send).mock.calls[0][0] as never as { batchRows: { seq?: number; rowData: Record<string, unknown> }[] };
     // Context ids and audit fields stay; content fields never hit the wire.
-    expect(payload.batchRows[0].rowData).toEqual({
-      id: event.rowData.id,
-      organizationId: 'org-a',
-      createdBy: 'u1',
-    });
+    expect(payload.batchRows[0].rowData).toEqual({ id: event.rowData.id, organizationId: 'org-a', createdBy: 'u1' });
   });
 
   it('groups non-product entities (user) by org instead of demanding a channel ancestor', () => {

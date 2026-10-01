@@ -11,10 +11,7 @@ vi.mock('shared', () => ({
   },
 }));
 
-vi.stubGlobal('window', {
-  addEventListener: vi.fn(),
-  removeEventListener: vi.fn(),
-});
+vi.stubGlobal('window', { addEventListener: vi.fn(), removeEventListener: vi.fn() });
 
 const sessionStorageMap = new Map<string, string>();
 vi.stubGlobal('sessionStorage', {
@@ -28,9 +25,7 @@ const { persister, sessionPersister, cleanupOrphanedSessions } = await import('~
 const { bindLocalUserDb, deleteLocalUserDb, getLocalUserDb } = await import('~/query/local-user-db');
 
 // Snapshot of the listeners registered at import time: a reload fires `beforeunload`, so a teardown wired there would wipe the session cache on every refresh.
-const importTimeWindowEvents = (window.addEventListener as unknown as { mock: { calls: unknown[][] } }).mock.calls.map(
-  (call) => call[0],
-);
+const importTimeWindowEvents = (window.addEventListener as unknown as { mock: { calls: unknown[][] } }).mock.calls.map((call) => call[0]);
 
 // Helpers
 
@@ -60,10 +55,7 @@ function makePersistedClient(queries: ReturnType<typeof makeQuery>[], timestamp 
   return {
     timestamp,
     buster: '',
-    clientState: {
-      queries,
-      mutations: [],
-    },
+    clientState: { queries, mutations: [] },
   };
 }
 
@@ -205,10 +197,7 @@ describe('per-query IDB persister', () => {
     });
 
     it('restores both product and context queries together', async () => {
-      const queries = [
-        makeQuery('["task","list"]', 'task', 1000, [{ id: 't1' }]),
-        makeQuery('["me"]', 'me', 2000, { name: 'user' }),
-      ];
+      const queries = [makeQuery('["task","list"]', 'task', 1000, [{ id: 't1' }]), makeQuery('["me"]', 'me', 2000, { name: 'user' })];
 
       await persister.persistClient(makePersistedClient(queries));
       await persister.flush();

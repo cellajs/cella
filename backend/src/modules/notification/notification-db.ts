@@ -60,10 +60,7 @@ export const notificationsTable = snakeCase.table(
     index('notifications_user_unread_index').on(table.userId, table.readAt),
     index('notifications_user_created_index').on(table.userId, table.createdAt.desc()),
     index('notifications_subject_index').on(table.subjectId),
-    foreignKey({
-      columns: [table.userId],
-      foreignColumns: [usersTable.id],
-    }).onDelete('cascade'),
+    foreignKey({ columns: [table.userId], foreignColumns: [usersTable.id] }).onDelete('cascade'),
   ],
 );
 

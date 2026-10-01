@@ -20,35 +20,21 @@ export interface StreamErrorPayload {
 }
 
 export async function writeChange(stream: SSEStreamingApi, id: string, data: unknown): Promise<void> {
-  await stream.writeSSE({
-    event: 'change',
-    id,
-    data: JSON.stringify(data),
-  });
+  await stream.writeSSE({ event: 'change', id, data: JSON.stringify(data) });
 }
 
 export async function writeChangeRaw(stream: SSEStreamingApi, id: string, serializedData: string): Promise<void> {
-  await stream.writeSSE({
-    event: 'change',
-    id,
-    data: serializedData,
-  });
+  await stream.writeSSE({ event: 'change', id, data: serializedData });
 }
 
 /** Catch-up complete marker. */
 export async function writeOffset(stream: SSEStreamingApi, cursor: string | null): Promise<void> {
-  await stream.writeSSE({
-    event: 'offset',
-    data: cursor ?? '',
-  });
+  await stream.writeSSE({ event: 'offset', data: cursor ?? '' });
 }
 
 /** The caller must return from the streamSSE callback after this, closing the stream. */
 export async function writeError(stream: SSEStreamingApi, payload: StreamErrorPayload): Promise<void> {
-  await stream.writeSSE({
-    event: 'error',
-    data: JSON.stringify(payload),
-  });
+  await stream.writeSSE({ event: 'error', data: JSON.stringify(payload) });
 }
 
 /**

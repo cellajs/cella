@@ -17,12 +17,7 @@ vi.mock('shared', async (importOriginal) => {
     .build();
   return {
     ...actual,
-    appConfig: {
-      slug: 'test',
-      channelEntityTypes: hierarchy.channelTypes,
-      entityIdColumnKeys: hierarchy.idColumnKeys,
-      seenTrackedProductTypes: [],
-    },
+    appConfig: { slug: 'test', channelEntityTypes: hierarchy.channelTypes, entityIdColumnKeys: hierarchy.idColumnKeys, seenTrackedProductTypes: [] },
     hierarchy,
     isChannel: hierarchy.isChannel,
     isProduct: hierarchy.isProduct,
@@ -50,10 +45,7 @@ registerEntityQueryKeys(TASK, taskKeys);
 
 /** Mount a headless observer matching the signal produced by a component rendering this query. */
 function observe(queryKey: readonly unknown[]): () => void {
-  const observer = new QueryObserver(queryClient, {
-    queryKey: [...queryKey],
-    queryFn: async () => [],
-  });
+  const observer = new QueryObserver(queryClient, { queryKey: [...queryKey], queryFn: async () => [] });
   return observer.subscribe(() => {});
 }
 

@@ -118,7 +118,7 @@
   "formatter": {
     "enabled": true,
     "indentStyle": "space",
-    "lineWidth": 120,
+    "lineWidth": 150,
     "bracketSpacing": true
   },
   "javascript": {

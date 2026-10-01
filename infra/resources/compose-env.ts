@@ -49,16 +49,10 @@ export interface CoHostingContext {
 
 /** Build the per-service compose-env builder from registry placeholders, registry `bindings`, and the shared env pool. */
 export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp, coHosting?: CoHostingContext) {
-  function bindingPart(
-    selfSlug: ServiceName,
-    target: string,
-    prop: string,
-    loopbackSlug?: ServiceName,
-  ): pulumi.Input<string> {
+  function bindingPart(selfSlug: ServiceName, target: string, prop: string, loopbackSlug?: ServiceName): pulumi.Input<string> {
     const slug = (target === 'self' ? selfSlug : target) as ServiceName;
     const definition = servicesByName.get(slug);
-    if (!definition)
-      throw new Error(`compute: binding @{${target}.${prop}} on '${selfSlug}' references unknown service '${slug}'.`);
+    if (!definition) throw new Error(`compute: binding @{${target}.${prop}} on '${selfSlug}' references unknown service '${slug}'.`);
     switch (prop) {
       case 'privateIp':
         // A folded worker dialing its own host resolves to loopback: they share one process, and the VM's private NIC may not be attached when the worker starts dialing at boot.
@@ -69,24 +63,17 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
       // Stable address through the LB's ACL-guarded internal frontend, so consumers never bake a generation IP; the folded-worker loopback shortcut collapses host and port to the in-process internal listener.
       case 'internalHost':
         if (definition.internalPort === undefined)
-          throw new Error(
-            `compute: binding @{${target}.internalHost} on '${selfSlug}': service '${slug}' has no internalPort.`,
-          );
+          throw new Error(`compute: binding @{${target}.internalHost} on '${selfSlug}': service '${slug}' has no internalPort.`);
         if (slug === loopbackSlug) return '127.0.0.1';
         return lbInternalAddress;
       case 'internalPort':
         if (definition.internalPort === undefined)
-          throw new Error(
-            `compute: binding @{${target}.internalPort} on '${selfSlug}': service '${slug}' has no internalPort.`,
-          );
+          throw new Error(`compute: binding @{${target}.internalPort} on '${selfSlug}': service '${slug}' has no internalPort.`);
         if (slug === loopbackSlug) return String(definition.internalPort);
         return String(internalLbPort(definition.internalPort));
       case 'url': {
         const endpoint = endpointBySlug.get(slug);
-        if (!endpoint)
-          throw new Error(
-            `compute: binding @{${target}.url} on '${selfSlug}': service '${slug}' has no public endpoint.`,
-          );
+        if (!endpoint) throw new Error(`compute: binding @{${target}.url} on '${selfSlug}': service '${slug}' has no public endpoint.`);
         return endpoint.url;
       }
       default:
@@ -160,10 +147,7 @@ export function createComposeEnvBuilder(currentGenBindingIp: CurrentGenBindingIp
   }
 
   /** Compose env for one service: universal vars, the baked image tag, and binding or pool values. */
-  return function buildComposeEnv(
-    svc: ServiceDefinition,
-    releaseSha: string,
-  ): Record<string, () => pulumi.Input<string>> {
+  return function buildComposeEnv(svc: ServiceDefinition, releaseSha: string): Record<string, () => pulumi.Input<string>> {
     const { slug } = svc;
     const isHost = coHosting !== undefined && slug === coHosting.hostSlug;
     const collocated = isHost ? coHosting.collocated : [];

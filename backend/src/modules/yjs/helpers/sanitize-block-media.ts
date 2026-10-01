@@ -9,11 +9,7 @@ import { blankMediaReference, findRefusedMediaBlocks } from 'shared/utils/valida
 export function sanitizeBlockMediaUrls(
   description: string,
   ctx: MediaRefContext,
-): {
-  description: string;
-  sanitized: boolean;
-  invalidUrls: string[];
-} {
+): { description: string; sanitized: boolean; invalidUrls: string[] } {
   let blocks: unknown;
   try {
     blocks = JSON.parse(description);

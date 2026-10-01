@@ -43,23 +43,13 @@ const verificationFor = async (props: Props) => {
   // The address under verification is the provider's, which may differ from the account's own.
   const email = identity.email ?? user.email;
 
-  const [emailInUse]: (EmailModel | undefined)[] = await db
-    .select()
-    .from(emailsTable)
-    .where(eq(emailsTable.email, email));
+  const [emailInUse]: (EmailModel | undefined)[] = await db.select().from(emailsTable).where(eq(emailsTable.email, email));
 
   if (emailInUse && identity.verified) {
     throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });
   }
 
-  const token: NewToken = {
-    type: 'oauth-verification',
-    userId: user.id,
-    email,
-    createdBy: user.id,
-    identityId: identity.id,
-    redirectPath,
-  };
+  const token: NewToken = { type: 'oauth-verification', userId: user.id, email, createdBy: user.id, identityId: identity.id, redirectPath };
   return { token, name: user.name, lng: user.language, providerName: identity.issuer };
 };
 
@@ -75,17 +65,10 @@ export const sendOAuthVerificationEmail = async (props: Props) => {
 
   const verificationLink = tokenLinkUrl('oauth-verification', rawToken);
 
-  const staticProps = {
-    verificationLink,
-    name,
-    providerEmail: tokenRecord.email,
-    providerName,
-  };
+  const staticProps = { verificationLink, name, providerEmail: tokenRecord.email, providerName };
   const recipients = [{ email: tokenRecord.email, lng }];
 
-  mailer
-    .prepareEmails(oauthVerificationEmail, staticProps, recipients)
-    .catch((err) => log.error('Failed to send OAuth verification email', { err }));
+  mailer.prepareEmails(oauthVerificationEmail, staticProps, recipients).catch((err) => log.error('Failed to send OAuth verification email', { err }));
 
   if (appConfig.mode === 'development') {
     console.info(`[verification-link] ${tokenRecord.email} ${verificationLink}`);

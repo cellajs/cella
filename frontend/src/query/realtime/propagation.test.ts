@@ -32,8 +32,7 @@ vi.mock('shared', async (importOriginal) => {
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
-const { collectEmbeddingTouches, invalidateEmbeddedForHost, invalidateEmbeddedUsage, propagateEmbeddedProduct } =
-  await import('./propagation');
+const { collectEmbeddingTouches, invalidateEmbeddedForHost, invalidateEmbeddedUsage, propagateEmbeddedProduct } = await import('./propagation');
 type EmbeddingTouches = Map<ProductEntityType, Set<string>>;
 
 // The synthetic 'label' and 'task' types exist only in this file's shared mock, hence the casts.
@@ -65,23 +64,13 @@ describe('embedded-product usage invalidation', () => {
   describe('collectEmbeddingTouches', () => {
     it('records only the symmetric difference when the previous row is known', () => {
       const touches: EmbeddingTouches = new Map();
-      collectEmbeddingTouches(
-        'task',
-        row({ id: 't1', labels: ['a', 'b'] }),
-        row({ id: 't1', labels: ['b', 'c'] }),
-        touches,
-      );
+      collectEmbeddingTouches('task', row({ id: 't1', labels: ['a', 'b'] }), row({ id: 't1', labels: ['b', 'c'] }), touches);
       expect([...(touches.get(LABEL) ?? [])].sort()).toEqual(['a', 'c']);
     });
 
     it('ignores an edit that leaves the embedding column alone', () => {
       const touches: EmbeddingTouches = new Map();
-      collectEmbeddingTouches(
-        'task',
-        row({ id: 't1', labels: ['a'], name: 'before' }),
-        row({ id: 't1', labels: ['a'], name: 'after' }),
-        touches,
-      );
+      collectEmbeddingTouches('task', row({ id: 't1', labels: ['a'], name: 'before' }), row({ id: 't1', labels: ['a'], name: 'after' }), touches);
       expect(touches.size).toBe(0);
     });
 
@@ -185,10 +174,7 @@ describe('propagateEmbeddedProduct', () => {
     propagateEmbeddedProduct(LABEL, ['l1'], 'update');
 
     const after = queryClient.getQueryData<typeof before>(infiniteKey);
-    expect(after?.pages[0].items[0]).toEqual({
-      id: 't1',
-      labels: [label('l1', 'new', '2026-02-01'), label('l2', 'kept', '2026-01-01')],
-    });
+    expect(after?.pages[0].items[0]).toEqual({ id: 't1', labels: [label('l1', 'new', '2026-02-01'), label('l2', 'kept', '2026-01-01')] });
     expect(after?.pages[1]).toBe(before?.pages[1]);
     expect(after?.pageParams).toBe(before?.pageParams);
   });

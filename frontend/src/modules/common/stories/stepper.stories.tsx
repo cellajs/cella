@@ -35,19 +35,9 @@ function OnboardingLikeStepper({ items, initialStep = 0 }: { items: StepItem[]; 
 
   return (
     <div className="w-[36rem]">
-      <Stepper
-        initialStep={initialStep}
-        steps={items}
-        onClickStep={(newStep, setStep) => setStep(newStep)}
-        orientation="vertical"
-      >
+      <Stepper initialStep={initialStep} steps={items} onClickStep={(newStep, setStep) => setStep(newStep)} orientation="vertical">
         {items.map(({ id, label }) => (
-          <Step
-            key={id}
-            label={label}
-            isKeepError={id !== 'profile'}
-            checkIcon={id === 'organization' ? XIcon : undefined}
-          >
+          <Step key={id} label={label} isKeepError={id !== 'profile'} checkIcon={id === 'organization' ? XIcon : undefined}>
             <div className="rounded-md border p-4">
               <p>{label} content</p>
               <StepFooter onComplete={() => setCompleted(true)} />
@@ -97,8 +87,7 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const checkButton = (root: HTMLElement, icon: 'check' | 'x') =>
-  root.querySelector(`svg.lucide-${icon}`)?.closest('button') ?? null;
+const checkButton = (root: HTMLElement, icon: 'check' | 'x') => root.querySelector(`svg.lucide-${icon}`)?.closest('button') ?? null;
 
 export const Default: Story = {};
 

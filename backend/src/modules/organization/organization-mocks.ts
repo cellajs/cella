@@ -24,14 +24,7 @@ export const resetOrganizationMockEnforcers = () => {
 
 /** Base organization fields shared between insert and response mocks. */
 const generateOrganizationBase = (id: string, tenantId: string, name: string, createdAt: string) => {
-  const base = mockChannelColumns('organization', {
-    id,
-    tenantId,
-    name,
-    createdAt,
-    updatedAt: createdAt,
-    publishedAt: createdAt,
-  });
+  const base = mockChannelColumns('organization', { id, tenantId, name, createdAt, updatedAt: createdAt, publishedAt: createdAt });
   const { slug } = base;
 
   return {
@@ -63,12 +56,7 @@ export const mockOrganization = (): InsertOrganizationModel => {
 /** Adds API-only fields (included.membership, included.counts) to the base mock. */
 export const mockOrganizationResponse = (
   key = 'organization:default',
-): OrganizationModel & {
-  included: {
-    membership: MembershipBaseModel;
-    counts: ReturnType<typeof generateMockChannelCounts>;
-  };
-} =>
+): OrganizationModel & { included: { membership: MembershipBaseModel; counts: ReturnType<typeof generateMockChannelCounts> } } =>
   withFakerSeed(key, () => {
     const createdAt = mockPastIsoDate();
     const organizationId = mockUuid();
@@ -83,13 +71,7 @@ export const mockOrganizationResponse = (
       tenantId,
     });
 
-    return {
-      ...base,
-      included: {
-        membership,
-        counts: generateMockChannelCounts('organization', `${key}:counts`),
-      },
-    };
+    return { ...base, included: { membership, counts: generateMockChannelCounts('organization', `${key}:counts`) } };
   });
 export const mockPaginatedOrganizationsResponse = (count = 2) => mockPaginated(mockOrganizationResponse, count);
 

@@ -75,11 +75,7 @@ function DropdownMenuItem({
   inset,
   variant = 'default',
   ...props
-}: MenuPrimitive.Item.Props &
-  RefAttributes<HTMLDivElement> & {
-    inset?: boolean;
-    variant?: 'default' | 'destructive';
-  }) {
+}: MenuPrimitive.Item.Props & RefAttributes<HTMLDivElement> & { inset?: boolean; variant?: 'default' | 'destructive' }) {
   return (
     <MenuPrimitive.Item
       data-slot="dropdown-menu-item"
@@ -94,11 +90,7 @@ function DropdownMenuItem({
   );
 }
 
-function DropdownMenuCheckboxItem({
-  className,
-  children,
-  ...props
-}: MenuPrimitive.CheckboxItem.Props & RefAttributes<HTMLDivElement>) {
+function DropdownMenuCheckboxItem({ className, children, ...props }: MenuPrimitive.CheckboxItem.Props & RefAttributes<HTMLDivElement>) {
   return (
     <MenuPrimitive.CheckboxItem
       data-slot="dropdown-menu-checkbox-item"
@@ -121,11 +113,7 @@ function DropdownMenuRadioGroup({ ...props }: MenuPrimitive.RadioGroup.Props & R
   return <MenuPrimitive.RadioGroup data-slot="dropdown-menu-radio-group" {...props} />;
 }
 
-function DropdownMenuRadioItem({
-  className,
-  children,
-  ...props
-}: MenuPrimitive.RadioItem.Props & RefAttributes<HTMLDivElement>) {
+function DropdownMenuRadioItem({ className, children, ...props }: MenuPrimitive.RadioItem.Props & RefAttributes<HTMLDivElement>) {
   return (
     <MenuPrimitive.RadioItem
       data-slot="dropdown-menu-radio-item"
@@ -143,14 +131,7 @@ function DropdownMenuRadioItem({
   );
 }
 
-function DropdownMenuLabel({
-  className,
-  inset,
-  ...props
-}: MenuPrimitive.GroupLabel.Props &
-  RefAttributes<HTMLDivElement> & {
-    inset?: boolean;
-  }) {
+function DropdownMenuLabel({ className, inset, ...props }: MenuPrimitive.GroupLabel.Props & RefAttributes<HTMLDivElement> & { inset?: boolean }) {
   return (
     <MenuPrimitive.GroupLabel
       data-slot="dropdown-menu-label"
@@ -162,23 +143,11 @@ function DropdownMenuLabel({
 }
 
 function DropdownMenuSeparator({ className, ...props }: MenuPrimitive.Separator.Props & RefAttributes<HTMLHRElement>) {
-  return (
-    <MenuPrimitive.Separator
-      data-slot="dropdown-menu-separator"
-      className={cn('-mx-1 my-1 h-px bg-border', className)}
-      {...props}
-    />
-  );
+  return <MenuPrimitive.Separator data-slot="dropdown-menu-separator" className={cn('-mx-1 my-1 h-px bg-border', className)} {...props} />;
 }
 
 function DropdownMenuShortcut({ className, ...props }: ComponentProps<'span'>) {
-  return (
-    <span
-      data-slot="dropdown-menu-shortcut"
-      className={cn('ml-auto text-muted-foreground text-xs tracking-widest', className)}
-      {...props}
-    />
-  );
+  return <span data-slot="dropdown-menu-shortcut" className={cn('ml-auto text-muted-foreground text-xs tracking-widest', className)} {...props} />;
 }
 
 function DropdownMenuSub({ ...props }: MenuPrimitive.SubmenuRoot.Props) {
@@ -190,10 +159,7 @@ function DropdownMenuSubTrigger({
   inset,
   children,
   ...props
-}: MenuPrimitive.SubmenuTrigger.Props &
-  RefAttributes<HTMLDivElement> & {
-    inset?: boolean;
-  }) {
+}: MenuPrimitive.SubmenuTrigger.Props & RefAttributes<HTMLDivElement> & { inset?: boolean }) {
   return (
     <MenuPrimitive.SubmenuTrigger
       data-slot="dropdown-menu-sub-trigger"

@@ -3,24 +3,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserContext } from '#/core/context';
 
 // Boundaries mocked: the RLS transaction passes through; DB query, signer and permission are stubbed.
-vi.mock('#/db/tenant-context', () => ({
-  tenantRead: (ctx: UserContext, fn: (c: UserContext) => unknown) => fn(ctx),
-}));
+vi.mock('#/db/tenant-context', () => ({ tenantRead: (ctx: UserContext, fn: (c: UserContext) => unknown) => fn(ctx) }));
 const findAttachmentsByIds = vi.fn();
-vi.mock('#/modules/attachment/attachment-queries', () => ({
-  findAttachmentsByIds: (...args: unknown[]) => findAttachmentsByIds(...args),
-}));
+vi.mock('#/modules/attachment/attachment-queries', () => ({ findAttachmentsByIds: (...args: unknown[]) => findAttachmentsByIds(...args) }));
 const getSignedUrlFromKey = vi.fn();
-vi.mock('#/modules/attachment/helpers/signed-url', () => ({
-  getSignedUrlFromKey: (...args: unknown[]) => getSignedUrlFromKey(...args),
-}));
+vi.mock('#/modules/attachment/helpers/signed-url', () => ({ getSignedUrlFromKey: (...args: unknown[]) => getSignedUrlFromKey(...args) }));
 const checkAccessBatch = vi.fn();
 vi.mock('#/permissions', () => ({ checkAccessBatch: (...args: unknown[]) => checkAccessBatch(...args) }));
 vi.mock('#/permissions/access', () => ({ accessFrom: () => ({ actorId: 'user-1', memberships: [] }) }));
 const buildSubjectFromEntity = vi.fn();
-vi.mock('#/permissions/build-subject', () => ({
-  buildSubjectFromEntity: (...args: unknown[]) => buildSubjectFromEntity(...args),
-}));
+vi.mock('#/permissions/build-subject', () => ({ buildSubjectFromEntity: (...args: unknown[]) => buildSubjectFromEntity(...args) }));
 
 const { getPresignedUrlsOp } = await import('./get-presigned-urls');
 
@@ -32,20 +24,14 @@ const attachmentA = {
   organizationId: 'org-1',
   createdBy: 'user-1',
   bucketName: appConfig.s3.privateBucket,
-  keys: {
-    original: 'org-1/user-1/a.jpg',
-    preview: 'org-1/user-1/a-preview.jpg',
-  },
+  keys: { original: 'org-1/user-1/a.jpg', preview: 'org-1/user-1/a-preview.jpg' },
 };
 const attachmentB = {
   id: 'att-b',
   organizationId: 'org-1',
   createdBy: 'user-2',
   bucketName: appConfig.s3.privateBucket,
-  keys: {
-    original: 'org-1/user-2/b.jpg',
-    converted: 'org-1/user-2/b.pdf',
-  },
+  keys: { original: 'org-1/user-2/b.jpg', converted: 'org-1/user-2/b.pdf' },
 };
 
 /** Allow every subject the engine sees, keyed like the real BatchPermissionResult. */
@@ -78,16 +64,8 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
     expect(getSignedUrlFromKey).toHaveBeenCalledTimes(2);
     expect(res).toEqual({
       data: [
-        {
-          attachmentId: 'att-a',
-          variant: 'preview',
-          url: `https://signed.example/${attachmentA.keys.preview}`,
-        },
-        {
-          attachmentId: 'att-b',
-          variant: 'original',
-          url: `https://signed.example/${attachmentB.keys.original}`,
-        },
+        { attachmentId: 'att-a', variant: 'preview', url: `https://signed.example/${attachmentA.keys.preview}` },
+        { attachmentId: 'att-b', variant: 'original', url: `https://signed.example/${attachmentB.keys.original}` },
       ],
       rejectedIds: [],
     });
@@ -109,10 +87,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
 
     const res = await getPresignedUrlsOp(ctx, { items: [{ attachmentId: 'att-a', variant: 'converted' }] });
 
-    expect(getSignedUrlFromKey).toHaveBeenCalledWith(attachmentA.keys.original, {
-      bucketName: appConfig.s3.privateBucket,
-      publicBucket: false,
-    });
+    expect(getSignedUrlFromKey).toHaveBeenCalledWith(attachmentA.keys.original, { bucketName: appConfig.s3.privateBucket, publicBucket: false });
     expect(res.data[0]?.variant).toBe('converted');
   });
 
@@ -152,10 +127,7 @@ describe('getPresignedUrlsOp: fail-closed batch signing', () => {
   });
 
   it('rejects a whole id when a requested variant names storage outside its organization, never signing it', async () => {
-    const planted = {
-      ...attachmentB,
-      keys: { original: attachmentB.keys.original, preview: 'org-2/user-9/secret.jpg' },
-    };
+    const planted = { ...attachmentB, keys: { original: attachmentB.keys.original, preview: 'org-2/user-9/secret.jpg' } };
     const foreignBucket = { ...attachmentA, id: 'att-c', bucketName: 'another-apps-bucket' };
     findAttachmentsByIds.mockResolvedValue([attachmentA, planted, foreignBucket]);
     allowAll([attachmentA, planted, foreignBucket]);

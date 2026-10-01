@@ -53,19 +53,11 @@ export async function cleanupEntityHierarchy(db: ExecutableDb, ...plans: TestEnt
  * ancestor, as `attachment-placement.ts` homes them, so the plan leaves the nullable ancestor columns unset.
  */
 export async function seedAttachmentHome(org: { id: string; tenantId: string }, createdBy: string) {
-  const plan = buildTestEntityHierarchyPlan({
-    entityType: 'attachment',
-    organizationId: org.id,
-    makeChannelId: () => generateId(),
-  });
+  const plan = buildTestEntityHierarchyPlan({ entityType: 'attachment', organizationId: org.id, makeChannelId: () => generateId() });
   const slugPrefix = `home-${nanoid(6)}`;
   await seedEntityHierarchy(getAdminDb('test setup'), plan, { tenantId: org.tenantId, createdBy, slugPrefix });
-  const nullable = new Set<string>(
-    hierarchy.getNullableAncestors('attachment').map((type) => appConfig.entityIdColumnKeys[type]),
-  );
-  const channelIdColumns = Object.fromEntries(
-    Object.entries(plan.channelIdColumns).filter(([key]) => !nullable.has(key)),
-  );
+  const nullable = new Set<string>(hierarchy.getNullableAncestors('attachment').map((type) => appConfig.entityIdColumnKeys[type]));
+  const channelIdColumns = Object.fromEntries(Object.entries(plan.channelIdColumns).filter(([key]) => !nullable.has(key)));
   return { ...plan, channelIdColumns };
 }
 

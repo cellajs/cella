@@ -15,15 +15,7 @@ interface Props {
   callback?: (args: CallbackArgs<Member[]>) => void;
 }
 
-export function DeleteMemberships({
-  members,
-  entityId,
-  entityType,
-  tenantId,
-  organizationId,
-  callback,
-  dialog: isDialog,
-}: Props) {
+export function DeleteMemberships({ members, entityId, entityType, tenantId, organizationId, callback, dialog: isDialog }: Props) {
   const removeDialog = useDialoger((state) => state.remove);
   const { mutate: deleteMemberships, isPending } = useMembershipsDeleteMutation();
 
@@ -39,12 +31,5 @@ export function DeleteMemberships({
     callback?.({ data: members, status: 'success' });
   };
 
-  return (
-    <DeleteForm
-      allowOfflineDelete={true}
-      onDelete={onDeleteMembers}
-      onCancel={() => removeDialog()}
-      pending={isPending}
-    />
-  );
+  return <DeleteForm allowOfflineDelete={true} onDelete={onDeleteMembers} onCancel={() => removeDialog()} pending={isPending} />;
 }

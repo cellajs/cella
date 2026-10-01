@@ -41,29 +41,16 @@ function installMocks(): void {
       return { applications: [{ id: appId(name), name }] } as never;
     }
     if (method === 'POST' && url.endsWith('/api-keys')) {
-      const { application_id: id, default_project_id: project } = body as {
-        application_id: string;
-        default_project_id: string;
-      };
+      const { application_id: id, default_project_id: project } = body as { application_id: string; default_project_id: string };
       if (project !== 'proj') throw new Error(`key minted outside the project: ${project}`);
       mintCount += 1;
       ops.push(`mint:${id}`);
-      return {
-        access_key: `${id}-fresh-${mintCount}`,
-        secret_key: `sk-${mintCount}`,
-        created_at: '2026-01-29',
-      } as never;
+      return { access_key: `${id}-fresh-${mintCount}`, secret_key: `sk-${mintCount}`, created_at: '2026-01-29' } as never;
     }
     if (method === 'GET' && url.includes('/api-keys?application_id=')) {
       const id = new URL(url).searchParams.get('application_id') ?? '';
       // Two stale keys, the live one and a fresh one: pruning keeps the newest KEYS_TO_KEEP of this app only.
-      return {
-        api_keys: priorKeys(id).map((key, index) => ({
-          access_key: key,
-          secret_key: '',
-          created_at: `2026-01-${10 + index}`,
-        })),
-      } as never;
+      return { api_keys: priorKeys(id).map((key, index) => ({ access_key: key, secret_key: '', created_at: `2026-01-${10 + index}` })) } as never;
     }
     throw new Error(`unexpected scwFetch ${method} ${url}`);
   });
@@ -73,9 +60,7 @@ function installMocks(): void {
   });
 
   vi.mocked(createSecretManagerClient).mockReturnValue({
-    listSecretsUnder: async (folder: string) => [
-      { id: `stale-bundle:${folder}`, name: 'handoff-stale', region: 'nl-ams' },
-    ],
+    listSecretsUnder: async (folder: string) => [{ id: `stale-bundle:${folder}`, name: 'handoff-stale', region: 'nl-ams' }],
     deleteSecret: async (id: string) => {
       ops.push(`delete-bundle:${id}`);
     },
@@ -155,9 +140,7 @@ describe('mintGenerationKeys', () => {
     await mintGenerationKeys(options(join(outDir, 'prune.json')));
     // 3 apps (boot + 2 services), each losing its own two oldest keys; the newest 2 survive.
     expect(keyDeletes().sort()).toEqual(
-      [BOOT, VM('backend'), VM('frontend')]
-        .flatMap((app) => [`delete:${appId(app)}-old-1`, `delete:${appId(app)}-old-2`])
-        .sort(),
+      [BOOT, VM('backend'), VM('frontend')].flatMap((app) => [`delete:${appId(app)}-old-1`, `delete:${appId(app)}-old-2`]).sort(),
     );
   });
 

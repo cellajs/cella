@@ -19,12 +19,7 @@ import {
 import type { ActorBinding } from '#/core/context';
 import { AppError } from '#/core/error';
 
-const roleReadValue = (
-  policies: PolicyMatrix,
-  entityType: ProductEntityType,
-  channelType: ChannelEntityType,
-  role: EntityRole,
-): PolicyCell => {
+const roleReadValue = (policies: PolicyMatrix, entityType: ProductEntityType, channelType: ChannelEntityType, role: EntityRole): PolicyCell => {
   const entityPolicies = getEntityPolicies(entityType, policies);
   const permissions = getPolicyPermissions(entityPolicies, channelType, role);
   return permissions?.read ?? 0;
@@ -63,16 +58,7 @@ interface ScopeAccumulator {
   /** HOME-scoped unconditional grants (non-elevated), keyed by channel type. */
   homeScoped: Map<ChannelEntityType, Set<string>>;
   /** Keyed by `${condition name}:${level}:${homeOnly}`; the name uniquely identifies the rule. */
-  conditional: Map<
-    string,
-    {
-      condition: RowConditionName;
-      channelType?: ChannelEntityType;
-      homeOnly: boolean;
-      orgWide: boolean;
-      ids: Set<string>;
-    }
-  >;
+  conditional: Map<string, { condition: RowConditionName; channelType?: ChannelEntityType; homeOnly: boolean; orgWide: boolean; ids: Set<string> }>;
 }
 
 /** The caller's readable scope. A role holding only `read: 'own'` contributes a {@link ConditionalScope}, so it can still list. */
@@ -100,20 +86,9 @@ const resolveScopes = (
     conditional: new Map(),
   };
 
-  const addConditional = (
-    condition: RowConditionName,
-    channelId: string | null,
-    channelType?: ChannelEntityType,
-    homeOnly = false,
-  ) => {
+  const addConditional = (condition: RowConditionName, channelId: string | null, channelType?: ChannelEntityType, homeOnly = false) => {
     const key = `${condition}:${channelType ?? ''}:${homeOnly}`;
-    const entry = acc.conditional.get(key) ?? {
-      condition,
-      channelType,
-      homeOnly,
-      orgWide: false,
-      ids: new Set<string>(),
-    };
+    const entry = acc.conditional.get(key) ?? { condition, channelType, homeOnly, orgWide: false, ids: new Set<string>() };
     if (channelId === null) entry.orgWide = true;
     else entry.ids.add(channelId);
     acc.conditional.set(key, entry);
@@ -140,8 +115,7 @@ const resolveScopes = (
     if (membership.channelType === 'organization' && membership.channelId === organizationId) {
       const value = roleReadValue(policies, entityType, 'organization', membership.role);
       if (value === 1) addUnconditional('organization', membership.role, null);
-      else if (isRowCondition(value))
-        addConditional(value, null, undefined, isHomeScopedGrant('organization', membership.role));
+      else if (isRowCondition(value)) addConditional(value, null, undefined, isHomeScopedGrant('organization', membership.role));
       continue;
     }
 
@@ -197,32 +171,21 @@ const deeperChannelsOf = (orderedChannels: readonly ChannelEntityType[], channel
   return index > 0 ? [...orderedChannels.slice(0, index)] : [];
 };
 
-const toConditionalScopes = (
-  acc: ScopeAccumulator,
-  orderedChannels: readonly ChannelEntityType[],
-): ConditionalScope[] => {
+const toConditionalScopes = (acc: ScopeAccumulator, orderedChannels: readonly ChannelEntityType[]): ConditionalScope[] => {
   // Org-wide unconditional scope subsumes every conditional slice.
   if (acc.unconditionalOrgWide) return [];
 
   const scopes: ConditionalScope[] = [];
   for (const { condition, channelType, homeOnly, orgWide, ids } of acc.conditional.values()) {
     // Home-scoped conditional slices additionally require the deeper columns NULL
-    const deeper = homeOnly
-      ? deeperChannelsOf(orderedChannels, channelType ?? (orderedChannels.at(-1) as ChannelEntityType))
-      : undefined;
+    const deeper = homeOnly ? deeperChannelsOf(orderedChannels, channelType ?? (orderedChannels.at(-1) as ChannelEntityType)) : undefined;
     if (orgWide) {
       scopes.push({ condition, channelIds: undefined, ...(deeper?.length && { deeperChannels: deeper }) });
       continue;
     }
     // Intermediate-level slices keep their own id space (scoped by their own column).
     if (channelType) {
-      if (ids.size > 0)
-        scopes.push({
-          condition,
-          channelIds: [...ids],
-          channelType,
-          ...(deeper?.length && { deeperChannels: deeper }),
-        });
+      if (ids.size > 0) scopes.push({ condition, channelIds: [...ids], channelType, ...(deeper?.length && { deeperChannels: deeper }) });
       continue;
     }
     // Ids already unconditionally readable don't need the conditional slice.
@@ -247,12 +210,7 @@ const toHomeScopes = (acc: ScopeAccumulator, orderedChannels: readonly ChannelEn
 
   const scopes: HomeScope[] = [];
   for (const [channelType, ids] of acc.homeScoped) {
-    if (ids.size > 0)
-      scopes.push({
-        channelType,
-        channelIds: [...ids],
-        deeperChannels: deeperChannelsOf(orderedChannels, channelType),
-      });
+    if (ids.size > 0) scopes.push({ channelType, channelIds: [...ids], deeperChannels: deeperChannelsOf(orderedChannels, channelType) });
   }
   return scopes;
 };
@@ -317,24 +275,14 @@ export const resolveCollectionReadFilterForPolicies = ({
   // Administrator short-circuit, matching the engine: they may pass the guard without a membership.
   if (!('anonymous' in actor) && actor.isSystemAdmin) {
     // A requested home channel still narrows: sysadmin widens WHO can read, never WHAT a filtered list returns.
-    if (requested?.homeChannelId !== undefined)
-      return { homeChannelIds: [requested.homeChannelId], conditionalScopes: [] };
-    if (requested?.homeChannelIds !== undefined)
-      return { homeChannelIds: requested.homeChannelIds, conditionalScopes: [] };
+    if (requested?.homeChannelId !== undefined) return { homeChannelIds: [requested.homeChannelId], conditionalScopes: [] };
+    if (requested?.homeChannelIds !== undefined) return { homeChannelIds: requested.homeChannelIds, conditionalScopes: [] };
     return { homeChannelIds: undefined, conditionalScopes: [] };
   }
 
   const resolvedHierarchy = hierarchy ?? appHierarchy;
   const orderedChannels = resolvedHierarchy.getOrderedAncestors(entityType) as ChannelEntityType[];
-  const acc = resolveScopes(
-    policies,
-    memberships,
-    entityType,
-    organizationId,
-    elevatedGrants,
-    orderedChannels,
-    publicGrants,
-  );
+  const acc = resolveScopes(policies, memberships, entityType, organizationId, elevatedGrants, orderedChannels, publicGrants);
   const conditionalScopes = toConditionalScopes(acc, orderedChannels);
   const homeChannel = orderedChannels.find((channel) => channel !== 'organization') ?? null;
   const intermediateScopes = toIntermediateScopes(acc);
@@ -345,8 +293,7 @@ export const resolveCollectionReadFilterForPolicies = ({
     intermediates: IntermediateScope[] = intermediateScopes,
     homes: HomeScope[] = homeScopes,
   ): CollectionReadFilter => {
-    let base: CollectionReadFilter =
-      intermediates.length > 0 ? { ...filter, intermediateScopes: intermediates } : filter;
+    let base: CollectionReadFilter = intermediates.length > 0 ? { ...filter, intermediateScopes: intermediates } : filter;
     if (homes.length > 0) base = { ...base, homeScopes: homes };
     return base;
   };
@@ -388,8 +335,5 @@ export const resolveCollectionReadFilterForPolicies = ({
   }
 
   // Aggregate read: org-wide for root-level grants, else the readable home channels plus intermediate / home scopes.
-  return withScopes({
-    homeChannelIds: acc.unconditionalOrgWide ? undefined : [...acc.unconditionalIds],
-    conditionalScopes,
-  });
+  return withScopes({ homeChannelIds: acc.unconditionalOrgWide ? undefined : [...acc.unconditionalIds], conditionalScopes });
 };

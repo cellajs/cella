@@ -16,11 +16,7 @@ function zoneName(zone: DnsZoneItem): string {
 /** Project id of the most specific existing zone serving `dnsZone`. A stack's records can land in a parent zone owned by another project, so the CI grant must cover that zone's project. */
 export async function resolveDnsZoneProjectId(auth: ScwAuth, dnsZone: string): Promise<string | undefined> {
   if (!dnsZone) return undefined;
-  const { dns_zones: zones = [] } = await scwFetch<{ dns_zones?: DnsZoneItem[] }>(
-    auth,
-    'GET',
-    `${DOMAIN_BASE}/dns-zones?page_size=100`,
-  );
+  const { dns_zones: zones = [] } = await scwFetch<{ dns_zones?: DnsZoneItem[] }>(auth, 'GET', `${DOMAIN_BASE}/dns-zones?page_size=100`);
   const matches = zones.filter((zone) => {
     const name = zoneName(zone);
     return dnsZone === name || dnsZone.endsWith(`.${name}`);
@@ -33,9 +29,7 @@ export async function resolveDnsZoneProjectId(auth: ScwAuth, dnsZone: string): P
 /** Project ids the CI key's DNS grant must cover: the app project plus the serving zone's project when it differs. Falls back to the app project alone when the zone lookup fails. */
 export async function resolveDnsProjectIds(auth: ScwAuth, dnsZone: string, appProjectId: string): Promise<string[]> {
   const zoneProjectId = await resolveDnsZoneProjectId(auth, dnsZone).catch((err: unknown) => {
-    console.warn(
-      `DNS zone project lookup failed (${err instanceof Error ? err.message : String(err)}); scoping DNS to the app project only.`,
-    );
+    console.warn(`DNS zone project lookup failed (${err instanceof Error ? err.message : String(err)}); scoping DNS to the app project only.`);
     return undefined;
   });
   return zoneProjectId && zoneProjectId !== appProjectId ? [appProjectId, zoneProjectId] : [appProjectId];

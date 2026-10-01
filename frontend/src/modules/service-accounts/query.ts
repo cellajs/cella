@@ -23,8 +23,7 @@ import type { MutationData, QueryOrgContext } from '~/query/types';
 export const serviceAccountKeys = {
   all: ['service-accounts'] as const,
   list: (path: QueryOrgContext) => ['service-accounts', 'list', path.tenantId, path.organizationId] as const,
-  apiKeys: (path: QueryOrgContext, id: string) =>
-    ['service-accounts', 'apiKeys', path.tenantId, path.organizationId, id] as const,
+  apiKeys: (path: QueryOrgContext, id: string) => ['service-accounts', 'apiKeys', path.tenantId, path.organizationId, id] as const,
   create: ['service-accounts', 'create'] as const,
   revoke: ['service-accounts', 'revoke'] as const,
 };
@@ -55,9 +54,7 @@ export const useCreateServiceAccountMutation = () => {
       // The secret never enters the cache; the listed row is the safe shape.
       if (apiKey) {
         const { secret: _secret, ...listed } = apiKey;
-        queryClient.setQueryData<GetApiKeysResponse>(serviceAccountKeys.apiKeys(path, serviceAccount.id), {
-          items: [listed],
-        });
+        queryClient.setQueryData<GetApiKeysResponse>(serviceAccountKeys.apiKeys(path, serviceAccount.id), { items: [listed] });
       }
       toaster.success(t('c:success.create_resource', { resource: t('c:api_key') }));
     },
@@ -74,13 +71,10 @@ export const useRevokeApiKeyMutation = () => {
     mutationFn: ({ path }) => revokeApiKey({ path }),
     onSuccess: (revoked, { path }) => {
       const { tenantId, organizationId, id } = path;
-      queryClient.setQueryData<GetApiKeysResponse>(
-        serviceAccountKeys.apiKeys({ tenantId, organizationId }, id),
-        (oldData) => {
-          if (!oldData) return oldData;
-          return { ...oldData, items: oldData.items.map((item) => (item.id === revoked.id ? revoked : item)) };
-        },
-      );
+      queryClient.setQueryData<GetApiKeysResponse>(serviceAccountKeys.apiKeys({ tenantId, organizationId }, id), (oldData) => {
+        if (!oldData) return oldData;
+        return { ...oldData, items: oldData.items.map((item) => (item.id === revoked.id ? revoked : item)) };
+      });
       toaster.success(t('c:success.revoke_resource', { resource: t('c:api_key') }));
     },
     onError(error) {

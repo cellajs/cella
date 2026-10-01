@@ -2,12 +2,7 @@ import type { ChannelEntityType } from 'shared';
 import type { UserMenuItem } from '~/modules/me/types';
 
 /** Filters menu items by entity type and archive state, then sorts them (`reverse` flips the order). */
-export const sortAndFilterMenu = (
-  data: UserMenuItem[],
-  entityType: ChannelEntityType,
-  archived: boolean,
-  reverse = false,
-): UserMenuItem[] => {
+export const sortAndFilterMenu = (data: UserMenuItem[], entityType: ChannelEntityType, archived: boolean, reverse = false): UserMenuItem[] => {
   return data
     .filter((el) => el.entityType === entityType && el.membership.archived === archived)
     .sort((a, b) => {

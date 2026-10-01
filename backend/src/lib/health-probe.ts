@@ -23,10 +23,7 @@ async function runProbe(baseUrl: string): Promise<ProbeResult> {
   try {
     // WebSocket workers advertise ws(s):// URLs, but /health speaks plain HTTP and fetch() rejects the ws scheme
     const httpBase = baseUrl.replace(/^ws(s?):/, 'http$1:');
-    const res = await fetch(`${httpBase}/health?depth=full`, {
-      signal: controller.signal,
-      headers: { accept: 'application/json' },
-    });
+    const res = await fetch(`${httpBase}/health?depth=full`, { signal: controller.signal, headers: { accept: 'application/json' } });
     const latencyMs = Date.now() - startedAt;
     if (!res.ok) return { ok: false, latencyMs, reason: `http_${res.status}` };
     const body = (await res.json()) as Record<string, unknown>;

@@ -16,12 +16,7 @@ const { syncStore } = await import('./sync-store');
 describe('sync-store declareSyncView (re-baseline rule)', () => {
   afterEach(() => syncStore.getState().reset());
 
-  const base = {
-    organizationId: 'org-1',
-    prefixes: ['org-1/c1'],
-    entityTypes: ['item'],
-    depth: 'subtree' as const,
-  };
+  const base = { organizationId: 'org-1', prefixes: ['org-1/c1'], entityTypes: ['item'], depth: 'subtree' as const };
 
   it('keeps the cursor while the view identity is unchanged (prefix order irrelevant)', () => {
     const store = syncStore.getState();
@@ -64,13 +59,7 @@ describe('sync-store getCatchupViews', () => {
     const views = syncStore.getState().getCatchupViews(['attachment']);
 
     expect(views).toEqual([
-      {
-        key: 'org-1:attachment',
-        organizationId: 'org-1',
-        prefixes: ['org-1'],
-        entityTypes: ['attachment'],
-        cursor: 42,
-      },
+      { key: 'org-1:attachment', organizationId: 'org-1', prefixes: ['org-1'], entityTypes: ['attachment'], cursor: 42 },
       { key: 'org-2:attachment', organizationId: 'org-2', prefixes: ['org-2'], entityTypes: ['attachment'], cursor: 0 },
     ]);
   });
@@ -82,9 +71,7 @@ describe('sync-store getCatchupViews', () => {
 
     const views = syncStore.getState().getCatchupViews(['attachment']);
     // Org slot untouched → baseline cursor 0, despite the live child cursor.
-    expect(views).toEqual([
-      { key: 'org-1:attachment', organizationId: 'org-1', prefixes: ['org-1'], entityTypes: ['attachment'], cursor: 0 },
-    ]);
+    expect(views).toEqual([{ key: 'org-1:attachment', organizationId: 'org-1', prefixes: ['org-1'], entityTypes: ['attachment'], cursor: 0 }]);
   });
 
   it('org-homed live channel views (channelId === orgId) share the org slot and drive the cursor', () => {

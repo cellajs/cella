@@ -25,8 +25,7 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: B
   const cellRef = useRef<HTMLButtonElement | null>(null);
 
   // While compacted the name is visually hidden, so the compact-scoped table tooltip shows it.
-  const compactTooltip =
-    compactable && user.name ? { 'data-tooltip': 'compact', 'data-tooltip-content': user.name } : undefined;
+  const compactTooltip = compactable && user.name ? { 'data-tooltip': 'compact', 'data-tooltip-content': user.name } : undefined;
 
   if (readOnly) {
     return (
@@ -54,21 +53,10 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: B
         if (e.metaKey || e.ctrlKey) return;
         e.preventDefault();
 
-        navigate({
-          to: '.',
-          replace: false,
-          resetScroll: false,
-          search: (prev) => ({ ...prev, userSheetId: user.id }),
-        });
+        navigate({ to: '.', replace: false, resetScroll: false, search: (prev) => ({ ...prev, userSheetId: user.id }) });
       }}
     >
-      <EntityAvatar
-        type="user"
-        className="h-8 w-8 group-active:translate-y-[.05rem]"
-        id={user.id}
-        name={user.name}
-        url={user.thumbnailUrl}
-      />
+      <EntityAvatar type="user" className="h-8 w-8 group-active:translate-y-[.05rem]" id={user.id} name={user.name} url={user.thumbnailUrl} />
       <span
         className={cn(
           'truncate decoration-foreground/20 underline-offset-3 group-hover:underline group-active:translate-y-[.05rem] group-active:decoration-foreground/50',

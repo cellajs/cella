@@ -17,9 +17,7 @@ const meta = {
       <HoverCardContent>Yeah, that works out. This is me. I am cool.</HoverCardContent>
     </HoverCard>
   ),
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
 } satisfies Meta<typeof HoverCard>;
 
 export default meta;
@@ -39,15 +37,11 @@ export const ShouldShowOnHover: Story = {
 
     await step('Hover over the trigger element', async () => {
       await userEvent.hover(await canvasBody.findByText(/hover/i));
-      await waitFor(() =>
-        expect(canvasElement.ownerDocument.body.querySelector('[data-slot="hover-card-content"]')).toBeVisible(),
-      );
+      await waitFor(() => expect(canvasElement.ownerDocument.body.querySelector('[data-slot="hover-card-content"]')).toBeVisible());
     });
     await step('Unhover the trigger element', async () => {
       await userEvent.unhover(await canvasBody.findByText(/hover/i));
-      await waitFor(() =>
-        expect(canvasElement.ownerDocument.body.querySelector('[data-slot="hover-card-content"]')).toBeNull(),
-      );
+      await waitFor(() => expect(canvasElement.ownerDocument.body.querySelector('[data-slot="hover-card-content"]')).toBeNull());
     });
   },
 };

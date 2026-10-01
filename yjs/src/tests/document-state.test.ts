@@ -72,11 +72,7 @@ describe('classifyUpdate', () => {
 describe('mergeLog', () => {
   it('must not let a row Yjs cannot decode block the rows around it', () => {
     const bad = row(2, new Uint8Array([1, 2, 3]));
-    const { state, rejected } = mergeLog(mapUpdate('base', true), [
-      row(1, mapUpdate('a', 1)),
-      bad,
-      row(3, mapUpdate('b', 2)),
-    ]);
+    const { state, rejected } = mergeLog(mapUpdate('base', true), [row(1, mapUpdate('a', 1)), bad, row(3, mapUpdate('b', 2))]);
     expect(rejected).toEqual([bad]);
     expect(readMap(state!)).toEqual({ base: true, a: 1, b: 2 });
   });
@@ -90,11 +86,7 @@ describe('mergeLog', () => {
     const poison = row(2, mapUpdate('poison', true));
     unmergeable.add(poison.payload);
     try {
-      const { state, rejected } = mergeLog(mapUpdate('base', true), [
-        row(1, mapUpdate('a', 1)),
-        poison,
-        row(3, mapUpdate('b', 2)),
-      ]);
+      const { state, rejected } = mergeLog(mapUpdate('base', true), [row(1, mapUpdate('a', 1)), poison, row(3, mapUpdate('b', 2))]);
       expect(rejected).toEqual([poison]);
       expect(readMap(state!)).toEqual({ base: true, a: 1, b: 2 });
     } finally {

@@ -13,9 +13,7 @@ export function EmailVerificationPage() {
     <div className="text-center">
       <h1 className="text-2xl">{t('c:almost_there')}</h1>
       <p className="my-4">
-        {t('c:request_verification.text', {
-          reason: t(`c:request_verification.${reason}` as TKey, { providerName: provider }),
-        })}
+        {t('c:request_verification.text', { reason: t(`c:request_verification.${reason}` as TKey, { providerName: provider }) })}
       </p>
 
       {reason === 'signup' && <LegalNotice mode="verify" />}

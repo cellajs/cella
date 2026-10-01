@@ -63,10 +63,7 @@ export const initTabCoordinator = async (): Promise<void> => {
       broadcastChannel.onmessage = handleBroadcastMessage;
       console.debug('[TabCoordinator] BroadcastChannel initialized');
       // Announce schema version so tabs running a different bundle detect skew.
-      broadcastChannel.postMessage({
-        type: 'schema-version',
-        version: currentSchemaVersion,
-      } satisfies BroadcastMessage);
+      broadcastChannel.postMessage({ type: 'schema-version', version: currentSchemaVersion } satisfies BroadcastMessage);
     }
 
     if (isWebLocksAvailable()) {
@@ -184,10 +181,7 @@ const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => 
       markBundleStale();
     } else if (message.version < currentSchemaVersion) {
       // An older tab announced itself after we booted, re-announce so it learns.
-      broadcastChannel?.postMessage({
-        type: 'schema-version',
-        version: currentSchemaVersion,
-      } satisfies BroadcastMessage);
+      broadcastChannel?.postMessage({ type: 'schema-version', version: currentSchemaVersion } satisfies BroadcastMessage);
     }
     return;
   }
@@ -203,18 +197,12 @@ const handleBroadcastMessage = (event: MessageEvent<BroadcastMessage>): void => 
 /** Called by the leader for each SSE notification it receives. */
 export const broadcastNotification = (notification: AppStreamNotification, organizationId: string): void => {
   if (broadcastChannel) {
-    broadcastChannel.postMessage({
-      type: 'stream-notification',
-      notification,
-      organizationId,
-    } satisfies BroadcastMessage);
+    broadcastChannel.postMessage({ type: 'stream-notification', notification, organizationId } satisfies BroadcastMessage);
   }
 };
 
 /** Followers register here to receive the leader's notifications. */
-export const onNotification = (
-  handler: (notification: AppStreamNotification, organizationId: string) => void,
-): (() => void) => {
+export const onNotification = (handler: (notification: AppStreamNotification, organizationId: string) => void): (() => void) => {
   notificationHandlers.add(handler);
   return () => {
     notificationHandlers.delete(handler);

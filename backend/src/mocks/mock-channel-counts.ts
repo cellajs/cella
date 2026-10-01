@@ -12,9 +12,9 @@ export const generateMockChannelCounts = (channelType: ChannelEntityType, key: s
   const entities = withFakerSeed(
     `${key}:entities`,
     () =>
-      Object.fromEntries(
-        descendants.map((entityType) => [entityType, faker.number.int({ min: 0, max: 500 })]),
-      ) as Partial<Record<EntityType, number>>,
+      Object.fromEntries(descendants.map((entityType) => [entityType, faker.number.int({ min: 0, max: 500 })])) as Partial<
+        Record<EntityType, number>
+      >,
   );
 
   const activity = withFakerSeed(
@@ -23,9 +23,7 @@ export const generateMockChannelCounts = (channelType: ChannelEntityType, key: s
       Object.fromEntries(
         productDescendants.map((entityType) => {
           const created = faker.date.recent({ days: 30, refDate: MOCK_REF_DATE });
-          const updated = faker.datatype.boolean({ probability: 2 / 3 })
-            ? faker.date.between({ from: created, to: MOCK_REF_DATE }).getTime()
-            : null;
+          const updated = faker.datatype.boolean({ probability: 2 / 3 }) ? faker.date.between({ from: created, to: MOCK_REF_DATE }).getTime() : null;
           return [entityType, { created: created.getTime(), updated }];
         }),
       ) as Partial<Record<ProductEntityType, { created: number | null; updated: number | null }>>,
@@ -36,17 +34,9 @@ export const generateMockChannelCounts = (channelType: ChannelEntityType, key: s
     `${key}:entitiesSelf`,
     () =>
       Object.fromEntries(
-        Object.entries(entities).map(([entityType, total]) => [
-          entityType,
-          faker.number.int({ min: 0, max: total ?? 0 }),
-        ]),
+        Object.entries(entities).map(([entityType, total]) => [entityType, faker.number.int({ min: 0, max: total ?? 0 })]),
       ) as Partial<Record<EntityType, number>>,
   );
 
-  return {
-    membership: generateMockMembershipCounts(`${key}:membership`),
-    entities,
-    entitiesSelf,
-    activity,
-  };
+  return { membership: generateMockMembershipCounts(`${key}:membership`), entities, entitiesSelf, activity };
 };

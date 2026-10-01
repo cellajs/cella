@@ -12,14 +12,7 @@ type SameSite = 'lax' | 'strict';
  * - `session`: those bound to its session (a step-up link: one per session at a time).
  * - `none`: nothing; each one stands on its own (every sign-in holds its own second-factor challenge).
  */
-export const tokenReplacements = [
-  'address-or-account',
-  'identity',
-  'invitation',
-  'account',
-  'session',
-  'none',
-] as const;
+export const tokenReplacements = ['address-or-account', 'identity', 'invitation', 'account', 'session', 'none'] as const;
 export type TokenReplacement = (typeof tokenReplacements)[number];
 
 /**
@@ -110,8 +103,7 @@ export type LinkTokenType = TokenTypeCarriedBy<'link'>;
  * The emailed URL that opens a link token. Keep the `/invoke-token/` path: `middlewares/app.ts` answers it with
  * `Referrer-Policy: no-referrer`, so the secret in it never leaks through a Referer.
  */
-export const tokenLinkUrl = (type: LinkTokenType, rawToken: string) =>
-  `${appConfig.backendAuthUrl}/invoke-token/${type}/${rawToken}`;
+export const tokenLinkUrl = (type: LinkTokenType, rawToken: string) => `${appConfig.backendAuthUrl}/invoke-token/${type}/${rawToken}`;
 
 /** Token types carried only by a cookie. */
 export type CookieTokenType = TokenTypeCarriedBy<'cookie'>;

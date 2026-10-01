@@ -6,12 +6,7 @@ import { ViewerGroup } from '~/modules/docs/viewer-group';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
 import { getHashUrl } from '../hash-url';
-import {
-  getTypeCodeForSchema,
-  getZodCodeForSchema,
-  typesIndexQueryOptions,
-  zodIndexQueryOptions,
-} from '../helpers/extract-types';
+import { getTypeCodeForSchema, getZodCodeForSchema, typesIndexQueryOptions, zodIndexQueryOptions } from '../helpers/extract-types';
 
 interface SchemaDetailProps {
   schema: GenComponentSchema;
@@ -31,9 +26,7 @@ function SchemaDetail({ schema, className }: SchemaDetailProps) {
           {schema.name}
           <HashUrlButton url={getHashUrl(refId)} />
         </CardTitle>
-        {schema.description && (
-          <CardDescription className="my-2 max-w-4xl text-base">{schema.description}</CardDescription>
-        )}
+        {schema.description && <CardDescription className="my-2 max-w-4xl text-base">{schema.description}</CardDescription>}
       </CardHeader>
       <CardContent>
         <div className="mt-2">

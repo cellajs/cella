@@ -10,23 +10,13 @@ import { NavButton } from '~/modules/navigation/nav-buttons';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { StopImpersonation } from '~/modules/navigation/stop-impersonation';
 import type { NavItem, TriggerNavItemFn } from '~/modules/navigation/types';
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-} from '~/modules/ui/sidebar';
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarMenu } from '~/modules/ui/sidebar';
 import { navItems } from '~/nav-config';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const DebugDropdown = __DEV_TOOLS__
-  ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown')
-  : () => null;
+const DebugDropdown = __DEV_TOOLS__ ? lazyNamed(() => import('~/modules/common/debug-dropdown'), 'DebugDropdown') : () => null;
 
-const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } =
-  appConfig.theme.navigation;
+const { hasSidebarTextLabels, sidebarWidthExpanded, sidebarWidthCollapsed, sheetPanelWidth } = appConfig.theme.navigation;
 
 let baseNavItems: NavItem[] | null = null;
 function getBaseNavItems() {
@@ -72,11 +62,7 @@ export function SidebarNav({ triggerNavItem }: SidebarNavProps) {
       ? `calc(${iconBarWidth} + ${sheetPanelWidth})`
       : iconBarWidth;
 
-  const cssVars = {
-    '--icon-bar-w': iconBarWidth,
-    '--sidebar-w': sidebarWidth,
-    '--spacer-w': spacerWidth,
-  } as CSSProperties;
+  const cssVars = { '--icon-bar-w': iconBarWidth, '--sidebar-w': sidebarWidth, '--spacer-w': spacerWidth } as CSSProperties;
 
   return (
     <div className="contents" style={cssVars}>

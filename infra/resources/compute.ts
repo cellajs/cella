@@ -15,15 +15,7 @@ import type { ServiceDefinition } from '../lib/services';
 import { naming, region, tags, zone } from '../pulumi-context';
 import { renderCloudInit } from './cloud-init';
 import { createComposeEnvBuilder } from './compose-env';
-import {
-  activeGenerations,
-  coHosted,
-  collocated,
-  enabled,
-  type Generation,
-  hostSlug,
-  secretConsumersFor,
-} from './generations';
+import { activeGenerations, coHosted, collocated, enabled, type Generation, hostSlug, secretConsumersFor } from './generations';
 import { privateNetworkId } from './network';
 import { registryEndpoint } from './registry';
 import { secretIds } from './secrets';
@@ -41,11 +33,7 @@ function readGenerationKeysFile(): GenerationKeysFile | undefined {
   const file = process.env.INFRA_GENERATION_KEYS_FILE;
   if (!file) return undefined;
   const parsed = JSON.parse(fs.readFileSync(file, 'utf8')) as Partial<GenerationKeysFile>;
-  if (
-    typeof parsed.bootAccessKey !== 'string' ||
-    typeof parsed.bootSecretKey !== 'string' ||
-    typeof parsed.handoffSecretIds !== 'object'
-  ) {
+  if (typeof parsed.bootAccessKey !== 'string' || typeof parsed.bootSecretKey !== 'string' || typeof parsed.handoffSecretIds !== 'object') {
     throw new Error('INFRA_GENERATION_KEYS_FILE is malformed: re-run the deploy (mint-generation-keys writes it).');
   }
   return parsed as GenerationKeysFile;
@@ -123,12 +111,7 @@ function resolveBootImageOnce(registry: string, releaseSha: string, secretKey: s
  * Resolve the boot runner tag to the name and digest it is pullable by, pinning the socket-mounted image against later registry pushes.
  * `requirePinned` fails closed on a real `up` for a newly rolling generation; a pre-existing generation and any dry run degrade to the unpinned tag with a warning.
  */
-function bootImageFor(
-  registry: string,
-  releaseSha: string,
-  secretKey: string,
-  requirePinned: boolean,
-): Promise<ResolvedBootImage | undefined> {
+function bootImageFor(registry: string, releaseSha: string, secretKey: string, requirePinned: boolean): Promise<ResolvedBootImage | undefined> {
   return resolveBootImageOnce(registry, releaseSha, secretKey).catch((err: unknown) => {
     const message = err instanceof Error ? err.message : String(err);
     if (pulumi.runtime.isDryRun()) {
@@ -136,23 +119,15 @@ function bootImageFor(
       return undefined;
     }
     if (!requirePinned) {
-      pulumi.log.warn(
-        `boot image not resolvable for existing generation ${releaseSha}; it keeps running on its booted image: ${message}`,
-      );
+      pulumi.log.warn(`boot image not resolvable for existing generation ${releaseSha}; it keeps running on its booted image: ${message}`);
       return undefined;
     }
     throw new Error(`Refusing to plan a VM with an unpinned boot image: ${message}`);
   });
 }
 
-function buildCloudInit(
-  service: ServiceConfig,
-  releaseSha: string,
-  requirePinnedBootImage: boolean,
-): pulumi.Output<string> {
-  const envLines = pulumi.all(
-    Object.entries(service.composeEnv).map(([k, supply]) => pulumi.output(supply()).apply((val) => `${k}=${val}`)),
-  );
+function buildCloudInit(service: ServiceConfig, releaseSha: string, requirePinnedBootImage: boolean): pulumi.Output<string> {
+  const envLines = pulumi.all(Object.entries(service.composeEnv).map(([k, supply]) => pulumi.output(supply()).apply((val) => `${k}=${val}`)));
 
   const bootImage = pulumi
     .all([registryEndpoint, vmSecretKey])
@@ -192,11 +167,7 @@ function buildCloudInit(
         // Deploy trace context, exported by deploy-run before the stack update; ignoreChanges on cloudInit keeps existing generations untouched.
         traceparent: process.env.TRACEPARENT,
         // The app's telemetry sink travels via the boot plan: the boot runner carries no vendor endpoint of its own.
-        telemetry: {
-          endpoint: telemetrySink.endpoint,
-          keyHeader: telemetrySink.keyHeader,
-          keyEnvVar: telemetrySink.keyEnvVar,
-        },
+        telemetry: { endpoint: telemetrySink.endpoint, keyHeader: telemetrySink.keyHeader, keyEnvVar: telemetrySink.keyEnvVar },
       }),
     );
 }
@@ -251,8 +222,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   // Public IP for egress (image pull) plus the per-generation private IP reserved in pass 1.
   const ip = new scaleway.instance.Ip(`ip-${svc.slug}-${generation.id}`, { zone, tags });
   const genPrivateIp = genIps.get(genIpKey(svc.slug, generation.id));
-  if (!genPrivateIp)
-    throw new Error(`compute: no reserved private IP for ${svc.slug} gen ${generation.id} (pass 1 must run first)`);
+  if (!genPrivateIp) throw new Error(`compute: no reserved private IP for ${svc.slug} gen ${generation.id} (pass 1 must run first)`);
 
   // A new generation must carry its minted handoff reference: no keys file means the mint step did not run, so refuse the plan and never bake an empty key.
   if (!generation.preexisting && !generationKeys) {
@@ -296,13 +266,7 @@ function createGenerationVm(svc: ServiceDefinition, generation: Generation): Gen
   const ipamIpIds: pulumi.Input<string>[] = [genPrivateIp.id];
   const privateNic = new scaleway.instance.PrivateNic(
     `pnic-${svc.slug}-${generation.id}`,
-    {
-      serverId: server.id,
-      privateNetworkId,
-      ipamIpIds,
-      zone,
-      tags,
-    },
+    { serverId: server.id, privateNetworkId, ipamIpIds, zone, tags },
     {
       // Scaleway allows only one private NIC per server and private-network pair, so a replacement must delete the old NIC first.
       deleteBeforeReplace: true,
@@ -376,7 +340,6 @@ export const computeGenerationMetadata = pulumi.all(
  * Under singleVM, co-hosted workers and collocated containers run on the host VM, so their LB backends target the host's generation IPs on the service's own port.
  */
 export function serviceGenerationIps(slug: string): pulumi.Output<string>[] {
-  const target =
-    appConfig.singleVM && hostSlug && [...coHosted, ...collocated].some((s) => s.slug === slug) ? hostSlug : slug;
+  const target = appConfig.singleVM && hostSlug && [...coHosted, ...collocated].some((s) => s.slug === slug) ? hostSlug : slug;
   return instances.filter((i) => i.service === target).map((i) => i.privateIp);
 }

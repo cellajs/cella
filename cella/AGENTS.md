@@ -142,7 +142,7 @@ A child-side host FK (nullable `<host>Id` column on one product pointing at anot
 ## Style & naming
 
 - Biome (`biome.jsonc`). Run `pnpm lint:fix`.
-- Indentation 2 spaces, line width 120, single quotes, Biome defaults for the rest.
+- Indentation 2 spaces, line width 150, single quotes, Biome defaults for the rest.
 - Zod v4 only: `import { z } from 'zod'`. Backend: `import { z } from '@hono/zod-openapi'`.
 - camelCase variables/functions (constants included), PascalCase components, kebab-case files, snake_case translation keys.
 - JSDoc: backend exports get full JSDoc with params/response. Frontend exports get one line, and none when identifier and types already carry the meaning (`useAttachmentDeleteMutation` earns one: it also cancels paused offline creates). No file-level comments above imports. A comment longer than three prose lines must document a declaration or local executable block. Cross-file architecture, workflows and failure-mode narratives go to the nearest canonical README.

@@ -32,13 +32,10 @@ function isFilteredDraftEvent(result: ParseMessageResult): boolean {
   const now = Date.now();
   if (now - lastDraftGuardWarnAt > DRAFT_GUARD_WARN_INTERVAL_MS) {
     lastDraftGuardWarnAt = now;
-    log.warn(
-      'Draft product row reached CDC: publication row filter missing? Regenerate migrations (pnpm generate + pnpm migrate).',
-      {
-        entityType: result.tableMeta.type,
-        action: result.activity.action,
-      },
-    );
+    log.warn('Draft product row reached CDC: publication row filter missing? Regenerate migrations (pnpm generate + pnpm migrate).', {
+      entityType: result.tableMeta.type,
+      action: result.activity.action,
+    });
   }
   return true;
 }

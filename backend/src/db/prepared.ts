@@ -10,9 +10,7 @@ const prepared = <T extends object>(name: string, build: () => T): T => {
   if (hasDb) return build();
   return new Proxy({} as T, {
     get() {
-      throw new Error(
-        `Prepared statement "${name}" is unavailable: this process runs without a database connection (NODB).`,
-      );
+      throw new Error(`Prepared statement "${name}" is unavailable: this process runs without a database connection (NODB).`);
     },
   });
 };

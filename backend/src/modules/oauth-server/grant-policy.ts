@@ -13,11 +13,7 @@ export interface UserGrantSubject {
   tenantId: string;
 }
 
-export type UserGrantRefusal =
-  | 'unknown_user'
-  | 'not_a_member'
-  | 'app_not_installed'
-  | 'unregistered_clients_not_allowed';
+export type UserGrantRefusal = 'unknown_user' | 'not_a_member' | 'app_not_installed' | 'unregistered_clients_not_allowed';
 
 /**
  * Whether a person's grant still holds: null while it does, else why not. Consent asks before the grant exists, the
@@ -33,10 +29,7 @@ export async function grantRefusal({ userId, clientId, tenantId }: UserGrantSubj
   const [person] = await baseDb
     .select({ membershipId: membershipsTable.id })
     .from(usersTable)
-    .leftJoin(
-      membershipsTable,
-      and(eq(membershipsTable.userId, usersTable.id), eq(membershipsTable.tenantId, tenantId)),
-    )
+    .leftJoin(membershipsTable, and(eq(membershipsTable.userId, usersTable.id), eq(membershipsTable.tenantId, tenantId)))
     .where(eq(usersTable.id, userId))
     .limit(1);
   if (!person) return 'unknown_user';

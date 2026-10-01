@@ -153,9 +153,7 @@ function Bucket({
     prevRef.current = entities;
   });
   let changed = 0;
-  const delays = entities.map((entity, i) =>
-    prev[i]?.label !== entity.label ? ENTER_STAGGER * (staggerOffset + changed++) : 0,
-  );
+  const delays = entities.map((entity, i) => (prev[i]?.label !== entity.label ? ENTER_STAGGER * (staggerOffset + changed++) : 0));
 
   return (
     <div className="relative flex min-w-0 flex-col rounded-2xl bg-background px-2 py-4 sm:px-6 sm:py-6">
@@ -191,10 +189,7 @@ export function EntityBuckets() {
         {hint && (
           <div className="absolute top-1/2 right-full mr-3 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap text-muted-foreground text-sm max-sm:hidden">
             {t('about:try_me')}
-            <motion.span
-              animate={{ x: [0, 4, 0] }}
-              transition={{ repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut', duration: 1 }}
-            >
+            <motion.span animate={{ x: [0, 4, 0] }} transition={{ repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut', duration: 1 }}>
               <ArrowRightIcon />
             </motion.span>
           </div>
@@ -231,9 +226,7 @@ export function EntityBuckets() {
             staggerOffset={1}
           />
         </div>
-        <p className="mt-5 text-center font-medium text-xs sm:mt-8 sm:text-sm">
-          {t('about:entity_buckets.foundation')}
-        </p>
+        <p className="mt-5 text-center font-medium text-xs sm:mt-8 sm:text-sm">{t('about:entity_buckets.foundation')}</p>
       </div>
     </div>
   );

@@ -9,10 +9,7 @@ interface SuccessCheckmarkProps {
 export function SuccessCheckmark({ className, size = 50 }: SuccessCheckmarkProps) {
   return (
     <div
-      className={cn(
-        'fade-in zoom-in-0 mx-auto animate-in duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]',
-        className,
-      )}
+      className={cn('fade-in zoom-in-0 mx-auto animate-in duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)]', className)}
       style={{ width: size, height: size }}
     >
       <svg

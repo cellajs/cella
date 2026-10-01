@@ -3,10 +3,7 @@ import type { ApiError } from '~/lib/api';
 import { decideConsent, getConsentDetails } from '~/lib/oauth-interaction';
 import { withStepUp } from '~/modules/auth/step-up';
 
-export const consentKeys = {
-  details: (uid: string) => ['oauth-consent', uid] as const,
-  decide: ['oauth-consent', 'decide'] as const,
-};
+export const consentKeys = { details: (uid: string) => ['oauth-consent', uid] as const, decide: ['oauth-consent', 'decide'] as const };
 
 /** Bound to one interaction, gone when it is answered: never persisted, never retried. */
 export const consentDetailsQueryOptions = (uid: string) =>

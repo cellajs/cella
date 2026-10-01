@@ -24,9 +24,7 @@ export function AppNav() {
   const setNavSheetOpen = useNavigationStore((state) => state.setNavSheetOpen);
 
   const triggerNavItem: TriggerNavItemFn = (id, ref, options) => {
-    const triggerRef = ref || {
-      current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null,
-    };
+    const triggerRef = ref || { current: document.activeElement instanceof HTMLButtonElement ? document.activeElement : null };
 
     if (id === navSheetOpen) {
       setNavSheetOpen(null);
@@ -98,18 +96,11 @@ export function AppNav() {
 
     for (const id of [...new Set(floatingConfig.left)]) {
       const item = navItems.find((n) => n.id === id);
-      if (item)
-        floatingItems.push({ id: item.id, icon: item.icon, onClick: () => triggerNavItem(item.id), direction: 'left' });
+      if (item) floatingItems.push({ id: item.id, icon: item.icon, onClick: () => triggerNavItem(item.id), direction: 'left' });
     }
     for (const id of [...new Set(floatingConfig.right)]) {
       const item = navItems.find((n) => n.id === id);
-      if (item)
-        floatingItems.push({
-          id: item.id,
-          icon: item.icon,
-          onClick: () => triggerNavItem(item.id),
-          direction: 'right',
-        });
+      if (item) floatingItems.push({ id: item.id, icon: item.icon, onClick: () => triggerNavItem(item.id), direction: 'right' });
     }
   }
 

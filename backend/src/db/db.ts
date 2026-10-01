@@ -10,8 +10,7 @@ export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'd
 // In production we require a verified TLS connection to the managed PostgreSQL.
 const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
 
-const connect = (connectionString: string, max: number): PgDB =>
-  createPgConnection(connectionString, { max, sslCa, debug: env.DEBUG });
+const connect = (connectionString: string, max: number): PgDB => createPgConnection(connectionString, { max, sslCa, debug: env.DEBUG });
 
 /** Probes exempt from the NODB throw: `prepared.ts` reads `select`, the pool probe reads `$client`. */
 const noDbProbeKeys: ReadonlySet<string | symbol> = new Set(['select', '$client']);
@@ -20,9 +19,7 @@ const createNoDbStub = (): DB =>
   new Proxy({} as DB, {
     get(_target, property) {
       if (noDbProbeKeys.has(property)) return undefined;
-      throw new Error(
-        `Database access ("${String(property)}") attempted while NODB is set. This process runs without a database connection.`,
-      );
+      throw new Error(`Database access ("${String(property)}") attempted while NODB is set. This process runs without a database connection.`);
     },
   });
 
@@ -30,8 +27,7 @@ const createNoDbStub = (): DB =>
 export const baseDb: DB = env.NODB ? createNoDbStub() : connect(env.DATABASE_URL, env.DATABASE_POOL_MAX);
 
 /** Only a pg Pool counts its clients and hands out a connection of its own; the NODB probe yields undefined. */
-const isPool = (client: unknown): client is Pool =>
-  typeof client === 'object' && client !== null && 'totalCount' in client;
+const isPool = (client: unknown): client is Pool => typeof client === 'object' && client !== null && 'totalCount' in client;
 
 /** Waiting clients relative to pool size (0 = idle, 1 or more = queueing). Feeds the sync spread window. */
 export const dbPoolPressure = (): number => {

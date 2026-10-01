@@ -37,11 +37,7 @@ const expectNoSecret = (text: string) => {
 describe('telemetry redaction', () => {
   it('must not export a token via a request span', async () => {
     const exported: ExportedSpan[] = [];
-    const otel = createOtelSDK({
-      serviceName: 'test-api',
-      traceExporter: collectingExporter(exported),
-      autoInstrumentations: false,
-    });
+    const otel = createOtelSDK({ serviceName: 'test-api', traceExporter: collectingExporter(exported), autoInstrumentations: false });
     otel.start();
     const { baseApp } = await import('#/routes');
 
@@ -59,14 +55,7 @@ describe('telemetry redaction', () => {
       ]),
     );
     expectNoSecret(
-      JSON.stringify(
-        exported.map((span) => ({
-          name: span.name,
-          attributes: span.attributes,
-          events: span.events,
-          status: span.status,
-        })),
-      ),
+      JSON.stringify(exported.map((span) => ({ name: span.name, attributes: span.attributes, events: span.events, status: span.status }))),
     );
   });
 

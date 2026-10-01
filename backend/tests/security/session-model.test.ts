@@ -117,10 +117,7 @@ describe('session model', async () => {
     const adminSession = await insertSession(admin);
     const target = await createTestUser('impersonated@security-test.com');
 
-    const started = await call(startImpersonation, {
-      body: { targetUserId: target.id },
-      headers: adminSession.headers,
-    });
+    const started = await call(startImpersonation, { body: { targetUserId: target.id }, headers: adminSession.headers });
     expect(started.response.status).toBe(204);
     const [impersonation] = await db
       .select()
@@ -142,10 +139,7 @@ describe('session model', async () => {
     expect(((await me(browser)).data as { user: { id: string } }).user.id).toBe(target.id);
     const genuine = await call(stopImpersonation, { headers: { ...defaultHeaders, Cookie: browser } });
     expect(genuine.response.status).toBe(204);
-    expect(await sessionRow(impersonation.id)).toMatchObject({
-      revocationReason: 'impersonation_stopped',
-      revokedBy: admin.id,
-    });
+    expect(await sessionRow(impersonation.id)).toMatchObject({ revocationReason: 'impersonation_stopped', revokedBy: admin.id });
     const back = await me(cookiesAfter(browser, genuine.response));
     expect((back.data as { user: { id: string } }).user.id).toBe(admin.id);
     await warmSession(victimSession);

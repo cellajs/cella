@@ -16,16 +16,11 @@ export const sessionBaseSchema = createSelectSchema(sessionsTable);
 /** A session as the account page lists it. */
 export const sessionSchema = sessionBaseSchema.extend({
   isCurrent: z.boolean(),
-  isNewDevice: z
-    .boolean()
-    .openapi({ description: 'The browser was first seen recently and is not the first one known.' }),
+  isNewDevice: z.boolean().openapi({ description: 'The browser was first seen recently and is not the first one known.' }),
 });
 
 export const meSchema = z
-  .object({
-    user: userSchema,
-    isSystemAdmin: z.boolean().openapi({ description: 'Whether the current user has system admin privileges.' }),
-  })
+  .object({ user: userSchema, isSystemAdmin: z.boolean().openapi({ description: 'Whether the current user has system admin privileges.' }) })
   .openapi('Me', {
     description: 'The currently authenticated user with their system admin status.',
     example: mockMeResponse(),
@@ -47,19 +42,12 @@ export const meAuthDataSchema = z
 
 export const uploadTokenSchema = z
   .object({
-    publicBucket: z
-      .boolean()
-      .openapi({ description: 'Whether the upload is stored public-read in the public bucket; the template decides.' }),
+    publicBucket: z.boolean().openapi({ description: 'Whether the upload is stored public-read in the public bucket; the template decides.' }),
     sub: z.string(),
     s3: z.boolean(),
     signature: z.string().nullable(),
     params: z
-      .object({
-        auth: z.object({
-          key: z.string(),
-          expires: z.string().optional(),
-        }),
-      })
+      .object({ auth: z.object({ key: z.string(), expires: z.string().optional() }) })
       .catchall(z.any())
       .nullable(),
   })
@@ -71,17 +59,11 @@ export const uploadTokenSchema = z
 
 export type { MeAuthResponse, MeResponse, UploadTokenResponse } from './types';
 
-export const uploadTokenQuerySchema = z.object({
-  organizationId: validUuidSchema.optional(),
-  templateId: z.enum(appConfig.uploadTemplateIds),
-});
+export const uploadTokenQuerySchema = z.object({ organizationId: validUuidSchema.optional(), templateId: z.enum(appConfig.uploadTemplateIds) });
 
 export const toggleMfaBodySchema = z.object({ mfaRequired: z.boolean() });
 
-export const mePendingInvitationSchema = z.object({
-  entity: channelBaseSchema,
-  inactiveMembership: inactiveMembershipSchema,
-});
+export const mePendingInvitationSchema = z.object({ entity: channelBaseSchema, inactiveMembership: inactiveMembershipSchema });
 
 /** A consent the user gave to an OAuth client, as the account page lists it. */
 export const connectedAppSchema = z
@@ -94,9 +76,6 @@ export const connectedAppSchema = z
     createdAt: z.string(),
     expiresAt: z.string().nullable(),
   })
-  .openapi('ConnectedApp', {
-    description: 'An OAuth consent (grant) of the current user.',
-    'x-tags': schemaTags('data', 'me', 'cella'),
-  });
+  .openapi('ConnectedApp', { description: 'An OAuth consent (grant) of the current user.', 'x-tags': schemaTags('data', 'me', 'cella') });
 
 export type ConnectedApp = z.infer<typeof connectedAppSchema>;

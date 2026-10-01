@@ -13,15 +13,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
  * A window overlaid on either the primary window or another dialog window,
  * rendering the content underneath inert.
  */
-const meta = {
-  title: 'ui/DatePicker',
-  component: Calendar,
-  tags: ['autodocs'],
-  argTypes: {},
-  parameters: {
-    layout: 'centered',
-  },
-} satisfies Meta<typeof Calendar>;
+const meta = { title: 'ui/DatePicker', component: Calendar, tags: ['autodocs'], argTypes: {}, parameters: { layout: 'centered' } } satisfies Meta<
+  typeof Calendar
+>;
 
 export default meta;
 
@@ -31,9 +25,7 @@ type Story = StoryObj<typeof meta>;
  * Combination of the calendar and a button that opens a popover.
  */
 export const WithPopover: Story = {
-  args: {
-    captionLayout: 'dropdown',
-  },
+  args: { captionLayout: 'dropdown' },
 
   render: function Render(args) {
     const [open, setOpen] = useState(false);
@@ -77,22 +69,14 @@ export const ShouldOpenPopover: Story = {
       await waitFor(() => expect(canvasElement.ownerDocument.body.querySelector('.rdp-root')).toBeVisible());
     });
     await step('Select a date', async () => {
-      const dateButtons = await canvas.findAllByRole('button', {
-        name: /1st/i,
-      });
+      const dateButtons = await canvas.findAllByRole('button', { name: /1st/i });
       await userEvent.click(dateButtons[0]);
     });
   },
 };
 
 function formatDate(date: Date | undefined) {
-  return date
-    ? date.toLocaleDateString('en-US', {
-        day: '2-digit',
-        month: 'long',
-        year: 'numeric',
-      })
-    : '';
+  return date ? date.toLocaleDateString('en-US', { day: '2-digit', month: 'long', year: 'numeric' }) : '';
 }
 
 function isValidDate(date: Date | undefined) {
@@ -103,9 +87,7 @@ function isValidDate(date: Date | undefined) {
  * Combination of the calendar and an input field that allows typing a date.
  */
 export const WithInput: Story = {
-  args: {
-    captionLayout: 'dropdown',
-  },
+  args: { captionLayout: 'dropdown' },
 
   render: function Render(args) {
     const [open, setOpen] = useState(false);
@@ -141,11 +123,7 @@ export const WithInput: Story = {
             }}
           />
           <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger
-              render={
-                <Button id="date-picker" variant="ghost" className="absolute top-1/2 right-2 size-6 -translate-y-1/2" />
-              }
-            >
+            <PopoverTrigger render={<Button id="date-picker" variant="ghost" className="absolute top-1/2 right-2 size-6 -translate-y-1/2" />}>
               <CalendarIcon className="size-3.5" />
               <span className="sr-only">Select date</span>
             </PopoverTrigger>
@@ -177,9 +155,7 @@ export const ShouldEnterTextDate: Story = {
   tags: ['!dev', '!autodocs'],
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement.ownerDocument.body);
-    const input = await canvas.findByRole('textbox', {
-      name: 'Subscription Date',
-    });
+    const input = await canvas.findByRole('textbox', { name: 'Subscription Date' });
     await step('type a date', async () => {
       await userEvent.click(input);
       await userEvent.clear(input);
@@ -190,13 +166,7 @@ export const ShouldEnterTextDate: Story = {
 
     await step('check the calendar', async () => {
       await userEvent.click(await canvas.findByRole('button', { name: 'Select date' }));
-      await waitFor(() =>
-        expect(
-          canvas.queryByRole('button', {
-            name: 'Wednesday, July 21st, 1999, selected',
-          }),
-        ).toBeVisible(),
-      );
+      await waitFor(() => expect(canvas.queryByRole('button', { name: 'Wednesday, July 21st, 1999, selected' })).toBeVisible());
     });
   },
 };
@@ -205,9 +175,7 @@ export const ShouldEnterTextDate: Story = {
  * Combination of the calendar and an input field that allows changing the time.
  */
 export const WithDateTime: Story = {
-  args: {
-    captionLayout: 'dropdown',
-  },
+  args: { captionLayout: 'dropdown' },
 
   render: function Render(args) {
     const [open, setOpen] = useState(false);
@@ -219,9 +187,7 @@ export const WithDateTime: Story = {
             Date
           </Label>
           <Popover open={open} onOpenChange={setOpen}>
-            <PopoverTrigger
-              render={<Button variant="outline" id="date-picker" className="w-32 justify-between font-normal" />}
-            >
+            <PopoverTrigger render={<Button variant="outline" id="date-picker" className="w-32 justify-between font-normal" />}>
               {date ? date.toLocaleDateString() : 'Select date'}
               <ChevronDownIcon />
             </PopoverTrigger>

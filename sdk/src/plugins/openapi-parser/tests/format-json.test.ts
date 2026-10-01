@@ -40,13 +40,7 @@ describe('formatJson', () => {
   });
 
   it('produces valid JSON for objects', () => {
-    const cases = [
-      {},
-      { a: 1 },
-      { type: 'string', required: true },
-      { nested: { deep: { value: 1 } } },
-      { mixed: [1, 2, { inner: 'value' }] },
-    ];
+    const cases = [{}, { a: 1 }, { type: 'string', required: true }, { nested: { deep: { value: 1 } } }, { mixed: [1, 2, { inner: 'value' }] }];
     for (const value of cases) {
       const output = formatJson(value);
       expect(() => JSON.parse(output)).not.toThrow();

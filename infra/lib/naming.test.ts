@@ -35,13 +35,7 @@ describe('deriveInfra', () => {
 
   it('all bucket names are unique within a stack', () => {
     const d = deriveInfra(fakeConfig());
-    const names = [
-      d.naming.frontendBucket,
-      d.naming.publicBucket,
-      d.naming.privateBucket,
-      d.naming.pulumiStateBucket,
-      d.naming.bootDiagBucket,
-    ];
+    const names = [d.naming.frontendBucket, d.naming.publicBucket, d.naming.privateBucket, d.naming.pulumiStateBucket, d.naming.bootDiagBucket];
     expect(new Set(names).size).toBe(names.length);
   });
 
@@ -69,13 +63,7 @@ describe('deriveInfra', () => {
   });
 
   it('hasDomain is false for localhost', () => {
-    const d = deriveInfra(
-      fakeConfig({
-        domain: 'localhost',
-        frontendUrl: 'http://localhost:3000',
-        backendUrl: 'http://localhost:4000',
-      }),
-    );
+    const d = deriveInfra(fakeConfig({ domain: 'localhost', frontendUrl: 'http://localhost:3000', backendUrl: 'http://localhost:4000' }));
     expect(d.hasDomain).toBe(false);
   });
 
@@ -131,9 +119,7 @@ describe('frontendApexIssue', () => {
   it('is silent without a real domain (dev/test) and for a disabled frontend', () => {
     expect(frontendApexIssue(fakeConfig({ domain: 'localhost', services: apexServices }))).toBeUndefined();
     expect(
-      frontendApexIssue(
-        fakeConfig({ services: { ...apexServices, frontend: { enabled: false, publicUrl: 'https://cellajs.com' } } }),
-      ),
+      frontendApexIssue(fakeConfig({ services: { ...apexServices, frontend: { enabled: false, publicUrl: 'https://cellajs.com' } } })),
     ).toBeUndefined();
   });
 });

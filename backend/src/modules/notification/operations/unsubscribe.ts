@@ -11,11 +11,7 @@ const errorPage = { willRedirect: true, meta: { errorPagePath: '/auth/error' } }
 
 /** Turning the digest off is a frequency change; the other two are booleans. */
 const disableFor = (category: Exclude<UnsubscribeCategory, 'newsletter'>) =>
-  category === 'digest'
-    ? { digest: 'off' as const }
-    : category === 'mention'
-      ? { mentionEmail: false }
-      : { commentEmail: false };
+  category === 'digest' ? { digest: 'off' as const } : category === 'mention' ? { mentionEmail: false } : { commentEmail: false };
 
 /**
  * Turn off one email category from an emailed link, without a session.
@@ -24,11 +20,7 @@ const disableFor = (category: Exclude<UnsubscribeCategory, 'newsletter'>) =>
  * link proves it was received in that user's mail and authorises exactly that one category. The
  * newsletter is a flag on the user; the notification categories are email preferences.
  */
-export async function unsubscribeNotificationsOp(
-  userId: string,
-  category: UnsubscribeCategory,
-  token: string,
-): Promise<URL> {
+export async function unsubscribeNotificationsOp(userId: string, category: UnsubscribeCategory, token: string): Promise<URL> {
   if (!verifyCategoryToken(userId, category, token)) {
     throw new AppError(401, 'unsubscribe_failed', 'warn', { entityType: 'user', ...errorPage });
   }

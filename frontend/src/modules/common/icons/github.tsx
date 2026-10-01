@@ -3,14 +3,7 @@ import { cn } from '~/utils/cn';
 
 export function GithubIcon({ className, size: _, strokeWidth: __, absoluteStrokeWidth: ___, ...props }: LucideProps) {
   return (
-    <svg
-      viewBox="0 0 98 96"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="currentColor"
-      aria-hidden="true"
-      className={cn('lucide', className)}
-      {...props}
-    >
+    <svg viewBox="0 0 98 96" xmlns="http://www.w3.org/2000/svg" fill="currentColor" aria-hidden="true" className={cn('lucide', className)} {...props}>
       <path
         fillRule="evenodd"
         clipRule="evenodd"

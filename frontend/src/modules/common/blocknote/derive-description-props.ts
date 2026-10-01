@@ -4,14 +4,10 @@ import { blocksToHTML } from '~/modules/common/blocknote/helpers/blocknote-helpe
 /** Count-based derived properties, including the referenced attachment ids; the walk is shared with the backend. */
 export type DerivedDescriptionCounts = DescriptionCounts;
 
-export type DerivedDescriptionProps = DerivedDescriptionCounts & {
-  summary: string;
-  summaryLength: number;
-};
+export type DerivedDescriptionProps = DerivedDescriptionCounts & { summary: string; summaryLength: number };
 
 /** Synchronous, so it is safe for optimistic updates in onMutate. */
-export const deriveDescriptionCounts = (description: string): DerivedDescriptionCounts =>
-  deriveDocument(description).counts;
+export const deriveDescriptionCounts = (description: string): DerivedDescriptionCounts => deriveDocument(description).counts;
 
 /** Async because the summary needs HTML conversion. */
 export const deriveDescriptionProps = async (description: string): Promise<DerivedDescriptionProps> => {

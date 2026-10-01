@@ -11,9 +11,7 @@ import { CollapsibleTagItem } from './collapsible-tag-item';
 import { OperationItem } from './operation-item';
 
 const itemKey = (op: GenOperationSummary) => op.hash;
-const renderItem = (op: GenOperationSummary, _index: number, isActive: boolean) => (
-  <OperationItem operation={op} isActive={isActive} />
-);
+const renderItem = (op: GenOperationSummary, _index: number, isActive: boolean) => <OperationItem operation={op} isActive={isActive} />;
 
 interface OperationsSidebarProps {
   activeTag?: string;

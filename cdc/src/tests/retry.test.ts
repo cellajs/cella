@@ -79,21 +79,13 @@ describe('retry utility', () => {
 
       const result = await withRetry(fn, 'test operation');
 
-      expect(result).toEqual({
-        success: true,
-        value: 'success',
-        attempts: 1,
-      });
+      expect(result).toEqual({ success: true, value: 'success', attempts: 1 });
       expect(fn).toHaveBeenCalledTimes(1);
     });
 
     it('should retry on transient error and succeed', async () => {
       const transientError = Object.assign(new Error('deadlock detected'), { code: '40P01' });
-      const fn = vi
-        .fn()
-        .mockRejectedValueOnce(transientError)
-        .mockRejectedValueOnce(transientError)
-        .mockResolvedValue('success after retries');
+      const fn = vi.fn().mockRejectedValueOnce(transientError).mockRejectedValueOnce(transientError).mockResolvedValue('success after retries');
 
       const resultPromise = withRetry(fn, 'test operation');
 
@@ -102,11 +94,7 @@ describe('retry utility', () => {
 
       const result = await resultPromise;
 
-      expect(result).toEqual({
-        success: true,
-        value: 'success after retries',
-        attempts: 3,
-      });
+      expect(result).toEqual({ success: true, value: 'success after retries', attempts: 3 });
       expect(fn).toHaveBeenCalledTimes(3);
     });
 
@@ -131,9 +119,7 @@ describe('retry utility', () => {
     });
 
     it('should not retry on non-transient error', async () => {
-      const nonTransientError = Object.assign(new Error('unique constraint violation'), {
-        code: '23505',
-      });
+      const nonTransientError = Object.assign(new Error('unique constraint violation'), { code: '23505' });
       const fn = vi.fn().mockRejectedValue(nonTransientError);
 
       const result = await withRetry(fn, 'test operation');
@@ -150,11 +136,7 @@ describe('retry utility', () => {
 
     it('should use exponential backoff for delays', async () => {
       const transientError = new Error('connection timeout');
-      const fn = vi
-        .fn()
-        .mockRejectedValueOnce(transientError)
-        .mockRejectedValueOnce(transientError)
-        .mockResolvedValue('success');
+      const fn = vi.fn().mockRejectedValueOnce(transientError).mockRejectedValueOnce(transientError).mockResolvedValue('success');
 
       const resultPromise = withRetry(fn, 'test operation');
 

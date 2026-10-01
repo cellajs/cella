@@ -23,8 +23,7 @@ export function PasskeysList() {
 
   const handleDeletePasskey = (id: string) => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
-    if (user.mfaRequired && passkeys.length <= 1)
-      return toaster.info(t('c:delete_mfa_last', { method: 'the last passkey' }));
+    if (user.mfaRequired && passkeys.length <= 1) return toaster.info(t('c:delete_mfa_last', { method: 'the last passkey' }));
     deletePasskey({ path: { id } });
   };
   return (

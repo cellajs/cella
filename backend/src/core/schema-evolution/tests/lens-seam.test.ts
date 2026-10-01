@@ -9,11 +9,7 @@ vi.mock('shared/schema-evolution', async (importOriginal) => {
   return {
     ...actual,
     widenedOpsKeyMap: (entityType: LensEntityType) => (entityType === 'attachment' ? { name: 'title' } : {}),
-    normalizeOps: (
-      entityType: LensEntityType,
-      ops: Record<string, unknown>,
-      stx: { fieldTimestamps?: Record<string, unknown> },
-    ) => {
+    normalizeOps: (entityType: LensEntityType, ops: Record<string, unknown>, stx: { fieldTimestamps?: Record<string, unknown> }) => {
       if (entityType !== 'attachment') return { ops, stx, unknownFields: [] };
       // Synthetic expand rename: canonicalize name → title, mirror-write the twin.
       const nextOps = { ...ops };
@@ -39,12 +35,7 @@ import { _resetHLC, compareHLC } from '#/core/stx/hlc';
 import { resolveServerUpdateOps, resolveUpdateOps } from '#/core/stx/resolve-update';
 
 // Replayed writes keep their client timestamps, which is what the lens expectations below observe.
-const stx = (fieldTimestamps: Record<string, string>) => ({
-  mutationId: 'm1',
-  sourceId: 's1',
-  fieldTimestamps,
-  replayed: true,
-});
+const stx = (fieldTimestamps: Record<string, string>) => ({ mutationId: 'm1', sourceId: 's1', fieldTimestamps, replayed: true });
 const hlc = '100:0001:aaaaa';
 
 afterEach(() => _resetHLC());
@@ -71,9 +62,7 @@ describe('createUpdateSchema widening', () => {
 
   it('rejects malformed and unrelated HLC entries', () => {
     expect(() => schema.parse({ ops: { title: 'x' }, stx: stx({ title: 'invalid' }) })).toThrow(/Invalid HLC/);
-    expect(() => schema.parse({ ops: { title: 'x' }, stx: stx({ title: hlc, other: hlc }) })).toThrow(
-      /does not match a scalar op/,
-    );
+    expect(() => schema.parse({ ops: { title: 'x' }, stx: stx({ title: hlc, other: hlc }) })).toThrow(/does not match a scalar op/);
   });
 
   it('accepts an AWSet delta without an HLC', () => {
@@ -81,9 +70,7 @@ describe('createUpdateSchema widening', () => {
     expect(deltaSchema.parse({ ops: { labels: { add: ['a'] } }, stx: stx({}) }).ops).toEqual({
       labels: { add: ['a'], remove: [] },
     });
-    expect(() => deltaSchema.parse({ ops: { labels: { add: ['a'] } }, stx: stx({ labels: hlc }) })).toThrow(
-      /does not match a scalar op/,
-    );
+    expect(() => deltaSchema.parse({ ops: { labels: { add: ['a'] } }, stx: stx({ labels: hlc }) })).toThrow(/does not match a scalar op/);
   });
 });
 
@@ -100,17 +87,8 @@ describe('arrayDeltaSchema', () => {
   it.each([
     { add: ['not-an-id'] },
     { add: ['00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000001'] },
-    {
-      add: [
-        '00000000-0000-4000-8000-000000000001',
-        '00000000-0000-4000-8000-000000000002',
-        '00000000-0000-4000-8000-000000000003',
-      ],
-    },
-    {
-      add: ['00000000-0000-4000-8000-000000000001'],
-      remove: ['00000000-0000-4000-8000-000000000001'],
-    },
+    { add: ['00000000-0000-4000-8000-000000000001', '00000000-0000-4000-8000-000000000002', '00000000-0000-4000-8000-000000000003'] },
+    { add: ['00000000-0000-4000-8000-000000000001'], remove: ['00000000-0000-4000-8000-000000000001'] },
   ])('rejects an invalid delta %j', (input) => {
     expect(deltaSchema.safeParse(input).success).toBe(false);
   });

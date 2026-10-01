@@ -26,26 +26,13 @@ interface HealthResponse {
     /** Null until the startup probe ran or when it failed. */
     role: RoleCapabilities | null;
   };
-  catchup: {
-    active: boolean;
-    eventsProcessed: number;
-    startedAt: string | null;
-    lagMs: number;
-  } | null;
-  websocket: {
-    connected: boolean;
-    state: string;
-    messagesSent: number;
-    lastMessageAt: string | null;
-  };
+  catchup: { active: boolean; eventsProcessed: number; startedAt: string | null; lagMs: number } | null;
+  websocket: { connected: boolean; state: string; messagesSent: number; lastMessageAt: string | null };
   circuitBreakers: Record<string, { state: string; failureCount: number; skippedCount: number }>;
   metrics: MetricsSnapshot;
 }
 
-export function getHealthResponse(): {
-  response: HealthResponse;
-  httpStatus: number;
-} {
+export function getHealthResponse(): { response: HealthResponse; httpStatus: number } {
   const replStatus = replicationState.status;
   const wsConnected = wsClient.isConnected();
 
@@ -90,9 +77,7 @@ export function getHealthResponse(): {
       ? {
           active: true,
           eventsProcessed: replicationState.catchupEventsProcessed,
-          startedAt: replicationState.catchupStartedAt
-            ? new Date(replicationState.catchupStartedAt).toISOString()
-            : null,
+          startedAt: replicationState.catchupStartedAt ? new Date(replicationState.catchupStartedAt).toISOString() : null,
           lagMs: replicationState.lastLagMs ?? 0,
         }
       : null,

@@ -22,8 +22,7 @@ export const openStepUpLink = async (ctx: Context<Env>, rawToken: string) => {
   const redeemed = await invokeToken(ctx, { type: 'step-up', rawToken });
   forgetLinkRequest(ctx, 'step-up');
 
-  const stamped =
-    !!redeemed.userId && !!redeemed.sessionId && (await stampStepUp(redeemed.sessionId, redeemed.userId, 'email'));
+  const stamped = !!redeemed.userId && !!redeemed.sessionId && (await stampStepUp(redeemed.sessionId, redeemed.userId, 'email'));
   if (!stamped) throw new AppError(401, 'step-up_expired', 'warn');
 
   log.info('Session stepped up', { via: 'email', sessionId: redeemed.sessionId });

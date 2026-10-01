@@ -25,12 +25,7 @@ describe('external URL stores', () => {
 
   it('mongoUrl contributes an operator MONGO_URL', () => {
     const secrets = mongoUrl({ services: ['api', 'worker'] }).secrets?.() ?? [];
-    expect(secrets[0]).toMatchObject({
-      id: 'mongoUrl',
-      envVar: 'MONGO_URL',
-      secretName: 'mongo-url',
-      services: ['api', 'worker'],
-    });
+    expect(secrets[0]).toMatchObject({ id: 'mongoUrl', envVar: 'MONGO_URL', secretName: 'mongo-url', services: ['api', 'worker'] });
   });
 
   it('externalUrl honors per-app overrides', () => {

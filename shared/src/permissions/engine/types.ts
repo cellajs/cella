@@ -1,10 +1,4 @@
-import type {
-  ChannelEntityType,
-  EntityActionType,
-  EntityIdColumns,
-  EntityRole,
-  ProductEntityType,
-} from '../../../types.ts';
+import type { ChannelEntityType, EntityActionType, EntityIdColumns, EntityRole, ProductEntityType } from '../../../types.ts';
 import type { EntityHierarchy } from '../../config-builder/entity-hierarchy.ts';
 import type { PublicReadGrants } from '../public-read.ts';
 
@@ -49,11 +43,7 @@ export interface ActionAttribution {
 }
 
 export interface PermissionDecision<T extends AccessMembership = AccessMembership> {
-  subject: {
-    entityType: ChannelEntityType | ProductEntityType;
-    id?: string;
-    channelIds: ResolvedChannelIds;
-  };
+  subject: { entityType: ChannelEntityType | ProductEntityType; id?: string; channelIds: ResolvedChannelIds };
   actions: Record<EntityActionType, ActionAttribution>;
   can: Record<EntityActionType, boolean>;
   membership: T | null;

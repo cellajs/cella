@@ -92,9 +92,7 @@ async function assertInfrastructureReady(): Promise<void> {
   if (!(await isPostgresReady())) {
     spinner.fail('postgres is not reachable');
     const { hostname, port } = new URL(DB_URL);
-    console.error(
-      pc.dim(`  Expected Postgres at ${hostname}:${port}. Start it with \`pnpm docker\` and seed with \`pnpm seed\`.`),
-    );
+    console.error(pc.dim(`  Expected Postgres at ${hostname}:${port}. Start it with \`pnpm docker\` and seed with \`pnpm seed\`.`));
     process.exit(1);
   }
 
@@ -130,16 +128,11 @@ async function clearRateLimits(): Promise<void> {
 function seedDatabase(): Promise<{ output: string }> {
   return new Promise((resolve, reject) => {
     const chunks: string[] = [];
-    const child = spawn('tsx', ['src/data-setup.ts'], {
-      cwd: BENCH_ROOT,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const child = spawn('tsx', ['src/data-setup.ts'], { cwd: BENCH_ROOT, stdio: ['ignore', 'pipe', 'pipe'] });
     child.stdout?.on('data', (data: Buffer) => chunks.push(data.toString()));
     child.stderr?.on('data', (data: Buffer) => chunks.push(data.toString()));
     child.on('close', (code) =>
-      code === 0
-        ? resolve({ output: chunks.join('') })
-        : reject(new Error(`db:seed exited with code ${code}\n${chunks.join('')}`)),
+      code === 0 ? resolve({ output: chunks.join('') }) : reject(new Error(`db:seed exited with code ${code}\n${chunks.join('')}`)),
     );
     child.on('error', reject);
   });
@@ -178,12 +171,7 @@ function runArtillery(
     if (!quiet) {
       console.error(`\n${pc.red('✗')} artillery exited with code ${code}`);
     } else {
-      const output = [
-        String((err as { stdout?: string }).stdout ?? ''),
-        String((err as { stderr?: string }).stderr ?? ''),
-      ]
-        .join('\n')
-        .trim();
+      const output = [String((err as { stdout?: string }).stdout ?? ''), String((err as { stderr?: string }).stderr ?? '')].join('\n').trim();
       if (output) {
         const lines = output.split('\n').slice(-40).join('\n');
         console.error(`\n${pc.red('✗')} ${name} artillery output:\n${lines}\n`);
@@ -195,10 +183,7 @@ function runArtillery(
 
 /** Samples CDC throughput and latency for every scenario, summarizing only when CDC processed events. A separate process, since `runArtillery` blocks the event loop on `execFileSync`. */
 function startCdcPoller(): { proc: ChildProcess; summary: Promise<string> } {
-  const proc = spawn('tsx', ['src/cdc-poller.ts', '--quiet'], {
-    cwd: BENCH_ROOT,
-    stdio: ['ignore', 'pipe', 'ignore'],
-  });
+  const proc = spawn('tsx', ['src/cdc-poller.ts', '--quiet'], { cwd: BENCH_ROOT, stdio: ['ignore', 'pipe', 'ignore'] });
   const chunks: string[] = [];
   proc.stdout?.on('data', (data: Buffer) => chunks.push(data.toString()));
   const summary = new Promise<string>((res) => proc.on('close', () => res(chunks.join(''))));
@@ -311,24 +296,9 @@ function printComparison(current: BaselineMetrics, baseline: BaselineMetrics | n
       baseline ? String(baseline.requestRate) : '-',
       baseline ? formatDelta(current.requestRate, baseline.requestRate, false) : '',
     ],
-    [
-      'Mean (ms)',
-      String(current.mean),
-      baseline ? String(baseline.mean) : '-',
-      baseline ? formatDelta(current.mean, baseline.mean, true) : '',
-    ],
-    [
-      'p95 (ms)',
-      String(current.p95),
-      baseline ? String(baseline.p95) : '-',
-      baseline ? formatDelta(current.p95, baseline.p95, true) : '',
-    ],
-    [
-      'p99 (ms)',
-      String(current.p99),
-      baseline ? String(baseline.p99) : '-',
-      baseline ? formatDelta(current.p99, baseline.p99, true) : '',
-    ],
+    ['Mean (ms)', String(current.mean), baseline ? String(baseline.mean) : '-', baseline ? formatDelta(current.mean, baseline.mean, true) : ''],
+    ['p95 (ms)', String(current.p95), baseline ? String(baseline.p95) : '-', baseline ? formatDelta(current.p95, baseline.p95, true) : ''],
+    ['p99 (ms)', String(current.p99), baseline ? String(baseline.p99) : '-', baseline ? formatDelta(current.p99, baseline.p99, true) : ''],
     ['Errors', String(current.errors), baseline ? String(baseline.errors) : '-', ''],
     ['VUs failed', String(current.vusersFailed), baseline ? String(baseline.vusersFailed) : '-', ''],
   ];
@@ -406,10 +376,7 @@ interface ScenarioResult {
 }
 
 /** Runs the CDC poller, Artillery, and the baseline compare or save. Short runs produce no comparable metrics and never touch baselines; `quiet` leaves output to the caller's combined summary. */
-async function runScenario(
-  name: string,
-  { short, quiet }: { short: boolean; quiet: boolean },
-): Promise<ScenarioResult> {
+async function runScenario(name: string, { short, quiet }: { short: boolean; quiet: boolean }): Promise<ScenarioResult> {
   const cdcPoller = startCdcPoller();
   const stopPoller = () => cdcPoller.proc.kill('SIGINT');
   registerCleanup(stopPoller);
@@ -505,10 +472,7 @@ async function main() {
       selected = cliScenario;
     } else {
       const choices = [
-        ...scenarios.map((name) => ({
-          value: name,
-          name: `${name.padEnd(22)}${pc.dim(scenarioDescription(name))}`,
-        })),
+        ...scenarios.map((name) => ({ value: name, name: `${name.padEnd(22)}${pc.dim(scenarioDescription(name))}` })),
         { type: 'separator' as const, separator: '─'.repeat(40) },
         { value: 'exit', name: pc.red(`exit${' '.repeat(18)}${pc.dim('quit without running')}`) },
       ];

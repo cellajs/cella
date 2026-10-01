@@ -102,39 +102,24 @@ describe('postgresManaged public endpoint ACL', () => {
 
   it('must not expose the database to the internet via an all-internet ACL', async () => {
     for (const acl of ['0.0.0.0/0', '::/0', '203.0.113.7, 0.0.0.0/0']) {
-      await expect(render({ 'infra:dbPublicEndpoint': 'true', 'infra:dbPublicAcl': acl })).rejects.toThrow(
-        /Security: infra:dbPublicAcl/,
-      );
+      await expect(render({ 'infra:dbPublicEndpoint': 'true', 'infra:dbPublicAcl': acl })).rejects.toThrow(/Security: infra:dbPublicAcl/);
     }
   });
 
   it('must not expose the database to a wide range via a short prefix', async () => {
-    await expect(render({ 'infra:dbPublicEndpoint': 'true', 'infra:dbPublicAcl': '198.51.0.0/16' })).rejects.toThrow(
-      /dbPublicAclAllowWide/,
-    );
+    await expect(render({ 'infra:dbPublicEndpoint': 'true', 'infra:dbPublicAcl': '198.51.0.0/16' })).rejects.toThrow(/dbPublicAclAllowWide/);
   });
 
   it('accepts a wide range only with the explicit escape hatch, and never the whole internet', async () => {
-    const wide = await render({
-      'infra:dbPublicEndpoint': 'true',
-      'infra:dbPublicAcl': '198.51.0.0/16',
-      'infra:dbPublicAclAllowWide': 'true',
-    });
+    const wide = await render({ 'infra:dbPublicEndpoint': 'true', 'infra:dbPublicAcl': '198.51.0.0/16', 'infra:dbPublicAclAllowWide': 'true' });
     expect(wide.rules?.map((rule) => rule.ip)).toEqual(['198.51.0.0/16']);
     await expect(
-      render({
-        'infra:dbPublicEndpoint': 'true',
-        'infra:dbPublicAcl': '0.0.0.0/0',
-        'infra:dbPublicAclAllowWide': 'true',
-      }),
+      render({ 'infra:dbPublicEndpoint': 'true', 'infra:dbPublicAcl': '0.0.0.0/0', 'infra:dbPublicAclAllowWide': 'true' }),
     ).rejects.toThrow(/entire internet/);
   });
 
   it('declares the operator ACL as canonical CIDRs (positive control)', async () => {
-    const { instance, rules } = await render({
-      'infra:dbPublicEndpoint': 'true',
-      'infra:dbPublicAcl': '203.0.113.7, 198.51.100.0/24',
-    });
+    const { instance, rules } = await render({ 'infra:dbPublicEndpoint': 'true', 'infra:dbPublicAcl': '203.0.113.7, 198.51.100.0/24' });
     expect(instance.inputs.loadBalancer).toEqual({});
     expect(rules?.map((rule) => rule.ip)).toEqual(['203.0.113.7/32', '198.51.100.0/24']);
   });

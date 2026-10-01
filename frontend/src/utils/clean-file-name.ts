@@ -9,11 +9,7 @@ export function cleanFileName(name: string): string {
   const baseName = hasExtension ? originalName.slice(0, lastDotIndex) : originalName;
   const extension = hasExtension ? originalName.slice(lastDotIndex) : '';
 
-  const cleanBaseName = slugify(baseName, {
-    lower: true,
-    strict: true,
-    replacement: '-',
-  });
+  const cleanBaseName = slugify(baseName, { lower: true, strict: true, replacement: '-' });
 
   return `${cleanBaseName}${extension}`;
 }

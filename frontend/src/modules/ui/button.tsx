@@ -17,10 +17,8 @@ export const buttonVariants = cva(
         brand: '[--intent-color:var(--brand)]',
         destructive: '[--intent-color:var(--destructive)]',
         success: '[--intent-color:var(--success)]',
-        secondary:
-          'border border-transparent bg-secondary text-secondary-foreground [--intent-color:var(--secondary)] hover:bg-secondary/80',
-        outline:
-          'border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50',
+        secondary: 'border border-transparent bg-secondary text-secondary-foreground [--intent-color:var(--secondary)] hover:bg-secondary/80',
+        outline: 'border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50',
         ghost: 'shadow-none hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
         outlineGhost:
           'border border-foreground/20 bg-background/20 shadow-none hover:border-foreground/30 hover:bg-background/40 hover:text-accent-foreground',
@@ -32,10 +30,7 @@ export const buttonVariants = cva(
         warning: '[--intent-color:var(--warning)]',
         none: 'border-none bg-transparent shadow-none',
       },
-      soft: {
-        true: '',
-        false: '',
-      },
+      soft: { true: '', false: '' },
       size: {
         default: 'h-10 px-3 py-2',
         micro: 'h-6 rounded-md p-1 text-xs',
@@ -62,25 +57,15 @@ export const buttonVariants = cva(
       },
       { variant: 'default', soft: false, className: 'bg-primary text-primary-foreground hover:bg-primary/80' },
       { variant: 'brand', soft: false, className: 'bg-brand text-brand-foreground hover:bg-brand/80' },
-      {
-        variant: 'destructive',
-        soft: false,
-        className: 'bg-destructive text-destructive-foreground hover:bg-destructive/80',
-      },
+      { variant: 'destructive', soft: false, className: 'bg-destructive text-destructive-foreground hover:bg-destructive/80' },
       { variant: 'success', soft: false, className: 'bg-success text-success-foreground hover:bg-success/80' },
       { variant: 'warning', soft: false, className: 'bg-warning text-warning-foreground hover:bg-warning/80' },
     ],
-    defaultVariants: {
-      variant: 'default',
-      soft: false,
-      size: 'default',
-    },
+    defaultVariants: { variant: 'default', soft: false, size: 'default' },
   },
 );
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
-    VariantProps<typeof buttonVariants> {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   loading?: boolean;
   render?: React.ReactElement;
 }
@@ -125,22 +110,10 @@ export function Button({
   );
 }
 
-type SubmitButtonProps = Omit<ButtonProps, 'type'> & {
-  allowOfflineDelete?: boolean;
-  icon?: React.ReactNode;
-};
+type SubmitButtonProps = Omit<ButtonProps, 'type'> & { allowOfflineDelete?: boolean; icon?: React.ReactNode };
 
 /** Form submit button that warns when offline; `icon` swaps to a spinner on loading, otherwise the spinner overlays the button. */
-export function SubmitButton({
-  onClick,
-  children,
-  allowOfflineDelete = false,
-  loading,
-  disabled,
-  icon,
-  className,
-  ...props
-}: SubmitButtonProps) {
+export function SubmitButton({ onClick, children, allowOfflineDelete = false, loading, disabled, icon, className, ...props }: SubmitButtonProps) {
   const isOnline = useOnlineManager();
 
   const isDisabled = disabled || loading;
@@ -158,13 +131,7 @@ export function SubmitButton({
     onClick?.(e);
   };
 
-  const resolvedIcon = loading ? (
-    <LoaderCircleIcon className="animate-spin" />
-  ) : showOfflineWarning ? (
-    <TriangleAlertIcon />
-  ) : (
-    icon
-  );
+  const resolvedIcon = loading ? <LoaderCircleIcon className="animate-spin" /> : showOfflineWarning ? <TriangleAlertIcon /> : icon;
 
   const buttonContent = (
     <Button
@@ -190,9 +157,5 @@ export function SubmitButton({
     </Button>
   );
 
-  return showOfflineWarning ? (
-    <TooltipButton toolTipContent={t('c:offline.text_with_info')}>{buttonContent}</TooltipButton>
-  ) : (
-    buttonContent
-  );
+  return showOfflineWarning ? <TooltipButton toolTipContent={t('c:offline.text_with_info')}>{buttonContent}</TooltipButton> : buttonContent;
 }

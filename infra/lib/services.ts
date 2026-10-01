@@ -40,42 +40,27 @@ export function placeServices(definitions: readonly ServiceDefinition[], singleV
   const collocated = definitions.filter((s) => s.placement === 'host');
   for (const svc of collocated) {
     if (svc.primaryRollout)
-      throw new Error(
-        `services: '${svc.slug}' cannot combine placement 'host' with primaryRollout (the host cannot collocate onto itself).`,
-      );
+      throw new Error(`services: '${svc.slug}' cannot combine placement 'host' with primaryRollout (the host cannot collocate onto itself).`);
     if (svc.coHosted)
       throw new Error(
         `services: '${svc.slug}' cannot set both coHosted and placement 'host': in-process fold and container collocation are mutually exclusive.`,
       );
   }
-  return {
-    vm: definitions.filter((s) => !s.coHosted && s.placement !== 'host'),
-    coHosted: definitions.filter((s) => s.coHosted),
-    collocated,
-  };
+  return { vm: definitions.filter((s) => !s.coHosted && s.placement !== 'host'), coHosted: definitions.filter((s) => s.coHosted), collocated };
 }
 
 /** Enabled services receiving dedicated VMs. Single-VM mode drops co-hosted workers and host-collocated containers from compute while keeping their routing through the host target. */
-export function deployedServices(
-  serviceConfig: Record<string, EngineServiceEndpoint>,
-  singleVM: boolean,
-): readonly ServiceDefinition[] {
+export function deployedServices(serviceConfig: Record<string, EngineServiceEndpoint>, singleVM: boolean): readonly ServiceDefinition[] {
   return placeServices(enabledServices(serviceConfig), singleVM).vm;
 }
 
 /** Enabled workers folded into the host process under singleVM, empty when singleVM is off. Their runtime secrets union onto the host VM and a co-hosted `exclusive` worker forces an exclusive host cutover. */
-export function coHostedServices(
-  serviceConfig: Record<string, EngineServiceEndpoint>,
-  singleVM: boolean,
-): readonly ServiceDefinition[] {
+export function coHostedServices(serviceConfig: Record<string, EngineServiceEndpoint>, singleVM: boolean): readonly ServiceDefinition[] {
   return placeServices(enabledServices(serviceConfig), singleVM).coHosted;
 }
 
 /** Enabled `placement: 'host'` containers the boot runner starts beside the host container under singleVM. Their LB pools follow the host cutover, their secrets union onto the host VM, and their compose blocks join the host's genId fingerprint. */
-export function collocatedServices(
-  serviceConfig: Record<string, EngineServiceEndpoint>,
-  singleVM: boolean,
-): readonly ServiceDefinition[] {
+export function collocatedServices(serviceConfig: Record<string, EngineServiceEndpoint>, singleVM: boolean): readonly ServiceDefinition[] {
   return placeServices(enabledServices(serviceConfig), singleVM).collocated;
 }
 
@@ -89,9 +74,7 @@ export function effectiveStrategy(
   if (
     singleVM &&
     svc.slug === host &&
-    [...coHostedServices(serviceConfig, singleVM), ...collocatedServices(serviceConfig, singleVM)].some(
-      (s) => s.replacementStrategy === 'stop-first',
-    )
+    [...coHostedServices(serviceConfig, singleVM), ...collocatedServices(serviceConfig, singleVM)].some((s) => s.replacementStrategy === 'stop-first')
   ) {
     return 'stop-first';
   }
@@ -99,11 +82,7 @@ export function effectiveStrategy(
 }
 
 /** Secret folders `service`'s VMs read, over `definitions`: itself plus, for the singleVM host, every folded co-hosted worker and collocated container. The host's secret-path grant must union identically or hydration 403s on the folded secrets. */
-export function secretScopeSlugs(
-  definitions: readonly ServiceDefinition[],
-  singleVM: boolean,
-  service: ServiceName,
-): readonly ServiceName[] {
+export function secretScopeSlugs(definitions: readonly ServiceDefinition[], singleVM: boolean, service: ServiceName): readonly ServiceName[] {
   const placed = placeServices(definitions, singleVM);
   const host = placed.vm.find((s) => s.primaryRollout)?.slug;
   if (!singleVM || service !== host) return [service];
@@ -130,11 +109,7 @@ export function appStorageNeeds(definitions: readonly ServiceDefinition[]): {
   browserOriginSlug?: ServiceName;
 } {
   const browserOriginSlug = definitions.find((s) => s.lbRoute === 'default')?.slug;
-  return {
-    spaBucket: browserOriginSlug !== undefined,
-    uploadBuckets: definitions.some((s) => s.s3Access),
-    browserOriginSlug,
-  };
+  return { spaBucket: browserOriginSlug !== undefined, uploadBuckets: definitions.some((s) => s.s3Access), browserOriginSlug };
 }
 
 /** A public service's resolved endpoint, derived from appConfig by the registry. */

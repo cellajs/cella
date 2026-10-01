@@ -44,13 +44,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
     text: string,
     editors: string[] = [owner.user.id],
     entityId = attachment.id,
-  ) => ({
-    entityType: 'attachment',
-    entityId,
-    ...scope,
-    editors,
-    description: paragraph(text),
-  });
+  ) => ({ entityType: 'attachment', entityId, ...scope, editors, description: paragraph(text) });
 
   const ownScope = () => ({ tenantId: owner.tenantId, organizationId: owner.organization.id });
 
@@ -78,9 +72,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   it('must not write without the relay secret or with a wrong one', async () => {
     const refused = await materialize(bodyFor(ownScope(), 'no secret'), null);
     await expectRefusal(refused, 401, 'unauthorized');
-    expect((await materialize(bodyFor(ownScope(), 'wrong secret'), `${modeSecret('YJS_RELAY_SECRET')}x`)).status).toBe(
-      401,
-    );
+    expect((await materialize(bodyFor(ownScope(), 'wrong secret'), `${modeSecret('YJS_RELAY_SECRET')}x`)).status).toBe(401);
     expect((await stored())?.description).toBe(original);
   });
 
@@ -92,9 +84,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
 
   it("must not write through a body that names another tenant's organization", async () => {
     for (const organizationId of [other.organization.id, null]) {
-      const { status, body } = await materialize(
-        bodyFor({ tenantId: owner.tenantId, organizationId }, 'forged organization'),
-      );
+      const { status, body } = await materialize(bodyFor({ tenantId: owner.tenantId, organizationId }, 'forged organization'));
       await expectRefusal({ status, body }, 403, 'forbidden', String(organizationId));
     }
     expect((await stored())?.description).toBe(original);
@@ -102,9 +92,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
 
   it('must not write through a body that names another tenant', async () => {
     // The entity is not in the named tenant: for that document it is gone.
-    const { status, body } = await materialize(
-      bodyFor({ tenantId: other.tenantId, organizationId: owner.organization.id }, 'forged tenant'),
-    );
+    const { status, body } = await materialize(bodyFor({ tenantId: other.tenantId, organizationId: owner.organization.id }, 'forged tenant'));
     await expectRefusal({ status, body }, 410, 'not_found');
     expect((await stored())?.description).toBe(original);
   });

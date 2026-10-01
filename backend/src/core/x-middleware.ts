@@ -25,40 +25,26 @@ const extensionValueMetadata = new Map<string, { name?: string; description: str
 export const getExtensionValueMetadata = () => extensionValueMetadata;
 
 /** Sets `.name`, `.__extensionType` and `.__description` for OpenAPI introspection. */
-export const xMiddleware = <E extends Env = Env>(
-  options: XMiddlewareOptions,
-  fn: MiddlewareFunction<E>,
-): XMiddlewareHandler<E> => {
+export const xMiddleware = <E extends Env = Env>(options: XMiddlewareOptions, fn: MiddlewareFunction<E>): XMiddlewareHandler<E> => {
   const { functionName, type, name, description, security } = options;
 
   if (description) {
     extensionValueMetadata.set(`${type}:${functionName}`, { name, description });
   }
-  const middleware = Object.assign(createMiddleware<E>(fn), {
-    __extensionType: type,
-    __description: description,
-    __security: security,
-  });
+  const middleware = Object.assign(createMiddleware<E>(fn), { __extensionType: type, __description: description, __security: security });
   // name requires Object.defineProperty since function.name is read-only in JS.
   Object.defineProperty(middleware, 'name', { value: functionName, writable: false });
   return middleware;
 };
 
 /** For composed middlewares such as `every()`. */
-export const setMiddlewareExtension = <E extends Env = Env>(
-  middleware: MiddlewareHandler<E>,
-  options: XMiddlewareOptions,
-): XMiddlewareHandler<E> => {
+export const setMiddlewareExtension = <E extends Env = Env>(middleware: MiddlewareHandler<E>, options: XMiddlewareOptions): XMiddlewareHandler<E> => {
   const { functionName, type, name, description, security } = options;
 
   if (description) {
     extensionValueMetadata.set(`${type}:${functionName}`, { name, description });
   }
-  const extended = Object.assign(middleware, {
-    __extensionType: type,
-    __description: description,
-    __security: security,
-  });
+  const extended = Object.assign(middleware, { __extensionType: type, __description: description, __security: security });
   Object.defineProperty(extended, 'name', { value: functionName, writable: false });
   return extended;
 };

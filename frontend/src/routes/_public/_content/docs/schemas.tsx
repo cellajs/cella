@@ -12,15 +12,10 @@ const SchemasPage = lazyNamed(() => import('~/modules/docs/schemas/schemas-page'
 export const Route = createFileRoute('/_public/_content/docs/schemas')({
   staticData: { isAuth: false },
   validateSearch: schemasRouteSearchParamsSchema,
-  search: {
-    middlewares: [stripParams('operationTag')],
-  },
+  search: { middlewares: [stripParams('operationTag')] },
   head: () => ({ meta: [{ title: appTitle('Schemas') }] }),
   loader: async () => {
-    await Promise.all([
-      queryClient.ensureQueryData(schemasQueryOptions),
-      queryClient.ensureQueryData(schemaTagsQueryOptions),
-    ]);
+    await Promise.all([queryClient.ensureQueryData(schemasQueryOptions), queryClient.ensureQueryData(schemaTagsQueryOptions)]);
   },
   component: withSuspense(SchemasPage),
 });

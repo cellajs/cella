@@ -11,17 +11,9 @@ const h = makeDeepHierarchy(['project', 'courseSection']);
 
 const itemMeta = () => tableMetaOf('entity', 'item');
 
-const itemActivity = (action: InsertActivityModel['action'], organizationId: string | null = 'o1') =>
-  mockCdcActivity({ action, organizationId });
+const itemActivity = (action: InsertActivityModel['action'], organizationId: string | null = 'o1') => mockCdcActivity({ action, organizationId });
 
-const fullDepthRow = {
-  id: 'i1',
-  projectId: 'p1',
-  courseSectionId: 's1',
-  courseId: 'c1',
-  organizationId: 'o1',
-  deletedAt: null,
-};
+const fullDepthRow = { id: 'i1', projectId: 'p1', courseSectionId: 's1', courseId: 'c1', organizationId: 'o1', deletedAt: null };
 /** Item attached to a course section (no project). */
 const sectionRow = { ...fullDepthRow, projectId: null };
 /** Course-stream item: lives directly on the course. */
@@ -69,10 +61,7 @@ describe('home channel: deepest non-null ancestor (resolveChannelKey)', () => {
 
 describe('sequence groups per organization (computeBatchUnifiedDeltas)', () => {
   it('variable-depth rows in one org share ONE sequence group (all depths, one order)', () => {
-    const plan = computeBatchUnifiedDeltas(
-      [mockEvent('create', fullDepthRow), mockEvent('create', { ...courseStreamRow, id: 'i2' })],
-      h,
-    );
+    const plan = computeBatchUnifiedDeltas([mockEvent('create', fullDepthRow), mockEvent('create', { ...courseStreamRow, id: 'i2' })], h);
 
     expect(plan.orgSequenceGroups).toHaveLength(1);
     expect(plan.orgSequenceGroups[0]).toMatchObject({ orgKey: 'o1', count: 2 });
@@ -80,10 +69,7 @@ describe('sequence groups per organization (computeBatchUnifiedDeltas)', () => {
   });
 
   it('same-org rows preserve WAL order within the group', () => {
-    const plan = computeBatchUnifiedDeltas(
-      [mockEvent('create', fullDepthRow), mockEvent('create', { ...fullDepthRow, id: 'i2' })],
-      h,
-    );
+    const plan = computeBatchUnifiedDeltas([mockEvent('create', fullDepthRow), mockEvent('create', { ...fullDepthRow, id: 'i2' })], h);
     expect(plan.orgSequenceGroups).toHaveLength(1);
     expect(plan.orgSequenceGroups[0].events.map((e) => e.result.rowData.id)).toEqual(['i1', 'i2']);
   });
@@ -94,9 +80,7 @@ describe('sequence groups per organization (computeBatchUnifiedDeltas)', () => {
   });
 
   it('an org-less row fails the batch loudly instead of inventing a scope', () => {
-    expect(() => computeBatchUnifiedDeltas([mockEvent('create', { id: 'i1' }, null, null)], h)).toThrow(
-      /organization ancestor/,
-    );
+    expect(() => computeBatchUnifiedDeltas([mockEvent('create', { id: 'i1' }, null, null)], h)).toThrow(/organization ancestor/);
   });
 });
 
@@ -154,35 +138,18 @@ describe('counter attribution: org + every non-null ancestor (getCountDeltas)', 
   });
 
   it('batch merge: two rows at different depths accumulate per context', () => {
-    const plan = computeBatchUnifiedDeltas(
-      [mockEvent('create', fullDepthRow), mockEvent('create', { ...courseStreamRow, id: 'i2' })],
-      h,
-    );
+    const plan = computeBatchUnifiedDeltas([mockEvent('create', fullDepthRow), mockEvent('create', { ...courseStreamRow, id: 'i2' })], h);
     // Activity stamps land at each row's home context only.
     expect(plan.countDeltasByChannelKey.get('o1')).toEqual({ 'e:c:item': 2 });
-    expect(plan.countDeltasByChannelKey.get('c1')).toEqual({
-      'e:c:item': 2,
-      'e:c:h:item': 1,
-      'e:li:h:item': expect.any(Number),
-    });
+    expect(plan.countDeltasByChannelKey.get('c1')).toEqual({ 'e:c:item': 2, 'e:c:h:item': 1, 'e:li:h:item': expect.any(Number) });
     expect(plan.countDeltasByChannelKey.get('s1')).toEqual({ 'e:c:item': 1 });
-    expect(plan.countDeltasByChannelKey.get('p1')).toEqual({
-      'e:c:item': 1,
-      'e:c:h:item': 1,
-      'e:li:h:item': expect.any(Number),
-    });
+    expect(plan.countDeltasByChannelKey.get('p1')).toEqual({ 'e:c:item': 1, 'e:c:h:item': 1, 'e:li:h:item': expect.any(Number) });
   });
 });
 
 describe('reparent updates re-credit the ancestor diff', () => {
   it('project→project move (same course): only the projects change, lu stamps the new home', () => {
-    const deltas = getCountDeltas(
-      itemMeta(),
-      itemActivity('update'),
-      { ...fullDepthRow, projectId: 'p2' },
-      fullDepthRow,
-      h,
-    );
+    const deltas = getCountDeltas(itemMeta(), itemActivity('update'), { ...fullDepthRow, projectId: 'p2' }, fullDepthRow, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
         { channelKey: 'p2', deltas: { 'e:c:item': 1 } },
@@ -238,13 +205,7 @@ describe('reparent updates re-credit the ancestor diff', () => {
 
 describe('soft-delete / restore transitions on variable-depth rows', () => {
   it('soft-delete of a course-stream item decrements exactly its non-null ancestors', () => {
-    const deltas = getCountDeltas(
-      itemMeta(),
-      itemActivity('update'),
-      { ...courseStreamRow, deletedAt: '2026-07-07T12:00:00Z' },
-      courseStreamRow,
-      h,
-    );
+    const deltas = getCountDeltas(itemMeta(), itemActivity('update'), { ...courseStreamRow, deletedAt: '2026-07-07T12:00:00Z' }, courseStreamRow, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
         { channelKey: 'o1', deltas: { 'e:c:item': -1 } },
@@ -256,13 +217,7 @@ describe('soft-delete / restore transitions on variable-depth rows', () => {
   });
 
   it('restore counts the row again on the same set', () => {
-    const deltas = getCountDeltas(
-      itemMeta(),
-      itemActivity('update'),
-      courseStreamRow,
-      { ...courseStreamRow, deletedAt: '2026-07-07T12:00:00Z' },
-      h,
-    );
+    const deltas = getCountDeltas(itemMeta(), itemActivity('update'), courseStreamRow, { ...courseStreamRow, deletedAt: '2026-07-07T12:00:00Z' }, h);
     expect(deltas).toEqual(
       expect.arrayContaining([
         { channelKey: 'o1', deltas: { 'e:c:item': 1 } },

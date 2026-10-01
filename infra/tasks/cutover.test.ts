@@ -125,9 +125,7 @@ describe('sequenceCutover: start-first', () => {
     // The exact stranded-LB scenario: a same-generation cutover with an empty
     // live pool must still issue a SetBackendServers call, never silently skip it.
     const lb = recordingSetServers();
-    const res = await sequenceCutover(
-      lbPlan({ oldIps: ['10.0.0.9'], newIps: ['10.0.0.9'], getServers: async () => [], setServers: lb.fn }),
-    );
+    const res = await sequenceCutover(lbPlan({ oldIps: ['10.0.0.9'], newIps: ['10.0.0.9'], getServers: async () => [], setServers: lb.fn }));
     expect(res.ok).toBe(true);
     expect(lb.calls).toEqual([['10.0.0.9']]);
   });
@@ -143,10 +141,7 @@ describe('sequenceCutover: start-first', () => {
   it('drain wait happens after contract (old is removed before we wait for it to drain)', async () => {
     const order: string[] = [];
     await sequenceCutover(
-      lbPlan({
-        setServers: async (ips) => void order.push(ips.length === 2 ? 'expand' : 'contract'),
-        sleep: async () => void order.push('drain'),
-      }),
+      lbPlan({ setServers: async (ips) => void order.push(ips.length === 2 ? 'expand' : 'contract'), sleep: async () => void order.push('drain') }),
     );
     expect(order.indexOf('contract')).toBeLessThan(order.indexOf('drain'));
   });

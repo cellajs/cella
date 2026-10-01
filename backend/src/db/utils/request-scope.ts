@@ -8,16 +8,10 @@ import { AppError } from '#/core/error';
  * The tenant and organization ids the guard chain set for this request. A route that reaches
  * scoped code without both `tenantGuard` and `orgGuard` is a wiring bug, not a request error.
  */
-export const requestScope = (
-  ctx: ActorContext,
-  entityType?: EntityType,
-): { tenantId: string; organizationId: string } => {
+export const requestScope = (ctx: ActorContext, entityType?: EntityType): { tenantId: string; organizationId: string } => {
   const { tenantId, organizationId } = ctx.var;
   if (!tenantId || !organizationId) {
-    throw new AppError(500, 'server_error', 'error', {
-      entityType,
-      meta: { reason: 'Scoped query without tenant and organization guards' },
-    });
+    throw new AppError(500, 'server_error', 'error', { entityType, meta: { reason: 'Scoped query without tenant and organization guards' } });
   }
   return { tenantId, organizationId };
 };
@@ -27,11 +21,7 @@ export const requestScope = (
  * product query (lists, counts, updates, soft-deletes, bulk predicates). Redundant with RLS and
  * global UUID identity on purpose: removing RLS must broaden no application query.
  */
-export const requestScopeWhere = (
-  ctx: ActorContext,
-  table: { tenantId: PgColumn; organizationId: PgColumn },
-  entityType?: EntityType,
-): SQL => {
+export const requestScopeWhere = (ctx: ActorContext, table: { tenantId: PgColumn; organizationId: PgColumn }, entityType?: EntityType): SQL => {
   const { tenantId, organizationId } = requestScope(ctx, entityType);
   return and(eq(table.tenantId, tenantId), eq(table.organizationId, organizationId)) as SQL;
 };

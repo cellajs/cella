@@ -37,14 +37,11 @@ const inputGroupAddonVariants = cva(
       align: {
         'inline-start': 'order-first pl-3 has-[>button]:ml-[-0.45rem] has-[>kbd]:ml-[-0.35rem]',
         'inline-end': 'order-last pr-3 has-[>button]:mr-[-0.45rem] has-[>kbd]:mr-[-0.35rem]',
-        'block-start':
-          'order-first w-full justify-start px-3 pt-3 group-has-[>input]/input-group:pt-2.5 [.border-b]:pb-3',
+        'block-start': 'order-first w-full justify-start px-3 pt-3 group-has-[>input]/input-group:pt-2.5 [.border-b]:pb-3',
         'block-end': 'order-last w-full justify-start px-3 pb-3 group-has-[>input]/input-group:pb-2.5 [.border-t]:pt-3',
       },
     },
-    defaultVariants: {
-      align: 'inline-start',
-    },
+    defaultVariants: { align: 'inline-start' },
   },
 );
 
@@ -80,9 +77,7 @@ const inputGroupButtonVariants = cva('flex items-center gap-2 text-sm shadow-non
       'icon-sm': 'size-8 p-0 has-[>svg]:p-0',
     },
   },
-  defaultVariants: {
-    size: 'xs',
-  },
+  defaultVariants: { size: 'xs' },
 });
 
 export function InputGroupButton({
@@ -92,15 +87,7 @@ export function InputGroupButton({
   size = 'xs',
   ...props
 }: Omit<React.ComponentProps<typeof Button>, 'size'> & VariantProps<typeof inputGroupButtonVariants>) {
-  return (
-    <Button
-      type={type}
-      data-size={size}
-      variant={variant}
-      className={cn(inputGroupButtonVariants({ size }), className)}
-      {...props}
-    />
-  );
+  return <Button type={type} data-size={size} variant={variant} className={cn(inputGroupButtonVariants({ size }), className)} {...props} />;
 }
 
 export function InputGroupText({ className, ...props }: React.ComponentProps<'span'>) {
@@ -119,10 +106,7 @@ export function InputGroupInput({ className, ...props }: React.ComponentProps<'i
   return (
     <Input
       data-slot="input-group-control"
-      className={cn(
-        'flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0',
-        className,
-      )}
+      className={cn('flex-1 rounded-none border-0 bg-transparent shadow-none focus-visible:ring-0 focus-visible:ring-offset-0', className)}
       {...props}
     />
   );
@@ -132,10 +116,7 @@ export function InputGroupTextarea({ className, ...props }: React.ComponentProps
   return (
     <Textarea
       data-slot="input-group-control"
-      className={cn(
-        'flex-1 resize-none rounded-none border-0 bg-transparent py-3 shadow-none focus-visible:ring-0',
-        className,
-      )}
+      className={cn('flex-1 resize-none rounded-none border-0 bg-transparent py-3 shadow-none focus-visible:ring-0', className)}
       {...props}
     />
   );

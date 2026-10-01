@@ -25,13 +25,7 @@ export function resolveViewReadStatus(
   depth: ViewDepth = 'subtree',
   truePath?: string | null,
 ): ViewReadStatus {
-  return classifyPrefix(
-    prefix,
-    organizationId,
-    resolveCollectionReadFilter(memberships, entityType, organizationId, actor),
-    depth,
-    truePath,
-  );
+  return classifyPrefix(prefix, organizationId, resolveCollectionReadFilter(memberships, entityType, organizationId, actor), depth, truePath);
 }
 
 /** {@link resolveViewReadStatus} against an explicit policy set / hierarchy, for deep-hierarchy parity tests. */
@@ -77,8 +71,7 @@ function classifyPrefix(
     // Home-level unconditional grant (deepest level: covers its subtree).
     if (provableIds.some((id) => filter.homeChannelIds?.includes(id))) return 'ok';
     // Unconditional grant at an intermediate ancestor level (subtree-scoped: elevated).
-    if (filter.intermediateScopes?.some((scope) => provableIds.some((id) => scope.channelIds.includes(id))))
-      return 'ok';
+    if (filter.intermediateScopes?.some((scope) => provableIds.some((id) => scope.channelIds.includes(id)))) return 'ok';
   }
 
   // A self view accepts only an unconditional home grant on that exact node: ancestor home grants do not prove descendants.

@@ -14,10 +14,7 @@ vi.mock('./cache-ops', () => ({
   invalidateEntityListForOrg: (...a: unknown[]) => invalidateEntityListForOrg(...a),
 }));
 const getSyncTier = vi.fn();
-vi.mock('./sync-priority', () => ({
-  getSyncTier: (...a: unknown[]) => getSyncTier(...a),
-  isViewingChannel: () => false,
-}));
+vi.mock('./sync-priority', () => ({ getSyncTier: (...a: unknown[]) => getSyncTier(...a), isViewingChannel: () => false }));
 const propagateEmbeddings = vi.fn();
 const invalidateEmbeddedUsage = vi.fn();
 const invalidateEmbeddedForHost = vi.fn();
@@ -32,9 +29,7 @@ vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: (...a: unknown[
 vi.mock('~/query/offline/stx-utils', () => ({ sourceId: 'test-client' }));
 vi.mock('~/routes/router', () => ({ router: { subscribe: vi.fn(), state: { matches: [] } } }));
 const resolveChannelPath = vi.fn((_channelType: string | null, _channelId: string): string | null => null);
-vi.mock('./view-declaration', () => ({
-  resolveChannelPath: (...a: [string | null, string]) => resolveChannelPath(...a),
-}));
+vi.mock('./view-declaration', () => ({ resolveChannelPath: (...a: [string | null, string]) => resolveChannelPath(...a) }));
 
 // Node test env has no document: stubbed before query-client loads, installListeners wires the promote-on-observe path.
 vi.stubGlobal('document', { addEventListener: vi.fn(), hidden: false });
@@ -47,13 +42,7 @@ const BACKGROUND = { min: 2_000, max: 30_000 };
 const VIEWING = { min: 0, max: 0 };
 const ON_OPEN = { min: Number.POSITIVE_INFINITY, max: Number.POSITIVE_INFINITY };
 
-const base = {
-  entityType: 'attachment' as const,
-  organizationId: 'org-1',
-  tenantId: 'tenant-1',
-  channelId: null,
-  isCreate: false,
-};
+const base = { entityType: 'attachment' as const, organizationId: 'org-1', tenantId: 'tenant-1', channelId: null, isCreate: false };
 
 describe('fetch-prioritizer', () => {
   beforeEach(() => {
@@ -161,12 +150,7 @@ describe('fetch-prioritizer', () => {
     off();
 
     expect(syncedRows).toHaveBeenCalledTimes(1);
-    expect(syncedRows).toHaveBeenCalledWith({
-      entityType: 'attachment',
-      organizationId: 'org-1',
-      rows: items,
-      degraded: false,
-    });
+    expect(syncedRows).toHaveBeenCalledWith({ entityType: 'attachment', organizationId: 'org-1', rows: items, degraded: false });
     expect(invalidateUnseenCounts).not.toHaveBeenCalled();
   });
 
@@ -180,12 +164,7 @@ describe('fetch-prioritizer', () => {
     off();
 
     expect(syncedRows).toHaveBeenCalledTimes(1);
-    expect(syncedRows).toHaveBeenCalledWith({
-      entityType: 'attachment',
-      organizationId: 'org-1',
-      rows: [],
-      degraded: true,
-    });
+    expect(syncedRows).toHaveBeenCalledWith({ entityType: 'attachment', organizationId: 'org-1', rows: [], degraded: true });
     expect(invalidateUnseenCounts).toHaveBeenCalledTimes(1);
   });
 
@@ -233,9 +212,7 @@ describe('fetch-prioritizer', () => {
   });
 
   it('narrows the covering fetch to the least-common-ancestor channel id when due channels diverge', async () => {
-    resolveChannelPath.mockImplementation((_type, channelId) =>
-      channelId === 'proj-a' ? 'org-1/course-1/proj-a' : 'org-1/course-1/proj-b',
-    );
+    resolveChannelPath.mockImplementation((_type, channelId) => (channelId === 'proj-a' ? 'org-1/course-1/proj-a' : 'org-1/course-1/proj-b'));
     enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
     enqueueRange({ ...base, channelId: 'proj-b', fromSeq: 9, untilSeq: 12 });
 
@@ -246,9 +223,7 @@ describe('fetch-prioritizer', () => {
   });
 
   it('widens to the whole org when any due channel path is unknown', async () => {
-    resolveChannelPath.mockImplementation((_type, channelId) =>
-      channelId === 'proj-a' ? 'org-1/course-1/proj-a' : null,
-    );
+    resolveChannelPath.mockImplementation((_type, channelId) => (channelId === 'proj-a' ? 'org-1/course-1/proj-a' : null));
     enqueueRange({ ...base, channelId: 'proj-a', fromSeq: 5, untilSeq: 8 });
     enqueueRange({ ...base, channelId: 'proj-b', fromSeq: 9, untilSeq: 12 });
 
@@ -322,10 +297,7 @@ describe('fetch-prioritizer', () => {
 
     // The channel view's view mounts: its list query gains an observer and the tier turns live.
     getSyncTier.mockReturnValue(VIEWING);
-    const observer = new QueryObserver(queryClient, {
-      queryKey: ['attachment', 'list', 'org-1'],
-      queryFn: async () => [],
-    });
+    const observer = new QueryObserver(queryClient, { queryKey: ['attachment', 'list', 'org-1'], queryFn: async () => [] });
     const unsubscribe = observer.subscribe(() => {});
 
     await vi.advanceTimersByTimeAsync(0);

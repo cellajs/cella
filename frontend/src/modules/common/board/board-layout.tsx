@@ -1,9 +1,5 @@
 import { combine } from '@atlaskit/pragmatic-drag-and-drop/combine';
-import {
-  draggable,
-  dropTargetForElements,
-  monitorForElements,
-} from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { draggable, dropTargetForElements, monitorForElements } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { setCustomNativeDragPreview } from '@atlaskit/pragmatic-drag-and-drop/element/set-custom-native-drag-preview';
 import { preserveOffsetOnSource } from '@atlaskit/pragmatic-drag-and-drop/utils/preserve-offset-on-source';
 import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge';
@@ -14,12 +10,7 @@ import { useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState 
 import { isPanelReorderDragData, PanelDragHandleContext, reorderPanels } from '~/modules/common/board/board-drag';
 import { useBoardStore } from '~/modules/common/board/board-store';
 import { DropIndicator } from '~/modules/common/drop-indicator';
-import {
-  type PanelGroupApi,
-  ResizablePanel,
-  ResizablePanelGroup,
-  ResizableSeparator,
-} from '~/modules/common/resizable-panels/resizable-panels';
+import { type PanelGroupApi, ResizablePanel, ResizablePanelGroup, ResizableSeparator } from '~/modules/common/resizable-panels/resizable-panels';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { cn } from '~/utils/cn';
 
@@ -141,21 +132,11 @@ export function BoardLayout({
       className={cn('group/board', !autoHeight && 'h-[inherit]', groupClassName)}
     >
       {panels.map(({ panelId }, i) => (
-        <motion.div
-          key={panelId}
-          layout="position"
-          layoutId={`${boardId}-${panelId}`}
-          className="relative flex shrink-0"
-        >
+        <motion.div key={panelId} layout="position" layoutId={`${boardId}-${panelId}`} className="relative flex shrink-0">
           {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'left' && (
             <DropIndicator edge="left" gap={i === 0 ? 0 : 0.6} />
           )}
-          <ResizablePanel
-            id={panelId}
-            minWidth={PANEL_MIN_WIDTH}
-            collapsedWidth={COLLAPSED_PANEL_MIN_WIDTH}
-            collapsible
-          >
+          <ResizablePanel id={panelId} minWidth={PANEL_MIN_WIDTH} collapsedWidth={COLLAPSED_PANEL_MIN_WIDTH} collapsible>
             {reorderable ? (
               <PanelDragWrapper
                 panelId={panelId}
@@ -172,9 +153,7 @@ export function BoardLayout({
               children(panelId, i)
             )}
           </ResizablePanel>
-          {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'right' && (
-            <DropIndicator edge="right" gap={-0.1} />
-          )}
+          {reorderable && dropIndicator?.panelId === panelId && dropIndicator.edge === 'right' && <DropIndicator edge="right" gap={-0.1} />}
 
           {i < panels.length - 1 && (
             <ResizableSeparator
@@ -198,10 +177,7 @@ export function BoardLayout({
 
   return (
     <ScrollArea
-      className={cn(
-        'transition sm:h-[calc(100dvh-var(--board-offset-sm))] md:h-[calc(100dvh-var(--board-offset-md))]',
-        className,
-      )}
+      className={cn('transition sm:h-[calc(100dvh-var(--board-offset-sm))] md:h-[calc(100dvh-var(--board-offset-md))]', className)}
       viewportClassName="overflow-y-hidden! overscroll-y-auto"
       horizontalScroll
       autoScrollOnDrag="horizontal"
@@ -272,10 +248,7 @@ function PanelDragWrapper({
         canDrop: ({ source }) => isPanelReorderDragData(source.data) && source.data.panelId !== panelId,
         getIsSticky: () => true,
         getData: ({ input }) =>
-          attachClosestEdge(
-            { dragItem: true, type: 'panelReorder' as const, panelId },
-            { element: wrapper, input, allowedEdges: ['left', 'right'] },
-          ),
+          attachClosestEdge({ dragItem: true, type: 'panelReorder' as const, panelId }, { element: wrapper, input, allowedEdges: ['left', 'right'] }),
         onDrag: ({ self, source }) => {
           const edge = extractClosestEdge(self.data);
           if (!edge || !isPanelReorderDragData(source.data)) return onEdgeChange(null);

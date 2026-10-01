@@ -1,11 +1,7 @@
 import { appConfig } from 'shared';
 import { activityBus, getEventData } from '#/lib/activity-bus';
 import { authEvents } from '#/modules/auth/auth-events';
-import {
-  type AppStreamSubscriber,
-  dispatchMoveOuts,
-  dispatchToAppStream,
-} from '#/modules/entities/helpers/dispatch-to-stream';
+import { type AppStreamSubscriber, dispatchMoveOuts, dispatchToAppStream } from '#/modules/entities/helpers/dispatch-to-stream';
 import { closeAppStreams, streamErrorForEnding } from '#/modules/entities/helpers/session-streams';
 import { toMembershipBase } from '#/modules/memberships/helpers/select';
 import { log } from '#/utils/logger';
@@ -48,8 +44,7 @@ for (const action of ['created', 'updated', 'deleted'] as const) {
       const subscribers = streamSubscriberManager.getByChannel<AppStreamSubscriber>(`user:${membership.userId}`);
       for (const subscriber of subscribers) {
         const remaining = subscriber.memberships.filter((existing) => existing.id !== membership.id);
-        subscriber.memberships =
-          action === 'deleted' ? remaining : [...remaining, toMembershipBase(membership as Record<string, unknown>)];
+        subscriber.memberships = action === 'deleted' ? remaining : [...remaining, toMembershipBase(membership as Record<string, unknown>)];
       }
     }
 

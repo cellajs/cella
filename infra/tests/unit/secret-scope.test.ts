@@ -18,15 +18,12 @@ const appConfigFor = (singleVM: boolean) =>
   });
 
 /** The folder prefixes a condition grants, from its `resource.name.startsWith("...")` clauses. */
-const grantedPrefixes = (condition: string) =>
-  [...condition.matchAll(/resource\.name\.startsWith\("([^"]+)"\)/g)].map((match) => match[1] ?? '');
+const grantedPrefixes = (condition: string) => [...condition.matchAll(/resource\.name\.startsWith\("([^"]+)"\)/g)].map((match) => match[1] ?? '');
 
 /** Whether a condition lets its principal read the secret named `name` (its full Secret Manager path and name). */
-const covers = (condition: string, name: string) =>
-  grantedPrefixes(condition).some((prefix) => name.startsWith(prefix));
+const covers = (condition: string, name: string) => grantedPrefixes(condition).some((prefix) => name.startsWith(prefix));
 
-const secretName = (secret: (typeof runtimeSecrets)[number]) =>
-  `${secretPathFor(secret, slug, mode)}${secret.secretName}`;
+const secretName = (secret: (typeof runtimeSecrets)[number]) => `${secretPathFor(secret, slug, mode)}${secret.secretName}`;
 
 /**
  * A VM principal's grant is conditioned on secret folders, so where a secret lives decides who reads it: a folder
@@ -68,9 +65,7 @@ describe('secret scope per principal', () => {
   });
 
   it('must not give the Yjs relay the key that signs editor tokens, under split-VM', () => {
-    const yjsRow = buildVmAssertRows(appConfigFor(false)).find(
-      (row) => row.app === principalNames(slug, mode).vmService('yjs'),
-    );
+    const yjsRow = buildVmAssertRows(appConfigFor(false)).find((row) => row.app === principalNames(slug, mode).vmService('yjs'));
     const signingKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PRIVATE_KEY');
     const publicKey = runtimeSecrets.find((secret) => secret.envVar === 'YJS_TOKEN_PUBLIC_KEY');
     if (!yjsRow || !signingKey || !publicKey) throw new Error('fixture missing');

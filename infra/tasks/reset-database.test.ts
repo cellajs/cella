@@ -1,12 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { RdbBackup, RdbDatabase, RdbInstance } from '../lib/scaleway/scaleway-rdb';
-import {
-  backupName,
-  type ResetDatabasePlan,
-  ResetIrrecoverableError,
-  sequenceDatabaseReset,
-  serialConsoleSteps,
-} from './reset-database';
+import { backupName, type ResetDatabasePlan, ResetIrrecoverableError, sequenceDatabaseReset, serialConsoleSteps } from './reset-database';
 
 const INSTANCE: RdbInstance = { id: 'inst-1', name: 'cella-postgres', status: 'ready' };
 const DATABASES: RdbDatabase[] = [{ name: 'cella' }, { name: 'rdb' }];
@@ -130,9 +124,7 @@ describe('sequenceDatabaseReset', () => {
 
     await sequenceDatabaseReset(plan);
 
-    expect(confirm).toHaveBeenCalledWith(
-      expect.objectContaining({ token: 'cella@cella-postgres', instanceId: 'inst-1', databases: DATABASES }),
-    );
+    expect(confirm).toHaveBeenCalledWith(expect.objectContaining({ token: 'cella@cella-postgres', instanceId: 'inst-1', databases: DATABASES }));
   });
 
   it('surfaces the backup id when the database is gone and cannot be rebuilt', async () => {
@@ -191,8 +183,6 @@ describe('backupName', () => {
   });
 
   it('names the database it belongs to, so a multi-database instance stays legible', () => {
-    expect(backupName('cella_staging', new Date('2026-01-02T03:04:05.000Z'))).toBe(
-      'pre-reset-cella_staging-20260102-0304',
-    );
+    expect(backupName('cella_staging', new Date('2026-01-02T03:04:05.000Z'))).toBe('pre-reset-cella_staging-20260102-0304');
   });
 });

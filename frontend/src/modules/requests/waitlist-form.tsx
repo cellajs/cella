@@ -31,15 +31,7 @@ interface WaitlistFormProps {
   callback?: (args: CallbackArgs) => void;
 }
 
-export function WaitlistForm({
-  email,
-  inputClassName,
-  buttonContent,
-  buttonClassName,
-  dialog: isDialog,
-  callback,
-  className,
-}: WaitlistFormProps) {
+export function WaitlistForm({ email, inputClassName, buttonContent, buttonClassName, dialog: isDialog, callback, className }: WaitlistFormProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
@@ -47,10 +39,7 @@ export function WaitlistForm({
 
   const { mutate: createRequest, isPending } = useCreateRequestMutation();
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { email, type: 'waitlist', message: null },
-  });
+  const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { email, type: 'waitlist', message: null } });
 
   const onSubmit = (body: FormValues) => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));

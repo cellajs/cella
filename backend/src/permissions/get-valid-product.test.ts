@@ -7,9 +7,7 @@ import { checkAccess } from '#/permissions';
 import { getValidProduct } from '#/permissions/get-valid-product';
 
 vi.mock('#/db/db', () => ({ baseDb: { kind: 'baseDb' } }));
-vi.mock('#/db/tenant-context', () => ({
-  tenantRead: vi.fn((ctx: UserContext, fn: (readCtx: UserContext) => unknown) => fn(ctx)),
-}));
+vi.mock('#/db/tenant-context', () => ({ tenantRead: vi.fn((ctx: UserContext, fn: (readCtx: UserContext) => unknown) => fn(ctx)) }));
 vi.mock('#/modules/entities/entities-queries', () => ({ resolveEntity: vi.fn() }));
 vi.mock('#/permissions', () => ({ checkAccess: vi.fn() }));
 vi.mock('#/permissions/access', () => ({ accessFrom: vi.fn(() => ({})) }));
@@ -20,9 +18,7 @@ const ORG = 'org-a';
 
 /** Scope check unit: the entity lookup, permission engine and RLS wrapper are mocked, so only the tenant/organization comparison is under test. */
 describe('getValidProduct request scope', () => {
-  const ctx = (
-    scope: Partial<{ tenantId: string; organizationId: string }> = { tenantId: TENANT, organizationId: ORG },
-  ) =>
+  const ctx = (scope: Partial<{ tenantId: string; organizationId: string }> = { tenantId: TENANT, organizationId: ORG }) =>
     ({
       var: {
         db: baseDb,
@@ -58,41 +54,27 @@ describe('getValidProduct request scope', () => {
 
   it('reads a foreign-tenant row as 404 even when the engine would allow it', async () => {
     vi.mocked(resolveEntity).mockResolvedValue(row({ tenantId: 'tenant-b' }) as never);
-    await expect(getValidProduct(ctx(), 'att-1', 'attachment', 'read')).rejects.toMatchObject({
-      status: 404,
-      type: 'not_found',
-    });
+    await expect(getValidProduct(ctx(), 'att-1', 'attachment', 'read')).rejects.toMatchObject({ status: 404, type: 'not_found' });
     expect(checkAccess).not.toHaveBeenCalled();
   });
 
   it('reads a foreign-organization row as 404', async () => {
     vi.mocked(resolveEntity).mockResolvedValue(row({ organizationId: 'org-b' }) as never);
-    await expect(getValidProduct(ctx(), 'att-1', 'attachment', 'read')).rejects.toMatchObject({
-      status: 404,
-      type: 'not_found',
-    });
+    await expect(getValidProduct(ctx(), 'att-1', 'attachment', 'read')).rejects.toMatchObject({ status: 404, type: 'not_found' });
     expect(checkAccess).not.toHaveBeenCalled();
   });
 
   it('returns 403 when the row is in scope and readable but the engine denies the action', async () => {
     vi.mocked(resolveEntity).mockResolvedValue(row() as never);
-    vi.mocked(checkAccess).mockImplementation(
-      (_access, action) => ({ allowed: action === 'read' }) as ReturnType<typeof checkAccess>,
-    );
-    await expect(getValidProduct(ctx(), 'att-1', 'attachment', 'update')).rejects.toMatchObject({
-      status: 403,
-      type: 'forbidden',
-    });
+    vi.mocked(checkAccess).mockImplementation((_access, action) => ({ allowed: action === 'read' }) as ReturnType<typeof checkAccess>);
+    await expect(getValidProduct(ctx(), 'att-1', 'attachment', 'update')).rejects.toMatchObject({ status: 403, type: 'forbidden' });
   });
 
   it('reads a row the engine denies reading as 404, whatever the action', async () => {
     vi.mocked(resolveEntity).mockResolvedValue(row() as never);
     vi.mocked(checkAccess).mockReturnValue({ allowed: false } as ReturnType<typeof checkAccess>);
     for (const action of ['read', 'update', 'delete'] as const) {
-      await expect(getValidProduct(ctx(), 'att-1', 'attachment', action)).rejects.toMatchObject({
-        status: 404,
-        type: 'not_found',
-      });
+      await expect(getValidProduct(ctx(), 'att-1', 'attachment', action)).rejects.toMatchObject({ status: 404, type: 'not_found' });
     }
   });
 

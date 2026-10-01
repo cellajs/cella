@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  buildNotificationLink,
-  type NotificationLinkSearch,
-  notificationLinkSearchSchema,
-} from './notification-link.ts';
+import { buildNotificationLink, type NotificationLinkSearch, notificationLinkSearchSchema } from './notification-link.ts';
 
 const frontendUrl = 'https://app.example.test';
 
@@ -19,8 +15,7 @@ const search: NotificationLinkSearch = {
 };
 
 /** What the `/n` route reads back from the link. */
-const parse = (link: string) =>
-  notificationLinkSearchSchema.parse(Object.fromEntries(new URL(link).searchParams.entries()));
+const parse = (link: string) => notificationLinkSearchSchema.parse(Object.fromEntries(new URL(link).searchParams.entries()));
 
 describe('buildNotificationLink', () => {
   it('carries every search field through the link, the context id included', () => {

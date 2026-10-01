@@ -11,8 +11,7 @@ const userRoutes = createXRoutes(['users', 'cella'], {
     path: '/users',
     xGuard: [userGuard, crossTenantGuard],
     summary: 'Get list of users',
-    description:
-      'Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.',
+    description: 'Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.',
     request: { query: userListQuerySchema },
     responses: {
       200: json(

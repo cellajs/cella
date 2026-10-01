@@ -6,8 +6,7 @@ import { useUserStore } from '~/modules/user/user-store';
 const isRecord = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null;
 
 /** A zod node exposes its definition tag; anything else is not a schema this walker can read. */
-const isSchema = (value: unknown): value is z.ZodType =>
-  isRecord(value) && isRecord(value.def) && typeof value.def.type === 'string';
+const isSchema = (value: unknown): value is z.ZodType => isRecord(value) && isRecord(value.def) && typeof value.def.type === 'string';
 
 const asSchema = (value: unknown): z.ZodType | undefined => (isSchema(value) ? value : undefined);
 
@@ -137,14 +136,7 @@ export const createOptimisticEntity = <T extends z.ZodObject<z.ZodRawShape>>(
 ): z.infer<T> => {
   const user = useUserStore.getState().user;
   const createdByUser = user
-    ? {
-        id: user.id,
-        name: user.name,
-        slug: user.slug,
-        thumbnailUrl: user.thumbnailUrl,
-        email: user.email,
-        entityType: 'user' as const,
-      }
+    ? { id: user.id, name: user.name, slug: user.slug, thumbnailUrl: user.thumbnailUrl, email: user.email, entityType: 'user' as const }
     : null;
 
   const defaults = getSchemaDefaults(schema);

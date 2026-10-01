@@ -45,19 +45,13 @@ export async function getApiKey(auth: IamAuth, accessKey: string): Promise<ScwAp
 export async function resolveOrganizationIdViaProject(auth: IamAuth, projectId: string): Promise<string> {
   const project = await scwFetch<{ organization_id?: string }>(auth, 'GET', `${ACCOUNT_BASE}/projects/${projectId}`);
   if (!project?.organization_id) {
-    throw new Error(
-      `Could not resolve organization_id from project ${projectId}: set SCW_DEFAULT_ORGANIZATION_ID (or pass --organization-id).`,
-    );
+    throw new Error(`Could not resolve organization_id from project ${projectId}: set SCW_DEFAULT_ORGANIZATION_ID (or pass --organization-id).`);
   }
   return project.organization_id;
 }
 
 /** Resolve an IAM application's id from its (unique) name. Returns null when not found. */
-export async function resolveApplicationIdByName(
-  auth: IamAuth,
-  organizationId: string,
-  name: string,
-): Promise<string | null> {
+export async function resolveApplicationIdByName(auth: IamAuth, organizationId: string, name: string): Promise<string | null> {
   const { applications = [] } = await scwFetch<{ applications?: Array<{ id: string; name: string }> }>(
     auth,
     'GET',
@@ -92,17 +86,14 @@ export async function listOrganizationPolicies(auth: IamAuth, organizationId: st
 }
 
 /** Group ids the application belongs to; a group's policies grant the app too. */
-async function fetchApplicationGroupIds(
-  auth: IamAuth,
-  organizationId: string,
-  applicationId: string,
-): Promise<Set<string>> {
+async function fetchApplicationGroupIds(auth: IamAuth, organizationId: string, applicationId: string): Promise<Set<string>> {
   const ids = new Set<string>();
   for (let page = 1; page <= 100; page++) {
-    const { groups = [], total_count = 0 } = await scwFetch<{
-      groups?: Array<{ id: string; application_ids?: string[] }>;
-      total_count?: number;
-    }>(auth, 'GET', `${IAM_BASE}/groups?organization_id=${organizationId}&page=${page}&page_size=100`);
+    const { groups = [], total_count = 0 } = await scwFetch<{ groups?: Array<{ id: string; application_ids?: string[] }>; total_count?: number }>(
+      auth,
+      'GET',
+      `${IAM_BASE}/groups?organization_id=${organizationId}&page=${page}&page_size=100`,
+    );
     for (const group of groups) if ((group.application_ids ?? []).includes(applicationId)) ids.add(group.id);
     if (groups.length === 0 || (page - 1) * 100 + groups.length >= total_count) break;
   }
@@ -110,26 +101,16 @@ async function fetchApplicationGroupIds(
 }
 
 /** Every rule (permission sets + condition) granted to an application across its policies. */
-export async function fetchGrantedRules(
-  auth: IamAuth,
-  organizationId: string,
-  applicationId: string,
-): Promise<GrantedRule[]> {
+export async function fetchGrantedRules(auth: IamAuth, organizationId: string, applicationId: string): Promise<GrantedRule[]> {
   const groupIds = await fetchApplicationGroupIds(auth, organizationId, applicationId);
   const policies = await listOrganizationPolicies(auth, organizationId);
   const bound = policies.filter(
-    (policy) =>
-      policy.application_id === applicationId || (policy.group_id !== undefined && groupIds.has(policy.group_id)),
+    (policy) => policy.application_id === applicationId || (policy.group_id !== undefined && groupIds.has(policy.group_id)),
   );
   const collected: GrantedRule[] = [];
   for (const policy of bound) {
     const { rules = [] } = await scwFetch<{
-      rules?: Array<{
-        permission_set_names?: string[];
-        condition?: string;
-        project_ids?: string[];
-        organization_id?: string;
-      }>;
+      rules?: Array<{ permission_set_names?: string[]; condition?: string; project_ids?: string[]; organization_id?: string }>;
     }>(auth, 'GET', `${IAM_BASE}/rules?policy_id=${policy.id}&page_size=100`);
     for (const rule of rules) {
       collected.push({

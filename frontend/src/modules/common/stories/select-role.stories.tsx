@@ -7,12 +7,9 @@ import { SelectRole } from '~/modules/common/form-fields/select-role';
 /** The organization vocabulary's floor role: `member` in cella; apps with other vocabularies still run this file unchanged. */
 const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
-const meta = {
-  title: 'common/SelectRole',
-  component: SelectRole,
-  tags: ['autodocs'],
-  parameters: { layout: 'centered' },
-} satisfies Meta<typeof SelectRole>;
+const meta = { title: 'common/SelectRole', component: SelectRole, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
+  typeof SelectRole
+>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

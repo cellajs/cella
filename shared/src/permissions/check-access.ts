@@ -4,21 +4,14 @@ import type { EntityActionType, EntityType } from '../../types.ts';
 import type { AccessScope } from './access-scopes.ts';
 import { getAllDecisions } from './engine/check.ts';
 import { type EngineAccess, getDecisionsForAccesses } from './engine/resolve-access.ts';
-import type {
-  AccessMembership,
-  PermissionCheckOptions,
-  PermissionDecision,
-  SubjectForPermission,
-} from './engine/types.ts';
+import type { AccessMembership, PermissionCheckOptions, PermissionDecision, SubjectForPermission } from './engine/types.ts';
 
 /**
  * Authenticated or anonymous actor used by SQL permission predicates. The discriminant makes an
  * omitted actor id a type error, so no actor-based condition is denied by accident. `actorId` is a user or
  * service account id; `scopes` is the mask of the API key or access token that proved the caller (null or absent = unmasked; a session is never masked).
  */
-export type PredicateActor =
-  | { actorId: string; isSystemAdmin?: boolean; scopes: readonly AccessScope[] | null }
-  | { anonymous: true };
+export type PredicateActor = { actorId: string; isSystemAdmin?: boolean; scopes: readonly AccessScope[] | null } | { anonymous: true };
 
 /**
  * Memberships and actor travel together, so no call site can pair one user's memberships with
@@ -80,12 +73,7 @@ export function checkAccess<T extends AccessMembership>(
   subject: SubjectForPermission,
 ): PermissionResult<T> {
   const engineAccess = toEngineAccess(access);
-  const { can, membership } = getAllDecisions(
-    policyMatrix,
-    engineAccess.memberships,
-    subject,
-    accessOptions(engineAccess),
-  );
+  const { can, membership } = getAllDecisions(policyMatrix, engineAccess.memberships, subject, accessOptions(engineAccess));
   return { allowed: can[action] && scopeAllows(access, subject.entityType, action), membership };
 }
 

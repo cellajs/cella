@@ -141,17 +141,9 @@ describe('computeSpanStats', () => {
 
 describe('attribute helpers', () => {
   it('cdcAttrs builds correct attributes', () => {
-    expect(cdcAttrs({ lsn: '0/1234' })).toEqual({
-      lsn: '0/1234',
-      'cdc.tag': 'unknown',
-      'cdc.table': 'unknown',
-    });
+    expect(cdcAttrs({ lsn: '0/1234' })).toEqual({ lsn: '0/1234', 'cdc.tag': 'unknown', 'cdc.table': 'unknown' });
 
-    expect(cdcAttrs({ lsn: '0/5678', tag: 'INSERT', table: 'tasks' })).toEqual({
-      lsn: '0/5678',
-      'cdc.tag': 'INSERT',
-      'cdc.table': 'tasks',
-    });
+    expect(cdcAttrs({ lsn: '0/5678', tag: 'INSERT', table: 'tasks' })).toEqual({ lsn: '0/5678', 'cdc.tag': 'INSERT', 'cdc.table': 'tasks' });
   });
 
   it('activityAttrs builds correct attributes', () => {
@@ -171,11 +163,7 @@ describe('attribute helpers', () => {
   });
 
   it('eventAttrs builds correct attributes', () => {
-    expect(eventAttrs({ type: 'create' })).toEqual({
-      'event.type': 'create',
-      'event.subjectId': null,
-      'event.entityType': null,
-    });
+    expect(eventAttrs({ type: 'create' })).toEqual({ 'event.type': 'create', 'event.subjectId': null, 'event.entityType': null });
 
     expect(eventAttrs({ type: 'update', subjectId: 'x', entityType: 'attachment' })).toEqual({
       'event.type': 'update',

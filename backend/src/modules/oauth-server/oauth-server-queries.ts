@@ -21,11 +21,7 @@ export async function getConsentTargetNames(
   ctx: DbContext,
   { userId, resource }: GetConsentTargetNamesOpts,
 ): Promise<{ tenant: string | null; organization: string | null }> {
-  const [tenant] = await ctx.var.db
-    .select({ name: tenantsTable.name })
-    .from(tenantsTable)
-    .where(eq(tenantsTable.id, resource.tenantId))
-    .limit(1);
+  const [tenant] = await ctx.var.db.select({ name: tenantsTable.name }).from(tenantsTable).where(eq(tenantsTable.id, resource.tenantId)).limit(1);
   // The resource grammar takes any path segment for the organization; only a uuid can name one.
   if (resource.face !== 'mcp' || !z.uuid().safeParse(resource.organizationId).success) {
     return { tenant: tenant?.name ?? null, organization: null };
@@ -33,10 +29,7 @@ export async function getConsentTargetNames(
   const [organization] = await ctx.var.db
     .select({ name: organizationsTable.name })
     .from(organizationsTable)
-    .innerJoin(
-      membershipsTable,
-      and(eq(membershipsTable.organizationId, organizationsTable.id), eq(membershipsTable.userId, userId)),
-    )
+    .innerJoin(membershipsTable, and(eq(membershipsTable.organizationId, organizationsTable.id), eq(membershipsTable.userId, userId)))
     .where(and(eq(organizationsTable.id, resource.organizationId), eq(organizationsTable.tenantId, resource.tenantId)))
     .limit(1);
   return { tenant: tenant?.name ?? null, organization: organization?.name ?? null };
@@ -56,13 +49,7 @@ export async function findConsentOfUser(ctx: DbContext, { grantId, userId }: { g
   const [grant] = await ctx.var.db
     .select({ id: oidcPayloadsTable.id })
     .from(oidcPayloadsTable)
-    .where(
-      and(
-        eq(oidcPayloadsTable.type, 'Grant'),
-        eq(oidcPayloadsTable.id, grantId),
-        eq(oidcPayloadsTable.accountId, userId),
-      ),
-    )
+    .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId), eq(oidcPayloadsTable.accountId, userId)))
     .limit(1);
   return grant;
 }
@@ -75,13 +62,8 @@ interface DeleteProviderSessionsOfUserOpts {
  * The authorization server's sessions of a user, in every browser: none answers a client for them any more until they
  * consent again. Their grants and refresh tokens stay.
  */
-export async function deleteProviderSessionsOfUser(
-  ctx: DbContext,
-  { userId }: DeleteProviderSessionsOfUserOpts,
-): Promise<void> {
-  await ctx.var.db
-    .delete(oidcPayloadsTable)
-    .where(and(eq(oidcPayloadsTable.type, 'Session'), eq(oidcPayloadsTable.accountId, userId)));
+export async function deleteProviderSessionsOfUser(ctx: DbContext, { userId }: DeleteProviderSessionsOfUserOpts): Promise<void> {
+  await ctx.var.db.delete(oidcPayloadsTable).where(and(eq(oidcPayloadsTable.type, 'Session'), eq(oidcPayloadsTable.accountId, userId)));
 }
 
 interface DeleteProviderSessionOpts {
@@ -91,9 +73,7 @@ interface DeleteProviderSessionOpts {
 
 /** One authorization server session. */
 export async function deleteProviderSession(ctx: DbContext, { id }: DeleteProviderSessionOpts): Promise<void> {
-  await ctx.var.db
-    .delete(oidcPayloadsTable)
-    .where(and(eq(oidcPayloadsTable.type, 'Session'), eq(oidcPayloadsTable.id, id)));
+  await ctx.var.db.delete(oidcPayloadsTable).where(and(eq(oidcPayloadsTable.type, 'Session'), eq(oidcPayloadsTable.id, id)));
 }
 
 /** Everything the authorization server holds for these users (grants, codes, refresh tokens, sessions): an account deletion. */

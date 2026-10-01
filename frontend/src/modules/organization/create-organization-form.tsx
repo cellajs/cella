@@ -34,10 +34,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
   const { nextStep } = useStepper();
   const nameLabel = t('c:name').toLowerCase();
 
-  const formOptions: UseFormProps<FormValues> = {
-    resolver: zodResolver(formSchema),
-    defaultValues: { name: '', slug: '' },
-  };
+  const formOptions: UseFormProps<FormValues> = { resolver: zodResolver(formSchema), defaultValues: { name: '', slug: '' } };
 
   const formContainerId = 'create-organization';
   const form = useFormWithDraft<FormValues>(formContainerId, { formOptions });
@@ -104,13 +101,7 @@ export function CreateOrganizationForm({ labelDirection = 'top', children, callb
           {children}
 
           {!children && (
-            <Button
-              type="reset"
-              variant="secondary"
-              className={form.isDirty ? '' : 'invisible'}
-              aria-label="Cancel"
-              onClick={() => form.reset()}
-            >
+            <Button type="reset" variant="secondary" className={form.isDirty ? '' : 'invisible'} aria-label="Cancel" onClick={() => form.reset()}>
               {t('c:cancel')}
             </Button>
           )}

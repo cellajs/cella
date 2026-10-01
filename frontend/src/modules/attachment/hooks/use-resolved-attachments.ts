@@ -22,11 +22,7 @@ interface ResolvedAttachmentsResult {
   errorIds: string[];
 }
 
-function buildItemData(
-  item: Partial<CarouselItemData> & { id: string },
-  url: string,
-  isLocal: boolean,
-): CarouselItemData {
+function buildItemData(item: Partial<CarouselItemData> & { id: string }, url: string, isLocal: boolean): CarouselItemData {
   const cached = findAttachmentInCache(item.id);
   return {
     id: item.id,

@@ -69,16 +69,8 @@ function patchHostCaches(
 }
 
 /** Optimistic propagation for mutation hooks, so the actor's cache updates without waiting on the stream. For updates the fresh embedded copy must already be cached. */
-export function propagateEmbeddedProduct(
-  embeddedProduct: ProductEntityType,
-  ids: string[],
-  kind: 'update' | 'remove',
-): void {
-  propagateEmbeddings({
-    embeddedProduct,
-    update: kind === 'update' ? ids : [],
-    remove: kind === 'remove' ? ids : [],
-  });
+export function propagateEmbeddedProduct(embeddedProduct: ProductEntityType, ids: string[], kind: 'update' | 'remove'): void {
+  propagateEmbeddings({ embeddedProduct, update: kind === 'update' ? ids : [], remove: kind === 'remove' ? ids : [] });
 }
 
 /** Rollback path for optimistic removals: propagation can strip an embedded copy but cannot re-insert one, so a failed delete recovers host data through a refetch. */
@@ -121,20 +113,13 @@ function embeddedIdsOf(host: ItemData | undefined, hostColumn: string): string[]
  * unclassifiable (a create, or a row this client never cached), so every current reference is taken as
  * touched: over-invalidation is cheap here, a missed one is invisible until the next reload.
  */
-export function collectEmbeddingTouches(
-  hostProduct: string,
-  previous: ItemData | undefined,
-  next: ItemData,
-  into: EmbeddingTouches,
-): void {
+export function collectEmbeddingTouches(hostProduct: string, previous: ItemData | undefined, next: ItemData, into: EmbeddingTouches): void {
   for (const embedding of appConfig.productEmbeddings) {
     if (embedding.hostProduct !== hostProduct) continue;
 
     const nextIds = embeddedIdsOf(next, embedding.hostColumn);
     const previousIds = embeddedIdsOf(previous, embedding.hostColumn);
-    const touched = previous
-      ? [...nextIds.filter((id) => !previousIds.includes(id)), ...previousIds.filter((id) => !nextIds.includes(id))]
-      : nextIds;
+    const touched = previous ? [...nextIds.filter((id) => !previousIds.includes(id)), ...previousIds.filter((id) => !nextIds.includes(id))] : nextIds;
     if (touched.length === 0) continue;
 
     const ids = into.get(embedding.embeddedProduct) ?? new Set<string>();
@@ -158,9 +143,7 @@ export function invalidateEmbeddedUsage(touches: EmbeddingTouches, organizationI
     let widened = false;
     for (const id of ids) {
       const cached = findInCache<ItemData>(embeddedProduct, id);
-      const homeChannelId = cached
-        ? resolveHomeChannelId(embeddedProduct, { ...cached, organizationId } as RoutableItemData)
-        : null;
+      const homeChannelId = cached ? resolveHomeChannelId(embeddedProduct, { ...cached, organizationId } as RoutableItemData) : null;
       // An unplaceable row already covers every home, so stop narrowing.
       if (!homeChannelId) {
         widened = true;
@@ -184,11 +167,7 @@ export function invalidateEmbeddedUsage(touches: EmbeddingTouches, organizationI
  * overflow, exhausted retries, nothing cached to patch. No row reaches the diff there, so every
  * product the host embeds may hold a stale usage aggregate.
  */
-export function invalidateEmbeddedForHost(
-  hostProduct: string,
-  organizationId: string,
-  refetchType: 'active' | 'none' = 'active',
-): void {
+export function invalidateEmbeddedForHost(hostProduct: string, organizationId: string, refetchType: 'active' | 'none' = 'active'): void {
   for (const embedding of appConfig.productEmbeddings) {
     if (embedding.hostProduct !== hostProduct) continue;
     if (!hasEntityQueryKeys(embedding.embeddedProduct)) continue;
@@ -234,9 +213,7 @@ function patchSingleHost(
 
   // Array column of embedded objects.
   if (Array.isArray(embedded)) {
-    const needsPatch = embedded.some(
-      (item: { id?: string }) => item.id && (updateSet.has(item.id) || removeSet.has(item.id)),
-    );
+    const needsPatch = embedded.some((item: { id?: string }) => item.id && (updateSet.has(item.id) || removeSet.has(item.id)));
     if (!needsPatch) return host;
 
     const patched = embedded

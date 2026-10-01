@@ -15,21 +15,14 @@ overrideConfig(appConfig, { maxSessionsPerUser: TEST_CAP });
 afterEach(async () => await clearDatabase());
 
 /** A session row of `type` signed in `ageMs` ago, inserted past setUserSession so no cap applies yet. */
-const insertSession = async (user: { id: string }, type: SessionTypes, ageMs: number) =>
-  (await insertTestSession(user, { type, ageMs })).id;
+const insertSession = async (user: { id: string }, type: SessionTypes, ageMs: number) => (await insertTestSession(user, { type, ageMs })).id;
 
 /** Ids of the user's sessions that still authenticate: revoked rows stay in the table but no longer count. */
 const liveIds = (userId: string, type?: SessionTypes) =>
   db
     .select({ id: sessionsTable.id })
     .from(sessionsTable)
-    .where(
-      and(
-        eq(sessionsTable.userId, userId),
-        isNull(sessionsTable.revokedAt),
-        type ? eq(sessionsTable.type, type) : undefined,
-      ),
-    )
+    .where(and(eq(sessionsTable.userId, userId), isNull(sessionsTable.revokedAt), type ? eq(sessionsTable.type, type) : undefined))
     .then((rows) => new Set(rows.map((r) => r.id)));
 
 describe('per-user session cap (A1)', () => {

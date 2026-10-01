@@ -28,8 +28,7 @@ export function defineGeneral<const T extends GeneralConfig>(config: T): T {
 export function resolvePerMode<T>(value: PerMode<T>, mode: Environment): T {
   if (value !== null && typeof value === 'object') {
     const resolved = (value as Partial<Record<Environment, T>>)[mode];
-    if (resolved === undefined)
-      throw new Error(`general.config.ts: no value for mode '${mode}' in per-mode map ${JSON.stringify(value)}.`);
+    if (resolved === undefined) throw new Error(`general.config.ts: no value for mode '${mode}' in per-mode map ${JSON.stringify(value)}.`);
     return resolved;
   }
   return value;

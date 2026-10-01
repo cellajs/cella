@@ -14,30 +14,20 @@ const NOW = '2026-07-06T12:00:00Z';
 const grants = widePublicGrants({ project: true, task: true });
 
 const projectSubject = (publicAt: string | null): SubjectForPermission =>
-  wideSubject({
-    entityType: 'project',
-    id: 'p1',
-    channelIds: { organization: 'org1' },
-    row: { publicAt },
-  });
+  wideSubject({ entityType: 'project', id: 'p1', channelIds: { organization: 'org1' }, row: { publicAt } });
 
 // No policies at all: everything below must come from public grants alone.
 const noPolicies = {};
 
 describe('public read grants: anonymous actor', () => {
   it('grants read when the row publicAt is set', () => {
-    const { can, actions } = getAllDecisions(noPolicies, [], projectSubject(NOW), {
-      publicGrants: grants,
-      ...wideOverrides,
-    });
+    const { can, actions } = getAllDecisions(noPolicies, [], projectSubject(NOW), { publicGrants: grants, ...wideOverrides });
     expect(can.read).toBe(true);
     expect(actions.read.grantedBy).toEqual([{ type: 'public' }]);
   });
 
   it('denies when publicAt is null or row data is absent', () => {
-    expect(
-      getAllDecisions(noPolicies, [], projectSubject(null), { publicGrants: grants, ...wideOverrides }).can.read,
-    ).toBe(false);
+    expect(getAllDecisions(noPolicies, [], projectSubject(null), { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
 
     const noRow = wideSubject({ entityType: 'project', id: 'p1', channelIds: { organization: 'org1' } });
     expect(getAllDecisions(noPolicies, [], noRow, { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
@@ -46,31 +36,16 @@ describe('public read grants: anonymous actor', () => {
   it('reads the row itself, never an ancestor: a public parent does NOT publish its children', () => {
     // The parent project is public, the task is not: publication never cascades through the
     // engine. An app that wants it propagates `publicAt` to the child row.
-    const task = wideSubject({
-      entityType: 'task',
-      id: 't1',
-      channelIds: { organization: 'org1', project: 'p1' },
-      row: { publicAt: null },
-    });
+    const task = wideSubject({ entityType: 'task', id: 't1', channelIds: { organization: 'org1', project: 'p1' }, row: { publicAt: null } });
     expect(getAllDecisions(noPolicies, [], task, { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
 
     // ...and once the child row itself carries publicAt, it is readable.
-    const publishedTask = wideSubject({
-      entityType: 'task',
-      id: 't1',
-      channelIds: { organization: 'org1', project: 'p1' },
-      row: { publicAt: NOW },
-    });
-    expect(getAllDecisions(noPolicies, [], publishedTask, { publicGrants: grants, ...wideOverrides }).can.read).toBe(
-      true,
-    );
+    const publishedTask = wideSubject({ entityType: 'task', id: 't1', channelIds: { organization: 'org1', project: 'p1' }, row: { publicAt: NOW } });
+    expect(getAllDecisions(noPolicies, [], publishedTask, { publicGrants: grants, ...wideOverrides }).can.read).toBe(true);
   });
 
   it('grants read only: other actions stay denied', () => {
-    const { can } = getAllDecisions(noPolicies, [], projectSubject(NOW), {
-      publicGrants: grants,
-      ...wideOverrides,
-    });
+    const { can } = getAllDecisions(noPolicies, [], projectSubject(NOW), { publicGrants: grants, ...wideOverrides });
     expect(can.read).toBe(true);
     expect(can.create).toBe(false);
     expect(can.update).toBe(false);
@@ -78,15 +53,8 @@ describe('public read grants: anonymous actor', () => {
   });
 
   it('no grant declared for the entity type → no public read', () => {
-    const orgSubject = wideSubject({
-      entityType: 'organization',
-      id: 'org1',
-      channelIds: {},
-      row: { publicAt: NOW },
-    });
-    expect(getAllDecisions(noPolicies, [], orgSubject, { publicGrants: grants, ...wideOverrides }).can.read).toBe(
-      false,
-    );
+    const orgSubject = wideSubject({ entityType: 'organization', id: 'org1', channelIds: {}, row: { publicAt: NOW } });
+    expect(getAllDecisions(noPolicies, [], orgSubject, { publicGrants: grants, ...wideOverrides }).can.read).toBe(false);
   });
 
   it('no publicGrants passed → engine behaves exactly as before', () => {

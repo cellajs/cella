@@ -4,12 +4,9 @@ import { expect, userEvent, within } from 'storybook/test';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import { SelectLanguages } from '~/modules/common/form-fields/select-languages';
 
-const meta = {
-  title: 'common/SelectLanguages',
-  component: SelectLanguages,
-  tags: ['autodocs'],
-  parameters: { layout: 'centered' },
-} satisfies Meta<typeof SelectLanguages>;
+const meta = { title: 'common/SelectLanguages', component: SelectLanguages, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
+  typeof SelectLanguages
+>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

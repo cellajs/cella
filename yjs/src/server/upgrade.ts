@@ -13,12 +13,7 @@ import { verifyToken } from './auth';
 import { stripYjsPrefix } from './path-prefix';
 import { checkConnectionRate } from './rate-limiter';
 
-const statusText = {
-  400: 'Bad Request',
-  403: 'Forbidden',
-  429: 'Too Many Requests',
-  500: 'Internal Server Error',
-} as const;
+const statusText = { 400: 'Bad Request', 403: 'Forbidden', 429: 'Too Many Requests', 500: 'Internal Server Error' } as const;
 
 /**
  * Rejects at the HTTP level for malformed requests (400), a token for another document (403) and rate limits (429),
@@ -56,10 +51,7 @@ async function verifyEntityAsync(ws: WebSocket, ctx: SocketContext): Promise<voi
   } catch (err) {
     if (ws.readyState !== ws.OPEN) return;
     if (err instanceof MissingAncestorError) {
-      log.warn(`Entity missing required ancestor for ${docLabel(ctx)}`, {
-        missingChannel: err.missingChannel,
-        missingKey: err.missingKey,
-      });
+      log.warn(`Entity missing required ancestor for ${docLabel(ctx)}`, { missingChannel: err.missingChannel, missingKey: err.missingKey });
       ws.close(4400, 'Missing entity ancestor');
       return;
     }
@@ -85,9 +77,7 @@ function parseTarget(req: IncomingMessage): URL | null {
  * would raise an uncaught 'error' and end the process, which under singleVM is the whole API. So the handler's own
  * listener destroys the socket, and a failure anywhere in the handler answers and ends the connection.
  */
-export function setupUpgradeHandler(
-  server: WebSocketServer,
-): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {
+export function setupUpgradeHandler(server: WebSocketServer): (req: IncomingMessage, socket: Duplex, head: Buffer) => void {
   return (req, socket, head) => {
     const onSocketError = () => socket.destroy();
     socket.on('error', onSocketError);
@@ -183,12 +173,7 @@ async function admitUpgrade(
   // Accepted optimistically: sync frames queue on the socket until entity access is verified.
   const ctx: SocketContext = {
     userId: payload.userId,
-    requested: {
-      entityType: payload.entityType,
-      entityId: payload.entityId,
-      tenantId: payload.tenantId,
-      organizationId: payload.organizationId,
-    },
+    requested: { entityType: payload.entityType, entityId: payload.entityId, tenantId: payload.tenantId, organizationId: payload.organizationId },
     scope: null,
     awaitingReply: false,
   };

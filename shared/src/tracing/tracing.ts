@@ -156,11 +156,7 @@ export interface CdcInput {
 }
 
 export function cdcAttrs(input: CdcInput): CleanSpanAttributes {
-  return {
-    lsn: input.lsn,
-    'cdc.tag': input.tag ?? 'unknown',
-    'cdc.table': input.table ?? 'unknown',
-  };
+  return { lsn: input.lsn, 'cdc.tag': input.tag ?? 'unknown', 'cdc.table': input.table ?? 'unknown' };
 }
 
 export interface ActivityInput {
@@ -186,9 +182,5 @@ export interface EventInput {
 }
 
 export function eventAttrs(input: EventInput): CleanSpanAttributes {
-  return {
-    'event.type': input.type,
-    'event.subjectId': input.subjectId ?? null,
-    'event.entityType': input.entityType ?? null,
-  };
+  return { 'event.type': input.type, 'event.subjectId': input.subjectId ?? null, 'event.entityType': input.entityType ?? null };
 }

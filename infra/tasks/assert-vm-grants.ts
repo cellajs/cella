@@ -10,11 +10,7 @@ import { runIfMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
 
 /** Permission sets that decrypt or enumerate secret values/metadata. */
-const SECRET_PERMISSION_SETS = new Set([
-  'SecretManagerSecretAccess',
-  'SecretManagerReadOnly',
-  'SecretManagerFullAccess',
-]);
+const SECRET_PERMISSION_SETS = new Set(['SecretManagerSecretAccess', 'SecretManagerReadOnly', 'SecretManagerFullAccess']);
 
 /**
  * Whether an EXTRA permission set on the VM key is benign. A read-only set is drift worth reporting but not a deploy-blocker: the VM policy is privileged
@@ -76,8 +72,7 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
   let applicationId = opts.applicationId;
   if (!applicationId && opts.applicationName) {
     applicationId = (await resolveApplicationIdByName(auth, organizationId, opts.applicationName)) ?? undefined;
-    if (!applicationId)
-      throw new Error(`IAM application '${opts.applicationName}' not found in organization ${organizationId}`);
+    if (!applicationId) throw new Error(`IAM application '${opts.applicationName}' not found in organization ${organizationId}`);
   }
   if (!applicationId) throw new Error('assertVmGrants: provide applicationId or applicationName');
 
@@ -95,9 +90,7 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     for (const rule of rules) {
       if (!rule.permissionSets.some((set) => SECRET_PERMISSION_SETS.has(set))) continue;
       if (rule.condition !== opts.requiredSecretCondition) {
-        unconditionedSecretRules.push(
-          `${rule.policyName} [${rule.permissionSets.join(', ')}] condition='${rule.condition || '(none)'}'`,
-        );
+        unconditionedSecretRules.push(`${rule.policyName} [${rule.permissionSets.join(', ')}] condition='${rule.condition || '(none)'}'`);
       }
     }
   }
@@ -105,19 +98,14 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
   const misscopedRules: string[] = [];
   if (opts.requiredProjectId) {
     for (const rule of rules) {
-      const scope = rule.organizationId
-        ? `organization ${rule.organizationId}`
-        : `projects [${(rule.projectIds ?? []).join(', ')}]`;
-      const projectScoped =
-        !rule.organizationId && rule.projectIds?.length === 1 && rule.projectIds[0] === opts.requiredProjectId;
+      const scope = rule.organizationId ? `organization ${rule.organizationId}` : `projects [${(rule.projectIds ?? []).join(', ')}]`;
+      const projectScoped = !rule.organizationId && rule.projectIds?.length === 1 && rule.projectIds[0] === opts.requiredProjectId;
       if (!projectScoped) misscopedRules.push(`${rule.policyName} [${rule.permissionSets.join(', ')}] scope=${scope}`);
     }
   }
 
   // Only a dormant principal is listed: a live one legitimately holds the current and previous generation's keys.
-  const dormantKeys = opts.dormant
-    ? (await listApiKeys(auth, organizationId, applicationId)).map((key) => key.access_key)
-    : [];
+  const dormantKeys = opts.dormant ? (await listApiKeys(auth, organizationId, applicationId)).map((key) => key.access_key) : [];
 
   // Fatal: missing sets break hydration, a non-read-only extra set is an escalation, an un-scoped secret rule leaks secrets, a key on a dormant principal is an unmonitored key. Extra read-only sets only warn (see isBenignExtraSet).
   const ok =
@@ -128,25 +116,19 @@ export async function assertVmGrants(opts: AssertVmGrantsOptions): Promise<Asser
     misscopedRules.length === 0;
   if (missing.length > 0) log(`✗ VM grant INCOMPLETE, missing: ${missing.join(', ')}`);
   if (extraFatal.length > 0) log(`✗ VM grant TOO BROAD, extra write/broad grant(s): ${extraFatal.join(', ')}`);
-  for (const entry of unconditionedSecretRules)
-    log(`✗ VM secret rule NOT path-scoped (union semantics un-scope the conditioned rule): ${entry}`);
-  for (const entry of misscopedRules)
-    log(`✗ VM rule NOT scoped to the project (reaches every project of the organization): ${entry}`);
+  for (const entry of unconditionedSecretRules) log(`✗ VM secret rule NOT path-scoped (union semantics un-scope the conditioned rule): ${entry}`);
+  for (const entry of misscopedRules) log(`✗ VM rule NOT scoped to the project (reaches every project of the organization): ${entry}`);
   if (dormantKeys.length > 0)
     log(
       `✗ dormant principal holds ${dormantKeys.length} API key(s): a registry service outside the deployed set must have none: ${dormantKeys.join(', ')}`,
     );
   if (extraBenign.length > 0)
-    log(
-      `⚠ VM application has extra read-only grant(s) (benign drift; reconcile via "Apply infra change"): ${extraBenign.join(', ')}`,
-    );
+    log(`⚠ VM application has extra read-only grant(s) (benign drift; reconcile via "Apply infra change"): ${extraBenign.join(', ')}`);
   if (ok) {
     const conditionNote = opts.requiredSecretCondition ? ', secret rules path-conditioned' : '';
     const scopeNote = opts.requiredProjectId ? ', project-scoped' : '';
     const dormantNote = opts.dormant ? ', dormant principal holds no key' : '';
-    log(
-      `✓ VM grant verified: required permission sets present, no escalation${conditionNote}${scopeNote}${dormantNote}`,
-    );
+    log(`✓ VM grant verified: required permission sets present, no escalation${conditionNote}${scopeNote}${dormantNote}`);
   }
   return { ok, granted: [...granted].sort(), missing, extra, unconditionedSecretRules, dormantKeys, misscopedRules };
 }

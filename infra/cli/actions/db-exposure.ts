@@ -58,11 +58,11 @@ export async function detectPublicIp(): Promise<string | undefined> {
 
 /** Read one key of the primary store's `storeOutputs` entry; empty when absent or unreadable. */
 function readPrimaryStoreOutput(env: NodeJS.ProcessEnv, stack: string, key: string): string {
-  const result = spawnSync(
-    'pulumi',
-    ['stack', 'output', 'storeOutputs', '--show-secrets', '--json', '--stack', stack],
-    { cwd: infraDir, env, encoding: 'utf8' },
-  );
+  const result = spawnSync('pulumi', ['stack', 'output', 'storeOutputs', '--show-secrets', '--json', '--stack', stack], {
+    cwd: infraDir,
+    env,
+    encoding: 'utf8',
+  });
   if (result.status !== 0) return '';
   try {
     const parsed = JSON.parse(result.stdout ?? '{}') as Record<string, Record<string, string> | undefined>;
@@ -159,18 +159,10 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
     // Verified TLS for the printed DSN, which carries the admin role and travels over the open endpoint.
     const caPath = writeDbCaFile(env, stack, context.environment);
     const shownDsn = caPath ? hardenPublicDsn(dsn, caPath) : dsn;
-    console.info(
-      `\n${checkMark} ${pc.bold('Database exposed.')} Admin connection string:\n\n    ${pc.cyan(shownDsn)}\n`,
-    );
+    console.info(`\n${checkMark} ${pc.bold('Database exposed.')} Admin connection string:\n\n    ${pc.cyan(shownDsn)}\n`);
     console.info(`  ${pc.dim('Example:')} psql "${shownDsn}"`);
-    if (caPath)
-      console.info(
-        `  ${pc.dim(`Server verification pins the instance CA written to ${caPath} (sslmode=verify-full).`)}`,
-      );
-    else
-      console.warn(
-        `  ${warningMark} CA output unavailable; DSN left encrypt-only (sslmode=require). Re-run to pick up the CA.`,
-      );
+    if (caPath) console.info(`  ${pc.dim(`Server verification pins the instance CA written to ${caPath} (sslmode=verify-full).`)}`);
+    else console.warn(`  ${warningMark} CA output unavailable; DSN left encrypt-only (sslmode=require). Re-run to pick up the CA.`);
   }
   console.info(`\n  ${pc.bold('When finished, run "Stop public DB exposure" to close it again.')}`);
   if (ownerKeyPasted) printRevokeReminder();
@@ -195,9 +187,7 @@ export async function runUnexposeDatabase(context: InfraContext): Promise<void> 
 
   const dsn = readPublicDsn(env, stack);
   if (dsn) {
-    console.warn(
-      `${warningMark} Public DSN output is still present: the endpoint may not have torn down. Re-run "Stop public DB exposure".`,
-    );
+    console.warn(`${warningMark} Public DSN output is still present: the endpoint may not have torn down. Re-run "Stop public DB exposure".`);
   } else {
     console.info(`\n${checkMark} ${pc.bold('Public endpoint closed.')} The database is private-only again.`);
   }

@@ -27,10 +27,7 @@ describe('Rejected invitations', async () => {
   afterEach(async () => await clearSecurityTestData());
 
   const respond = (id: string, acceptOrReject: 'accept' | 'reject', sessionCookie: string) =>
-    call(handleMembershipInvitation, {
-      path: { id, acceptOrReject },
-      headers: { ...defaultHeaders, Cookie: sessionCookie },
-    });
+    call(handleMembershipInvitation, { path: { id, acceptOrReject }, headers: { ...defaultHeaders, Cookie: sessionCookie } });
 
   const membershipsIn = (userId: string, organizationId: string) =>
     db
@@ -40,10 +37,7 @@ describe('Rejected invitations', async () => {
 
   const rejectedAtOf = async (id: string) =>
     (
-      await db
-        .select({ rejectedAt: inactiveMembershipsTable.rejectedAt })
-        .from(inactiveMembershipsTable)
-        .where(eq(inactiveMembershipsTable.id, id))
+      await db.select({ rejectedAt: inactiveMembershipsTable.rejectedAt }).from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id))
     )[0]?.rejectedAt;
 
   const markRejected = (id: string) =>
@@ -53,12 +47,7 @@ describe('Rejected invitations', async () => {
     const organization = await createTestOrganization();
     const invitee = await createTestUser('rejected-invitee@security-test.com');
     const sessionCookie = await createTestSession(invitee);
-    const { inactiveMembership } = await createInvitation({
-      organization,
-      email: invitee.email,
-      createdBy: invitee.id,
-      boundTo: invitee.id,
-    });
+    const { inactiveMembership } = await createInvitation({ organization, email: invitee.email, createdBy: invitee.id, boundTo: invitee.id });
 
     expect((await respond(inactiveMembership.id, 'reject', sessionCookie)).response.status).toBe(200);
 
@@ -91,23 +80,13 @@ describe('Rejected invitations', async () => {
   it('accepts a pending invitation by id and by token (positive control)', async () => {
     const organization = await createTestOrganization();
     const byId = await createTestUser('pending-by-id@security-test.com');
-    const byIdInvitation = await createInvitation({
-      organization,
-      email: byId.email,
-      createdBy: byId.id,
-      boundTo: byId.id,
-    });
+    const byIdInvitation = await createInvitation({ organization, email: byId.email, createdBy: byId.id, boundTo: byId.id });
     const accepted = await respond(byIdInvitation.inactiveMembership.id, 'accept', await createTestSession(byId));
     expect(accepted.response.status).toBe(200);
     expect(await membershipsIn(byId.id, organization.id)).toHaveLength(1);
 
     const byToken = await createTestUser('pending-by-token@security-test.com');
-    const { invitationCookie } = await createInvitation({
-      organization,
-      email: byToken.email,
-      createdBy: byToken.id,
-      token: 'invoked',
-    });
+    const { invitationCookie } = await createInvitation({ organization, email: byToken.email, createdBy: byToken.id, token: 'invoked' });
     const viaToken = await call(acceptInvitationToken, {
       headers: { ...defaultHeaders, Cookie: [await createTestSession(byToken), invitationCookie].join('; ') },
     });
@@ -118,27 +97,15 @@ describe('Rejected invitations', async () => {
   it('must not bind a rejected invitation via an inbox proof', async () => {
     const owner = await createTestUser('proven-owner@security-test.com');
     // A rejected invitation that no account holds, and a pending one, both to the owner's address.
-    const rejected = await createInvitation({
-      organization: await createTestOrganization(),
-      email: owner.email,
-      createdBy: owner.id,
-    });
+    const rejected = await createInvitation({ organization: await createTestOrganization(), email: owner.email, createdBy: owner.id });
     await markRejected(rejected.inactiveMembership.id);
-    const pending = await createInvitation({
-      organization: await createTestOrganization(),
-      email: owner.email,
-      createdBy: owner.id,
-    });
+    const pending = await createInvitation({ organization: await createTestOrganization(), email: owner.email, createdBy: owner.id });
 
     expect(await markEmailVerified(db, { userId: owner.id, email: owner.email, via: 'magic' })).toBe(true);
 
     const boundUserOf = async (id: string) =>
-      (
-        await db
-          .select({ userId: inactiveMembershipsTable.userId })
-          .from(inactiveMembershipsTable)
-          .where(eq(inactiveMembershipsTable.id, id))
-      )[0]?.userId;
+      (await db.select({ userId: inactiveMembershipsTable.userId }).from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id)))[0]
+        ?.userId;
     expect(await boundUserOf(rejected.inactiveMembership.id)).toBeNull();
     // The pending invitation to the same address is claimed (positive control).
     expect(await boundUserOf(pending.inactiveMembership.id)).toBe(owner.id);
@@ -173,11 +140,7 @@ describe('Rejected invitations', async () => {
       .set({ restrictions: { ...restrictions, quotas: { ...restrictions.quotas, user: 3 } } })
       .where(eq(tenantsTable.id, organization.tenantId));
     const admin = await createOrgUser(call, organization.tenantId, organization.id, 'rejected-admin', adminRole);
-    const rejected = await createInvitation({
-      organization,
-      email: 'rejected-address@security-test.com',
-      createdBy: admin.id,
-    });
+    const rejected = await createInvitation({ organization, email: 'rejected-address@security-test.com', createdBy: admin.id });
     await markRejected(rejected.inactiveMembership.id);
     await createInvitation({ organization, email: 'pending-address@security-test.com', createdBy: admin.id });
 

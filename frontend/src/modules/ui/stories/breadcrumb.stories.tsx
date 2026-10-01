@@ -1,13 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { SquareArrowRightIcon } from 'lucide-react';
-import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '~/modules/ui/breadcrumb';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '~/modules/ui/breadcrumb';
 
 /**
  * Displays the path to the current resource using a hierarchy of links.
@@ -35,9 +28,7 @@ const meta = {
       </BreadcrumbList>
     </Breadcrumb>
   ),
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
 } satisfies Meta<typeof Breadcrumb>;
 
 export default meta;

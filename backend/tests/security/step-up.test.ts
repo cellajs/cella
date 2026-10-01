@@ -21,14 +21,7 @@ import {
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, insertPasskey, issuedChallenge, passkeyChallenge } from './helpers';
-import {
-  askStepUpLink,
-  insertImpersonation,
-  insertSession,
-  insertStaleSession,
-  openStepUpLink,
-  type TestSession,
-} from './session-helpers';
+import { askStepUpLink, insertImpersonation, insertSession, insertStaleSession, openStepUpLink, type TestSession } from './session-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'magic'] });
 
@@ -84,9 +77,7 @@ describe('step-up', async () => {
     await expectRefusal({ response, error }, 401, 'invalid_token');
     expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
 
-    expect((await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers })).response.status).toBe(
-      204,
-    );
+    expect((await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers })).response.status).toBe(204);
     expect(await sessionRow(session.id)).toMatchObject({ steppedUpVia: 'totp' });
     expect(await stateOf(session)).toEqual({ steppedUp: true, methods: ['totp'] });
   });
@@ -141,10 +132,7 @@ describe('step-up', async () => {
       const otherBrowser = await insertStaleSession(user);
       const { browser, rawToken } = await askStepUpLink(asking, '/account');
 
-      const elsewhere = await call(invokeToken, {
-        path: { type: 'step-up', token: rawToken },
-        headers: otherBrowser.headers,
-      });
+      const elsewhere = await call(invokeToken, { path: { type: 'step-up', token: rawToken }, headers: otherBrowser.headers });
       await expectRefusal(elsewhere, 403, 'step_up_other_browser');
       expect((await sessionRow(asking.id)).steppedUpAt).toBeNull();
       expect((await sessionRow(otherBrowser.id)).steppedUpAt).toBeNull();

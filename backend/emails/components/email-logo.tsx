@@ -13,24 +13,14 @@ export const EmailLogo = ({ style }: { style?: React.CSSProperties }): JSX.Eleme
     href={appConfig.aboutUrl}
     target="_blank"
     rel="noreferrer"
-    style={{
-      display: 'inline-block',
-      marginTop: '2rem',
-      textDecoration: 'none',
-      ...style,
-    }}
+    style={{ display: 'inline-block', marginTop: '2rem', textDecoration: 'none', ...style }}
   >
     <Img
       src={logoUrl}
       alt={appConfig.name}
       width="120"
       height="auto"
-      style={{
-        display: 'block',
-        outline: 'none',
-        border: 'none',
-        textDecoration: 'none',
-      }}
+      style={{ display: 'block', outline: 'none', border: 'none', textDecoration: 'none' }}
     />
   </a>
 );

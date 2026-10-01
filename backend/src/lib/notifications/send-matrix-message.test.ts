@@ -2,9 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 const botAccessToken = 'syt_bot_access_token_value';
 
-vi.mock('#/env', () => ({
-  env: { ELEMENT_ROOM_ID: '!room:matrix.example', ELEMENT_BOT_ACCESS_TOKEN: botAccessToken },
-}));
+vi.mock('#/env', () => ({ env: { ELEMENT_ROOM_ID: '!room:matrix.example', ELEMENT_BOT_ACCESS_TOKEN: botAccessToken } }));
 vi.mock('#/utils/logger', () => ({ log: { info: vi.fn(), error: vi.fn() } }));
 
 const { sendMatrixMessage } = await import('./send-matrix-message');

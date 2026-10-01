@@ -137,11 +137,7 @@ describe('computeCan three-state semantics', () => {
 // cells `'home'` for `resolveCan`. Every role, channel and action of a hierarchy mixing elevated and home-scoped
 // roles runs against the engine, on an `item` homed at the membership's channel and on one homed at a channel below.
 describe('computeCan parity with the engine under home scoping', () => {
-  const hierarchy = makeDeepHierarchy(undefined, {
-    organization: ['admin'],
-    course: ['staff'],
-    courseSection: ['staff'],
-  });
+  const hierarchy = makeDeepHierarchy(undefined, { organization: ['admin'], course: ['staff'], courseSection: ['staff'] });
   const overrides = { hierarchy };
   const actor = 'actor';
 
@@ -179,11 +175,7 @@ describe('computeCan parity with the engine under home scoping', () => {
   };
 
   const engineCan = (membership: AccessMembership, subject: SubjectForPermission) =>
-    getAllDecisions(policies, [membership], subject, {
-      actorId: actor,
-      elevatedGrants: hierarchy.elevatedGrants,
-      ...overrides,
-    }).can;
+    getAllDecisions(policies, [membership], subject, { actorId: actor, elevatedGrants: hierarchy.elevatedGrants, ...overrides }).can;
 
   it('must not show a course student (home-scoped) an update affordance the engine refuses on an item homed in a project below', () => {
     const student = membershipAt('course', 'student');
@@ -216,10 +208,7 @@ describe('computeCan parity with the engine under home scoping', () => {
             if (action === 'create' && home !== channelType) continue;
             for (const createdBy of [actor, 'other']) {
               const label = `${channelType} ${role}: ${action} on an item homed at ${home} created by ${createdBy}`;
-              const resolved = resolveCan(states?.[action], createdBy, actor, {
-                row: `${home}1`,
-                channel: membership.channelId,
-              });
+              const resolved = resolveCan(states?.[action], createdBy, actor, { row: `${home}1`, channel: membership.channelId });
               expect(resolved, label).toBe(engineCan(membership, itemHomedAt(home, createdBy))[action]);
             }
           }

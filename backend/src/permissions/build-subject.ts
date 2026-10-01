@@ -1,9 +1,5 @@
 import type { ChannelEntityType, ChannelIdColumns, ProductEntityType, SubjectForPermission } from 'shared';
-import {
-  MissingAncestorError,
-  buildSubject as sharedBuildSubject,
-  buildSubjectFromEntity as sharedBuildSubjectFromEntity,
-} from 'shared';
+import { MissingAncestorError, buildSubject as sharedBuildSubject, buildSubjectFromEntity as sharedBuildSubjectFromEntity } from 'shared';
 import { AppError } from '#/core/error';
 
 /** Translate the shared engine's tier-neutral `MissingAncestorError` into `AppError(400, 'missing_ancestor')`. */
@@ -24,11 +20,7 @@ const translateMissingScope = (e: unknown): never => {
 export const buildSubject = (
   entityType: ChannelEntityType | ProductEntityType,
   ancestorChannelIds: Partial<ChannelIdColumns>,
-  options?: {
-    id?: string;
-    createdBy?: string | null;
-    row?: Record<string, unknown>;
-  },
+  options?: { id?: string; createdBy?: string | null; row?: Record<string, unknown> },
 ): SubjectForPermission => {
   try {
     return sharedBuildSubject(entityType, ancestorChannelIds, options);

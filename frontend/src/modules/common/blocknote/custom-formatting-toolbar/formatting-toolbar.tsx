@@ -50,12 +50,6 @@ function FormattingToolbarContent({ headingLevels }: { headingLevels: CustomBloc
   );
 }
 
-export function CustomFormattingToolbar({
-  headingLevels,
-}: {
-  headingLevels: CustomBlockNoteMenuProps['headingLevels'];
-}) {
-  return (
-    <FormattingToolbarController formattingToolbar={() => <FormattingToolbarContent headingLevels={headingLevels} />} />
-  );
+export function CustomFormattingToolbar({ headingLevels }: { headingLevels: CustomBlockNoteMenuProps['headingLevels'] }) {
+  return <FormattingToolbarController formattingToolbar={() => <FormattingToolbarContent headingLevels={headingLevels} />} />;
 }

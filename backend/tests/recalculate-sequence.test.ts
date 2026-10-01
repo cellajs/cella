@@ -30,10 +30,7 @@ describe('recalculateCounters (sequence + frontier)', async () => {
   // deepest strict ancestor; invented ids remain only for strict deeper ancestors.
   const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(PRODUCT));
   const deeperAncestorIds = Object.fromEntries(
-    ANCESTORS.filter((type) => type !== 'organization' && !nullableAncestors.has(type)).map((type) => [
-      type,
-      crypto.randomUUID(),
-    ]),
+    ANCESTORS.filter((type) => type !== 'organization' && !nullableAncestors.has(type)).map((type) => [type, crypto.randomUUID()]),
   );
   const homeChannelId = () => {
     const deepest = ANCESTORS.find((type) => type === 'organization' || !nullableAncestors.has(type));
@@ -41,10 +38,7 @@ describe('recalculateCounters (sequence + frontier)', async () => {
   };
   const ancestorColumns = (orgId: string) =>
     Object.fromEntries(
-      ANCESTORS.map((type) => [
-        appConfig.entityIdColumnKeys[type],
-        type === 'organization' ? orgId : (deeperAncestorIds[type] ?? null),
-      ]),
+      ANCESTORS.map((type) => [appConfig.entityIdColumnKeys[type], type === 'organization' ? orgId : (deeperAncestorIds[type] ?? null)]),
     );
 
   beforeAll(async () => {
@@ -75,15 +69,7 @@ describe('recalculateCounters (sequence + frontier)', async () => {
       // Audit users are nulled: mock ids have no users rows and the columns are nullable FKs.
       buildInsertableProduct(
         PRODUCT,
-        {
-          tenantId: tenant.tenantId,
-          ...ancestorColumns(tenant.organization.id),
-          createdBy: null,
-          updatedBy: null,
-          deletedBy: null,
-          seq,
-          ...extra,
-        },
+        { tenantId: tenant.tenantId, ...ancestorColumns(tenant.organization.id), createdBy: null, updatedBy: null, deletedBy: null, seq, ...extra },
         key,
       );
 

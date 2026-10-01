@@ -33,9 +33,7 @@ export function MenuSheetItems({ data, type, isArchived, options, className }: M
         </Button>
       </div>
     ) : (
-      <li className="py-2 text-center text-light text-muted-foreground text-sm">
-        {t('c:no_resource_yet', { resource: t(type).toLowerCase() })}
-      </li>
+      <li className="py-2 text-center text-light text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: t(type).toLowerCase() })}</li>
     );
 
   const renderItems = () => {

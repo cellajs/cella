@@ -9,11 +9,7 @@ const stepIds = (ctx: Parameters<typeof getOnboardingSteps>[0]) => getOnboarding
 
 describe('getOnboardingSteps', () => {
   it('gives a user with no organization and no invitation the founder steps', () => {
-    expect(stepIds({ hasOrganizations: false, hasInvitations: false })).toEqual([
-      'profile',
-      'organization',
-      'invitation',
-    ]);
+    expect(stepIds({ hasOrganizations: false, hasInvitations: false })).toEqual(['profile', 'organization', 'invitation']);
   });
 
   it('lets an invited user answer invitations instead of creating an organization', () => {

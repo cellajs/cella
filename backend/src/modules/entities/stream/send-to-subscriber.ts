@@ -22,12 +22,7 @@ export async function sendNotificationToSubscriber<T extends CursoredSubscriber,
     await writeChange(subscriber.stream, event.id, final);
   }
 
-  log.debug('SSE notification sent', {
-    subscriberId: subscriber.id,
-    activityId: event.id,
-    entityType: event.entityType,
-    action: event.action,
-  });
+  log.debug('SSE notification sent', { subscriberId: subscriber.id, activityId: event.id, entityType: event.entityType, action: event.action });
 
   subscriber.cursor = event.id;
 }

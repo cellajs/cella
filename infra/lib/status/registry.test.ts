@@ -42,18 +42,8 @@ function base(overrides: Partial<Facts> = {}): Facts {
     },
     secrets: [],
     live: [
-      {
-        slug: 'backend',
-        healthUrl: 'https://api.example.com/health',
-        probe: { status: 204, version: 'abc123def456' },
-        expectedSha: 'abc123def456',
-      },
-      {
-        slug: 'frontend',
-        healthUrl: 'https://app.example.com/health',
-        probe: { status: 200, version: 'abc123def456' },
-        expectedSha: 'abc123def456',
-      },
+      { slug: 'backend', healthUrl: 'https://api.example.com/health', probe: { status: 204, version: 'abc123def456' }, expectedSha: 'abc123def456' },
+      { slug: 'frontend', healthUrl: 'https://app.example.com/health', probe: { status: 200, version: 'abc123def456' }, expectedSha: 'abc123def456' },
     ],
     components: { slug: 'backend', url: 'https://api.example.com/health?depth=full', httpStatus: 200, issues: [] },
     dns: { host: 'app.example.com', resolvedIps: ['1.2.3.4'] },
@@ -98,14 +88,7 @@ const find = (checks: Check[], id: string): Check | undefined => checks.find((c)
 describe('report envelope (public contract)', () => {
   it('has the documented top-level shape and schema version', () => {
     const report = reportFor(base());
-    expect(Object.keys(report).sort()).toEqual([
-      'checks',
-      'mode',
-      'nextAction',
-      'schemaVersion',
-      'stackState',
-      'summary',
-    ]);
+    expect(Object.keys(report).sort()).toEqual(['checks', 'mode', 'nextAction', 'schemaVersion', 'stackState', 'summary']);
     expect(report.schemaVersion).toBe(1);
     expect(report.mode).toBe('staging');
     expect(report.stackState).toBe('bootstrapped');
@@ -136,9 +119,7 @@ describe('report envelope (public contract)', () => {
 
 describe('key degradation', () => {
   it('scaleway-tier checks are unknown (not error) without a Scaleway key', () => {
-    const report = reportFor(base({ state: {}, secrets: undefined, identity: undefined }), {
-      scalewayKeyAvailable: false,
-    });
+    const report = reportFor(base({ state: {}, secrets: undefined, identity: undefined }), { scalewayKeyAvailable: false });
     for (const id of ['identity.adminApp', 'state.bucket', 'state.lock', 'rollout', 'secrets.required']) {
       const check = find(report.checks, id);
       expect(check?.status).toBe('unknown');
@@ -174,10 +155,7 @@ describe('admin app identity', () => {
 
 describe('nextAction priority (lifecycle order)', () => {
   it('missing pulumi outranks everything', () => {
-    const report = reportFor(base({ tooling: { pulumi: false, dockerBuildx: true, gh: true } }), {
-      stackState: 'fresh',
-      projectId: undefined,
-    });
+    const report = reportFor(base({ tooling: { pulumi: false, dockerBuildx: true, gh: true } }), { stackState: 'fresh', projectId: undefined });
     expect(find(report.checks, 'tooling.pulumi')?.status).toBe('error');
     expect(report.nextAction?.command).toBe('brew install pulumi/tap/pulumi');
   });
@@ -192,9 +170,7 @@ describe('nextAction priority (lifecycle order)', () => {
   });
 
   it('bootstrapped with nothing deployed points at deploy', () => {
-    const report = reportFor(
-      base({ state: { stateBucketExists: true, lock: { held: false }, rollout: [] }, live: undefined }),
-    );
+    const report = reportFor(base({ state: { stateBucketExists: true, lock: { held: false }, rollout: [] }, live: undefined }));
     expect(find(report.checks, 'rollout')?.status).toBe('missing');
     expect(report.nextAction?.command).toContain('deploy --mode staging');
   });
@@ -206,9 +182,7 @@ describe('nextAction priority (lifecycle order)', () => {
   });
 
   it('a store misconfiguration outranks deploy-stage actions', () => {
-    const report = reportFor(
-      base({ stores: [{ id: 'primary', kind: 'redis-managed', error: 'tls is disabled' }], secrets: ['x'] }),
-    );
+    const report = reportFor(base({ stores: [{ id: 'primary', kind: 'redis-managed', error: 'tls is disabled' }], secrets: ['x'] }));
     const check = find(report.checks, 'stores.primary');
     expect(check?.status).toBe('error');
     expect(check?.detail).toBe('tls is disabled');
@@ -224,12 +198,7 @@ describe('live service checks', () => {
     const report = reportFor(
       base({
         live: [
-          {
-            slug: 'backend',
-            healthUrl: 'https://api.example.com/health',
-            probe: { status: 204, version: 'oldsha00' },
-            expectedSha: 'abc123def456',
-          },
+          { slug: 'backend', healthUrl: 'https://api.example.com/health', probe: { status: 204, version: 'oldsha00' }, expectedSha: 'abc123def456' },
         ],
       }),
     );
@@ -239,9 +208,7 @@ describe('live service checks', () => {
   });
 
   it('an unreachable service is missing', () => {
-    const report = reportFor(
-      base({ live: [{ slug: 'backend', healthUrl: 'https://api.example.com/health', probe: { status: 0 } }] }),
-    );
+    const report = reportFor(base({ live: [{ slug: 'backend', healthUrl: 'https://api.example.com/health', probe: { status: 0 } }] }));
     expect(find(report.checks, 'live.backend')?.status).toBe('missing');
   });
 
@@ -265,9 +232,7 @@ describe('primary components check (same verdict rule as the smoke step)', () =>
   });
 
   it('only-degraded components warn without an action', () => {
-    const report = reportFor(
-      base({ components: at({ issues: [{ name: 'cdc', status: 'degraded', reason: 'worker_report_stale' }] }) }),
-    );
+    const report = reportFor(base({ components: at({ issues: [{ name: 'cdc', status: 'degraded', reason: 'worker_report_stale' }] }) }));
     const check = find(report.checks, 'live.components');
     expect(check?.status).toBe('warn');
     expect(check?.detail).toBe('cdc=degraded(worker_report_stale)');

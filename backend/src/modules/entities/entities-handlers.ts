@@ -62,10 +62,7 @@ app.openapi(entityRoutes.appStream, async (ctx) => {
     // membership in a new org reaches the user here and the frontend reconnects to re-register.
     streamSubscriberManager.register(subscriber, [...orgChannels.slice(1), `user:${user.id}`]);
     ensureAppStreamSessionSweep();
-    log.debug('App stream subscriber registered', {
-      subscriberId: subscriber.id,
-      orgCount: organizationIds.size,
-    });
+    log.debug('App stream subscriber registered', { subscriberId: subscriber.id, orgCount: organizationIds.size });
 
     stream.onAbort(() => {
       streamSubscriberManager.unregister(subscriber.id);

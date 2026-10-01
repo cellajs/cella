@@ -2,12 +2,7 @@ import type { SQL } from 'drizzle-orm';
 import { hierarchy, type SeenTrackedProductType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
-import {
-  groupingChannelTypes,
-  homeChannelColumn,
-  seenWindowMs,
-  trackedProductTypes,
-} from '#/modules/seen/operations/mark-seen';
+import { groupingChannelTypes, homeChannelColumn, seenWindowMs, trackedProductTypes } from '#/modules/seen/operations/mark-seen';
 import { findUnseenCountsByUser } from '#/modules/seen/seen-queries';
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
@@ -50,12 +45,7 @@ export async function getUnseenCountsOp(ctx: UserContext) {
 
     for (const productType of trackedProductTypes) {
       const readFilter = resolveCollectionReadFilter(memberships, productType, organizationId, actor);
-      const scopeWhere = buildCollectionReadWhere(
-        readFilter,
-        getEntityTable(productType),
-        homeChannelColumn(productType),
-        actor,
-      );
+      const scopeWhere = buildCollectionReadWhere(readFilter, getEntityTable(productType), homeChannelColumn(productType), actor);
       if (scopeWhere.kind === 'none') continue;
       readableTypes.push(productType);
       if (scopeWhere.kind === 'where') scopeWhereByType[productType] = scopeWhere.where;

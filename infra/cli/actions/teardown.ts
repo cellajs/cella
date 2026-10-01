@@ -3,22 +3,11 @@ import { confirm, input } from '@inquirer/prompts';
 import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
 import { principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
-import {
-  deleteApplicationCascade,
-  deleteGroup,
-  listManagedPrincipals,
-  removeBootstrapDnsGrant,
-} from '../../lib/scaleway/scaleway-iam';
+import { deleteApplicationCascade, deleteGroup, listManagedPrincipals, removeBootstrapDnsGrant } from '../../lib/scaleway/scaleway-iam';
 import { checkMark, pc, tildeMark, warningMark } from '../../lib/utils/cli-output';
 import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
-import {
-  acquireStackLockOrExit,
-  type InfraContext,
-  pulumiLoginAndSelect,
-  resolveVerifiedPassphrase,
-  stackNameFor,
-} from '../shared';
+import { acquireStackLockOrExit, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { acquireOwnerKey, type OwnerKey, printRevokeReminder } from './owner-key';
 
 /**
@@ -33,11 +22,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   const confirmToken = `${appConfig.slug}-${mode}`;
 
   console.info(`\n${pc.bold(pc.redBright('Teardown'))} ${pc.dim(`(${confirmToken})`)}\n`);
-  console.info(
-    pc.dim(
-      'Destroys every Pulumi-managed resource of this stack (VMs, LB, buckets, DB…), then optionally deletes the IAM principals.',
-    ),
-  );
+  console.info(pc.dim('Destroys every Pulumi-managed resource of this stack (VMs, LB, buckets, DB…), then optionally deletes the IAM principals.'));
   if (mode === 'production') {
     console.warn(
       `${warningMark} ${pc.bold('This is PRODUCTION.')} Protected resources (frontend/private buckets, DB) will refuse destruction unless 'protect' is lifted in code: that refusal is deliberate.`,
@@ -66,11 +51,7 @@ export async function runTeardown(context: InfraContext): Promise<void> {
   if (ownerKey.pasted) printRevokeReminder();
 }
 
-async function destroyStack(
-  context: InfraContext,
-  ownerKey: OwnerKey,
-  admin: { accessKey: string; secretKey: string } | undefined,
-): Promise<void> {
+async function destroyStack(context: InfraContext, ownerKey: OwnerKey, admin: { accessKey: string; secretKey: string } | undefined): Promise<void> {
   const { appConfig } = context;
   const mode = context.environment;
   const confirmToken = `${appConfig.slug}-${mode}`;
@@ -103,11 +84,7 @@ async function destroyStack(
   let destroy: ReturnType<typeof spawnSync>;
   try {
     console.info(pc.dim('\n→ pulumi destroy --refresh (this may take several minutes)…'));
-    destroy = spawnSync('pulumi', ['destroy', '--refresh', '--yes', '--stack', targetStack], {
-      cwd: infraDir,
-      env,
-      stdio: 'inherit',
-    });
+    destroy = spawnSync('pulumi', ['destroy', '--refresh', '--yes', '--stack', targetStack], { cwd: infraDir, env, stdio: 'inherit' });
   } finally {
     await stackLock.release();
   }
@@ -121,11 +98,7 @@ async function destroyStack(
   console.info(`${checkMark} Stack resources destroyed.`);
 
   // Remove the stack from the backend once empty; state history remains in the versioned state bucket.
-  const rmStack = spawnSync('pulumi', ['stack', 'rm', '--yes', '--stack', targetStack], {
-    cwd: infraDir,
-    env,
-    stdio: 'inherit',
-  });
+  const rmStack = spawnSync('pulumi', ['stack', 'rm', '--yes', '--stack', targetStack], { cwd: infraDir, env, stdio: 'inherit' });
   if (rmStack.status === 0) console.info(`${checkMark} Pulumi stack '${targetStack}' removed from the backend.`);
 
   // IAM principal cleanup: group members plus the org-wide bootstrap DNS residue, enumerated via the per-mode group (REQ-1) and never by name-guessing. Needs IAMManager + IAMReadOnly on the same key.
@@ -138,12 +111,7 @@ async function destroyStack(
     return;
   }
   try {
-    const { applications } = await listManagedPrincipals({
-      callerSecretKey: secretKey,
-      organizationId,
-      slug: appConfig.slug,
-      mode,
-    });
+    const { applications } = await listManagedPrincipals({ callerSecretKey: secretKey, organizationId, slug: appConfig.slug, mode });
     if (applications.length === 0) {
       console.info(`${tildeMark} No engine-managed IAM applications found.`);
     }
@@ -152,9 +120,7 @@ async function destroyStack(
       console.info(`  ${tildeMark} Deleted ${app.name}`);
     }
     await deleteGroup({ callerSecretKey: secretKey, organizationId, slug: appConfig.slug, mode });
-    await removeBootstrapDnsGrant({ callerSecretKey: secretKey, organizationId, slug: appConfig.slug }).catch(
-      () => false,
-    );
+    await removeBootstrapDnsGrant({ callerSecretKey: secretKey, organizationId, slug: appConfig.slug }).catch(() => false);
     console.info(`${checkMark} IAM cleanup complete.`);
   } catch (error) {
     console.warn(

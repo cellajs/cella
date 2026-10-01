@@ -12,13 +12,7 @@ import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { ensureRegistryPrincipals } from '../../tasks/setup-service-apps';
 import { verifyPrivilegedUp } from '../../tasks/verify-privileged-up';
-import {
-  acquireStackLockOrExit,
-  type InfraContext,
-  pulumiLoginAndSelect,
-  resolveVerifiedPassphrase,
-  stackNameFor,
-} from '../shared';
+import { acquireStackLockOrExit, type InfraContext, pulumiLoginAndSelect, resolveVerifiedPassphrase, stackNameFor } from '../shared';
 import { acquireOwnerKey } from './owner-key';
 
 export interface PrivilegedConvergeOptions {
@@ -54,14 +48,9 @@ export interface PrivilegedConvergeResult {
  * apply the caller's config mutation, then `pulumi up` with an orphan-prune/retry loop.
  * Returns the provider env and stack for reading outputs after the lock releases, and exits the process on hard failures before the `up` loop.
  */
-export async function runPrivilegedConverge(
-  context: InfraContext,
-  opts: PrivilegedConvergeOptions,
-): Promise<PrivilegedConvergeResult> {
+export async function runPrivilegedConverge(context: InfraContext, opts: PrivilegedConvergeOptions): Promise<PrivilegedConvergeResult> {
   if (context.state !== 'bootstrapped') {
-    console.error(
-      `${warningMark} This action requires a fully bootstrapped stack (state=${context.state}). Run Resume first.`,
-    );
+    console.error(`${warningMark} This action requires a fully bootstrapped stack (state=${context.state}). Run Resume first.`);
     process.exit(1);
   }
 
@@ -80,16 +69,8 @@ export async function runPrivilegedConverge(
   const stack = stackNameFor(context);
 
   // The admin application key from infra/.env.<mode> signs every state-bucket touch (login, lock, `up`) while the Owner API key drives the resource mutations; without an admin key the Owner API key serves both sides.
-  const stateOverride = identity.admin
-    ? { stateAccessKey: identity.admin.accessKey, stateSecretKey: identity.admin.secretKey }
-    : {};
-  const env = buildProviderEnv(infraDir, {
-    accessKey: ownerKey.accessKey,
-    secretKey: ownerKey.secretKey,
-    projectId,
-    passphrase,
-    ...stateOverride,
-  });
+  const stateOverride = identity.admin ? { stateAccessKey: identity.admin.accessKey, stateSecretKey: identity.admin.secretKey } : {};
+  const env = buildProviderEnv(infraDir, { accessKey: ownerKey.accessKey, secretKey: ownerKey.secretKey, projectId, passphrase, ...stateOverride });
   // Marks the `pulumi up` child as privileged: the resources only a privileged run writes (VM IAM policy rules) reconcile under this marker.
   env[PRIVILEGED_UP_ENV] = '1';
   pulumiLoginAndSelect(infraDir, env, appConfig, stack);
@@ -140,29 +121,17 @@ export async function runPrivilegedConverge(
 
       // Reconcile gen/sha from live state before `up`: a stale committed Pulumi.<stack>.yaml would converge compute back to an old generation and destroy newer live VMs.
       console.info(pc.dim('\n→ Reconciling rollout config from live state (sync-rollout-config)…'));
-      const sync = spawnSync('pnpm', ['--filter', 'infra', 'sync-rollout-config', '--stack', stack], {
-        cwd: infraDir,
-        env,
-        stdio: 'inherit',
-      });
+      const sync = spawnSync('pnpm', ['--filter', 'infra', 'sync-rollout-config', '--stack', stack], { cwd: infraDir, env, stdio: 'inherit' });
       if (sync.status !== 0) {
         await releaseAll();
-        console.error(
-          `${warningMark} sync-rollout-config failed (exit ${sync.status}). Aborting to avoid applying against stale gen/sha.`,
-        );
+        console.error(`${warningMark} sync-rollout-config failed (exit ${sync.status}). Aborting to avoid applying against stale gen/sha.`);
         process.exit(sync.status ?? 1);
       }
 
       const configFile = opts.prepare?.(env, stack);
 
       if (opts.confirmPlan) {
-        const previewArgs = [
-          'preview',
-          '--stack',
-          stack,
-          '--diff',
-          ...(configFile ? ['--config-file', configFile] : []),
-        ];
+        const previewArgs = ['preview', '--stack', stack, '--diff', ...(configFile ? ['--config-file', configFile] : [])];
         console.info(`\n→ pulumi preview (the plan this run would apply)\n  $ pulumi ${previewArgs.join(' ')}`);
         const preview = spawnSync('pulumi', previewArgs, { cwd: infraDir, env, stdio: 'inherit' });
         if (preview.status !== 0) {
@@ -184,11 +153,7 @@ export async function runPrivilegedConverge(
       }
 
       while (true) {
-        const { code, output } = await runPulumiUpWithHint(stack, infraDir, env, {
-          configFile,
-          skipPreview: opts.confirmPlan,
-          debugLogPath,
-        });
+        const { code, output } = await runPulumiUpWithHint(stack, infraDir, env, { configFile, skipPreview: opts.confirmPlan, debugLogPath });
         if (code === 0) {
           completed = true;
           break;
@@ -196,9 +161,7 @@ export async function runPrivilegedConverge(
         // A delete 404 leaves only stale Pulumi state, so offer to prune it and reconverge.
         const orphans = parseOrphanedDeletes(output);
         if (orphans.length > 0) {
-          console.warn(
-            `\n${warningMark} ${orphans.length} resource(s) failed to delete because the live object no longer exists:`,
-          );
+          console.warn(`\n${warningMark} ${orphans.length} resource(s) failed to delete because the live object no longer exists:`);
           for (const urn of orphans) console.warn(`  ${pc.dim('-')} ${urn}`);
           if (
             await confirm({
@@ -230,11 +193,7 @@ export async function runPrivilegedConverge(
         console.error(
           `\n${warningMark} could not verify the live infrastructure after the up:\n${result.errors.map((error) => `  ✗ ${error}`).join('\n')}`,
         );
-        console.error(
-          pc.dim(
-            "  Nothing is known to be wrong: re-run Preview, or let the next deploy's Verify VM IAM grants step tell.",
-          ),
-        );
+        console.error(pc.dim("  Nothing is known to be wrong: re-run Preview, or let the next deploy's Verify VM IAM grants step tell."));
       }
       if (result.problems.length > 0) {
         console.error(

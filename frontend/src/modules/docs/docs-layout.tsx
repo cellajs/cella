@@ -76,12 +76,7 @@ function DocsLayout() {
           useSheeter.getState().remove('docs-sidebar');
           return;
         }
-        navigate({
-          to: '.',
-          search: (prev) => ({ ...prev, operationTag: undefined }),
-          resetScroll: false,
-          replace: true,
-        });
+        navigate({ to: '.', search: (prev) => ({ ...prev, operationTag: undefined }), resetScroll: false, replace: true });
       },
     ],
   ]);
@@ -108,14 +103,7 @@ function DocsLayout() {
 
   const floatingNavItems: FloatingNavItem[] = [
     { id: 'docs-menu', icon: MenuIcon, onClick: toggleSidebar, ariaLabel: 'Toggle menu', direction: 'left' },
-    {
-      id: 'docs-scroll-top',
-      icon: ArrowUpIcon,
-      onClick: scrollToTop,
-      ariaLabel: 'Scroll to top',
-      visible: showScrollTop,
-      direction: 'right',
-    },
+    { id: 'docs-scroll-top', icon: ArrowUpIcon, onClick: scrollToTop, ariaLabel: 'Scroll to top', visible: showScrollTop, direction: 'right' },
   ];
 
   if (!isDesktop) {
@@ -129,12 +117,7 @@ function DocsLayout() {
     );
   }
 
-  const sidebarWidthStyle =
-    resizedSidebarWidth === null
-      ? undefined
-      : ({
-          '--docs-sidebar-width': `${resizedSidebarWidth}px`,
-        } as CSSProperties);
+  const sidebarWidthStyle = resizedSidebarWidth === null ? undefined : ({ '--docs-sidebar-width': `${resizedSidebarWidth}px` } as CSSProperties);
 
   return (
     <div className="contents [--docs-sidebar-width:clamp(220px,24vw,288px)]" style={sidebarWidthStyle}>

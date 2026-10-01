@@ -5,22 +5,13 @@ import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Env } from '#/core/context';
 import { defaultHeaders } from '../fixtures';
-import {
-  createSystemAdminUser,
-  createTestOrganization,
-  createTestSession,
-  createTestUser,
-  expectRefusal,
-} from '../helpers';
+import { createSystemAdminUser, createTestOrganization, createTestSession, createTestUser, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 
 // Every sign-in method on, so a route's strategy gate lets the request through to the guard under test.
-setTestConfig({
-  enabledAuthStrategies: ['passkey', 'totp', 'oauth', 'magic'],
-  enabledOAuthProviders: ['github', 'google', 'microsoft'],
-});
+setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'oauth', 'magic'], enabledOAuthProviders: ['github', 'google', 'microsoft'] });
 
 interface Operation {
   operationId: string;
@@ -93,9 +84,7 @@ describe('Route guards', async () => {
     const organization = await createTestOrganization();
     tenant = { id: organization.tenantId, organizationId: organization.id };
     user = { sessionCookie: await createTestSession(await createTestUser('route-guards-user@security-test.com')) };
-    sysAdmin = {
-      sessionCookie: await createTestSession(await createSystemAdminUser('route-guards-sysadmin@security-test.com')),
-    };
+    sysAdmin = { sessionCookie: await createTestSession(await createSystemAdminUser('route-guards-sysadmin@security-test.com')) };
   });
 
   afterAll(async () => await clearSecurityTestData());
@@ -113,9 +102,7 @@ describe('Route guards', async () => {
       expect(status, nameOf(operation)).toBe(401);
     }
     // Positive control: a session reaches a route behind userGuard.
-    expect((await call(getMe, { headers: { ...defaultHeaders, Cookie: user.sessionCookie } })).response.status).toBe(
-      200,
-    );
+    expect((await call(getMe, { headers: { ...defaultHeaders, Cookie: user.sessionCookie } })).response.status).toBe(200);
   });
 
   it('must not reach any system-admin route via a session without the system role', async () => {

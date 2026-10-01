@@ -10,10 +10,7 @@ export const Img: JsxEmailComponent<ImgProps> = ({ alt, disableDefaultStyle, hei
       src={src}
       width={width}
       height={height}
-      style={{
-        ...(disableDefaultStyle ? {} : { border: 'none', display: 'block', outline: 'none', textDecoration: 'none' }),
-        ...style,
-      }}
+      style={{ ...(disableDefaultStyle ? {} : { border: 'none', display: 'block', outline: 'none', textDecoration: 'none' }), ...style }}
     />
   );
 };

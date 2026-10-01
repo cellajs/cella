@@ -203,10 +203,7 @@ export function RenderExpandToggle({
             className="absolute top-1/2 left-[calc(50%+4px)] size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-input bg-background"
           />
         ) : (
-          <span
-            aria-hidden
-            className="absolute top-1/2 left-[calc(50%-4px)] size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-input"
-          />
+          <span aria-hidden className="absolute top-1/2 left-[calc(50%-4px)] size-2.5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-input" />
         )
       ) : null}
     </span>

@@ -1,7 +1,4 @@
-import {
-  autoScrollForElements,
-  autoScrollWindowForElements,
-} from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
+import { autoScrollForElements, autoScrollWindowForElements } from '@atlaskit/pragmatic-drag-and-drop-auto-scroll/element';
 import { type RefObject, useEffect, useRef } from 'react';
 
 /** Nearest vertically-scrollable ancestor, matching `getScrollParent` in `useGridDimensions`. */
@@ -30,13 +27,8 @@ export function useDragAutoScroll(gridRef: RefObject<HTMLDivElement | null>, ena
     scrollParentRef.current = findScrollParent(grid.parentElement);
 
     if (scrollParentRef.current) {
-      return autoScrollForElements({
-        element: scrollParentRef.current,
-        getAllowedAxis: () => 'vertical',
-      });
+      return autoScrollForElements({ element: scrollParentRef.current, getAllowedAxis: () => 'vertical' });
     }
-    return autoScrollWindowForElements({
-      getAllowedAxis: () => 'vertical',
-    });
+    return autoScrollWindowForElements({ getAllowedAxis: () => 'vertical' });
   }, [enabled, gridRef]);
 }

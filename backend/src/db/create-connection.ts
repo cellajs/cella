@@ -31,10 +31,7 @@ const KEEP_ALIVE_IDLE_MS = 30_000;
  * @param options - Pool size, TLS CA, the `DEBUG` flag and the connect timeout.
  * @returns The client; its pool opens a connection on the first query.
  */
-export const createPgConnection = (
-  url: string,
-  { max, sslCa, debug = false, connectionTimeoutMillis = 10_000 }: CreatePgConnectionOptions,
-): PgDB =>
+export const createPgConnection = (url: string, { max, sslCa, debug = false, connectionTimeoutMillis = 10_000 }: CreatePgConnectionOptions): PgDB =>
   pgDrizzle({
     connection: {
       connectionString: stripPostgresSslParams(url),

@@ -1,10 +1,6 @@
 import type { KeyObject } from 'node:crypto';
 import type { ProductEntityType } from 'shared';
-import {
-  type YjsTokenPayload as SharedYjsTokenPayload,
-  signYjsToken as signToken,
-  yjsTokenSigningKey,
-} from 'shared/utils/yjs-token';
+import { type YjsTokenPayload as SharedYjsTokenPayload, signYjsToken as signToken, yjsTokenSigningKey } from 'shared/utils/yjs-token';
 import { modeSecret } from '#/env';
 
 /** Token TTL: 5 minutes. The relay closes a socket when its token expires, so revoked access reaches open sockets within it. */

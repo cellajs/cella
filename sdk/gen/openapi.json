@@ -568,18 +568,7 @@
             "enum": ["user"]
           }
         },
-        "required": [
-          "id",
-          "name",
-          "createdAt",
-          "updatedAt",
-          "slug",
-          "thumbnailUrl",
-          "bannerUrl",
-          "description",
-          "email",
-          "entityType"
-        ],
+        "required": ["id", "name", "createdAt", "updatedAt", "slug", "thumbnailUrl", "bannerUrl", "description", "email", "entityType"],
         "description": "Base user schema with essential fields for identification and display.",
         "example": {
           "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
@@ -627,17 +616,7 @@
             "type": ["string", "null"]
           }
         },
-        "required": [
-          "id",
-          "name",
-          "createdAt",
-          "updatedAt",
-          "tenantId",
-          "entityType",
-          "slug",
-          "thumbnailUrl",
-          "bannerUrl"
-        ],
+        "required": ["id", "name", "createdAt", "updatedAt", "tenantId", "entityType", "slug", "thumbnailUrl", "bannerUrl"],
         "description": "Base schema for entities with memberships (e.g. organization).",
         "example": {
           "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",
@@ -698,17 +677,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "id",
-          "name",
-          "createdAt",
-          "updatedAt",
-          "description",
-          "createdBy",
-          "updatedBy",
-          "entityType",
-          "keywords"
-        ],
+        "required": ["id", "name", "createdAt", "updatedAt", "description", "createdBy", "updatedBy", "entityType", "keywords"],
         "description": "Base schema for content entities with creator tracking (e.g. page, attachment).",
         "example": {
           "id": "7e460470-da58-4733-a7ff-0d31897ecf8d",
@@ -778,18 +747,7 @@
             "format": "uuid"
           }
         },
-        "required": [
-          "id",
-          "tenantId",
-          "channelType",
-          "channelId",
-          "userId",
-          "role",
-          "archived",
-          "muted",
-          "displayOrder",
-          "organizationId"
-        ],
+        "required": ["id", "tenantId", "channelType", "channelId", "userId", "role", "archived", "muted", "displayOrder", "organizationId"],
         "description": "Core membership fields shared across active and inactive memberships.",
         "example": {
           "id": "ee163b99-3dce-4900-a23a-1256a303215e",
@@ -872,17 +830,7 @@
           },
           "resourceType": {
             "type": ["string", "null"],
-            "enum": [
-              "request",
-              "membership",
-              "inactive_membership",
-              "tenant",
-              "system_role",
-              "service_account",
-              "api_key",
-              "oauth_client",
-              null
-            ]
+            "enum": ["request", "membership", "inactive_membership", "tenant", "system_role", "service_account", "api_key", "oauth_client", null]
           },
           "subjectId": {
             "type": ["string", "null"]
@@ -1507,15 +1455,7 @@
                 },
                 "revocationReason": {
                   "type": ["string", "null"],
-                  "enum": [
-                    "sign_out",
-                    "other_session",
-                    "mfa_enabled",
-                    "session_cap",
-                    "replaced",
-                    "impersonation_stopped",
-                    null
-                  ]
+                  "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", "impersonation_stopped", null]
                 },
                 "impersonatorSessionId": {
                   "type": ["string", "null"],
@@ -1600,16 +1540,7 @@
                   "type": "string"
                 }
               },
-              "required": [
-                "id",
-                "userId",
-                "deviceName",
-                "deviceType",
-                "deviceOs",
-                "browser",
-                "nameOnDevice",
-                "createdAt"
-              ]
+              "required": ["id", "userId", "deviceName", "deviceType", "deviceOs", "browser", "nameOnDevice", "createdAt"]
             }
           }
         },
@@ -2021,13 +1952,7 @@
             "type": "string"
           }
         },
-        "required": [
-          "resource",
-          "authorization_servers",
-          "scopes_supported",
-          "bearer_methods_supported",
-          "resource_documentation"
-        ]
+        "required": ["resource", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"]
       },
       "Organization": {
         "type": "object",
@@ -2608,18 +2533,7 @@
             "type": ["string", "null"]
           }
         },
-        "required": [
-          "id",
-          "tenantId",
-          "name",
-          "status",
-          "bindings",
-          "oauthClientId",
-          "createdBy",
-          "updatedBy",
-          "createdAt",
-          "updatedAt"
-        ],
+        "required": ["id", "tenantId", "name", "status", "bindings", "oauthClientId", "createdBy", "updatedBy", "createdAt", "updatedAt"],
         "description": "The actor an API key runs as, with its role bindings.",
         "example": {
           "id": "764ce6e7-55fc-4f5d-b661-0c777df71d45",
@@ -3780,16 +3694,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "id",
-                    "userId",
-                    "deviceName",
-                    "deviceType",
-                    "deviceOs",
-                    "browser",
-                    "nameOnDevice",
-                    "createdAt"
-                  ]
+                  "required": ["id", "userId", "deviceName", "deviceType", "deviceOs", "browser", "nameOnDevice", "createdAt"]
                 }
               }
             }
@@ -4860,16 +4765,7 @@
                         "type": "string"
                       }
                     },
-                    "required": [
-                      "id",
-                      "tenantId",
-                      "domain",
-                      "verified",
-                      "verificationToken",
-                      "verifiedAt",
-                      "lastCheckedAt",
-                      "createdAt"
-                    ]
+                    "required": ["id", "tenantId", "domain", "verified", "verificationToken", "verifiedAt", "lastCheckedAt", "createdAt"]
                   }
                 }
               }
@@ -5160,16 +5056,7 @@
                       "type": "string"
                     }
                   },
-                  "required": [
-                    "id",
-                    "tenantId",
-                    "domain",
-                    "verified",
-                    "verificationToken",
-                    "verifiedAt",
-                    "lastCheckedAt",
-                    "createdAt"
-                  ]
+                  "required": ["id", "tenantId", "domain", "verified", "verificationToken", "verifiedAt", "lastCheckedAt", "createdAt"]
                 }
               }
             }
@@ -5272,16 +5159,7 @@
                           "type": "string"
                         }
                       },
-                      "required": [
-                        "id",
-                        "tenantId",
-                        "domain",
-                        "verified",
-                        "verificationToken",
-                        "verifiedAt",
-                        "lastCheckedAt",
-                        "createdAt"
-                      ]
+                      "required": ["id", "tenantId", "domain", "verified", "verificationToken", "verifiedAt", "lastCheckedAt", "createdAt"]
                     },
                     "diagnostics": {
                       "type": "object",
@@ -6308,15 +6186,7 @@
                           },
                           "revocationReason": {
                             "type": ["string", "null"],
-                            "enum": [
-                              "sign_out",
-                              "other_session",
-                              "mfa_enabled",
-                              "session_cap",
-                              "replaced",
-                              "impersonation_stopped",
-                              null
-                            ]
+                            "enum": ["sign_out", "other_session", "mfa_enabled", "session_cap", "replaced", "impersonation_stopped", null]
                           },
                           "impersonatorSessionId": {
                             "type": ["string", "null"],
@@ -12316,15 +12186,7 @@
                                     "maximum": 140737488355327
                                   }
                                 },
-                                "required": [
-                                  "id",
-                                  "tenantId",
-                                  "channelType",
-                                  "channelId",
-                                  "userId",
-                                  "role",
-                                  "organizationId"
-                                ]
+                                "required": ["id", "tenantId", "channelType", "channelId", "userId", "role", "organizationId"]
                               },
                               "counts": {
                                 "type": "object",

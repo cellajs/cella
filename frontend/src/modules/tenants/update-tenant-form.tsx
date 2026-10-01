@@ -31,13 +31,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
   const { t } = useTranslation();
   const { mutate, isPending } = useTenantUpdateMutation();
 
-  const formOptions: UseFormProps<FormValues> = {
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      name: tenant.name,
-      status: tenant.status,
-    },
-  };
+  const formOptions: UseFormProps<FormValues> = { resolver: zodResolver(formSchema), defaultValues: { name: tenant.name, status: tenant.status } };
 
   const formContainerId = 'update-tenant';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${tenant.id}`, { formOptions, formContainerId });
@@ -92,12 +86,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
           <SubmitButton disabled={!form.isDirty} loading={isPending}>
             {t('c:save_changes')}
           </SubmitButton>
-          <Button
-            type="reset"
-            variant="secondary"
-            onClick={() => form.reset()}
-            className={form.isDirty ? '' : 'invisible'}
-          >
+          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={form.isDirty ? '' : 'invisible'}>
             {t('c:cancel')}
           </Button>
         </div>

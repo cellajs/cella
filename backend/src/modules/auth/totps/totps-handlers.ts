@@ -31,13 +31,7 @@ app.openapi(authTotpsRoutes.generateTotpKey, async (ctx) => {
 
   await setAuthCookie(ctx, 'totp-challenge', manualKey, new TimeSpan(5, 'm'));
 
-  const totpUri = createTOTPKeyURI(
-    appConfig.slug,
-    user.email,
-    secretBytes,
-    appConfig.totp.intervalInSeconds,
-    appConfig.totp.digits,
-  );
+  const totpUri = createTOTPKeyURI(appConfig.slug, user.email, secretBytes, appConfig.totp.intervalInSeconds, appConfig.totp.digits);
 
   return ctx.json({ totpUri, manualKey }, 200);
 });

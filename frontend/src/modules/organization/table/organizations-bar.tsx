@@ -92,14 +92,7 @@ export function OrganizationsTableBar({
       selection={{
         count: selected.length,
         onClear: clearSelection,
-        children: (
-          <TableBarButton
-            ref={newsletterButtonRef}
-            onClick={openNewsletterSheet}
-            label="c:newsletter"
-            icon={MailboxIcon}
-          />
-        ),
+        children: <TableBarButton ref={newsletterButtonRef} onClick={openNewsletterSheet} label="c:newsletter" icon={MailboxIcon} />,
       }}
     />
   );

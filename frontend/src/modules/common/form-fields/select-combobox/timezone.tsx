@@ -4,13 +4,7 @@ import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { ComboboxSelect } from '~/modules/ui/combobox';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
-export function SelectTimezone<TFieldValues extends FieldValues>({
-  control,
-  name,
-  disabled,
-  label,
-  required,
-}: BaseFormFieldProps<TFieldValues>) {
+export function SelectTimezone<TFieldValues extends FieldValues>({ control, name, disabled, label, required }: BaseFormFieldProps<TFieldValues>) {
   const seen = new Set<string>();
   const options = timezones.reduce<{ value: string; label: string }[]>((acc, { utc, text }) => {
     const value = utc[0];

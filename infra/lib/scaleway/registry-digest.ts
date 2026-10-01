@@ -51,9 +51,7 @@ export async function resolveImageDigest(opts: ResolveImageDigestOptions): Promi
   if (response.status === 401) {
     const challenge = parseBearerChallenge(response.headers?.get('www-authenticate') ?? '');
     if (!challenge) {
-      throw new Error(
-        `Registry ${host} rejected basic auth for ${repository}:${opts.tag} and sent no bearer challenge (status 401).`,
-      );
+      throw new Error(`Registry ${host} rejected basic auth for ${repository}:${opts.tag} and sent no bearer challenge (status 401).`);
     }
     const tokenUrl = new URL(challenge.realm);
     if (challenge.service) tokenUrl.searchParams.set('service', challenge.service);
@@ -62,25 +60,17 @@ export async function resolveImageDigest(opts: ResolveImageDigestOptions): Promi
     if (!tokenResponse.ok) {
       throw new Error(`Registry token exchange failed for ${repository}:${opts.tag} (status ${tokenResponse.status}).`);
     }
-    const { token, access_token: accessToken } = JSON.parse(await tokenResponse.text()) as {
-      token?: string;
-      access_token?: string;
-    };
+    const { token, access_token: accessToken } = JSON.parse(await tokenResponse.text()) as { token?: string; access_token?: string };
     const bearer = token ?? accessToken;
     if (!bearer) throw new Error(`Registry token endpoint for ${host} returned no token.`);
-    response = await fetchImpl(manifestUrl, {
-      headers: { Accept: MANIFEST_ACCEPT, Authorization: `Bearer ${bearer}` },
-    });
+    response = await fetchImpl(manifestUrl, { headers: { Accept: MANIFEST_ACCEPT, Authorization: `Bearer ${bearer}` } });
   }
 
   if (!response.ok) {
     // Attach the HTTP status so callers can branch on 404 (tag not found) without parsing the message.
-    throw Object.assign(
-      new Error(`Could not fetch manifest for ${repository}:${opts.tag} from ${host} (status ${response.status}).`),
-      {
-        status: response.status,
-      },
-    );
+    throw Object.assign(new Error(`Could not fetch manifest for ${repository}:${opts.tag} from ${host} (status ${response.status}).`), {
+      status: response.status,
+    });
   }
   const body = await response.text();
   return `sha256:${createHash('sha256').update(body).digest('hex')}`;

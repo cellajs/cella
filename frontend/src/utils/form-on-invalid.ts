@@ -20,10 +20,7 @@ export const defaultOnInvalid = <TFieldValues extends FieldValues>(errors: Field
   console.error('Form validation failed', errors);
 };
 
-const processErrors = <TFieldValues extends FieldValues>(
-  errors: FieldErrors<TFieldValues>,
-  parentFieldName?: string,
-): string[] => {
+const processErrors = <TFieldValues extends FieldValues>(errors: FieldErrors<TFieldValues>, parentFieldName?: string): string[] => {
   const messages: string[] = [];
 
   for (const [name, value] of Object.entries(errors)) {

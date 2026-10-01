@@ -116,11 +116,7 @@ describe('verifyPrivilegedUp', () => {
   });
 
   it('keeps probe failures apart from verified differences: a revoked key is unknown, not wrong', async () => {
-    const denied: FetchLike = async () => ({
-      ok: false,
-      status: 401,
-      text: async () => JSON.stringify({ message: 'authentication is denied' }),
-    });
+    const denied: FetchLike = async () => ({ ok: false, status: 401, text: async () => JSON.stringify({ message: 'authentication is denied' }) });
     const throwingGrants: typeof assertVmGrants = async () => {
       throw new Error('Scaleway GET applications → 401: authentication is denied');
     };

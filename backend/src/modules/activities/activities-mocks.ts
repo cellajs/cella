@@ -25,10 +25,7 @@ export const mockActivity = (key = 'activity:default', overrides?: Partial<Activ
       type: `${entityType}.${verb}`,
       subjectId: mockUuid(),
       createdAt,
-      changedFields:
-        action === 'update'
-          ? faker.helpers.arrayElements(['name', 'email', 'slug', 'description'], { min: 2, max: 4 })
-          : null,
+      changedFields: action === 'update' ? faker.helpers.arrayElements(['name', 'email', 'slug', 'description'], { min: 2, max: 4 }) : null,
       stx: null,
       ...generateMockActivityChannelIdColumns(),
       ...overrides,

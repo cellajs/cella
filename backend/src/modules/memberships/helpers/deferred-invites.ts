@@ -42,10 +42,7 @@ export async function dispatchDeferredInvites(ctx: UserContext, { channelIds }: 
 
   for (const group of groups.values()) {
     const { channelType, channelId, role } = group[0];
-    const entity = await resolveEntity(ctx, {
-      entityType: channelType as ChannelEntityType,
-      identifier: channelId,
-    });
+    const entity = await resolveEntity(ctx, { entityType: channelType as ChannelEntityType, identifier: channelId });
     if (!entity) continue;
 
     const invited: InvitedAddress[] = [];

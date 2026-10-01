@@ -1,32 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import type {
-  GithubUserEmailProps,
-  GithubUserProps,
-  GoogleUserProps,
-  MicrosoftUserProps,
-} from '#/modules/auth/oauth/helpers/providers';
+import type { GithubUserEmailProps, GithubUserProps, GoogleUserProps, MicrosoftUserProps } from '#/modules/auth/oauth/helpers/providers';
 import { transformGithubUserData, transformSocialUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
 
-const githubUser = {
-  id: 123,
-  login: 'octocat',
-  name: 'Octo Cat',
-  avatar_url: 'https://example.com/a.png',
-} as GithubUserProps;
+const githubUser = { id: 123, login: 'octocat', name: 'Octo Cat', avatar_url: 'https://example.com/a.png' } as GithubUserProps;
 
-const ghEmail = (email: string, primary: boolean, verified: boolean): GithubUserEmailProps => ({
-  email,
-  primary,
-  verified,
-  visibility: null,
-});
+const ghEmail = (email: string, primary: boolean, verified: boolean): GithubUserEmailProps => ({ email, primary, verified, visibility: null });
 
 describe('transformGithubUserData', () => {
   it('selects the primary email and normalizes it', () => {
-    const result = transformGithubUserData(githubUser, [
-      ghEmail('Secondary@Example.com', false, true),
-      ghEmail('Primary@Example.com', true, true),
-    ]);
+    const result = transformGithubUserData(githubUser, [ghEmail('Secondary@Example.com', false, true), ghEmail('Primary@Example.com', true, true)]);
 
     expect(result.email).toBe('primary@example.com');
     expect(result.emailVerified).toBe(true);
@@ -40,9 +22,7 @@ describe('transformGithubUserData', () => {
   });
 
   it('throws when there is no primary email', () => {
-    expect(() => transformGithubUserData(githubUser, [ghEmail('only@example.com', false, true)])).toThrow(
-      'no_email_found',
-    );
+    expect(() => transformGithubUserData(githubUser, [ghEmail('only@example.com', false, true)])).toThrow('no_email_found');
   });
 });
 
@@ -93,14 +73,7 @@ describe('transformSocialUserData', () => {
   });
 
   it('throws when no email is present', () => {
-    const microsoft = {
-      sub: 'm2',
-      name: 'M User',
-      email: undefined,
-      picture: 'p',
-      givenname: 'M',
-      familyname: 'User',
-    } as MicrosoftUserProps;
+    const microsoft = { sub: 'm2', name: 'M User', email: undefined, picture: 'p', givenname: 'M', familyname: 'User' } as MicrosoftUserProps;
 
     expect(() => transformSocialUserData(microsoft)).toThrow('no_email_found');
   });

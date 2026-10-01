@@ -53,9 +53,7 @@ export function mockScope(overrides?: Partial<DocScope>): DocScope {
 }
 
 /** A socket's context: authorized in `requested` unless `scope` says otherwise (null for a socket still pending). */
-export function mockSocketContext(
-  overrides: { userId?: string; requested?: DocScope; scope?: DocScope | null } = {},
-): SocketContext {
+export function mockSocketContext(overrides: { userId?: string; requested?: DocScope; scope?: DocScope | null } = {}): SocketContext {
   const requested = overrides.requested ?? mockScope();
   return {
     userId: overrides.userId ?? 'user-1',
@@ -88,8 +86,7 @@ export function buildSyncUpdate(update: Uint8Array, syncType: number = YSync.Upd
 }
 
 /** A client's reply to the relay's Step1: the update it holds that the relay lacks (an empty one when nothing). */
-export const buildSyncStep2 = (update: Uint8Array = Y.encodeStateAsUpdate(new Y.Doc())) =>
-  buildSyncUpdate(update, YSync.Step2);
+export const buildSyncStep2 = (update: Uint8Array = Y.encodeStateAsUpdate(new Y.Doc())) => buildSyncUpdate(update, YSync.Step2);
 
 /** The generation a relay frame announces; null for any other frame. */
 export function decodeGeneration(message: Uint8Array): string | null {
@@ -299,8 +296,7 @@ export function readMap(state: Uint8Array): Record<string, unknown> {
 }
 
 /** Polls until `check` holds, failing after `timeout` ms. */
-export const until = (check: () => boolean | Promise<boolean>, timeout = 3000) =>
-  vi.waitUntil(check, { timeout, interval: 10 });
+export const until = (check: () => boolean | Promise<boolean>, timeout = 3000) => vi.waitUntil(check, { timeout, interval: 10 });
 
 /**
  * The relay's upgrade and connection handlers on a loopback HTTP server, as the worker mounts them. They are imported

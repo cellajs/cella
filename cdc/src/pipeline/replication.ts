@@ -35,10 +35,7 @@ export function createReplicationService(): LogicalReplicationService {
       // Verified TLS, matching the query connection; certificate identity is pinned to the dialed host in production.
       ssl: buildVerifiedSsl(env.DATABASE_CDC_URL),
     },
-    {
-      acknowledge: { auto: false, timeoutSeconds: 0 },
-      flowControl: { enabled: true },
-    },
+    { acknowledge: { auto: false, timeoutSeconds: 0 }, flowControl: { enabled: true } },
   );
 
   service.on('data', (lsn: string, message: unknown) => {
@@ -93,13 +90,9 @@ async function recreateReplicationSlot(): Promise<void> {
     return;
   }
   try {
-    const publicationCheck = await cdcDb.execute(
-      sql`SELECT 1 FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`,
-    );
+    const publicationCheck = await cdcDb.execute(sql`SELECT 1 FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`);
     if (publicationCheck.rows.length === 0) {
-      log.warn(
-        `Publication '${CDC_PUBLICATION_NAME}' does not exist; not recreating slot '${CDC_SLOT_NAME}'. Backing off until it appears.`,
-      );
+      log.warn(`Publication '${CDC_PUBLICATION_NAME}' does not exist; not recreating slot '${CDC_SLOT_NAME}'. Backing off until it appears.`);
       return;
     }
 
@@ -162,10 +155,7 @@ export function setupBackpressure(): void {
 
 // Subscription loop
 
-export async function subscribeWithReconnect(
-  service: LogicalReplicationService,
-  plugin: PgoutputPlugin,
-): Promise<never> {
+export async function subscribeWithReconnect(service: LogicalReplicationService, plugin: PgoutputPlugin): Promise<never> {
   // Fast retries during a rolling-deploy slot handoff, then the normal cadence under sustained contention.
   let attempt = 0;
   while (true) {
@@ -182,12 +172,8 @@ export async function subscribeWithReconnect(
       const inHandoffWindow = attempt <= slotTakeover.maxAttempts;
       const retryDelayMs = inHandoffWindow ? slotTakeover.retryDelayMs : reconnection.retryDelayMs;
       const takeover = inHandoffWindow ? ` (slot-takeover ${attempt}/${slotTakeover.maxAttempts})` : '';
-      const slotHolder =
-        (error as { code?: string } | null)?.code === PG_OBJECT_IN_USE ? await describeSlotHolder() : null;
-      log.warn(`Subscription error, retrying in ${retryDelayMs / 1000}s${takeover}...`, {
-        err: error,
-        ...(slotHolder && { slotHolder }),
-      });
+      const slotHolder = (error as { code?: string } | null)?.code === PG_OBJECT_IN_USE ? await describeSlotHolder() : null;
+      log.warn(`Subscription error, retrying in ${retryDelayMs / 1000}s${takeover}...`, { err: error, ...(slotHolder && { slotHolder }) });
       replicationState.markStopped();
       // Reposition a slot whose start predates its publication so decoding can proceed.
       if (isStalePublicationError(error)) {

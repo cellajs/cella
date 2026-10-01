@@ -175,11 +175,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
       excludedTags.add(tag.name);
       if (tag.kind === 'hidden') hiddenTags.add(tag.name);
       if (tag.kind === 'schema') {
-        schemaKindTags.push({
-          name: tag.name,
-          description: tag.description ?? '',
-          isDefault: tag['x-default'] === true,
-        });
+        schemaKindTags.push({ name: tag.name, description: tag.description ?? '', isDefault: tag['x-default'] === true });
       }
       continue;
     }
@@ -292,9 +288,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     const resolvedSchema = resolveSchema(schemaValue, spec);
 
     const xTags = (schemaValue as { 'x-tags'?: unknown })['x-tags'];
-    const declaredTags = Array.isArray(xTags)
-      ? (xTags as unknown[]).filter((t): t is string => typeof t === 'string')
-      : [];
+    const declaredTags = Array.isArray(xTags) ? (xTags as unknown[]).filter((t): t is string => typeof t === 'string') : [];
     const schemaTag = declaredTags.find((t) => schemaTagNameSet.has(t)) ?? defaultSchemaTag;
     schemaTagCounts.set(schemaTag, (schemaTagCounts.get(schemaTag) ?? 0) + 1);
 
@@ -344,12 +338,5 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
     count: schemaTagCounts.get(t.name) ?? 0,
   }));
 
-  return {
-    operations,
-    tags,
-    info,
-    schemas: componentSchemas,
-    schemaTags,
-    tagDetails: tagDetailsMap,
-  };
+  return { operations, tags, info, schemas: componentSchemas, schemaTags, tagDetails: tagDetailsMap };
 }

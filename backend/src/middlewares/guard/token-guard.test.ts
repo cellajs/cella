@@ -43,13 +43,7 @@ interface Forgery {
 }
 
 /** A token signed under the server's `kid`, well-formed for this route unless a forgery says otherwise. */
-const signed = async ({
-  key,
-  alg = 'RS256',
-  issuer = appConfig.oauthUrl,
-  audience = resource,
-  expiresAt = '1h',
-}: Forgery = {}) => {
+const signed = async ({ key, alg = 'RS256', issuer = appConfig.oauthUrl, audience = resource, expiresAt = '1h' }: Forgery = {}) => {
   const [signingJwk] = (await loadSigningJwks()).keys;
   return new SignJWT(claims)
     .setProtectedHeader({ alg, kid: signingJwk.kid, typ: 'at+jwt' })

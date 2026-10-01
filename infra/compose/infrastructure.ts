@@ -8,25 +8,19 @@ export function defineServices<const T extends AppServices>(services: T): T {
   for (const [slug, cfg] of Object.entries(services)) {
     const prefix = cfg.pathPrefix;
     if (prefix === undefined) {
-      if (cfg.lbRoute === 'path')
-        throw new Error(`services config: '${slug}' has lbRoute 'path' but no pathPrefix: nothing would route to it.`);
+      if (cfg.lbRoute === 'path') throw new Error(`services config: '${slug}' has lbRoute 'path' but no pathPrefix: nothing would route to it.`);
       continue;
     }
     // The LB matches the raw path-begin string, so a malformed prefix routes wrong traffic: validate at synth time.
     if (!cfg.lbRoute)
-      throw new Error(
-        `services config: '${slug}' declares pathPrefix without lbRoute: an internal-only service has no LB backend to route to.`,
-      );
+      throw new Error(`services config: '${slug}' declares pathPrefix without lbRoute: an internal-only service has no LB backend to route to.`);
     if (!/^\/[a-z0-9-]+$/.test(prefix)) {
       throw new Error(
         `services config: '${slug}' pathPrefix '${prefix}' must be a single lowercase path segment starting with '/' and no trailing slash (e.g. '/api').`,
       );
     }
     const owner = seenPrefixes.get(prefix);
-    if (owner)
-      throw new Error(
-        `services config: pathPrefix '${prefix}' declared by both '${owner}' and '${slug}': path prefixes must be unique.`,
-      );
+    if (owner) throw new Error(`services config: pathPrefix '${prefix}' declared by both '${owner}' and '${slug}': path prefixes must be unique.`);
     seenPrefixes.set(prefix, slug);
   }
   return services;
@@ -42,8 +36,7 @@ function validateInternalPorts(services: AppServices): void {
   for (const [slug, cfg] of Object.entries(services)) {
     const port = cfg.internalPort;
     if (port === undefined) continue;
-    if (!Number.isInteger(port) || port < 1 || port > 65535)
-      throw new Error(`services config: '${slug}' internalPort ${port} is not a valid port.`);
+    if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error(`services config: '${slug}' internalPort ${port} is not a valid port.`);
     const owner = owners.get(port);
     if (owner)
       throw new Error(
@@ -54,11 +47,7 @@ function validateInternalPorts(services: AppServices): void {
 }
 
 /** Standard environment injected into every app service unless opted out. */
-const STANDARD_ENV = {
-  NODE_ENV: 'production',
-  APP_MODE: '${APP_MODE:-production}',
-  TZ: 'UTC',
-} as const;
+const STANDARD_ENV = { NODE_ENV: 'production', APP_MODE: '${APP_MODE:-production}', TZ: 'UTC' } as const;
 
 /** Uniform identity healthcheck injected into every app service. The interval floors how fast `compose up --wait` can observe readiness at boot (the deploy's health gate waits on it), so it stays short; `start_interval` would scope that to startup but needs a compose/engine version floor the marketplace VM image cannot guarantee. */
 function healthcheck(port: number, startPeriod: string): HealthCheck {
@@ -103,11 +92,7 @@ function metaFrom(slug: string, cfg: AppServiceConfig): ServiceMeta {
  * Expand one app service entry into a full Compose service block.
  * `extraEnv` is the service's release-step `appEnv`, applied to the app block whenever a release companion exists.
  */
-function appBlock(
-  slug: string,
-  cfg: AppServiceConfig,
-  opts: { extraEnv?: Record<string, string> } = {},
-): ComposeService {
+function appBlock(slug: string, cfg: AppServiceConfig, opts: { extraEnv?: Record<string, string> } = {}): ComposeService {
   const environment = {
     ...(cfg.includeStandardEnv === false ? {} : STANDARD_ENV),
     // The registry entry declares the internal listener's port once; the process reads it from INTERNAL_PORT.
@@ -159,10 +144,7 @@ function releaseBlock(slug: string, cfg: AppServiceConfig): ComposeService {
  * `processIdentityEnv` names the env keys selecting a container's process identity (which worker/mode, which port);
  * they are never folded from a co-hosted worker into the singleVM host.
  */
-export function assembleCompose(
-  appServices: AppServices,
-  options: { processIdentityEnv?: readonly string[] } = {},
-): ComposeFile {
+export function assembleCompose(appServices: AppServices, options: { processIdentityEnv?: readonly string[] } = {}): ComposeFile {
   const processIdentityEnv = new Set(options.processIdentityEnv ?? []);
   const services: Record<string, ComposeService> = {};
   for (const [slug, cfg] of Object.entries(appServices)) {
@@ -178,11 +160,7 @@ export function assembleCompose(
  * Fold co-hosted service environments into the single-VM host block, which supplies their placeholders because worker blocks do not start.
  * Equal collisions are accepted, conflicting values fail synthesis, and process-identity keys are skipped (folded workers boot under the host's identity).
  */
-function publishCoHostedEnv(
-  appServices: AppServices,
-  blocks: Record<string, ComposeService>,
-  processIdentityEnv: ReadonlySet<string>,
-): void {
+function publishCoHostedEnv(appServices: AppServices, blocks: Record<string, ComposeService>, processIdentityEnv: ReadonlySet<string>): void {
   const hostSlug = Object.entries(appServices).find(([, cfg]) => cfg.primaryRollout)?.[0];
   if (!hostSlug) return;
   const hostBlock = blocks[hostSlug];

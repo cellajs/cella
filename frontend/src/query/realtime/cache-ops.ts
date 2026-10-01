@@ -104,11 +104,7 @@ export function removeEntity(entityType: string, entityId: string, organizationI
   }
 }
 
-export function invalidateEntityDetail(
-  entityId: string,
-  keys: EntityQueryKeys,
-  refetchType: 'active' | 'none' = 'active',
-): void {
+export function invalidateEntityDetail(entityId: string, keys: EntityQueryKeys, refetchType: 'active' | 'none' = 'active'): void {
   queryClient.invalidateQueries({ queryKey: keys.detail.byId(entityId), refetchType });
 }
 
@@ -117,15 +113,8 @@ export function invalidateEntityList(keys: EntityQueryKeys, refetchType: 'active
 }
 
 /** Matches on the org tier of the key hierarchy as a direct prefix. */
-export function invalidateEntityListForOrg(
-  keys: EntityQueryKeys,
-  organizationId: string,
-  refetchType: 'active' | 'none' | 'all' = 'active',
-): void {
-  queryClient.invalidateQueries({
-    queryKey: keys.list.org(organizationId),
-    refetchType,
-  });
+export function invalidateEntityListForOrg(keys: EntityQueryKeys, organizationId: string, refetchType: 'active' | 'none' | 'all' = 'active'): void {
+  queryClient.invalidateQueries({ queryKey: keys.list.org(organizationId), refetchType });
 }
 
 const isScalar = (value: unknown): value is string | number | boolean =>
@@ -168,12 +157,7 @@ function invalidateFilteredLists(entityType: string, orgListKey: readonly unknow
  * Applies server truth to detail and list caches: tombstones remove, new rows enter only home lists.
  * Returns true when every list lacked the row, so the caller can invalidate opaque filtered lists once.
  */
-function applyServerEntity(
-  entityType: string,
-  entity: ItemData,
-  keys: EntityQueryKeys,
-  organizationId: string | null,
-): boolean {
+function applyServerEntity(entityType: string, entity: ItemData, keys: EntityQueryKeys, organizationId: string | null): boolean {
   if (isSoftDeleted(entity)) {
     removeEntity(entityType, entity.id, organizationId ?? undefined);
     return false;
@@ -186,11 +170,7 @@ function applyServerEntity(
   }
 
   const filtered = stripYjsOwnedFields(entityType, entity, keys.detail.byId(entity.id));
-  const routedEntity: RoutableItemData = {
-    ...filtered,
-    entityType,
-    organizationId: organizationId ?? undefined,
-  };
+  const routedEntity: RoutableItemData = { ...filtered, entityType, organizationId: organizationId ?? undefined };
 
   queryClient.setQueryData(keys.detail.byId(entity.id), (old: ItemData | undefined) => {
     if (!old) return filtered;
@@ -200,9 +180,7 @@ function applyServerEntity(
   const homeChannelId = resolveHomeChannelId(entityType, routedEntity);
 
   // Shared canonical-home policy: cached rows update in place, new rows insert only into the canonical home list, a row whose parent channel changed is removed.
-  const { seen, spliced, sawFilteredList } = spliceEntityIntoListCaches(queryClient, routedEntity, {
-    removeOnParentChannelChange: true,
-  });
+  const { seen, spliced, sawFilteredList } = spliceEntityIntoListCaches(queryClient, routedEntity, { removeOnParentChannelChange: true });
 
   // A new row no home list spliced and no filtered list refetches stays invisible: a key-shape bug, canonical data cached outside keys.list.home.
   if (organizationId && homeChannelId && !seen && !spliced && !sawFilteredList) {
@@ -309,12 +287,7 @@ export async function fetchRangeAndPatch(
     if (items.length > 0) {
       console.debug(`[CacheOps] Delta fetch: ${entityType} patched ${items.length} entities (seqCursor=${seqCursor})`);
     }
-    return {
-      status: 'ok',
-      items,
-      reachedSeq: items.reduce((max, item) => Math.max(max, seqOf(item)), 0),
-      embeddingTouches,
-    };
+    return { status: 'ok', items, reachedSeq: items.reduce((max, item) => Math.max(max, seqOf(item)), 0), embeddingTouches };
   } catch (error) {
     console.warn(`[CacheOps] Delta fetch failed for ${entityType}, falling back to invalidation`, error);
     return { status: 'error', items: [], reachedSeq: 0, embeddingTouches: new Map() };

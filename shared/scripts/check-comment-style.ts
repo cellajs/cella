@@ -22,11 +22,7 @@ function groupedComments(comments: Comment[], source: string): Comment[] {
   const groups: Comment[] = [];
   for (const comment of comments) {
     const previous = groups.at(-1);
-    if (
-      comment.text.startsWith('//') &&
-      previous?.text.startsWith('//') &&
-      /^[\t ]*\r?\n[\t ]*$/.test(source.slice(previous.end, comment.offset))
-    ) {
+    if (comment.text.startsWith('//') && previous?.text.startsWith('//') && /^[\t ]*\r?\n[\t ]*$/.test(source.slice(previous.end, comment.offset))) {
       previous.end = comment.end;
       previous.text += `\n${comment.text}`;
       continue;

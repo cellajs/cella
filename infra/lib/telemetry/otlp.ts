@@ -15,9 +15,7 @@ export function toKeyValues(attrs: Record<string, AttrValue>): OtlpKeyValue[] {
   return Object.entries(attrs).map(([key, value]) => {
     if (typeof value === 'boolean') return { key, value: { boolValue: value } };
     if (typeof value === 'number') {
-      return Number.isInteger(value)
-        ? { key, value: { intValue: String(value) } }
-        : { key, value: { doubleValue: value } };
+      return Number.isInteger(value) ? { key, value: { intValue: String(value) } } : { key, value: { doubleValue: value } };
     }
     return { key, value: { stringValue: value } };
   });
@@ -82,10 +80,7 @@ export function buildSpan(opts: {
     startTimeUnixNano: unixNano(opts.startMs),
     endTimeUnixNano: unixNano(opts.endMs),
     attributes: toKeyValues(opts.attrs ?? {}),
-    status:
-      opts.status === 'error'
-        ? { code: 2, ...(opts.statusMessage ? { message: opts.statusMessage } : {}) }
-        : { code: 1 },
+    status: opts.status === 'error' ? { code: 2, ...(opts.statusMessage ? { message: opts.statusMessage } : {}) } : { code: 1 },
   };
 }
 

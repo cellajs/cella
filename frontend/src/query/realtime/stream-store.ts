@@ -8,13 +8,7 @@ import { setSyncStreamHealthy } from '~/query/basic/sync-stale-config';
 import { type CatchupViewRequest, syncStore } from '~/query/realtime/sync-store';
 import { handleAppStreamNotification } from './app-stream-handler';
 import { catchupEntityTypes, processAppCatchup } from './catchup-processor';
-import {
-  broadcastNotification,
-  initTabCoordinator,
-  isLeader,
-  onNotification,
-  tabCoordinatorStore,
-} from './tab-coordinator';
+import { broadcastNotification, initTabCoordinator, isLeader, onNotification, tabCoordinatorStore } from './tab-coordinator';
 import type { AppStreamNotification, StreamState } from './types';
 import { declareViewsFromMemberships } from './view-declaration';
 
@@ -54,15 +48,10 @@ const initStore: StreamStoreState = { state: 'disconnected', cursor: null };
 
 function createStreamStore(name: string) {
   return create<StreamStore>()(
-    devtools(
-      (set) => ({
-        ...initStore,
-        setState: (state) => set({ state }),
-        setCursor: (cursor) => set({ cursor }),
-        reset: () => set(initStore),
-      }),
-      { name, enabled: isDebugMode },
-    ),
+    devtools((set) => ({ ...initStore, setState: (state) => set({ state }), setCursor: (cursor) => set({ cursor }), reset: () => set(initStore) }), {
+      name,
+      enabled: isDebugMode,
+    }),
   );
 }
 
@@ -229,10 +218,7 @@ export class StreamManager {
     const isPermanentError = this.isPermanentError(error);
 
     console.error(`[${this.name}] Catchup failed:`, error);
-    reportCriticalError('realtime.catchup_failed', error, {
-      stream: this.name,
-      consecutiveFailures: this.consecutiveFailures,
-    });
+    reportCriticalError('realtime.catchup_failed', error, { stream: this.name, consecutiveFailures: this.consecutiveFailures });
     this.useStore.getState().setState('error');
 
     // Resolve catchup promise on failure so paused mutations aren't stuck forever
@@ -322,8 +308,7 @@ export class StreamManager {
       if (!(e instanceof MessageEvent) || !e.data) return; // transport error -> falls through to onerror
       try {
         const payload = JSON.parse(e.data) as { code?: string; message?: string };
-        const permanent =
-          payload.code === 'unauthorized' || payload.code === 'forbidden' || payload.code === 'tenant_revoked';
+        const permanent = payload.code === 'unauthorized' || payload.code === 'forbidden' || payload.code === 'tenant_revoked';
         console.debug(`[${this.name}] Server stream error:`, payload);
         eventSource.close();
         this.eventSource = null;
@@ -398,11 +383,7 @@ export class StreamManager {
 
     const elapsed = Date.now() - (this.circuitOpenedAt ?? 0);
     if (elapsed < CIRCUIT_COOLDOWN_MS) {
-      console.debug(
-        `[${this.name}] Circuit cooldown:`,
-        Math.round((CIRCUIT_COOLDOWN_MS - elapsed) / 1000),
-        's remaining',
-      );
+      console.debug(`[${this.name}] Circuit cooldown:`, Math.round((CIRCUIT_COOLDOWN_MS - elapsed) / 1000), 's remaining');
       return;
     }
 
@@ -543,12 +524,7 @@ export const appStreamManager = new StreamManager('AppStream', {
     // Combine baseline organization views with membership-derived grant boundaries.
     declareViewsFromMemberships();
     const views = toCatchupViews(syncStore.getState().getCatchupViews(catchupEntityTypes()));
-    const response = await postAppCatchup({
-      body: {
-        cursor: cursor ?? undefined,
-        views: views.length > 0 ? views : undefined,
-      },
-    });
+    const response = await postAppCatchup({ body: { cursor: cursor ?? undefined, views: views.length > 0 ? views : undefined } });
     await processAppCatchup(response, !cursor);
     return response.cursor ?? null;
   },

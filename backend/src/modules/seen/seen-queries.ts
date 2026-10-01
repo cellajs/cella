@@ -6,11 +6,7 @@ import { homeChannelIdSql } from '#/db/utils/home-channel';
 import { seenByTable } from '#/modules/seen/seen-by-db';
 import { getEntityTable } from '#/tables';
 
-type OrgScopedEntityTable = AnyPgTable & {
-  id: PgColumn;
-  organizationId: PgColumn;
-  createdAt: PgColumn;
-};
+type OrgScopedEntityTable = AnyPgTable & { id: PgColumn; organizationId: PgColumn; createdAt: PgColumn };
 
 /** A row's recency for the seen window: publish time on draft-lifecycle tables, creation time elsewhere. */
 export const seenRecencySql = (table: AnyPgTable & { createdAt: PgColumn }): SQL<string> => {
@@ -54,11 +50,7 @@ export const findUnseenCountsByUser = async (
     if (scopeWhere) filters.push(scopeWhere);
 
     const entityRows = await db
-      .select({
-        channelId: channelIdColumn,
-        productType: sql<SeenTrackedProductType>`${productType}`,
-        unseenCount: count(),
-      })
+      .select({ channelId: channelIdColumn, productType: sql<SeenTrackedProductType>`${productType}`, unseenCount: count() })
       .from(entityTable)
       .where(and(...filters))
       .groupBy(channelIdColumn);

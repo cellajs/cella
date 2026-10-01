@@ -14,12 +14,7 @@ import type { UserModel } from '#/modules/user/user-db';
 export type TokenGrantEntry =
   | { refusal: UserGrantRefusal | ApiKeyRefusal | 'grant_revoked' }
   | { refusal: null; kind: 'user'; user: UserModel }
-  | {
-      refusal: null;
-      kind: 'service';
-      account: ServiceAccountModel;
-      apiKey: Pick<ApiKeyModel, 'revokedAt' | 'expiresAt'>;
-    };
+  | { refusal: null; kind: 'service'; account: ServiceAccountModel; apiKey: Pick<ApiKeyModel, 'revokedAt' | 'expiresAt'> };
 
 /** A verdict with the tenant and client its token names, so a change to either finds every verdict it affects. */
 interface CachedVerdict {
@@ -38,8 +33,7 @@ const tokenGrantCache = new TTLCache<CachedVerdict>({ maxSize: 5000, defaultTtl:
 const keyOf = (token: VerifiedAccessToken) =>
   token.kind === 'user' ? `${token.actorId}:${token.grantId}:${token.tenantId}` : `${token.actorId}:${token.keyId}`;
 
-export const getTokenGrantCache = (token: VerifiedAccessToken): TokenGrantEntry | undefined =>
-  tokenGrantCache.get(keyOf(token))?.entry;
+export const getTokenGrantCache = (token: VerifiedAccessToken): TokenGrantEntry | undefined => tokenGrantCache.get(keyOf(token))?.entry;
 
 export const setTokenGrantCache = (token: VerifiedAccessToken, entry: TokenGrantEntry): void => {
   tokenGrantCache.set(keyOf(token), { entry, tenantId: token.tenantId, clientId: token.clientId });
@@ -57,9 +51,7 @@ export const invalidateTokenGrant = (accountId: string, grantId: string): void =
 
 /** After a tenant's policy changes, or with `clientId` one installation in it: the verdicts on tokens naming it. */
 export const invalidateTokenGrantsByTenant = (tenantId: string, clientId?: string): void => {
-  tokenGrantCache.invalidateWhere(
-    (verdict) => verdict.tenantId === tenantId && (clientId === undefined || verdict.clientId === clientId),
-  );
+  tokenGrantCache.invalidateWhere((verdict) => verdict.tenantId === tenantId && (clientId === undefined || verdict.clientId === clientId));
 };
 
 /** Drops every verdict: a process whose invalidation channel reconnects may have missed messages. */

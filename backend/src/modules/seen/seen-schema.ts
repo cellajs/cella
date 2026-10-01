@@ -7,9 +7,7 @@ export const seenBatchBodySchema = z.object({
   entityType: productEntityTypeSchema.describe('Entity type for all IDs in this batch'),
 });
 
-export const seenBatchResponseSchema = z.object({
-  newCount: z.number().int().min(0).describe('Number of entities newly marked as seen (deduped)'),
-});
+export const seenBatchResponseSchema = z.object({ newCount: z.number().int().min(0).describe('Number of entities newly marked as seen (deduped)') });
 
 /** Shape: { [channelId]: { [productEntityType]: unseenCount } }; keys are dynamic IDs and type strings. */
 export const unseenCountsResponseSchema = z.record(z.string(), z.record(z.string(), z.number().int().min(0)));

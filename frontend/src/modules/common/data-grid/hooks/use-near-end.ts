@@ -14,17 +14,8 @@ interface UseNearEndOptions {
 }
 
 /** Level-triggered near-end state for infinite scrolling, so a consumer can retry a load it had to defer. */
-export function useNearEnd({
-  totalRows,
-  rowOverscanEndIdx,
-  measured,
-  onNearEndChange,
-  threshold,
-}: UseNearEndOptions): void {
-  const effectiveThreshold = useMemo(
-    () => threshold ?? Math.min(50, Math.max(10, Math.floor(totalRows * 0.25))),
-    [threshold, totalRows],
-  );
+export function useNearEnd({ totalRows, rowOverscanEndIdx, measured, onNearEndChange, threshold }: UseNearEndOptions): void {
+  const effectiveThreshold = useMemo(() => threshold ?? Math.min(50, Math.max(10, Math.floor(totalRows * 0.25))), [threshold, totalRows]);
 
   // Before measurement the overscan range is a placeholder, not a viewport position, so near-end reports false.
   const nearEnd = measured && totalRows > 0 && rowOverscanEndIdx >= totalRows - effectiveThreshold;

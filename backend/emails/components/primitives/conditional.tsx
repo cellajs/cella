@@ -5,11 +5,7 @@ declare module 'react/jsx-runtime' {
   namespace JSX {
     interface IntrinsicElements {
       'jsx-email-cond': React.DetailedHTMLProps<
-        React.HTMLAttributes<HTMLElement> & {
-          'data-expression'?: string;
-          'data-head'?: boolean;
-          'data-mso'?: boolean;
-        },
+        React.HTMLAttributes<HTMLElement> & { 'data-expression'?: string; 'data-head'?: boolean; 'data-mso'?: boolean },
         HTMLElement
       >;
     }

@@ -30,10 +30,7 @@ export const Container: JsxEmailComponent<ContainerProps> = ({
           cellPadding="0"
           border={0}
           {...props}
-          style={{
-            ...(disableDefaultStyle ? {} : { maxWidth: `${containerWidth}px` }),
-            ...style,
-          }}
+          style={{ ...(disableDefaultStyle ? {} : { maxWidth: `${containerWidth}px` }), ...style }}
         >
           <tbody>
             <tr style={disableDefaultStyle ? {} : { width: '100%' }}>
@@ -41,11 +38,7 @@ export const Container: JsxEmailComponent<ContainerProps> = ({
             </tr>
           </tbody>
         </table>
-        <span
-          dangerouslySetInnerHTML={{
-            __html: '<!--[if mso]></td></tr></table><![endif]-->',
-          }}
-        />
+        <span dangerouslySetInnerHTML={{ __html: '<!--[if mso]></td></tr></table><![endif]-->' }} />
       </div>
     </div>
   );

@@ -41,10 +41,7 @@ describe('EntityHierarchyBuilder', () => {
 
     it('throws when the organization is declared through channel()', () => {
       expect(() => {
-        createEntityHierarchy(roles)
-          .user()
-          .organization({ roles: roles.all })
-          .channel('organization', { parent: 'organization', roles: roles.all });
+        createEntityHierarchy(roles).user().organization({ roles: roles.all }).channel('organization', { parent: 'organization', roles: roles.all });
       }).toThrow('declare it with organization()');
     });
 
@@ -140,9 +137,7 @@ describe('EntityHierarchyBuilder', () => {
       expect(hierarchy.getRoles('task')).toEqual([]);
       expectTypeOf(hierarchy.getRoles('organization')).toEqualTypeOf<readonly ('admin' | 'member')[]>();
       expectTypeOf(hierarchy.getMostPrivilegedRole('project')).toEqualTypeOf<'admin' | 'member' | 'guest'>();
-      expectTypeOf<ReturnType<typeof hierarchy.getRoles<'task'>>>().toEqualTypeOf<
-        readonly ('admin' | 'member' | 'guest')[]
-      >();
+      expectTypeOf<ReturnType<typeof hierarchy.getRoles<'task'>>>().toEqualTypeOf<readonly ('admin' | 'member' | 'guest')[]>();
     });
 
     it('getParent returns correct parent', () => {
@@ -231,15 +226,11 @@ describe('EntityHierarchyBuilder', () => {
     });
 
     it('throws when the organization is declared nullable', () => {
-      expect(() => deep().product('item', { parent: 'project', nullableAncestors: ['organization'] })).toThrow(
-        'organization and must stay non-null',
-      );
+      expect(() => deep().product('item', { parent: 'project', nullableAncestors: ['organization'] })).toThrow('organization and must stay non-null');
     });
 
     it('throws on duplicate nullable ancestors', () => {
-      expect(() => deep().product('item', { parent: 'project', nullableAncestors: ['project', 'project'] })).toThrow(
-        'duplicate nullableAncestor',
-      );
+      expect(() => deep().product('item', { parent: 'project', nullableAncestors: ['project', 'project'] })).toThrow('duplicate nullableAncestor');
     });
   });
 
@@ -248,11 +239,7 @@ describe('EntityHierarchyBuilder', () => {
 
     it('exposes the declared escalation map via getOrganizationRole', () => {
       const h = base()
-        .channel('workspace', {
-          parent: 'organization',
-          roles: ['member', 'guest'],
-          organizationRoles: { member: 'member', guest: 'guest' },
-        })
+        .channel('workspace', { parent: 'organization', roles: ['member', 'guest'], organizationRoles: { member: 'member', guest: 'guest' } })
         .build();
       expect(h.getOrganizationRole('workspace', 'member')).toBe('member');
       expect(h.getOrganizationRole('workspace', 'guest')).toBe('guest');
@@ -268,22 +255,14 @@ describe('EntityHierarchyBuilder', () => {
 
     it('throws when a declared map leaves one of the channel roles unmapped', () => {
       expect(() =>
-        base().channel('workspace', {
-          parent: 'organization',
-          roles: ['member', 'guest'],
-          organizationRoles: { member: 'member' } as any,
-        }),
+        base().channel('workspace', { parent: 'organization', roles: ['member', 'guest'], organizationRoles: { member: 'member' } as any }),
       ).toThrow('leaves guest unmapped');
     });
 
     it('throws when a mapped value is not an organization role', () => {
-      expect(() =>
-        base().channel('workspace', {
-          parent: 'organization',
-          roles: ['guest'],
-          organizationRoles: { guest: 'owner' } as any,
-        }),
-      ).toThrow('not an organization role');
+      expect(() => base().channel('workspace', { parent: 'organization', roles: ['guest'], organizationRoles: { guest: 'owner' } as any })).toThrow(
+        'not an organization role',
+      );
     });
   });
 

@@ -39,8 +39,7 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
             const resource = t('c:user', { count: invitesSentCount }).toLowerCase();
             toaster.success(t('c:success.resource_count_invited', { count: invitesSentCount, resource }));
           }
-          if (rejectedIds.length)
-            toaster.info(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }));
+          if (rejectedIds.length) toaster.info(t('c:still_not_accepted', { count: rejectedIds.length, total: emails.length }));
 
           if (isDialog) useDialoger.getState().remove();
         },
@@ -67,12 +66,7 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
           name="role"
           render={({ field: { value, onChange } }) => (
             <FormItem className="flex-row items-center gap-4">
-              <SelectRoleRadio
-                value={value}
-                onValueChange={onChange}
-                entityType={channel.entityType}
-                label={`${t('c:role')}:`}
-              />
+              <SelectRoleRadio value={value} onValueChange={onChange} entityType={channel.entityType} label={`${t('c:role')}:`} />
               <FormMessage />
             </FormItem>
           )}

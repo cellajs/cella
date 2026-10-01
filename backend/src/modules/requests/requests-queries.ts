@@ -45,10 +45,7 @@ export const findRequestsPaginated = async (ctx: DbContext, opts: FindRequestsPa
   });
 
   const itemsQuery = db
-    .select({
-      ...requestsSelect,
-      wasInvited: sql<boolean>`(${requestsTable.tokenId} IS NOT NULL)::boolean`.as('wasInvited'),
-    })
+    .select({ ...requestsSelect, wasInvited: sql<boolean>`(${requestsTable.tokenId} IS NOT NULL)::boolean`.as('wasInvited') })
     .from(requestsTable)
     .where(filter)
     .orderBy(...orderBy)

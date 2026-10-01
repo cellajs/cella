@@ -17,9 +17,7 @@ export function MagicLinkSentStep() {
       <SuccessCheckmark className="absolute top-[60px] left-1/2 ml-4" />
       <MailIcon strokeWidth={1} className="mx-auto size-30 text-foreground" />
       <h1 className="text-2xl">{t('c:magic_link_check_email')}</h1>
-      <p className="">
-        {t(isSignup ? 'c:magic_link_check_email.signup.text' : 'c:magic_link_check_email.text', { email })}
-      </p>
+      <p className="">{t(isSignup ? 'c:magic_link_check_email.signup.text' : 'c:magic_link_check_email.text', { email })}</p>
       {!isSignup && (
         <div className="mt-2 flex flex-col gap-2">
           <Button type="button" variant="plain" onClick={resetSteps}>

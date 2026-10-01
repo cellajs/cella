@@ -5,9 +5,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vite
 const { queryClient } = await import('~/query/query-client');
 const { isSeenTracked, seenKeys } = await import('./helpers');
 const { seenStore } = await import('./seen-store');
-const { applyUnfetchableRemovalUnseen, ingestSyncedRows, noteUnseenReconciled, subscribeUnseenSync } = await import(
-  './unseen-sync'
-);
+const { applyUnfetchableRemovalUnseen, ingestSyncedRows, noteUnseenReconciled, subscribeUnseenSync } = await import('./unseen-sync');
 const { publishSyncedRows } = await import('~/query/realtime/sync-signals');
 
 // Tracked type and effective home come from config, so the fixture works across app hierarchies.

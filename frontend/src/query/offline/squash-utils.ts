@@ -54,20 +54,13 @@ export function squashPendingMutation<TOps extends object>(
   }
 
   const ops = mergeOps(mergedOps, newOps);
-  const stx: StxBase = {
-    ...newStx,
-    fieldTimestamps: { ...inheritedTimestamps, ...newStx.fieldTimestamps },
-  };
+  const stx: StxBase = { ...newStx, fieldTimestamps: { ...inheritedTimestamps, ...newStx.fieldTimestamps } };
 
   return { ops, stx };
 }
 
 /** Cancels queued offline creates for rows deleted before reaching the server, so the deletion stays cache-only. Online deletes stay serialized after their possibly delivered create. */
-export function removePausedCreates(
-  queryClient: QueryClient,
-  createMutationKey: readonly unknown[],
-  ids: string[],
-): string[] {
+export function removePausedCreates(queryClient: QueryClient, createMutationKey: readonly unknown[], ids: string[]): string[] {
   if (!canCoalesce()) return [];
 
   const idSet = new Set(ids);
@@ -121,10 +114,7 @@ export function squashIntoPendingCreate<TOps extends object>(
     const variables = mutation.state.variables as CreateVariables | undefined;
     if (!variables) continue;
 
-    const target =
-      variables.id === entityId
-        ? (variables as Record<string, unknown>)
-        : variables.data?.find((row) => row?.id === entityId);
+    const target = variables.id === entityId ? (variables as Record<string, unknown>) : variables.data?.find((row) => row?.id === entityId);
     if (!target) continue;
 
     Object.assign(target, ops);

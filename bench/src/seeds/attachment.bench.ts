@@ -23,9 +23,7 @@ export const loadtestAttachment = (index: number): InsertAttachmentModel => ({
   keys: { original: `uploads/xbench/${attachmentId(index)}/xbench-file-${index}.pdf` },
   organizationId: ORG_ID,
   // Org-homed: the mock invents ids for every ancestor, and nullable ones would reference no seeded channel.
-  ...Object.fromEntries(
-    hierarchy.getNullableAncestors('attachment').map((type) => [appConfig.entityIdColumnKeys[type], null]),
-  ),
+  ...Object.fromEntries(hierarchy.getNullableAncestors('attachment').map((type) => [appConfig.entityIdColumnKeys[type], null])),
   createdBy: userId(index % 100),
   updatedBy: userId(index % 100),
 });
@@ -34,6 +32,5 @@ registerBenchSeed({
   table: 'attachments',
   order: 100,
   idVariant: CORE_ID_VARIANTS.attachment,
-  rows: ({ now }) =>
-    Array.from({ length: TOTAL_ATTACHMENTS }, (_, i) => ({ ...loadtestAttachment(i), createdAt: now, seq: 0 })),
+  rows: ({ now }) => Array.from({ length: TOTAL_ATTACHMENTS }, (_, i) => ({ ...loadtestAttachment(i), createdAt: now, seq: 0 })),
 });

@@ -4,17 +4,12 @@ import enApp from '../../../locales/en/app.json';
 import enCommon from '../../../locales/en/common.json';
 import enError from '../../../locales/en/error.json';
 
-const enCommonExtended = {
-  ...enCommon,
-  ...enApp,
-};
+const enCommonExtended = { ...enCommon, ...enApp };
 
 /** Any valid translation key: bare `c` keys plus `c:`/`about:`/`error:` prefixed ones, per i18next-resources.d.ts. */
 export type TKey = ParseKeys;
 
-const locales = {
-  en: { about: enAbout, c: enCommonExtended, error: enError },
-};
+const locales = { en: { about: enAbout, c: enCommonExtended, error: enError } };
 
 export { locales };
 

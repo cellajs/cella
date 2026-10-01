@@ -28,17 +28,11 @@ export const stateProvider: StatusProvider<ScalewayFacts> = {
       }),
       probed(rollout, creds, facts?.rollout, 'could not read the control object', (services) => {
         if (services.length === 0) return rollout.missing('no services deployed yet', deployAction(session.mode));
-        if (!services.some((r) => r.activeSha))
-          return rollout.missing('no active generation for any service', deployAction(session.mode));
+        if (!services.some((r) => r.activeSha)) return rollout.missing('no active generation for any service', deployAction(session.mode));
         const summary = services
-          .map(
-            (r) =>
-              `${r.slug}=${r.activeSha ? short(r.activeSha) : '-'}${r.pendingSha ? `→${short(r.pendingSha)}` : ''}`,
-          )
+          .map((r) => `${r.slug}=${r.activeSha ? short(r.activeSha) : '-'}${r.pendingSha ? `→${short(r.pendingSha)}` : ''}`)
           .join(' ');
-        return services.some((r) => r.pendingSha)
-          ? rollout.warn(`pending rollout: ${summary}`, deployAction(session.mode))
-          : rollout.ok(summary);
+        return services.some((r) => r.pendingSha) ? rollout.warn(`pending rollout: ${summary}`, deployAction(session.mode)) : rollout.ok(summary);
       }),
     ];
   },

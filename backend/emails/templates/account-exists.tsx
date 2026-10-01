@@ -38,8 +38,5 @@ export const accountExistsEmail = defineEmailTemplate<AccountExistsStatic>()({
       />
     );
   },
-  preview: {
-    statics: { name: 'Emily' },
-    recipient: {},
-  },
+  preview: { statics: { name: 'Emily' }, recipient: {} },
 });

@@ -30,18 +30,11 @@ export interface BootPlan {
   /** W3C traceparent of the deploy that provisioned this generation; boot telemetry joins that trace. */
   traceparent?: string;
   /** App-declared telemetry sink: boot events export here once the runtime env delivers the key under `keyEnvVar`. Absent = black box only; the boot runner bakes in no vendor endpoint. */
-  telemetry?: {
-    endpoint: string;
-    keyHeader: string;
-    keyEnvVar: string;
-  };
+  telemetry?: { endpoint: string; keyHeader: string; keyEnvVar: string };
   imageContract: typeof supportedImageContract;
   registry: string;
   region: string;
-  credentials: {
-    scwAccessKeyFile: string;
-    scwSecretKeyFile: string;
-  };
+  credentials: { scwAccessKeyFile: string; scwSecretKeyFile: string };
   /**
    * Fetch the real service key from a single-access handoff bundle using the baked boot key, cache-first on reboots.
    * A failed fetch on FIRST boot means the bundle was already consumed, which is an interception signal and halts the boot. Absent = the baked key does everything.
@@ -49,27 +42,11 @@ export interface BootPlan {
   serviceKeyHandoff?: ServiceKeyHandoff;
   /** Export the service key as S3_ACCESS_KEY_ID/S3_ACCESS_KEY_SECRET into the runtime env (backend uploads/presigning). */
   exportS3Env?: boolean;
-  bootDiagnostics: {
-    bucket: string;
-    logFile: string;
-  };
-  releaseCommand: {
-    enabled: boolean;
-    command: [string, ...string[]];
-  };
-  docker: {
-    composeFile: string;
-  };
-  files: {
-    compose: string;
-    env: string;
-    runtimeSecretManifest: RuntimeSecretManifestEntry[];
-  };
-  timeouts: {
-    privateNetworkSeconds: number;
-    pullAttempts: number;
-    pullRetrySeconds: number;
-  };
+  bootDiagnostics: { bucket: string; logFile: string };
+  releaseCommand: { enabled: boolean; command: [string, ...string[]] };
+  docker: { composeFile: string };
+  files: { compose: string; env: string; runtimeSecretManifest: RuntimeSecretManifestEntry[] };
+  timeouts: { privateNetworkSeconds: number; pullAttempts: number; pullRetrySeconds: number };
 }
 
 const topLevelKeys = new Set([
@@ -95,8 +72,7 @@ const topLevelKeys = new Set([
 
 function stringField(obj: Record<string, unknown>, key: string): string {
   const value = obj[key];
-  if (typeof value !== 'string' || value.trim() === '')
-    throw new Error(`boot plan: '${key}' must be a non-empty string`);
+  if (typeof value !== 'string' || value.trim() === '') throw new Error(`boot plan: '${key}' must be a non-empty string`);
   return value;
 }
 
@@ -108,8 +84,7 @@ function booleanField(obj: Record<string, unknown>, key: string): boolean {
 
 function numberField(obj: Record<string, unknown>, key: string): number {
   const value = obj[key];
-  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0)
-    throw new Error(`boot plan: '${key}' must be a positive number`);
+  if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) throw new Error(`boot plan: '${key}' must be a positive number`);
   return value;
 }
 
@@ -138,11 +113,9 @@ function assertAllowedPath(path: string, configDir: string): void {
 
 function commandField(obj: Record<string, unknown>, key: string): [string, ...string[]] {
   const value = obj[key];
-  if (!Array.isArray(value) || value.length === 0)
-    throw new Error(`boot plan: '${key}' must be a non-empty command array`);
+  if (!Array.isArray(value) || value.length === 0) throw new Error(`boot plan: '${key}' must be a non-empty command array`);
   const command = value.map((part) => {
-    if (typeof part !== 'string' || part === '')
-      throw new Error(`boot plan: '${key}' contains an empty or non-string command argument`);
+    if (typeof part !== 'string' || part === '') throw new Error(`boot plan: '${key}' contains an empty or non-string command argument`);
     return part;
   });
   // Validated non-empty above, so the tuple type lets consumers destructure the executable without a non-null assertion.
@@ -154,11 +127,7 @@ export function parseRuntimeSecretManifest(value: unknown): RuntimeSecretManifes
   if (!Array.isArray(value)) throw new Error("boot plan: 'runtimeSecretManifest' must be an array");
   return value.map((entry, index) => {
     if (!isRecord(entry)) throw new Error(`boot plan: runtimeSecretManifest[${index}] must be an object`);
-    return {
-      envVar: stringField(entry, 'envVar'),
-      secretId: stringField(entry, 'secretId'),
-      required: booleanField(entry, 'required'),
-    };
+    return { envVar: stringField(entry, 'envVar'), secretId: stringField(entry, 'secretId'), required: booleanField(entry, 'required') };
   });
 }
 
@@ -170,11 +139,9 @@ export function parseBootPlanJson(json: string, planPath: string): BootPlan {
   assertKnownTopLevel(parsed);
 
   const schemaVersion = parsed.schemaVersion;
-  if (schemaVersion !== supportedSchemaVersion)
-    throw new Error(`boot plan: unsupported schemaVersion '${String(schemaVersion)}'`);
+  if (schemaVersion !== supportedSchemaVersion) throw new Error(`boot plan: unsupported schemaVersion '${String(schemaVersion)}'`);
   const imageContract = parsed.imageContract;
-  if (imageContract !== supportedImageContract)
-    throw new Error(`boot plan: unsupported imageContract '${String(imageContract)}'`);
+  if (imageContract !== supportedImageContract) throw new Error(`boot plan: unsupported imageContract '${String(imageContract)}'`);
 
   const credentials = objectField(parsed, 'credentials');
   const bootDiagnostics = objectField(parsed, 'bootDiagnostics');
@@ -189,8 +156,7 @@ export function parseBootPlanJson(json: string, planPath: string): BootPlan {
   const composeFile = stringField(docker, 'composeFile');
   for (const path of [scwAccessKeyFile, scwSecretKeyFile, logFile, composeFile]) assertAllowedPath(path, configDir);
 
-  const traceparent =
-    typeof parsed.traceparent === 'string' && parsed.traceparent.trim() !== '' ? parsed.traceparent : undefined;
+  const traceparent = typeof parsed.traceparent === 'string' && parsed.traceparent.trim() !== '' ? parsed.traceparent : undefined;
 
   let serviceKeyHandoff: ServiceKeyHandoff | undefined;
   if (parsed.serviceKeyHandoff !== undefined) {
@@ -204,11 +170,7 @@ export function parseBootPlanJson(json: string, planPath: string): BootPlan {
   let telemetry: BootPlan['telemetry'];
   if (parsed.telemetry !== undefined) {
     const sink = objectField(parsed, 'telemetry');
-    telemetry = {
-      endpoint: stringField(sink, 'endpoint'),
-      keyHeader: stringField(sink, 'keyHeader'),
-      keyEnvVar: stringField(sink, 'keyEnvVar'),
-    };
+    telemetry = { endpoint: stringField(sink, 'endpoint'), keyHeader: stringField(sink, 'keyHeader'), keyEnvVar: stringField(sink, 'keyEnvVar') };
   }
 
   const services = parsed.services === undefined ? undefined : commandField(parsed, 'services');
@@ -227,14 +189,8 @@ export function parseBootPlanJson(json: string, planPath: string): BootPlan {
     credentials: { scwAccessKeyFile, scwSecretKeyFile },
     ...(serviceKeyHandoff ? { serviceKeyHandoff } : {}),
     ...(exportS3Env !== undefined ? { exportS3Env } : {}),
-    bootDiagnostics: {
-      bucket: stringField(bootDiagnostics, 'bucket'),
-      logFile,
-    },
-    releaseCommand: {
-      enabled: booleanField(releaseCommand, 'enabled'),
-      command: commandField(releaseCommand, 'command'),
-    },
+    bootDiagnostics: { bucket: stringField(bootDiagnostics, 'bucket'), logFile },
+    releaseCommand: { enabled: booleanField(releaseCommand, 'enabled'), command: commandField(releaseCommand, 'command') },
     docker: { composeFile },
     files: {
       compose: stringField(files, 'compose'),

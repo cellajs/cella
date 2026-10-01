@@ -11,14 +11,10 @@ export const Head: JsxEmailComponent<HeadProps> = ({ children, enableFormatDetec
     <meta httpEquiv="Content-Type" content="text/html; charset=UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes" />
     <meta name="x-apple-disable-message-reformatting" />
-    {!enableFormatDetection && (
-      <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no" />
-    )}
+    {!enableFormatDetection && <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no" />}
     <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=yes" />
     <meta name="x-apple-disable-message-reformatting" />
-    {!enableFormatDetection && (
-      <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no" />
-    )}
+    {!enableFormatDetection && <meta name="format-detection" content="telephone=no, date=no, address=no, email=no, url=no" />}
     {children}
     <Conditional head mso>
       <Raw content="<xml><o:OfficeDocumentSettings><o:AllowPNG /><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml>" />

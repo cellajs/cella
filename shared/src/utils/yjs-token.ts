@@ -28,9 +28,7 @@ export type YjsTokenPayload = z.infer<typeof yjsTokenPayloadSchema>;
  * on a long-lived editor socket and the client reconnects with a fresh one. `bad_signature` and
  * `malformed` mean a mismatched key pair, truncation or tampering.
  */
-export type VerifyYjsTokenResult =
-  | { ok: true; payload: YjsTokenPayload }
-  | { ok: false; reason: 'malformed' | 'bad_signature' | 'expired' };
+export type VerifyYjsTokenResult = { ok: true; payload: YjsTokenPayload } | { ok: false; reason: 'malformed' | 'bad_signature' | 'expired' };
 
 /**
  * The Ed25519 signing key for the backend's key material: any string of at least 32 characters, from which the
@@ -58,10 +56,7 @@ export function yjsTokenVerifyKey(publicKey: string): KeyObject {
  * access locally with no call back to the backend.
  */
 export function signYjsToken(params: Omit<YjsTokenPayload, 'exp'>, signingKey: KeyObject, ttlMs: number): string {
-  const payload: YjsTokenPayload = {
-    ...params,
-    exp: Date.now() + ttlMs,
-  };
+  const payload: YjsTokenPayload = { ...params, exp: Date.now() + ttlMs };
   const payloadB64 = Buffer.from(JSON.stringify(payload)).toString('base64url');
   const signature = sign(null, Buffer.from(payloadB64), signingKey).toString('base64url');
   return `${payloadB64}${DELIMITER}${signature}`;

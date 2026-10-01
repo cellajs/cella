@@ -65,8 +65,7 @@ describe.skipIf(!isTrackedProductType('attachment'))('markSeen and rows the call
       .from(seenByTable)
       .where(and(eq(seenByTable.userId, userId), eq(seenByTable.productId, productId)));
 
-  const viewCounters = (productId: string) =>
-    adminDb.select().from(productCountersTable).where(eq(productCountersTable.productId, productId));
+  const viewCounters = (productId: string) => adminDb.select().from(productCountersTable).where(eq(productCountersTable.productId, productId));
 
   beforeAll(async () => {
     organization = await createTestOrganization();

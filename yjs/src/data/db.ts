@@ -15,9 +15,7 @@ export const db = createPgConnection(env.DATABASE_URL, { max: env.YJS_DB_POOL_MA
 /** Runs `fn` in a transaction with tenant/user RLS context: `set_config(..., true)` scopes the vars to the transaction, so pooled connections never leak context. */
 export async function withRlsTx<T>(tenantId: string, userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
   return db.transaction(async (tx) => {
-    await tx.execute(
-      sql`SELECT set_config('app.tenant_id', ${tenantId}, true), set_config('app.user_id', ${userId}, true)`,
-    );
+    await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantId}, true), set_config('app.user_id', ${userId}, true)`);
     return fn(tx);
   });
 }

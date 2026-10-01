@@ -9,37 +9,15 @@ const meta = {
   title: 'ui/Calendar',
   component: Calendar,
   tags: ['autodocs'],
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
   argTypes: {
-    showOutsideDays: {
-      control: 'boolean',
-    },
-    captionLayout: {
-      control: 'select',
-      options: ['label', 'dropdown'],
-    },
-    buttonVariant: {
-      control: 'select',
-      options: ['default', 'destructive', 'outline', 'secondary', 'ghost', 'link'],
-    },
-    disabled: {
-      control: 'boolean',
-    },
-    numberOfMonths: {
-      control: 'number',
-      min: 1,
-      max: 3,
-    },
+    showOutsideDays: { control: 'boolean' },
+    captionLayout: { control: 'select', options: ['label', 'dropdown'] },
+    buttonVariant: { control: 'select', options: ['default', 'destructive', 'outline', 'secondary', 'ghost', 'link'] },
+    disabled: { control: 'boolean' },
+    numberOfMonths: { control: 'number', min: 1, max: 3 },
   },
-  args: {
-    showOutsideDays: true,
-    captionLayout: 'label',
-    buttonVariant: 'ghost',
-    disabled: false,
-    numberOfMonths: 1,
-  },
+  args: { showOutsideDays: true, captionLayout: 'label', buttonVariant: 'ghost', disabled: false, numberOfMonths: 1 },
 } satisfies Meta<typeof Calendar>;
 
 export default meta;
@@ -52,15 +30,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {
   render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
-    return (
-      <Calendar
-        {...args}
-        mode="single"
-        selected={date}
-        onSelect={(selectedDate) => setDate(selectedDate)}
-        className="rounded-md border"
-      />
-    );
+    return <Calendar {...args} mode="single" selected={date} onSelect={(selectedDate) => setDate(selectedDate)} className="rounded-md border" />;
   },
 };
 
@@ -215,14 +185,7 @@ export const FixedWeeks: Story = {
   render: function Render(args) {
     const [date, setDate] = useState<Date | undefined>(new Date());
     return (
-      <Calendar
-        {...args}
-        mode="single"
-        fixedWeeks
-        selected={date}
-        onSelect={(selectedDate) => setDate(selectedDate)}
-        className="rounded-md border"
-      />
+      <Calendar {...args} mode="single" fixedWeeks selected={date} onSelect={(selectedDate) => setDate(selectedDate)} className="rounded-md border" />
     );
   },
 };
@@ -233,15 +196,6 @@ export const FixedWeeks: Story = {
 export const Disabled: Story = {
   render: function Render(args) {
     const [date] = useState<Date | undefined>(new Date());
-    return (
-      <Calendar
-        {...args}
-        mode="single"
-        disabled
-        selected={date}
-        onSelect={() => {}}
-        className="rounded-md border opacity-50"
-      />
-    );
+    return <Calendar {...args} mode="single" disabled selected={date} onSelect={() => {}} className="rounded-md border opacity-50" />;
   },
 };

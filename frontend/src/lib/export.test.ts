@@ -30,9 +30,7 @@ describe('exportToCsv', () => {
       { name: 'Smith, Jo', message: 'first line\nsecond line' },
     ];
 
-    expect(await csvText(columns, rows)).toBe(
-      ['Name,Message', 'Plain,"Say ""hi"""', '"Smith, Jo","first line\nsecond line"'].join('\n'),
-    );
+    expect(await csvText(columns, rows)).toBe(['Name,Message', 'Plain,"Say ""hi"""', '"Smith, Jo","first line\nsecond line"'].join('\n'));
   });
 
   it('writes a list as one quoted cell', async () => {

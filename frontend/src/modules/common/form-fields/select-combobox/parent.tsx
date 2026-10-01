@@ -43,13 +43,7 @@ export function SelectParentFormField<TFieldValues extends FieldValues>({
 }: SelectParentProps<TFieldValues>) {
   const { items } = useParentChannels(parentType, organizationId, !disabled);
 
-  const options =
-    opts ??
-    items.map((i) => ({
-      value: i.id,
-      label: i.name,
-      url: i.thumbnailUrl ?? undefined,
-    }));
+  const options = opts ?? items.map((i) => ({ value: i.id, label: i.name, url: i.thumbnailUrl ?? undefined }));
 
   return (
     <FormField

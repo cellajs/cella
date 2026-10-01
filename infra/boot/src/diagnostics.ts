@@ -90,13 +90,7 @@ export async function uploadBootDiagnostics(opts: UploadBootDiagnosticsOptions):
   } catch {
     log = 'boot log not found\n';
   }
-  const parts = [
-    `service=${opts.service}`,
-    `release=${opts.releaseSha}`,
-    `boot_rc=${opts.bootRc}`,
-    '',
-    scrubSecretLines(log),
-  ];
+  const parts = [`service=${opts.service}`, `release=${opts.releaseSha}`, `boot_rc=${opts.bootRc}`, '', scrubSecretLines(log)];
   // The boot runner runs containerized without the host boot log mounted, so the file read above is usually empty and the captured app logs carry the crash reason.
   if (opts.appLogs?.trim()) parts.push('', '--- app logs ---', scrubSecretLines(opts.appLogs));
   const body = opts.redact(parts.join('\n'));

@@ -4,17 +4,9 @@ import { channelEntityTypeSchema, productEntityTypeSchema } from '#/schemas';
 import { nullableUserMinimalBaseSchema } from '#/schemas/minimal-base';
 import { mockChannelBase, mockProductBase } from './entity-base-mocks';
 
-const entityCoreShape = {
-  id: z.string(),
-  name: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string().nullable(),
-};
+const entityCoreShape = { id: z.string(), name: z.string(), createdAt: z.string(), updatedAt: z.string().nullable() };
 
-const auditShape = {
-  createdBy: nullableUserMinimalBaseSchema,
-  updatedBy: nullableUserMinimalBaseSchema,
-};
+const auditShape = { createdBy: nullableUserMinimalBaseSchema, updatedBy: nullableUserMinimalBaseSchema };
 
 /**
  * Exported separately to avoid circular dependencies, which is also why `included` is left out: channel
@@ -37,13 +29,7 @@ export const channelBaseSchema = z
 
 /** Exported separately to avoid circular dependencies. */
 export const productBaseSchema = z
-  .object({
-    ...entityCoreShape,
-    description: z.string().nullable(),
-    ...auditShape,
-    entityType: productEntityTypeSchema,
-    keywords: z.string(),
-  })
+  .object({ ...entityCoreShape, description: z.string().nullable(), ...auditShape, entityType: productEntityTypeSchema, keywords: z.string() })
   .openapi('ProductBase', {
     description: 'Base schema for content entities with creator tracking (e.g. page, attachment).',
     example: mockProductBase(),

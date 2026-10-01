@@ -12,10 +12,7 @@ import { mockUuid } from './mock-nanoid';
 
 type MockChannelIdColumns = EntityIdColumns<ChannelEntityType, string>;
 
-type MockEntityChannelIdColumns<E extends string> = EntityIdColumns<
-  (AncestorChannelType<E> | RelatedChannelType<E>) & EntityType,
-  string
->;
+type MockEntityChannelIdColumns<E extends string> = EntityIdColumns<(AncestorChannelType<E> | RelatedChannelType<E>) & EntityType, string>;
 
 const mockIdColumns = (entityTypes: Iterable<ChannelEntityType>) => {
   const columns: Record<string, string> = {};
@@ -25,17 +22,11 @@ const mockIdColumns = (entityTypes: Iterable<ChannelEntityType>) => {
   return columns;
 };
 
-export const generateMockChannelIdColumns = (): MockChannelIdColumns =>
-  mockIdColumns(appConfig.channelEntityTypes) as MockChannelIdColumns;
+export const generateMockChannelIdColumns = (): MockChannelIdColumns => mockIdColumns(appConfig.channelEntityTypes) as MockChannelIdColumns;
 
 /** Generates the hierarchy-derived channel ID columns carried by one product entity. */
-export const generateMockEntityChannelIdColumns = <E extends ProductEntityType>(
-  entityType: E,
-): MockEntityChannelIdColumns<E> =>
-  mockIdColumns([
-    ...hierarchy.getOrderedAncestors(entityType),
-    ...hierarchy.getRelatedChannels(entityType),
-  ]) as MockEntityChannelIdColumns<E>;
+export const generateMockEntityChannelIdColumns = <E extends ProductEntityType>(entityType: E): MockEntityChannelIdColumns<E> =>
+  mockIdColumns([...hierarchy.getOrderedAncestors(entityType), ...hierarchy.getRelatedChannels(entityType)]) as MockEntityChannelIdColumns<E>;
 
 type MockActivityChannelIdColumns = EntityIdColumns<AncestorChannelType<ProductEntityType> & EntityType, string>;
 

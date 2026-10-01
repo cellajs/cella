@@ -22,23 +22,13 @@ function buildTableRegistry(): Map<string, TableMeta> {
 
   for (const [type, table] of typedEntries(entityTables)) {
     const tableName = getTableName(table);
-    const meta: EntityTableMeta = {
-      kind: 'entity',
-      table,
-      type,
-      columnNameMap: buildColumnNameMap(Object.keys(getColumns(table))),
-    };
+    const meta: EntityTableMeta = { kind: 'entity', table, type, columnNameMap: buildColumnNameMap(Object.keys(getColumns(table))) };
     registry.set(tableName, meta);
   }
 
   for (const [type, table] of typedEntries(resourceTables)) {
     const tableName = getTableName(table);
-    const meta: ResourceTableMeta = {
-      kind: 'resource',
-      table,
-      type,
-      columnNameMap: buildColumnNameMap(Object.keys(getColumns(table))),
-    };
+    const meta: ResourceTableMeta = { kind: 'resource', table, type, columnNameMap: buildColumnNameMap(Object.keys(getColumns(table))) };
     registry.set(tableName, meta);
   }
 

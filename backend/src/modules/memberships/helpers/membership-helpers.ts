@@ -116,12 +116,7 @@ export const insertMemberships = async <T extends BaseEntityModel>(
 
     assignedCounts.set(userId, alreadyAssigned + 1);
 
-    const baseMembership = {
-      userId,
-      role,
-      createdBy,
-      displayOrder: nextOrder,
-    } as const;
+    const baseMembership = { userId, role, createdBy, displayOrder: nextOrder } as const;
 
     return { targetEntitiesIdColumnKeys, baseMembership, entity, extraFields: info.extraFields };
   });
@@ -173,26 +168,20 @@ export const insertMemberships = async <T extends BaseEntityModel>(
     })
     .filter((row): row is NonNullable<typeof row> => row !== null);
 
-  const targetRows: InsertMembershipModel[] = prepared.map(
-    ({ baseMembership, targetEntitiesIdColumnKeys, entity, extraFields }) => ({
-      ...baseMembership,
-      tenantId: entity.tenantId,
-      channelType: entity.entityType,
-      channelId: entity.id,
-      ...targetEntitiesIdColumnKeys,
-      ...extraFields,
-    }),
-  );
+  const targetRows: InsertMembershipModel[] = prepared.map(({ baseMembership, targetEntitiesIdColumnKeys, entity, extraFields }) => ({
+    ...baseMembership,
+    tenantId: entity.tenantId,
+    channelType: entity.entityType,
+    channelId: entity.id,
+    ...targetEntitiesIdColumnKeys,
+    ...extraFields,
+  }));
 
   const [insertedTarget] = await Promise.all([
     db.insert(membershipsTable).values(targetRows).returning(membershipBaseSelect),
 
-    organizationRows.length
-      ? db.insert(membershipsTable).values(organizationRows).onConflictDoNothing()
-      : Promise.resolve(),
-    associatedRows.length
-      ? db.insert(membershipsTable).values(associatedRows).onConflictDoNothing()
-      : Promise.resolve(),
+    organizationRows.length ? db.insert(membershipsTable).values(organizationRows).onConflictDoNothing() : Promise.resolve(),
+    associatedRows.length ? db.insert(membershipsTable).values(associatedRows).onConflictDoNothing() : Promise.resolve(),
   ]);
 
   if (insertedTarget.length) {

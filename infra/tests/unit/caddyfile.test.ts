@@ -13,8 +13,7 @@ const frontendBucket = deriveInfra(fakeConfig()).naming.frontendBucket;
 
 // Pins the Caddyfile contract the rollout and smoke tests depend on.
 /** The value the global header block sets for a response header, or undefined when the block does not set it. */
-const headerValue = (name: string): string | undefined =>
-  caddyfile.match(new RegExp(`^\\s*${name}\\s+"([^"]*)"`, 'm'))?.[1];
+const headerValue = (name: string): string | undefined => caddyfile.match(new RegExp(`^\\s*${name}\\s+"([^"]*)"`, 'm'))?.[1];
 
 describe('frontend Caddyfile', () => {
   it('sets every header the deploy smoke check requires, with the values that lock the response down', () => {

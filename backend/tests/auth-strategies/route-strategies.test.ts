@@ -10,12 +10,7 @@ import { authTotpsRoutes } from '#/modules/auth/totps/totps-routes';
  * `appConfig` refuses the route before any handler runs. The routes that stay reachable while their method is off
  * (deleting a factor) are listed here; any other route without the gate fails.
  */
-const strategyRoutes = {
-  totp: authTotpsRoutes,
-  passkey: authPasskeysRoutes,
-  magic: authMagicLinkRoutes,
-  oauth: authOAuthRoutes,
-};
+const strategyRoutes = { totp: authTotpsRoutes, passkey: authPasskeysRoutes, magic: authMagicLinkRoutes, oauth: authOAuthRoutes };
 const reachableWhileOff = new Set(['deletePasskey', 'deleteTotp']);
 
 const guardsOf = (route: object) => (route as { 'x-guard'?: string[] })['x-guard'] ?? [];

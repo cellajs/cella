@@ -10,12 +10,9 @@ const sortOptions = [
   { name: 'c:filter', icon: ListFilterIcon, value: 'manual' },
 ] as const;
 
-const meta = {
-  title: 'common/SelectSort',
-  component: SelectSort,
-  tags: ['autodocs'],
-  parameters: { layout: 'centered' },
-} satisfies Meta<typeof SelectSort<typeof sortOptions>>;
+const meta = { title: 'common/SelectSort', component: SelectSort, tags: ['autodocs'], parameters: { layout: 'centered' } } satisfies Meta<
+  typeof SelectSort<typeof sortOptions>
+>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;

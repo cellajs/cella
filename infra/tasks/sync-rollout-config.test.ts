@@ -15,11 +15,7 @@ describe('sync rollout config helpers', () => {
   it('selects a single, deterministic generation per service when seeding', () => {
     // On a first provision there is exactly one generation per service; the
     // The genId-sorted pick only matters if that assumption stops holding.
-    expect(selectGeneration([{ service: 'frontend', genId: 'bb22', sha: 'old' }])).toEqual({
-      service: 'frontend',
-      genId: 'bb22',
-      sha: 'old',
-    });
+    expect(selectGeneration([{ service: 'frontend', genId: 'bb22', sha: 'old' }])).toEqual({ service: 'frontend', genId: 'bb22', sha: 'old' });
     expect(
       selectGeneration([
         { service: 'backend', genId: 'cc33', sha: 'new' },

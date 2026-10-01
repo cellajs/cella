@@ -81,24 +81,17 @@ export function buildRuntimeSecrets(
 }
 
 /** Fail fast on a misconfiguration that would produce a missing container at deploy time or a missing variable at runtime, including clashes across stores and app config. */
-export function validateRuntimeSecrets(
-  secrets: readonly RuntimeSecretDefinition[],
-  knownServices: ReadonlySet<string>,
-): void {
+export function validateRuntimeSecrets(secrets: readonly RuntimeSecretDefinition[], knownServices: ReadonlySet<string>): void {
   const seenIds = new Set<string>();
   const seenEnvVars = new Set<string>();
   const seenSecretNames = new Set<string>();
   for (const secret of secrets) {
     if (seenIds.has(secret.id)) {
-      throw new Error(
-        `runtime-secrets: duplicate secret id '${secret.id}': a store contribution clashes with another store or the app config.`,
-      );
+      throw new Error(`runtime-secrets: duplicate secret id '${secret.id}': a store contribution clashes with another store or the app config.`);
     }
     seenIds.add(secret.id);
     if (secret.services.length === 0) {
-      throw new Error(
-        `runtime-secrets.config: secret '${secret.id}' has no services: assign at least one consumer or remove it.`,
-      );
+      throw new Error(`runtime-secrets.config: secret '${secret.id}' has no services: assign at least one consumer or remove it.`);
     }
     for (const service of secret.services) {
       if (!knownServices.has(service)) {
@@ -121,9 +114,7 @@ export function validateRuntimeSecrets(
     const source = secrets.find((candidate) => candidate.id === secret.derivedFrom?.secretId);
     // Only Pulumi writes both values, so the derived one can never drift from an out-of-band rotation of its source.
     if (source?.valueSource !== 'pulumi' || source.derivedFrom || secret.valueSource !== 'pulumi') {
-      throw new Error(
-        `runtime-secrets.config: secret '${secret.id}' must be pulumi-owned and derive from a pulumi-owned, non-derived secret.`,
-      );
+      throw new Error(`runtime-secrets.config: secret '${secret.id}' must be pulumi-owned and derive from a pulumi-owned, non-derived secret.`);
     }
   }
 }
@@ -132,9 +123,7 @@ export function validateRuntimeSecrets(
 export const runtimeSecrets: RuntimeSecretDefinition[] = buildRuntimeSecrets(appStores, runtimeSecretsConfig);
 validateRuntimeSecrets(runtimeSecrets, new Set<string>(serviceNames));
 
-export const operatorManagedRuntimeSecrets: RuntimeSecretDefinition[] = runtimeSecrets.filter(
-  (secret) => secret.valueSource === 'operator',
-);
+export const operatorManagedRuntimeSecrets: RuntimeSecretDefinition[] = runtimeSecrets.filter((secret) => secret.valueSource === 'operator');
 
 export function runtimeSecretsForConsumer(consumer: RuntimeSecretConsumer): RuntimeSecretDefinition[] {
   return runtimeSecrets.filter((secret) => secret.services.some((service) => service === consumer));

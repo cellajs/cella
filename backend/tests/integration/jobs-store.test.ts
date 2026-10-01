@@ -85,9 +85,7 @@ describe('job store as runtime_role', () => {
     const snapshot = await readJobsHealth();
     expect(snapshot.installed).toBe(true);
     expect(snapshot.schema).toBe(JOBS_SCHEMA);
-    expect(snapshot.queues.map((queue) => queue.name)).toEqual(
-      expect.arrayContaining(getBackendJobs().map((job) => job.name)),
-    );
+    expect(snapshot.queues.map((queue) => queue.name)).toEqual(expect.arrayContaining(getBackendJobs().map((job) => job.name)));
     const component = mapJobsComponent(snapshot, true);
     expect(['healthy', 'degraded']).toContain(component.status);
     expect(component.details).toHaveProperty('queues');

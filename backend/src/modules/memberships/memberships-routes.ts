@@ -40,11 +40,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     summary: 'Create memberships',
     description:
       "Creates one or more memberships, inviting users (existing or new) to a channel entity such as an organization. A created membership carries muted, archived and display order only when it is the caller's own.",
-    request: {
-      params: tenantOrgParamSchema,
-      query: entityWithTypeQuerySchema,
-      body: jsonBody(membershipCreateBodySchema),
-    },
+    request: { params: tenantOrgParamSchema, query: entityWithTypeQuerySchema, body: jsonBody(membershipCreateBodySchema) },
     responses: {
       200: json(
         'Created memberships and invite count',
@@ -59,8 +55,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     xGuard: [userGuard, tenantGuard, orgGuard],
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Delete memberships',
-    description:
-      'Deletes one or more memberships by ID. This removes the membership but does not delete the associated user(s).',
+    description: 'Deletes one or more memberships by ID. This removes the membership but does not delete the associated user(s).',
     request: { params: tenantOrgParamSchema, query: entityWithTypeQuerySchema, body: jsonBody(idsBodySchema()) },
     responses: { 200: json('Success', batchResponseSchema()) },
   }),
@@ -102,13 +97,7 @@ const membershipRoutes = createXRoutes(['memberships', 'cella'], {
     description:
       'Returns the pending invitations of a channel entity, identified by ID: the address each went to, its role and its inviter. A row looks the same whether an account holds the address or not.',
     request: { params: tenantOrgParamSchema, query: pendingMembershipListQuerySchema },
-    responses: {
-      200: json(
-        'Pending memberships',
-        paginationSchema(pendingMembershipSchema),
-        mockPaginatedPendingMembershipsResponse(),
-      ),
-    },
+    responses: { 200: json('Pending memberships', paginationSchema(pendingMembershipSchema), mockPaginatedPendingMembershipsResponse()) },
   }),
   resendPendingInvitation: xRoute({
     method: 'post',

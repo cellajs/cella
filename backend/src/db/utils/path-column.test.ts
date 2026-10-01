@@ -10,11 +10,7 @@ const seedDb = getSeedDb();
 const roles = createRoleRegistry(['admin', 'member'] as const);
 
 // Synthetic org-homed product: binding to the real config would break the assertion in apps that re-home it.
-const orgHomedH = createEntityHierarchy(roles)
-  .user()
-  .organization({ roles: roles.all })
-  .product('doc', { parent: 'organization' })
-  .build();
+const orgHomedH = createEntityHierarchy(roles).user().organization({ roles: roles.all }).product('doc', { parent: 'organization' }).build();
 describe('pathColumnSql (SQL shape)', () => {
   it('org-homed product: just the org id', () => {
     expect(orgHomedH.pathColumnSql('doc', false)).toBe('"organization_id"::text');
@@ -64,9 +60,7 @@ describe('SQL ≍ JS path parity on a live deep-chain table', () => {
   });
 
   afterAll(async () => {
-    await seedDb.execute(
-      sql.raw('drop table if exists test_path_parity_items; drop table if exists test_path_parity_projects;'),
-    );
+    await seedDb.execute(sql.raw('drop table if exists test_path_parity_items; drop table if exists test_path_parity_projects;'));
   });
 
   const itemRows = [
@@ -89,9 +83,7 @@ describe('SQL ≍ JS path parity on a live deep-chain table', () => {
         ),
       );
     }
-    const stored = await seedDb.execute<{ id: string; path: string }>(
-      sql.raw('select id, path from test_path_parity_items order by id'),
-    );
+    const stored = await seedDb.execute<{ id: string; path: string }>(sql.raw('select id, path from test_path_parity_items order by id'));
     for (const { id, path } of stored.rows) {
       const row = itemRows.find((r) => r.id === id);
       expect(path, `item ${id}`).toBe(deepH.computeProductPath('item', row ?? {}));
@@ -112,9 +104,7 @@ describe('SQL ≍ JS path parity on a live deep-chain table', () => {
         ),
       );
     }
-    const stored = await seedDb.execute<{ id: string; path: string }>(
-      sql.raw('select id, path from test_path_parity_projects order by id'),
-    );
+    const stored = await seedDb.execute<{ id: string; path: string }>(sql.raw('select id, path from test_path_parity_projects order by id'));
     for (const { id, path } of stored.rows) {
       const row = projectRows.find((r) => r.id === id);
       expect(path, `project ${id}`).toBe(deepH.computeChannelPath('project', row ?? {}));

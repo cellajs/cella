@@ -12,11 +12,7 @@ interface SectionArchiveButtonProps {
 
 const EMPTY_CHANNEL_IDS: string[] = [];
 
-export function SectionArchiveButton({
-  archiveToggleClick,
-  archivedCount,
-  archivedChannelIds = EMPTY_CHANNEL_IDS,
-}: SectionArchiveButtonProps) {
+export function SectionArchiveButton({ archiveToggleClick, archivedCount, archivedChannelIds = EMPTY_CHANNEL_IDS }: SectionArchiveButtonProps) {
   const { t } = useTranslation();
   const archivedUnseenCount = useUnseenCount(archivedChannelIds);
 

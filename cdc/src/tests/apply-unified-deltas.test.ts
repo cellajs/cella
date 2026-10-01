@@ -26,11 +26,7 @@ vi.mock('../lib/db', () => {
     return { rows: [{ counts: upsertReturnValue }], rowCount: 1 };
   });
 
-  return {
-    cdcDb: {
-      execute: mockExecute,
-    },
-  };
+  return { cdcDb: { execute: mockExecute } };
 });
 
 const { applyBatchUnifiedDeltas, sumInto } = await import('../utils/apply-unified-deltas');
@@ -52,11 +48,7 @@ beforeEach(() => {
 
 describe('applyBatchUnifiedDeltas', () => {
   const mockEvent = (id: string) =>
-    changeEvent({
-      tableMeta: tableMetaOf('entity', 'task'),
-      action: 'create',
-      rowData: { id, projectId: 'proj-1', organizationId: 'org-1' },
-    });
+    changeEvent({ tableMeta: tableMetaOf('entity', 'task'), action: 'create', rowData: { id, projectId: 'proj-1', organizationId: 'org-1' } });
 
   it('assigns sequential org-sequence values to events from the reserved range', async () => {
     upsertReturnValue = { sequence: 5 }; // highSeq = 5, count = 3, baseSeq = 2
@@ -129,10 +121,7 @@ describe('applyBatchUnifiedDeltas', () => {
   });
 
   it('handles empty plan', async () => {
-    const plan: BatchUnifiedDeltaPlan = {
-      orgSequenceGroups: [],
-      countDeltasByChannelKey: new Map(),
-    };
+    const plan: BatchUnifiedDeltaPlan = { orgSequenceGroups: [], countDeltasByChannelKey: new Map() };
 
     await applyBatchUnifiedDeltas(plan, syntheticH);
     expect(dbOps).toHaveLength(0);
@@ -141,9 +130,7 @@ describe('applyBatchUnifiedDeltas', () => {
 
 describe('frontierNodeKeys', () => {
   it('org first, then every non-null ancestor, deduplicated', () => {
-    expect(
-      frontierNodeKeys('task', { id: 't1', projectId: 'proj-1', organizationId: 'org-1' }, 'org-1', syntheticH),
-    ).toEqual(['org-1', 'proj-1']);
+    expect(frontierNodeKeys('task', { id: 't1', projectId: 'proj-1', organizationId: 'org-1' }, 'org-1', syntheticH)).toEqual(['org-1', 'proj-1']);
   });
 
   it('org-homed row rolls up to the org node only', () => {

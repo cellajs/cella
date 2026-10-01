@@ -5,9 +5,7 @@ import { blurAndStashTrigger, removeAndNotify, withDefaults } from '~/modules/co
 /** Element focus returns to on close; read when the sheet closes, so a ref may resolve to a later DOM node. */
 export type TriggerRef = RefObject<HTMLElement | null>;
 
-type SheetContainerOptions = {
-  ref: RefObject<HTMLDivElement | null>;
-};
+type SheetContainerOptions = { ref: RefObject<HTMLDivElement | null> };
 
 export type SheetData = {
   id: string;
@@ -31,10 +29,7 @@ export type SheetData = {
   onClose?: (isCleanup?: boolean) => void;
 };
 
-export type InternalSheet = SheetData & {
-  content: ReactNode;
-  open?: boolean;
-};
+export type InternalSheet = SheetData & { content: ReactNode; open?: boolean };
 
 interface SheetStoreState {
   sheets: InternalSheet[];
@@ -70,16 +65,12 @@ export const useSheeter = create<SheetStoreState>()((set, get) => ({
     if (!existing) return get().create(content, data);
 
     // Merges into the open sheet: an option passed as undefined clears its value, as the nav's per-call skipAnimation expects.
-    set((state) => ({
-      sheets: state.sheets.map((s) => (s.id === data.id ? { ...s, ...data, content, open: true } : s)),
-    }));
+    set((state) => ({ sheets: state.sheets.map((s) => (s.id === data.id ? { ...s, ...data, content, open: true } : s)) }));
     return data.id;
   },
 
   update: (id, updates) => {
-    set((state) => ({
-      sheets: state.sheets.map((sheet) => (sheet.id === id ? { ...sheet, ...updates } : sheet)),
-    }));
+    set((state) => ({ sheets: state.sheets.map((sheet) => (sheet.id === id ? { ...sheet, ...updates } : sheet)) }));
   },
 
   remove: (id, opts) => {

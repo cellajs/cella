@@ -5,9 +5,7 @@ import { entityTables } from '#/tables';
 // Immutable column sets
 
 const BASE_ENTITY_COLUMNS = ['id', 'tenant_id', 'entity_type', 'created_at', 'created_by'] as const;
-const MEMBERSHIP_CHANNEL_ID_COLUMNS = appConfig.channelEntityTypes.map((type) =>
-  toColumnName(appConfig.entityIdColumnKeys[type]),
-);
+const MEMBERSHIP_CHANNEL_ID_COLUMNS = appConfig.channelEntityTypes.map((type) => toColumnName(appConfig.entityIdColumnKeys[type]));
 const BASE_MEMBERSHIP_COLUMNS = ['tenant_id', 'channel_id', 'channel_type', ...MEMBERSHIP_CHANNEL_ID_COLUMNS] as const;
 
 /** Product entities with a parent org (tasks, labels, attachments). */
@@ -68,20 +66,11 @@ CREATE TRIGGER ${triggerName}
 
 export const baseEntityImmutabilityFunctionSQL = buildFunctionSQL('base_entity_immutable_keys', BASE_ENTITY_COLUMNS);
 
-export const productImmutabilityFunctionSQL = buildFunctionSQL(
-  'product_entity_immutable_keys',
-  productImmutableColumns,
-);
+export const productImmutabilityFunctionSQL = buildFunctionSQL('product_entity_immutable_keys', productImmutableColumns);
 
-export const membershipImmutabilityFunctionSQL = buildFunctionSQL(
-  'membership_immutable_keys',
-  membershipImmutableColumns,
-);
+export const membershipImmutabilityFunctionSQL = buildFunctionSQL('membership_immutable_keys', membershipImmutableColumns);
 
-export const inactiveMembershipImmutabilityFunctionSQL = buildFunctionSQL(
-  'inactive_membership_immutable_keys',
-  inactiveMembershipImmutableColumns,
-);
+export const inactiveMembershipImmutabilityFunctionSQL = buildFunctionSQL('inactive_membership_immutable_keys', inactiveMembershipImmutableColumns);
 
 export const appendOnlyImmutabilityFunctionSQL = `
 CREATE OR REPLACE FUNCTION append_only_immutable_row() RETURNS TRIGGER AS $$
@@ -118,14 +107,10 @@ const membershipConfigs: TableImmutabilityConfig[] = [
   { tableName: 'inactive_memberships', functionName: 'inactive_membership_immutable_keys' },
 ];
 
-const appendOnlyConfigs: TableImmutabilityConfig[] = [
-  { tableName: 'activities', functionName: 'append_only_immutable_row' },
-];
+const appendOnlyConfigs: TableImmutabilityConfig[] = [{ tableName: 'activities', functionName: 'append_only_immutable_row' }];
 
 /** Read-only for the app: `system_roles` decides who is a system admin, so writes must use the admin connection. */
-const adminOnlyWriteConfigs: TableImmutabilityConfig[] = [
-  { tableName: 'system_roles', functionName: 'admin_only_write_row' },
-];
+const adminOnlyWriteConfigs: TableImmutabilityConfig[] = [{ tableName: 'system_roles', functionName: 'admin_only_write_row' }];
 
 export const allImmutabilityTables: TableImmutabilityConfig[] = [
   ...channelConfigs,

@@ -3,11 +3,7 @@ import type { UserContext } from '#/core/context';
 import { tenantRead } from '#/db/tenant-context';
 import type { AttachmentModel } from '#/modules/attachment/attachment-db';
 import { findAttachmentsByIds } from '#/modules/attachment/attachment-queries';
-import type {
-  attachmentVariantSchema,
-  presignedUrlItemSchema,
-  presignedUrlsBodySchema,
-} from '#/modules/attachment/attachment-schema';
+import type { attachmentVariantSchema, presignedUrlItemSchema, presignedUrlsBodySchema } from '#/modules/attachment/attachment-schema';
 import { getSignedUrlFromKey } from '#/modules/attachment/helpers/signed-url';
 import { isSignableKey } from '#/modules/attachment/helpers/storage-key';
 import { checkAccessBatch } from '#/permissions';
@@ -24,8 +20,7 @@ interface PresignedUrlsResult {
 }
 
 /** Resolved from the row, never client input; an ungenerated variant falls back to `original`. */
-const selectVariantKey = (attachment: AttachmentModel, variant: AttachmentVariant): string =>
-  attachment.keys[variant] ?? attachment.keys.original;
+const selectVariantKey = (attachment: AttachmentModel, variant: AttachmentVariant): string => attachment.keys[variant] ?? attachment.keys.original;
 
 /**
  * Signs private-bucket download URLs for up to 50 attachments the caller may read.

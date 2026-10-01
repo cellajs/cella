@@ -527,11 +527,7 @@
                     "type": ["string", "null"],
                     "required": true
                   },
-                  "domainsCount": {
-                    "type": "integer",
-                    "required": true,
-                    "description": "Number of domains claimed by this tenant"
-                  },
+                  "domainsCount": { "type": "integer", "required": true, "description": "Number of domains claimed by this tenant" },
                   "organization": {
                     "type": ["object", "null"],
                     "required": true,
@@ -700,11 +696,7 @@
               "type": ["string", "null"],
               "required": true
             },
-            "domainsCount": {
-              "type": "integer",
-              "required": true,
-              "description": "Number of domains claimed by this tenant"
-            }
+            "domainsCount": { "type": "integer", "required": true, "description": "Number of domains claimed by this tenant" }
           },
           "ref": "#/components/schemas/Tenant",
           "contentType": "application/json"
@@ -849,11 +841,7 @@
               "type": ["string", "null"],
               "required": true
             },
-            "domainsCount": {
-              "type": "integer",
-              "required": true,
-              "description": "Number of domains claimed by this tenant"
-            }
+            "domainsCount": { "type": "integer", "required": true, "description": "Number of domains claimed by this tenant" }
           },
           "ref": "#/components/schemas/Tenant",
           "contentType": "application/json"

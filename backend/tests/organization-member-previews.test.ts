@@ -28,21 +28,12 @@ describe('Organization member previews (include=members)', async () => {
   let memberUserId: string;
 
   const listOrganizations = async (query: Record<string, string> = {}) => {
-    const result = await call(getOrganizations, {
-      query,
-      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
-    });
+    const result = await call(getOrganizations, { query, headers: { ...defaultHeaders, Cookie: tenant.sessionCookie } });
     const data = result.data as { items: OrgListItem[]; total: number } | undefined;
     return { status: result.response.status, items: data?.items ?? [], total: data?.total ?? 0 };
   };
 
-  const insertMembership = async (
-    userId: string,
-    orgId: string,
-    role: EntityRole,
-    createdAt: string,
-    tenantId: string = tenant.tenantId,
-  ) => {
+  const insertMembership = async (userId: string, orgId: string, role: EntityRole, createdAt: string, tenantId: string = tenant.tenantId) => {
     await db.insert(membershipsTable).values({
       id: generateId(),
       userId,

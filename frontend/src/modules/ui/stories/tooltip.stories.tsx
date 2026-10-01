@@ -12,23 +12,11 @@ const meta: Meta<typeof TooltipContent> = {
   component: TooltipContent,
   tags: ['autodocs'],
   argTypes: {
-    side: {
-      options: ['top', 'bottom', 'left', 'right'],
-      control: {
-        type: 'radio',
-      },
-    },
-    children: {
-      control: 'text',
-    },
+    side: { options: ['top', 'bottom', 'left', 'right'], control: { type: 'radio' } },
+    children: { control: 'text' },
   },
-  args: {
-    side: 'top',
-    children: 'Add to library',
-  },
-  parameters: {
-    layout: 'centered',
-  },
+  args: { side: 'top', children: 'Add to library' },
+  parameters: { layout: 'centered' },
   render: (args) => (
     <TooltipProvider>
       <Tooltip>
@@ -54,29 +42,17 @@ export const Default: Story = {};
 /**
  * Use the `bottom` side to display the tooltip below the element.
  */
-export const Bottom: Story = {
-  args: {
-    side: 'bottom',
-  },
-};
+export const Bottom: Story = { args: { side: 'bottom' } };
 
 /**
  * Use the `left` side to display the tooltip to the left of the element.
  */
-export const Left: Story = {
-  args: {
-    side: 'left',
-  },
-};
+export const Left: Story = { args: { side: 'left' } };
 
 /**
  * Use the `right` side to display the tooltip to the right of the element.
  */
-export const Right: Story = {
-  args: {
-    side: 'right',
-  },
-};
+export const Right: Story = { args: { side: 'right' } };
 
 export const ShouldShowOnHover: Story = {
   name: 'when hovering over trigger, should show hover tooltip content',

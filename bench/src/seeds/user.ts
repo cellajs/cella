@@ -20,10 +20,7 @@ export function loadtestUser(index: number): InsertUserModel {
 }
 
 export function loadtestEmail(index: number) {
-  return {
-    ...mockEmail({ id: userId(index), email: userEmail(index) } as UserModel),
-    id: emailId(index),
-  };
+  return { ...mockEmail({ id: userId(index), email: userEmail(index) } as UserModel), id: emailId(index) };
 }
 
 /** The token is deterministic per index, so the Artillery processor reconstructs the cookie without a DB query. */

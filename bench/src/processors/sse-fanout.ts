@@ -34,10 +34,7 @@ function hashSpread(key: string): number {
 }
 
 /** Merges app-stream ranges per scope and fetches after deterministic sync-window jitter; immediate mode fetches each notification as the comparison baseline. */
-export async function subscribeAndReact(
-  context: { vars: Record<string, unknown> },
-  events: ArtilleryEvents,
-): Promise<void> {
+export async function subscribeAndReact(context: { vars: Record<string, unknown> }, events: ArtilleryEvents): Promise<void> {
   const cookie = context.vars.cookie as string;
   const clientId = `vu-${context.vars.userIndex}`;
 
@@ -48,9 +45,7 @@ export async function subscribeAndReact(
   const deltaFetch = async (from: number, until: number) => {
     const started = Date.now();
     try {
-      const res = await fetch(`${BASE_URL}/${TENANT_ID}/${ORG_ID}/attachments?seqCursor=${from},${until}&limit=1000`, {
-        headers: { cookie },
-      });
+      const res = await fetch(`${BASE_URL}/${TENANT_ID}/${ORG_ID}/attachments?seqCursor=${from},${until}&limit=1000`, { headers: { cookie } });
       await res.json();
       events.emit('histogram', 'sync.fetch_ms', Date.now() - started);
       events.emit('counter', 'sync.delta_fetches', 1);
@@ -101,10 +96,7 @@ export async function subscribeAndReact(
 
   try {
     const started = Date.now();
-    const res = await fetch(`${BASE_URL}/entities/app/stream`, {
-      headers: { cookie, accept: 'text/event-stream' },
-      signal: controller.signal,
-    });
+    const res = await fetch(`${BASE_URL}/entities/app/stream`, { headers: { cookie, accept: 'text/event-stream' }, signal: controller.signal });
     if (!res.ok || !res.body) {
       events.emit('counter', 'sse.errors', 1);
       return;

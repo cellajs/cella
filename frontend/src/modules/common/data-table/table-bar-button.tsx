@@ -7,16 +7,9 @@ import type { IconComponent } from '~/modules/common/icons/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button, type ButtonProps } from '~/modules/ui/button';
 
-type Props = {
-  icon: IconComponent;
-  label: TKey;
-  badge?: ReactNode;
-} & ButtonProps;
+type Props = { icon: IconComponent; label: TKey; badge?: ReactNode } & ButtonProps;
 
-export const TableBarButton = forwardRef<HTMLButtonElement, Props>(function TableBarButton(
-  { icon: Icon, label, badge, className, ...props },
-  ref,
-) {
+export const TableBarButton = forwardRef<HTMLButtonElement, Props>(function TableBarButton({ icon: Icon, label, badge, className, ...props }, ref) {
   const { t } = useTranslation();
   const id = slugify(label, { lower: true, strict: true });
   return (

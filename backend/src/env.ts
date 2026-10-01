@@ -15,8 +15,7 @@ if (existsSync(envFile)) process.loadEnvFile(envFile);
 const minSecretLength = 16;
 
 /** A secret of at least `min` characters, refused with a message that names it. */
-const secretString = (name: string, min = minSecretLength) =>
-  z.string().min(min, `${name} must be at least ${min} characters`);
+const secretString = (name: string, min = minSecretLength) => z.string().min(min, `${name} must be at least ${min} characters`);
 
 /** Development and tunnel run on the example `.env`, whose cookie secret is shorter: there an entry only has to be non-empty. */
 const minCookieSecretLength = appConfig.mode === 'development' || appConfig.mode === 'tunnel' ? 1 : minSecretLength;
@@ -38,13 +37,7 @@ export const env = createEnv({
     DATABASE_POOL_MAX: z.coerce.number().default(20),
     // PEM CA cert for the managed PostgreSQL TLS connection: required in production, where the DB client fails fast without it.
     DATABASE_SSL_CA: z.string().optional(),
-    NODE_ENV: z.union([
-      z.literal('development'),
-      z.literal('production'),
-      z.literal('staging'),
-      z.literal('tunnel'),
-      z.literal('test'),
-    ]),
+    NODE_ENV: z.union([z.literal('development'), z.literal('production'), z.literal('staging'), z.literal('tunnel'), z.literal('test')]),
     PORT: z.string().default(String(appConfig.devPorts.api)),
     // The internal listener (lib/listeners.ts): the CDC socket and the Yjs relay's routes, reached only from the private network.
     INTERNAL_PORT: z.string().default(String(appConfig.devPorts.internal)),
@@ -58,11 +51,9 @@ export const env = createEnv({
 
     // One secret or a comma-separated list (the first signs, any verifies). Every entry counts on its own, so a stray
     // comma or a short entry stops the boot and never becomes a signing key.
-    COOKIE_SECRET: z
-      .string()
-      .refine((value) => value.split(',').every((entry) => entry.trim().length >= minCookieSecretLength), {
-        message: `Every COOKIE_SECRET entry must be at least ${minCookieSecretLength} characters`,
-      }),
+    COOKIE_SECRET: z.string().refine((value) => value.split(',').every((entry) => entry.trim().length >= minCookieSecretLength), {
+      message: `Every COOKIE_SECRET entry must be at least ${minCookieSecretLength} characters`,
+    }),
 
     // Operator-managed runtime secret. When the secret has no version the env var is omitted and this
     // defaults to 'none' (deny), so sys-admin routes stay off until an operator sets the allowlist.

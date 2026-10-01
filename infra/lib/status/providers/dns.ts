@@ -36,8 +36,7 @@ export const dnsProvider: StatusProvider<DnsFacts> = {
     const dns = check('dns.zone', 'DNS');
     const { host, resolvedIps } = facts;
     if (resolvedIps === undefined) return [dns.unknown(`did not resolve ${host}`)];
-    if (resolvedIps.length === 0)
-      return [dns.warn(`${host} does not resolve (NXDOMAIN); certificate issuance and traffic need it`, runSetup)];
+    if (resolvedIps.length === 0) return [dns.warn(`${host} does not resolve (NXDOMAIN); certificate issuance and traffic need it`, runSetup)];
     return [dns.ok(`${host} → ${resolvedIps.join(', ')}`)];
   },
 };

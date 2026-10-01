@@ -47,10 +47,7 @@ interface CdcTestHarness {
   stop(): Promise<void>;
 }
 
-export function waitForEvent(
-  eventType: Parameters<typeof activityBus.once>[0],
-  timeoutMs = 10000,
-): Promise<ActivityEvent> {
+export function waitForEvent(eventType: Parameters<typeof activityBus.once>[0], timeoutMs = 10000): Promise<ActivityEvent> {
   return new Promise((resolve, reject) => {
     const timeout = setTimeout(() => {
       reject(new Error(`Timeout waiting for event: ${eventType}`));
@@ -64,11 +61,7 @@ export function waitForEvent(
 }
 
 /** Poll a predicate until it returns true or the timeout expires. */
-export async function waitFor(
-  predicate: () => boolean | Promise<boolean>,
-  timeoutMs: number,
-  label: string,
-): Promise<void> {
+export async function waitFor(predicate: () => boolean | Promise<boolean>, timeoutMs: number, label: string): Promise<void> {
   const deadline = Date.now() + timeoutMs;
   while (Date.now() < deadline) {
     if (await predicate()) return;
@@ -123,21 +116,14 @@ export async function ensureCdcSetup() {
   const CDC_PUBLICATION_NAME = 'cdc_pub';
   const CDC_SLOT_NAME = process.env.CDC_SLOT_NAME ?? 'cdc_slot';
 
-  const pubResult = await db.execute<{ pubname: string }>(
-    sql`SELECT pubname FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`,
-  );
+  const pubResult = await db.execute<{ pubname: string }>(sql`SELECT pubname FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`);
 
   if (pubResult.rows.length === 0) {
     throw new Error(`CDC publication '${CDC_PUBLICATION_NAME}' not found. Run migrations first.`);
   }
 
   // The CDC worker creates the replication slot.
-  const slotResult = await db.execute<{ slot_name: string }>(
-    sql`SELECT slot_name FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`,
-  );
+  const slotResult = await db.execute<{ slot_name: string }>(sql`SELECT slot_name FROM pg_replication_slots WHERE slot_name = ${CDC_SLOT_NAME}`);
 
-  return {
-    publicationExists: pubResult.rows.length > 0,
-    slotExists: slotResult.rows.length > 0,
-  };
+  return { publicationExists: pubResult.rows.length > 0, slotExists: slotResult.rows.length > 0 };
 }

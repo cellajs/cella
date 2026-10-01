@@ -4,18 +4,9 @@ import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 
 const notifications = [
-  {
-    title: 'Your call has been confirmed.',
-    description: '1 hour ago',
-  },
-  {
-    title: 'You have a new message!',
-    description: '1 hour ago',
-  },
-  {
-    title: 'Your subscription is expiring soon!',
-    description: '2 hours ago',
-  },
+  { title: 'Your call has been confirmed.', description: '1 hour ago' },
+  { title: 'You have a new message!', description: '1 hour ago' },
+  { title: 'Your subscription is expiring soon!', description: '2 hours ago' },
 ];
 
 /**
@@ -26,9 +17,7 @@ const meta = {
   component: Card,
   tags: ['autodocs'],
   argTypes: {},
-  args: {
-    className: 'w-96',
-  },
+  args: { className: 'w-96' },
   render: (args) => (
     <Card {...args}>
       <CardHeader>
@@ -51,9 +40,7 @@ const meta = {
       </CardFooter>
     </Card>
   ),
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
 } satisfies Meta<typeof Card>;
 
 export default meta;

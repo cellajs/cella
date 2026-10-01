@@ -4,10 +4,7 @@ import { supportedOAuthProviders } from '#/modules/auth/identities-db';
 const oauthFlowTypes = ['auth', 'connect', 'invite', 'verify'] as const;
 export type OAuthFlowType = (typeof oauthFlowTypes)[number];
 
-export const oauthQuerySchema = z.object({
-  type: z.enum(oauthFlowTypes).default('auth'),
-  redirectAfter: z.string().optional(),
-});
+export const oauthQuerySchema = z.object({ type: z.enum(oauthFlowTypes).default('auth'), redirectAfter: z.string().optional() });
 
 /** The state cookie of one round trip; `provider` is the provider whose start minted the state. */
 export const oauthCookiePayloadSchema = z.object({

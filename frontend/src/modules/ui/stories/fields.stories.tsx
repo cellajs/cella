@@ -28,12 +28,8 @@ const meta = {
   title: 'ui/Fields',
   component: FieldLayout,
   tags: ['autodocs'],
-  parameters: {
-    layout: 'centered',
-  },
-  args: {
-    orientation: 'vertical',
-  },
+  parameters: { layout: 'centered' },
+  args: { orientation: 'vertical' },
 } satisfies Meta<typeof FieldLayout>;
 
 export default meta;
@@ -92,9 +88,7 @@ export const WithDescription: Story = {
       <FieldContent>
         <Input id="password" type="password" placeholder="Enter a secure password" />
       </FieldContent>
-      <FieldDescription>
-        Password must be at least 8 characters long and include uppercase, lowercase, and numbers.
-      </FieldDescription>
+      <FieldDescription>Password must be at least 8 characters long and include uppercase, lowercase, and numbers.</FieldDescription>
     </FieldLayout>
   ),
 };
@@ -119,11 +113,7 @@ export const WithError: Story = {
  */
 export const WithMultipleErrors: Story = {
   render: function Render() {
-    const errors = [
-      { message: 'Password is too short' },
-      { message: 'Must include uppercase letter' },
-      { message: 'Must include a number' },
-    ];
+    const errors = [{ message: 'Password is too short' }, { message: 'Must include uppercase letter' }, { message: 'Must include a number' }];
 
     return (
       <FieldLayout>

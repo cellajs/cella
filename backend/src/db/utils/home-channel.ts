@@ -14,7 +14,6 @@ export function homeChannelIdSql(productType: ProductEntityType, table: AnyPgTab
     .getOrderedAncestors(productType)
     .map((ancestor) => columns[appConfig.entityIdColumnKeys[ancestor]])
     .filter((column): column is PgColumn => Boolean(column));
-  if (ancestorColumns.length === 0)
-    throw new Error(`homeChannelIdSql: ${productType} table carries no ancestor id column`);
+  if (ancestorColumns.length === 0) throw new Error(`homeChannelIdSql: ${productType} table carries no ancestor id column`);
   return sql<string>`COALESCE(${sql.join(ancestorColumns, sql`, `)})`;
 }

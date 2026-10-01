@@ -58,12 +58,7 @@ function snapToTier(lines: number): number {
   return heightTiers[heightTiers.length - 1];
 }
 
-export function tierToHeight(
-  tier: number,
-  baseHeight: number,
-  lineHeight = wrapTextLineHeight,
-  padding = wrapTextPadding,
-): number {
+export function tierToHeight(tier: number, baseHeight: number, lineHeight = wrapTextLineHeight, padding = wrapTextPadding): number {
   if (tier <= 1) return baseHeight;
   return Math.max(baseHeight, tier * lineHeight + padding);
 }

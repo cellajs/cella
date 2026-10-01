@@ -36,12 +36,7 @@ vi.mock('~/modules/common/dropdowner/drawer', () => ({ DropdownerDrawer: () => n
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
 const dialog = (id: string, data: Partial<DialogData> = {}): DialogData => ({ id, triggerRef: createRef(), ...data });
-const sheet = (id: string, data: Partial<SheetData> = {}): SheetData => ({
-  id,
-  side: 'right',
-  triggerRef: createRef(),
-  ...data,
-});
+const sheet = (id: string, data: Partial<SheetData> = {}): SheetData => ({ id, side: 'right', triggerRef: createRef(), ...data });
 
 const changeRoute = (pathChanged: boolean) =>
   act(() => {

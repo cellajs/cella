@@ -12,10 +12,7 @@ export function CustomSideMenu({ editor, allowedTypes, headingLevels }: CustomBl
     <SideMenuController
       sideMenu={(props) => {
         const sideMenu = useExtension(SideMenuExtension);
-        const block = useExtensionState(SideMenuExtension, {
-          editor,
-          selector: (state) => state?.block,
-        });
+        const block = useExtensionState(SideMenuExtension, { editor, selector: (state) => state?.block });
         if (block === undefined) return null;
         return (
           <SideMenu {...props}>

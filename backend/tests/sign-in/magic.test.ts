@@ -10,14 +10,7 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
-import {
-  authCookie,
-  cookieChange,
-  createTestOrganization,
-  createUser,
-  enableMFAForUser,
-  insertTestToken,
-} from '../helpers';
+import { authCookie, cookieChange, createTestOrganization, createUser, enableMFAForUser, insertTestToken } from '../helpers';
 import { createInvitation } from '../invitations/helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
@@ -74,10 +67,7 @@ describe('Magic link authentication', async () => {
     ])('should drop an invalid redirect ($name)', async ({ redirect }) => {
       const user = await createUser(signUpUser.email);
 
-      const { response: res } = await call(sendMagicLink, {
-        body: { email: signUpUser.email, redirect },
-        headers: defaultHeaders,
-      });
+      const { response: res } = await call(sendMagicLink, { body: { email: signUpUser.email, redirect }, headers: defaultHeaders });
 
       expect(res.status).toBe(204);
       expect((await getMagicToken(user.id)).redirectPath).toBeNull();
@@ -225,10 +215,7 @@ describe('Magic link authentication', async () => {
       const inviter = await createUser('inviter@example.com');
       await createInvitation({ organization, email: 'invited@example.com', createdBy: inviter.id });
 
-      const { response: res } = await call(sendMagicLink, {
-        body: { email: 'invited@example.com' },
-        headers: defaultHeaders,
-      });
+      const { response: res } = await call(sendMagicLink, { body: { email: 'invited@example.com' }, headers: defaultHeaders });
 
       expect(res.status).toBe(204);
       // The link goes out without an account: the account is created when the link is clicked.
@@ -239,10 +226,7 @@ describe('Magic link authentication', async () => {
     it('creates nothing for an address that was not invited, with the same response', async () => {
       closeRegistration();
 
-      const { response: res } = await call(sendMagicLink, {
-        body: { email: 'stranger@example.com' },
-        headers: defaultHeaders,
-      });
+      const { response: res } = await call(sendMagicLink, { body: { email: 'stranger@example.com' }, headers: defaultHeaders });
 
       expect(res.status).toBe(204);
       expect(await magicLinksFor('stranger@example.com')).toHaveLength(0);
@@ -253,11 +237,7 @@ describe('Magic link authentication', async () => {
       closeRegistration();
       const organization = await createTestOrganization();
       const inviter = await createUser('inviter@example.com');
-      const { inactiveMembership, token } = await createInvitation({
-        organization,
-        email: 'declined@example.com',
-        createdBy: inviter.id,
-      });
+      const { inactiveMembership, token } = await createInvitation({ organization, email: 'declined@example.com', createdBy: inviter.id });
       await db
         .update(inactiveMembershipsTable)
         .set({ rejectedAt: new Date().toISOString() })
@@ -276,10 +256,7 @@ describe('Magic link authentication', async () => {
       const user = await createUser(signUpUser.email);
       await addProvenEmail(db, { userId: user.id, email: 'work@example.com', via: 'github' });
 
-      const { response: res } = await call(sendMagicLink, {
-        body: { email: 'work@example.com' },
-        headers: defaultHeaders,
-      });
+      const { response: res } = await call(sendMagicLink, { body: { email: 'work@example.com' }, headers: defaultHeaders });
 
       expect(res.status).toBe(204);
       const token = await getMagicToken(user.id);

@@ -18,11 +18,7 @@ const usePrerenderStore = create<PrerenderState>((set) => ({
     }),
 }));
 
-const hiddenStyle: CSSProperties = {
-  contentVisibility: 'hidden',
-  height: 0,
-  overflow: 'hidden',
-};
+const hiddenStyle: CSSProperties = { contentVisibility: 'hidden', height: 0, overflow: 'hidden' };
 
 /** Prerendered sections mount hidden so opening them is instant. */
 export function usePrerenderSection(scope: string, sectionId: string, isOpen: boolean) {

@@ -82,11 +82,7 @@ export function buildSession(ctx: StatusContext): ProbeSession {
         try {
           const { state } = await readControlState(s3, bucket, controlKey(ctx.mode));
           out.stateBucketExists = true;
-          out.rollout = Object.entries(state.rollout).map(([slug, r]) => ({
-            slug,
-            activeSha: r.active?.sha,
-            pendingSha: r.pendingSha,
-          }));
+          out.rollout = Object.entries(state.rollout).map(([slug, r]) => ({ slug, activeSha: r.active?.sha, pendingSha: r.pendingSha }));
         } catch (err) {
           if (isNoSuchBucket(err)) out.stateBucketExists = false;
         }
@@ -135,13 +131,7 @@ export async function buildReport(ctx: StatusContext): Promise<StatusReport> {
   return buildStatusReport(buildSession(ctx));
 }
 
-const MARKS: Record<CheckStatus, string> = {
-  ok: checkMark,
-  warn: warningMark,
-  missing: crossMark,
-  error: crossMark,
-  unknown: pc.dim('?'),
-};
+const MARKS: Record<CheckStatus, string> = { ok: checkMark, warn: warningMark, missing: crossMark, error: crossMark, unknown: pc.dim('?') };
 
 export function formatReport(report: StatusReport): string {
   const lines: string[] = [];
@@ -197,9 +187,7 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const flagMode = getFlag(argv, '--mode') ?? process.env.INFRA_MODE;
   if (flagMode && flagMode !== 'production' && flagMode !== 'staging')
     throw new Error(`--mode must be 'production' or 'staging' (got '${flagMode}')`);
-  const mode =
-    (flagMode as 'production' | 'staging' | undefined) ??
-    pickStackShort((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)));
+  const mode = (flagMode as 'production' | 'staging' | undefined) ?? pickStackShort((name) => existsSync(resolve(infraDir, `Pulumi.${name}.yaml`)));
   const json = argv.includes('--json');
 
   loadBaseEnvFiles();
@@ -270,25 +258,20 @@ export async function collectQuickFacts(
       budgetMs,
       stateProbe().catch(() => facts.unavailable.push('state bucket')),
     ).then((v) => {
-      if (v === undefined && key && !facts.control && !facts.unavailable.includes('state bucket'))
-        facts.unavailable.push('state bucket');
+      if (v === undefined && key && !facts.control && !facts.unavailable.includes('state bucket')) facts.unavailable.push('state bucket');
     }),
     within(
       budgetMs,
       keyProbe().catch(() => facts.unavailable.push('key lookup')),
     ).then((v) => {
-      if (v === undefined && key && !facts.key && !facts.unavailable.includes('key lookup'))
-        facts.unavailable.push('key lookup');
+      if (v === undefined && key && !facts.key && !facts.unavailable.includes('key lookup')) facts.unavailable.push('key lookup');
     }),
   ]);
   return facts;
 }
 
 /** Human lines for the quick facts; pure, so the shape is testable without Scaleway. `configured` is the slot the env resolved to, or `none`. */
-export function formatQuickFacts(
-  facts: QuickFacts,
-  opts: { now?: number; configured?: KeySlot | 'none' } = {},
-): string[] {
+export function formatQuickFacts(facts: QuickFacts, opts: { now?: number; configured?: KeySlot | 'none' } = {}): string[] {
   const now = opts.now ?? Date.now();
   const lines: string[] = [];
   if (facts.lock) {
@@ -315,14 +298,7 @@ export function formatQuickFacts(
   if (facts.key) {
     const { desc, role, slot } = facts.key;
     const hours = hoursUntilExpiry(desc, now);
-    const expiry =
-      hours === undefined
-        ? ''
-        : hours < 0
-          ? ' — EXPIRED'
-          : hours < 48
-            ? ` — expires in ${Math.max(1, Math.round(hours))}h`
-            : '';
+    const expiry = hours === undefined ? '' : hours < 0 ? ' — EXPIRED' : hours < 48 ? ` — expires in ${Math.max(1, Math.round(hours))}h` : '';
     const healthy = slot === 'admin' && role === 'admin' && !(hours !== undefined && hours < 48);
     const label = slot === 'admin' ? 'Admin application key:' : 'Ambient key: SCW_ACCESS_KEY';
     lines.push(`${healthy ? pc.green('●') : warningMark} ${label} ${formatKeyLine(desc, role)}${expiry}`);
@@ -334,27 +310,16 @@ export function formatQuickFacts(
       lines.push(`  ${pc.dim(`SCW_ADMIN_* should hold the admin application key: ${fetchHint}.`)}`);
     }
   } else if (opts.configured === 'none') {
-    lines.push(
-      `${warningMark} Admin application key: none in infra/.env.<mode> (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; ${fetchHint})`,
-    );
+    lines.push(`${warningMark} Admin application key: none in infra/.env.<mode> (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY; ${fetchHint})`);
   }
-  if (facts.unavailable.length > 0)
-    lines.push(pc.dim(`  (${facts.unavailable.join(', ')}: no answer within the budget)`));
+  if (facts.unavailable.length > 0) lines.push(pc.dim(`  (${facts.unavailable.join(', ')}: no answer within the budget)`));
   return lines;
 }
 
 /** Print the quick facts for a loaded CLI context; never throws, never blocks longer than the budget. */
-export async function printQuickFacts(context: {
-  environment: string;
-  appConfig: EngineConfig;
-  projectId: string;
-}): Promise<void> {
+export async function printQuickFacts(context: { environment: string; appConfig: EngineConfig; projectId: string }): Promise<void> {
   const facts = await withSpinner('Checking lock, rollout and key', () =>
-    collectQuickFacts({
-      environment: context.environment,
-      appConfig: context.appConfig,
-      projectId: context.projectId || undefined,
-    }),
+    collectQuickFacts({ environment: context.environment, appConfig: context.appConfig, projectId: context.projectId || undefined }),
   );
   const identity = resolveOperatorIdentity();
   const configured = identity.admin ? 'admin' : identity.ambient ? 'ambient' : 'none';

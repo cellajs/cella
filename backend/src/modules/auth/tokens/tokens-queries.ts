@@ -30,8 +30,7 @@ export const findInvitationToken = async (
   { forUpdate = false }: FindInvitationTokenOpts = {},
 ): Promise<TokenRecord | undefined> => {
   const { db } = ctx.var;
-  const byKey =
-    'id' in key ? eq(tokensTable.id, key.id) : eq(tokensTable.inactiveMembershipId, key.inactiveMembershipId);
+  const byKey = 'id' in key ? eq(tokensTable.id, key.id) : eq(tokensTable.inactiveMembershipId, key.inactiveMembershipId);
   const query = db
     .select(tokenColumns)
     .from(tokensTable)
@@ -52,9 +51,7 @@ export const hasLiveInvitationToken = async (ctx: DbContext, { email }: HasLiveI
   const [liveToken] = await db
     .select({ id: tokensTable.id })
     .from(tokensTable)
-    .where(
-      and(eq(tokensTable.email, email), eq(tokensTable.type, 'invitation'), gt(tokensTable.expiresAt, getIsoDate())),
-    )
+    .where(and(eq(tokensTable.email, email), eq(tokensTable.type, 'invitation'), gt(tokensTable.expiresAt, getIsoDate())))
     .limit(1);
   return !!liveToken;
 };

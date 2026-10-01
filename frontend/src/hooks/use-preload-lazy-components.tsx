@@ -8,9 +8,7 @@ export function usePreloadLazyComponents(components: LazyExoticComponent<Compone
       // React.lazy keeps the loader in _payload/_init; calling _init starts the import without rendering.
       if ('_payload' in lazyComponent && '_init' in lazyComponent) {
         try {
-          (lazyComponent as { _init: (payload: unknown) => void; _payload: unknown })._init(
-            (lazyComponent as { _payload: unknown })._payload,
-          );
+          (lazyComponent as { _init: (payload: unknown) => void; _payload: unknown })._init((lazyComponent as { _payload: unknown })._payload);
         } catch {
           // Errors are expected for unresolved promises - component will load when rendered
         }

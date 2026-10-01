@@ -6,9 +6,7 @@ import { entityTables } from '#/tables';
 
 /** Every product entity table needs a composite `(organization_id, seq)` index so seq-range delta reads scan it. */
 describe('every product entity table has the (organization_id, seq) delta index', () => {
-  const productTables = Object.entries(entityTables).filter(([type]) =>
-    (appConfig.productEntityTypes as readonly string[]).includes(type),
-  );
+  const productTables = Object.entries(entityTables).filter(([type]) => (appConfig.productEntityTypes as readonly string[]).includes(type));
 
   it('covers at least one product table (guard against registry drift)', () => {
     expect(productTables.length).toBeGreaterThan(0);

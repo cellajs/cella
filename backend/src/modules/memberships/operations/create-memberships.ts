@@ -50,20 +50,11 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   const channelIsDraft = entity.publishedAt === null;
   const deferDispatch = channelIsDraft && role !== hierarchy.getRoles(entityType)[0];
 
-  const currentOrgMemberships = await countMembershipsByChannel(ctx, {
-    channelType: 'organization',
-    channelId: organization.id,
-  });
-  const pendingInvites = await countPendingInvitesByChannel(ctx, {
-    channelType: 'organization',
-    channelId: organization.id,
-  });
+  const currentOrgMemberships = await countMembershipsByChannel(ctx, { channelType: 'organization', channelId: organization.id });
+  const pendingInvites = await countPendingInvitesByChannel(ctx, { channelType: 'organization', channelId: organization.id });
 
   const membersRestrictions = ctx.var.tenant.restrictions.quotas.user;
-  if (
-    membersRestrictions !== 0 &&
-    currentOrgMemberships + pendingInvites + normalizedEmails.length > membersRestrictions
-  ) {
+  if (membersRestrictions !== 0 && currentOrgMemberships + pendingInvites + normalizedEmails.length > membersRestrictions) {
     throw new AppError(403, 'restrict_by_org', 'warn', { entityType });
   }
 
@@ -119,8 +110,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
       const isAdminInvitingSelf = user.email === email && isSystemAdmin;
       // An organization member invited below the organization by their listed address joins at once. Draft context:
       // existing users are deferred too, with no membership, nav entry, or email.
-      const joinsDirectly =
-        entityType !== 'organization' && !!account.orgMembershipId && isListedAddress && !deferDispatch;
+      const joinsDirectly = entityType !== 'organization' && !!account.orgMembershipId && isListedAddress && !deferDispatch;
 
       if (isAdminInvitingSelf || joinsDirectly) existingUsersToDirectAdd.push({ userId: account.userId, email });
       else existingUsersToActivate.push({ userId: account.userId, email });
@@ -194,9 +184,7 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   }
 
   if (inactiveMembershipsToInsert.length > 0) {
-    insertedInactiveMemberships = await insertInactiveMemberships(ctx, {
-      memberships: inactiveMembershipsToInsert,
-    });
+    insertedInactiveMemberships = await insertInactiveMemberships(ctx, { memberships: inactiveMembershipsToInsert });
   }
 
   // A new address gets its token's link once its invitation row stands.
@@ -217,19 +205,12 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
 
   // Track reminder dispatch for the 7-day throttle
   if (!deferDispatch && remindedInactiveMembershipIds.length > 0) {
-    await stampInactiveMembershipsReminded(ctx, {
-      ids: remindedInactiveMembershipIds,
-      remindedAt: new Date().toISOString(),
-    });
+    await stampInactiveMembershipsReminded(ctx, { ids: remindedInactiveMembershipIds, remindedAt: new Date().toISOString() });
   }
 
   const invitesSentCount = insertedInactiveMemberships.length;
 
-  log.info('Users invited on entity level', {
-    count: invitesSentCount,
-    entityType,
-    entityId,
-  });
+  log.info('Users invited on entity level', { count: invitesSentCount, entityType, entityId });
 
   const data = createdMemberships.map((membership) => membershipAsSeenBy(membership, user.id));
 

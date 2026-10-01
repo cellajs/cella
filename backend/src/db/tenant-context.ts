@@ -39,11 +39,7 @@ export async function tenantReadById<T>(tenantId: string, fn: (tx: DbOrTx) => Pr
  * `ctx.var.tenantId`) that resolved the request's single tenant themselves, e.g. an org-scoped
  * list whose per-row subqueries read RLS-guarded product tables.
  */
-export async function tenantReadAs<T>(
-  ctx: ActorContext,
-  tenantId: string,
-  fn: (readCtx: ActorContext) => Promise<T>,
-): Promise<T> {
+export async function tenantReadAs<T>(ctx: ActorContext, tenantId: string, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
   return baseDb.transaction(
     async (tx) => {
       await setSessionVars(tx, tenantId, ctx.var.actor.id, false);
@@ -65,10 +61,7 @@ export async function tenantRead<T>(ctx: ActorContext, fn: (readCtx: ActorContex
   );
 }
 
-export async function tenantReadIncludingDeleted<T>(
-  ctx: ActorContext,
-  fn: (readCtx: ActorContext) => Promise<T>,
-): Promise<T> {
+export async function tenantReadIncludingDeleted<T>(ctx: ActorContext, fn: (readCtx: ActorContext) => Promise<T>): Promise<T> {
   return baseDb.transaction(
     async (tx) => {
       await setTenantSessionVars(tx, ctx, true);
@@ -86,10 +79,7 @@ export async function tenantContext<T>(ctx: ActorContext, fn: (txCtx: ActorConte
   });
 }
 
-export async function tenantContextIncludingDeleted<T>(
-  ctx: ActorContext,
-  fn: (txCtx: ActorContext) => Promise<T>,
-): Promise<T> {
+export async function tenantContextIncludingDeleted<T>(ctx: ActorContext, fn: (txCtx: ActorContext) => Promise<T>): Promise<T> {
   return baseDb.transaction(async (tx) => {
     await setTenantSessionVars(tx, ctx, true);
     return fn({ var: { ...ctx.var, db: tx } });

@@ -12,17 +12,10 @@ const meta = {
   component: Alert,
   tags: ['autodocs'],
   argTypes: {
-    variant: {
-      options: ALERT_VARIANTS,
-      control: { type: 'radio' },
-    },
-    soft: {
-      control: { type: 'boolean' },
-    },
+    variant: { options: ALERT_VARIANTS, control: { type: 'radio' } },
+    soft: { control: { type: 'boolean' } },
   },
-  args: {
-    variant: 'default',
-  },
+  args: { variant: 'default' },
   render: (args) => (
     <Alert {...args}>
       <AlertTitle>Heads up!</AlertTitle>
@@ -50,9 +43,7 @@ export const Destructive: Story = {
       <AlertDescription>Your session has expired. Please log in again.</AlertDescription>
     </Alert>
   ),
-  args: {
-    variant: 'destructive',
-  },
+  args: { variant: 'destructive' },
 };
 
 /** Every variant in soft and solid fill; a row whose text washes out means a solid `text-*-foreground` leaked into the soft form. */

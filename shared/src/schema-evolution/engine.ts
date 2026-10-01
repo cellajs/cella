@@ -1,12 +1,6 @@
 import { createRegistry, type Registry, type RegistryHooks } from 'dobajs';
 import { schemaEvolutionPolicy, type UnknownFieldHandling } from './config.ts';
-import {
-  deltaRenameMap,
-  type LensContext,
-  type LensDefinition,
-  type LensEntityType,
-  resolveAddDefault,
-} from './define.ts';
+import { deltaRenameMap, type LensContext, type LensDefinition, type LensEntityType, resolveAddDefault } from './define.ts';
 import { lenses } from './lens-list.ts';
 
 /** Re-exported so telemetry callers need no direct dobajs import. */
@@ -16,11 +10,7 @@ type AnyRecord = Record<string, unknown>;
 
 /** Permissive Standard Schema node: transforms always run with `validate: 'none'`. */
 const passthroughSchema = {
-  '~standard': {
-    version: 1 as const,
-    vendor: 'cella',
-    validate: (value: unknown) => ({ value }),
-  },
+  '~standard': { version: 1 as const, vendor: 'cella', validate: (value: unknown) => ({ value }) },
 };
 
 /** Injected by the host: the server passes otel hooks, the client passes none. */
@@ -107,10 +97,7 @@ function buildEntityMigration(lens: LensDefinition): {
   }
 
   if (rename) {
-    return {
-      forward: (v) => renameKeyDeep(v, rename.from, rename.to),
-      backward: (v) => renameKeyDeep(v, rename.to, rename.from),
-    };
+    return { forward: (v) => renameKeyDeep(v, rename.from, rename.to), backward: (v) => renameKeyDeep(v, rename.to, rename.from) };
   }
 
   if ('add' in delta) {
@@ -182,11 +169,7 @@ export function resetLensEngine(): void {
 // ── Public API ──
 
 /** Idempotent: re-running over already-migrated rows changes nothing. */
-export async function migrateCachedEntity<T extends AnyRecord>(
-  entityType: LensEntityType,
-  entity: T,
-  fromVersion: number,
-): Promise<T> {
+export async function migrateCachedEntity<T extends AnyRecord>(entityType: LensEntityType, entity: T, fromVersion: number): Promise<T> {
   const registry = getRegistry(entityType);
   if (!registry) return entity;
   const from = versionNodeFor(entityType, fromVersion);
@@ -197,11 +180,7 @@ export async function migrateCachedEntity<T extends AnyRecord>(
 }
 
 /** Phase 2 only. `lossyBackward` lenses keep removed fields absent going backward. */
-export async function downgradeEntity<T extends AnyRecord>(
-  entityType: LensEntityType,
-  entity: T,
-  toVersion: number,
-): Promise<T> {
+export async function downgradeEntity<T extends AnyRecord>(entityType: LensEntityType, entity: T, toVersion: number): Promise<T> {
   const registry = getRegistry(entityType);
   if (!registry) return entity;
   const from = currentNode(entityType);
@@ -314,11 +293,7 @@ export function normalizeOps<O extends AnyRecord, S extends StxLike>(
  * Client entry point: rewrites a queued mutation's variables from its persisted global version
  * to current canonical keys, across top-level keys, `ops` and `stx.fieldTimestamps`.
  */
-export function migrateQueuedMutation<V extends AnyRecord>(
-  entityType: LensEntityType,
-  variables: V,
-  fromVersion: number,
-): V {
+export function migrateQueuedMutation<V extends AnyRecord>(entityType: LensEntityType, variables: V, fromVersion: number): V {
   const pending = lensesFor(entityType).filter(({ ordinal }) => ordinal > fromVersion);
   if (pending.length === 0) return variables;
 

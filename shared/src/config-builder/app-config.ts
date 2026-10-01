@@ -18,9 +18,7 @@ const rawMode = process.env.APP_MODE || process.env.NODE_ENV || 'development';
 // Fail loud: an undefined `configModes` entry would otherwise boot the default configuration
 // for the wrong environment with no error.
 if (!Object.hasOwn(configModes, rawMode)) {
-  throw new Error(
-    `Invalid config mode "${rawMode}": must be one of ${Object.keys(configModes).join(', ')} (set APP_MODE or NODE_ENV).`,
-  );
+  throw new Error(`Invalid config mode "${rawMode}": must be one of ${Object.keys(configModes).join(', ')} (set APP_MODE or NODE_ENV).`);
 }
 const mode = rawMode as Config['mode'];
 
@@ -53,14 +51,10 @@ const services: BuiltServices = {
 // valid value; this check never rewrites it.
 const slugPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 if (!slugPattern.test(merged.slug)) {
-  throw new Error(
-    `Invalid config slug "${merged.slug}": must be lowercase alphanumeric, hyphen-separated (e.g. "my-app").`,
-  );
+  throw new Error(`Invalid config slug "${merged.slug}": must be lowercase alphanumeric, hyphen-separated (e.g. "my-app").`);
 }
 if (merged.slug.replace(/-/g, '').length < 4) {
-  throw new Error(
-    `Invalid config slug "${merged.slug}": must be at least 4 characters (excluding hyphens) for Scaleway registry naming.`,
-  );
+  throw new Error(`Invalid config slug "${merged.slug}": must be at least 4 characters (excluding hyphens) for Scaleway registry naming.`);
 }
 
 // Bucket names and CDN URLs derive from the slug. Explicit bucket config shares storage

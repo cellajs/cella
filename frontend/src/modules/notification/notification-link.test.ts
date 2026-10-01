@@ -7,13 +7,7 @@ const { notificationSearch } = vi.hoisted(() => ({
 
 // A channel whose notification search opens a comment's host item, the way an app with threads declares it.
 vi.mock('~/routes-config', () => ({
-  channelRouteConfig: {
-    organization: {
-      path: '/$tenantId/$organizationSlug/organization',
-      paramName: 'organizationSlug',
-      notificationSearch,
-    },
-  },
+  channelRouteConfig: { organization: { path: '/$tenantId/$organizationSlug/organization', paramName: 'organizationSlug', notificationSearch } },
 }));
 
 const target = {
@@ -30,19 +24,11 @@ describe('getNotificationRoute', () => {
 
   it("hands the channel's notification search the context id", () => {
     getNotificationRoute({ ...target, contextId: 'post-1' });
-    expect(notificationSearch).toHaveBeenCalledWith({
-      entityType: 'attachment',
-      subjectId: 'comment-1',
-      contextId: 'post-1',
-    });
+    expect(notificationSearch).toHaveBeenCalledWith({ entityType: 'attachment', subjectId: 'comment-1', contextId: 'post-1' });
   });
 
   it('hands null when the row has no context (inbox rows carry null)', () => {
     getNotificationRoute({ ...target, contextId: null });
-    expect(notificationSearch).toHaveBeenCalledWith({
-      entityType: 'attachment',
-      subjectId: 'comment-1',
-      contextId: null,
-    });
+    expect(notificationSearch).toHaveBeenCalledWith({ entityType: 'attachment', subjectId: 'comment-1', contextId: null });
   });
 });

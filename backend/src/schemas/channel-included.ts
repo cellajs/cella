@@ -13,9 +13,7 @@ export const channelIncludedSchema = (entityType: ChannelEntityType) => {
   // Per product descendant, epoch ms of the latest post and the latest content update; null when never.
   const productDescendants = descendants.filter((descendant) => isProduct(descendant));
   const activitySchema = z.object(
-    recordFromKeys(productDescendants, () =>
-      z.object({ created: z.number().nullable(), updated: z.number().nullable() }),
-    ),
+    recordFromKeys(productDescendants, () => z.object({ created: z.number().nullable(), updated: z.number().nullable() })),
   );
 
   const countsSchema = z.object({

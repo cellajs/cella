@@ -5,25 +5,13 @@ import { MenuItemEditWrapper } from '~/modules/navigation/menu-sheet/item-edit-w
 import type { MenuSectionOptions } from '~/modules/navigation/menu-sheet/section';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 
-export function MenuSheetItemsEdit({
-  data,
-  isArchived,
-  options,
-}: {
-  data: UserMenuItem[];
-  options?: MenuSectionOptions;
-  isArchived: boolean;
-}) {
+export function MenuSheetItemsEdit({ data, isArchived, options }: { data: UserMenuItem[]; options?: MenuSectionOptions; isArchived: boolean }) {
   const { t } = useTranslation();
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
   const [submenuVisibility, setSubmenuVisibility] = useState<Record<string, boolean>>({});
 
   if (options && data.length === 0) {
-    return (
-      <li className="py-2 text-center text-light text-muted-foreground text-sm">
-        {t('c:no_resource_yet', { resource: options.entityType })}
-      </li>
-    );
+    return <li className="py-2 text-center text-light text-muted-foreground text-sm">{t('c:no_resource_yet', { resource: options.entityType })}</li>;
   }
 
   const filteredItems = data
@@ -31,10 +19,7 @@ export function MenuSheetItemsEdit({
     .sort((a, b) => a.membership.displayOrder - b.membership.displayOrder);
 
   const toggleSubmenuVisibility = (itemId: string) => {
-    setSubmenuVisibility((prevState) => ({
-      ...prevState,
-      [itemId]: !prevState[itemId],
-    }));
+    setSubmenuVisibility((prevState) => ({ ...prevState, [itemId]: !prevState[itemId] }));
   };
 
   return filteredItems.map((item) => (

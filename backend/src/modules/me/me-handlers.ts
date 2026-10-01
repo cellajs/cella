@@ -47,12 +47,7 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
     const updated = await updateUserMfa(txCtx, { mfaRequired });
     if (updated.mfaRequired) {
       // This browser's session gives way to the mfa session minted below; every other regular session ends.
-      await revokeSessions(txCtx, {
-        userId: user.id,
-        sessionIds: [ctx.var.sessionId],
-        reason: 'replaced',
-        by: user.id,
-      });
+      await revokeSessions(txCtx, { userId: user.id, sessionIds: [ctx.var.sessionId], reason: 'replaced', by: user.id });
       await revokeSessions(txCtx, { userId: user.id, all: true, type: 'regular', reason: 'mfa_enabled', by: user.id });
     }
     return updated;

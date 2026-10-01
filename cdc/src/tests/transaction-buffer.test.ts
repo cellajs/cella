@@ -46,39 +46,13 @@ describe('TransactionBuffer', () => {
   it('suppresses cascaded child deletes when the parent channel entity is deleted', async () => {
     buffer.onBegin({ tag: 'begin', xid: 42, commitLsn: null, commitTime: BigInt(0) });
 
-    const t1 = mockParseResult({
-      action: 'delete',
-      entityType: 'attachment',
-      subjectId: 'attachment-1',
-      organizationId: 'org-1',
-    });
-    const t2 = mockParseResult({
-      action: 'delete',
-      entityType: 'attachment',
-      subjectId: 'attachment-2',
-      organizationId: 'org-1',
-    });
-    const t3 = mockParseResult({
-      action: 'delete',
-      entityType: 'attachment',
-      subjectId: 'attachment-3',
-      organizationId: 'org-1',
-    });
+    const t1 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-1', organizationId: 'org-1' });
+    const t2 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-2', organizationId: 'org-1' });
+    const t3 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-3', organizationId: 'org-1' });
 
-    const m1 = mockParseResult({
-      action: 'delete',
-      resourceType: 'membership',
-      entityType: null,
-      subjectId: 'mem-1',
-      organizationId: 'org-1',
-    });
+    const m1 = mockParseResult({ action: 'delete', resourceType: 'membership', entityType: null, subjectId: 'mem-1', organizationId: 'org-1' });
 
-    const proj = mockParseResult({
-      action: 'delete',
-      entityType: 'organization',
-      subjectId: 'org-1',
-      organizationId: 'org-1',
-    });
+    const proj = mockParseResult({ action: 'delete', entityType: 'organization', subjectId: 'org-1', organizationId: 'org-1' });
 
     await buffer.onEvent('0/1', t1);
     await buffer.onEvent('0/2', t2);
@@ -89,38 +63,20 @@ describe('TransactionBuffer', () => {
     await buffer.onCommit();
 
     expect(processedEvents).toHaveLength(1);
-    const survivors = processedEvents.map((e) => ({
-      entityType: e.result.activity.entityType,
-      subjectId: e.result.activity.subjectId,
-    }));
+    const survivors = processedEvents.map((e) => ({ entityType: e.result.activity.entityType, subjectId: e.result.activity.subjectId }));
     expect(survivors).toContainEqual({ entityType: 'organization', subjectId: 'org-1' });
   });
 
   it('does not suppress deletes from different channel entities', async () => {
     buffer.onBegin({ tag: 'begin', xid: 43, commitLsn: null, commitTime: BigInt(0) });
 
-    const proj = mockParseResult({
-      action: 'delete',
-      entityType: 'organization',
-      subjectId: 'org-1',
-      organizationId: 'org-1',
-    });
+    const proj = mockParseResult({ action: 'delete', entityType: 'organization', subjectId: 'org-1', organizationId: 'org-1' });
 
     // Different org: not suppressed.
-    const t1 = mockParseResult({
-      action: 'delete',
-      entityType: 'attachment',
-      subjectId: 'attachment-99',
-      organizationId: 'org-other',
-    });
+    const t1 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-99', organizationId: 'org-other' });
 
     // Deleted org: suppressed.
-    const t2 = mockParseResult({
-      action: 'delete',
-      entityType: 'attachment',
-      subjectId: 'attachment-1',
-      organizationId: 'org-1',
-    });
+    const t2 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-1', organizationId: 'org-1' });
 
     await buffer.onEvent('0/1', proj);
     await buffer.onEvent('0/2', t1);
@@ -137,12 +93,7 @@ describe('TransactionBuffer', () => {
     buffer.onBegin({ tag: 'begin', xid: 44, commitLsn: null, commitTime: BigInt(0) });
 
     const update = mockParseResult({ action: 'update', entityType: 'attachment', subjectId: 'attachment-1' });
-    const proj = mockParseResult({
-      action: 'delete',
-      entityType: 'organization',
-      subjectId: 'org-1',
-      organizationId: 'org-1',
-    });
+    const proj = mockParseResult({ action: 'delete', entityType: 'organization', subjectId: 'org-1', organizationId: 'org-1' });
 
     await buffer.onEvent('0/1', update);
     await buffer.onEvent('0/2', proj);
@@ -156,19 +107,8 @@ describe('TransactionBuffer', () => {
     buffer.onBegin({ tag: 'begin', xid: 45, commitLsn: null, commitTime: BigInt(0) });
 
     const org = mockParseResult({ action: 'delete', entityType: 'organization', subjectId: 'org-1' });
-    const t1 = mockParseResult({
-      action: 'delete',
-      entityType: 'attachment',
-      subjectId: 'attachment-1',
-      organizationId: 'org-1',
-    });
-    const m1 = mockParseResult({
-      action: 'delete',
-      resourceType: 'membership',
-      entityType: null,
-      subjectId: 'mem-1',
-      organizationId: 'org-1',
-    });
+    const t1 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-1', organizationId: 'org-1' });
+    const m1 = mockParseResult({ action: 'delete', resourceType: 'membership', entityType: null, subjectId: 'mem-1', organizationId: 'org-1' });
 
     await buffer.onEvent('0/1', org);
     await buffer.onEvent('0/2', t1);
@@ -188,12 +128,7 @@ describe('TransactionBuffer', () => {
 
     // 50,000 cascaded child deletes prove suppression stays memory-bounded.
     for (let i = 0; i < 50_000; i++) {
-      const task = mockParseResult({
-        action: 'delete',
-        entityType: 'attachment',
-        subjectId: `task-${i}`,
-        organizationId: 'org-1',
-      });
+      const task = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: `task-${i}`, organizationId: 'org-1' });
       await buffer.onEvent(`0/${i + 1}`, task);
     }
 
@@ -210,24 +145,9 @@ describe('TransactionBuffer', () => {
     buffer.onBegin({ tag: 'begin', xid: 101, commitLsn: null, commitTime: BigInt(0) });
 
     // Non-standard WAL order: children before parent.
-    const t1 = mockParseResult({
-      action: 'delete',
-      entityType: 'attachment',
-      subjectId: 'attachment-1',
-      organizationId: 'org-1',
-    });
-    const t2 = mockParseResult({
-      action: 'delete',
-      entityType: 'attachment',
-      subjectId: 'attachment-2',
-      organizationId: 'org-1',
-    });
-    const proj = mockParseResult({
-      action: 'delete',
-      entityType: 'organization',
-      subjectId: 'org-1',
-      organizationId: 'org-1',
-    });
+    const t1 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-1', organizationId: 'org-1' });
+    const t2 = mockParseResult({ action: 'delete', entityType: 'attachment', subjectId: 'attachment-2', organizationId: 'org-1' });
+    const proj = mockParseResult({ action: 'delete', entityType: 'organization', subjectId: 'org-1', organizationId: 'org-1' });
 
     await buffer.onEvent('0/1', t1);
     await buffer.onEvent('0/2', t2);

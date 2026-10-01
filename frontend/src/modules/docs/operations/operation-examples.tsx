@@ -44,9 +44,7 @@ export function OperationExamples({ operationId, tagName }: OperationExamplesPro
   const responses = operation?.responses ?? [];
 
   // The sheet is titled "Success response": error examples stay on the operation page.
-  const successResponsesWithExamples = responses.filter(
-    (r) => r.status >= 200 && r.status < 300 && r.example !== undefined,
-  );
+  const successResponsesWithExamples = responses.filter((r) => r.status >= 200 && r.status < 300 && r.example !== undefined);
 
   if (successResponsesWithExamples.length === 0) {
     return <div className="py-4 text-center text-muted-foreground">{t('c:docs.no_examples_defined')}</div>;

@@ -131,12 +131,7 @@ export async function jsxToString(element: ReactNode): Promise<string> {
         return suspenseResult;
       }
     } else if (isReactForwardRef(type)) {
-      return jsxToString(
-        (type as { render: (props: unknown, ref: unknown) => ReactNode }).render(
-          props,
-          (props as { ref: unknown }).ref,
-        ),
-      );
+      return jsxToString((type as { render: (props: unknown, ref: unknown) => ReactNode }).render(props, (props as { ref: unknown }).ref));
     } else if ((type as { $$typeof?: symbol }).$$typeof) {
       const key = Symbol.keyFor((type as { $$typeof: symbol }).$$typeof);
       if (key === 'react.provider') {
@@ -156,9 +151,7 @@ function isIterable(node: unknown): node is Iterable<unknown> {
   return typeof node === 'object' && node !== null && Symbol.iterator in node;
 }
 
-function isReactForwardRef(
-  type: unknown,
-): type is { $$typeof: symbol; render: (props: unknown, ref: unknown) => ReactNode } {
+function isReactForwardRef(type: unknown): type is { $$typeof: symbol; render: (props: unknown, ref: unknown) => ReactNode } {
   return (
     typeof type === 'object' &&
     type !== null &&

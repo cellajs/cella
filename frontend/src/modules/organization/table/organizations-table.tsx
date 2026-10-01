@@ -24,9 +24,7 @@ function OrganizationsTable() {
   const { t } = useTranslation();
   const changeRole = useChangeEntityRoleMutation();
 
-  const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({
-    from: '/_app/system/organizations',
-  });
+  const { search, setSearch } = useSearchParams<OrganizationsRouteSearchParams>({ from: '/_app/system/organizations' });
 
   const { q, sort, order } = search;
   const limit = LIMIT;
@@ -39,10 +37,7 @@ function OrganizationsTable() {
   const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
   const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
 
-  const onRowsChange = (
-    changedRows: EnrichedOrganization[],
-    { column, indexes }: RowsChangeData<EnrichedOrganization>,
-  ) => {
+  const onRowsChange = (changedRows: EnrichedOrganization[], { column, indexes }: RowsChangeData<EnrichedOrganization>) => {
     if (column.key !== 'role') return;
 
     for (const index of indexes) {
@@ -83,11 +78,7 @@ function OrganizationsTable() {
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder
-              icon={BirdIcon}
-              title="c:no_resource_yet"
-              titleProps={{ resource: t('c:organization_other').toLowerCase() }}
-            />
+            <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:organization_other').toLowerCase() }} />
           ),
         }}
       />

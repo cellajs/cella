@@ -51,9 +51,7 @@ export function getDecisionsForAccesses<T extends AccessMembership>(
   validateSubject(subject, undefined, hierarchy);
 
   const ancestors = hierarchy.getOrderedAncestors(subject.entityType) as ChannelEntityType[];
-  const orderedChannels = (
-    hierarchy.isChannel(subject.entityType) ? [subject.entityType, ...ancestors] : [...ancestors]
-  ) as ChannelEntityType[];
+  const orderedChannels = (hierarchy.isChannel(subject.entityType) ? [subject.entityType, ...ancestors] : [...ancestors]) as ChannelEntityType[];
 
   const policyIndex = buildPolicyIndex(policies, subject.entityType);
 
@@ -124,9 +122,7 @@ export function getDecisionsForAccesses<T extends AccessMembership>(
     }
 
     // Re-personalize: the class decision's membership belongs to the class representative.
-    const membership = primaryChannelId
-      ? (membershipIndex.get(`${primaryChannel}:${primaryChannelId}`)?.[0] ?? null)
-      : null;
+    const membership = primaryChannelId ? (membershipIndex.get(`${primaryChannel}:${primaryChannelId}`)?.[0] ?? null) : null;
     return decision.membership === membership ? decision : { ...decision, membership };
   });
 }

@@ -53,16 +53,8 @@ describe('resolveFieldConflicts', () => {
 
   it('handles multiple fields with mixed results', () => {
     const incoming = { name: 'A', status: 'B', description: 'C' };
-    const incomingTs = {
-      name: '300:0001:aaaaa',
-      status: '100:0001:aaaaa',
-      description: '250:0001:aaaaa',
-    };
-    const storedTs = {
-      name: '200:0001:bbbbb',
-      status: '200:0001:bbbbb',
-      description: '200:0001:bbbbb',
-    };
+    const incomingTs = { name: '300:0001:aaaaa', status: '100:0001:aaaaa', description: '250:0001:aaaaa' };
+    const storedTs = { name: '200:0001:bbbbb', status: '200:0001:bbbbb', description: '200:0001:bbbbb' };
     const result = resolveFieldConflicts(incoming, incomingTs, storedTs);
 
     expect(result).toEqual({ name: 'A', description: 'C' });

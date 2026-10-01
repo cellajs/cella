@@ -1,10 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import {
-  isSyncDeliveryTrusted,
-  setSyncDeliveryTrusted,
-  setSyncStreamHealthy,
-  syncStaleTime,
-} from './sync-stale-config';
+import { isSyncDeliveryTrusted, setSyncDeliveryTrusted, setSyncStreamHealthy, syncStaleTime } from './sync-stale-config';
 
 const FIVE_MINUTES = 5 * 60 * 1000;
 

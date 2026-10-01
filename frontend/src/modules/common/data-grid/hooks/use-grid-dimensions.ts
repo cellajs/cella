@@ -13,12 +13,7 @@ interface GridDimensionsResult extends GridDimensions {
   gridRef: RefObject<HTMLDivElement | null>;
 }
 
-const initialDimensions: GridDimensions = {
-  viewportHeight: 1,
-  scrollTop: 0,
-  gridRect: null,
-  measured: false,
-};
+const initialDimensions: GridDimensions = { viewportHeight: 1, scrollTop: 0, gridRect: null, measured: false };
 
 /** Nearest scrollable ancestor, or null when the window or document is the scroll container. */
 function getScrollParent(node: HTMLElement): HTMLElement | null {
@@ -35,10 +30,7 @@ function getScrollParent(node: HTMLElement): HTMLElement | null {
 }
 
 /** Row-virtualization dimensions from an explicit or nearest scroll container; CSS owns column sizing. */
-export function useGridDimensions(
-  scrollContainerRef?: RefObject<HTMLElement | null>,
-  enableRowVirtualization = true,
-): GridDimensionsResult {
+export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | null>, enableRowVirtualization = true): GridDimensionsResult {
   const gridRef = useRef<HTMLDivElement>(null);
   const snapshotRef = useRef<GridDimensions>(initialDimensions);
   // The notifier from useSyncExternalStore's subscribe lives in a ref, so the layout effect does not re-run when subscribe is re-invoked.
@@ -105,13 +97,7 @@ export function useGridDimensions(
         return prev;
       }
 
-      return {
-        ...prev,
-        viewportHeight,
-        scrollTop,
-        gridRect: rect,
-        measured: true,
-      };
+      return { ...prev, viewportHeight, scrollTop, gridRect: rect, measured: true };
     };
 
     // --- Initial synchronous measurement ---
@@ -148,8 +134,5 @@ export function useGridDimensions(
     };
   }, [scrollContainerRef, enableRowVirtualization]);
 
-  return {
-    gridRef,
-    ...dimensions,
-  };
+  return { gridRef, ...dimensions };
 }

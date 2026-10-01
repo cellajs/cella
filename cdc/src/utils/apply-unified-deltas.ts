@@ -13,11 +13,7 @@ import { isMaxMergeKey } from './update-counts';
  * GREATEST(0, existing + delta) per key and max-merges `e:li:`/`e:lu:`/`e:f:` keys. The SQL shape is
  * fixed so PostgreSQL can cache the plan.
  */
-async function mergedUpsert(
-  channelKey: string,
-  deltas: Record<string, number>,
-  returning: true,
-): Promise<Record<string, number>>;
+async function mergedUpsert(channelKey: string, deltas: Record<string, number>, returning: true): Promise<Record<string, number>>;
 async function mergedUpsert(channelKey: string, deltas: Record<string, number>, returning?: false): Promise<void>;
 async function mergedUpsert(
   channelKey: string,
@@ -56,10 +52,7 @@ async function mergedUpsert(
  * Adds `source` into `target` in place, summing on key collision. Max-merge keys keep the max, since
  * apply_count_deltas only ever moves stamps and frontiers forward.
  */
-export function sumInto(
-  target: Record<string, number>,
-  source: Record<string, number> | undefined,
-): Record<string, number> {
+export function sumInto(target: Record<string, number>, source: Record<string, number> | undefined): Record<string, number> {
   if (source) {
     for (const [k, v] of Object.entries(source)) {
       target[k] = isMaxMergeKey(k) ? Math.max(target[k] ?? 0, v) : (target[k] ?? 0) + v;
@@ -73,10 +66,7 @@ export function sumInto(
  * reserves WAL-ordered sequence ranges; phase 2 writes ancestor frontiers, remaining counts, and the
  * row seq values.
  */
-export async function applyBatchUnifiedDeltas(
-  plan: BatchUnifiedDeltaPlan,
-  h: EntityHierarchy = hierarchy,
-): Promise<void> {
+export async function applyBatchUnifiedDeltas(plan: BatchUnifiedDeltaPlan, h: EntityHierarchy = hierarchy): Promise<void> {
   const { orgSequenceGroups, countDeltasByChannelKey } = plan;
 
   const handledChannelKeys = new Set<string>();
@@ -111,12 +101,7 @@ export async function applyBatchUnifiedDeltas(
       mergeDelta(phase2Deltas, home, { [`e:f:h:${tableMeta.type}`]: seq });
     }
 
-    log.trace('Batch sequence stamped', {
-      orgKey: group.orgKey,
-      count: group.count,
-      baseSeq: baseSeq + 1,
-      highSeq,
-    });
+    log.trace('Batch sequence stamped', { orgKey: group.orgKey, count: group.count, baseSeq: baseSeq + 1, highSeq });
   }
 
   // Phase 2: frontier marks + remaining count UPSERTs + bulk entity stamp, all in parallel.

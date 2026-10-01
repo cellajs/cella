@@ -17,8 +17,5 @@ export async function makeS3Client(region: string, accessKey: string, secretKey:
 
 /** The key a deploy-side bucket write authenticates with: the SCW_* pair, else the AWS_* pair of the state backend. Empty when neither is set, so the SDK's own error names the missing key. */
 export function deployS3Key(env: NodeJS.ProcessEnv = process.env): { accessKey: string; secretKey: string } {
-  return {
-    accessKey: env.SCW_ACCESS_KEY ?? env.AWS_ACCESS_KEY_ID ?? '',
-    secretKey: env.SCW_SECRET_KEY ?? env.AWS_SECRET_ACCESS_KEY ?? '',
-  };
+  return { accessKey: env.SCW_ACCESS_KEY ?? env.AWS_ACCESS_KEY_ID ?? '', secretKey: env.SCW_SECRET_KEY ?? env.AWS_SECRET_ACCESS_KEY ?? '' };
 }

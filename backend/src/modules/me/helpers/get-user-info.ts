@@ -27,9 +27,7 @@ export const getAuthInfo = async (ctx: DbContext, { userId }: { userId: string }
   const getOAuth = db
     .select({ provider: identitiesTable.issuer })
     .from(identitiesTable)
-    .where(
-      and(eq(identitiesTable.userId, userId), eq(identitiesTable.kind, 'oauth'), eq(identitiesTable.verified, true)),
-    );
+    .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.kind, 'oauth'), eq(identitiesTable.verified, true)));
 
   const [passkeys, totps, oauth] = await Promise.all([getPasskeys, getTotp, getOAuth]);
   return { passkeys, hasTotp: !!totps.length, oauth };
@@ -47,25 +45,14 @@ export const getUserSessions = async (ctx: Context<Env>, userId: string): Promis
   const getSessions = db
     .select()
     .from(sessionsTable)
-    .where(
-      and(
-        eq(sessionsTable.userId, userId),
-        or(isNull(sessionsTable.revokedAt), gt(sessionsTable.revokedAt, revokedSince)),
-      ),
-    )
+    .where(and(eq(sessionsTable.userId, userId), or(isNull(sessionsTable.revokedAt), gt(sessionsTable.revokedAt, revokedSince))))
     .orderBy(desc(sessionsTable.createdAt));
   const windowStart = new Date(Date.now() - NEW_DEVICE_WINDOW.milliseconds()).toISOString();
   const oldestFirstSeen = sql`(select min(${devicesTable.firstSeenAt}) from ${devicesTable} where ${devicesTable.userId} = ${userId})`;
   const getNewDevices = db
     .select({ deviceIdHash: devicesTable.deviceIdHash })
     .from(devicesTable)
-    .where(
-      and(
-        eq(devicesTable.userId, userId),
-        gt(devicesTable.firstSeenAt, windowStart),
-        gt(devicesTable.firstSeenAt, oldestFirstSeen),
-      ),
-    );
+    .where(and(eq(devicesTable.userId, userId), gt(devicesTable.firstSeenAt, windowStart), gt(devicesTable.firstSeenAt, oldestFirstSeen)));
 
   const [sessions, newDevices] = await Promise.all([getSessions, getNewDevices]);
   const newDeviceHashes = new Set(newDevices.map(({ deviceIdHash }) => deviceIdHash));

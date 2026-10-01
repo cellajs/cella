@@ -14,10 +14,7 @@ type PromptOption<T extends string> = { name: string; value: T; description?: st
  * `select` that also resolves the {@link BACK} sentinel on Esc, so a prompt can return to the previous menu without forcing a choice.
  * Inquirer's select has no native Esc handling, so it is aborted via an AbortController driven by a stdin keypress listener.
  */
-function selectWithEscape<T extends string>(options: {
-  message: string;
-  choices: Array<PromptOption<T>>;
-}): Promise<T | typeof BACK> {
+function selectWithEscape<T extends string>(options: { message: string; choices: Array<PromptOption<T>> }): Promise<T | typeof BACK> {
   const controller = new AbortController();
   const onKeypress = (_chunk: unknown, key?: { name?: string }) => {
     if (key?.name === 'escape') controller.abort();
@@ -44,11 +41,7 @@ function selectWithEscape<T extends string>(options: {
  */
 export async function runSecrets(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
-  console.info(
-    pc.dim(
-      '\n→ Manage runtime secrets writes Secret Manager, which the admin application key cannot: it uses your Owner API key.',
-    ),
-  );
+  console.info(pc.dim('\n→ Manage runtime secrets writes Secret Manager, which the admin application key cannot: it uses your Owner API key.'));
   const ownerKey = await acquireOwnerKey({
     identity: resolveOperatorIdentity(),
     names: principalNames(appConfig.slug, context.environment),

@@ -29,9 +29,7 @@ describe('Sign-out scoping', async () => {
     const forgedContent = `${forgedSecret}.${victimSessionId}.`;
     const forgedCookie = authCookie('session', forgedContent);
 
-    const { response: res } = await call(signOut, {
-      headers: { ...defaultHeaders, Cookie: forgedCookie },
-    });
+    const { response: res } = await call(signOut, { headers: { ...defaultHeaders, Cookie: forgedCookie } });
 
     // The forged secret matches no session row → fail closed.
     expect(res.status).toBe(401);

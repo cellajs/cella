@@ -42,15 +42,9 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
   // Inline media become org-scoped attachment rows, so the file panel needs attachment CREATE, which
   // an organization UPDATE grant does not imply, and the organization must be an upload target.
   const canUploadAttachments =
-    (appConfig.attachmentUploadTargets as readonly string[]).includes('organization') &&
-    organization.can?.attachment?.create === true;
+    (appConfig.attachmentUploadTargets as readonly string[]).includes('organization') && organization.can?.attachment?.create === true;
 
-  const formOptions: UseFormProps<FormValues> = {
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      welcomeText: organization.welcomeText || '',
-    },
-  };
+  const formOptions: UseFormProps<FormValues> = { resolver: zodResolver(formSchema), defaultValues: { welcomeText: organization.welcomeText || '' } };
 
   const formContainerId = 'update-organization-details';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${organization.id}`, { formOptions, formContainerId });
@@ -99,10 +93,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
                     organizationId: organization.id,
                     // Private org-scoped attachments so the id the block references resolves via presigned + permission check.
                     onComplete: (attachments) =>
-                      persistAttachments(attachments, {
-                        tenantId: organization.tenantId,
-                        organizationId: organization.id,
-                      }).catch(() => {
+                      persistAttachments(attachments, { tenantId: organization.tenantId, organizationId: organization.id }).catch(() => {
                         toaster.error(t('error:create_resource', { resource: t('c:attachment').toLowerCase() }));
                       }),
                   }
@@ -115,12 +106,7 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
           <SubmitButton disabled={!isDirty()} loading={isPending}>
             {t('c:save_changes')}
           </SubmitButton>
-          <Button
-            type="reset"
-            variant="secondary"
-            onClick={() => form.reset()}
-            className={isDirty() ? '' : 'invisible'}
-          >
+          <Button type="reset" variant="secondary" onClick={() => form.reset()} className={isDirty() ? '' : 'invisible'}>
             {t('c:cancel')}
           </Button>
         </div>

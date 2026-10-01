@@ -35,9 +35,7 @@ interface InvitationMailOpts {
 export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOpts): Promise<void> {
   const { sender, channel, organization, invited, added = [] } = opts;
 
-  const languages = await findAccountLanguages(ctx, {
-    userIds: [...invited, ...added].flatMap(({ userId }) => (userId ? [userId] : [])),
-  });
+  const languages = await findAccountLanguages(ctx, { userIds: [...invited, ...added].flatMap(({ userId }) => (userId ? [userId] : [])) });
   const recipient = ({ email, userId }: InvitedAddress) => ({
     email,
     lng: (userId && languages.get(userId)) || organization?.defaultLanguage || appConfig.defaultLanguage,
@@ -55,9 +53,7 @@ export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOp
 
   const statics = { ...senderProps, entityName: channel.name, role: channel.role };
   const page = `${appConfig.frontendUrl}/${channel.type}/${channel.slug}`;
-  const withoutToken = invited.flatMap((address) =>
-    address.rawToken ? [] : [{ ...recipient(address), memberInviteLink: page }],
-  );
+  const withoutToken = invited.flatMap((address) => (address.rawToken ? [] : [{ ...recipient(address), memberInviteLink: page }]));
   const addedRecipients = added.map((address) => ({ ...recipient(address), entityLink: page }));
 
   if (withToken.length) await mailer.prepareEmails(memberInviteWithTokenEmail, statics, withToken, sender.email);

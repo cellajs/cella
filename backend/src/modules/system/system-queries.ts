@@ -48,18 +48,10 @@ interface FindNewsletterRecipientsOpts {
   roles: EntityRole[];
 }
 
-export const findNewsletterRecipients = async (
-  ctx: DbContext,
-  { organizationIds, roles }: FindNewsletterRecipientsOpts,
-) => {
+export const findNewsletterRecipients = async (ctx: DbContext, { organizationIds, roles }: FindNewsletterRecipientsOpts) => {
   const { db } = ctx.var;
   return db
-    .selectDistinct({
-      userId: usersTable.id,
-      email: usersTable.email,
-      name: usersTable.name,
-      orgName: organizationsTable.name,
-    })
+    .selectDistinct({ userId: usersTable.id, email: usersTable.email, name: usersTable.name, orgName: organizationsTable.name })
     .from(membershipsTable)
     .innerJoin(usersTable, eq(usersTable.id, membershipsTable.userId))
     .innerJoin(organizationsTable, eq(organizationsTable.id, membershipsTable.organizationId))

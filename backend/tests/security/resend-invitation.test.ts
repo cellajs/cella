@@ -97,9 +97,7 @@ describe('Resend an invitation', async () => {
 
     const opened = await invoke(rawFresh);
     expect(opened.response.status).toBe(302);
-    expect(opened.response.headers.get('location')).toBe(
-      `${appConfig.frontendUrl}/auth/authenticate?tokenId=${fresh.id}`,
-    );
+    expect(opened.response.headers.get('location')).toBe(`${appConfig.frontendUrl}/auth/authenticate?tokenId=${fresh.id}`);
 
     const old = await invoke(rawToken);
     await expectRefusal(old, 401, 'invitation_not_found');
@@ -147,10 +145,7 @@ describe('Resend an invitation', async () => {
 
   it('must not re-mint a rejected invitation via resend-invitation', async () => {
     const { token, inactiveMembership } = await expiredInvitation();
-    await db
-      .update(inactiveMembershipsTable)
-      .set({ rejectedAt: getIsoDate() })
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    await db.update(inactiveMembershipsTable).set({ rejectedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
     const { response } = await resend({ tokenId: token.id });
 
@@ -201,11 +196,7 @@ describe('Resend an invitation', async () => {
     const { token } = await expiredInvitation();
     const { baseApp } = await import('#/routes');
     const resendByEmail = (email: string) =>
-      baseApp.request('/auth/resend-invitation', {
-        method: 'POST',
-        headers: defaultHeaders,
-        body: JSON.stringify({ email }),
-      });
+      baseApp.request('/auth/resend-invitation', { method: 'POST', headers: defaultHeaders, body: JSON.stringify({ email }) });
 
     // An address is no key: the invited and the unknown one get the same refusal.
     const invited = await resendByEmail(invitedEmail);
@@ -227,19 +218,10 @@ describe('Resend a pending invitation from the pending list', async () => {
 
   const setup = async () => {
     const organization = await createTestOrganization();
-    const admin = await createOrganizationAdminUser(
-      'org-admin@example.com',
-      organization.id,
-      adminRole,
-      organization.tenantId,
-    );
+    const admin = await createOrganizationAdminUser('org-admin@example.com', organization.id, adminRole, organization.tenantId);
     const invitation = await createInvitation({ organization, email: invitedEmail, createdBy: admin.id });
     const headers = { ...defaultHeaders, Cookie: await createTestSession(admin) };
-    const path = {
-      tenantId: organization.tenantId,
-      organizationId: organization.id,
-      id: invitation.inactiveMembership.id,
-    };
+    const path = { tenantId: organization.tenantId, organizationId: organization.id, id: invitation.inactiveMembership.id };
     return { organization, headers, path, ...invitation };
   };
 
@@ -258,10 +240,7 @@ describe('Resend a pending invitation from the pending list', async () => {
 
   it('must not re-mint a rejected invitation via the pending list', async () => {
     const { headers, path, token, inactiveMembership } = await setup();
-    await db
-      .update(inactiveMembershipsTable)
-      .set({ rejectedAt: getIsoDate() })
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    await db.update(inactiveMembershipsTable).set({ rejectedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
     const { response, error } = await call(resendPendingInvitation, { path, headers });
 

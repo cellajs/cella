@@ -50,10 +50,7 @@ describe('Passkey Authentication', async () => {
       const user = await createUser(signUpUser.email);
       await db.update(usersTable).set({ mfaRequired: true }).where(eq(usersTable.id, user.id));
 
-      const { response: res, error } = await call(generatePasskeyChallenge, {
-        body: { type: 'mfa' },
-        headers: defaultHeaders,
-      });
+      const { response: res, error } = await call(generatePasskeyChallenge, { body: { type: 'mfa' }, headers: defaultHeaders });
       await expectRefusal({ response: res, error }, 401, 'confirm-mfa_not_found');
     });
   });
@@ -99,8 +96,7 @@ describe('Passkey Authentication', async () => {
       const victimPasskey = await insertPasskey(victim);
       const stored = () => db.select().from(passkeysTable).where(eq(passkeysTable.id, victimPasskey.id));
       const remove = async (cookie: string) =>
-        (await call(deletePasskey, { path: { id: victimPasskey.id }, headers: { ...defaultHeaders, Cookie: cookie } }))
-          .response.status;
+        (await call(deletePasskey, { path: { id: victimPasskey.id }, headers: { ...defaultHeaders, Cookie: cookie } })).response.status;
 
       // The delete is scoped to the caller, so it is a no-op for the attacker.
       expect(await remove(await createTestSession(attacker))).toBe(204);

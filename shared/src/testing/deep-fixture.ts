@@ -39,11 +39,7 @@ export const makeDeepHierarchy = (
     .user()
     .organization({ roles: deepChannelRoles.organization, elevated: elevated.organization })
     .channel('course', { parent: 'organization', roles: deepChannelRoles.course, elevated: elevated.course })
-    .channel('courseSection', {
-      parent: 'course',
-      roles: deepChannelRoles.courseSection,
-      elevated: elevated.courseSection,
-    })
+    .channel('courseSection', { parent: 'course', roles: deepChannelRoles.courseSection, elevated: elevated.courseSection })
     .channel('project', { parent: 'courseSection', roles: deepChannelRoles.project, elevated: elevated.project })
     .product('item', { parent: 'project', nullableAncestors: itemNullableAncestors })
     .product('task', { parent: 'project' })
@@ -76,6 +72,5 @@ export const deepItemPolicies = (
   );
 
 /** One read cell per channel level and role; `readValue` decides each cell. */
-export const deepReadPolicies = (
-  readValue: (channelType: DeepChannelType, role: string) => PolicyCellInput,
-): PolicyMatrix => deepItemPolicies((channelType, role) => ({ read: readValue(channelType, role) }));
+export const deepReadPolicies = (readValue: (channelType: DeepChannelType, role: string) => PolicyCellInput): PolicyMatrix =>
+  deepItemPolicies((channelType, role) => ({ read: readValue(channelType, role) }));

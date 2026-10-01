@@ -8,12 +8,7 @@ const legacyTerm = ['fo', 'rk'].join('');
 
 describe('findAppVocabularyFindings', () => {
   it('finds the term in prose, casing, plurals, and identifiers', () => {
-    const source = [
-      `// ${legacyTerm}-owned`,
-      `const ${legacyTerm}Breaking = true`,
-      legacyTerm.toUpperCase(),
-      `${legacyTerm}s`,
-    ].join('\n');
+    const source = [`// ${legacyTerm}-owned`, `const ${legacyTerm}Breaking = true`, legacyTerm.toUpperCase(), `${legacyTerm}s`].join('\n');
 
     expect(findAppVocabularyFindings('example.ts', source).map(({ line, term }) => ({ line, term }))).toEqual([
       { line: 1, term: legacyTerm },
@@ -35,9 +30,7 @@ describe('findAppVocabularyFindings', () => {
       ' */',
     ].join('\n');
 
-    expect(
-      findAppVocabularyFindings('example.ts', source).map(({ line, column, term }) => ({ line, column, term })),
-    ).toEqual([
+    expect(findAppVocabularyFindings('example.ts', source).map(({ line, column, term }) => ({ line, column, term }))).toEqual([
       { line: 3, column: 18, term: legacyTerm },
       { line: 7, column: 10, term: legacyTerm },
     ]);
@@ -47,12 +40,7 @@ describe('findAppVocabularyFindings', () => {
     const findings = findAppVocabularyFindings(`src/${legacyTerm}-config.ts`, 'export {};');
 
     expect(findings).toEqual([
-      {
-        file: `src/${legacyTerm}-config.ts`,
-        rule: 'source-control-term',
-        term: legacyTerm,
-        message: 'use template/app terminology',
-      },
+      { file: `src/${legacyTerm}-config.ts`, rule: 'source-control-term', term: legacyTerm, message: 'use template/app terminology' },
     ]);
   });
 
@@ -83,9 +71,7 @@ describe('findProductNameFindings', () => {
       `const host = \`_${name}-verification.\${domain}\`;`,
       `const url = 'https://www.${name}js.com/mcp';`,
     ].join('\n');
-    expect(
-      findProductNameFindings('backend/src/modules/x/x.ts', source).map(({ line, term }) => ({ line, term })),
-    ).toEqual([
+    expect(findProductNameFindings('backend/src/modules/x/x.ts', source).map(({ line, term }) => ({ line, term }))).toEqual([
       { line: 1, term: `${name}_k` },
       { line: 2, term: 'CellaT' },
       { line: 3, term: `_${name}-` },
@@ -94,11 +80,7 @@ describe('findProductNameFindings', () => {
   });
 
   it('leaves prose, tags and ownership markers alone', () => {
-    const source = [
-      `// none in ${name}; apps with other vocabularies add theirs`,
-      `tags: ['me', '${name}'],`,
-      `owner: '${name}',`,
-    ].join('\n');
+    const source = [`// none in ${name}; apps with other vocabularies add theirs`, `tags: ['me', '${name}'],`, `owner: '${name}',`].join('\n');
     expect(findProductNameFindings('backend/src/modules/x/x.ts', source)).toEqual([]);
   });
 

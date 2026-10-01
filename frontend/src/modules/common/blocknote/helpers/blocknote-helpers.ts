@@ -7,11 +7,7 @@ import type { CustomBlock } from '~/modules/common/blocknote/types';
 let headlessEditor: ReturnType<typeof BlockNoteEditor.create> | null = null;
 export const getHeadlessEditor = () => {
   if (!headlessEditor) {
-    headlessEditor = BlockNoteEditor.create({
-      schema: customSchema,
-      _headless: true,
-      extensions: [checkedExtension()],
-    });
+    headlessEditor = BlockNoteEditor.create({ schema: customSchema, _headless: true, extensions: [checkedExtension()] });
   }
   return headlessEditor;
 };
@@ -27,13 +23,9 @@ export const walkBlocks = (blocks: CustomBlock[], visitor: (block: CustomBlock) 
 };
 
 /** Media element for a click in rendered content, or null. `includeWrapped` also matches nested media and file blocks without a preview. */
-export const findClickedMedia = (
-  target: HTMLElement,
-  { includeWrapped = false } = {},
-): { src: string | undefined } | null => {
+export const findClickedMedia = (target: HTMLElement, { includeWrapped = false } = {}): { src: string | undefined } | null => {
   const mediaElement =
-    target.closest<HTMLElement>('img, video, audio') ??
-    (includeWrapped ? target.querySelector<HTMLElement>('img, video, audio') : null);
+    target.closest<HTMLElement>('img, video, audio') ?? (includeWrapped ? target.querySelector<HTMLElement>('img, video, audio') : null);
   const insideFileBlock = includeWrapped && !!target.closest('.bn-file-block-content-wrapper');
 
   if (!mediaElement && !insideFileBlock) return null;
@@ -66,10 +58,7 @@ export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<b
     const html = editor.blocksToHTMLLossy(blocks);
 
     await navigator.clipboard.write([
-      new ClipboardItem({
-        'text/html': new Blob([html], { type: 'text/html' }),
-        'text/plain': new Blob([markdown], { type: 'text/plain' }),
-      }),
+      new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([markdown], { type: 'text/plain' }) }),
     ]);
 
     return true;

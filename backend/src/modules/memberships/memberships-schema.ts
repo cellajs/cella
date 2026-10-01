@@ -46,12 +46,7 @@ export const inactiveMembershipSchema = z
   });
 
 export const membershipBaseSchema = membershipSchema
-  .omit({
-    createdAt: true,
-    createdBy: true,
-    updatedAt: true,
-    updatedBy: true,
-  })
+  .omit({ createdAt: true, createdBy: true, updatedAt: true, updatedBy: true })
   .openapi('MembershipBase', {
     description: 'Core membership fields shared across active and inactive memberships.',
     example: mockMembershipBase(),
@@ -73,10 +68,7 @@ export const memberMembershipSchema = membershipBaseSchema.omit(personalViewMask
 /** An updated membership with its audit fields; archive, mute and menu order as in `memberMembershipSchema`. */
 export const updatedMembershipSchema = membershipSchema.omit(personalViewMask).extend(optionalPersonalView);
 
-export const membershipCreateBodySchema = z.object({
-  emails: validEmailSchema.array().min(1).max(50),
-  role: membershipSchema.shape.role,
-});
+export const membershipCreateBodySchema = z.object({ emails: validEmailSchema.array().min(1).max(50), role: membershipSchema.shape.role });
 
 export const membershipUpdateBodySchema = z
   .object({ role: membershipSchema.shape.role.optional(), ...optionalPersonalView })

@@ -62,12 +62,9 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
         .where(and(isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, getIsoDate()), where))
         .returning(sessionSafeColumns);
 
-    const stamped =
-      reason === 'user_deleted' ? [] : await stamp(reason, and(eq(sessionsTable.userId, userId), selection, ofType));
+    const stamped = reason === 'user_deleted' ? [] : await stamp(reason, and(eq(sessionsTable.userId, userId), selection, ofType));
     const endedIds = stamped.map((session) => session.id);
-    const stopped = endedIds.length
-      ? await stamp('impersonation_stopped', inArray(sessionsTable.impersonatorSessionId, endedIds))
-      : [];
+    const stopped = endedIds.length ? await stamp('impersonation_stopped', inArray(sessionsTable.impersonatorSessionId, endedIds)) : [];
 
     if (deletesProviderSessions.has(reason)) await deleteProviderSessionsOfUser({ var: { db: tx } }, { userId });
 
@@ -81,19 +78,11 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
 
   const everySession = 'all' in opts && !opts.type;
   if (everySession || ended.length > 0) {
-    authEvents.emit('session.revoked', {
-      userId,
-      sessionIds: everySession ? 'all' : ended.map((session) => session.id),
-      reason,
-    });
+    authEvents.emit('session.revoked', { userId, sessionIds: everySession ? 'all' : ended.map((session) => session.id), reason });
   }
   for (const impersonation of layered) {
     dropCachedAuth({ user: impersonation.userId });
-    authEvents.emit('session.revoked', {
-      userId: impersonation.userId,
-      sessionIds: [impersonation.id],
-      reason: 'impersonation_stopped',
-    });
+    authEvents.emit('session.revoked', { userId: impersonation.userId, sessionIds: [impersonation.id], reason: 'impersonation_stopped' });
   }
   log.info('Sessions revoked', { userId, reason, count: ended.length, impersonationsStopped: layered.length });
 

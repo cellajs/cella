@@ -9,14 +9,7 @@ import { adminApplicationId, backendServiceApplicationId, bootApplicationId, ciD
 const needs = appStorageNeeds(services);
 const browserOrigin = needs.browserOriginSlug ? serviceUrl(needs.browserOriginSlug) : undefined;
 const uploadCorsRules = browserOrigin
-  ? [
-      {
-        allowedHeaders: ['*'],
-        allowedMethods: ['GET', 'PUT', 'POST'],
-        allowedOrigins: [browserOrigin],
-        maxAgeSeconds: 3600,
-      },
-    ]
+  ? [{ allowedHeaders: ['*'], allowedMethods: ['GET', 'PUT', 'POST'], allowedOrigins: [browserOrigin], maxAgeSeconds: 3600 }]
   : undefined;
 
 /**
@@ -190,20 +183,18 @@ if (publicUploadsBucket) {
     region,
     policy: pulumi.jsonStringify({
       Version: '2023-04-17',
-      Statement: pulumi
-        .all([adminAccess(publicUploadsBucket.name), uploadsSignerAccess(publicUploadsBucket.name)])
-        .apply(([admin, signers]) => [
-          {
-            Sid: 'PublicRead',
-            Effect: 'Allow',
-            Principal: '*',
-            Action: ['s3:GetObject'],
-            Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
-          },
-          deployAccessNoVersionDelete(publicUploadsBucket.name),
-          ...admin,
-          ...signers,
-        ]),
+      Statement: pulumi.all([adminAccess(publicUploadsBucket.name), uploadsSignerAccess(publicUploadsBucket.name)]).apply(([admin, signers]) => [
+        {
+          Sid: 'PublicRead',
+          Effect: 'Allow',
+          Principal: '*',
+          Action: ['s3:GetObject'],
+          Resource: [pulumi.interpolate`${publicUploadsBucket.name}/*`],
+        },
+        deployAccessNoVersionDelete(publicUploadsBucket.name),
+        ...admin,
+        ...signers,
+      ]),
     }),
   });
 }
@@ -254,14 +245,7 @@ const bootDiagBucket = new scaleway.object.Bucket(
     tags: tagsAsMap,
     forceDestroy: !isProduction,
     versioning: { enabled: false },
-    lifecycleRules: [
-      {
-        id: 'expire-boot-diag',
-        enabled: true,
-        expiration: { days: 30 },
-        prefix: 'boot-diag/',
-      },
-    ],
+    lifecycleRules: [{ id: 'expire-boot-diag', enabled: true, expiration: { days: 30 }, prefix: 'boot-diag/' }],
   },
   { protect: isProduction },
 );

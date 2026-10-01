@@ -130,16 +130,11 @@ export const totpCode = (secret = testTotpSecret, stepsAhead = 0) => {
 };
 
 /** The current code with its first digit changed. */
-export const wrongTotpCode = (secret = testTotpSecret) =>
-  totpCode(secret).replace(/^./, (digit) => String((Number(digit) + 5) % 10));
+export const wrongTotpCode = (secret = testTotpSecret) => totpCode(secret).replace(/^./, (digit) => String((Number(digit) + 5) % 10));
 
 export async function createTotpUser(email: string) {
   const user = await createTestUser(email);
-  await db.insert(totpsTable).values({
-    userId: user.id,
-    secret: encryptTotpSecret(testTotpSecret),
-    createdAt: mockPastIsoDate(),
-  });
+  await db.insert(totpsTable).values({ userId: user.id, secret: encryptTotpSecret(testTotpSecret), createdAt: mockPastIsoDate() });
   await enableMFAForUser(user.id);
   return user;
 }
@@ -163,12 +158,7 @@ export async function createSystemAdminUser(email: string) {
   const user = await createTestUser(email);
 
   // system_roles is admin-only (read-only grant + admin-only write trigger for runtime_role).
-  await getAdminDb('test setup').insert(systemRolesTable).values({
-    id: user.id,
-    userId: user.id,
-    role: 'admin',
-    createdAt: mockPastIsoDate(),
-  });
+  await getAdminDb('test setup').insert(systemRolesTable).values({ id: user.id, userId: user.id, role: 'admin', createdAt: mockPastIsoDate() });
 
   return user;
 }
@@ -204,9 +194,7 @@ export async function parseResponse<T>(response: Response): Promise<T> {
 }
 
 /** The tenant is created first; the FK constraint requires it. */
-export async function createTestOrganization(
-  overrides?: Partial<ReturnType<typeof mockOrganization>>,
-): Promise<OrganizationModel> {
+export async function createTestOrganization(overrides?: Partial<ReturnType<typeof mockOrganization>>): Promise<OrganizationModel> {
   const [tenant] = await db.insert(tenantsTable).values({ name: 'Test Tenant' }).returning();
 
   const orgData = mockOrganization();
@@ -234,13 +222,7 @@ interface TestSessionOpts {
  */
 export async function insertTestSession(
   user: { id: string },
-  {
-    type = 'regular',
-    authStrategy = 'passkey',
-    ageMs = 0,
-    expiresInMs = 7 * 24 * 60 * 60 * 1000,
-    impersonatorSessionId,
-  }: TestSessionOpts = {},
+  { type = 'regular', authStrategy = 'passkey', ageMs = 0, expiresInMs = 7 * 24 * 60 * 60 * 1000, impersonatorSessionId }: TestSessionOpts = {},
 ) {
   const { token, secret } = newSessionToken();
   const id = generateId();
@@ -268,8 +250,7 @@ export async function createTestSession(user: { id: string }, opts?: TestSession
 /** Every session row of a user, the ended ones included. */
 export const sessionsOf = (userId: string) => db.select().from(sessionsTable).where(eq(sessionsTable.userId, userId));
 
-export const sessionRow = async (id: string) =>
-  (await db.select().from(sessionsTable).where(eq(sessionsTable.id, id)).limit(1))[0];
+export const sessionRow = async (id: string) => (await db.select().from(sessionsTable).where(eq(sessionsTable.id, id)).limit(1))[0];
 
 interface TestTokenOpts extends Partial<InsertTokenModel> {
   /** From now; negative for a token that already expired. Default 15 minutes, a magic link's lifetime. */
@@ -384,8 +365,7 @@ export class CookieJar {
 }
 
 /** The `Cookie` header a browser holding `cookieHeader` sends after `response`. */
-export const cookiesAfter = (cookieHeader: string, response: Response) =>
-  new CookieJar([cookieHeader]).absorb(response).header();
+export const cookiesAfter = (cookieHeader: string, response: Response) => new CookieJar([cookieHeader]).absorb(response).header();
 
 /** Links an external identity to a user; by default a verified GitHub identity asserting the user's own address. */
 export async function linkIdentity(user: { id: string; email: string }, overrides: Partial<InsertIdentityModel> = {}) {

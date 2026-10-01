@@ -17,9 +17,5 @@ export const useMountedState = () => {
     };
   }, []);
 
-  return {
-    hasMounted: mountedRef.current,
-    hasStarted: stage >= 1,
-    hasWaited: stage >= 2,
-  };
+  return { hasMounted: mountedRef.current, hasStarted: stage >= 1, hasWaited: stage >= 2 };
 };

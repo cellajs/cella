@@ -49,11 +49,7 @@ export interface EnsureSecretInput {
   description: string;
   protect?: boolean;
   /** Scaleway ephemeral policy, set at creation and irremovable. `expires_once_accessed` with action 'disable' makes versions single-access: the first read disables it, which is the handoff tamper alarm. */
-  ephemeralPolicy?: {
-    expires_once_accessed: boolean;
-    action: 'disable' | 'delete';
-    time_to_live?: string;
-  };
+  ephemeralPolicy?: { expires_once_accessed: boolean; action: 'disable' | 'delete'; time_to_live?: string };
 }
 
 export interface PutSecretValueInput {
@@ -78,10 +74,7 @@ export function createSecretManagerClient(options: SecretManagerClientOptions) {
 
   return {
     async listSecrets(path?: string): Promise<SecretManagerSecret[]> {
-      const query = new URLSearchParams({
-        project_id: options.projectId,
-        scheduled_for_deletion: 'false',
-      });
+      const query = new URLSearchParams({ project_id: options.projectId, scheduled_for_deletion: 'false' });
       if (path) query.set('path', normalizeSecretPath(path));
       const response = await scwFetch<SecretListResponse>(auth, 'GET', buildSecretsUrl(options.region, query));
       return response.secrets;

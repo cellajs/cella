@@ -12,11 +12,7 @@ import { validateAncestorScope } from './validate-ancestor-scope.ts';
 export const buildSubject = (
   entityType: ChannelEntityType | ProductEntityType,
   ancestorChannelIds: Partial<ChannelIdColumns>,
-  options?: {
-    id?: string;
-    createdBy?: string | null;
-    row?: Record<string, unknown>;
-  },
+  options?: { id?: string; createdBy?: string | null; row?: Record<string, unknown> },
 ): SubjectForPermission => {
   const channelIds: AncestorChannelIds = {};
 
@@ -45,9 +41,4 @@ export const buildSubject = (
 export const buildSubjectFromEntity = (
   entityType: ChannelEntityType | ProductEntityType,
   entity: { id: string; createdBy?: string | null } & Partial<ChannelIdColumns> & Record<string, unknown>,
-): SubjectForPermission =>
-  buildSubject(entityType, entity, {
-    id: entity.id,
-    createdBy: entity.createdBy,
-    row: entity as Record<string, unknown>,
-  });
+): SubjectForPermission => buildSubject(entityType, entity, { id: entity.id, createdBy: entity.createdBy, row: entity as Record<string, unknown> });

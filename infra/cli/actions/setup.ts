@@ -12,11 +12,7 @@ import { CI_RULE_SHAPES } from '../../lib/scaleway/permissions';
 import { principalNames } from '../../lib/scaleway/principals';
 import { buildProviderEnv } from '../../lib/scaleway/provider-env';
 import { createProject, listProjects, resolveOrganizationIdFromKey } from '../../lib/scaleway/scaleway-account';
-import {
-  ensureBootstrapDnsGrant,
-  removeBootstrapDnsGrant,
-  resolveOrganizationId,
-} from '../../lib/scaleway/scaleway-iam';
+import { ensureBootstrapDnsGrant, removeBootstrapDnsGrant, resolveOrganizationId } from '../../lib/scaleway/scaleway-iam';
 import { createSecretManagerClient } from '../../lib/scaleway/scaleway-secret-manager';
 import { secretManagerPath } from '../../lib/scaleway/secret-paths';
 import { runPulumiUpWithHint } from '../../lib/stack/pulumi-up';
@@ -85,18 +81,10 @@ interface CiKeyResult {
 /** Read-only warning about required operator-managed runtime secrets with no value. Non-fatal: the first `pulumi up` creates the containers. */
 async function warnOnMissingOperatorSecrets(ctx: SetupContext): Promise<void> {
   try {
-    const client = createSecretManagerClient({
-      secretKey: ctx.secretKey,
-      region: ctx.appConfig.s3.region,
-      projectId: ctx.projectId,
-    });
+    const client = createSecretManagerClient({ secretKey: ctx.secretKey, region: ctx.appConfig.s3.region, projectId: ctx.projectId });
     const existing = await client.listSecretsUnder(ctx.runtimeSecretPath);
-    const versioned = new Set(
-      existing.filter((secret) => (secret.version_count ?? 0) > 0).map((secret) => secret.name),
-    );
-    const missing = operatorManagedRuntimeSecrets.filter(
-      (secret) => secret.required && !versioned.has(secret.secretName),
-    );
+    const versioned = new Set(existing.filter((secret) => (secret.version_count ?? 0) > 0).map((secret) => secret.name));
+    const missing = operatorManagedRuntimeSecrets.filter((secret) => secret.required && !versioned.has(secret.secretName));
     if (missing.length > 0) {
       const services = [...new Set(missing.flatMap((secret) => secret.services))].join(', ');
       console.warn(
@@ -130,10 +118,7 @@ async function warnOnCiPolicyDrift(ctx: SetupContext): Promise<void> {
         problems.push(`missing rule [${shape.id}: ${shape.permissionSets.join(', ')}]`);
         continue;
       }
-      if (live.condition)
-        problems.push(
-          `rule [${shape.id}] carries a condition '${live.condition}' (CI rules are unconditioned by design)`,
-        );
+      if (live.condition) problems.push(`rule [${shape.id}] carries a condition '${live.condition}' (CI rules are unconditioned by design)`);
       liveByKey.delete(setKey(shape.permissionSets));
     }
     for (const [key, rule] of liveByKey) problems.push(`unexpected rule [${rule.policyName}: ${key}]`);
@@ -163,8 +148,7 @@ async function mintCiKey(ctx: SetupContext, keyMintAppIds?: readonly string[]): 
       return { accessKey: key.accessKey, secretKey: key.secretKey, organizationId: key.organizationId };
     } catch (error) {
       console.error(`\n${warningMark} CI key setup failed: ${errorMessage(error)}`);
-      if (nonInteractive() || !(await confirm({ message: 'Retry?', default: true })))
-        return { accessKey: '', secretKey: '', organizationId: '' };
+      if (nonInteractive() || !(await confirm({ message: 'Retry?', default: true }))) return { accessKey: '', secretKey: '', organizationId: '' };
     }
   }
 }
@@ -190,9 +174,7 @@ async function ensureAdminApp(ctx: SetupContext): Promise<string> {
       { SCW_ADMIN_ACCESS_KEY: admin.accessKey, SCW_ADMIN_SECRET_KEY: admin.secretKey },
       { remove: LEGACY_ADMIN_KEY_NAMES },
     );
-    console.info(
-      `  ${checkMark} Admin application key written to ${written.path} (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY)`,
-    );
+    console.info(`  ${checkMark} Admin application key written to ${written.path} (SCW_ADMIN_ACCESS_KEY / SCW_ADMIN_SECRET_KEY)`);
     return admin.applicationId;
   } catch (error) {
     console.warn(`${warningMark} Admin app setup failed: ${errorMessage(error)}`);
@@ -207,13 +189,9 @@ function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; adminApp
   if (!needsCiKey) {
     console.info(`${checkMark} ${pc.bold('Resume verified.')} Existing keys left unchanged.`);
   } else if (ciAccessKey) {
-    console.info(
-      `${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)}`,
-    );
+    console.info(`${checkMark} ${pc.bold(pc.greenBright('Bootstrap complete.'))} CI deploy key: ${pc.cyanBright(ciAccessKey)}`);
   } else {
-    console.info(
-      `${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Re-run and choose ${pc.italic('"Rotate keys"')}.`,
-    );
+    console.info(`${warningMark} ${pc.bold(pc.yellowBright('Done, but CI key was not created.'))} Re-run and choose ${pc.italic('"Rotate keys"')}.`);
   }
   if (adminAppId) {
     console.info(
@@ -228,10 +206,7 @@ function printSummary(opts: { needsCiKey: boolean; ciAccessKey: string; adminApp
  * Mint the scoped Scaleway IAM keys the operator opted into, once `pulumi up` has created their empty runtime-secret containers.
  * Non-fatal per key: a mint failure warns and continues, and the key can be minted later via "Manage runtime secrets".
  */
-async function provisionConfirmedManagedKeys(
-  ctx: SetupContext,
-  mintDecisions: Map<ManagedKeyId, boolean>,
-): Promise<void> {
+async function provisionConfirmedManagedKeys(ctx: SetupContext, mintDecisions: Map<ManagedKeyId, boolean>): Promise<void> {
   for (const key of managedKeys) {
     if (!mintDecisions.get(key.id)) continue;
     console.info(`\n→ Minting ${key.label} key (${ctx.appConfig.slug}-${key.suffix})`);
@@ -247,9 +222,7 @@ async function provisionConfirmedManagedKeys(
       });
       console.info(`  ${checkMark} Minted ${key.label} ${pc.dim(`(app ${result.applicationId})`)}`);
     } catch (error) {
-      console.warn(
-        `  ${warningMark} ${key.label} mint failed: ${errorMessage(error)}. Mint later via "Manage runtime secrets".`,
-      );
+      console.warn(`  ${warningMark} ${key.label} mint failed: ${errorMessage(error)}. Mint later via "Manage runtime secrets".`);
     }
   }
 }
@@ -265,12 +238,9 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
       // A setup key owned by an application needs org-wide DNS before the first up can write records in an org-shared zone.
       const organizationId = ctx.childEnv.SCW_DEFAULT_ORGANIZATION_ID;
       if (organizationId) {
-        await ensureBootstrapDnsGrant({
-          callerSecretKey: ctx.secretKey,
-          accessKey: ctx.accessKey,
-          organizationId,
-          slug: ctx.appConfig.slug,
-        }).catch((error) => console.warn(`  ${warningMark} Bootstrap DNS grant skipped: ${errorMessage(error)}`));
+        await ensureBootstrapDnsGrant({ callerSecretKey: ctx.secretKey, accessKey: ctx.accessKey, organizationId, slug: ctx.appConfig.slug }).catch(
+          (error) => console.warn(`  ${warningMark} Bootstrap DNS grant skipped: ${errorMessage(error)}`),
+        );
       }
       await ensureDnsZone({ secretKey: ctx.secretKey, projectId: ctx.projectId, domain: dnsZone });
     } catch (error) {
@@ -290,9 +260,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
 
   const firstProvision = ctx.context.state === 'fresh';
   if (firstProvision) {
-    console.info(
-      `${pc.dim('  first provisioning runs with the Owner API key (the CI key is read-only on VPC/PN/RDB and cannot create them)')}`,
-    );
+    console.info(`${pc.dim('  first provisioning runs with the Owner API key (the CI key is read-only on VPC/PN/RDB and cannot create them)')}`);
     // Fresh provision: no images exist yet, so compute is deferred until CI pushes them (helpers gate on this marker).
     const startedAt = new Date().toISOString();
     spawnSync('pulumi', ['config', 'set', 'bootstrap:computeDeferred', startedAt, '--stack', ctx.stackName], {
@@ -322,9 +290,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
       stdio: 'ignore',
     });
   }
-  console.info(
-    `\n${checkMark} Base infrastructure provisioned (no compute yet). The next deploy, local or CI, brings the VMs up.`,
-  );
+  console.info(`\n${checkMark} Base infrastructure provisioned (no compute yet). The next deploy, local or CI, brings the VMs up.`);
 
   // Seed prompted values only after Pulumi creates the empty secret containers; skipped values stay available through "Manage runtime secrets".
   await seedOperatorSecrets({
@@ -333,10 +299,7 @@ async function provisionBaseInfra(ctx: SetupContext, inputs: BootstrapSecretInpu
     region: ctx.appConfig.s3.region,
     slug: ctx.appConfig.slug,
     mode: ctx.context.environment,
-    values: {
-      adminEmail: inputs.operatorSecrets.adminEmail || undefined,
-      brevoApiKey: inputs.operatorSecrets.brevoApiKey || undefined,
-    },
+    values: { adminEmail: inputs.operatorSecrets.adminEmail || undefined, brevoApiKey: inputs.operatorSecrets.brevoApiKey || undefined },
   });
 
   // Mint the scoped Scaleway IAM keys the operator opted into (containers now exist).
@@ -366,22 +329,14 @@ async function ensureProjectId(opts: { slug: string; accessKey: string; secretKe
     default: existing?.id ?? CREATE,
     loop: false,
     choices: [
-      {
-        name: `Create project "${opts.slug}"`,
-        value: CREATE,
-        description: 'Creates a fresh project in your organization.',
-      },
+      { name: `Create project "${opts.slug}"`, value: CREATE, description: 'Creates a fresh project in your organization.' },
       ...projects.map((project) => ({ name: `${project.name} ${pc.dim(`(${project.id})`)}`, value: project.id })),
     ],
   });
   let projectId = choice;
   if (choice === CREATE) {
     const name = await inputOrDefault({ message: 'New project name', default: opts.slug });
-    const project = await createProject(opts.secretKey, {
-      organizationId,
-      name,
-      description: 'Created by the infra CLI setup wizard',
-    });
+    const project = await createProject(opts.secretKey, { organizationId, name, description: 'Created by the infra CLI setup wizard' });
     console.info(`  ${changeMark} Created project ${project.name} (${project.id})`);
     projectId = project.id;
   }
@@ -400,16 +355,12 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
   const mode = ctx.context.environment;
   const manualCmd = (sha: string) => `pnpm --filter infra run deploy --mode ${mode} --sha ${sha} --build`;
   if (spawnSync('docker', ['buildx', 'version'], { stdio: 'ignore' }).status !== 0) {
-    console.info(
-      `\n${pc.dim('docker (with buildx) not found; skipping the first deploy. Run it later:')} ${pc.cyan(manualCmd('<git-sha>'))}`,
-    );
+    console.info(`\n${pc.dim('docker (with buildx) not found; skipping the first deploy. Run it later:')} ${pc.cyan(manualCmd('<git-sha>'))}`);
     return;
   }
   const sha = spawnSync('git', ['rev-parse', 'HEAD'], { cwd: infraDir, encoding: 'utf8' }).stdout?.trim();
   if (!sha) {
-    console.info(
-      `\n${pc.dim('Could not resolve git HEAD; skipping the first deploy. Run it later:')} ${pc.cyan(manualCmd('<git-sha>'))}`,
-    );
+    console.info(`\n${pc.dim('Could not resolve git HEAD; skipping the first deploy. Run it later:')} ${pc.cyan(manualCmd('<git-sha>'))}`);
     return;
   }
   const hasAdminEmail = !!inputs.operatorSecrets.adminEmail;
@@ -428,9 +379,7 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
           default: hasAdminEmail,
         });
   if (!deployNow) {
-    console.info(
-      `  ${pc.dim('Deploy later from CI (publish a release / run the Deploy workflow) or locally:')} ${pc.cyan(manualCmd(sha))}`,
-    );
+    console.info(`  ${pc.dim('Deploy later from CI (publish a release / run the Deploy workflow) or locally:')} ${pc.cyan(manualCmd(sha))}`);
     return;
   }
   // The exact env the GitHub Environment holds: the CI deploy key as both the provider key and the state-backend key, plus the passphrase and project ids from childEnv.
@@ -450,11 +399,8 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
   if (status === 0) {
     const { serviceEndpoints } = await import('../../lib/services');
     const frontendUrl = serviceEndpoints(ctx.appConfig).find((endpoint) => endpoint.slug === 'frontend')?.url;
-    console.info(
-      `\n${checkMark} ${pc.bold(pc.greenBright('App is live.'))}${frontendUrl ? ` ${pc.underline(pc.cyanBright(frontendUrl))}` : ''}`,
-    );
-    if (hasAdminEmail)
-      console.info(`  ${pc.dim('Sign in by requesting a magic link for the admin email you provided.')}`);
+    console.info(`\n${checkMark} ${pc.bold(pc.greenBright('App is live.'))}${frontendUrl ? ` ${pc.underline(pc.cyanBright(frontendUrl))}` : ''}`);
+    if (hasAdminEmail) console.info(`  ${pc.dim('Sign in by requesting a magic link for the admin email you provided.')}`);
   } else {
     console.warn(
       `\n${warningMark} First deploy failed (exit ${status}). Boot diagnostics were collected; inspect with ${pc.cyan('pnpm --filter infra diag')}.\n` +
@@ -466,44 +412,29 @@ async function offerFirstDeploy(ctx: SetupContext, ciKey: CiKeyResult, inputs: B
 /** Set up or resume a stack: Owner API key, project, identities, CI key, state backend, and base infrastructure. */
 export async function runSetup(context: InfraContext, mode: Extract<CliMode, 'resume' | 'rotate'>): Promise<void> {
   const needsCiKey = mode === 'rotate' || !context.hasCiKey;
-  const { passphrase: pulumiPassphrase, generated: passphraseGenerated } = await resolveOrCreatePassphrase(
-    context.stackYaml,
-  );
+  const { passphrase: pulumiPassphrase, generated: passphraseGenerated } = await resolveOrCreatePassphrase(context.stackYaml);
 
   // Provider authentication and all IAM / Secret Manager work use the Owner API key (SCW_OWNER_*, else a prompt) through SCW_* env (childEnv below), never stack config.
   const identity = resolveOperatorIdentity();
   const ownerKeyPasted = !identity.owner;
-  const { accessKey: scwAccessKey, secretKey: scwSecretKey } = await keyPairOrPrompt(
-    identity.owner,
-    'Scaleway Owner API key',
-    OWNER_KEY_HINT,
-  );
+  const { accessKey: scwAccessKey, secretKey: scwSecretKey } = await keyPairOrPrompt(identity.owner, 'Scaleway Owner API key', OWNER_KEY_HINT);
   const scwProjectId =
-    context.projectId ||
-    (await ensureProjectId({ slug: context.appConfig.slug, accessKey: scwAccessKey, secretKey: scwSecretKey }));
+    context.projectId || (await ensureProjectId({ slug: context.appConfig.slug, accessKey: scwAccessKey, secretKey: scwSecretKey }));
 
   const stackName = stackNameFor(context);
 
   // Prompt for operator secrets and managed-key decisions only on the first setup; keys are minted after the first infrastructure update creates their containers.
   const isFirstSetup = !context.hasCiKey;
-  const inputs: BootstrapSecretInputs = {
-    operatorSecrets: { adminEmail: '', brevoApiKey: '' },
-    mintDecisions: new Map<ManagedKeyId, boolean>(),
-  };
+  const inputs: BootstrapSecretInputs = { operatorSecrets: { adminEmail: '', brevoApiKey: '' }, mintDecisions: new Map<ManagedKeyId, boolean>() };
   if (isFirstSetup) {
     inputs.operatorSecrets.adminEmail = await inputOrDefault({
       message: 'Admin email (optional, set later via "Manage runtime secrets")',
       envName: 'INFRA_ADMIN_EMAIL',
     });
     inputs.operatorSecrets.brevoApiKey =
-      inputs.operatorSecrets.adminEmail && !nonInteractive()
-        ? await maskedSecret({ message: 'Brevo API key (optional)' }).catch(() => '')
-        : '';
+      inputs.operatorSecrets.adminEmail && !nonInteractive() ? await maskedSecret({ message: 'Brevo API key (optional)' }).catch(() => '') : '';
     for (const key of managedKeys) {
-      inputs.mintDecisions.set(
-        key.id,
-        await confirmOrDefault({ message: key.prompt.message, default: key.prompt.default }),
-      );
+      inputs.mintDecisions.set(key.id, await confirmOrDefault({ message: key.prompt.message, default: key.prompt.default }));
     }
   }
 
@@ -529,11 +460,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     );
   }
 
-  const stateBucketEnv: NodeJS.ProcessEnv = {
-    ...childEnv,
-    SCW_ACCESS_KEY: scwAccessKey,
-    SCW_SECRET_KEY: scwSecretKey,
-  };
+  const stateBucketEnv: NodeJS.ProcessEnv = { ...childEnv, SCW_ACCESS_KEY: scwAccessKey, SCW_SECRET_KEY: scwSecretKey };
 
   const { must } = createStepRunner(infraDir, childEnv);
   const { appConfig } = context;
@@ -550,16 +477,9 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
   };
 
   // State backend + stack
-  await must('Ensure Pulumi state bucket', 'pnpm', ['ensure-state-bucket'], spawnSync, {
-    retry: true,
-    env: stateBucketEnv,
-  });
+  await must('Ensure Pulumi state bucket', 'pnpm', ['ensure-state-bucket'], spawnSync, { retry: true, env: stateBucketEnv });
   await must('Pulumi login (S3 backend)', 'pulumi', ['login', pulumiLoginUrl(appConfig)], spawnSync, { retry: true });
-  const selected = spawnSync('pulumi', ['stack', 'select', stackName], {
-    cwd: infraDir,
-    env: childEnv,
-    stdio: 'ignore',
-  });
+  const selected = spawnSync('pulumi', ['stack', 'select', stackName], { cwd: infraDir, env: childEnv, stdio: 'ignore' });
   if (selected.status === 0) {
     console.info(`\n→ Pulumi stack: ${stackName} (exists: selected)`);
   } else {
@@ -584,9 +504,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
       });
       serviceAppIds = apps.allAppIds;
     } catch (error) {
-      console.warn(
-        `${warningMark} Service app setup failed: ${errorMessage(error)}: the CI key-mint rule will be omitted; re-run "Rotate keys".`,
-      );
+      console.warn(`${warningMark} Service app setup failed: ${errorMessage(error)}: the CI key-mint rule will be omitted; re-run "Rotate keys".`);
     }
   }
 
@@ -617,12 +535,7 @@ export async function runSetup(context: InfraContext, mode: Extract<CliMode, 're
     repoRoot: new URL('..', `file://${infraDir}/`).pathname,
     environment: context.environment,
     ciKey: ciKey.accessKey
-      ? {
-          accessKey: ciKey.accessKey,
-          secretKey: ciKey.secretKey,
-          projectId: scwProjectId,
-          organizationId: ciKey.organizationId,
-        }
+      ? { accessKey: ciKey.accessKey, secretKey: ciKey.secretKey, projectId: scwProjectId, organizationId: ciKey.organizationId }
       : undefined,
     passphrase: pulumiPassphrase,
   });

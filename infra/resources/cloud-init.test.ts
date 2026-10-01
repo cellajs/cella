@@ -39,9 +39,7 @@ describe('renderCloudInit', () => {
     }
     expect(out).toContain("cat > /etc/cella/run-boot.sh <<'RUN_BOOT_EOF'");
     expect(out).toContain('\nRUN_BOOT_EOF\nchmod 700 /etc/cella/run-boot.sh\n');
-    expect(out.indexOf('chmod 600 /etc/cella/scw-secret-key')).toBeLessThan(
-      out.indexOf('systemctl start infra-boot.service'),
-    );
+    expect(out.indexOf('chmod 600 /etc/cella/scw-secret-key')).toBeLessThan(out.indexOf('systemctl start infra-boot.service'));
     // Host logs into the registry to pull the boot runner image, then runs it. The
     // registry host + image ref arrive via the systemd EnvironmentFile, so the
     // launcher references them as env vars, never interpolated shell literals.
@@ -106,9 +104,7 @@ describe('renderCloudInit', () => {
     expect(out).toContain('"registry": "rg.fr-par.scw.cloud/my-namespace"');
     expect(out).toContain('"bucket": "cella-boot-diag"');
     expect(out).toContain('"compose": "services:\\n  backend: {}"');
-    expect(out).toContain(
-      '"env": "APP_MODE=production\\nBACKEND_TAG=abc123def\\nBACKEND_URL=https://api.example.test"',
-    );
+    expect(out).toContain('"env": "APP_MODE=production\\nBACKEND_TAG=abc123def\\nBACKEND_URL=https://api.example.test"');
     expect(out).toContain('"envVar": "COOKIE_SECRET"');
   });
 
@@ -116,10 +112,7 @@ describe('renderCloudInit', () => {
     const out = renderCloudInit(params({ slug: 'acme', handoffSecretId: 'handoff-secret' }));
 
     const { plan } = bootPlanIn(out, '/etc/acme/boot-plan.json');
-    expect(plan.credentials).toEqual({
-      scwAccessKeyFile: '/etc/acme/scw-access-key',
-      scwSecretKeyFile: '/etc/acme/scw-secret-key',
-    });
+    expect(plan.credentials).toEqual({ scwAccessKeyFile: '/etc/acme/scw-access-key', scwSecretKeyFile: '/etc/acme/scw-secret-key' });
     expect(plan.serviceKeyHandoff?.cacheFile).toBe('/etc/acme/service-key.json');
   });
 

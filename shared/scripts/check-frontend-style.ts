@@ -40,11 +40,7 @@ function checkReactComponentType(sourceFile: ts.SourceFile, node: ts.Node, repor
   if (!ts.isTypeReferenceNode(node)) return;
   const name = node.typeName.getText(sourceFile);
   if (!['FC', 'FunctionComponent', 'React.FC', 'React.FunctionComponent'].includes(name)) return;
-  report(
-    node,
-    'react-component-type',
-    'declare components with functions; use ComponentType<Props> when a component is stored as a value',
-  );
+  report(node, 'react-component-type', 'declare components with functions; use ComponentType<Props> when a component is stored as a value');
 }
 
 function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStatement, report: Report): void {
@@ -55,11 +51,7 @@ function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStat
     if (!name || !/^[A-Z]/.test(name) || !initializer || !containsJsx(initializer)) continue;
 
     if (ts.isArrowFunction(initializer)) {
-      report(
-        declaration,
-        'component-declaration',
-        `${name} is an ordinary component; use a named function declaration`,
-      );
+      report(declaration, 'component-declaration', `${name} is an ordinary component; use a named function declaration`);
       continue;
     }
 
@@ -69,11 +61,7 @@ function checkVariableStatement(sourceFile: ts.SourceFile, node: ts.VariableStat
         (ts.isArrowFunction(argument) || ts.isFunctionExpression(argument)) && containsJsx(argument),
     );
     if (!wrappedRender || (ts.isFunctionExpression(wrappedRender) && wrappedRender.name?.text === name)) continue;
-    report(
-      wrappedRender,
-      'component-declaration',
-      `${name} is wrapped by a component helper; use a named function expression`,
-    );
+    report(wrappedRender, 'component-declaration', `${name} is wrapped by a component helper; use a named function expression`);
   }
 }
 

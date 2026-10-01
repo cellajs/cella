@@ -1,11 +1,6 @@
 import type { IconComponent } from '~/modules/common/icons/types';
 
-type StepItem = {
-  id?: string;
-  label?: string;
-  description?: string;
-  optional?: boolean;
-};
+type StepItem = { id?: string; label?: string; description?: string; optional?: boolean };
 
 interface StepperProps {
   children?: React.ReactNode;

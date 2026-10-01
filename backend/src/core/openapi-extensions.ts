@@ -16,30 +16,10 @@ export type ExtensionMetadata = {
 
 /** Add new extensions here to expose them in the OpenAPI spec. */
 export const extensionMap = {
-  'x-guard': {
-    id: 'xGuard',
-    description: 'Authorization middleware applied to the endpoint',
-    required: true,
-    kind: 'middleware',
-  },
-  'x-rate-limiter': {
-    id: 'xRateLimiter',
-    description: 'Rate limiting rules applied to the endpoint',
-    required: false,
-    kind: 'middleware',
-  },
-  'x-cache': {
-    id: 'xCache',
-    description: 'Caching strategy applied to the endpoint',
-    required: false,
-    kind: 'middleware',
-  },
-  'x-tool': {
-    id: 'xTool',
-    description: 'MCP tool registration metadata',
-    required: false,
-    kind: 'metadata',
-  },
+  'x-guard': { id: 'xGuard', description: 'Authorization middleware applied to the endpoint', required: true, kind: 'middleware' },
+  'x-rate-limiter': { id: 'xRateLimiter', description: 'Rate limiting rules applied to the endpoint', required: false, kind: 'middleware' },
+  'x-cache': { id: 'xCache', description: 'Caching strategy applied to the endpoint', required: false, kind: 'middleware' },
+  'x-tool': { id: 'xTool', description: 'MCP tool registration metadata', required: false, kind: 'metadata' },
 } as const satisfies Record<string, ExtensionMetadata>;
 
 export type ExtensionType = keyof typeof extensionMap;
@@ -57,17 +37,9 @@ export type XMiddlewareHandler<E extends Env = Env> = MiddlewareHandler<E> & {
 export type SpecificationExtensions = Record<ExtensionType, string[]>;
 
 /** Value metadata for individual extension values (e.g., each limiter or guard) */
-export type ExtensionValueMetadata = {
-  name?: string;
-  description: string;
-};
+export type ExtensionValueMetadata = { name?: string; description: string };
 
-export type ExtensionEntry = {
-  key: string;
-  id: string;
-  description: string;
-  values?: Record<string, ExtensionValueMetadata>;
-};
+export type ExtensionEntry = { key: string; id: string; description: string; values?: Record<string, ExtensionValueMetadata> };
 
 /** A route opts in as an MCP tool by carrying this; the input schema derives from the route's `request`. */
 export type XTool = {
@@ -112,9 +84,7 @@ export function createSpecificationExtensions(getValue: (key: ExtensionType) => 
 }
 
 /** @param valueMetadata - keyed by `"extensionType:functionName"`. */
-export function buildExtensionEntries(
-  valueMetadata: Map<string, { name?: string; description: string }>,
-): ExtensionEntry[] {
+export function buildExtensionEntries(valueMetadata: Map<string, { name?: string; description: string }>): ExtensionEntry[] {
   return Object.entries(extensionMap).map(([key, metadata]) => {
     const values: Record<string, ExtensionValueMetadata> = {};
     for (const [mapKey, meta] of valueMetadata) {
@@ -124,10 +94,6 @@ export function buildExtensionEntries(
       }
     }
 
-    return {
-      key,
-      ...metadata,
-      ...(Object.keys(values).length > 0 ? { values } : {}),
-    };
+    return { key, ...metadata, ...(Object.keys(values).length > 0 ? { values } : {}) };
   });
 }

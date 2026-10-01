@@ -14,9 +14,7 @@ describe('pulumi versions', () => {
     expect(comparePulumiVersions('4.0.0', '3.999.9')).toBeGreaterThan(0);
   });
   it('warns only for a CLI older than the SDK', () => {
-    expect(pulumiCliLagWarning('3.236.0', '3.263.0')).toMatch(
-      /3\.236\.0 is older than .*3\.263\.0.*brew upgrade pulumi/,
-    );
+    expect(pulumiCliLagWarning('3.236.0', '3.263.0')).toMatch(/3\.236\.0 is older than .*3\.263\.0.*brew upgrade pulumi/);
     expect(pulumiCliLagWarning('3.263.0', '3.263.0')).toBeUndefined();
     expect(pulumiCliLagWarning('3.270.0', '3.263.0')).toBeUndefined();
     expect(pulumiCliLagWarning(undefined, '3.263.0')).toBeUndefined();

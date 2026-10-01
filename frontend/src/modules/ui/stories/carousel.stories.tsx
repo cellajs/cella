@@ -10,9 +10,7 @@ const meta: Meta<typeof Carousel> = {
   component: Carousel,
   tags: ['autodocs'],
   argTypes: {},
-  args: {
-    className: 'w-full max-w-xs',
-  },
+  args: { className: 'w-full max-w-xs' },
   render: (args) => (
     <Carousel {...args}>
       <CarouselContent>
@@ -28,9 +26,7 @@ const meta: Meta<typeof Carousel> = {
       <CarouselNext />
     </Carousel>
   ),
-  parameters: {
-    layout: 'centered',
-  },
+  parameters: { layout: 'centered' },
 } satisfies Meta<typeof Carousel>;
 
 export default meta;
@@ -61,9 +57,7 @@ export const Size: Story = {
       <CarouselNext />
     </Carousel>
   ),
-  args: {
-    className: 'mx-12 w-full max-w-xs',
-  },
+  args: { className: 'mx-12 w-full max-w-xs' },
 };
 
 export const ShouldNavigate: Story = {
@@ -73,9 +67,7 @@ export const ShouldNavigate: Story = {
     const slides = await canvas.findAllByRole('group');
     expect(slides).toHaveLength(5);
     const nextBtn = await canvas.findByRole('button', { name: /next/i });
-    const prevBtn = await canvas.findByRole('button', {
-      name: /previous/i,
-    });
+    const prevBtn = await canvas.findByRole('button', { name: /previous/i });
 
     await step('navigate to the last slide', async () => {
       for (let i = 0; i < slides.length - 1; i++) {

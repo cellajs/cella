@@ -21,24 +21,13 @@ import { getCurrentUser } from '~/modules/user/user-store';
 import { cacheUpdate } from '~/query/basic/cache-mutations';
 import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { invalidateOnMembershipChange } from '~/query/basic/invalidation-helpers';
-import {
-  forEachListQuery,
-  getQueryItems,
-  getSimilarQueries,
-  isInfiniteQueryData,
-  mapListItems,
-} from '~/query/basic/mutate-query';
+import { forEachListQuery, getQueryItems, getSimilarQueries, isInfiniteQueryData, mapListItems } from '~/query/basic/mutate-query';
 import { queryClient } from '~/query/query-client';
 
-const getMembershipChannelKey = (
-  membership: Pick<MembershipBase, 'tenantId' | 'userId' | 'channelType' | 'channelId'>,
-) => [membership.tenantId, membership.userId, membership.channelType, membership.channelId].join(':');
+const getMembershipChannelKey = (membership: Pick<MembershipBase, 'tenantId' | 'userId' | 'channelType' | 'channelId'>) =>
+  [membership.tenantId, membership.userId, membership.channelType, membership.channelId].join(':');
 
-type ApiResponseWithIncludedMembership = {
-  included?: {
-    membership?: MembershipBase;
-  } | null;
-};
+type ApiResponseWithIncludedMembership = { included?: { membership?: MembershipBase } | null };
 
 /** Extract API-only included membership data for seeding the myMemberships cache. */
 export const getApiIncludedMembership = (entity: ApiResponseWithIncludedMembership) => entity.included?.membership;
@@ -52,20 +41,14 @@ const writeMyMemberships = (write: (items: MembershipBase[]) => MembershipBase[]
 };
 
 export const updateMyMembershipCache = (updatedMembership: Partial<MembershipBase> & { id: string }) =>
-  writeMyMemberships(
-    (items) => items.map((m) => (m.id === updatedMembership.id ? { ...m, ...updatedMembership } : m)),
-    true,
-  );
+  writeMyMemberships((items) => items.map((m) => (m.id === updatedMembership.id ? { ...m, ...updatedMembership } : m)), true);
 
-export const addMyMembershipCache = (newMembership: MembershipBase) =>
-  writeMyMemberships((items) => [...items, newMembership]);
+export const addMyMembershipCache = (newMembership: MembershipBase) => writeMyMemberships((items) => [...items, newMembership]);
 
 /** Matches on channel identity, not on membership id. */
 export const upsertMyMembershipCache = (membership: MembershipBase) => {
   const isSameChannel = (m: MembershipBase) => getMembershipChannelKey(m) === getMembershipChannelKey(membership);
-  writeMyMemberships((items) =>
-    items.some(isSameChannel) ? items.map((m) => (isSameChannel(m) ? membership : m)) : [...items, membership],
-  );
+  writeMyMemberships((items) => (items.some(isSameChannel) ? items.map((m) => (isSameChannel(m) ? membership : m)) : [...items, membership]));
 };
 
 /** Maps the members of every list under `key` and returns each list's previous data for rollback. */
@@ -84,11 +67,7 @@ const patchMemberLists = (key: QueryKey, mapItems: (members: Member[]) => Member
   return previous;
 };
 
-const onError = (
-  _: ApiError,
-  __: InviteMember | MutationUpdateMembership | DeleteMembership,
-  context?: MemberChannelProp[],
-) => {
+const onError = (_: ApiError, __: InviteMember | MutationUpdateMembership | DeleteMembership, context?: MemberChannelProp[]) => {
   if (context?.length) {
     for (const [queryKey, previousData] of context) queryClient.setQueryData(queryKey, previousData);
   }
@@ -105,22 +84,15 @@ export const useInviteMemberMutation = () =>
         if (entityType !== 'organization' && organizationId) {
           const orgKeys = getEntityQueryKeys('organization');
           const orgDetailQueryKey = orgKeys.detail.byId(organizationId);
-          queryClient.setQueryData<Organization>(orgDetailQueryKey, (oldOrg) =>
-            updateMembershipCounts(oldOrg, invitesSentCount),
-          );
+          queryClient.setQueryData<Organization>(orgDetailQueryKey, (oldOrg) => updateMembershipCounts(oldOrg, invitesSentCount));
         }
 
-        const entityPendingTableQueries = getSimilarQueries(
-          memberQueryKeys.list.similarPending({ entityId, entityType }),
-        );
-        for (const [queryKey] of entityPendingTableQueries)
-          queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
+        const entityPendingTableQueries = getSimilarQueries(memberQueryKeys.list.similarPending({ entityId, entityType }));
+        for (const [queryKey] of entityPendingTableQueries) queryClient.invalidateQueries({ queryKey, refetchType: 'all' });
 
         const entityKeys = getEntityQueryKeys(entityType);
         const detailQueryKey = entityKeys.detail.byId(entityId);
-        queryClient.setQueryData<Organization>(detailQueryKey, (oldEntity) =>
-          updateMembershipCounts(oldEntity, invitesSentCount),
-        );
+        queryClient.setQueryData<Organization>(detailQueryKey, (oldEntity) => updateMembershipCounts(oldEntity, invitesSentCount));
 
         invalidateOnMembershipChange(queryClient, entityType, entityId, organizationId);
       }
@@ -139,52 +111,29 @@ export const useMemberUpdateMutation = () =>
       const { tenantId, organizationId, id } = path;
       const membershipInfo = { id, ...body };
 
-      const context = {
-        queryChannel: [] as MemberChannelProp[],
-        toastMessage: t('c:success.update_item', { item: t('c:membership') }),
-        channelType,
-      };
+      const context = { queryChannel: [] as MemberChannelProp[], toastMessage: t('c:success.update_item', { item: t('c:membership') }), channelType };
 
       if (body?.archived !== undefined) {
-        context.toastMessage = t(`c:success.${body.archived ? 'archived' : 'restore'}_resource`, {
-          resource: t(`c:${channelType}`),
-        });
+        context.toastMessage = t(`c:success.${body.archived ? 'archived' : 'restore'}_resource`, { resource: t(`c:${channelType}`) });
       } else if (body?.muted !== undefined) {
-        context.toastMessage = t(`c:success.${body.muted ? 'mute' : 'unmute'}_resource`, {
-          resource: t(`c:${channelType}`),
-        });
+        context.toastMessage = t(`c:success.${body.muted ? 'mute' : 'unmute'}_resource`, { resource: t(`c:${channelType}`) });
       } else if (body?.role) {
         context.toastMessage = t('c:success.update_item', { item: t('c:role') });
-      } else if (body?.displayOrder !== undefined)
-        context.toastMessage = t('c:success.update_item', { item: t('c:order') });
+      } else if (body?.displayOrder !== undefined) context.toastMessage = t('c:success.update_item', { item: t('c:order') });
 
       updateMyMembershipCache(membershipInfo);
 
-      const similarKey = memberQueryKeys.list.similarMembers({
-        entityId: channelId,
-        entityType: channelType,
-        tenantId,
-        organizationId,
-      });
+      const similarKey = memberQueryKeys.list.similarMembers({ entityId: channelId, entityType: channelType, tenantId, organizationId });
       await queryClient.cancelQueries({ queryKey: similarKey });
       const previous = patchMemberLists(similarKey, (members) => updateMembers(members, membershipInfo));
       for (const [queryKey, previousData] of previous) context.queryChannel.push([queryKey, previousData, id]);
 
       return context;
     },
-    onSuccess: async (
-      updatedMembership,
-      { channelId, channelType, path: { tenantId, organizationId } },
-      { toastMessage },
-    ) => {
+    onSuccess: async (updatedMembership, { channelId, channelType, path: { tenantId, organizationId } }, { toastMessage }) => {
       updateMyMembershipCache(updatedMembership);
 
-      const similarKey = memberQueryKeys.list.similarMembers({
-        entityId: channelId,
-        entityType: channelType,
-        tenantId,
-        organizationId,
-      });
+      const similarKey = memberQueryKeys.list.similarMembers({ entityId: channelId, entityType: channelType, tenantId, organizationId });
       patchMemberLists(similarKey, (members) => updateMembers(members, updatedMembership));
 
       // Role-filtered lists must refetch when the role changes
@@ -251,10 +200,7 @@ const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount
       ...oldEntity.included,
       counts: {
         ...oldEntity.included.counts,
-        membership: {
-          ...oldEntity.included.counts.membership,
-          pending: (oldEntity.included.counts.membership.pending ?? 0) + updateCount,
-        },
+        membership: { ...oldEntity.included.counts.membership, pending: (oldEntity.included.counts.membership.pending ?? 0) + updateCount },
       },
     },
   };
@@ -264,16 +210,9 @@ const updateMembershipCounts = (oldEntity: Organization | undefined, updateCount
 const hasPersonalView = (membership: Partial<MembershipBase>): membership is MembershipBase =>
   membership.archived !== undefined && membership.muted !== undefined && membership.displayOrder !== undefined;
 
-type ChangeEntityRoleVariables = {
-  entity: EnrichedChannel;
-  role: MembershipBase['role'];
-};
+type ChangeEntityRoleVariables = { entity: EnrichedChannel; role: MembershipBase['role'] };
 
-type ChangeEntityRoleResult = {
-  entity: EnrichedChannel;
-  membership: MembershipBase;
-  wasNew: boolean;
-};
+type ChangeEntityRoleResult = { entity: EnrichedChannel; membership: MembershipBase; wasNew: boolean };
 
 export const useChangeEntityRoleMutation = () =>
   useMutation<ChangeEntityRoleResult, ApiError, ChangeEntityRoleVariables>({
@@ -289,10 +228,7 @@ export const useChangeEntityRoleMutation = () =>
       if (!organizationId) throw new Error(`Missing organizationId for ${entityType} entity`);
 
       if (membership?.id) {
-        const updated = await updateMembership({
-          body: { role },
-          path: { id: membership.id, tenantId, organizationId },
-        });
+        const updated = await updateMembership({ body: { role }, path: { id: membership.id, tenantId, organizationId } });
         return { entity, membership: { ...membership, ...updated }, wasNew: false };
       }
 

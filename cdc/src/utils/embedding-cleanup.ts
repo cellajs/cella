@@ -40,18 +40,12 @@ function resolveEmbeddings(): ReadonlyMap<ProductEntityType, ResolvedEmbedding[]
     // be null on the deleted row (which would silently skip cleanup), while the strict ancestor
     // (ultimately the org root) is present on the row and on every host table.
     const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors(embeddedProduct));
-    const parentType = hierarchy
-      .getOrderedAncestors(embeddedProduct)
-      .find((ancestor) => !nullableAncestors.has(ancestor));
-    if (!parentType)
-      throw new Error(
-        `productEmbeddings: "${embeddedProduct}" has no parent context: cleanup requires a scoping column`,
-      );
+    const parentType = hierarchy.getOrderedAncestors(embeddedProduct).find((ancestor) => !nullableAncestors.has(ancestor));
+    if (!parentType) throw new Error(`productEmbeddings: "${embeddedProduct}" has no parent context: cleanup requires a scoping column`);
 
     const parentColumnName = appConfig.entityIdColumnKeys[parentType];
     const parentColumn = columns[parentColumnName];
-    if (!parentColumn)
-      throw new Error(`productEmbeddings: column "${parentColumnName}" not found on "${hostProduct}" table`);
+    if (!parentColumn) throw new Error(`productEmbeddings: column "${parentColumnName}" not found on "${hostProduct}" table`);
 
     const resolved: ResolvedEmbedding = { hostTable, hostColumn, hostColumnName, parentColumnName, parentColumn };
     const list = map.get(embeddedProduct);
@@ -78,10 +72,7 @@ export async function cleanupEmbeddingReferences(
   if (!embeddings) return;
 
   // Hard delete: every event is a removal. Soft delete: only events that flip deletedAt.
-  const relevantEvents =
-    action === 'delete'
-      ? events
-      : events.filter(({ result }) => isSoftDeleteTransition(result.rowData, result.oldRowData));
+  const relevantEvents = action === 'delete' ? events : events.filter(({ result }) => isSoftDeleteTransition(result.rowData, result.oldRowData));
 
   if (relevantEvents.length === 0) return;
 

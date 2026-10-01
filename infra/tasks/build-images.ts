@@ -23,10 +23,7 @@ export interface BakeOptions {
 }
 
 /** A `docker buildx bake` definition covering every app image + the boot runner. */
-export function bakeDefinition(
-  rows: BuildImageRow[],
-  opts: BakeOptions,
-): { group: unknown; target: Record<string, unknown> } {
+export function bakeDefinition(rows: BuildImageRow[], opts: BakeOptions): { group: unknown; target: Record<string, unknown> } {
   const context = opts.context ?? '.';
   const image = (service: string) => `${opts.registry}/${opts.namespace}/${service}:${opts.tag}`;
   const cacheRef = (service: string) => `${opts.registry}/${opts.namespace}/${service}:buildcache`;

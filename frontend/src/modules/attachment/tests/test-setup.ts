@@ -18,16 +18,7 @@ export const mockAttachmentAppConfig = {
 
 /** Factory for DownloadQueueEntry test data */
 export function makeQueueEntry(overrides: Partial<DownloadQueueEntry> = {}): DownloadQueueEntry {
-  return {
-    id: 'att-1',
-    organizationId: 'org-1',
-    priority: 1,
-    status: 'pending',
-    skipReason: null,
-    queuedAt: new Date(),
-    attempts: 0,
-    ...overrides,
-  };
+  return { id: 'att-1', organizationId: 'org-1', priority: 1, status: 'pending', skipReason: null, queuedAt: new Date(), attempts: 0, ...overrides };
 }
 
 /** Factory for attachment-like objects */

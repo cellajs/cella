@@ -26,17 +26,7 @@ export const systemInviteEmail = defineEmailTemplate<SystemInviteStatic, SystemI
       senderName,
     };
   },
-  component({
-    previewText,
-    headerHtml,
-    hiText,
-    bodyHtml,
-    inviteExpires,
-    buttonText,
-    supportText,
-    senderName,
-    inviteLink,
-  }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, inviteExpires, buttonText, supportText, senderName, inviteLink }) {
     return (
       <EmailMessage
         previewText={previewText}
@@ -50,8 +40,5 @@ export const systemInviteEmail = defineEmailTemplate<SystemInviteStatic, SystemI
       />
     );
   },
-  preview: {
-    statics: { senderName: 'John' },
-    recipient: { name: 'Emily', inviteLink: 'https://example.com/invite' },
-  },
+  preview: { statics: { senderName: 'John' }, recipient: { name: 'Emily', inviteLink: 'https://example.com/invite' } },
 });

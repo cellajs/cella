@@ -24,9 +24,7 @@ export const resolveHierarchy = (overrides?: HierarchyOverrides): ResolvedHierar
   return {
     hierarchy: h,
     entityActions: (overrides?.entityActions ?? appConfig.entityActions) as readonly EntityActionType[],
-    channelEntityTypes: (overrides?.hierarchy
-      ? h.channelTypes
-      : appConfig.channelEntityTypes) as readonly ChannelEntityType[],
+    channelEntityTypes: (overrides?.hierarchy ? h.channelTypes : appConfig.channelEntityTypes) as readonly ChannelEntityType[],
     getRoles: (type) => h.getRoles(type),
   };
 };

@@ -1,12 +1,5 @@
 import { useEffectEvent, useLayoutEffect, useRef } from 'react';
-import type {
-  CellKeyboardEvent,
-  CellRendererProps,
-  EditCellKeyDownArgs,
-  Maybe,
-  Omit,
-  RenderEditCellProps,
-} from './types';
+import type { CellKeyboardEvent, CellRendererProps, EditCellKeyDownArgs, Maybe, Omit, RenderEditCellProps } from './types';
 import { createCellEvent, getCellClassname, getCellStyle, onEditorNavigation } from './utils/grid-utils';
 
 const canUsePostTask = typeof scheduler !== 'undefined' && typeof scheduler.postTask === 'function';
@@ -15,9 +8,7 @@ const cellEditingClassname = '!p-0 [&>input]:border-0 [&>input]:shadow-none [&>i
 
 type SharedCellRendererProps<R, SR> = Pick<CellRendererProps<R, SR>, 'colSpan'>;
 
-interface EditCellProps<R, SR>
-  extends Omit<RenderEditCellProps<R, SR>, 'onRowChange' | 'onClose'>,
-    SharedCellRendererProps<R, SR> {
+interface EditCellProps<R, SR> extends Omit<RenderEditCellProps<R, SR>, 'onRowChange' | 'onClose'>, SharedCellRendererProps<R, SR> {
   rowIdx: number;
   onRowChange: (row: R, commitChanges: boolean, shouldFocusCell: boolean) => void;
   closeEditor: (shouldFocusCell: boolean) => void;
@@ -29,16 +20,7 @@ interface EditCellProps<R, SR>
  * Commits outside mousedown events after capture reaches portals and before blur unmounts the editor.
  * A scheduled fallback handles events whose propagation stops before returning to window.
  */
-export function EditCell<R, SR>({
-  column,
-  colSpan,
-  row,
-  rowIdx,
-  onRowChange,
-  closeEditor,
-  onKeyDown,
-  navigate,
-}: EditCellProps<R, SR>) {
+export function EditCell<R, SR>({ column, colSpan, row, rowIdx, onRowChange, closeEditor, onKeyDown, navigate }: EditCellProps<R, SR>) {
   const captureEventRef = useRef<MouseEvent | undefined>(undefined);
   const abortControllerRef = useRef<AbortController>(undefined);
   const frameRequestRef = useRef<number>(undefined);
@@ -158,22 +140,9 @@ export function EditCell<R, SR>({
     >
       {column.renderEditCell != null && (
         <>
-          {column.renderEditCell({
-            column,
-            row,
-            rowIdx,
-            onRowChange: onEditorRowChange,
-            onClose,
-          })}
+          {column.renderEditCell({ column, row, rowIdx, onRowChange: onEditorRowChange, onClose })}
           {column.editorOptions?.displayCellContent &&
-            column.renderCell({
-              column,
-              row,
-              rowIdx,
-              isCellEditable: true,
-              tabIndex: -1,
-              onRowChange: onEditorRowChange,
-            })}
+            column.renderCell({ column, row, rowIdx, isCellEditable: true, tabIndex: -1, onRowChange: onEditorRowChange })}
         </>
       )}
     </div>

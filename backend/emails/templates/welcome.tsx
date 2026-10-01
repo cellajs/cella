@@ -62,8 +62,5 @@ export const welcomeEmailTemplate = defineEmailTemplate<Record<string, never>, W
       </EmailLayout>
     );
   },
-  preview: {
-    statics: {},
-    recipient: { name: 'Emily' },
-  },
+  preview: { statics: {}, recipient: { name: 'Emily' } },
 });

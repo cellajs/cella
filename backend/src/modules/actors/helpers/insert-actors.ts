@@ -6,12 +6,7 @@ import { type ActorKind, actorsTable } from '#/modules/actors/actors-db';
  * Actor rows for ids about to get a kind row; with `onConflictDoNothing`, existing ids are left alone. Returns
  * the ids this call inserted, so a caller cleaning up after a skipped kind row never touches a pre-existing actor.
  */
-export async function insertActors(
-  tx: DbOrTx,
-  ids: string[],
-  kind: ActorKind,
-  { onConflictDoNothing = false } = {},
-): Promise<string[]> {
+export async function insertActors(tx: DbOrTx, ids: string[], kind: ActorKind, { onConflictDoNothing = false } = {}): Promise<string[]> {
   if (ids.length === 0) return [];
   const insert = tx
     .insert(actorsTable)

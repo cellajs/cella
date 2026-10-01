@@ -66,8 +66,7 @@ const rejected = [
 ];
 
 const submits = (email: string) =>
-  zSystemInviteBody.safeParse({ emails: [email] }).success &&
-  zMembershipInviteBody.shape.emails.safeParse([email]).success;
+  zSystemInviteBody.safeParse({ emails: [email] }).success && zMembershipInviteBody.shape.emails.safeParse([email]).success;
 
 describe('isInviteEmail', () => {
   it.each(accepted)('accepts %s', (email) => {

@@ -78,11 +78,7 @@ export function createRdbClient(opts: RdbClientOptions) {
   return {
     /** Exact-name lookup. Returns undefined when no instance matches. */
     async findInstance(name: string): Promise<RdbInstance | undefined> {
-      const res = await scwFetch<InstanceListResponse>(
-        auth,
-        'GET',
-        `${base}/instances?name=${encodeURIComponent(name)}`,
-      );
+      const res = await scwFetch<InstanceListResponse>(auth, 'GET', `${base}/instances?name=${encodeURIComponent(name)}`);
       return res.instances.find((instance) => instance.name === name);
     },
 
@@ -112,12 +108,7 @@ export function createRdbClient(opts: RdbClientOptions) {
     },
 
     /** Restore database-level privileges that deletion removes and recreation does not recover. */
-    async setPrivilege(
-      instanceId: string,
-      databaseName: string,
-      userName: string,
-      permission: RdbPermission,
-    ): Promise<void> {
+    async setPrivilege(instanceId: string, databaseName: string, userName: string, permission: RdbPermission): Promise<void> {
       await scwFetch<RdbPrivilege>(auth, 'PUT', `${instanceBase(instanceId)}/privileges`, {
         database_name: databaseName,
         user_name: userName,
@@ -125,12 +116,7 @@ export function createRdbClient(opts: RdbClientOptions) {
       });
     },
 
-    async createBackup(input: {
-      instanceId: string;
-      databaseName: string;
-      name: string;
-      expiresAt?: string;
-    }): Promise<RdbBackup> {
+    async createBackup(input: { instanceId: string; databaseName: string; name: string; expiresAt?: string }): Promise<RdbBackup> {
       return scwFetch<RdbBackup>(auth, 'POST', `${base}/backups`, {
         instance_id: input.instanceId,
         database_name: input.databaseName,
@@ -166,8 +152,7 @@ export async function waitForBackupReady(
   let last: RdbBackup = await client.getBackup(backupId);
   while (last.status !== 'ready') {
     if (last.status === 'error') throw new Error(`Backup ${backupId} failed (status: error)`);
-    if (now() >= deadline)
-      throw new Error(`Backup ${backupId} not ready after ${Math.round(timeoutMs / 1000)}s (status: ${last.status})`);
+    if (now() >= deadline) throw new Error(`Backup ${backupId} not ready after ${Math.round(timeoutMs / 1000)}s (status: ${last.status})`);
     await sleep(intervalMs);
     last = await client.getBackup(backupId);
   }

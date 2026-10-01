@@ -183,13 +183,7 @@ const sortableColumns: Column<Person>[] = [
   { key: 'lastName', name: 'Last Name', width: 120, sortable: true },
   { key: 'age', name: 'Age', width: 80, sortable: true },
   { key: 'department', name: 'Department', width: 130, sortable: true },
-  {
-    key: 'salary',
-    name: 'Salary',
-    width: 110,
-    sortable: true,
-    renderCell: ({ row }) => `$${row.salary.toLocaleString()}`,
-  },
+  { key: 'salary', name: 'Salary', width: 110, sortable: true, renderCell: ({ row }) => `$${row.salary.toLocaleString()}` },
 ];
 
 const responsiveColumns: Column<Person>[] = [
@@ -209,30 +203,16 @@ const meta: Meta<DataGridProps<Person>> = {
   title: 'common/DataGrid',
   component: DataGrid<Person>,
   tags: ['autodocs'],
-  parameters: {
-    layout: 'padded',
-  },
+  parameters: { layout: 'padded' },
   argTypes: {
-    cellSelectionMode: {
-      control: 'select',
-      options: ['none', 'cell', 'cell-range'],
-    },
-    rowSelectionMode: {
-      control: 'select',
-      options: ['none', 'single', 'multi'],
-    },
+    cellSelectionMode: { control: 'select', options: ['none', 'cell', 'cell-range'] },
+    rowSelectionMode: { control: 'select', options: ['none', 'single', 'multi'] },
     rowHeight: { control: { type: 'number', min: 25, max: 80 } },
     headerRowHeight: { control: { type: 'number', min: 25, max: 80 } },
     enableVirtualization: { control: 'boolean' },
     isCompact: { control: 'boolean' },
   },
-  args: {
-    rows: sampleData,
-    columns: basicColumns,
-    rowHeight: 35,
-    headerRowHeight: 35,
-    enableVirtualization: true,
-  },
+  args: { rows: sampleData, columns: basicColumns, rowHeight: 35, headerRowHeight: 35, enableVirtualization: true },
   decorators: [
     (Story) => (
       <div style={{ height: 400, width: '100%' }}>
@@ -252,9 +232,7 @@ type Story = StoryObj<DataGridProps<Person>>;
 export const Default: Story = {};
 
 /** All columns including frozen ID, custom renderers, and many fields. */
-export const FullColumns: Story = {
-  args: { columns: fullColumns },
-};
+export const FullColumns: Story = { args: { columns: fullColumns } };
 
 /** Toggle between all selection modes interactively. */
 export const SelectionModes: Story = {
@@ -262,10 +240,7 @@ export const SelectionModes: Story = {
     const [cellMode, setCellMode] = useState<CellSelectionMode>('cell');
     const [rowMode, setRowMode] = useState<RowSelectionMode>('multi');
     const [selectedRows, setSelectedRows] = useState<ReadonlySet<number>>(new Set());
-    const [selectedRange, setSelectedRange] = useState<{
-      start: { idx: number; rowIdx: number };
-      end: { idx: number; rowIdx: number };
-    } | null>(null);
+    const [selectedRange, setSelectedRange] = useState<{ start: { idx: number; rowIdx: number }; end: { idx: number; rowIdx: number } } | null>(null);
 
     return (
       <div className="space-y-4">
@@ -353,9 +328,7 @@ export const Sorting: Story = {
     return (
       <div className="space-y-4">
         <div className="text-muted-foreground text-sm">
-          Click headers to sort.{' '}
-          {sortColumns.length > 0 &&
-            `Sorting by: ${sortColumns.map((s) => `${s.columnKey} ${s.direction}`).join(', ')}`}
+          Click headers to sort. {sortColumns.length > 0 && `Sorting by: ${sortColumns.map((s) => `${s.columnKey} ${s.direction}`).join(', ')}`}
         </div>
         <div style={{ height: 350 }}>
           <DataGrid {...args} rows={sorted} sortColumns={sortColumns} onSortColumnsChange={setSortColumns} />
@@ -367,9 +340,7 @@ export const Sorting: Story = {
 };
 
 /** Columns show/hide based on viewport breakpoints. Resize the browser to test. */
-export const ResponsiveColumns: Story = {
-  args: { columns: responsiveColumns },
-};
+export const ResponsiveColumns: Story = { args: { columns: responsiveColumns } };
 
 const largeData = Array.from({ length: 1000 }, (_, i) => ({
   id: i + 1,
@@ -385,9 +356,7 @@ const largeData = Array.from({ length: 1000 }, (_, i) => ({
 }));
 
 /** 1000 rows with virtualization for smooth scrolling. */
-export const LargeDataset: Story = {
-  args: { columns: fullColumns, rows: largeData },
-};
+export const LargeDataset: Story = { args: { columns: fullColumns, rows: largeData } };
 
 /** Click a cell and press Cmd+C to copy its value. */
 export const CopyCell: Story = {
@@ -484,12 +453,7 @@ export const ShouldSelectRowOnClick: Story = {
     const [selectedRows, setSelectedRows] = useState<ReadonlySet<number>>(new Set());
     return (
       <div style={{ height: 300 }}>
-        <DataGrid
-          {...args}
-          selectedRows={selectedRows}
-          onSelectedRowsChange={setSelectedRows}
-          rowKeyGetter={(row) => row.id}
-        />
+        <DataGrid {...args} selectedRows={selectedRows} onSelectedRowsChange={setSelectedRows} rowKeyGetter={(row) => row.id} />
       </div>
     );
   },
@@ -694,9 +658,7 @@ export const ColumnDragDrop: Story = {
 
     return (
       <div className="space-y-4">
-        <div className="text-muted-foreground text-sm">
-          Drag column headers to reorder them. A blue drop indicator shows the target position.
-        </div>
+        <div className="text-muted-foreground text-sm">Drag column headers to reorder them. A blue drop indicator shows the target position.</div>
         <div style={{ height: 400 }}>
           <DataGrid
             rows={sampleData}
@@ -801,8 +763,7 @@ const draggableColumns: Column<DraggablePerson>[] = [
 function reorderRows<R extends DraggablePerson>(prev: R[], fromIndex: number, toIndex: number, edge: Edge) {
   const next = [...prev];
   const [moved] = next.splice(fromIndex, 1);
-  const insertIdx =
-    edge === 'bottom' ? toIndex + (fromIndex < toIndex ? 0 : 1) : toIndex > fromIndex ? toIndex - 1 : toIndex;
+  const insertIdx = edge === 'bottom' ? toIndex + (fromIndex < toIndex ? 0 : 1) : toIndex > fromIndex ? toIndex - 1 : toIndex;
   next.splice(insertIdx, 0, moved);
   return next.map((r, i) => ({ ...r, displayOrder: (i + 1) * 10 }));
 }
@@ -896,11 +857,7 @@ export const ShouldReorderRowOnDragDrop: Story = {
 export const RowDragDropAutoScroll: Story = {
   render: function Render() {
     // 100 rows so the list is much taller than the 300px viewport
-    const initial = Array.from({ length: 100 }, (_, i) => ({
-      ...sampleData[i % sampleData.length],
-      id: i + 1,
-      displayOrder: (i + 1) * 10,
-    }));
+    const initial = Array.from({ length: 100 }, (_, i) => ({ ...sampleData[i % sampleData.length], id: i + 1, displayOrder: (i + 1) * 10 }));
     const [rows, setRows] = useState<DraggablePerson[]>(initial);
 
     const onRowReorder = (fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => {
@@ -910,9 +867,8 @@ export const RowDragDropAutoScroll: Story = {
     return (
       <div className="space-y-4">
         <div className="text-muted-foreground text-sm">
-          Drag a row near the top or bottom edge of the scroll area: the list auto-scrolls so you can drop on rows that
-          started off-screen. The grid uses row virtualization, so off-screen rows mount on demand as scrolling reveals
-          them.
+          Drag a row near the top or bottom edge of the scroll area: the list auto-scrolls so you can drop on rows that started off-screen. The grid
+          uses row virtualization, so off-screen rows mount on demand as scrolling reveals them.
         </div>
         <div style={{ height: 300, overflowY: 'auto' }} className="rounded border">
           <DataGrid

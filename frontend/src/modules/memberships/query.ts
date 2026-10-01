@@ -4,8 +4,7 @@ import { appConfig } from 'shared';
 import { membersSearchDefaults } from '~/modules/memberships/search-params-schemas';
 import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
 
-type PendingMembershipsParams = Omit<GetPendingMembershipsData['query'], 'limit' | 'offset'> &
-  GetPendingMembershipsData['path'];
+type PendingMembershipsParams = Omit<GetPendingMembershipsData['query'], 'limit' | 'offset'> & GetPendingMembershipsData['path'];
 type MembersParams = Omit<GetMembersData['query'], 'limit' | 'offset'> & GetMembersData['path'];
 type PendingMembershipsListParams = PendingMembershipsParams & { limit?: number };
 type MembersListParams = MembersParams & { limit?: number };
@@ -17,8 +16,7 @@ const keys = {
     similarMembers: (filters: Pick<MembersParams, 'tenantId' | 'organizationId' | 'entityId' | 'entityType'>) =>
       [...keys.list.base, filters] as const,
     pending: (filters: PendingMembershipsParams) => ['invites', ...keys.list.base, filters] as const,
-    similarPending: (filters: Pick<PendingMembershipsParams, 'entityId' | 'entityType'>) =>
-      ['invites', ...keys.list.base, filters] as const,
+    similarPending: (filters: Pick<PendingMembershipsParams, 'entityId' | 'entityType'>) => ['invites', ...keys.list.base, filters] as const,
   },
   update: ['member', 'update'] as const,
   delete: ['member', 'delete'] as const,
@@ -48,9 +46,7 @@ export const membersListQueryOptions = (params: MembersListParams) => {
 
   return infiniteQueryOptions({
     queryKey: keys.list.members(keyFilters),
-    ...offsetPaging(limit, (offset, signal) =>
-      fetchMembersPage(requestQuery, { tenantId, organizationId }, limit, offset, signal),
-    ),
+    ...offsetPaging(limit, (offset, signal) => fetchMembersPage(requestQuery, { tenantId, organizationId }, limit, offset, signal)),
     refetchOnMount: true,
   });
 };
@@ -73,11 +69,7 @@ export const pendingMembershipsQueryOptions = (params: PendingMembershipsListPar
   return infiniteQueryOptions({
     queryKey: keys.list.pending(keyFilters),
     ...offsetPaging(limit, (offset, signal) =>
-      getPendingMemberships({
-        query: { ...query, ...pageQuery(limit, offset) },
-        path: { tenantId, organizationId },
-        signal,
-      }),
+      getPendingMemberships({ query: { ...query, ...pageQuery(limit, offset) }, path: { tenantId, organizationId }, signal }),
     ),
     refetchOnMount: true,
   });

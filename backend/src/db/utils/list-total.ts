@@ -10,10 +10,7 @@ export interface PaginatedResult<TItem> {
 }
 
 /** Runs the items query and the total source in parallel; page-length reads skip the total source. */
-export async function resolveListTotal<TItem>(
-  itemsQuery: PromiseLike<TItem[]>,
-  source: ListTotalSource,
-): Promise<PaginatedResult<TItem>> {
+export async function resolveListTotal<TItem>(itemsQuery: PromiseLike<TItem[]>, source: ListTotalSource): Promise<PaginatedResult<TItem>> {
   if (source.kind === 'pageLength') {
     const items = await itemsQuery;
     return { items, total: items.length };

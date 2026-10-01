@@ -101,11 +101,7 @@ export const OrganizationSheet: Story = {
   name: 'Organization',
   args: { open: (triggerRef) => openUpdateOrganizationSheet(organization, triggerRef) },
   play: async ({ canvasElement }) => {
-    const sheet = await openAndClose(canvasElement, {
-      id: 'update-organization',
-      title: 'Edit organization',
-      container: 'container w-full',
-    });
+    const sheet = await openAndClose(canvasElement, { id: 'update-organization', title: 'Edit organization', container: 'container w-full' });
     const cards = sheet.querySelectorAll('[data-slot="card"]');
     await expect(cards).toHaveLength(1);
     await expect(cards[0]).toHaveClass('mb-20');
@@ -116,11 +112,7 @@ export const TenantSheet: Story = {
   name: 'Tenant',
   args: { open: (triggerRef) => openUpdateTenantSheet(tenant, triggerRef) },
   play: async ({ canvasElement }) => {
-    const sheet = await openAndClose(canvasElement, {
-      id: 'update-tenant',
-      title: 'Edit tenant',
-      container: 'container w-full',
-    });
+    const sheet = await openAndClose(canvasElement, { id: 'update-tenant', title: 'Edit tenant', container: 'container w-full' });
     // The form card, then the domains card.
     const cards = [...sheet.querySelectorAll('[data-slot="card"]')];
     await expect(cards).toHaveLength(2);

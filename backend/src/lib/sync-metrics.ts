@@ -21,11 +21,7 @@ export const cdcMessagesReceived = meter.createCounter('sync.cdc.messages_receiv
 const tracer = trace.getTracer('app-sync');
 
 /** Start a sync span; the caller ends it. */
-export function startSyncSpan(
-  name: string,
-  attributes?: Record<string, string | number | boolean | null>,
-  _parentTraceId?: string,
-): Span {
+export function startSyncSpan(name: string, attributes?: Record<string, string | number | boolean | null>, _parentTraceId?: string): Span {
   const span = tracer.startSpan(name);
   if (attributes) {
     for (const [key, value] of Object.entries(attributes)) {

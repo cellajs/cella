@@ -6,10 +6,6 @@ import type enError from '../../../locales/en/error.json';
 declare module 'i18next' {
   interface CustomTypeOptions {
     defaultNS: ['c', 'about', 'error'];
-    resources: {
-      c: typeof enCommon & typeof enApp;
-      about: typeof enAbout;
-      error: typeof enError;
-    };
+    resources: { c: typeof enCommon & typeof enApp; about: typeof enAbout; error: typeof enError };
   }
 }

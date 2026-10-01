@@ -6,10 +6,7 @@ import { resourceUri } from '#/modules/oauth-server/resources';
 import { mockUserResponse } from '#/modules/user/user-mocks';
 import { mockChannelBase } from '#/schemas/entity-base-mocks';
 
-export const mockMeResponse = (key = 'me:default'): MeResponse => ({
-  user: mockUserResponse(`${key}:user`),
-  isSystemAdmin: false,
-});
+export const mockMeResponse = (key = 'me:default'): MeResponse => ({ user: mockUserResponse(`${key}:user`), isSystemAdmin: false });
 
 export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
   withFakerSeed(key, () => {
@@ -59,12 +56,7 @@ export const mockUploadTokenResponse = (key = 'upload-token:default'): UploadTok
       sub: mockNanoid(),
       s3: true,
       signature: faker.string.alphanumeric(64),
-      params: {
-        auth: {
-          key: `uploads/${mockNanoid()}`,
-          expires: expiresAt.toISOString(),
-        },
-      },
+      params: { auth: { key: `uploads/${mockNanoid()}`, expires: expiresAt.toISOString() } },
     };
   });
 

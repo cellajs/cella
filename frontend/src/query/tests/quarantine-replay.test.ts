@@ -6,9 +6,7 @@ vi.mock('shared', () => ({
 }));
 
 const quarantineFailedSync = vi.fn(async (_record: unknown) => {});
-vi.mock('~/query/offline/failed-sync', () => ({
-  quarantineFailedSync: (record: unknown) => quarantineFailedSync(record),
-}));
+vi.mock('~/query/offline/failed-sync', () => ({ quarantineFailedSync: (record: unknown) => quarantineFailedSync(record) }));
 
 const { markReplayingMutations, queryClient } = await import('~/query/query-client');
 
@@ -60,9 +58,7 @@ describe('failedSync quarantine is gated on replay', () => {
     await failMutation(mutation, variables);
 
     expect(quarantineFailedSync).toHaveBeenCalledTimes(1);
-    expect(quarantineFailedSync).toHaveBeenCalledWith(
-      expect.objectContaining({ mutationId: 'm-replay', entityType: 'attachment', status: 400 }),
-    );
+    expect(quarantineFailedSync).toHaveBeenCalledWith(expect.objectContaining({ mutationId: 'm-replay', entityType: 'attachment', status: 400 }));
   });
 
   it('leaves a live (never paused) mutation to the error toast', async () => {

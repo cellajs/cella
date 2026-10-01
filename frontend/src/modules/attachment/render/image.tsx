@@ -26,27 +26,14 @@ interface ControlButtonProps {
 function ControlButton({ tooltipContent, onClick, icon, className }: ControlButtonProps) {
   return (
     <TooltipButton toolTipContent={tooltipContent}>
-      <Button
-        onClick={onClick}
-        className={cn(
-          'rounded-none border border-input bg-background text-accent-foreground hover:bg-accent',
-          className,
-        )}
-      >
+      <Button onClick={onClick} className={cn('rounded-none border border-input bg-background text-accent-foreground hover:bg-accent', className)}>
         {icon}
       </Button>
     </TooltipButton>
   );
 }
 
-export function ReactPanZoom({
-  image,
-  alt,
-  showButtons,
-  imageClassName,
-  onPanStateToggle,
-  backdropDismiss = false,
-}: RenderImageProps) {
+export function ReactPanZoom({ image, alt, showButtons, imageClassName, onPanStateToggle, backdropDismiss = false }: RenderImageProps) {
   const { t } = useTranslation();
   // On by default when no onPanStateToggle is passed.
   const [panState, setPanState] = useState(!onPanStateToggle);
@@ -62,12 +49,7 @@ export function ReactPanZoom({
             icon={<PlusIcon className="icon-sm" />}
             className="rounded-l-md border-r-0"
           />
-          <ControlButton
-            tooltipContent={t('c:zoom_out')}
-            onClick={zoomOut}
-            icon={<MinusIcon className="icon-sm" />}
-            className="border-r-0"
-          />
+          <ControlButton tooltipContent={t('c:zoom_out')} onClick={zoomOut} icon={<MinusIcon className="icon-sm" />} className="border-r-0" />
           <ControlButton
             tooltipContent={t('c:rotate_right')}
             onClick={rotateRight}
@@ -87,27 +69,15 @@ export function ReactPanZoom({
             />
           )}
 
-          <ControlButton
-            tooltipContent={t('c:reset')}
-            onClick={reset}
-            icon={<RefreshCwIcon className="icon-sm" />}
-            className="rounded-r-md"
-          />
+          <ControlButton tooltipContent={t('c:reset')} onClick={reset} icon={<RefreshCwIcon className="icon-sm" />} className="rounded-r-md" />
         </div>
       )}
 
-      <div
-        className={cn('flex h-full w-full items-center justify-center', backdropDismiss && 'pointer-events-none')}
-        {...panProps}
-      >
+      <div className={cn('flex h-full w-full items-center justify-center', backdropDismiss && 'pointer-events-none')} {...panProps}>
         <div className="flex h-full w-full items-center justify-center" style={layerStyle}>
           <img
             style={{ transform: `rotate(${rotation * 90}deg)` }}
-            className={cn(
-              imageClassName,
-              'object-contain',
-              backdropDismiss ? 'pointer-events-auto max-h-full max-w-full' : 'h-full w-full',
-            )}
+            className={cn(imageClassName, 'object-contain', backdropDismiss ? 'pointer-events-auto max-h-full max-w-full' : 'h-full w-full')}
             src={image}
             alt={alt}
           />

@@ -30,11 +30,7 @@ export function declareViewsFromMemberships(): void {
   const memberships = data?.items ?? [];
   const entityTypes = getRegisteredProductEntityTypes();
 
-  const derived = deriveGrantBoundaryViews({
-    memberships,
-    entityTypes,
-    resolvePath: resolveChannelPath,
-  });
+  const derived = deriveGrantBoundaryViews({ memberships, entityTypes, resolvePath: resolveChannelPath });
 
   const store = syncStore.getState();
   const keep = new Set<string>();

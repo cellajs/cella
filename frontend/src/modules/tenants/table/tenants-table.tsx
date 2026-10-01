@@ -33,10 +33,7 @@ function TenantsTable() {
   const queryOptions = tenantsListQueryOptions({ ...search, limit });
   const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
 
-  const onRowsChange = (
-    changedRows: TenantWithOrganization[],
-    { indexes, column }: RowsChangeData<TenantWithOrganization>,
-  ) => {
+  const onRowsChange = (changedRows: TenantWithOrganization[], { indexes, column }: RowsChangeData<TenantWithOrganization>) => {
     if (column.key !== 'status') return;
     for (const index of indexes) {
       const tenant = changedRows[index];
@@ -71,11 +68,7 @@ function TenantsTable() {
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder
-              icon={BuildingIcon}
-              title="c:no_resource_yet"
-              titleProps={{ resource: t('c:tenant_other').toLowerCase() }}
-            />
+            <ContentPlaceholder icon={BuildingIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:tenant_other').toLowerCase() }} />
           ),
         }}
       />

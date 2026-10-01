@@ -43,9 +43,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
   const byUser = new Map(recipients.map((row) => [row.id, row]));
   const readableByUser = await findReadableByUser(pending);
 
-  const actorNames = await findUserNames([
-    ...new Set(pending.map((row) => row.actorId).filter((id): id is string => Boolean(id))),
-  ]);
+  const actorNames = await findUserNames([...new Set(pending.map((row) => row.actorId).filter((id): id is string => Boolean(id)))]);
   const channelNames = await findChannelNames(pending.map((row) => row.channelId));
 
   let sent = 0;
@@ -58,9 +56,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
     const source = getNotificationSource(notification.entityType);
     if (!source) continue;
 
-    const preview = await tenantReadById(notification.tenantId, (tx) =>
-      loadSubjectPreview(source, tx, notification.subjectId),
-    );
+    const preview = await tenantReadById(notification.tenantId, (tx) => loadSubjectPreview(source, tx, notification.subjectId));
     if (!preview) continue;
 
     const statics = {
@@ -86,9 +82,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
     };
 
     if (notification.type === 'mention') {
-      await mailer.prepareEmails(mentionEmail, statics, [
-        { ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'mention') },
-      ]);
+      await mailer.prepareEmails(mentionEmail, statics, [{ ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'mention') }]);
     } else {
       await mailer.prepareEmails(commentEmail, { ...statics, reply: notification.type === 'reply' }, [
         { ...recipient, unsubscribeLink: buildUnsubscribeLink(user.id, 'comment') },

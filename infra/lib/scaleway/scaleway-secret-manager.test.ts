@@ -2,11 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { makeFetch } from '../../tests/helpers/fake-fetch';
 import { createSecretManagerClient } from './scaleway-secret-manager';
 
-const baseOptions = {
-  secretKey: 'caller-secret',
-  region: 'nl-ams',
-  projectId: 'proj-1',
-};
+const baseOptions = { secretKey: 'caller-secret', region: 'nl-ams', projectId: 'proj-1' };
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -45,11 +41,7 @@ describe('createSecretManagerClient', () => {
     vi.stubGlobal('fetch', fn);
 
     const client = createSecretManagerClient({ ...baseOptions, fetchImpl: fn });
-    const secret = await client.ensureSecret({
-      name: 'cookie-secret',
-      path: '/demo-production/',
-      description: 'Cookie signing secret',
-    });
+    const secret = await client.ensureSecret({ name: 'cookie-secret', path: '/demo-production/', description: 'Cookie signing secret' });
 
     expect(secret.id).toBe('secret-1');
     expect(calls).toHaveLength(1);
@@ -111,11 +103,7 @@ describe('createSecretManagerClient', () => {
 
   it('creates a new version with base64 encoded data', async () => {
     const { fn, calls } = makeFetch([
-      {
-        method: 'POST',
-        match: '/secrets/secret-3/versions',
-        body: { revision: 2, secret_id: 'secret-3', latest: true },
-      },
+      { method: 'POST', match: '/secrets/secret-3/versions', body: { revision: 2, secret_id: 'secret-3', latest: true } },
     ]);
     vi.stubGlobal('fetch', fn);
 
@@ -136,11 +124,7 @@ describe('createSecretManagerClient', () => {
       {
         method: 'GET',
         match: '/secrets/secret-4/versions/latest/access',
-        body: {
-          secret_id: 'secret-4',
-          revision: 3,
-          data: Buffer.from('decoded-value', 'utf8').toString('base64'),
-        },
+        body: { secret_id: 'secret-4', revision: 3, data: Buffer.from('decoded-value', 'utf8').toString('base64') },
       },
     ]);
     vi.stubGlobal('fetch', fn);
@@ -164,12 +148,7 @@ describe('createSecretManagerClient', () => {
 
   it('throws a useful error on Scaleway failures', async () => {
     const { fn } = makeFetch([
-      {
-        method: 'GET',
-        match: '/secret-manager/v1beta1/regions/nl-ams/secrets?',
-        body: { message: 'forbidden' },
-        status: 403,
-      },
+      { method: 'GET', match: '/secret-manager/v1beta1/regions/nl-ams/secrets?', body: { message: 'forbidden' }, status: 403 },
     ]);
     vi.stubGlobal('fetch', fn);
 

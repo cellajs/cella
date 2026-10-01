@@ -20,11 +20,7 @@ interface ResyncableProvider {
  * the store and reconnects once the park has lasted `PARKED_GRACE_MS` while connected, with a
  * cooldown so a gap the relay itself cannot fill does not turn into a reconnect storm.
  */
-export function watchPendingStructs(
-  doc: Y.Doc,
-  provider: ResyncableProvider,
-  now: () => number = Date.now,
-): () => void {
+export function watchPendingStructs(doc: Y.Doc, provider: ResyncableProvider, now: () => number = Date.now): () => void {
   let parkedSince = 0;
   let lastResyncAt = 0;
 

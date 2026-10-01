@@ -2,11 +2,7 @@ import { type RefObject, useEffect, useRef } from 'react';
 import type { RenderEditCellProps } from '../types';
 
 /** External-editor defaults: cell content stays visible during the single frame edit mode lasts. */
-export const externalEditorOptions = {
-  editorType: 'text',
-  displayCellContent: true,
-  commitOnOutsideClick: false,
-} as const;
+export const externalEditorOptions = { editorType: 'text', displayCellContent: true, commitOnOutsideClick: false } as const;
 
 type Props<TRow> = Pick<RenderEditCellProps<TRow>, 'onClose'> & {
   /** Opens the editor; receives the grid cell so the sheet or dialog can return focus to it. */
@@ -42,9 +38,7 @@ export function liveCellRef(cell: HTMLElement | null): RefObject<HTMLElement | n
   return {
     get current() {
       if (!grid || !rowIndex || !colIndex) return null;
-      return grid.querySelector<HTMLElement>(
-        `[role="row"][aria-rowindex="${rowIndex}"] [role="gridcell"][aria-colindex="${colIndex}"]`,
-      );
+      return grid.querySelector<HTMLElement>(`[role="row"][aria-rowindex="${rowIndex}"] [role="gridcell"][aria-colindex="${colIndex}"]`);
     },
   };
 }

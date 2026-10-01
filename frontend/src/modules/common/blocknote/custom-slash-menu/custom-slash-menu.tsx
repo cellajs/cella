@@ -25,8 +25,7 @@ export function CustomSlashMenuComponent({
     const { key: pressedKey } = e;
     const itemIndex = Number.parseInt(pressedKey, 10) - 1;
 
-    if (items.length !== originalItemCount || Number.isNaN(itemIndex) || itemIndex < 0 || itemIndex >= indexedItemCount)
-      return;
+    if (items.length !== originalItemCount || Number.isNaN(itemIndex) || itemIndex < 0 || itemIndex >= indexedItemCount) return;
 
     const item = items[itemIndex];
     if (!item) return;
@@ -75,9 +74,7 @@ export function CustomSlashMenuComponent({
               {item.icon}
               {item.title}
             </div>
-            {items.length === originalItemCount && index < indexedItemCount && (
-              <span className="slash-menu-item-badge">{index + 1}</span>
-            )}
+            {items.length === originalItemCount && index < indexedItemCount && <span className="slash-menu-item-badge">{index + 1}</span>}
           </button>
         </div>
       ))}

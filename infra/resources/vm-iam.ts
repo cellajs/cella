@@ -5,11 +5,7 @@ import { engineConfig } from '../config/engine-config';
 const appConfig = engineConfig();
 
 import { principalSecretCondition } from '../lib/runtime-secrets';
-import {
-  BACKEND_S3_PERMISSION_SETS,
-  BOOT_PROJECT_PERMISSION_SETS,
-  SERVICE_SECRET_PERMISSION_SETS,
-} from '../lib/scaleway/permissions';
+import { BACKEND_S3_PERMISSION_SETS, BOOT_PROJECT_PERMISSION_SETS, SERVICE_SECRET_PERMISSION_SETS } from '../lib/scaleway/permissions';
 import { principalNames } from '../lib/scaleway/principals';
 import { bootKeyCondition } from '../lib/scaleway/secret-paths';
 import { principalServices } from '../lib/services';
@@ -39,18 +35,13 @@ function findApplicationId(name: string): pulumi.Output<string | undefined> {
 function requirePrincipalId(resolved: pulumi.Output<string | undefined>, label: string): pulumi.Output<string> {
   return resolved.apply((id) => {
     if (!id)
-      throw new Error(
-        `IAM application for ${label} not found: run the pnpm infra setup first, or "Apply infra change" after a registry change.`,
-      );
+      throw new Error(`IAM application for ${label} not found: run the pnpm infra setup first, or "Apply infra change" after a registry change.`);
     return id;
   });
 }
 
 /** CI deploy application id: the principal CI authenticates as. Required. */
-export const ciDeployApplicationId = requirePrincipalId(
-  findApplicationId(names.ciDeploy),
-  `CI deploy ('${names.ciDeploy}')`,
-);
+export const ciDeployApplicationId = requirePrincipalId(findApplicationId(names.ciDeploy), `CI deploy ('${names.ciDeploy}')`);
 
 /** Admin application id, the standing human principal. Optional: when absent its bucket-policy statements are dropped with a warning. */
 export const adminApplicationId: pulumi.Output<string | undefined> = findApplicationId(names.admin).apply((id) => {
@@ -76,10 +67,7 @@ export const serviceApplicationIds: Record<string, pulumi.Output<string>> = Obje
 );
 
 /** Boot fetcher application id. Required. */
-export const bootApplicationId: pulumi.Output<string> = requirePrincipalId(
-  findApplicationId(names.boot),
-  `boot fetcher ('${names.boot}')`,
-);
+export const bootApplicationId: pulumi.Output<string> = requirePrincipalId(findApplicationId(names.boot), `boot fetcher ('${names.boot}')`);
 
 /**
  * Pulumi-managed IAM policies for the VM-side principals. Privileged: IAM policy write is forbidden to the CI key, so a privileged up creates these before compute exists, and compute VMs depend on them so grants attach before the first runtime-secret hydration.
@@ -108,14 +96,7 @@ for (const svc of vmServices) {
             projectIds: [projectId],
             condition: principalSecretCondition(naming.slug, mode, singleVM, svc.slug),
           },
-          ...(isBackend
-            ? [
-                {
-                  permissionSetNames: [...BACKEND_S3_PERMISSION_SETS],
-                  projectIds: [projectId],
-                },
-              ]
-            : []),
+          ...(isBackend ? [{ permissionSetNames: [...BACKEND_S3_PERMISSION_SETS], projectIds: [projectId] }] : []),
         ],
         tags,
       },
@@ -128,20 +109,12 @@ vmIamPolicies.push(
     'vm-boot-policy',
     {
       name: naming.resource('vm-boot-policy'),
-      description:
-        'Registry pull + boot-diag write + handoff-only secret read for the boot fetcher (managed by Pulumi)',
+      description: 'Registry pull + boot-diag write + handoff-only secret read for the boot fetcher (managed by Pulumi)',
       applicationId: bootApplicationId,
       organizationId,
       rules: [
-        {
-          permissionSetNames: [...BOOT_PROJECT_PERMISSION_SETS],
-          projectIds: [projectId],
-        },
-        {
-          permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS],
-          projectIds: [projectId],
-          condition: bootKeyCondition(naming.slug, mode),
-        },
+        { permissionSetNames: [...BOOT_PROJECT_PERMISSION_SETS], projectIds: [projectId] },
+        { permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS], projectIds: [projectId], condition: bootKeyCondition(naming.slug, mode) },
       ],
       tags,
     },
@@ -150,5 +123,4 @@ vmIamPolicies.push(
 );
 
 /** Backend service app id when the backend service is deployed, for the bucket statements; undefined otherwise. */
-export const backendServiceApplicationId: pulumi.Output<string | undefined> =
-  serviceApplicationIds.backend ?? pulumi.output(undefined);
+export const backendServiceApplicationId: pulumi.Output<string | undefined> = serviceApplicationIds.backend ?? pulumi.output(undefined);

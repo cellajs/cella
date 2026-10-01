@@ -4,12 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 import { type SheetData, sheeter, useSheeter } from './use-sheeter';
 
-const sheet = (id: string, data: Partial<SheetData> = {}): SheetData => ({
-  id,
-  side: 'right',
-  triggerRef: createRef(),
-  ...data,
-});
+const sheet = (id: string, data: Partial<SheetData> = {}): SheetData => ({ id, side: 'right', triggerRef: createRef(), ...data });
 
 const openIds = () => useSheeter.getState().sheets.map((s) => s.id);
 
@@ -36,9 +31,7 @@ describe('sheeter close order', () => {
   it('closes only route-bound sheets on a route change', () => {
     const closed: string[] = [];
     useSheeter.getState().create(null, sheet('route', { onClose: () => closed.push('route') }));
-    useSheeter
-      .getState()
-      .create(null, sheet('pinned', { closeSheetOnRouteChange: false, onClose: () => closed.push('pinned') }));
+    useSheeter.getState().create(null, sheet('pinned', { closeSheetOnRouteChange: false, onClose: () => closed.push('pinned') }));
 
     useSheeter.getState().removeOnRouteChange();
 
@@ -109,23 +102,13 @@ describe('sheeter store', () => {
 
     expect(id).toBe('a');
     expect(openIds()).toEqual(['a', 'b']);
-    expect(useSheeter.getState().get('a')).toMatchObject({
-      content: 'second',
-      side: 'left',
-      title: 'A',
-      open: true,
-      closeSheetOnRouteChange: false,
-    });
+    expect(useSheeter.getState().get('a')).toMatchObject({ content: 'second', side: 'left', title: 'A', open: true, closeSheetOnRouteChange: false });
   });
 
   it('replace opens a new sheet when none has the id', () => {
     useSheeter.getState().replace('content', sheet('a'));
 
-    expect(useSheeter.getState().get('a')).toMatchObject({
-      content: 'content',
-      open: true,
-      closeSheetOnRouteChange: true,
-    });
+    expect(useSheeter.getState().get('a')).toMatchObject({ content: 'content', open: true, closeSheetOnRouteChange: true });
   });
 
   it('removes every sheet without an id and passes isCleanup to each onClose', () => {

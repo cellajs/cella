@@ -63,11 +63,7 @@ function RequestsTable() {
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder
-              icon={BirdIcon}
-              title="c:no_resource_yet"
-              titleProps={{ resource: t('c:request_other').toLowerCase() }}
-            />
+            <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:request_other').toLowerCase() }} />
           ),
         }}
       />

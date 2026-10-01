@@ -13,15 +13,8 @@ import { defaultOnInvalid } from '~/utils/form-on-invalid';
 // biome-ignore lint/suspicious/noExplicitAny: Can be any form context
 export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues, TContext = any>(
   formId: string,
-  opt?: {
-    formOptions?: UseFormProps<TFieldValues, TContext>;
-    formContainerId?: string;
-  },
-): UseFormReturn<TFieldValues, TContext, TFieldValues> & {
-  unsavedChanges: boolean;
-  isDirty: boolean;
-  loading: boolean;
-} {
+  opt?: { formOptions?: UseFormProps<TFieldValues, TContext>; formContainerId?: string },
+): UseFormReturn<TFieldValues, TContext, TFieldValues> & { unsavedChanges: boolean; isDirty: boolean; loading: boolean } {
   const { formOptions, formContainerId } = opt || {};
 
   const getDraftForm = useDraftStore((state) => state.getForm);
@@ -127,8 +120,7 @@ export function useFormWithDraft<TFieldValues extends FieldValues = FieldValues,
     const draftData = getDraftForm<TFieldValues>(formId);
 
     if (draftData) {
-      for (const [key, value] of Object.entries(draftData))
-        form.setValue(key as FieldPath<TFieldValues>, value, { shouldDirty: true });
+      for (const [key, value] of Object.entries(draftData)) form.setValue(key as FieldPath<TFieldValues>, value, { shouldDirty: true });
     }
 
     setLoading(false);

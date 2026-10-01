@@ -7,11 +7,7 @@ import type { NotificationSubjectRow } from '#/lib/module';
 import { isPushSendConfigured, sendNotificationPush } from '#/modules/push/push-sender';
 import { log } from '#/utils/logger';
 import { readableAccess } from '../helpers/readable-access';
-import {
-  findNotifiedUserIds,
-  insertNotificationsIgnoringDuplicates,
-  type NotificationInsert,
-} from '../notification-queries';
+import { findNotifiedUserIds, insertNotificationsIgnoringDuplicates, type NotificationInsert } from '../notification-queries';
 import { getNotificationSource, loadSubjectRows, type NotificationSource } from '../notification-sources';
 import { instantEmailTypes, type NotificationType, notificationTypes } from '../notification-types';
 
@@ -72,9 +68,7 @@ function mayAddMentions(event: ActivityEvent): boolean {
 /** Single events name one subject; batches list theirs in `batchRows`. */
 function collectSubjectIds(event: ActivityEvent): string[] {
   if (event.batchRows?.length) {
-    const ids = event.batchRows
-      .map((batchRow) => (batchRow.rowData as { id?: unknown })?.id)
-      .filter((id): id is string => typeof id === 'string');
+    const ids = event.batchRows.map((batchRow) => (batchRow.rowData as { id?: unknown })?.id).filter((id): id is string => typeof id === 'string');
     if (ids.length) return ids;
   }
   return event.subjectId ? [event.subjectId] : [];
@@ -160,11 +154,7 @@ async function fanOutRow(
 }
 
 /** Keep only recipients who may read the row, then drop muted-type candidates whose home membership is muted. */
-async function filterByReadAccess(
-  entityType: ProductEntityType,
-  row: NotificationSubjectRow,
-  candidates: Candidate[],
-): Promise<Candidate[]> {
+async function filterByReadAccess(entityType: ProductEntityType, row: NotificationSubjectRow, candidates: Candidate[]): Promise<Candidate[]> {
   const readable = await readableAccess(
     entityType,
     row,
@@ -183,10 +173,7 @@ async function filterByReadAccess(
 }
 
 /** The row's home channel, row-side twin of `homeChannelIdSql`. */
-function resolveChannel(
-  entityType: ProductEntityType,
-  row: NotificationSubjectRow,
-): { id: string; type: ChannelEntityType } {
+function resolveChannel(entityType: ProductEntityType, row: NotificationSubjectRow): { id: string; type: ChannelEntityType } {
   const [deepest] = hierarchy.resolveNonNullAncestors(entityType, row);
   if (deepest && isChannel(deepest.type)) return { id: deepest.id, type: deepest.type };
   return { id: row.organizationId, type: 'organization' };

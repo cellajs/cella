@@ -22,10 +22,7 @@ export const useColumns = () => {
         <div className="flew-row flex items-center gap-2">
           {t(`c:${type}`)}
           {type === 'waitlist' && (
-            <TooltipButton
-              toolTipContent={t(`c:${wasInvited ? 'pending' : 'not_processed'}`)}
-              disabled={type !== 'waitlist'}
-            >
+            <TooltipButton toolTipContent={t(`c:${wasInvited ? 'pending' : 'not_processed'}`)} disabled={type !== 'waitlist'}>
               <Badge className={`h-2 w-2 justify-center p-0 ${wasInvited ? 'bg-yellow-400' : 'bg-gray-400'}`} />
             </TooltipButton>
           )}
@@ -39,11 +36,7 @@ export const useColumns = () => {
       minWidth: 140,
       renderCell: ({ row, tabIndex }) => {
         return (
-          <a
-            href={`mailto:${row.email}`}
-            tabIndex={tabIndex}
-            className="truncate underline-offset-4 outline-0 ring-0 hover:underline"
-          >
+          <a href={`mailto:${row.email}`} tabIndex={tabIndex} className="truncate underline-offset-4 outline-0 ring-0 hover:underline">
             {row.email || <span className="text-muted">-</span>}
           </a>
         );
@@ -56,8 +49,7 @@ export const useColumns = () => {
       resizable: true,
       minWidth: 200,
       placeholderValue: '-',
-      renderCell: ({ row }) =>
-        row.message ? <span className="whitespace-pre-line leading-5">{row.message}</span> : null,
+      renderCell: ({ row }) => (row.message ? <span className="whitespace-pre-line leading-5">{row.message}</span> : null),
     },
     dateColumn('createdAt', { name: t('c:created_at') }),
   ];

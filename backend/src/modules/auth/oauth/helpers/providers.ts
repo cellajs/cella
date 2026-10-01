@@ -28,10 +28,7 @@ type ProviderSetup = {
  * Resolves the effective Entra ID issuer for multi-tenant sign-in: 'common', 'organizations' and 'consumers' are not real issuers, since
  * the id_token `iss` claim embeds the user's tenant id. Claim and signature validation run against the resolved issuer.
  */
-const resolveEntraIssuer = async (
-  response: Response,
-  as: oauth.AuthorizationServer,
-): Promise<oauth.AuthorizationServer> => {
+const resolveEntraIssuer = async (response: Response, as: oauth.AuthorizationServer): Promise<oauth.AuthorizationServer> => {
   const body = (await response
     .clone()
     .json()
@@ -48,23 +45,12 @@ const resolveEntraIssuer = async (
 };
 
 /** Creates a per-provider OAuth client: authorization-URL building and code exchange on `oauth4webapi`. */
-const createProviderClient = ({
-  as,
-  clientId,
-  clientSecret,
-  redirectUri,
-  oidc,
-  resolveIssuerFromIdToken,
-}: ProviderSetup) => {
+const createProviderClient = ({ as, clientId, clientSecret, redirectUri, oidc, resolveIssuerFromIdToken }: ProviderSetup) => {
   const client: oauth.Client = { client_id: clientId };
 
   return {
     /** Builds the provider authorization URL with state, scopes, and an optional PKCE challenge + OIDC nonce. */
-    async createAuthorizationURL(
-      state: string,
-      scopes: string[],
-      { codeVerifier, nonce }: OAuthFlowContext = {},
-    ): Promise<URL> {
+    async createAuthorizationURL(state: string, scopes: string[], { codeVerifier, nonce }: OAuthFlowContext = {}): Promise<URL> {
       const url = new URL(as.authorization_endpoint as string);
       url.searchParams.set('client_id', clientId);
       url.searchParams.set('redirect_uri', redirectUri);
@@ -83,23 +69,12 @@ const createProviderClient = ({
      * Exchanges the authorization code for tokens, enforcing PKCE when a `codeVerifier` is given. OIDC providers also get
      * id_token claim validation, `nonce` binding, and a signature check against the provider JWKS.
      */
-    async validateAuthorizationCode(
-      code: string,
-      state: string,
-      { codeVerifier, nonce }: OAuthFlowContext = {},
-    ): Promise<{ accessToken: string }> {
+    async validateAuthorizationCode(code: string, state: string, { codeVerifier, nonce }: OAuthFlowContext = {}): Promise<{ accessToken: string }> {
       try {
         // Created lazily: ClientSecretPost rejects empty secrets, which can be absent at module load (CI openapi generation, deployments without this provider)
         const clientAuth = oauth.ClientSecretPost(clientSecret);
         const callbackParams = oauth.validateAuthResponse(as, client, new URLSearchParams({ code, state }), state);
-        const response = await oauth.authorizationCodeGrantRequest(
-          as,
-          client,
-          clientAuth,
-          callbackParams,
-          redirectUri,
-          codeVerifier ?? oauth.nopkce,
-        );
+        const response = await oauth.authorizationCodeGrantRequest(as, client, clientAuth, callbackParams, redirectUri, codeVerifier ?? oauth.nopkce);
 
         const effectiveAs = resolveIssuerFromIdToken ? await resolveEntraIssuer(response, as) : as;
         const tokens = await oauth.processAuthorizationCodeResponse(effectiveAs, client, response, {

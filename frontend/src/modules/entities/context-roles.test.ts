@@ -3,8 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { heldContextRoles } from '~/modules/entities/context-roles';
 import type { EnrichedChannel } from '~/modules/entities/types';
 
-const membership = (channelId: string, role: string) =>
-  ({ channelType: 'organization', channelId, role }) as MembershipBase;
+const membership = (channelId: string, role: string) => ({ channelType: 'organization', channelId, role }) as MembershipBase;
 const entity = { id: 'org1', entityType: 'organization' } as EnrichedChannel;
 
 describe('heldContextRoles', () => {
@@ -13,11 +12,7 @@ describe('heldContextRoles', () => {
   });
 
   it('ignores memberships on unrelated channels and deduplicates pairs', () => {
-    const pairs = heldContextRoles(entity, [
-      membership('other-org', 'admin'),
-      membership('org1', 'member'),
-      membership('org1', 'member'),
-    ]);
+    const pairs = heldContextRoles(entity, [membership('other-org', 'admin'), membership('org1', 'member'), membership('org1', 'member')]);
     expect(pairs).toEqual(['organization.member']);
   });
 

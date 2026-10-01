@@ -30,30 +30,18 @@ export interface OrgSequenceGroup {
  * organization; a missing organization violates the hierarchy and throws. The key groups audiences,
  * activity stamps, and unseen counts, never sequence allocation.
  */
-export function resolveChannelKey(
-  entityType: string,
-  rowData: CdcRowData,
-  activity: ActivityWithoutId,
-  h: EntityHierarchy = hierarchy,
-): string {
+export function resolveChannelKey(entityType: string, rowData: CdcRowData, activity: ActivityWithoutId, h: EntityHierarchy = hierarchy): string {
   const deepest = h.resolveDeepestAncestorId(entityType, rowData);
   if (deepest) return deepest;
   if (activity.organizationId) return activity.organizationId;
-  throw new Error(
-    `No context for ${entityType} row ${rowData.id}: the hierarchy model requires an organization ancestor`,
-  );
+  throw new Error(`No context for ${entityType} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
 }
 
 /**
  * Channel-counter nodes a stamped row's frontier propagates to: the organization plus every non-null
  * ancestor, so `e:f:{type}` at any node answers "did anything of this type change at or below here".
  */
-export function frontierNodeKeys(
-  entityType: string,
-  rowData: CdcRowData,
-  organizationId: string,
-  h: EntityHierarchy = hierarchy,
-): string[] {
+export function frontierNodeKeys(entityType: string, rowData: CdcRowData, organizationId: string, h: EntityHierarchy = hierarchy): string[] {
   const nodes = [organizationId];
   for (const ancestor of h.resolveNonNullAncestors(entityType, rowData)) {
     if (ancestor.id !== organizationId) nodes.push(ancestor.id);
@@ -62,11 +50,7 @@ export function frontierNodeKeys(
 }
 
 /** Sums matching keys; max-merge keys keep the max, since stamps and frontiers must never sum. */
-export function mergeDelta(
-  map: Map<string, Record<string, number>>,
-  channelKey: string,
-  deltas: Record<string, number>,
-): void {
+export function mergeDelta(map: Map<string, Record<string, number>>, channelKey: string, deltas: Record<string, number>): void {
   const existing = map.get(channelKey);
   if (existing) {
     for (const [k, v] of Object.entries(deltas)) {
@@ -85,10 +69,7 @@ function isStampable(tableMeta: TableMeta, action: ActivityAction, h: EntityHier
  * Reserves one sequence range per organization, shared by all product entity types and preserving WAL
  * order, and accumulates count deltas. Frontier (`e:f:`) deltas wait until seq values are assigned.
  */
-export function computeBatchUnifiedDeltas(
-  events: PendingEvent[],
-  h: EntityHierarchy = hierarchy,
-): BatchUnifiedDeltaPlan {
+export function computeBatchUnifiedDeltas(events: PendingEvent[], h: EntityHierarchy = hierarchy): BatchUnifiedDeltaPlan {
   const countDeltasByChannelKey = new Map<string, Record<string, number>>();
   const orgSequenceGroupMap = new Map<string, OrgSequenceGroup>();
 
@@ -99,9 +80,7 @@ export function computeBatchUnifiedDeltas(
     if (isStampable(tableMeta, action, h)) {
       const orgKey = activity.organizationId;
       if (!orgKey) {
-        throw new Error(
-          `No organization for ${tableMeta.type} row ${rowData.id}: the hierarchy model requires an organization ancestor`,
-        );
+        throw new Error(`No organization for ${tableMeta.type} row ${rowData.id}: the hierarchy model requires an organization ancestor`);
       }
       const existing = orgSequenceGroupMap.get(orgKey);
       if (existing) {

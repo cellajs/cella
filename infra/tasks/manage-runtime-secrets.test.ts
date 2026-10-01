@@ -1,11 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { manageRuntimeSecrets } from './manage-runtime-secrets';
 
-const prompts = {
-  select: vi.fn(),
-  password: vi.fn(),
-  confirm: vi.fn(),
-};
+const prompts = { select: vi.fn(), password: vi.fn(), confirm: vi.fn() };
 
 const listSecrets = vi.fn();
 const listSecretsUnder = vi.fn();
@@ -16,19 +12,10 @@ const deleteSecret = vi.fn();
 const provisionManagedKey = vi.fn();
 
 vi.mock('../lib/scaleway/scaleway-secret-manager', () => ({
-  createSecretManagerClient: () => ({
-    listSecrets,
-    listSecretsUnder,
-    getSecretByName,
-    ensureSecret,
-    putSecretValue,
-    deleteSecret,
-  }),
+  createSecretManagerClient: () => ({ listSecrets, listSecretsUnder, getSecretByName, ensureSecret, putSecretValue, deleteSecret }),
 }));
 
-vi.mock('./provision-managed-key', () => ({
-  provisionManagedKey: (...args: unknown[]) => provisionManagedKey(...args),
-}));
+vi.mock('./provision-managed-key', () => ({ provisionManagedKey: (...args: unknown[]) => provisionManagedKey(...args) }));
 
 function resetMocks() {
   prompts.select.mockReset();
@@ -84,9 +71,7 @@ describe('manageRuntimeSecrets', () => {
     await manageRuntimeSecrets(baseOptions);
 
     expect(ensureSecret).not.toHaveBeenCalled();
-    expect(putSecretValue).toHaveBeenCalledWith(
-      expect.objectContaining({ secretId: 'secret-2', value: 'new-api-key' }),
-    );
+    expect(putSecretValue).toHaveBeenCalledWith(expect.objectContaining({ secretId: 'secret-2', value: 'new-api-key' }));
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('revision 7'));
   });
 
@@ -106,10 +91,7 @@ describe('manageRuntimeSecrets', () => {
 
   it('deletes an entire secret object only after confirmation', async () => {
     resetMocks();
-    prompts.select
-      .mockResolvedValueOnce('delete')
-      .mockResolvedValueOnce('githubClientSecret')
-      .mockResolvedValueOnce('exit');
+    prompts.select.mockResolvedValueOnce('delete').mockResolvedValueOnce('githubClientSecret').mockResolvedValueOnce('exit');
     prompts.confirm.mockResolvedValueOnce(true);
     getSecretByName.mockResolvedValueOnce({ id: 'secret-3', name: 'github-client-secret' });
 
@@ -120,10 +102,7 @@ describe('manageRuntimeSecrets', () => {
 
   it('cancels deletion when confirmation is declined', async () => {
     resetMocks();
-    prompts.select
-      .mockResolvedValueOnce('delete')
-      .mockResolvedValueOnce('githubClientId')
-      .mockResolvedValueOnce('exit');
+    prompts.select.mockResolvedValueOnce('delete').mockResolvedValueOnce('githubClientId').mockResolvedValueOnce('exit');
     prompts.confirm.mockResolvedValueOnce(false);
     getSecretByName.mockResolvedValueOnce({ id: 'secret-4', name: 'github-client-id' });
 
@@ -142,12 +121,7 @@ describe('manageRuntimeSecrets', () => {
     await manageRuntimeSecrets(baseOptions);
 
     expect(provisionManagedKey).toHaveBeenCalledWith(
-      expect.objectContaining({
-        callerSecretKey: 'caller-secret',
-        projectId: 'proj-1',
-        slug: 'demo',
-        path: '/demo-production/',
-      }),
+      expect.objectContaining({ callerSecretKey: 'caller-secret', projectId: 'proj-1', slug: 'demo', path: '/demo-production/' }),
     );
     expect(baseOptions.log).toHaveBeenCalledWith(expect.stringContaining('Minted'));
   });

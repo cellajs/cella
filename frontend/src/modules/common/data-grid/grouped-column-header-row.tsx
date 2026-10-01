@@ -60,8 +60,6 @@ function GroupedColumnHeaderRow<R, SR>({
   );
 }
 
-const GroupedColumnHeaderRowMemo = memo(GroupedColumnHeaderRow) as <R, SR>(
-  props: GroupedColumnHeaderRowProps<R, SR>,
-) => React.JSX.Element;
+const GroupedColumnHeaderRowMemo = memo(GroupedColumnHeaderRow) as <R, SR>(props: GroupedColumnHeaderRowProps<R, SR>) => React.JSX.Element;
 
 export { GroupedColumnHeaderRowMemo as GroupedColumnHeaderRow };

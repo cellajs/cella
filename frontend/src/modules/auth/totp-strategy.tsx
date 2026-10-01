@@ -18,11 +18,7 @@ export function TotpStrategy({ isActive, setIsActive }: { isActive: boolean; set
 
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
-  const { mutate: totpSignIn } = useMutation<
-    SignInWithTotpResponse,
-    ApiError | Error,
-    NonNullable<SignInWithTotpData['body']>
-  >({
+  const { mutate: totpSignIn } = useMutation<SignInWithTotpResponse, ApiError | Error, NonNullable<SignInWithTotpData['body']>>({
     mutationFn: async (body) => await signInWithTotp({ body }),
     onSuccess: () => {
       useAuthStore.getState().setSignedIn(true);
@@ -34,13 +30,7 @@ export function TotpStrategy({ isActive, setIsActive }: { isActive: boolean; set
   return (
     <div data-mode={mode} className="group flex flex-col space-y-2">
       {!isActive && (
-        <Button
-          ref={triggerRef}
-          type="button"
-          onClick={() => setIsActive(true)}
-          variant="plain"
-          className="w-full gap-1.5 truncate"
-        >
+        <Button ref={triggerRef} type="button" onClick={() => setIsActive(true)} variant="plain" className="w-full gap-1.5 truncate">
           <SmartphoneIcon />
           <span className="truncate">
             {t('c:sign_in')} {t('c:with').toLowerCase()} {t('c:authenticator_app').toLowerCase()}
@@ -48,9 +38,7 @@ export function TotpStrategy({ isActive, setIsActive }: { isActive: boolean; set
         </Button>
       )}
 
-      {isActive && (
-        <TotpConfirmationForm onSubmit={totpSignIn} onCancel={() => setIsActive(false)} label={t('c:totp_verify')} />
-      )}
+      {isActive && <TotpConfirmationForm onSubmit={totpSignIn} onCancel={() => setIsActive(false)} label={t('c:totp_verify')} />}
     </div>
   );
 }

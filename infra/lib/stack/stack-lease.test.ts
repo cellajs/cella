@@ -34,12 +34,7 @@ describe('acquireLease', () => {
   });
 
   it('waits for a live lock to lapse, then takes it', async () => {
-    const held: LockInfo = {
-      owner: 'operator:b',
-      operation: 'deploy',
-      acquiredAt: '',
-      expiresAt: new Date(T0 + 15_000).toISOString(),
-    };
+    const held: LockInfo = { owner: 'operator:b', operation: 'deploy', acquiredAt: '', expiresAt: new Date(T0 + 15_000).toISOString() };
     const { s3, currentInfo } = makeLockS3(held);
     const waits: number[] = [];
     const sleep = async (ms: number) => {
@@ -65,12 +60,7 @@ describe('acquireLease', () => {
   });
 
   it('gives up after waitMs when the holder keeps its lease', async () => {
-    const held: LockInfo = {
-      owner: 'ci:run-9',
-      operation: 'deploy',
-      acquiredAt: '',
-      expiresAt: new Date(T0 + 3_600_000).toISOString(),
-    };
+    const held: LockInfo = { owner: 'ci:run-9', operation: 'deploy', acquiredAt: '', expiresAt: new Date(T0 + 3_600_000).toISOString() };
     const { s3 } = makeLockS3(held);
     const sleep = async (ms: number) => {
       await vi.advanceTimersByTimeAsync(ms);
@@ -105,12 +95,7 @@ describe('acquireLease', () => {
       onRenewFailed: (reason) => reasons.push(reason),
     });
     if (!res.acquired) throw new Error('expected acquire');
-    overwrite({
-      owner: 'operator:b',
-      operation: 'apply',
-      acquiredAt: '',
-      expiresAt: new Date(Date.now() + 60_000).toISOString(),
-    });
+    overwrite({ owner: 'operator:b', operation: 'apply', acquiredAt: '', expiresAt: new Date(Date.now() + 60_000).toISOString() });
     await vi.advanceTimersByTimeAsync(10_000);
     expect(res.lease.lost).toBe(true);
     expect(reasons[0]).toMatch(/held by operator:b/);

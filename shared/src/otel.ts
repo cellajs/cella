@@ -105,10 +105,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
 
   // Always present, with no readers when export is off, so callers register gauges
   // unconditionally and reader-less observations go nowhere.
-  const meterProvider = new SdkMeterProvider({
-    readers: metricReader ? [metricReader] : [],
-    resource,
-  });
+  const meterProvider = new SdkMeterProvider({ readers: metricReader ? [metricReader] : [], resource });
 
   const traceExporter = options.traceExporter ?? (hasMaple ? new OTLPTraceExporter(hasMaple('traces')) : undefined);
 
@@ -138,11 +135,7 @@ export function createOtelSDK(options: OtelSDKOptions): OtelSDK {
     resource,
     // Redaction runs first, so every later processor and the exporter read the scrubbed span. NodeSDK ignores
     // `traceExporter` whenever `spanProcessors` is set, so the exporter gets its own batch processor, last.
-    spanProcessors: [
-      createRedactingSpanProcessor(),
-      ...spanProcessors,
-      ...(traceExporter ? [new BatchSpanProcessor(traceExporter)] : []),
-    ],
+    spanProcessors: [createRedactingSpanProcessor(), ...spanProcessors, ...(traceExporter ? [new BatchSpanProcessor(traceExporter)] : [])],
     logRecordProcessors: logExporter ? [new SimpleLogRecordProcessor({ exporter: logExporter })] : [],
     // Metrics are owned by the explicit meterProvider above. Without this, NodeSDK
     // creates a second env-driven OTLP metrics reader that can block hot restarts.

@@ -32,9 +32,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   const lbServices = enabledServices(appConfig.services).filter((s) => s.lbRoute);
   const defaultService = lbServices.find((s) => s.lbRoute === 'default');
   if (!defaultService) {
-    throw new Error(
-      "loadbalancer: no enabled service declares lbRoute 'default', the HTTPS frontend needs a fallback backend.",
-    );
+    throw new Error("loadbalancer: no enabled service declares lbRoute 'default', the HTTPS frontend needs a fallback backend.");
   }
 
   // The default-route service owns the app host; the engine never names a service literal.
@@ -57,9 +55,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   }
   const publicHosts = [...hostEntries.values()];
 
-  const lbIp = new scaleway.loadbalancers.Ip('lb-ip', {
-    zone,
-  });
+  const lbIp = new scaleway.loadbalancers.Ip('lb-ip', { zone });
 
   const lb = new scaleway.loadbalancers.LoadBalancer('main-lb', {
     name: naming.resource('lb'),
@@ -67,11 +63,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     type: 'LB-S',
     zone,
     tags,
-    privateNetworks: [
-      {
-        privateNetworkId,
-      },
-    ],
+    privateNetworks: [{ privateNetworkId }],
   });
 
   // A records must exist before the Let's Encrypt certificates: Scaleway validates a cert by resolving the FQDN to the LB IP at creation time.
@@ -92,38 +84,15 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     });
     dnsRecords.set(host, record);
     // Hold the cert request until the record answers on public resolvers, so ACME validation never races propagation.
-    dnsGates.set(
-      host,
-      new DnsPropagationGate(
-        `${base}-dns-gate`,
-        {
-          fqdn: host,
-          expectedIp: lbPublicIp,
-        },
-        { dependsOn: [record] },
-      ),
-    );
+    dnsGates.set(host, new DnsPropagationGate(`${base}-dns-gate`, { fqdn: host, expectedIp: lbPublicIp }, { dependsOn: [record] }));
   }
 
   // The apex points at the LB so the apex-to-www redirect ACL below can answer.
   let apexDns: scaleway.domain.Record | undefined;
   let apexDnsGate: DnsPropagationGate | undefined;
   if (managesApex) {
-    apexDns = new scaleway.domain.Record('apex-dns', {
-      dnsZone,
-      name: '',
-      type: 'A',
-      data: lbPublicIp,
-      ttl: 300,
-    });
-    apexDnsGate = new DnsPropagationGate(
-      'apex-dns-gate',
-      {
-        fqdn: dnsZone,
-        expectedIp: lbPublicIp,
-      },
-      { dependsOn: [apexDns] },
-    );
+    apexDns = new scaleway.domain.Record('apex-dns', { dnsZone, name: '', type: 'A', data: lbPublicIp, ttl: 300 });
+    apexDnsGate = new DnsPropagationGate('apex-dns-gate', { fqdn: dnsZone, expectedIp: lbPublicIp }, { dependsOn: [apexDns] });
   }
 
   // Wait for public DNS resolution before ACME, then for certificate readiness before attachment, so issuance failures report certificate-level detail.
@@ -135,13 +104,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     if (!dns) continue; // apex-hosted: covered by the apex cert below
     const cert = new scaleway.loadbalancers.Certificate(
       `${base}-cert`,
-      {
-        lbId: lb.id,
-        name: naming.resource(`${base}-cert`),
-        letsencrypt: {
-          commonName: host,
-        },
-      },
+      { lbId: lb.id, name: naming.resource(`${base}-cert`), letsencrypt: { commonName: host } },
       { dependsOn: [dns, dnsGates.get(host)!] },
     );
     certs.set(host, cert);
@@ -152,13 +115,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   if (managesApex && apexDns && apexDnsGate) {
     apexCert = new scaleway.loadbalancers.Certificate(
       'apex-cert',
-      {
-        lbId: lb.id,
-        name: naming.resource('apex-cert'),
-        letsencrypt: {
-          commonName: dnsZone,
-        },
-      },
+      { lbId: lb.id, name: naming.resource('apex-cert'), letsencrypt: { commonName: dnsZone } },
       { dependsOn: [apexDns, apexDnsGate] },
     );
     certGates.push(new CertReadyGate('apex-cert-ready', { certificateId: apexCert.id }, { dependsOn: [apexCert] }));
@@ -187,9 +144,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
           // Long timeouts keep WebSocket connections open.
           ...(service.lbWebsockets ? { timeoutServer: '1h', timeoutTunnel: '1h' } : {}),
         },
-        {
-          ignoreChanges: ['serverIps'],
-        },
+        { ignoreChanges: ['serverIps'] },
       ),
     );
   }
@@ -202,16 +157,13 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
   const lbPrivateIp = lb.id.apply(async (lbId) => {
     const bareLbId = lbId.split('/').at(-1) ?? lbId;
     const secretKey = process.env.SCW_SECRET_KEY;
-    if (!secretKey)
-      throw new Error('loadbalancer: SCW_SECRET_KEY is required to resolve the LB private-network IP from IPAM');
+    if (!secretKey) throw new Error('loadbalancer: SCW_SECRET_KEY is required to resolve the LB private-network IP from IPAM');
     const url = `https://api.scaleway.com/ipam/v1/regions/${region}/ips?resource_id=${bareLbId}&resource_type=lb_server&is_ipv6=false`;
     const res = await fetch(url, { headers: { 'X-Auth-Token': secretKey } });
-    if (!res.ok)
-      throw new Error(`loadbalancer: IPAM lookup for the LB private IP failed: ${res.status} ${await res.text()}`);
+    if (!res.ok) throw new Error(`loadbalancer: IPAM lookup for the LB private IP failed: ${res.status} ${await res.text()}`);
     const body = (await res.json()) as { ips?: Array<{ address?: string }> };
     const address = body.ips?.[0]?.address;
-    if (!address)
-      throw new Error('loadbalancer: could not resolve the LB private-network IP from IPAM (resource type lb_server).');
+    if (!address) throw new Error('loadbalancer: could not resolve the LB private-network IP from IPAM (resource type lb_server).');
     return address;
   });
   publishLbInternalAddress(lbPrivateIp);
@@ -238,9 +190,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
         timeoutServer: '1h',
         timeoutTunnel: '1h',
       },
-      {
-        ignoreChanges: ['serverIps'],
-      },
+      { ignoreChanges: ['serverIps'] },
     );
     internalBackends.set(`${service.slug}-internal`, internalBackend);
 
@@ -322,11 +272,7 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
           },
         ],
       },
-      match: {
-        httpFilter: 'http_header_match',
-        httpFilterOption: 'host',
-        httpFilterValues: [dnsZone],
-      },
+      match: { httpFilter: 'http_header_match', httpFilterOption: 'host', httpFilterValues: [dnsZone] },
     });
   }
 
@@ -343,17 +289,9 @@ function provisionLoadBalancer(): LoadBalancerOutputs {
     index: 0,
     action: {
       type: 'redirect',
-      redirects: [
-        {
-          type: 'scheme',
-          target: 'https',
-          code: 301,
-        },
-      ],
+      redirects: [{ type: 'scheme', target: 'https', code: 301 }],
     },
-    match: {
-      httpFilter: 'acl_http_filter_none',
-    },
+    match: { httpFilter: 'acl_http_filter_none' },
   });
 
   const serviceUrls: Record<string, pulumi.Output<string>> = {};

@@ -10,11 +10,7 @@ const meta = {
   component: Progress,
   tags: ['autodocs'],
   argTypes: {},
-  args: {
-    'aria-label': 'Progress',
-    value: 30,
-    max: 100,
-  },
+  args: { 'aria-label': 'Progress', value: 30, max: 100 },
 } satisfies Meta<typeof Progress>;
 
 export default meta;
@@ -29,17 +25,9 @@ export const Default: Story = {};
 /**
  * When the progress is indeterminate.
  */
-export const Indeterminate: Story = {
-  args: {
-    value: undefined,
-  },
-};
+export const Indeterminate: Story = { args: { value: undefined } };
 
 /**
  * When the progress is completed.
  */
-export const Completed: Story = {
-  args: {
-    value: 100,
-  },
-};
+export const Completed: Story = { args: { value: 100 } };

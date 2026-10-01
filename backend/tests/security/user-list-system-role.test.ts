@@ -30,9 +30,7 @@ describe('System roles in the user list', async () => {
     member = await createOrgUser(call, organization.tenantId, organization.id, 'role-list-member');
     // A system admin who is also a member here, so the member's list includes them.
     sysAdmin = await createOrgUser(call, organization.tenantId, organization.id, 'role-list-sysadmin');
-    await getAdminDb('test setup')
-      .insert(systemRolesTable)
-      .values({ userId: sysAdmin.id, role: 'admin', createdAt: mockPastIsoDate() });
+    await getAdminDb('test setup').insert(systemRolesTable).values({ userId: sysAdmin.id, role: 'admin', createdAt: mockPastIsoDate() });
   });
 
   afterAll(async () => await clearSecurityTestData());

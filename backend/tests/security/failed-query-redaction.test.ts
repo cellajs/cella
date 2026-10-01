@@ -34,11 +34,7 @@ describe('failed queries in telemetry', () => {
   let status = 0;
 
   beforeAll(async () => {
-    const otel = createOtelSDK({
-      serviceName: 'test-api',
-      traceExporter: collectingExporter(exported),
-      autoInstrumentations: false,
-    });
+    const otel = createOtelSDK({ serviceName: 'test-api', traceExporter: collectingExporter(exported), autoInstrumentations: false });
     otel.start();
     const { baseApp } = await import('#/routes');
 
@@ -73,9 +69,7 @@ describe('failed queries in telemetry', () => {
     expect(JSON.stringify(spans)).not.toContain(secret);
 
     // Positive control: the request span recorded the exception with the database's reason.
-    const exception = exported
-      .flatMap((span) => span.events)
-      .find((event) => event.attributes?.['exception.type'] === 'DrizzleQueryError');
+    const exception = exported.flatMap((span) => span.events).find((event) => event.attributes?.['exception.type'] === 'DrizzleQueryError');
     expect(exception?.attributes?.['exception.message']).toBe(reason);
     expect(exception?.attributes?.['exception.stacktrace']).toMatch(/^DrizzleQueryError: invalid byte sequence/);
   });

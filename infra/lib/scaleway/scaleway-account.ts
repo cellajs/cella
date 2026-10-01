@@ -37,10 +37,7 @@ export async function listProjects(secretKey: string, organizationId: string): P
 }
 
 /** Create a project in the organization and return it. */
-export async function createProject(
-  secretKey: string,
-  opts: { organizationId: string; name: string; description?: string },
-): Promise<ScwProject> {
+export async function createProject(secretKey: string, opts: { organizationId: string; name: string; description?: string }): Promise<ScwProject> {
   return scwFetch<ScwProject>({ secretKey }, 'POST', `${ACCOUNT_BASE}/projects`, {
     name: opts.name,
     organization_id: opts.organizationId,

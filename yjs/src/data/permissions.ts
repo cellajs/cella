@@ -43,11 +43,7 @@ export function getTableColumnNames(tx: Tx, table: string): Promise<Set<string>>
 /** Runs on an RLS-scoped transaction, so the result is limited to the active tenant. */
 export async function loadMemberships(tx: Tx, userId: string): Promise<AccessMembership[]> {
   return tx
-    .select({
-      channelType: membershipsTable.channelType,
-      channelId: membershipsTable.channelId,
-      role: membershipsTable.role,
-    })
+    .select({ channelType: membershipsTable.channelType, channelId: membershipsTable.channelId, role: membershipsTable.role })
     .from(membershipsTable)
     .where(eq(membershipsTable.userId, userId));
 }
@@ -79,9 +75,7 @@ export async function resolveEntityScope(
   const selectKeys = candidateKeys.filter((key) => existing.has(toColumnName(key)));
 
   const projection = selectKeys.map((key) => `"${toColumnName(key)}" AS "${key}"`).join(', ');
-  const { rows } = await tx.execute(
-    sql`SELECT ${sql.raw(projection)} FROM ${sql.raw(`"${table}"`)} WHERE "id" = ${entityId} LIMIT 1`,
-  );
+  const { rows } = await tx.execute(sql`SELECT ${sql.raw(projection)} FROM ${sql.raw(`"${table}"`)} WHERE "id" = ${entityId} LIMIT 1`);
   return (rows[0] as unknown as EntityScopeRow | undefined) ?? null;
 }
 
@@ -100,10 +94,7 @@ export async function authorizeDoc(userId: string, requested: DocScope): Promise
   if (!isProduct(entityType)) return null;
 
   return withRlsTx(requested.tenantId, userId, async (tx) => {
-    const [entity, memberships] = await Promise.all([
-      resolveEntityScope(tx, entityType, requested.entityId),
-      loadMemberships(tx, userId),
-    ]);
+    const [entity, memberships] = await Promise.all([resolveEntityScope(tx, entityType, requested.entityId), loadMemberships(tx, userId)]);
 
     if (!entity || typeof entity.tenantId !== 'string') return null;
     // Defense in depth: RLS limits the read to the token's tenant, which a superuser connection would not.
@@ -123,11 +114,7 @@ export async function authorizeDoc(userId: string, requested: DocScope): Promise
     });
 
     // Collaborative editing confers no system-admin bypass, matching the backend materialize endpoint.
-    const { allowed } = checkAccess(
-      { actorId: userId, isSystemAdmin: false, memberships, scopes: null },
-      'update',
-      subject,
-    );
+    const { allowed } = checkAccess({ actorId: userId, isSystemAdmin: false, memberships, scopes: null }, 'update', subject);
     if (!allowed) return null;
 
     return { entityType, entityId: entity.id, tenantId: entity.tenantId, organizationId };

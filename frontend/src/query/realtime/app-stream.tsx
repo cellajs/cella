@@ -47,12 +47,7 @@ function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamReturn {
     };
   }, [state, offlineAccess]);
 
-  return {
-    state,
-    cursor,
-    reconnect: () => appStreamManager.reconnect(),
-    disconnect: () => appStreamManager.disconnect(),
-  };
+  return { state, cursor, reconnect: () => appStreamManager.reconnect(), disconnect: () => appStreamManager.disconnect() };
 }
 
 /** Connects to the app-scoped stream for real-time sync (CDC -> ActivityBus pipeline). Mount in AppLayout. */

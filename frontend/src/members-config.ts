@@ -7,9 +7,7 @@ import type { ChannelEntityType, ProductEntityType } from 'shared';
  * the attachment paperclip and hides nothing; apps map their own product types here without
  * editing the template's members-columns.
  */
-export const memberStatIcons: Partial<Record<ProductEntityType, LucideIcon>> = {
-  attachment: PaperclipIcon,
-};
+export const memberStatIcons: Partial<Record<ProductEntityType, LucideIcon>> = { attachment: PaperclipIcon };
 
 /**
  * Count columns (`${type}Count`, product and sub-channel types alike) hidden by default. Users can

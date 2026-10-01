@@ -20,14 +20,7 @@ interface Bucket {
 }
 
 function createBucket(startMs: number): Bucket {
-  return {
-    startMs,
-    eventCount: 0,
-    flushCount: 0,
-    processingDurations: [],
-    flushDurations: [],
-    batchSizes: [],
-  };
+  return { startMs, eventCount: 0, flushCount: 0, processingDurations: [], flushDurations: [], batchSizes: [] };
 }
 
 function percentile(sorted: number[], p: number): number {
@@ -121,9 +114,7 @@ class Metrics {
         p99: Math.round(percentile(sortedProc, 99) * 10) / 10,
       },
       batchSize: {
-        avg: sortedBatch.length
-          ? Math.round((sortedBatch.reduce((a, b) => a + b, 0) / sortedBatch.length) * 10) / 10
-          : 0,
+        avg: sortedBatch.length ? Math.round((sortedBatch.reduce((a, b) => a + b, 0) / sortedBatch.length) * 10) / 10 : 0,
         max: sortedBatch.length ? sortedBatch[sortedBatch.length - 1] : 0,
       },
       flushes: totalFlushes,
@@ -156,20 +147,13 @@ class Metrics {
 
     if (currentBytes >= warnBytes && !this.hasWarned) {
       this.hasWarned = true;
-      log.warn('WAL lag approaching backpressure limit', {
-        lagBytes: currentBytes,
-        warnThreshold: warnBytes,
-        unhealthyThreshold: unhealthyBytes,
-      });
+      log.warn('WAL lag approaching backpressure limit', { lagBytes: currentBytes, warnThreshold: warnBytes, unhealthyThreshold: unhealthyBytes });
       this.emitLagControl('wal_lag_warn');
     }
 
     if (currentBytes >= unhealthyBytes && !this.hasGoneUnhealthy) {
       this.hasGoneUnhealthy = true;
-      log.error('WAL lag exceeded backpressure limit: CDC unhealthy', {
-        lagBytes: currentBytes,
-        unhealthyThreshold: unhealthyBytes,
-      });
+      log.error('WAL lag exceeded backpressure limit: CDC unhealthy', { lagBytes: currentBytes, unhealthyThreshold: unhealthyBytes });
       this.emitLagControl('wal_lag_unhealthy');
     }
   }
@@ -190,11 +174,7 @@ class Metrics {
 
   private async pollLag(): Promise<void> {
     try {
-      const result = await cdcDb.execute<{
-        lag_bytes: string;
-        active: boolean;
-        wal_status: string;
-      }>(
+      const result = await cdcDb.execute<{ lag_bytes: string; active: boolean; wal_status: string }>(
         sql`SELECT active, wal_status, pg_wal_lsn_diff(pg_current_wal_lsn(), confirmed_flush_lsn)::text AS lag_bytes
             FROM pg_replication_slots
             WHERE slot_name = ${CDC_SLOT_NAME}`,

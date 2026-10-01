@@ -34,37 +34,16 @@ export const registerTag = (tag: OpenApiTag): OpenApiTag => {
 export const getRegisteredTags = (): OpenApiTag[] => [...tagRegistry.values()];
 
 /** Default owner tags, registered eagerly so module tags can reference them as parents. */
-registerTag({
-  tag: 'cella',
-  kind: 'owner',
-  description: 'Core modules provided by cella.',
-});
+registerTag({ tag: 'cella', kind: 'owner', description: 'Core modules provided by cella.' });
 
-registerTag({
-  tag: 'app',
-  kind: 'owner',
-  description: 'Application-specific modules.',
-});
+registerTag({ tag: 'app', kind: 'owner', description: 'Application-specific modules.' });
 
 // Schema tags group OpenAPI components in the docs UI: components opt in through `x-tags`, unmatched ones use the default.
-registerTag({
-  tag: 'data',
-  kind: 'schema',
-  default: true,
-  description: 'Complete data schemas',
-});
+registerTag({ tag: 'data', kind: 'schema', default: true, description: 'Complete data schemas' });
 
-registerTag({
-  tag: 'base',
-  kind: 'schema',
-  description: 'Schemas with base fields only',
-});
+registerTag({ tag: 'base', kind: 'schema', description: 'Schemas with base fields only' });
 
-registerTag({
-  tag: 'errors',
-  kind: 'schema',
-  description: 'Error schemas',
-});
+registerTag({ tag: 'errors', kind: 'schema', description: 'Error schemas' });
 
 // Entity-kind tags declare an operation's entity scope: a route adds `'channel'` or `'product'` to its `tags`.
 registerTag({
@@ -80,8 +59,4 @@ registerTag({
 });
 
 // Per-operation hide: a route adds `'internal'` to its `tags` to drop from docs while staying in the SDK.
-registerTag({
-  tag: 'internal',
-  kind: 'hidden',
-  description: 'Operations hidden from the public API reference.',
-});
+registerTag({ tag: 'internal', kind: 'hidden', description: 'Operations hidden from the public API reference.' });

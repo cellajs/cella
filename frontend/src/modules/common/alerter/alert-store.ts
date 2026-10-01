@@ -9,12 +9,7 @@ import { awaitRecovery, forceOnline } from '~/query/offline/connectivity';
 export type AlertKeys = 'offline' | 'backend_not_ready' | 'maintenance' | 'auth_unavailable';
 
 // Alerts with higher priority should not be overwritten by lower ones
-const alertPriority: Record<AlertKeys, number> = {
-  maintenance: 3,
-  backend_not_ready: 2,
-  auth_unavailable: 1,
-  offline: 0,
-};
+const alertPriority: Record<AlertKeys, number> = { maintenance: 3, backend_not_ready: 2, auth_unavailable: 1, offline: 0 };
 
 interface AlertStoreState {
   alertsSeen: string[]; // Seen alert IDs (to prevent duplicate notifications)
@@ -33,10 +28,7 @@ const cancelRecovery = () => {
   recoveryController = null;
 };
 
-const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = {
-  downAlert: appConfig.maintenance ? 'maintenance' : null,
-  alertsSeen: [],
-};
+const initStore: Pick<AlertStoreState, 'alertsSeen' | 'downAlert'> = { downAlert: appConfig.maintenance ? 'maintenance' : null, alertsSeen: [] };
 
 /**
  * Store for app-wide alerts and UI specific alerts in `alertsSeen`.
@@ -96,10 +88,7 @@ export const useAlertStore = create<AlertStoreState>()(
           version: 1,
           name: 'alerts',
           skipHydration: true,
-          partialize: (state) => ({
-            alertsSeen: state.alertsSeen,
-            downAlert: state.downAlert,
-          }),
+          partialize: (state) => ({ alertsSeen: state.alertsSeen, downAlert: state.downAlert }),
           storage: createJSONStorage(() => idbKvStorage('alerts')),
         },
       ),

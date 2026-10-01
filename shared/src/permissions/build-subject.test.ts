@@ -4,8 +4,7 @@ import { describe, expect, it } from 'vitest';
 describe('shared buildSubject', () => {
   const productWithAncestors = hierarchy.productTypes.find((t) => hierarchy.getOrderedAncestors(t).length > 0);
 
-  if (!productWithAncestors)
-    throw new Error('No product entity types with ancestors found: hierarchy config may be empty');
+  if (!productWithAncestors) throw new Error('No product entity types with ancestors found: hierarchy config may be empty');
 
   const ancestors = hierarchy.getOrderedAncestors(productWithAncestors);
   const ancestorIdKeys = ancestors.map((a) => appConfig.entityIdColumnKeys[a]);
@@ -51,9 +50,7 @@ describe('buildSubjectFromEntity: carries the row', () => {
   const product = hierarchy.productTypes.find((t) => hierarchy.getOrderedAncestors(t).length > 0);
   if (!product) throw new Error('No product entity types with ancestors found');
 
-  const ancestorIds = Object.fromEntries(
-    hierarchy.getOrderedAncestors(product).map((a) => [appConfig.entityIdColumnKeys[a], `test-${a}`]),
-  );
+  const ancestorIds = Object.fromEntries(hierarchy.getOrderedAncestors(product).map((a) => [appConfig.entityIdColumnKeys[a], `test-${a}`]));
 
   const publicAt = '2026-07-06T12:00:00Z';
   const entity = { ...ancestorIds, id: 'e1', createdBy: 'u1', publicAt, name: 'irrelevant' };

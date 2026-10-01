@@ -8,10 +8,7 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 import { lazyNamed } from '~/utils/lazy-named';
 
-const PendingMembershipsTable = lazyNamed(
-  () => import('~/modules/memberships/pending-table/pending-memberships-table'),
-  'PendingMembershipsTable',
-);
+const PendingMembershipsTable = lazyNamed(() => import('~/modules/memberships/pending-table/pending-memberships-table'), 'PendingMembershipsTable');
 
 type EntityWithIncluded = EnrichedChannel & Pick<Organization, 'included'>;
 const hasIncluded = (channel: EnrichedChannel): channel is EntityWithIncluded => 'included' in channel;
@@ -37,9 +34,7 @@ export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel 
         side: 'right',
         className: 'max-w-full lg:max-w-4xl',
         title: t('c:pending_invitations'),
-        description: t('c:pending_invitations.text', {
-          entityType: t(`c:${channel.entityType}`).toLowerCase(),
-        }),
+        description: t('c:pending_invitations.text', { entityType: t(`c:${channel.entityType}`).toLowerCase() }),
       },
     );
   };
@@ -47,14 +42,7 @@ export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel 
   if (!hasIncluded(channel) || !channel.included.counts) return null;
 
   return (
-    <Button
-      ref={buttonRef}
-      disabled={channel.included.counts.membership.pending < 1}
-      variant="ghost"
-      size="xs"
-      className=""
-      onClick={openSheet}
-    >
+    <Button ref={buttonRef} disabled={channel.included.counts.membership.pending < 1} variant="ghost" size="xs" className="" onClick={openSheet}>
       {new Intl.NumberFormat('de-DE').format(channel.included.counts.membership.pending)} {t('c:pending').toLowerCase()}
     </Button>
   );

@@ -78,12 +78,7 @@ export async function acquireOwnerKey(opts: {
   const expiresAt = new Date(Date.now() + MINTED_KEY_TTL_MS).toISOString();
   const minted = await createApiKey(
     { secretKey: pair.secretKey },
-    {
-      userId: desc.bearerId,
-      description: `${opts.slug}-${opts.mode} privileged run (auto-revoked)`,
-      defaultProjectId: projectId,
-      expiresAt,
-    },
+    { userId: desc.bearerId, description: `${opts.slug}-${opts.mode} privileged run (auto-revoked)`, defaultProjectId: projectId, expiresAt },
   );
   console.info(
     `${pc.dim('Owner API key:')} ${formatKeyLine(desc, role)}\n  ${pc.dim('minted')} ${minted.access_key} ${pc.dim(`for this run, expires ${expiresAt.slice(0, 16).replace('T', ' ')} UTC, revoked when the run ends`)}`,
@@ -99,9 +94,7 @@ export async function acquireOwnerKey(opts: {
       if (released) return;
       released = true;
       await deleteApiKey({ secretKey: pair.secretKey }, minted.access_key).catch((error) =>
-        console.warn(
-          `${warningMark} could not revoke the minted key ${minted.access_key} (${errorMessage(error)}); it expires at ${expiresAt}.`,
-        ),
+        console.warn(`${warningMark} could not revoke the minted key ${minted.access_key} (${errorMessage(error)}); it expires at ${expiresAt}.`),
       );
       console.info(pc.dim(`Minted key ${minted.access_key} revoked.`));
     },

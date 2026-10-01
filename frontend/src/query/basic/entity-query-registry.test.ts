@@ -41,10 +41,7 @@ describe('registerEntityQueryKeys key-contract validation', () => {
     const keys = createEntityKeys(entityType);
     const broken = {
       ...keys,
-      list: {
-        ...keys.list,
-        home: (organizationId: string, homeChannelId?: string) => ['lists', entityType, organizationId, homeChannelId],
-      },
+      list: { ...keys.list, home: (organizationId: string, homeChannelId?: string) => ['lists', entityType, organizationId, homeChannelId] },
     };
     expect(() => registerEntityQueryKeys(entityType, broken)).toThrow(/createEntityKeys contract/);
   });

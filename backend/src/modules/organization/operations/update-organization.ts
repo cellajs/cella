@@ -39,19 +39,13 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
   // Rows store organizationFlags/setupConfig sparse; merge config defaults under the stored bag
   const updatedOrganizationRecord = withOrganizationDefaults(updatedRecord);
 
-  await dispatchMutation(ctx, 'organization.updated', {
-    before: [withOrganizationDefaults(organization)],
-    after: [updatedOrganizationRecord],
-  });
+  await dispatchMutation(ctx, 'organization.updated', { before: [withOrganizationDefaults(organization)], after: [updatedOrganizationRecord] });
 
   await invalidateCache.org(ctx.var.db, organization.tenantId, organization.id);
 
   log.info('Organization updated', { organizationId: updatedOrganizationRecord.id });
 
-  const counts = await getChannelCounts(ctx, {
-    entityType: organization.entityType,
-    entityId: organization.id,
-  });
+  const counts = await getChannelCounts(ctx, { entityType: organization.entityType, entityId: organization.id });
 
   const included = {
     // A service account's grant is not a membership row; only a user's row is returned.

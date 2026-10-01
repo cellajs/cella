@@ -31,12 +31,8 @@ export function Why() {
                         t={t}
                         i18nKey={text as never}
                         components={{
-                          featuresLink: (
-                            <Link to="/features" className="underline underline-offset-4 hover:text-primary" />
-                          ),
-                          syncEngineLink: (
-                            <Link to="/sync-engine" className="underline underline-offset-4 hover:text-primary" />
-                          ),
+                          featuresLink: <Link to="/features" className="underline underline-offset-4 hover:text-primary" />,
+                          syncEngineLink: <Link to="/sync-engine" className="underline underline-offset-4 hover:text-primary" />,
                         }}
                       />
                     </p>
@@ -49,12 +45,7 @@ export function Why() {
       </div>
       <div className="w-full lg:w-7/12">
         <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
-          <DeviceMockup
-            className="-top-2 lg:relative lg:ml-8 lg:w-[54vw]"
-            type="pc"
-            lightItems={whyLightSlides}
-            darkItems={whyDarkSlides}
-          />
+          <DeviceMockup className="-top-2 lg:relative lg:ml-8 lg:w-[54vw]" type="pc" lightItems={whyLightSlides} darkItems={whyDarkSlides} />
         </Suspense>
       </div>
     </div>

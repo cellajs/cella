@@ -6,13 +6,7 @@ import { baseDb as db } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultHeaders, memberRole } from '../fixtures';
-import {
-  createSystemAdminUser,
-  createTestOrganization,
-  createTestSession,
-  expectRefusal,
-  getUserByEmail,
-} from '../helpers';
+import { createSystemAdminUser, createTestOrganization, createTestSession, expectRefusal, getUserByEmail } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser } from './helpers';
@@ -39,10 +33,7 @@ describe('Organizations of another user (relatableUserId)', async () => {
   let viewer: { id: string; email: string; sessionCookie: string };
 
   const listAs = (as: { sessionCookie: string }, relatableUserId: string) =>
-    call(getOrganizations, {
-      query: { relatableUserId, include: 'members,counts' },
-      headers: { ...defaultHeaders, Cookie: as.sessionCookie },
-    });
+    call(getOrganizations, { query: { relatableUserId, include: 'members,counts' }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
 
   beforeAll(async () => {
     shared = await createTestOrganization();
@@ -112,9 +103,7 @@ describe('Organizations of another user (relatableUserId)', async () => {
     const { baseApp } = await import('#/routes');
     // Raw requests: the SDK validates the query itself and would throw before the server is reached.
     const listRaw = (as: { sessionCookie: string }, relatableUserId: string) =>
-      baseApp.request(`/organizations?${new URLSearchParams({ relatableUserId })}`, {
-        headers: { ...defaultHeaders, Cookie: as.sessionCookie },
-      });
+      baseApp.request(`/organizations?${new URLSearchParams({ relatableUserId })}`, { headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
 
     // Another user named by anything but a user id relates to nobody: the guard refuses before any query.
     const junk = await listRaw(viewer, 'not-a-user-id');
@@ -142,10 +131,7 @@ describe('Organizations of another user (relatableUserId)', async () => {
     const pair = [alpha.id, bravo.id];
 
     const listFor = (query: Record<string, string>, as: { sessionCookie: string } = viewer) =>
-      call(getOrganizations, {
-        query: { relatableUserId: target.id, ...query },
-        headers: { ...defaultHeaders, Cookie: as.sessionCookie },
-      });
+      call(getOrganizations, { query: { relatableUserId: target.id, ...query }, headers: { ...defaultHeaders, Cookie: as.sessionCookie } });
     const idsOf = (data: unknown) => (data as OrgList).items.map((org) => org.id).filter((id) => pair.includes(id));
 
     // The listed user's archive and role are not the viewer's to filter on: refused, never dropped.

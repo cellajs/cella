@@ -56,18 +56,14 @@ export const readStepUp = async (session: SessionFacts): Promise<StepUpState> =>
   if (!row) return refused;
 
   const held = { passkey: row.hasPasskey, totp: row.hasTotp };
-  const factors = (['passkey', 'totp'] as const).filter(
-    (factor) => held[factor] && appConfig.enabledAuthStrategies.includes(factor),
-  );
+  const factors = (['passkey', 'totp'] as const).filter((factor) => held[factor] && appConfig.enabledAuthStrategies.includes(factor));
   if (factors.length === 0) {
     return { steppedUp: !!row.stampedVia || row.signedInRecently, methods: ['email', 'sign_in'], factor: null };
   }
 
   // Only a factor the user holds counts: an emailed link stands in for a factor only while the user has none.
   const stampedWith = factors.find((candidate) => candidate === row.stampedVia);
-  const signedInWith = row.signedInRecently
-    ? factors.find((candidate) => candidate === session.authStrategy)
-    : undefined;
+  const signedInWith = row.signedInRecently ? factors.find((candidate) => candidate === session.authStrategy) : undefined;
   const factor = stampedWith ?? signedInWith ?? null;
   return { steppedUp: !!factor, methods: factors, factor };
 };

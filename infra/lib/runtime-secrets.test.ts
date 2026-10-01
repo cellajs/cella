@@ -32,10 +32,7 @@ describe('buildRuntimeSecrets with external stores (P2)', () => {
   });
 
   it('rejects a store contribution clashing with an app-config id', () => {
-    const clashing = {
-      ...appSecrets,
-      databaseUrl: { ...appSecrets.adminEmail!, secretName: 'db-url-2', envVar: 'DB_URL_2' },
-    };
+    const clashing = { ...appSecrets, databaseUrl: { ...appSecrets.adminEmail!, secretName: 'db-url-2', envVar: 'DB_URL_2' } };
     const secrets = buildRuntimeSecrets({ primary: databaseUrl({ services: ['api'] }) }, clashing);
     expect(() => validateRuntimeSecrets(secrets, knownServices)).toThrow(/duplicate secret id 'databaseUrl'/);
   });

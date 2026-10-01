@@ -1,13 +1,5 @@
 import { eq } from 'drizzle-orm';
-import {
-  deleteMe,
-  deleteUsers,
-  revokeMySessions,
-  signOut,
-  startImpersonation,
-  stopImpersonation,
-  toggleMfa,
-} from 'sdk';
+import { deleteMe, deleteUsers, revokeMySessions, signOut, startImpersonation, stopImpersonation, toggleMfa } from 'sdk';
 import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
@@ -192,10 +184,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
       const elsewhere = await signIn(user, nanoid(24));
       await warmSession(earlier);
       await warmSession(elsewhere);
-      const [earlierStream, elsewhereStream] = [
-        await openStream(user.id, earlier),
-        await openStream(user.id, elsewhere),
-      ];
+      const [earlierStream, elsewhereStream] = [await openStream(user.id, earlier), await openStream(user.id, elsewhere)];
 
       const later = await signIn(user, deviceId);
 
@@ -216,10 +205,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
     const adminSession = await insertSession(admin);
     const targetOwn = await insertSession(target);
 
-    const started = await call(startImpersonation, {
-      body: { targetUserId: target.id },
-      headers: adminSession.headers,
-    });
+    const started = await call(startImpersonation, { body: { targetUserId: target.id }, headers: adminSession.headers });
     expect(started.response.status).toBe(204);
     const impersonation = await impersonationSetBy(started.response, adminSession);
     await warmSession(impersonation);
@@ -268,12 +254,7 @@ describe('Ending a session closes its stream and its cached entry', async () => 
   it('keeps the sessions of an account whose deletion was refused (positive control)', async () => {
     const org = await createTestOrganization();
     // The only admin of an organization: the database refuses to delete the account.
-    const soleAdmin = await createOrganizationAdminUser(
-      'sole-admin@security-test.com',
-      org.id,
-      adminRole,
-      org.tenantId,
-    );
+    const soleAdmin = await createOrganizationAdminUser('sole-admin@security-test.com', org.id, adminRole, org.tenantId);
     const session = await insertSession(soleAdmin);
     await warmSession(session);
     const stream = await openStream(soleAdmin.id, session);

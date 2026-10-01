@@ -47,12 +47,7 @@ export async function expectAllowed(name: string, run: () => Promise<unknown>): 
 export async function expectDenied(name: string, run: () => Promise<unknown>): Promise<PolicyCheck> {
   try {
     await run();
-    return {
-      name,
-      expected: 'denied',
-      ok: false,
-      detail: 'expected AccessDenied but the call SUCCEEDED: policy is not effective',
-    };
+    return { name, expected: 'denied', ok: false, detail: 'expected AccessDenied but the call SUCCEEDED: policy is not effective' };
   } catch (err) {
     if (isAccessDenied(err)) return { name, expected: 'denied', ok: true, detail: 'denied as expected (403)' };
     return { name, expected: 'denied', ok: false, detail: `non-403 error, inconclusive: ${errMessage(err)}` };
@@ -87,25 +82,15 @@ export async function validateStateBucketPolicy(opts: ValidateOptions): Promise<
 
   // (b) Operator keeps full read/write.
   checks.push(await expectAllowed('operator: ListBucket', () => adminS3.send(new ListBucketsCommand({}))));
+  checks.push(await expectAllowed('operator: GetObject', () => adminS3.send(new GetObjectCommand({ Bucket: bucket, Key: probeKey }))));
   checks.push(
-    await expectAllowed('operator: GetObject', () =>
-      adminS3.send(new GetObjectCommand({ Bucket: bucket, Key: probeKey })),
-    ),
-  );
-  checks.push(
-    await expectAllowed('operator: PutObject', () =>
-      adminS3.send(new PutObjectCommand({ Bucket: bucket, Key: probeKey, Body: 'probe-op-write' })),
-    ),
+    await expectAllowed('operator: PutObject', () => adminS3.send(new PutObjectCommand({ Bucket: bucket, Key: probeKey, Body: 'probe-op-write' }))),
   );
 
   // CI keeps exactly what the Pulumi backend needs.
   checks.push(await expectAllowed('ci: ListBucket', () => ciS3.send(new ListBucketsCommand({}))));
-  checks.push(
-    await expectAllowed('ci: GetBucketVersioning', () => ciS3.send(new GetBucketVersioningCommand({ Bucket: bucket }))),
-  );
-  checks.push(
-    await expectAllowed('ci: GetObject', () => ciS3.send(new GetObjectCommand({ Bucket: bucket, Key: probeKey }))),
-  );
+  checks.push(await expectAllowed('ci: GetBucketVersioning', () => ciS3.send(new GetBucketVersioningCommand({ Bucket: bucket }))));
+  checks.push(await expectAllowed('ci: GetObject', () => ciS3.send(new GetObjectCommand({ Bucket: bucket, Key: probeKey }))));
   checks.push(
     await expectAllowed('ci: PutObject (state write)', () =>
       ciS3.send(new PutObjectCommand({ Bucket: bucket, Key: probeKey, Body: 'probe-ci-write' })),
@@ -113,9 +98,7 @@ export async function validateStateBucketPolicy(opts: ValidateOptions): Promise<
   );
   // Plain DeleteObject on a versioned bucket is a recoverable delete marker; CI is allowed this.
   checks.push(
-    await expectAllowed('ci: DeleteObject (recoverable marker)', () =>
-      ciS3.send(new DeleteObjectCommand({ Bucket: bucket, Key: probeKey })),
-    ),
+    await expectAllowed('ci: DeleteObject (recoverable marker)', () => ciS3.send(new DeleteObjectCommand({ Bucket: bucket, Key: probeKey }))),
   );
 
   // (c) The core H3 assertions: CI cannot destroy version history or suspend versioning.
@@ -146,12 +129,9 @@ export async function validateStateBucketPolicy(opts: ValidateOptions): Promise<
   try {
     const listed = await adminS3.send(new ListObjectVersionsCommand({ Bucket: bucket, Prefix: probeKey }));
     for (const v of [...(listed.Versions ?? []), ...(listed.DeleteMarkers ?? [])]) {
-      if (v.Key && v.VersionId)
-        await adminS3.send(new DeleteObjectCommand({ Bucket: bucket, Key: v.Key, VersionId: v.VersionId }));
+      if (v.Key && v.VersionId) await adminS3.send(new DeleteObjectCommand({ Bucket: bucket, Key: v.Key, VersionId: v.VersionId }));
     }
-    await adminS3.send(
-      new PutBucketVersioningCommand({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } }),
-    );
+    await adminS3.send(new PutBucketVersioningCommand({ Bucket: bucket, VersioningConfiguration: { Status: 'Enabled' } }));
   } catch (err) {
     log(`⚠ cleanup incomplete for ${probeKey}: ${errMessage(err)}`);
   }
@@ -195,9 +175,7 @@ export async function main(): Promise<void> {
   }
   const failures = checks.filter((c) => !c.ok);
   if (failures.length > 0) {
-    console.error(
-      `\n✗ ${failures.length} of ${checks.length} checks failed: the state-bucket policy is NOT validated.`,
-    );
+    console.error(`\n✗ ${failures.length} of ${checks.length} checks failed: the state-bucket policy is NOT validated.`);
     process.exit(1);
   }
   console.info(`\n✓ All ${checks.length} checks passed: state-bucket policy validated (H3 (b) + (c)).`);

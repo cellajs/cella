@@ -15,9 +15,7 @@ async function probeReady(): Promise<boolean> {
   try {
     const wal = await cdcDb.execute<{ wal_level: string }>(sql`SHOW wal_level`);
     if (wal.rows[0]?.wal_level !== 'logical') return false;
-    const pub = await cdcDb.execute<{ ok: number }>(
-      sql`SELECT 1 AS ok FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`,
-    );
+    const pub = await cdcDb.execute<{ ok: number }>(sql`SELECT 1 AS ok FROM pg_publication WHERE pubname = ${CDC_PUBLICATION_NAME}`);
     return pub.rows.length > 0;
   } catch {
     return false;
@@ -164,11 +162,7 @@ describe.skipIf(!READY)('CDC backpressure (integration)', () => {
     await waitFor(() => replicationState.status === 'active', 20_000, 'replication resumed');
 
     // Acks resume → retained WAL drains well below the WS-down peak.
-    await waitFor(
-      async () => (await slotLagBytes()) < Math.max(65_536, lagPeak / 2),
-      30_000,
-      'slot drained after reconnect',
-    );
+    await waitFor(async () => (await slotLagBytes()) < Math.max(65_536, lagPeak / 2), 30_000, 'slot drained after reconnect');
 
     // Drain to the floor before probing a fresh change: the previous threshold still allows
     // half the burst to be in flight, whose replay competes with the probe on a slow runner.

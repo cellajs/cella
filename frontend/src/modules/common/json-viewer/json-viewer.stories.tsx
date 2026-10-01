@@ -4,30 +4,14 @@ import { expect, spyOn, userEvent, waitFor } from 'storybook/test';
 import { JsonViewer } from '../json-viewer';
 
 // Sample data for stories
-const simpleObject = {
-  name: 'John Doe',
-  age: 30,
-  email: 'john@example.com',
-  active: true,
-  role: null,
-};
+const simpleObject = { name: 'John Doe', age: 30, email: 'john@example.com', active: true, role: null };
 
 const nestedObject = {
   user: {
     id: 1,
-    profile: {
-      firstName: 'John',
-      lastName: 'Doe',
-      settings: {
-        theme: 'dark',
-        notifications: true,
-      },
-    },
+    profile: { firstName: 'John', lastName: 'Doe', settings: { theme: 'dark', notifications: true } },
   },
-  metadata: {
-    createdAt: '2024-01-15T10:30:00Z',
-    version: '1.0.0',
-  },
+  metadata: { createdAt: '2024-01-15T10:30:00Z', version: '1.0.0' },
 };
 
 const arrayData = {
@@ -57,17 +41,12 @@ const openApiSchemaData = {
     email: { type: 'string', format: 'email', required: true },
     age: { type: 'integer', required: false },
     active: { type: 'boolean', required: false },
-    roles: {
-      type: 'array',
-      items: { type: 'string' },
-    },
+    roles: { type: 'array', items: { type: 'string' } },
     profile: {
       type: 'object',
       required: false,
       ref: '#/components/schemas/Profile',
-      properties: {
-        bio: { type: 'string', required: false },
-      },
+      properties: { bio: { type: 'string', required: false } },
     },
   },
 };
@@ -80,59 +59,20 @@ const meta = {
   title: 'common/JsonViewer',
   component: JsonViewer,
   tags: ['autodocs'],
-  parameters: {
-    layout: 'padded',
-  },
+  parameters: { layout: 'padded' },
   argTypes: {
-    value: {
-      control: 'object',
-      description: 'The JSON data to display',
-    },
-    defaultInspectDepth: {
-      control: { type: 'number', min: 0, max: 10 },
-      description: 'Default depth to expand nodes',
-    },
-    rootName: {
-      control: 'text',
-      description: 'Root node name (false to hide)',
-    },
-    displayDataTypes: {
-      control: 'boolean',
-      description: 'Show data type labels next to values',
-    },
-    enableClipboard: {
-      control: 'boolean',
-      description: 'Enable copy to clipboard button',
-    },
-    indentWidth: {
-      control: { type: 'number', min: 1, max: 8 },
-      description: 'Indentation width in characters',
-    },
-    collapseStringsAfterLength: {
-      control: { type: 'number', min: 10, max: 200 },
-      description: 'Truncate strings after this length',
-    },
-    openapiMode: {
-      control: 'select',
-      options: [undefined, 'spec', 'schema'],
-      description: 'OpenAPI display mode',
-    },
-    searchText: {
-      control: 'text',
-      description: 'Text to search and highlight',
-    },
-    expandAll: {
-      control: 'boolean',
-      description: 'Expand all nodes',
-    },
-    showKeyQuotes: {
-      control: 'boolean',
-      description: 'Show quotes around object keys',
-    },
-    expandChildrenDepth: {
-      control: { type: 'number', min: 1, max: 5 },
-      description: 'Levels to expand when clicking a node',
-    },
+    value: { control: 'object', description: 'The JSON data to display' },
+    defaultInspectDepth: { control: { type: 'number', min: 0, max: 10 }, description: 'Default depth to expand nodes' },
+    rootName: { control: 'text', description: 'Root node name (false to hide)' },
+    displayDataTypes: { control: 'boolean', description: 'Show data type labels next to values' },
+    enableClipboard: { control: 'boolean', description: 'Enable copy to clipboard button' },
+    indentWidth: { control: { type: 'number', min: 1, max: 8 }, description: 'Indentation width in characters' },
+    collapseStringsAfterLength: { control: { type: 'number', min: 10, max: 200 }, description: 'Truncate strings after this length' },
+    openapiMode: { control: 'select', options: [undefined, 'spec', 'schema'], description: 'OpenAPI display mode' },
+    searchText: { control: 'text', description: 'Text to search and highlight' },
+    expandAll: { control: 'boolean', description: 'Expand all nodes' },
+    showKeyQuotes: { control: 'boolean', description: 'Show quotes around object keys' },
+    expandChildrenDepth: { control: { type: 'number', min: 1, max: 5 }, description: 'Levels to expand when clicking a node' },
   },
   args: {
     value: simpleObject,
@@ -155,133 +95,67 @@ type Story = StoryObj<typeof meta>;
 /**
  * Default JSON viewer with a simple object.
  */
-export const Default: Story = {
-  args: {
-    value: simpleObject,
-  },
-};
+export const Default: Story = { args: { value: simpleObject } };
 
 /**
  * Nested object with multiple levels of depth.
  */
-export const NestedObject: Story = {
-  args: {
-    value: nestedObject,
-    defaultInspectDepth: 2,
-  },
-};
+export const NestedObject: Story = { args: { value: nestedObject, defaultInspectDepth: 2 } };
 
 /**
  * Arrays and collections display.
  */
-export const WithArrays: Story = {
-  args: {
-    value: arrayData,
-    defaultInspectDepth: 3,
-  },
-};
+export const WithArrays: Story = { args: { value: arrayData, defaultInspectDepth: 3 } };
 
 /**
  * Single-line primitive arrays in schema mode.
  */
-export const SingleLineArrays: Story = {
-  args: {
-    value: arrayData,
-    openapiMode: 'schema',
-    defaultInspectDepth: 3,
-  },
-};
+export const SingleLineArrays: Story = { args: { value: arrayData, openapiMode: 'schema', defaultInspectDepth: 3 } };
 
 /**
  * Display with data type labels shown.
  */
-export const WithDataTypes: Story = {
-  args: {
-    value: simpleObject,
-    displayDataTypes: true,
-  },
-};
+export const WithDataTypes: Story = { args: { value: simpleObject, displayDataTypes: true } };
 
 /**
  * Copy to clipboard enabled on hover.
  */
-export const WithClipboard: Story = {
-  args: {
-    value: nestedObject,
-    enableClipboard: true,
-  },
-};
+export const WithClipboard: Story = { args: { value: nestedObject, enableClipboard: true } };
 
 /**
  * Long strings are truncated with click to expand.
  */
-export const LongStrings: Story = {
-  args: {
-    value: longStringData,
-    collapseStringsAfterLength: 50,
-  },
-};
+export const LongStrings: Story = { args: { value: longStringData, collapseStringsAfterLength: 50 } };
 
 /**
  * Keys displayed without quotes for cleaner look.
  */
-export const WithoutKeyQuotes: Story = {
-  args: {
-    value: simpleObject,
-    showKeyQuotes: false,
-  },
-};
+export const WithoutKeyQuotes: Story = { args: { value: simpleObject, showKeyQuotes: false } };
 
 /**
  * Hidden root name for embedding in other contexts.
  */
-export const HiddenRootName: Story = {
-  args: {
-    value: simpleObject,
-    rootName: false,
-  },
-};
+export const HiddenRootName: Story = { args: { value: simpleObject, rootName: false } };
 
 /**
  * Custom root name.
  */
-export const CustomRootName: Story = {
-  args: {
-    value: simpleObject,
-    rootName: 'userData',
-  },
-};
+export const CustomRootName: Story = { args: { value: simpleObject, rootName: 'userData' } };
 
 /**
  * All nodes expanded regardless of depth.
  */
-export const ExpandAll: Story = {
-  args: {
-    value: nestedObject,
-    expandAll: true,
-  },
-};
+export const ExpandAll: Story = { args: { value: nestedObject, expandAll: true } };
 
 /**
  * Shallow default expansion (depth 1).
  */
-export const ShallowExpansion: Story = {
-  args: {
-    value: nestedObject,
-    defaultInspectDepth: 1,
-  },
-};
+export const ShallowExpansion: Story = { args: { value: nestedObject, defaultInspectDepth: 1 } };
 
 /**
  * Wider indentation for better readability.
  */
-export const WideIndent: Story = {
-  args: {
-    value: nestedObject,
-    indentWidth: 4,
-    defaultInspectDepth: 4,
-  },
-};
+export const WideIndent: Story = { args: { value: nestedObject, indentWidth: 4, defaultInspectDepth: 4 } };
 
 /**
  * Interactive search with highlighting.
@@ -304,34 +178,18 @@ export const WithSearch: Story = {
       </div>
     );
   },
-  args: {
-    value: nestedObject,
-    defaultInspectDepth: 4,
-  },
+  args: { value: nestedObject, defaultInspectDepth: 4 },
 };
 
 /**
  * OpenAPI schema mode with type labels and required indicators.
  */
-export const OpenApiSchemaMode: Story = {
-  args: {
-    value: openApiSchemaData,
-    openapiMode: 'schema',
-    showKeyQuotes: false,
-    defaultInspectDepth: 4,
-  },
-};
+export const OpenApiSchemaMode: Story = { args: { value: openApiSchemaData, openapiMode: 'schema', showKeyQuotes: false, defaultInspectDepth: 4 } };
 
 /**
  * Cascade expand multiple levels on click.
  */
-export const CascadeExpand: Story = {
-  args: {
-    value: nestedObject,
-    defaultInspectDepth: 1,
-    expandChildrenDepth: 3,
-  },
-};
+export const CascadeExpand: Story = { args: { value: nestedObject, defaultInspectDepth: 1, expandChildrenDepth: 3 } };
 
 /**
  * Complex real-world API response structure.
@@ -345,48 +203,23 @@ export const ComplexApiResponse: Story = {
           {
             id: 'usr_123',
             email: 'alice@example.com',
-            profile: {
-              firstName: 'Alice',
-              lastName: 'Smith',
-              avatar: 'https://example.com/avatars/alice.jpg',
-            },
+            profile: { firstName: 'Alice', lastName: 'Smith', avatar: 'https://example.com/avatars/alice.jpg' },
             permissions: ['read', 'write', 'admin'],
             createdAt: '2024-01-15T10:30:00Z',
-            metadata: {
-              lastLogin: '2024-06-20T14:22:00Z',
-              loginCount: 42,
-              verified: true,
-            },
+            metadata: { lastLogin: '2024-06-20T14:22:00Z', loginCount: 42, verified: true },
           },
           {
             id: 'usr_456',
             email: 'bob@example.com',
-            profile: {
-              firstName: 'Bob',
-              lastName: 'Jones',
-              avatar: null,
-            },
+            profile: { firstName: 'Bob', lastName: 'Jones', avatar: null },
             permissions: ['read'],
             createdAt: '2024-03-22T08:15:00Z',
-            metadata: {
-              lastLogin: '2024-06-19T09:45:00Z',
-              loginCount: 7,
-              verified: false,
-            },
+            metadata: { lastLogin: '2024-06-19T09:45:00Z', loginCount: 7, verified: false },
           },
         ],
-        pagination: {
-          page: 1,
-          pageSize: 20,
-          total: 2,
-          hasMore: false,
-        },
+        pagination: { page: 1, pageSize: 20, total: 2, hasMore: false },
       },
-      meta: {
-        requestId: 'req_abc123',
-        timestamp: '2024-06-21T12:00:00Z',
-        version: 'v1',
-      },
+      meta: { requestId: 'req_abc123', timestamp: '2024-06-21T12:00:00Z', version: 'v1' },
     },
     defaultInspectDepth: 2,
     enableClipboard: true,
@@ -406,10 +239,7 @@ export const EdgeCases: Story = {
       zero: 0,
       emptyString: '',
       falseBoolean: false,
-      nestedEmpty: {
-        inner: {},
-        list: [],
-      },
+      nestedEmpty: { inner: {}, list: [] },
     },
     defaultInspectDepth: 3,
   },
@@ -436,15 +266,7 @@ export const AllFeatures: Story = {
       </div>
     );
   },
-  args: {
-    value: {
-      ...nestedObject,
-      ...arrayData,
-      config: longStringData,
-    },
-    defaultInspectDepth: 2,
-    showKeyQuotes: false,
-  },
+  args: { value: { ...nestedObject, ...arrayData, config: longStringData }, defaultInspectDepth: 2, showKeyQuotes: false },
 };
 
 // Interaction tests
@@ -455,11 +277,7 @@ export const AllFeatures: Story = {
 export const ShouldExpandOnClick: Story = {
   name: 'when collapsed node is clicked, should expand to show children',
   tags: ['!dev', '!autodocs'],
-  args: {
-    value: nestedObject,
-    defaultInspectDepth: 1,
-    rootName: false,
-  },
+  args: { value: nestedObject, defaultInspectDepth: 1, rootName: false },
   play: async ({ canvas, step }) => {
     await step('Click to expand user node', async () => {
       const userNode = await canvas.findByText('"user"');
@@ -476,11 +294,7 @@ export const ShouldExpandOnClick: Story = {
 export const ShouldCollapseOnClick: Story = {
   name: 'when expanded node is clicked, should collapse',
   tags: ['!dev', '!autodocs'],
-  args: {
-    value: nestedObject,
-    defaultInspectDepth: 2,
-    rootName: false,
-  },
+  args: { value: nestedObject, defaultInspectDepth: 2, rootName: false },
   play: async ({ canvas, step }) => {
     // First verify it's expanded
     await waitFor(() => expect(canvas.queryByText('"id"')).toBeVisible());
@@ -499,12 +313,7 @@ export const ShouldCollapseOnClick: Story = {
 export const ShouldShowCopyOnHover: Story = {
   name: 'when node is hovered, should show copy button',
   tags: ['!dev', '!autodocs'],
-  args: {
-    value: simpleObject,
-    enableClipboard: true,
-    rootName: false,
-    defaultInspectDepth: 0,
-  },
+  args: { value: simpleObject, enableClipboard: true, rootName: false, defaultInspectDepth: 0 },
   play: async ({ canvas, step }) => {
     const copyButton = await canvas.findByTitle('Copy to clipboard');
 
@@ -530,12 +339,7 @@ export const ShouldShowCopyOnHover: Story = {
 export const ShouldExpandLongString: Story = {
   name: 'when truncated string is clicked, should expand full text',
   tags: ['!dev', '!autodocs'],
-  args: {
-    value: longStringData,
-    collapseStringsAfterLength: 30,
-    defaultInspectDepth: 2,
-    rootName: false,
-  },
+  args: { value: longStringData, collapseStringsAfterLength: 30, defaultInspectDepth: 2, rootName: false },
   play: async ({ canvas, step }) => {
     await step('Verify string is truncated', async () => {
       // Should show truncated text with ellipsis (multiple strings are truncated)
@@ -560,12 +364,7 @@ export const ShouldExpandLongString: Story = {
 export const ShouldHighlightSearchMatches: Story = {
   name: 'when search text matches, should highlight matches',
   tags: ['!dev', '!autodocs'],
-  args: {
-    value: simpleObject,
-    searchText: 'john',
-    defaultInspectDepth: 2,
-    rootName: false,
-  },
+  args: { value: simpleObject, searchText: 'john', defaultInspectDepth: 2, rootName: false },
   play: async ({ canvas, step }) => {
     await step('Verify search match is highlighted', async () => {
       // The "John" text should have highlight styling applied
@@ -604,13 +403,7 @@ export const ShouldRenderSingleLineArrays: Story = {
 export const ShouldShowTypeLabelsInSchemaMode: Story = {
   name: 'when openapiMode is schema, should show type labels',
   tags: ['!dev', '!autodocs'],
-  args: {
-    value: openApiSchemaData,
-    openapiMode: 'schema',
-    defaultInspectDepth: 2,
-    rootName: false,
-    showKeyQuotes: false,
-  },
+  args: { value: openApiSchemaData, openapiMode: 'schema', defaultInspectDepth: 2, rootName: false, showKeyQuotes: false },
   play: async ({ canvas, step }) => {
     await step('Verify type label is displayed', async () => {
       // Should show "object" type label (from nested profile property)

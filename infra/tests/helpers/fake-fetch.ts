@@ -16,10 +16,7 @@ export function makeFetch(routes: Array<{ method: string; match: string; body?: 
     const route = routes.find((r) => r.method === method && url.includes(r.match));
     if (!route) return new Response(`no mock for ${method} ${url}`, { status: 599 });
     if (route.status === 204) return new Response(null, { status: 204 });
-    return new Response(JSON.stringify(route.body ?? {}), {
-      status: route.status ?? 200,
-      headers: { 'Content-Type': 'application/json' },
-    });
+    return new Response(JSON.stringify(route.body ?? {}), { status: route.status ?? 200, headers: { 'Content-Type': 'application/json' } });
   });
   return { fn, calls };
 }

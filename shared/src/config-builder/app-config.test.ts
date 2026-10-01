@@ -16,10 +16,7 @@ async function loadAppConfig(env: Record<string, string>) {
 
 describe('mergeDeep', () => {
   it('replaces an array, never merges it: a mode override lists its values in full', () => {
-    expect(mergeDeep({ list: [1, 2, 3], nested: { kept: true } }, { list: [9] })).toEqual({
-      list: [9],
-      nested: { kept: true },
-    });
+    expect(mergeDeep({ list: [1, 2, 3], nested: { kept: true } }, { list: [9] })).toEqual({ list: [9], nested: { kept: true } });
   });
 });
 

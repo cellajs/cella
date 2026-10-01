@@ -23,7 +23,4 @@ export const activitySchema = z
     changedFields: z.array(z.string()).nullable(),
     stx: nullableStxBaseSchema,
   })
-  .openapi('Activity', {
-    description: 'An auditable event recording an entity change, used for sync and history.',
-    example: mockActivityResponse(),
-  });
+  .openapi('Activity', { description: 'An auditable event recording an entity change, used for sync and history.', example: mockActivityResponse() });

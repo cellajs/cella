@@ -14,15 +14,7 @@ const TENANT_ID = 'tenant-1';
 const ORG_ID = 'org-1';
 const OTHER_ORG_ID = 'org-2';
 
-const orgRow = {
-  id: ORG_ID,
-  tenantId: TENANT_ID,
-  entityType: 'organization',
-  name: 'Org',
-  slug: 'org',
-  organizationFlags: {},
-  setupConfig: {},
-};
+const orgRow = { id: ORG_ID, tenantId: TENANT_ID, entityType: 'organization', name: 'Org', slug: 'org', organizationFlags: {}, setupConfig: {} };
 
 /**
  * Membership row as the guard sees it. `channelType` is widened past cella's own vocabulary on
@@ -35,24 +27,13 @@ const membership = (channelType: string, organizationId: string) =>
 
 const emptyDb = { select: () => ({ from: () => ({ where: () => Promise.resolve([]) }) }) };
 
-const mockCtx = (opts: {
-  memberships: unknown[];
-  isSystemAdmin?: boolean;
-  organizationId?: string;
-  tenantId?: string;
-  db?: unknown;
-}) => ({
+const mockCtx = (opts: { memberships: unknown[]; isSystemAdmin?: boolean; organizationId?: string; tenantId?: string; db?: unknown }) => ({
   req: { param: () => opts.organizationId ?? ORG_ID },
   var: {
     db: (opts.db ?? emptyDb) as never,
     memberships: opts.memberships,
     // The guard reads the actor's bindings; for a session those are the memberships.
-    actor: {
-      kind: 'user',
-      id: 'user-1',
-      bindings: opts.memberships,
-      scopes: null,
-    },
+    actor: { kind: 'user', id: 'user-1', bindings: opts.memberships, scopes: null },
     isSystemAdmin: opts.isSystemAdmin ?? false,
     tenantId: opts.tenantId ?? TENANT_ID,
   },
@@ -169,13 +150,7 @@ describe('orgGuard — organization lookup within the tenant', () => {
     });
     expect((await runExpectingError(asMember)).status).toBe(404);
 
-    const asSystemAdmin = mockCtx({
-      memberships: [],
-      isSystemAdmin: true,
-      organizationId: organization.id,
-      tenantId: otherTenantId,
-      db: baseDb,
-    });
+    const asSystemAdmin = mockCtx({ memberships: [], isSystemAdmin: true, organizationId: organization.id, tenantId: otherTenantId, db: baseDb });
     expect((await runExpectingError(asSystemAdmin)).status).toBe(404);
   });
 

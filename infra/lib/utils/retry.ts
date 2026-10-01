@@ -40,10 +40,7 @@ export interface PollUntilOptions {
 }
 
 /** Probe until `probe` returns a non-undefined value, or the attempt budget is spent. A miss returns undefined and is not an error, so per-attempt logging and fast-fail decisions live inside the probe. */
-export async function pollUntil<T>(
-  probe: (attempt: number) => Promise<T | undefined>,
-  opts: PollUntilOptions,
-): Promise<T | undefined> {
+export async function pollUntil<T>(probe: (attempt: number) => Promise<T | undefined>, opts: PollUntilOptions): Promise<T | undefined> {
   const sleep = opts.sleep ?? defaultSleep;
   for (let attempt = 1; attempt <= opts.attempts; attempt++) {
     const result = await probe(attempt);

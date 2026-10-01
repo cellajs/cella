@@ -12,9 +12,7 @@ beforeAll(async () => {
 
 describe('storage module', () => {
   it('creates exactly four Object Storage buckets', () => {
-    const buckets = h.resources.filter(
-      (r) => /bucket(?!Policy|Website)/i.test(r.type) && !/Policy|Website/i.test(r.type),
-    );
+    const buckets = h.resources.filter((r) => /bucket(?!Policy|Website)/i.test(r.type) && !/Policy|Website/i.test(r.type));
     expect(buckets.map((b) => b.name).sort(), `captured: ${h.resources.map((r) => r.type).join(', ')}`).toEqual([
       'boot-diag-bucket',
       'frontend-bucket',
@@ -26,17 +24,10 @@ describe('storage module', () => {
   it('must not let anyone but a named application write or list: the public read only fetches objects of the two public buckets', () => {
     type Statement = { Sid: string; Effect: string; Principal: unknown; Action: string[]; Resource: string[] };
     const policies = h.resources.filter((r) => /bucketPolicy/i.test(r.type));
-    expect(policies.map((p) => p.name).sort()).toEqual([
-      'boot-diag-policy',
-      'frontend-policy',
-      'private-uploads-policy',
-      'public-uploads-policy',
-    ]);
+    expect(policies.map((p) => p.name).sort()).toEqual(['boot-diag-policy', 'frontend-policy', 'private-uploads-policy', 'public-uploads-policy']);
     const publicReads: string[] = [];
     for (const policy of policies) {
-      const bucket = String(
-        h.resources.find((r) => r.name === policy.name.replace(/-policy$/, '-bucket'))?.inputs.name,
-      );
+      const bucket = String(h.resources.find((r) => r.name === policy.name.replace(/-policy$/, '-bucket'))?.inputs.name);
       const { Statement } = JSON.parse(String(policy.inputs.policy)) as { Statement: Statement[] };
       expect(Statement.length, policy.name).toBeGreaterThan(0);
       for (const statement of Statement) {
@@ -47,9 +38,7 @@ describe('storage module', () => {
           expect(statement.Resource, `${policy.name} ${statement.Sid}`).toEqual([`${bucket}/*`]);
           publicReads.push(policy.name);
         } else {
-          expect(statement.Principal, `${policy.name} ${statement.Sid}`).toEqual({
-            SCW: expect.stringMatching(/^application_id:.+/),
-          });
+          expect(statement.Principal, `${policy.name} ${statement.Sid}`).toEqual({ SCW: expect.stringMatching(/^application_id:.+/) });
         }
       }
     }
@@ -67,9 +56,7 @@ describe('storage module', () => {
     expect(policyJson).toMatch(/application_id:/);
     expect(policyJson).toMatch(/s3:PutObject/);
     expect(policyJson).toMatch(/boot-diag\/*/);
-    const parsed = JSON.parse(policyJson) as {
-      Statement: Array<{ Sid: string; Action: string[]; Resource: string[] }>;
-    };
+    const parsed = JSON.parse(policyJson) as { Statement: Array<{ Sid: string; Action: string[]; Resource: string[] }> };
     const bootWrite = parsed.Statement.find((s) => s.Sid === 'BootWriteBootDiagnostics');
     expect(bootWrite?.Action).toEqual(['s3:PutObject']);
     // Derive the bucket name from the captured resource so this holds for any app slug.

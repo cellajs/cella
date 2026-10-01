@@ -97,12 +97,7 @@ function flush() {
  * memoized for an hour. Rejected ids reject with {@link PresignRejectedError}; transport failures
  * reject with the underlying error. Fails fast when offline.
  */
-export function getPresignedUrlBatched(
-  attachmentId: string,
-  variant: CloudFileVariant,
-  tenantId: string,
-  organizationId: string,
-): Promise<string> {
+export function getPresignedUrlBatched(attachmentId: string, variant: CloudFileVariant, tenantId: string, organizationId: string): Promise<string> {
   subscribeOwnerOnce();
 
   const key = pairKey(attachmentId, variant);

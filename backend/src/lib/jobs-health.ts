@@ -48,13 +48,7 @@ interface QueueRow extends Record<string, unknown> {
  */
 export async function readJobsHealth(): Promise<JobsHealthSnapshot> {
   const schema = sql.raw(JOBS_SCHEMA);
-  const empty: JobsHealthSnapshot = {
-    installed: false,
-    schema: JOBS_SCHEMA,
-    cronOn: null,
-    cronAgeMs: null,
-    queues: [],
-  };
+  const empty: JobsHealthSnapshot = { installed: false, schema: JOBS_SCHEMA, cronOn: null, cronAgeMs: null, queues: [] };
   if (env.NODB) return empty;
 
   const { rows: versions } = await baseDb.execute<{ cron_on: Date | null }>(sql`
@@ -95,13 +89,7 @@ export async function readJobsHealth(): Promise<JobsHealthSnapshot> {
     deadLetterDepth: row.dead_letter ? (queuedByName.get(row.dead_letter) ?? 0) : null,
   }));
   const cronOn = version.cron_on ? new Date(version.cron_on) : null;
-  return {
-    installed: true,
-    schema: JOBS_SCHEMA,
-    cronOn: cronOn?.toISOString() ?? null,
-    cronAgeMs: cronOn ? now - cronOn.getTime() : null,
-    queues,
-  };
+  return { installed: true, schema: JOBS_SCHEMA, cronOn: cronOn?.toISOString() ?? null, cronAgeMs: cronOn ? now - cronOn.getTime() : null, queues };
 }
 
 /**

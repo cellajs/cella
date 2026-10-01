@@ -10,11 +10,7 @@ export const findDomainsByTenant = async (ctx: UserContext) => {
 
 export const findTenantExists = async (ctx: UserContext) => {
   const { db, tenantId } = ctx.var;
-  const [tenant] = await db
-    .select({ id: tenantsTable.id })
-    .from(tenantsTable)
-    .where(eq(tenantsTable.id, tenantId))
-    .limit(1);
+  const [tenant] = await db.select({ id: tenantsTable.id }).from(tenantsTable).where(eq(tenantsTable.id, tenantId)).limit(1);
   return tenant;
 };
 
@@ -67,8 +63,7 @@ export const deleteDomain = async (ctx: UserContext, { id }: DeleteDomainOpts) =
 
 interface UpdateDomainOpts {
   id: string;
-  values: Pick<typeof domainsTable.$inferInsert, 'lastCheckedAt'> &
-    Partial<Pick<typeof domainsTable.$inferInsert, 'verified' | 'verifiedAt'>>;
+  values: Pick<typeof domainsTable.$inferInsert, 'lastCheckedAt'> & Partial<Pick<typeof domainsTable.$inferInsert, 'verified' | 'verifiedAt'>>;
 }
 
 export const updateDomain = async (ctx: UserContext, { id, values }: UpdateDomainOpts) => {

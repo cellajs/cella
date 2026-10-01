@@ -2,9 +2,7 @@ import { vi } from 'vitest';
 
 // Every limiter passes every request; a test of a real limiter calls `vi.unmock('#/middlewares/rate-limiter/core')`.
 vi.mock('#/middlewares/rate-limiter/core', async () => (await import('./test-utils')).rateLimiterCoreMock());
-vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) =>
-  (await import('./test-utils')).rateLimiterHelpersMock(importOriginal),
-);
+vi.mock('#/middlewares/rate-limiter/helpers', async (importOriginal) => (await import('./test-utils')).rateLimiterHelpersMock(importOriginal));
 
 // Every mail renders for real and is recorded for `sentMails`; test mode sends none. The config clears the record
 // before each test (`clearMocks`).

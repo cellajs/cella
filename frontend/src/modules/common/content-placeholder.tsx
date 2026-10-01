@@ -15,13 +15,7 @@ interface Props {
 
 const defaultTitleProps = {};
 
-export function ContentPlaceholder({
-  title,
-  icon: Icon,
-  className = '',
-  children,
-  titleProps = defaultTitleProps,
-}: Props) {
+export function ContentPlaceholder({ title, icon: Icon, className = '', children, titleProps = defaultTitleProps }: Props) {
   const { t } = useTranslation();
 
   const titleText = t(title, titleProps as Record<string, unknown>);

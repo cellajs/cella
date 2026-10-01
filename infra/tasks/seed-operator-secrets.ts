@@ -27,11 +27,7 @@ const defaultLog = (message: string) => console.info(message);
  */
 export async function seedOperatorSecrets(options: SeedOperatorSecretsOptions): Promise<void> {
   const log = options.log ?? defaultLog;
-  const client = createSecretManagerClient({
-    secretKey: options.secretKey,
-    region: options.region,
-    projectId: options.projectId,
-  });
+  const client = createSecretManagerClient({ secretKey: options.secretKey, region: options.region, projectId: options.projectId });
 
   for (const secret of operatorManagedRuntimeSecrets as RuntimeSecretDefinition[]) {
     const value = options.values[secret.id];
@@ -44,19 +40,8 @@ export async function seedOperatorSecrets(options: SeedOperatorSecretsOptions): 
       continue;
     }
 
-    const ensured =
-      existing ??
-      (await client.ensureSecret({
-        name: secret.secretName,
-        path,
-        description: secret.description,
-      }));
-    await client.putSecretValue({
-      secretId: ensured.id,
-      value,
-      description: 'Seeded during setup',
-      disablePrevious: false,
-    });
+    const ensured = existing ?? (await client.ensureSecret({ name: secret.secretName, path, description: secret.description }));
+    await client.putSecretValue({ secretId: ensured.id, value, description: 'Seeded during setup', disablePrevious: false });
     log(`seed ${secret.secretName}`);
   }
 }

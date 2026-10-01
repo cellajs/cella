@@ -27,11 +27,8 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     path: '/health',
     xGuard: [publicGuard],
     summary: 'Auth health check',
-    description:
-      'Returns auth health status including whether the client IP is rate-limited for email enumeration protection.',
-    responses: {
-      200: json('Auth health status', z.object({ restrictedMode: z.boolean(), retryAfter: z.number().optional() })),
-    },
+    description: 'Returns auth health status including whether the client IP is rate-limited for email enumeration protection.',
+    responses: { 200: json('Auth health status', z.object({ restrictedMode: z.boolean(), retryAfter: z.number().optional() })) },
   }),
   startImpersonation: xRoute({
     method: 'post',
@@ -40,8 +37,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     // user, refuse them as no admin and raise a security alert about the admin's own request.
     xGuard: [userGuard, noImpersonationGuard, sysAdminGuard],
     summary: 'Start impersonating',
-    description:
-      'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
+    description: 'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
     request: { body: jsonBody(z.object({ targetUserId: validIdSchema })) },
     responses: { 204: { description: 'Impersonating', headers: z.object({ 'Set-Cookie': cookieSchema }) } },
   }),
@@ -63,9 +59,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     description:
       'Tells whether this browser has signed in to the account with this email address before, by its device cookie. Any other browser gets `recognized: false`, whether or not the address has an account.',
     request: { body: jsonBody(emailBodySchema) },
-    responses: {
-      200: json('Whether this browser is recognized for the address', z.object({ recognized: z.boolean() })),
-    },
+    responses: { 200: json('Whether this browser is recognized for the address', z.object({ recognized: z.boolean() })) },
   }),
   invokeToken: xRoute({
     method: 'get',
@@ -86,8 +80,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     xRateLimiter: [tokenLimiter('token')],
     middleware: isNoBot,
     summary: 'Get token data',
-    description:
-      'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
+    description: 'Get basic token data from single-use token session, It returns basic data if the session is still valid.',
     request: { params: z.object({ type: z.enum(invokableTokenTypes), id: validIdSchema }) },
     responses: { 200: json('Token is valid', tokenWithDataSchema, mockTokenDataResponse()) },
   }),
@@ -119,8 +112,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     path: '/sign-out',
     xGuard: [publicGuard],
     summary: 'Sign out',
-    description:
-      'Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared.',
+    description: 'Signs out the current user: the session is revoked (its row stays for the sessions list) and the cookie is cleared.',
     responses: { 204: { description: 'User signed out' } },
   }),
 });

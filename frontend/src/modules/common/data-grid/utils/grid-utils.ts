@@ -15,9 +15,7 @@ export * from './wrap-text-utils';
 
 export const { min, max, floor, sign } = Math;
 
-export function assertIsValidKeyGetter<R, K extends React.Key>(
-  keyGetter: Maybe<(row: NoInfer<R>) => K>,
-): asserts keyGetter is (row: R) => K {
+export function assertIsValidKeyGetter<R, K extends React.Key>(keyGetter: Maybe<(row: NoInfer<R>) => K>): asserts keyGetter is (row: R) => K {
   if (typeof keyGetter !== 'function') {
     throw new Error('Please specify the rowKeyGetter prop to use selection');
   }

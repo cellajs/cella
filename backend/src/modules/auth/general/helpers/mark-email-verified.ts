@@ -44,9 +44,7 @@ export const markEmailVerified = async (db: DbOrTx, { userId, email, via }: Emai
 /** For flows whose whole purpose is verification: an address the account does not hold fails the request. */
 export const requireEmailVerified = async (db: DbOrTx, opts: EmailProofOpts): Promise<void> => {
   if (await markEmailVerified(db, opts)) return;
-  throw new AppError(500, 'server_error', 'error', {
-    meta: { reason: 'verified_address_not_on_account', userId: opts.userId },
-  });
+  throw new AppError(500, 'server_error', 'error', { meta: { reason: 'verified_address_not_on_account', userId: opts.userId } });
 };
 
 /**
@@ -59,11 +57,7 @@ export const addProvenEmail = async (db: DbOrTx, { userId, email, via }: EmailPr
   const [row] = await db
     .insert(emailsTable)
     .values({ email, userId, verified: true, verifiedAt: now, lastVerifiedVia: via, lastVerifiedAt: now })
-    .onConflictDoUpdate({
-      target: emailsTable.email,
-      set: proofStamps(via, now),
-      setWhere: eq(emailsTable.userId, userId),
-    })
+    .onConflictDoUpdate({ target: emailsTable.email, set: proofStamps(via, now), setWhere: eq(emailsTable.userId, userId) })
     .returning({ id: emailsTable.id });
 
   if (!row) throw new AppError(409, 'oauth_conflict', 'warn');

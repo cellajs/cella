@@ -48,34 +48,22 @@ type Story = StoryObj<typeof meta>;
 export const Root: Story = {};
 
 /** Root row with no children: renders nothing at depth 0. */
-export const RootLeaf: Story = {
-  args: { hasChildren: false },
-};
+export const RootLeaf: Story = { args: { hasChildren: false } };
 
 /** Inner row (depth 1) with children. Solid 2px connectors. */
-export const InnerExpanded: Story = {
-  args: { depth: 1, expanded: true, hasChildren: true },
-};
+export const InnerExpanded: Story = { args: { depth: 1, expanded: true, hasChildren: true } };
 
 /** Inner leaf row (depth 1, no children). Filled bullet on the centered track. */
-export const InnerLeaf: Story = {
-  args: { depth: 1, hasChildren: false },
-};
+export const InnerLeaf: Story = { args: { depth: 1, hasChildren: false } };
 
 /** Deepest row (depth 2 of maxDepth 3) with no children. Thin lines + hollow bullet on the deeper track. */
-export const DeepestLeaf: Story = {
-  args: { depth: 2, hasChildren: false, maxDepth: 3 },
-};
+export const DeepestLeaf: Story = { args: { depth: 2, hasChildren: false, maxDepth: 3 } };
 
 /** Deepest row that is also the last child; connector below should not be drawn. */
-export const DeepestLeafLastChild: Story = {
-  args: { depth: 2, hasChildren: false, isLastChild: true, maxDepth: 3 },
-};
+export const DeepestLeafLastChild: Story = { args: { depth: 2, hasChildren: false, isLastChild: true, maxDepth: 3 } };
 
 /** Inner row whose parent is itself a last child; depth-1 trunk should NOT continue. */
-export const DeepestParentIsLast: Story = {
-  args: { depth: 2, hasChildren: false, parentIsLastChild: true, maxDepth: 3 },
-};
+export const DeepestParentIsLast: Story = { args: { depth: 2, hasChildren: false, parentIsLastChild: true, maxDepth: 3 } };
 
 /**
  * Interaction test: clicking the toggle button calls `onToggle`. Tagged
@@ -84,10 +72,7 @@ export const DeepestParentIsLast: Story = {
 export const ShouldFireOnToggle: Story = {
   name: 'when chevron clicked, should call onToggle',
   tags: ['!dev', '!autodocs'],
-  args: {
-    depth: 1,
-    hasChildren: true,
-  },
+  args: { depth: 1, hasChildren: true },
   render: function Render(args) {
     const [calls, setCalls] = useState(0);
     return (

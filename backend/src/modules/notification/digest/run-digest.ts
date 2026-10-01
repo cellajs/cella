@@ -19,8 +19,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 /** How far back a digest window reaches at most: the cadence plus a day. */
 const MAX_WINDOW_DAYS = { daily: 2, weekly: 8 };
 
-const earliestStart = (cadence: keyof typeof MAX_WINDOW_DAYS, now: Date): Date =>
-  new Date(now.getTime() - MAX_WINDOW_DAYS[cadence] * DAY_MS);
+const earliestStart = (cadence: keyof typeof MAX_WINDOW_DAYS, now: Date): Date => new Date(now.getTime() - MAX_WINDOW_DAYS[cadence] * DAY_MS);
 
 /**
  * Where a recipient's digest window starts: at the stored `lastDigestAt`, so a late or skipped run resumes where the

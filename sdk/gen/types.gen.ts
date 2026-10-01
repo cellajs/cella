@@ -130,16 +130,7 @@ export type StreamNotification = {
    */
   action: 'create' | 'update' | 'delete' | 'moveOut';
   productType: 'attachment' | null;
-  resourceType:
-    | 'request'
-    | 'membership'
-    | 'inactive_membership'
-    | 'tenant'
-    | 'system_role'
-    | 'service_account'
-    | 'api_key'
-    | 'oauth_client'
-    | null;
+  resourceType: 'request' | 'membership' | 'inactive_membership' | 'tenant' | 'system_role' | 'service_account' | 'api_key' | 'oauth_client' | null;
   subjectId: string | null;
   organizationId: string | null;
   tenantId: string | null;
@@ -326,14 +317,7 @@ export type MeAuthData = {
     expiresAt: string;
     revokedAt: string | null;
     revokedBy: string | null;
-    revocationReason:
-      | 'sign_out'
-      | 'other_session'
-      | 'mfa_enabled'
-      | 'session_cap'
-      | 'replaced'
-      | 'impersonation_stopped'
-      | null;
+    revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | 'impersonation_stopped' | null;
     impersonatorSessionId: string | null;
     steppedUpAt: string | null;
     steppedUpVia: 'passkey' | 'totp' | 'email' | null;
@@ -1015,8 +999,7 @@ export type ResendInvitationWithTokenResponses = {
   204: void;
 };
 
-export type ResendInvitationWithTokenResponse =
-  ResendInvitationWithTokenResponses[keyof ResendInvitationWithTokenResponses];
+export type ResendInvitationWithTokenResponse = ResendInvitationWithTokenResponses[keyof ResendInvitationWithTokenResponses];
 
 export type SignOutData = {
   body?: never;
@@ -1545,8 +1528,7 @@ export type GeneratePasskeyChallengeResponses = {
   };
 };
 
-export type GeneratePasskeyChallengeResponse =
-  GeneratePasskeyChallengeResponses[keyof GeneratePasskeyChallengeResponses];
+export type GeneratePasskeyChallengeResponse = GeneratePasskeyChallengeResponses[keyof GeneratePasskeyChallengeResponses];
 
 export type SignInWithPasskeyData = {
   body: {
@@ -2056,8 +2038,7 @@ export type GetStepUpPasskeyChallengeResponses = {
   };
 };
 
-export type GetStepUpPasskeyChallengeResponse =
-  GetStepUpPasskeyChallengeResponses[keyof GetStepUpPasskeyChallengeResponses];
+export type GetStepUpPasskeyChallengeResponse = GetStepUpPasskeyChallengeResponses[keyof GetStepUpPasskeyChallengeResponses];
 
 export type SendStepUpLinkData = {
   body?: {
@@ -2972,14 +2953,7 @@ export type RevokeMySessionsResponses = {
       expiresAt: string;
       revokedAt: string | null;
       revokedBy: string | null;
-      revocationReason:
-        | 'sign_out'
-        | 'other_session'
-        | 'mfa_enabled'
-        | 'session_cap'
-        | 'replaced'
-        | 'impersonation_stopped'
-        | null;
+      revocationReason: 'sign_out' | 'other_session' | 'mfa_enabled' | 'session_cap' | 'replaced' | 'impersonation_stopped' | null;
       impersonatorSessionId: string | null;
       steppedUpAt: string | null;
       steppedUpVia: 'passkey' | 'totp' | 'email' | null;
@@ -3471,8 +3445,7 @@ export type GetNotificationPreferencesResponses = {
   };
 };
 
-export type GetNotificationPreferencesResponse =
-  GetNotificationPreferencesResponses[keyof GetNotificationPreferencesResponses];
+export type GetNotificationPreferencesResponse = GetNotificationPreferencesResponses[keyof GetNotificationPreferencesResponses];
 
 export type UpdateNotificationPreferencesData = {
   body: {
@@ -3512,8 +3485,7 @@ export type UpdateNotificationPreferencesErrors = {
   429: TooManyRequestsError;
 };
 
-export type UpdateNotificationPreferencesError =
-  UpdateNotificationPreferencesErrors[keyof UpdateNotificationPreferencesErrors];
+export type UpdateNotificationPreferencesError = UpdateNotificationPreferencesErrors[keyof UpdateNotificationPreferencesErrors];
 
 export type UpdateNotificationPreferencesResponses = {
   /**
@@ -3526,8 +3498,7 @@ export type UpdateNotificationPreferencesResponses = {
   };
 };
 
-export type UpdateNotificationPreferencesResponse =
-  UpdateNotificationPreferencesResponses[keyof UpdateNotificationPreferencesResponses];
+export type UpdateNotificationPreferencesResponse = UpdateNotificationPreferencesResponses[keyof UpdateNotificationPreferencesResponses];
 
 export type UnsubscribeNotificationsData = {
   body?: never;
@@ -4491,8 +4462,7 @@ export type GetApiProtectedResourceMetadataErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetApiProtectedResourceMetadataError =
-  GetApiProtectedResourceMetadataErrors[keyof GetApiProtectedResourceMetadataErrors];
+export type GetApiProtectedResourceMetadataError = GetApiProtectedResourceMetadataErrors[keyof GetApiProtectedResourceMetadataErrors];
 
 export type GetApiProtectedResourceMetadataResponses = {
   /**
@@ -4501,8 +4471,7 @@ export type GetApiProtectedResourceMetadataResponses = {
   200: ProtectedResourceMetadata;
 };
 
-export type GetApiProtectedResourceMetadataResponse =
-  GetApiProtectedResourceMetadataResponses[keyof GetApiProtectedResourceMetadataResponses];
+export type GetApiProtectedResourceMetadataResponse = GetApiProtectedResourceMetadataResponses[keyof GetApiProtectedResourceMetadataResponses];
 
 export type DeleteOrganizationsData = {
   body: {
@@ -5285,8 +5254,7 @@ export type GetMcpProtectedResourceMetadataErrors = {
   429: TooManyRequestsError;
 };
 
-export type GetMcpProtectedResourceMetadataError =
-  GetMcpProtectedResourceMetadataErrors[keyof GetMcpProtectedResourceMetadataErrors];
+export type GetMcpProtectedResourceMetadataError = GetMcpProtectedResourceMetadataErrors[keyof GetMcpProtectedResourceMetadataErrors];
 
 export type GetMcpProtectedResourceMetadataResponses = {
   /**
@@ -5295,8 +5263,7 @@ export type GetMcpProtectedResourceMetadataResponses = {
   200: ProtectedResourceMetadata;
 };
 
-export type GetMcpProtectedResourceMetadataResponse =
-  GetMcpProtectedResourceMetadataResponses[keyof GetMcpProtectedResourceMetadataResponses];
+export type GetMcpProtectedResourceMetadataResponse = GetMcpProtectedResourceMetadataResponses[keyof GetMcpProtectedResourceMetadataResponses];
 
 export type HandleMcpData = {
   body: unknown;
@@ -5602,8 +5569,7 @@ export type HandleMembershipInvitationResponses = {
   200: ChannelBase;
 };
 
-export type HandleMembershipInvitationResponse =
-  HandleMembershipInvitationResponses[keyof HandleMembershipInvitationResponses];
+export type HandleMembershipInvitationResponse = HandleMembershipInvitationResponses[keyof HandleMembershipInvitationResponses];
 
 export type GetMembersData = {
   body?: never;

@@ -17,8 +17,4 @@ export const schemaEvolutionPolicy: {
   staleBundleMaxDays: number;
   /** Policy for unmappable ops fields in `normalizeOps` (when `canonicalKeys` is provided). */
   unknownFieldHandling: UnknownFieldHandling;
-} = {
-  expandWindowMinDays: 14,
-  staleBundleMaxDays: 30,
-  unknownFieldHandling: 'strip',
-};
+} = { expandWindowMinDays: 14, staleBundleMaxDays: 30, unknownFieldHandling: 'strip' };

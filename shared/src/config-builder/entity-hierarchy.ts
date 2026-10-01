@@ -5,21 +5,13 @@ import {
   resolveDeepestAncestorId,
   resolveNonNullAncestors,
 } from './resolve-row-channel.ts';
-import {
-  computeAncestorPath,
-  computeChannelPath,
-  computeProductPath,
-  deepestAncestorSql,
-  pathColumnSql,
-} from './row-path.ts';
+import { computeAncestorPath, computeChannelPath, computeProductPath, deepestAncestorSql, pathColumnSql } from './row-path.ts';
 
 function buildRoleMap<T extends readonly string[]>(roleNames: T): { readonly [K in T[number]]: K } {
   return Object.fromEntries(roleNames.map((r) => [r, r])) as { readonly [K in T[number]]: K };
 }
 
-export function createRoleRegistry<const T extends readonly string[]>(
-  roleNames: T,
-): { readonly all: T } & { readonly [K in T[number]]: K } {
+export function createRoleRegistry<const T extends readonly string[]>(roleNames: T): { readonly all: T } & { readonly [K in T[number]]: K } {
   const registry = Object.assign({ all: roleNames }, buildRoleMap(roleNames));
   return Object.freeze(registry) as { readonly all: T } & { readonly [K in T[number]]: K };
 }
@@ -27,11 +19,9 @@ export function createRoleRegistry<const T extends readonly string[]>(
 export type RoleFromRegistry<R extends { all: readonly string[] }> = R['all'][number];
 
 /** The roles a channel declared, or every registry role for a type the map does not name. */
-export type ChannelRole<
-  TRoleMap,
-  TRoles extends { all: readonly string[] },
-  T extends string,
-> = T extends keyof TRoleMap ? TRoleMap[T] : RoleFromRegistry<TRoles>;
+export type ChannelRole<TRoleMap, TRoles extends { all: readonly string[] }, T extends string> = T extends keyof TRoleMap
+  ? TRoleMap[T]
+  : RoleFromRegistry<TRoles>;
 
 export type EntityKind = 'user' | 'channel' | 'product';
 
@@ -127,24 +117,11 @@ class EntityHierarchyBuilder<
       TRelatedMap,
       TNullableMap,
       TRoleMap & { organization: RO[number] }
-    >(
-      this.roles,
-      this.withEntity('organization', {
-        kind: 'channel',
-        parent: null,
-        roles: options.roles,
-        elevated: options.elevated,
-      }),
-    );
+    >(this.roles, this.withEntity('organization', { kind: 'channel', parent: null, roles: options.roles, elevated: options.elevated }));
   }
 
   /** A channel below the organization (`parent` is the organization or a channel under it). */
-  channel<
-    N extends string,
-    P extends TChannels,
-    const RO extends readonly RoleFromRegistry<TRoles>[],
-    const RC extends readonly TChannels[] = [],
-  >(
+  channel<N extends string, P extends TChannels, const RO extends readonly RoleFromRegistry<TRoles>[], const RC extends readonly TChannels[] = []>(
     name: N,
     options: {
       parent: P;
@@ -209,19 +186,13 @@ class EntityHierarchyBuilder<
     if (!elevated) return;
     for (const role of elevated) {
       if (!roles.includes(role)) {
-        throw new Error(
-          `EntityHierarchy: channel "${name}" elevates unknown role "${role}". Own roles: ${roles.join(', ')}`,
-        );
+        throw new Error(`EntityHierarchy: channel "${name}" elevates unknown role "${role}". Own roles: ${roles.join(', ')}`);
       }
     }
   }
 
   /** Keys must be this channel's own roles; values must be organization roles. */
-  private validateOrganizationRoles(
-    name: string,
-    roles: readonly string[],
-    organizationRoles?: Partial<Record<string, string>>,
-  ): void {
+  private validateOrganizationRoles(name: string, roles: readonly string[], organizationRoles?: Partial<Record<string, string>>): void {
     if (!organizationRoles) return;
 
     // organization() runs before any channel(), so the vocabulary is known here.
@@ -230,9 +201,7 @@ class EntityHierarchyBuilder<
 
     for (const [role, organizationRole] of Object.entries(organizationRoles)) {
       if (!roles.includes(role)) {
-        throw new Error(
-          `EntityHierarchy: channel "${name}" maps unknown role "${role}" in organizationRoles. Own roles: ${roles.join(', ')}`,
-        );
+        throw new Error(`EntityHierarchy: channel "${name}" maps unknown role "${role}" in organizationRoles. Own roles: ${roles.join(', ')}`);
       }
       if (organizationRole !== undefined && !organizationVocabulary.includes(organizationRole)) {
         throw new Error(
@@ -257,12 +226,7 @@ class EntityHierarchyBuilder<
    * most-specific link permissions and public-read inheritance read. `relatedChannels` and
    * `nullableAncestors` add further non-home links. @see README.md
    */
-  product<
-    N extends string,
-    P extends TChannels,
-    const RC extends readonly TChannels[] = [],
-    const NA extends readonly TChannels[] = [],
-  >(
+  product<N extends string, P extends TChannels, const RC extends readonly TChannels[] = [], const NA extends readonly TChannels[] = []>(
     name: N,
     options: { parent: P; relatedChannels?: RC; nullableAncestors?: NA },
   ): EntityHierarchyBuilder<
@@ -314,24 +278,15 @@ class EntityHierarchyBuilder<
 
   private validateParent(name: string, parent: string | null, kind: 'channel' | 'product'): void {
     if (parent === null) {
-      throw new Error(
-        `EntityHierarchy: ${kind} "${name}" has no parent. ` +
-          'Only the organization is parentless; every other entity nests under it.',
-      );
+      throw new Error(`EntityHierarchy: ${kind} "${name}" has no parent. Only the organization is parentless; every other entity nests under it.`);
     }
 
     const parentEntry = this.entities.get(parent);
     if (!parentEntry) {
-      throw new Error(
-        `EntityHierarchy: ${kind} "${name}" references unknown parent "${parent}". ` +
-          'Parents must be defined before children.',
-      );
+      throw new Error(`EntityHierarchy: ${kind} "${name}" references unknown parent "${parent}". Parents must be defined before children.`);
     }
     if (parentEntry.kind !== 'channel') {
-      throw new Error(
-        `EntityHierarchy: ${kind} "${name}" parent "${parent}" must be a channel entity, ` +
-          `but it is a ${parentEntry.kind} entity.`,
-      );
+      throw new Error(`EntityHierarchy: ${kind} "${name}" parent "${parent}" must be a channel entity, ` + `but it is a ${parentEntry.kind} entity.`);
     }
   }
 
@@ -343,10 +298,7 @@ class EntityHierarchyBuilder<
     const validRoles = new Set(this.roles.all);
     for (const role of roles) {
       if (!validRoles.has(role)) {
-        throw new Error(
-          `EntityHierarchy: channel "${name}" has invalid role "${role}". ` +
-            `Valid roles: ${[...validRoles].join(', ')}`,
-        );
+        throw new Error(`EntityHierarchy: channel "${name}" has invalid role "${role}". ` + `Valid roles: ${[...validRoles].join(', ')}`);
       }
     }
   }
@@ -382,8 +334,7 @@ class EntityHierarchyBuilder<
       }
       if (entry.kind !== 'channel') {
         throw new Error(
-          `EntityHierarchy: entity "${name}" relatedChannel "${related}" must be a channel entity, ` +
-            `but it is a ${entry.kind} entity.`,
+          `EntityHierarchy: entity "${name}" relatedChannel "${related}" must be a channel entity, ` + `but it is a ${entry.kind} entity.`,
         );
       }
       if (ancestors.has(related)) {
@@ -419,14 +370,11 @@ class EntityHierarchyBuilder<
 
       if (!chain.includes(ancestor)) {
         throw new Error(
-          `EntityHierarchy: product "${name}" nullableAncestor "${ancestor}" is not an ancestor. ` +
-            `Ancestor chain: ${chain.join(' > ')}.`,
+          `EntityHierarchy: product "${name}" nullableAncestor "${ancestor}" is not an ancestor. ` + `Ancestor chain: ${chain.join(' > ')}.`,
         );
       }
       if (ancestor === 'organization') {
-        throw new Error(
-          `EntityHierarchy: product "${name}" nullableAncestor "${ancestor}" is the organization and must stay non-null.`,
-        );
+        throw new Error(`EntityHierarchy: product "${name}" nullableAncestor "${ancestor}" is the organization and must stay non-null.`);
       }
     }
   }
@@ -543,10 +491,7 @@ export class EntityHierarchy<
    * organization membership row; undefined when the channel declares no mapping for it
    * (insertMemberships treats that as a programming error and throws).
    */
-  readonly getOrganizationRole = (
-    channelType: string,
-    role: string,
-  ): ChannelRole<TRoleMap, TRoles, 'organization'> | undefined => {
+  readonly getOrganizationRole = (channelType: string, role: string): ChannelRole<TRoleMap, TRoles, 'organization'> | undefined => {
     const entry = this.entities.get(channelType);
     if (entry?.kind !== 'channel') return undefined;
     return entry.organizationRoles?.[role] as ChannelRole<TRoleMap, TRoles, 'organization'> | undefined;
@@ -673,8 +618,6 @@ export class EntityHierarchy<
   };
 }
 
-export function createEntityHierarchy<R extends { all: readonly string[] }>(
-  roles: R,
-): EntityHierarchyBuilder<R, never, never> {
+export function createEntityHierarchy<R extends { all: readonly string[] }>(roles: R): EntityHierarchyBuilder<R, never, never> {
   return new EntityHierarchyBuilder(roles);
 }

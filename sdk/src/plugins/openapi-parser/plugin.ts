@@ -6,9 +6,7 @@ import { formatJson } from './format-json';
 import { parseOpenApiSpec } from './parse-spec';
 import type { OpenApiSpec } from './types';
 
-type Config = {
-  name: 'openapi-parser';
-};
+type Config = { name: 'openapi-parser' };
 
 type OpenApiParserPlugin = DefinePlugin<Config>;
 
@@ -37,11 +35,6 @@ const handler: OpenApiParserPlugin['Handler'] = ({ plugin }) => {
   }
 };
 
-const defaultConfig: OpenApiParserPlugin['Config'] = {
-  dependencies: ['@hey-api/typescript'],
-  handler,
-  name: 'openapi-parser',
-  config: {},
-};
+const defaultConfig: OpenApiParserPlugin['Config'] = { dependencies: ['@hey-api/typescript'], handler, name: 'openapi-parser', config: {} };
 
 export const defineConfig = definePluginConfig(defaultConfig);

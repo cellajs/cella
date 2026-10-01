@@ -9,8 +9,7 @@ export const TITLE_MAX_LENGTH = 255;
 type LooseBlock = { type: string; props?: Record<string, unknown>; content?: unknown; children?: LooseBlock[] };
 
 /** True when a block renders nothing: no text, no children, and not a media/void block. */
-const isEmptyTextBlock = (block: LooseBlock): boolean =>
-  Array.isArray(block.content) && !getInlineTextFromBlock(block) && !block.children?.length;
+const isEmptyTextBlock = (block: LooseBlock): boolean => Array.isArray(block.content) && !getInlineTextFromBlock(block) && !block.children?.length;
 
 const titleBlock = (name: string, level: TitleLevel) =>
   ({
@@ -48,5 +47,4 @@ export const trimTitleDocument = (strBlocks: string): string => {
 };
 
 /** True when the document carries more than its title, so a create form can tell an empty body apart. */
-export const titleDocumentHasBody = (strBlocks: string): boolean =>
-  splitTitleBlocks(parseBlocks(strBlocks) ?? []).body.length > 0;
+export const titleDocumentHasBody = (strBlocks: string): boolean => splitTitleBlocks(parseBlocks(strBlocks) ?? []).body.length > 0;

@@ -12,10 +12,7 @@ import {
 } from 'sdk';
 import { queryClient } from '~/query/query-client';
 
-export const notificationKeys = {
-  list: ['me', 'notifications'] as const,
-  preferences: ['me', 'notification-preferences'] as const,
-};
+export const notificationKeys = { list: ['me', 'notifications'] as const, preferences: ['me', 'notification-preferences'] as const };
 
 /**
  * Reconciled query: the server response is authoritative and this key is what freshness signals
@@ -48,20 +45,13 @@ export const useMarkNotificationsRead = () =>
       };
 
       const items = previous.items.map((item) => (item.readAt || !shouldMark(item) ? item : { ...item, readAt }));
-      queryClient.setQueryData(notificationKeys.list, {
-        ...previous,
-        items,
-        unreadCount: items.filter((item) => !item.readAt).length,
-      });
+      queryClient.setQueryData(notificationKeys.list, { ...previous, items, unreadCount: items.filter((item) => !item.readAt).length });
     },
     onSettled: () => invalidateNotifications(),
   });
 
 export const notificationPreferencesQueryOptions = () =>
-  queryOptions({
-    queryKey: notificationKeys.preferences,
-    queryFn: () => getNotificationPreferences(),
-  });
+  queryOptions({ queryKey: notificationKeys.preferences, queryFn: () => getNotificationPreferences() });
 
 /** Partial update: the server merges per key, so an older tab cannot clobber a preference it never knew. */
 export const useUpdateNotificationPreferences = () =>

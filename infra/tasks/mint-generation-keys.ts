@@ -1,12 +1,5 @@
 import { writeFile } from 'node:fs/promises';
-import {
-  createApiKey,
-  deleteApiKey,
-  type IamAuth,
-  listApiKeys,
-  resolveApplicationIdByName,
-  type ScwApiKey,
-} from '../lib/scaleway/iam-client';
+import { createApiKey, deleteApiKey, type IamAuth, listApiKeys, resolveApplicationIdByName, type ScwApiKey } from '../lib/scaleway/iam-client';
 import { principalNames } from '../lib/scaleway/principals';
 import { createSecretManagerClient } from '../lib/scaleway/scaleway-secret-manager';
 import { handoffServicePath } from '../lib/scaleway/secret-paths';
@@ -47,34 +40,17 @@ export interface GenerationKeys {
 
 async function resolveAppId(auth: IamAuth, organizationId: string, name: string): Promise<string> {
   const id = await resolveApplicationIdByName(auth, organizationId, name);
-  if (!id)
-    throw new Error(`mint-generation-keys: IAM application '${name}' not found: run the pnpm infra setup first.`);
+  if (!id) throw new Error(`mint-generation-keys: IAM application '${name}' not found: run the pnpm infra setup first.`);
   return id;
 }
 
 /** Mint a fresh key on the app. Pruning runs separately, AFTER every handoff bundle is staged; see pruneStaleKeys. */
-async function mintKey(
-  auth: IamAuth,
-  projectId: string,
-  appId: string,
-  label: string,
-  sha: string,
-): Promise<ScwApiKey> {
-  return createApiKey(auth, {
-    applicationId: appId,
-    description: `${label} gen ${sha.slice(0, 10)}`,
-    defaultProjectId: projectId,
-  });
+async function mintKey(auth: IamAuth, projectId: string, appId: string, label: string, sha: string): Promise<ScwApiKey> {
+  return createApiKey(auth, { applicationId: appId, description: `${label} gen ${sha.slice(0, 10)}`, defaultProjectId: projectId });
 }
 
 /** Delete all but the newest KEYS_TO_KEEP keys on the app. */
-async function pruneStaleKeys(
-  auth: IamAuth,
-  organizationId: string,
-  appId: string,
-  label: string,
-  log: (msg: string) => void,
-): Promise<void> {
+async function pruneStaleKeys(auth: IamAuth, organizationId: string, appId: string, label: string, log: (msg: string) => void): Promise<void> {
   const apiKeys = await listApiKeys(auth, organizationId, appId);
   const byNewest = [...apiKeys].sort((a, b) => (b.created_at ?? '').localeCompare(a.created_at ?? ''));
   for (const stale of byNewest.slice(KEYS_TO_KEEP)) {
@@ -84,13 +60,7 @@ async function pruneStaleKeys(
 }
 
 /** Delete every key on a dormant principal: a registry service outside the deployed set has no VM to hand a key to, so any key on it is an unmonitored key. */
-async function purgeDormantKeys(
-  auth: IamAuth,
-  organizationId: string,
-  appId: string,
-  label: string,
-  log: (msg: string) => void,
-): Promise<void> {
+async function purgeDormantKeys(auth: IamAuth, organizationId: string, appId: string, label: string, log: (msg: string) => void): Promise<void> {
   for (const key of await listApiKeys(auth, organizationId, appId)) {
     await deleteApiKey(auth, key.access_key);
     log(`  ~ purged dormant ${label} key ${key.access_key}`);
@@ -110,11 +80,7 @@ export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promi
   const log = opts.log ?? ((msg: string) => console.info(msg));
   const auth: IamAuth = { secretKey: opts.callerSecretKey };
   const names = principalNames(opts.slug, opts.mode);
-  const client = createSecretManagerClient({
-    secretKey: opts.callerSecretKey,
-    region: opts.region,
-    projectId: opts.projectId,
-  });
+  const client = createSecretManagerClient({ secretKey: opts.callerSecretKey, region: opts.region, projectId: opts.projectId });
 
   // Resolve every app id first, so a missing principal fails before anything is minted or pruned.
   const bootAppId = await resolveAppId(auth, opts.organizationId, names.boot);
@@ -173,11 +139,7 @@ export async function mintGenerationKeys(opts: MintGenerationKeysOptions): Promi
     await purgeDormantKeys(auth, opts.organizationId, appId, appName, log);
   }
 
-  const result: GenerationKeys = {
-    bootAccessKey: bootKey.access_key,
-    bootSecretKey: bootKey.secret_key,
-    handoffSecretIds,
-  };
+  const result: GenerationKeys = { bootAccessKey: bootKey.access_key, bootSecretKey: bootKey.secret_key, handoffSecretIds };
   await writeFile(opts.outFile, JSON.stringify(result), { mode: 0o600 });
   return result;
 }

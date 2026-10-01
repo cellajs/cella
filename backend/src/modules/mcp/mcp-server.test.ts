@@ -22,8 +22,7 @@ const contextWith = (scopes: string[] | null) =>
 
 const { baseApp } = await import('#/routes');
 const appTools = buildMcpTools(baseApp);
-const handle = (scopes: string[] | null, message: JsonRpcMessage) =>
-  handleMcpMessage(contextWith(scopes), message, appTools);
+const handle = (scopes: string[] | null, message: JsonRpcMessage) => handleMcpMessage(contextWith(scopes), message, appTools);
 
 describe('mcp-server', () => {
   it('responds to initialize with protocol version, capabilities, and server info', async () => {
@@ -36,41 +35,20 @@ describe('mcp-server', () => {
   });
 
   it('echoes the client requested protocol version on initialize', async () => {
-    const res = await handle(null, {
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'initialize',
-      params: { protocolVersion: '2024-11-05' },
-    });
+    const res = await handle(null, { jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2024-11-05' } });
     const result = res?.result as Record<string, unknown>;
     expect(result.protocolVersion).toBe('2024-11-05');
   });
 
   it('lists the attachment tools with scope, annotations and a strict input schema', async () => {
-    const res = await handle(['attachment:read'], {
-      jsonrpc: '2.0',
-      id: 2,
-      method: 'tools/list',
-    });
+    const res = await handle(['attachment:read'], { jsonrpc: '2.0', id: 2, method: 'tools/list' });
     const { tools } = (res?.result ?? {}) as { tools: McpToolDescriptor[] };
     const names = tools.map((tool) => tool.name);
-    expect(names).toEqual(
-      expect.arrayContaining([
-        'getAttachments',
-        'getAttachment',
-        'createAttachments',
-        'updateAttachment',
-        'deleteAttachments',
-      ]),
-    );
+    expect(names).toEqual(expect.arrayContaining(['getAttachments', 'getAttachment', 'createAttachments', 'updateAttachment', 'deleteAttachments']));
     const byName = Object.fromEntries(tools.map((tool) => [tool.name, tool]));
     const properties = (name: string) => Object.keys((byName[name].inputSchema as { properties: object }).properties);
     expect(byName.updateAttachment._meta.scope).toBe('attachment:write');
-    expect(byName.updateAttachment.annotations).toMatchObject({
-      readOnlyHint: false,
-      destructiveHint: false,
-      idempotentHint: true,
-    });
+    expect(byName.updateAttachment.annotations).toMatchObject({ readOnlyHint: false, destructiveHint: false, idempotentHint: true });
     // Path params minus the route's own, plus the body without its sync transaction.
     expect(byName.updateAttachment.inputSchema).toMatchObject({ type: 'object', additionalProperties: false });
     expect(properties('updateAttachment')).toEqual(expect.arrayContaining(['id', 'ops']));
@@ -122,11 +100,7 @@ describe('mcp-server', () => {
         method: 'get',
         path: '/broken',
         xGuard: [publicGuard],
-        xTool: {
-          description: 'Fails',
-          approvalRequired: false,
-          entity: 'attachment',
-        },
+        xTool: { description: 'Fails', approvalRequired: false, entity: 'attachment' },
         summary: 'Broken query',
         responses: { 200: json('ok', z.any()) },
       }),
@@ -134,11 +108,7 @@ describe('mcp-server', () => {
         method: 'get',
         path: '/missing',
         xGuard: [publicGuard],
-        xTool: {
-          description: 'Fails',
-          approvalRequired: false,
-          entity: 'attachment',
-        },
+        xTool: { description: 'Fails', approvalRequired: false, entity: 'attachment' },
         summary: 'Missing thing',
         responses: { 200: json('ok', z.any()) },
       }),
@@ -155,11 +125,7 @@ describe('mcp-server', () => {
     const failingTools = buildMcpTools(app);
 
     const call = (name: string) =>
-      handleMcpMessage(
-        contextWith(null),
-        { jsonrpc: '2.0', id: 9, method: 'tools/call', params: { name } },
-        failingTools,
-      );
+      handleMcpMessage(contextWith(null), { jsonrpc: '2.0', id: 9, method: 'tools/call', params: { name } }, failingTools);
 
     it('must not leak SQL or query parameters to the model via a failing query', async () => {
       const res = await call('brokenQueryTool');

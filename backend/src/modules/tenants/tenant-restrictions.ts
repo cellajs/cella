@@ -31,13 +31,7 @@ export const defaultRestrictions = (): Restrictions => {
     return acc;
   }, {} as Quotas);
 
-  return {
-    quotas,
-    rateLimits: {
-      apiPointsPerHour: appConfig.defaultRestrictions.rateLimits.apiPointsPerHour,
-    },
-    allowUnregisteredClients: true,
-  };
+  return { quotas, rateLimits: { apiPointsPerHour: appConfig.defaultRestrictions.rateLimits.apiPointsPerHour }, allowUnregisteredClients: true };
 };
 
 /**
@@ -49,10 +43,7 @@ export function assertTenantQuota(ctx: ActorContext, key: QuotaKey, existing: nu
   const quota = ctx.var.tenant.restrictions.quotas[key];
   if (ctx.var.isSystemAdmin || quota === 0 || existing + adding <= quota) return;
   const isEntity = (appConfig.entityTypes as readonly string[]).includes(key);
-  throw new AppError(403, 'restrict_by_app', 'warn', {
-    ...(isEntity ? { entityType: key as EntityType } : {}),
-    meta: { resource: key, quota },
-  });
+  throw new AppError(403, 'restrict_by_app', 'warn', { ...(isEntity ? { entityType: key as EntityType } : {}), meta: { resource: key, quota } });
 }
 
 /** Merge stored restrictions with current defaults so stored rows gain missing fields. */

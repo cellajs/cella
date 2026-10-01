@@ -56,26 +56,14 @@ const streamEdges: {
 
 // Which nodes and edges participate in each mode. Edge keys are `${from}-${to}`.
 const modeConfig: Record<SyncMode, { nodes: NodeKey[]; edges: string[] }> = {
-  rest: {
-    nodes: ['database', 'api', 'client'],
-    edges: ['client-api', 'api-database'],
-  },
+  rest: { nodes: ['database', 'api', 'client'], edges: ['client-api', 'api-database'] },
   cdc: {
     nodes: ['database', 'api', 'cdc', 'client'],
     edges: ['client-api', 'api-database', 'cdc-database', 'database-cdc', 'cdc-api', 'api-client'],
   },
   yjs: {
     nodes: ['database', 'api', 'cdc', 'client', 'yjs'],
-    edges: [
-      'client-api',
-      'api-database',
-      'cdc-database',
-      'database-cdc',
-      'cdc-api',
-      'api-client',
-      'client-yjs',
-      'yjs-database',
-    ],
+    edges: ['client-api', 'api-database', 'cdc-database', 'database-cdc', 'cdc-api', 'api-client', 'client-yjs', 'yjs-database'],
   },
 };
 
@@ -114,10 +102,7 @@ const buildTimeline = (lead: number) => {
 
   // `draw` lines are stroked along their trajectory; the rest fade in.
   const edgeAnim: Record<SyncMode, Record<string, EdgeTiming>> = {
-    rest: {
-      'client-api': { delay: 0, duration: ANIM.fade, draw: false },
-      'api-database': { delay: 0, duration: ANIM.fade, draw: false },
-    },
+    rest: { 'client-api': { delay: 0, duration: ANIM.fade, draw: false }, 'api-database': { delay: 0, duration: ANIM.fade, draw: false } },
     cdc: {
       'client-api': { delay: 0, duration: ANIM.fade, draw: false },
       'api-database': { delay: 0, duration: ANIM.fade, draw: false },
@@ -159,9 +144,7 @@ export function SyncDiagram() {
   const activeEdges = modeConfig[mode].edges;
   // Only edges a part introduces get moving dashes; earlier lines stay static.
   const prevMode = (['rest', 'cdc', 'yjs'] as const)[(['rest', 'cdc', 'yjs'] as const).indexOf(mode) - 1];
-  const introducedEdges = new Set(
-    activeEdges.filter((edge) => !prevMode || !modeConfig[prevMode].edges.includes(edge)),
-  );
+  const introducedEdges = new Set(activeEdges.filter((edge) => !prevMode || !modeConfig[prevMode].edges.includes(edge)));
   const [lead, setLead] = useState<number>(ANIM.hold);
   // Edge whose label is revealed on hover (inherited labels are hidden until hovered/near).
   const [hovered, setHovered] = useState<string | null>(null);
@@ -211,10 +194,7 @@ export function SyncDiagram() {
         const box = boxRefs.current[key];
         if (!box) continue;
         const bRect = box.getBoundingClientRect();
-        centers[key] = {
-          x: bRect.left + bRect.width / 2 - cRect.left,
-          y: bRect.top + bRect.height / 2 - cRect.top,
-        };
+        centers[key] = { x: bRect.left + bRect.width / 2 - cRect.left, y: bRect.top + bRect.height / 2 - cRect.top };
         // Trim to the box's corner radius so diagonal lines clear it too.
         radii[key] = Math.hypot(bRect.width, bRect.height) / 2 + EDGE_PADDING;
       }
@@ -252,10 +232,7 @@ export function SyncDiagram() {
     const dx = line.x2 - line.x1;
     const dy = line.y2 - line.y1;
     const len = Math.hypot(dx, dy) || 1;
-    return {
-      x: (line.x1 + line.x2) / 2 + (-dy / len) * offset,
-      y: (line.y1 + line.y2) / 2 + (dx / len) * offset,
-    };
+    return { x: (line.x1 + line.x2) / 2 + (-dy / len) * offset, y: (line.y1 + line.y2) / 2 + (dx / len) * offset };
   };
 
   return (
@@ -265,10 +242,7 @@ export function SyncDiagram() {
         {hint && (
           <div className="absolute top-1/2 right-full mr-3 flex -translate-y-1/2 items-center gap-1 whitespace-nowrap text-muted-foreground max-sm:hidden">
             {t('about:try_me')}
-            <motion.span
-              animate={{ x: [0, 4, 0] }}
-              transition={{ repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut', duration: 1 }}
-            >
+            <motion.span animate={{ x: [0, 4, 0] }} transition={{ repeat: Number.POSITIVE_INFINITY, ease: 'easeInOut', duration: 1 }}>
               <ArrowRightIcon />
             </motion.span>
           </div>
@@ -296,11 +270,7 @@ export function SyncDiagram() {
           transition={{ duration: 0.25, ease: 'easeInOut' }}
           className="mx-auto mb-4 max-w-2xl font-light text-muted-foreground text-sm sm:text-center"
         >
-          <Trans
-            t={t}
-            i18nKey={modeText[mode].text as never}
-            components={{ strong: <strong className="font-normal text-foreground" /> }}
-          />
+          <Trans t={t} i18nKey={modeText[mode].text as never} components={{ strong: <strong className="font-normal text-foreground" /> }} />
         </motion.p>
       </AnimatePresence>
 
@@ -322,124 +292,89 @@ export function SyncDiagram() {
       >
         {/* SVG overlay drawn in real pixel space and re-measured on resize. */}
         {geom && (
-          <svg
-            className="absolute inset-0 h-full w-full"
-            viewBox={`0 0 ${geom.width} ${geom.height}`}
-            aria-hidden="true"
-          >
+          <svg className="absolute inset-0 h-full w-full" viewBox={`0 0 ${geom.width} ${geom.height}`} aria-hidden="true">
             <title>Cella sync engine data flow</title>
 
             <g>
               <defs>
-                <marker
-                  id="request-arrow"
-                  viewBox="0 0 10 10"
-                  refX="8"
-                  refY="5"
-                  markerWidth="5"
-                  markerHeight="5"
-                  orient="auto-start-reverse"
-                >
+                <marker id="request-arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
                   <path d="M 0 0 L 10 5 L 0 10 z" fill="#9ca3af" />
                 </marker>
-                <marker
-                  id="request-arrow-primary"
-                  viewBox="0 0 10 10"
-                  refX="8"
-                  refY="5"
-                  markerWidth="5"
-                  markerHeight="5"
-                  orient="auto-start-reverse"
-                >
+                <marker id="request-arrow-primary" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
                   <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--primary)" />
                 </marker>
               </defs>
-              {requestEdges.map(
-                ({ from, to, label, label2, offset, labelOffset, oneWay, bidirectional, stroke = '#9ca3af' }) => {
-                  const key = `${from}-${to}`;
-                  if (!activeEdges.includes(key)) return null;
-                  const line = trimmedLine(from, to, offset);
-                  if (!line) return null;
-                  const anim = edgeAnim[mode][key] ?? fallbackAnim;
-                  const lp = label ? labelPos(line, labelOffset) : null;
-                  const lp2 = label2 ? labelPos(line, -(labelOffset ?? 12)) : null;
-                  const showEnd = !anim.draw || drawn[key];
-                  const delay = startDelay(anim.delay, drawn[key]);
-                  const labelDelay = delay + (anim.draw ? anim.duration : 0);
-                  const markerId = stroke === '#9ca3af' ? 'request-arrow' : 'request-arrow-primary';
-                  const relevant = introducedEdges.has(key);
-                  const showLabel = relevant || hovered === key || showAllLabels;
-                  return (
-                    <g
-                      key={key}
-                      onMouseEnter={() => setHovered(key)}
-                      onMouseLeave={() => setHovered((h) => (h === key ? null : h))}
-                    >
-                      <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={20} />
-                      <motion.line
-                        x1={line.x1}
-                        y1={line.y1}
-                        x2={line.x2}
-                        y2={line.y2}
-                        stroke={stroke}
-                        strokeWidth={2}
-                        strokeLinecap="round"
-                        markerStart={
-                          bidirectional
-                            ? showEnd
-                              ? `url(#${markerId})`
-                              : undefined
-                            : oneWay || anim.draw
-                              ? undefined
-                              : `url(#${markerId})`
-                        }
-                        markerEnd={showEnd ? `url(#${markerId})` : undefined}
-                        initial={anim.draw ? { pathLength: 0, opacity: 0 } : { opacity: 0 }}
-                        animate={anim.draw ? { pathLength: 1, opacity: 1 } : { opacity: 1 }}
-                        transition={
-                          anim.draw
-                            ? {
-                                pathLength: { delay, duration: anim.duration, ease: 'easeInOut' },
-                                opacity: { delay, duration: 0.001 },
-                              }
-                            : { delay, duration: anim.duration, ease: 'easeInOut' }
-                        }
-                        onAnimationComplete={anim.draw ? () => setDrawn((d) => ({ ...d, [key]: true })) : undefined}
-                      />
-                      {lp && (
-                        <motion.text
-                          x={lp.x}
-                          y={lp.y}
-                          fill={stroke}
-                          fontSize={11}
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: showLabel ? 1 : 0 }}
-                          transition={{ delay: relevant ? labelDelay : 0, duration: 0.3 }}
-                        >
-                          {label}
-                        </motion.text>
-                      )}
-                      {lp2 && (
-                        <motion.text
-                          x={lp2.x}
-                          y={lp2.y}
-                          fill={stroke}
-                          fontSize={11}
-                          textAnchor="middle"
-                          dominantBaseline="middle"
-                          initial={{ opacity: 0 }}
-                          animate={{ opacity: showLabel ? 1 : 0 }}
-                          transition={{ delay: relevant ? labelDelay : 0, duration: 0.3 }}
-                        >
-                          {label2}
-                        </motion.text>
-                      )}
-                    </g>
-                  );
-                },
-              )}
+              {requestEdges.map(({ from, to, label, label2, offset, labelOffset, oneWay, bidirectional, stroke = '#9ca3af' }) => {
+                const key = `${from}-${to}`;
+                if (!activeEdges.includes(key)) return null;
+                const line = trimmedLine(from, to, offset);
+                if (!line) return null;
+                const anim = edgeAnim[mode][key] ?? fallbackAnim;
+                const lp = label ? labelPos(line, labelOffset) : null;
+                const lp2 = label2 ? labelPos(line, -(labelOffset ?? 12)) : null;
+                const showEnd = !anim.draw || drawn[key];
+                const delay = startDelay(anim.delay, drawn[key]);
+                const labelDelay = delay + (anim.draw ? anim.duration : 0);
+                const markerId = stroke === '#9ca3af' ? 'request-arrow' : 'request-arrow-primary';
+                const relevant = introducedEdges.has(key);
+                const showLabel = relevant || hovered === key || showAllLabels;
+                return (
+                  <g key={key} onMouseEnter={() => setHovered(key)} onMouseLeave={() => setHovered((h) => (h === key ? null : h))}>
+                    <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={20} />
+                    <motion.line
+                      x1={line.x1}
+                      y1={line.y1}
+                      x2={line.x2}
+                      y2={line.y2}
+                      stroke={stroke}
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      markerStart={
+                        bidirectional ? (showEnd ? `url(#${markerId})` : undefined) : oneWay || anim.draw ? undefined : `url(#${markerId})`
+                      }
+                      markerEnd={showEnd ? `url(#${markerId})` : undefined}
+                      initial={anim.draw ? { pathLength: 0, opacity: 0 } : { opacity: 0 }}
+                      animate={anim.draw ? { pathLength: 1, opacity: 1 } : { opacity: 1 }}
+                      transition={
+                        anim.draw
+                          ? { pathLength: { delay, duration: anim.duration, ease: 'easeInOut' }, opacity: { delay, duration: 0.001 } }
+                          : { delay, duration: anim.duration, ease: 'easeInOut' }
+                      }
+                      onAnimationComplete={anim.draw ? () => setDrawn((d) => ({ ...d, [key]: true })) : undefined}
+                    />
+                    {lp && (
+                      <motion.text
+                        x={lp.x}
+                        y={lp.y}
+                        fill={stroke}
+                        fontSize={11}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: showLabel ? 1 : 0 }}
+                        transition={{ delay: relevant ? labelDelay : 0, duration: 0.3 }}
+                      >
+                        {label}
+                      </motion.text>
+                    )}
+                    {lp2 && (
+                      <motion.text
+                        x={lp2.x}
+                        y={lp2.y}
+                        fill={stroke}
+                        fontSize={11}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: showLabel ? 1 : 0 }}
+                        transition={{ delay: relevant ? labelDelay : 0, duration: 0.3 }}
+                      >
+                        {label2}
+                      </motion.text>
+                    )}
+                  </g>
+                );
+              })}
             </g>
 
             <defs>
@@ -458,93 +393,87 @@ export function SyncDiagram() {
                 </marker>
               ))}
             </defs>
-            {streamEdges.map(
-              ({ from, to, stroke, label, label2, labelOffset, label2Offset, offset, bidirectional }) => {
-                const key = `${from}-${to}`;
-                if (!activeEdges.includes(key)) return null;
-                const line = trimmedLine(from, to, offset);
-                if (!line) return null;
-                const anim = edgeAnim[mode][key] ?? fallbackAnim;
-                const lp = labelPos(line, labelOffset);
-                const lp2 = label2 ? labelPos(line, -(label2Offset ?? labelOffset ?? 12)) : null;
-                const delay = startDelay(anim.delay, drawn[key]);
-                const labelDelay = delay + anim.duration;
-                const animateDashes = introducedEdges.has(key);
-                const showLabel = animateDashes || hovered === key || showAllLabels;
-                // Bidirectional streams split into two collinear halves with a center gap, dashes flowing outward.
-                const flowLanes = (() => {
-                  if (!bidirectional) return [{ seg: line, dir: -10, lane: 'flow' }];
-                  const dx = line.x2 - line.x1;
-                  const dy = line.y2 - line.y1;
-                  const len = Math.hypot(dx, dy) || 1;
-                  const ux = dx / len;
-                  const uy = dy / len;
-                  const gap = 3;
-                  const mx = (line.x1 + line.x2) / 2;
-                  const my = (line.y1 + line.y2) / 2;
-                  return [
-                    {
-                      seg: { x1: mx + ux * gap, y1: my + uy * gap, x2: line.x2, y2: line.y2 },
-                      dir: -10,
-                      lane: 'fwd',
-                    },
-                    {
-                      seg: { x1: mx - ux * gap, y1: my - uy * gap, x2: line.x1, y2: line.y1 },
-                      dir: -10,
-                      lane: 'rev',
-                    },
-                  ];
-                })();
-                return (
-                  <g
-                    key={key}
-                    onMouseEnter={() => setHovered(key)}
-                    onMouseLeave={() => setHovered((h) => (h === key ? null : h))}
-                  >
-                    <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={20} />
-                    {drawn[key] ? (
-                      flowLanes.map(({ seg, dir, lane }) => (
-                        <motion.line
-                          key={`${key}-${lane}`}
-                          x1={seg.x1}
-                          y1={seg.y1}
-                          x2={seg.x2}
-                          y2={seg.y2}
-                          stroke={stroke}
-                          strokeWidth={2}
-                          strokeLinecap="round"
-                          strokeDasharray="5 5"
-                          markerEnd={`url(#stream-arrow-${from}-${to})`}
-                          animate={{ strokeDashoffset: animateDashes ? [0, dir] : 0 }}
-                          transition={
-                            animateDashes
-                              ? { repeat: Number.POSITIVE_INFINITY, ease: 'linear', duration: 0.6 }
-                              : { duration: 0 }
-                          }
-                        />
-                      ))
-                    ) : (
+            {streamEdges.map(({ from, to, stroke, label, label2, labelOffset, label2Offset, offset, bidirectional }) => {
+              const key = `${from}-${to}`;
+              if (!activeEdges.includes(key)) return null;
+              const line = trimmedLine(from, to, offset);
+              if (!line) return null;
+              const anim = edgeAnim[mode][key] ?? fallbackAnim;
+              const lp = labelPos(line, labelOffset);
+              const lp2 = label2 ? labelPos(line, -(label2Offset ?? labelOffset ?? 12)) : null;
+              const delay = startDelay(anim.delay, drawn[key]);
+              const labelDelay = delay + anim.duration;
+              const animateDashes = introducedEdges.has(key);
+              const showLabel = animateDashes || hovered === key || showAllLabels;
+              // Bidirectional streams split into two collinear halves with a center gap, dashes flowing outward.
+              const flowLanes = (() => {
+                if (!bidirectional) return [{ seg: line, dir: -10, lane: 'flow' }];
+                const dx = line.x2 - line.x1;
+                const dy = line.y2 - line.y1;
+                const len = Math.hypot(dx, dy) || 1;
+                const ux = dx / len;
+                const uy = dy / len;
+                const gap = 3;
+                const mx = (line.x1 + line.x2) / 2;
+                const my = (line.y1 + line.y2) / 2;
+                return [
+                  { seg: { x1: mx + ux * gap, y1: my + uy * gap, x2: line.x2, y2: line.y2 }, dir: -10, lane: 'fwd' },
+                  { seg: { x1: mx - ux * gap, y1: my - uy * gap, x2: line.x1, y2: line.y1 }, dir: -10, lane: 'rev' },
+                ];
+              })();
+              return (
+                <g key={key} onMouseEnter={() => setHovered(key)} onMouseLeave={() => setHovered((h) => (h === key ? null : h))}>
+                  <line x1={line.x1} y1={line.y1} x2={line.x2} y2={line.y2} stroke="transparent" strokeWidth={20} />
+                  {drawn[key] ? (
+                    flowLanes.map(({ seg, dir, lane }) => (
                       <motion.line
-                        key={`${key}-draw`}
-                        x1={line.x1}
-                        y1={line.y1}
-                        x2={line.x2}
-                        y2={line.y2}
+                        key={`${key}-${lane}`}
+                        x1={seg.x1}
+                        y1={seg.y1}
+                        x2={seg.x2}
+                        y2={seg.y2}
                         stroke={stroke}
                         strokeWidth={2}
                         strokeLinecap="round"
-                        initial={{ pathLength: 0, opacity: 0 }}
-                        animate={{ pathLength: 1, opacity: 1 }}
-                        transition={{
-                          pathLength: { delay, duration: anim.duration, ease: 'easeInOut' },
-                          opacity: { delay, duration: 0.001 },
-                        }}
-                        onAnimationComplete={() => setDrawn((d) => ({ ...d, [key]: true }))}
+                        strokeDasharray="5 5"
+                        markerEnd={`url(#stream-arrow-${from}-${to})`}
+                        animate={{ strokeDashoffset: animateDashes ? [0, dir] : 0 }}
+                        transition={animateDashes ? { repeat: Number.POSITIVE_INFINITY, ease: 'linear', duration: 0.6 } : { duration: 0 }}
                       />
-                    )}
+                    ))
+                  ) : (
+                    <motion.line
+                      key={`${key}-draw`}
+                      x1={line.x1}
+                      y1={line.y1}
+                      x2={line.x2}
+                      y2={line.y2}
+                      stroke={stroke}
+                      strokeWidth={2}
+                      strokeLinecap="round"
+                      initial={{ pathLength: 0, opacity: 0 }}
+                      animate={{ pathLength: 1, opacity: 1 }}
+                      transition={{ pathLength: { delay, duration: anim.duration, ease: 'easeInOut' }, opacity: { delay, duration: 0.001 } }}
+                      onAnimationComplete={() => setDrawn((d) => ({ ...d, [key]: true }))}
+                    />
+                  )}
+                  <motion.text
+                    x={lp.x}
+                    y={lp.y}
+                    fill={stroke}
+                    fontSize={11}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: showLabel ? 1 : 0 }}
+                    transition={{ delay: animateDashes ? labelDelay : 0, duration: 0.3 }}
+                  >
+                    {label}
+                  </motion.text>
+                  {lp2 && (
                     <motion.text
-                      x={lp.x}
-                      y={lp.y}
+                      x={lp2.x}
+                      y={lp2.y}
                       fill={stroke}
                       fontSize={11}
                       textAnchor="middle"
@@ -553,27 +482,12 @@ export function SyncDiagram() {
                       animate={{ opacity: showLabel ? 1 : 0 }}
                       transition={{ delay: animateDashes ? labelDelay : 0, duration: 0.3 }}
                     >
-                      {label}
+                      {label2}
                     </motion.text>
-                    {lp2 && (
-                      <motion.text
-                        x={lp2.x}
-                        y={lp2.y}
-                        fill={stroke}
-                        fontSize={11}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: showLabel ? 1 : 0 }}
-                        transition={{ delay: animateDashes ? labelDelay : 0, duration: 0.3 }}
-                      >
-                        {label2}
-                      </motion.text>
-                    )}
-                  </g>
-                );
-              },
-            )}
+                  )}
+                </g>
+              );
+            })}
           </svg>
         )}
 
@@ -587,10 +501,7 @@ export function SyncDiagram() {
               style={{ left: `${x}%`, top: `${y}%` }}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{
-                delay: startDelay(nodeDelay[mode][key as NodeKey] ?? 0),
-                duration: isLastNode ? ANIM.cdcIn : ANIM.fade,
-              }}
+              transition={{ delay: startDelay(nodeDelay[mode][key as NodeKey] ?? 0), duration: isLastNode ? ANIM.cdcIn : ANIM.fade }}
             >
               <div
                 ref={(el) => {

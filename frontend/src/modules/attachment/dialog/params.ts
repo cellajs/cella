@@ -21,11 +21,7 @@ export const attachmentDialogContentClassName = 'relative -z-1 flex h-dvh grow f
 export const attachmentDialogStageClassName = 'pt-12 sm:pb-14';
 
 export function openAttachmentDialogSearch(attachmentId: string, groupId?: string | null) {
-  return (prev: Record<string, unknown>) => ({
-    ...prev,
-    [ATTACHMENT_DIALOG_PARAM]: attachmentId,
-    groupId: groupId || undefined,
-  });
+  return (prev: Record<string, unknown>) => ({ ...prev, [ATTACHMENT_DIALOG_PARAM]: attachmentId, groupId: groupId || undefined });
 }
 
 export function clearAttachmentDialogSearch(prev: Record<string, unknown>) {
@@ -36,19 +32,10 @@ export function clearAttachmentDialogSearch(prev: Record<string, unknown>) {
 
 /** Clears the dialog search params through the router instance, where `to: '.'` resolves against the current location. */
 export const clearAttachmentDialogSearchParams = () => {
-  getRouter().navigate({
-    to: '.',
-    replace: true,
-    resetScroll: false,
-    search: clearAttachmentDialogSearch,
-  });
+  getRouter().navigate({ to: '.', replace: true, resetScroll: false, search: clearAttachmentDialogSearch });
 };
 
 /** Dialoger options shared by both entry points. */
 export function attachmentDialogOptions(overrides: DialogData): DialogData {
-  return {
-    drawerOnMobile: false,
-    className: attachmentDialogClassName,
-    ...overrides,
-  };
+  return { drawerOnMobile: false, className: attachmentDialogClassName, ...overrides };
 }

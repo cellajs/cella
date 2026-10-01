@@ -10,18 +10,12 @@ describe('memberListQuerySchema', () => {
   const baseQuery = { entityId: firstId, entityType: 'organization' as const };
 
   it('parses a bounded comma-separated UUID list once at the request boundary', () => {
-    expect(memberListQuerySchema.parse({ ...baseQuery, userIds: `${firstId}, ${secondId}` }).userIds).toEqual([
-      firstId,
-      secondId,
-    ]);
+    expect(memberListQuerySchema.parse({ ...baseQuery, userIds: `${firstId}, ${secondId}` }).userIds).toEqual([firstId, secondId]);
   });
 
-  it.each(['', 'not-an-id', `${firstId},`, Array.from({ length: 51 }, () => firstId).join(',')])(
-    'rejects invalid member ID list %s',
-    (userIds) => {
-      expect(memberListQuerySchema.safeParse({ ...baseQuery, userIds }).success).toBe(false);
-    },
-  );
+  it.each(['', 'not-an-id', `${firstId},`, Array.from({ length: 51 }, () => firstId).join(',')])('rejects invalid member ID list %s', (userIds) => {
+    expect(memberListQuerySchema.safeParse({ ...baseQuery, userIds }).success).toBe(false);
+  });
 });
 
 describe('sendNewsletterBodySchema', () => {

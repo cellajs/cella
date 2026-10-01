@@ -18,16 +18,10 @@ describe('board-store panel orders', () => {
     useBoardStore.getState().setPanelOrder(boardId, 'explainer', 100);
     useBoardStore.getState().setPanelOrder(boardId, 'ai-chat', 200);
 
-    expect(useBoardStore.getState().boardPanelOrders[boardId]).toEqual({
-      explainer: 100,
-      'ai-chat': 200,
-    });
+    expect(useBoardStore.getState().boardPanelOrders[boardId]).toEqual({ explainer: 100, 'ai-chat': 200 });
 
     useBoardStore.getState().setPanelOrder(boardId, 'explainer', 150);
-    expect(useBoardStore.getState().boardPanelOrders[boardId]).toEqual({
-      explainer: 150,
-      'ai-chat': 200,
-    });
+    expect(useBoardStore.getState().boardPanelOrders[boardId]).toEqual({ explainer: 150, 'ai-chat': 200 });
   });
 
   it('does not rewrite state when displayOrder is unchanged', () => {
@@ -48,10 +42,7 @@ describe('board-store panel orders', () => {
 
     useBoardStore.getState().prunePanelOrders(boardId, ['explainer', 'ai-chat']);
 
-    expect(useBoardStore.getState().boardPanelOrders[boardId]).toEqual({
-      explainer: 100,
-      'ai-chat': 200,
-    });
+    expect(useBoardStore.getState().boardPanelOrders[boardId]).toEqual({ explainer: 100, 'ai-chat': 200 });
   });
 
   it('is a no-op when nothing is stale', () => {

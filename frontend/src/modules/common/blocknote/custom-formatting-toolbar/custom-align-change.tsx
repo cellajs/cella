@@ -12,11 +12,7 @@ export function CustomTextAlignSelect() {
   return (
     <Components.Generic.Menu.Root portalElement={portalElement}>
       <Components.Generic.Menu.Trigger>
-        <Components.FormattingToolbar.Button
-          className="bn-dropdown-button"
-          label="Text align select"
-          mainTooltip="Select text align"
-        >
+        <Components.FormattingToolbar.Button className="bn-dropdown-button" label="Text align select" mainTooltip="Select text align">
           <MoveHorizontalIcon className="icon-lg" />
           <ChevronDownIcon className="icon-sm" />
         </Components.FormattingToolbar.Button>

@@ -5,9 +5,7 @@ export type ResourceRef = { face: 'mcp'; tenantId: string; organizationId: strin
 
 /** RFC 8707 resource identifiers are tenant-qualified (D7), so a token never crosses tenants. */
 export function resourceUri(ref: ResourceRef): string {
-  return ref.face === 'mcp'
-    ? `${appConfig.mcpUrl}/${ref.tenantId}/${ref.organizationId}/mcp`
-    : `${appConfig.backendUrl}/t/${ref.tenantId}`;
+  return ref.face === 'mcp' ? `${appConfig.mcpUrl}/${ref.tenantId}/${ref.organizationId}/mcp` : `${appConfig.backendUrl}/t/${ref.tenantId}`;
 }
 
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

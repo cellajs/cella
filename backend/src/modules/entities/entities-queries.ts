@@ -51,9 +51,7 @@ export const getChannelCountsSelect = (entityType: ChannelEntityType) => {
   const entityJsonPairs = children.map((entity) => `'${entity}', ${jsonbIntRaw(col, `e:c:${entity}`)}`).join(', ');
 
   // Home-only twin of `entities` from the `e:c:h:` keys: rows homed directly at the channel, no descendant rollup.
-  const entitySelfJsonPairs = children
-    .map((entity) => `'${entity}', ${jsonbIntRaw(col, `e:c:h:${entity}`)}`)
-    .join(', ');
+  const entitySelfJsonPairs = children.map((entity) => `'${entity}', ${jsonbIntRaw(col, `e:c:h:${entity}`)}`).join(', ');
 
   // Product descendants only: { attachment: { created: epochMs | null, updated: epochMs | null }, ... }
   const activityJsonPairs = productChildren
@@ -97,8 +95,7 @@ export const findProductViewCount = async (ctx: DbContext, { productId }: FindPr
 };
 
 /** Pair with {@link productViewCountJoin}. */
-export const productViewCountSelect = () =>
-  sql<number>`coalesce(${productCountersTable.viewCount}, 0)`.as('view_count');
+export const productViewCountSelect = () => sql<number>`coalesce(${productCountersTable.viewCount}, 0)`.as('view_count');
 
 export const productViewCountJoin = (productIdColumn: AnyColumn) => eq(productCountersTable.productId, productIdColumn);
 
@@ -112,19 +109,14 @@ export const getChannelCounts = async (ctx: DbContext, { entityType, entityId }:
   const { db } = ctx.var;
   const { countsSelect } = getChannelCountsSelect(entityType);
 
-  const [counts] = await db
-    .select(countsSelect)
-    .from(channelCountersTable)
-    .where(eq(channelCountersTable.channelKey, entityId));
+  const [counts] = await db.select(countsSelect).from(channelCountersTable).where(eq(channelCountersTable.channelKey, entityId));
 
   // No row yet: activity stamps stay null until a first post.
   if (!counts) {
     const descendants = hierarchy.getOrderedDescendants(entityType);
     const zeroMembership = Object.fromEntries([...roles.all.map((r) => [r, 0]), ['pending', 0], ['total', 0]]);
     const zeroEntities = Object.fromEntries(descendants.map((e) => [e, 0]));
-    const nullActivity = Object.fromEntries(
-      descendants.filter((e) => isProduct(e)).map((e) => [e, { created: null, updated: null }]),
-    );
+    const nullActivity = Object.fromEntries(descendants.filter((e) => isProduct(e)).map((e) => [e, { created: null, updated: null }]));
     return {
       membership: zeroMembership as z.infer<typeof membershipCountSchema>,
       entities: zeroEntities as Record<string, number>,
@@ -145,19 +137,13 @@ interface GetOrganizationEntityCountOpts {
  * Reads `e:c:{entityType}` from the org's counter row. Draft-lifecycle tables fall back to a
  * direct COUNT including drafts, since that counter tracks published rows only.
  */
-export const getOrganizationEntityCount = async (
-  ctx: DbContext,
-  { organizationId, entityType }: GetOrganizationEntityCountOpts,
-) => {
+export const getOrganizationEntityCount = async (ctx: DbContext, { organizationId, entityType }: GetOrganizationEntityCountOpts) => {
   const { db } = ctx.var;
 
   const table = isProduct(entityType) ? getEntityTable(entityType) : null;
   if (table && hasPublishedAt(table)) {
     const deletedFilter = hasDeletedAt(table) ? sql.raw(' AND deleted_at IS NULL') : sql.raw('');
-    const [row] = await db
-      .select({ count: count() })
-      .from(table)
-      .where(sql`organization_id = ${organizationId}${deletedFilter}`);
+    const [row] = await db.select({ count: count() }).from(table).where(sql`organization_id = ${organizationId}${deletedFilter}`);
     return row?.count ?? 0;
   }
 
@@ -176,10 +162,7 @@ interface FindLatestUserActivityIdOpts {
   entityTypes: SharedEntityType[];
 }
 
-export const findLatestUserActivityId = async (
-  ctx: DbContext,
-  { organizationIds, entityTypes }: FindLatestUserActivityIdOpts,
-) => {
+export const findLatestUserActivityId = async (ctx: DbContext, { organizationIds, entityTypes }: FindLatestUserActivityIdOpts) => {
   const { db } = ctx.var;
   const result = await db
     .select({ id: activitiesTable.id })
@@ -252,8 +235,7 @@ export async function resolveEntities<T extends EntityType>(
 }
 
 /** Drafts are outside the sync engine, so their seq bumps must not yield ids to sync back. */
-const publishedSqlFilter = (table: ResolvableTable) =>
-  hasPublishedAt(table) ? sql.raw(' AND published_at IS NOT NULL') : sql.raw('');
+const publishedSqlFilter = (table: ResolvableTable) => (hasPublishedAt(table) ? sql.raw(' AND published_at IS NOT NULL') : sql.raw(''));
 
 interface FindChangedEntityIdsOpts {
   entityType: EntityType;
@@ -261,10 +243,7 @@ interface FindChangedEntityIdsOpts {
   afterSeq: number;
 }
 
-export const findChangedEntityIds = async (
-  ctx: DbContext,
-  { entityType, organizationId, afterSeq }: FindChangedEntityIdsOpts,
-) => {
+export const findChangedEntityIds = async (ctx: DbContext, { entityType, organizationId, afterSeq }: FindChangedEntityIdsOpts) => {
   const { db } = ctx.var;
   const table = getEntityTable(entityType);
 
@@ -277,10 +256,7 @@ export const findChangedEntityIds = async (
 };
 
 /** Split into live updates and soft-delete tombstones. */
-export const findChangedEntityDeltaIds = async (
-  ctx: DbContext,
-  { entityType, organizationId, afterSeq }: FindChangedEntityIdsOpts,
-) => {
+export const findChangedEntityDeltaIds = async (ctx: DbContext, { entityType, organizationId, afterSeq }: FindChangedEntityIdsOpts) => {
   const { db } = ctx.var;
   const table = getEntityTable(entityType);
   const deletedAtSelect = hasDeletedAt(table) ? sql.raw('deleted_at') : sql.raw('NULL');

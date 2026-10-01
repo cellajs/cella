@@ -17,10 +17,10 @@ interface UpsertLastStartedOpts {
 /** Upsert the lastStartedAt counter for a user (avoids CDC noise on users table). */
 export const upsertLastStarted = async (ctx: UserContext, { lastStartedAt }: UpsertLastStartedOpts) => {
   const { db, userId } = ctx.var;
-  return db.insert(userCountersTable).values({ userId, lastStartedAt }).onConflictDoUpdate({
-    target: userCountersTable.userId,
-    set: { lastStartedAt },
-  });
+  return db
+    .insert(userCountersTable)
+    .values({ userId, lastStartedAt })
+    .onConflictDoUpdate({ target: userCountersTable.userId, set: { lastStartedAt } });
 };
 
 /** Select a user by ID with activity timestamps (from user_counters). */
@@ -50,12 +50,7 @@ export const updateMe = async (ctx: UserContext, { values }: UpdateMeOpts) => {
   const { db, userId } = ctx.var;
   const { userFlags, ...rest } = values;
 
-  const updateData = {
-    ...rest,
-    ...(userFlags && {
-      userFlags: sql`${usersTable.userFlags} || ${JSON.stringify(userFlags)}::jsonb`,
-    }),
-  };
+  const updateData = { ...rest, ...(userFlags && { userFlags: sql`${usersTable.userFlags} || ${JSON.stringify(userFlags)}::jsonb` }) };
 
   return db.update(usersTable).set(updateData).where(eq(usersTable.id, userId));
 };
@@ -66,9 +61,7 @@ interface DeleteMyMembershipOpts {
 
 export const deleteMyMembership = async (ctx: UserContext, { channelId }: DeleteMyMembershipOpts) => {
   const { db, userId } = ctx.var;
-  return db
-    .delete(membershipsTable)
-    .where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.channelId, channelId)));
+  return db.delete(membershipsTable).where(and(eq(membershipsTable.userId, userId), eq(membershipsTable.channelId, channelId)));
 };
 
 interface FindPendingInvitationsOpts {
@@ -85,10 +78,7 @@ export const findPendingInvitations = async (ctx: DbContext, { userId }: FindPen
       const channelBaseSelect = pick(cols, keys);
 
       return db
-        .select({
-          entity: channelBaseSelect,
-          inactiveMembership: inactiveMembershipsTable,
-        })
+        .select({ entity: channelBaseSelect, inactiveMembership: inactiveMembershipsTable })
         .from(inactiveMembershipsTable)
         .innerJoin(entityTable, eq(entityTable.id, inactiveMembershipsTable.channelId))
         .where(

@@ -3,9 +3,7 @@ import type { LockInfo, S3Like } from '../../lib/stack/control-store';
 
 /** Stateful single-object S3 fake honouring If-None-Match / If-Match, the conditional writes the stack lock and control object rely on. */
 export function makeLockS3(initial?: LockInfo) {
-  let obj: { body: string; etag: string } | undefined = initial
-    ? { body: JSON.stringify(initial), etag: '"e1"' }
-    : undefined;
+  let obj: { body: string; etag: string } | undefined = initial ? { body: JSON.stringify(initial), etag: '"e1"' } : undefined;
   let counter = 1;
   const fail412 = () => Object.assign(new Error('PreconditionFailed'), { name: 'PreconditionFailed' });
   const send = vi.fn(async (cmd: { constructor: { name: string }; input: Record<string, string> }) => {

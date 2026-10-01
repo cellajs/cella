@@ -30,18 +30,11 @@ describe('removePendingMutations: preserves active updates for scope serializati
     });
     cleanups.push(() => release());
     // networkMode 'always' keeps this active (on the wire) regardless of connectivity.
-    const active = new MutationObserver(queryClient, {
-      mutationKey: updateKey,
-      networkMode: 'always',
-      mutationFn: (_vars: { id: string }) => never,
-    });
+    const active = new MutationObserver(queryClient, { mutationKey: updateKey, networkMode: 'always', mutationFn: (_vars: { id: string }) => never });
     active.mutate({ id: 'active-1' }).catch(() => {});
 
     onlineManager.setOnline(false);
-    const queued = new MutationObserver(queryClient, {
-      mutationKey: updateKey,
-      mutationFn: async (_vars: { id: string }) => ({}),
-    });
+    const queued = new MutationObserver(queryClient, { mutationKey: updateKey, mutationFn: async (_vars: { id: string }) => ({}) });
     queued.mutate({ id: 'queued-1' }).catch(() => {});
 
     const cache = queryClient.getMutationCache();

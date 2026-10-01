@@ -52,10 +52,7 @@ describe('Columns outside the body pick', async () => {
     {
       route: 'updateMe',
       send: () =>
-        call(updateMe, {
-          body: { firstName: 'Renamed', email: 'taken-over@security-test.com', mfaRequired: true } as never,
-          headers: headers(),
-        }),
+        call(updateMe, { body: { firstName: 'Renamed', email: 'taken-over@security-test.com', mfaRequired: true } as never, headers: headers() }),
       row: async () => (await db.select().from(usersTable).where(eq(usersTable.id, admin.id)))[0],
       changed: { firstName: 'Renamed' },
       kept: () => ({ email: admin.email, mfaRequired: false }),
@@ -68,8 +65,7 @@ describe('Columns outside the body pick', async () => {
           body: { name: 'Renamed', tenantId: otherTenantId, createdBy: admin.id } as never,
           headers: headers(),
         }),
-      row: async () =>
-        (await db.select().from(organizationsTable).where(eq(organizationsTable.id, organization.id)))[0],
+      row: async () => (await db.select().from(organizationsTable).where(eq(organizationsTable.id, organization.id)))[0],
       changed: { name: 'Renamed' },
       kept: () => ({ tenantId: organization.tenantId, createdBy: organization.createdBy }),
     },

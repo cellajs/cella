@@ -134,10 +134,7 @@ class ReplicationStateManager {
         this._catchupStartedAt = Date.now();
         this._catchupEventsProcessed = 0;
         this._consecutiveLiveTxns = 0;
-        log.info('Entering catchup mode: WAL lag exceeds threshold', {
-          lagMs: Math.round(lagMs),
-          thresholdMs: enterLagMs,
-        });
+        log.info('Entering catchup mode: WAL lag exceeds threshold', { lagMs: Math.round(lagMs), thresholdMs: enterLagMs });
       }
       return this._catchingUp;
     }

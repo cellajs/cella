@@ -36,11 +36,7 @@ export function enrichWithPermissions(item: EnrichableChannel, channelType: Chan
   const existing = item.can;
 
   const isSystemAdmin = useUserStore.getState().isSystemAdmin;
-  const computed = membership
-    ? computeCan(channelType, membership, policyMatrix)
-    : isSystemAdmin
-      ? computeSystemAdminCan(channelType)
-      : {};
+  const computed = membership ? computeCan(channelType, membership, policyMatrix) : isSystemAdmin ? computeSystemAdminCan(channelType) : {};
 
   if (!hasCanChanged(existing, computed)) return item;
 

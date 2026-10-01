@@ -8,8 +8,5 @@ interface ResolveFileUrlContext {
 /** Supplies the editor's org context to `resolveBlockNoteFileRef` as a fallback for references whose attachment is not cached. */
 export function createResolveFileUrl({ baseFilePanelProps }: ResolveFileUrlContext) {
   return (ref: string): Promise<string> =>
-    resolveBlockNoteFileRef(ref, {
-      tenantId: baseFilePanelProps?.tenantId,
-      organizationId: baseFilePanelProps?.organizationId,
-    });
+    resolveBlockNoteFileRef(ref, { tenantId: baseFilePanelProps?.tenantId, organizationId: baseFilePanelProps?.organizationId });
 }

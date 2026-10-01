@@ -60,19 +60,12 @@ export function AcceptInvitationStep({ tokenData, user }: Props) {
         <Alert variant="warning">
           <TriangleAlertIcon />
           <AlertTitle>{t('c:invite_other_address')}</AlertTitle>
-          <AlertDescription>
-            {t('c:invite_other_address.text', { invitedEmail, accountEmail: user.email })}
-          </AlertDescription>
+          <AlertDescription>{t('c:invite_other_address.text', { invitedEmail, accountEmail: user.email })}</AlertDescription>
         </Alert>
       )}
 
       <div className="flex flex-col gap-2">
-        <SubmitButton
-          loading={isPending}
-          icon={<CheckIcon />}
-          className="w-full"
-          onClick={() => accept(undefined, { onSuccess: leave })}
-        >
+        <SubmitButton loading={isPending} icon={<CheckIcon />} className="w-full" onClick={() => accept(undefined, { onSuccess: leave })}>
           {t('c:accept')}
         </SubmitButton>
         <Button variant="plain" className="w-full" disabled={isPending} onClick={leave}>

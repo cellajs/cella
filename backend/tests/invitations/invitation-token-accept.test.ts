@@ -34,21 +34,13 @@ describe('Accept an invitation token as the signed-in user', async () => {
   const setup = async (opts: { boundTo?: string | null } = {}) => {
     const organization = await createTestOrganization();
     const inviter = await createTestUser('inviter@example.com');
-    const invitation = await createInvitation({
-      token: 'invoked',
-      email: invitedEmail,
-      organization,
-      createdBy: inviter.id,
-      ...opts,
-    });
+    const invitation = await createInvitation({ token: 'invoked', email: invitedEmail, organization, createdBy: inviter.id, ...opts });
     return { organization, inviter, ...invitation };
   };
 
-  const accept = (cookies: string[]) =>
-    call(acceptInvitationToken, { headers: { ...defaultHeaders, Cookie: cookies.join('; ') } });
+  const accept = (cookies: string[]) => call(acceptInvitationToken, { headers: { ...defaultHeaders, Cookie: cookies.join('; ') } });
 
-  const membershipsOf = (userId: string) =>
-    db.select().from(membershipsTable).where(eq(membershipsTable.userId, userId));
+  const membershipsOf = (userId: string) => db.select().from(membershipsTable).where(eq(membershipsTable.userId, userId));
 
   it('activates the membership for the session user, spends the invitation and notifies the invited address', async () => {
     const { organization, token, inactiveMembership, invitationCookie } = await setup();
@@ -65,19 +57,14 @@ describe('Accept an invitation token as the signed-in user', async () => {
     expect(memberships[0].organizationId).toBe(organization.id);
     expect(memberships[0].role).toBe(memberRole);
 
-    expect(
-      await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id)),
-    ).toHaveLength(0);
+    expect(await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id))).toHaveLength(0);
     expect(await db.select().from(tokensTable).where(eq(tokensTable.id, token.id))).toHaveLength(0);
 
     // The invited inbox may not belong to the accepting account, so it hears about the acceptance.
     expect(mailer.prepareEmails).toHaveBeenCalledTimes(1);
     const mails = sentMails();
     expect(mails.map(({ recipient }) => recipient.email)).toEqual([invitedEmail]);
-    expect(mails[0].statics).toMatchObject({
-      type: 'invitation-accepted-elsewhere',
-      details: { accountEmail: 'my-account@example.com' },
-    });
+    expect(mails[0].statics).toMatchObject({ type: 'invitation-accepted-elsewhere', details: { accountEmail: 'my-account@example.com' } });
   });
 
   it('lets the new member into the organization right after accepting', async () => {
@@ -116,20 +103,14 @@ describe('Accept an invitation token as the signed-in user', async () => {
       organization,
       createdBy: owner.id,
     });
-    await db
-      .update(inactiveMembershipsTable)
-      .set({ userId: owner.id })
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    await db.update(inactiveMembershipsTable).set({ userId: owner.id }).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
 
     const attacker = await createTestUser('attacker@example.com');
     const { response } = await accept([await createTestSession(attacker), invitationCookie]);
 
     expect(response.status).toBe(404);
     expect(await membershipsOf(attacker.id)).toHaveLength(0);
-    const [still] = await db
-      .select()
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+    const [still] = await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
     expect(still.userId).toBe(owner.id);
   });
 
@@ -185,10 +166,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     const second = await createTestUser('second@example.com');
     const [firstSession, secondSession] = await Promise.all([createTestSession(first), createTestSession(second)]);
 
-    const results = await Promise.all([
-      accept([firstSession, invitationCookie]),
-      accept([secondSession, invitationCookie]),
-    ]);
+    const results = await Promise.all([accept([firstSession, invitationCookie]), accept([secondSession, invitationCookie])]);
 
     expect(results.filter((r) => r.response.status === 200)).toHaveLength(1);
     const total = (await membershipsOf(first.id)).length + (await membershipsOf(second.id)).length;
@@ -197,12 +175,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
 
   it('spends the invitation without a duplicate membership when the user is already a member', async () => {
     const organization = await createTestOrganization();
-    const me = await createOrganizationAdminUser(
-      'my-account@example.com',
-      organization.id,
-      adminRole,
-      organization.tenantId,
-    );
+    const me = await createOrganizationAdminUser('my-account@example.com', organization.id, adminRole, organization.tenantId);
     const { inactiveMembership, invitationCookie } = await createInvitation({
       token: 'invoked',
       email: invitedEmail,
@@ -216,9 +189,7 @@ describe('Accept an invitation token as the signed-in user', async () => {
     const memberships = await membershipsOf(me.id);
     expect(memberships).toHaveLength(1);
     expect(memberships[0].role).toBe(adminRole);
-    expect(
-      await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id)),
-    ).toHaveLength(0);
+    expect(await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id))).toHaveLength(0);
   });
 });
 
@@ -262,10 +233,7 @@ describe('Opening a token link while signed in', async () => {
     const { raw, row: link } = await insertTestToken('magic', owner);
 
     // Opened in the browser that asked for it, so it is redeemed directly.
-    await call(invokeToken, {
-      path: { type: 'magic', token: raw },
-      headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', link.id) },
-    });
+    await call(invokeToken, { path: { type: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: authCookie('magic-requested', link.id) } });
 
     const [opened] = await db.select().from(tokensTable).where(eq(tokensTable.email, owner.email));
     const minutesLeft = (new Date(opened.expiresAt).getTime() - Date.now()) / 60_000;
@@ -291,10 +259,7 @@ describe('Opening a token link while signed in', async () => {
     const { raw, row: link } = await insertTestToken('magic', owner);
 
     const cookies = [await createTestSession(me), authCookie('magic-requested', link.id)].join('; ');
-    const { response } = await call(invokeToken, {
-      path: { type: 'magic', token: raw },
-      headers: { ...defaultHeaders, Cookie: cookies },
-    });
+    const { response } = await call(invokeToken, { path: { type: 'magic', token: raw }, headers: { ...defaultHeaders, Cookie: cookies } });
 
     expect(response.status).toBe(409);
   });

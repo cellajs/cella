@@ -24,20 +24,14 @@ describe('internal listener routing', () => {
 
   it('must not let the cdc or yjs worker reach the backend through its public URL', () => {
     for (const worker of [appServices.cdc, appServices.yjs]) {
-      expect(worker.bindings).toEqual({
-        BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}',
-      });
+      expect(worker.bindings).toEqual({ BACKEND_INTERNAL_URL: 'http://@{backend.internalHost}:@{backend.internalPort}' });
     }
   });
 
   it('must not accept an internal listener that shares a port with any service', () => {
     expect(() => defineServices({ a: { ...base, internalPort: 4000 } })).toThrow(/port of its own/);
-    expect(() => defineServices({ a: { ...base, internalPort: 4005 }, b: { ...base, port: 4005 } })).toThrow(
-      /port of its own/,
-    );
-    expect(() =>
-      defineServices({ a: { ...base, internalPort: 4005 }, b: { ...base, port: 4001, internalPort: 4005 } }),
-    ).toThrow(/port of its own/);
+    expect(() => defineServices({ a: { ...base, internalPort: 4005 }, b: { ...base, port: 4005 } })).toThrow(/port of its own/);
+    expect(() => defineServices({ a: { ...base, internalPort: 4005 }, b: { ...base, port: 4001, internalPort: 4005 } })).toThrow(/port of its own/);
     expect(() => defineServices({ a: { ...base, internalPort: 70000 } })).toThrow(/not a valid port/);
     // Positive control: a port of its own passes.
     expect(() => defineServices({ a: { ...base, internalPort: 4005 }, b: { ...base, port: 4001 } })).not.toThrow();

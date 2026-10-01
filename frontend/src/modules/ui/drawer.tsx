@@ -51,10 +51,7 @@ function DrawerContent({
   React.useEffect(() => {
     if (!autoScrollOnDrag || !popupRef.current) return;
     const axis = typeof autoScrollOnDrag === 'string' ? autoScrollOnDrag : undefined;
-    return autoScrollForElements({
-      element: popupRef.current,
-      ...(axis && { getAllowedAxis: () => axis as 'vertical' | 'horizontal' }),
-    });
+    return autoScrollForElements({ element: popupRef.current, ...(axis && { getAllowedAxis: () => axis as 'vertical' | 'horizontal' }) });
   }, [autoScrollOnDrag]);
 
   return (
@@ -146,32 +143,11 @@ function DrawerFooter({ className, ...props }: React.ComponentProps<'div'>) {
 }
 
 function DrawerTitle({ className, ...props }: DrawerPrimitive.Title.Props) {
-  return (
-    <DrawerPrimitive.Title
-      data-slot="drawer-title"
-      className={cn('font-semibold text-foreground', className)}
-      {...props}
-    />
-  );
+  return <DrawerPrimitive.Title data-slot="drawer-title" className={cn('font-semibold text-foreground', className)} {...props} />;
 }
 
 function DrawerDescription({ className, ...props }: DrawerPrimitive.Description.Props) {
-  return (
-    <DrawerPrimitive.Description
-      data-slot="drawer-description"
-      className={cn('text-muted-foreground text-sm', className)}
-      {...props}
-    />
-  );
+  return <DrawerPrimitive.Description data-slot="drawer-description" className={cn('text-muted-foreground text-sm', className)} {...props} />;
 }
 
-export {
-  Drawer,
-  DrawerClose,
-  DrawerContent,
-  DrawerDescription,
-  DrawerFooter,
-  DrawerHeader,
-  DrawerTitle,
-  DrawerTrigger,
-};
+export { Drawer, DrawerClose, DrawerContent, DrawerDescription, DrawerFooter, DrawerHeader, DrawerTitle, DrawerTrigger };

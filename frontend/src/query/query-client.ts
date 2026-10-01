@@ -15,8 +15,7 @@ function entityTypeOf(key: unknown): ProductEntityType | undefined {
 }
 
 // Lazy import breaks the cycle query-client -> on-error -> teardown-user-state -> query-client; a static import makes HMR re-evaluation hit a TDZ error on `onError`.
-const handleError = (error: ApiError, meta: QueryMeta | undefined) =>
-  import('~/query/on-error').then((m) => m.onError(error, meta));
+const handleError = (error: ApiError, meta: QueryMeta | undefined) => import('~/query/on-error').then((m) => m.onError(error, meta));
 const handleSuccess = () => import('~/query/on-success').then((m) => m.onSuccess());
 
 /** stx mutations carry stx.mutationId on the variables (single or batch shape). */
@@ -48,25 +47,13 @@ function quarantineOnClientError(error: ApiError, vars: unknown, mutationKey: un
   const entityType = entityTypeOf(mutationKey);
   import('~/query/offline/failed-sync')
     .then(({ quarantineFailedSync }) =>
-      quarantineFailedSync({
-        mutationId,
-        entityType,
-        clientCacheVersion: appConfig.clientCacheVersion,
-        status,
-        variables: vars,
-        error,
-      }),
+      quarantineFailedSync({ mutationId, entityType, clientCacheVersion: appConfig.clientCacheVersion, status, variables: vars, error }),
     )
     .catch(() => {});
 }
 
 const mutationCacheConfig = {
-  onError: (
-    error: ApiError,
-    vars: unknown,
-    _ctx: unknown,
-    mutation: { meta?: QueryMeta; options?: { mutationKey?: unknown } },
-  ) => {
+  onError: (error: ApiError, vars: unknown, _ctx: unknown, mutation: { meta?: QueryMeta; options?: { mutationKey?: unknown } }) => {
     quarantineOnClientError(error, vars, mutation.options?.mutationKey);
     return handleError(error, mutation.meta);
   },
@@ -77,10 +64,7 @@ const mutationCacheConfig = {
   },
 };
 
-const queryCacheConfig = {
-  onError: (error: ApiError, query: { meta?: QueryMeta }) => handleError(error, query.meta),
-  onSuccess: handleSuccess,
-};
+const queryCacheConfig = { onError: (error: ApiError, query: { meta?: QueryMeta }) => handleError(error, query.meta), onSuccess: handleSuccess };
 
 const defaultStaleTime = 1000 * 30 * 1; // 30 seconds
 const offlineStaleTime = Number.POSITIVE_INFINITY; // Infinite when offline
@@ -160,12 +144,7 @@ export function updateStaleTime(offlineAccess: boolean, isOnline: boolean): void
   const shouldUseInfiniteStale = offlineAccess && !isOnline;
   const newStaleTime = shouldUseInfiniteStale ? offlineStaleTime : defaultStaleTime;
 
-  queryClient.setDefaultOptions({
-    queries: {
-      ...queryClient.getDefaultOptions().queries,
-      staleTime: newStaleTime,
-    },
-  });
+  queryClient.setDefaultOptions({ queries: { ...queryClient.getDefaultOptions().queries, staleTime: newStaleTime } });
 
   console.debug(`[Query] StaleTime: ${shouldUseInfiniteStale ? 'infinite (offline)' : '30s (online)'}`);
 }

@@ -19,8 +19,7 @@ function parseOperatorSecretImports(raw: string | undefined): Record<string, str
     const eq = entry.indexOf('=');
     const name = eq === -1 ? '' : entry.slice(0, eq).trim();
     const id = eq === -1 ? '' : entry.slice(eq + 1).trim();
-    if (!name || !id)
-      throw new Error(`OPERATOR_SECRET_IMPORTS: malformed entry '${entry}' (expected name=region/uuid).`);
+    if (!name || !id) throw new Error(`OPERATOR_SECRET_IMPORTS: malformed entry '${entry}' (expected name=region/uuid).`);
     map[name] = id;
   }
   return map;
@@ -28,34 +27,16 @@ function parseOperatorSecretImports(raw: string | undefined): Record<string, str
 
 const operatorSecretImports = parseOperatorSecretImports(process.env.OPERATOR_SECRET_IMPORTS);
 
-function createSecretContainer(
-  name: string,
-  path: string,
-  description: string,
-  opts?: { retainOnDelete?: boolean; importId?: string },
-) {
+function createSecretContainer(name: string, path: string, description: string, opts?: { retainOnDelete?: boolean; importId?: string }) {
   return new scaleway.secrets.Secret(
     `secret-${name}`,
-    {
-      name,
-      path,
-      description,
-      region,
-      tags,
-    },
-    {
-      retainOnDelete: opts?.retainOnDelete,
-      import: opts?.importId,
-    },
+    { name, path, description, region, tags },
+    { retainOnDelete: opts?.retainOnDelete, import: opts?.importId },
   );
 }
 
 function createSecretVersion(name: string, secretId: pulumi.Input<string>, data: pulumi.Input<string>) {
-  return new scaleway.secrets.Version(`secret-version-${name}`, {
-    secretId,
-    data,
-    region,
-  });
+  return new scaleway.secrets.Version(`secret-version-${name}`, { secretId, data, region });
 }
 
 // The `generated-<secretName>` resource names are the Pulumi identities of the live secret values; renaming re-creates them.
@@ -109,6 +90,7 @@ const secretResources = Object.fromEntries(
 );
 
 /** Runtime secret ids to Scaleway secret ids. The key type is the literal id union, so a typo is a compile error; Object.fromEntries widens, hence the cast. */
-export const secretIds = Object.fromEntries(
-  Object.entries(secretResources).map(([id, secret]) => [id, secret.id]),
-) as Record<RuntimeSecretId, pulumi.Output<string>>;
+export const secretIds = Object.fromEntries(Object.entries(secretResources).map(([id, secret]) => [id, secret.id])) as Record<
+  RuntimeSecretId,
+  pulumi.Output<string>
+>;

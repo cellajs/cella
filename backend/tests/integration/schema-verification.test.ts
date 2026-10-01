@@ -5,13 +5,9 @@ import { baseDb as adminDb } from '#/db/db';
 import { entityTables } from '#/tables';
 
 /** Product entities with a parent org (tasks, labels, attachments) have RLS and composite FK. */
-const orgScopedProductTables = appConfig.productEntityTypes.map((t) =>
-  getTableName(entityTables[t as keyof typeof entityTables]),
-);
+const orgScopedProductTables = appConfig.productEntityTypes.map((t) => getTableName(entityTables[t as keyof typeof entityTables]));
 
-const channelTables = appConfig.channelEntityTypes.map((t) =>
-  getTableName(entityTables[t as keyof typeof entityTables]),
-);
+const channelTables = appConfig.channelEntityTypes.map((t) => getTableName(entityTables[t as keyof typeof entityTables]));
 
 function getRows<T = Record<string, unknown>>(result: any): T[] {
   if (Array.isArray(result)) return result;
@@ -50,11 +46,9 @@ describe('Schema verification', () => {
   });
 
   describe('Composite foreign keys (tenant_id, organization_id)', () => {
-    it.each(orgScopedProductTables)(
-      'should have composite FK (tenant_id, organization_id) → organizations on %s',
-      async (tableName) => {
-        const rows = getRows<{ constraint_name: string; column_name: string }>(
-          await adminDb.execute(sql`
+    it.each(orgScopedProductTables)('should have composite FK (tenant_id, organization_id) → organizations on %s', async (tableName) => {
+      const rows = getRows<{ constraint_name: string; column_name: string }>(
+        await adminDb.execute(sql`
             SELECT kcu.constraint_name, kcu.column_name
             FROM information_schema.key_column_usage kcu
             JOIN information_schema.table_constraints tc
@@ -68,12 +62,11 @@ describe('Schema verification', () => {
               AND kcu.table_name = ${tableName}
               AND kcu2.table_name = 'organizations'
           `),
-        );
+      );
 
-        const columns = rows.map((r) => r.column_name);
-        expect(columns, `Missing composite FK on ${tableName}`).toContain('tenant_id');
-        expect(columns, `Missing composite FK on ${tableName}`).toContain('organization_id');
-      },
-    );
+      const columns = rows.map((r) => r.column_name);
+      expect(columns, `Missing composite FK on ${tableName}`).toContain('tenant_id');
+      expect(columns, `Missing composite FK on ${tableName}`).toContain('organization_id');
+    });
   });
 });

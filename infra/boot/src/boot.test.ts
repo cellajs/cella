@@ -47,9 +47,7 @@ describe('waitForPrivateNetwork', () => {
       return { code: 0, stdout: '2: ens2    inet 192.0.2.12/24 scope global ens2', stderr: '' };
     };
 
-    await expect(waitForPrivateNetwork({ exec, timeoutSeconds: 0.001, retryDelayMs: 1 })).rejects.toThrow(
-      /private network did not become ready/,
-    );
+    await expect(waitForPrivateNetwork({ exec, timeoutSeconds: 0.001, retryDelayMs: 1 })).rejects.toThrow(/private network did not become ready/);
   });
 });
 
@@ -129,8 +127,7 @@ describe('boot', () => {
     const exec: ExecFn = async (command, args) => {
       const line = [command, ...args].join(' ');
       if (line === 'ip -4 addr show') return ok('inet 10.0.0.12/24 scope global ens2');
-      if (line.includes('run --rm backend-release'))
-        return { code: 1, stdout: '', stderr: `migrate: dial ${dsn} refused (auth ${dbPassword})` };
+      if (line.includes('run --rm backend-release')) return { code: 1, stdout: '', stderr: `migrate: dial ${dsn} refused (auth ${dbPassword})` };
       if (line.includes(' logs ')) {
         return ok(
           [

@@ -13,10 +13,7 @@ function fakeMutation() {
 describe('buildPreparedHandlers', () => {
   it('run: mutate issues the prepared vars', () => {
     const mutation = fakeMutation();
-    const { mutate } = buildPreparedHandlers<{ ok: string }, Vars, string>(mutation, (id) => ({
-      kind: 'run',
-      vars: { id, value: 1 },
-    }));
+    const { mutate } = buildPreparedHandlers<{ ok: string }, Vars, string>(mutation, (id) => ({ kind: 'run', vars: { id, value: 1 } }));
 
     mutate('a');
     expect(mutation.mutate).toHaveBeenCalledWith({ id: 'a', value: 1 }, undefined);
@@ -24,10 +21,7 @@ describe('buildPreparedHandlers', () => {
 
   it('run: mutateAsync resolves with the mutation result', async () => {
     const mutation = fakeMutation();
-    const { mutateAsync } = buildPreparedHandlers<{ ok: string }, Vars, string>(mutation, (id) => ({
-      kind: 'run',
-      vars: { id, value: 1 },
-    }));
+    const { mutateAsync } = buildPreparedHandlers<{ ok: string }, Vars, string>(mutation, (id) => ({ kind: 'run', vars: { id, value: 1 } }));
 
     await expect(mutateAsync('a')).resolves.toEqual({ ok: 'a' });
     expect(mutation.mutateAsync).toHaveBeenCalledTimes(1);
@@ -43,9 +37,7 @@ describe('buildPreparedHandlers', () => {
 
   it('coalesced: mutateAsync resolves immediately with COALESCED and never touches the mutation', async () => {
     const mutation = fakeMutation();
-    const { mutateAsync } = buildPreparedHandlers<{ ok: string }, Vars, string>(mutation, () => ({
-      kind: 'coalesced',
-    }));
+    const { mutateAsync } = buildPreparedHandlers<{ ok: string }, Vars, string>(mutation, () => ({ kind: 'coalesced' }));
 
     // The key property: an awaiting caller (e.g. a dialog) settles without hanging on a queued
     // mutation whose own promise never resolves.

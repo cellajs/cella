@@ -7,6 +7,5 @@ registerBenchSeed({
   table: 'emails',
   order: 30,
   idVariant: CORE_ID_VARIANTS.email,
-  rows: ({ now }) =>
-    Array.from({ length: TOTAL_USERS }, (_, i) => ({ ...loadtestEmail(i), verifiedAt: now, createdAt: now })),
+  rows: ({ now }) => Array.from({ length: TOTAL_USERS }, (_, i) => ({ ...loadtestEmail(i), verifiedAt: now, createdAt: now })),
 });

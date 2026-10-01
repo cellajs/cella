@@ -2,13 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockSetOnline = vi.fn();
 
-vi.mock('@tanstack/react-query', () => ({
-  onlineManager: { setOnline: mockSetOnline },
-}));
+vi.mock('@tanstack/react-query', () => ({ onlineManager: { setOnline: mockSetOnline } }));
 
-vi.mock('shared', () => ({
-  appConfig: { backendUrl: 'https://test.example.com' },
-}));
+vi.mock('shared', () => ({ appConfig: { backendUrl: 'https://test.example.com' } }));
 
 describe('connectivity probe', () => {
   beforeEach(() => {

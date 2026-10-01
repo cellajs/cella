@@ -7,13 +7,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
-import {
-  invokeToken,
-  issueToken,
-  issueTokens,
-  readBoundToken,
-  spendCookieToken,
-} from '#/modules/auth/tokens/token-lifecycle';
+import { invokeToken, issueToken, issueTokens, readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { isTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { hashToken } from '#/utils/hash-token';
@@ -252,10 +246,7 @@ describe('spendCookieToken', () => {
     const { token, rawToken } = await issueToken(ctx, { type: 'confirm-mfa', email: user.email, userId: user.id });
     const cookie = authCookie('confirm-mfa', rawToken);
 
-    const responses = await Promise.all([
-      request('/spend/confirm-mfa', [cookie], 'POST'),
-      request('/spend/confirm-mfa', [cookie], 'POST'),
-    ]);
+    const responses = await Promise.all([request('/spend/confirm-mfa', [cookie], 'POST'), request('/spend/confirm-mfa', [cookie], 'POST')]);
     const spent = await Promise.all(responses.map(async (response) => (await response.json()).spent));
 
     expect(spent.filter(Boolean)).toEqual([expect.objectContaining({ id: token.id, userId: user.id })]);

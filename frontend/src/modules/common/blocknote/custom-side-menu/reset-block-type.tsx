@@ -44,10 +44,7 @@ export function ResetBlockTypeItem({ editor, allowedTypes, headingLevels }: Rese
       if (existingBlock) editor.updateBlock(existingBlock, { type: 'paragraph' });
     }
 
-    editor.updateBlock(block, {
-      type: item.type as Exclude<CustomBlockTypes, 'emoji'>,
-      props: item.props,
-    });
+    editor.updateBlock(block, { type: item.type as Exclude<CustomBlockTypes, 'emoji'>, props: item.props });
     // Refocus the editor so the open side menu does not block the blur update.
     setTimeout(() => focusEditor(editor, block.id), 0);
   };

@@ -15,12 +15,8 @@ const meta: Meta<typeof Toaster> = {
   argTypes: {
     position: { control: 'inline-radio', options: ['top', 'bottom'] },
   },
-  args: {
-    position: 'bottom',
-  },
-  parameters: {
-    layout: 'fullscreen',
-  },
+  args: { position: 'bottom' },
+  parameters: { layout: 'fullscreen' },
   render: (args) => (
     <div className="flex min-h-96 flex-wrap items-center justify-center gap-2">
       <Button
@@ -83,9 +79,7 @@ export const Default: Story = {};
 /**
  * On small screens the app stacks toasts from the top edge.
  */
-export const Top: Story = {
-  args: { position: 'top' },
-};
+export const Top: Story = { args: { position: 'top' } };
 
 export const ShouldShowToast: Story = {
   name: 'when repeating the same toast, should keep one toast',

@@ -12,8 +12,7 @@ import { Button } from '~/modules/ui/button';
 import { queryClient } from '~/query/query-client';
 
 /** A session that still authenticates: not revoked and not past its expiry. */
-export const isLiveSession = (session: Session) =>
-  session.revokedAt === null && new Date(session.expiresAt).getTime() > Date.now();
+export const isLiveSession = (session: Session) => session.revokedAt === null && new Date(session.expiresAt).getTime() > Date.now();
 
 export function SessionsList() {
   const { t } = useTranslation();
@@ -28,8 +27,7 @@ export function SessionsList() {
 
   // Group the current session first, followed by matching device hashes and ungrouped sessions.
   const currentDeviceHash = liveSessions.find((session) => session.isCurrent)?.deviceIdHash ?? null;
-  const isCurrentDevice = (session: Session) =>
-    !session.isCurrent && session.deviceIdHash !== null && session.deviceIdHash === currentDeviceHash;
+  const isCurrentDevice = (session: Session) => !session.isCurrent && session.deviceIdHash !== null && session.deviceIdHash === currentDeviceHash;
   const rank = (session: Session) => (session.isCurrent ? 0 : isCurrentDevice(session) ? 1 : 2);
   const sessions = Array.from(liveSessions).sort((a, b) => rank(a) - rank(b));
 
@@ -55,9 +53,7 @@ export function SessionsList() {
         };
       });
 
-      toaster.success(
-        t('c:success.revoke_resource', { resource: t(revoked.length === 1 ? 'c:session' : 'c:sessions') }),
-      );
+      toaster.success(t('c:success.revoke_resource', { resource: t(revoked.length === 1 ? 'c:session' : 'c:sessions') }));
     },
   });
 

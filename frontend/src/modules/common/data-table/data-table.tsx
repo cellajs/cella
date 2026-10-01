@@ -112,13 +112,7 @@ export function DataTable<TData>({
 
   // Virtualized tables use the grid's near-end state; fully rendered tables use InfiniteLoader observation.
   const [nearEnd, setNearEnd] = useState(false);
-  useFetchMoreOnDemand({
-    demand: !!enableVirtualization && nearEnd,
-    hasNextPage,
-    isFetching: !!isFetching,
-    error: !!error,
-    fetchMore,
-  });
+  useFetchMoreOnDemand({ demand: !!enableVirtualization && nearEnd, hasNextPage, isFetching: !!isFetching, error: !!error, fetchMore });
 
   // Memoized because `DataGrid` passes it to memoized rows; a fresh function each render defeats that memo.
   const handleSelectedRowsChange = useCallback(

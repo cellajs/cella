@@ -12,10 +12,7 @@ export const useMeasure = <T extends Element = Element>() => {
 
       const box = entry.borderBoxSize?.[0];
       if (box) {
-        setBounds({
-          width: box.inlineSize,
-          height: box.blockSize,
-        });
+        setBounds({ width: box.inlineSize, height: box.blockSize });
       } else {
         // fallback for older browsers
         const rect = entry.target.getBoundingClientRect();

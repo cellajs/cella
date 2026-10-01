@@ -18,9 +18,7 @@ import { validUuidSchema } from '#/schemas';
 const nullableAncestors = new Set<string>(hierarchy.getNullableAncestors('attachment'));
 /** Sub-organization ancestors an attachment can home at, deepest first; none in cella. */
 // Compared as string so cella's organization-only chain does not infer a `never[]` predicate.
-const placementAncestors = hierarchy
-  .getOrderedAncestors('attachment')
-  .filter((type) => (type as string) !== 'organization');
+const placementAncestors = hierarchy.getOrderedAncestors('attachment').filter((type) => (type as string) !== 'organization');
 const placementKey = (type: string) => appConfig.entityIdColumnKeys[type as ChannelEntityType];
 
 /**
@@ -31,10 +29,7 @@ const placementKey = (type: string) => appConfig.entityIdColumnKeys[type as Chan
  * ancestor column is null. cella has no sub-organization ancestors, so its rows are org-homed.
  */
 export const attachmentPlacementFieldsSchema = Object.fromEntries(
-  placementAncestors.map((type) => [
-    placementKey(type),
-    nullableAncestors.has(type) ? validUuidSchema.optional() : validUuidSchema,
-  ]),
+  placementAncestors.map((type) => [placementKey(type), nullableAncestors.has(type) ? validUuidSchema.optional() : validUuidSchema]),
 ) as Record<string, z.ZodType<string | undefined>>;
 
 /** A create-body item as the placement seam sees it; apps narrow to their placement fields. */
@@ -46,25 +41,17 @@ type SubOrgAncestor = Exclude<AncestorChannelType<'attachment'>, 'organization'>
  * Ancestor id columns to stamp on the inserted row, typed like the table columns: strict ancestors
  * are `string`, nullable ones `string | null`; empty for org-homed rows.
  */
-export type ResolvedAttachmentPlacement = EntityIdColumns<
-  Exclude<SubOrgAncestor, NullableAncestorType<'attachment'>> & EntityType,
-  string
-> &
+export type ResolvedAttachmentPlacement = EntityIdColumns<Exclude<SubOrgAncestor, NullableAncestorType<'attachment'>> & EntityType, string> &
   EntityIdColumns<Extract<SubOrgAncestor, NullableAncestorType<'attachment'>> & EntityType, string | null>;
 
 const providedHome = (item: AttachmentPlacementInput) =>
   placementAncestors.filter((type) => typeof item[placementKey(type)] === 'string' && item[placementKey(type)]);
 
 /** Per-item create-body validation, anchored at the returned path relative to the item: one home id at most. */
-export const validateAttachmentPlacement = (
-  item: AttachmentPlacementInput,
-): { path: (string | number)[]; message: string } | null => {
+export const validateAttachmentPlacement = (item: AttachmentPlacementInput): { path: (string | number)[]; message: string } | null => {
   const provided = providedHome(item);
   if (provided.length <= 1) return null;
-  return {
-    path: [placementKey(provided[0])],
-    message: 'Ambiguous placement: send only the deepest home id (its ancestors are derived server-side)',
-  };
+  return { path: [placementKey(provided[0])], message: 'Ambiguous placement: send only the deepest home id (its ancestors are derived server-side)' };
 };
 
 /**
@@ -72,13 +59,8 @@ export const validateAttachmentPlacement = (
  * the request scope, plus that row's own ancestor ids; never client input above the home. No id
  * means org-homed, which the fields schema only allows when no strict ancestor exists.
  */
-export const resolveAttachmentPlacement = async (
-  ctx: OrgContext,
-  input: AttachmentPlacementInput,
-): Promise<ResolvedAttachmentPlacement> => {
-  const columns: Record<string, string | null> = Object.fromEntries(
-    placementAncestors.map((type) => [placementKey(type), null]),
-  );
+export const resolveAttachmentPlacement = async (ctx: OrgContext, input: AttachmentPlacementInput): Promise<ResolvedAttachmentPlacement> => {
+  const columns: Record<string, string | null> = Object.fromEntries(placementAncestors.map((type) => [placementKey(type), null]));
   const home = providedHome(input)[0];
   if (!home) return columns as ResolvedAttachmentPlacement;
 
@@ -99,13 +81,10 @@ export const resolveAttachmentPlacement = async (
  * The channel type attachments home at: the deepest strict ancestor, else the organization. Apps
  * with nullable placement (rows home at any depth) keep the organization here and read org-wide.
  */
-const homeChannelType =
-  hierarchy.getOrderedAncestors('attachment').find((type) => !nullableAncestors.has(type)) ?? 'organization';
+const homeChannelType = hierarchy.getOrderedAncestors('attachment').find((type) => !nullableAncestors.has(type)) ?? 'organization';
 
 /** Column holding a row's home channel id: list reads compile the caller's grant scope against it. */
-export const attachmentHomeColumnKey = appConfig.entityIdColumnKeys[
-  homeChannelType
-] as keyof typeof attachmentsTable.$inferSelect;
+export const attachmentHomeColumnKey = appConfig.entityIdColumnKeys[homeChannelType] as keyof typeof attachmentsTable.$inferSelect;
 
 /**
  * Home channel a list or delta read narrows to, from the `channelId` query param; undefined reads
@@ -113,10 +92,7 @@ export const attachmentHomeColumnKey = appConfig.entityIdColumnKeys[
  * home type inside the request scope. With the organization as home there is no narrower channel, so
  * other ids are unknown.
  */
-export const resolveAttachmentHomeScope = async (
-  ctx: OrgContext,
-  channelId: string | undefined,
-): Promise<string | undefined> => {
+export const resolveAttachmentHomeScope = async (ctx: OrgContext, channelId: string | undefined): Promise<string | undefined> => {
   if (!channelId || channelId === ctx.var.organization.id) return undefined;
   // Compared as string so cella's organization-only hierarchy does not narrow `homeChannelType` to never.
   if ((homeChannelType as string) === 'organization') {
@@ -140,12 +116,5 @@ export interface AttachmentSeedPlacement {
  * return one batch per home channel, or an empty list to skip attachment seeding altogether
  * (e.g. when their dev bucket carries no `seed/` objects).
  */
-export const seedAttachmentPlacements = async (
-  _db: DB,
-  organizations: { id: string; tenantId: string }[],
-): Promise<AttachmentSeedPlacement[]> =>
-  organizations.map((org) => ({
-    organizationId: org.id,
-    tenantId: org.tenantId,
-    placement: {} as ResolvedAttachmentPlacement,
-  }));
+export const seedAttachmentPlacements = async (_db: DB, organizations: { id: string; tenantId: string }[]): Promise<AttachmentSeedPlacement[]> =>
+  organizations.map((org) => ({ organizationId: org.id, tenantId: org.tenantId, placement: {} as ResolvedAttachmentPlacement }));

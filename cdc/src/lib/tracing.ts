@@ -12,12 +12,7 @@ export { activityAttrs, cdcAttrs, cdcSpanNames };
 
 const debugProcessor = createSpanStoreProcessor({
   onSpanEnd: (span) => {
-    log.trace(`Span: ${span.name}`, {
-      traceId: span.traceId,
-      duration: `${span.duration}ms`,
-      status: span.status,
-      ...span.attributes,
-    });
+    log.trace(`Span: ${span.name}`, { traceId: span.traceId, duration: `${span.duration}ms`, status: span.status, ...span.attributes });
   },
 });
 
@@ -34,27 +29,19 @@ export const otel: OtelSDK = createOtelSDK({
 const meter = otel.meterProvider.getMeter('cdc-health');
 
 meter
-  .createObservableGauge('cdc.ws.connected', {
-    description: 'Whether CDC is connected to backend WebSocket (0/1)',
-  })
+  .createObservableGauge('cdc.ws.connected', { description: 'Whether CDC is connected to backend WebSocket (0/1)' })
   .addCallback(async (result) => {
     const { wsClient } = await import('../network/websocket-client');
     result.observe(wsClient.isConnected() ? 1 : 0);
   });
 
-meter
-  .createObservableGauge('cdc.ws.messages_sent', {
-    description: 'Total messages sent to backend via WebSocket',
-  })
-  .addCallback(async (result) => {
-    const { wsClient } = await import('../network/websocket-client');
-    result.observe(wsClient.messagesSent);
-  });
+meter.createObservableGauge('cdc.ws.messages_sent', { description: 'Total messages sent to backend via WebSocket' }).addCallback(async (result) => {
+  const { wsClient } = await import('../network/websocket-client');
+  result.observe(wsClient.messagesSent);
+});
 
 meter
-  .createObservableGauge('cdc.circuit_breaker.open_count', {
-    description: 'Number of open/half-open circuit breakers',
-  })
+  .createObservableGauge('cdc.circuit_breaker.open_count', { description: 'Number of open/half-open circuit breakers' })
   .addCallback(async (result) => {
     const { circuitBreaker } = await import('../services/circuit-breaker');
     const status = circuitBreaker.getStatus();
@@ -63,9 +50,7 @@ meter
   });
 
 meter
-  .createObservableGauge('cdc.replication.status', {
-    description: 'Replication status (0=stopped, 1=paused, 2=active)',
-  })
+  .createObservableGauge('cdc.replication.status', { description: 'Replication status (0=stopped, 1=paused, 2=active)' })
   .addCallback(async (result) => {
     const { replicationState } = await import('../services/replication-state');
     const statusMap = { stopped: 0, paused: 1, active: 2 } as const;

@@ -36,12 +36,7 @@ let seenByAvailable = false;
 
 const quoteIdent = (identifier: string) => `"${identifier.replaceAll('"', '""')}"`;
 
-async function seedEntityHierarchy(
-  plan: TestEntityHierarchyPlan,
-  tenantId: string,
-  createdBy: string,
-  slugPrefix: string,
-) {
+async function seedEntityHierarchy(plan: TestEntityHierarchyPlan, tenantId: string, createdBy: string, slugPrefix: string) {
   for (const row of plan.seedChannelRows) {
     // Every ancestor id column is NOT NULL on channel tables, so insert all of them.
     const ancestorNames = sql.join(
@@ -99,11 +94,7 @@ const makeRlsProductFixture = (entityType: ProductEntityType): RlsProductFixture
   const table = getEntityTable(entityType);
   const rowId = rlsProductRowIds[entityType] ?? randomUUID();
   const rowName = `RLS ${entityType}`;
-  const plan = buildTestEntityHierarchyPlan({
-    entityType,
-    organizationId: TEST_ORG_A,
-    makeChannelId: () => randomUUID(),
-  });
+  const plan = buildTestEntityHierarchyPlan({ entityType, organizationId: TEST_ORG_A, makeChannelId: () => randomUUID() });
   // Deepest seeded ancestor is where unseen counts roll up (the org itself when org-homed).
   const homeChannelId = plan.sqlChannelColumns[0]?.id ?? TEST_ORG_A;
 
@@ -155,9 +146,7 @@ let activeRlsProducts: { type: string; fixture: RlsProductFixture }[] = [];
 
 async function checkRolesExist(): Promise<boolean> {
   const rows = getRows<{ exists: boolean }>(
-    await adminDb.execute(
-      sql`SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role') as exists`,
-    ),
+    await adminDb.execute(sql`SELECT EXISTS(SELECT 1 FROM pg_catalog.pg_roles WHERE rolname = 'runtime_role') as exists`),
   );
   return rows[0]?.exists === true;
 }
@@ -289,9 +278,7 @@ async function queryAsRuntimeRole<T = Record<string, unknown>>(
 }
 
 /** Query as runtime_role with no session context: fail-closed reads must yield zero rows. */
-async function queryWithoutChannel<T = Record<string, unknown>>(
-  queryFn: (tx: NodePgTx) => Promise<unknown>,
-): Promise<T[]> {
+async function queryWithoutChannel<T = Record<string, unknown>>(queryFn: (tx: NodePgTx) => Promise<unknown>): Promise<T[]> {
   return runtimeDb.transaction(async (tx) => {
     await tx.execute(sql`SELECT set_config('app.tenant_id', '', true)`);
     await tx.execute(sql`SELECT set_config('app.user_id', '', true)`);
@@ -316,9 +303,7 @@ describe('RLS Security Tests', () => {
       expect(inside[0]).toEqual({ tenant: TEST_TENANT_A, user: '', deleted: 'false' });
 
       // Transaction-scoped: the pooled connection carries no tenant into its next statement.
-      const after = getRows<{ value: string | null }>(
-        await adminDb.execute(sql`SELECT current_setting('app.tenant_id', true) AS value`),
-      );
+      const after = getRows<{ value: string | null }>(await adminDb.execute(sql`SELECT current_setting('app.tenant_id', true) AS value`));
       expect(after[0]?.value ?? '').toBe('');
     });
 
@@ -363,9 +348,7 @@ const rlsSuiteReady = await (async () => {
       return;
     }
 
-    runtimeDb = drizzle({
-      connection: { connectionString: RUNTIME_DB_URL, connectionTimeoutMillis: 5_000 },
-    });
+    runtimeDb = drizzle({ connection: { connectionString: RUNTIME_DB_URL, connectionTimeoutMillis: 5_000 } });
 
     const rows = getRows<{ role: string }>(await runtimeDb.execute(sql`SELECT current_user as role`));
     expect(rows[0].role).toBe('runtime_role');
@@ -406,9 +389,7 @@ const rlsSuiteReady = await (async () => {
     });
 
     it('should deny access to attachments without tenant context', async () => {
-      const rows = await queryWithoutChannel(async (tx) =>
-        tx.execute(sql`SELECT id FROM attachments WHERE id = ${TEST_ATTACHMENT_A}`),
-      );
+      const rows = await queryWithoutChannel(async (tx) => tx.execute(sql`SELECT id FROM attachments WHERE id = ${TEST_ATTACHMENT_A}`));
       expect(rows).toHaveLength(0);
     });
   });
@@ -418,9 +399,7 @@ const rlsSuiteReady = await (async () => {
   describe('Unseen counts (seen-tracking RLS regression)', () => {
     // FORCE RLS makes context-less base reads return zero, so unseen reads need tenant context.
     type UnseenRow = { channelId: string; productType: string; unseenCount: number };
-    const trackedProduct = iterableRlsProducts.find(([type]) =>
-      (trackedProductTypes as readonly string[]).includes(type),
-    );
+    const trackedProduct = iterableRlsProducts.find(([type]) => (trackedProductTypes as readonly string[]).includes(type));
     const [trackedType, trackedFixture] = trackedProduct ?? [undefined, undefined];
     const cutoff = () => new Date(Date.now() - seenWindowMs).toISOString();
     const countUnseen = (tx: NodePgTx) =>
@@ -480,27 +459,19 @@ const rlsSuiteReady = await (async () => {
 
       it('should allow UPDATE as runtime_role, and the row changes', async () => {
         const updated = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-          tx.execute(
-            sql.raw(`UPDATE ${fixture.table} SET name = 'Updated Row' WHERE id = '${fixture.rowId}' RETURNING id`),
-          ),
+          tx.execute(sql.raw(`UPDATE ${fixture.table} SET name = 'Updated Row' WHERE id = '${fixture.rowId}' RETURNING id`)),
         );
         // A policy that leaves no row to update makes the statement a silent no-op, so the row count is the proof.
         expect(updated.map((r) => r.id)).toEqual([fixture.rowId]);
-        const [row] = getRows<{ name: string }>(
-          await adminDb.execute(sql.raw(`SELECT name FROM ${fixture.table} WHERE id = '${fixture.rowId}'`)),
-        );
+        const [row] = getRows<{ name: string }>(await adminDb.execute(sql.raw(`SELECT name FROM ${fixture.table} WHERE id = '${fixture.rowId}'`)));
         expect(row.name).toBe('Updated Row');
-        await adminDb.execute(
-          sql.raw(`UPDATE ${fixture.table} SET name = '${fixture.rowName}' WHERE id = '${fixture.rowId}'`),
-        );
+        await adminDb.execute(sql.raw(`UPDATE ${fixture.table} SET name = '${fixture.rowName}' WHERE id = '${fixture.rowId}'`));
       });
 
       it('should allow DELETE as runtime_role', async () => {
         const id = randomUUID();
         await fixture.insert(adminDb, { id, tenantId: TEST_TENANT_A, createdBy: TEST_USER_A });
-        await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) =>
-          tx.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`)),
-        );
+        await queryAsRuntimeRole(TEST_TENANT_A, TEST_USER_A, async (tx) => tx.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`)));
         const rows = getRows(await adminDb.execute(sql.raw(`SELECT id FROM ${fixture.table} WHERE id = '${id}'`)));
         expect(rows).toHaveLength(0);
       });
@@ -518,22 +489,15 @@ const rlsSuiteReady = await (async () => {
       await adminDb.execute(sql`DELETE FROM yjs_documents WHERE entity_id = ${fixture.rowId}`);
     });
 
-    it.skipIf(iterableRlsProducts.length === 0)(
-      'should allow writing without tenant context (write-through is unconditional)',
-      async () => {
-        const [, fixture] = iterableRlsProducts[0];
-        const id = randomUUID();
-        // The write-through policy is sql`true`, so no session context is needed.
-        await queryWithoutChannel(async (tx) =>
-          fixture.insert(tx, { id, tenantId: TEST_TENANT_A, createdBy: TEST_USER_A }),
-        );
-        const rows = await queryWithoutChannel(async (tx) =>
-          tx.execute(sql.raw(`SELECT id FROM ${fixture.table} WHERE id = '${id}'`)),
-        );
-        expect(rows).toHaveLength(0);
-        await adminDb.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`));
-      },
-    );
+    it.skipIf(iterableRlsProducts.length === 0)('should allow writing without tenant context (write-through is unconditional)', async () => {
+      const [, fixture] = iterableRlsProducts[0];
+      const id = randomUUID();
+      // The write-through policy is sql`true`, so no session context is needed.
+      await queryWithoutChannel(async (tx) => fixture.insert(tx, { id, tenantId: TEST_TENANT_A, createdBy: TEST_USER_A }));
+      const rows = await queryWithoutChannel(async (tx) => tx.execute(sql.raw(`SELECT id FROM ${fixture.table} WHERE id = '${id}'`)));
+      expect(rows).toHaveLength(0);
+      await adminDb.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`));
+    });
   });
 
   // ---- Composite FK violation (tenant_id must match organization's tenant_id) ----
@@ -541,16 +505,14 @@ const rlsSuiteReady = await (async () => {
   describe('Composite foreign key enforcement', () => {
     describe.each(iterableRlsProducts)('%s', (_type, fixture) => {
       it('should reject INSERT with mismatched tenant_id / organization_id', async () => {
-        await expect(
-          unwrapDrizzle(fixture.insert(adminDb, { id: randomUUID(), tenantId: TEST_TENANT_B, createdBy: TEST_USER_A })),
-        ).rejects.toThrow(/foreign key|violates/i);
+        await expect(unwrapDrizzle(fixture.insert(adminDb, { id: randomUUID(), tenantId: TEST_TENANT_B, createdBy: TEST_USER_A }))).rejects.toThrow(
+          /foreign key|violates/i,
+        );
       });
 
       it('should allow INSERT with matching tenant_id / organization_id', async () => {
         const id = randomUUID();
-        await expect(
-          fixture.insert(adminDb, { id, tenantId: TEST_TENANT_A, createdBy: TEST_USER_A }),
-        ).resolves.not.toThrow();
+        await expect(fixture.insert(adminDb, { id, tenantId: TEST_TENANT_A, createdBy: TEST_USER_A })).resolves.not.toThrow();
         await adminDb.execute(sql.raw(`DELETE FROM ${fixture.table} WHERE id = '${id}'`));
       });
     });
@@ -565,9 +527,7 @@ const rlsSuiteReady = await (async () => {
 
     const seededChannelRowIdsByTable = new Map<string, string>([
       ['organizations', TEST_ORG_A],
-      ...iterableRlsProducts.flatMap(([, fixture]) =>
-        fixture.plan.seedChannelRows.map((row) => [row.tableName, row.id] as const),
-      ),
+      ...iterableRlsProducts.flatMap(([, fixture]) => fixture.plan.seedChannelRows.map((row) => [row.tableName, row.id] as const)),
     ]);
 
     // Only target rows this suite seeds.
@@ -578,18 +538,14 @@ const rlsSuiteReady = await (async () => {
       return baseImmutableColumns.map((col): ImmutableEntityCase => [tableName, col, entityType, rowId]);
     });
 
-    const seededProductRowIdsByTable = new Map<string, string>(
-      iterableRlsProducts.map(([, fixture]) => [fixture.table, fixture.rowId]),
-    );
+    const seededProductRowIdsByTable = new Map<string, string>(iterableRlsProducts.map(([, fixture]) => [fixture.table, fixture.rowId]));
 
     // Product entities add organization_id. Only target rows this suite seeds.
     const orgProductCases: ImmutableEntityCase[] = appConfig.productEntityTypes.flatMap((entityType) => {
       const tableName = getTableName(entityTables[entityType as keyof typeof entityTables]);
       const rowId = seededProductRowIdsByTable.get(tableName);
       if (!rowId) return [];
-      return [...baseImmutableColumns, 'organization_id'].map(
-        (col): ImmutableEntityCase => [tableName, col, entityType, rowId],
-      );
+      return [...baseImmutableColumns, 'organization_id'].map((col): ImmutableEntityCase => [tableName, col, entityType, rowId]);
     });
 
     const membershipCases: [string, string][] = membershipImmutableColumns.map((col) => ['memberships', col]);
@@ -607,34 +563,26 @@ const rlsSuiteReady = await (async () => {
     it.each(allEntityCases)('should reject %s.%s mutation (%s)', async (tableName, column, _entityType, rowId) => {
       await expect(
         unwrapDrizzle(
-          adminDb.execute(
-            sql.raw(
-              `UPDATE ${quoteIdent(tableName)} SET ${quoteIdent(column)} = ${fakeValueForColumn(column)} WHERE id = '${rowId}'`,
-            ),
-          ),
+          adminDb.execute(sql.raw(`UPDATE ${quoteIdent(tableName)} SET ${quoteIdent(column)} = ${fakeValueForColumn(column)} WHERE id = '${rowId}'`)),
         ),
       ).rejects.toThrow(/immutable/i);
     });
 
     it.each(membershipCases)('should reject %s.%s mutation', async (tableName, column) => {
-      const fakeValue = ['tenant_id', 'channel_type'].includes(column)
-        ? "'hacked'"
-        : "'00000000-0000-4000-a000-ffffffffffff'";
-      await expect(
-        unwrapDrizzle(adminDb.execute(sql.raw(`UPDATE ${tableName} SET ${column} = ${fakeValue} WHERE 1=1`))),
-      ).rejects.toThrow(/immutable/i);
+      const fakeValue = ['tenant_id', 'channel_type'].includes(column) ? "'hacked'" : "'00000000-0000-4000-a000-ffffffffffff'";
+      await expect(unwrapDrizzle(adminDb.execute(sql.raw(`UPDATE ${tableName} SET ${column} = ${fakeValue} WHERE 1=1`)))).rejects.toThrow(
+        /immutable/i,
+      );
     });
 
     it('should reject updates on append-only activities table', async () => {
-      await expect(
-        unwrapDrizzle(adminDb.execute(sql.raw("UPDATE activities SET id = 'hacked' WHERE 1=1"))),
-      ).rejects.toThrow(/append.only|immutable/i);
+      await expect(unwrapDrizzle(adminDb.execute(sql.raw("UPDATE activities SET id = 'hacked' WHERE 1=1")))).rejects.toThrow(
+        /append.only|immutable/i,
+      );
     });
 
     it('should allow updating non-immutable columns', async () => {
-      await expect(
-        adminDb.execute(sql`UPDATE organizations SET name = 'Updated Name' WHERE id = ${TEST_ORG_A}`),
-      ).resolves.not.toThrow();
+      await expect(adminDb.execute(sql`UPDATE organizations SET name = 'Updated Name' WHERE id = ${TEST_ORG_A}`)).resolves.not.toThrow();
       await adminDb.execute(sql`UPDATE organizations SET name = 'RLS Org A' WHERE id = ${TEST_ORG_A}`);
     });
   });
@@ -647,33 +595,26 @@ const rlsSuiteReady = await (async () => {
 
     beforeAll(async () => {
       if (!rolesAvailable) return;
-      adminRoleDb = drizzle({
-        connection: { connectionString: testAdminRoleDatabaseUrl, connectionTimeoutMillis: 5_000 },
-      });
+      adminRoleDb = drizzle({ connection: { connectionString: testAdminRoleDatabaseUrl, connectionTimeoutMillis: 5_000 } });
     });
 
-    it.skipIf(iterableRlsProducts.length === 0)(
-      'tenant-scoped runtime read matches the admin_role read and is empty without context',
-      async () => {
-        if (!rolesAvailable) return;
-        const [entityType, fixture] = iterableRlsProducts[0];
-        // The generic table read; app declarations with their own loadRows take the same tx.
-        const source: NotificationSource = { entityType, declaration: {} };
-        const ids = (rows: { id: string }[]) => rows.map((row) => row.id);
+    it.skipIf(iterableRlsProducts.length === 0)('tenant-scoped runtime read matches the admin_role read and is empty without context', async () => {
+      if (!rolesAvailable) return;
+      const [entityType, fixture] = iterableRlsProducts[0];
+      // The generic table read; app declarations with their own loadRows take the same tx.
+      const source: NotificationSource = { entityType, declaration: {} };
+      const ids = (rows: { id: string }[]) => rows.map((row) => row.id);
 
-        const asAdmin = await loadSubjectRows(source, adminRoleDb as unknown as DbOrTx, [fixture.rowId]);
-        const asRuntime = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, (tx) =>
-          loadSubjectRows(source, tx as unknown as DbOrTx, [fixture.rowId]),
-        );
-        const withoutContext = await queryWithoutChannel<{ id: string }>((tx) =>
-          loadSubjectRows(source, tx as unknown as DbOrTx, [fixture.rowId]),
-        );
+      const asAdmin = await loadSubjectRows(source, adminRoleDb as unknown as DbOrTx, [fixture.rowId]);
+      const asRuntime = await queryAsRuntimeRole<{ id: string }>(TEST_TENANT_A, TEST_USER_A, (tx) =>
+        loadSubjectRows(source, tx as unknown as DbOrTx, [fixture.rowId]),
+      );
+      const withoutContext = await queryWithoutChannel<{ id: string }>((tx) => loadSubjectRows(source, tx as unknown as DbOrTx, [fixture.rowId]));
 
-        expect(ids(asAdmin), 'admin_role must see the fixture row (owner bypass)').toEqual([fixture.rowId]);
-        expect(ids(asRuntime), 'tenant-scoped runtime read must match the admin read').toEqual(ids(asAdmin));
-        expect(withoutContext, 'no tenant context must fail closed').toEqual([]);
-      },
-    );
+      expect(ids(asAdmin), 'admin_role must see the fixture row (owner bypass)').toEqual([fixture.rowId]);
+      expect(ids(asRuntime), 'tenant-scoped runtime read must match the admin read').toEqual(ids(asAdmin));
+      expect(withoutContext, 'no tenant context must fail closed').toEqual([]);
+    });
   });
 
   // CDC stamps seq as `admin_role` with no tenant context. The role has no BYPASSRLS (managed providers
@@ -684,15 +625,11 @@ const rlsSuiteReady = await (async () => {
     beforeAll(async () => {
       if (!rolesAvailable) return;
       const ADMIN_ROLE_DB_URL = testAdminRoleDatabaseUrl;
-      adminRoleDb = drizzle({
-        connection: { connectionString: ADMIN_ROLE_DB_URL, connectionTimeoutMillis: 5_000 },
-      });
+      adminRoleDb = drizzle({ connection: { connectionString: ADMIN_ROLE_DB_URL, connectionTimeoutMillis: 5_000 } });
     });
 
     it('admin_role owns every RLS table without forced RLS, and holds no BYPASSRLS attribute', async () => {
-      const role = getRows<{ bypass: boolean }>(
-        await adminDb.execute(sql`SELECT rolbypassrls AS bypass FROM pg_roles WHERE rolname = 'admin_role'`),
-      );
+      const role = getRows<{ bypass: boolean }>(await adminDb.execute(sql`SELECT rolbypassrls AS bypass FROM pg_roles WHERE rolname = 'admin_role'`));
       expect(role[0]?.bypass, 'the suite must prove owner bypass, not the attribute').toBe(false);
 
       const blocked = getRows<{ relname: string }>(
@@ -708,32 +645,25 @@ const rlsSuiteReady = await (async () => {
       ).toEqual([]);
     });
 
-    it.skipIf(iterableRlsProducts.length === 0)(
-      'admin_role can UPDATE seq on a product row without tenant context',
-      async () => {
-        const [, fixture] = iterableRlsProducts[0];
-        const before = getRows<{ seq: string | number }>(
-          await adminRoleDb.execute(sql.raw(`SELECT seq FROM ${fixture.table} WHERE id = '${fixture.rowId}'`)),
-        );
-        expect(before, 'admin_role must see the product row (owner bypass)').toHaveLength(1);
+    it.skipIf(iterableRlsProducts.length === 0)('admin_role can UPDATE seq on a product row without tenant context', async () => {
+      const [, fixture] = iterableRlsProducts[0];
+      const before = getRows<{ seq: string | number }>(
+        await adminRoleDb.execute(sql.raw(`SELECT seq FROM ${fixture.table} WHERE id = '${fixture.rowId}'`)),
+      );
+      expect(before, 'admin_role must see the product row (owner bypass)').toHaveLength(1);
 
-        // bigint columns come back as strings from node-pg; coerce
-        const newSeq = Number(before[0].seq ?? 0) + 1;
-        const updateResult = await adminRoleDb.execute(
-          sql.raw(
-            `UPDATE ${fixture.table} SET seq = ${newSeq}, stx = stx - 'changedFields' WHERE id = '${fixture.rowId}'`,
-          ),
-        );
+      // bigint columns come back as strings from node-pg; coerce
+      const newSeq = Number(before[0].seq ?? 0) + 1;
+      const updateResult = await adminRoleDb.execute(
+        sql.raw(`UPDATE ${fixture.table} SET seq = ${newSeq}, stx = stx - 'changedFields' WHERE id = '${fixture.rowId}'`),
+      );
 
-        expect((updateResult as { rowCount?: number }).rowCount, 'UPDATE must affect the row, not silently no-op').toBe(
-          1,
-        );
+      expect((updateResult as { rowCount?: number }).rowCount, 'UPDATE must affect the row, not silently no-op').toBe(1);
 
-        const after = getRows<{ seq: string | number }>(
-          await adminDb.execute(sql.raw(`SELECT seq FROM ${fixture.table} WHERE id = '${fixture.rowId}'`)),
-        );
-        expect(Number(after[0].seq)).toBe(newSeq);
-      },
-    );
+      const after = getRows<{ seq: string | number }>(
+        await adminDb.execute(sql.raw(`SELECT seq FROM ${fixture.table} WHERE id = '${fixture.rowId}'`)),
+      );
+      expect(Number(after[0].seq)).toBe(newSeq);
+    });
   });
 });

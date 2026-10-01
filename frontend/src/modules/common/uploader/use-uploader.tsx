@@ -14,14 +14,8 @@ type CommonUploadData = {
 };
 
 type UploadData =
-  | (CommonUploadData & {
-      personalUpload: true;
-      organizationId?: never;
-    })
-  | (CommonUploadData & {
-      personalUpload: false;
-      organizationId: string;
-    });
+  | (CommonUploadData & { personalUpload: true; organizationId?: never })
+  | (CommonUploadData & { personalUpload: false; organizationId: string });
 
 interface UploadStoreState {
   uploaderConfig: UploadData | null;

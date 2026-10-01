@@ -30,9 +30,7 @@ const results = Object.entries(appStores).map(([id, store]) => {
 export const primaryStoreOutputs: StoreOutputs = results[0]?.[1].outputs ?? {};
 
 /** Every store's outputs, keyed by store id; the stack exports these as one `storeOutputs` object addressed `<storeId>.<key>`. */
-export const allStoreOutputs: Record<string, StoreOutputs> = Object.fromEntries(
-  results.map(([id, provisioned]) => [id, provisioned.outputs]),
-);
+export const allStoreOutputs: Record<string, StoreOutputs> = Object.fromEntries(results.map(([id, provisioned]) => [id, provisioned.outputs]));
 
 /** Runtime-secret values merged across stores, keyed by runtime-secret id. A collision means two stores bind the same secret, which is an app misconfiguration. */
 export const derivedRuntimeSecretData: Record<string, pulumi.Input<string>> = (() => {

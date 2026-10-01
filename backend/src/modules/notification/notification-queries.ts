@@ -7,12 +7,7 @@ import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { toUserMinimalBase, type UserMinimalBase } from '#/modules/user/helpers/audit-user';
 import { usersTable } from '#/modules/user/user-db';
-import {
-  type DigestFrequency,
-  defaultDigestFrequency,
-  notificationPreferencesTable,
-  notificationsTable,
-} from './notification-db';
+import { type DigestFrequency, defaultDigestFrequency, notificationPreferencesTable, notificationsTable } from './notification-db';
 import { instantEmailTypes, type NotificationType } from './notification-types';
 
 /**
@@ -58,12 +53,7 @@ export async function findNotificationsByUser(ctx: DbContext, opts: FindNotifica
     .selectDistinctOn([notificationsTable.userId, notificationsTable.activityId, notificationsTable.type])
     .from(notificationsTable)
     .where(and(...filters))
-    .orderBy(
-      notificationsTable.userId,
-      notificationsTable.activityId,
-      notificationsTable.type,
-      desc(notificationsTable.createdAt),
-    )
+    .orderBy(notificationsTable.userId, notificationsTable.activityId, notificationsTable.type, desc(notificationsTable.createdAt))
     .limit(limit);
 
   return rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -97,13 +87,7 @@ export async function markContextNotificationsRead(ctx: DbContext, userId: strin
   const updated = await ctx.var.db
     .update(notificationsTable)
     .set({ readAt: new Date().toISOString() })
-    .where(
-      and(
-        eq(notificationsTable.userId, userId),
-        eq(notificationsTable.contextId, contextId),
-        isNull(notificationsTable.readAt),
-      ),
-    )
+    .where(and(eq(notificationsTable.userId, userId), eq(notificationsTable.contextId, contextId), isNull(notificationsTable.readAt)))
     .returning({ id: notificationsTable.id });
 
   return updated.length;
@@ -115,21 +99,13 @@ export async function markContextNotificationsRead(ctx: DbContext, userId: strin
 export async function findOrCreatePreferences(ctx: DbContext, userId: string) {
   const { db } = ctx.var;
 
-  const [existing] = await db
-    .select()
-    .from(notificationPreferencesTable)
-    .where(eq(notificationPreferencesTable.userId, userId))
-    .limit(1);
+  const [existing] = await db.select().from(notificationPreferencesTable).where(eq(notificationPreferencesTable.userId, userId)).limit(1);
   if (existing) return existing;
 
   const [created] = await db.insert(notificationPreferencesTable).values({ userId }).onConflictDoNothing().returning();
   if (created) return created;
 
-  const [raced] = await db
-    .select()
-    .from(notificationPreferencesTable)
-    .where(eq(notificationPreferencesTable.userId, userId))
-    .limit(1);
+  const [raced] = await db.select().from(notificationPreferencesTable).where(eq(notificationPreferencesTable.userId, userId)).limit(1);
   return raced;
 }
 
@@ -217,10 +193,7 @@ export async function insertNotificationsIgnoringDuplicates(rows: NotificationIn
  */
 export async function findPendingInstantEmails(organizationId: string, limit: number) {
   const wantsMail = or(
-    and(
-      eq(notificationsTable.type, 'mention'),
-      or(isNull(notificationPreferencesTable.userId), eq(notificationPreferencesTable.mentionEmail, true)),
-    ),
+    and(eq(notificationsTable.type, 'mention'), or(isNull(notificationPreferencesTable.userId), eq(notificationPreferencesTable.mentionEmail, true))),
     and(ne(notificationsTable.type, 'mention'), eq(notificationPreferencesTable.commentEmail, true)),
   );
 
@@ -259,12 +232,7 @@ export async function findVerifiedRecipients(userIds: string[]) {
   if (userIds.length === 0) return [];
 
   return baseDb
-    .selectDistinctOn([usersTable.id], {
-      id: usersTable.id,
-      email: usersTable.email,
-      name: usersTable.name,
-      language: usersTable.language,
-    })
+    .selectDistinctOn([usersTable.id], { id: usersTable.id, email: usersTable.email, name: usersTable.name, language: usersTable.language })
     .from(usersTable)
     .innerJoin(emailsTable, and(eq(emailsTable.userId, usersTable.id), eq(emailsTable.verified, true)))
     .where(inArray(usersTable.id, userIds))
@@ -286,10 +254,7 @@ export async function findUsersMinimal(userIds: string[]) {
 export async function findUserNames(userIds: string[]): Promise<Map<string, string>> {
   if (userIds.length === 0) return new Map();
 
-  const rows = await baseDb
-    .select({ id: usersTable.id, name: usersTable.name })
-    .from(usersTable)
-    .where(inArray(usersTable.id, userIds));
+  const rows = await baseDb.select({ id: usersTable.id, name: usersTable.name }).from(usersTable).where(inArray(usersTable.id, userIds));
 
   return new Map(rows.map((row) => [row.id, row.name]));
 }
@@ -297,10 +262,7 @@ export async function findUserNames(userIds: string[]): Promise<Map<string, stri
 /** Settles rows the instant-mail pass took, mailed or skipped for good: neither it nor the digest reads them again. */
 export async function stampEmailed(notificationIds: string[]): Promise<void> {
   if (notificationIds.length === 0) return;
-  await baseDb
-    .update(notificationsTable)
-    .set({ emailedAt: new Date().toISOString() })
-    .where(inArray(notificationsTable.id, notificationIds));
+  await baseDb.update(notificationsTable).set({ emailedAt: new Date().toISOString() }).where(inArray(notificationsTable.id, notificationIds));
 }
 
 // ── Digest ───────────────────────────────────────────────────────────────────
@@ -311,12 +273,7 @@ export async function stampEmailed(notificationIds: string[]): Promise<void> {
  * (`lastDigestAt`, no further back than `earliest` for the cadence; see run-digest.ts). A run walks only users
  * with something to send.
  */
-export async function findDueDigestRecipients(
-  dayStart: string,
-  includeWeekly: boolean,
-  earliest: Record<'daily' | 'weekly', string>,
-  limit: number,
-) {
+export async function findDueDigestRecipients(dayStart: string, includeWeekly: boolean, earliest: Record<'daily' | 'weekly', string>, limit: number) {
   const digest = sql<DigestFrequency>`coalesce(${notificationPreferencesTable.digest}, ${defaultDigestFrequency})`;
   const cadences: DigestFrequency[] = includeWeekly ? ['daily', 'weekly'] : ['daily'];
   const earliestForCadence = sql`case when ${digest} = 'weekly'
@@ -349,10 +306,7 @@ export async function findDueDigestRecipients(
       .where(
         and(
           inArray(digest, cadences),
-          or(
-            isNull(notificationPreferencesTable.lastDigestAt),
-            lt(notificationPreferencesTable.lastDigestAt, dayStart),
-          ),
+          or(isNull(notificationPreferencesTable.lastDigestAt), lt(notificationPreferencesTable.lastDigestAt, dayStart)),
           hasUndigested,
         ),
       )
@@ -391,10 +345,7 @@ export async function findUndigestedNotifications(userId: string, since: string,
 
 export async function stampDigested(notificationIds: string[]): Promise<void> {
   if (notificationIds.length === 0) return;
-  await baseDb
-    .update(notificationsTable)
-    .set({ digestedAt: new Date().toISOString() })
-    .where(inArray(notificationsTable.id, notificationIds));
+  await baseDb.update(notificationsTable).set({ digestedAt: new Date().toISOString() }).where(inArray(notificationsTable.id, notificationIds));
 }
 
 /** Upserts, so a user who never saved preferences gets a row with the defaults and the stamp. */

@@ -47,21 +47,14 @@ async function migrateData(entityType: LensEntityType, data: unknown, fromVersio
 }
 
 /** Migrates a single dehydrated query's `state.data` for a lens-capable entity type. */
-export async function migrateQueryState<S extends { data?: unknown }>(
-  entityType: LensEntityType,
-  state: S,
-  fromVersion: number,
-): Promise<S> {
+export async function migrateQueryState<S extends { data?: unknown }>(entityType: LensEntityType, state: S, fromVersion: number): Promise<S> {
   if (state.data === undefined) return state;
   const data = await migrateData(entityType, state.data, fromVersion);
   return { ...state, data };
 }
 
 /** Migrates queued mutation variables forward. Entity type is inferred from the mutation key. */
-export function migrateMutations(
-  mutations: DehydratedState['mutations'],
-  fromVersion: number,
-): DehydratedState['mutations'] {
+export function migrateMutations(mutations: DehydratedState['mutations'], fromVersion: number): DehydratedState['mutations'] {
   return mutations.map((mutation) => {
     const entityType = entityTypeOf(mutation.mutationKey);
     const variables = mutation.state?.variables;

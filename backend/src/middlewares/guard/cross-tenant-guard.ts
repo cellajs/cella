@@ -16,9 +16,7 @@ export const crossTenantGuard = xMiddleware(
     const memberships = ctx.var.memberships;
 
     if (!user || memberships === undefined) {
-      throw new AppError(401, 'unauthorized', 'warn', {
-        message: 'crossTenantGuard requires userGuard middleware',
-      });
+      throw new AppError(401, 'unauthorized', 'warn', { message: 'crossTenantGuard requires userGuard middleware' });
     }
 
     ctx.set('db', baseDb);

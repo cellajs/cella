@@ -16,14 +16,7 @@ export interface EngineConfig {
   backendUrl: string;
   /** Cost escape hatch: the backend co-hosts every enabled worker in-process. */
   singleVM: boolean;
-  s3: {
-    region: string;
-    host: string;
-    publicBucket: string;
-    privateBucket: string;
-    publicCDNUrl: string;
-    privateCDNUrl: string;
-  };
+  s3: { region: string; host: string; publicBucket: string; privateBucket: string; publicCDNUrl: string; privateCDNUrl: string };
   /** Service endpoint config keyed by slug (enabled flags + public URLs). */
   services: Record<string, EngineServiceEndpoint>;
 }
@@ -38,9 +31,7 @@ export function setEngineConfig(config: EngineConfig): void {
 /** The active engine config. Throws when no config has been loaded yet. */
 export function engineConfig(): EngineConfig {
   if (!injected) {
-    throw new Error(
-      'engine-config: no config loaded, await loadEngineConfig() (or call setEngineConfig) before importing engine modules.',
-    );
+    throw new Error('engine-config: no config loaded, await loadEngineConfig() (or call setEngineConfig) before importing engine modules.');
   }
   return injected;
 }
@@ -82,9 +73,7 @@ export async function loadEngineConfig(): Promise<EngineConfig> {
     const mod: Record<string, unknown> = await import(pathToFileURL(configModule).href);
     const candidate = mod.engineConfig ?? mod.default;
     if (!isEngineConfig(candidate)) {
-      throw new Error(
-        `engine-config: module '${configModule}' does not export an EngineConfig ('engineConfig' or default export).`,
-      );
+      throw new Error(`engine-config: module '${configModule}' does not export an EngineConfig ('engineConfig' or default export).`);
     }
     assertValidSlug(candidate.slug);
     setEngineConfig(candidate);

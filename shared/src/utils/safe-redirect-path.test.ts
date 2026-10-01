@@ -2,17 +2,14 @@ import { describe, expect, it } from 'vitest';
 import { toSafeRedirectPath } from './safe-redirect-path.ts';
 
 const origin = 'https://app.example.test';
-const safe = (input: unknown, opts: { maxLength?: number; denyPrefixes?: string[] } = {}) =>
-  toSafeRedirectPath(input, { origin, ...opts });
+const safe = (input: unknown, opts: { maxLength?: number; denyPrefixes?: string[] } = {}) => toSafeRedirectPath(input, { origin, ...opts });
 
 describe('toSafeRedirectPath', () => {
   describe('legitimate paths (positive controls)', () => {
     it('keeps a plain path, its query and its hash', () => {
       expect(safe('/home')).toBe('/home');
       expect(safe('/home?tab=members#top')).toBe('/home?tab=members#top');
-      expect(safe('/acme/organization/members?q=jane&sort=name#row-2')).toBe(
-        '/acme/organization/members?q=jane&sort=name#row-2',
-      );
+      expect(safe('/acme/organization/members?q=jane&sort=name#row-2')).toBe('/acme/organization/members?q=jane&sort=name#row-2');
     });
 
     it('keeps an encoded query intact', () => {

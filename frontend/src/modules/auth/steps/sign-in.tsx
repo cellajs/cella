@@ -32,18 +32,17 @@ type FormValues = z.infer<typeof formSchema>;
 
 export function SignInStep() {
   const { t } = useTranslation();
-  const { email, resetSteps, restrictedMode, setStep, setSignedIn, setMagicLinkMode, inviteOtherAccount } =
-    useAuthStore(
-      useShallow((state) => ({
-        email: state.email,
-        resetSteps: state.resetSteps,
-        restrictedMode: state.restrictedMode,
-        setStep: state.setStep,
-        setSignedIn: state.setSignedIn,
-        setMagicLinkMode: state.setMagicLinkMode,
-        inviteOtherAccount: state.inviteOtherAccount,
-      })),
-    );
+  const { email, resetSteps, restrictedMode, setStep, setSignedIn, setMagicLinkMode, inviteOtherAccount } = useAuthStore(
+    useShallow((state) => ({
+      email: state.email,
+      resetSteps: state.resetSteps,
+      restrictedMode: state.restrictedMode,
+      setStep: state.setStep,
+      setSignedIn: state.setSignedIn,
+      setMagicLinkMode: state.setMagicLinkMode,
+      inviteOtherAccount: state.inviteOtherAccount,
+    })),
+  );
 
   const lastUser = useUserStore((state) => state.lastUser);
   const clearUserStore = useUserStore((state) => state.reset);
@@ -54,10 +53,7 @@ export function SignInStep() {
   const abortRef = useRef<AbortController | null>(null);
   const [conditionalMediationSupported, setConditionalMediationSupported] = useState(false);
 
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { email },
-  });
+  const form = useForm<FormValues>({ resolver: zodResolver(formSchema), defaultValues: { email } });
 
   useEffect(() => {
     if (!enabledStrategies.includes('passkey')) return;
@@ -95,10 +91,7 @@ export function SignInStep() {
 
   const { mutate: sendMagic, isPending: isSending } = useMutation({
     // An invitation in hand: the magic link returns here, so it can be confirmed as the account signed in to.
-    mutationFn: () =>
-      sendMagicLink({
-        body: { email: form.getValues('email'), redirect: tokenId ? invitationResumePath(tokenId) : redirect },
-      }),
+    mutationFn: () => sendMagicLink({ body: { email: form.getValues('email'), redirect: tokenId ? invitationResumePath(tokenId) : redirect } }),
     onSuccess: () => {
       setMagicLinkMode('signin');
       setStep('magicLinkSent', form.getValues('email'));
@@ -137,12 +130,7 @@ export function SignInStep() {
       ) : (
         <h1 className="text-center text-2xl">
           {getTitle()} <br />
-          <AuthEmailButton
-            email={email}
-            onClick={resetAuth}
-            disabled={!!tokenId && !inviteOtherAccount}
-            className="mt-2"
-          />
+          <AuthEmailButton email={email} onClick={resetAuth} disabled={!!tokenId && !inviteOtherAccount} className="mt-2" />
         </h1>
       )}
 

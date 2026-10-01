@@ -6,10 +6,7 @@ function UserSheetHandlerBase() {
   useUrlSheet({
     searchParamKey: 'userSheetId',
     renderContent: (id, organizationId) => <UserSheet id={id} organizationId={organizationId} />,
-    options: {
-      side: 'right',
-      className: 'max-w-full lg:max-w-4xl p-0',
-    },
+    options: { side: 'right', className: 'max-w-full lg:max-w-4xl p-0' },
   });
 
   return null;

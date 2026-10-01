@@ -123,9 +123,7 @@ export function InfoGrid<C extends string>({
                   {t(`about:${namespace}.category_${category}` as TKey)}
                 </h2>
               )}
-              <div className="grid gap-4 md:grid-cols-2">
-                {items.filter((item) => item.category === category).map(renderTile)}
-              </div>
+              <div className="grid gap-4 md:grid-cols-2">{items.filter((item) => item.category === category).map(renderTile)}</div>
             </div>
           );
         })}

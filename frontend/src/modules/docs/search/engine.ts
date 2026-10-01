@@ -15,14 +15,7 @@ export type EnginePage = {
 };
 
 /** Indexed fields; display-only fields ride along on the documents unindexed. */
-const searchSchema = {
-  kind: 'enum',
-  pageId: 'string',
-  title: 'string',
-  content: 'string',
-  path: 'string',
-  tags: 'enum[]',
-} as const;
+const searchSchema = { kind: 'enum', pageId: 'string', title: 'string', content: 'string', path: 'string', tags: 'enum[]' } as const;
 
 type SearchDoc = {
   id: string;
@@ -45,14 +38,7 @@ const MAX_HITS = 60;
 const MAX_CHILD_ROWS = 5;
 
 function pageDocs(page: EnginePage): SearchDoc[] {
-  const base = {
-    pageId: page.slug,
-    path: '',
-    tags: [],
-    breadcrumbs: [] as string[],
-    to: '/docs/page/$',
-    params: { _splat: page.slug },
-  };
+  const base = { pageId: page.slug, path: '', tags: [], breadcrumbs: [] as string[], to: '/docs/page/$', params: { _splat: page.slug } };
   return [
     {
       ...base,
@@ -152,8 +138,7 @@ export function createEngine(
     id: doc.id,
     pageId: doc.pageId,
     type: doc.kind,
-    title:
-      doc.kind === 'text' ? markMatches(trimAroundMatch(doc.content, terms), terms) : markMatches(doc.title, terms),
+    title: doc.kind === 'text' ? markMatches(trimAroundMatch(doc.content, terms), terms) : markMatches(doc.title, terms),
     breadcrumbs: doc.breadcrumbs,
     to: doc.to,
     params: doc.params,

@@ -79,15 +79,9 @@ export function HeaderCell<R, SR>({
     column,
     'border-t-0',
     column.headerCellClass,
-    {
-      'cursor-pointer': sortable,
-      'touch-action-none': resizable,
-      'opacity-40': isDragging,
-      'z-3': column.frozen,
-    },
+    { 'cursor-pointer': sortable, 'touch-action-none': resizable, 'opacity-40': isDragging, 'z-3': column.frozen },
     // aria-selected is never true without cell selection, so the focus outline comes from :focus-visible.
-    !isCellSelectionEnabled &&
-      'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-solid focus-visible:-outline-offset-2',
+    !isCellSelectionEnabled && 'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-solid focus-visible:-outline-offset-2',
   );
 
   useEffect(() => {
@@ -136,21 +130,12 @@ export function HeaderCell<R, SR>({
     if (onSortColumnsChange == null) return;
     const { sortDescendingFirst } = column;
     if (sortColumn === undefined) {
-      const nextSort: SortColumn = {
-        columnKey: column.key,
-        direction: sortDescendingFirst ? 'DESC' : 'ASC',
-      };
+      const nextSort: SortColumn = { columnKey: column.key, direction: sortDescendingFirst ? 'DESC' : 'ASC' };
       onSortColumnsChange(sortColumns && ctrlClick ? [...sortColumns, nextSort] : [nextSort]);
     } else {
       let nextSortColumn: SortColumn | undefined;
-      if (
-        (sortDescendingFirst === true && sortDirection === 'DESC') ||
-        (sortDescendingFirst !== true && sortDirection === 'ASC')
-      ) {
-        nextSortColumn = {
-          columnKey: column.key,
-          direction: sortDirection === 'ASC' ? 'DESC' : 'ASC',
-        };
+      if ((sortDescendingFirst === true && sortDirection === 'DESC') || (sortDescendingFirst !== true && sortDirection === 'ASC')) {
+        nextSortColumn = { columnKey: column.key, direction: sortDirection === 'ASC' ? 'DESC' : 'ASC' };
       }
       if (ctrlClick) {
         const nextSortColumns = [...sortColumns!];
@@ -201,17 +186,9 @@ export function HeaderCell<R, SR>({
     }
   }
 
-  const style: React.CSSProperties = {
-    ...getHeaderCellStyle(column, rowIdx, rowSpan),
-    ...getCellStyle(column, colSpan),
-  };
+  const style: React.CSSProperties = { ...getHeaderCellStyle(column, rowIdx, rowSpan), ...getCellStyle(column, colSpan) };
 
-  const content = column.renderHeaderCell({
-    column,
-    sortDirection,
-    priority,
-    tabIndex: childTabIndex,
-  });
+  const content = column.renderHeaderCell({ column, sortDirection, priority, tabIndex: childTabIndex });
 
   return (
     <>
@@ -233,16 +210,10 @@ export function HeaderCell<R, SR>({
       >
         {content}
 
-        {resizable && (
-          <ResizeHandle column={column} onColumnResize={onColumnResize} onColumnResizeEnd={onColumnResizeEnd} />
-        )}
+        {resizable && <ResizeHandle column={column} onColumnResize={onColumnResize} onColumnResizeEnd={onColumnResizeEnd} />}
       </div>
       {closestEdge && <DropIndicator edge={closestEdge} gap={0} />}
-      {preview &&
-        createPortal(
-          <div className="rounded border bg-background px-3 py-1.5 text-sm shadow-lg">{column.name}</div>,
-          preview.container,
-        )}
+      {preview && createPortal(<div className="rounded border bg-background px-3 py-1.5 text-sm shadow-lg">{column.name}</div>, preview.container)}
     </>
   );
 }

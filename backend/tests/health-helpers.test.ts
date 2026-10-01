@@ -13,12 +13,7 @@ import {
   worstStatus,
 } from '#/lib/health-helpers';
 
-const connectedSocket: CdcSocketSnapshot = {
-  cdcConnected: true,
-  lastMessageAt: null,
-  messagesReceived: 10,
-  parseErrors: 0,
-};
+const connectedSocket: CdcSocketSnapshot = { cdcConnected: true, lastMessageAt: null, messagesReceived: 10, parseErrors: 0 };
 
 function worker(overrides: Record<string, unknown> = {}) {
   return {
@@ -70,11 +65,7 @@ describe('gradeEventLoop', () => {
 
 describe('mapApiComponent', () => {
   it('reports memory in MB and grades the event loop', () => {
-    const memory = {
-      rss: 400 * 1024 * 1024,
-      heapUsed: 180 * 1024 * 1024,
-      heapTotal: 256 * 1024 * 1024,
-    } as NodeJS.MemoryUsage;
+    const memory = { rss: 400 * 1024 * 1024, heapUsed: 180 * 1024 * 1024, heapTotal: 256 * 1024 * 1024 } as NodeJS.MemoryUsage;
     const component = mapApiComponent(8, memory);
     expect(component.status).toBe('healthy');
     expect(component.checkedVia).toBe('local');

@@ -99,10 +99,7 @@ export function JsonViewer({
     }, 200);
   }, []);
 
-  const refDataType = useMemo(
-    () => (openapiMode === 'spec' ? createRefDataType(handleRefNavigate) : null),
-    [openapiMode, handleRefNavigate],
-  );
+  const refDataType = useMemo(() => (openapiMode === 'spec' ? createRefDataType(handleRefNavigate) : null), [openapiMode, handleRefNavigate]);
 
   const combinedValueTypes = useMemo(() => {
     if (refDataType) {

@@ -1,9 +1,4 @@
-import {
-  type VerifyYjsTokenResult,
-  verifyYjsToken,
-  type YjsTokenPayload,
-  yjsTokenVerifyKey,
-} from 'shared/utils/yjs-token';
+import { type VerifyYjsTokenResult, verifyYjsToken, type YjsTokenPayload, yjsTokenVerifyKey } from 'shared/utils/yjs-token';
 import { env } from '../env';
 
 export type { YjsTokenPayload };

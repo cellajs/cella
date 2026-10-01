@@ -22,10 +22,7 @@ import {
 
 /** Mock S3 client dispatching on command constructor name, mirroring
  *  ensure-state-bucket.test.ts. GET pops from `get`, PUT records inputs. */
-function makeS3(opts: {
-  get?: Array<{ body?: string; etag?: string } | { status: number } | { name: string }>;
-  putEtag?: string;
-}) {
+function makeS3(opts: { get?: Array<{ body?: string; etag?: string } | { status: number } | { name: string }>; putEtag?: string }) {
   const getQueue = [...(opts.get ?? [])];
   const puts: Array<Record<string, unknown>> = [];
   const send = vi.fn(async (cmd: { constructor: { name: string }; input: Record<string, unknown> }) => {
@@ -85,21 +82,16 @@ describe('parse/serialize', () => {
   });
 
   it('rejects a malformed rollout entry', () => {
-    expect(() =>
-      parseControlState('{"schemaVersion":2,"rollout":{"backend":{"active":{"id":"x","sha":"y","seq":1}}}}'),
-    ).toThrow(/rollout\['backend'\].seq/);
+    expect(() => parseControlState('{"schemaVersion":2,"rollout":{"backend":{"active":{"id":"x","sha":"y","seq":1}}}}')).toThrow(
+      /rollout\['backend'\].seq/,
+    );
   });
 });
 
 describe('readControlState', () => {
   it('parses an existing object and returns its etag', async () => {
     const { s3 } = makeS3({
-      get: [
-        {
-          body: '{"schemaVersion":2,"rollout":{"backend":{"seq":5,"active":{"id":"aa11","sha":"abc","seq":5}}}}',
-          etag: '"e1"',
-        },
-      ],
+      get: [{ body: '{"schemaVersion":2,"rollout":{"backend":{"seq":5,"active":{"id":"aa11","sha":"abc","seq":5}}}}', etag: '"e1"' }],
     });
     const { state, etag } = await readControlState(s3, 'b', 'k');
     expect(state.rollout.backend).toEqual({ seq: 5, active: { id: 'aa11', sha: 'abc', seq: 5 } });
@@ -168,12 +160,7 @@ describe('acquireLock / releaseLock', () => {
   });
 
   it('refuses when a live lock is held by someone else', async () => {
-    const held: LockInfo = {
-      owner: 'operator:b',
-      operation: 'deploy',
-      acquiredAt: '',
-      expiresAt: new Date(2_000_000).toISOString(),
-    };
+    const held: LockInfo = { owner: 'operator:b', operation: 'deploy', acquiredAt: '', expiresAt: new Date(2_000_000).toISOString() };
     const { s3 } = makeLockS3(held);
     const res = await acquireLock(s3, 'b', 'k', opts);
     expect(res.acquired).toBe(false);
@@ -181,12 +168,7 @@ describe('acquireLock / releaseLock', () => {
   });
 
   it('breaks and takes an expired lock', async () => {
-    const expired: LockInfo = {
-      owner: 'operator:b',
-      operation: 'deploy',
-      acquiredAt: '',
-      expiresAt: new Date(500_000).toISOString(),
-    };
+    const expired: LockInfo = { owner: 'operator:b', operation: 'deploy', acquiredAt: '', expiresAt: new Date(500_000).toISOString() };
     const { s3, current } = makeLockS3(expired);
     const res = await acquireLock(s3, 'b', 'k', opts);
     expect(res.acquired).toBe(true);
@@ -201,24 +183,14 @@ describe('acquireLock / releaseLock', () => {
   });
 
   it('release leaves a lock owned by someone else', async () => {
-    const other: LockInfo = {
-      owner: 'operator:b',
-      operation: 'deploy',
-      acquiredAt: '',
-      expiresAt: new Date(2_000_000).toISOString(),
-    };
+    const other: LockInfo = { owner: 'operator:b', operation: 'deploy', acquiredAt: '', expiresAt: new Date(2_000_000).toISOString() };
     const { s3, current } = makeLockS3(other);
     await releaseLock(s3, 'b', 'k', 'operator:a');
     expect(current()).toBeDefined();
   });
 
   it('forceUnlock removes any lock and returns its info', async () => {
-    const other: LockInfo = {
-      owner: 'operator:b',
-      operation: 'deploy',
-      acquiredAt: '',
-      expiresAt: new Date(2_000_000).toISOString(),
-    };
+    const other: LockInfo = { owner: 'operator:b', operation: 'deploy', acquiredAt: '', expiresAt: new Date(2_000_000).toISOString() };
     const { s3, current } = makeLockS3(other);
     const info = await forceUnlock(s3, 'b', 'k');
     expect(info?.owner).toBe('operator:b');
@@ -244,10 +216,7 @@ describe('rollout transitions', () => {
   });
 
   it('promote on a first deploy starts from seq 1', () => {
-    expect(promote(undefined, { id: 'bb22', sha: 'def' })).toEqual({
-      seq: 1,
-      active: { id: 'bb22', sha: 'def', seq: 1 },
-    });
+    expect(promote(undefined, { id: 'bb22', sha: 'def' })).toEqual({ seq: 1, active: { id: 'bb22', sha: 'def', seq: 1 } });
   });
 
   it('parse tolerates and drops unknown pointer fields (a pre-refactor plane marker)', () => {
@@ -317,13 +286,9 @@ describe('updateServiceRollout', () => {
       throw fail412();
     });
     const s3 = { send } as any;
-    await expect(
-      updateServiceRollout(s3, 'b', 'k', 'backend', (cur) => promote(cur, { id: 'bb22', sha: 'new' }), 2),
-    ).rejects.toThrow(/PreconditionFailed/);
-    expect(
-      send.mock.calls.filter(
-        ([cmd]) => (cmd as { constructor: { name: string } }).constructor.name === 'PutObjectCommand',
-      ),
-    ).toHaveLength(2);
+    await expect(updateServiceRollout(s3, 'b', 'k', 'backend', (cur) => promote(cur, { id: 'bb22', sha: 'new' }), 2)).rejects.toThrow(
+      /PreconditionFailed/,
+    );
+    expect(send.mock.calls.filter(([cmd]) => (cmd as { constructor: { name: string } }).constructor.name === 'PutObjectCommand')).toHaveLength(2);
   });
 });

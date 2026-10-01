@@ -9,9 +9,7 @@ import { defineRuntimeSecrets } from '../lib/runtime-secrets';
 function yjsTokenPublicKey(material: string): string {
   const seed = Buffer.from(hkdfSync('sha256', material, '', 'yjs-token-ed25519', 32));
   const pkcs8 = Buffer.concat([Buffer.from('302e020100300506032b657004220420', 'hex'), seed]);
-  const { x } = createPublicKey(createPrivateKey({ key: pkcs8, format: 'der', type: 'pkcs8' })).export({
-    format: 'jwk',
-  });
+  const { x } = createPublicKey(createPrivateKey({ key: pkcs8, format: 'der', type: 'pkcs8' })).export({ format: 'jwk' });
   if (!x) throw new Error('runtime-secrets.config: Ed25519 public key export carried no key bytes');
   return x;
 }

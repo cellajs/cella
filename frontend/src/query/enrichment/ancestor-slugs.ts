@@ -16,11 +16,7 @@ function hasAncestorSlugsChanged(a: AncestorSlugs | null, b: AncestorSlugs | nul
 }
 
 /** Reads a pre-built index, falling back to the ancestor id when a slug is not indexed; rewriteUrlToSlug corrects the URL later. Returns the original reference if unchanged. */
-export function enrichWithAncestorSlugs(
-  item: EnrichableChannel,
-  ancestors: readonly ChannelEntityType[],
-  slugIndex: SlugIndex,
-): EnrichableChannel {
+export function enrichWithAncestorSlugs(item: EnrichableChannel, ancestors: readonly ChannelEntityType[], slugIndex: SlugIndex): EnrichableChannel {
   if (ancestors.length === 0) return item;
 
   const membership: MembershipBase | null = item.membership ?? null;

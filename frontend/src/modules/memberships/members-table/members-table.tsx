@@ -52,15 +52,7 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
   const { sortColumns, setSortColumns: onSortColumnsChange } = useSortColumns(sort, order, setSearch);
 
   // include=counts feeds the per-member insight columns (last post, authored counts, sub-channel memberships)
-  const queryOptions = membersListQueryOptions({
-    entityId,
-    entityType,
-    tenantId,
-    organizationId,
-    ...search,
-    limit,
-    include: 'counts',
-  });
+  const queryOptions = membersListQueryOptions({ entityId, entityType, tenantId, organizationId, ...search, limit, include: 'counts' });
 
   const { rows, isLoading, isFetching, error, hasNextPage, fetchMore } = useInfiniteRows(queryOptions);
   const { selected, selectedRowIds, onSelectedRowsChange, clearSelection } = useRowSelection(rows);
@@ -70,11 +62,7 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
 
     for (const index of indexes) {
       const updatedMembership = {
-        path: {
-          id: changedRows[index].membership.id,
-          tenantId,
-          organizationId,
-        },
+        path: { id: changedRows[index].membership.id, tenantId, organizationId },
         body: { role: changedRows[index].membership.role },
         channelId: entityId,
         channelType: entityType,
@@ -118,11 +106,7 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
           sortColumns,
           onSortColumnsChange,
           NoRowsComponent: (
-            <ContentPlaceholder
-              icon={UsersIcon}
-              title="c:no_resource_yet"
-              titleProps={{ resource: t('c:member_other').toLowerCase() }}
-            />
+            <ContentPlaceholder icon={UsersIcon} title="c:no_resource_yet" titleProps={{ resource: t('c:member_other').toLowerCase() }} />
           ),
         }}
       />

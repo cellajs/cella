@@ -26,11 +26,7 @@ export async function createTenantForUser(
   log.info('Tenant auto-created', { tenantId: tenant.id, name, createdBy });
 
   // Fire-and-forget security notification to sysadmin
-  sendSecurityInboxEmail('tenant-created', {
-    tenantName: name,
-    userEmail,
-    timestamp: utcStamp(),
-  });
+  sendSecurityInboxEmail('tenant-created', { tenantName: name, userEmail, timestamp: utcStamp() });
 
   return tenant;
 }

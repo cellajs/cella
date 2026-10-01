@@ -19,14 +19,7 @@ const collapseTextClasses =
 
 const expandedTextClasses = 'transition-[max-height,opacity,margin] duration-300 ease-in-out max-h-24 mt-2 md:mt-3';
 
-export function SimpleHeader({
-  heading,
-  text,
-  children,
-  className = '',
-  textClassName = '',
-  collapseText,
-}: SimpleHeaderProps) {
+export function SimpleHeader({ heading, text, children, className = '', textClassName = '', collapseText }: SimpleHeaderProps) {
   const { t } = useTranslation();
   const hasScrolled = useHasScrolled();
   const useCollapse = collapseText || textClassName;
@@ -36,11 +29,7 @@ export function SimpleHeader({
       {heading && <h1 className="font-heading font-semibold text-xl">{t(heading as TKey)}</h1>}
       {text && (
         <p
-          className={cn(
-            'text-base text-muted-foreground',
-            collapseText && (hasScrolled ? collapseTextClasses : expandedTextClasses),
-            textClassName,
-          )}
+          className={cn('text-base text-muted-foreground', collapseText && (hasScrolled ? collapseTextClasses : expandedTextClasses), textClassName)}
         >
           {t(text as TKey)}
         </p>

@@ -74,28 +74,25 @@ export function useTreeRows<T extends TreeItem>(opts: UseTreeRowsOptions<T>) {
     [toggledIds],
   );
 
-  const canDrop = useCallback(
-    (rows: readonly TreeRow<T>[] | undefined, { fromIdx, toIdx, zone }: CanDropArgs): boolean => {
-      if (!rows) return false;
-      const dragged = rows[fromIdx];
-      const target = rows[toIdx];
-      if (!dragged || !target) return false;
-      const o = optsRef.current;
-      const getId = o.getId ?? treeItemAccessors.getId;
-      const getParentId = o.getParentId ?? treeItemAccessors.getParentId;
+  const canDrop = useCallback((rows: readonly TreeRow<T>[] | undefined, { fromIdx, toIdx, zone }: CanDropArgs): boolean => {
+    if (!rows) return false;
+    const dragged = rows[fromIdx];
+    const target = rows[toIdx];
+    if (!dragged || !target) return false;
+    const o = optsRef.current;
+    const getId = o.getId ?? treeItemAccessors.getId;
+    const getParentId = o.getParentId ?? treeItemAccessors.getParentId;
 
-      // Cycle prevention: target must not be the dragged row or any descendant.
-      const byId = new Map(rows.map((r) => [getId(r), r] as const));
-      if (isSelfOrDescendantOf(getId(dragged), getId(target), byId, getParentId)) return false;
+    // Cycle prevention: target must not be the dragged row or any descendant.
+    const byId = new Map(rows.map((r) => [getId(r), r] as const));
+    if (isSelfOrDescendantOf(getId(dragged), getId(target), byId, getParentId)) return false;
 
-      // 'center' lands as a child, as does 'bottom' on an expanded parent; otherwise the target's depth is reused.
-      const landsAsChild = zone === 'center' || (zone === 'bottom' && target._hasChildren && target._isExpanded);
-      const targetDepth = landsAsChild ? target._depth + 1 : target._depth;
-      if (o.maxDepth !== undefined && targetDepth + dragged._subtreeHeight > o.maxDepth - 1) return false;
-      return true;
-    },
-    [],
-  );
+    // 'center' lands as a child, as does 'bottom' on an expanded parent; otherwise the target's depth is reused.
+    const landsAsChild = zone === 'center' || (zone === 'bottom' && target._hasChildren && target._isExpanded);
+    const targetDepth = landsAsChild ? target._depth + 1 : target._depth;
+    if (o.maxDepth !== undefined && targetDepth + dragged._subtreeHeight > o.maxDepth - 1) return false;
+    return true;
+  }, []);
 
   const onReorder = useCallback(
     (rows: readonly TreeRow<T>[] | undefined, fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => {
@@ -115,9 +112,7 @@ export function useTreeRows<T extends TreeItem>(opts: UseTreeRowsOptions<T>) {
       const siblings = rows.filter((r) => (getParentId(r) ?? null) === targetParentId);
       // `getRelativeOrder` only needs `{ id, displayOrder }` per item.
       const siblingItems = siblings.map((s) => ({ id: getId(s), displayOrder: getDisplayOrder(s) }));
-      const anchorOrder = dropAsFirstChild
-        ? Math.min(...siblings.map((s) => getDisplayOrder(s)))
-        : getDisplayOrder(target);
+      const anchorOrder = dropAsFirstChild ? Math.min(...siblings.map((s) => getDisplayOrder(s))) : getDisplayOrder(target);
       const anchorEdge = dropAsFirstChild ? 'top' : edge;
       const newOrder = getRelativeOrder(siblingItems, anchorOrder, getId(dragged), anchorEdge);
 

@@ -56,12 +56,7 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
           </DropdownActionItem>
         ))}
       </div>,
-      {
-        id: 'user-language',
-        triggerId: 'user-language-trigger',
-        triggerRef,
-        kind: 'menu',
-      },
+      { id: 'user-language', triggerId: 'user-language-trigger', triggerRef, kind: 'menu' },
     );
   };
 

@@ -36,10 +36,7 @@ export function AttachmentsTableBar({
   const isOrganization = channel.entityType === 'organization';
   const organizationId = !isOrganization && 'organizationId' in channel ? String(channel.organizationId) : channel.id;
   const publicAt = 'publicAt' in channel && typeof channel.publicAt === 'string' ? channel.publicAt : null;
-  const placement = {
-    ...(isOrganization ? {} : { [appConfig.entityIdColumnKeys[channel.entityType]]: channel.id }),
-    publicAt,
-  };
+  const placement = { ...(isOrganization ? {} : { [appConfig.entityIdColumnKeys[channel.entityType]]: channel.id }), publicAt };
   const { open } = useAttachmentsUploadDialog(channel.tenantId, organizationId, placement);
   const resolveCan = useResolveCan();
 
@@ -51,10 +48,7 @@ export function AttachmentsTableBar({
 
   // Bulk delete acts only on rows this user may delete; the badge shows that count when it differs from the selection.
   const deletable = selected.filter((row) =>
-    resolveCan(channel.can?.attachment?.delete, row.createdBy, {
-      row: hierarchy.resolveDeepestAncestorId('attachment', row),
-      channel: channel.id,
-    }),
+    resolveCan(channel.can?.attachment?.delete, row.createdBy, { row: hierarchy.resolveDeepestAncestorId('attachment', row), channel: channel.id }),
   );
 
   const openDeleteDialog = () => {

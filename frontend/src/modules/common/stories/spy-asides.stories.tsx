@@ -9,11 +9,7 @@ import { TocAside } from '~/modules/page/toc-aside';
 import { withApp } from '~/stories/with-app';
 
 /** Scroll-spy asides: the docs page "on this page" nav and the legal page subject nav. */
-const meta = {
-  title: 'common/SpyAsides',
-  decorators: [withApp],
-  parameters: { layout: 'fullscreen' },
-} satisfies Meta;
+const meta = { title: 'common/SpyAsides', decorators: [withApp], parameters: { layout: 'fullscreen' } } satisfies Meta;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
@@ -111,10 +107,7 @@ const subjects = [
  */
 export const Legal: Story = {
   render: () => (
-    <SpyPage
-      ids={['overview', 'introduction', 'cookies']}
-      aside={<LegalAside subjects={subjects} currentSubject={'terms' as LegalSubject} />}
-    />
+    <SpyPage ids={['overview', 'introduction', 'cookies']} aside={<LegalAside subjects={subjects} currentSubject={'terms' as LegalSubject} />} />
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

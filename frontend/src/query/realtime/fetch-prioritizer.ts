@@ -49,8 +49,7 @@ const dirty = new Map<string, DirtyEntry>();
 let timer: ReturnType<typeof setTimeout> | null = null;
 let listenersInstalled = false;
 
-const entryKey = (entityType: string, organizationId: string, channelId: string | null) =>
-  `${entityType}:${channelId ?? organizationId}`;
+const entryKey = (entityType: string, organizationId: string, channelId: string | null) => `${entityType}:${channelId ?? organizationId}`;
 
 /** FNV-1a 32-bit gives the same client and scope a stable spread slot. */
 function hashSpread(key: string): number {
@@ -95,9 +94,7 @@ function enqueueWithTier(input: EnqueueInput, tier: { min: number; max: number }
 
   if (!hasEntityQueryKeys(entityType)) return;
 
-  const caughtUp = channelId
-    ? store.getChannelSeq(organizationId, channelId, entityType)
-    : store.getOrgSeq(organizationId, entityType);
+  const caughtUp = channelId ? store.getChannelSeq(organizationId, channelId, entityType) : store.getOrgSeq(organizationId, entityType);
   if (untilSeq <= caughtUp) return; // already have this range
 
   // Anchoring at caught-up+1 heals missed-notification gaps and trims already-ingested overlap; with no baseline, trust the notification's own range.
@@ -250,18 +247,10 @@ async function flushGroup(entries: DirtyEntry[]): Promise<'ok' | 'fallback' | 'r
   const fromSeq = Math.min(...entries.map((entry) => entry.fromSeq));
   const untilSeq = Math.max(...entries.map((entry) => entry.untilSeq));
   const keys = getEntityQueryKeys(entityType);
-  const result = await cacheOps.fetchRangeAndPatch(
-    entityType,
-    organizationId,
-    tenantId,
-    `${fromSeq},${untilSeq}`,
-    keys,
-    coveringChannelId(entries),
-  );
+  const result = await cacheOps.fetchRangeAndPatch(entityType, organizationId, tenantId, `${fromSeq},${untilSeq}`, keys, coveringChannelId(entries));
 
   if (result.status === 'error' && entries.some((entry) => entry.attempts + 1 < MAX_FLUSH_ATTEMPTS)) {
-    for (const entry of entries)
-      requeue({ ...entry, attempts: entry.attempts + 1 }, RETRY_BASE_MS * 2 ** entry.attempts);
+    for (const entry of entries) requeue({ ...entry, attempts: entry.attempts + 1 }, RETRY_BASE_MS * 2 ** entry.attempts);
     return 'requeued';
   }
 

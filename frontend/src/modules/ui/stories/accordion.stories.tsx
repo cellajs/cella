@@ -11,9 +11,7 @@ const meta = {
   component: Accordion,
   tags: ['autodocs'],
   argTypes: {
-    multiple: {
-      control: { type: 'boolean' },
-    },
+    multiple: { control: { type: 'boolean' } },
   },
   args: {},
   render: (args) => (
@@ -24,9 +22,7 @@ const meta = {
       </AccordionItem>
       <AccordionItem value="item-2">
         <AccordionTrigger>Is it styled?</AccordionTrigger>
-        <AccordionContent>
-          Yes. It comes with default styles that matches the other components' aesthetic.
-        </AccordionContent>
+        <AccordionContent>Yes. It comes with default styles that matches the other components' aesthetic.</AccordionContent>
       </AccordionItem>
       <AccordionItem value="item-3">
         <AccordionTrigger>Is it animated?</AccordionTrigger>
@@ -73,9 +69,7 @@ export const ShouldOnlyOpenOne: Story = {
 
 export const ShouldOpenAll: Story = {
   name: 'when accordions are clicked, should open all items one at a time',
-  args: {
-    multiple: true,
-  },
+  args: { multiple: true },
   tags: ['!dev', '!autodocs'],
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);

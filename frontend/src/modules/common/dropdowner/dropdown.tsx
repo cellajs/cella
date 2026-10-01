@@ -74,10 +74,7 @@ function MenuDropdown({ dropdown, triggerEl }: { dropdown: InternalDropdown; tri
       <Menu.Portal>
         <Menu.Positioner anchor={triggerEl} align={dropdown.align} sideOffset={4} className="z-301">
           <Menu.Popup
-            className={cn(
-              'min-w-32 rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-hidden',
-              dropdown.popupClassName,
-            )}
+            className={cn('min-w-32 rounded-md border bg-popover p-1 text-popover-foreground shadow-md outline-hidden', dropdown.popupClassName)}
             finalFocus={triggerFocusRef}
           >
             {dropdown.content}
@@ -97,13 +94,7 @@ function PanelDropdown({ dropdown, triggerEl }: { dropdown: InternalDropdown; tr
 
   return (
     <Popover key={dropdown.key} open={true} onOpenChange={onOpenChange} modal={false}>
-      <PopoverContent
-        anchor={triggerEl}
-        align={dropdown.align}
-        positionerClassName="z-301"
-        className="p-0"
-        finalFocus={triggerFocusRef}
-      >
+      <PopoverContent anchor={triggerEl} align={dropdown.align} positionerClassName="z-301" className="p-0" finalFocus={triggerFocusRef}>
         <FocusTrap active initialFocus returnFocus containFocus>
           <div style={{ display: 'contents' }}>{dropdown.content}</div>
         </FocusTrap>

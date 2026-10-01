@@ -42,21 +42,10 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
             initial={{ opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}
-            transition={{
-              opacity: { duration: 0.15 },
-              scale: { type: 'spring', stiffness: 300, damping: 15 },
-            }}
+            transition={{ opacity: { duration: 0.15 }, scale: { type: 'spring', stiffness: 300, damping: 15 } }}
             className="absolute"
           >
-            <motion.div
-              animate={{ scale: [1, 1.08, 1] }}
-              transition={{
-                duration: 1.5,
-                repeat: 1,
-                repeatDelay: 0.3,
-                ease: 'easeInOut',
-              }}
-            >
+            <motion.div animate={{ scale: [1, 1.08, 1] }} transition={{ duration: 1.5, repeat: 1, repeatDelay: 0.3, ease: 'easeInOut' }}>
               <Logo iconOnly height={34} className="saturate-[.9]" />
             </motion.div>
           </motion.div>
@@ -70,10 +59,7 @@ export function AppNavLoader({ className, icon: Icon }: { className?: string; ic
             initial={skipInitialAnimation ? false : { opacity: 0, scale: 0 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0 }}
-            transition={{
-              opacity: { duration: 0.15 },
-              scale: { type: 'spring', stiffness: 300, damping: 17 },
-            }}
+            transition={{ opacity: { duration: 0.15 }, scale: { type: 'spring', stiffness: 300, damping: 17 } }}
             className="absolute"
           >
             {isLoading ? (

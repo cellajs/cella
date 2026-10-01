@@ -98,8 +98,7 @@ export const useNavigationStore = create<NavigationStoreState>()(
           toggleSection: (section) => {
             set((state) => {
               if (!state.activeSections) state.activeSections = { [section]: false };
-              else if (state.activeSections[section] !== undefined)
-                state.activeSections[section] = !state.activeSections[section];
+              else if (state.activeSections[section] !== undefined) state.activeSections[section] = !state.activeSections[section];
               else state.activeSections = { ...state.activeSections, ...{ [section]: false } };
             });
           },

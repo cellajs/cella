@@ -13,9 +13,7 @@ import {
 } from '../tests/helpers/pulumi-mock';
 
 // The generation VMs the pools target need a pinnable boot image; the registry lookup answers a fixed digest here.
-vi.mock('../lib/scaleway/boot-image', () => ({
-  resolveBootImage: async () => ({ image: 'infra-boot', digest: `sha256:${'a'.repeat(64)}` }),
-}));
+vi.mock('../lib/scaleway/boot-image', () => ({ resolveBootImage: async () => ({ image: 'infra-boot', digest: `sha256:${'a'.repeat(64)}` }) }));
 
 // The propagation and readiness gates are dynamic resources whose providers poll the network; a plain component stands in so the graph they gate renders.
 vi.mock('./dns-cert-gates', async () => {
@@ -42,19 +40,14 @@ const vmEnv = (slug: string): Record<string, string> => {
   const server = h.byType('scaleway:instance/server:Server').find((r) => r.name.startsWith(`vm-${slug}-`));
   if (!server) throw new Error(`no VM for ${slug}`);
   const { env } = bootPlanIn(String(unwrapSecret(server.inputs.cloudInit)), '/etc/cella/boot-plan.json').plan.files;
-  return Object.fromEntries(
-    env.split('\n').map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]),
-  );
+  return Object.fromEntries(env.split('\n').map((line) => [line.slice(0, line.indexOf('=')), line.slice(line.indexOf('=') + 1)]));
 };
 
 beforeAll(async () => {
   writeGenerationKeys({ bootAccessKey: 'ak', bootSecretKey: 'sk', handoffSecretIds: {} });
   // The LB resolves its private-network address from IPAM over HTTPS.
   vi.stubEnv('SCW_SECRET_KEY', 'test-secret-key');
-  vi.stubGlobal(
-    'fetch',
-    makeFetch([{ method: 'GET', match: '/ipam/v1/', body: { ips: [{ address: '10.0.0.200/24' }] } }]).fn,
-  );
+  vi.stubGlobal('fetch', makeFetch([{ method: 'GET', match: '/ipam/v1/', body: { ips: [{ address: '10.0.0.200/24' }] } }]).fn);
   // Split-VM with the path-routed WebSocket relay enabled, so a pool with WebSocket timeouts and an internal-listener consumer both render.
   const { setEngineConfig } = await import('../config/engine-config');
   const { services } = fakeConfig();
@@ -75,10 +68,7 @@ describe('load balancer', () => {
     const https = named('https-frontend');
     expect(https.inputs.inboundPort).toBe(443);
     const certificates = h.byType('scaleway:loadbalancers/certificate:Certificate');
-    expect(certificates.map((c) => (c.inputs.letsencrypt as { commonName: string }).commonName).sort()).toEqual([
-      'cellajs.com',
-      'www.cellajs.com',
-    ]);
+    expect(certificates.map((c) => (c.inputs.letsencrypt as { commonName: string }).commonName).sort()).toEqual(['cellajs.com', 'www.cellajs.com']);
     expect([...(https.inputs.certificateIds as string[])].sort()).toEqual(certificates.map((c) => id(c.name)).sort());
 
     const http = named('http-frontend');
@@ -105,14 +95,8 @@ describe('load balancer', () => {
 
   it('exposes the internal listener only through a frontend that admits the private network and denies the rest', () => {
     const frontends = h.byType('scaleway:loadbalancers/frontend:Frontend');
-    expect(frontends.map((f) => f.name).sort()).toEqual([
-      'backend-internal-frontend',
-      'http-frontend',
-      'https-frontend',
-    ]);
-    const subnet = (
-      h.oneOfType('scaleway:network/privateNetwork:PrivateNetwork').inputs.ipv4Subnet as { subnet: string }
-    ).subnet;
+    expect(frontends.map((f) => f.name).sort()).toEqual(['backend-internal-frontend', 'http-frontend', 'https-frontend']);
+    const subnet = (h.oneOfType('scaleway:network/privateNetwork:PrivateNetwork').inputs.ipv4Subnet as { subnet: string }).subnet;
     const internal = named('backend-internal-frontend');
     expect(internal.inputs.certificateIds).toBeUndefined();
     const acls = h
@@ -158,9 +142,7 @@ describe('load balancer', () => {
     expect(lb.inputs.privateNetworks).toEqual([{ privateNetworkId: id('main-private-network') }]);
     for (const pool of h.byType('scaleway:loadbalancers/backend:Backend')) {
       const slug = pool.name.replace(/-(internal-)?lb-backend$/, '');
-      const reserved = h.resources.filter(
-        (r) => r.type === 'scaleway:ipam/ip:Ip' && r.name.startsWith(`ipam-${slug}-`),
-      );
+      const reserved = h.resources.filter((r) => r.type === 'scaleway:ipam/ip:Ip' && r.name.startsWith(`ipam-${slug}-`));
       expect(reserved.length, pool.name).toBeGreaterThan(0);
       expect(pool.inputs.serverIps, pool.name).toEqual(reserved.map((r) => String(r.outputs.address).split('/')[0]));
     }
@@ -169,16 +151,7 @@ describe('load balancer', () => {
   it('keeps the resource names of the live stack, so an update replaces no certificate, record or pool', () => {
     // Renaming a Pulumi resource replaces it: a new certificate waits on issuance and a new record on propagation, both with the old one gone.
     const names = h.resources.map((r) => r.name);
-    for (const name of [
-      'app-dns',
-      'apex-dns',
-      'app-cert',
-      'apex-cert',
-      'https-frontend',
-      'http-frontend',
-      'main-lb',
-      'lb-ip',
-    ]) {
+    for (const name of ['app-dns', 'apex-dns', 'app-cert', 'apex-cert', 'https-frontend', 'http-frontend', 'main-lb', 'lb-ip']) {
       expect(names).toContain(name);
     }
   });
