@@ -87,7 +87,7 @@ export function OrganizationsTableBar({
       {...{ searchVars, total, columns, setColumns }}
       label="c:organization"
       searchName="organizationSearch"
-      actions={<TableBarButton label="c:create" icon={PlusIcon} onClick={openCreateDialog} />}
+      actions={<TableBarButton ref={createButtonRef} label="c:create" icon={PlusIcon} onClick={openCreateDialog} />}
       export={{ filename: `${appConfig.slug}-organizations`, selectedRows: selected, fetchRows: fetchExport }}
       selection={{
         count: selected.length,

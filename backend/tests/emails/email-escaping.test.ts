@@ -21,7 +21,7 @@ const link = 'https://app.example.test/invite';
 
 describe('email templates escape names interpolated into HTML', () => {
   it('must not inject a link into a member invite via the sender or organization name', async () => {
-    const statics = { senderName: hostile, senderThumbnailUrl: null, entityName: hostile, role: memberRole };
+    const statics = { senderName: hostile, entityName: hostile, role: memberRole };
     const translated = memberInviteEmail.translate('en', statics);
     const html = await render(memberInviteEmail.component({ ...translated, name: 'Emily', memberInviteLink: link }));
 
@@ -32,10 +32,10 @@ describe('email templates escape names interpolated into HTML', () => {
   });
 
   it('must not inject a link into an invite with token, a member-added or a system invite mail', async () => {
-    const statics = { senderName: hostile, senderThumbnailUrl: null, entityName: hostile, role: memberRole };
+    const statics = { senderName: hostile, entityName: hostile, role: memberRole };
     const withToken = memberInviteWithTokenEmail.translate('en', statics);
     const added = memberAddedEmail.translate('en', statics);
-    const system = systemInviteEmail.translate('en', { senderName: hostile, senderThumbnailUrl: null });
+    const system = systemInviteEmail.translate('en', { senderName: hostile });
     const htmls = await Promise.all([
       render(memberInviteWithTokenEmail.component({ ...withToken, name: 'Emily', inviteLink: link })),
       render(memberAddedEmail.component({ ...added, name: 'Emily', entityLink: link })),
@@ -84,7 +84,7 @@ describe('email button', () => {
 });
 
 describe('email plain-text parts keep names as typed', () => {
-  const statics = { senderName: 'Jane', senderThumbnailUrl: null, entityName: 'R&D <Lab>', role: memberRole };
+  const statics = { senderName: 'Jane', entityName: 'R&D <Lab>', role: memberRole };
 
   it('leaves the subject and preview unescaped, and the rendered mail escapes them once', async () => {
     const translated = memberInviteEmail.translate('en', statics);

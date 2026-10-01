@@ -194,6 +194,8 @@ export const config = {
     pwa: true as boolean,
     /** Web Push delivery for notifications; sending also needs VAPID_* backend env vars */
     push: false as boolean,
+    /** Shows the comment email preference in the account settings; no send path reads it yet */
+    commentEmail: false as boolean,
     /** Allow users to sign up. If false, the app is by invitation only */
     selfRegistration: false as boolean,
     /** Suggest a waitlist for unknown emails when sign up is disabled */

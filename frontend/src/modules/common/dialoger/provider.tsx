@@ -17,7 +17,7 @@ export function Dialoger() {
 
   useEffect(() => {
     return getRouter().subscribe('onBeforeLoad', ({ pathChanged }) => {
-      if (pathChanged) useDialoger.getState().remove();
+      if (pathChanged) useDialoger.getState().remove(undefined, { isCleanup: true });
     });
   }, []);
 

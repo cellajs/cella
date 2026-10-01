@@ -1,6 +1,7 @@
 import '~/query/tests/query-client-env';
 import '~/lib/dayjs';
 import { QueryClientProvider } from '@tanstack/react-query';
+import dayjs from 'dayjs';
 import { createElement, Fragment, type ReactElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -35,6 +36,7 @@ const members = await import('~/modules/memberships/members-table/members-column
 const pending = await import('~/modules/memberships/pending-table/pending-columns');
 const invitations = await import('~/modules/me/invitations-table/invitations-columns');
 const attachments = await import('~/modules/attachment/table/attachments-columns');
+const { exportToCsv } = await import('~/lib/export');
 
 type Column = { key: string; renderCell?: (props: { row: never; tabIndex: number }) => ReactNode } & Record<
   string,
@@ -63,8 +65,8 @@ const column = (columns: Column[], key: string) => {
   return found;
 };
 
-/** The column without its renderer, for comparing configuration. */
-const configOf = ({ renderCell, ...config }: Column) => config;
+/** The column without its renderer and export value, for comparing configuration. */
+const configOf = ({ renderCell, exportValue, ...config }: Column) => config;
 
 const cellMarkup = (col: Column, row: unknown) =>
   renderToStaticMarkup(createElement(Fragment, null, col.renderCell?.({ row: row as never, tabIndex: 0 })));
@@ -277,5 +279,68 @@ describe('ellipsis columns', () => {
 
     expect(cellMarkup(col, { id: 'att-1', createdBy: null })).toBe('');
     useUserStore.setState({ user: null });
+  });
+});
+
+describe('csv export', () => {
+  /** The lines of the CSV file an export of these columns and rows downloads. */
+  async function csvLines(columns: Column[], rows: Record<string, unknown>[]) {
+    let file: Blob | undefined;
+    vi.stubGlobal('document', { activeElement: null, createElement: () => ({ click: () => {} }) });
+    vi.spyOn(URL, 'createObjectURL').mockImplementation((blob) => {
+      file = blob as Blob;
+      return 'blob:export';
+    });
+    vi.spyOn(URL, 'revokeObjectURL').mockImplementation(() => {});
+    await exportToCsv(columns as never, rows, 'export.csv');
+    return file ? (await file.text()).split('\n') : [];
+  }
+
+  // The export writes dates in the long localized format; with a comma in it, the cell is quoted.
+  const dateCell = (value: string | number) => `"${dayjs.utc(value).local().format('lll')}"`;
+
+  it('organizations: visible columns with names as text, the role, counts and dates, and a dash when missing', async () => {
+    const rows = [
+      {
+        id: 'org-48',
+        name: 'Tenant 48',
+        createdAt: created,
+        membership: { role: 'admin' },
+        included: { counts: { membership: { admin: 2, member: 5 }, entities: { attachment: 0 } } },
+      },
+      { id: 'org-12', name: 'Organization 12', createdAt: null, membership: null, included: {} },
+      // A row fetched for the export carries the caller's membership under `included`.
+      { id: 'org-7', name: 'Seven', included: { membership: { role: 'member' } } },
+    ];
+
+    expect(await csvLines(columnsOf(organizations.useColumns), rows)).toEqual([
+      'c:name,c:your_role,c:created_at,c:admin,c:member,c:attachment',
+      `Tenant 48,admin,${dateCell(created)},2,5,0`,
+      'Organization 12,-,-,-,-,-',
+      'Seven,member,-,-,-,-',
+    ]);
+  });
+
+  it('members: visible columns with the role, dates and per-member counts, and a dash when missing', async () => {
+    const postedAt = Date.parse(seenAt);
+    const rows = [
+      {
+        id: 'user-48',
+        name: 'Tenant 48',
+        email: 'ada@example.com',
+        membership: { role: 'member' },
+        createdAt: created,
+        lastSeenAt: seenAt,
+        counts: { memberships: {}, products: { attachment: 3 }, activity: { attachment: postedAt } },
+      },
+      { id: 'user-12', name: 'Organization 12', email: null, membership: null, createdAt: null, lastSeenAt: null },
+    ];
+
+    const columns = columnsOf(() => members.useColumns(true, false, 'organization'));
+    expect(await csvLines(columns, rows)).toEqual([
+      'c:name,c:email,c:role,c:created_at,c:last_seen_at,c:last_post,c:attachment',
+      `Tenant 48,ada@example.com,member,${dateCell(created)},${dateCell(seenAt)},${dateCell(postedAt)},3`,
+      'Organization 12,-,-,-,-,-,-',
+    ]);
   });
 });

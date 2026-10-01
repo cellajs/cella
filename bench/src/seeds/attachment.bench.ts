@@ -1,3 +1,4 @@
+import { appConfig, hierarchy } from 'shared';
 import type { InsertAttachmentModel } from '#/modules/attachment/attachment-db';
 import { mockAttachment } from '#/modules/attachment/attachment-mocks';
 import { registerBenchSeed } from '../registry';
@@ -21,6 +22,10 @@ export const loadtestAttachment = (index: number): InsertAttachmentModel => ({
   bucketName: 'attachments',
   keys: { original: `uploads/xbench/${attachmentId(index)}/xbench-file-${index}.pdf` },
   organizationId: ORG_ID,
+  // Org-homed: the mock invents ids for every ancestor, and nullable ones would reference no seeded channel.
+  ...Object.fromEntries(
+    hierarchy.getNullableAncestors('attachment').map((type) => [appConfig.entityIdColumnKeys[type], null]),
+  ),
   createdBy: userId(index % 100),
   updatedBy: userId(index % 100),
 });

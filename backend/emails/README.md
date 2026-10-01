@@ -9,7 +9,14 @@ A template is a `defineEmailTemplate()` definition with two parts:
 - `translate(lng, statics)`: pure function returning every translated string (plus any pass-through statics the component needs). Must include `subject`.
 - `component(props)`: a dumb React shell built from `components/` and `components/primitives/`. No i18n calls.
 
-`defineEmailTemplate` types `component()` to exactly what `translate()` returns (plus per-recipient placeholder strings), so the two cannot drift. Each definition carries a `preview: { statics, recipient }` field with sample data, type-checked against its own props. Export the template from [index.ts](index.ts) and register its preview slug in [preview-fixtures.ts](preview-fixtures.ts).
+`defineEmailTemplate` types `component()` to exactly what `translate()` returns (plus per-recipient placeholder strings), so the two cannot drift. Each definition carries a `preview: { statics, recipient }` field with sample data, type-checked against its own props. Export the template from [index.ts](index.ts), register its preview slug in [preview-fixtures.ts](preview-fixtures.ts) and add a story for it in `frontend/src/stories/email-templates.stories.tsx`.
+
+Two components carry the shared markup:
+
+- `EmailMessage` is the whole email for a standard message: greeting, one translated HTML paragraph, an action button and a fine-print note, each optional except the paragraph. Most templates are only this.
+- `EmailLayout` is the frame around every email: sender avatar, header, body panel, unsubscribe link, logo and footer. A template whose body is more than one paragraph (welcome, newsletter, digest) passes its own children to it.
+
+Headers are translated HTML, like bodies. Add a prop to either component only when a template needs it.
 
 ## Escaping
 

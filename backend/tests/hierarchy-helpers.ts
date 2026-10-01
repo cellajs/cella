@@ -49,7 +49,8 @@ export async function cleanupEntityHierarchy(db: ExecutableDb, ...plans: TestEnt
 
 /**
  * Seeds, on the admin connection, the channels between an organization and where its attachments live, and returns
- * the plan: none in the template, whose attachments live in the organization itself.
+ * the plan: none in the template, whose attachments live in the organization itself. Rows home at the deepest strict
+ * ancestor, as `attachment-placement.ts` homes them, so the plan leaves the nullable ancestor columns unset.
  */
 export async function seedAttachmentHome(org: { id: string; tenantId: string }, createdBy: string) {
   const plan = buildTestEntityHierarchyPlan({
@@ -59,10 +60,16 @@ export async function seedAttachmentHome(org: { id: string; tenantId: string }, 
   });
   const slugPrefix = `home-${nanoid(6)}`;
   await seedEntityHierarchy(getAdminDb('test setup'), plan, { tenantId: org.tenantId, createdBy, slugPrefix });
-  return plan;
+  const nullable = new Set<string>(
+    hierarchy.getNullableAncestors('attachment').map((type) => appConfig.entityIdColumnKeys[type]),
+  );
+  const channelIdColumns = Object.fromEntries(
+    Object.entries(plan.channelIdColumns).filter(([key]) => !nullable.has(key)),
+  );
+  return { ...plan, channelIdColumns };
 }
 
-/** The id column a create body names its home by: the deepest channel the plan seeded, none when that is the organization. */
+/** The id column a create body names its home by: the deepest channel in the plan's columns, none when that is the organization. */
 export function homeColumns(plan: TestEntityHierarchyPlan): Record<string, string> {
   const home = hierarchy
     .getOrderedAncestors(plan.entityType)

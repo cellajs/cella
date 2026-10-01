@@ -37,5 +37,3 @@ export const EmailAvatar = ({ name, type = 'user' }: { name?: string | null; typ
     </div>
   );
 };
-
-export const Template = EmailAvatar;

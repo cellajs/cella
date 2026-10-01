@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import { HelpText } from '~/modules/common/help-text';
 import { ToolCard } from '~/modules/common/tool-card';
 import { notificationPreferencesQueryOptions, useUpdateNotificationPreferences } from '~/modules/notification/query';
@@ -38,14 +39,16 @@ export function AccountNotificationsCard() {
           <Label htmlFor="mentionEmail">{t('c:notifications.mention_email')}</Label>
         </div>
 
-        <div className="flex items-center gap-4">
-          <Switch
-            id="commentEmail"
-            checked={data.commentEmail}
-            onCheckedChange={(commentEmail) => mutate({ commentEmail })}
-          />
-          <Label htmlFor="commentEmail">{t('c:notifications.comment_email')}</Label>
-        </div>
+        {appConfig.has.commentEmail && (
+          <div className="flex items-center gap-4">
+            <Switch
+              id="commentEmail"
+              checked={data.commentEmail}
+              onCheckedChange={(commentEmail) => mutate({ commentEmail })}
+            />
+            <Label htmlFor="commentEmail">{t('c:notifications.comment_email')}</Label>
+          </div>
+        )}
 
         {push.supported && (
           <div className="flex items-center gap-4">

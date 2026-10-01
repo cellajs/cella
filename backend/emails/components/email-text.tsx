@@ -11,5 +11,3 @@ export const EmailText = ({ style, ...props }: React.ComponentProps<typeof JsxTe
     {...props}
   />
 );
-
-export const Template = EmailText;

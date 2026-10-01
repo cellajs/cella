@@ -15,5 +15,3 @@ export const EmailHeader = ({ headerText }: { headerText: string | React.ReactNo
     {typeof headerText === 'string' ? <div>{headerText}</div> : headerText}
   </Heading>
 );
-
-export const Template = EmailHeader;

@@ -118,7 +118,7 @@ describe('Mails as Brevo fills them', () => {
   it('fills the params a template names in its translated text (positive control)', async () => {
     const invite = await send(
       systemInviteEmail,
-      { senderName: '{{params.name}}', senderThumbnailUrl: null },
+      { senderName: '{{params.name}}' },
       { email: 'emily@example.test', lng: 'en', name: 'Emily', inviteLink: link },
     );
     expect(invite.html).toContain('Hi Emily,');

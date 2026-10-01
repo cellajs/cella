@@ -43,6 +43,7 @@ export function OperationExamples({ operationId, tagName }: OperationExamplesPro
   const operation = operations.find((op) => op.operationId === operationId);
   const responses = operation?.responses ?? [];
 
+  // The sheet is titled "Success response": error examples stay on the operation page.
   const successResponsesWithExamples = responses.filter(
     (r) => r.status >= 200 && r.status < 300 && r.example !== undefined,
   );
@@ -54,7 +55,7 @@ export function OperationExamples({ operationId, tagName }: OperationExamplesPro
   return (
     <ResponsesAccordion
       examplesOnly
-      responses={responses}
+      responses={successResponsesWithExamples}
       schemas={schemas}
       operationId={operationId}
       zodIndex={zodIndex}

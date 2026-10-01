@@ -1,16 +1,6 @@
 import { appConfig } from 'shared';
-import {
-  EmailBody,
-  EmailButton,
-  EmailContainer,
-  EmailFooter,
-  EmailHeader,
-  EmailLogo,
-  EmailText,
-  SafeHtml,
-} from '../components';
+import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
-import { greetingStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
 
 const appName = appConfig.name;
@@ -30,7 +20,7 @@ export const oauthVerificationEmail = defineEmailTemplate<
     return {
       subject: i18n.t('backend:email.oauth_verification.subject', { lng, appName, ...plainText }),
       previewText: i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName, ...plainText }),
-      headerText: i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName, ...plainText }),
+      headerHtml: i18n.t('backend:email.oauth_verification.preview', { appName, lng, providerName }),
       hiText: name ? i18n.t('backend:email.hi', { lng, name, ...plainText }) : '',
       bodyHtml: i18n.t('backend:email.oauth_verification.text', {
         lng,
@@ -45,20 +35,16 @@ export const oauthVerificationEmail = defineEmailTemplate<
       verificationLink,
     };
   },
-  component({ previewText, headerText, hiText, bodyHtml, buttonText, verificationLink, supportText }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, verificationLink, supportText }) {
     return (
-      <EmailContainer previewText={previewText}>
-        <EmailHeader headerText={headerText} />
-        <EmailBody>
-          {hiText && <EmailText style={greetingStyle}>{hiText}</EmailText>}
-          <EmailText>
-            <SafeHtml html={bodyHtml} policy="inline" />
-          </EmailText>
-          <EmailButton ButtonText={buttonText} href={verificationLink} />
-        </EmailBody>
-        <EmailLogo />
-        <EmailFooter supportText={supportText} />
-      </EmailContainer>
+      <EmailMessage
+        previewText={previewText}
+        headerHtml={headerHtml}
+        greeting={hiText}
+        bodyHtml={bodyHtml}
+        action={{ label: buttonText, href: verificationLink }}
+        supportText={supportText}
+      />
     );
   },
   preview: {

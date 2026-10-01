@@ -2,6 +2,8 @@ import { onlineManager, useSuspenseQuery } from '@tanstack/react-query';
 import { CopyCheckIcon, CopyIcon, PlusIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import type { CreateServiceAccountData } from 'sdk';
+import { hierarchy } from 'shared';
 import { useCopyToClipboard } from '~/hooks/use-copy-to-clipboard';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import { toaster } from '~/modules/common/toaster/toaster';
@@ -12,9 +14,13 @@ import { ServiceAccountTile } from '~/modules/service-accounts/service-account-t
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 
+// Narrowed to the organization roles the create body accepts: the hierarchy can type a role registry-wide.
+const keyRole = hierarchy.getLeastPrivilegedRole('organization') as CreateServiceAccountData['body']['role'];
+
 /**
  * The one-step key experience (substrate D21): "Create API key" makes an implicit service account named after the
- * key, bound to this organization as a member, and shows the secret once. Accounts list with their keys under them.
+ * key, bound to this organization with its least privileged role, and shows the secret once. Accounts list with their
+ * keys under them.
  */
 export function ApiKeysCard({ organization }: { organization: EnrichedOrganization }) {
   const { t } = useTranslation();
@@ -31,7 +37,7 @@ export function ApiKeysCard({ organization }: { organization: EnrichedOrganizati
     const keyName = name.trim();
     if (!keyName) return;
     create(
-      { path, body: { name: keyName, role: 'member', key: { name: keyName } } },
+      { path, body: { name: keyName, role: keyRole, key: { name: keyName } } },
       {
         onSuccess: (created) => {
           setSecret(created.apiKey?.secret ?? null);

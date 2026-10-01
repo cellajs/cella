@@ -10,6 +10,8 @@ export type BaseTableSearchVariables<T> = T & {
 /** Grid columns narrowed to keyed entries for table chrome; the grid filters hidden entries. */
 export type ColumnOrColumnGroup<TData> = GridColumnOrColumnGroup<TData> & {
   key: string;
+  /** The cell a CSV or PDF export writes; without it the export writes the row field named by the key. */
+  exportValue?: (row: TData) => string | number | null | undefined;
 };
 
 export type BaseTableBarProps<T, K> = {

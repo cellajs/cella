@@ -15,7 +15,7 @@ import { getNotificationSource, loadSubjectPreview } from '../notification-sourc
 /** Excerpt length in the email body; longer bodies are truncated. */
 const EXCERPT_LENGTH = 250;
 
-/** Notifications handled per pass; a backlog continues on the next event. */
+/** Notifications handled per pass. A pass runs after each new mention in the organization, so a backlog beyond this drains on the next mention. */
 const MAX_PER_RUN = 200;
 
 /**
@@ -74,6 +74,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
             channelType: notification.channelType,
             entityType: notification.entityType,
             subjectId: notification.subjectId,
+            contextId: notification.contextId ?? undefined,
             nid: notification.id,
           }),
           unsubscribeLink: buildUnsubscribeLink(user.id, 'mention'),

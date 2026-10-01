@@ -1,3 +1,4 @@
+import { exportDate } from '~/lib/export';
 import type { BreakpointKey } from '~/modules/common/data-grid/types';
 import { type EllipsisOption, TableEllipsis } from '~/modules/common/data-table/table-ellipsis';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
@@ -14,7 +15,7 @@ interface DateColumnOptions<T> {
   get?: (row: T) => DateValue;
 }
 
-/** A short relative date, hidden below md. */
+/** A short relative date, hidden below md; exports write the full date. */
 export const dateColumn = <T,>(
   key: string,
   { name, sortable = true, hidden, get = (row) => (row as Record<string, DateValue>)[key] }: DateColumnOptions<T>,
@@ -27,6 +28,7 @@ export const dateColumn = <T,>(
   minWidth: 120,
   placeholderValue: '-',
   renderCell: ({ row }) => dateShort(get(row)),
+  exportValue: (row) => exportDate(get(row)),
 });
 
 /** Row actions behind an ellipsis button; a row without options gets an empty cell. */

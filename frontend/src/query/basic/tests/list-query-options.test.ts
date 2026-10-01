@@ -249,11 +249,18 @@ describe('list query factories', () => {
 });
 
 describe('export fetchers', () => {
-  it('organizations: order follows displayOrder and include stays unset', async () => {
+  it('organizations: order follows displayOrder and the rows include counts and my membership', async () => {
     await fetchOrganizationsForExport({ limit: 1000, offset: 2000 });
 
     expect(sdk.getOrganizations).toHaveBeenCalledWith({
-      query: { limit: '1000', q: '', sort: 'displayOrder', order: 'asc', offset: '2000' },
+      query: {
+        limit: '1000',
+        q: '',
+        sort: 'displayOrder',
+        order: 'asc',
+        offset: '2000',
+        include: 'counts,membership',
+      },
     });
   });
 
@@ -261,7 +268,7 @@ describe('export fetchers', () => {
     await fetchOrganizationsForExport({ limit: 1000, q: 'x', sort: 'name' });
 
     expect(sdk.getOrganizations).toHaveBeenCalledWith({
-      query: { limit: '1000', q: 'x', sort: 'name', order: 'desc', offset: '0' },
+      query: { limit: '1000', q: 'x', sort: 'name', order: 'desc', offset: '0', include: 'counts,membership' },
     });
   });
 
@@ -273,7 +280,7 @@ describe('export fetchers', () => {
     });
   });
 
-  it('members: the channel scopes the request and search defaults fill it', async () => {
+  it('members: the channel scopes the request, search defaults fill it and the rows include counts', async () => {
     await fetchMembersForExport({ ...channel, role: 'member', limit: 1000, offset: 1000 });
 
     expect(sdk.getMembers).toHaveBeenCalledWith({
@@ -286,6 +293,7 @@ describe('export fetchers', () => {
         offset: '1000',
         entityId: 'org-1',
         entityType: 'organization',
+        include: 'counts',
       },
       path,
     });
