@@ -14,8 +14,12 @@
 
 @theme {
   --font-sans: "Open Sans", ui-sans-serif, sans-serif;
+  /* Headings share the sans stack; an app with a heading font sets it here. */
+  --font-heading: var(--font-sans);
   /* Exactly 16px at the 18px mobile root. */
   --text-md: 0.888rem;
+  /* Badge and counter text. */
+  --text-2xs: 0.6rem;
   --transition-property-spacing: margin, padding;
 
   /* Steps down from --radius, which the token blocks below define; upstream shadcn classes also read --radius-md. */
@@ -103,6 +107,7 @@
   --color-popover-foreground: var(--popover-foreground);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
+  --color-overlay: var(--overlay);
   --color-chart-1: var(--chart-1);
   --color-chart-2: var(--chart-2);
   --color-chart-3: var(--chart-3);
@@ -192,6 +197,11 @@
     width: 0.05rem;
     height: calc(100% - 1.5rem);
   }
+}
+
+/* Sets the color the soft-* utilities mix from: intent-success, intent-destructive, any theme color. */
+@utility intent-* {
+  --intent-color: --value(--color-*);
 }
 
 /* Opaque soft intent colors using color-mix (no transparency) */
@@ -404,6 +414,8 @@
     --warning-foreground: oklch(0.9851 0 0);
     --brand: oklch(0.2061 0.006 285.56);
     --brand-foreground: oklch(0.9627 0 0);
+    /* Modal backdrop scrim, the same in both modes. */
+    --overlay: oklch(0 0 0 / 0.4);
     /* Chart series: shadcn's neutral ramp on cella's zinc hue (zinc-300/500/600/700/800), shared by both modes. */
     --chart-1: oklch(0.871 0.006 286.286);
     --chart-2: oklch(0.552 0.016 285.938);
