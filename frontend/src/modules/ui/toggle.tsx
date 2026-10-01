@@ -10,7 +10,7 @@ export const toggleVariants = cva(
       variant: {
         default: 'bg-transparent shadow-none',
         outline: 'border border-input bg-transparent hover:bg-accent hover:text-accent-foreground',
-        tile: 'group border bg-transparent p-3 text-left hover:bg-accent/50 hover:text-accent-foreground',
+        tile: 'group/toggle border bg-transparent p-3 text-left hover:bg-accent/50 hover:text-accent-foreground',
         merged:
           'rounded-none border border-input border-r-0 bg-transparent first:rounded-l-md last:rounded-r-md last:border-r hover:bg-accent/50 hover:text-accent-foreground',
       },

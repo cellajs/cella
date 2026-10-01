@@ -73,12 +73,12 @@ export const useColumns = () => {
           >
             <EntityAvatar
               type="organization"
-              className="h-8 w-8 group-active:translate-y-[.05rem]"
+              className="h-8 w-8 group-active/cell-button:translate-y-[.05rem]"
               id={org.id}
               name={org.name}
               url={org.thumbnailUrl}
             />
-            <span className="truncate font-medium decoration-foreground/20 underline-offset-3 group-hover:underline group-active:translate-y-[.05rem] group-active:decoration-foreground/50">
+            <span className="truncate font-medium decoration-foreground/20 underline-offset-3 group-hover/cell-button:underline group-active/cell-button:translate-y-[.05rem] group-active/cell-button:decoration-foreground/50">
               {org.name || '-'}
             </span>
           </Button>

@@ -19,7 +19,7 @@ function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props
     return (
       <Avatar
         {...props}
-        className={cn('group flex items-center justify-center overflow-hidden rounded-md bg-background data-[type=user]:rounded-full', className)}
+        className={cn('flex items-center justify-center overflow-hidden rounded-md bg-background data-[type=user]:rounded-full', className)}
       >
         <Icon className="size-[70%] fill-accent opacity-70" strokeWidth={1.5} />
       </Avatar>
@@ -28,7 +28,7 @@ function EntityAvatarBase({ type, id, name, icon: Icon, url, className, ...props
   const avatarBackground = numberToColorClass(id);
 
   return (
-    <Avatar {...props} data-type={type} className={cn('group overflow-hidden rounded-md data-[type=user]:rounded-full', className)}>
+    <Avatar {...props} data-type={type} className={cn('overflow-hidden rounded-md data-[type=user]:rounded-full', className)}>
       {url && <AvatarImage src={url} draggable={false} />}
       <AvatarFallback className={avatarBackground}>
         <span className="sr-only">{name}</span>

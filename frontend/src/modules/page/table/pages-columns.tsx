@@ -43,15 +43,15 @@ export function usePagesTableColumns() {
       minWidth: 180,
       resizable: true,
       renderCell: ({ row, tabIndex }) => (
-        <div className="group flex items-center gap-2 truncate outline-0 ring-0">
+        <div className="flex items-center gap-2 truncate outline-0 ring-0">
           <Link
             to="/docs/page/$"
             tabIndex={tabIndex}
             draggable={false}
             params={{ _splat: row.id }}
-            className="group flex min-w-0 items-center outline-0 ring-0"
+            className="group/link flex min-w-0 items-center outline-0 ring-0"
           >
-            <span className="truncate font-medium decoration-foreground/20 underline-offset-3 group-hover:underline group-active:translate-y-[.05rem] group-active:decoration-foreground/50">
+            <span className="truncate font-medium decoration-foreground/20 underline-offset-3 group-hover/link:underline group-active/link:translate-y-[.05rem] group-active/link:decoration-foreground/50">
               {row.name}
             </span>
           </Link>

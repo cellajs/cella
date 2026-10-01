@@ -13,17 +13,17 @@ export function AccordionItem({ className, ...props }: AccordionPrimitive.Item.P
 
 export function AccordionTrigger({ className, children, ...props }: AccordionPrimitive.Trigger.Props & React.RefAttributes<HTMLButtonElement>) {
   return (
-    <AccordionPrimitive.Header className="group flex">
+    <AccordionPrimitive.Header className="group/accordion-header flex">
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          'focus-effect flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left font-medium text-sm decoration-foreground/20 underline-offset-3 transition-all hover:underline group-active:decoration-foreground/50 data-disabled:pointer-events-none data-disabled:opacity-50 sm:px-3 [&[data-panel-open]>svg]:rotate-180',
+          'focus-effect flex flex-1 items-start justify-between gap-4 rounded-md py-4 text-left font-medium text-sm decoration-foreground/20 underline-offset-3 transition-all hover:underline group-active/accordion-header:decoration-foreground/50 data-disabled:pointer-events-none data-disabled:opacity-50 sm:px-3 [&[data-panel-open]>svg]:rotate-180',
           className,
         )}
         {...props}
       >
         {children}
-        <ChevronDownIcon className="pointer-events-none size-5 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200 group-hover:text-foreground" />
+        <ChevronDownIcon className="pointer-events-none size-5 shrink-0 translate-y-0.5 text-muted-foreground transition-transform duration-200 group-hover/accordion-header:text-foreground" />
       </AccordionPrimitive.Trigger>
     </AccordionPrimitive.Header>
   );

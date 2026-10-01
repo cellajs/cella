@@ -49,7 +49,7 @@ export function SearchResultBlock({ results, entityType, hideSeparator = false, 
               data-already-member={isChannelType && 'membership' in item && item.membership !== null}
               className={cn('group w-full justify-between', collapsed && 'hidden')}
             >
-              <div className="group flex items-center space-x-2 outline-0 ring-0">
+              <div className="flex items-center space-x-2 outline-0 ring-0">
                 <EntityAvatar type={entityType} className="h-8 w-8" id={item.id} name={item.name} url={item.thumbnailUrl} />
                 <span className="truncate font-medium underline-offset-4 group-data-[already-member=true]:hover:underline">{item.name}</span>
               </div>

@@ -49,7 +49,7 @@ export function MenuSectionButton({
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.25 }}
-                className="inline-block px-2 py-1 text-muted-foreground text-xs group-data-[visible=true]/menuSection:hidden"
+                className="inline-block px-2 py-1 text-muted-foreground text-xs group-data-[visible=true]/menu-section:hidden"
               >
                 {sectionUnseenCount > 0 ? (
                   <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 font-bold text-[0.6rem] text-primary-foreground leading-none">
@@ -61,7 +61,7 @@ export function MenuSectionButton({
               </motion.span>
             </div>
 
-            <ChevronDownIcon className="opacity-50 transition-transform duration-200 group-data-[visible=true]/menuSection:rotate-180" />
+            <ChevronDownIcon className="opacity-50 transition-transform duration-200 group-data-[visible=true]/menu-section:rotate-180" />
           </Button>
 
           {/* Enter by transform and opacity, which skip layout; leaving is instant, so the toggle widens in one step */}

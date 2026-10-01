@@ -19,7 +19,7 @@ export const buttonVariants = cva(
         outlineGhost:
           'border border-foreground/20 bg-background/20 shadow-none hover:border-foreground/30 hover:bg-background/40 hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 shadow-none hover:underline',
-        cell: 'group flex w-full justify-start gap-2 font-normal underline-offset-4 opacity-75 shadow-none hover:opacity-100 focus-visible:ring-transparent focus-visible:ring-offset-transparent',
+        cell: 'group/cell-button flex w-full justify-start gap-2 font-normal underline-offset-4 opacity-75 shadow-none hover:opacity-100 focus-visible:ring-transparent focus-visible:ring-offset-transparent',
         plain: 'border border-primary/20 bg-primary/5 text-primary hover:border-primary/30 hover:bg-primary/10',
         input:
           'border border-input bg-background aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&:not(.absolute)]:active:translate-y-0',

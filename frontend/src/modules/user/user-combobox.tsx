@@ -157,7 +157,7 @@ export function UserCombobox({ value, onValueChange, channel }: Props) {
                           data-already-member={alreadyMember}
                           className="group w-full justify-between"
                         >
-                          <div className="group flex items-center space-x-2 outline-0 ring-0">
+                          <div className="flex items-center space-x-2 outline-0 ring-0">
                             <EntityAvatar type={entityType} className="h-8 w-8" id={id} name={name} url={thumbnailUrl} />
                             <span className="truncate font-medium underline-offset-4 group-hover:underline group-data-[already-member=true]:no-underline">
                               {isMobile ? email : name}

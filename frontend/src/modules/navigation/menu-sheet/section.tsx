@@ -61,7 +61,7 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
   const collapse = collapseMotion(isMobile);
 
   return (
-    <div className="group/menuSection px-3" data-visible={isSectionVisible}>
+    <div className="group/menu-section px-3" data-visible={isSectionVisible}>
       <MenuSectionButton
         data={data}
         channelIds={activeChannelIds}

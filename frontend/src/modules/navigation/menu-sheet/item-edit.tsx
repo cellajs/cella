@@ -42,15 +42,15 @@ export function MenuItemEdit({ item, icon: Icon }: MenuItemEditProps) {
       layoutId={`sheet-menu-item-${item.id}`}
       data-subitem={!item.submenu}
       data-archived={item.membership.archived}
-      className="group/optionsItem relative flex h-12 w-full items-center justify-start rounded-sm p-0 pr-2 ring-1 ring-muted ring-inset hover:bg-accent/50 hover:text-accent-foreground focus:outline-hidden focus-visible:ring-foreground data-[archived=false]:cursor-grab group-data-[submenu=false]/menuOptions:h-10"
+      className="group/options-item relative flex h-12 w-full items-center justify-start rounded-sm p-0 pr-2 ring-1 ring-muted ring-inset hover:bg-accent/50 hover:text-accent-foreground focus:outline-hidden focus-visible:ring-foreground data-[archived=false]:cursor-grab group-data-[submenu=false]/menu-options:h-10"
     >
       {status === 'pending' && onlineManager.isOnline() && (
         <div className="absolute z-10">
-          <Spinner className="m-1 mr-3 h-10 w-10 p-1 text-black opacity-50 group-data-[submenu=false]/menuOptions:mx-3 group-data-[submenu=false]/menuOptions:my-2 group-data-[submenu=false]/menuOptions:h-7 group-data-[submenu=false]/menuOptions:w-7 group-data-[submenu=false]/menuOptions:p-1" />
+          <Spinner className="m-1 mr-3 h-10 w-10 p-1 text-black opacity-50 group-data-[submenu=false]/menu-options:mx-3 group-data-[submenu=false]/menu-options:my-2 group-data-[submenu=false]/menu-options:h-7 group-data-[submenu=false]/menu-options:w-7 group-data-[submenu=false]/menu-options:p-1" />
         </div>
       )}
       <EntityAvatar
-        className="m-2 mx-3 h-8 w-8 text-sm group-data-[submenu=false]/menuOptions:mx-4 group-data-[submenu=false]/menuOptions:my-1 group-data-[submenu=false]/menuOptions:h-6 group-data-[submenu=false]/menuOptions:w-6 group-data-[subitem=true]/optionsItem:text-xs group-data-[archived=true]/optionsItem:opacity-70"
+        className="m-2 mx-3 h-8 w-8 text-sm group-data-[submenu=false]/menu-options:mx-4 group-data-[submenu=false]/menu-options:my-1 group-data-[submenu=false]/menu-options:h-6 group-data-[submenu=false]/menu-options:w-6 group-data-[subitem=true]/options-item:text-xs group-data-[archived=true]/options-item:opacity-70"
         type={item.entityType}
         id={item.id}
         icon={Icon}
@@ -58,8 +58,8 @@ export function MenuItemEdit({ item, icon: Icon }: MenuItemEditProps) {
         url={item.thumbnailUrl}
       />
 
-      <div className="grow truncate text-left group-data-[submenu=false]/menuOptions:pl-0">
-        <div className="truncate text-md leading-5 group-data-[subitem=true]/optionsItem:text-xs group-data-[archived=true]/optionsItem:opacity-70">
+      <div className="grow truncate text-left group-data-[submenu=false]/menu-options:pl-0">
+        <div className="truncate text-md leading-5 group-data-[subitem=true]/options-item:text-xs group-data-[archived=true]/options-item:opacity-70">
           {item.name} {env.VITE_DEBUG_MODE && <span className="text-muted">#{item.membership.displayOrder}</span>}
         </div>
         <div className="flex items-center gap-2 transition-opacity delay-500">
