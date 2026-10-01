@@ -162,29 +162,6 @@
   }
 }
 
-/* Semantic icon sizes. Icons use classes because the base rule below overrides Lucide's
-   px-based `size` prop. They scale with the mobile root-font-size bump like the rest of the UI. */
-@utility icon-xs {
-  width: 0.75rem;
-  height: 0.75rem;
-}
-@utility icon-sm {
-  width: 0.875rem;
-  height: 0.875rem;
-}
-@utility icon-md {
-  width: 1rem;
-  height: 1rem;
-}
-@utility icon-lg {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-@utility icon-xl {
-  width: 1.5rem;
-  height: 1.5rem;
-}
-
 /* From shadcn's tailwind.css so ported upstream classes work: Base UI sets `data-orientation`, never `data-horizontal`.
    Its other state variants stay native, as Base UI's boolean attributes match them (shadcn's `data-selected` is cmdk's). */
 @custom-variant data-horizontal {
@@ -384,8 +361,8 @@
     @apply font-sans overscroll-none overflow-x-clip max-sm:text-[18px];
   }
 
-  /* Override Lucide attributes with a scalable 1rem default.
-     :where keeps zero specificity so size utilities and container rules win. */
+  /* Lucide icons default to 1rem, which scales with the mobile root font size; its px `size` prop never applies.
+     Size icons with size-* classes: :where keeps zero specificity so they and container rules win. */
   :where(svg.lucide) {
     width: 1rem;
     height: 1rem;
