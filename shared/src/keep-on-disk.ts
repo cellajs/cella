@@ -11,18 +11,32 @@
  *   neither survives being inlined.
  * `packages` are plain names: the service's own additions (a native addon, a replication driver) and
  * the app's `appKeepOnDisk` (`backend/src/bundle-config.ts`).
+ *
+ * A service image installs only the service's `dependencies` (`pnpm install --prod`), so `dependencies` holds packages
+ * kept on disk and every inlined package is a devDependency. A `dependencies` entry the bundle would inline throws here.
+ * A package kept on disk that production never loads, such as the dev tunnel's @ngrok/ngrok, stays a devDependency.
  */
 const sharedPatterns = [String.raw`pg(?:\/|$)`, String.raw`@opentelemetry\/`, String.raw`pino(?:-|\/|$)`];
 
-export function keepOnDisk(packages: readonly string[]): { noExternal: RegExp[]; external: RegExp[] } {
+export function keepOnDisk(
+  packages: readonly string[],
+  dependencies: Readonly<Record<string, string>>,
+): { noExternal: RegExp[]; external: RegExp[] } {
   const patterns = [
     ...sharedPatterns,
     ...['thread-stream', 'sonic-boom', 'jsdom', ...packages].map((name) => `${name.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')}(?:\\/|$)`),
   ];
+  const external = patterns.map((pattern) => new RegExp(`^${pattern}`));
+
+  const inlined = Object.keys(dependencies).filter((name) => !external.some((pattern) => pattern.test(name)));
+  if (inlined.length) {
+    throw new Error(`The bundle inlines these, so move them to devDependencies (or keep them on disk): ${inlined.join(', ')}`);
+  }
+
   return {
     // tsup's `noExternal` takes precedence over `external`, so the exceptions live in this negative
     // lookahead; `external` repeats them so subpath imports stay external too.
     noExternal: [new RegExp(`^(?!(?:${patterns.join('|')}))`)],
-    external: patterns.map((pattern) => new RegExp(`^${pattern}`)),
+    external,
   };
 }
