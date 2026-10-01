@@ -15,7 +15,7 @@ export function DeviceFrame({ type, inView, renderCarousel }: DeviceFrameProps) 
           <div className="absolute -inset-s-4 top-32 h-12 w-1 rounded-s-lg bg-gray-300 dark:bg-gray-800" />
           <div className="absolute -inset-s-4 top-44 h-12 w-1 rounded-s-lg bg-gray-300 dark:bg-gray-800" />
           <div className="absolute -inset-e-4 top-36 h-16 w-1 rounded-e-lg bg-gray-300 dark:bg-gray-800" />
-          <div className="size-full cursor-pointer rounded-4xl bg-white dark:bg-gray-800">{inView && renderCarousel('rounded-[2rem]')}</div>
+          <div className="size-full cursor-pointer rounded-4xl bg-white dark:bg-gray-800">{inView && renderCarousel('rounded-4xl')}</div>
         </div>
       );
     case 'pc':
@@ -36,7 +36,7 @@ export function DeviceFrame({ type, inView, renderCarousel }: DeviceFrameProps) 
           <div className="absolute -inset-s-3 top-32 h-12 w-[.19rem] rounded-s-lg bg-gray-200 dark:bg-gray-800" />
           <div className="absolute -inset-s-3 top-44 h-12 w-[.19rem] rounded-s-lg bg-gray-200 dark:bg-gray-800" />
           <div className="absolute -inset-e-3 top-36 h-12 w-[.19rem] rounded-e-lg bg-gray-200 dark:bg-gray-800" />
-          <div className="size-full cursor-pointer rounded-2xl bg-gray-200 dark:bg-gray-800">{inView && renderCarousel('rounded-[1rem]')}</div>
+          <div className="size-full cursor-pointer rounded-2xl bg-gray-200 dark:bg-gray-800">{inView && renderCarousel('rounded-2xl')}</div>
         </div>
       );
     default:

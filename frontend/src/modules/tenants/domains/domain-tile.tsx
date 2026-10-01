@@ -45,7 +45,7 @@ export function DomainTile({ domain, tenantId }: DomainTileProps) {
 
   return (
     <Card className="group/tile w-full py-0 transition-all sm:py-0">
-      <CardContent className="flex flex-col gap-2 p-2! sm:p-3!">
+      <CardContent className="flex flex-col gap-2 p-2 sm:p-3">
         <div className="flex items-center gap-2 sm:gap-3">
           <GlobeIcon className="size-4 shrink-0 opacity-50 sm:size-6" strokeWidth={1.5} />
 

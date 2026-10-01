@@ -210,8 +210,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
           fill="none"
           stroke="currentColor"
           strokeWidth={backgroundStroke}
-          className="text-muted-foreground/70"
-          style={{ transition: 'stroke-width 0.15s ease-out' }}
+          className="text-muted-foreground/70 transition-[stroke-width] duration-150 ease-out"
         />
         <circle
           cx="20"
@@ -223,8 +222,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
           strokeDasharray={isActive ? explodedDashArray : circumference}
           strokeDashoffset={isActive ? 0 : strokeDashoffset}
           strokeLinecap={isActive ? 'butt' : 'round'}
-          className="text-foreground"
-          style={{ transition: 'stroke-width 0.15s ease-out' }}
+          className="text-foreground transition-[stroke-width] duration-150 ease-out"
         />
       </svg>
     </div>

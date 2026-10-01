@@ -100,7 +100,7 @@ export function MenuSheetItem({ item, icon: Icon, className }: MenuSheetItemProp
         </div>
       </div>
       {showBadge && (
-        <span className="mr-3 flex h-4 min-w-4 shrink-0 items-center justify-center self-center rounded-full bg-primary px-1 font-bold text-[0.6rem] text-primary-foreground leading-none">
+        <span className="mr-3 flex h-4 min-w-4 shrink-0 items-center justify-center self-center rounded-full bg-primary px-1 font-bold text-2xs text-primary-foreground leading-none">
           {unseenCount > 99 ? '99+' : unseenCount}
         </span>
       )}

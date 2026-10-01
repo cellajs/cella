@@ -38,8 +38,8 @@ export function getCellClassname<R, SR>(column: CalculatedColumn<R, SR>, ...extr
   const textOverflow =
     wrapLines > 0
       ? hasMergedSlots
-        ? 'whitespace-pre-line overflow-hidden [&_[data-tile-main]>*]:line-clamp-[var(--rdg-wrap-text-lines,none)] [&_[data-tile-main]>*]:text-ellipsis [&_[data-tile-main]>*]:!py-0'
-        : 'whitespace-pre-line overflow-hidden [&>*]:line-clamp-[var(--rdg-wrap-text-lines,none)] [&>*]:text-ellipsis [&>*]:!py-0'
+        ? 'whitespace-pre-line overflow-hidden [&_[data-tile-main]>*]:line-clamp-[var(--rdg-wrap-text-lines,none)] [&_[data-tile-main]>*]:text-ellipsis [&_[data-tile-main]>*]:py-0!'
+        : 'whitespace-pre-line overflow-hidden [&>*]:line-clamp-[var(--rdg-wrap-text-lines,none)] [&>*]:text-ellipsis [&>*]:py-0!'
       : 'whitespace-nowrap overflow-clip text-ellipsis';
   return cn(
     `rdg-cell flex items-center group/cell relative py-0 px-2 bg-inherit outline-hidden scroll-mt-32 border-t-[0.05rem] border-border ${textOverflow}`,

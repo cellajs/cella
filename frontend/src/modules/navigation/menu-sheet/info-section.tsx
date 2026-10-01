@@ -23,11 +23,7 @@ const statusCardClass = 'flex items-center gap-2 rounded-md border border-dashed
 function StatusDot({ status }: { status: HealthStatus }) {
   return (
     <span
-      className={cn(
-        'inline-block size-2 shrink-0 animate-[status-pulse_3.5s_ease-in-out_infinite] rounded-full',
-        statusStyleMap[status].dot,
-        statusStyleMap[status].pulse,
-      )}
+      className={cn('inline-block size-2 shrink-0 animate-status-pulse rounded-full', statusStyleMap[status].dot, statusStyleMap[status].pulse)}
       aria-hidden="true"
     />
   );

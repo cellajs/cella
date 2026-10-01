@@ -19,11 +19,10 @@ type DocsSearch = { operationTag?: string; schemaTag?: string; q?: string };
 interface ApiReferenceSectionProps {
   label: string;
   tags: GenTagSummary[];
-  isMobile: boolean;
 }
 
 /** Expansion is derived from the route, mutually exclusive, with a per-section forced-collapse override. */
-export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSectionProps) {
+export function ApiReferenceSection({ label, tags }: ApiReferenceSectionProps) {
   const { t } = useTranslation();
 
   const { data: schemas } = useQuery(schemasQueryOptions);
@@ -103,9 +102,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
                 />
               </CollapsibleTrigger>
             </SidebarMenuItem>
-            <CollapsibleContent
-              className={cn('overflow-hidden', !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}
-            >
+            <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
               <SidebarGroupContent>
                 <Suspense fallback={null}>
                   <OperationsSidebar activeTag={activeOperationTag} />
@@ -152,9 +149,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
                 />
               </CollapsibleTrigger>
             </SidebarMenuItem>
-            <CollapsibleContent
-              className={cn('overflow-hidden', !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}
-            >
+            <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
               <SidebarGroupContent>
                 <Suspense fallback={null}>
                   <SchemasSidebar activeTag={activeSchemaTag} />

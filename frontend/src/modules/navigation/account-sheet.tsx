@@ -103,7 +103,7 @@ export function AccountSheet() {
             initial={{ opacity: 0, scale: 0.8 }}
             animate={hasStarted ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="absolute top-6 left-[50%] -ml-10"
+            className="absolute top-6 left-1/2 -ml-10"
           >
             <EntityAvatar
               className="size-20 rounded-full text-2xl shadow-[0_0_0_4px_rgba(0,0,0,0.1)]"

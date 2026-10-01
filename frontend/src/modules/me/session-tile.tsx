@@ -45,7 +45,7 @@ export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending 
       className={cn('group/tile w-full py-0 transition-all sm:py-0 sm:has-[button:focus]:ring-2', !isLive && 'opacity-70')}
       data-expanded={expanded}
     >
-      <CardContent className="flex gap-2 p-2! sm:gap-3 sm:p-3! lg:items-center">
+      <CardContent className="flex gap-2 p-2 sm:gap-3 sm:p-3 lg:items-center">
         <DeviceIcon className="size-4 max-sm:mt-0.5 sm:size-8" strokeWidth={1.5} />
         <div className="flex w-full flex-col gap-1 overflow-hidden">
           <div className="flex gap-1 xs:gap-2 max-xs:flex-col">

@@ -9,11 +9,11 @@ export const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: '[--intent-color:var(--primary)]',
-        brand: '[--intent-color:var(--brand)]',
-        destructive: '[--intent-color:var(--destructive)]',
-        success: '[--intent-color:var(--success)]',
-        secondary: 'border border-transparent bg-secondary text-secondary-foreground [--intent-color:var(--secondary)] hover:bg-secondary/80',
+        default: 'intent-primary',
+        brand: 'intent-brand',
+        destructive: 'intent-destructive',
+        success: 'intent-success',
+        secondary: 'intent-secondary border border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
         outline: 'border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50',
         ghost: 'shadow-none hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
         outlineGhost:
@@ -23,7 +23,7 @@ export const buttonVariants = cva(
         plain: 'border border-primary/20 bg-primary/5 text-primary hover:border-primary/30 hover:bg-primary/10',
         input:
           'border border-input bg-background aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&:not(.absolute)]:active:translate-y-0',
-        warning: '[--intent-color:var(--warning)]',
+        warning: 'intent-warning',
         none: 'border-none bg-transparent shadow-none',
       },
       soft: { true: '', false: '' },

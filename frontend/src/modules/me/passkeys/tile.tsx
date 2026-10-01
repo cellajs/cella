@@ -27,7 +27,7 @@ export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPassk
 
   return (
     <Card className="group/tile w-full py-0 transition-all sm:py-0 sm:has-[button:focus]:ring-2" data-expanded={expanded}>
-      <CardContent className="flex gap-2 p-2! sm:gap-3 sm:p-3! lg:items-center">
+      <CardContent className="flex gap-2 p-2 sm:gap-3 sm:p-3 lg:items-center">
         <DeviceIcon className="size-4 max-sm:mt-0.5 sm:size-8" strokeWidth={1.5} />
 
         <div className="flex w-full flex-col gap-1 overflow-hidden">

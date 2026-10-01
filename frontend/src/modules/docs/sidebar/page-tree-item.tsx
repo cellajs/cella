@@ -98,7 +98,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
         </div>
 
         {hasChildren && (
-          <CollapsibleContent className={cn('overflow-hidden', !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}>
+          <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
             {isRoot ? (
               // A <ul> keeps the nested SidebarMenuItem <li> rows off this row's own <li> (invalid HTML)
               <ul className="flex list-none flex-col gap-1 py-1">

@@ -24,7 +24,7 @@ function DrawerOverlay({ className, ...props }: DrawerPrimitive.Backdrop.Props &
     <DrawerPrimitive.Backdrop
       data-slot="drawer-overlay"
       className={cn(
-        'fixed inset-0 z-117 bg-black/50 transition-discrete transition-opacity duration-300 group-has-data-[overlay=dialog]/drawer-portal:z-125 group-has-data-[overlay=dropdown]/drawer-portal:z-299',
+        'fixed inset-0 z-117 bg-overlay transition-discrete transition-opacity duration-300 group-has-data-[overlay=dialog]/drawer-portal:z-125 group-has-data-[overlay=dropdown]/drawer-portal:z-299',
         // No data-open opacity: it outranks `starting:` (@starting-style), the only enter hook for a drawer mounted already
         // open, since Base UI skips data-starting-style then. Opacity defaults to 1.
         'data-closed:opacity-0',

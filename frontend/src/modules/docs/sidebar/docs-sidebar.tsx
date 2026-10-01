@@ -75,7 +75,7 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
         .map((section) => {
           switch (section.id) {
             case 'apiReference':
-              return <ApiReferenceSection key={section.id} label={section.label} tags={tags} isMobile={isMobile} />;
+              return <ApiReferenceSection key={section.id} label={section.label} tags={tags} />;
             case 'pages':
               return <PagesSection key={section.id} label={section.label} onClose={closeSheet} />;
             case 'links':

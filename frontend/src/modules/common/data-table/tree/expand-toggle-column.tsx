@@ -35,8 +35,8 @@ const def: ColumnOrColumnGroup<AnyTreeRow> = {
   // Focus ring moves to the toggle button; leaf rows keep the cell outline.
   cellClass: (row) =>
     row._hasChildren
-      ? 'flex items-center justify-center !p-0 aria-selected:outline-hidden aria-selected:[&_[data-slot=expand-toggle]]:ring-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-ring aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-background'
-      : 'flex items-center justify-center !p-0',
+      ? 'flex items-center justify-center p-0! aria-selected:outline-hidden aria-selected:[&_[data-slot=expand-toggle]]:ring-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-ring aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-2 aria-selected:[&_[data-slot=expand-toggle]]:ring-offset-background'
+      : 'flex items-center justify-center p-0!',
   renderCell: ({ row, tabIndex }) => <ExpandToggleCell row={row} tabIndex={tabIndex ?? -1} />,
 };
 

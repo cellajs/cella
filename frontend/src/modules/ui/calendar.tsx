@@ -6,7 +6,7 @@ import { Button, buttonVariants } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 function CalendarRoot({ className, rootRef, ...props }: RootProps) {
-  return <div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />;
+  return <div data-slot="calendar" ref={rootRef} className={className} {...props} />;
 }
 
 function CalendarChevron({ className, orientation, ...props }: ChevronProps) {

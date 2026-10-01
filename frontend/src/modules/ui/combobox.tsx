@@ -18,12 +18,7 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
 
 function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
   return (
-    <ComboboxPrimitive.Clear
-      data-slot="combobox-clear"
-      render={<InputGroupButton variant="ghost" size="size-3" />}
-      className={cn(className)}
-      {...props}
-    >
+    <ComboboxPrimitive.Clear data-slot="combobox-clear" render={<InputGroupButton variant="ghost" size="size-3" />} className={className} {...props}>
       <XIcon className="pointer-events-none size-3.5" />
     </ComboboxPrimitive.Clear>
   );
@@ -153,7 +148,7 @@ function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.Props) {
 }
 
 function ComboboxGroup({ className, ...props }: ComboboxPrimitive.Group.Props) {
-  return <ComboboxPrimitive.Group data-slot="combobox-group" className={cn(className)} {...props} />;
+  return <ComboboxPrimitive.Group data-slot="combobox-group" className={className} {...props} />;
 }
 
 function ComboboxGroupLabel({ className, ...props }: ComboboxPrimitive.GroupLabel.Props) {
@@ -179,7 +174,7 @@ function ComboboxValue(props: ComboboxPrimitive.Value.Props) {
 }
 
 function ComboboxLabel({ className, ...props }: ComboboxPrimitive.Label.Props) {
-  return <ComboboxPrimitive.Label data-slot="combobox-label" className={cn(className)} {...props} />;
+  return <ComboboxPrimitive.Label data-slot="combobox-label" className={className} {...props} />;
 }
 
 function ComboboxChips({ className, ...props }: ComboboxPrimitive.Chips.Props) {

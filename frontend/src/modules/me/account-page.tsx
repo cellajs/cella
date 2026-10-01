@@ -15,14 +15,14 @@ function UserAccountPage() {
 
   return (
     <div className="container my-4 gap-4 md:mt-8 md:flex md:flex-row">
-      <div className="mx-auto max-md:hidden md:mt-3 md:w-[30%] md:min-w-48">
+      <div className="mx-auto max-md:hidden md:mt-3 md:w-3/10 md:min-w-48">
         <div className="max-md:block! group sticky top-3 z-10 max-h-[calc(100dvh-1.5rem)] overflow-y-auto px-1">
           <SimpleHeader className="p-3" heading="c:settings" text="c:settings.text" collapseText />
           <PageAside tabs={sections} className="py-2" setFocus />
         </div>
       </div>
 
-      <div className="flex flex-col gap-8 md:w-[70%]">
+      <div className="flex flex-col gap-8 md:w-7/10">
         {sections.map((tool) => (
           <AsideAnchor key={tool.id} id={tool.id}>
             <Suspense fallback={null}>{tool.render(user)}</Suspense>

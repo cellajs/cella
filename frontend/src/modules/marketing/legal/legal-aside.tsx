@@ -31,7 +31,6 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
 
   const isMobile = useBreakpointBelow('sm');
   // Below `md` the aside stacks above the legal text, so a height animation would relayout the text every frame
-  const isStacked = useBreakpointBelow('md', false);
 
   const [layoutId] = useState(() => nanoid());
 
@@ -100,7 +99,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
               {/* keepMounted preserves the data-spy-active marks the scroll spy sets on rows outside React */}
               <CollapsibleContent
                 keepMounted
-                className={cn('overflow-hidden', !isStacked && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}
+                className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}
               >
                 <div className="relative flex flex-col px-0 py-1">
                   {subjectSections.map(({ id: sectionId, label: sectionLabel }) => (

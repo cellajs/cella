@@ -50,7 +50,7 @@ export function AboutPage() {
               variant="plain"
               size="lg"
               onClick={() => window.open(appConfig.company.githubUrl, '_blank', 'noopener')}
-              className="group h-14 rounded-full! px-8 transition"
+              className="group h-14 rounded-full px-8 transition"
               aria-label={t('about:github_star')}
             >
               <GithubIcon className="size-4 transition-transform group-hover:scale-110" />

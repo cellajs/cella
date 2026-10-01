@@ -2,7 +2,6 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { ChevronDownIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GenComponentSchema, GenOperationDetail, GenResponseSummary, GenSchema } from 'sdk/docs-types';
-import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
@@ -108,7 +107,6 @@ interface OperationResponsesProps {
 export function OperationResponses({ detail }: OperationResponsesProps) {
   const { t } = useTranslation();
   // Height keyframes run on the main thread and drop frames while the opening panel mounts the accordion
-  const isMobile = useBreakpointBelow('md', false);
 
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
   const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
@@ -127,7 +125,7 @@ export function OperationResponses({ detail }: OperationResponsesProps) {
           </Button>
         }
       />
-      <CollapsibleContent className={cn('overflow-hidden', !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}>
+      <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
         <div className="mt-2">
           <ResponsesAccordion
             responses={responses}

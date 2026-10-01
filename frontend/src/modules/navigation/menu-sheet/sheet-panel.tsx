@@ -35,12 +35,7 @@ function MenuSheetPanel({ id, label, children }: MenuSheetPanelProps) {
 
       <AnimatePresence initial={false}>
         {isOpen && (
-          <motion.div
-            key={`panel-${id}`}
-            {...collapseMotion(isMobile)}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            style={{ overflow: 'hidden' }}
-          >
+          <motion.div key={`panel-${id}`} {...collapseMotion(isMobile)} transition={{ duration: 0.2, ease: 'easeInOut' }} className="overflow-hidden">
             {children}
           </motion.div>
         )}
