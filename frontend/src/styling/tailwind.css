@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @import "./gradients.css" layer(base); /* Custom gradients that are not easy to build using tailwind */
-@import "../modules/common/blocknote/styles.css" layer(base);
 
 @config "../../tailwind.config.ts";
 
@@ -302,8 +301,7 @@
 
 @layer base {
   /* Theme tokens */
-  :root,
-  .bn-container.bn-shadcn {
+  :root {
     --background: oklch(1 0 0);
     --foreground: oklch(0.2067 0.01 285.49);
     --card: oklch(0.987 0.0013 285.76);
@@ -334,6 +332,12 @@
     --warning-foreground: oklch(0.9851 0 0);
     --brand: oklch(0.2061 0.006 285.56);
     --brand-foreground: oklch(0.9627 0 0);
+    /* Chart series: shadcn's neutral ramp on cella's zinc hue (zinc-300/500/600/700/800), shared by both modes. */
+    --chart-1: oklch(0.871 0.006 286.286);
+    --chart-2: oklch(0.552 0.016 285.938);
+    --chart-3: oklch(0.442 0.017 285.786);
+    --chart-4: oklch(0.37 0.013 285.805);
+    --chart-5: oklch(0.274 0.006 286.033);
 
     --sidebar: oklch(0.9575 0.0044 285.76);
     --sidebar-foreground: oklch(0.145 0 0);
@@ -345,8 +349,7 @@
     --sidebar-ring: var(--ring);
   }
 
-  .dark,
-  .bn-container.bn-shadcn.dark {
+  .dark {
     --background: oklch(0.1963 0.0092 285.53);
     --foreground: oklch(0.9627 0 0);
     --card: oklch(0.232 0.0095 285.56);

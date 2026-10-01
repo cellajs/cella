@@ -14,8 +14,6 @@ li:has(.is-focused) {
   background: transparent;
 }
 
-/* Dark theme variables inherited from tailwind.css via .bn-container.bn-shadcn.dark selector */
-
 /* Override BlockNote's soft editor text color with the app foreground. */
 .bn-container.bn-shadcn {
   --bn-font-family: "Open Sans", ui-sans-serif, sans-serif;
@@ -401,12 +399,12 @@ li:has(.is-focused) {
 }
 
 .bn-shadcn th {
-  border: 0.05rem solid var(--table-border);
+  border: 0.05rem solid var(--border);
   border-collapse: collapse;
 }
 .bn-shadcn td {
   padding: 4px;
-  border: 0.05rem solid var(--table-border);
+  border: 0.05rem solid var(--border);
   border-collapse: collapse;
 }
 
