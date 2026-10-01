@@ -1498,6 +1498,24 @@
     "pnpm check"
    ],
    "summary": "A new has.commentEmail config flag (default false) shows the comment email switch in account settings; every app adds it to shared/config/config.default.ts. Table exports write the columns the table shows and take a column's exportValue(row), with exportDate for dates and no date guessing, so app tables using Export export raw values until they set it. Notification links carry contextId (the pinned routes-config.tsx may pass it on), the instant email pass runs only after a mention, and the weekly digest reaches users without a preferences row. The tenants list normalizes stored restrictions, a failed first table load shows its error, createBaseApp builds a server app so the folded MCP worker serves its own, service-account bindings take any channel role, and changeArbitraryQueryData with its types is removed. Stories render with Tailwind. raak and projectcampus drop the fork markers these fixes supersede."
+  },
+  {
+   "id": "20261001T0549-mention-write-and-comment-emails",
+   "version": "next",
+   "title": "One write per mention edit, comment emails, filter-aware list refetch",
+   "kind": "manual",
+   "syncBreaking": false,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "frontend/src"
+   ],
+   "requires": [
+    "pnpm test:core",
+    "pnpm check"
+   ],
+   "summary": "Mention derivation moves before the write: prepareMutation on the mutation bus returns server-owned columns that an op writes in the edit's own statement and then dispatches with prepared: true, so a description edit that changes mentions is one CDC activity (the attachment ops do this; app ops that do not keep a second activity, now attributed to mentions). With has.commentEmail on, the instant email pass also mails comment and reply notifications to users who opted in, one mail per subject with a mention winning. registerEqualityFilterKeys lets a new row skip the filtered lists one declared equality filter rules it out of. The digest reads lastDigestAt as UTC, overlay stores treat an undefined option as omitted, the role radio group stays controlled, backend test runs queue on one advisory lock, and the bench preflight checks only the API and the cdc worker. findPendingMentionEmails is renamed findPendingInstantEmails."
   }
  ]
 }

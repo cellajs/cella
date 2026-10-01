@@ -21,7 +21,7 @@ No script: manual.
 
 ## Manual steps
 
-1. Add `commentEmail: false as boolean,` to `has` in `shared/config/config.default.ts`; `true` shows the "Email me about comments" switch, which no send path reads yet.
+1. Add `commentEmail: false as boolean,` to `has` in `shared/config/config.default.ts`; `true` shows the "Email me about comments" switch (comment emails: see `20261001T0549-mention-write-and-comment-emails`).
 2. Optional: let `notificationSearch` in the pinned `frontend/src/routes-config.tsx` take `contextId: string | null` and open a comment's host (projectcampus already does).
 3. App-owned columns that should export formatted values set `exportValue`, e.g. `exportValue: (row) => exportDate(row.createdAt)` from `~/lib/export` (raak: `task/table/tasks-columns.tsx`).
 4. raak: take upstream for `service-accounts-schema.ts`, `create-service-account.ts`, `tests/service-accounts.test.ts` and `query/tests/query-client-env.ts`, dropping their `// fork:` markers.
