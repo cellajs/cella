@@ -1,4 +1,5 @@
-/* Lift editing task card above sibling virtualizer items so BlockNote floating UI (slash menu, toolbar) isn't clipped */
+/* Serves an app's task board (raak): lift the editing task card above sibling virtualizer items so BlockNote floating UI
+   (slash menu, toolbar) isn't clipped. */
 li:has([data-state="editing"]),
 li:has(.is-focused) {
   z-index: 10;
@@ -31,10 +32,10 @@ li:has(.is-focused) {
 }
 
 .bn-editor[contenteditable="false"] .bn-file-block-content-wrapper {
-  cursor: default !important;
+  cursor: default;
 }
 .bn-editor[contenteditable="false"] .bn-add-file-button {
-  pointer-events: none !important;
+  pointer-events: none;
 }
 .bn-editor[contenteditable="false"] p.bn-add-file-button-text {
   display: none;
@@ -161,8 +162,8 @@ li:has(.is-focused) {
 }
 
 .bn-link-toolbar > button.px-3 {
-  padding-left: 0.5rem !important;
-  padding-right: 0.5rem !important;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
   height: 2rem;
 }
 
@@ -212,9 +213,9 @@ li:has(.is-focused) {
 
 .bn-shadcn .bn-editor,
 .bn-shadcn .bn-static-editor {
-  white-space: pre-wrap !important;
-  padding: 0px !important;
-  background: transparent !important;
+  white-space: pre-wrap;
+  padding: 0px;
+  background: transparent;
   height: 100%;
   width: 100%;
 }
@@ -297,7 +298,7 @@ li:has(.is-focused) {
 }
 
 .no-hover-bg:hover {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .notify-icon-wrapper {

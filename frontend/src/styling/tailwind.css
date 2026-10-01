@@ -510,7 +510,7 @@
     display: none !important;
   }
 
-  /* Hide create-task button when board is empty (no projects) */
+  /* Serves an app's task board (raak): hide the create-task button when the board is empty (no projects). */
   body:has([data-board-empty]) #create-task {
     display: none;
   }
