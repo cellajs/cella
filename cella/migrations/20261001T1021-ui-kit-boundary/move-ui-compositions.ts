@@ -45,6 +45,11 @@ function collect(root: string, out: string[]): void {
   }
 }
 
+/** Escape a string for use inside a RegExp. */
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&')
+}
+
 /** The exported name a specifier refers to: `type Foo as Bar` -> `Foo`. */
 function importedName(specifier: string): string {
   return specifier.replace(/^type\s+/, '').split(/\s+as\s+/)[0].trim()
@@ -74,7 +79,7 @@ function rewrite(source: string): { text: string; moved: string[] } {
   })
   // Merge a moved import into an existing declaration for the same new module.
   for (const to of new Set(Object.values(MOVES).map(([, t]) => t))) {
-    const decls = [...text.matchAll(new RegExp(`^import \\{([^}]*)\\} from '${to.replace(/[/.-]/g, '\\$&')}';\\n?`, 'gm'))]
+    const decls = [...text.matchAll(new RegExp(`^import \\{([^}]*)\\} from '${escapeRegExp(to)}';\\n?`, 'gm'))]
     if (decls.length < 2) continue
     const specs = [...new Set(decls.flatMap((d) => d[1].split(',').map((s) => s.trim()).filter(Boolean)))]
     text = text.replace(decls[0][0], `import { ${specs.join(', ')} } from '${to}';\n`)
