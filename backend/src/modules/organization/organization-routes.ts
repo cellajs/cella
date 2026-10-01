@@ -1,5 +1,5 @@
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { actorGuard, crossTenantGuard, relatableGuard, tenantGuard, userGuard } from '#/middlewares/guard';
+import { actorGuard, relatableGuard, tenantGuard, userGuard } from '#/middlewares/guard';
 import { insertEntityLock } from '#/middlewares/insert-entity-lock';
 import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
@@ -26,7 +26,7 @@ const organizationRoutes = createXRoutes(['organizations', 'cella', 'channel'], 
   getOrganizations: xRoute({
     method: 'get',
     path: '/organizations',
-    xGuard: [userGuard, crossTenantGuard, relatableGuard],
+    xGuard: [userGuard, relatableGuard],
     summary: 'Get list of organizations',
     description: 'Returns a list of organizations.',
     request: { query: organizationListQuerySchema },
