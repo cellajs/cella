@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { appConfig, type ChannelEntityType, hierarchy } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
-import { ResponsiveSelect } from '~/modules/ui/responsive-select';
+import { ResponsiveSelect } from '~/modules/common/form-fields/responsive-select';
 
 interface SelectRoleProps {
   /** Restrict options to this channel entity's role vocabulary; omit for system roles. */

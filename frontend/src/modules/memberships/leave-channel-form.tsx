@@ -8,7 +8,7 @@ export function LeaveChannelForm({ onCancel, ...props }: LeaveChannelButtonProps
   return (
     <div className="flex flex-col gap-2 sm:flex-row">
       <LeaveChannelButton {...props} buttonProps={{ variant: 'destructive', className: 'justify-center sm:w-auto' }} />
-      <Button type="reset" variant="secondary" aria-label="Cancel" onClick={onCancel}>
+      <Button type="reset" variant="secondary" data-autofocus onClick={onCancel}>
         {t('c:cancel')}
       </Button>
     </div>

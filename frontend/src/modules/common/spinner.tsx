@@ -1,5 +1,5 @@
-import { LoaderCircleIcon } from 'lucide-react';
 import { useMountedState } from '~/hooks/use-mounted-state';
+import { Spinner as SpinnerIcon } from '~/modules/ui/spinner';
 import { cn } from '~/utils/cn';
 
 export function Spinner({ className = '', noDelay = false }) {
@@ -11,7 +11,7 @@ export function Spinner({ className = '', noDelay = false }) {
       data-delay={noDelay}
       className="group transition-all duration-300 data-[started=false]:data-[delay=false]:opacity-0"
     >
-      <LoaderCircleIcon className={cn('mx-auto h-6 w-6 animate-spin text-foreground opacity-50', className)} />
+      <SpinnerIcon className={cn('mx-auto h-6 w-6 text-foreground opacity-50', className)} />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import { TrashIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button, SubmitButton } from '~/modules/ui/button';
+import { SubmitButton } from '~/modules/common/form-fields/submit-button';
+import { Button } from '~/modules/ui/button';
 
 interface DeleteFormProps {
   onDelete: () => void;
@@ -14,17 +15,10 @@ export function DeleteForm({ onDelete, onCancel, pending, allowOfflineDelete = f
 
   return (
     <div className="flex flex-col gap-2 sm:flex-row">
-      <SubmitButton
-        variant="destructive"
-        icon={<TrashIcon />}
-        allowOfflineDelete={allowOfflineDelete}
-        onClick={onDelete}
-        aria-label="Delete"
-        loading={pending}
-      >
+      <SubmitButton variant="destructive" icon={<TrashIcon />} allowOfflineDelete={allowOfflineDelete} onClick={onDelete} loading={pending}>
         {t('c:delete')}
       </SubmitButton>
-      <Button type="reset" variant="secondary" aria-label="Cancel" onClick={onCancel}>
+      <Button type="reset" variant="secondary" data-autofocus onClick={onCancel}>
         {t('c:cancel')}
       </Button>
     </div>

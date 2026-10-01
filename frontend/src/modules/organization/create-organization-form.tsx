@@ -10,11 +10,12 @@ import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import { InputFormField } from '~/modules/common/form-fields/input';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
+import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useStepper } from '~/modules/common/stepper/stepper';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationCreateMutation } from '~/modules/organization/query';
 import { useSelfCreateTenantMutation } from '~/modules/tenants/query';
-import { Button, SubmitButton } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { Form, type LabelDirectionType } from '~/modules/ui/field';
 
 interface Props {

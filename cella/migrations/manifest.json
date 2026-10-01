@@ -1616,6 +1616,23 @@
    "pnpm check"
   ],
   "summary": "frontend/src/modules/ui/slot.tsx is removed: Button, Badge, ButtonGroupText, BreadcrumbLink and the sidebar parts with a render prop build on Base UI's useRender, like upstream shadcn. Props merge as before (the render element wins, class names join, both handlers run), refs now merge where Slot dropped the outer one, and render also accepts Base UI's function form. Apps that import ~/modules/ui/slot rebuild those components on useRender; render={<Link />} call sites are unaffected."
+ },
+ {
+  "id": "20261001T1021-ui-kit-boundary",
+  "version": "next",
+  "title": "App compositions leave the ui kit",
+  "kind": "codemod",
+  "syncBreaking": true,
+  "clientCacheBump": false,
+  "script": "cella/migrations/20261001T1021-ui-kit-boundary/move-ui-compositions.ts",
+  "roots": [
+   "frontend/src"
+  ],
+  "requires": [
+   "pnpm lint:fix",
+   "pnpm check"
+  ],
+  "summary": "SubmitButton moves from ~/modules/ui/button to ~/modules/common/form-fields/submit-button, ComboboxSelect (with ComboboxSelectProps and ComboBoxOption) to ~/modules/common/form-fields/select-combobox/combobox-select, ComboboxSearchInput to ~/modules/common/combobox-search-input, and ResponsiveSelect to ~/modules/common/form-fields/responsive-select, so every file in frontend/src/modules/ui maps to one upstream shadcn component. No behaviour changes. The codemod moves the named imports and drops emptied declarations; pnpm lint:fix sorts them."
  }
  ]
 }

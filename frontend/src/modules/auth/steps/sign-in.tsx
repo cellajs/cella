@@ -16,8 +16,9 @@ import type { ConditionalMediationResult } from '~/modules/auth/passkey-credenti
 import { isConditionalMediationAvailable, startConditionalMediation } from '~/modules/auth/passkey-credentials';
 import { PasskeyStrategy } from '~/modules/auth/passkey-strategy';
 import { invitationResumePath, useNavigateAfterAuth } from '~/modules/auth/use-post-auth-redirect';
+import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
-import { Button, SubmitButton } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { Form, FormControl, FormField, FormItem } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { useUserStore } from '~/modules/user/user-store';

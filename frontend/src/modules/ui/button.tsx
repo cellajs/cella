@@ -1,11 +1,7 @@
 import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
-import { t } from 'i18next';
-import { LoaderCircleIcon, TriangleAlertIcon } from 'lucide-react';
+import { LoaderCircleIcon } from 'lucide-react';
 import type * as React from 'react';
-import { useOnlineManager } from '~/hooks/use-online-manager';
-import { toaster } from '~/modules/common/toaster/toaster';
-import { TooltipButton } from '~/modules/common/tooltip-button';
 import { cn } from '~/utils/cn';
 
 export const buttonVariants = cva(
@@ -70,7 +66,10 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   render?: useRender.RenderProp;
 }
 
-/** `loading` disables the button and overlays a spinner on its hidden content, so the width stays put. Native buttons default to `type="button"`. */
+/**
+ * `loading` disables the button and overlays a spinner on its transparent content, so the width stays put and the
+ * content still names the button. Native buttons default to `type="button"`.
+ */
 export function Button({
   className,
   variant,
@@ -84,7 +83,7 @@ export function Button({
 }: React.ComponentProps<'button'> & ButtonProps) {
   const content = loading ? (
     <span className="relative inline-flex items-center justify-center gap-[inherit]">
-      <span className="invisible inline-flex items-center gap-[inherit]">{children}</span>
+      <span className="inline-flex items-center gap-[inherit] opacity-0">{children}</span>
       <LoaderCircleIcon className="absolute inset-0 m-auto animate-spin" />
     </span>
   ) : (
@@ -105,54 +104,4 @@ export function Button({
       children: content,
     },
   });
-}
-
-type SubmitButtonProps = Omit<ButtonProps, 'type'> & { allowOfflineDelete?: boolean; icon?: React.ReactNode };
-
-/** Form submit button that warns when offline; `icon` swaps to a spinner on loading, otherwise the spinner overlays the button. */
-export function SubmitButton({ onClick, children, allowOfflineDelete = false, loading, disabled, icon, className, ...props }: SubmitButtonProps) {
-  const isOnline = useOnlineManager();
-
-  const isDisabled = disabled || loading;
-  const showOfflineWarning = !allowOfflineDelete && !isOnline;
-
-  const handleClick: React.MouseEventHandler<HTMLButtonElement> = (e) => {
-    if (isDisabled) {
-      e.preventDefault();
-      return;
-    }
-    if (showOfflineWarning) {
-      e.preventDefault();
-      return toaster.warning(t('c:action.offline.text'));
-    }
-    onClick?.(e);
-  };
-
-  const resolvedIcon = loading ? <LoaderCircleIcon className="animate-spin" /> : showOfflineWarning ? <TriangleAlertIcon /> : icon;
-
-  const buttonContent = (
-    <Button
-      type="submit"
-      onClick={handleClick}
-      disabled={isDisabled}
-      aria-busy={loading || undefined}
-      loading={!icon && loading}
-      className={cn(icon && 'gap-2', className)}
-      {...props}
-    >
-      {icon ? (
-        <>
-          {resolvedIcon}
-          {children}
-        </>
-      ) : (
-        <>
-          {showOfflineWarning && <TriangleAlertIcon className="mr-2" />}
-          {children}
-        </>
-      )}
-    </Button>
-  );
-
-  return showOfflineWarning ? <TooltipButton toolTipContent={t('c:offline.text_with_info')}>{buttonContent}</TooltipButton> : buttonContent;
 }

@@ -1,4 +1,5 @@
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { useRemoveAfterExit } from '~/modules/common/overlay-store-helpers';
 import { ContentKeyTransition } from '~/modules/common/sheeter/sheet';
 import { type InternalSheet, sheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Drawer, DrawerContent, DrawerDescription, DrawerHeader, DrawerTitle } from '~/modules/ui/drawer';
@@ -14,11 +15,18 @@ export function SheeterDrawer({ sheet }: { sheet: InternalSheet }) {
 
   const isDropdownOpen = useDropdowner((state) => state.dropdown);
 
-  const closeSheet = () => sheeter.getState().remove(sheet.id);
+  // The drawer slides out before its entry is removed; onClose still runs as the close starts.
+  const { close: closeSheet, onOpenChangeComplete } = useRemoveAfterExit(
+    () => {
+      updateSheet(sheet.id, { open: false, onClose: undefined });
+      sheet.onClose?.();
+    },
+    () => sheeter.getState().remove(sheet.id),
+  );
 
   const onOpenChange = (open: boolean) => {
-    updateSheet(sheet.id, { open });
-    if (!open) closeSheet();
+    if (open) updateSheet(sheet.id, { open });
+    else closeSheet();
   };
 
   return (
@@ -29,6 +37,7 @@ export function SheeterDrawer({ sheet }: { sheet: InternalSheet }) {
       disablePointerDismissal={!!isDropdownOpen}
       swipeDirection={sideToSwipeDirection[side]}
       onOpenChange={onOpenChange}
+      onOpenChangeComplete={onOpenChangeComplete}
     >
       <DrawerContent id={String(id)} className={className}>
         <DrawerHeader sticky className={cn(headerClassName, !(description || title) && 'hidden')}>

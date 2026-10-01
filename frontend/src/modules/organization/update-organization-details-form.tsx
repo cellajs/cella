@@ -12,12 +12,13 @@ import { blocknoteFieldIsDirty } from '~/modules/common/blocknote/helpers/blockn
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useFormWithDraft } from '~/modules/common/form-draft/use-draft-form';
 import type { BlockNoteContentFormField as BlockNoteContentFormFieldType } from '~/modules/common/form-fields/blocknote';
+import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
 import type { EnrichedOrganization } from '~/modules/organization/types';
-import { Button, SubmitButton } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { Form } from '~/modules/ui/field';
 import { lazyNamed } from '~/utils/lazy-named';
 

@@ -7,6 +7,7 @@ import type { ChannelBase } from 'sdk';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useDebounce } from '~/hooks/use-debounce';
+import { ComboboxSearchInput } from '~/modules/common/combobox-search-input';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { membersListQueryOptions } from '~/modules/memberships/query';
@@ -19,7 +20,6 @@ import {
   ComboboxItemIndicator,
   ComboboxList,
   ComboboxPrimitive,
-  ComboboxSearchInput,
 } from '~/modules/ui/combobox';
 import { ScrollArea } from '~/modules/ui/scroll-area';
 import { usersListQueryOptions } from '~/modules/user/query';
