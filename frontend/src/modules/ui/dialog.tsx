@@ -30,7 +30,7 @@ function DialogOverlay({
       className={cn(
         disabled
           ? ''
-          : 'data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 in-[.sheeter-open]:z-125 z-115 bg-overlay backdrop-blur-xs data-closed:animate-out data-open:animate-in',
+          : 'data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 in-[.sheeter-open]:z-125 z-115 bg-overlay backdrop-blur-xs duration-200 data-closed:animate-out data-open:animate-in data-closed:fill-mode-forwards',
         className,
       )}
       {...props}
