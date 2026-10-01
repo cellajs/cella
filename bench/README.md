@@ -27,13 +27,14 @@ Start these first (bench checks they are reachable and exits with guidance if no
 | `pnpm db:seed` | Seed test data (idempotent, cleans first) |
 | `pnpm db:teardown` | Remove all bench data (baselines are kept) |
 
-`--all` adds a short cooldown between scenarios. A single-scenario run stays verbose with a live comparison table. The Vitest smoke test `bench/src/tests/all-scenarios.test.ts` runs `--all --short` to catch broken scenarios and skips itself when the stack is down.
+`--all` waits 15 seconds between scenarios so a saturating one does not slow the next. A single-scenario run stays verbose with a live comparison table. The Vitest smoke test `bench/src/tests/all-scenarios.test.ts` runs `--all --short` to catch broken scenarios and skips itself when the stack is down.
 
 ## Interpreting results
 
 Bench measures the live dev stack. Before calling a result a regression:
 
-- **Cache warm-up.** The auth guard caches sessions in-process (1 min TTL) and memberships separately (5 min TTL). Runs shorter than the session TTL include cold-cache `validateSession` hits.
+- **Auth reads.** Every authenticated request reads its session (or token) once. Memberships are cached per process until they change, so the first request of each user in a run also reads its memberships.
 - **Per-mutation RLS transactions.** Each write wraps permission check + update in one short transaction that also sets tenant/user GUCs. The write ceiling is pool size (`DATABASE_POOL_MAX`) and DB round-trip latency, not handler CPU alone.
-- **Rate limiting is effectively off.** The seeded bench tenant has a very high `apiPointsPerHour`, and the points limiter has an in-process fast path.
+- **Rate limiting is effectively off.** The seeded bench tenant has a very high `apiPointsPerHour`, the points limiter has an in-process fast path, and every scenario starts with the bench users' per-user budgets (stream connects, sync reads) cleared.
+- **Saturation.** At their configured arrival rates `attachment-edit`, `cdc-attachment` and `page-load` saturate a laptop that also runs the stack, so their thresholds fail on most runs. Compare medians and the trend between runs.
 - **Telemetry is off without a key.** OpenTelemetry exports only when `MAPLE_SECRET_INGEST_KEY` is set.
