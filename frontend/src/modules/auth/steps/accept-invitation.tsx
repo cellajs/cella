@@ -3,10 +3,11 @@ import { CheckIcon, TriangleAlertIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import type { TokenData } from '~/modules/auth/types';
+import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useAcceptInvitationTokenMutation } from '~/modules/me/query';
 import type { MeUser } from '~/modules/me/types';
 import { Alert, AlertDescription, AlertTitle } from '~/modules/ui/alert';
-import { Button, SubmitButton } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 
 interface Props {
   tokenData: TokenData;

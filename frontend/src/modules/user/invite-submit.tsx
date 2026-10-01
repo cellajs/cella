@@ -5,11 +5,12 @@ import { useTranslation } from 'react-i18next';
 import { systemInvite as baseSystemInvite } from 'sdk';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { SelectRoleRadio } from '~/modules/common/form-fields/select-role-radio';
+import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
-import { Button, SubmitButton } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import type { InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
 

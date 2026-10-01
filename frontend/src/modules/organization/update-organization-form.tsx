@@ -17,11 +17,12 @@ import { SelectTimezone } from '~/modules/common/form-fields/select-combobox/tim
 import { SelectLanguage } from '~/modules/common/form-fields/select-language';
 import { SelectLanguages } from '~/modules/common/form-fields/select-languages';
 import { SlugFormField } from '~/modules/common/form-fields/slug';
+import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useOrganizationUpdateMutation } from '~/modules/organization/query';
-import { Button, SubmitButton } from '~/modules/ui/button';
+import { Button } from '~/modules/ui/button';
 import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
 // welcomeText belongs to the details form; empty optional strings are stored as null.

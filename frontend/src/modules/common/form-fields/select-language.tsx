@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { appConfig, type Language } from 'shared';
-import { ResponsiveSelect } from '~/modules/ui/responsive-select';
+import { ResponsiveSelect } from '~/modules/common/form-fields/responsive-select';
 
 interface SelectLanguageProps {
   value: Language;

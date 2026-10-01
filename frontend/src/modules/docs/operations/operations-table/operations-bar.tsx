@@ -8,8 +8,8 @@ import { FilterBarActions, FilterBarFilters, FilterBarSearch, TableFilterBar } f
 import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
+import { ResponsiveSelect } from '~/modules/common/form-fields/responsive-select';
 import { ViewModeToggle } from '~/modules/docs/operations/view-mode-toggle';
-import { ResponsiveSelect } from '~/modules/ui/responsive-select';
 
 interface OperationsTableBarProps {
   total: number;

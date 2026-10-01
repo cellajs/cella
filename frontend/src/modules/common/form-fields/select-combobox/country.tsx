@@ -1,8 +1,8 @@
 import type { FieldValues } from 'react-hook-form';
 import countries from '#json/countries.json';
 import { CountryFlag } from '~/modules/common/country-flag';
+import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/common/form-fields/select-combobox/combobox-select';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
-import { ComboboxSelect, type ComboboxSelectProps } from '~/modules/ui/combobox';
 import { FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 
 export function SelectCountry<TFieldValues extends FieldValues>({ control, name, disabled, label, required }: BaseFormFieldProps<TFieldValues>) {

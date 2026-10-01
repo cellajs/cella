@@ -1,12 +1,5 @@
 import { Combobox as ComboboxPrimitive } from '@base-ui/react/combobox';
-import { CheckIcon, ChevronDownIcon, CircleXIcon, SearchIcon, XIcon } from 'lucide-react';
-import * as React from 'react';
-import { useTranslation } from 'react-i18next';
-import type { TKey } from '~/lib/i18n-locales';
-import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { EntityAvatar } from '~/modules/common/entity-avatar';
-import { SearchSpinner } from '~/modules/common/search-spinner';
-import { Button } from '~/modules/ui/button';
+import { CheckIcon, ChevronDownIcon, XIcon } from 'lucide-react';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '~/modules/ui/input-group';
 import { cn } from '~/utils/cn';
 
@@ -217,169 +210,7 @@ function ComboboxChipRemove({ className, ...props }: ComboboxPrimitive.ChipRemov
   );
 }
 
-/** Search-styled combobox input for the command palette and dropdowner. */
-function ComboboxSearchInput({
-  className,
-  wrapClassName,
-  isSearching = false,
-  spinnerDelay,
-  showClear = true,
-  value,
-  ref,
-  ...props
-}: Omit<ComboboxPrimitive.Input.Props, 'value'> & {
-  value: string;
-  wrapClassName?: string;
-  isSearching?: boolean;
-  spinnerDelay?: number;
-  showClear?: boolean;
-}) {
-  return (
-    <div
-      data-slot="combobox-search-input-wrapper"
-      className={cn('group relative flex h-10 items-center border-b px-3', wrapClassName, value.length > 0 && 'pr-10')}
-    >
-      <SearchSpinner isSearching={isSearching} value={value} appearDelay={spinnerDelay} />
-      <ComboboxPrimitive.Input
-        data-slot="combobox-search-input"
-        className={cn(
-          'flex h-10 w-full rounded-md bg-transparent py-3 text-sm outline-hidden placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 [&::-webkit-search-cancel-button]:hidden',
-          className,
-        )}
-        value={value}
-        data-1p-ignore
-        data-lpignore="true"
-        {...props}
-        ref={(el) => {
-          // type="search" is set imperatively (base-ui omits it from its types) so password managers skip the input.
-          if (el) el.type = 'search';
-          if (typeof ref === 'function') ref(el);
-          else if (ref) ref.current = el;
-        }}
-      />
-      {showClear && value.length > 0 && (
-        <ComboboxPrimitive.Clear
-          render={
-            <button
-              type="button"
-              aria-label="Clear search"
-              className="absolute top-1/2 right-3 -translate-y-1/2 cursor-pointer opacity-70 hover:opacity-100"
-            />
-          }
-        >
-          <CircleXIcon />
-        </ComboboxPrimitive.Clear>
-      )}
-    </div>
-  );
-}
-
-// High-level ComboboxSelect: drop-in for form fields
-
-interface ComboBoxOption {
-  value: string;
-  label: string;
-  url?: string | null;
-}
-
-export interface ComboboxSelectProps {
-  options: ComboBoxOption[];
-  value: string;
-  onChange: (newValue: string) => void;
-  renderOption?: (option: ComboBoxOption) => React.ReactNode;
-  renderAvatar?: boolean;
-  clearable?: boolean;
-  disabled?: boolean;
-  searchableTrigger?: boolean;
-  placeholders?: { trigger?: TKey; search?: TKey; notFound?: TKey; resource?: TKey };
-}
-
-function ComboboxSelect({
-  options,
-  value,
-  onChange,
-  renderOption,
-  renderAvatar = false,
-  clearable = false,
-  disabled = false,
-  searchableTrigger = false,
-  placeholders: passedPlaceholders,
-}: ComboboxSelectProps) {
-  const { t } = useTranslation();
-
-  const placeholders = {
-    trigger: 'c:select' as TKey,
-    search: 'c:placeholder.search' as TKey,
-    notFound: 'c:no_resource_found' as TKey,
-    resource: 'c:item' as TKey,
-    ...passedPlaceholders,
-  };
-
-  const selectedOption = options.find((o) => o.value === value) ?? null;
-  const anchorRef = React.useRef<HTMLDivElement>(null);
-
-  return (
-    <Combobox<ComboBoxOption>
-      items={options}
-      itemToStringLabel={(item) => item.label}
-      itemToStringValue={(item) => item.value}
-      value={selectedOption}
-      onValueChange={(item) => {
-        if (item) onChange(item.value);
-        else if (clearable) onChange('');
-      }}
-      disabled={disabled}
-    >
-      {searchableTrigger ? (
-        <div ref={anchorRef}>
-          <ComboboxInput
-            placeholder={t(placeholders.trigger, { resource: t(placeholders.resource).toLowerCase() })}
-            showTrigger
-            showClear={clearable && !!selectedOption}
-            disabled={disabled}
-            className="w-full"
-          />
-        </div>
-      ) : (
-        <ComboboxPrimitive.Trigger
-          data-slot="combobox-trigger"
-          render={<Button variant="input" aria-haspopup="listbox" className="w-full justify-between truncate font-normal" disabled={disabled} />}
-        >
-          {selectedOption ? (
-            <div className="flex items-center gap-2 truncate">
-              {renderAvatar && (
-                <EntityAvatar className="h-6 w-6 shrink-0 text-xs" id={selectedOption.value} name={selectedOption.label} url={selectedOption.url} />
-              )}
-              {renderOption ? renderOption(selectedOption) : <span className="truncate">{selectedOption.label}</span>}
-            </div>
-          ) : (
-            <span className="truncate text-muted-foreground">{t(placeholders.trigger, { resource: t(placeholders.resource).toLowerCase() })}</span>
-          )}
-          <ChevronDownIcon className="ml-2 size-4 shrink-0 opacity-50" />
-        </ComboboxPrimitive.Trigger>
-      )}
-      <ComboboxContent anchor={searchableTrigger ? anchorRef : undefined}>
-        {!searchableTrigger && <ComboboxInput placeholder={t(placeholders.search)} showTrigger={false} />}
-        <ComboboxList>
-          {(item) => (
-            <ComboboxItem key={item.value} value={item}>
-              <div className="flex items-center gap-2">
-                {renderAvatar && <EntityAvatar id={item.value} name={item.label} url={item.url} />}
-                {renderOption ? renderOption(item) : <span className="truncate">{item.label}</span>}
-              </div>
-            </ComboboxItem>
-          )}
-        </ComboboxList>
-        <ComboboxEmpty>
-          <ContentPlaceholder icon={SearchIcon} title={placeholders.notFound} titleProps={{ resource: t(placeholders.resource).toLowerCase() }} />
-        </ComboboxEmpty>
-      </ComboboxContent>
-    </Combobox>
-  );
-}
-
 export {
-  type ComboBoxOption,
   Combobox,
   ComboboxChip,
   ComboboxChipRemove,
@@ -395,8 +226,6 @@ export {
   ComboboxLabel,
   ComboboxList,
   ComboboxPrimitive,
-  ComboboxSearchInput,
-  ComboboxSelect,
   ComboboxSeparator,
   ComboboxStatus,
   ComboboxTrigger,

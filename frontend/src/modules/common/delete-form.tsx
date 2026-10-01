@@ -1,6 +1,7 @@
 import { TrashIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { Button, SubmitButton } from '~/modules/ui/button';
+import { SubmitButton } from '~/modules/common/form-fields/submit-button';
+import { Button } from '~/modules/ui/button';
 
 interface DeleteFormProps {
   onDelete: () => void;
