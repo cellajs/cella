@@ -520,15 +520,6 @@ export const zApiKey = z.object({
 });
 
 /**
- * A newly issued API key with its plaintext secret.
- */
-export const zCreatedApiKey = zApiKey.and(
-  z.object({
-    secret: z.string(),
-  }),
-);
-
-/**
  * Auth health status
  */
 export const zGetAuthHealthResponse = z.object({
@@ -2177,7 +2168,13 @@ export const zCreateServiceAccountPath = z.object({
  */
 export const zCreateServiceAccountResponse = z.object({
   serviceAccount: zServiceAccount,
-  apiKey: zCreatedApiKey.optional(),
+  apiKey: zApiKey
+    .and(
+      z.object({
+        secret: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 export const zUpdateServiceAccountBody = z.object({
@@ -2236,9 +2233,13 @@ export const zCreateApiKeyPath = z.object({
 });
 
 /**
- * API key was issued
+ * A newly issued API key with its plaintext secret.
  */
-export const zCreateApiKeyResponse = zCreatedApiKey;
+export const zCreateApiKeyResponse = zApiKey.and(
+  z.object({
+    secret: z.string(),
+  }),
+);
 
 export const zRevokeApiKeyPath = z.object({
   tenantId: z.string().max(50),
