@@ -1,6 +1,5 @@
 import { baseDb } from '#/db/db';
 import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bus';
-import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { findUserById } from '#/modules/user/user-queries';
 import { utcStamp } from '#/utils/iso-date';
@@ -9,17 +8,14 @@ import { log } from '#/utils/logger';
 const securityEmailType = { create: 'system-role-granted', update: 'system-role-changed', delete: 'system-role-revoked' } as const;
 
 /**
- * Every CDC-observed system-role change drops the user's cached sessions in every process, so the role (and the
- * impersonations it backs) holds only while it is granted, and notifies the security contact.
+ * Every CDC-observed system-role change notifies the security contact. The role itself needs no listener: every
+ * process reads it with the session at each request, so it (and the impersonations it backs) holds only while granted.
  */
 const notifySystemRoleChange = async (event: ActivityEvent) => {
   const systemRole = getEventData(event, 'system_role');
   if (!systemRole) return;
 
   try {
-    // The role row is committed by the time CDC reports it: the message goes out on the pool.
-    await invalidateCache.user(baseDb, systemRole.userId);
-
     // On delete the user may already be cascade-deleted; fall back to the raw id
     const user = await findUserById({ var: { db: baseDb } }, { id: systemRole.userId });
 

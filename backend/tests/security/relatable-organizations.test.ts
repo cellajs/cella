@@ -3,7 +3,6 @@ import { hierarchy } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultHeaders, memberRole } from '../fixtures';
 import { createSystemAdminUser, createTestOrganization, createTestSession, expectRefusal, getUserByEmail } from '../helpers';
@@ -127,7 +126,6 @@ describe('Organizations of another user (relatableUserId)', async () => {
     // The target archived Alpha, holds another role there, and put Bravo first in their menu.
     await createOrgMembership(target.id, alpha, previewedRole, 2, true);
     await createOrgMembership(target.id, bravo, memberRole, 1);
-    for (const user of [viewer, target]) await invalidateCache.user(db, user.id);
     const pair = [alpha.id, bravo.id];
 
     const listFor = (query: Record<string, string>, as: { sessionCookie: string } = viewer) =>

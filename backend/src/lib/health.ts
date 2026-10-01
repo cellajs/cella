@@ -19,13 +19,12 @@ import {
 import { extractMcpDetails, extractOauthDetails, extractYjsDetails, probeWorker, workerUrls } from '#/lib/health-probe';
 import { mapJobsComponent, readJobsHealth } from '#/lib/jobs-health';
 import { getBackendJobs } from '#/lib/module';
-import { authInvalidationHealth } from '#/middlewares/guard/invalidation-listener';
 import { log } from '#/utils/logger';
 
 export type { HealthResponse, HealthStatus };
 
 /** Components that reflect the process's own ability to serve; only these can drive an `unhealthy` rollup (503). */
-const CRITICAL_COMPONENTS = new Set(['api', 'database', 'authInvalidation']);
+const CRITICAL_COMPONENTS = new Set(['api', 'database']);
 
 /** Check database connectivity with a timed `SELECT 1`. */
 async function checkDatabase(): Promise<{ connected: boolean; latencyMs: number | null }> {
@@ -83,9 +82,8 @@ async function buildJobsComponent(): Promise<HealthComponent> {
 
 /**
  * Aggregates every dependency and sibling worker into a uniform `component` keyed by name. The api process grades
- * itself, checks the database and its auth invalidation listener, reads the pushed CDC report, probes yjs/mcp/oauth and
- * reads the job store; the mcp worker grades the same three and reports itself; the jobs worker grades itself, the
- * database and the store.
+ * itself, checks the database, reads the pushed CDC report, probes yjs/mcp/oauth and reads the job store; the mcp
+ * worker grades the same two and reports itself; the jobs worker grades itself, the database and the store.
  */
 async function getHealthResponse(): Promise<{ response: HealthResponse; httpStatus: number }> {
   const components: Record<string, HealthComponent> = {};
@@ -93,8 +91,6 @@ async function getHealthResponse(): Promise<{ response: HealthResponse; httpStat
   const dbCheck = await checkDatabase();
   components.api = mapApiComponent(getEventLoopLagMs(), process.memoryUsage());
   components.database = mapDatabaseComponent(dbCheck.connected, dbCheck.latencyMs);
-  // The jobs worker serves no request, so it holds no guard cache that an invalidation would have to reach.
-  if (env.MODE !== 'jobs') components.authInvalidation = authInvalidationHealth();
 
   if (env.MODE === 'mcp') {
     components.mcp = buildMcpSelfComponent();

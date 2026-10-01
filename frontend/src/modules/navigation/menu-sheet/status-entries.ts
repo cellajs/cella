@@ -18,7 +18,7 @@ export interface GradedStatusEntry {
   reason?: string;
 }
 
-const appEntry: StatusEntry = { id: 'app', label: 'c:app', description: 'c:app_status.text', components: ['api', 'database', 'authInvalidation'] };
+const appEntry: StatusEntry = { id: 'app', label: 'c:app', description: 'c:app_status.text', components: ['api', 'database'] };
 
 /** The info panel's status entries in display order: the one place to show, group or describe a service. */
 export const statusEntries: readonly StatusEntry[] = [

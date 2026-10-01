@@ -1,7 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { importJWK, SignJWT } from 'jose';
 import { nanoid } from 'nanoid';
-import pg from 'pg';
 import {
   createApiKey,
   createServiceAccount,
@@ -17,13 +16,13 @@ import {
   updateServiceAccount,
 } from 'sdk';
 import { appConfig } from 'shared';
-import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
 import type { SessionEndReason } from '#/modules/auth/sessions-db';
 import { stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
@@ -84,12 +83,6 @@ const cimdDocument = {
   response_types: ['code'],
 };
 
-/**
- * The other processes (api, mcp, oauth): what they hear on `auth_invalidate`, through a listener on a connection of
- * its own. Each keeps its own cached verdicts, so a revocation must reach them at once.
- */
-const otherProcesses = { client: new pg.Client({ connectionString: testDatabaseUrl }), heard: [] as unknown[] };
-const toldOtherProcesses = (message: unknown) => vi.waitFor(() => expect(otherProcesses.heard).toContainEqual(message), { timeout: 5000 });
 const reasonOf = (error: unknown) => (error as ErrorResponse).meta?.reason;
 
 /** A user's grants with the codes and refresh tokens issued under them (the provider's sessions are left out). */
@@ -111,18 +104,10 @@ describe('OAuth grants', async () => {
   beforeAll(async () => {
     oauth = await startTestOauthServer();
     restoreFetch = serveClientMetadataDocuments({ [CIMD_ID]: cimdDocument, [SERVICE_CLAIM_ID]: { ...cimdDocument, client_kind: 'service' } });
-    await otherProcesses.client.connect();
-    // A dropped connection shows as the messages it no longer hears, never as an unhandled error event.
-    otherProcesses.client.on('error', () => {});
-    otherProcesses.client.on('notification', ({ channel, payload }) => {
-      if (channel === 'auth_invalidate' && payload) otherProcesses.heard.push(JSON.parse(payload));
-    });
-    await otherProcesses.client.query('LISTEN auth_invalidate');
   });
   afterAll(async () => {
     restoreFetch();
     await oauth.close();
-    await otherProcesses.client.end();
   });
   afterEach(async () => await clearSecurityTestData());
 
@@ -159,11 +144,11 @@ describe('OAuth grants', async () => {
   const readAttachments = (ctx: Tenant, jwt: string) =>
     call(getAttachments, { path: { tenantId: ctx.org.tenantId, organizationId: ctx.org.id }, headers: bearerHeaders(jwt) });
 
-  /** The grant a person's access token names, as the other processes hear of its revocation. */
-  async function grantOf(ctx: Tenant, jwt: string) {
+  /** The grant a person's access token names. */
+  async function grantIdOf(ctx: Tenant, jwt: string) {
     const token = await verifyAccessToken(jwt, { tenantId: ctx.org.tenantId, organizationId: ctx.org.id });
     if (token.kind !== 'user') throw new Error("Expected a person's token");
-    return { grant: { accountId: token.actorId, grantId: token.grantId } };
+    return token.grantId;
   }
 
   async function allowUnregisteredClients(tenantId: string, allow: boolean) {
@@ -172,7 +157,7 @@ describe('OAuth grants', async () => {
       .update(tenantsTable)
       .set({ restrictions: { ...normalizeRestrictions(tenant.restrictions), allowUnregisteredClients: allow } })
       .where(eq(tenantsTable.id, tenantId));
-    await invalidateCache.tenant(db, tenantId);
+    invalidateCache.tenant(tenantId);
   }
 
   describe('a grant ends with what it rests on', () => {
@@ -197,15 +182,40 @@ describe('OAuth grants', async () => {
       const read = await readAttachments(ctx, access);
       expect(read.response.status).toBe(401);
       expect(reasonOf(read.error)).toBe('app_not_installed');
-      await toldOtherProcesses({ serviceAccount: { id: ctx.installationId, tenantId: ctx.org.tenantId, clientId: APP_ID } });
 
-      const revoked = await grantOf(ctx, access);
       const refused = await refresh(String(rotated.body.refresh_token));
       expect(refused.status).toBe(400);
       expect(refused.body.error).toBe('invalid_grant');
       // The refused grant is deleted with every token issued under it: the client must ask the person again.
       expect(await grantRowsOf(ctx.member.id)).toEqual([]);
-      await toldOtherProcesses(revoked);
+    });
+
+    it('must not act via an access token once another process deleted its grant, even while its verdict is cached', async () => {
+      const ctx = await tenantWithApp();
+      const grant = await consent(ctx);
+      // Positive control, which also caches the grant's verdict at the guard.
+      expect((await readAttachments(ctx, grant.access)).response.status).toBe(200);
+
+      // A revoke in another process: the grant row goes, and nothing drops this process's verdict.
+      const grantId = await grantIdOf(ctx, grant.access);
+      await db.delete(oidcPayloadsTable).where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId)));
+
+      const read = await readAttachments(ctx, grant.access);
+      expect(read.response.status).toBe(401);
+      expect(reasonOf(read.error)).toBe('grant_revoked');
+    });
+
+    it("must not act via a person's token once another process removed their membership, even while its verdict is cached", async () => {
+      const ctx = await tenantWithApp();
+      const grant = await consent(ctx);
+      expect((await readAttachments(ctx, grant.access)).response.status).toBe(200);
+
+      // A removal in another process: only the trigger on memberships records it.
+      await db.delete(membershipsTable).where(eq(membershipsTable.userId, ctx.member.id));
+
+      const read = await readAttachments(ctx, grant.access);
+      expect(read.response.status).toBe(401);
+      expect(reasonOf(read.error)).toBe('not_a_member');
     });
 
     it('must not keep a deleted account acting via its grant', async () => {
@@ -346,7 +356,6 @@ describe('OAuth grants', async () => {
       const read = await readAttachments(ctx, grant.access);
       expect(read.response.status).toBe(401);
       expect(reasonOf(read.error)).toBe('grant_revoked');
-      await toldOtherProcesses(await grantOf(ctx, grant.access));
     });
 
     it('must not act via an access token after the client revokes its refresh token', async () => {
@@ -366,7 +375,6 @@ describe('OAuth grants', async () => {
       const read = await readAttachments(ctx, grant.access);
       expect(read.response.status).toBe(401);
       expect(reasonOf(read.error)).toBe('grant_revoked');
-      await toldOtherProcesses(await grantOf(ctx, grant.access));
     });
   });
 
@@ -394,7 +402,7 @@ describe('OAuth grants', async () => {
     /** The token endpoint's answer to a key that no longer authenticates its account: no token. */
     const noClient = { status: 401, body: { error: 'invalid_client' } };
 
-    it('must not act or mint via a service token after its API key is revoked, even while its verdict is cached', async () => {
+    it('must not act or mint via a service token after its API key is revoked', async () => {
       const bot = await botWithKey();
       const second = await call(createApiKey, { path: bot.path, body: { name: 'second' }, headers: bot.headers });
       const secondKey = second.data as { secret: string };
@@ -408,13 +416,12 @@ describe('OAuth grants', async () => {
       const refused = await bot.read(jwt);
       expect(refused.response.status).toBe(401);
       expect(reasonOf(refused.error)).toBe('invalid_api_key');
-      await toldOtherProcesses({ serviceAccount: { id: bot.accountId, tenantId: bot.path.tenantId, clientId: null } });
       expect(await bot.mint(bot.key.secret)).toMatchObject(noClient);
       // Positive control: the account and its other key are untouched.
       expect((await bot.read(await bot.tokenFor(secondKey.secret))).response.status).toBe(200);
     });
 
-    it('must not act via a service token after its account is disabled, even while its verdict is cached', async () => {
+    it('must not act via a service token after its account is disabled', async () => {
       const bot = await botWithKey();
       const jwt = await bot.tokenFor(bot.key.secret);
       expect((await bot.read(jwt)).response.status).toBe(200);
@@ -425,12 +432,24 @@ describe('OAuth grants', async () => {
       const refused = await bot.read(jwt);
       expect(refused.response.status).toBe(401);
       expect(reasonOf(refused.error)).toBe('service_account_disabled');
-      await toldOtherProcesses({ serviceAccount: { id: bot.accountId, tenantId: bot.path.tenantId, clientId: null } });
     });
 
-    it('must not mint a service token via a client cached before its account was disabled', async () => {
+    it('must not act via a service token once another process revoked its API key', async () => {
       const bot = await botWithKey();
-      // Positive control, which also caches the client, as the authorization server's process holds it.
+      const jwt = await bot.tokenFor(bot.key.secret);
+      expect((await bot.read(jwt)).response.status).toBe(200);
+
+      // A revoke in another process: the key row changes, and nothing drops what this process holds.
+      await db.update(apiKeysTable).set({ revokedAt: new Date().toISOString() }).where(eq(apiKeysTable.id, bot.key.id));
+
+      const refused = await bot.read(jwt);
+      expect(refused.response.status).toBe(401);
+      expect(reasonOf(refused.error)).toBe('invalid_api_key');
+    });
+
+    it('must not mint a service token once another process disabled its account', async () => {
+      const bot = await botWithKey();
+      // Positive control.
       await bot.tokenFor(bot.key.secret);
 
       // A disable this process has not heard of yet: another process's write, or one outside the API.
@@ -698,7 +717,6 @@ describe('OAuth grants', async () => {
       expect(read.response.status).toBe(401);
       expect(reasonOf(read.error)).toBe('grant_revoked');
       expect((await refresh(String(first.body.refresh_token))).body.error).toBe('invalid_grant');
-      await toldOtherProcesses(await grantOf(ctx, access));
     });
 
     it('must not mint tokens via a rotated refresh token, and the replay revokes the grant', async () => {
@@ -719,7 +737,6 @@ describe('OAuth grants', async () => {
       const read = await readAttachments(ctx, access);
       expect(read.response.status).toBe(401);
       expect(reasonOf(read.error)).toBe('grant_revoked');
-      await toldOtherProcesses(await grantOf(ctx, access));
     });
 
     /** Holds every consume back a moment, so each racing request has read the unspent row before any spends it. */
@@ -740,10 +757,9 @@ describe('OAuth grants', async () => {
       const results = await Promise.all([exchange(), exchange()]).finally(() => race.mockRestore());
       expect(results.map((result) => result.status).sort()).toEqual([200, 400]);
       expect(results.find((result) => result.status === 400)?.body.error).toBe('invalid_grant');
-      // The replay revoked the grant, the winner's tokens with it, here and in the other processes.
+      // The replay revoked the grant, the winner's tokens with it.
       const winner = String(results.find((result) => result.status === 200)?.body.access_token);
       expect((await readAttachments(ctx, winner)).response.status).toBe(401);
-      await toldOtherProcesses(await grantOf(ctx, winner));
     });
 
     it('must not mint tokens twice via two concurrent refreshes with one refresh token', async () => {

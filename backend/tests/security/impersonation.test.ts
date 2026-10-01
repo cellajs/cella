@@ -2,9 +2,8 @@ import { eq } from 'drizzle-orm';
 import { deleteUsers, getMe, revokeMySessions, signOut, startImpersonation } from 'sdk';
 import { appConfig } from 'shared';
 import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
-import { baseDb, getAdminDb } from '#/db/db';
+import { getAdminDb } from '#/db/db';
 import { env } from '#/env';
-import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders, overrideConfig } from '../fixtures';
 import { authCookie, cookieChange, createSystemAdminUser, createTestUser, expectRefusal, mailsTo, sessionRow, sessionsOf } from '../helpers';
@@ -148,9 +147,8 @@ describe('impersonation lives on its admin', async () => {
     const { admin, impersonation } = await impersonating('demoted');
     const kept = await impersonating('kept');
 
-    // Roles change outside the API; the change listener drops the admin's cached sessions.
+    // Roles change outside the API; every request reads the role with its session.
     await getAdminDb('test arrange').delete(systemRolesTable).where(eq(systemRolesTable.userId, admin.id));
-    await invalidateCache.user(baseDb, admin.id);
 
     const refused = await meAs(impersonation);
     await expectRefusal(refused, 401, 'unauthorized');

@@ -3,7 +3,6 @@ import { hierarchy } from 'shared';
 import { getEdgeOrder } from 'shared/utils/display-order';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import { findMembershipByIdInOrg, updateMembership } from '#/modules/memberships/memberships-queries';
 import { type membershipUpdateBodySchema, personalViewKeys } from '#/modules/memberships/memberships-schema';
@@ -70,8 +69,6 @@ export async function updateMembershipOp(ctx: UserContext, membershipId: string,
     updatedAt: getIsoDate(),
   };
   const updatedMembership = await updateMembership(ctx, { id: membershipId, values });
-
-  await invalidateCache.user(ctx.var.db, updatedMembership.userId);
 
   log.info('Membership updated', { userId: updatedMembership.userId, membershipId: updatedMembership.id });
 

@@ -1,6 +1,5 @@
 import type { ChannelEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
-import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteMembershipsByIds, findMembershipsByUserIdsAndChannel } from '#/modules/memberships/memberships-queries';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
@@ -29,8 +28,6 @@ export async function deleteMembershipsOp(ctx: UserContext, input: DeleteMembers
   if (targets.length === 0) return { data: [] as never[], rejectedIds };
 
   await deleteMembershipsByIds(ctx, { ids: targets.map((target) => target.id) });
-
-  for (const target of targets) await invalidateCache.user(ctx.var.db, target.userId);
 
   log.info('Memberships deleted', { count: targets.length, ids: targets.map((t) => t.userId) });
 

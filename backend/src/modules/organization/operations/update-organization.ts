@@ -41,7 +41,7 @@ export async function updateOrganizationOp(ctx: ActorContext, id: string, rawInp
 
   await dispatchMutation(ctx, 'organization.updated', { before: [withOrganizationDefaults(organization)], after: [updatedOrganizationRecord] });
 
-  await invalidateCache.org(ctx.var.db, organization.tenantId, organization.id);
+  invalidateCache.org(organization.tenantId, organization.id);
 
   log.info('Organization updated', { organizationId: updatedOrganizationRecord.id });
 

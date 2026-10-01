@@ -1,7 +1,6 @@
 import { and, eq, gt, inArray, isNull, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
-import { dropCachedAuth, publishAuthInvalidation } from '#/middlewares/guard/invalidate-cache';
 import { authEvents } from '#/modules/auth/auth-events';
 import {
   type SessionEndReason,
@@ -34,14 +33,15 @@ export type RevokeSessionsOpts = SessionSelection & {
 
 /**
  * The one way sessions end before their expiry. Stamps the user's selected live sessions with `revokedAt`,
- * `revokedBy` and `revocationReason`, drops the user's cached sessions in every process, and closes the streams bound
- * to them. A revoked session is never re-stamped, so the first revocation is the one the sessions list shows; the row
- * stays until the nightly sweep. `user_deleted` follows the delete, which took the rows along: nothing is stamped,
- * and every stream of the user closes. An impersonation layered on a revoked session is revoked with it as
- * `impersonation_stopped` (a deleted admin's rows take theirs along), since only its admin's session can present it.
+ * `revokedBy` and `revocationReason` and closes the streams bound to them; every process reads the session per request,
+ * so the stamp ends it at its next request. A revoked session is never re-stamped, so the first revocation is the one
+ * the sessions list shows; the row stays until the nightly sweep. `user_deleted` follows the delete, which took the
+ * rows along: nothing is stamped, and every stream of the user closes. An impersonation layered on a revoked session is
+ * revoked with it as `impersonation_stopped` (a deleted admin's rows take theirs along), since only its admin's session
+ * can present it.
  *
- * The stamps and the `auth_invalidate` message commit together, inside the caller's transaction when there is one;
- * this process drops its cache and closes the streams at the call, so call it last in a transaction.
+ * The stamps commit inside the caller's transaction when there is one; the streams close at the call, so call it last
+ * in a transaction.
  *
  * @param ctx - Any context with a database; the sign-in paths pass the base pool.
  * @param opts - The user, which sessions (`sessionIds` or `all`), the reason and the acting actor.
@@ -67,14 +67,8 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
     const stopped = endedIds.length ? await stamp('impersonation_stopped', inArray(sessionsTable.impersonatorSessionId, endedIds)) : [];
 
     if (deletesProviderSessions.has(reason)) await deleteProviderSessionsOfUser({ var: { db: tx } }, { userId });
-
-    for (const user of new Set([userId, ...stopped.map((session) => session.userId)])) {
-      await publishAuthInvalidation(tx, { user });
-    }
     return { ended: stamped, layered: stopped };
   });
-
-  dropCachedAuth({ user: userId });
 
   const everySession = 'all' in opts && !opts.type;
   if (everySession || ended.length > 0) {
@@ -82,7 +76,6 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
     authEvents.emit('session.revoked', { userId, sessionIds, reason });
   }
   for (const impersonation of layered) {
-    dropCachedAuth({ user: impersonation.userId });
     authEvents.emit('session.revoked', { userId: impersonation.userId, sessionIds: [impersonation.id], reason: 'impersonation_stopped' });
   }
   log.info('Sessions revoked', { userId, reason, count: ended.length, impersonationsStopped: layered.length });

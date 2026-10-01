@@ -5,16 +5,16 @@ import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { getApiKeyCache, setApiKeyCache } from '#/middlewares/guard/api-key-cache';
-import { loadMemberships } from '#/middlewares/guard/auth-cache';
+import { loadMemberships } from '#/middlewares/guard/membership-cache';
 import { getTokenGrantCache, setTokenGrantCache, type TokenGrantEntry } from '#/middlewares/guard/token-grant-cache';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
-import { findConsentOfUser } from '#/modules/oauth-server/oauth-server-queries';
+import { findLiveGrantBindings } from '#/modules/oauth-server/oauth-server-queries';
 import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
 import { bearerJwtFrom, type VerifiedAccessToken, verifyAccessToken } from '#/modules/oauth-server/verify-access-token';
 import { apiKeyFrom, apiKeyRefusal, parseApiKey } from '#/modules/service-accounts/helpers/api-key';
 import { findApiKeyWithAccount } from '#/modules/service-accounts/service-accounts-queries';
-import { usersTable } from '#/modules/user/user-db';
+import { type UserModel, usersTable } from '#/modules/user/user-db';
 
 export const unauthorized = (reason: string) => new AppError(401, 'unauthorized', 'warn', { meta: { reason } });
 
@@ -33,18 +33,16 @@ export function routeTarget(ctx: Context<Env>): { tenantId: string; organization
  */
 export async function setActorFromToken(ctx: Context<Env>, jwt: string, scope: { tenantId: string; organizationId?: string }): Promise<void> {
   const token = await verifyAccessToken(jwt, scope);
-  const grant = await resolveTokenGrant(token);
-  if (grant.refusal !== null) throw unauthorized(grant.refusal);
 
-  if (grant.kind === 'user') {
-    const { user } = grant;
-    const memberships = await loadMemberships(user.id);
+  if (token.kind === 'user') {
+    const { user, bindingsVersion } = await resolveUserToken(token);
+    const memberships = await loadMemberships(user.id, bindingsVersion);
     ctx.set('user', user);
     ctx.set('userId', user.id);
     ctx.set('memberships', memberships);
     ctx.set('actor', { kind: 'user', id: user.id, bindings: memberships, scopes: token.scopes });
   } else {
-    const { account } = grant;
+    const account = await resolveServiceToken(token);
     ctx.set('actor', {
       kind: 'service',
       id: account.id,
@@ -57,33 +55,42 @@ export async function setActorFromToken(ctx: Context<Env>, jwt: string, scope: {
   ctx.set('db', baseDb);
 }
 
+type UserToken = Extract<VerifiedAccessToken, { kind: 'user' }>;
+
 /**
- * The grant policy's verdict on the grant (per tenant) or API key a token names, cached with the actor's row. A key
- * expires by the clock alone, unannounced, so its rule runs at every use, on a cached key as on a fresh one.
+ * A person's token: the grant it names and the user's bindings version are read at every use, so a revoked grant
+ * stops the token and a membership change narrows it at the next request in every process. The grant policy's verdict
+ * with the user row is cached per grant, tenant and bindings version (`token-grant-cache.ts`).
  */
-async function resolveTokenGrant(token: VerifiedAccessToken): Promise<TokenGrantEntry> {
-  const entry = getTokenGrantCache(token) ?? (await loadTokenGrant(token));
-  if (entry.refusal !== null || entry.kind === 'user') return entry;
-  const refusal = apiKeyRefusal(entry.apiKey, entry.account);
-  return refusal ? { refusal } : entry;
+async function resolveUserToken(token: UserToken): Promise<{ user: UserModel; bindingsVersion: string }> {
+  const live = await findLiveGrantBindings({ var: { db: baseDb } }, { grantId: token.grantId, userId: token.actorId });
+  if (!live) throw unauthorized('grant_revoked');
+
+  const { bindingsVersion } = live;
+  const entry = getTokenGrantCache(token, bindingsVersion) ?? (await loadTokenGrant(token, bindingsVersion));
+  if (entry.refusal !== null) throw unauthorized(entry.refusal);
+  return { user: entry.user, bindingsVersion };
 }
 
-/** What the database holds on the token's grant or key, cached for the token's next use. */
-async function loadTokenGrant(token: VerifiedAccessToken): Promise<TokenGrantEntry> {
-  let entry: TokenGrantEntry;
-  if (token.kind === 'user') {
-    // A revoked grant, or one a replayed code or refresh token revoked, is deleted: its tokens stop with it.
-    const grant = await findConsentOfUser({ var: { db: baseDb } }, { grantId: token.grantId, userId: token.actorId });
-    const refusal = grant ? await grantRefusal({ userId: token.actorId, clientId: token.clientId, tenantId: token.tenantId }) : 'grant_revoked';
-    const [user] = refusal ? [] : await baseDb.select().from(usersTable).where(eq(usersTable.id, token.actorId));
-    entry = user ? { refusal: null, kind: 'user', user } : { refusal: refusal ?? 'unknown_user' };
-  } else {
-    // The key the token was minted with, which must belong to the token's account.
-    const found = await findApiKeyWithAccount({ var: { db: baseDb } }, { key: { id: token.keyId }, actorId: token.actorId });
-    entry = found ? { refusal: null, kind: 'service', ...found } : { refusal: 'invalid_api_key' };
-  }
-  setTokenGrantCache(token, entry);
+/** The grant policy's verdict on a live grant, with the user row, cached for the token's next uses. */
+async function loadTokenGrant(token: UserToken, bindingsVersion: string): Promise<TokenGrantEntry> {
+  const refusal = await grantRefusal({ userId: token.actorId, clientId: token.clientId, tenantId: token.tenantId });
+  const [user] = refusal ? [] : await baseDb.select().from(usersTable).where(eq(usersTable.id, token.actorId));
+  const entry: TokenGrantEntry = user ? { refusal: null, user } : { refusal: refusal ?? 'unknown_user' };
+  setTokenGrantCache(token, bindingsVersion, entry);
   return entry;
+}
+
+/**
+ * A service account's token: the key it was minted with and its account, read in one statement at every use, so a
+ * revoked or expired key or a disabled account stops it at the next request in every process.
+ */
+async function resolveServiceToken(token: Extract<VerifiedAccessToken, { kind: 'service' }>) {
+  const found = await findApiKeyWithAccount({ var: { db: baseDb } }, { key: { id: token.keyId }, actorId: token.actorId });
+  if (!found) throw unauthorized('invalid_api_key');
+  const refusal = apiKeyRefusal(found.apiKey, found.account);
+  if (refusal) throw unauthorized(refusal);
+  return found.account;
 }
 
 /** The key and its account in one read, cached by hash; a revoke, roll, or disable invalidates the account's keys. */

@@ -95,6 +95,8 @@ export type Access<T extends AccessMembership = AccessMembership> =
 
 Backend handlers never assemble an access by hand: `accessFrom(ctx)` reads the guard-populated actor (`id`, `bindings`, `scopes`) and `isSystemAdmin` off the request context and yields `{ anonymous: true }` when nobody is signed in. `scopes` is required so a hand-built access states its mask: a session passes `null`; an API key or an access token passes what it was issued with, and the decision is `allowed AND the scope covers the action`. Where scopes come from: [Interoperability](./INTEROPERABILITY.md#access-scopes).
 
+A user's bindings are their memberships, which each process caches under `actors.bindings_version`. A trigger on `memberships` gives that column a new random value on every insert, update and delete, cascades included, and every request reads it along with its session or token. A membership change therefore counts at the next request in every process, whatever wrote it.
+
 ## The policy consulted
 
 **`shared/config/hierarchy-config.ts`**, a fluent builder:

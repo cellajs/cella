@@ -5,7 +5,6 @@ import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
 import { env } from '#/env';
 import { baseLog } from '#/lib/pino';
 import { otel } from '#/lib/tracing';
-import { listenForAuthInvalidation } from '#/middlewares/guard/invalidation-listener';
 // Composition root: registers every backend module. This worker serves only the mcp routes; tool calls run through
 // the module routes `#/routes` mounts.
 import '#/modules';
@@ -35,8 +34,6 @@ export async function startMcpWorker(options: { port?: number; inProcess?: boole
   // An app of its own: folded into the API process, the API's app takes no routes once it has answered a request.
   const app = createBaseApp();
   app.route('/:tenantId/:organizationId/mcp', mcpHandlers);
-  // The token users and memberships this process caches drop when another process invalidates them.
-  const stopInvalidationListener = listenForAuthInvalidation();
 
   const server: ServerType = serve({ fetch: app.fetch, hostname: '0.0.0.0', port }, () => {
     baseLog.info(`MCP service listening on port ${port}${hasAiKey ? '' : ' (AI features off)'}`);
@@ -46,7 +43,6 @@ export async function startMcpWorker(options: { port?: number; inProcess?: boole
     name: 'mcp-worker',
     cleanup: async () => {
       server.close();
-      await stopInvalidationListener();
       if (!options.inProcess) await otel.shutdown();
     },
     log: (msg) => baseLog.info(msg),
