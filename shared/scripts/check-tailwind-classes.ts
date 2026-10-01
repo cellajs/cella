@@ -88,9 +88,11 @@ function usedClassNames(files: string[]): Set<string> {
   }
   for (const file of files.filter(isFrontendScript)) {
     const source = readFileSync(join(repoRoot, file), 'utf8');
-    for (const [chunk] of source.matchAll(/\[[^\s'"`]*/g)) addMatches(names, chunk, /(?<![a-zA-Z0-9$.)\]])\.(-?[_a-zA-Z][\w-]*)/g);
+    // Arbitrary selectors (`group-[.x]`, `[&_.x]`); a bracket after a name, `)`, `]` or `?.` indexes code.
+    for (const [chunk] of source.matchAll(/(?<![\w$)\]?.])\[[^\s'"`]*/g)) addMatches(names, chunk, /(?<![a-zA-Z0-9$.)\]?!])\.(-?[_a-zA-Z][\w-]*)/g);
+    // Selector strings for querySelector, closest and the like.
     for (const [, , text] of source.matchAll(/(['"`])((?:\\.|(?!\1)[^\\\n])*)\1/g)) {
-      addMatches(names, text, /(?:^|[\s>+~,(&])\.(-?[_a-zA-Z][\w-]*)/g);
+      if (/^[\w\s.#>+~,:()[\]="*-]+$/.test(text)) addMatches(names, text, /(?:^|[\s>+~,(])\.(-?[_a-zA-Z][\w-]*)/g);
     }
     for (const [, args] of source.matchAll(/(?:classList\.(?:add|contains|remove|replace|toggle)|getElementsByClassName)\(([^)]*)\)/g)) {
       for (const [, text] of args.matchAll(/['"`]([^'"`]+)['"`]/g)) for (const name of text.split(/\s+/)) names.add(name);
