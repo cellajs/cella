@@ -87,17 +87,10 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
               isMobile && drawerOnMobile ? headerClassName?.replace('with-close-btn', '') : headerClassName,
             )}
           >
-            {title ? (
-              <DialogTitle className="h-6 leading-6">{titleContent}</DialogTitle>
-            ) : (
-              <DialogTitle className="hidden" />
-            )}
+            {title && <DialogTitle className="h-6 leading-6">{titleContent}</DialogTitle>}
             {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
         )}
-
-        {/* Guarantee an accessible name without a visible header */}
-        {!title && !description && <DialogTitle className="hidden" />}
         {content}
       </DialogContent>
     </Dialog>

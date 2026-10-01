@@ -22,7 +22,7 @@ import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button, SubmitButton } from '~/modules/ui/button';
 import { Checkbox } from '~/modules/ui/checkbox';
-import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import type { MutationData } from '~/query/types';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -138,11 +138,16 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
           name="roles"
           render={({ field: { value, onChange } }) => (
             <FormItem>
-              <FormLabel>
-                {t('c:roles')}
-                <span className="ml-1 opacity-50">*</span>
-              </FormLabel>
-              <SelectRoles value={value} onValueChange={onChange} />
+              <SelectRoles
+                value={value}
+                onValueChange={onChange}
+                label={
+                  <>
+                    {t('c:roles')}
+                    <span className="ml-1 opacity-50">*</span>
+                  </>
+                }
+              />
               <FormMessage />
             </FormItem>
           )}

@@ -1,76 +1,28 @@
 import { Select as SelectPrimitive } from '@base-ui/react/select';
 import { CheckIcon, ChevronDownIcon, ChevronUpIcon } from 'lucide-react';
 import type * as React from 'react';
-import { createContext, useContext, useEffect, useRef, useSyncExternalStore } from 'react';
+import { createContext, useContext } from 'react';
 import { cn } from '~/utils/cn';
 
 // Context to pass the current value from Select to SelectItem for reliable checkmarks.
 // Works around a Base UI timing issue where ItemIndicator can show stale selection state.
 const SelectValueContext = createContext<string | null | undefined>(undefined);
 
-// Registry that lets SelectItem children register their displayed label so SelectValue
-// can render the label (e.g. "Banana") for a raw value (e.g. "banana").
-type LabelRegistry = {
-  register: (value: string, label: React.ReactNode) => () => void;
-  getLabel: (value: string | null) => React.ReactNode;
-  subscribe: (listener: () => void) => () => void;
-  getVersion: () => number;
-};
-const SelectLabelRegistryContext = createContext<LabelRegistry | null>(null);
-
-function useLabelRegistry(): LabelRegistry {
-  // Stable registry object so context value identity never changes (avoids infinite re-renders).
-  const ref = useRef<LabelRegistry | null>(null);
-  if (ref.current === null) {
-    const labels = new Map<string, React.ReactNode>();
-    const listeners = new Set<() => void>();
-    let version = 0;
-    const notify = () => {
-      version += 1;
-      listeners.forEach((l) => {
-        l();
-      });
-    };
-    ref.current = {
-      register(value, label) {
-        labels.set(value, label);
-        notify();
-        return () => {
-          labels.delete(value);
-          notify();
-        };
-      },
-      getLabel(value) {
-        if (value == null) return null;
-        return labels.has(value) ? labels.get(value) : value;
-      },
-      subscribe(listener) {
-        listeners.add(listener);
-        return () => listeners.delete(listener);
-      },
-      getVersion: () => version,
-    };
-  }
-  return ref.current;
-}
-
-// Override onValueChange to narrow Base UI's (string | null) to string for all consumers
+// Override onValueChange to narrow Base UI's (string | null) to string for all consumers.
+// Pass `items` when labels differ from values: SelectValue reads them before the popup has ever mounted.
 type SelectProps = Omit<SelectPrimitive.Root.Props<string>, 'onValueChange'> & {
   onValueChange?: (value: string) => void;
 };
 
 function Select({ onValueChange, value, ...props }: SelectProps) {
-  const registry = useLabelRegistry();
   return (
     <SelectValueContext.Provider value={value}>
-      <SelectLabelRegistryContext.Provider value={registry}>
-        <SelectPrimitive.Root
-          data-slot="select"
-          value={value}
-          onValueChange={onValueChange as SelectPrimitive.Root.Props<string>['onValueChange']}
-          {...props}
-        />
-      </SelectLabelRegistryContext.Provider>
+      <SelectPrimitive.Root
+        data-slot="select"
+        value={value}
+        onValueChange={onValueChange as SelectPrimitive.Root.Props<string>['onValueChange']}
+        {...props}
+      />
     </SelectValueContext.Provider>
   );
 }
@@ -79,28 +31,8 @@ function SelectGroup({ ...props }: SelectPrimitive.Group.Props & React.RefAttrib
   return <SelectPrimitive.Group data-slot="select-group" {...props} />;
 }
 
-function SelectValue({
-  placeholder,
-  ...props
-}: SelectPrimitive.Value.Props &
-  React.RefAttributes<HTMLSpanElement> & {
-    placeholder?: string;
-  }) {
-  const registry = useContext(SelectLabelRegistryContext);
-  // Subscribe so SelectValue re-renders when items register/unregister labels.
-  useSyncExternalStore(
-    registry?.subscribe ?? (() => () => {}),
-    registry?.getVersion ?? (() => 0),
-    registry?.getVersion ?? (() => 0),
-  );
-  return (
-    <>
-      <SelectPrimitive.Value data-slot="select-value" {...props}>
-        {registry ? (value: string | null) => registry.getLabel(value) : undefined}
-      </SelectPrimitive.Value>
-      {placeholder && <span className="hidden [[data-placeholder]_&]:inline">{placeholder}</span>}
-    </>
-  );
+function SelectValue({ ...props }: SelectPrimitive.Value.Props & React.RefAttributes<HTMLSpanElement>) {
+  return <SelectPrimitive.Value data-slot="select-value" {...props} />;
 }
 
 function SelectTrigger({
@@ -198,13 +130,7 @@ function SelectItem({
   ...props
 }: SelectPrimitive.Item.Props & React.RefAttributes<HTMLDivElement>) {
   const selectValue = useContext(SelectValueContext);
-  const registry = useContext(SelectLabelRegistryContext);
   const isSelected = selectValue !== undefined && props.value !== undefined && selectValue === props.value;
-
-  useEffect(() => {
-    if (!registry || typeof props.value !== 'string') return;
-    return registry.register(props.value, children);
-  }, [registry, props.value, children]);
 
   return (
     <SelectPrimitive.Item

@@ -1,5 +1,6 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { Outlet, useNavigate } from '@tanstack/react-router';
+import i18n from 'i18next';
 import { ArrowUpIcon, MenuIcon } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { useEffect, useRef, useState } from 'react';
@@ -93,6 +94,8 @@ function DocsLayout() {
         id: 'docs-sidebar',
         side: 'left',
         triggerRef,
+        title: i18n.t('c:docs'),
+        headerClassName: 'hidden',
         className: 'w-72 p-0',
         closeSheetOnRouteChange: false,
       });

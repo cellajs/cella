@@ -89,7 +89,7 @@ function DebugDropdown({ className }: DebugDropdownProps) {
         >
           🐞
         </DropdownMenuTrigger>
-        <DropdownMenuContent side="right" align="end" sideOffset={24} className="z-300 w-48 p-1">
+        <DropdownMenuContent side="right" align="end" sideOffset={24} positionerClassName="z-300" className="w-48 p-1">
           {debugOptions.map((item) => (
             <DropdownMenuItem key={item.id} onClick={() => debugToggle(item)}>
               <span className="mr-2">{item.icon}</span>

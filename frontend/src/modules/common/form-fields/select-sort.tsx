@@ -32,8 +32,16 @@ export function SelectSort<T extends readonly SortOptionBase[]>({
   const selected = sortOptions.find((option) => option.value === value) ?? sortOptions[0];
 
   return (
-    <Select value={value} onValueChange={onChange}>
-      <SelectTrigger disabled={!isOnline} className={cn('w-auto', className)}>
+    <Select
+      value={value}
+      onValueChange={onChange}
+      items={sortOptions.map((option) => ({ value: option.value, label: t(option.name) }))}
+    >
+      <SelectTrigger
+        disabled={!isOnline}
+        aria-label={iconOnly ? `${t('c:sort')}: ${t(selected.name)}` : undefined}
+        className={cn('w-auto', className)}
+      >
         {iconOnly ? <selected.icon /> : <SelectValue />}
       </SelectTrigger>
       <SelectContent align="end" className="min-w-48">

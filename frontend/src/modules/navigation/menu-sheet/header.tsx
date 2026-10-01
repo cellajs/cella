@@ -1,4 +1,5 @@
 import { Link } from '@tanstack/react-router';
+import i18n from 'i18next';
 import { BellIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -21,6 +22,8 @@ function openStackedNavSheet(id: NavItemId, content: React.ReactNode, triggerRef
   useSheeter.getState().create(content, {
     id: `${id}-sheet`,
     triggerRef,
+    title: i18n.t(`c:${id}`),
+    headerClassName: 'hidden',
     side: 'left',
     modal: 'trap-focus',
     disablePointerDismissal: true,

@@ -7,7 +7,7 @@ import type { EnrichedChannel } from '~/modules/entities/types';
 import { useInviteMemberMutation } from '~/modules/memberships/query-mutations';
 import { Badge } from '~/modules/ui/badge';
 import { Button, SubmitButton } from '~/modules/ui/button';
-import { Form, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
+import { Form, FormField, FormItem, FormMessage } from '~/modules/ui/field';
 import { type InviteFormValues, useInviteFormDraft } from '~/modules/user/invite-users';
 import { UserCombobox } from '~/modules/user/user-combobox';
 
@@ -67,8 +67,12 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
           name="role"
           render={({ field: { value, onChange } }) => (
             <FormItem className="flex-row items-center gap-4">
-              <FormLabel>{t('c:role')}:</FormLabel>
-              <SelectRoleRadio value={value} onValueChange={onChange} entityType={channel.entityType} />
+              <SelectRoleRadio
+                value={value}
+                onValueChange={onChange}
+                entityType={channel.entityType}
+                label={`${t('c:role')}:`}
+              />
               <FormMessage />
             </FormItem>
           )}

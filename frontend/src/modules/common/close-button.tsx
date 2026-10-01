@@ -1,4 +1,5 @@
 import { XIcon } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
@@ -15,12 +16,14 @@ interface CloseButtonProps {
 }
 
 export function CloseButton({ onClick, size = 'md', className }: CloseButtonProps) {
+  const { t } = useTranslation();
   const { icon, button } = sizeConfig[size];
 
   return (
     <Button
       variant="ghost"
       size="icon"
+      aria-label={t('c:close')}
       className={cn(button, 'opacity-70 hover:opacity-100', className)}
       onClick={onClick}
     >

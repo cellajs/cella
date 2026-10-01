@@ -85,7 +85,6 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
         id={String(id)}
         side={side}
         overlay={modal === true}
-        aria-describedby={undefined}
         container={containerElement}
         className={cn(className, 'items-start', containerElement && 'z-40', skipAnimation && 'duration-0!')}
         initialFocus={isMobile ? false : undefined}
@@ -93,8 +92,8 @@ export function SheeterSheet({ sheet }: { sheet: InternalSheet }) {
         autoScrollOnDrag={autoScrollOnDrag}
       >
         <SheetHeader sticky className={cn(headerClassName, !(title || description) && 'hidden')}>
-          <SheetTitle className={`${title ? '' : 'hidden'} h-6 leading-6`}>{titleContent}</SheetTitle>
-          <SheetDescription className={`${description ? '' : 'hidden'}`}>{description}</SheetDescription>
+          {title && <SheetTitle className="h-6 leading-6">{titleContent}</SheetTitle>}
+          {description && <SheetDescription>{description}</SheetDescription>}
         </SheetHeader>
         <ContentKeyTransition contentKey={contentKey}>{content}</ContentKeyTransition>
       </SheetContent>

@@ -21,8 +21,8 @@ export function DialogerDrawer({ dialog }: { dialog: InternalDialog }) {
     <Drawer key={id} open={open} disablePointerDismissal={!!isDropdownOpen} onOpenChange={onOpenChange}>
       <DrawerContent id={String(id)} className={className}>
         <DrawerHeader data-overlay="dialog" className={title || description ? headerClassName : 'hidden'}>
-          <DrawerTitle className={`${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
-          <DrawerDescription className={`${description ? '' : 'hidden'}`}>{description}</DrawerDescription>
+          {title && <DrawerTitle>{titleContent}</DrawerTitle>}
+          {description && <DrawerDescription>{description}</DrawerDescription>}
         </DrawerHeader>
         <div className="px-3 pb-3">{content}</div>
       </DrawerContent>

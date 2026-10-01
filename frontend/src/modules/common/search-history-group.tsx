@@ -33,6 +33,7 @@ export function SearchHistoryGroup({ searches, onRemove }: SearchHistoryGroupPro
             <Button
               variant="ghost"
               size="icon"
+              aria-label={t('c:remove')}
               className="h-6 w-6 p-0"
               onClick={(event) => {
                 event.stopPropagation();

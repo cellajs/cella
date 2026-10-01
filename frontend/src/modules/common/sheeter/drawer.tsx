@@ -43,10 +43,8 @@ export function SheeterDrawer({ sheet }: { sheet: InternalSheet }) {
     >
       <DrawerContent id={String(id)} className={className}>
         <DrawerHeader sticky className={cn(headerClassName, !(description || title) && 'hidden')}>
-          <DrawerTitle className={`font-medium ${title ? '' : 'hidden'}`}>{titleContent}</DrawerTitle>
-          <DrawerDescription className={`text-muted-foreground ${description ? '' : 'hidden'}`}>
-            {description}
-          </DrawerDescription>
+          {title && <DrawerTitle className="font-medium">{titleContent}</DrawerTitle>}
+          {description && <DrawerDescription className="text-muted-foreground">{description}</DrawerDescription>}
         </DrawerHeader>
         <ContentKeyTransition contentKey={contentKey}>{content}</ContentKeyTransition>
       </DrawerContent>

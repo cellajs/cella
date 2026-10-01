@@ -24,6 +24,8 @@ export type DropdownData = {
 export type InternalDropdown = DropdownData & {
   key: number;
   content: ReactNode;
+  /** The trigger's accessible name at open time; names the mobile drawer that stands in for the dropdown. */
+  triggerLabel?: string;
   align: 'start' | 'center' | 'end';
   modal: boolean;
   kind: DropdownKind;
@@ -71,7 +73,9 @@ export const useDropdowner = create<DropdownStoreState>((set, get) => ({
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
 
     const defaults: Pick<InternalDropdown, 'align' | 'modal' | 'kind'> = { align: 'start', modal: true, kind: 'panel' };
-    set({ dropdown: { ...withDefaults(defaults, data), content, key: Date.now() } });
+    const trigger = data.triggerRef.current;
+    const triggerLabel = trigger?.getAttribute('aria-label') || trigger?.textContent?.trim() || undefined;
+    set({ dropdown: { ...withDefaults(defaults, data), content, triggerLabel, key: Date.now() } });
 
     return data.id;
   },
