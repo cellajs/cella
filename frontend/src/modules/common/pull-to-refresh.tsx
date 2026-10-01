@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useUIStore } from '~/modules/ui/ui-store';
@@ -27,14 +28,13 @@ function getScrollParent(el: Element | null): Element | null {
 
 type Props = {
   onRefresh: () => void | Promise<void>;
-  /** Whether queries are currently fetching (from useIsFetching) */
-  isFetching?: boolean;
   refreshThreshold?: number;
   maximumPullLength?: number;
   isDisabled?: boolean;
 };
 
-export function PullToRefresh({ onRefresh, isFetching = false, refreshThreshold = 90, maximumPullLength = 200, isDisabled = false }: Props) {
+export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLength = 200, isDisabled = false }: Props) {
+  const queryClient = useQueryClient();
   const [pullPosition, setPullPosition] = useState(0);
   const [phase, setPhase] = useState<Phase>('idle');
 
@@ -55,9 +55,15 @@ export function PullToRefresh({ onRefresh, isFetching = false, refreshThreshold 
   const isUILocked = useUIStore((state) => state.uiLocks.length > 0);
   const disabled = isDisabled || isUILocked;
 
+  // Watches the query cache only while refreshing, so fetches at other times never re-render this
   useEffect(() => {
-    if (isRefreshing && isFetching) sawFetchRef.current = true;
-  }, [isRefreshing, isFetching]);
+    if (!isRefreshing) return;
+    const check = () => {
+      if (!sawFetchRef.current && queryClient.isFetching() > 0) sawFetchRef.current = true;
+    };
+    check();
+    return queryClient.getQueryCache().subscribe(check);
+  }, [isRefreshing, queryClient]);
 
   useEffect(() => {
     if (disabled) return;
@@ -74,13 +80,12 @@ export function PullToRefresh({ onRefresh, isFetching = false, refreshThreshold 
     };
 
     const startPull = (e: TouchEvent) => {
-      // Only start at the top of the touch target's scroll parent, or of the window
-      const scrollParent = getScrollParent(e.target as Element | null);
-      const scrollTop = scrollParent ? scrollParent.scrollTop : window.scrollY;
-      if (scrollTop > 0) return;
-
       const touch = e.targetTouches[0];
-      if (touch.clientY > window.innerHeight * 0.4) return;
+      if (!touch || touch.clientY > window.innerHeight * 0.4 || window.scrollY > 0) return;
+
+      // Only start at the top of the touch target's scroll parent; the walk reads styles, so it runs last
+      const scrollParent = getScrollParent(e.target as Element | null);
+      if (scrollParent && scrollParent.scrollTop > 0) return;
 
       setPhase('idle'); // cancel any in-progress exit animation
       pullStartRef.current = touch.screenY;
@@ -174,21 +179,22 @@ export function PullToRefresh({ onRefresh, isFetching = false, refreshThreshold 
   if (!isPulling && phase === 'idle') return null;
 
   const isExiting = phase === 'exiting';
-  const top = isExiting ? -20 : isRefreshing ? 48 : Math.min(pullPosition / 1.5, 120);
+  // Moved by transform, so the release and exit glides run on the compositor while the refresh re-renders the page
+  const offset = isExiting ? -20 : isRefreshing ? 48 : Math.min(pullPosition / 1.5, 120);
   const opacity = isExiting ? 0 : isActive || pullPosition > 0 ? 1 : 0;
   const transition = isDraggingRef.current
     ? 'none'
     : isExiting
-      ? `top ${exitDuration}ms ease-in ${exitHold}ms, opacity ${exitDuration}ms ease-in ${exitHold}ms`
-      : 'top 0.3s ease-out, opacity 0.3s ease-out';
+      ? `transform ${exitDuration}ms ease-in ${exitHold}ms, opacity ${exitDuration}ms ease-in ${exitHold}ms`
+      : 'transform 0.3s ease-out, opacity 0.3s ease-out';
 
   return (
     <div
       onTransitionEnd={(e) => {
         if (isExiting && e.propertyName === 'opacity') setPhase('idle');
       }}
-      style={{ top, opacity, transition }}
-      className="fixed inset-x-1/2 z-300 h-8 w-8 -translate-x-1/2 bg-base-100"
+      style={{ transform: `translateY(${offset}px)`, opacity, transition }}
+      className="fixed inset-x-1/2 top-0 z-300 h-8 w-8 -translate-x-1/2 bg-base-100"
     >
       <svg
         className={`h-8 w-8 ${isActive ? 'animate-spin' : ''}`}

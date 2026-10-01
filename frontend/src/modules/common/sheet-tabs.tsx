@@ -1,7 +1,6 @@
 import { motion } from 'motion/react';
-import { Suspense, useState } from 'react';
+import { Suspense, useId, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { nanoid } from 'shared/utils/nanoid';
 import type { TKey } from '~/lib/i18n-locales';
 import { Button } from '~/modules/ui/button';
 
@@ -13,7 +12,8 @@ interface Props {
 }
 
 export function SheetTabs({ tabs }: Props) {
-  const layoutId = nanoid();
+  // Stable per instance, so the underline animates between tabs
+  const layoutId = useId();
   const { t } = useTranslation();
 
   const [currentPage, setCurrentPage] = useState(tabs[0]);

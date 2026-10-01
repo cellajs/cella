@@ -17,9 +17,12 @@ const orgAttachmentsApi = getRouteApi('/_app/$tenantId/$organizationSlug/organiz
 const orgSettingsApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/settings');
 const orgToolApi = getRouteApi('/_app/$tenantId/$organizationSlug/organization/$tool');
 
+// Route context is rebuilt on every navigation, search-only ones included: select primitives so URL writes don't re-render the page.
+
 export function OrganizationRouteComponent() {
-  const { organization, tenantId } = orgRouteApi.useRouteContext();
-  const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
+  const organizationId = orgRouteApi.useRouteContext({ select: (c) => c.organization.id });
+  const tenantId = orgRouteApi.useRouteContext({ select: (c) => c.tenantId });
+  const { data } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
   return (
     <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
       <OrganizationPage key={data.id} organizationId={data.id} tenantId={tenantId} />
@@ -28,8 +31,9 @@ export function OrganizationRouteComponent() {
 }
 
 export function OrganizationMembersComponent() {
-  const { organization, tenantId } = orgMembersApi.useRouteContext();
-  const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
+  const organizationId = orgMembersApi.useRouteContext({ select: (c) => c.organization.id });
+  const tenantId = orgMembersApi.useRouteContext({ select: (c) => c.tenantId });
+  const { data } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
   return (
     <Suspense>
       <MembersTable key={data.id} channel={data} />
@@ -38,8 +42,9 @@ export function OrganizationMembersComponent() {
 }
 
 export function OrganizationAttachmentsComponent() {
-  const { organization, tenantId } = orgAttachmentsApi.useRouteContext();
-  const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
+  const organizationId = orgAttachmentsApi.useRouteContext({ select: (c) => c.organization.id });
+  const tenantId = orgAttachmentsApi.useRouteContext({ select: (c) => c.tenantId });
+  const { data } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
   return (
     <Suspense>
       <AttachmentsTable key={data.id} channel={data} />
@@ -48,8 +53,9 @@ export function OrganizationAttachmentsComponent() {
 }
 
 export function OrganizationSettingsComponent() {
-  const { organization, tenantId } = orgSettingsApi.useRouteContext();
-  const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
+  const organizationId = orgSettingsApi.useRouteContext({ select: (c) => c.organization.id });
+  const tenantId = orgSettingsApi.useRouteContext({ select: (c) => c.tenantId });
+  const { data } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
   return (
     <Suspense>
       <OrganizationSettings organization={data} />
@@ -58,9 +64,10 @@ export function OrganizationSettingsComponent() {
 }
 
 export function OrganizationToolComponent() {
-  const { organization, tenantId } = orgToolApi.useRouteContext();
+  const organizationId = orgToolApi.useRouteContext({ select: (c) => c.organization.id });
+  const tenantId = orgToolApi.useRouteContext({ select: (c) => c.tenantId });
   const { tool } = orgToolApi.useParams();
-  const { data } = useSuspenseQuery(organizationQueryOptions(organization.id, tenantId));
+  const { data } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
   return (
     <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
       <SlotTabHost slot="organization.tabs" toolId={tool} context={data} />

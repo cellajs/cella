@@ -50,9 +50,7 @@ vi.mock('~/query/query-client', async () => {
 });
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
 vi.mock('~/hooks/use-search-params', () => ({ useSearchParams: () => ({ search: seen.search, setSearch: vi.fn() }) }));
-vi.mock('~/hooks/use-route-context', () => ({
-  useOrganizationLayoutContext: () => ({ organization: { id: 'org-1', tenantId: 'tenant-1' } }),
-}));
+vi.mock('~/hooks/use-route-context', () => ({ useOrganizationLayoutContext: () => ({ organizationId: 'org-1', tenantId: 'tenant-1' }) }));
 vi.mock('~/modules/common/data-table/data-table', () => ({
   DataTable: (props: unknown) => {
     seen.table.push(props);

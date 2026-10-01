@@ -22,6 +22,7 @@ function DocsLayout() {
   const isDesktop = useBreakpointAbove('md');
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   // Resizable sidebar width (desktop only); main content uses window scroll offset by the same CSS variable
   const [resizedSidebarWidth, setResizedSidebarWidth] = useState<number | null>(null);
@@ -32,15 +33,25 @@ function DocsLayout() {
     e.preventDefault();
     const startX = e.clientX;
     const startWidth = sidebarRef.current?.getBoundingClientRect().width ?? MIN_SIDEBAR_WIDTH;
+    // The drag writes the variable to the DOM once per frame and commits state on release, so it doesn't re-render the layout and sidebar
+    let width: number | null = null;
+    let frame = 0;
+    const writeWidth = () => {
+      frame = 0;
+      if (width !== null) wrapperRef.current?.style.setProperty('--docs-sidebar-width', `${width}px`);
+    };
     const onMove = (ev: PointerEvent) => {
-      const next = Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, startWidth + (ev.clientX - startX)));
-      setResizedSidebarWidth(next);
+      width = Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, startWidth + (ev.clientX - startX)));
+      if (!frame) frame = requestAnimationFrame(writeWidth);
     };
     const onUp = () => {
       document.removeEventListener('pointermove', onMove);
       document.removeEventListener('pointerup', onUp);
       document.removeEventListener('pointercancel', onUp);
       document.body.style.cursor = '';
+      cancelAnimationFrame(frame);
+      writeWidth();
+      if (width !== null) setResizedSidebarWidth(width);
     };
     document.addEventListener('pointermove', onMove);
     document.addEventListener('pointerup', onUp);
@@ -122,7 +133,7 @@ function DocsLayout() {
   const sidebarWidthStyle = resizedSidebarWidth === null ? undefined : ({ '--docs-sidebar-width': `${resizedSidebarWidth}px` } as CSSProperties);
 
   return (
-    <div className="contents [--docs-sidebar-width:clamp(220px,24vw,288px)]" style={sidebarWidthStyle}>
+    <div ref={wrapperRef} className="contents [--docs-sidebar-width:clamp(220px,24vw,288px)]" style={sidebarWidthStyle}>
       <aside ref={sidebarRef} className="fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width) bg-background focus-view:hidden">
         <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
         <button

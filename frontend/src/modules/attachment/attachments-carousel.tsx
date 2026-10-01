@@ -56,7 +56,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
   const removeDialog = useDialoger((state) => state.remove);
   const { download, isInProgress } = useDownloader();
 
-  const { attachmentDialogId } = useSearch({ strict: false });
+  const attachmentDialogId = useSearch({ strict: false, select: (s) => s.attachmentDialogId });
 
   const nextButtonRef = useRef(null);
   const [watchDrag, setWatchDrag] = useState(items.length > 1);

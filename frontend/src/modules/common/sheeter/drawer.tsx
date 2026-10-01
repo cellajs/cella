@@ -12,7 +12,7 @@ export function SheeterDrawer({ sheet, onExited }: { sheet: InternalSheet; onExi
 
   const updateSheet = sheeter.getState().update;
 
-  const isDropdownOpen = useDropdowner((state) => state.dropdown);
+  const isDropdownOpen = useDropdowner((state) => !!state.dropdown);
 
   // The provider keeps the removed drawer rendered until it has slid out
   const onOpenChange = (open: boolean) => {
@@ -25,7 +25,7 @@ export function SheeterDrawer({ sheet, onExited }: { sheet: InternalSheet; onExi
       key={id}
       modal
       open={open}
-      disablePointerDismissal={!!isDropdownOpen}
+      disablePointerDismissal={isDropdownOpen}
       swipeDirection={sideToSwipeDirection[side]}
       onOpenChange={onOpenChange}
       onOpenChangeComplete={(isOpen) => !isOpen && onExited?.()}

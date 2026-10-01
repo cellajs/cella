@@ -3,13 +3,13 @@ import { ChevronDownIcon } from 'lucide-react';
 import { useId } from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { getSection, scrollToSectionById } from '~/hooks/use-scroll-spy-store';
+import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { type DocPage, PAGE_SECTION_ID } from '~/modules/page/content';
 import { Button, buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
 import { ActiveIndicator } from './active-indicator';
-import { closeDocsSidebarAfterNavigation } from './close-after-navigation';
 
 export type PageNode = { page: DocPage; children: PageNode[] };
 
@@ -71,12 +71,12 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
               e.preventDefault();
               if (getSection() === PAGE_SECTION_ID) return onToggle(page.id);
               scrollToSectionById(PAGE_SECTION_ID);
-              closeDocsSidebarAfterNavigation(e.currentTarget);
+              useSheeter.getState().remove('docs-sidebar');
               return;
             }
             if (hasChildren && !isExpanded) onToggle(page.id);
             // On mobile the sheet closes only on leaf navigation, so children revealed by an expand stay visible
-            if (!hasChildren) closeDocsSidebarAfterNavigation(e.currentTarget);
+            if (!hasChildren) useSheeter.getState().remove('docs-sidebar');
           }}
         >
           {/* Leading dot (parent tier only) */}
@@ -144,7 +144,7 @@ function PageLeaf({ page, isActive }: { page: DocPage; isActive: boolean }) {
           data-active={isActive}
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey) return;
-            closeDocsSidebarAfterNavigation(e.currentTarget);
+            useSheeter.getState().remove('docs-sidebar');
           }}
         />
       }

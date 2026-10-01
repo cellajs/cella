@@ -110,6 +110,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                       isActive={isActive && currentSection === sectionId}
                       layoutId={layoutId}
                       group="section"
+                      staticIndicator={isMobile}
                       className="pl-5"
                     >
                       {sectionLabel}

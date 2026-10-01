@@ -3,8 +3,8 @@ import { useCallback, useLayoutEffect, useRef, useSyncExternalStore } from 'reac
 
 interface GridDimensions {
   viewportHeight: number;
+  /** Scroll offset into the grid, clamped to its height and rounded to SCROLL_STEP. */
   scrollTop: number;
-  gridRect: DOMRect | null;
   /** False until the first layout measurement commits; the placeholder numbers below are not viewport geometry. */
   measured: boolean;
 }
@@ -13,7 +13,13 @@ interface GridDimensionsResult extends GridDimensions {
   gridRef: RefObject<HTMLDivElement | null>;
 }
 
-const initialDimensions: GridDimensions = { viewportHeight: 1, scrollTop: 0, gridRect: null, measured: false };
+const initialDimensions: GridDimensions = { viewportHeight: 1, scrollTop: 0, measured: false };
+
+/**
+ * scrollTop is rounded to this step, so scrolling commits a snapshot at most once per step. The row window shifts by at
+ * most half a step (16px), well inside the four-row overscan of useViewportRows (140px at the 35px default row height).
+ */
+const SCROLL_STEP = 32;
 
 /** Nearest scrollable ancestor, or null when the window or document is the scroll container. */
 function getScrollParent(node: HTMLElement): HTMLElement | null {
@@ -73,31 +79,20 @@ export function useGridDimensions(scrollContainerRef?: RefObject<HTMLElement | n
       rafId = requestAnimationFrame(fn);
     };
 
-    /** Read scroll-related measurements and merge into previous state */
+    /** Read scroll measurements; returns `prev` while the inputs of the row window are unchanged. */
     const measureScroll = (prev: GridDimensions): GridDimensions => {
       const rect = grid.getBoundingClientRect();
       const viewportHeight = isWindowScroll ? window.innerHeight : scrollContainer.clientHeight;
+      const viewportTop = isWindowScroll ? 0 : scrollContainer.getBoundingClientRect().top;
 
-      let scrollTop: number;
-      if (isWindowScroll) {
-        scrollTop = Math.max(0, -rect.top);
-      } else {
-        const containerRect = scrollContainer.getBoundingClientRect();
-        scrollTop = Math.max(0, containerRect.top - rect.top);
-      }
+      // Clamped to the grid's own range, so scrolling while the grid is out of view leaves the snapshot unchanged.
+      const offset = Math.min(Math.max(0, viewportTop - rect.top), rect.height);
+      const scrollTop = Math.round(offset / SCROLL_STEP) * SCROLL_STEP;
 
       // Skip rerenders when nothing changed, but never while unmeasured: the first measurement must commit even if it matches the placeholders.
-      if (
-        prev.measured &&
-        prev.viewportHeight === viewportHeight &&
-        Math.abs(prev.scrollTop - scrollTop) < 1 &&
-        prev.gridRect?.top === rect.top &&
-        prev.gridRect?.left === rect.left
-      ) {
-        return prev;
-      }
+      if (prev.measured && prev.viewportHeight === viewportHeight && prev.scrollTop === scrollTop) return prev;
 
-      return { ...prev, viewportHeight, scrollTop, gridRect: rect, measured: true };
+      return { viewportHeight, scrollTop, measured: true };
     };
 
     // --- Initial synchronous measurement ---

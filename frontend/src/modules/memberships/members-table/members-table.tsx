@@ -33,14 +33,12 @@ function MembersTable({ channel, isSheet = false, children }: MembersTableWrappe
   const { search, setSearch } = useSearchParams<MembersRouteSearchParams>({ saveDataInSearch: !isSheet });
 
   // MembersTable always renders inside OrganizationLayoutRoute
-  const { organization } = useOrganizationLayoutContext();
+  const { organizationId, tenantId } = useOrganizationLayoutContext();
 
   const updateMemberMembership = useMemberUpdateMutation();
 
   const entityId = channel.id;
   const entityType = channel.entityType;
-  const tenantId = organization.tenantId;
-  const organizationId = organization.id;
 
   // Members are managed per channel and the channel has no `createdBy` to resolve `'own'`, so require an unconditional grant.
   const canUpdate = isUnconditionalCan(channel.can?.[channel.entityType]?.update);

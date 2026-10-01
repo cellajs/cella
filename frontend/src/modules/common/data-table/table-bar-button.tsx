@@ -1,7 +1,6 @@
 import { motion } from 'motion/react';
 import { forwardRef, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import slugify from 'slugify';
 import type { TKey } from '~/lib/i18n-locales';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Badge } from '~/modules/ui/badge';
@@ -11,15 +10,12 @@ type Props = { icon: IconComponent; label: TKey; badge?: ReactNode } & ButtonPro
 
 export const TableBarButton = forwardRef<HTMLButtonElement, Props>(function TableBarButton({ icon: Icon, label, badge, className, ...props }, ref) {
   const { t } = useTranslation();
-  const id = slugify(label, { lower: true, strict: true });
   return (
     <Button
       {...props}
       render={
         <motion.button
           ref={ref}
-          layout="size"
-          layoutId={id}
           className={className}
           transition={{ bounce: 0, duration: 0.3, ease: 'easeOut' }}
           initial={{ scale: 0.9, opacity: 0 }}

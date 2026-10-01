@@ -31,7 +31,9 @@ export function RenderPDF({ file, className, fitMode = 'width' }: RenderPDFProps
     const node = containerRef.current;
     if (!node) return;
 
-    const update = (width: number, height: number) => setContainer({ width, height });
+    // An unchanged size, such as the observer's first callback repeating the measurement below, skips the render.
+    const update = (width: number, height: number) =>
+      setContainer((prev) => (prev.width === width && prev.height === height ? prev : { width, height }));
 
     update(node.clientWidth, node.clientHeight);
 

@@ -3,12 +3,16 @@ import { getSection, registerSections, subscribeSection, unregisterSections } fr
 
 /** Register sections whose active ID the scroll-spy store writes to the URL hash. */
 export const useScrollSpy = (sectionIds?: string[]) => {
+  // Keyed on the ids, not the array: callers map a fresh array each render, and re-registering rebuilds the observer.
+  // Section ids are DOM id suffixes, which can't hold whitespace, so the newline join round-trips.
+  const idsKey = sectionIds?.join('\n') ?? '';
+
   useEffect(() => {
-    if (sectionIds?.length) {
-      registerSections(sectionIds);
-      return () => unregisterSections(sectionIds);
-    }
-  }, [sectionIds]);
+    if (!idsKey) return;
+    const ids = idsKey.split('\n');
+    registerSections(ids);
+    return () => unregisterSections(ids);
+  }, [idsKey]);
 };
 
 /** Current scroll-spy section; updates once scrolling settles or immediately on an explicit action. */

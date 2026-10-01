@@ -1,14 +1,13 @@
 import type { AnyRoute } from '@tanstack/react-router';
 import { Link, type LinkComponentProps, redirect, useNavigate, useRouterState } from '@tanstack/react-router';
-import { motion } from 'motion/react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ContextRole, SlotToolsConfig } from 'shared/tools-config';
-import { nanoid } from 'shared/utils/nanoid';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import type { TKey } from '~/lib/i18n-locales';
 import { getSlotDescriptors, isPlacementHidden, type PlacementDescriptor, type PlacementOverrides, resolvePlacementList } from '~/lib/placements';
+import { ActiveTabMarker, useTabIndicator } from '~/modules/common/page/tab-indicator';
 import { type TabNavAvatar, TabNavShell } from '~/modules/common/page/tab-nav-shell';
 import { useScrollReset } from '~/modules/common/scroll-reset';
 import { getRouter } from '~/routes/-router-instance';
@@ -168,11 +167,12 @@ export function guardNavTabs(
  */
 export function useNavTabRedirect(parentRouteId: string, options: ResolveNavTabsOptions = {}): void {
   const navigate = useNavigate();
-  const leaf = useRouterState({ select: (state) => state.matches[state.matches.length - 1] });
+  // Primitives only: the leaf match object is new on every navigation
+  const leafPath = useRouterState({ select: (state) => state.matches.at(-1)?.fullPath });
+  const toolId = useRouterState({ select: (state) => (state.matches.at(-1)?.params as { tool?: string } | undefined)?.tool });
 
-  const toolId = (leaf?.params as { tool?: string } | undefined)?.tool;
   const candidates = parentRouteId ? getNavTabCandidates(parentRouteId) : [];
-  const active = toolId ? candidates.find((tab) => tab.id === toolId) : candidates.find((tab) => tab.path === leaf?.fullPath);
+  const active = toolId ? candidates.find((tab) => tab.id === toolId) : candidates.find((tab) => tab.path === leafPath);
 
   const disabled = active !== undefined && isPlacementHidden(getTabsHost(parentRouteId), active, options);
   const target = disabled ? resolveNavTabs(parentRouteId, options)[0] : undefined;
@@ -208,8 +208,7 @@ export function PageTabNav({ tabs: explicitTabs, parentRouteId, grants, pairs, s
   // Forward off a tab this surface has disabled (explicit tab lists opt out of route derivation)
   useNavTabRedirect(explicitTabs ? '' : (parentRouteId ?? ''), { grants, pairs, slotConfig });
 
-  const layoutId = useRef(nanoid()).current;
-
+  const indicator = useTabIndicator();
   const tabRefs = useRef<Record<string, HTMLAnchorElement | null>>({});
 
   useEffect(() => {
@@ -218,13 +217,8 @@ export function PageTabNav({ tabs: explicitTabs, parentRouteId, grants, pairs, s
 
   const scrollToReset = useScrollReset();
 
-  const scrollTabIntoView = (id: string) => {
-    const tab = tabRefs.current[id];
-    tab?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-  };
-
   return (
-    <TabNavShell title={title} avatar={avatar} className={className}>
+    <TabNavShell title={title} avatar={avatar} className={className} indicator={indicator}>
       {tabs.map(({ id, path, label, search = {}, params = true, activeOptions = { exact: true, includeSearch: false } }, index) => (
         <Link
           key={id}
@@ -245,19 +239,11 @@ export function PageTabNav({ tabs: explicitTabs, parentRouteId, grants, pairs, s
         >
           {({ isActive }) => {
             const showAsActive = isActive || (fallbackToFirst && index === 0);
-            if (showAsActive) scrollTabIntoView(id);
 
             return (
               <>
                 <span className="block group-active:translate-y-[.05rem]">{truncateMiddle(t(label), 20)}</span>
-                {showAsActive && hasStarted && (
-                  <motion.span
-                    layoutId={layoutId}
-                    transition={{ type: 'spring', duration: 0.4, bounce: 0, delay: 0.1 }}
-                    className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary"
-                  />
-                )}
-                {showAsActive && !hasStarted && <span className="absolute bottom-0 left-2 h-1 w-[calc(100%-1rem)] rounded-sm bg-primary" />}
+                {showAsActive && <ActiveTabMarker indicator={indicator} />}
               </>
             );
           }}

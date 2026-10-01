@@ -26,10 +26,9 @@ interface ErrorNoticeProps {
 export function ErrorNotice({ error, children, resetErrorBoundary, boundary, homePath = '/' }: ErrorNoticeProps) {
   const { t } = useTranslation();
   const router = useRouter();
-  const { location } = useRouterState();
+  const errorFromQuery = useRouterState({ select: (s) => s.location.search.error });
+  const severityFromQuery = useRouterState({ select: (s) => s.location.search.severity });
   const contactButtonRef = useRef<HTMLButtonElement>(null);
-
-  const { error: errorFromQuery, severity: severityFromQuery } = location.search;
 
   const [showError, setShowError] = useState(false);
   const severity = error && 'severity' in error ? error.severity : severityFromQuery;

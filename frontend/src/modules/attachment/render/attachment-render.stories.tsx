@@ -37,10 +37,9 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** Scale and offset of the pan layer's matrix(a, b, c, d, e, f). */
+/** Scale and offset of the pan layer as rendered: the offset lives in CSS variables, so read the computed matrix. */
 const panLayerOf = (img: HTMLElement) => {
-  const layer = img.parentElement as HTMLElement;
-  const [scale, , , , x, y] = (layer.style.transform.match(/matrix\(([^)]+)\)/)?.[1] ?? '').split(',').map(Number);
+  const { a: scale, e: x, f: y } = new DOMMatrixReadOnly(getComputedStyle(img.parentElement as HTMLElement).transform);
   return { scale, x, y };
 };
 

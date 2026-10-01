@@ -7,11 +7,11 @@ import type { UseAppStreamOptions, UseAppStreamReturn } from './types';
 const debugLabel = 'AppStream';
 
 /** React wrapper around appStreamManager. StreamManager owns all reconnect logic, including visibility and leader changes. */
-function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamReturn {
+function useAppStream(options: UseAppStreamOptions = {}): Omit<UseAppStreamReturn, 'cursor'> {
   const { enabled = true } = options;
 
+  // Only the connection state: the cursor advances on every event and nothing here renders it.
   const state = appStreamManager.useStore((s) => s.state);
-  const cursor = appStreamManager.useStore((s) => s.cursor);
 
   // Route beforeLoad owns the disconnect lifecycle.
   useEffect(() => {
@@ -47,7 +47,7 @@ function useAppStream(options: UseAppStreamOptions = {}): UseAppStreamReturn {
     };
   }, [state, offlineAccess]);
 
-  return { state, cursor, reconnect: () => appStreamManager.reconnect(), disconnect: () => appStreamManager.disconnect() };
+  return { state, reconnect: () => appStreamManager.reconnect(), disconnect: () => appStreamManager.disconnect() };
 }
 
 /** Connects to the app-scoped stream for real-time sync (CDC -> ActivityBus pipeline). Mount in AppLayout. */

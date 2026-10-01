@@ -385,10 +385,11 @@
 }
 
 @layer base {
-  /* Bottom inset for fixed-to-bottom UI: layout-viewport bottom hidden behind the on-screen
-     keyboard or overlaying browser chrome (--vv-bottom, see viewport-observer.ts) + device
-     safe area (home indicator, requires viewport-fit=cover). */
-  :root {
+  /* Bottom inset for fixed-to-bottom UI: device safe area (home indicator, requires viewport-fit=cover) + the
+     layout-viewport bottom hidden behind the keyboard or overlaying browser chrome, which FloatingNav writes
+     as --vv-bottom on #floating-nav only (see viewport-observer.ts). */
+  :root,
+  #floating-nav {
     --bottom-inset: calc(var(--vv-bottom, 0px) + env(safe-area-inset-bottom, 0px));
   }
 

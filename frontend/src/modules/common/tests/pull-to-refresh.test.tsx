@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -15,7 +16,13 @@ beforeEach(async () => {
   container = document.createElement('div');
   document.body.append(container);
   root = createRoot(container);
-  await act(async () => root.render(<PullToRefresh onRefresh={vi.fn()} />));
+  await act(async () =>
+    root.render(
+      <QueryClientProvider client={new QueryClient()}>
+        <PullToRefresh onRefresh={vi.fn()} />
+      </QueryClientProvider>,
+    ),
+  );
 });
 
 afterEach(async () => {

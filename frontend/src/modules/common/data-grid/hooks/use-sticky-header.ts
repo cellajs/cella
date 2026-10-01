@@ -14,6 +14,9 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
     let resizeRafId = 0;
     let resizeSettleTimer = 0;
     let isSticky = false;
+    // Grid bounds of the last horizontal sync: vertical scrolling leaves them unchanged, so it skips the per-cell writes.
+    let syncedLeft = Number.NaN;
+    let syncedRight = Number.NaN;
     let headerCells: HTMLElement[] = [];
     let originalStyles: { cssText: string }[] = [];
 
@@ -54,12 +57,13 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
       isSticky = false;
     }
 
-    function syncHorizontal() {
+    function syncHorizontal(gridRect = grid!.getBoundingClientRect()) {
       if (!isSticky || headerCells.length === 0) return;
-      const gridRect = grid!.getBoundingClientRect();
       const scrollLeft = grid!.scrollLeft;
       const gridLeft = gridRect.left;
       const gridRight = gridRect.right;
+      syncedLeft = gridLeft;
+      syncedRight = gridRight;
 
       let currentLeft = gridLeft - scrollLeft;
       for (const cell of headerCells) {
@@ -100,12 +104,11 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
 
       if (shouldStick && !isSticky) {
         applyFixed();
+        syncHorizontal(rect);
       } else if (!shouldStick && isSticky) {
         removeFixed();
-      }
-
-      if (isSticky) {
-        syncHorizontal();
+      } else if (isSticky && (rect.left !== syncedLeft || rect.right !== syncedRight)) {
+        syncHorizontal(rect);
       }
     }
 
@@ -117,7 +120,7 @@ export function useStickyHeader(gridRef: RefObject<HTMLDivElement | null>, heade
     const onScrollHorizontal = () => {
       if (!isSticky) return;
       cancelAnimationFrame(hScrollRafId);
-      hScrollRafId = requestAnimationFrame(syncHorizontal);
+      hScrollRafId = requestAnimationFrame(() => syncHorizontal());
     };
 
     const onResize = () => {
