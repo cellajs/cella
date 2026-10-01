@@ -3,8 +3,8 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
 import { mfaFactorRules } from '#/modules/auth/general/helpers/mfa';
+import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { readStepUp } from '#/modules/auth/step-up/helpers/step-up';
@@ -47,8 +47,13 @@ app.openapi(meRoutes.toggleMfa, async (ctx) => {
     const updated = await updateUserMfa(txCtx, { mfaRequired });
     if (updated.mfaRequired) {
       // This browser's session gives way to the mfa session minted below; every other regular session ends.
-      await endSessions(txCtx, { userId: user.id, sessionIds: [ctx.var.sessionId], reason: 'replaced', by: user.id });
-      await endSessions(txCtx, { userId: user.id, all: true, type: 'regular', reason: 'mfa_enabled', by: user.id });
+      await revokeSessions(txCtx, {
+        userId: user.id,
+        sessionIds: [ctx.var.sessionId],
+        reason: 'replaced',
+        by: user.id,
+      });
+      await revokeSessions(txCtx, { userId: user.id, all: true, type: 'regular', reason: 'mfa_enabled', by: user.id });
     }
     return updated;
   });

@@ -32,7 +32,7 @@ An account is identified by the proofs it holds, never by an address; the identi
 
 The session cookie carries a random 40-character token; `sessions.secret` stores its SHA-256 hash, so reading the table yields no session. `resolveSession(ctx)` reads the session a request presents from its cookies alone, so any process on the app origin can call it. `readSession(token)` turns a token into its row, from a one-minute cache or the database. `findSession(ctx)` serves requests that may carry no session: a refusal reads as null, while a failed read stays the request's failure, so the database being away never reads as signed out. A session lives a week. A browser holds one live session per account, and an account at most `maxSessionsPerUser` (10) besides impersonations.
 
-Every ending before expiry goes through `endSessions`. It stamps the rows with `revokedAt`, `revokedBy` and a `revocationReason`, tells every process to drop its cached sessions (`auth_invalidate`), and closes the streams bound to them; the row stays for the sessions list.
+Every revocation before expiry goes through `revokeSessions`. It stamps the rows with `revokedAt`, `revokedBy` and a `revocationReason`, tells every process to drop its cached sessions (`auth_invalidate`), and closes the streams bound to them; the row stays for the sessions list.
 
 | Reason | When |
 | --- | --- |

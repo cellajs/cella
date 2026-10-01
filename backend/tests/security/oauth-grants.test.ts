@@ -21,7 +21,7 @@ import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { endSessions } from '#/modules/auth/general/helpers/end-sessions';
+import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
 import type { SessionEndReason } from '#/modules/auth/sessions-db';
 import { stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
@@ -692,7 +692,7 @@ describe('OAuth grants', async () => {
         return session;
       };
       const ending = (reason: SessionEndReason, sessionId: string) =>
-        endSessions({ var: { db } }, { userId: user.id, sessionIds: [sessionId], reason, by: null });
+        revokeSessions({ var: { db } }, { userId: user.id, sessionIds: [sessionId], reason, by: null });
 
       for (const reason of ['sign_out', 'other_session', 'mfa_enabled'] as const) {
         await ending(reason, (await signIn()).id);
