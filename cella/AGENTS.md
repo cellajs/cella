@@ -138,6 +138,7 @@ A child-side host FK (nullable `<host>Id` column on one product pointing at anot
 - **Skills**: `cella/skills/` is the single home for agent skills (synced to apps). Claude Code only discovers `.claude/skills` (gitignored): `ln -s ../cella/skills .claude/skills`.
 - **OpenAPI nullable**: `z.union([schema, z.null()])`, never `schema.nullable()`, for named schemas.
 - **OpenAPI schema naming**: register named components (`.openapi('Name')`) only for whole entity responses or crucial shared base types. Inline enums and request body schemas. Share one schema when the shape is identical across contexts.
+- **OpenAPI named schema shape**: define it in the module's `*-schema.ts` and pass `{ description, example: mockXResponse(), 'x-tags': schemaTags(kind, module, 'cella') }`, kind first (`data`, `base` or `errors`). A variant of a named schema stays unnamed and overrides the parent's `description` and `example` with `.openapi({ ... })` when they no longer fit.
 
 ## Style & naming
 
