@@ -1,7 +1,9 @@
 @import "tailwindcss";
 @import "./gradients.css" layer(base); /* Custom gradients that are not easy to build using tailwind */
 
-@config "../../tailwind.config.ts";
+@plugin "tailwindcss-animate";
+/* Breakpoints, the container cap and typography: the parts that need JS. */
+@plugin "./tailwind-plugin.ts";
 
 /* `:is` keeps the specificity of the `.dark` ancestor; v4's documented `:where` form would drop it. */
 @custom-variant dark (&:is(.dark *));
@@ -9,6 +11,109 @@
 /* Vite scans frontend/ on its own. shared/ also carries classes (the avatar placeholder colors); its scripts only feed junk candidates. */
 @source "../../../shared";
 @source not "../../../shared/scripts";
+
+@theme {
+  --font-sans: "Open Sans", ui-sans-serif, sans-serif;
+  /* Exactly 16px at the 18px mobile root. */
+  --text-md: 0.888rem;
+  --transition-property-spacing: margin, padding;
+
+  /* Steps down from --radius, which the token blocks below define; upstream shadcn classes also read --radius-md. */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+
+  /* Base UI publishes the panel heights as --accordion-panel-height and --collapsible-panel-height. */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-collapsible-down: collapsible-down 0.2s ease-out;
+  --animate-collapsible-up: collapsible-up 0.2s ease-out;
+  --animate-status-pulse: status-pulse 3.5s ease-in-out infinite;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--accordion-panel-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--accordion-panel-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+  @keyframes collapsible-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--collapsible-panel-height);
+    }
+  }
+  @keyframes collapsible-up {
+    from {
+      height: var(--collapsible-panel-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+  @keyframes status-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 2px 1px var(--status-pulse-color, currentColor);
+    }
+    50% {
+      transform: scale(1.12);
+      box-shadow: 0 0 4px 2px var(--status-pulse-color, currentColor);
+    }
+  }
+}
+
+/* Inline: utilities read the token itself, so a nested .dark scope recolors them. */
+@theme inline {
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
 
 @layer base {
   @font-face {
@@ -292,10 +397,6 @@
     --input: oklch(0.88 0.005 285.75);
     --ring: oklch(0.2067 0.01 285.49);
     --radius: 0.5rem;
-    /* The rounded-sm/md/lg scale (tailwind.config.ts reads it); upstream shadcn classes also read --radius-md. */
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
     --success: oklch(0.5917 0.2014 142.5);
     --success-foreground: oklch(0.9851 0 0);
     --warning: oklch(0.68 0.16 70);
