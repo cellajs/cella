@@ -254,58 +254,6 @@ li:has(.is-focused) {
   gap: 0.15rem;
 }
 
-.slash-menu {
-  max-height: 40vh;
-  overflow-y: auto;
-  background-color: var(--popover) !important;
-  border: 0.05rem solid var(--border) !important;
-  border-radius: 0.5rem;
-  box-shadow: 0 0.05rem 0.3rem 0 rgb(0 0 0 / 0.1) !important;
-  display: flex;
-  flex-direction: column;
-  height: fit-content;
-  padding: 0.25rem;
-}
-
-.slash-menu-item {
-  border-radius: 0.25rem;
-  font-size: 0.888rem;
-  min-width: 14rem;
-  align-items: center;
-  display: flex;
-  height: 2.25rem;
-  flex-direction: row;
-  justify-content: space-between;
-}
-
-/* BlockNote's shadcn theme resets icons without a size-* class via an unlayered rule, so !important is required. */
-.slash-menu-item svg {
-  width: 1rem !important;
-  height: 1rem !important;
-}
-
-.slash-menu-item-badge {
-  font-size: 0.8rem;
-  min-width: 1rem;
-  align-items: center;
-  color: var(--muted-foreground);
-  opacity: 0.5 !important;
-  display: flex;
-  padding: 0.125rem 0 0.125rem 0.25rem;
-}
-
-.slash-menu-separator {
-  margin-top: 0.25rem !important;
-  margin-bottom: 0.25rem !important;
-}
-
-.slash-menu-item[aria-selected="true"] {
-  background-color: var(--accent);
-}
-.slash-menu-item:hover {
-  background-color: color-mix(in oklch, var(--accent) 60%, transparent);
-}
-
 .notify {
   display: flex;
   justify-content: center;
