@@ -10,6 +10,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
+          "description": "RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.",
           "properties": {
             "resource": { "type": "string", "required": true },
             "authorization_servers": { "type": "array", "required": true, "itemType": "string" },
@@ -19,6 +20,13 @@
           },
           "ref": "#/components/schemas/ProtectedResourceMetadata",
           "contentType": "application/json"
+        },
+        "example": {
+          "resource": "http://localhost:3000/api/t/m5jfjs",
+          "authorization_servers": ["http://localhost:3000/oauth"],
+          "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+          "bearer_methods_supported": ["header"],
+          "resource_documentation": "http://localhost:3000/docs"
         }
       },
       {

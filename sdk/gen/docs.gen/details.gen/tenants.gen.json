@@ -553,6 +553,73 @@
             "total": { "type": "number", "required": true }
           },
           "contentType": "application/json"
+        },
+        "example": {
+          "items": [
+            {
+              "id": "svjbtq",
+              "name": "Predovic, Bahringer and Morar",
+              "status": "active",
+              "restrictions": {
+                "quotas": {
+                  "user": 1000,
+                  "organization": 1,
+                  "attachment": 100,
+                  "serviceAccount": 20,
+                  "apiKey": 100
+                },
+                "rateLimits": { "apiPointsPerHour": 1000 },
+                "allowUnregisteredClients": true
+              },
+              "authStrategies": [],
+              "createdBy": "d91cd87f-54ea-401d-9336-a3f30f204331",
+              "subscriptionId": null,
+              "subscriptionStatus": "none",
+              "subscriptionPlan": null,
+              "createdAt": "2024-11-25T05:49:32.040Z",
+              "updatedAt": "2024-12-21T15:03:10.241Z",
+              "domainsCount": 0,
+              "organization": {
+                "id": "ed4a4eac-b4a6-4c0f-ae21-2f50796fe855",
+                "name": "Predovic, Bahringer and Morar",
+                "slug": "predovic-bahringer-and-morar",
+                "thumbnailUrl": null,
+                "entityType": "organization"
+              }
+            },
+            {
+              "id": "b2dbwf",
+              "name": "Crooks, Kuphal and Roob-Blick",
+              "status": "active",
+              "restrictions": {
+                "quotas": {
+                  "user": 1000,
+                  "organization": 1,
+                  "attachment": 100,
+                  "serviceAccount": 20,
+                  "apiKey": 100
+                },
+                "rateLimits": { "apiPointsPerHour": 1000 },
+                "allowUnregisteredClients": true
+              },
+              "authStrategies": [],
+              "createdBy": "35465948-59fc-43d4-bffc-d93da6f4757f",
+              "subscriptionId": null,
+              "subscriptionStatus": "none",
+              "subscriptionPlan": null,
+              "createdAt": "2024-01-02T16:12:28.968Z",
+              "updatedAt": "2024-01-18T17:11:22.322Z",
+              "domainsCount": 0,
+              "organization": {
+                "id": "cc2dc65b-1a01-4eb4-922d-b6339b813cf8",
+                "name": "Crooks, Kuphal and Roob-Blick",
+                "slug": "crooks-kuphal-and-roob-blick",
+                "thumbnailUrl": null,
+                "entityType": "organization"
+              }
+            }
+          ],
+          "total": 2
         }
       },
       {
@@ -728,6 +795,37 @@
           },
           "ref": "#/components/schemas/Tenant",
           "contentType": "application/json"
+        },
+        "example": {
+          "id": "l6ddop",
+          "name": "Lubowitz, Waters and Haley",
+          "status": "active",
+          "restrictions": {
+            "quotas": {
+              "user": 1000,
+              "organization": 1,
+              "attachment": 100,
+              "serviceAccount": 20,
+              "apiKey": 100
+            },
+            "rateLimits": { "apiPointsPerHour": 1000 },
+            "allowUnregisteredClients": true
+          },
+          "authStrategies": [],
+          "createdBy": "97e6acf3-d1c3-4967-a839-e8b32adde60a",
+          "subscriptionId": null,
+          "subscriptionStatus": "none",
+          "subscriptionPlan": null,
+          "createdAt": "2024-02-09T07:11:04.461Z",
+          "updatedAt": "2024-03-30T20:43:34.109Z",
+          "domainsCount": 0,
+          "organization": {
+            "id": "c6e2f31a-be0a-4e1a-a760-f0b106b6bbcb",
+            "name": "Lubowitz, Waters and Haley",
+            "slug": "lubowitz-waters-and-haley",
+            "thumbnailUrl": null,
+            "entityType": "organization"
+          }
         }
       },
       {
@@ -892,6 +990,37 @@
           },
           "ref": "#/components/schemas/Tenant",
           "contentType": "application/json"
+        },
+        "example": {
+          "id": "l6ddop",
+          "name": "Lubowitz, Waters and Haley",
+          "status": "active",
+          "restrictions": {
+            "quotas": {
+              "user": 1000,
+              "organization": 1,
+              "attachment": 100,
+              "serviceAccount": 20,
+              "apiKey": 100
+            },
+            "rateLimits": { "apiPointsPerHour": 1000 },
+            "allowUnregisteredClients": true
+          },
+          "authStrategies": [],
+          "createdBy": "97e6acf3-d1c3-4967-a839-e8b32adde60a",
+          "subscriptionId": null,
+          "subscriptionStatus": "none",
+          "subscriptionPlan": null,
+          "createdAt": "2024-02-09T07:11:04.461Z",
+          "updatedAt": "2024-03-30T20:43:34.109Z",
+          "domainsCount": 0,
+          "organization": {
+            "id": "c6e2f31a-be0a-4e1a-a760-f0b106b6bbcb",
+            "name": "Lubowitz, Waters and Haley",
+            "slug": "lubowitz-waters-and-haley",
+            "thumbnailUrl": null,
+            "entityType": "organization"
+          }
         }
       },
       {

@@ -434,6 +434,9 @@ export type Tenant = {
   } | null;
 };
 
+/**
+ * RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.
+ */
 export type ProtectedResourceMetadata = {
   resource: string;
   authorization_servers: Array<string>;
@@ -576,16 +579,6 @@ export type ServiceAccount = {
   updatedBy: string | null;
   createdAt: string;
   updatedAt: string | null;
-};
-
-/**
- * A newly issued API key with its plaintext secret.
- */
-export type CreatedApiKey = ApiKey & {
-  /**
-   * The plaintext API key; store it now, it is not shown again.
-   */
-  secret: string;
 };
 
 /**
@@ -5920,7 +5913,15 @@ export type CreateServiceAccountResponses = {
    */
   201: {
     serviceAccount: ServiceAccount;
-    apiKey?: CreatedApiKey;
+    /**
+     * A newly issued API key with its plaintext secret.
+     */
+    apiKey?: ApiKey & {
+      /**
+       * The plaintext API key; store it now, it is not shown again.
+       */
+      secret: string;
+    };
   };
 };
 
@@ -6077,9 +6078,14 @@ export type CreateApiKeyError = CreateApiKeyErrors[keyof CreateApiKeyErrors];
 
 export type CreateApiKeyResponses = {
   /**
-   * API key was issued
+   * A newly issued API key with its plaintext secret.
    */
-  201: CreatedApiKey;
+  201: ApiKey & {
+    /**
+     * The plaintext API key; store it now, it is not shown again.
+     */
+    secret: string;
+  };
 };
 
 export type CreateApiKeyResponse = CreateApiKeyResponses[keyof CreateApiKeyResponses];

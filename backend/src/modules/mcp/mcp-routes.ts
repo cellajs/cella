@@ -2,7 +2,8 @@ import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { orgGuard, publicGuard, serviceEnabled, tenantGuard, tokenGuard } from '#/middlewares/guard';
 import { mcpRequestLimiter } from '#/middlewares/rate-limiter/limiters';
-import { protectedResourceSchema } from '#/modules/oauth-server/oauth-server-routes';
+import { mockProtectedResourceResponse } from '#/modules/oauth-server/oauth-server-mocks';
+import { protectedResourceSchema } from '#/modules/oauth-server/oauth-server-schema';
 import { tenantOrgParamSchema } from '#/schemas';
 
 const mcpRoutes = createXRoutes(['mcp', 'cella'], {
@@ -14,7 +15,7 @@ const mcpRoutes = createXRoutes(['mcp', 'cella'], {
     description:
       'RFC 9728 metadata of this organization MCP server: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.',
     request: { params: tenantOrgParamSchema },
-    responses: { 200: json('Protected resource metadata', protectedResourceSchema) },
+    responses: { 200: json('Protected resource metadata', protectedResourceSchema, mockProtectedResourceResponse('mcp')) },
   }),
   handleMcp: xRoute({
     method: 'post',
