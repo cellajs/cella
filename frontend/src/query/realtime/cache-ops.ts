@@ -128,23 +128,23 @@ export function invalidateEntityListForOrg(
   });
 }
 
-/** Paging, ordering and include params shape a list without excluding rows. */
-const listShapeKeys = new Set(['sort', 'order', 'offset', 'limit', 'include']);
-
 const isScalar = (value: unknown): value is string | number | boolean =>
   typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean';
 
-/** True only when every set filter is a shape param or a declared equality key the row's own value differs from; `q` or any other set key keeps the list. */
+/**
+ * True when the list sets a declared equality key to a value the row's own differs from. The server combines filters
+ * with AND, so that one key excludes the row whatever `q` or the other filters say; a row without the field never
+ * counts as excluded.
+ */
 function filtersExcludeRow(filters: object[], row: Record<string, unknown>, equalityKeys: readonly string[]): boolean {
-  let excluded = false;
-  for (const [key, value] of filters.flatMap((filter) => Object.entries(filter))) {
-    if (value === undefined || value === null || value === '' || listShapeKeys.has(key)) continue;
-    const rowValue = row[key];
-    if (!equalityKeys.includes(key) || !isScalar(value) || !(rowValue === null || isScalar(rowValue))) return false;
-    if (rowValue !== null && String(rowValue) === String(value)) return false;
-    excluded = true;
-  }
-  return excluded;
+  return filters
+    .flatMap((filter) => Object.entries(filter))
+    .some(([key, value]) => {
+      if (!equalityKeys.includes(key) || !isScalar(value) || value === '') return false;
+      const rowValue = row[key];
+      if (rowValue === null) return true;
+      return isScalar(rowValue) && String(rowValue) !== String(value);
+    });
 }
 
 /**

@@ -273,6 +273,8 @@ describe('filtered list refetch for a new row', () => {
     sameItem: { itemId: 'item-1' },
     otherItemSearch: { itemId: 'item-2', q: 'hello' },
     otherItemUndeclared: { itemId: 'item-2', authorId: 'user-1' },
+    sameItemSearch: { itemId: 'item-1', q: 'hello' },
+    sameItemUndeclared: { itemId: 'item-1', authorId: 'user-1' },
     noItem: { sort: 'createdAt' },
   };
 
@@ -285,8 +287,11 @@ describe('filtered list refetch for a new row', () => {
     expect(isInvalidated(lists.otherItem)).toBe(false);
     expect(isInvalidated(lists.otherItemSorted)).toBe(false);
     expect(isInvalidated(lists.sameItem)).toBe(true);
-    expect(isInvalidated(lists.otherItemSearch)).toBe(true);
-    expect(isInvalidated(lists.otherItemUndeclared)).toBe(true);
+    // Filters combine with AND: another item rules the row out whatever the search or other filters say
+    expect(isInvalidated(lists.otherItemSearch)).toBe(false);
+    expect(isInvalidated(lists.otherItemUndeclared)).toBe(false);
+    expect(isInvalidated(lists.sameItemSearch)).toBe(true);
+    expect(isInvalidated(lists.sameItemUndeclared)).toBe(true);
     expect(isInvalidated(lists.noItem)).toBe(true);
   });
 
@@ -299,8 +304,8 @@ describe('filtered list refetch for a new row', () => {
     expect(isInvalidated(lists.otherItem)).toBe(false);
     expect(isInvalidated(lists.sameItem)).toBe(true);
     expect(isInvalidated({ itemId: 'item-3' })).toBe(true);
-    expect(isInvalidated(lists.otherItemSearch)).toBe(true);
-    expect(isInvalidated(lists.otherItemUndeclared)).toBe(true);
+    expect(isInvalidated(lists.otherItemSearch)).toBe(false);
+    expect(isInvalidated(lists.sameItemSearch)).toBe(true);
   });
 
   it('keeps the refetch when the row does not carry the declared field', async () => {

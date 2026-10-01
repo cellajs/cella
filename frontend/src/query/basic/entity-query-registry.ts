@@ -98,7 +98,8 @@ export function getEntityDeltaFetch(entityType: string): DeltaFetchFn | undefine
 
 /**
  * Declares list filter keys that a row matches only when its field of the same name equals the filter value, as `itemId` on
- * a `{ itemId }` list. A new row then refetches only the filtered lists it can belong to; undeclared keys and `q` keep the refetch.
+ * a `{ itemId }` list. A new row then skips a filtered list that sets one of these keys to another value; a list that sets
+ * none of them keeps the refetch.
  */
 export function registerEqualityFilterKeys(entityType: EntityType, filterKeys: readonly string[]): void {
   equalityFilterKeysRegistry.set(entityType, filterKeys);
