@@ -1008,9 +1008,6 @@
             "type": "string",
             "enum": ["user", "organization", "attachment"]
           },
-          "logId": {
-            "type": "string"
-          },
           "requestId": {
             "type": "string"
           },

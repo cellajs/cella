@@ -32,7 +32,18 @@ app.use(
   }),
 );
 
-app.use('*', httpInstrumentationMiddleware({ serviceName: appConfig.name, serviceVersion: '1.0' }));
+const requestIdHeader = 'X-Request-Id';
+
+// The span records the request id from the response header, so a trace is searchable by the id a user quotes.
+app.use('*', httpInstrumentationMiddleware({ serviceName: appConfig.name, serviceVersion: '1.0', captureResponseHeaders: [requestIdHeader] }));
+
+// One id per request, generated here and never taken from the caller, so no two requests share one.
+app.use('*', (ctx, next) => {
+  const requestId = crypto.randomUUID();
+  ctx.set('requestId', requestId);
+  ctx.header(requestIdHeader, requestId);
+  return next();
+});
 
 app.use('*', loggerMiddleware);
 

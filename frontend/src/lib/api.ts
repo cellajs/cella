@@ -14,33 +14,23 @@ export const clientConfig = {
 /** SDK API-error payload with a required, Hono-branded status and optional synthesized fields. */
 export type ApiErrorInit = Partial<Omit<ApiErrorPayload, 'status'>> & { status: ClientErrorStatusCode | ServerErrorStatusCode };
 
+/** The payload's fields are copied onto the error as they are; `declare` keeps them typed without emitting class fields. */
 export class ApiError extends Error implements ApiErrorInit {
-  name: string;
-  status: ApiErrorInit['status'];
-  type?: string;
-  entityType?: ApiErrorPayload['entityType'];
-  severity?: ApiErrorPayload['severity'];
-  logId?: string;
-  path?: string;
-  method?: string;
-  timestamp?: string;
-  userId?: string;
-  organizationId?: string;
-  meta?: ApiErrorPayload['meta'];
+  declare status: ApiErrorInit['status'];
+  declare type?: string;
+  declare entityType?: ApiErrorPayload['entityType'];
+  declare severity?: ApiErrorPayload['severity'];
+  declare requestId?: string;
+  declare path?: string;
+  declare method?: string;
+  declare timestamp?: string;
+  declare userId?: string;
+  declare organizationId?: string;
+  declare meta?: ApiErrorPayload['meta'];
 
-  constructor(init: ApiErrorInit) {
-    super(init.message ?? init.type ?? init.name ?? `HTTP ${init.status}`);
-    this.name = init.name ?? init.type ?? 'ApiError';
-    this.status = init.status;
-    this.type = init.type;
-    this.entityType = init.entityType;
-    this.severity = init.severity;
-    this.logId = init.logId;
-    this.path = init.path;
-    this.method = init.method;
-    this.timestamp = init.timestamp;
-    this.userId = init.userId;
-    this.organizationId = init.organizationId;
-    this.meta = init.meta;
+  constructor({ message, name, ...fields }: ApiErrorInit) {
+    super(message ?? fields.type ?? name ?? `HTTP ${fields.status}`);
+    Object.assign(this, fields);
+    this.name = name ?? fields.type ?? 'ApiError';
   }
 }

@@ -1,4 +1,3 @@
-import { trace } from '@opentelemetry/api';
 import type { ErrorHandler } from 'hono';
 import { HTTPException } from 'hono/http-exception';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
@@ -204,8 +203,6 @@ export const appErrorHandler: ErrorHandler<Env> = (err, ctx) => {
   return ctx.json(
     {
       ...body,
-      // Correlates browser tracing, server spans, and logs; falls back to request ID when no span records
-      logId: trace.getActiveSpan()?.spanContext().traceId ?? ctx.get('requestId'),
       requestId: ctx.get('requestId'),
       path: safePath,
       method: ctx.req.method,

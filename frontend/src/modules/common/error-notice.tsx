@@ -1,7 +1,7 @@
 import { useRouter, useRouterState } from '@tanstack/react-router';
 import { ChevronUpIcon, HouseIcon, MessageCircleQuestionMarkIcon, RefreshCwIcon } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { AppFooter } from '~/modules/common/app/app-footer';
 import { Dialoger } from '~/modules/common/dialoger/provider';
@@ -35,8 +35,6 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
   const severity = error && 'severity' in error ? error.severity : severityFromQuery;
 
   const { title, message } = getErrorInfo({ error, errorFromQuery });
-
-  const dateNow = new Date().toUTCString();
 
   // Reset before a route change so the error state is not retained
   useEffect(() => {
@@ -96,24 +94,25 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
                       className="overflow-hidden"
                     >
                       <div className="grid grid-cols-[auto_1fr] place-items-start gap-1 pb-4 text-sm">
-                        <div className="place-self-end pr-4 font-medium">Log ID</div>
-                        <div>{error.logId || 'na'}</div>
-                        <div className="place-self-end pr-4 font-medium">Timestamp</div>
-                        <div>{dateNow}</div>
-                        <div className="place-self-end pr-4 font-medium">Message</div>
-                        <div>{error.message || 'na'}</div>
-                        <div className="place-self-end pr-4 font-medium">Type</div>
-                        <div>{error.type || 'na'}</div>
-                        <div className="place-self-end pr-4 font-medium">Resource type</div>
-                        <div>{error.entityType || 'na'}</div>
-                        <div className="place-self-end pr-4 font-medium">HTTP status</div>
-                        <div>{error.status || 'na'}</div>
-                        <div className="place-self-end pr-4 font-medium">Severity</div>
-                        <div>{error.severity || 'na'}</div>
-                        <div className="place-self-end pr-4 font-medium">User ID</div>
-                        <div>{error.userId || 'na'}</div>
-                        <div className="place-self-end pr-4 font-medium">Organization ID</div>
-                        <div>{error.organizationId || 'na'}</div>
+                        {(
+                          [
+                            ['c:request_id', error.requestId],
+                            // A server error carries the moment it was raised; one made in the browser shows the time it renders.
+                            ['c:timestamp', new Date(error.timestamp ?? Date.now()).toUTCString()],
+                            ['c:message', error.message],
+                            ['c:type', error.type],
+                            ['c:resource_type', error.entityType],
+                            ['c:http_status', error.status],
+                            ['c:severity', error.severity],
+                            ['c:user_id', error.userId],
+                            ['c:organization_id', error.organizationId],
+                          ] as const
+                        ).map(([label, value]) => (
+                          <Fragment key={label}>
+                            <div className="place-self-end pr-4 font-medium">{t(label)}</div>
+                            <div>{value || 'na'}</div>
+                          </Fragment>
+                        ))}
                       </div>
                     </motion.div>
                   )}
