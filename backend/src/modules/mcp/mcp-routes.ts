@@ -3,7 +3,7 @@ import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { orgGuard, publicGuard, serviceEnabled, tenantGuard, tokenGuard } from '#/middlewares/guard';
 import { mcpRequestLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockProtectedResourceResponse } from '#/modules/oauth-server/oauth-server-mocks';
-import { protectedResourceSchema } from '#/modules/oauth-server/oauth-server-routes';
+import { protectedResourceSchema } from '#/modules/oauth-server/oauth-server-schema';
 import { tenantOrgParamSchema } from '#/schemas';
 
 const mcpRoutes = createXRoutes(['mcp', 'cella'], {

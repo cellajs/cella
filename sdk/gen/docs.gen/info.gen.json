@@ -54,8 +54,8 @@
         "strategyEnabled(microsoft)": { "name": "microsoft enabled", "description": "Refused while microsoft sign-in is switched off" },
         "strategyEnabled(passkey)": { "name": "passkey enabled", "description": "Refused while passkey sign-in is switched off" },
         "strategyEnabled(totp)": { "name": "totp enabled", "description": "Refused while totp sign-in is switched off" },
-        "serviceEnabled(oauth)": { "name": "oauth enabled", "description": "Answers 404 while the oauth service is switched off" },
         "serviceEnabled(mcp)": { "name": "mcp enabled", "description": "Answers 404 while the mcp service is switched off" },
+        "serviceEnabled(oauth)": { "name": "oauth enabled", "description": "Answers 404 while the oauth service is switched off" },
         "serviceEnabled(yjs)": { "name": "yjs enabled", "description": "Answers 404 while the yjs service is switched off" }
       }
     },

@@ -30,7 +30,7 @@ export const serviceAccountSchema = z
   .openapi('ServiceAccount', {
     description: 'The actor an API key runs as, with its role bindings.',
     example: mockServiceAccountResponse(),
-    'x-tags': schemaTags('service-accounts', 'cella'),
+    'x-tags': schemaTags('data', 'service-accounts', 'cella'),
   });
 
 export const apiKeySchema = createSelectSchema(apiKeysTable)
@@ -38,7 +38,7 @@ export const apiKeySchema = createSelectSchema(apiKeysTable)
   .openapi('ApiKey', {
     description: 'An API key of a service account; the secret is never returned after creation.',
     example: mockApiKeyResponse(),
-    'x-tags': schemaTags('service-accounts', 'cella'),
+    'x-tags': schemaTags('data', 'service-accounts', 'cella'),
   });
 
 /** Returned once, at creation or roll: the only time the plaintext key exists outside the caller. */

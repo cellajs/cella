@@ -470,7 +470,16 @@
       "module": ["me"],
       "owner": ["cella"]
     },
-    "description": "An OAuth consent (grant) of the current user."
+    "description": "An OAuth consent (grant) of the current user.",
+    "example": {
+      "id": "01J9Z2Q0X7ZQ4S5M8NX3F2ABCD",
+      "clientId": "https://vscode.dev/oauth/client-metadata.json",
+      "clientName": "Visual Studio Code",
+      "scopes": ["attachment:read"],
+      "resources": ["http://localhost:3000/mcp/tenant01/org01/mcp"],
+      "createdAt": "2026-09-22T10:00:00.000Z",
+      "expiresAt": "2026-10-22T10:00:00.000Z"
+    }
   },
   {
     "name": "Me",
@@ -984,6 +993,7 @@
     },
     "schemaTag": "data",
     "tagsByKind": {
+      "schema": ["data"],
       "module": ["oauth-server"],
       "owner": ["cella"]
     },
@@ -1386,6 +1396,7 @@
     },
     "schemaTag": "data",
     "tagsByKind": {
+      "schema": ["data"],
       "module": ["service-accounts"],
       "owner": ["cella"]
     },
@@ -1466,6 +1477,7 @@
     },
     "schemaTag": "data",
     "tagsByKind": {
+      "schema": ["data"],
       "module": ["service-accounts"],
       "owner": ["cella"]
     },
@@ -1592,7 +1604,38 @@
       "module": ["tenants"],
       "owner": ["cella"]
     },
-    "description": "A tenant representing an isolated data partition for multi-tenancy."
+    "description": "A tenant representing an isolated data partition for multi-tenancy.",
+    "example": {
+      "id": "l6ddop",
+      "name": "Lubowitz, Waters and Haley",
+      "status": "active",
+      "restrictions": {
+        "quotas": {
+          "user": 1000,
+          "organization": 1,
+          "attachment": 100,
+          "serviceAccount": 20,
+          "apiKey": 100
+        },
+        "rateLimits": { "apiPointsPerHour": 1000 },
+        "allowUnregisteredClients": true
+      },
+      "authStrategies": [],
+      "createdBy": "97e6acf3-d1c3-4967-a839-e8b32adde60a",
+      "subscriptionId": null,
+      "subscriptionStatus": "none",
+      "subscriptionPlan": null,
+      "createdAt": "2024-02-09T07:11:04.461Z",
+      "updatedAt": "2024-03-30T20:43:34.109Z",
+      "domainsCount": 0,
+      "organization": {
+        "id": "c6e2f31a-be0a-4e1a-a760-f0b106b6bbcb",
+        "name": "Lubowitz, Waters and Haley",
+        "slug": "lubowitz-waters-and-haley",
+        "thumbnailUrl": null,
+        "entityType": "organization"
+      }
+    }
   },
   {
     "name": "User",
