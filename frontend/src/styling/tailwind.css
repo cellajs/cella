@@ -469,11 +469,11 @@
     --bottom-inset: calc(var(--vv-bottom, 0px) + env(safe-area-inset-bottom, 0px));
   }
 
-  /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size.
+  /* Small screens enlarge everything through the rem root: 112.5% is 18px at the default size and follows the user's setting.
      overflow-x-clip (on html and body, iOS needs both) keeps stray wide content from widening the layout
      viewport, which on phones reads as the page zooming out and flipping to desktop breakpoints. */
   html {
-    @apply font-sans overscroll-none overflow-x-clip max-sm:text-[18px];
+    @apply font-sans overscroll-none overflow-x-clip max-sm:text-[112.5%];
   }
 
   /* Lucide icons default to 1rem, which scales with the mobile root font size; its px `size` prop never applies.
