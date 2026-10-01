@@ -13,6 +13,7 @@ import { toggleDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { tw } from '~/utils/tw';
 
 const MIN_SIDEBAR_WIDTH = 220;
 const MAX_SIDEBAR_WIDTH = 400;
@@ -97,7 +98,7 @@ function DocsLayout() {
         triggerRef,
         title: i18n.t('c:docs'),
         headerClassName: 'hidden',
-        className: 'w-72 p-0',
+        className: tw('w-72 p-0'),
         closeSheetOnRouteChange: false,
       });
     }

@@ -5,6 +5,7 @@ import { ExpandableList } from '~/modules/common/expandable-list';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Badge } from '~/modules/ui/badge';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 export type InfoGridItem<C extends string = string> = {
   id: string;
@@ -86,7 +87,7 @@ export function InfoGrid<C extends string>({
   image,
   tileClassName,
   expandable,
-  className = 'sm:grid-cols-2 md:grid-cols-3',
+  className = tw('sm:grid-cols-2 md:grid-cols-3'),
 }: InfoGridProps<C>) {
   const { t } = useTranslation();
   const isMediumScreen = useBreakpointAbove('md');

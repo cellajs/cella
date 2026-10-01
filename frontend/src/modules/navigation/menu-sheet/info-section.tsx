@@ -11,6 +11,7 @@ import { type GradedStatusEntry, gradeStatusEntries } from '~/modules/navigation
 import { Button } from '~/modules/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 const statusStyleMap: Record<HealthStatus, { dot: string; pulse: string }> = {
   healthy: { dot: 'bg-success', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--success)_50%,transparent)]' },
@@ -18,7 +19,7 @@ const statusStyleMap: Record<HealthStatus, { dot: string; pulse: string }> = {
   unhealthy: { dot: 'bg-destructive', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--destructive)_50%,transparent)]' },
 };
 
-const statusCardClass = 'flex items-center gap-2 rounded-md border border-dashed px-4 py-2 text-left text-xs';
+const statusCardClass = tw('flex items-center gap-2 rounded-md border border-dashed px-4 py-2 text-left text-xs');
 
 function StatusDot({ status }: { status: HealthStatus }) {
   return (

@@ -12,6 +12,7 @@ import { getNavTabCandidates } from '~/modules/common/page/tab-nav';
 import { ToolCard } from '~/modules/common/tool-card';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Switch } from '~/modules/ui/switch';
+import { tw } from '~/utils/tw';
 
 interface TabRow {
   id: string;
@@ -99,7 +100,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       name: '',
       width: 32,
       maxWidth: 32,
-      cellClass: 'cursor-grab flex items-center justify-center',
+      cellClass: tw('flex cursor-grab items-center justify-center'),
       rowDragHandle: true,
       renderCell: () => <GripVerticalIcon className="size-3.5 text-muted-foreground/70" />,
     },
@@ -131,7 +132,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       key: 'visible',
       name: t('c:visible'),
       width: 64,
-      cellClass: 'flex items-center justify-center',
+      cellClass: tw('flex items-center justify-center'),
       headerCellClass: 'text-center',
       renderCell: ({ row }) =>
         row.locked ? (

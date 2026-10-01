@@ -3,6 +3,7 @@ import { useInView } from '~/hooks/use-in-view';
 import type { TKey } from '~/lib/i18n-locales';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 interface HeroProps {
   title: TKey;
@@ -27,7 +28,7 @@ export function Hero({ title, text, children, chips }: HeroProps) {
           color-mix(in oklch, var(--primary), black 20%))`,
       }
     : undefined;
-  const sectionClass = 'rich-gradient relative flex min-h-[90vh] items-center justify-center py-24 px-4 lg:py-32';
+  const sectionClass = tw('rich-gradient relative flex min-h-[90vh] items-center justify-center px-4 py-24 lg:py-32');
   const headerClass = cn('transition-all duration-500 ease-out will-change-transform', inView ? 'opacity-100' : 'translate-y-4 scale-95 opacity-0');
 
   return (

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 import { getTypeColorClass, type JsonViewerTheme } from './types';
 import { highlightText, JSON_SCHEMA_TYPES } from './utils';
 
@@ -72,7 +73,7 @@ interface PrimitiveValueProps {
 
 export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength, searchText, openapiMode }: PrimitiveValueProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const baseClass = 'wrap-break-word whitespace-pre-line';
+  const baseClass = tw('wrap-break-word whitespace-pre-line');
 
   switch (type) {
     case 'string': {

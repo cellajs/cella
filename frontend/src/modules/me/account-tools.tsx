@@ -23,10 +23,11 @@ import { Button } from '~/modules/ui/button';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 const enabledStrategies = appConfig.enabledAuthStrategies;
 
-const cardClass = 'mx-auto sm:w-full';
+const cardClass = tw('mx-auto sm:w-full');
 
 export function AccountGeneralCard() {
   const user = useCurrentUser();

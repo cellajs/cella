@@ -8,6 +8,7 @@ import { BackgroundCurve } from '~/modules/marketing/about/hero';
 import { footerSections, legalLinks } from '~/modules/marketing/marketing-config';
 import { SubscribeNewsletterForm } from '~/modules/marketing/subscribe-newsletter-form';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 const currentYear = new Date().getFullYear();
 const companyName = appConfig.company.name;
@@ -56,7 +57,7 @@ function Credits({ className }: { className?: string }) {
 
 export function MarketingFooter() {
   const { t } = useTranslation();
-  const sectionClass = 'rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]';
+  const sectionClass = tw('rich-gradient dark-gradient relative min-h-[30vw] pt-[15vw]');
   const statusUrl = appConfig.statusUrl?.trim();
   const legalFooterLinks = statusUrl ? [...legalLinks, { title: 'c:status', href: statusUrl }] : legalLinks;
 

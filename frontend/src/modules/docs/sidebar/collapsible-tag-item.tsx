@@ -8,6 +8,7 @@ import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 import { useSheeter } from '../../common/sheeter/use-sheeter';
 import { ActiveIndicator } from './active-indicator';
 
@@ -22,7 +23,7 @@ const tagTypeConfig = {
     linkTo: '/docs/schemas' as const,
     getHash: (name: string) => name,
     getSearch: (collapse: boolean, name: string) => ({ schemaTag: collapse ? undefined : name }),
-    triggerClassName: 'justify-start lowercase',
+    triggerClassName: tw('justify-start lowercase'),
   },
 };
 

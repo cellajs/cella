@@ -17,6 +17,7 @@ import { fetchMembersForExport } from '~/modules/memberships/query';
 import type { Member, MembersRouteSearchParams } from '~/modules/memberships/types';
 import { InviteUsers } from '~/modules/user/invite-users';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
+import { tw } from '~/utils/tw';
 
 type MembersTableBarProps = MembersTableWrapperProps & BaseTableBarProps<Member, MembersRouteSearchParams>;
 
@@ -85,7 +86,7 @@ export function MembersTableBar({
       id: 'invite-users',
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
-      className: 'w-auto shadow-none border relative z-60 max-w-4xl',
+      className: tw('relative z-60 w-auto max-w-4xl border shadow-none'),
       container: { ref: inviteContainerRef, overlay: !isSheet },
       title: t('c:invite'),
       titleContent: <UnsavedBadge title={t('c:invite')} />,

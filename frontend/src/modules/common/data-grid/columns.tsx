@@ -1,3 +1,4 @@
+import { tw } from '~/utils/tw';
 import { RenderCheckbox } from './cell-renderers';
 import { useHeaderRowSelection, useRowSelection } from './hooks/use-row-selection';
 import type { Column, RenderCellProps, RenderHeaderCellProps } from './types';
@@ -43,10 +44,12 @@ export const SelectColumn: Column<any, any> = {
   width: 35,
   minWidth: 35,
   maxWidth: 35,
-  cellClass:
-    'rdg-cell-checkbox aria-selected:outline-hidden aria-selected:[&_[data-slot=checkbox]]:ring-2 aria-selected:[&_[data-slot=checkbox]]:ring-ring aria-selected:[&_[data-slot=checkbox]]:ring-offset-2 aria-selected:[&_[data-slot=checkbox]]:ring-offset-background aria-selected:[&_[data-slot=checkbox]]:rounded',
-  headerCellClass:
-    'rdg-cell-checkbox aria-selected:outline-hidden aria-selected:[&_[data-slot=checkbox]]:ring-2 aria-selected:[&_[data-slot=checkbox]]:ring-ring aria-selected:[&_[data-slot=checkbox]]:ring-offset-2 aria-selected:[&_[data-slot=checkbox]]:ring-offset-background aria-selected:[&_[data-slot=checkbox]]:rounded',
+  cellClass: tw(
+    'rdg-cell-checkbox aria-selected:outline-hidden aria-selected:[&_[data-slot=checkbox]]:rounded aria-selected:[&_[data-slot=checkbox]]:ring-2 aria-selected:[&_[data-slot=checkbox]]:ring-ring aria-selected:[&_[data-slot=checkbox]]:ring-offset-2 aria-selected:[&_[data-slot=checkbox]]:ring-offset-background',
+  ),
+  headerCellClass: tw(
+    'rdg-cell-checkbox aria-selected:outline-hidden aria-selected:[&_[data-slot=checkbox]]:rounded aria-selected:[&_[data-slot=checkbox]]:ring-2 aria-selected:[&_[data-slot=checkbox]]:ring-ring aria-selected:[&_[data-slot=checkbox]]:ring-offset-2 aria-selected:[&_[data-slot=checkbox]]:ring-offset-background',
+  ),
   renderHeaderCell(props) {
     return <HeaderRenderer {...props} />;
   },

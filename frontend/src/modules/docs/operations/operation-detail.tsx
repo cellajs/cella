@@ -11,6 +11,7 @@ import { OperationResponses } from '~/modules/docs/operations/operation-response
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 import { Spinner } from '../../common/spinner';
 import { getHashUrl } from '../hash-url';
 import { getMethodColor } from '../helpers/get-method-color';
@@ -27,7 +28,7 @@ export function openOperationSheet(operation: GenOperationSummary, trigger: HTML
       id: `operation-${operation.id}`,
       triggerRef: { current: trigger },
       side: 'right',
-      className: 'max-w-full lg:max-w-4xl',
+      className: tw('max-w-full lg:max-w-4xl'),
       title: i18n.t('c:docs.operation_detail'),
     },
   );

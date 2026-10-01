@@ -5,6 +5,7 @@ import { type ComponentType, lazy, Suspense, useMemo } from 'react';
 import { Spinner } from '~/modules/common/spinner';
 import { type DocsTile, docsConfig, getDocPageLoader, getResolvedDocPageComponent } from '~/modules/page/content';
 import { mdxComponents } from '~/modules/page/mdx-components';
+import { tw } from '~/utils/tw';
 
 /** The /docs landing page, driven by the global docs config (content root index.mdx frontmatter). */
 export function DocsLandingPage() {
@@ -45,7 +46,7 @@ export function DocsLandingPage() {
 /** Landing tile; internal targets go through the router. */
 function DocsTileCard({ tile }: { tile: DocsTile }) {
   const isInternal = tile.to.startsWith('/');
-  const cardClass = 'group flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent/50';
+  const cardClass = tw('group flex items-center gap-3 rounded-lg border p-4 transition-colors hover:bg-accent/50');
   const TrailingIcon = isInternal ? ChevronRightIcon : ExternalLinkIcon;
   const inner = (
     <>

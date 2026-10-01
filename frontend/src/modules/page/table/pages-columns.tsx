@@ -11,6 +11,7 @@ import { canEditDocs } from '~/modules/page/utils/edit-doc-page';
 import { RenderModeLabel, renderModeLabelKey } from '~/modules/page/utils/render-mode';
 import { Badge } from '~/modules/ui/badge';
 import { dateShort } from '~/utils/date-short';
+import { tw } from '~/utils/tw';
 
 export const dragHandleColumnKey = 'drag-handle';
 
@@ -30,7 +31,7 @@ export function usePagesTableColumns() {
             name: '',
             width: 32,
             maxWidth: 32,
-            cellClass: 'cursor-grab flex items-center justify-center',
+            cellClass: tw('flex cursor-grab items-center justify-center'),
             rowDragHandle: true,
             renderCell: () => <GripVerticalIcon className="size-3.5 text-muted-foreground/70" />,
           } satisfies ColumnOrColumnGroup<PageTreeRow>,

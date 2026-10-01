@@ -7,6 +7,7 @@ import { LegalText } from '~/modules/auth/legal/legal-text';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
 import { Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
+import { tw } from '~/utils/tw';
 
 /** Legal dialog body. Owns the current subject so cross-links can swap terms <-> privacy in place, without navigating to /legal. */
 function LegalDialog({ initialSubject }: { initialSubject: LegalSubject }) {
@@ -45,7 +46,7 @@ export function LegalNotice({ email = '', mode = 'signup' }: LegalNoticeProps) {
       id: 'legal',
       triggerRef,
       title: t(legalConfig[legalSubject].label),
-      className: 'md:max-w-4xl p-6',
+      className: tw('p-6 md:max-w-4xl'),
       outsideScroll: true,
       drawerOnMobile: false,
     });
