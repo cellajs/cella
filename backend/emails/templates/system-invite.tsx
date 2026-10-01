@@ -1,23 +1,10 @@
 import { appConfig } from 'shared';
-import {
-  EmailAvatar,
-  EmailBody,
-  EmailButton,
-  EmailContainer,
-  EmailFooter,
-  EmailHeader,
-  EmailLogo,
-  EmailText,
-  SafeHtml,
-} from '../components';
-import { Column, Row } from '../components/primitives';
+import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
-import { avatarRowStyle, greetingStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
 
 interface SystemInviteStatic {
   senderName: string;
-  senderThumbnailUrl: string | null;
 }
 
 type SystemInviteRecipient = EmailRecipient & { name: string; inviteLink: string };
@@ -26,7 +13,7 @@ const appName = appConfig.name;
 
 /** System-level invitation, for new users. */
 export const systemInviteEmail = defineEmailTemplate<SystemInviteStatic, SystemInviteRecipient>()({
-  translate(lng, { senderName, senderThumbnailUrl }, param = plainParam) {
+  translate(lng, { senderName }, param = plainParam) {
     return {
       subject: i18n.t('backend:email.system_invite.subject', { lng, appName, ...plainText }),
       previewText: i18n.t('backend:email.system_invite.preview', { appName, lng, ...plainText }),
@@ -37,7 +24,6 @@ export const systemInviteEmail = defineEmailTemplate<SystemInviteStatic, SystemI
       buttonText: i18n.t('c:join', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       senderName,
-      senderThumbnailUrl,
     };
   },
   component({
@@ -49,36 +35,23 @@ export const systemInviteEmail = defineEmailTemplate<SystemInviteStatic, SystemI
     buttonText,
     supportText,
     senderName,
-    name,
     inviteLink,
   }) {
     return (
-      <EmailContainer previewText={previewText}>
-        {senderName && (
-          <Row style={avatarRowStyle}>
-            <Column align="center">
-              <EmailAvatar name={senderName} type="user" />
-            </Column>
-          </Row>
-        )}
-
-        <EmailHeader headerText={<SafeHtml html={headerHtml} policy="inline" as="div" />} />
-        <EmailBody>
-          {name && <EmailText style={greetingStyle}>{hiText}</EmailText>}
-          <EmailText>
-            <SafeHtml html={bodyHtml} policy="inline" /> {inviteExpires}
-          </EmailText>
-
-          <EmailButton ButtonText={buttonText} href={inviteLink} />
-        </EmailBody>
-
-        <EmailLogo />
-        <EmailFooter supportText={supportText} />
-      </EmailContainer>
+      <EmailMessage
+        previewText={previewText}
+        avatarName={senderName}
+        headerHtml={headerHtml}
+        greeting={hiText}
+        bodyHtml={bodyHtml}
+        action={{ label: buttonText, href: inviteLink }}
+        note={inviteExpires}
+        supportText={supportText}
+      />
     );
   },
   preview: {
-    statics: { senderName: 'John', senderThumbnailUrl: null },
+    statics: { senderName: 'John' },
     recipient: { name: 'Emily', inviteLink: 'https://example.com/invite' },
   },
 });

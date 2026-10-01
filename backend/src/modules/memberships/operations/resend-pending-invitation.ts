@@ -42,7 +42,7 @@ async function remindInvitee(
   // Replies reach the inviter, as on the first invitation.
   const sender = await findUserById(ctx, { id: invitation.createdBy });
   await sendInvitationMails(ctx, {
-    sender: sender ?? { name: 'System', thumbnailUrl: null },
+    sender: sender ?? { name: 'System' },
     channel: { type: invitation.channelType, slug: entity.slug, name: entity.name, role: invitation.role },
     organization: ctx.var.organization,
     invited: [{ email: invitation.email, userId: invitation.userId }],

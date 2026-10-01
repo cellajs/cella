@@ -1,7 +1,6 @@
-import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText, SafeHtml } from '../components';
-import { Link } from '../components/primitives';
+import { EmailLayout, EmailText, SafeHtml } from '../components';
 import { i18n } from '../i18n';
-import { newsletterContentStyles, smallTextStyle } from '../styles';
+import { newsletterContentStyles } from '../styles';
 import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
 
 interface NewsletterStatic {
@@ -25,27 +24,17 @@ export const newsletterEmail = defineEmailTemplate<NewsletterStatic, NewsletterR
   },
   component({ subject, headerHtml, unsubscribeText, supportText, content, testEmail, unsubscribeLink }) {
     return (
-      <EmailContainer
+      <EmailLayout
         previewText={subject}
-        containerStyle={{ maxWidth: '40rem' }}
+        headerHtml={headerHtml}
+        wide
         headChildren={<style>{newsletterContentStyles}</style>}
+        unsubscribe={{ label: unsubscribeText, href: unsubscribeLink }}
+        supportText={supportText}
       >
-        <EmailHeader headerText={<SafeHtml html={headerHtml} policy="inline" as="div" />} />
-        <EmailBody>
-          <EmailText>{testEmail && 'THIS IS A TEST'}</EmailText>
-
-          <SafeHtml html={content} policy="richText" as="div" className="bn-email-content" />
-
-          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-            <Link style={smallTextStyle} href={unsubscribeLink}>
-              {unsubscribeText}
-            </Link>
-          </div>
-        </EmailBody>
-
-        <EmailLogo />
-        <EmailFooter supportText={supportText} />
-      </EmailContainer>
+        {testEmail && <EmailText>THIS IS A TEST</EmailText>}
+        <SafeHtml html={content} policy="richText" as="div" className="bn-email-content" />
+      </EmailLayout>
     );
   },
   preview: {

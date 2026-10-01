@@ -27,5 +27,3 @@ export const EmailFooter = ({ supportText }: { supportText: string }) => (
     </Link>
   </EmailText>
 );
-
-export const Template = EmailFooter;

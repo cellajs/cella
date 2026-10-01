@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText, SafeHtml } from '../components';
+import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
 import { defineEmailTemplate } from '../types';
 
@@ -38,24 +38,15 @@ export const accountSecurityEmail = defineEmailTemplate<AccountSecurityStatic>()
     return {
       subject: i18n.t(`backend:email.account_security.${type}.title`, { ...baseProps, ...details, ...plainText }),
       previewText: i18n.t('backend:email.account_security.preview', { ...baseProps, name, ...plainText }),
-      headerText: i18n.t(`backend:email.account_security.${type}.title`, { ...baseProps, ...plainText }),
+      headerHtml: i18n.t(`backend:email.account_security.${type}.title`, baseProps),
       // Details can carry request-derived text (route, browser, names); the body renders as HTML, so they stay escaped.
       bodyHtml: i18n.t(`backend:email.account_security.${type}.text`, { ...baseProps, ...details, location }),
       supportText: i18n.t('backend:email.support_email', { lng }),
     };
   },
-  component({ previewText, headerText, bodyHtml, supportText }) {
+  component({ previewText, headerHtml, bodyHtml, supportText }) {
     return (
-      <EmailContainer previewText={previewText}>
-        <EmailHeader headerText={headerText} />
-        <EmailBody>
-          <EmailText>
-            <SafeHtml html={bodyHtml} policy="inline" />
-          </EmailText>
-        </EmailBody>
-        <EmailLogo />
-        <EmailFooter supportText={supportText} />
-      </EmailContainer>
+      <EmailMessage previewText={previewText} headerHtml={headerHtml} bodyHtml={bodyHtml} supportText={supportText} />
     );
   },
   preview: {

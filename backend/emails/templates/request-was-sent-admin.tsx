@@ -1,5 +1,5 @@
 import { appConfig } from 'shared';
-import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText, SafeHtml } from '../components';
+import { EmailLayout, EmailText } from '../components';
 import { i18n } from '../i18n';
 import { defineEmailTemplate } from '../types';
 import type { RequestType } from './request-was-sent';
@@ -24,16 +24,10 @@ export const requestInfoEmail = defineEmailTemplate<RequestInfoStatic>()({
   },
   component({ subject, headerHtml, email, message, supportText }) {
     return (
-      <EmailContainer previewText={subject}>
-        <EmailHeader headerText={<SafeHtml html={headerHtml} policy="inline" as="div" />} />
-        <EmailBody>
-          <EmailText>Email: {email}</EmailText>
-          {message && <EmailText>{message}</EmailText>}
-        </EmailBody>
-
-        <EmailLogo />
-        <EmailFooter supportText={supportText} />
-      </EmailContainer>
+      <EmailLayout previewText={subject} headerHtml={headerHtml} supportText={supportText}>
+        <EmailText>Email: {email}</EmailText>
+        {message && <EmailText>{message}</EmailText>}
+      </EmailLayout>
     );
   },
   preview: {
