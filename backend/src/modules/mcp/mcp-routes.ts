@@ -1,6 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
 import { orgGuard, publicGuard, serviceEnabled, tenantGuard, tokenGuard } from '#/middlewares/guard';
+import { mcpRequestLimiter } from '#/middlewares/rate-limiter/limiters';
 import { protectedResourceSchema } from '#/modules/oauth-server/oauth-server-routes';
 import { tenantOrgParamSchema } from '#/schemas';
 
@@ -19,6 +20,7 @@ const mcpRoutes = createXRoutes(['mcp', 'cella'], {
     method: 'post',
     path: '/',
     xGuard: [serviceEnabled('mcp'), tokenGuard, tenantGuard, orgGuard],
+    xRateLimiter: [mcpRequestLimiter],
     summary: 'MCP endpoint',
     description:
       'Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.',

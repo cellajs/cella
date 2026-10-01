@@ -2008,7 +2008,7 @@
     "hasExample": false,
     "extensions": {
       "xGuard": ["serviceEnabled(mcp)", "tokenGuard", "tenantGuard", "orgGuard"],
-      "xRateLimiter": [],
+      "xRateLimiter": ["mcpRequestLimiter"],
       "xCache": []
     },
     "tagsByKind": {

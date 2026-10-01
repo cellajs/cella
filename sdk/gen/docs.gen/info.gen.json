@@ -141,6 +141,7 @@
           "description": "Max 60 client metadata document fetches per minute per IP"
         },
         "serviceBurstLimiter": { "name": "serviceBurst", "description": "Max 30 requests/second per service account" },
+        "mcpRequestLimiter": { "name": "mcpRequest", "description": "Max 30 MCP requests/second per account" },
         "syncReadLimiter": {
           "name": "syncRead",
           "description": "Max 5000 sync-driven reads/hour per user (delta lists, unseen counts)"
