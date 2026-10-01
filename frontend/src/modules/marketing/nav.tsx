@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
-import { useScrollVisibility } from '~/hooks/use-scroll-visibility';
+import { useScrolledPast } from '~/hooks/use-scrolled-past';
 import { GithubIcon } from '~/modules/common/icons/github';
 import { Logo } from '~/modules/common/logo';
 import type { AboutSectionId } from '~/modules/marketing/about/about-page';
@@ -22,8 +22,7 @@ export function MarketingNav() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isMobile = useBreakpointBelow('sm');
 
-  const { scrollTop } = useScrollVisibility(isMobile);
-  const showScrollTop = scrollTop > 300;
+  const showScrollTop = useScrolledPast(300, isMobile);
 
   const closeDrawer = () => setDrawerOpen(false);
 

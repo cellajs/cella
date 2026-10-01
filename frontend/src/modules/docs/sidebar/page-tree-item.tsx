@@ -7,8 +7,8 @@ import { Button, buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
-import { useSheeter } from '../../common/sheeter/use-sheeter';
 import { ActiveIndicator } from './active-indicator';
+import { closeDocsSidebarAfterNavigation } from './close-after-navigation';
 
 export type PageNode = { page: DocPage; children: PageNode[] };
 
@@ -18,18 +18,18 @@ type PageBranchProps = {
   activePageId: string | undefined;
   expandedIds: ReadonlySet<string>;
   onToggle: (id: string) => void;
-  onClose: () => void;
 };
 
 /** Tier 0 (root) and tier 1 (parent) page rows. Both are collapsible; only visuals differ. */
-export function PageBranch({ node, variant, activePageId, expandedIds, onToggle, onClose }: PageBranchProps) {
+export function PageBranch({ node, variant, activePageId, expandedIds, onToggle }: PageBranchProps) {
   const { page, children } = node;
   const hasChildren = children.length > 0;
   const isExpanded = expandedIds.has(page.id);
   const isActive = activePageId === page.id;
   const expanderOnly = page.renderMode === 'nodeOnly' && hasChildren;
   const isRoot = variant === 'root';
-  // Sheet-mode threshold (below `md`), where the sidebar is a sheet and the indicator animates as elsewhere
+  // Sheet-mode threshold (below `md`): the indicator animates as elsewhere, and subtrees open without a height
+  // animation (main-thread layout every frame, competing with the page a tap navigates to)
   const isMobile = useBreakpointBelow('md', false);
   const layoutId = useId();
   const activeChildIndex = isRoot ? -1 : children.findIndex((c) => c.page.id === activePageId);
@@ -45,6 +45,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
         <Link
           to="/docs/page/$"
           params={{ _splat: page.id }}
+          preload={expanderOnly ? false : 'intent'}
           draggable={false}
           data-active={isActive}
           data-expanded={isExpanded}
@@ -72,7 +73,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
             }
             if (hasChildren && !isExpanded) onToggle(page.id);
             // On mobile the sheet closes only on leaf navigation, so children revealed by an expand stay visible
-            if (!hasChildren) onClose();
+            if (!hasChildren) closeDocsSidebarAfterNavigation(e.currentTarget);
           }}
         >
           {/* Leading dot (parent tier only) */}
@@ -91,7 +92,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
         </Link>
 
         {hasChildren && (
-          <CollapsibleContent className="overflow-hidden data-closed:animate-collapsible-up data-open:animate-collapsible-down">
+          <CollapsibleContent className={cn('overflow-hidden', !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}>
             {isRoot ? (
               // A <ul> keeps the nested SidebarMenuItem <li> rows off this row's own <li> (invalid HTML)
               <ul className="flex list-none flex-col gap-1 py-1">
@@ -103,7 +104,6 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
                     activePageId={activePageId}
                     expandedIds={expandedIds}
                     onToggle={onToggle}
-                    onClose={onClose}
                   />
                 ))}
               </ul>
@@ -111,7 +111,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
               <div className="relative flex flex-col px-0 py-0.5">
                 <ActiveIndicator activeIndex={activeChildIndex} layoutId={layoutId} isMobile={isMobile} />
                 {children.map((child) => (
-                  <PageLeaf key={child.page.id} page={child.page} isActive={child.page.id === activePageId} onClose={onClose} />
+                  <PageLeaf key={child.page.id} page={child.page} isActive={child.page.id === activePageId} />
                 ))}
               </div>
             )}
@@ -123,7 +123,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle,
 }
 
 /** Tier 2: Leaf page row (mirrors SchemaItem / OperationItem). */
-function PageLeaf({ page, isActive, onClose }: { page: DocPage; isActive: boolean; onClose: () => void }) {
+function PageLeaf({ page, isActive }: { page: DocPage; isActive: boolean }) {
   return (
     <Button
       variant="ghost"
@@ -136,12 +136,12 @@ function PageLeaf({ page, isActive, onClose }: { page: DocPage; isActive: boolea
         <Link
           to="/docs/page/$"
           params={{ _splat: page.id }}
+          preload="intent"
           draggable={false}
           data-active={isActive}
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey) return;
-            useSheeter.getState().remove('docs-sidebar');
-            onClose();
+            closeDocsSidebarAfterNavigation(e.currentTarget);
           }}
         />
       }

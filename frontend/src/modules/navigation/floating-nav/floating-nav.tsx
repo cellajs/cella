@@ -46,7 +46,7 @@ export function FloatingNav({ items, scrollContainerRef, bodyClass = 'floating-n
         return (
           <FloatingNavButton
             key={item.id}
-            className={isItemVisible ? 'opacity-100' : 'pointer-events-none -bottom-12 scale-50 opacity-0'}
+            className={isItemVisible ? 'opacity-100' : 'pointer-events-none translate-y-16 scale-50 opacity-0'}
             id={item.id}
             icon={item.icon}
             onClick={item.onClick}

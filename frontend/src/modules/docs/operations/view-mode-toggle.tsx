@@ -7,8 +7,7 @@ interface ViewModeToggleProps {
 }
 
 export function ViewModeToggle({ size = 'default' }: ViewModeToggleProps) {
-  const { location } = useRouterState();
-  const isTableRoute = location.pathname === '/docs/operations/table';
+  const isTableRoute = useRouterState({ select: (state) => state.location.pathname === '/docs/operations/table' });
   const viewMode = isTableRoute ? 'table' : 'list';
 
   return (

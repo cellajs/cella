@@ -5,19 +5,16 @@ import { buildPageNodeTree, computeAncestorIds, PageBranch } from '~/modules/doc
 import { docPages } from '~/modules/page/content';
 import { SidebarMenu, SidebarMenuItem } from '~/modules/ui/sidebar';
 
-interface PagesSidebarProps {
-  onClose: () => void;
-}
-
 /** Sidebar listing docs pages as a hierarchical tree, sorted by display order. */
-export function PagesSidebar({ onClose }: PagesSidebarProps) {
+export function PagesSidebar() {
   const { t } = useTranslation();
-  const { location } = useRouterState();
+  // Pathname only: the whole router state changes several times per navigation
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   const pages = useMemo(() => docPages.filter((page) => !page.draft && !page.hidden), []);
 
   // Active page slug from URL (e.g. /docs/page/<slug>, slug may contain slashes)
-  const activeMatch = location.pathname.match(/\/docs\/page\/(.+?)\/?$/)?.[1];
+  const activeMatch = pathname.match(/\/docs\/page\/(.+?)\/?$/)?.[1];
   const activePageId = activeMatch ? decodeURIComponent(activeMatch) : undefined;
 
   const pageTree = useMemo(() => buildPageNodeTree(pages), [pages]);
@@ -77,7 +74,6 @@ export function PagesSidebar({ onClose }: PagesSidebarProps) {
             activePageId={activePageId}
             expandedIds={expandedIds}
             onToggle={togglePageExpanded}
-            onClose={onClose}
           />
         ))
       ) : (

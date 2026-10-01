@@ -13,6 +13,9 @@ import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenuItem }
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 
+/** Search params of the operations and schemas routes; the router types location.search as the union of all routes. */
+type DocsSearch = { operationTag?: string; schemaTag?: string; q?: string };
+
 interface ApiReferenceSectionProps {
   label: string;
   tags: GenTagSummary[];
@@ -25,19 +28,20 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
 
   const { data: schemas } = useQuery(schemasQueryOptions);
 
-  const { location } = useRouterState();
-  const isOperationsRoute = location.pathname === '/docs/operations';
-  const isOperationsTableRoute = location.pathname === '/docs/operations/table';
-  const isSchemasRoute = location.pathname.includes('/docs/schemas');
+  // Narrow selects: the whole router state changes several times per navigation
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
+  const activeOperationTag = useRouterState({ select: (state) => (state.location.search as DocsSearch).operationTag });
+  const activeSchemaTag = useRouterState({ select: (state) => (state.location.search as DocsSearch).schemaTag });
+  const hasQuery = useRouterState({ select: (state) => !!(state.location.search as DocsSearch).q });
+  const isOperationsRoute = pathname === '/docs/operations';
+  const isOperationsTableRoute = pathname === '/docs/operations/table';
+  const isSchemasRoute = pathname.includes('/docs/schemas');
 
   // Operations expand only in list view, not table view
   const expandedSection = isOperationsRoute ? 'operations' : isSchemasRoute ? 'schemas' : null;
 
   // Start collapsed when landing directly via URL without search params
-  const searchParams = location.search as Record<string, unknown>;
-  const activeOperationTag = searchParams.operationTag as string | undefined;
-  const activeSchemaTag = searchParams.schemaTag as string | undefined;
-  const hasOperationSearchParams = !!activeOperationTag || !!searchParams.q;
+  const hasOperationSearchParams = !!activeOperationTag || hasQuery;
   const hasSchemasSearchParams = !!activeSchemaTag;
   const initialForcedCollapsed =
     isOperationsRoute && !hasOperationSearchParams ? 'operations' : isSchemasRoute && !hasSchemasSearchParams ? 'schemas' : null;
