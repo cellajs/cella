@@ -54,8 +54,8 @@ export function SlugFormField<TFieldValues extends FieldValues>({
 
   const inputClassName = cn({
     'ring-2 sm:focus-visible:ring-2': isSlugAvailable !== 'blank',
-    'ring-green-500 focus-visible:ring-green-500': isSlugAvailable === 'available',
-    'ring-red-500 focus-visible:ring-red-500': isSlugAvailable === 'notAvailable',
+    'ring-success focus-visible:ring-success': isSlugAvailable === 'available',
+    'ring-destructive focus-visible:ring-destructive': isSlugAvailable === 'notAvailable',
   });
 
   const form = useFormContext<{ slug: string }>();

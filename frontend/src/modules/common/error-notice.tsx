@@ -71,13 +71,13 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
               </CardDescription>
             </CardHeader>
             {error && 'status' in error && (
-              <CardContent className="whitespace-pre-wrap px-0 py-4 font-mono text-red-600">
+              <CardContent className="whitespace-pre-wrap px-0 py-4 font-mono text-destructive">
                 {error.type && (
                   <Button
                     variant="link"
                     size="sm"
                     onClick={() => setShowError((prev) => !prev)}
-                    className="flex w-full items-center whitespace-pre-wrap text-red-600"
+                    className="flex w-full items-center whitespace-pre-wrap text-destructive"
                   >
                     <span>{showError ? t('c:hide_details') : t('c:show_details')}</span>
                     {<ChevronUpIcon className={cn('transition-transform', showError ? 'rotate-0' : 'rotate-180')} />}

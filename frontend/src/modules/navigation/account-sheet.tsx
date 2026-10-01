@@ -32,7 +32,7 @@ function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action 
     <Button
       variant="ghost"
       size="lg"
-      className="focus-effect w-full justify-start text-left hover:bg-accent/50 data-[sign-out=true]:text-red-600"
+      className="focus-effect w-full justify-start text-left hover:bg-accent/50 data-[sign-out=true]:text-destructive"
       data-sign-out={id === 'btn-signout'}
       render={
         <Link

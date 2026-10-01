@@ -69,7 +69,7 @@ export function OperationDetail({ operation, detail: detailProp, className }: Op
           </Badge>
           <code className="break-all font-mono text-muted-foreground sm:text-lg">{operation.path}</code>
           {operation.deprecated && (
-            <Badge variant="outline" className="border-yellow-600 text-yellow-600">
+            <Badge variant="outline" className="border-warning text-warning">
               {t('c:deprecated')}
             </Badge>
           )}

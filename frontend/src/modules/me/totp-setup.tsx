@@ -70,7 +70,7 @@ export function SetupTotp() {
   return (
     <div className="group flex flex-col gap-2">
       <div className="flex items-center justify-center gap-2">
-        <CircleAlertIcon className="size-3.5 shrink-0 text-amber-500" />
+        <CircleAlertIcon className="size-3.5 shrink-0 text-warning" />
         <div className="text-muted-foreground text-sm">
           <span>{t('c:totp_manual.footer_description')}</span>
           <Button ref={triggerRef} variant="none" className="inline h-auto cursor-pointer p-0 underline" onClick={openManualKey}>

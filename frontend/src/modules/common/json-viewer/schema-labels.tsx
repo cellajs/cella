@@ -1,4 +1,5 @@
 import { cn } from '~/utils/cn';
+import { getTypeColorClass, type JsonViewerTheme } from './types';
 
 interface SchemaLabelsProps {
   typeValue: string | string[] | null;
@@ -7,23 +8,7 @@ interface SchemaLabelsProps {
   hasAnyOf?: boolean;
   hasOneOf?: boolean;
   constraints?: { maxLength?: number; minLength?: number; maximum?: number; minimum?: number } | null;
-  theme: { string: string; number: string; boolean: string; null: string; schemaType: string };
-}
-
-function getTypeColorClass(typeValue: string, theme: { string: string; number: string; boolean: string; null: string }): string {
-  switch (typeValue) {
-    case 'string':
-      return theme.string;
-    case 'number':
-    case 'integer':
-      return theme.number;
-    case 'boolean':
-      return theme.boolean;
-    case 'null':
-      return theme.null;
-    default:
-      return 'text-purple-600 dark:text-purple-400'; // for array/object
-  }
+  theme: Pick<JsonViewerTheme, 'string' | 'number' | 'boolean' | 'null' | 'schemaType' | 'structureType'>;
 }
 
 export function SchemaLabels({ typeValue, refValue, contentTypeValue, hasAnyOf, hasOneOf, constraints, theme }: SchemaLabelsProps) {

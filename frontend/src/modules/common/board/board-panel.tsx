@@ -106,7 +106,7 @@ export function CollapsedPanelView({ mainCount, sections = EMPTY_SECTIONS, class
         </div>
       ))}
 
-      <div className="flex grow items-center justify-center text-gray-500 text-xs">
+      <div className="flex grow items-center justify-center text-muted-foreground text-xs">
         <div className="absolute top-[calc(50%-0.5rem)]">{mainCount}</div>
       </div>
 

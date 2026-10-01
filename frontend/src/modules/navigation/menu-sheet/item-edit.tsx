@@ -46,7 +46,7 @@ export function MenuItemEdit({ item, icon: Icon }: MenuItemEditProps) {
     >
       {status === 'pending' && onlineManager.isOnline() && (
         <div className="absolute z-10">
-          <Spinner className="m-1 mr-3 size-10 p-1 text-black opacity-50 group-data-[submenu=false]/menu-options:mx-3 group-data-[submenu=false]/menu-options:my-2 group-data-[submenu=false]/menu-options:size-7 group-data-[submenu=false]/menu-options:p-1" />
+          <Spinner className="m-1 mr-3 size-10 p-1 text-muted-foreground group-data-[submenu=false]/menu-options:mx-3 group-data-[submenu=false]/menu-options:my-2 group-data-[submenu=false]/menu-options:size-7 group-data-[submenu=false]/menu-options:p-1" />
         </div>
       )}
       <EntityAvatar

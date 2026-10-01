@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { cn } from '~/utils/cn';
+import { getTypeColorClass, type JsonViewerTheme } from './types';
 import { highlightText, JSON_SCHEMA_TYPES } from './utils';
 
 interface InlinePrimitiveValueProps {
@@ -63,7 +64,7 @@ export function InlinePrimitiveValue({ value, theme, searchText }: InlinePrimiti
 interface PrimitiveValueProps {
   value: unknown;
   type: string;
-  theme: { string: string; number: string; boolean: string; null: string; schemaType: string; searchMatch: string };
+  theme: Pick<JsonViewerTheme, 'string' | 'number' | 'boolean' | 'null' | 'schemaType' | 'structureType' | 'searchMatch'>;
   collapseStringsAfterLength: number;
   searchText: string;
   openapiMode?: 'spec' | 'schema';
@@ -79,17 +80,7 @@ export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength,
 
       // Schema-mode type keywords render unquoted and in their type color.
       if (openapiMode === 'schema' && JSON_SCHEMA_TYPES.has(str)) {
-        const typeClass =
-          str === 'string'
-            ? theme.string
-            : str === 'number' || str === 'integer'
-              ? theme.number
-              : str === 'boolean'
-                ? theme.boolean
-                : str === 'null'
-                  ? theme.null
-                  : 'text-purple-600 dark:text-purple-400'; // for array/object
-        return <span className={cn(baseClass, theme.schemaType, typeClass)}>{str}</span>;
+        return <span className={cn(baseClass, theme.schemaType, getTypeColorClass(str, theme))}>{str}</span>;
       }
 
       const shouldTruncate = str.length > collapseStringsAfterLength;

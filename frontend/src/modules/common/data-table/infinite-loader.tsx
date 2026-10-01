@@ -21,7 +21,7 @@ export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, hide
   const { ref: measureRef, inView } = useInView();
   useFetchMoreOnDemand({ demand: inView, hasNextPage, isFetching: !!isFetching, error: !!isFetchMoreError, fetchMore });
 
-  if (isFetchMoreError) return <div className="my-8 text-center text-red-600 text-sm">{t('error:load_more_failed')}</div>;
+  if (isFetchMoreError) return <div className="my-8 text-center text-destructive text-sm">{t('error:load_more_failed')}</div>;
 
   if (!isOnline && hasNextPage)
     return <div className="mt-4 w-full text-center text-muted-foreground/70 text-sm italic">{t('c:offline.load_more')}</div>;

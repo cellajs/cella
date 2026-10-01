@@ -78,7 +78,7 @@ export function Pricing() {
                 {t(title)}
                 {popular && <SparklesIcon className="ml-1 w-5 text-primary" />}
               </h3>
-              <div className="mt-4 flex items-center justify-center text-gray-600 dark:text-gray-400">
+              <div className="mt-4 flex items-center justify-center text-muted-foreground">
                 {discount && (
                   <Badge size="md" className="mr-2 px-2 py-0 text-lg">
                     {discount}

@@ -152,7 +152,7 @@ export function DataTable<TData>({
         />
       ) : error && !rows?.length ? (
         <div className="flex size-full flex-col items-center justify-center bg-background text-muted-foreground">
-          <div className="my-8 text-center text-red-600 text-sm">{error.message}</div>
+          <div className="my-8 text-center text-destructive text-sm">{error.message}</div>
         </div>
       ) : !rows?.length ? (
         <NoRows isFiltered={isFiltered} isFetching={isFetching} customComponent={NoRowsComponent} />

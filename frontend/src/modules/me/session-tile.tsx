@@ -52,7 +52,7 @@ export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending 
             <span className="text-sm">{session.deviceName || t('c:unknown_device')}</span>
             <div className="flex items-center gap-2 empty:hidden">
               {session.type === 'mfa' && (
-                <Badge size="xs" variant="outline" className="border-green-600 text-green-600">
+                <Badge size="xs" variant="outline" className="border-success text-success">
                   <ShieldCheckIcon className="size-3" />
                   {t('c:mfa_short')}
                 </Badge>

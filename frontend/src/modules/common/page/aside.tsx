@@ -35,7 +35,7 @@ export function PageAside<T extends PageTab>({ tabs, className, setFocus }: Page
   return (
     <div className={cn('flex w-full flex-col gap-1', className)}>
       {tabs.map(({ id, label, icon, resource }, index) => {
-        const btnClass = cn(id.includes('delete') && 'text-red-600', 'w-full justify-start text-left hover:bg-accent/50');
+        const btnClass = cn(id.includes('delete') && 'text-destructive', 'w-full justify-start text-left hover:bg-accent/50');
         const Icon = icon;
         return (
           <Button

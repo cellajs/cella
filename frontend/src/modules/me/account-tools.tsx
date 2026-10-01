@@ -20,7 +20,6 @@ import { SessionsList } from '~/modules/me/sessions-list';
 import { Totp } from '~/modules/me/totp';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { useUIStore } from '~/modules/ui/ui-store';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { cn } from '~/utils/cn';
@@ -62,13 +61,10 @@ export function AccountConnectedAppsCard() {
 export function AccountAuthenticationCard() {
   const { t } = useTranslation();
   const user = useCurrentUser();
-  const mode = useUIStore((state) => state.mode);
   const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
   const { enabledOAuth } = authData;
 
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
-
-  const invertClass = mode === 'dark' ? 'invert' : '';
 
   // The backend pins the provider's callback to this account first; the browser then leaves for the provider.
   const { mutate: connectProvider } = useMutation({
@@ -99,7 +95,7 @@ export function AccountAuthenticationCard() {
                 <div className="flex items-center">
                   <p className="font-semibold">{t('c:mfa')}</p>
                   {!user.mfaRequired && (
-                    <Badge size="xs" variant="outline" className="ml-2 border-green-600 text-green-600 max-sm:hidden">
+                    <Badge size="xs" variant="outline" className="ml-2 border-success text-success max-sm:hidden">
                       {t('c:recommended')}
                     </Badge>
                   )}
@@ -151,7 +147,7 @@ export function AccountAuthenticationCard() {
                         <img
                           src={`/static/auth/${provider.id}-icon.svg`}
                           alt={provider.id}
-                          className={cn('mr-2 size-4', provider.id === 'github' && invertClass)}
+                          className={cn('mr-2 size-4', provider.id === 'github' && 'dark:invert')}
                           loading="lazy"
                         />
                         <CheckIcon strokeWidth={3} className="size-4.5 text-success" />
@@ -171,7 +167,7 @@ export function AccountAuthenticationCard() {
                       <img
                         src={`/static/auth/${provider.id}-icon.svg`}
                         alt={provider.id}
-                        className={cn('size-4', provider.id === 'github' && invertClass)}
+                        className={cn('size-4', provider.id === 'github' && 'dark:invert')}
                         loading="lazy"
                       />
                       {`${t('c:add')} ${provider.name} ${t('c:account').toLowerCase()}`}

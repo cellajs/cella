@@ -4,7 +4,6 @@ import type { TKey } from '~/lib/i18n-locales';
 import { CountryFlag } from '~/modules/common/country-flag';
 import { cards } from '~/modules/marketing/marketing-config';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
-import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 export interface InfoCard {
@@ -17,7 +16,6 @@ export interface InfoCard {
 
 export function InfoCards() {
   const { t } = useTranslation();
-  const mode = useUIStore((state) => state.mode);
 
   return (
     <ScrollArea className="w-full" horizontalScroll>
@@ -39,7 +37,7 @@ export function InfoCards() {
                 <img
                   src={`/static/marketing/integrations/${id}.svg`}
                   alt={name}
-                  className={cn('size-8 object-contain', invert && mode === 'dark' && 'invert')}
+                  className={cn('size-8 object-contain', invert && 'dark:invert')}
                   loading="lazy"
                 />
                 <span className="ml-4 font-semibold">{name}</span>

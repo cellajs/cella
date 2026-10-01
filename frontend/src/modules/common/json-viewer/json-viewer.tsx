@@ -148,11 +148,7 @@ export function JsonViewer({
           }
         `}
       </style>
-      <div
-        ref={containerRef}
-        data-openapi-mode={openapiMode}
-        className={cn('group/jv font-mono text-gray-900 text-sm leading-relaxed dark:text-gray-100', className)}
-      >
+      <div ref={containerRef} data-openapi-mode={openapiMode} className={cn('group/jv font-mono text-foreground text-sm leading-relaxed', className)}>
         <JsonNode value={value} path={[]} keyName={rootName} depth={0} />
       </div>
     </JsonViewerContext.Provider>

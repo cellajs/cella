@@ -16,7 +16,7 @@ export function CopyButton({ value }: CopyButtonProps) {
   return (
     <button
       type="button"
-      className="ml-1 inline-flex cursor-pointer items-center justify-center rounded border-none bg-transparent p-0.5 opacity-0 transition-opacity hover:bg-black/10 hover:opacity-100 group-hover/node:opacity-60 dark:hover:bg-white/10"
+      className="ml-1 inline-flex cursor-pointer items-center justify-center rounded border-none bg-transparent p-0.5 opacity-0 transition-opacity hover:bg-foreground/10 hover:opacity-100 group-hover/node:opacity-60"
       onClick={handleCopy}
       title="Copy to clipboard"
     >

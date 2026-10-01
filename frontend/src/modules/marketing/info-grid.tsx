@@ -4,7 +4,6 @@ import type { TKey } from '~/lib/i18n-locales';
 import { ExpandableList } from '~/modules/common/expandable-list';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Badge } from '~/modules/ui/badge';
-import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
 
 export type InfoGridItem<C extends string = string> = {
@@ -90,8 +89,6 @@ export function InfoGrid<C extends string>({
   className = 'sm:grid-cols-2 md:grid-cols-3',
 }: InfoGridProps<C>) {
   const { t } = useTranslation();
-  const mode = useUIStore((state) => state.mode);
-  const invertClass = mode === 'dark' ? 'invert' : '';
   const isMediumScreen = useBreakpointAbove('md');
 
   const renderTile = (item: InfoGridItem<C>) => (
@@ -101,7 +98,7 @@ export function InfoGrid<C extends string>({
       namespace={namespace}
       layers={item.layers}
       image={image}
-      invertClassName={invertClass}
+      invertClassName="dark:invert"
       tileClassName={tileClassName}
     />
   );

@@ -24,7 +24,7 @@ export const useColumns = () => {
           {t(`c:${type}`)}
           {type === 'waitlist' && (
             <TooltipButton toolTipContent={t(`c:${wasInvited ? 'pending' : 'not_processed'}`)} disabled={type !== 'waitlist'}>
-              <Badge className={cn('size-2 justify-center p-0', wasInvited ? 'bg-yellow-400' : 'bg-gray-400')} />
+              <Badge className={cn('size-2 justify-center p-0', wasInvited ? 'bg-warning' : 'bg-muted-foreground/70')} />
             </TooltipButton>
           )}
         </div>

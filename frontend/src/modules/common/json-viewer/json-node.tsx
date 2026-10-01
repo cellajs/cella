@@ -323,7 +323,7 @@ export const JsonNode = memo(
           <div
             className={cn(
               'group/node -mx-1 -my-px inline-flex items-center gap-0.5 rounded px-1 py-px',
-              isExpandable ? 'cursor-pointer hover:bg-gray-100 dark:hover:bg-white/5' : 'pointer-events-none',
+              isExpandable ? 'cursor-pointer hover:bg-accent/50' : 'pointer-events-none',
             )}
             style={{ paddingLeft }}
             onClick={
