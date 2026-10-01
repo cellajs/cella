@@ -6,7 +6,7 @@ No column stores mentions: the notification fan-out reads them from the row's st
 a body change, so a mention edit is one CDC activity. `mentionableColumns` is deprecated (empty); `writeMentions`
 and `deriveFrom` are gone. With `has.commentEmail` on, `comment` and `reply` rows mail opted-in users.
 `registerEqualityFilterKeys` lets a new row skip filtered lists it cannot belong to. `findPendingMentionEmails` is
-`findPendingInstantEmails`.
+`findPendingInstantEmails`. `deriveDocument` derives a description's columns in one parse.
 
 ## Blast radius
 
@@ -25,6 +25,7 @@ No script: manual.
 3. Apps that emit `comment`/`reply` notifications and want them mailed set `has.commentEmail: true`; users opt in with the account switch, and a mention on the same subject wins (projectcampus).
 4. Optional: lists filtered on a row column call `registerEqualityFilterKeys('<type>', ['<column>'])` next to `registerEntityQueryKeys` (projectcampus: `registerEqualityFilterKeys('comment', ['itemId'])`).
 5. App code calling `findPendingMentionEmails` uses `findPendingInstantEmails`.
+6. Optional: ops deriving several columns from one description read them from one `deriveDocument(description)` call (`shared/utils/derive-description-core`; raak: task `deriveDescriptionProps`, projectcampus: item and material ops).
 
 ## Verify
 

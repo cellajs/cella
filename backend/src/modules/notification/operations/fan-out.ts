@@ -1,11 +1,11 @@
 import { appConfig, type ChannelEntityType, hierarchy, isChannel, isProduct, type ProductEntityType } from 'shared';
+import { deriveDocument } from 'shared/utils/derive-description-core';
 import { buildNotificationLink } from 'shared/utils/notification-link';
 import { tenantReadById } from '#/db/tenant-context';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import type { NotificationSubjectRow } from '#/lib/module';
 import { isPushSendConfigured, sendNotificationPush } from '#/modules/push/push-sender';
 import { log } from '#/utils/logger';
-import { extractMentionIds } from '../helpers/extract-mentions';
 import { readableAccess } from '../helpers/readable-access';
 import {
   findNotifiedUserIds,
@@ -98,7 +98,7 @@ async function fanOutRow(
     if (!candidates.has(userId)) candidates.set(userId, { userId, type });
   };
 
-  if (readsMentions) for (const mentioned of extractMentionIds(row.description)) add(mentioned, 'mention');
+  if (readsMentions) for (const mentioned of deriveDocument(row.description).mentions) add(mentioned, 'mention');
 
   const { resolveRecipients, resolveContextId } = source.declaration;
   if (resolveRecipients) {

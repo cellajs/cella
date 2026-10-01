@@ -1,4 +1,7 @@
-import { mediaBlockTypes } from './text-from-block.ts';
+import type { Block } from '@blocknote/core';
+import { isRecord } from './as-record.ts';
+import { isUuid } from './entity-id.ts';
+import { getSearchableTextFromBlocks, getTextFromBlock, mediaBlockTypes } from './text-from-block.ts';
 
 /** Tolerant of custom block types. */
 export type DescriptionBlock = {
@@ -82,3 +85,98 @@ export const findSummarySource = (blocks: DescriptionBlock[]): SummarySource => 
 /** Fallback for summary sources the per-side HTML converters cannot render. */
 export const blockPlainText = (block: DescriptionBlock): string =>
   Array.isArray(block.content) ? (block.content as { text?: string }[]).map((item) => item.text ?? '').join('') : '';
+
+/** Everything the app derives from one stored description. */
+export type DerivedDocument = {
+  /** Block 0's plain text, trimmed: the title of a document that keeps it there. */
+  name: string;
+  /** Search text of every block, link and media URL terms included, whitespace-collapsed, at most 900 characters. */
+  keywords: string;
+  /** Attachment entity ids referenced by media blocks (unique, document order), as in `counts`. */
+  attachments: string[];
+  /** Mentioned user ids (unique, document order): mention nodes at any depth, then HTML mention spans. */
+  mentions: string[];
+  counts: DescriptionCounts;
+  /** The parsed document; empty when the body is not a block document. */
+  blocks: DescriptionBlock[];
+};
+
+/** The span the editor renders around a mention: how an HTML body carries one. */
+const htmlMentionPattern = /data-mention-id=["']([0-9a-f-]{36})["']/gi;
+
+const keywordsBudget = 900;
+
+/** Walks any parsed JSON, collecting `{ type: 'mention', props: { id } }` nodes at any depth. */
+const collectMentionNodes = (node: unknown, into: Set<string>): void => {
+  if (Array.isArray(node)) {
+    for (const child of node) collectMentionNodes(child, into);
+    return;
+  }
+  if (!isRecord(node)) return;
+
+  if (node.type === 'mention' && isRecord(node.props)) {
+    const id = node.props.id;
+    // Ids are UUIDs; anything else is a malformed or hand-written payload and is dropped.
+    if (typeof id === 'string' && isUuid(id)) into.add(id);
+  }
+
+  for (const value of Object.values(node)) {
+    if (Array.isArray(value) || isRecord(value)) collectMentionNodes(value, into);
+  }
+};
+
+const parseJson = (body: string): unknown => {
+  try {
+    return JSON.parse(body);
+  } catch {
+    return undefined;
+  }
+};
+
+/** A derivation that trips over a malformed block yields its empty value. */
+const attempt = <T>(derive: () => T, empty: () => T): T => {
+  try {
+    return derive();
+  } catch {
+    return empty();
+  }
+};
+
+/**
+ * One parse of a stored description (BlockNote JSON, or HTML in older bodies), deriving what the
+ * write paths store and the notification fan-out reads. Mention ids come from the body itself, so
+ * a caller decides who may be told about them. Never throws: a malformed body must not fail the
+ * write it is derived from.
+ */
+export const deriveDocument = (description: string | null | undefined): DerivedDocument => {
+  const parsed = description ? parseJson(description) : undefined;
+  const blocks = Array.isArray(parsed) ? (parsed as DescriptionBlock[]) : [];
+
+  const name = attempt(
+    () => {
+      const [first] = blocks;
+      return first ? getTextFromBlock(first as Block).trim() : '';
+    },
+    () => '',
+  );
+  const keywords = attempt(
+    () =>
+      getSearchableTextFromBlocks(blocks as Block[])
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, keywordsBudget),
+    () => '',
+  );
+  const counts = attempt(() => countDescriptionBlocks(blocks), emptyDescriptionCounts);
+
+  const mentions = new Set<string>();
+  collectMentionNodes(parsed, mentions);
+  if (description) {
+    for (const match of description.matchAll(htmlMentionPattern)) {
+      const id = match[1];
+      if (id && isUuid(id)) mentions.add(id.toLowerCase());
+    }
+  }
+
+  return { name, keywords, attachments: counts.attachments, mentions: [...mentions], counts, blocks };
+};
