@@ -20,7 +20,7 @@ export function PagesSection({ label, onClose }: PagesSectionProps) {
   return (
     <SidebarGroup>
       <div className="flex items-center gap-3 px-4 pr-1">
-        <SidebarGroupLabel className="p-0 lowercase opacity-75">{label}</SidebarGroupLabel>
+        <SidebarGroupLabel className="p-0 text-muted-foreground lowercase">{label}</SidebarGroupLabel>
         {isSystemAdmin && (
           <TooltipButton toolTipContent={t('c:manage_pages')} side="right">
             <Button

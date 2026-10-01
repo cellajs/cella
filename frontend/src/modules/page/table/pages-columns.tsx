@@ -32,7 +32,7 @@ export function usePagesTableColumns() {
             maxWidth: 32,
             cellClass: 'cursor-grab flex items-center justify-center',
             rowDragHandle: true,
-            renderCell: () => <GripVerticalIcon className="size-3.5 text-muted-foreground/50" />,
+            renderCell: () => <GripVerticalIcon className="size-3.5 text-muted-foreground/70" />,
           } satisfies ColumnOrColumnGroup<PageTreeRow>,
         ]
       : []),

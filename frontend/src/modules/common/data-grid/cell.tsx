@@ -220,7 +220,7 @@ function MergedCellContent<R, SR>({ column, slots, row, rowIdx, isCellEditable, 
 function renderCellContent<R, SR>(column: CellRendererProps<R, SR>['column'], props: Parameters<typeof column.renderCell>[0]) {
   const content = column.renderCell(props);
   if (content == null && column.placeholderValue != null) {
-    return <span className="text-muted-foreground/50">{column.placeholderValue}</span>;
+    return <span className="text-muted-foreground/70">{column.placeholderValue}</span>;
   }
   return content;
 }

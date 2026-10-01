@@ -58,7 +58,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
   return (
     <SidebarGroup>
       <div className="flex items-center gap-3 px-4 pr-1 pb-1">
-        <SidebarGroupLabel className="p-0 lowercase opacity-75">{label}</SidebarGroupLabel>
+        <SidebarGroupLabel className="p-0 text-muted-foreground lowercase">{label}</SidebarGroupLabel>
       </div>
 
       <SidebarGroupContent>
@@ -93,7 +93,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
               >
                 <span>{t('c:operation', { count: 2 })}</span>
                 {(!isListMode || expandedSection !== 'operations' || forcedCollapsed === 'operations') && (
-                  <span className="ml-2 text-muted-foreground/90 text-xs">{tags.reduce((sum, tag) => sum + tag.count, 0)}</span>
+                  <span className="ml-2 text-muted-foreground text-xs">{tags.reduce((sum, tag) => sum + tag.count, 0)}</span>
                 )}
                 <ChevronDownIcon
                   className={cn(
@@ -142,7 +142,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
               >
                 <span>{t('c:schema', { count: 2 })}</span>
                 {(expandedSection !== 'schemas' || forcedCollapsed === 'schemas') && schemas && (
-                  <span className="ml-2 text-muted-foreground/90 text-xs">{schemas.length}</span>
+                  <span className="ml-2 text-muted-foreground text-xs">{schemas.length}</span>
                 )}
                 <ChevronDownIcon
                   className={cn(

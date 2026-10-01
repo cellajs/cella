@@ -55,21 +55,21 @@ export function PageHeader({ entity, panel, parents, parent, ...coverProps }: Pa
                     <Fragment key={crumb.id}>
                       <BreadcrumbItem>
                         <BreadcrumbLink
-                          className="flex items-center text-foreground/70"
+                          className="flex items-center text-muted-foreground"
                           render={<Link to={crumbRoute.to} params={crumbRoute.params} {...pageTopHashNav} />}
                         >
                           <span className="truncate max-sm:max-w-24">{crumb.name}</span>
                         </BreadcrumbLink>
                       </BreadcrumbItem>
-                      <BreadcrumbSeparator className="text-foreground/50">
+                      <BreadcrumbSeparator className="text-muted-foreground/70">
                         <ChevronRightIcon className="size-3" />
                       </BreadcrumbSeparator>
                     </Fragment>
                   );
                 })}
-                <BreadcrumbItem className="flex items-center text-foreground/70">
+                <BreadcrumbItem className="flex items-center text-muted-foreground">
                   <span>{t(`c:${entity.entityType}`).toLowerCase()}</span>
-                  {appConfig.mode === 'development' && <span className="ml-2 text-foreground/40 text-xs max-sm:hidden">{entity.id}</span>}
+                  {appConfig.mode === 'development' && <span className="ml-2 text-muted-foreground/70 text-xs max-sm:hidden">{entity.id}</span>}
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

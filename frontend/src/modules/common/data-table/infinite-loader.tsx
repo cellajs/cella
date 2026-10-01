@@ -24,7 +24,7 @@ export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, hide
   if (isFetchMoreError) return <div className="my-8 text-center text-red-600 text-sm">{t('error:load_more_failed')}</div>;
 
   if (!isOnline && hasNextPage)
-    return <div className="mt-4 w-full text-center text-muted-foreground/50 text-sm italic">{t('c:offline.load_more')}</div>;
+    return <div className="mt-4 w-full text-center text-muted-foreground/70 text-sm italic">{t('c:offline.load_more')}</div>;
 
   return (
     <>
@@ -38,7 +38,7 @@ export function InfiniteLoader({ hasNextPage, isFetching, isFetchMoreError, hide
 
 function AllLoaded() {
   return (
-    <div className="mt-4 mb-10 w-full text-center text-xl opacity-50">
+    <div className="mt-4 mb-10 w-full text-center text-muted-foreground/70 text-xl">
       <div>&#183;</div>
       <div className="-mt-5">&#183;</div>
       <div className="-mt-5">&#183;</div>

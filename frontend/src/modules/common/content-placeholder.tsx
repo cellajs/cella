@@ -23,7 +23,7 @@ export function ContentPlaceholder({ title, icon: Icon, className = '', children
   return (
     <div className={cn('relative flex h-full w-full flex-col items-center justify-center p-8 text-center', className)}>
       {Icon && <Icon strokeWidth={0.7} className="size-20 opacity-50" />}
-      <p className="mt-4 text-sm opacity-60">{titleText}</p>
+      <p className="mt-4 text-muted-foreground text-sm">{titleText}</p>
       {children && <div className="mt-8">{children}</div>}
     </div>
   );

@@ -197,7 +197,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                   descriptionOpen ? 'opacity-100' : 'opacity-0',
                 )}
               >
-                <p className="mt-2 ml-1 max-w-3xl text-sm opacity-80 max-sm:mx-auto">{descriptionText}</p>
+                <p className="mt-2 ml-1 max-w-3xl text-muted-foreground text-sm max-sm:mx-auto">{descriptionText}</p>
               </div>
             </div>
           )}

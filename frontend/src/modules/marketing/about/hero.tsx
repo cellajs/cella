@@ -44,7 +44,7 @@ export function Hero({ title, text, children, chips }: HeroProps) {
           </h2>
         )}
         {chips && chips.length > 0 && (
-          <div className="mb-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-foreground/70">
+          <div className="mb-8 flex flex-wrap items-center justify-center gap-x-8 gap-y-2 text-muted-foreground">
             {chips.map((chip) => (
               <span key={chip}>{t(chip)}</span>
             ))}

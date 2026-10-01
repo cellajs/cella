@@ -96,7 +96,9 @@ export function Onboarding({ onboarding = 'start', setOnboardingState, createdOr
                           <StepperFooter setOnboardingState={setOnboardingState} />
                         </CreateOrganizationForm>
                       )}
-                      {id === 'organization' && !!organization && <p className="font-normal text-sm opacity-80">{t('c:already_created_org.text')}</p>}
+                      {id === 'organization' && !!organization && (
+                        <p className="font-normal text-muted-foreground text-sm">{t('c:already_created_org.text')}</p>
+                      )}
                       {id === 'invitation' && organization && (
                         <InviteUsers channel={organization} mode="email">
                           <StepperFooter setOnboardingState={setOnboardingState} />
@@ -104,7 +106,7 @@ export function Onboarding({ onboarding = 'start', setOnboardingState, createdOr
                       )}
                       {id === 'invitation' && !organization && (
                         <div>
-                          <p className="mb-4 font-normal text-sm opacity-80">{t('c:need_org_to_invite.text')}</p>
+                          <p className="mb-4 font-normal text-muted-foreground text-sm">{t('c:need_org_to_invite.text')}</p>
                           <StepperFooter setOnboardingState={setOnboardingState} />
                         </div>
                       )}

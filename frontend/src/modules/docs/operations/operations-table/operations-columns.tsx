@@ -114,7 +114,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         width: 50,
         renderCell: ({ row, tabIndex }) => {
           // No response body means examples are not applicable
-          if (!row.hasResponseBody) return <span className="block w-full text-center text-muted-foreground/50 text-xs">na</span>;
+          if (!row.hasResponseBody) return <span className="block w-full text-center text-muted-foreground/70 text-xs">na</span>;
           // Has response body but no example yet
           if (!row.hasExample) return <span className="block w-full text-center text-muted-foreground">-</span>;
           return (
@@ -137,7 +137,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         minBreakpoint: 'md',
         resizable: true,
         width: 200,
-        renderCell: ({ row }) => <code className="truncate font-mono text-muted-foreground/80 text-xs">{row.id}</code>,
+        renderCell: ({ row }) => <code className="truncate font-mono text-muted-foreground text-xs">{row.id}</code>,
       },
       {
         key: 'summary',

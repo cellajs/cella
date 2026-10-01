@@ -24,7 +24,7 @@ export function LinksSection({ label, onClose }: LinksSectionProps) {
   return (
     <SidebarGroup>
       <div className="flex items-center gap-3 px-4 pr-1 pb-1">
-        <SidebarGroupLabel className="p-0 lowercase opacity-75">{label}</SidebarGroupLabel>
+        <SidebarGroupLabel className="p-0 text-muted-foreground lowercase">{label}</SidebarGroupLabel>
       </div>
       <SidebarGroupContent>
         <SidebarGroup className="flex flex-col gap-1 p-1 pt-0">

@@ -32,7 +32,7 @@ export function KeyRenderer({ keyName, showKeyQuotes, searchText, isObjectValue,
           'font-medium',
           theme.key,
           isMatch && theme.searchMatch,
-          isDictionaryKey ? 'text-foreground/40! italic' : openapiMode === 'schema' && !isObjectValue ? 'text-foreground/40!' : '',
+          isDictionaryKey ? 'text-muted-foreground/70! italic' : openapiMode === 'schema' && !isObjectValue ? 'text-muted-foreground/70!' : '',
         )}
         data-search-match={isMatch ? 'true' : undefined}
       >

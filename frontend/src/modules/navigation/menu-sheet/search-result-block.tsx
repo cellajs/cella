@@ -36,7 +36,7 @@ export function SearchResultBlock({ results, entityType, hideSeparator = false, 
           onClick={onToggleCollapsed}
         >
           {t(entityType)}
-          {collapsed && <span className="ml-3 opacity-70">{results.length}</span>}
+          {collapsed && <span className="ml-3 text-muted-foreground">{results.length}</span>}
           <span className="grow" />
           <ChevronDownIcon className={cn('size-4 transition-transform', !collapsed && 'rotate-180')} />
         </button>
