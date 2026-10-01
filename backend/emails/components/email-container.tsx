@@ -33,5 +33,3 @@ export const EmailContainer = ({
     </Body>
   </Html>
 );
-
-export const Template = EmailContainer;

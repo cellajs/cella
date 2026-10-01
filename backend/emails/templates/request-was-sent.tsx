@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 import type { requestTypeEnum } from '#/modules/requests/requests-db';
-import { EmailBody, EmailContainer, EmailFooter, EmailHeader, EmailLogo, EmailText, SafeHtml } from '../components';
+import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
 import { defineEmailTemplate } from '../types';
 
@@ -27,19 +27,7 @@ export const requestResponseEmail = defineEmailTemplate<RequestResponseStatic>()
     };
   },
   component({ subject, headerHtml, bodyHtml, supportText }) {
-    return (
-      <EmailContainer previewText={subject}>
-        <EmailHeader headerText={<SafeHtml html={headerHtml} policy="inline" as="div" />} />
-        <EmailBody>
-          <EmailText>
-            <SafeHtml html={bodyHtml} policy="inline" />
-          </EmailText>
-        </EmailBody>
-
-        <EmailLogo />
-        <EmailFooter supportText={supportText} />
-      </EmailContainer>
-    );
+    return <EmailMessage previewText={subject} headerHtml={headerHtml} bodyHtml={bodyHtml} supportText={supportText} />;
   },
   preview: {
     statics: { type: 'contact', message: null },

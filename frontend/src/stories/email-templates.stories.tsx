@@ -8,7 +8,7 @@ interface EmailPreviewArgs {
   placeholders: boolean;
 }
 
-/** Renders backend-generated email HTML through Storybook's same-origin `/dev-emails` proxy. */
+/** Renders backend-generated email HTML through Storybook's same-origin `/api/dev/emails` proxy (`.storybook/main.ts`). */
 const EmailPreview = ({ name, lng, placeholders }: EmailPreviewArgs) => {
   const [html, setHtml] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -18,7 +18,7 @@ const EmailPreview = ({ name, lng, placeholders }: EmailPreviewArgs) => {
     setHtml(null);
     setError(null);
 
-    const url = `/dev-emails/${name}?lng=${lng}&placeholders=${placeholders ? '1' : '0'}`;
+    const url = `/api/dev/emails/${name}?lng=${lng}&placeholders=${placeholders ? '1' : '0'}`;
     fetch(url)
       .then(async (res) => {
         if (!res.ok) throw new Error(`Backend responded ${res.status}`);
@@ -72,9 +72,12 @@ type Story = StoryObj<typeof meta>;
 /** One story per backend email template. The `name` is fixed; lng/placeholders stay as controls. */
 const makeEmailStory = (name: string): Story => ({ args: { name } });
 
+export const Welcome = makeEmailStory('welcome');
 export const AccountSecurity = makeEmailStory('account-security');
+export const AccountExists = makeEmailStory('account-exists');
 export const OauthVerification = makeEmailStory('oauth-verification');
 export const MagicLink = makeEmailStory('magic-link');
+export const StepUp = makeEmailStory('step-up');
 export const SystemInvite = makeEmailStory('system-invite');
 export const MemberInvite = makeEmailStory('member-invite');
 export const MemberInviteWithToken = makeEmailStory('member-invite-with-token');
@@ -82,3 +85,5 @@ export const MemberAdded = makeEmailStory('member-added');
 export const Newsletter = makeEmailStory('newsletter');
 export const RequestWasSent = makeEmailStory('request-was-sent');
 export const RequestWasSentAdmin = makeEmailStory('request-was-sent-admin');
+export const Mention = makeEmailStory('mention');
+export const Digest = makeEmailStory('digest');

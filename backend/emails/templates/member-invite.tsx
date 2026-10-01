@@ -1,23 +1,10 @@
 import { appConfig, type EntityRole, hierarchy } from 'shared';
-import {
-  EmailAvatar,
-  EmailBody,
-  EmailButton,
-  EmailContainer,
-  EmailFooter,
-  EmailHeader,
-  EmailLogo,
-  EmailText,
-  SafeHtml,
-} from '../components';
-import { Column, Row } from '../components/primitives';
+import { EmailMessage } from '../components';
 import { i18n, plainText } from '../i18n';
-import { avatarRowStyle, greetingStyle } from '../styles';
 import { defineEmailTemplate, type EmailRecipient, plainParam } from '../types';
 
 interface MemberInviteStatic {
   senderName: string;
-  senderThumbnailUrl: string | null;
   entityName: string;
   role: EntityRole;
 }
@@ -28,7 +15,7 @@ const appName = appConfig.name;
 
 /** For existing users; new users get member-invite-with-token. */
 export const memberInviteEmail = defineEmailTemplate<MemberInviteStatic, MemberInviteRecipient>()({
-  translate(lng, { senderName, senderThumbnailUrl, entityName, role }, param = plainParam) {
+  translate(lng, { senderName, entityName, role }, param = plainParam) {
     return {
       subject: i18n.t('backend:email.member_invite.subject', { lng, entityName, ...plainText }),
       previewText: i18n.t('backend:email.member_invite.preview', { lng, entityName, appName, ...plainText }),
@@ -38,52 +25,23 @@ export const memberInviteEmail = defineEmailTemplate<MemberInviteStatic, MemberI
       buttonText: i18n.t('c:accept', { lng }),
       supportText: i18n.t('backend:email.support_email', { lng }),
       senderName,
-      senderThumbnailUrl,
     };
   },
-  component({
-    previewText,
-    headerHtml,
-    hiText,
-    bodyHtml,
-    buttonText,
-    supportText,
-    senderName,
-    name,
-    memberInviteLink,
-  }) {
+  component({ previewText, headerHtml, hiText, bodyHtml, buttonText, supportText, senderName, memberInviteLink }) {
     return (
-      <EmailContainer previewText={previewText}>
-        {senderName && (
-          <Row style={avatarRowStyle}>
-            <Column align="center">
-              <EmailAvatar name={senderName} type="user" />
-            </Column>
-          </Row>
-        )}
-
-        <EmailHeader headerText={<SafeHtml html={headerHtml} policy="inline" as="div" />} />
-        <EmailBody>
-          {name && <EmailText style={greetingStyle}>{hiText}</EmailText>}
-          <EmailText>
-            <SafeHtml html={bodyHtml} policy="inline" />
-          </EmailText>
-
-          <EmailButton ButtonText={buttonText} href={memberInviteLink} />
-        </EmailBody>
-
-        <EmailLogo />
-        <EmailFooter supportText={supportText} />
-      </EmailContainer>
+      <EmailMessage
+        previewText={previewText}
+        avatarName={senderName}
+        headerHtml={headerHtml}
+        greeting={hiText}
+        bodyHtml={bodyHtml}
+        action={{ label: buttonText, href: memberInviteLink }}
+        supportText={supportText}
+      />
     );
   },
   preview: {
-    statics: {
-      senderName: 'John',
-      senderThumbnailUrl: null,
-      entityName: 'Acme',
-      role: hierarchy.getLeastPrivilegedRole('organization'),
-    },
+    statics: { senderName: 'John', entityName: 'Acme', role: hierarchy.getLeastPrivilegedRole('organization') },
     recipient: { name: 'Emily', memberInviteLink: 'https://example.com/invite' },
   },
 });

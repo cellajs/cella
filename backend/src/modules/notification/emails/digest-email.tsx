@@ -1,15 +1,5 @@
-import {
-  EmailBody,
-  EmailContainer,
-  EmailFooter,
-  EmailHeader,
-  EmailLogo,
-  EmailText,
-  SafeHtml,
-} from '../../../../emails/components';
-import { Link } from '../../../../emails/components/primitives';
+import { EmailLayout, EmailText, SafeHtml } from '../../../../emails/components';
 import { i18n } from '../../../../emails/i18n';
-import { smallTextStyle } from '../../../../emails/styles';
 import { defineEmailTemplate, type EmailRecipient } from '../../../../emails/types';
 
 interface DigestStatic {
@@ -40,23 +30,16 @@ export const digestEmail = defineEmailTemplate<DigestStatic, DigestRecipient>()(
   },
   component({ previewText, headerHtml, introText, unsubscribeText, supportText, sectionsHtml, unsubscribeLink }) {
     return (
-      <EmailContainer previewText={previewText} containerStyle={{ maxWidth: '40rem' }}>
-        <EmailHeader headerText={<SafeHtml html={headerHtml} policy="inline" as="div" />} />
-        <EmailBody>
-          <EmailText>{introText}</EmailText>
-
-          <SafeHtml html={sectionsHtml} policy="richText" as="div" />
-
-          <div style={{ textAlign: 'center', marginTop: '2rem' }}>
-            <Link style={smallTextStyle} href={unsubscribeLink}>
-              {unsubscribeText}
-            </Link>
-          </div>
-        </EmailBody>
-
-        <EmailLogo />
-        <EmailFooter supportText={supportText} />
-      </EmailContainer>
+      <EmailLayout
+        previewText={previewText}
+        headerHtml={headerHtml}
+        wide
+        unsubscribe={{ label: unsubscribeText, href: unsubscribeLink }}
+        supportText={supportText}
+      >
+        <EmailText>{introText}</EmailText>
+        <SafeHtml html={sectionsHtml} policy="richText" as="div" />
+      </EmailLayout>
     );
   },
   htmlParams: { sectionsHtml: 'richText' },
