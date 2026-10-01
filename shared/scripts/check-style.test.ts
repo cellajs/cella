@@ -149,3 +149,101 @@ describe('app-owned prose exclusions', () => {
     }
   });
 });
+
+describe('tailwind classes', () => {
+  const view = [
+    "import { cva } from 'class-variance-authority';",
+    "import { cn, tw } from './cn';",
+    '',
+    "const badge = cva('inline-flex bad-base', {",
+    "  variants: { size: { sm: 'h-8 bad-variant', lg: ['h-10', 'bad-array'] } },",
+    "  compoundVariants: [{ size: 'sm', class: 'bad-compound' }],",
+    "  defaultVariants: { size: 'sm' },",
+    '});',
+    'const cardClass = tw`rounded bad-tagged`;',
+    "const edges = ['top', 'bottom'];",
+    '',
+    'function rowClass(index: number) {',
+    "  if (index === 0) return 'bad-return';",
+    "  return edges.includes('top') ? 'p-1' : 'p-2';",
+    '}',
+    '',
+    "export const meta = { argTypes: { className: { control: 'text' } }, args: { className: 'bad-arg' } };",
+    '',
+    "export function View({ open, size, className = 'bad-default' }: { open: boolean; size: string; className?: string }) {",
+    '  return (',
+    '    <div className="flex flew-row group/tile soft-text hover:soft-text plain-marker sm:plain-marker toggled in-[.selected]:block">',
+    "      <p className={cn('p-2', { hidden: open, 'bad-key': size === 'not-a-class' }, open && 'bad-and', badge({ size: 'sm' }), className)} />",
+    // biome-ignore lint/suspicious/noTemplateCurlyInString: the fixture line is TSX source holding a template literal
+    "      <p className={`text-${size} px-2 ${open ? 'bad-nested' : ''} row-${open ? 'even' : 'odd'} ${cardClass} ${rowClass(1)}`} />",
+    '      <span className="selected" />',
+    '    </div>',
+    '  );',
+    '}',
+    '',
+    'export function toggle(element: HTMLElement) {',
+    "  element.classList.toggle('toggled');",
+    '}',
+  ].join('\n');
+
+  function tailwindRepo(stylesheet: string): string {
+    const root = makeRepo({
+      'frontend/package.json': '{ "name": "frontend", "private": true }\n',
+      'frontend/src/styling/app.css': stylesheet,
+      'frontend/src/view.tsx': view,
+      'frontend/src/view.test.tsx': 'export const probe = <div className="made-up" />;\n',
+    });
+    symlinkSync(join(scripts, '../../frontend/node_modules'), join(root, 'frontend/node_modules'));
+    return root;
+  }
+
+  const stylesheet = lines("@import 'tailwindcss';", '@utility soft-text {', '  color: red;', '}', '.plain-marker {', '  color: red;', '}');
+
+  const deadMessage =
+    'Tailwind compiles no CSS for it and no stylesheet or script selects it; fix the name, or add a marker class to markerClasses in shared/scripts/check-tailwind-classes.ts';
+  const dead = (at: string, className: string) => `  frontend/src/view.tsx:${at} [tailwind-class] "${className}": ${deadMessage}`;
+
+  it('reports class names that compile to no CSS and that no stylesheet, script or selector uses', () => {
+    const root = tailwindRepo(stylesheet);
+    try {
+      expect(run(root)).toEqual({
+        status: 1,
+        stdout: '',
+        stderr: lines(
+          '[style] 13 finding(s):',
+          dead('4:32', 'bad-base'),
+          dead('5:32', 'bad-variant'),
+          dead('5:60', 'bad-array'),
+          dead('6:44', 'bad-compound'),
+          dead('9:30', 'bad-tagged'),
+          dead('13:28', 'bad-return'),
+          dead('17:89', 'bad-arg'),
+          dead('19:49', 'bad-default'),
+          dead('21:26', 'flew-row'),
+          '  frontend/src/view.tsx:21:85 [tailwind-class] "sm:plain-marker": plain-marker is a plain CSS class, so variants and ! do not apply to it; define it with @utility',
+          dead('22:48', 'bad-key'),
+          dead('22:93', 'bad-and'),
+          dead('23:50', 'bad-nested'),
+        ),
+      });
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('reports a stylesheet Tailwind cannot load on the entry file', () => {
+    const root = tailwindRepo(`${stylesheet}.box {\n  @apply p-2 bad-apply;\n}\n`);
+    try {
+      expect(run(root, 'frontend/src/styling/app.css')).toEqual({
+        status: 1,
+        stdout: '',
+        stderr: lines(
+          '[style] 1 finding(s):',
+          '  frontend/src/styling/app.css [tailwind-class] Tailwind cannot load this stylesheet: Cannot apply unknown utility class `bad-apply`',
+        ),
+      });
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
