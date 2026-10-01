@@ -1,4 +1,12 @@
+import { testDatabaseName, withDatabase } from 'shared/test-db';
 import { vi } from 'vitest';
+
+// Each worker runs on its own database (global-setup.ts prepares one per worker), so test files run in parallel without
+// seeing each other's rows. The config's URLs name the shared database; swapped before any app module reads the env.
+for (const key of ['DATABASE_URL', 'DATABASE_ADMIN_URL'] as const) {
+  const url = process.env[key];
+  if (url) process.env[key] = withDatabase(url, testDatabaseName);
+}
 
 // Every limiter passes every request; a test of a real limiter calls `vi.unmock('#/middlewares/rate-limiter/core')`.
 vi.mock('#/middlewares/rate-limiter/core', async () => (await import('./test-utils')).rateLimiterCoreMock());

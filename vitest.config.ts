@@ -31,6 +31,8 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       reportsDirectory: '.coverage',
+      // Keep the last report until a run replaces it, so an aborted run leaves `pnpm cella stats` its previous numbers.
+      clean: false,
       reportOnFailure: true,
       reporter: coverageReporters,
       include: [

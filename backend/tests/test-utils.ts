@@ -12,14 +12,56 @@ type OAuthProvider = 'github' | 'google' | 'microsoft';
 
 type ConfigOverride = { enabledAuthStrategies?: AuthStrategy[]; enabledOAuthProviders?: OAuthProvider[]; selfRegistration?: boolean };
 
-/** TRUNCATE CASCADE on the admin connection (runtime_role holds no TRUNCATE), plus a mock-enforcer reset so unique values do not conflict across tests. */
+/** Empties the auth tables and everything that references them, plus a mock-enforcer reset so unique values do not conflict across tests. */
 export async function clearDatabase() {
   resetUserMockEnforcers();
   resetOrganizationMockEnforcers();
 
-  await getAdminDb('test cleanup').execute(sql`TRUNCATE TABLE 
-    sessions, tokens, passkeys, identities, emails, users, api_keys, service_accounts, actors, oidc_payloads, oauth_clients
-    CASCADE`);
+  await emptyTables([
+    'sessions',
+    'tokens',
+    'passkeys',
+    'identities',
+    'emails',
+    'users',
+    'api_keys',
+    'service_accounts',
+    'actors',
+    'oidc_payloads',
+    'oauth_clients',
+  ]);
+}
+
+/** Per root list: the roots and every table a chain of foreign keys ties to them, the set `TRUNCATE ... CASCADE` reaches. */
+const cascadeSets = new Map<string, string[]>();
+
+/**
+ * Empties `roots` and every table referencing them, on the admin connection (runtime_role may not). Deleting a test's
+ * few rows takes ~10ms; TRUNCATE gives each of the ~25 tables new files and takes ~400ms, after every test.
+ * `replica` skips row triggers and foreign key checks, as TRUNCATE does.
+ */
+export async function emptyTables(roots: string[]) {
+  const db = getAdminDb('test cleanup');
+  const key = roots.join();
+  let tables = cascadeSets.get(key);
+  if (!tables) {
+    const { rows } = await db.execute<{ name: string }>(sql`
+      WITH RECURSIVE cascade_set(oid) AS (
+        SELECT oid FROM pg_class WHERE relnamespace = 'public'::regnamespace AND relname IN ${roots}
+        UNION
+        SELECT con.conrelid FROM pg_constraint con JOIN cascade_set ON con.confrelid = cascade_set.oid WHERE con.contype = 'f'
+      )
+      SELECT DISTINCT format('%I.%I', n.nspname, c.relname) AS name
+      FROM cascade_set JOIN pg_class c ON c.oid = cascade_set.oid JOIN pg_namespace n ON n.oid = c.relnamespace
+      WHERE NOT c.relispartition`);
+    tables = rows.map((row) => row.name);
+    cascadeSets.set(key, tables);
+  }
+  const statements = tables.map((table) => `DELETE FROM ${table};`).join('\n');
+  await db.transaction(async (tx) => {
+    await tx.execute(sql`SET LOCAL session_replication_role = replica`);
+    await tx.execute(sql.raw(statements));
+  });
 }
 
 /** Vitest hoists vi.mock(), so call at top level: vi.mock('#/middlewares/rate-limiter/core', rateLimiterCoreMock) */

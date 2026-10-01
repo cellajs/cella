@@ -171,7 +171,7 @@ describe('auth_invalidate listener', () => {
   it('must not keep an entry cached while the listening connection was down via the missed messages', async () => {
     // The listening connection's last statement is always its LISTEN, which also serves as its heartbeat.
     await adminDb.execute(
-      sql`select pg_terminate_backend(pid) from pg_stat_activity where query = 'LISTEN auth_invalidate' and pid <> pg_backend_pid()`,
+      sql`select pg_terminate_backend(pid) from pg_stat_activity where query = 'LISTEN auth_invalidate' and datname = current_database() and pid <> pg_backend_pid()`,
     );
     // Cached in the gap: whatever invalidation it missed is gone, so the reconnect drops it.
     cacheUser('in-gap');
@@ -188,7 +188,7 @@ describe('auth_invalidate listener', () => {
 
   it("must not keep a service account's cached key or client while the listening connection was down", async () => {
     await adminDb.execute(
-      sql`select pg_terminate_backend(pid) from pg_stat_activity where query = 'LISTEN auth_invalidate' and pid <> pg_backend_pid()`,
+      sql`select pg_terminate_backend(pid) from pg_stat_activity where query = 'LISTEN auth_invalidate' and datname = current_database() and pid <> pg_backend_pid()`,
     );
     cacheServiceAccount('in-gap-account');
 

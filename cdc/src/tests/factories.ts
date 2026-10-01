@@ -29,9 +29,12 @@ export const tableMetaOf = (kind: TableMeta['kind'], type: string): TableMeta =>
 const DEFAULT_ENTITY: NonNullable<InsertActivityModel['entityType']> = 'attachment';
 const DEFAULT_TABLE = 'attachments';
 
+/** The seeded mock is the same on every call, and reseeding faker per call made a 50,000-event test take 11s, so it is built once. */
+let cdcActivityDefaults: InsertActivityModel | undefined;
+
 /** Activity with explicit test-friendly defaults, based on the backend mockActivity shape. */
 export function mockCdcActivity(overrides: Partial<InsertActivityModel> = {}): InsertActivityModel {
-  return mockActivity('cdc:default', {
+  cdcActivityDefaults ??= mockActivity('cdc:default', {
     action: 'create',
     entityType: DEFAULT_ENTITY,
     resourceType: null,
@@ -42,8 +45,8 @@ export function mockCdcActivity(overrides: Partial<InsertActivityModel> = {}): I
     organizationId: 'org-1',
     changedFields: null,
     stx: null,
-    ...overrides,
   }) as InsertActivityModel;
+  return { ...cdcActivityDefaults, ...overrides };
 }
 
 /** ParseMessageResult fixture. */

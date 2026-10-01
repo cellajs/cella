@@ -35,7 +35,7 @@ const stateOf = async (userId: string) => {
 /** Whether some query waits for a lock another transaction holds. */
 const aQueryWaitsForALock = async () => {
   const result = await getAdminDb('mfa factor race test').execute<{ waiting: number }>(
-    sql`select count(*)::int as waiting from pg_locks where not granted`,
+    sql`select count(*)::int as waiting from pg_locks join pg_stat_activity using (pid) where not granted and datname = current_database()`,
   );
   return result.rows[0].waiting > 0;
 };
