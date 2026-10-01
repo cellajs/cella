@@ -1,6 +1,6 @@
+import { useRender } from '@base-ui/react/use-render';
 import { ChevronRightIcon, EllipsisIcon } from 'lucide-react';
-import React from 'react';
-import { Slot } from '~/modules/ui/slot';
+import type React from 'react';
 import { cn } from '~/utils/cn';
 
 function Breadcrumb({ ...props }: React.ComponentProps<'nav'>) {
@@ -21,18 +21,16 @@ function BreadcrumbItem({ className, ...props }: React.ComponentProps<'li'>) {
   return <li data-slot="breadcrumb-item" className={cn('inline-flex items-center gap-1.5', className)} {...props} />;
 }
 
-function BreadcrumbLink({ render, className, children, ...props }: React.ComponentProps<'a'> & { render?: React.ReactElement }) {
-  const computedProps = {
-    'data-slot': 'breadcrumb-link',
-    className: cn('focus-effect rounded-sm ring-offset-0 transition-colors hover:text-foreground', className),
-    ...props,
-  };
-
-  if (render) {
-    return <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot>;
-  }
-
-  return <a {...computedProps}>{children}</a>;
+function BreadcrumbLink({ render, className, ...props }: useRender.ComponentProps<'a'>) {
+  return useRender({
+    defaultTagName: 'a',
+    render,
+    props: {
+      'data-slot': 'breadcrumb-link',
+      className: cn('focus-effect rounded-sm ring-offset-0 transition-colors hover:text-foreground', className),
+      ...props,
+    },
+  });
 }
 
 function BreadcrumbPage({ className, ...props }: React.ComponentProps<'span'>) {

@@ -1,7 +1,7 @@
+import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
-import React from 'react';
+import type React from 'react';
 import { Separator } from '~/modules/ui/separator';
-import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';
 
 export const buttonGroupVariants = cva(
@@ -29,20 +29,18 @@ export function ButtonGroup({ className, orientation, ...props }: React.Componen
   );
 }
 
-export function ButtonGroupText({ className, render, children, ...props }: React.ComponentProps<'div'> & { render?: React.ReactElement }) {
-  const computedProps = {
-    className: cn(
-      "flex items-center gap-2 rounded-md border bg-muted px-4 font-medium text-sm shadow-xs [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
-      className,
-    ),
-    ...props,
-  };
-
-  if (render) {
-    return <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot>;
-  }
-
-  return <div {...computedProps}>{children}</div>;
+export function ButtonGroupText({ className, render, ...props }: useRender.ComponentProps<'div'>) {
+  return useRender({
+    defaultTagName: 'div',
+    render,
+    props: {
+      className: cn(
+        "flex items-center gap-2 rounded-md border bg-muted px-4 font-medium text-sm shadow-xs [&_svg:not([class*='size-'])]:size-4 [&_svg]:pointer-events-none",
+        className,
+      ),
+      ...props,
+    },
+  });
 }
 
 export function ButtonGroupSeparator({ className, orientation = 'vertical', ...props }: React.ComponentProps<typeof Separator>) {

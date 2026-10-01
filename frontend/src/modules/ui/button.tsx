@@ -1,11 +1,11 @@
+import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { t } from 'i18next';
 import { LoaderCircleIcon, TriangleAlertIcon } from 'lucide-react';
-import * as React from 'react';
+import type * as React from 'react';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { TooltipButton } from '~/modules/common/tooltip-button';
-import { Slot } from '~/modules/ui/slot';
 import { cn } from '~/utils/cn';
 
 export const buttonVariants = cva(
@@ -67,7 +67,7 @@ export const buttonVariants = cva(
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof buttonVariants> {
   loading?: boolean;
-  render?: React.ReactElement;
+  render?: useRender.RenderProp;
 }
 
 /** `loading` disables the button and overlays a spinner on its hidden content, so the width stays put. Native buttons default to `type="button"`. */
@@ -82,14 +82,6 @@ export function Button({
   children,
   ...props
 }: React.ComponentProps<'button'> & ButtonProps) {
-  const computedProps = {
-    'data-slot': 'button',
-    className: cn(buttonVariants({ variant, soft, size, className })),
-    disabled: disabled || loading,
-    'aria-busy': loading || undefined,
-    ...props,
-  };
-
   const content = loading ? (
     <span className="relative inline-flex items-center justify-center gap-[inherit]">
       <span className="invisible inline-flex items-center gap-[inherit]">{children}</span>
@@ -99,15 +91,20 @@ export function Button({
     children
   );
 
-  if (render) {
-    return <Slot {...computedProps}>{React.cloneElement(render, undefined, content)}</Slot>;
-  }
-
-  return (
-    <button type="button" {...computedProps}>
-      {content}
-    </button>
-  );
+  return useRender({
+    defaultTagName: 'button',
+    render,
+    props: {
+      // A `render` element such as a Link keeps its own semantics, so only the native button gets a type.
+      ...(render ? {} : { type: 'button' }),
+      'data-slot': 'button',
+      className: cn(buttonVariants({ variant, soft, size, className })),
+      disabled: disabled || loading,
+      'aria-busy': loading || undefined,
+      ...props,
+      children: content,
+    },
+  });
 }
 
 type SubmitButtonProps = Omit<ButtonProps, 'type'> & { allowOfflineDelete?: boolean; icon?: React.ReactNode };

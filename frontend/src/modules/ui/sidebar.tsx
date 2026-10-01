@@ -1,13 +1,13 @@
+import { useRender } from '@base-ui/react/use-render';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { PanelLeftIcon } from 'lucide-react';
-import * as React from 'react';
+import type * as React from 'react';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
 import { Separator } from '~/modules/ui/separator';
 import { Skeleton } from '~/modules/ui/skeleton';
-import { Slot } from '~/modules/ui/slot';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '~/modules/ui/tooltip';
 import { cn } from '~/utils/cn';
 
@@ -221,43 +221,39 @@ function SidebarGroup({ className, ...props }: React.ComponentProps<'div'>) {
   return <div data-slot="sidebar-group" data-sidebar="group" className={cn('relative flex w-full min-w-0 flex-col p-2', className)} {...props} />;
 }
 
-function SidebarGroupLabel({ className, render, children, ...props }: React.ComponentProps<'div'> & { render?: React.ReactElement }) {
-  const computedProps = {
-    'data-slot': 'sidebar-group-label',
-    'data-sidebar': 'group-label',
-    className: cn(
-      'linear flex h-8 shrink-0 items-center rounded-md px-2 font-medium text-sidebar-foreground/70 text-xs outline-hidden ring-sidebar-ring transition-[margin,opacity] duration-200 focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
-      'group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0',
-      className,
-    ),
-    ...props,
-  };
-
-  if (render) {
-    return <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot>;
-  }
-
-  return <div {...computedProps}>{children}</div>;
+function SidebarGroupLabel({ className, render, ...props }: useRender.ComponentProps<'div'>) {
+  return useRender({
+    defaultTagName: 'div',
+    render,
+    props: {
+      'data-slot': 'sidebar-group-label',
+      'data-sidebar': 'group-label',
+      className: cn(
+        'linear flex h-8 shrink-0 items-center rounded-md px-2 font-medium text-sidebar-foreground/70 text-xs outline-hidden ring-sidebar-ring transition-[margin,opacity] duration-200 focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        'group-data-[collapsible=icon]:-mt-8 group-data-[collapsible=icon]:opacity-0',
+        className,
+      ),
+      ...props,
+    },
+  });
 }
 
-export function SidebarGroupAction({ className, render, children, ...props }: React.ComponentProps<'button'> & { render?: React.ReactElement }) {
-  const computedProps = {
-    'data-slot': 'sidebar-group-action',
-    'data-sidebar': 'group-action',
-    className: cn(
-      'absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
-      'after:absolute after:-inset-2 md:after:hidden',
-      'group-data-[collapsible=icon]:hidden',
-      className,
-    ),
-    ...props,
-  };
-
-  if (render) {
-    return <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot>;
-  }
-
-  return <button {...computedProps}>{children}</button>;
+export function SidebarGroupAction({ className, render, ...props }: useRender.ComponentProps<'button'>) {
+  return useRender({
+    defaultTagName: 'button',
+    render,
+    props: {
+      'data-slot': 'sidebar-group-action',
+      'data-sidebar': 'group-action',
+      className: cn(
+        'absolute top-3.5 right-3 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0',
+        'after:absolute after:-inset-2 md:after:hidden',
+        'group-data-[collapsible=icon]:hidden',
+        className,
+      ),
+      ...props,
+    },
+  });
 }
 
 function SidebarGroupContent({ className, ...props }: React.ComponentProps<'div'>) {
@@ -294,29 +290,25 @@ function SidebarMenuButton({
   size = 'default',
   tooltip,
   className,
-  children,
   ...props
-}: React.ComponentProps<'button'> & {
-  render?: React.ReactElement;
+}: useRender.ComponentProps<'button'> & {
   isActive?: boolean;
   tooltip?: string | React.ComponentProps<typeof TooltipContent>;
 } & VariantProps<typeof sidebarMenuButtonVariants>) {
   const { isMobile, state } = useSidebar();
 
-  const computedProps = {
-    'data-slot': 'sidebar-menu-button',
-    'data-sidebar': 'menu-button',
-    'data-size': size,
-    'data-active': isActive,
-    className: cn(sidebarMenuButtonVariants({ variant, size }), className),
-    ...props,
-  };
-
-  const button = render ? (
-    <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot>
-  ) : (
-    <button {...computedProps}>{children}</button>
-  );
+  const button = useRender({
+    defaultTagName: 'button',
+    render,
+    props: {
+      'data-slot': 'sidebar-menu-button',
+      'data-sidebar': 'menu-button',
+      'data-size': size,
+      'data-active': isActive,
+      className: cn(sidebarMenuButtonVariants({ variant, size }), className),
+      ...props,
+    },
+  });
 
   if (!tooltip) {
     return button;
@@ -338,27 +330,28 @@ export function SidebarMenuAction({
   className,
   render,
   showOnHover = false,
-  children,
   ...props
-}: React.ComponentProps<'button'> & { render?: React.ReactElement; showOnHover?: boolean }) {
-  const computedProps = {
-    'data-slot': 'sidebar-menu-action',
-    'data-sidebar': 'menu-action',
-    className: cn(
-      'absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0',
-      'after:absolute after:-inset-2 md:after:hidden',
-      'peer-data-[size=sm]/menu-button:top-1',
-      'peer-data-[size=default]/menu-button:top-1.5',
-      'peer-data-[size=lg]/menu-button:top-2.5',
-      'group-data-[collapsible=icon]:hidden',
-      showOnHover &&
-        'group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-popup-open:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0',
-      className,
-    ),
-    ...props,
-  };
-
-  return render ? <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot> : <button {...computedProps}>{children}</button>;
+}: useRender.ComponentProps<'button'> & { showOnHover?: boolean }) {
+  return useRender({
+    defaultTagName: 'button',
+    render,
+    props: {
+      'data-slot': 'sidebar-menu-action',
+      'data-sidebar': 'menu-action',
+      className: cn(
+        'absolute top-1.5 right-1 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-hidden ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0',
+        'after:absolute after:-inset-2 md:after:hidden',
+        'peer-data-[size=sm]/menu-button:top-1',
+        'peer-data-[size=default]/menu-button:top-1.5',
+        'peer-data-[size=lg]/menu-button:top-2.5',
+        'group-data-[collapsible=icon]:hidden',
+        showOnHover &&
+          'group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-popup-open:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0',
+        className,
+      ),
+      ...props,
+    },
+  });
 }
 
 export function SidebarMenuBadge({ className, ...props }: React.ComponentProps<'div'>) {
@@ -424,30 +417,27 @@ export function SidebarMenuSubButton({
   size = 'md',
   isActive = false,
   className,
-  children,
   ...props
-}: React.ComponentProps<'a'> & { render?: React.ReactElement; size?: 'sm' | 'md'; isActive?: boolean }) {
-  const computedProps = {
-    'data-slot': 'sidebar-menu-sub-button',
-    'data-sidebar': 'menu-sub-button',
-    'data-size': size,
-    'data-active': isActive,
-    className: cn(
-      'flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground outline-hidden ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground',
-      'data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground',
-      size === 'sm' && 'text-xs',
-      size === 'md' && 'text-sm',
-      'group-data-[collapsible=icon]:hidden',
-      className,
-    ),
-    ...props,
-  };
-
-  if (render) {
-    return <Slot {...computedProps}>{React.cloneElement(render, undefined, children)}</Slot>;
-  }
-
-  return <a {...computedProps}>{children}</a>;
+}: useRender.ComponentProps<'a'> & { size?: 'sm' | 'md'; isActive?: boolean }) {
+  return useRender({
+    defaultTagName: 'a',
+    render,
+    props: {
+      'data-slot': 'sidebar-menu-sub-button',
+      'data-sidebar': 'menu-sub-button',
+      'data-size': size,
+      'data-active': isActive,
+      className: cn(
+        'flex h-7 min-w-0 -translate-x-px items-center gap-2 overflow-hidden rounded-md px-2 text-sidebar-foreground outline-hidden ring-sidebar-ring hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 [&>span:last-child]:truncate [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:text-sidebar-accent-foreground',
+        'data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground',
+        size === 'sm' && 'text-xs',
+        size === 'md' && 'text-sm',
+        'group-data-[collapsible=icon]:hidden',
+        className,
+      ),
+      ...props,
+    },
+  });
 }
 
 export {
