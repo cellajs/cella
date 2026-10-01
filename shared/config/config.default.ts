@@ -170,7 +170,7 @@ export const config = {
     pwa: true as boolean,
     /** Web Push delivery for notifications; also needs VAPID_* backend env vars. */
     push: false as boolean,
-    /** Shows the comment email preference in the account settings; no send path reads it yet. */
+    /** Comment and reply emails: shows the preference in the account settings and mails those who turn it on. */
     commentEmail: false as boolean,
     selfRegistration: false as boolean,
     waitlist: false as boolean,

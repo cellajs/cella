@@ -3,20 +3,23 @@ import { type GetNotificationsResponse, getNotifications, updateAttachment } fro
 import { appConfig } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { generateId } from 'shared/utils/entity-id';
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { generateServerHLC } from '#/core/stx';
 import { getSeedDb } from '#/db/db';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
-import { notificationsTable } from '#/modules/notification/notification-db';
+import { commentEmail } from '#/modules/notification/emails/comment-email';
+import { mentionEmail } from '#/modules/notification/emails/mention-email';
+import { notificationPreferencesTable, notificationsTable } from '#/modules/notification/notification-db';
+import { getNotificationSource } from '#/modules/notification/notification-sources';
 import { fanOutNotifications } from '#/modules/notification/operations/fan-out';
 import { sendPendingInstantEmails } from '#/modules/notification/operations/send-instant-emails';
 import { sendNotificationPush } from '#/modules/push/push-sender';
 import { emailsTable } from '#/modules/user/emails-db';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
-import { adminRole, defaultHeaders, memberRole } from './fixtures';
+import { adminRole, defaultHeaders, memberRole, overrideConfig } from './fixtures';
 import { createOrganizationAdminUser, createTestUser, mailsTo } from './helpers';
 import { cleanupEntityHierarchy, insertAttachmentRow, seedAttachmentHome } from './hierarchy-helpers';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './security/helpers';
@@ -212,7 +215,7 @@ describe('Attachment mentions (template notification source)', async () => {
   });
 
   it('fans out a mention to the inbox and mails it instantly, never to the actor', async () => {
-    // The fan-out reports whether it wrote a mention; only then does the listener run the instant email pass.
+    // The fan-out reports whether it wrote a row the instant pass mails; only then does the listener run the pass.
     expect(await fanOutNotifications(updatedEvent(member.id))).toBe(false);
     expect(await notificationsFor(member.id)).toEqual([]);
 
@@ -312,5 +315,155 @@ describe('Attachment mentions (template notification source)', async () => {
       .from(notificationsTable)
       .where(eq(notificationsTable.userId, unverified.id));
     expect(backlog.filter(({ emailedAt }) => emailedAt === null)).toHaveLength(0);
+  });
+
+  // The template emits no comment or reply rows (an app's `resolveRecipients` does), so these tests write the rows
+  // directly, or give the attachment source a recipient resolver for one test.
+  describe('comment emails', () => {
+    /** A second live subject, so the reply mail is not folded into the comment mail on `attachmentId`. */
+    const replySubjectId = generateId();
+
+    const rowOf = (type: 'mention' | 'comment' | 'reply', subjectId = attachmentId) => ({
+      userId: member.id,
+      actorId: tenant.user.id,
+      type,
+      entityType: 'attachment' as const,
+      subjectId,
+      contextId: subjectId,
+      channelId: tenant.organization.id,
+      channelType: 'organization' as const,
+      organizationId: tenant.organization.id,
+      tenantId: tenant.tenantId,
+      activityId: `act:${generateId()}`,
+    });
+
+    /** Rows for this test only: a row the pass leaves pending must not reach the next test's pass. */
+    const insertRows = async (...rows: ReturnType<typeof rowOf>[]) => {
+      const inserted = await db.insert(notificationsTable).values(rows).returning({ id: notificationsTable.id });
+      const ids = inserted.map(({ id }) => id);
+      onTestFinished(async () => {
+        await db.delete(notificationsTable).where(inArray(notificationsTable.id, ids));
+      });
+      return ids;
+    };
+
+    /** The given rows the instant pass has not taken; the digest still covers these. */
+    const unemailed = async (ids: string[]) =>
+      (
+        await db
+          .select({ id: notificationsTable.id, emailedAt: notificationsTable.emailedAt })
+          .from(notificationsTable)
+          .where(inArray(notificationsTable.id, ids))
+      ).filter(({ emailedAt }) => emailedAt === null);
+
+    const setCommentEmail = (commentEmail: boolean) =>
+      db
+        .insert(notificationPreferencesTable)
+        .values({ userId: member.id, commentEmail })
+        .onConflictDoUpdate({ target: notificationPreferencesTable.userId, set: { commentEmail } });
+
+    const offerCommentEmail = () => onTestFinished(overrideConfig(appConfig.has, { commentEmail: true }));
+
+    beforeAll(async () => {
+      const row = buildInsertableProduct(
+        'attachment',
+        {
+          id: replySubjectId,
+          tenantId: tenant.tenantId,
+          ...plan.channelIdColumns,
+          createdBy: tenant.user.id,
+          updatedBy: null,
+          deletedBy: null,
+        },
+        replySubjectId,
+      );
+      await insertAttachmentRow(row);
+    });
+
+    afterAll(async () => {
+      await db.delete(notificationsTable).where(eq(notificationsTable.subjectId, replySubjectId));
+      await db.delete(attachmentsTable).where(eq(attachmentsTable.id, replySubjectId));
+      await db.delete(notificationPreferencesTable).where(eq(notificationPreferencesTable.userId, member.id));
+    });
+
+    it('mails comment and reply rows when the app offers comment email and the recipient turned it on', async () => {
+      offerCommentEmail();
+      await setCommentEmail(true);
+      const ids = await insertRows(rowOf('comment'), rowOf('reply', replySubjectId));
+
+      await sendPendingInstantEmails(tenant.organization.id);
+
+      const mails = mailsTo(member.email);
+      expect(mails.map(({ template, statics }) => [template, statics.reply])).toEqual(
+        expect.arrayContaining([
+          [commentEmail, false],
+          [commentEmail, true],
+        ]),
+      );
+      expect(mails).toHaveLength(2);
+      for (const { recipient } of mails) expect(String(recipient.unsubscribeLink)).toContain('category=comment');
+      expect(await unemailed(ids)).toEqual([]);
+    });
+
+    it('leaves comment rows to the digest when the recipient keeps comment email off', async () => {
+      offerCommentEmail();
+      await setCommentEmail(false);
+      const ids = await insertRows(rowOf('comment'));
+
+      await sendPendingInstantEmails(tenant.organization.id);
+
+      expect(mailsTo(member.email)).toEqual([]);
+      expect(await unemailed(ids)).toHaveLength(1);
+    });
+
+    it('mails no comment row while the app does not offer comment email', async () => {
+      expect(appConfig.has.commentEmail).toBe(false);
+      await setCommentEmail(true);
+      const ids = await insertRows(rowOf('comment'));
+
+      await sendPendingInstantEmails(tenant.organization.id);
+
+      expect(mailsTo(member.email)).toEqual([]);
+      expect(await unemailed(ids)).toHaveLength(1);
+    });
+
+    it('mails a mention and a comment on the same subject once, as the mention', async () => {
+      offerCommentEmail();
+      await setCommentEmail(true);
+      const ids = await insertRows(rowOf('comment'), rowOf('mention'));
+
+      await sendPendingInstantEmails(tenant.organization.id);
+
+      expect(mailsTo(member.email).map(({ template }) => template)).toEqual([mentionEmail]);
+      // The mention mail settles the comment too, so the digest does not repeat it.
+      expect(await unemailed(ids)).toEqual([]);
+    });
+
+    it('reports a fan-out that wrote a comment row as mailable only while the app offers comment email', async () => {
+      const source = getNotificationSource('attachment');
+      if (!source) throw new Error('attachment notification source not registered');
+      source.declaration.resolveRecipients = async () => [{ userId: member.id, type: 'comment' }];
+      onTestFinished(() => {
+        delete source.declaration.resolveRecipients;
+      });
+      // A create event: an update skips recipients already notified about the subject.
+      const createdEvent = () =>
+        ({
+          ...updatedEvent(tenant.user.id),
+          id: `act:${generateId()}`,
+          type: 'attachment.created',
+          action: 'create',
+          subjectId: replySubjectId,
+        }) as ActivityEvent;
+
+      expect(await fanOutNotifications(createdEvent())).toBe(false);
+      offerCommentEmail();
+      expect(await fanOutNotifications(createdEvent())).toBe(true);
+      const written = await db
+        .select({ type: notificationsTable.type })
+        .from(notificationsTable)
+        .where(eq(notificationsTable.subjectId, replySubjectId));
+      expect(written).toEqual([{ type: 'comment' }, { type: 'comment' }]);
+    });
   });
 });

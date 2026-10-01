@@ -12,7 +12,7 @@ import {
   type NotificationInsert,
 } from '../notification-queries';
 import { getNotificationSource, loadSubjectRows, type NotificationSource } from '../notification-sources';
-import { type NotificationType, notificationTypes } from '../notification-types';
+import { instantEmailTypes, type NotificationType, notificationTypes } from '../notification-types';
 
 /** Types a muted membership silences. Mentions are deliberately absent: they are addressed to you. */
 const mutedTypes = new Set<NotificationType>(notificationTypes.filter((type) => type !== 'mention'));
@@ -25,7 +25,8 @@ type Candidate = { userId: string; type: NotificationType };
  * further recipients from the source's `resolveRecipients`.
  *
  * Runs post-commit off the activity bus, so the row is durable before anyone is told about it.
- * Resolves true when it wrote a mention row, the only kind the instant email pass mails.
+ * Resolves true when it wrote a row the instant email pass mails (`instantEmailTypes`): a mention,
+ * or a comment or reply while the app sets `has.commentEmail`.
  */
 export async function fanOutNotifications(event: ActivityEvent): Promise<boolean> {
   const entityType = event.entityType;
@@ -41,15 +42,15 @@ export async function fanOutNotifications(event: ActivityEvent): Promise<boolean
   // Batch events carry only permission columns, never `mentions`, so the rows are always re-read.
   const rows = await tenantReadById(tenantId, (tx) => loadSubjectRows(source, tx, subjectIds));
 
-  let mentioned = false;
+  let mailable = false;
   for (const row of rows) {
     try {
-      if (await fanOutRow(event, entityType, source, row, tenantId)) mentioned = true;
+      if (await fanOutRow(event, entityType, source, row, tenantId)) mailable = true;
     } catch (error) {
       log.error('Notification fan-out failed for row', { error, activityId, subjectId: row.id });
     }
   }
-  return mentioned;
+  return mailable;
 }
 
 /** Single events name one subject; batches list theirs in `batchRows`. */
@@ -63,7 +64,7 @@ function collectSubjectIds(event: ActivityEvent): string[] {
   return event.subjectId ? [event.subjectId] : [];
 }
 
-/** Writes one row's notifications; true when a mention was among them (a redelivered one too, so its email pass reruns). */
+/** Writes one row's notifications; true when one is mailable (a redelivered one too, so its email pass reruns). */
 async function fanOutRow(
   event: ActivityEvent,
   entityType: ProductEntityType,
@@ -119,12 +120,10 @@ async function fanOutRow(
 
   log.debug('Notifications created', { activityId: event.id, subjectId: row.id, recipientCount: allowed.length });
 
-  const mentioned = allowed.some((recipient) => recipient.type === 'mention');
-
   // Best-effort Web Push on top of the durable rows; the audience is already resolved, so this
   // costs one subscription lookup. Never awaited into the fan-out's failure path.
   if (isPushSendConfigured()) {
-    const primaryType = mentioned ? 'mention' : allowed[0].type;
+    const primaryType = allowed.some((recipient) => recipient.type === 'mention') ? 'mention' : allowed[0].type;
     const url = buildNotificationLink(appConfig.frontendUrl, {
       tenantId,
       organizationId,
@@ -139,7 +138,8 @@ async function fanOutRow(
       { t: 'notif', activityId: event.id as string, channelId: channel.id, type: primaryType, url },
     );
   }
-  return mentioned;
+  const mailed = instantEmailTypes();
+  return allowed.some((recipient) => mailed.includes(recipient.type));
 }
 
 /** Keep only recipients who may read the row, then drop muted-type candidates whose home membership is muted. */

@@ -28,7 +28,7 @@ export interface DigestContent {
  * Assemble one user's digest for the window `[since, now)`, with lines in the recipient's
  * language. The runner bounds `since` (run-digest.ts).
  *
- * Rows already emailed instantly are excluded, so a mention never arrives twice. So are rows of
+ * Rows already emailed instantly are excluded, so a mention or comment never arrives twice. So are rows of
  * an organization the user left and rows whose subject the user may no longer read: the digest
  * names only what the recipient can open.
  */
