@@ -6,7 +6,7 @@ import { env } from '#/env';
 import { baseLog } from '#/lib/pino';
 import { otel } from '#/lib/tracing';
 import { listenForAuthInvalidation } from '#/middlewares/guard/invalidation-listener';
-import '#/modules'; // composition root: registers every backend module (this worker mounts only mcp routes)
+import '#/modules'; // composition root: registers every backend module (this worker serves only mcp routes; tool calls run through `#/routes`)
 import { mcpHandlers } from '#/modules/mcp/mcp-handlers';
 import { createBaseApp } from '#/server';
 

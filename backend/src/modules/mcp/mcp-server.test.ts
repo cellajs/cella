@@ -1,23 +1,33 @@
-import { z } from '@hono/zod-openapi';
+import { OpenAPIHono, z } from '@hono/zod-openapi';
 import { sql } from 'drizzle-orm';
+import type { Context } from 'hono';
 import { describe, expect, it } from 'vitest';
-import type { OrgContext } from '#/core/context';
+import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { getMcpTools } from '#/core/mcp-tool-registry';
-import { createXRoute } from '#/core/x-routes';
+import { createXRoutes, json, xRoute } from '#/core/x-routes';
 import { baseDb } from '#/db/db';
 import { publicGuard } from '#/middlewares/guard';
-import '#/modules/attachment/attachment-routes';
-import { handleMcpMessage, InsufficientScopeError } from '#/modules/mcp/mcp-server';
-import { describeMcpTools } from '#/modules/mcp/tool-source';
+import { handleMcpMessage, InsufficientScopeError, type JsonRpcMessage } from '#/modules/mcp/mcp-server';
+import { buildMcpTools, type McpToolDescriptor } from '#/modules/mcp/mcp-tools';
+import { createBaseApp } from '#/server';
+import { defaultHook } from '#/utils/default-hook';
 
-/** Transport-level behavior needs no database: the registry is the attachment routes', the actor carries scopes. */
+/** Transport-level behavior needs no session: the tools are the mounted app's, the actor carries scopes. */
 const contextWith = (scopes: string[] | null) =>
-  ({ var: { actor: { kind: 'service', scopes } } }) as unknown as OrgContext;
+  ({
+    var: { actor: { kind: 'service', scopes }, tenantId: 'tenant-1', organizationId: 'org-1' },
+    req: { url: 'http://localhost/tenant-1/org-1/mcp', header: () => undefined },
+    env: undefined,
+  }) as unknown as Context<Env>;
+
+const { baseApp } = await import('#/routes');
+const appTools = buildMcpTools(baseApp);
+const handle = (scopes: string[] | null, message: JsonRpcMessage) =>
+  handleMcpMessage(contextWith(scopes), message, appTools);
 
 describe('mcp-server', () => {
   it('responds to initialize with protocol version, capabilities, and server info', async () => {
-    const res = await handleMcpMessage(contextWith(null), { jsonrpc: '2.0', id: 1, method: 'initialize' });
+    const res = await handle(null, { jsonrpc: '2.0', id: 1, method: 'initialize' });
     expect(res).not.toBeNull();
     const result = res?.result as Record<string, unknown>;
     expect(result.protocolVersion).toBeTypeOf('string');
@@ -26,7 +36,7 @@ describe('mcp-server', () => {
   });
 
   it('echoes the client requested protocol version on initialize', async () => {
-    const res = await handleMcpMessage(contextWith(null), {
+    const res = await handle(null, {
       jsonrpc: '2.0',
       id: 1,
       method: 'initialize',
@@ -37,12 +47,12 @@ describe('mcp-server', () => {
   });
 
   it('lists the attachment tools with scope, annotations and a strict input schema', async () => {
-    const res = await handleMcpMessage(contextWith(['attachment:read']), {
+    const res = await handle(['attachment:read'], {
       jsonrpc: '2.0',
       id: 2,
       method: 'tools/list',
     });
-    const { tools } = (res?.result ?? {}) as { tools: ReturnType<typeof describeMcpTools> };
+    const { tools } = (res?.result ?? {}) as { tools: McpToolDescriptor[] };
     const names = tools.map((tool) => tool.name);
     expect(names).toEqual(
       expect.arrayContaining([
@@ -72,7 +82,7 @@ describe('mcp-server', () => {
 
   it('refuses a call outside the token scopes with the scope to step up to', async () => {
     await expect(
-      handleMcpMessage(contextWith(['attachment:read']), {
+      handle(['attachment:read'], {
         jsonrpc: '2.0',
         id: 6,
         method: 'tools/call',
@@ -82,7 +92,7 @@ describe('mcp-server', () => {
   });
 
   it('rejects arguments the route schema refuses, before executing', async () => {
-    const res = await handleMcpMessage(contextWith(null), {
+    const res = await handle(null, {
       jsonrpc: '2.0',
       id: 7,
       method: 'tools/call',
@@ -92,46 +102,70 @@ describe('mcp-server', () => {
   });
 
   it('answers ping with an empty result', async () => {
-    const res = await handleMcpMessage(contextWith(null), { jsonrpc: '2.0', id: 3, method: 'ping' });
+    const res = await handle(null, { jsonrpc: '2.0', id: 3, method: 'ping' });
     expect(res?.result).toEqual({});
   });
 
   it('returns no response for notifications', async () => {
-    const res = await handleMcpMessage(contextWith(null), { jsonrpc: '2.0', method: 'notifications/initialized' });
+    const res = await handle(null, { jsonrpc: '2.0', method: 'notifications/initialized' });
     expect(res).toBeNull();
   });
 
   it('errors on unknown method (method not found)', async () => {
-    const res = await handleMcpMessage(contextWith(null), { jsonrpc: '2.0', id: 4, method: 'does/not-exist' });
+    const res = await handle(null, { jsonrpc: '2.0', id: 4, method: 'does/not-exist' });
     expect(res?.error?.code).toBe(-32601);
   });
 
   describe('a failing tool', () => {
-    /** Registers a read tool whose operation runs `execute`; each name registers once per run. */
-    const toolFailingWith = (operationId: string, execute: () => Promise<unknown>) =>
-      createXRoute({
-        operationId,
-        method: 'get',
-        path: `/${operationId}`,
-        xGuard: [publicGuard],
+    const failRoutes = createXRoutes(['things'], {
+      brokenQueryTool: xRoute({
         'x-tool': {
           enabled: true,
-          description: 'A tool whose operation fails',
+          description: 'Fails',
           approvalRequired: false,
           category: 'things',
           entity: 'attachment',
-          execute,
         },
-        responses: { 200: { description: 'ok' } },
-      });
-    const call = (name: string) =>
-      handleMcpMessage(contextWith(null), { jsonrpc: '2.0', id: 9, method: 'tools/call', params: { name } });
+        method: 'get',
+        path: '/broken',
+        xGuard: [publicGuard],
+        summary: 'Broken query',
+        responses: { 200: json('ok', z.any()) },
+      }),
+      missingThingTool: xRoute({
+        'x-tool': {
+          enabled: true,
+          description: 'Fails',
+          approvalRequired: false,
+          category: 'things',
+          entity: 'attachment',
+        },
+        method: 'get',
+        path: '/missing',
+        xGuard: [publicGuard],
+        summary: 'Missing thing',
+        responses: { 200: json('ok', z.any()) },
+      }),
+    });
+    const failing = new OpenAPIHono<Env>({ defaultHook });
+    failing.openapi(failRoutes.brokenQueryTool, async (ctx) =>
+      ctx.json(await baseDb.execute(sql`select * from mcp_missing_table where token = ${'param-secret-value'}`), 200),
+    );
+    failing.openapi(failRoutes.missingThingTool, () => {
+      throw new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
+    });
+    const app = createBaseApp();
+    app.route('/:tenantId/:organizationId/things', failing);
+    const failingTools = buildMcpTools(app);
 
-    it('must not leak SQL or query parameters to the model via a failing query', async () => {
-      toolFailingWith('brokenQueryTool', async () =>
-        baseDb.execute(sql`select * from mcp_missing_table where token = ${'param-secret-value'}`),
+    const call = (name: string) =>
+      handleMcpMessage(
+        contextWith(null),
+        { jsonrpc: '2.0', id: 9, method: 'tools/call', params: { name } },
+        failingTools,
       );
 
+    it('must not leak SQL or query parameters to the model via a failing query', async () => {
       const res = await call('brokenQueryTool');
       expect(res?.result).toEqual({
         content: [{ type: 'text', text: 'server_error: Internal server error' }],
@@ -141,11 +175,7 @@ describe('mcp-server', () => {
     });
 
     it('answers a domain failure with its type and message (positive control)', async () => {
-      toolFailingWith('missingThingTool', async () => {
-        throw new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
-      });
-
-      const { message } = new AppError(404, 'not_found', 'warn');
+      const { message } = new AppError(404, 'not_found', 'warn', { entityType: 'attachment' });
       expect(message).not.toBe('');
 
       const res = await call('missingThingTool');
@@ -154,72 +184,12 @@ describe('mcp-server', () => {
   });
 
   it('errors when calling a tool that is not registered', async () => {
-    const res = await handleMcpMessage(contextWith(null), {
+    const res = await handle(null, {
       jsonrpc: '2.0',
       id: 5,
       method: 'tools/call',
       params: { name: 'missing_tool', arguments: {} },
     });
     expect(res?.error?.code).toBe(-32602);
-  });
-});
-
-describe('createXRoute with x-tool', () => {
-  it('registers the route as a tool, derives the input from the request, and rebuilds the sync transaction', async () => {
-    const calls: unknown[] = [];
-    createXRoute({
-      operationId: 'renameThing',
-      method: 'put',
-      path: '/{id}',
-      xGuard: [publicGuard],
-      'x-tool': {
-        enabled: true,
-        description: 'Rename a thing',
-        approvalRequired: true,
-        category: 'things',
-        entity: 'attachment',
-        execute: async (_ctx, { params, body }) => {
-          calls.push({ id: params.id, name: body.ops.name, stx: body.stx });
-          return { ok: true };
-        },
-      },
-      request: {
-        params: z.object({ tenantId: z.string(), organizationId: z.string(), id: z.string() }),
-        body: {
-          content: {
-            'application/json': {
-              schema: z.object({
-                ops: z.object({ name: z.string() }),
-                stx: z.object({
-                  mutationId: z.string(),
-                  sourceId: z.string(),
-                  fieldTimestamps: z.record(z.string(), z.string()),
-                }),
-              }),
-            },
-          },
-        },
-      },
-      responses: { 200: { description: 'ok' } },
-    });
-    const tool = getMcpTools().find((candidate) => candidate.name === 'renameThing');
-    expect(tool).toMatchObject({
-      scope: 'attachment:write',
-      annotations: { readOnlyHint: false, idempotentHint: true },
-    });
-    expect(Object.keys((describeMcpTools([tool!])[0].inputSchema as { properties: object }).properties)).toEqual([
-      'id',
-      'ops',
-    ]);
-
-    // A sync transaction the model sends never reaches the route: the server's own replaces it.
-    await tool!.run(contextWith(null), {
-      id: 'thing-1',
-      ops: { name: 'renamed' },
-      stx: { mutationId: 'model', sourceId: 'model', fieldTimestamps: { name: '1:0001:model' } },
-    });
-    expect(calls[0]).toMatchObject({ id: 'thing-1', name: 'renamed', stx: { sourceId: 'server' } });
-    expect((calls[0] as { stx: { mutationId: string } }).stx.mutationId).not.toBe('model');
-    await expect(tool!.run(contextWith(null), { id: 'thing-1', ops: { name: 7 } })).rejects.toThrow();
   });
 });

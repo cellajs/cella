@@ -3,7 +3,6 @@ import type { MiddlewareHandler } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { registerMcpTool } from '#/core/mcp-tool-registry';
 import type { ServiceGate, StrategyGate, XMiddlewareHandler } from '#/core/openapi-extensions';
 import {
   collectExtensionMiddleware,
@@ -11,7 +10,6 @@ import {
   type ExtensionPropId,
   getExtensionPropIds,
   type XMiddlewareOptions,
-  type XToolMetadata,
 } from '#/core/openapi-extensions';
 import { errorResponseRefs } from '#/schemas/error-response-schemas';
 
@@ -66,7 +64,7 @@ const strategyLabel = (gate: StrategyGate): string => {
 type RouteOptions = Parameters<typeof createRoute>[0] & XMiddlewareOptions & { operationId: string };
 
 /** The route `createXRoute` returns: its own responses plus the error `$ref`s every route answers with. */
-type Route<P extends string, R extends Omit<RouteOptions, 'path' | 'x-tool' | 'request'> & { path: P }> = ReturnType<
+type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }> = ReturnType<
   typeof createRoute<P, Omit<R, ExtensionPropId> & { responses: typeof errorResponseRefs }>
 >;
 
@@ -75,14 +73,9 @@ type Route<P extends string, R extends Omit<RouteOptions, 'path' | 'x-tool' | 'r
  * The error responses (`errorResponseRefs`) are appended to every route's own.
  * @link https://github.com/honojs/middleware/tree/main/packages/zod-openapi#configure-middleware-for-each-endpoint
  */
-export const createXRoute = <
-  P extends string,
-  Req extends RouteOptions['request'],
-  R extends Omit<RouteOptions, 'path' | 'x-tool' | 'request'> & { path: P },
->(
-  // `x-tool.execute` is typed from this route's own `request`, so an operation receives the request parts it expects.
-  config: R & { request?: Req; 'x-tool'?: XToolMetadata<Req> },
-): Route<P, R & { request?: Req }> => {
+export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>(
+  config: R,
+): Route<P, R> => {
   const extensionMiddleware = collectExtensionMiddleware(config);
   const existing = config.middleware
     ? Array.isArray(config.middleware)
@@ -119,14 +112,6 @@ export const createXRoute = <
   // The spec names the strategy as a label: a per-request gate is code, never document content.
   if (strategy !== undefined) Object.assign(cleanConfig, { 'x-strategy': strategyLabel(strategy) });
 
-  // A route carrying `x-tool` registers itself as an MCP tool; the spec keeps the metadata, never `execute`.
-  const tool = config['x-tool'];
-  if (tool?.enabled) {
-    registerMcpTool({ operationId: config.operationId, method: config.method, request: config.request }, tool);
-    const { execute: _execute, ...spec } = tool;
-    Object.assign(cleanConfig, { 'x-tool': spec });
-  }
-
   return createRoute({
     security,
     ...cleanConfig,
@@ -156,7 +141,7 @@ export const jsonBody = <S extends z.ZodType>(schema: S): JsonBody<S> => ({
 });
 
 /** Route options before `createXRoutes` fills in `operationId` (the key) and `tags` (the module's). */
-type DraftOptions = Omit<RouteOptions, 'path' | 'x-tool' | 'request' | 'operationId' | 'tags'> & {
+type DraftOptions = Omit<RouteOptions, 'path' | 'operationId' | 'tags'> & {
   operationId?: string;
   tags?: string[];
 };
@@ -168,10 +153,8 @@ type XRoute<D extends Draft> = ReturnType<
   typeof createRoute<D['path'], Omit<D, ExtensionPropId> & { responses: typeof errorResponseRefs }>
 >;
 
-/** One route of a `createXRoutes` module: keeps its literal types and types `x-tool.execute` like `createXRoute`. */
-export const xRoute = <P extends string, Req extends RouteOptions['request'], R extends DraftOptions & { path: P }>(
-  config: R & { request?: Req; 'x-tool'?: XToolMetadata<Req> },
-) => config as R & { request?: Req };
+/** One route of a `createXRoutes` module: keeps its literal types. */
+export const xRoute = <P extends string, R extends DraftOptions & { path: P }>(config: R) => config;
 
 /**
  * Finishes a module's routes with `createXRoute`: `operationId` defaults to the route's key and `tags` to the module's,

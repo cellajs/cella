@@ -8,6 +8,7 @@ import {
   type JsonRpcMessage,
   type JsonRpcResponse,
 } from '#/modules/mcp/mcp-server';
+import { getMcpTools } from '#/modules/mcp/mcp-tools';
 import { resourceMetadataUrl, resourceUri } from '#/modules/oauth-server/resources';
 import { defaultHook } from '#/utils/default-hook';
 
@@ -31,19 +32,20 @@ app.openapi(mcpRoutes.getMcpProtectedResourceMetadata, async (ctx) => {
 // biome-ignore lint/suspicious/noExplicitAny: JSON-RPC bodies are dynamic and notifications return 202 with no body
 app.openapi(mcpRoutes.handleMcp, async (ctx): Promise<any> => {
   const body = ctx.req.valid('json') as JsonRpcMessage | JsonRpcMessage[];
+  const tools = await getMcpTools();
 
   try {
     // JSON-RPC batch: collect responses, dropping notification (null) results.
     if (Array.isArray(body)) {
       const responses: JsonRpcResponse[] = [];
       for (const message of body) {
-        const response = await handleMcpMessage(ctx, message);
+        const response = await handleMcpMessage(ctx, message, tools);
         if (response) responses.push(response);
       }
       return responses.length ? ctx.json(responses, 200) : ctx.body(null, 202);
     }
 
-    const response = await handleMcpMessage(ctx, body);
+    const response = await handleMcpMessage(ctx, body, tools);
     if (!response) return ctx.body(null, 202);
     return ctx.json(response, 200);
   } catch (error) {

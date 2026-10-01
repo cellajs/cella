@@ -29,11 +29,6 @@ import {
   mockBatchAttachmentsResponse,
   mockPaginatedAttachmentsResponse,
 } from './attachment-mocks';
-import { createAttachmentsOp } from './operations/create-attachments';
-import { deleteAttachmentsOp } from './operations/delete-attachments';
-import { getAttachmentOp } from './operations/get-attachment';
-import { getAttachmentsOp } from './operations/get-attachments';
-import { updateAttachmentOp } from './operations/update-attachment';
 
 const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
   getAttachments: xRoute({
@@ -44,7 +39,6 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
       approvalRequired: false,
       category: 'attachments',
       entity: 'attachment',
-      execute: (ctx, { query }) => getAttachmentsOp(ctx, query),
     },
     method: 'get',
     path: '/',
@@ -64,7 +58,6 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
       approvalRequired: true,
       category: 'attachments',
       entity: 'attachment',
-      execute: (ctx, { body }) => createAttachmentsOp(ctx, body),
     },
     method: 'post',
     path: '/',
@@ -90,7 +83,6 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
       approvalRequired: false,
       category: 'attachments',
       entity: 'attachment',
-      execute: (ctx, { params }) => getAttachmentOp(ctx, params.id),
     },
     method: 'get',
     path: '/{id}',
@@ -108,8 +100,6 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
       approvalRequired: true,
       category: 'attachments',
       entity: 'attachment',
-      // The transaction is server-built, so field timestamps come from the server clock.
-      execute: (ctx, { params, body }) => updateAttachmentOp(ctx, params.id, body, { serverOrigin: true }),
     },
     method: 'put',
     path: '/{id}',
@@ -131,7 +121,6 @@ const attachmentRoutes = createXRoutes(['attachments', 'cella', 'product'], {
       approvalRequired: true,
       category: 'attachments',
       entity: 'attachment',
-      execute: (ctx, { body }) => deleteAttachmentsOp(ctx, Array.isArray(body.ids) ? body.ids : [body.ids]),
     },
     method: 'delete',
     path: '/',

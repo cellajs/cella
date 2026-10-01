@@ -1,8 +1,7 @@
-import type { RouteConfig, z } from '@hono/zod-openapi';
 import type { Context, MiddlewareHandler } from 'hono';
 import type { AccessScopedEntityType, appConfig } from 'shared';
 import type { BaseAuthStrategies, BaseOAuthProviders } from 'shared/config-builder/types';
-import type { Env, OrgContext } from '#/core/context';
+import type { Env } from '#/core/context';
 
 /** Services that can gate a route, derived from appConfig.services. */
 export type ServiceGate = keyof typeof appConfig.services;
@@ -97,23 +96,7 @@ export type ExtensionEntry = {
   values?: Record<string, ExtensionValueMetadata>;
 };
 
-/** The route fields a tool is derived from. */
-export type ToolRoute = { operationId: string; method: string; request?: RouteConfig['request'] };
-
-type InferSchema<S> = S extends z.ZodType ? z.infer<S> : Record<string, never>;
-type JsonBodySchema<Req> = Req extends { body: { content: { 'application/json': { schema: infer S } } } } ? S : never;
-
-/**
- * What a tool's `execute` receives: the route's request parts, each validated by the route's own schema, with
- * `tenantId` / `organizationId` resolved by the MCP endpoint and the sync transaction rebuilt server-side.
- */
-export type ToolInput<Req> = {
-  params: Omit<InferSchema<Req extends { params: infer P } ? P : never>, 'tenantId' | 'organizationId'>;
-  query: InferSchema<Req extends { query: infer Q } ? Q : never>;
-  body: [JsonBodySchema<Req>] extends [never] ? undefined : InferSchema<JsonBodySchema<Req>>;
-};
-
-/** What the OpenAPI spec shows under `x-tool`; `execute` never leaves the process. */
+/** A route opts in as an MCP tool by carrying this; the input schema derives from the route's `request`. */
 export type XToolSpec = {
   /** Whether this route is exposed as an MCP tool */
   enabled: boolean;
@@ -126,18 +109,12 @@ export type XToolSpec = {
   entity: AccessScopedEntityType;
 };
 
-/** A route opts in as an MCP tool by carrying this; the input schema derives from the route's `request`. */
-export type XToolMetadata<Req = RouteConfig['request']> = XToolSpec & {
-  /** The route's operation, called in-process with the MCP request's context and the validated request parts. */
-  execute: (ctx: OrgContext, input: ToolInput<Req>) => Promise<unknown>;
-};
-
 /** When adding an extension to `extensionMap`, add its prop here too. */
-export type XMiddlewareOptions<Req = RouteConfig['request']> = {
+export type XMiddlewareOptions = {
   xGuard: MiddlewareArray;
   xRateLimiter?: MiddlewareArray;
   xCache?: MiddlewareArray;
-  'x-tool'?: XToolMetadata<Req>;
+  'x-tool'?: XToolSpec;
   /** Route 404s when the service is disabled. */
   'x-service'?: ServiceGate;
   /** Route is refused while its sign-in method is switched off in `appConfig`. */
