@@ -11,3 +11,8 @@ export function Spinner({ className = '', noDelay = false }) {
     </div>
   );
 }
+
+/** Spinner for a page or panel that is still loading, placed near the vertical middle of the viewport. */
+export function PageSpinner({ className }: { className?: string }) {
+  return <Spinner className={cn('mt-[45vh] size-10', className)} />;
+}

@@ -2,7 +2,7 @@ import { Link } from '@tanstack/react-router';
 import { Suspense } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
-import { Spinner } from '~/modules/common/spinner';
+import { PageSpinner } from '~/modules/common/spinner';
 import { whyDarkSlides, whyItems, whyLightSlides } from '~/modules/marketing/marketing-config';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -44,7 +44,7 @@ export function Why() {
         </div>
       </div>
       <div className="w-full lg:w-7/12">
-        <Suspense fallback={<Spinner className="mt-[45vh] size-10" />}>
+        <Suspense fallback={<PageSpinner />}>
           <DeviceMockup className="-top-2 lg:relative lg:ml-8 lg:w-[54vw]" type="pc" lightItems={whyLightSlides} darkItems={whyDarkSlides} />
         </Suspense>
       </div>

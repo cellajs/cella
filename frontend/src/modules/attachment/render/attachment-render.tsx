@@ -6,7 +6,7 @@ import useDownloader from 'react-use-downloader';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { getFileIcon } from '~/modules/attachment/file-placeholder';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { Spinner } from '~/modules/common/spinner';
+import { PageSpinner, Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -48,7 +48,7 @@ export function AttachmentRender({
   const isMobile = useBreakpointBelow('sm');
   const { download, isInProgress } = useDownloader();
 
-  if (!url) return <Spinner className="mt-[45vh] size-12" />;
+  if (!url) return <PageSpinner className="size-12" />;
 
   // Only the container itself is the backdrop: clicks on media or controls bubble here but fail the target check.
   const handleBackdropClick = onBackdropClick
@@ -60,7 +60,7 @@ export function AttachmentRender({
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop dismiss is a mouse affordance; ESC closes the dialog for keyboard users
     <div className={containerClassName} onClick={handleBackdropClick}>
-      <Suspense fallback={<Spinner className="mt-[45vh]" />}>
+      <Suspense fallback={<PageSpinner className="size-6" />}>
         {type.includes('image') &&
           (imagePanZoom && !isMobile ? (
             <ReactPanZoom
