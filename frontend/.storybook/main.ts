@@ -43,9 +43,12 @@ const config: StorybookConfig = {
       __DEV_TOOLS__: 'true',
       __APP_VERSION__: JSON.stringify('storybook'),
     };
+    // storybook dev and build merge frontend/vite.config.ts, which registers Tailwind already. The vitest storybook
+    // project applies only this viteFinal, so it gets Tailwind here.
+    const hasTailwind = (config.plugins ?? []).flat(2).some((plugin) => plugin && 'name' in plugin && plugin.name.startsWith('@tailwindcss/vite'));
     // Every virtual module the app imports must resolve: an unresolved import fails Vite's dependency scan, so
     // dependencies are found mid-run and each discovery reloads the tests.
-    config.plugins = [...(config.plugins ?? []), tailwindcss(), docsFrontmatter(), pwaRegisterStub];
+    config.plugins = [...(config.plugins ?? []), ...(hasTailwind ? [] : [tailwindcss()]), docsFrontmatter(), pwaRegisterStub];
     // The email stories render backend HTML: proxy the dev preview route so their fetch stays same-origin.
     config.server = {
       ...config.server,
