@@ -1,4 +1,4 @@
-import { insertUsers } from '#/modules/user/helpers/insert-users';
+import { insertUsers } from '#/modules/user/user-queries';
 import { registerBenchSeed } from '../registry';
 import { userId } from './ids';
 import { loadtestUser } from './user';
@@ -15,6 +15,6 @@ registerBenchSeed({
   },
   seed: async ({ now, db }) => {
     const users = Array.from({ length: TOTAL_USERS }, (_, i) => ({ ...loadtestUser(i), createdAt: now }));
-    await insertUsers(db, users);
+    await insertUsers({ var: { db } }, { users });
   },
 });

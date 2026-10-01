@@ -21,7 +21,10 @@ import {
   updateServiceAccountBodySchema,
 } from './service-accounts-schema';
 
-/** All routes are user-only: creating and managing machine actors is a human act (D9). */
+/**
+ * All routes are user-only: creating and managing machine actors is a human act (D9). Each operation first checks
+ * that the caller may update the organization.
+ */
 export const serviceAccountRoutes = createXRoutes(['service-accounts', 'cella'], {
   createServiceAccount: xRoute({
     method: 'post',

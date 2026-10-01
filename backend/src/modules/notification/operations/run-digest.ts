@@ -1,9 +1,11 @@
+import { baseDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { log } from '#/utils/logger';
 import { digestEmail } from '../emails/digest-email';
 import { buildUnsubscribeLink } from '../helpers/category-token';
+import { renderSectionsHtml } from '../helpers/render-digest-html';
 import { findDueDigestRecipients, stampDigested, stampDigestRun } from '../notification-queries';
-import { buildDigestForUser, renderSectionsHtml } from './build-digest';
+import { buildDigestForUser } from './build-digest';
 
 /** Recipients handled per run; a backlog simply continues on the next hourly tick. */
 const MAX_RECIPIENTS_PER_RUN = 500;
@@ -15,6 +17,9 @@ const SEND_HOUR = 7;
 const WEEKLY_ISO_WEEKDAY = 5;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+
+/** Runs from the digest job, outside any request. */
+const dbCtx = { var: { db: baseDb } };
 
 /** How far back a digest window reaches at most: the cadence plus a day. */
 const MAX_WINDOW_DAYS = { daily: 2, weekly: 8 };
@@ -48,12 +53,12 @@ export async function runDigest(now: Date = new Date()): Promise<{ sent: number;
   const dayStart = new Date(now);
   dayStart.setHours(0, 0, 0, 0);
 
-  const due = await findDueDigestRecipients(
-    dayStart.toISOString(),
-    isoWeekday(now) === WEEKLY_ISO_WEEKDAY,
-    { daily: earliestStart('daily', now).toISOString(), weekly: earliestStart('weekly', now).toISOString() },
-    MAX_RECIPIENTS_PER_RUN,
-  );
+  const due = await findDueDigestRecipients(dbCtx, {
+    dayStart: dayStart.toISOString(),
+    includeWeekly: isoWeekday(now) === WEEKLY_ISO_WEEKDAY,
+    earliest: { daily: earliestStart('daily', now).toISOString(), weekly: earliestStart('weekly', now).toISOString() },
+    limit: MAX_RECIPIENTS_PER_RUN,
+  });
   if (due.length === 0) return { sent: 0, skipped: 0 };
 
   let sent = 0;
@@ -80,7 +85,7 @@ export async function runDigest(now: Date = new Date()): Promise<{ sent: number;
         },
       ]);
 
-      await stampDigested(content.notificationIds);
+      await stampDigested(dbCtx, { ids: content.notificationIds });
       processed.push(recipient.userId);
       sent++;
     } catch (error) {
@@ -90,7 +95,7 @@ export async function runDigest(now: Date = new Date()): Promise<{ sent: number;
   }
 
   // Stamped even when nothing was sent, so an empty window is not re-evaluated all day.
-  await stampDigestRun(processed, now.toISOString());
+  await stampDigestRun(dbCtx, { userIds: processed, ranAt: now.toISOString() });
 
   log.info('Digest run complete', { sent, skipped, considered: due.length });
   return { sent, skipped };

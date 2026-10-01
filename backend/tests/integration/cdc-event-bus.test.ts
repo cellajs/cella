@@ -11,8 +11,8 @@ import { organizationsTable } from '#/modules/organization/organization-db';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { insertUsers } from '#/modules/user/helpers/insert-users';
 import { mockUser } from '#/modules/user/user-mocks';
+import { insertUsers } from '#/modules/user/user-queries';
 import { cleanupEntityHierarchy, seedAttachmentHome } from '../hierarchy-helpers';
 import { clearDatabase, startInProcessCdcWorker, waitFor, waitForEvent } from './test-utils';
 
@@ -37,7 +37,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
       .returning({ id: organizationsTable.id, slug: organizationsTable.slug, tenantId: organizationsTable.tenantId });
 
     const userData = mockUser();
-    const [insertedUser] = await insertUsers(db, [userData]);
+    const [insertedUser] = await insertUsers({ var: { db } }, { users: [userData] });
     testUser = { id: insertedUser.id, email: insertedUser.email };
     await db.insert(emailsTable).values({ email: testUser.email, userId: testUser.id, verified: true });
 

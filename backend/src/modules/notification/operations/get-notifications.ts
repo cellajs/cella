@@ -1,11 +1,10 @@
 import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { accessFrom } from '#/permissions/access';
-import { findChannelNames } from '../helpers/channel-names';
-import { findReadableSubjectIds } from '../helpers/readable-subjects';
-import { findSubjectNames } from '../helpers/subject-names';
-import { countUnreadByUser, findNotificationsByUser, findUsersMinimal } from '../notification-queries';
+import { countUnreadByUser, findChannelNames, findNotificationsByUser, findUsersMinimal } from '../notification-queries';
 import type { notificationSchema } from '../notification-schema';
+import { findSubjectNames } from '../notification-sources';
+import { findReadableSubjectIds } from './readable-subjects';
 
 type NotificationResponse = z.infer<typeof notificationSchema>;
 
@@ -27,14 +26,14 @@ export interface GetNotificationsInput {
 export async function getNotificationsOp(ctx: UserContext, input: GetNotificationsInput) {
   const userId = ctx.var.user.id;
 
-  const [rows, unreadCount] = await Promise.all([findNotificationsByUser(ctx, { userId, ...input }), countUnreadByUser(ctx, userId)]);
+  const [rows, unreadCount] = await Promise.all([findNotificationsByUser(ctx, { userId, ...input }), countUnreadByUser(ctx, { userId })]);
 
   const readable = await findReadableSubjectIds(accessFrom(ctx), rows);
   const readableRows = rows.filter((row) => readable.has(row.subjectId));
 
   const [actors, channelNames, subjectTitles] = await Promise.all([
-    findUsersMinimal(rows.map((row) => row.actorId).filter((id): id is string => id !== null)),
-    findChannelNames(readableRows.map((row) => row.channelId)),
+    findUsersMinimal(ctx, { userIds: rows.map((row) => row.actorId).filter((id): id is string => id !== null) }),
+    findChannelNames(ctx, { channelIds: readableRows.map((row) => row.channelId) }),
     findSubjectNames(readableRows.map((row) => ({ ...row, id: row.subjectId }))),
   ]);
 

@@ -9,7 +9,7 @@ import { emailsTable } from '#/modules/user/emails-db';
 import { InsertMembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
 import { OrganizationModel, organizationsTable } from '#/modules/organization/organization-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
-import { insertUsers } from '#/modules/user/helpers/insert-users';
+import { insertUsers } from '#/modules/user/user-queries';
 import { UserModel, usersTable } from '#/modules/user/user-db';
 import { getMembershipOrderOffset, mockChannelMembership } from '#/modules/memberships/memberships-mocks';
 import { mockOrganization } from '#/modules/organization/organization-mocks';
@@ -104,7 +104,7 @@ export const organizationsSeed = async () => {
     const userRecords = mockMany(() => mockUser(), MEMBERS_COUNT);
     const users: UserModel[] = [];
     for (const batch of toBatches(userRecords)) {
-      users.push(...(await insertUsers(db, batch, { onConflictDoNothing: true })));
+      users.push(...(await insertUsers({ var: { db } }, { users: batch, onConflictDoNothing: true })));
     }
 
     // Make email row for each user, then insert into the database

@@ -13,7 +13,7 @@ export interface MarkReadInput {
 export async function markReadOp(ctx: UserContext, input: MarkReadInput) {
   const userId = ctx.var.user.id;
 
-  if (input.contextId) return { updated: await markContextNotificationsRead(ctx, userId, input.contextId) };
+  if (input.contextId) return { updated: await markContextNotificationsRead(ctx, { userId, contextId: input.contextId }) };
 
-  return { updated: await markNotificationsRead(ctx, userId, input.ids) };
+  return { updated: await markNotificationsRead(ctx, { userId, ids: input.ids }) };
 }

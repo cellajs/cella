@@ -1,13 +1,15 @@
 import { appConfig, type ChannelEntityType, hierarchy, isChannel, isProduct, type ProductEntityType } from 'shared';
 import { deriveDocument } from 'shared/utils/derive-description-core';
 import { buildNotificationLink } from 'shared/utils/notification-link';
+import { baseDb } from '#/db/db';
 import { tenantReadById } from '#/db/tenant-context';
 import type { ActivityEvent } from '#/lib/activity-bus';
 import type { NotificationSubjectRow } from '#/lib/module';
 import { isPushSendConfigured, sendNotificationPush } from '#/modules/push/push-sender';
+import { checkAccessFanout } from '#/permissions';
+import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { log } from '#/utils/logger';
-import { readableAccess } from '../helpers/readable-access';
-import { findNotifiedUserIds, insertNotificationsIgnoringDuplicates, type NotificationInsert } from '../notification-queries';
+import { findNotifiedUserIds, getUserAccess, insertNotificationsIgnoringDuplicates, type NotificationInsert } from '../notification-queries';
 import { getNotificationSource, loadSubjectRows, type NotificationSource } from '../notification-sources';
 import { instantEmailTypes, type NotificationType, notificationTypes } from '../notification-types';
 
@@ -15,6 +17,9 @@ import { instantEmailTypes, type NotificationType, notificationTypes } from '../
 const mutedTypes = new Set<NotificationType>(notificationTypes.filter((type) => type !== 'mention'));
 
 type Candidate = { userId: string; type: NotificationType };
+
+/** Runs off the activity bus, outside any request. */
+const dbCtx = { var: { db: baseDb } };
 
 /**
  * Turn one CDC event into per-recipient inbox rows, for entity types whose module declared a
@@ -103,7 +108,7 @@ async function fanOutRow(
   if (candidates.size === 0) return false;
 
   // An edit must not re-notify people who were already told about this row.
-  const notified = event.action === 'update' ? await findNotifiedUserIds(row.id, [...candidates.keys()]) : new Set();
+  const notified = event.action === 'update' ? await findNotifiedUserIds(dbCtx, { subjectId: row.id, userIds: [...candidates.keys()] }) : new Set();
   const fresh = [...candidates.values()].filter((candidate) => !notified.has(candidate.userId));
   if (fresh.length === 0) return false;
 
@@ -113,8 +118,8 @@ async function fanOutRow(
   const channel = resolveChannel(entityType, row);
   const organizationId = event.organizationId as string;
   const contextId = resolveContextId ? resolveContextId(row) : row.id;
-  await insertNotificationsIgnoringDuplicates(
-    allowed.map<NotificationInsert>((recipient) => ({
+  await insertNotificationsIgnoringDuplicates(dbCtx, {
+    rows: allowed.map<NotificationInsert>((recipient) => ({
       userId: recipient.userId,
       type: recipient.type,
       entityType,
@@ -127,7 +132,7 @@ async function fanOutRow(
       activityId: event.id as string,
       actorId,
     })),
-  );
+  });
 
   log.debug('Notifications created', { activityId: event.id, subjectId: row.id, recipientCount: allowed.length });
 
@@ -153,21 +158,23 @@ async function fanOutRow(
   return allowed.some((recipient) => mailed.includes(recipient.type));
 }
 
-/** Keep only recipients who may read the row, then drop muted-type candidates whose home membership is muted. */
+/**
+ * Keep only recipients who may read the row, then drop muted-type candidates whose home membership is muted.
+ * Fails closed: an unknown user drops the whole set, as a doctored id must never notify anyone.
+ */
 async function filterByReadAccess(entityType: ProductEntityType, row: NotificationSubjectRow, candidates: Candidate[]): Promise<Candidate[]> {
-  const readable = await readableAccess(
-    entityType,
-    row,
-    candidates.map((candidate) => candidate.userId),
-  );
+  const accessByUser = await getUserAccess(dbCtx, { userIds: candidates.map((candidate) => candidate.userId) });
+  const accesses = candidates.map((candidate) => accessByUser.get(candidate.userId)).filter((access) => access !== undefined);
+  if (accesses.length !== candidates.length) return [];
+
+  const decisions = checkAccessFanout(accesses, 'read', buildSubjectFromEntity(entityType, row), { onInvalidMembership: 'deny' });
   const { id: channelId } = resolveChannel(entityType, row);
 
-  return candidates.filter((candidate) => {
-    const access = readable.get(candidate.userId);
-    if (!access) return false;
+  return candidates.filter((candidate, index) => {
+    if (!decisions[index]?.allowed) return false;
     if (!mutedTypes.has(candidate.type)) return true;
 
-    const muted = access.memberships.some((membership) => membership.channelId === channelId && membership.muted);
+    const muted = accesses[index].memberships.some((membership) => membership.channelId === channelId && membership.muted);
     return !muted;
   });
 }

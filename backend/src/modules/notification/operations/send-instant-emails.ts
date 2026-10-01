@@ -1,17 +1,23 @@
 import { appConfig } from 'shared';
 import { buildNotificationLink } from 'shared/utils/notification-link';
+import { baseDb } from '#/db/db';
 import { tenantReadById } from '#/db/tenant-context';
 import { mailer } from '#/lib/mailer';
 import { log } from '#/utils/logger';
 import { commentEmail } from '../emails/comment-email';
 import { mentionEmail } from '../emails/mention-email';
-import { accessForUserIds } from '../helpers/access-for-users';
 import { buildUnsubscribeLink } from '../helpers/category-token';
-import { findChannelNames } from '../helpers/channel-names';
-import { findReadableSubjectIds } from '../helpers/readable-subjects';
 import { htmlToExcerpt } from '../helpers/render-digest-html';
-import { findPendingInstantEmails, findUserNames, findVerifiedRecipients, stampEmailed } from '../notification-queries';
+import {
+  findChannelNames,
+  findPendingInstantEmails,
+  findUserNames,
+  findVerifiedRecipients,
+  getUserAccess,
+  stampEmailed,
+} from '../notification-queries';
 import { getNotificationSource, loadSubjectPreview } from '../notification-sources';
+import { findReadableSubjectIds } from './readable-subjects';
 
 /** Excerpt length in the email body; longer bodies are truncated. */
 const EXCERPT_LENGTH = 250;
@@ -21,6 +27,9 @@ const EXCERPT_LENGTH = 250;
  * mailable row, so a backlog beyond this drains on the next one.
  */
 const MAX_PER_RUN = 200;
+
+/** Runs after a fan-out, outside any request. */
+const dbCtx = { var: { db: baseDb } };
 
 type PendingEmail = Awaited<ReturnType<typeof findPendingInstantEmails>>[number];
 
@@ -36,16 +45,16 @@ type PendingEmail = Awaited<ReturnType<typeof findPendingInstantEmails>>[number]
  * pass.
  */
 export async function sendPendingInstantEmails(organizationId: string): Promise<void> {
-  const pending = await findPendingInstantEmails(organizationId, MAX_PER_RUN);
+  const pending = await findPendingInstantEmails(dbCtx, { organizationId, limit: MAX_PER_RUN });
   if (pending.length === 0) return;
 
-  const recipients = await findVerifiedRecipients(pending.map((row) => row.userId));
+  const recipients = await findVerifiedRecipients(dbCtx, { userIds: pending.map((row) => row.userId) });
   const byUser = new Map(recipients.map((row) => [row.id, row]));
   const readableByUser = await findReadableByUser(pending);
 
   const actorIds = [...new Set(pending.map((row) => row.actorId).filter((id): id is string => Boolean(id)))];
-  const actorNames = await findUserNames(actorIds);
-  const channelNames = await findChannelNames(pending.map((row) => row.channelId));
+  const actorNames = await findUserNames(dbCtx, { userIds: actorIds });
+  const channelNames = await findChannelNames(dbCtx, { channelIds: pending.map((row) => row.channelId) });
 
   let sent = 0;
 
@@ -93,7 +102,7 @@ export async function sendPendingInstantEmails(organizationId: string): Promise<
     sent++;
   }
 
-  await stampEmailed(pending.map((row) => row.id));
+  await stampEmailed(dbCtx, { ids: pending.map((row) => row.id) });
   if (sent > 0) log.info('Instant notification emails sent', { count: sent, organizationId });
 }
 
@@ -110,7 +119,7 @@ function oneRowPerSubject(pending: PendingEmail[]): PendingEmail[] {
 
 /** Per recipient, the subjects of their pending rows they may read now. */
 async function findReadableByUser(pending: PendingEmail[]) {
-  const accessByUser = await accessForUserIds(pending.map((row) => row.userId));
+  const accessByUser = await getUserAccess(dbCtx, { userIds: pending.map((row) => row.userId) });
   const readableByUser = new Map<string, Set<string>>();
   for (const [userId, access] of accessByUser) {
     const refs = pending.filter((row) => row.userId === userId);
