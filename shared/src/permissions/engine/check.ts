@@ -116,7 +116,12 @@ export const checkWithIndices = <T extends AccessMembership>(
     const can = { ...allActionsAllowed };
     const channelIds: ResolvedChannelIds = primaryChannelId ? { [primaryChannel]: primaryChannelId } : {};
 
-    return { subject: { entityType: subject.entityType, id: subject.id, channelIds }, actions: allGranted, can, membership: resolvedMembership };
+    return {
+      subject: { entityType: subject.entityType, id: subject.id, channelIds },
+      actions: allGranted,
+      can,
+      membership: resolvedMembership,
+    };
   }
 
   const actions = createActionRecord((): ActionAttribution => ({ allowed: false, grantedBy: [] }));
@@ -149,7 +154,8 @@ export const checkWithIndices = <T extends AccessMembership>(
       // Missing policy rows deny by default, like omitted actions.
       if (!permissions) continue;
 
-      if (elevatedGrants && isProductSubject && !elevatedGrants.has(`${channelType}:${m.role}`) && channelType !== homeChannel) {
+      const outsideElevation = elevatedGrants && isProductSubject && !elevatedGrants.has(`${channelType}:${m.role}`) && channelType !== homeChannel;
+      if (outsideElevation) {
         continue;
       }
 
@@ -179,7 +185,12 @@ export const checkWithIndices = <T extends AccessMembership>(
 
   const can = createActionRecord((action) => actions[action].allowed);
 
-  return { subject: { entityType: subject.entityType, id: subject.id, channelIds }, actions, can, membership: resolvedMembership };
+  return {
+    subject: { entityType: subject.entityType, id: subject.id, channelIds },
+    actions,
+    can,
+    membership: resolvedMembership,
+  };
 };
 
 /** One subject returns a `PermissionDecision`; an array returns a `Map` keyed by subject.id. */

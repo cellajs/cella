@@ -287,7 +287,8 @@ export async function fetchRangeAndPatch(
     if (items.length > 0) {
       console.debug(`[CacheOps] Delta fetch: ${entityType} patched ${items.length} entities (seqCursor=${seqCursor})`);
     }
-    return { status: 'ok', items, reachedSeq: items.reduce((max, item) => Math.max(max, seqOf(item)), 0), embeddingTouches };
+    const reachedSeq = items.reduce((max, item) => Math.max(max, seqOf(item)), 0);
+    return { status: 'ok', items, reachedSeq, embeddingTouches };
   } catch (error) {
     console.warn(`[CacheOps] Delta fetch failed for ${entityType}, falling back to invalidation`, error);
     return { status: 'error', items: [], reachedSeq: 0, embeddingTouches: new Map() };

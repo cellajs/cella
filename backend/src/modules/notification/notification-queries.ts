@@ -192,8 +192,9 @@ export async function insertNotificationsIgnoringDuplicates(rows: NotificationIn
  * the app offers them (`instantEmailTypes`), goes only to recipients who turned comment email on.
  */
 export async function findPendingInstantEmails(organizationId: string, limit: number) {
+  const mentionEmailOn = or(isNull(notificationPreferencesTable.userId), eq(notificationPreferencesTable.mentionEmail, true));
   const wantsMail = or(
-    and(eq(notificationsTable.type, 'mention'), or(isNull(notificationPreferencesTable.userId), eq(notificationPreferencesTable.mentionEmail, true))),
+    and(eq(notificationsTable.type, 'mention'), mentionEmailOn),
     and(ne(notificationsTable.type, 'mention'), eq(notificationPreferencesTable.commentEmail, true)),
   );
 

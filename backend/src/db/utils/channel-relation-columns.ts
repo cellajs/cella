@@ -106,7 +106,8 @@ export const membershipChannelIndexes = (tableName: string, table: Record<string
 export const activityChannelColumns = (): ActivityChannelColumns => {
   const columns = {} as Record<string, NullableUuid>;
 
-  for (const ctx of new Set(appConfig.productEntityTypes.flatMap((entityType) => hierarchy.getOrderedAncestors(entityType)))) {
+  const contexts = new Set(appConfig.productEntityTypes.flatMap((entityType) => hierarchy.getOrderedAncestors(entityType)));
+  for (const ctx of contexts) {
     columns[appConfig.entityIdColumnKeys[ctx]] = uuid();
   }
 

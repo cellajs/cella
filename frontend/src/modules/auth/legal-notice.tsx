@@ -53,7 +53,7 @@ export function LegalNotice({ email = '', mode = 'signup' }: LegalNoticeProps) {
 
   return (
     <p className="space-x-1 text-center">
-      {mode === 'signup' && (email ? <span>{t('c:legal_notice_email.text', { email })}</span> : <span>{t('c:legal_notice.text')}</span>)}
+      {mode === 'signup' && <span>{email ? t('c:legal_notice_email.text', { email }) : t('c:legal_notice.text')}</span>}
       {mode === 'waitlist' && <span>{t('c:legal_notice_waitlist.text', { email })}</span>}
       {mode === 'verify' && <span>{t('c:request_verification.legal_notice')}</span>}
       <Button ref={termsButtonRef} type="button" variant="link" className="h-auto p-0 text-base" onClick={openDialog('terms', termsButtonRef)}>

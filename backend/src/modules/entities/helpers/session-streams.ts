@@ -103,9 +103,8 @@ export async function sweepAppStreamSessions(): Promise<void> {
   const impersonatorIds = [...new Set(sessions.flatMap((s) => (s.impersonatorSessionId ? [s.impersonatorSessionId] : [])))];
   const impersonators = impersonatorIds.length === 0 ? [] : await readSessionStates(impersonatorIds);
 
-  const adminIds = [
-    ...new Set([...subscribers.filter((s) => s.isSystemAdmin || s.systemAccessAllowed).map((s) => s.userId), ...impersonators.map((s) => s.userId)]),
-  ];
+  const subscriberUserIds = subscribers.filter((s) => s.isSystemAdmin || s.systemAccessAllowed).map((s) => s.userId);
+  const adminIds = [...new Set([...subscriberUserIds, ...impersonators.map((s) => s.userId)])];
   const admins =
     adminIds.length === 0
       ? []

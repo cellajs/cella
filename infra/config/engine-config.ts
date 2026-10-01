@@ -16,7 +16,14 @@ export interface EngineConfig {
   backendUrl: string;
   /** Cost escape hatch: the backend co-hosts every enabled worker in-process. */
   singleVM: boolean;
-  s3: { region: string; host: string; publicBucket: string; privateBucket: string; publicCDNUrl: string; privateCDNUrl: string };
+  s3: {
+    region: string;
+    host: string;
+    publicBucket: string;
+    privateBucket: string;
+    publicCDNUrl: string;
+    privateCDNUrl: string;
+  };
   /** Service endpoint config keyed by slug (enabled flags + public URLs). */
   services: Record<string, EngineServiceEndpoint>;
 }

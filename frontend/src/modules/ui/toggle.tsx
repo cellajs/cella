@@ -14,7 +14,13 @@ export const toggleVariants = cva(
         merged:
           'rounded-none border border-input border-r-0 bg-transparent first:rounded-l-md last:rounded-r-md last:border-r hover:bg-accent/50 hover:text-accent-foreground',
       },
-      size: { default: 'h-10 px-3', xs: 'h-7 px-2', sm: 'h-9 px-2.5', lg: 'h-11 px-5', tile: '!rounded-xl h-full w-full' },
+      size: {
+        default: 'h-10 px-3',
+        xs: 'h-7 px-2',
+        sm: 'h-9 px-2.5',
+        lg: 'h-11 px-5',
+        tile: '!rounded-xl h-full w-full',
+      },
     },
     defaultVariants: { variant: 'default', size: 'default' },
   },

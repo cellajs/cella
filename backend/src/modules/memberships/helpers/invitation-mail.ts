@@ -35,7 +35,8 @@ interface InvitationMailOpts {
 export async function sendInvitationMails(ctx: DbContext, opts: InvitationMailOpts): Promise<void> {
   const { sender, channel, organization, invited, added = [] } = opts;
 
-  const languages = await findAccountLanguages(ctx, { userIds: [...invited, ...added].flatMap(({ userId }) => (userId ? [userId] : [])) });
+  const userIds = [...invited, ...added].flatMap(({ userId }) => (userId ? [userId] : []));
+  const languages = await findAccountLanguages(ctx, { userIds });
   const recipient = ({ email, userId }: InvitedAddress) => ({
     email,
     lng: (userId && languages.get(userId)) || organization?.defaultLanguage || appConfig.defaultLanguage,

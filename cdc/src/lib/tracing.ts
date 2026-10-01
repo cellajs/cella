@@ -35,10 +35,14 @@ meter
     result.observe(wsClient.isConnected() ? 1 : 0);
   });
 
-meter.createObservableGauge('cdc.ws.messages_sent', { description: 'Total messages sent to backend via WebSocket' }).addCallback(async (result) => {
-  const { wsClient } = await import('../network/websocket-client');
-  result.observe(wsClient.messagesSent);
-});
+meter
+  .createObservableGauge('cdc.ws.messages_sent', {
+    description: 'Total messages sent to backend via WebSocket',
+  })
+  .addCallback(async (result) => {
+    const { wsClient } = await import('../network/websocket-client');
+    result.observe(wsClient.messagesSent);
+  });
 
 meter
   .createObservableGauge('cdc.circuit_breaker.open_count', { description: 'Number of open/half-open circuit breakers' })

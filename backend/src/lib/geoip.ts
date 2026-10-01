@@ -29,7 +29,13 @@ const country: GeoipDatabase<CountryResponse> = {
   reader: null,
   warned: false,
 };
-const asn: GeoipDatabase<AsnResponse> = { kind: 'asn', path: env.GEOIP_ASN_DB_PATH, object: 'dbip-asn-lite.mmdb.gz', reader: null, warned: false };
+const asn: GeoipDatabase<AsnResponse> = {
+  kind: 'asn',
+  path: env.GEOIP_ASN_DB_PATH,
+  object: 'dbip-asn-lite.mmdb.gz',
+  reader: null,
+  warned: false,
+};
 
 /**
  * Where the DB-IP Lite databases (CC BY 4.0, attribution: IP geolocation by DB-IP, https://db-ip.com) are fetched
@@ -77,7 +83,9 @@ export const lookupIp = async (ip: string | null | undefined): Promise<{ country
   if (!target) return { country: null, asn: null };
   try {
     const [countryReader, asnReader] = await Promise.all([loadReader(country), loadReader(asn)]);
-    return { country: countryReader?.get(target)?.country?.iso_code ?? null, asn: asnReader?.get(target)?.autonomous_system_number ?? null };
+    const countryCode = countryReader?.get(target)?.country?.iso_code ?? null;
+    const asnNumber = asnReader?.get(target)?.autonomous_system_number ?? null;
+    return { country: countryCode, asn: asnNumber };
   } catch (err) {
     baseLog.warn('GeoIP lookup failed', { err, ip: target });
     return { country: null, asn: null };

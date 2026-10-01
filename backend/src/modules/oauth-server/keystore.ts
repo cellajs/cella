@@ -18,7 +18,13 @@ async function mintKey(db: DbOrTx, status: 'current' | 'next'): Promise<void> {
   // Two processes booting at once both try; the unique index lets one win and the other keeps that key.
   const inserted = await db
     .insert(signingKeysTable)
-    .values({ id: kid, alg: ALG, status, privateJwk: encryptData(JSON.stringify(privateJwk), ENCRYPTION_PURPOSE), publicJwk: { ...publicJwk, kid } })
+    .values({
+      id: kid,
+      alg: ALG,
+      status,
+      privateJwk: encryptData(JSON.stringify(privateJwk), ENCRYPTION_PURPOSE),
+      publicJwk: { ...publicJwk, kid },
+    })
     .onConflictDoNothing()
     .returning({ id: signingKeysTable.id });
   if (inserted.length > 0) log.info('Signing key minted', { kid, status });

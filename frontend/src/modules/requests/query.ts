@@ -22,7 +22,10 @@ type RequestFilters = Omit<NonNullable<GetRequestsData['query']>, 'limit' | 'off
 type RequestsListParams = RequestFilters & { limit?: number };
 
 export const requestsKeys = {
-  table: { base: ['requests', 'table'] as const, entries: (filters: RequestFilters) => [...requestsKeys.table.base, filters] as const },
+  table: {
+    base: ['requests', 'table'] as const,
+    entries: (filters: RequestFilters) => [...requestsKeys.table.base, filters] as const,
+  },
   approve: ['requests', 'approve'] as const,
   create: ['requests', 'create'] as const,
   delete: ['requests', 'delete'] as const,

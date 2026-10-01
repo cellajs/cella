@@ -1,0 +1,4 @@
+# Formatting-only commits that `git blame` skips (GitHub reads this file; locally: git config blame.ignoreRevsFile .git-blame-ignore-revs).
+
+# style: line width 150 with shallow objects collapsed (#1229)
+25d183326355a1de182eb15c775b61833d1f681d

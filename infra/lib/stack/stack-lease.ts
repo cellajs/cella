@@ -68,7 +68,8 @@ export async function acquireLease(opts: LeaseOptions): Promise<LeaseResult> {
       if (renewal.renewed) info = renewal.info;
       else {
         lost = true;
-        opts.onRenewFailed?.(renewal.held ? `lock now held by ${renewal.held.owner} (${renewal.held.operation})` : 'lock object is gone', true);
+        const reason = renewal.held ? `lock now held by ${renewal.held.owner} (${renewal.held.operation})` : 'lock object is gone';
+        opts.onRenewFailed?.(reason, true);
       }
     } catch (err) {
       opts.onRenewFailed?.(err instanceof Error ? err.message : String(err), false);

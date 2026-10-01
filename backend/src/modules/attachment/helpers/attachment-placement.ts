@@ -51,7 +51,10 @@ const providedHome = (item: AttachmentPlacementInput) =>
 export const validateAttachmentPlacement = (item: AttachmentPlacementInput): { path: (string | number)[]; message: string } | null => {
   const provided = providedHome(item);
   if (provided.length <= 1) return null;
-  return { path: [placementKey(provided[0])], message: 'Ambiguous placement: send only the deepest home id (its ancestors are derived server-side)' };
+  return {
+    path: [placementKey(provided[0])],
+    message: 'Ambiguous placement: send only the deepest home id (its ancestors are derived server-side)',
+  };
 };
 
 /**

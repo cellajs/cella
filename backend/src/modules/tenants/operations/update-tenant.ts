@@ -25,7 +25,11 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
       }
     : undefined;
 
-  const values = { ...otherUpdates, ...(mergedRestrictions ? { restrictions: mergedRestrictions } : {}), updatedAt: new Date().toISOString() };
+  const values = {
+    ...otherUpdates,
+    ...(mergedRestrictions ? { restrictions: mergedRestrictions } : {}),
+    updatedAt: new Date().toISOString(),
+  };
   const tenant = await updateTenant(ctx, { targetTenantId: tenantId, values });
 
   await invalidateCache.tenant(ctx.var.db, tenantId);

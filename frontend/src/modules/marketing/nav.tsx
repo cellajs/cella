@@ -73,8 +73,21 @@ export function MarketingNav() {
   };
 
   const floatingNavItems: FloatingNavItem[] = [
-    { id: 'marketing-menu', icon: MenuIcon, onClick: () => setDrawerOpen((prev) => !prev), ariaLabel: 'Toggle menu', direction: 'left' },
-    { id: 'marketing-scroll-top', icon: ArrowUpIcon, onClick: scrollToTop, ariaLabel: 'Scroll to top', visible: showScrollTop, direction: 'right' },
+    {
+      id: 'marketing-menu',
+      icon: MenuIcon,
+      onClick: () => setDrawerOpen((prev) => !prev),
+      ariaLabel: 'Toggle menu',
+      direction: 'left',
+    },
+    {
+      id: 'marketing-scroll-top',
+      icon: ArrowUpIcon,
+      onClick: scrollToTop,
+      ariaLabel: 'Scroll to top',
+      visible: showScrollTop,
+      direction: 'right',
+    },
   ];
 
   return (

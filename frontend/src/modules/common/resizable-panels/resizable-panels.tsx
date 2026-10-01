@@ -415,7 +415,7 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
   const computeAutoFill = () => {
     const container = containerRef.current;
     if (!container) return true;
-    const parentWidth = container.parentElement ? container.parentElement.getBoundingClientRect().width : container.getBoundingClientRect().width;
+    const parentWidth = (container.parentElement ?? container).getBoundingClientRect().width;
     return getIdealPanelSum() + getSeparatorSpace() <= parentWidth;
   };
 
@@ -531,7 +531,14 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
       }
     }
 
-    dragRef.current = { separatorIndex, startX, autoFill: isAutoFill, initialWidths: snapshot, collapsedAtStart, perPanelCascade };
+    dragRef.current = {
+      separatorIndex,
+      startX,
+      autoFill: isAutoFill,
+      initialWidths: snapshot,
+      collapsedAtStart,
+      perPanelCascade,
+    };
 
     setCursorOverride('col-resize');
   };
@@ -702,7 +709,7 @@ export function ResizablePanelGroup({ id, defaultLayout, onLayoutChanged, onColl
       const w = widthsRef.current[panel.id] ?? panel.minWidth;
       const isLast = i === resizable.length - 1;
       // Last panel absorbs rounding remainder to keep total exact
-      let newW = isLast ? Math.max(panel.minWidth, target - distributed) : Math.max(panel.minWidth, Math.floor(w * ratio));
+      let newW = Math.max(panel.minWidth, isLast ? target - distributed : Math.floor(w * ratio));
       newW = Math.min(newW, viewportWidth);
       distributed += newW;
       if (Math.abs(newW - w) >= 1) {

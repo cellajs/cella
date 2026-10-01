@@ -135,7 +135,13 @@ export async function uploadFrontendAssets(opts: UploadAssetsOptions): Promise<{
         continue;
       }
       await s3.send(
-        new PutObjectCommand({ Bucket: opts.bucket, Key: key, Body: body, ContentType: contentTypeFor(key), CacheControl: 'public, max-age=3600' }),
+        new PutObjectCommand({
+          Bucket: opts.bucket,
+          Key: key,
+          Body: body,
+          ContentType: contentTypeFor(key),
+          CacheControl: 'public, max-age=3600',
+        }),
       );
       uploaded++;
     }

@@ -151,7 +151,14 @@ export function parseArgs(argv: string[]): CliArgs {
   const buildImagesRaw = getFlag(argv, '--build-images-json');
   const services = buildImagesRaw ? imageServicesFromBuildMatrix(buildImagesRaw) : undefined;
 
-  return { registry, namespace, tag, services, attempts: getNumFlag(argv, '--attempts', 80), intervalMs: getNumFlag(argv, '--interval', 15000) };
+  return {
+    registry,
+    namespace,
+    tag,
+    services,
+    attempts: getNumFlag(argv, '--attempts', 80),
+    intervalMs: getNumFlag(argv, '--interval', 15000),
+  };
 }
 
 export async function main(argv = process.argv.slice(2)): Promise<void> {

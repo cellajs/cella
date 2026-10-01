@@ -71,7 +71,8 @@ export const buildCollectionReadWhere = (
   // HOME-scoped grants (non-elevated): the grant level's column matches AND every deeper ancestor column is NULL.
   for (const { channelType, channelIds, deeperChannels } of filter.homeScopes ?? []) {
     if (channelIds.length === 0) continue;
-    const scoped = and(inArray(scopeColumn(channelType), channelIds), ...deeperChannels.map((deeper) => isNull(scopeColumn(deeper))));
+    const deeperNulls = deeperChannels.map((deeper) => isNull(scopeColumn(deeper)));
+    const scoped = and(inArray(scopeColumn(channelType), channelIds), ...deeperNulls);
     if (scoped) clauses.push(scoped);
   }
 

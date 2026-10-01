@@ -172,7 +172,8 @@ export const findLinkToken = async ({ type, rawToken }: LinkTokenOpts): Promise<
 
 /** Deletes the unopened link a raw value names, so neither its URL nor a confirmation page can redeem it any more. */
 export const withdrawLinkToken = async ({ type, rawToken }: LinkTokenOpts) => {
-  await baseDb.delete(tokensTable).where(and(eq(tokensTable.secret, hashToken(rawToken)), eq(tokensTable.type, type), isNull(tokensTable.invokedAt)));
+  const secret = hashToken(rawToken);
+  await baseDb.delete(tokensTable).where(and(eq(tokensTable.secret, secret), eq(tokensTable.type, type), isNull(tokensTable.invokedAt)));
 };
 
 /**

@@ -67,7 +67,8 @@ export async function createInviteOp(ctx: UserContext, emails: string[]) {
 
   // No account holds these addresses (a verified one is rejected above) and no organization is involved: the mail
   // goes out in the app's language.
-  await sendInvitationMails(ctx, { sender: user, invited: issued.map(({ token, rawToken }) => ({ email: token.email, rawToken })) });
+  const invited = issued.map(({ token, rawToken }) => ({ email: token.email, rawToken }));
+  await sendInvitationMails(ctx, { sender: user, invited });
 
   log.info('Users invited on system level', { count: issued.length });
 

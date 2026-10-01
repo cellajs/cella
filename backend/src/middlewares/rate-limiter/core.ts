@@ -79,7 +79,7 @@ export const rateLimiter = (mode: RateLimitMode, key: string, identifiers: RateL
         // Clamp tenant budgets without mutating the shared prefix limiter; a zero tenant budget uses the global ceiling
         const consumePoints = getConsumePoints ? await getConsumePoints(ctx) : 1;
         const tenantBudget = getPointsBudget ? getPointsBudget(ctx) : null;
-        const effectiveBudget = tenantBudget === null ? config.points : Math.min(tenantBudget > 0 ? tenantBudget : config.points, config.points);
+        const effectiveBudget = Math.min(tenantBudget !== null && tenantBudget > 0 ? tenantBudget : config.points, config.points);
 
         // Fast path: an in-process counter skips the DB while the key is well under budget.
         if (getPointsBudget && tryFastConsume(rateLimitKey, consumePoints, effectiveBudget) === 'allow') {

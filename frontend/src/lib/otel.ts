@@ -21,12 +21,9 @@ if (!mapleEnabled) {
 
   // Guarded for test environments where appConfig is partially mocked.
   if (appConfig.backendUrl) {
+    const backendOrigin = new RegExp(`^${appConfig.backendUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(/|$)`);
     registerInstrumentations({
-      instrumentations: [
-        new FetchInstrumentation({
-          propagateTraceHeaderCorsUrls: [new RegExp(`^${appConfig.backendUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(/|$)`)],
-        }),
-      ],
+      instrumentations: [new FetchInstrumentation({ propagateTraceHeaderCorsUrls: [backendOrigin] })],
     });
   }
 }

@@ -47,7 +47,14 @@ function quarantineOnClientError(error: ApiError, vars: unknown, mutationKey: un
   const entityType = entityTypeOf(mutationKey);
   import('~/query/offline/failed-sync')
     .then(({ quarantineFailedSync }) =>
-      quarantineFailedSync({ mutationId, entityType, clientCacheVersion: appConfig.clientCacheVersion, status, variables: vars, error }),
+      quarantineFailedSync({
+        mutationId,
+        entityType,
+        clientCacheVersion: appConfig.clientCacheVersion,
+        status,
+        variables: vars,
+        error,
+      }),
     )
     .catch(() => {});
 }
@@ -64,7 +71,10 @@ const mutationCacheConfig = {
   },
 };
 
-const queryCacheConfig = { onError: (error: ApiError, query: { meta?: QueryMeta }) => handleError(error, query.meta), onSuccess: handleSuccess };
+const queryCacheConfig = {
+  onError: (error: ApiError, query: { meta?: QueryMeta }) => handleError(error, query.meta),
+  onSuccess: handleSuccess,
+};
 
 const defaultStaleTime = 1000 * 30 * 1; // 30 seconds
 const offlineStaleTime = Number.POSITIVE_INFINITY; // Infinite when offline

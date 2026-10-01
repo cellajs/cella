@@ -46,7 +46,9 @@ export function placeServices(definitions: readonly ServiceDefinition[], singleV
         `services: '${svc.slug}' cannot set both coHosted and placement 'host': in-process fold and container collocation are mutually exclusive.`,
       );
   }
-  return { vm: definitions.filter((s) => !s.coHosted && s.placement !== 'host'), coHosted: definitions.filter((s) => s.coHosted), collocated };
+  const vm = definitions.filter((s) => !s.coHosted && s.placement !== 'host');
+  const coHosted = definitions.filter((s) => s.coHosted);
+  return { vm, coHosted, collocated };
 }
 
 /** Enabled services receiving dedicated VMs. Single-VM mode drops co-hosted workers and host-collocated containers from compute while keeping their routing through the host target. */
@@ -109,7 +111,9 @@ export function appStorageNeeds(definitions: readonly ServiceDefinition[]): {
   browserOriginSlug?: ServiceName;
 } {
   const browserOriginSlug = definitions.find((s) => s.lbRoute === 'default')?.slug;
-  return { spaBucket: browserOriginSlug !== undefined, uploadBuckets: definitions.some((s) => s.s3Access), browserOriginSlug };
+  const spaBucket = browserOriginSlug !== undefined;
+  const uploadBuckets = definitions.some((s) => s.s3Access);
+  return { spaBucket, uploadBuckets, browserOriginSlug };
 }
 
 /** A public service's resolved endpoint, derived from appConfig by the registry. */

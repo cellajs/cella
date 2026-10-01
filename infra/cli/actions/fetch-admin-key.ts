@@ -18,7 +18,13 @@ export async function runFetchAdminKey(context: InfraContext): Promise<void> {
   const { appConfig, projectId } = context;
   console.info(pc.dim('\nFetch admin application key: read it from Secret Manager with your Owner API key and write it to infra/.env.<mode>.\n'));
   const names = principalNames(appConfig.slug, context.environment);
-  const ownerKey = await acquireOwnerKey({ identity: resolveOperatorIdentity(), names, projectId, slug: appConfig.slug, mode: context.environment });
+  const ownerKey = await acquireOwnerKey({
+    identity: resolveOperatorIdentity(),
+    names,
+    projectId,
+    slug: appConfig.slug,
+    mode: context.environment,
+  });
 
   const secrets = createSecretManagerClient({ secretKey: ownerKey.secretKey, region: appConfig.s3.region, projectId });
   const container = await secrets.getSecretByName(ADMIN_KEY_SECRET_NAME, engineSecretPath(appConfig.slug, context.environment));

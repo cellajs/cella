@@ -118,7 +118,10 @@ const getBestSection = (): string | null => {
   const triggerY = window.innerHeight * 0.25;
 
   const withPositions = visible
-    .map(([id]) => ({ id, top: document.getElementById(`${SPY_PREFIX}${id}`)?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY }))
+    .map(([id]) => ({
+      id,
+      top: document.getElementById(`${SPY_PREFIX}${id}`)?.getBoundingClientRect().top ?? Number.POSITIVE_INFINITY,
+    }))
     .sort((a, b) => a.top - b.top);
 
   const pastTrigger = withPositions.filter(({ top }) => top <= triggerY);

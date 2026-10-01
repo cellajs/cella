@@ -153,7 +153,13 @@ export async function gcOwnedEmbeddedRows(
           const now = new Date().toISOString();
           const deleted = await cdcDb
             .update(embeddedTable)
-            .set({ deletedAt: now, deletedBy: actorId, updatedAt: now, updatedBy: actorId, stx: stripChangedFieldsStx() })
+            .set({
+              deletedAt: now,
+              deletedBy: actorId,
+              updatedAt: now,
+              updatedBy: actorId,
+              stx: stripChangedFieldsStx(),
+            })
             .where(and(inArray(embeddedColumns.id, orphanIds), eq(embeddedScopeColumn, scopeId), isNull(embeddedColumns.deletedAt)))
             .returning({ id: embeddedColumns.id });
 

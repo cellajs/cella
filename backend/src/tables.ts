@@ -28,10 +28,11 @@ const resolveTables = <T extends Record<string, () => AnyPgTable>>(getters: T) =
  * Entity-to-table mapping, derived from the pinned `channel-tables.ts` and `product-tables.ts`
  * lists plus `user`, the one entity that is neither. `satisfies` enforces shape without widening keys.
  */
-export const entityTables = { user: usersTable, ...resolveTables(channelTables), ...resolveTables(productTables) } as const satisfies Record<
-  string,
-  ResolvableTable
->;
+export const entityTables = {
+  user: usersTable,
+  ...resolveTables(channelTables),
+  ...resolveTables(productTables),
+} as const satisfies Record<string, ResolvableTable>;
 
 /** Resource-to-table mapping. */
 export const resourceTables = {

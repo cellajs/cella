@@ -44,7 +44,13 @@ async function checkDatabase(): Promise<{ connected: boolean; latencyMs: number 
 function buildCdcComponent(): HealthComponent {
   const socket = cdcWebSocketServer.getHealthStatus();
   const report = cdcWebSocketServer.getWorkerHealth();
-  const worker = report ? { ...report.payload, receivedAt: report.receivedAt.toISOString(), ageMs: Date.now() - report.receivedAt.getTime() } : null;
+  const worker = report
+    ? {
+        ...report.payload,
+        receivedAt: report.receivedAt.toISOString(),
+        ageMs: Date.now() - report.receivedAt.getTime(),
+      }
+    : null;
   const component = mapCdcComponent(
     {
       cdcConnected: socket.cdcConnected,

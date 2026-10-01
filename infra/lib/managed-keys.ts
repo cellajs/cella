@@ -43,7 +43,8 @@ export const managedKeys: ManagedKeyDefinition[] = Object.entries(managedKeysCon
 
 // Fail fast at load time: a misconfiguration here becomes a bad IAM call or a mis-seeded secret at setup.
 {
-  const operatorSecretIds = new Set(runtimeSecrets.filter((secret) => secret.valueSource === 'operator').map((secret) => secret.id));
+  const operatorIds = runtimeSecrets.filter((secret) => secret.valueSource === 'operator').map((secret) => secret.id);
+  const operatorSecretIds = new Set(operatorIds);
   const seenSuffixes = new Set<string>();
   const seenSecretIds = new Set<string>();
   for (const key of managedKeys) {

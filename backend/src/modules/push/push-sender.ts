@@ -49,9 +49,8 @@ export interface PushSendDeps {
 const defaultDeps: PushSendDeps = {
   send: async (subscription, payload) => {
     applyVapidDetails();
-    await webpush.sendNotification({ endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } }, payload, {
-      TTL: 60 * 60 * 24,
-    });
+    const pushSubscription = { endpoint: subscription.endpoint, keys: { p256dh: subscription.p256dh, auth: subscription.auth } };
+    await webpush.sendNotification(pushSubscription, payload, { TTL: 60 * 60 * 24 });
   },
   findSubscriptions: (userIds) => findSubscriptionsByUserIds(userIds),
   pruneEndpoints: (endpoints) => deleteSubscriptionsByEndpoints(endpoints),

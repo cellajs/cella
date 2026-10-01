@@ -18,7 +18,10 @@ type ActiveIndicatorProps = {
 /** Assumes a `relative` parent, items stacked with no gap, and each item `h-8`. */
 export function ActiveIndicator({ activeIndex, layoutId, isMobile }: ActiveIndicatorProps) {
   if (activeIndex < 0) return null;
-  const style = { top: `${LIST_PADDING_TOP_REM + activeIndex * ITEM_HEIGHT_REM + INDICATOR_OFFSET_REM}rem`, height: `${INDICATOR_HEIGHT_REM}rem` };
+  const style = {
+    top: `${LIST_PADDING_TOP_REM + activeIndex * ITEM_HEIGHT_REM + INDICATOR_OFFSET_REM}rem`,
+    height: `${INDICATOR_HEIGHT_REM}rem`,
+  };
 
   return <IndicatorBar layoutId={layoutId} animate={!isMobile} className={isMobile ? 'transition-[top] duration-200' : undefined} style={style} />;
 }

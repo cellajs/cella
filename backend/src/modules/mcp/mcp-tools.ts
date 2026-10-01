@@ -62,7 +62,10 @@ function splitStx(schema: z.ZodType): { modelSchema: z.ZodType; withServerStx: (
   if (schema instanceof z.ZodArray) {
     const inner = splitStx(schema.element as z.ZodType);
     if (inner.modelSchema !== schema.element) {
-      return { modelSchema: z.array(inner.modelSchema), withServerStx: (value) => (Array.isArray(value) ? value.map(inner.withServerStx) : value) };
+      return {
+        modelSchema: z.array(inner.modelSchema),
+        withServerStx: (value) => (Array.isArray(value) ? value.map(inner.withServerStx) : value),
+      };
     }
   }
   return { modelSchema: schema, withServerStx: (value) => value };

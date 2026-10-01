@@ -127,7 +127,8 @@ function bootImageFor(registry: string, releaseSha: string, secretKey: string, r
 }
 
 function buildCloudInit(service: ServiceConfig, releaseSha: string, requirePinnedBootImage: boolean): pulumi.Output<string> {
-  const envLines = pulumi.all(Object.entries(service.composeEnv).map(([k, supply]) => pulumi.output(supply()).apply((val) => `${k}=${val}`)));
+  const envEntries = Object.entries(service.composeEnv).map(([k, supply]) => pulumi.output(supply()).apply((val) => `${k}=${val}`));
+  const envLines = pulumi.all(envEntries);
 
   const bootImage = pulumi
     .all([registryEndpoint, vmSecretKey])

@@ -161,7 +161,10 @@ async function handleSet(ctx: MenuContext): Promise<void> {
   // becomes part of the stored secret; validate on the trimmed length so an
   // all-whitespace entry is rejected the same as an empty one.
   const value = (
-    await ctx.prompts.password({ message: `New value for ${secret.secretName}`, validate: (input) => input.trim().length > 0 || 'Value is required' })
+    await ctx.prompts.password({
+      message: `New value for ${secret.secretName}`,
+      validate: (input) => input.trim().length > 0 || 'Value is required',
+    })
   ).trim();
   const version = await ctx.client.putSecretValue({
     secretId: existingSecret.id,
@@ -187,7 +190,11 @@ async function handleMint(ctx: MenuContext): Promise<void> {
     message: 'Select a managed key to mint / rotate (Esc to go back)',
     choices: managedKeys.map((key) => {
       const targets = Object.values(key.assign).map((id) => runtimeSecrets.find((secret) => secret.id === id)?.envVar ?? id);
-      return { name: `${key.suffix}: ${key.label}`, value: key.id, description: `${ctx.slug}-${key.suffix} → ${targets.join(', ')}` };
+      return {
+        name: `${key.suffix}: ${key.label}`,
+        value: key.id,
+        description: `${ctx.slug}-${key.suffix} → ${targets.join(', ')}`,
+      };
     }),
   });
   if (selectedId === BACK) return;
@@ -248,10 +255,26 @@ export async function manageRuntimeSecrets(options: ManageRuntimeSecretsOptions)
     const action = await options.prompts.select<Action>({
       message: 'Manage runtime secrets',
       choices: [
-        { name: 'List', value: 'list', description: 'Show operator-managed runtime secrets and whether a secret object exists.' },
-        { name: 'Set or update', value: 'set', description: 'Create a new secret version for a selected runtime secret.' },
-        { name: 'Rotate', value: 'rotate', description: 'Generate a fresh random value for a selected runtime secret when supported.' },
-        { name: 'Mint key', value: 'mint', description: 'Mint (or rotate) a scoped Scaleway IAM key and write it into its runtime secret(s).' },
+        {
+          name: 'List',
+          value: 'list',
+          description: 'Show operator-managed runtime secrets and whether a secret object exists.',
+        },
+        {
+          name: 'Set or update',
+          value: 'set',
+          description: 'Create a new secret version for a selected runtime secret.',
+        },
+        {
+          name: 'Rotate',
+          value: 'rotate',
+          description: 'Generate a fresh random value for a selected runtime secret when supported.',
+        },
+        {
+          name: 'Mint key',
+          value: 'mint',
+          description: 'Mint (or rotate) a scoped Scaleway IAM key and write it into its runtime secret(s).',
+        },
         { name: 'Delete', value: 'delete', description: 'Delete an entire runtime secret object after confirmation.' },
         { name: 'Exit', value: 'exit', description: 'Leave the runtime secrets menu.' },
       ],

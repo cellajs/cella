@@ -16,7 +16,15 @@ export function Stepper({ children, className, initialStep = 0, steps, onClickSt
   );
 
   return (
-    <StepperContext.Provider value={{ steps, activeStep, onClickStep, nextStep: () => setActiveStep((prev) => prev + 1), setStep: setActiveStep }}>
+    <StepperContext.Provider
+      value={{
+        steps,
+        activeStep,
+        onClickStep,
+        nextStep: () => setActiveStep((prev) => prev + 1),
+        setStep: setActiveStep,
+      }}
+    >
       <div
         className={cn(
           'flex w-full flex-col flex-wrap [--step-gap:0.5rem] [--step-icon-size:2rem]',

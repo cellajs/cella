@@ -8,6 +8,7 @@ import { organizationsTable } from '#/modules/organization/organization-db';
  * be a plain comparison of both ids.
  */
 export const organizationForeignKey = (table: { tenantId: AnyPgColumn; organizationId: AnyPgColumn }) =>
-  foreignKey({ columns: [table.tenantId, table.organizationId], foreignColumns: [organizationsTable.tenantId, organizationsTable.id] }).onDelete(
-    'cascade',
-  );
+  foreignKey({
+    columns: [table.tenantId, table.organizationId],
+    foreignColumns: [organizationsTable.tenantId, organizationsTable.id],
+  }).onDelete('cascade');

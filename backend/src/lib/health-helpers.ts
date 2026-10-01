@@ -92,7 +92,12 @@ export function mapCdcComponent(socket: CdcSocketSnapshot, worker: CdcWorkerRepo
       checkedVia: 'push',
       ageMs: worker?.ageMs ?? null,
       reason: 'worker_disconnected',
-      details: { wsConnected: false, lastMessageAt: socket.lastMessageAt, messages: socket.messagesReceived, parseErrors: socket.parseErrors },
+      details: {
+        wsConnected: false,
+        lastMessageAt: socket.lastMessageAt,
+        messages: socket.messagesReceived,
+        parseErrors: socket.parseErrors,
+      },
     };
   }
 

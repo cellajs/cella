@@ -14,7 +14,14 @@ export const mockServiceAccountResponse = (key = 'serviceAccount:default'): Serv
       tenantId: mockTenantId(),
       name: `${faker.hacker.noun()} bot`,
       status: 'active',
-      bindings: [{ channelType: 'organization', channelId: organizationId, organizationId, role: hierarchy.getLeastPrivilegedRole('organization') }],
+      bindings: [
+        {
+          channelType: 'organization',
+          channelId: organizationId,
+          organizationId,
+          role: hierarchy.getLeastPrivilegedRole('organization'),
+        },
+      ],
       oauthClientId: null,
       createdBy: mockUuid(),
       createdAt,

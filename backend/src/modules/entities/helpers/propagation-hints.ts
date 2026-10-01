@@ -61,7 +61,13 @@ export async function buildPropagationHints(
 
       for (const host of hosts) {
         if (updatedIds.length > 0 || deletedIds.length > 0) {
-          hints.push({ embeddedProduct, hostProduct: host.hostProduct, hostColumn: host.hostColumn, update: updatedIds, remove: deletedIds });
+          hints.push({
+            embeddedProduct,
+            hostProduct: host.hostProduct,
+            hostColumn: host.hostColumn,
+            update: updatedIds,
+            remove: deletedIds,
+          });
         }
       }
     }

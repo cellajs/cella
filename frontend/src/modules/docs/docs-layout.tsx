@@ -103,7 +103,14 @@ function DocsLayout() {
 
   const floatingNavItems: FloatingNavItem[] = [
     { id: 'docs-menu', icon: MenuIcon, onClick: toggleSidebar, ariaLabel: 'Toggle menu', direction: 'left' },
-    { id: 'docs-scroll-top', icon: ArrowUpIcon, onClick: scrollToTop, ariaLabel: 'Scroll to top', visible: showScrollTop, direction: 'right' },
+    {
+      id: 'docs-scroll-top',
+      icon: ArrowUpIcon,
+      onClick: scrollToTop,
+      ariaLabel: 'Scroll to top',
+      visible: showScrollTop,
+      direction: 'right',
+    },
   ];
 
   if (!isDesktop) {

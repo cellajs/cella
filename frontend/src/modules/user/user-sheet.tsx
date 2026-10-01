@@ -18,7 +18,7 @@ export function UserSheet({ id, organizationId }: { id: string; organizationId: 
   if (isError) return <ContentPlaceholder icon={ServerCrashIcon} title="error:request_failed" />;
 
   if (!user)
-    return <ContentPlaceholder icon={isOnline ? FlameKindlingIcon : WifiOffIcon} title={`${isOnline ? 'error:no_user_found' : 'c:offline.text'}`} />;
+    return <ContentPlaceholder icon={isOnline ? FlameKindlingIcon : WifiOffIcon} title={isOnline ? 'error:no_user_found' : 'c:offline.text'} />;
 
   return <UserProfile user={user} organizationId={isSelf ? undefined : organizationId} isSheet />;
 }

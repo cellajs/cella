@@ -44,7 +44,10 @@ export function UpdateOrganizationDetailsForm({ organization, callback, sheet: i
   const canUploadAttachments =
     (appConfig.attachmentUploadTargets as readonly string[]).includes('organization') && organization.can?.attachment?.create === true;
 
-  const formOptions: UseFormProps<FormValues> = { resolver: zodResolver(formSchema), defaultValues: { welcomeText: organization.welcomeText || '' } };
+  const formOptions: UseFormProps<FormValues> = {
+    resolver: zodResolver(formSchema),
+    defaultValues: { welcomeText: organization.welcomeText || '' },
+  };
 
   const formContainerId = 'update-organization-details';
   const form = useFormWithDraft<FormValues>(`${formContainerId}-${organization.id}`, { formOptions, formContainerId });

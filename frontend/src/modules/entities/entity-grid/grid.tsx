@@ -69,10 +69,11 @@ export function BaseEntityGrid<TEntity extends { id: string }>({
   if (isLoading || !entities) return <EntityGridSkeleton tileHeight={skeletonHeight} />;
 
   if (!isFetching && !error && entities.length === 0) {
+    const resource = t(label, { count: 0 }).toLowerCase();
     return isFiltered ? (
-      <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }} />
+      <ContentPlaceholder icon={SearchIcon} title="c:no_resource_found" titleProps={{ resource }} />
     ) : (
-      <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleProps={{ resource: t(label, { count: 0 }).toLowerCase() }} />
+      <ContentPlaceholder icon={BirdIcon} title="c:no_resource_yet" titleProps={{ resource }} />
     );
   }
 

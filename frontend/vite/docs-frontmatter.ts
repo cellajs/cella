@@ -157,7 +157,9 @@ export function pageStructure(file: string, source: string): { headings: DocHead
   const imported = importTargets(file, source)
     .filter((target) => existsSync(target))
     .map((target) => extractStructure(readFileSync(target, 'utf8'), { stripLeadingH1: true }));
-  return { headings: [...own.headings, ...imported.flatMap((s) => s.headings)], sections: [...own.sections, ...imported.flatMap((s) => s.sections)] };
+  const headings = [...own.headings, ...imported.flatMap((s) => s.headings)];
+  const sections = [...own.sections, ...imported.flatMap((s) => s.sections)];
+  return { headings, sections };
 }
 
 /** Exposes page metadata and search text as virtual modules without importing page components. */
@@ -188,7 +190,8 @@ export function docsFrontmatter(): Plugin {
       const { draft, hidden } = (frontmatter ?? {}) as { draft?: boolean; hidden?: boolean };
       if (/^index\.mdx?$/.test(relative) || draft || hidden) continue;
       // Bare anchor ids: consumers navigate via hashes, which drop the DOM prefix.
-      sectionEntries.push([key, sections.map((s) => ({ ...s, headingId: s.headingId ? s.headingId.replace(ID_PREFIX, '') : null }))] as const);
+      const bareSections = sections.map((s) => ({ ...s, headingId: s.headingId ? s.headingId.replace(ID_PREFIX, '') : null }));
+      sectionEntries.push([key, bareSections] as const);
     }
 
     return { index: Object.fromEntries(entries), sections: Object.fromEntries(sectionEntries), targets };

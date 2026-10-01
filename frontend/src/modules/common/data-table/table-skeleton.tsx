@@ -32,10 +32,7 @@ export function DataTableSkeleton({
           {Array.from({ length: 1 }).map((_, i) => (
             <TableRow key={i.toString()} className="hover:bg-transparent">
               {Array.from({ length: effectiveColumnCount }).map((_, j) => (
-                <TableHead
-                  key={j.toString()}
-                  style={{ width: cellsWidths[j] ? cellsWidths[j] : 'auto', minWidth: shrinkTable ? cellsWidths[j] : 'auto' }}
-                >
+                <TableHead key={j.toString()} style={{ width: cellsWidths[j] || 'auto', minWidth: shrinkTable ? cellsWidths[j] : 'auto' }}>
                   <Skeleton className={'mt-2 mb-2 w-full'} style={{ height: `${renderCellHeight}px` }} />
                 </TableHead>
               ))}
@@ -46,10 +43,7 @@ export function DataTableSkeleton({
           {Array.from({ length: rowCount }).map((_, i) => (
             <TableRow key={i.toString()} className="hover:bg-transparent">
               {Array.from({ length: effectiveColumnCount }).map((_, j) => (
-                <TableCell
-                  key={j.toString()}
-                  style={{ width: cellsWidths[j] ? cellsWidths[j] : 'auto', minWidth: shrinkTable ? cellsWidths[j] : 'auto' }}
-                >
+                <TableCell key={j.toString()} style={{ width: cellsWidths[j] || 'auto', minWidth: shrinkTable ? cellsWidths[j] : 'auto' }}>
                   <Skeleton className={'w-full'} style={{ height: `${renderCellHeight}px` }} />
                 </TableCell>
               ))}

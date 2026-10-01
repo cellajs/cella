@@ -11,7 +11,10 @@ export const EmailAvatar = ({ name, type = 'user' }: { name?: string | null; typ
   let initials = 'U';
   if (name) {
     const words = name.split(' ');
-    initials = words.length > 1 ? words[0].charAt(0).toUpperCase() + words[1].charAt(0).toUpperCase() : words[0].charAt(0).toUpperCase();
+    initials = words
+      .slice(0, 2)
+      .map((word) => word.charAt(0).toUpperCase())
+      .join('');
   }
   if (type === 'organization') initials = 'O';
 

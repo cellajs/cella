@@ -30,9 +30,10 @@ const restrictionsSchema = z.object({
 
 export const tenantSchema = z
   .object({
-    ...createSelectSchema(tenantsTable, { restrictions: restrictionsSchema, authStrategies: z.array(z.enum(authStrategiesEnum)) }).omit({
-      subscriptionData: true,
-    }).shape,
+    ...createSelectSchema(tenantsTable, {
+      restrictions: restrictionsSchema,
+      authStrategies: z.array(z.enum(authStrategiesEnum)),
+    }).omit({ subscriptionData: true }).shape,
     domainsCount: z.number().int().describe('Number of domains claimed by this tenant'),
   })
   .openapi('Tenant', {

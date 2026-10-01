@@ -155,10 +155,8 @@ export async function provisionScopedKey(opts: ProvisionScopedKeyOptions, config
   }
 
   // Mint before purging: Scaleway reveals each secret only at creation, and purge-then-mint leaves the principal keyless when the mint fails.
-  const apiKey = await createApiKey(
-    { secretKey: callerSecretKey },
-    { applicationId: app.id, description: `${config.suffix}: rotated ${new Date().toISOString().slice(0, 10)}`, defaultProjectId: projectId },
-  );
+  const description = `${config.suffix}: rotated ${new Date().toISOString().slice(0, 10)}`;
+  const apiKey = await createApiKey({ secretKey: callerSecretKey }, { applicationId: app.id, description, defaultProjectId: projectId });
   log(`  ${changeMark} Created API key: ${apiKey.access_key}`);
 
   // Purge replaced keys so reruns do not accumulate unusable keys.

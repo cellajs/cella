@@ -125,7 +125,8 @@ export class TransactionBuffer {
 
     if (surviving.length > 0) {
       if (surviving.length > 1) {
-        const nonDeleteTypes = new Set(surviving.filter((e) => e.result.activity.action !== 'delete').map((e) => e.result.tableMeta.type));
+        const nonDeleteEvents = surviving.filter((e) => e.result.activity.action !== 'delete');
+        const nonDeleteTypes = new Set(nonDeleteEvents.map((e) => e.result.tableMeta.type));
         if (nonDeleteTypes.size > 1) {
           log.warn('Transaction contains non-delete mutations across types', { types: [...nonDeleteTypes] });
         }

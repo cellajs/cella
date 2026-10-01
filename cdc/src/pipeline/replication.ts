@@ -173,7 +173,10 @@ export async function subscribeWithReconnect(service: LogicalReplicationService,
       const retryDelayMs = inHandoffWindow ? slotTakeover.retryDelayMs : reconnection.retryDelayMs;
       const takeover = inHandoffWindow ? ` (slot-takeover ${attempt}/${slotTakeover.maxAttempts})` : '';
       const slotHolder = (error as { code?: string } | null)?.code === PG_OBJECT_IN_USE ? await describeSlotHolder() : null;
-      log.warn(`Subscription error, retrying in ${retryDelayMs / 1000}s${takeover}...`, { err: error, ...(slotHolder && { slotHolder }) });
+      log.warn(`Subscription error, retrying in ${retryDelayMs / 1000}s${takeover}...`, {
+        err: error,
+        ...(slotHolder && { slotHolder }),
+      });
       replicationState.markStopped();
       // Reposition a slot whose start predates its publication so decoding can proceed.
       if (isStalePublicationError(error)) {

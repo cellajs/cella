@@ -5,7 +5,11 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
 import { Button } from '~/modules/ui/button';
 
-export type EllipsisOption<T> = { label: string; icon: IconComponent; onSelect: (row: T, triggerRef: RefObject<HTMLButtonElement | null>) => void };
+export type EllipsisOption<T> = {
+  label: string;
+  icon: IconComponent;
+  onSelect: (row: T, triggerRef: RefObject<HTMLButtonElement | null>) => void;
+};
 
 interface Props<T> {
   row: T;

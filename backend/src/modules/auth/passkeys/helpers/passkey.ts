@@ -69,7 +69,11 @@ const consumeChallenge = async (ctx: Context<Env>, purpose: PasskeyChallengePurp
   const [issued] = await db
     .delete(passkeyChallengesTable)
     .where(eq(passkeyChallengesTable.challengeHash, hashToken(challenge)))
-    .returning({ purpose: passkeyChallengesTable.purpose, userId: passkeyChallengesTable.userId, expiresAt: passkeyChallengesTable.expiresAt });
+    .returning({
+      purpose: passkeyChallengesTable.purpose,
+      userId: passkeyChallengesTable.userId,
+      expiresAt: passkeyChallengesTable.expiresAt,
+    });
   if (!issued || issued.purpose !== purpose || isExpiredDate(issued.expiresAt)) throw verificationFailed();
   if (issued.userId && issued.userId !== userId) throw verificationFailed();
 
@@ -146,10 +150,11 @@ export const verifyPasskeyAssertion = async (ctx: Context<Env>, { assertion, pur
   if (!verified) throw verificationFailed();
 
   const { newCounter } = authenticationInfo;
+  const counterAdvances = newCounter > 0 ? lt(passkeysTable.counter, newCounter) : eq(passkeysTable.counter, 0);
   const [stored] = await db
     .update(passkeysTable)
     .set({ counter: newCounter })
-    .where(and(eq(passkeysTable.id, passkey.id), newCounter > 0 ? lt(passkeysTable.counter, newCounter) : eq(passkeysTable.counter, 0)))
+    .where(and(eq(passkeysTable.id, passkey.id), counterAdvances))
     .returning({ id: passkeysTable.id });
   if (!stored) throw verificationFailed();
 

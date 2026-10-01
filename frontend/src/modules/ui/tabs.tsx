@@ -4,7 +4,9 @@ import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 const TabsListVariants = cva('inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-none p-[3px] text-muted-foreground', {
-  variants: { variant: { default: '', side: 'flex h-fit w-fit flex-col border-none [&>button]:w-full', underline: 'rounded-none border-b pb-2' } },
+  variants: {
+    variant: { default: '', side: 'flex h-fit w-fit flex-col border-none [&>button]:w-full', underline: 'rounded-none border-b pb-2' },
+  },
   defaultVariants: { variant: 'default' },
 });
 

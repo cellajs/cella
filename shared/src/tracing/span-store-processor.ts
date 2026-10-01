@@ -35,7 +35,11 @@ function readableSpanToSpanData(span: ReadableSpan): SpanData {
     duration: endTime - startTime,
     attributes,
     status: span.status.code === 2 ? 'error' : span.status.code === 1 ? 'ok' : 'unset',
-    events: span.events.map((e) => ({ name: e.name, time: hrTimeToMs(e.time), attributes: e.attributes as Record<string, unknown> | undefined })),
+    events: span.events.map((e) => ({
+      name: e.name,
+      time: hrTimeToMs(e.time),
+      attributes: e.attributes as Record<string, unknown> | undefined,
+    })),
   };
 }
 

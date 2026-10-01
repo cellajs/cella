@@ -231,7 +231,14 @@ export const cards: InfoCard[] = [
 
 export const pricingPlans: PricingPlan[] = [
   { id: 'donate', action: 'contact_us', priceId: null, featureCount: 5, borderColor: '' },
-  { id: 'build', action: 'waitlist_request', priceId: null, featureCount: 4, borderColor: 'ring-4 ring-primary/5', popular: true },
+  {
+    id: 'build',
+    action: 'waitlist_request',
+    priceId: null,
+    featureCount: 4,
+    borderColor: 'ring-4 ring-primary/5',
+    popular: true,
+  },
   { id: 'partner', action: 'contact_us', priceId: null, featureCount: 3, borderColor: '' },
 ];
 
@@ -256,9 +263,27 @@ export const counts = [
 export const whyItems = [{ id: 'implementation-ready' }, { id: 'prebuilt-endpoints' }, { id: 'dedicated-community' }];
 
 export const whyLightSlides = [
-  { id: nanoid(), url: '/static/marketing/screenshots/system-page.png', name: 'System page', filename: 'system-page.png', contentType: 'image/png' },
-  { id: nanoid(), url: '/static/marketing/screenshots/org-page.png', name: 'Organization page', filename: 'org-page.png', contentType: 'image/png' },
-  { id: nanoid(), url: '/static/marketing/screenshots/settings.png', name: 'User settings page', filename: 'settings.png', contentType: 'image/png' },
+  {
+    id: nanoid(),
+    url: '/static/marketing/screenshots/system-page.png',
+    name: 'System page',
+    filename: 'system-page.png',
+    contentType: 'image/png',
+  },
+  {
+    id: nanoid(),
+    url: '/static/marketing/screenshots/org-page.png',
+    name: 'Organization page',
+    filename: 'org-page.png',
+    contentType: 'image/png',
+  },
+  {
+    id: nanoid(),
+    url: '/static/marketing/screenshots/settings.png',
+    name: 'User settings page',
+    filename: 'settings.png',
+    contentType: 'image/png',
+  },
 ];
 export const whyDarkSlides = [
   {

@@ -38,7 +38,7 @@ export async function setupCiKey(opts: SetupCiKeyOptions): Promise<CiKeyResult> 
     // unconditioned: the resource.id condition 403s real api-key mints on
     // live Scaleway (disproven 2026-08-10; see CI_KEY_MINT_PERMISSION_SETS).
     buildRules: ({ projectId, organizationId }) =>
-      CI_RULE_SHAPES.filter((shape) => shape.id !== 'key-mint' || (opts.keyMintAppIds && opts.keyMintAppIds.length > 0)).map((shape) =>
+      CI_RULE_SHAPES.filter((shape) => shape.id !== 'key-mint' || (opts.keyMintAppIds?.length ?? 0) > 0).map((shape) =>
         shape.scope === 'project'
           ? { permission_set_names: [...shape.permissionSets], project_ids: [projectId] }
           : shape.scope === 'dns-projects'

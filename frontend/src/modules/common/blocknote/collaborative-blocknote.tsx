@@ -101,7 +101,13 @@ export function CollaborativeBlockNote({
 
   const collaborationBundle =
     collaborative && yjsConn
-      ? { provider: yjsConn.provider, fragment: yjsConn.fragment, user: { name: user.name, color: userColorRef.current }, entityType, entityId }
+      ? {
+          provider: yjsConn.provider,
+          fragment: yjsConn.fragment,
+          user: { name: user.name, color: userColorRef.current },
+          entityType,
+          entityId,
+        }
       : undefined;
 
   // A reseeded document syncs afresh: the editor comes back on the new fragment once it did.

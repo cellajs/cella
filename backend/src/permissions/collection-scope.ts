@@ -58,7 +58,16 @@ interface ScopeAccumulator {
   /** HOME-scoped unconditional grants (non-elevated), keyed by channel type. */
   homeScoped: Map<ChannelEntityType, Set<string>>;
   /** Keyed by `${condition name}:${level}:${homeOnly}`; the name uniquely identifies the rule. */
-  conditional: Map<string, { condition: RowConditionName; channelType?: ChannelEntityType; homeOnly: boolean; orgWide: boolean; ids: Set<string> }>;
+  conditional: Map<
+    string,
+    {
+      condition: RowConditionName;
+      channelType?: ChannelEntityType;
+      homeOnly: boolean;
+      orgWide: boolean;
+      ids: Set<string>;
+    }
+  >;
 }
 
 /** The caller's readable scope. A role holding only `read: 'own'` contributes a {@link ConditionalScope}, so it can still list. */

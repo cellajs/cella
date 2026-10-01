@@ -198,7 +198,7 @@ export function PullToRefresh({ onRefresh, isFetching = false, refreshThreshold 
       <svg
         className={`h-8 w-8 ${isActive ? 'animate-spin' : ''}`}
         viewBox="0 0 40 40"
-        style={{ transform: isActive ? undefined : `rotate(${pullPosition * 2}deg)`, transition: isActive ? 'none' : 'transform 0.1s ease-out' }}
+        style={isActive ? { transition: 'none' } : { transform: `rotate(${pullPosition * 2}deg)`, transition: 'transform 0.1s ease-out' }}
       >
         <title>Pull to refresh</title>
         <circle

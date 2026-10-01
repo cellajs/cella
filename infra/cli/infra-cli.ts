@@ -46,8 +46,16 @@ async function resolveMode(): Promise<'production' | 'staging'> {
       message: 'Fresh install. Which mode do you want to set up?',
       default: 'staging',
       choices: [
-        { name: 'staging (recommended)', value: 'staging', description: 'Cheapest setup, disposable. Validate the pipeline here first.' },
-        { name: 'production', value: 'production', description: 'The real thing. Promote here later once staging is green.' },
+        {
+          name: 'staging (recommended)',
+          value: 'staging',
+          description: 'Cheapest setup, disposable. Validate the pipeline here first.',
+        },
+        {
+          name: 'production',
+          value: 'production',
+          description: 'The real thing. Promote here later once staging is green.',
+        },
       ],
     });
   }
@@ -130,7 +138,11 @@ async function chooseDatabaseAction(dbExposed: boolean): Promise<Exclude<CliMode
     message: 'Manage database',
     loop: false,
     choices: [
-      { name: 'Reset database', value: 'reset-database', description: 'DESTRUCTIVE: wipe and rebuild the database empty (backup first).' },
+      {
+        name: 'Reset database',
+        value: 'reset-database',
+        description: 'DESTRUCTIVE: wipe and rebuild the database empty (backup first).',
+      },
       { name: 'Seed database', value: 'seed-db', description: 'Load seed data into a non-production database.' },
       toggle,
       backChoice,
@@ -148,8 +160,16 @@ async function chooseKeysAction(): Promise<Exclude<CliMode, 'status'> | 'back'> 
         value: 'rotate',
         description: 'Replace the CI deploy key and the admin application key with fresh ones (the admin key is rewritten in infra/.env.<mode>).',
       },
-      { name: 'Rotate passphrase', value: 'rotate-passphrase', description: 'Re-encrypt stack state with a new Pulumi passphrase and sync it.' },
-      { name: 'Manage runtime secrets', value: 'secrets', description: 'List, set, rotate, or delete the runtime secrets.' },
+      {
+        name: 'Rotate passphrase',
+        value: 'rotate-passphrase',
+        description: 'Re-encrypt stack state with a new Pulumi passphrase and sync it.',
+      },
+      {
+        name: 'Manage runtime secrets',
+        value: 'secrets',
+        description: 'List, set, rotate, or delete the runtime secrets.',
+      },
       {
         name: 'Fetch admin application key',
         value: 'fetch-admin-key',
@@ -187,7 +207,11 @@ async function chooseStackAction(): Promise<Exclude<CliMode, 'status'> | 'back'>
         value: 'geoip-refresh',
         description: "Publish this month's DB-IP databases to the public bucket; API processes pick them up within a day.",
       },
-      { name: 'Teardown', value: 'teardown', description: 'DESTRUCTIVE: destroy every stack resource, then optionally delete the IAM principals.' },
+      {
+        name: 'Teardown',
+        value: 'teardown',
+        description: 'DESTRUCTIVE: destroy every stack resource, then optionally delete the IAM principals.',
+      },
       backChoice,
     ],
   });

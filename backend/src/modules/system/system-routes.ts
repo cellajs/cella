@@ -8,6 +8,8 @@ import { batchResponseSchema, booleanTransformSchema, entityIdParamSchema, idsBo
 import { userSchema, userUpdateBodySchema } from '../user/user-schema';
 import { mockSystemInviteResponse } from './system-mocks';
 
+const systemInviteResponseSchema = batchResponseSchema().extend({ invitesSentCount: z.number() });
+
 const systemRoutes = createXRoutes(['system', 'cella'], {
   createInvite: xRoute({
     operationId: 'systemInvite',
@@ -18,7 +20,7 @@ const systemRoutes = createXRoutes(['system', 'cella'], {
     summary: 'Invite to system',
     description: 'Invites one or more users to the system via email. Can be used to onboard system level users or admins.',
     request: { body: jsonBody(inviteBodySchema) },
-    responses: { 200: json('Invitations are sent', batchResponseSchema().extend({ invitesSentCount: z.number() }), mockSystemInviteResponse()) },
+    responses: { 200: json('Invitations are sent', systemInviteResponseSchema, mockSystemInviteResponse()) },
   }),
   deleteUsers: xRoute({
     method: 'delete',

@@ -45,7 +45,13 @@ export async function setActorFromToken(ctx: Context<Env>, jwt: string, scope: {
     ctx.set('actor', { kind: 'user', id: user.id, bindings: memberships, scopes: token.scopes });
   } else {
     const { account } = grant;
-    ctx.set('actor', { kind: 'service', id: account.id, tenantId: account.tenantId, bindings: account.bindings, scopes: token.scopes });
+    ctx.set('actor', {
+      kind: 'service',
+      id: account.id,
+      tenantId: account.tenantId,
+      bindings: account.bindings,
+      scopes: token.scopes,
+    });
   }
   ctx.set('isSystemAdmin', false);
   ctx.set('db', baseDb);
@@ -114,7 +120,8 @@ export const serviceGuard = xMiddleware(
     const raw = apiKeyFrom(ctx);
     if (!raw) {
       // RFC 9728: the challenge names where the API face publishes its metadata.
-      ctx.header('WWW-Authenticate', `Bearer resource_metadata="${resourceMetadataUrl({ face: 'api', tenantId: target.tenantId })}"`);
+      const metadata = resourceMetadataUrl({ face: 'api', tenantId: target.tenantId });
+      ctx.header('WWW-Authenticate', `Bearer resource_metadata="${metadata}"`);
       throw unauthorized('missing_api_key');
     }
 
@@ -130,7 +137,13 @@ export const serviceGuard = xMiddleware(
     if (refusal) throw unauthorized(refusal);
     const { apiKey, account } = resolved;
 
-    ctx.set('actor', { kind: 'service', id: account.id, tenantId: account.tenantId, bindings: account.bindings, scopes: apiKey.scopes });
+    ctx.set('actor', {
+      kind: 'service',
+      id: account.id,
+      tenantId: account.tenantId,
+      bindings: account.bindings,
+      scopes: apiKey.scopes,
+    });
     ctx.set('isSystemAdmin', false);
     ctx.set('db', baseDb);
 

@@ -114,7 +114,11 @@ vmIamPolicies.push(
       organizationId,
       rules: [
         { permissionSetNames: [...BOOT_PROJECT_PERMISSION_SETS], projectIds: [projectId] },
-        { permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS], projectIds: [projectId], condition: bootKeyCondition(naming.slug, mode) },
+        {
+          permissionSetNames: [...SERVICE_SECRET_PERMISSION_SETS],
+          projectIds: [projectId],
+          condition: bootKeyCondition(naming.slug, mode),
+        },
       ],
       tags,
     },

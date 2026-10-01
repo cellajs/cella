@@ -43,7 +43,8 @@ export async function verifyAccessToken(jwt: string, route: { tenantId: string; 
         client_id?: string;
       };
     if (claims.sub && claims.tenant_id && claims.client_id) {
-      const token = { actorId: claims.sub, tenantId: claims.tenant_id, scopes: accessScopes.parse(claims.scope), clientId: claims.client_id };
+      const scopes = accessScopes.parse(claims.scope);
+      const token = { actorId: claims.sub, tenantId: claims.tenant_id, scopes, clientId: claims.client_id };
       if (claims.actor_kind === 'user' && claims.gid) return { ...token, kind: 'user', grantId: claims.gid };
       if (claims.actor_kind === 'service' && claims.key_id) return { ...token, kind: 'service', keyId: claims.key_id };
     }

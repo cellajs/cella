@@ -171,7 +171,8 @@ function runArtillery(
     if (!quiet) {
       console.error(`\n${pc.red('✗')} artillery exited with code ${code}`);
     } else {
-      const output = [String((err as { stdout?: string }).stdout ?? ''), String((err as { stderr?: string }).stderr ?? '')].join('\n').trim();
+      const { stdout, stderr } = err as { stdout?: string; stderr?: string };
+      const output = [String(stdout ?? ''), String(stderr ?? '')].join('\n').trim();
       if (output) {
         const lines = output.split('\n').slice(-40).join('\n');
         console.error(`\n${pc.red('✗')} ${name} artillery output:\n${lines}\n`);

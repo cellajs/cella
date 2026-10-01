@@ -49,7 +49,14 @@ export async function ensureDoc(scope: DocScope, seed: Uint8Array | null): Promi
   return asSystem(scope, async (tx) => {
     await tx
       .insert(yjsDocumentsTable)
-      .values({ entityType, entityId, tenantId, organizationId, state: seed ? Buffer.from(seed) : Buffer.alloc(0), updatedAt: sql`now()` })
+      .values({
+        entityType,
+        entityId,
+        tenantId,
+        organizationId,
+        state: seed ? Buffer.from(seed) : Buffer.alloc(0),
+        updatedAt: sql`now()`,
+      })
       .onConflictDoNothing({ target: [yjsDocumentsTable.entityType, yjsDocumentsTable.entityId] });
     const rows = await tx.select(baseColumns).from(yjsDocumentsTable).where(docWhere(scope));
     return toBaseRow(rows[0]);

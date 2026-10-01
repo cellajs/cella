@@ -57,9 +57,9 @@ export const copyBlocksToClipboard = async (strBlocks: string | null): Promise<b
     const markdown = editor.blocksToMarkdownLossy(blocks);
     const html = editor.blocksToHTMLLossy(blocks);
 
-    await navigator.clipboard.write([
-      new ClipboardItem({ 'text/html': new Blob([html], { type: 'text/html' }), 'text/plain': new Blob([markdown], { type: 'text/plain' }) }),
-    ]);
+    const htmlBlob = new Blob([html], { type: 'text/html' });
+    const markdownBlob = new Blob([markdown], { type: 'text/plain' });
+    await navigator.clipboard.write([new ClipboardItem({ 'text/html': htmlBlob, 'text/plain': markdownBlob })]);
 
     return true;
   } catch {

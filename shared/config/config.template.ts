@@ -111,7 +111,16 @@ export const config = {
    * with the dev `frontendUrl` port (unique per app) so parallel local stacks never collide.
    * `frontend` is the Vite fallback for when `frontendUrl` carries no port (tunnel mode).
    */
-  devPorts: { frontend: 3000, api: 4000, cdcHealth: 4001, yjs: 4002, mcp: 4003, oauth: 4004, internal: 4005, jobs: 4006 },
+  devPorts: {
+    frontend: 3000,
+    api: 4000,
+    cdcHealth: 4001,
+    yjs: 4002,
+    mcp: 4003,
+    oauth: 4004,
+    internal: 4005,
+    jobs: 4006,
+  },
   /**
    * Per-service toggles: `enabled` controls whether the service is wired up. Each service's
    * public URL is derived from the URL family above.
@@ -220,7 +229,15 @@ export const config = {
    * Default page sizes for list endpoints. Backend enforces max 1000.
    * Must include 'default' key as fallback.
    */
-  requestLimits: { default: 40, users: 100, members: 40, organizations: 40, requests: 40, attachments: 40, pendingMemberships: 20 },
+  requestLimits: {
+    default: 40,
+    users: 100,
+    members: 40,
+    organizations: 40,
+    requests: 40,
+    attachments: 40,
+    pendingMemberships: 20,
+  },
 
   /** Max JSON body size in bytes */
   jsonBodyLimit: 1 * 1024 * 1024,

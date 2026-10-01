@@ -28,7 +28,7 @@ interface PreparedEvent {
 
 // Activity persistence
 
-function prepareActivity(parseResult: ParseMessageResult, lsn: string): { activityWithId: BatchEvent['activity']; seq: number | undefined } {
+function prepareActivity(parseResult: ParseMessageResult, lsn: string): Pick<PreparedEvent, 'activityWithId' | 'seq'> {
   const activityId = generateActivityId(lsn);
   const activityWithId = { ...parseResult.activity, id: activityId };
   const seq = typeof parseResult.rowData.seq === 'number' ? parseResult.rowData.seq : undefined;
@@ -39,7 +39,7 @@ function prepareActivity(parseResult: ParseMessageResult, lsn: string): { activi
  * Multi-row insert with retry, falling back to individual inserts.
  * @returns false when persistence failed, in which case the caller must skip deltas.
  */
-async function persistActivities(infos: Array<{ activityWithId: BatchEvent['activity']; lsn: string }>, tableName: string): Promise<boolean> {
+async function persistActivities(infos: Array<Pick<PreparedEvent, 'activityWithId' | 'lsn'>>, tableName: string): Promise<boolean> {
   if (infos.length === 1) {
     const { activityWithId, lsn } = infos[0];
     const insertResult = await withRetry(async () => {
@@ -138,7 +138,8 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
     return;
   }
 
-  await withSpan(cdcSpanNames.processWal, cdcAttrs({ lsn: firstLsn, tag: action, table: tableName }), async (traceCtx) => {
+  const processWalAttrs = cdcAttrs({ lsn: firstLsn, tag: action, table: tableName });
+  await withSpan(cdcSpanNames.processWal, processWalAttrs, async (traceCtx) => {
     const startMs = performance.now();
 
     // Pure: no side effects until applyBatchUnifiedDeltas below.
@@ -150,13 +151,9 @@ export async function processEvents(events: Array<{ lsn: string; result: ParseMe
       return { activityWithId, seq, lsn, rowData: result.rowData, movedFrom: result.movedFrom ?? null };
     });
 
-    // Persist first: a failure here leaves no deltas applied.
-    const persisted = await withSpan(cdcSpanNames.createActivity, activityAttrs(prepared[0].activityWithId), async () => {
-      return persistActivities(
-        prepared.map(({ activityWithId, lsn }) => ({ activityWithId, lsn })),
-        tableName,
-      );
-    });
+    const persisted = await withSpan(cdcSpanNames.createActivity, activityAttrs(prepared[0].activityWithId), () =>
+      persistActivities(prepared, tableName),
+    );
 
     if (!persisted) {
       return;

@@ -49,9 +49,14 @@ export const handleCreateUser = async (ctx: DbContext, { newUser, via }: HandleC
     // The account's one email row, proven at creation. A taken address never gets here: the users insert above
     // already failed on its unique email.
     const now = getIsoDate();
-    await db
-      .insert(emailsTable)
-      .values({ email: normalizedEmail, userId: user.id, verified: true, verifiedAt: now, lastVerifiedVia: via, lastVerifiedAt: now });
+    await db.insert(emailsTable).values({
+      email: normalizedEmail,
+      userId: user.id,
+      verified: true,
+      verifiedAt: now,
+      lastVerifiedVia: via,
+      lastVerifiedAt: now,
+    });
     await claimEmailForUser(ctx, { userId: user.id, email: normalizedEmail });
 
     return user;

@@ -173,7 +173,12 @@ async function admitUpgrade(
   // Accepted optimistically: sync frames queue on the socket until entity access is verified.
   const ctx: SocketContext = {
     userId: payload.userId,
-    requested: { entityType: payload.entityType, entityId: payload.entityId, tenantId: payload.tenantId, organizationId: payload.organizationId },
+    requested: {
+      entityType: payload.entityType,
+      entityId: payload.entityId,
+      tenantId: payload.tenantId,
+      organizationId: payload.organizationId,
+    },
     scope: null,
     awaitingReply: false,
   };

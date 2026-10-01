@@ -329,9 +329,7 @@ export function SyncDiagram() {
                       stroke={stroke}
                       strokeWidth={2}
                       strokeLinecap="round"
-                      markerStart={
-                        bidirectional ? (showEnd ? `url(#${markerId})` : undefined) : oneWay || anim.draw ? undefined : `url(#${markerId})`
-                      }
+                      markerStart={(bidirectional ? showEnd : !oneWay && !anim.draw) ? `url(#${markerId})` : undefined}
                       markerEnd={showEnd ? `url(#${markerId})` : undefined}
                       initial={anim.draw ? { pathLength: 0, opacity: 0 } : { opacity: 0 }}
                       animate={anim.draw ? { pathLength: 1, opacity: 1 } : { opacity: 1 }}

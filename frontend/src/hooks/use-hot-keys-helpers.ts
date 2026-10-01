@@ -36,7 +36,8 @@ function isExactHotkey(hotkey: Hotkey, event: KeyboardEvent): boolean {
     return false;
   }
 
-  if (key && (pressedKey.toLowerCase() === key.toLowerCase() || event.code.replace('Key', '').toLowerCase() === key.toLowerCase())) {
+  const lowerKey = key?.toLowerCase();
+  if (lowerKey && (pressedKey.toLowerCase() === lowerKey || event.code.replace('Key', '').toLowerCase() === lowerKey)) {
     return true;
   }
 

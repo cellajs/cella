@@ -84,7 +84,10 @@ const main = async () => {
       // Folded workers listen on their own ports (the LB routes each path to the host VM on that port); the API
       // process keeps PORT for itself.
       if (appConfig.services.mcp.enabled)
-        await (await import('#/modules/mcp/worker/mcp-worker-entry')).startMcpWorker({ port: appConfig.devPorts.mcp, inProcess: true });
+        await (await import('#/modules/mcp/worker/mcp-worker-entry')).startMcpWorker({
+          port: appConfig.devPorts.mcp,
+          inProcess: true,
+        });
       if (appConfig.services.oauth.enabled)
         await (await import('#/modules/oauth-server/worker/oauth-worker-entry')).startOauthServer({
           port: appConfig.devPorts.oauth,

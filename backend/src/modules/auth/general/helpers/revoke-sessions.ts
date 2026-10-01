@@ -78,7 +78,8 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
 
   const everySession = 'all' in opts && !opts.type;
   if (everySession || ended.length > 0) {
-    authEvents.emit('session.revoked', { userId, sessionIds: everySession ? 'all' : ended.map((session) => session.id), reason });
+    const sessionIds = everySession ? 'all' : ended.map((session) => session.id);
+    authEvents.emit('session.revoked', { userId, sessionIds, reason });
   }
   for (const impersonation of layered) {
     dropCachedAuth({ user: impersonation.userId });
