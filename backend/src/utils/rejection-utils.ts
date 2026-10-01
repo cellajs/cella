@@ -16,13 +16,17 @@ export const reject = (rejectionState: RejectionState, id: string, reason: strin
   },
 });
 
-export const rejectMany = (rejectionState: RejectionState, ids: string[], reason: string): RejectionState => ({
-  rejectedIds: [...rejectionState.rejectedIds, ...ids],
-  rejectionReasons: {
-    ...rejectionState.rejectionReasons,
-    [reason]: [...(rejectionState.rejectionReasons[reason] ?? []), ...ids],
-  },
-});
+/** No ids leaves the state untouched: clients read the reason keys, so a reason must not appear without ids. */
+export const rejectMany = (rejectionState: RejectionState, ids: string[], reason: string): RejectionState => {
+  if (ids.length === 0) return rejectionState;
+  return {
+    rejectedIds: [...rejectionState.rejectedIds, ...ids],
+    rejectionReasons: {
+      ...rejectionState.rejectionReasons,
+      [reason]: [...(rejectionState.rejectionReasons[reason] ?? []), ...ids],
+    },
+  };
+};
 
 export const mergeRejections = (a: RejectionState, b: RejectionState): RejectionState => {
   const merged = { ...a.rejectionReasons };
