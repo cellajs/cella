@@ -12,6 +12,16 @@ export const findCredentialIdsByUser = async (ctx: DbContext, { userId }: FindCr
   return ctx.var.db.select({ credentialId: passkeysTable.credentialId }).from(passkeysTable).where(eq(passkeysTable.userId, userId));
 };
 
+interface FindPasskeysByUserOpts {
+  userId: string;
+}
+
+/** The user's passkeys without their credential id and public key, for the account page. */
+export const findPasskeysByUser = async (ctx: DbContext, { userId }: FindPasskeysByUserOpts) => {
+  const { credentialId, publicKey, ...passkeySelect } = getColumns(passkeysTable);
+  return ctx.var.db.select(passkeySelect).from(passkeysTable).where(eq(passkeysTable.userId, userId));
+};
+
 interface FindPasskeyByCredentialIdOpts {
   credentialId: string;
   /** The account the passkey must belong to; any account when omitted. */

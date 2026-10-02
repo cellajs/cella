@@ -169,6 +169,16 @@ export const insertUsers = async (ctx: DbContext, { users, onConflictDoNothing =
   });
 };
 
+interface FindEmailOpts {
+  email: string;
+}
+
+/** The email row of an address, whichever account holds it; undefined when none does. */
+export const findEmail = async (ctx: DbContext, { email }: FindEmailOpts) => {
+  const [row] = await ctx.var.db.select().from(emailsTable).where(eq(emailsTable.email, email)).limit(1);
+  return row;
+};
+
 interface EmailProofOpts {
   userId: string;
   email: string;

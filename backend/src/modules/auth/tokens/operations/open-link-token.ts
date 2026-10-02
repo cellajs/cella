@@ -5,7 +5,7 @@ import { assertSwitchOn } from '#/middlewares/config-switch';
 import { handleMagicLink } from '#/modules/auth/magic/operations/handle-magic';
 import { explainOpenedMagicLink, holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/operations/magic-link-browser';
 import { claimMagicLinkOwner } from '#/modules/auth/magic/operations/magic-sign-up';
-import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
+import { handleOAuthVerification } from '#/modules/auth/oauth/operations/handle-oauth-verification';
 import { openStepUpLink } from '#/modules/auth/step-up/operations/open-step-up-link';
 import { forgetLinkRequest, invokeToken } from '#/modules/auth/tokens/token-lifecycle';
 import type { LinkTokenType } from '#/modules/auth/tokens/token-policies';
