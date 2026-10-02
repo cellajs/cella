@@ -29,6 +29,6 @@ export const getMentionMenuItems = (members: Member[], editor: CustomBlockNoteEd
     onItemClick: () => {
       editor.insertInlineContent([{ type: 'mention', props: { name: m.name, id: m.id, slug: m.slug } }]);
     },
-    icon: <EntityAvatar type="user" id={m.id} name={m.name} url={m.thumbnailUrl} className="h-5 w-5 text-xs" />,
+    icon: <EntityAvatar type="user" id={m.id} name={m.name} url={m.thumbnailUrl} className="size-5 text-xs" />,
   }));
 };

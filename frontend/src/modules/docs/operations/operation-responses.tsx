@@ -2,7 +2,6 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { ChevronDownIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import type { GenComponentSchema, GenOperationDetail, GenResponseSummary, GenSchema } from 'sdk/docs-types';
-import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '~/modules/ui/accordion';
 import { Button } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
@@ -55,11 +54,11 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
         const schema = resolveResponseSchema(response, schemas);
         return (
           <AccordionItem key={response.status} value={String(response.status)}>
-            <AccordionTrigger className="group py-2 opacity-80 hover:opacity-100 group-data-open:opacity-100">
+            <AccordionTrigger className="group py-2 opacity-80 hover:opacity-100 group-data-open/accordion-header:opacity-100">
               <div className="flex w-full items-center justify-between gap-3 pr-2">
                 <div
                   className={cn(
-                    'rounded px-2 py-0.5 font-mono font-semibold text-sm group-data-open:opacity-100',
+                    'rounded px-2 py-0.5 font-mono font-semibold text-sm group-data-open/accordion-header:opacity-100',
                     !examplesOnly && 'decoration-transparent',
                     getStatusColor(response.status),
                   )}
@@ -69,7 +68,9 @@ export function ResponsesAccordion({ responses: allResponses, schemas, operation
                 <div
                   className={cn(
                     'grow text-sm',
-                    examplesOnly ? 'text-muted-foreground group-data-open:text-foreground' : 'text-foreground group-data-open:text-primary',
+                    examplesOnly
+                      ? 'text-muted-foreground group-data-open/accordion-header:text-foreground'
+                      : 'text-foreground group-data-open/accordion-header:text-primary',
                   )}
                 >
                   {response.description}
@@ -106,7 +107,6 @@ interface OperationResponsesProps {
 export function OperationResponses({ detail }: OperationResponsesProps) {
   const { t } = useTranslation();
   // Height keyframes run on the main thread and drop frames while the opening panel mounts the accordion
-  const isMobile = useBreakpointBelow('md', false);
 
   const { data: schemas } = useSuspenseQuery(schemasQueryOptions);
   const { data: zodIndex } = useSuspenseQuery(zodIndexQueryOptions);
@@ -125,7 +125,7 @@ export function OperationResponses({ detail }: OperationResponsesProps) {
           </Button>
         }
       />
-      <CollapsibleContent className={cn('overflow-hidden', !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}>
+      <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
         <div className="mt-2">
           <ResponsesAccordion
             responses={responses}

@@ -11,6 +11,7 @@ import { canEditDocs } from '~/modules/page/utils/edit-doc-page';
 import { RenderModeLabel, renderModeLabelKey } from '~/modules/page/utils/render-mode';
 import { Badge } from '~/modules/ui/badge';
 import { dateShort } from '~/utils/date-short';
+import { tw } from '~/utils/tw';
 
 export const dragHandleColumnKey = 'drag-handle';
 
@@ -30,9 +31,9 @@ export function usePagesTableColumns() {
             name: '',
             width: 32,
             maxWidth: 32,
-            cellClass: 'cursor-grab flex items-center justify-center',
+            cellClass: tw('flex cursor-grab items-center justify-center'),
             rowDragHandle: true,
-            renderCell: () => <GripVerticalIcon className="icon-sm text-muted-foreground/50" />,
+            renderCell: () => <GripVerticalIcon className="size-3.5 text-muted-foreground/70" />,
           } satisfies ColumnOrColumnGroup<PageTreeRow>,
         ]
       : []),
@@ -43,15 +44,15 @@ export function usePagesTableColumns() {
       minWidth: 180,
       resizable: true,
       renderCell: ({ row, tabIndex }) => (
-        <div className="group flex items-center gap-2 truncate outline-0 ring-0">
+        <div className="flex items-center gap-2 truncate outline-0 ring-0">
           <Link
             to="/docs/page/$"
             tabIndex={tabIndex}
             draggable={false}
             params={{ _splat: row.id }}
-            className="group flex min-w-0 items-center outline-0 ring-0"
+            className="group/link flex min-w-0 items-center outline-0 ring-0"
           >
-            <span className="truncate font-medium decoration-foreground/20 underline-offset-3 group-hover:underline group-active:translate-y-[.05rem] group-active:decoration-foreground/50">
+            <span className="group-active/link:press truncate font-medium decoration-foreground/20 underline-offset-3 group-hover/link:underline group-active/link:decoration-foreground/50">
               {row.name}
             </span>
           </Link>

@@ -11,7 +11,7 @@ export function Switch({ className, thumb, ...props }: SwitchProps) {
     <SwitchPrimitive.Root
       data-slot="switch"
       className={cn(
-        'peer focus-effect inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs outline-none transition-all data-disabled:cursor-not-allowed data-checked:bg-primary data-unchecked:bg-muted-foreground/25 data-disabled:opacity-50 dark:data-unchecked:bg-muted-foreground/30',
+        'peer focus-effect inline-flex h-[1.15rem] w-8 shrink-0 items-center rounded-full border border-transparent shadow-xs outline-hidden transition-all data-disabled:cursor-not-allowed data-checked:bg-primary data-unchecked:bg-muted-foreground/25 data-disabled:opacity-50 dark:data-unchecked:bg-muted-foreground/30',
         className,
       )}
       {...props}

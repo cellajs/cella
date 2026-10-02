@@ -8,6 +8,7 @@ import { CreateDomainForm, createDomainDialogId } from '~/modules/tenants/domain
 import { DomainTile } from '~/modules/tenants/domains/domain-tile';
 import { domainsQueryOptions } from '~/modules/tenants/query';
 import { Button } from '~/modules/ui/button';
+import { tw } from '~/utils/tw';
 
 interface ManageDomainsContentProps {
   tenant: Tenant;
@@ -27,7 +28,7 @@ export function ManageDomainsContent({ tenant }: ManageDomainsContentProps) {
       id: createDomainDialogId,
       triggerRef: createButtonRef,
       drawerOnMobile: false,
-      className: 'w-auto shadow-none border relative z-60',
+      className: tw('relative z-60 w-auto border shadow-none'),
       container: { ref: createContainerRef },
       title: t('c:create_resource', { resource: t('c:domain').toLowerCase() }),
     });
@@ -45,7 +46,7 @@ export function ManageDomainsContent({ tenant }: ManageDomainsContentProps) {
 
       {isLoading && (
         <div className="flex justify-center py-4">
-          <LoaderCircleIcon className="icon-lg animate-spin text-muted-foreground" />
+          <LoaderCircleIcon className="size-5 animate-spin text-muted-foreground" />
         </div>
       )}
 

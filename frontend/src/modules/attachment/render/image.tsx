@@ -46,14 +46,14 @@ export function ReactPanZoom({ image, alt, showButtons, imageClassName, onPanSta
           <ControlButton
             tooltipContent={t('c:zoom_in')}
             onClick={zoomIn}
-            icon={<PlusIcon className="icon-sm" />}
+            icon={<PlusIcon className="size-3.5" />}
             className="rounded-l-md border-r-0"
           />
-          <ControlButton tooltipContent={t('c:zoom_out')} onClick={zoomOut} icon={<MinusIcon className="icon-sm" />} className="border-r-0" />
+          <ControlButton tooltipContent={t('c:zoom_out')} onClick={zoomOut} icon={<MinusIcon className="size-3.5" />} className="border-r-0" />
           <ControlButton
             tooltipContent={t('c:rotate_right')}
             onClick={rotateRight}
-            icon={<RotateCwSquareIcon className="icon-sm" />}
+            icon={<RotateCwSquareIcon className="size-3.5" />}
             className="border-r-0"
           />
 
@@ -64,20 +64,20 @@ export function ReactPanZoom({ image, alt, showButtons, imageClassName, onPanSta
                 setPanState(!panState);
                 onPanStateToggle(panState);
               }}
-              icon={panState ? <HandGrabIcon className="icon-sm" /> : <HandIcon className="icon-sm" />}
+              icon={panState ? <HandGrabIcon className="size-3.5" /> : <HandIcon className="size-3.5" />}
               className="border-r-0"
             />
           )}
 
-          <ControlButton tooltipContent={t('c:reset')} onClick={reset} icon={<RefreshCwIcon className="icon-sm" />} className="rounded-r-md" />
+          <ControlButton tooltipContent={t('c:reset')} onClick={reset} icon={<RefreshCwIcon className="size-3.5" />} className="rounded-r-md" />
         </div>
       )}
 
-      <div className={cn('flex h-full w-full items-center justify-center', backdropDismiss && 'pointer-events-none')} {...panProps}>
-        <div className="flex h-full w-full items-center justify-center" style={layerStyle}>
+      <div className={cn('flex size-full items-center justify-center', backdropDismiss && 'pointer-events-none')} {...panProps}>
+        <div className="flex size-full items-center justify-center" style={layerStyle}>
           <img
             style={{ transform: `rotate(${rotation * 90}deg)` }}
-            className={cn(imageClassName, 'object-contain', backdropDismiss ? 'pointer-events-auto max-h-full max-w-full' : 'h-full w-full')}
+            className={cn('object-contain', backdropDismiss ? 'pointer-events-auto max-h-full max-w-full' : 'size-full', imageClassName)}
             src={image}
             alt={alt}
           />

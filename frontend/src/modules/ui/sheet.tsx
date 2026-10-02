@@ -26,6 +26,8 @@ function SheetOverlay({ className, ...props }: SheetPrimitive.Backdrop.Props & R
       data-slot="sheet-overlay"
       className={cn(
         'data-closed:fade-out-0 data-open:fade-in-0 fixed inset-0 z-113 bg-muted/30 backdrop-blur-xs data-closed:animate-out data-open:animate-in',
+        // Same duration as the popup, which Base UI waits on before unmounting; forwards keeps the overlay hidden until then
+        'data-closed:fill-mode-forwards data-closed:duration-300 data-open:duration-300',
         className,
       )}
       {...props}
@@ -59,7 +61,7 @@ export function SheetContent({
       initialFocus={initialFocus}
       finalFocus={finalFocus}
       className={cn(
-        'flex flex-col bg-background shadow-lg focus-visible:outline-none',
+        'flex flex-col bg-background shadow-lg focus-visible:outline-hidden',
         !container && 'fixed z-114 transition data-closed:animate-out data-open:animate-in data-closed:duration-300 data-open:duration-300',
         !container &&
           side === 'right' &&
@@ -69,12 +71,12 @@ export function SheetContent({
           'data-closed:slide-out-to-left data-open:slide-in-from-left inset-y-0 left-0 h-full w-[95vw] sm:w-[90vw] lg:max-w-4xl',
         !container && side === 'top' && 'data-closed:slide-out-to-top data-open:slide-in-from-top inset-x-0 top-0 h-auto',
         !container && side === 'bottom' && 'data-closed:slide-out-to-bottom data-open:slide-in-from-bottom inset-x-0 bottom-0 h-auto',
-        container && 'relative h-full w-full',
+        container && 'relative size-full',
         className,
       )}
       {...props}
     >
-      <ScrollArea className="h-full w-full" viewportClassName="touch-pan-y" autoScrollOnDrag={autoScrollOnDrag}>
+      <ScrollArea className="size-full" viewportClassName="touch-pan-y" autoScrollOnDrag={autoScrollOnDrag}>
         {children}
       </ScrollArea>
     </SheetPrimitive.Popup>

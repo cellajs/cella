@@ -8,6 +8,7 @@ import { usePushSubscription } from '~/modules/notification/use-push-subscriptio
 import { Label } from '~/modules/ui/label';
 import { RadioGroup, RadioGroupItem } from '~/modules/ui/radio-group';
 import { Switch } from '~/modules/ui/switch';
+import { tw } from '~/utils/tw';
 
 type DigestFrequency = 'off' | 'daily' | 'weekly';
 
@@ -18,7 +19,7 @@ const digestOptions = [
   { value: 'weekly', label: 'c:notifications.digest_weekly' },
 ] as const satisfies { value: DigestFrequency; label: string }[];
 
-const cardClass = 'mx-auto sm:w-full';
+const cardClass = tw('mx-auto sm:w-full');
 
 /** Only email is opt-out: the inbox always fills, so every switch off still delivers the mention. */
 export function AccountNotificationsCard() {

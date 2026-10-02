@@ -14,6 +14,7 @@ import { NavSheetFrame } from '~/modules/navigation/nav-sheet-frame';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { Button } from '~/modules/ui/button';
 import { useCurrentUser, useUserStore } from '~/modules/user/user-store';
+import { cn } from '~/utils/cn';
 import { fallbackContentRef } from '~/utils/fallback-content-ref';
 import { numberToColorClass } from '~/utils/number-to-color-class';
 
@@ -31,7 +32,7 @@ function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action 
     <Button
       variant="ghost"
       size="lg"
-      className="focus-effect w-full justify-start text-left hover:bg-accent/50 data-[sign-out=true]:text-red-600"
+      className="focus-effect w-full justify-start text-left hover:bg-accent/50 data-[sign-out=true]:text-destructive"
       data-sign-out={id === 'btn-signout'}
       render={
         <Link
@@ -49,7 +50,7 @@ function AccountButton({ offlineAccess, isOnline, icon: Icon, label, id, action 
         />
       }
     >
-      <Icon className="mr-2 size-4" aria-hidden="true" />
+      <Icon className="size-4" aria-hidden="true" />
       {label}
     </Button>
   );
@@ -92,16 +93,17 @@ export function AccountSheet() {
       </div>
       <button type="button" tabIndex={-1} onClick={openProfile} className="relative mt-3 w-full">
         <div
-          className={`relative h-32 bg-center bg-cover bg-opacity-80 shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-all duration-300 hover:bg-opacity-50 ${
-            user.bannerUrl ? '' : numberToColorClass(user.id)
-          }`}
+          className={cn(
+            'relative h-32 bg-center bg-cover shadow-[inset_0_-4px_12px_rgba(0,0,0,0.15)] transition-all duration-300',
+            !user.bannerUrl && numberToColorClass(user.id),
+          )}
           style={user.bannerUrl ? { backgroundImage: `url(${user.bannerUrl})` } : {}}
         >
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={hasStarted ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.8 }}
             transition={{ duration: 0.3, ease: 'easeOut' }}
-            className="absolute top-6 left-[50%] -ml-10"
+            className="absolute top-6 left-1/2 -ml-10"
           >
             <EntityAvatar
               className="size-20 rounded-full text-2xl shadow-[0_0_0_4px_rgba(0,0,0,0.1)]"
@@ -121,7 +123,7 @@ export function AccountSheet() {
           className="focus-effect w-full justify-start text-left hover:bg-accent/50"
           onClick={openProfile}
         >
-          <UserRoundIcon className="mr-2 size-4" aria-hidden="true" />
+          <UserRoundIcon className="size-4" aria-hidden="true" />
           {t('c:view_resource', { resource: t('c:profile').toLowerCase() })}
         </Button>
         <AccountButton offlineAccess={false} isOnline={isOnline} icon={SettingsIcon} id="btn-account" label={t('c:settings')} action="/account" />

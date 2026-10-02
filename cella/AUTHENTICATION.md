@@ -48,7 +48,7 @@ A client learns of a lost session from four 401 types, `unauthorized`, `no_sessi
 
 **Devices.** A sign-in sets a 400-day `device-id` cookie and records its per-user hash in `devices`. `PII_HASH_SECRET` peppers the hash so a database leak cannot correlate browsers across accounts. A sign-in from a browser the account has not used before mails the owner, and `check-email` recognizes a browser by it.
 
-**Impersonation.** A system admin's impersonation is a session of its own (`type: 'impersonation'`, one hour) in its own cookie, layered on the admin's session cookie: it authenticates only while that admin session lives, the admin holds the system role and the request comes from an allowed address. The admin acts as the user, never on the account: stepping up, revoking the user's sessions and impersonating again are refused with 403 `impersonation_forbidden` (`noImpersonationGuard`).
+**Impersonation.** A system admin's impersonation is a session of its own (`type: 'impersonation'`, one hour) in its own cookie, layered on the admin's session cookie: it authenticates only while that admin session lives, the admin holds the system role and the request comes from an allowed address. The admin acts as the user, never on the account: stepping up and revoking the user's sessions are refused with 403 `impersonation_forbidden` by their handlers, and every system route, impersonating again included, by `sysAdminGuard`.
 
 ## Cookies
 

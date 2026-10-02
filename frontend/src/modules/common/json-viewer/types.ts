@@ -60,6 +60,8 @@ export interface JsonViewerTheme {
   index: string;
   // Schema mode specific
   schemaType: string;
+  /** Type keywords other than the primitive ones (array, object) */
+  structureType: string;
   required: string;
   // Search highlight
   searchMatch: string;
@@ -70,12 +72,22 @@ export const defaultTheme: JsonViewerTheme = {
   string: 'text-foreground',
   number: 'text-amber-700 dark:text-amber-400',
   boolean: 'text-rose-600 dark:text-rose-400',
-  null: 'text-gray-500 dark:text-gray-500',
+  null: 'text-gray-500',
   key: 'text-emerald-700 dark:text-emerald-400',
   bracket: 'text-gray-700 dark:text-gray-300',
   index: 'text-gray-500 opacity-70 text-xs',
   schemaType: 'font-medium italic',
+  structureType: 'text-purple-600 dark:text-purple-400',
   required: 'bg-amber-100/50 dark:bg-amber-900/10 text-amber-700/60 dark:text-amber-200/60',
   searchMatch: 'bg-yellow-200 dark:bg-yellow-700 rounded px-0.5',
   matchBadge: 'bg-yellow-200 dark:bg-yellow-800 text-yellow-800 dark:text-yellow-200',
 };
+
+/** Color class for a JSON Schema type keyword, shared by schema labels and schema-mode values. */
+export function getTypeColorClass(type: string, theme: Pick<JsonViewerTheme, 'string' | 'number' | 'boolean' | 'null' | 'structureType'>): string {
+  if (type === 'string') return theme.string;
+  if (type === 'number' || type === 'integer') return theme.number;
+  if (type === 'boolean') return theme.boolean;
+  if (type === 'null') return theme.null;
+  return theme.structureType;
+}

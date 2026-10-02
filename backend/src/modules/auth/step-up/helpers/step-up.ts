@@ -2,7 +2,6 @@ import { and, eq, gt, isNull, ne, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { refuseImpersonation } from '#/middlewares/guard/no-impersonation-guard';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { type SessionFacts, type StepUpProof, sessionsTable } from '#/modules/auth/sessions-db';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
@@ -66,6 +65,16 @@ export const readStepUp = async (session: SessionFacts): Promise<StepUpState> =>
   const signedInWith = row.signedInRecently ? factors.find((candidate) => candidate === session.authStrategy) : undefined;
   const factor = stampedWith ?? signedInWith ?? null;
   return { steppedUp: !!factor, methods: factors, factor };
+};
+
+/**
+ * Refuses an impersonation: the admin acts as the user, never on the account itself, its sessions or how it is
+ * protected. The one spelling of this answer: `requireStepUp`, `sysAdminGuard` and the handlers of stepping up and
+ * revoking sessions.
+ * @throws AppError 403 `impersonation_forbidden`.
+ */
+export const refuseImpersonation = (session: SessionFacts): void => {
+  if (session.type === 'impersonation') throw new AppError(403, 'impersonation_forbidden', 'warn');
 };
 
 /**

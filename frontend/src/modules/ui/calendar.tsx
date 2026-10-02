@@ -6,7 +6,7 @@ import { Button, buttonVariants } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 function CalendarRoot({ className, rootRef, ...props }: RootProps) {
-  return <div data-slot="calendar" ref={rootRef} className={cn(className)} {...props} />;
+  return <div data-slot="calendar" ref={rootRef} className={className} {...props} />;
 }
 
 function CalendarChevron({ className, orientation, ...props }: ChevronProps) {
@@ -70,7 +70,7 @@ export function Calendar({
         month_caption: cn('flex h-(--cell-size) w-full items-center justify-center px-(--cell-size)', defaultClassNames.month_caption),
         dropdowns: cn('flex h-(--cell-size) w-full items-center justify-center gap-1.5 font-medium text-sm', defaultClassNames.dropdowns),
         dropdown_root: cn(
-          'relative rounded-md border border-input shadow-xs has-focus:border-ring has-focus:ring-2 has-focus:ring-ring',
+          'relative rounded-md border border-input shadow-xs sm:has-focus-visible:ring-2 sm:has-focus-visible:ring-ring sm:has-focus-visible:ring-offset-2 sm:has-focus-visible:ring-offset-background',
           defaultClassNames.dropdown_root,
         ),
         dropdown: cn('absolute inset-0 bg-popover opacity-0', defaultClassNames.dropdown),
@@ -88,7 +88,7 @@ export function Calendar({
         week_number_header: cn('w-(--cell-size) select-none', defaultClassNames.week_number_header),
         week_number: cn('select-none text-[0.8rem] text-muted-foreground', defaultClassNames.week_number),
         day: cn(
-          'group/day relative aspect-square h-full w-full select-none p-0 text-center [&:first-child[data-selected=true]_button]:rounded-l-md [&:last-child[data-selected=true]_button]:rounded-r-md',
+          'group/day relative aspect-square size-full select-none p-0 text-center [&:first-child[data-selected=true]_button]:rounded-l-md [&:last-child[data-selected=true]_button]:rounded-r-md',
           defaultClassNames.day,
         ),
         range_start: cn('rounded-l-md bg-accent', defaultClassNames.range_start),

@@ -86,7 +86,7 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
       <LegalNotice email={email || form.getValues('email')} mode="signup" />
 
       {(emailEnabled || isMagicLinkEnabled) && (
-        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="mt-0! flex flex-col gap-4">
+        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
           {restrictedMode && (
             <FormField
               control={form.control}

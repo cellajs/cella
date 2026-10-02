@@ -2,6 +2,7 @@ import type { GenOperationSummary } from 'sdk/docs-types';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { TagHashLink, TagTable } from '~/modules/docs/tag-table';
 import { Badge } from '~/modules/ui/badge';
+import { cn } from '~/utils/cn';
 import { getMethodColor } from './helpers/get-method-color';
 
 interface TagOperationsTableProps {
@@ -19,7 +20,7 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
 
       width: 80,
       renderCell: ({ row }) => (
-        <Badge variant="secondary" className={`bg-transparent font-mono text-xs uppercase shadow-none ${getMethodColor(row.method)}`}>
+        <Badge variant="secondary" className={cn('bg-transparent font-mono text-xs uppercase shadow-none', getMethodColor(row.method))}>
           {row.method.toUpperCase()}
         </Badge>
       ),

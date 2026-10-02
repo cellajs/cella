@@ -20,11 +20,11 @@ export function getFileIcon(contentType?: string) {
 interface Props {
   contentType?: string;
   strokeWidth?: number;
-  /** Size the icon here (icon-* / size-*); defaults to icon-lg. */
+  /** Size the icon here (icon-* / size-*); defaults to size-5. */
   className?: string;
 }
 
-export function FilePlaceholder({ contentType, strokeWidth, className = 'icon-lg' }: Props) {
+export function FilePlaceholder({ contentType, strokeWidth, className = 'size-5' }: Props) {
   const FileIconComponent = getFileIcon(contentType);
   return <FileIconComponent strokeWidth={strokeWidth} className={className} />;
 }

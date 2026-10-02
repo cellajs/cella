@@ -32,7 +32,7 @@ export function MfaPage() {
     }
   };
 
-  if (signedIn) return <Spinner className="h-10 w-10" />;
+  if (signedIn) return <Spinner className="size-10" />;
 
   if (!lastUser?.email) {
     navigate({ to: '/auth/authenticate', replace: true });

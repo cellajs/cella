@@ -1,18 +1,127 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 @import "./gradients.css" layer(base); /* Custom gradients that are not easy to build using tailwind */
-@import "../modules/common/blocknote/styles.css" layer(base);
 
-@config "../../tailwind.config.ts";
+/* Breakpoints, the container cap and typography: the parts that need JS. */
+@plugin "./tailwind-plugin.ts";
+
+/* `:is` keeps the specificity of the `.dark` ancestor; v4's documented `:where` form would drop it. */
+@custom-variant dark (&:is(.dark *));
+
+/* Vite scans frontend/ on its own. shared/ also carries classes (the avatar placeholder colors); its scripts only feed junk candidates. */
+@source "../../../shared";
+@source not "../../../shared/scripts";
+
+@theme {
+  --font-sans: "Open Sans", ui-sans-serif, sans-serif;
+  /* Headings share the sans stack; an app with a heading font sets it here. */
+  --font-heading: var(--font-sans);
+  /* Exactly 16px at the 18px mobile root. */
+  --text-md: 0.888rem;
+  /* Badge and counter text. */
+  --text-2xs: 0.6rem;
+  --transition-property-spacing: margin, padding;
+
+  /* Steps down from --radius, which the token blocks below define; upstream shadcn classes also read --radius-md. */
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+
+  /* Base UI publishes the panel heights as --accordion-panel-height and --collapsible-panel-height. These keyframes
+     replace tw-animate-css's same-name ones, which read the Radix variables. */
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-collapsible-down: collapsible-down 0.2s ease-out;
+  --animate-collapsible-up: collapsible-up 0.2s ease-out;
+  --animate-status-pulse: status-pulse 3.5s ease-in-out infinite;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--accordion-panel-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--accordion-panel-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+  @keyframes collapsible-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--collapsible-panel-height);
+    }
+  }
+  @keyframes collapsible-up {
+    from {
+      height: var(--collapsible-panel-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+  @keyframes status-pulse {
+    0%,
+    100% {
+      transform: scale(1);
+      box-shadow: 0 0 2px 1px var(--status-pulse-color, currentColor);
+    }
+    50% {
+      transform: scale(1.12);
+      box-shadow: 0 0 4px 2px var(--status-pulse-color, currentColor);
+    }
+  }
+}
+
+/* Inline: utilities read the token itself, so a nested .dark scope recolors them. */
+@theme inline {
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-brand: var(--brand);
+  --color-brand-foreground: var(--brand-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-overlay: var(--overlay);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
 
 @layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentColor);
-  }
-
   @font-face {
     font-family: "Open Sans";
     src:
@@ -90,6 +199,11 @@
   }
 }
 
+/* Sets the color the soft-* utilities mix from: intent-success, intent-destructive, any theme color. */
+@utility intent-* {
+  --intent-color: --value(--color-*);
+}
+
 /* Opaque soft intent colors using color-mix (no transparency) */
 @utility soft-bg {
   background-color: color-mix(in srgb, var(--intent-color) 10%, var(--background));
@@ -109,17 +223,12 @@
    utilities like Card's `text-card-foreground` in light mode. In dark mode the intent tokens
    are too dark on the tinted fill, so lift them toward white to restore contrast. */
 @utility soft-text {
-  color: var(--intent-color);
   :root & {
     color: var(--intent-color);
   }
   .dark & {
     color: color-mix(in oklch, var(--intent-color), white 35%);
   }
-}
-
-@utility soft-bg-hover {
-  background-color: color-mix(in srgb, var(--intent-color) 15%, var(--background));
 }
 
 /* Stronger steps for interactive elements sitting ON a soft surface, where flat soft-bg blends
@@ -132,7 +241,6 @@
   background-color: color-mix(in srgb, var(--intent-color) 26%, var(--background));
 }
 @utility soft-text-strong {
-  color: color-mix(in oklch, var(--intent-color), black 10%);
   :root & {
     color: color-mix(in oklch, var(--intent-color), black 10%);
   }
@@ -141,7 +249,6 @@
   }
 }
 @utility soft-text-stronger {
-  color: color-mix(in oklch, var(--intent-color), black 20%);
   :root & {
     color: color-mix(in oklch, var(--intent-color), black 20%);
   }
@@ -171,29 +278,6 @@
   }
 }
 
-/* Semantic icon sizes. Icons use classes because the base rule below overrides Lucide's
-   px-based `size` prop. They scale with the mobile root-font-size bump like the rest of the UI. */
-@utility icon-xs {
-  width: 0.75rem;
-  height: 0.75rem;
-}
-@utility icon-sm {
-  width: 0.875rem;
-  height: 0.875rem;
-}
-@utility icon-md {
-  width: 1rem;
-  height: 1rem;
-}
-@utility icon-lg {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-@utility icon-xl {
-  width: 1.5rem;
-  height: 1.5rem;
-}
-
 /* From shadcn's tailwind.css so ported upstream classes work: Base UI sets `data-orientation`, never `data-horizontal`.
    Its other state variants stay native, as Base UI's boolean attributes match them (shadcn's `data-selected` is cmdk's). */
 @custom-variant data-horizontal {
@@ -211,6 +295,12 @@
 /* Active while a FocusViewContainer is in focus view, e.g. `focus-view:hidden` for chrome outside a `.focus-view-scope`. */
 @custom-variant focus-view (&:where(.focus-view *));
 
+/* Press feedback through a state variant (`active:press`, `group-active/name:press`). `transform` stacks on the
+   `translate` of translate utilities, so a centered `-translate-y-1/2` stays centered; an inline transform wins. */
+@utility press {
+  transform: translateY(0.05rem);
+}
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -220,9 +310,10 @@
   }
 }
 
+/* The ring is desktop-only on purpose: below sm, focus draws nothing, like a native app. outline-hidden keeps the forced-colors outline. */
 @layer components {
   .focus-effect {
-    @apply focus-visible:outline-none sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 }
 
@@ -260,7 +351,7 @@
 /* Inline `code` pills: drop the prose backtick pseudo-elements, add a bordered chip. */
 .prose code:not(pre code)::before,
 .prose code:not(pre code)::after {
-  content: none !important;
+  content: none;
 }
 
 .prose code:not(pre code) {
@@ -302,14 +393,13 @@
 
 @layer base {
   /* Theme tokens */
-  :root,
-  .bn-container.bn-shadcn {
+  :root {
     --background: oklch(1 0 0);
     --foreground: oklch(0.2067 0.01 285.49);
     --card: oklch(0.987 0.0013 285.76);
     --card-foreground: oklch(0.2067 0.01 285.49);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.1155 0 0);
+    --popover-foreground: oklch(0.2067 0.01 285.49);
     --primary: oklch(0.2061 0.006 285.56);
     --primary-foreground: oklch(0.9627 0 0);
     --secondary: oklch(0.9575 0.0044 285.76);
@@ -324,29 +414,30 @@
     --input: oklch(0.88 0.005 285.75);
     --ring: oklch(0.2067 0.01 285.49);
     --radius: 0.5rem;
-    /* The rounded-sm/md/lg scale (tailwind.config.ts reads it); upstream shadcn classes also read --radius-md. */
-    --radius-sm: calc(var(--radius) - 4px);
-    --radius-md: calc(var(--radius) - 2px);
-    --radius-lg: var(--radius);
     --success: oklch(0.5917 0.2014 142.5);
     --success-foreground: oklch(0.9851 0 0);
     --warning: oklch(0.68 0.16 70);
     --warning-foreground: oklch(0.9851 0 0);
     --brand: oklch(0.2061 0.006 285.56);
     --brand-foreground: oklch(0.9627 0 0);
+    /* Modal backdrop scrim, the same in both modes. */
+    --overlay: oklch(0 0 0 / 0.4);
+    /* Chart series: shadcn's neutral ramp on cella's zinc hue (zinc-300/500/600/700/800), shared by both modes. */
+    --chart-1: oklch(0.871 0.006 286.286);
+    --chart-2: oklch(0.552 0.016 285.938);
+    --chart-3: oklch(0.442 0.017 285.786);
+    --chart-4: oklch(0.37 0.013 285.805);
+    --chart-5: oklch(0.274 0.006 286.033);
 
     --sidebar: oklch(0.9575 0.0044 285.76);
-    --sidebar-foreground: oklch(0.145 0 0);
-    --sidebar-primary: oklch(0.205 0 0);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.97 0 0);
-    --sidebar-accent-foreground: oklch(0.205 0 0);
-    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-foreground: oklch(0.145 0.01 285.49);
+    --sidebar-accent: oklch(0.97 0.003 285.76);
+    --sidebar-accent-foreground: oklch(0.205 0.01 285.49);
+    --sidebar-border: oklch(0.922 0.004 285.75);
     --sidebar-ring: var(--ring);
   }
 
-  .dark,
-  .bn-container.bn-shadcn.dark {
+  .dark {
     --background: oklch(0.1963 0.0092 285.53);
     --foreground: oklch(0.9627 0 0);
     --card: oklch(0.232 0.0095 285.56);
@@ -361,54 +452,49 @@
     --muted-foreground: oklch(0.8089 0.0128 285.86);
     --accent: oklch(0.3138 0.0102 285.63);
     --accent-foreground: oklch(0.9851 0 0);
-    --destructive: oklch(0.5137 0.2082 29.23);
-    --destructive-foreground: oklch(0.9851 0 0);
     --border: oklch(0.36 0.011 285.63);
     --input: oklch(0.42 0.011 285.63);
     --ring: oklch(0.86 0.0096 285.72);
-    --success: oklch(0.5917 0.2014 142.5);
-    --success-foreground: oklch(0.9851 0 0);
-    --warning: oklch(0.68 0.16 70);
-    --warning-foreground: oklch(0.9851 0 0);
     --brand: oklch(0.9851 0 0);
     --brand-foreground: oklch(0.3138 0.0102 285.63);
 
     --sidebar: oklch(0.3138 0.0102 285.63);
     --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.488 0.243 264.376);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent: oklch(0.269 0.0098 285.6);
     --sidebar-accent-foreground: oklch(0.985 0 0);
-    --sidebar-border: oklch(0.269 0 0);
-    --sidebar-ring: var(--ring);
+    --sidebar-border: oklch(0.269 0.0098 285.6);
   }
 }
 
 @layer base {
   /* Bottom inset for fixed-to-bottom UI: device safe area (home indicator, requires viewport-fit=cover) + the
-     layout-viewport bottom hidden behind the keyboard or overlaying browser chrome, which FloatingNav writes
-     as --vv-bottom on #floating-nav only (see viewport-observer.ts). */
+     layout-viewport bottom hidden behind the on-screen keyboard, which FloatingNav writes as --vv-bottom on
+     #floating-nav only (see viewport-observer.ts). */
   :root,
   #floating-nav {
     --bottom-inset: calc(var(--vv-bottom, 0px) + env(safe-area-inset-bottom, 0px));
   }
 
-  /* For small screens we enlarge all elements by using rem everywhere, and then simply increase font-size.
+  /* Small screens enlarge everything through the rem root: 112.5% is 18px at the default size and follows the user's setting.
      overflow-x-clip (on html and body, iOS needs both) keeps stray wide content from widening the layout
      viewport, which on phones reads as the page zooming out and flipping to desktop breakpoints. */
   html {
-    @apply font-sans overscroll-none overflow-x-clip max-sm:text-[18px];
+    @apply font-sans overscroll-none overflow-x-clip max-sm:text-[112.5%];
   }
 
-  /* Override Lucide attributes with a scalable 1rem default.
-     :where keeps zero specificity so size utilities and container rules win. */
+  /* Lucide icons default to 1rem, which scales with the mobile root font size; its px `size` prop never applies.
+     Size icons with size-* classes: :where keeps zero specificity so they and container rules win. */
   :where(svg.lucide) {
     width: 1rem;
     height: 1rem;
   }
 
-  * {
-    @apply border-border;
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    @apply border-border outline-ring/50;
   }
 
   body {
@@ -430,7 +516,7 @@
     display: none !important;
   }
 
-  /* Hide create-task button when board is empty (no projects) */
+  /* Serves an app's task board (raak): hide the create-task button when the board is empty (no projects). */
   body:has([data-board-empty]) #create-task {
     display: none;
   }

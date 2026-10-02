@@ -19,11 +19,10 @@ type DocsSearch = { operationTag?: string; schemaTag?: string; q?: string };
 interface ApiReferenceSectionProps {
   label: string;
   tags: GenTagSummary[];
-  isMobile: boolean;
 }
 
 /** Expansion is derived from the route, mutually exclusive, with a per-section forced-collapse override. */
-export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSectionProps) {
+export function ApiReferenceSection({ label, tags }: ApiReferenceSectionProps) {
   const { t } = useTranslation();
 
   const { data: schemas } = useQuery(schemasQueryOptions);
@@ -58,7 +57,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
   return (
     <SidebarGroup>
       <div className="flex items-center gap-3 px-4 pr-1 pb-1">
-        <SidebarGroupLabel className="p-0 lowercase opacity-75">{label}</SidebarGroupLabel>
+        <SidebarGroupLabel className="p-0 text-muted-foreground lowercase">{label}</SidebarGroupLabel>
       </div>
 
       <SidebarGroupContent>
@@ -93,7 +92,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
               >
                 <span>{t('c:operation', { count: 2 })}</span>
                 {(!isListMode || expandedSection !== 'operations' || forcedCollapsed === 'operations') && (
-                  <span className="ml-2 text-muted-foreground/90 text-xs">{tags.reduce((sum, tag) => sum + tag.count, 0)}</span>
+                  <span className="text-muted-foreground text-xs">{tags.reduce((sum, tag) => sum + tag.count, 0)}</span>
                 )}
                 <ChevronDownIcon
                   className={cn(
@@ -103,9 +102,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
                 />
               </CollapsibleTrigger>
             </SidebarMenuItem>
-            <CollapsibleContent
-              className={cn('overflow-hidden', !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}
-            >
+            <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
               <SidebarGroupContent>
                 <Suspense fallback={null}>
                   <OperationsSidebar activeTag={activeOperationTag} />
@@ -142,7 +139,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
               >
                 <span>{t('c:schema', { count: 2 })}</span>
                 {(expandedSection !== 'schemas' || forcedCollapsed === 'schemas') && schemas && (
-                  <span className="ml-2 text-muted-foreground/90 text-xs">{schemas.length}</span>
+                  <span className="text-muted-foreground text-xs">{schemas.length}</span>
                 )}
                 <ChevronDownIcon
                   className={cn(
@@ -152,9 +149,7 @@ export function ApiReferenceSection({ label, tags, isMobile }: ApiReferenceSecti
                 />
               </CollapsibleTrigger>
             </SidebarMenuItem>
-            <CollapsibleContent
-              className={cn('overflow-hidden', !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}
-            >
+            <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
               <SidebarGroupContent>
                 <Suspense fallback={null}>
                   <SchemasSidebar activeTag={activeSchemaTag} />

@@ -58,7 +58,7 @@ export function ApiKeysCard({ organization }: { organization: EnrichedOrganizati
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
           />
           <Button type="button" variant="plain" onClick={handleCreate} loading={creating} disabled={!name.trim()}>
-            <PlusIcon className="mr-2 size-4" />
+            <PlusIcon className="size-4" />
             {t('c:create_resource', { resource: t('c:api_key') })}
           </Button>
         </div>

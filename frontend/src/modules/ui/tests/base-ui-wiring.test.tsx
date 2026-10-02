@@ -2,6 +2,7 @@
 import type * as React from 'react';
 import { act, createRef, type ReactNode } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
+import type { OrganizationRole } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('react-i18next', () => ({ useTranslation: () => ({ t: (key: string) => key }) }));
@@ -230,7 +231,7 @@ describe('TOTP confirmation form', () => {
 
 describe('role selectors in a form field', () => {
   function RoleForm() {
-    const form = useForm<{ role?: 'admin' | 'member' }>();
+    const form = useForm<{ role?: OrganizationRole }>();
     return (
       <Form {...form}>
         <FormField
@@ -265,7 +266,7 @@ describe('role selectors in a form field', () => {
 
   it('names each role checkbox by its own label inside a form field', async () => {
     function RolesForm() {
-      const form = useForm<{ roles: ('admin' | 'member')[] }>({ defaultValues: { roles: [] } });
+      const form = useForm<{ roles: OrganizationRole[] }>({ defaultValues: { roles: [] } });
       return (
         <Form {...form}>
           <FormField

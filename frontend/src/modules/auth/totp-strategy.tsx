@@ -28,7 +28,7 @@ export function TotpStrategy({ isActive, setIsActive }: { isActive: boolean; set
   });
 
   return (
-    <div data-mode={mode} className="group flex flex-col space-y-2">
+    <div data-mode={mode} className="group flex flex-col gap-2">
       {!isActive && (
         <Button ref={triggerRef} type="button" onClick={() => setIsActive(true)} variant="plain" className="w-full gap-1.5 truncate">
           <SmartphoneIcon />

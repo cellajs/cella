@@ -4,7 +4,7 @@ import { createCellEvent, getCellClassname, getCellStyle, onEditorNavigation } f
 
 const canUsePostTask = typeof scheduler !== 'undefined' && typeof scheduler.postTask === 'function';
 
-const cellEditingClassname = '!p-0 [&>input]:border-0 [&>input]:shadow-none [&>input]:bg-transparent';
+const cellEditingClassname = 'p-0! [&>input]:border-0 [&>input]:shadow-none [&>input]:bg-transparent';
 
 type SharedCellRendererProps<R, SR> = Pick<CellRendererProps<R, SR>, 'colSpan'>;
 

@@ -21,6 +21,7 @@ import { ScrollArea } from '~/modules/ui/scroll-area';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { usersListQueryOptions } from '~/modules/user/query';
 import { getChannelRoute, pageTopHashNav } from '~/utils/channel-route';
+import { cn } from '~/utils/cn';
 import { addRecentSearch, resolveSearchInput } from '~/utils/recent-searches';
 
 const searchableEntityTypes = ['user', ...appConfig.channelEntityTypes] as const;
@@ -30,7 +31,7 @@ function SearchResultsSkeleton() {
   const { hasStarted } = useMountedState();
 
   return (
-    <div className={`flex flex-col gap-4 p-4 transition-opacity duration-300 ${hasStarted ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={cn('flex flex-col gap-4 p-4 transition-opacity duration-300', hasStarted ? 'opacity-100' : 'opacity-0')}>
       {Array.from({ length: 3 }).map((_, i) => (
         // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholder.
         <div key={i} className="flex items-center gap-3 py-1.5">

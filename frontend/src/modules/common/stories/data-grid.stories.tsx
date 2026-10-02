@@ -2,6 +2,7 @@ import type { Edge } from '@atlaskit/pragmatic-drag-and-drop-hitbox/closest-edge
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useState } from 'react';
 import { expect, userEvent, waitFor } from 'storybook/test';
+import { cn } from '~/utils/cn';
 import {
   type CellSelectionMode,
   type Column,
@@ -254,7 +255,7 @@ export const SelectionModes: Story = {
                 setCellMode(m);
                 setSelectedRange(null);
               }}
-              className={`rounded px-3 py-1 text-sm ${cellMode === m ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+              className={cn('rounded px-3 py-1 text-sm', cellMode === m ? 'bg-primary text-primary-foreground' : 'bg-muted')}
             >
               {m}
             </button>
@@ -270,7 +271,7 @@ export const SelectionModes: Story = {
                 setRowMode(m);
                 setSelectedRows(new Set());
               }}
-              className={`rounded px-3 py-1 text-sm ${rowMode === m ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+              className={cn('rounded px-3 py-1 text-sm', rowMode === m ? 'bg-primary text-primary-foreground' : 'bg-muted')}
             >
               {m}
             </button>

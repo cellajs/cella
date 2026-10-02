@@ -61,7 +61,7 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
   const collapse = collapseMotion(isMobile);
 
   return (
-    <div className="group/menuSection px-3" data-visible={isSectionVisible}>
+    <div className="group/menu-section px-3" data-visible={isSectionVisible}>
       <MenuSectionButton
         data={data}
         channelIds={activeChannelIds}
@@ -77,7 +77,7 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
             key="alert"
             {...collapse}
             transition={{ height: { duration: 0.3 }, opacity: { delay: 0.3, duration: 0.2 } }}
-            style={{ overflow: 'hidden' }}
+            className="overflow-hidden"
           >
             <AlertBanner id="menu_management" variant="plain" icon={InfoIcon} animate>
               {t('c:configure_menu.text')}
@@ -87,7 +87,7 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
       </AnimatePresence>
       <AnimatePresence initial={false}>
         {isSectionVisible && (
-          <motion.ul key={options.entityType} {...collapse} transition={{ duration: 0.2, ease: 'easeInOut' }} style={{ overflow: 'hidden' }}>
+          <motion.ul key={options.entityType} {...collapse} transition={{ duration: 0.2, ease: 'easeInOut' }} className="overflow-hidden">
             {isEditing ? (
               <MenuSheetItemsEdit data={data} isArchived={false} options={options} />
             ) : (
@@ -108,7 +108,7 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
                       key={`${options.entityType}-archived`}
                       {...collapse}
                       transition={{ duration: 0.2, ease: 'easeInOut' }}
-                      style={{ overflow: 'hidden' }}
+                      className="overflow-hidden"
                     >
                       {isEditing ? (
                         <MenuSheetItemsEdit data={data} isArchived={true} options={options} />

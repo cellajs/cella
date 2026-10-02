@@ -21,16 +21,16 @@ export function SectionArchiveButton({ archiveToggleClick, archivedCount, archiv
         onClick={archiveToggleClick}
         disabled={archivedCount < 1}
         variant="secondary"
-        className="group focus-effect w-full bg-transparent p-0 shadow-none ring-inset ring-offset-0 transition duration-300 hover:bg-accent/50 hover:text-accent-foreground group-data-[submenu=true]/archived:h-8"
+        className="group focus-effect w-full gap-0 bg-transparent p-0 shadow-none ring-inset ring-offset-0 transition duration-300 hover:bg-accent/50 hover:text-accent-foreground group-data-[submenu=true]/archived:h-8"
       >
         <div className="flex w-12 items-center justify-center py-2">
-          <ArchiveIcon className="icon-lg ml-2 items-center opacity-75" />
+          <ArchiveIcon className="ml-2 size-5 items-center opacity-75" />
         </div>
         <div className="grow truncate p-2 pl-2 text-left opacity-75">
           <span className="text-sm group-data-[submenu=true]/archived:text-xs">{t('c:archived')}</span>
           <span className="inline-block px-2 py-1 text-muted-foreground text-xs group-data-[archived-visible=true]/archived:hidden">
             {archivedUnseenCount > 0 ? (
-              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 font-bold text-[0.6rem] text-primary-foreground leading-none">
+              <span className="inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 font-bold text-2xs text-primary-foreground leading-none">
                 {archivedUnseenCount > 99 ? '99+' : archivedUnseenCount}
               </span>
             ) : (

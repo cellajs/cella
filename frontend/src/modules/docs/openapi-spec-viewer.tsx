@@ -152,7 +152,7 @@ export function OpenApiSpecViewer() {
                   className="rounded p-1 hover:bg-muted disabled:opacity-30"
                   title={t('c:previous')}
                 >
-                  <ChevronUpIcon className="icon-sm" />
+                  <ChevronUpIcon className="size-3.5" />
                 </button>
                 <button
                   type="button"
@@ -161,7 +161,7 @@ export function OpenApiSpecViewer() {
                   className="mr-2 rounded p-1 hover:bg-muted disabled:opacity-30"
                   title={t('c:next')}
                 >
-                  <ChevronDownIcon className="icon-sm" />
+                  <ChevronDownIcon className="size-3.5" />
                 </button>
               </motion.div>
             ) : null}

@@ -79,7 +79,7 @@ const SidebarWithRouter = () => (
           />
         }
       >
-        <Icon className="mr-2 size-5" /> {label}
+        <Icon className="size-5" /> {label}
       </Button>
     ))}
   </div>

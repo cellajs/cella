@@ -55,7 +55,7 @@ export function UpdateTenantForm({ tenant, callback, sheet: isSheet }: Props) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <InputFormField control={form.control} name="name" label={t('c:name')} required />
         <FormField
           control={form.control}

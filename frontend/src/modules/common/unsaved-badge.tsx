@@ -8,7 +8,7 @@ export function UnsavedBadge({ title }: { title?: string | React.ReactNode }) {
     <>
       {typeof title === 'string' ? <span>{title}</span> : title}
       <Badge size="sm" variant="plain" className="ml-2 in-[.unsaved-changes]:inline-flex hidden w-fit gap-2">
-        <SquarePenIcon className="icon-xs" />
+        <SquarePenIcon className="size-3" />
         <span className="max-sm:hidden">{t('c:unsaved_changes')}</span>
       </Badge>
     </>

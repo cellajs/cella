@@ -24,7 +24,7 @@ export const TableBarButton = forwardRef<HTMLButtonElement, Props>(function Tabl
         />
       }
     >
-      {Icon && <motion.span className="mr-2 flex items-center">{<Icon />}</motion.span>}
+      {Icon && <motion.span className="flex items-center">{<Icon />}</motion.span>}
       {label && <span>{t(label)}</span>}
 
       {badge && <Badge context="button">{badge}</Badge>}

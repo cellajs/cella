@@ -6,7 +6,7 @@ import useDownloader from 'react-use-downloader';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { getFileIcon } from '~/modules/attachment/file-placeholder';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
-import { Spinner } from '~/modules/common/spinner';
+import { PageSpinner, Spinner } from '~/modules/common/spinner';
 import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 import { lazyNamed } from '~/utils/lazy-named';
@@ -48,7 +48,7 @@ export function AttachmentRender({
   const isMobile = useBreakpointBelow('sm');
   const { download, isInProgress } = useDownloader();
 
-  if (!url) return <Spinner className="mt-[45vh] h-12 w-12" />;
+  if (!url) return <PageSpinner className="size-12" />;
 
   // Only the container itself is the backdrop: clicks on media or controls bubble here but fail the target check.
   const handleBackdropClick = onBackdropClick
@@ -60,7 +60,7 @@ export function AttachmentRender({
   return (
     // biome-ignore lint/a11y/useKeyWithClickEvents: backdrop dismiss is a mouse affordance; ESC closes the dialog for keyboard users
     <div className={containerClassName} onClick={handleBackdropClick}>
-      <Suspense fallback={<Spinner className="mt-[45vh]" />}>
+      <Suspense fallback={<PageSpinner className="size-6" />}>
         {type.includes('image') &&
           (imagePanZoom && !isMobile ? (
             <ReactPanZoom
@@ -72,7 +72,7 @@ export function AttachmentRender({
               backdropDismiss={!!onBackdropClick}
             />
           ) : (
-            <img src={url} alt={altName} className={cn(itemClassName, onBackdropClick ? 'max-h-full max-w-full' : 'h-full w-full')} />
+            <img src={url} alt={altName} className={cn(itemClassName, onBackdropClick ? 'max-h-full max-w-full' : 'size-full')} />
           ))}
         {type.includes('audio') && <RenderAudio src={url} className="mx-auto -mt-48 h-20 w-[80vw]" />}
         {type.includes('video') && <RenderVideo src={url} className="mx-auto max-h-full max-w-7xl" />}
@@ -82,7 +82,7 @@ export function AttachmentRender({
             {/* The URL is always fetchable: a CDN or presigned URL online, a local blob URL offline. */}
             <Button variant="plain" className="mt-4" disabled={isInProgress} onClick={() => download(url, filename || 'file')}>
               {isInProgress ? <Spinner className="size-4" noDelay /> : <DownloadIcon className="size-4" />}
-              <span className="ml-1">{t('c:download')}</span>
+              <span>{t('c:download')}</span>
             </Button>
           </ContentPlaceholder>
         )}

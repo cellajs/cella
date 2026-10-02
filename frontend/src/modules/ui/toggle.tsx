@@ -4,13 +4,13 @@ import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 export const toggleVariants = cva(
-  'focus-effect inline-flex items-center justify-center rounded-md font-medium text-sm shadow-xs transition-colors hover:bg-muted hover:text-muted-foreground active:translate-y-[.05rem] disabled:pointer-events-none disabled:opacity-50 data-pressed:bg-accent data-pressed:text-accent-foreground',
+  'focus-effect active:press inline-flex items-center justify-center rounded-md font-medium text-sm shadow-xs transition-colors hover:bg-muted hover:text-muted-foreground disabled:pointer-events-none disabled:opacity-50 data-pressed:bg-accent data-pressed:text-accent-foreground',
   {
     variants: {
       variant: {
         default: 'bg-transparent shadow-none',
         outline: 'border border-input bg-transparent hover:bg-accent hover:text-accent-foreground',
-        tile: 'group border bg-transparent p-3 text-left hover:bg-accent/50 hover:text-accent-foreground',
+        tile: 'group/toggle border bg-transparent p-3 text-left hover:bg-accent/50 hover:text-accent-foreground',
         merged:
           'rounded-none border border-input border-r-0 bg-transparent first:rounded-l-md last:rounded-r-md last:border-r hover:bg-accent/50 hover:text-accent-foreground',
       },
@@ -19,7 +19,7 @@ export const toggleVariants = cva(
         xs: 'h-7 px-2',
         sm: 'h-9 px-2.5',
         lg: 'h-11 px-5',
-        tile: '!rounded-xl h-full w-full',
+        tile: 'size-full rounded-xl!',
       },
     },
     defaultVariants: { variant: 'default', size: 'default' },

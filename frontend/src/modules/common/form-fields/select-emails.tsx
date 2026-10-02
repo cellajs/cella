@@ -72,7 +72,8 @@ export function SelectEmails({ emails = [], onValueChange, placeholder, inputPro
                 size="micro"
                 aria-label={t('c:remove_resource', { resource: email })}
                 onClick={() => remove(email)}
-                className="size-4.5 cursor-pointer rounded-full p-0 ring-inset active:translate-y-0! sm:focus-visible:ring-2"
+                className="size-4.5 cursor-pointer rounded-full p-0 ring-inset sm:focus-visible:ring-2"
+                press={false}
               >
                 <XIcon />
               </Button>

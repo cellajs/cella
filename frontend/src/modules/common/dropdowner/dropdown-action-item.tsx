@@ -23,7 +23,7 @@ export function DropdownActionItem({ isMobile, onSelect, icon: Icon, children, v
     return (
       <div className="sm:p-1">
         <Button onClick={onSelect} variant={variant} className={cn('flex w-full items-center', className)}>
-          {Icon && <Icon className="mr-2" />}
+          {Icon && <Icon />}
           {children}
         </Button>
       </div>

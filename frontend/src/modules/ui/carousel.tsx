@@ -212,7 +212,7 @@ function CarouselNext({ className, variant = 'outline', size = 'icon', ...props 
 
 const dotsVariants = cva('rounded-full transition-all duration-300', {
   variants: {
-    size: { default: 'h-5 w-5 text-xs', sm: 'h-6 w-6 text-sm', lg: 'h-7 w-7 text-md' },
+    size: { default: 'size-5 text-xs', sm: 'size-6 text-sm', lg: 'size-7 text-md' },
     gap: { default: 'mx-1', sm: 'mx-1', lg: 'mx-1' },
   },
   defaultVariants: { size: 'default', gap: 'default' },

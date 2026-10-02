@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useEffect, useRef, useState } from 'react';
 import { useLatestRef } from '~/hooks/use-latest-ref';
 import { useUIStore } from '~/modules/ui/ui-store';
+import { cn } from '~/utils/cn';
 
 // Hold the indicator still briefly, then glide it off-screen (ms).
 const exitHold = 100;
@@ -194,10 +195,10 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
         if (isExiting && e.propertyName === 'opacity') setPhase('idle');
       }}
       style={{ transform: `translateY(${offset}px)`, opacity, transition }}
-      className="fixed inset-x-1/2 top-0 z-300 h-8 w-8 -translate-x-1/2 bg-base-100"
+      className="fixed inset-x-1/2 top-0 z-300 size-8 -translate-x-1/2"
     >
       <svg
-        className={`h-8 w-8 ${isActive ? 'animate-spin' : ''}`}
+        className={cn('size-8', isActive && 'animate-spin')}
         viewBox="0 0 40 40"
         style={isActive ? { transition: 'none' } : { transform: `rotate(${pullPosition * 2}deg)`, transition: 'transform 0.1s ease-out' }}
       >
@@ -209,8 +210,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
           fill="none"
           stroke="currentColor"
           strokeWidth={backgroundStroke}
-          className="text-muted-foreground/50"
-          style={{ transition: 'stroke-width 0.15s ease-out' }}
+          className="text-muted-foreground/70 transition-[stroke-width] duration-150 ease-out"
         />
         <circle
           cx="20"
@@ -222,8 +222,7 @@ export function PullToRefresh({ onRefresh, refreshThreshold = 90, maximumPullLen
           strokeDasharray={isActive ? explodedDashArray : circumference}
           strokeDashoffset={isActive ? 0 : strokeDashoffset}
           strokeLinecap={isActive ? 'butt' : 'round'}
-          className="text-foreground"
-          style={{ transition: 'stroke-width 0.15s ease-out' }}
+          className="text-foreground transition-[stroke-width] duration-150 ease-out"
         />
       </svg>
     </div>

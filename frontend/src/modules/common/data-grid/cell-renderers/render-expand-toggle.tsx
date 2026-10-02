@@ -1,6 +1,7 @@
 import { ChevronRightIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
 
 export interface RenderExpandToggleProps {
   expanded: boolean;
@@ -146,12 +147,12 @@ export function RenderExpandToggle({
   });
 
   return (
-    <span className="relative flex h-full w-full items-center justify-center">
+    <span className="relative flex size-full items-center justify-center">
       {paths.length > 0 && (
         // Connectors stretch to the rendered cell for mobile row and rem scaling; the viewBox keeps desktop drawing coordinates.
         <svg
           aria-hidden
-          className="pointer-events-none absolute inset-0 h-full w-full text-input"
+          className="pointer-events-none absolute inset-0 size-full text-input"
           viewBox={`0 0 ${COL} ${rowHeight}`}
           preserveAspectRatio="none"
         >
@@ -193,7 +194,7 @@ export function RenderExpandToggle({
             }
           }}
         >
-          <ChevronRightIcon className={`opacity-70 transition-transform ${expanded ? 'rotate-90' : ''}`} />
+          <ChevronRightIcon className={cn('opacity-70 transition-transform', expanded && 'rotate-90')} />
         </Button>
       ) : depth > 0 ? (
         // Deepest leaf bullets ride the thin track (4px right of center), inner-leaf bullets the solid track (4px left).

@@ -4,7 +4,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import { CountryFlag } from '~/modules/common/country-flag';
 import { cards } from '~/modules/marketing/marketing-config';
 import { ScrollArea, ScrollBar } from '~/modules/ui/scroll-area';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { cn } from '~/utils/cn';
 
 export interface InfoCard {
   name: string;
@@ -16,11 +16,10 @@ export interface InfoCard {
 
 export function InfoCards() {
   const { t } = useTranslation();
-  const mode = useUIStore((state) => state.mode);
 
   return (
     <ScrollArea className="w-full" horizontalScroll>
-      <div className="flex w-max space-x-4 px-2 py-8">
+      <div className="flex w-max gap-4 px-2 py-8">
         {cards.map(({ url, id, name, invert, country }) => {
           const text = `about:cards.${id}.text` as TKey;
           const purpose = `about:cards.${id}.purpose` as TKey;
@@ -32,13 +31,13 @@ export function InfoCards() {
               rel="noreferrer"
               draggable={false}
               key={id}
-              className="group focus-effect relative flex h-96 w-64 shrink-0 flex-col justify-between rounded-lg border p-5 hover:cursor-pointer hover:border-primary hover:ring-4 hover:ring-primary/10 active:translate-y-[.05rem] sm:w-80"
+              className="group focus-effect active:press relative flex h-96 w-64 shrink-0 flex-col justify-between rounded-lg border p-5 hover:cursor-pointer hover:border-primary hover:ring-4 hover:ring-primary/10 sm:w-80"
             >
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center gap-2">
                 <img
                   src={`/static/marketing/integrations/${id}.svg`}
                   alt={name}
-                  className={`h-8 w-8 object-contain ${invert && mode === 'dark' && 'invert'}`}
+                  className={cn('size-8 object-contain', invert && 'dark:invert')}
                   loading="lazy"
                 />
                 <span className="ml-4 font-semibold">{name}</span>
@@ -49,7 +48,7 @@ export function InfoCards() {
                 <div className="font-semibold underline-offset-4 group-hover:underline">
                   <CountryFlag countryCode={country} className="mr-2" />
                   {url}
-                  <ArrowUpRightIcon className="icon-xs -mt-2 ml-1 inline-block text-primary opacity-50 group-hover:opacity-100" />
+                  <ArrowUpRightIcon className="-mt-2 ml-1 inline-block size-3 text-primary opacity-50 group-hover:opacity-100" />
                 </div>
               </div>
             </a>
