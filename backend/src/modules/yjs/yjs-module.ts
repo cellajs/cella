@@ -20,8 +20,19 @@ const writtenRowOf = ({ id, tenantId, organizationId, description }: PayloadRow)
 };
 
 /**
+ * True when the write itself wrote the row's description: the stx it stored names the fields it wrote (`buildStx`).
+ * `before` was read ahead of the row lock, so a description committed in between differs from it although this write
+ * left the description alone. Comparing with it only screens out a set an earlier write left in the stx, from an op
+ * that keeps the stored stx on a write that changes nothing (updateAttachmentOp strips the set then).
+ */
+const wroteDescription = (row: PayloadRow, before: PayloadRow | undefined) => {
+  const changedFields = (row.stx as { changedFields?: unknown } | null | undefined)?.changedFields;
+  return Array.isArray(changedFields) && changedFields.includes('description') && row.description !== before?.description;
+};
+
+/**
  * A description written by anything but the relay (a REST update, an MCP tool, an import) becomes an update of the
- * collaborative document of each row whose description changed, in the writing transaction. The relay's own
+ * collaborative document of each row whose description the write wrote, in the writing transaction. The relay's own
  * materialization carries `materialized` and records nothing: it is refused (409) when its merge lacks an outside
  * write. Only entity types with a materializer hold documents.
  */
@@ -31,11 +42,11 @@ const recordOnUpdate = (entityType: ProductEntityType): MutationHandler => {
     // The bus runs handlers in the write's transaction, after its UPDATE.
     const tx = ctx.var.db as Tx;
     if (materialized) return assertMaterializeWindow(tx, entityType, after);
-    const changed = after.filter((row, index) => row.description !== before[index]?.description);
+    const written = after.filter((row, index) => wroteDescription(row, before[index]));
     await recordYjsOutsideWrite(
       tx,
       entityType,
-      changed.flatMap((row) => writtenRowOf(row) ?? []),
+      written.flatMap((row) => writtenRowOf(row) ?? []),
     );
   };
 };

@@ -1,4 +1,5 @@
 import { and, asc, count, eq, getColumns, ilike, inArray, isNull, or, type SQL } from 'drizzle-orm';
+import type { PgUpdateSetSource } from 'drizzle-orm/pg-core';
 import type { ActorContext, DbContext } from '#/core/context';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
@@ -21,7 +22,7 @@ export const insertAttachments = async (ctx: DbContext, { attachments }: { attac
 
 interface UpdateAttachmentOpts {
   id: string;
-  values: Partial<typeof attachmentsTable.$inferInsert>;
+  values: PgUpdateSetSource<typeof attachmentsTable>;
 }
 
 export const updateAttachment = async (ctx: ActorContext, { id, values }: UpdateAttachmentOpts) => {

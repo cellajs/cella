@@ -20,8 +20,8 @@ export interface YjsWrittenRow {
  *
  * Runs in the write's own transaction, after the entity UPDATE: that row lock orders outside writes to one entity, and
  * the diff is taken against the log as committed then, so an edit committed earlier is overwritten where the write
- * differs and a later one merges. The yjs module's `<type>.updated` handler calls it for every write that changed a
- * description; an app write path that dispatches no `<type>.updated` calls it itself, after its UPDATE.
+ * differs and a later one merges. The yjs module's `<type>.updated` handler calls it for every write whose stored stx
+ * names the description; an app write path that dispatches no `<type>.updated` calls it itself, after its UPDATE.
  * @throws AppError 400 when a document exists and the description is one the editor schema cannot hold; the write
  * then rolls back, so row and document never part.
  */

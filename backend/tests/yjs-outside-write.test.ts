@@ -10,6 +10,7 @@ import * as Y from 'yjs';
 import type { ActorContext } from '#/core/context';
 import { generateServerHLC } from '#/core/stx';
 import { baseDb } from '#/db/db';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -127,6 +128,17 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
       body: {
         ops: { description: written },
         stx: { ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { description: generateServerHLC('test-client') } },
+      },
+      headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
+    });
+
+  /** A PUT of the name alone, which leaves the description to the row. */
+  const putName = (entityId: string, name: string) =>
+    call(updateAttachment, {
+      path: { organizationId: tenant.organization.id, tenantId: tenant.tenantId, id: entityId },
+      body: {
+        ops: { name },
+        stx: { ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { name: generateServerHLC('test-client') } },
       },
       headers: { ...defaultHeaders, Cookie: tenant.sessionCookie },
     });
@@ -288,6 +300,40 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
     expect(after.rows).toHaveLength(2);
     expect(texts(after.state)).toEqual(['Status: done']);
     expect(blockGroups(after.state!)).toBe(1);
+  });
+
+  it('must not record a write that left the description alone, though a materialization changed it after the write read the row', async () => {
+    // A rename, and a write that changes nothing, as an unchanged name.
+    for (const renamed of [true, false]) {
+      const { attachment, scope, seed } = await arrange(description(block('one', 'Status: draft')));
+      const [{ name }] = await adminDb.select({ name: attachmentsTable.name }).from(attachmentsTable).where(eq(attachmentsTable.id, attachment.id));
+      // A client edit, which the relay's materialization merges.
+      const typed = description(block('one', 'Status: typed'));
+      const merged = descriptionToUpdate(seed, typed)!;
+      await adminDb.insert(yjsUpdatesTable).values({ ...scope, userId: tenant.user.id, payload: Buffer.from(merged) });
+
+      // The materialization queues on the row first; the write reads the row, with the old description, and queues next.
+      const holder = await holdAttachmentRow(attachment.id);
+      const materialized = materializeDescriptionOp({ ...scope, description: typed, editors: [tenant.user.id] });
+      await lockWaiters(1);
+      const write = putName(attachment.id, renamed ? `${name} renamed` : name);
+      await lockWaiters(2);
+      // A client edit the materialization does not hold, logged before the write takes the row.
+      const later = descriptionToUpdate(mergeState(seed, [merged]), description(block('one', 'Status: typed, and more')))!;
+      await adminDb.insert(yjsUpdatesTable).values({ ...scope, userId: tenant.user.id, payload: Buffer.from(later) });
+      holder.release();
+      await holder.done;
+      await materialized;
+      expect((await write).response.status, String(renamed)).toBe(200);
+
+      const after = await stored(attachment.id);
+      expect((await attachment.read())?.description, String(renamed)).toContain('Status: typed');
+      expect(
+        after.rows.map((row) => row.userId),
+        String(renamed),
+      ).toEqual([tenant.user.id, tenant.user.id]);
+      expect(texts(after.state), String(renamed)).toEqual(['Status: typed, and more']);
+    }
   });
 
   it('records a server-clock write outside the relay, as an MCP tool makes it, like a REST write (11)', async () => {
