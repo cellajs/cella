@@ -6,6 +6,7 @@ import { dateColumn } from '~/modules/common/data-table/columns';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Badge } from '~/modules/ui/badge';
+import { cn } from '~/utils/cn';
 
 export const useColumns = () => {
   const { t } = useTranslation();
@@ -19,11 +20,11 @@ export const useColumns = () => {
       resizable: true,
       width: 160,
       renderCell: ({ row: { type, wasInvited } }) => (
-        <div className="flew-row flex items-center gap-2">
+        <div className="flex items-center gap-2">
           {t(`c:${type}`)}
           {type === 'waitlist' && (
             <TooltipButton toolTipContent={t(`c:${wasInvited ? 'pending' : 'not_processed'}`)} disabled={type !== 'waitlist'}>
-              <Badge className={`h-2 w-2 justify-center p-0 ${wasInvited ? 'bg-yellow-400' : 'bg-gray-400'}`} />
+              <Badge className={cn('size-2 justify-center p-0', wasInvited ? 'bg-warning' : 'bg-muted-foreground/70')} />
             </TooltipButton>
           )}
         </div>

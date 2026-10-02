@@ -60,7 +60,7 @@ export const Link: Story = { args: { variant: 'link' } };
 export const Loading: Story = {
   render: (args) => (
     <Button {...args}>
-      <LoaderCircleIcon className="mr-2 size-4 animate-spin" />
+      <LoaderCircleIcon className="size-4 animate-spin" />
       Button
     </Button>
   ),
@@ -74,7 +74,7 @@ export const Loading: Story = {
 export const WithIcon: Story = {
   render: (args) => (
     <Button {...args}>
-      <MailIcon className="mr-2 size-4" /> Login with Email Button
+      <MailIcon className="size-4" /> Login with Email Button
     </Button>
   ),
   args: { ...Secondary.args },

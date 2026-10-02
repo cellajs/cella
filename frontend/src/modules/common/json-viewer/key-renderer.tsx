@@ -1,3 +1,5 @@
+import { cn } from '~/utils/cn';
+
 interface KeyRendererProps {
   keyName?: string | number | false;
   showKeyQuotes: boolean;
@@ -17,7 +19,7 @@ export function KeyRenderer({ keyName, showKeyQuotes, searchText, isObjectValue,
   // Dictionary key from additionalProperties, written as [key].
   const isDictionaryKey = openapiMode === 'schema' && keyStr.startsWith('[') && keyStr.endsWith(']');
 
-  const requiredLabel = hasSelfRequired && <span className={`ml-1.5 rounded px-1 py-0.5 font-medium text-xs ${theme.required}`}>required</span>;
+  const requiredLabel = hasSelfRequired && <span className={cn('ml-1.5 rounded px-1 py-0.5 font-medium text-xs', theme.required)}>required</span>;
 
   if (typeof keyName === 'number') {
     return <span className={theme.index}>{keyName}</span>;
@@ -26,7 +28,12 @@ export function KeyRenderer({ keyName, showKeyQuotes, searchText, isObjectValue,
   return (
     <>
       <span
-        className={`font-medium ${theme.key} ${isMatch ? theme.searchMatch : ''} ${isDictionaryKey ? 'text-foreground/40! italic' : openapiMode === 'schema' && !isObjectValue ? 'text-foreground/40!' : ''}`}
+        className={cn(
+          'font-medium',
+          theme.key,
+          isMatch && theme.searchMatch,
+          isDictionaryKey ? 'text-muted-foreground/70! italic' : openapiMode === 'schema' && !isObjectValue ? 'text-muted-foreground/70!' : '',
+        )}
         data-search-match={isMatch ? 'true' : undefined}
       >
         {showKeyQuotes && !isDictionaryKey ? `"${keyName}"` : keyName}

@@ -1,4 +1,5 @@
-/* Lift editing task card above sibling virtualizer items so BlockNote floating UI (slash menu, toolbar) isn't clipped */
+/* Serves an app's task board (raak): lift the editing task card above sibling virtualizer items so BlockNote floating UI
+   (slash menu, toolbar) isn't clipped. */
 li:has([data-state="editing"]),
 li:has(.is-focused) {
   z-index: 10;
@@ -13,8 +14,6 @@ li:has(.is-focused) {
   overflow: visible;
   background: transparent;
 }
-
-/* Dark theme variables inherited from tailwind.css via .bn-container.bn-shadcn.dark selector */
 
 /* Override BlockNote's soft editor text color with the app foreground. */
 .bn-container.bn-shadcn {
@@ -33,10 +32,10 @@ li:has(.is-focused) {
 }
 
 .bn-editor[contenteditable="false"] .bn-file-block-content-wrapper {
-  cursor: default !important;
+  cursor: default;
 }
 .bn-editor[contenteditable="false"] .bn-add-file-button {
-  pointer-events: none !important;
+  pointer-events: none;
 }
 .bn-editor[contenteditable="false"] p.bn-add-file-button-text {
   display: none;
@@ -163,8 +162,8 @@ li:has(.is-focused) {
 }
 
 .bn-link-toolbar > button.px-3 {
-  padding-left: 0.5rem !important;
-  padding-right: 0.5rem !important;
+  padding-left: 0.5rem;
+  padding-right: 0.5rem;
   height: 2rem;
 }
 
@@ -214,9 +213,9 @@ li:has(.is-focused) {
 
 .bn-shadcn .bn-editor,
 .bn-shadcn .bn-static-editor {
-  white-space: pre-wrap !important;
-  padding: 0px !important;
-  background: transparent !important;
+  white-space: pre-wrap;
+  padding: 0px;
+  background: transparent;
   height: 100%;
   width: 100%;
 }
@@ -254,58 +253,6 @@ li:has(.is-focused) {
 .bn-dropdown-button {
   display: inline-flex;
   gap: 0.15rem;
-}
-
-.slash-menu {
-  max-height: 40vh;
-  overflow-y: auto;
-  background-color: var(--popover) !important;
-  border: 0.05rem solid var(--border) !important;
-  border-radius: 0.5rem;
-  box-shadow: 0 0.05rem 0.3rem 0 rgb(0 0 0 / 0.1) !important;
-  display: flex;
-  flex-direction: column;
-  height: fit-content;
-  padding: 0.25rem;
-}
-
-.slash-menu-item {
-  border-radius: 0.25rem;
-  font-size: 0.888rem;
-  min-width: 14rem;
-  align-items: center;
-  display: flex;
-  height: 2.25rem;
-  flex-direction: row;
-  justify-content: space-between;
-}
-
-/* BlockNote's shadcn theme resets icons without a size-* class via an unlayered rule, so !important is required. */
-.slash-menu-item svg {
-  width: 1rem !important;
-  height: 1rem !important;
-}
-
-.slash-menu-item-badge {
-  font-size: 0.8rem;
-  min-width: 1rem;
-  align-items: center;
-  color: var(--muted-foreground);
-  opacity: 0.5 !important;
-  display: flex;
-  padding: 0.125rem 0 0.125rem 0.25rem;
-}
-
-.slash-menu-separator {
-  margin-top: 0.25rem !important;
-  margin-bottom: 0.25rem !important;
-}
-
-.slash-menu-item[aria-selected="true"] {
-  background-color: var(--accent);
-}
-.slash-menu-item:hover {
-  background-color: color-mix(in oklch, var(--accent) 60%, transparent);
 }
 
 .notify {
@@ -351,7 +298,7 @@ li:has(.is-focused) {
 }
 
 .no-hover-bg:hover {
-  background-color: transparent !important;
+  background-color: transparent;
 }
 
 .notify-icon-wrapper {
@@ -401,12 +348,12 @@ li:has(.is-focused) {
 }
 
 .bn-shadcn th {
-  border: 0.05rem solid var(--table-border);
+  border: 0.05rem solid var(--border);
   border-collapse: collapse;
 }
 .bn-shadcn td {
   padding: 4px;
-  border: 0.05rem solid var(--table-border);
+  border: 0.05rem solid var(--border);
   border-collapse: collapse;
 }
 

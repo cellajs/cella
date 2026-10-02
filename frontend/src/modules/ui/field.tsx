@@ -271,7 +271,8 @@ export function FormLabel({
           aria-label={t('c:help')}
           aria-expanded={helpOpen}
           onClick={() => setHelpOpen(!helpOpen)}
-          className="-my-1 size-6 opacity-50 hover:opacity-100 active:translate-y-0!"
+          press={false}
+          className="-my-1 size-6 opacity-50 hover:opacity-100"
         >
           <span className="relative size-4">
             <CircleQuestionMarkIcon

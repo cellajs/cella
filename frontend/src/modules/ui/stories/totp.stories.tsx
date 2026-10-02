@@ -152,12 +152,12 @@ export const CustomStyling: Story = {
       <div className="space-y-4">
         <InputOTP length={6} value={value} onValueChange={(value) => setValue(value)} className="gap-4">
           <InputOTPGroup>
-            <InputOTPSlot className="h-12 w-12 text-lg" />
-            <InputOTPSlot className="h-12 w-12 text-lg" />
-            <InputOTPSlot className="h-12 w-12 text-lg" />
-            <InputOTPSlot className="h-12 w-12 text-lg" />
-            <InputOTPSlot className="h-12 w-12 text-lg" />
-            <InputOTPSlot className="h-12 w-12 text-lg" />
+            <InputOTPSlot className="size-12 text-lg" />
+            <InputOTPSlot className="size-12 text-lg" />
+            <InputOTPSlot className="size-12 text-lg" />
+            <InputOTPSlot className="size-12 text-lg" />
+            <InputOTPSlot className="size-12 text-lg" />
+            <InputOTPSlot className="size-12 text-lg" />
           </InputOTPGroup>
         </InputOTP>
       </div>

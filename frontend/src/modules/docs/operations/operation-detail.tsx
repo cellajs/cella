@@ -11,6 +11,7 @@ import { OperationResponses } from '~/modules/docs/operations/operation-response
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 import { Spinner } from '../../common/spinner';
 import { getHashUrl } from '../hash-url';
 import { getMethodColor } from '../helpers/get-method-color';
@@ -27,7 +28,7 @@ export function openOperationSheet(operation: GenOperationSummary, trigger: HTML
       id: `operation-${operation.id}`,
       triggerRef: { current: trigger },
       side: 'right',
-      className: 'max-w-full lg:max-w-4xl',
+      className: tw('max-w-full lg:max-w-4xl'),
       title: i18n.t('c:docs.operation_detail'),
     },
   );
@@ -64,12 +65,12 @@ export function OperationDetail({ operation, detail: detailProp, className }: Op
       </CardHeader>
       <CardContent>
         <div className="mb-4 flex items-center gap-4 max-sm:flex-col max-sm:items-start max-sm:gap-1">
-          <Badge className={`font-mono uppercase ${getMethodColor(operation.method)} rounded-none bg-transparent p-0 text-md shadow-none`}>
+          <Badge className={cn('font-mono uppercase', getMethodColor(operation.method), 'rounded-none bg-transparent p-0 text-md shadow-none')}>
             {operation.method.toUpperCase()}
           </Badge>
-          <code className="break-all font-mono opacity-70 sm:text-lg">{operation.path}</code>
+          <code className="break-all font-mono text-muted-foreground sm:text-lg">{operation.path}</code>
           {operation.deprecated && (
-            <Badge variant="outline" className="border-yellow-600 text-yellow-600">
+            <Badge variant="outline" className="border-warning text-warning">
               {t('c:deprecated')}
             </Badge>
           )}

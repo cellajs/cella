@@ -4,6 +4,7 @@ import type { TKey } from '~/lib/i18n-locales';
 import { type TriggerRef, useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { UnsavedBadge } from '~/modules/common/unsaved-badge';
 import { Card, CardContent } from '~/modules/ui/card';
+import { tw } from '~/utils/tw';
 
 interface OpenEditSheetOptions {
   id: string;
@@ -18,7 +19,7 @@ interface OpenEditSheetOptions {
 }
 
 /** Opens a right-side sheet that edits one resource: the form in a card, the title with an unsaved badge. */
-export function openEditSheet({ id, resource, triggerRef, children, after, className = 'container w-full' }: OpenEditSheetOptions) {
+export function openEditSheet({ id, resource, triggerRef, children, after, className = tw('container w-full') }: OpenEditSheetOptions) {
   const title = i18n.t('c:edit_resource', { resource: i18n.t(resource).toLowerCase() });
 
   useSheeter.getState().create(
@@ -32,7 +33,7 @@ export function openEditSheet({ id, resource, triggerRef, children, after, class
       id,
       triggerRef,
       side: 'right',
-      className: 'max-w-full lg:max-w-4xl',
+      className: tw('max-w-full lg:max-w-4xl'),
       title,
       titleContent: <UnsavedBadge title={title} />,
     },

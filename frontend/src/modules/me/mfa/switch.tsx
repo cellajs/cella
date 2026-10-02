@@ -37,13 +37,13 @@ export function MfaSwitch() {
         <Switch id="mfaRequired" ref={triggerRef} disabled={!hasPasskey || !hasTotp} checked={user.mfaRequired} onCheckedChange={handleToggleMfa} />
         {user.mfaRequired && (
           <p className="flex items-center gap-2">
-            <CircleAlertIcon className="icon-sm shrink-0 text-amber-500" />
+            <CircleAlertIcon className="size-3.5 shrink-0 text-warning" />
             <span className="text-muted-foreground text-sm">{t('c:mfa_enabled.text')}</span>
           </p>
         )}
         {(!hasPasskey || !hasTotp) && (
           <p className="flex items-center gap-2">
-            <CircleAlertIcon className="icon-sm shrink-0 text-amber-500" />
+            <CircleAlertIcon className="size-3.5 shrink-0 text-warning" />
             <span className="text-muted-foreground text-sm">{t('c:mfa_disabled.text')}</span>
           </p>
         )}

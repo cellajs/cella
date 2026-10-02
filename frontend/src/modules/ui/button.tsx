@@ -5,35 +5,37 @@ import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 export const buttonVariants = cva(
-  'focus-effect inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium text-sm shadow-xs transition-colors disabled:pointer-events-none disabled:opacity-50 [&:not(.absolute):not(.relative)]:active:translate-y-[.05rem]',
+  'focus-effect inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md font-medium text-sm shadow-xs transition-colors disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
-        default: '[--intent-color:var(--primary)]',
-        brand: '[--intent-color:var(--brand)]',
-        destructive: '[--intent-color:var(--destructive)]',
-        success: '[--intent-color:var(--success)]',
-        secondary: 'border border-transparent bg-secondary text-secondary-foreground [--intent-color:var(--secondary)] hover:bg-secondary/80',
+        default: 'intent-primary',
+        brand: 'intent-brand',
+        destructive: 'intent-destructive',
+        success: 'intent-success',
+        secondary: 'intent-secondary border border-transparent bg-secondary text-secondary-foreground hover:bg-secondary/80',
         outline: 'border bg-background hover:bg-accent hover:text-accent-foreground dark:border-input dark:hover:bg-input/50',
         ghost: 'shadow-none hover:bg-accent hover:text-accent-foreground dark:hover:bg-accent/50',
         outlineGhost:
           'border border-foreground/20 bg-background/20 shadow-none hover:border-foreground/30 hover:bg-background/40 hover:text-accent-foreground',
         link: 'text-primary underline-offset-4 shadow-none hover:underline',
-        cell: 'group flex w-full justify-start gap-2 font-normal text-regular underline-offset-4 opacity-75 shadow-none hover:opacity-100 focus-visible:ring-transparent focus-visible:ring-offset-transparent',
+        cell: 'group/cell-button flex w-full justify-start gap-2 font-normal underline-offset-4 opacity-75 shadow-none hover:opacity-100 focus-visible:ring-transparent focus-visible:ring-offset-transparent',
         plain: 'border border-primary/20 bg-primary/5 text-primary hover:border-primary/30 hover:bg-primary/10',
         input:
-          'hover:transparent border border-input bg-background aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 [&:not(.absolute)]:active:translate-y-0',
-        warning: '[--intent-color:var(--warning)]',
+          'border border-input bg-background aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40',
+        warning: 'intent-warning',
         none: 'border-none bg-transparent shadow-none',
       },
       soft: { true: '', false: '' },
+      // Nudges the button down while held; input-styled buttons stay put like the fields they sit among
+      press: { true: 'active:press', false: '' },
       size: {
         default: 'h-10 px-3 py-2',
-        micro: 'h-6 rounded-md p-1 text-xs',
-        xs: 'h-8 rounded-md px-2',
-        sm: 'h-9 rounded-md px-3',
+        micro: 'h-6 gap-1 rounded-md p-1 text-xs',
+        xs: 'h-8 gap-1.5 rounded-md px-2',
+        sm: 'h-9 gap-1.5 rounded-md px-3',
         lg: 'h-11 rounded-md px-4',
-        icon: 'h-10 w-10',
+        icon: 'size-10',
         cell: 'h-full px-0 py-0',
         xl: 'h-14 rounded-lg px-6 text-lg',
         auto: 'h-auto',
@@ -57,7 +59,7 @@ export const buttonVariants = cva(
       { variant: 'success', soft: false, className: 'bg-success text-success-foreground hover:bg-success/80' },
       { variant: 'warning', soft: false, className: 'bg-warning text-warning-foreground hover:bg-warning/80' },
     ],
-    defaultVariants: { variant: 'default', soft: false, size: 'default' },
+    defaultVariants: { variant: 'default', soft: false, size: 'default', press: true },
   },
 );
 
@@ -75,6 +77,7 @@ export function Button({
   variant,
   soft,
   size,
+  press,
   render,
   loading,
   disabled,
@@ -97,7 +100,7 @@ export function Button({
       // A `render` element such as a Link keeps its own semantics, so only the native button gets a type.
       ...(render ? {} : { type: 'button' }),
       'data-slot': 'button',
-      className: cn(buttonVariants({ variant, soft, size, className })),
+      className: cn(buttonVariants({ variant, soft, size, press: press ?? variant !== 'input', className })),
       disabled: disabled || loading,
       'aria-busy': loading || undefined,
       ...props,

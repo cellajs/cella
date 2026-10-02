@@ -14,6 +14,7 @@ import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { findClickedMedia, getHeadlessEditor, getParsedContent } from '~/modules/common/blocknote/helpers/blocknote-helpers';
 import type { CustomBlock } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/modules/ui/ui-store';
+import { cn } from '~/utils/cn';
 
 // DOMPurify's default URI policy strips `blob:`, which this render needs for locally cached images; all other schemes keep the default.
 const ALLOWED_URI_REGEXP = /^(?:(?:(?:f|ht)tps?|mailto|tel|callto|sms|cid|xmpp|blob):|[^a-z]|[a-z+.-]+(?:[^a-z+.\-:]|$))/i;
@@ -220,7 +221,7 @@ function BlockNoteFullHtml({
       id={id}
       ref={containerRef}
       role="presentation"
-      className={`bn-container bn-shadcn ${dense ? 'bn-dense' : ''} ${mode === 'dark' ? 'dark' : ''} ${className}`}
+      className={cn('bn-container bn-shadcn', dense && 'bn-dense', mode === 'dark' && 'dark', className)}
       data-color-scheme={mode}
       onClick={handleClick}
     >

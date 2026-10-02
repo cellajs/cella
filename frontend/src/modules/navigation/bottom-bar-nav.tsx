@@ -29,7 +29,7 @@ export function BottomBarNav({ triggerNavItem }: BottomBarNavProps) {
     >
       <ul className="flex w-full flex-row justify-between p-1 px-2">
         {getBaseNavItems().map((navItem: NavItem) => (
-          <li key={navItem.id} className="flex transform justify-start">
+          <li key={navItem.id} className="flex justify-start">
             <BottomBarNavButton navItem={navItem} isActive={navSheetOpen === navItem.id} onClick={triggerNavItem} />
           </li>
         ))}

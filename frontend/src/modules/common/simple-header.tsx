@@ -2,6 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useHasScrolled } from '~/hooks/use-has-scrolled';
 import type { TKey } from '~/lib/i18n-locales';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 interface SimpleHeaderProps {
   /** i18n key or already-translated text (t() renders non-keys verbatim). */
@@ -14,10 +15,11 @@ interface SimpleHeaderProps {
   collapseText?: boolean;
 }
 
-const collapseTextClasses =
-  'transition-[max-height,opacity,margin] duration-300 ease-in-out max-h-24 mt-2 md:mt-3 overflow-hidden group-data-[sticky=true]:opacity-0 group-data-[sticky=true]:max-h-0 group-data-[sticky=true]:mt-0';
+const collapseTextClasses = tw(
+  'mt-2 max-h-24 overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-in-out group-data-[sticky=true]:mt-0 group-data-[sticky=true]:max-h-0 group-data-[sticky=true]:opacity-0 md:mt-3',
+);
 
-const expandedTextClasses = 'transition-[max-height,opacity,margin] duration-300 ease-in-out max-h-24 mt-2 md:mt-3';
+const expandedTextClasses = tw('mt-2 max-h-24 transition-[max-height,opacity,margin] duration-300 ease-in-out md:mt-3');
 
 export function SimpleHeader({ heading, text, children, className = '', textClassName = '', collapseText }: SimpleHeaderProps) {
   const { t } = useTranslation();

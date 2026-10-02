@@ -19,7 +19,7 @@ export function CodeBlock({ children, ...props }: ComponentProps<'pre'>) {
         tabIndex={-1}
         aria-label="Copy code"
         onClick={() => copyToClipboard(ref.current?.textContent ?? '')}
-        className="absolute top-2 right-2 h-7 w-7 border border-border bg-background/80 p-0 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
+        className="absolute top-2 right-2 size-7 border border-border bg-background/80 p-0 opacity-0 backdrop-blur-sm transition-opacity group-hover:opacity-100"
       >
         {copied ? <CheckIcon className="size-3.5 text-success" /> : <CopyIcon className="size-3.5" />}
       </Button>

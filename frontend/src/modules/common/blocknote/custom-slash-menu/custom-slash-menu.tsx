@@ -55,10 +55,14 @@ export function CustomSlashMenuComponent({
   }, [selectedIndex]);
 
   return (
-    <div className="slash-menu" role="listbox" ref={menuRef}>
+    <div
+      className="flex h-fit max-h-[40vh] flex-col overflow-y-auto rounded-lg border-[0.05rem] bg-popover p-1 shadow-[0_0.05rem_0.3rem_0_rgb(0_0_0/0.1)]"
+      role="listbox"
+      ref={menuRef}
+    >
       {items.map((item, index) => (
         <div key={item.title}>
-          {index === indexedItemCount && items.length === originalItemCount && <hr className="slash-menu-separator" />}
+          {index === indexedItemCount && items.length === originalItemCount && <hr className="my-1" />}
           <button
             ref={(el) => {
               itemRefs.current[index] = el;
@@ -66,7 +70,8 @@ export function CustomSlashMenuComponent({
             role="option"
             type="button"
             aria-selected={selectedIndex === index}
-            className="slash-menu-item px-2!"
+            // BlockNote's shadcn theme resets icons without a size-* class from an unlayered rule, which only `!` outranks.
+            className="flex h-9 min-w-56 items-center justify-between rounded-sm px-2 text-md hover:bg-accent/60 aria-selected:bg-accent [&_svg]:size-4!"
             onClick={() => onItemClick?.(item)}
             tabIndex={-1}
           >
@@ -74,7 +79,9 @@ export function CustomSlashMenuComponent({
               {item.icon}
               {item.title}
             </div>
-            {items.length === originalItemCount && index < indexedItemCount && <span className="slash-menu-item-badge">{index + 1}</span>}
+            {items.length === originalItemCount && index < indexedItemCount && (
+              <span className="flex min-w-4 items-center py-0.5 pl-1 text-[0.8rem] text-muted-foreground opacity-50">{index + 1}</span>
+            )}
           </button>
         </div>
       ))}

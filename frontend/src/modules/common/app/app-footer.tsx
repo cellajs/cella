@@ -66,7 +66,7 @@ export function AppFooter({ className = '' }) {
       <div className="flex items-center gap-4">
         <UserLanguage />
         <div className="mr-1 opacity-20 first:hidden">|</div>
-        <Link to="/about" draggable={false} className="focus-effect rounded-md transition-transform hover:scale-105 active:translate-y-[.05rem]">
+        <Link to="/about" draggable={false} className="focus-effect active:press rounded-md transition-transform hover:scale-105">
           <Logo height={25} />
         </Link>
         <div className="ml-1 opacity-20">|</div>

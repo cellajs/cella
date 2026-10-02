@@ -39,14 +39,14 @@ export function OAuthConsentPage() {
 
   // An expired or unknown interaction is an answer, not a wait.
   if (error && !unauthenticated) return <ErrorNotice error={error as ErrorNoticeError} boundary="public" />;
-  if (isPending || !data) return <Spinner className="h-10 w-10" />;
+  if (isPending || !data) return <Spinner className="size-10" />;
 
   const { client, scopes, refusal, target } = data;
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col items-center gap-3 text-center">
-        {client.logoUri && <img src={client.logoUri} alt="" className="h-12 w-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
+        {client.logoUri && <img src={client.logoUri} alt="" className="size-12 rounded-md" loading="lazy" referrerPolicy="no-referrer" />}
         <h1 className="text-2xl">{t('c:oauth_consent_header', { name: client.name })}</h1>
         <p className="text-muted-foreground text-sm">{t('c:oauth_consent.text', { name: client.name, appName: appConfig.name })}</p>
         {target.tenant && (

@@ -26,14 +26,14 @@ export function LegalPage() {
   return (
     <MarketingLayout title={t('c:legal')}>
       <div className="container my-4 gap-4 md:mt-8 md:flex md:flex-row">
-        <div className="mx-auto md:mt-3 md:w-[25%] md:min-w-48">
+        <div className="mx-auto md:mt-3 md:w-1/4 md:min-w-48">
           <div className="group sticky top-3 z-10 max-h-[calc(100dvh-1.5rem)] overflow-y-auto">
             <SimpleHeader className="p-3" text={t('c:legal_text', { appName: appConfig.name })} collapseText />
             <LegalAside subjects={subjects} currentSubject={currentSubject} className="py-2" />
           </div>
         </div>
 
-        <div className="flex min-h-svh flex-col gap-8 md:w-[75%]">
+        <div className="flex min-h-svh flex-col gap-8 md:w-3/4">
           {subjects.map(({ id }) => {
             const isActive = id === currentSubject;
             const Component = legalConfig[id].component;

@@ -1,5 +1,6 @@
 import { Trans, useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
+import { cn } from '~/utils/cn';
 
 interface AboutSectionProps {
   /** When set, renders a `spy-<sectionId>` anchor for scroll-spy nav (used on the about page). */
@@ -44,7 +45,7 @@ export function AboutSection({ title, text, textComponents, sectionId, children,
   return (
     <section
       id={sectionId ? `spy-${sectionId}` : undefined}
-      className={`container max-w-none overflow-hidden px-4 py-8 md:py-12 lg:py-20 ${backgroundClass}`}
+      className={cn('container max-w-none overflow-hidden px-4 py-8 md:py-12 lg:py-20', backgroundClass)}
     >
       <AboutSectionHeader title={title} text={text} textComponents={textComponents} className="mb-12" />
       {children}

@@ -99,7 +99,7 @@ export function SheeterSheet({ sheet, onExited }: { sheet: InternalSheet; onExit
         side={side}
         overlay={modal === true}
         container={containerElement}
-        className={cn(className, 'items-start', containerElement && 'z-40')}
+        className={cn('items-start', className, containerElement && 'z-40')}
         initialFocus={isMobile ? false : undefined}
         finalFocus={finalFocus}
         autoScrollOnDrag={autoScrollOnDrag}

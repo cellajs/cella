@@ -1046,7 +1046,7 @@ export function DataGrid<R, SR = unknown, K extends Key = Key>(props: DataGridPr
         {
           'rdg-readonly': readOnly,
           // Row-body clicks select rows, so the row outline replaces the per-cell one.
-          'rdg-row-selection [&_.rdg-cell]:aria-selected:outline-none': rowSelectionMode !== 'none',
+          'rdg-row-selection [&_.rdg-cell]:aria-selected:outline-hidden': rowSelectionMode !== 'none',
         },
         className,
       )}

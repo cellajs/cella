@@ -11,6 +11,7 @@ import { type GradedStatusEntry, gradeStatusEntries } from '~/modules/navigation
 import { Button } from '~/modules/ui/button';
 import { HoverCard, HoverCardContent, HoverCardTrigger } from '~/modules/ui/hover-card';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 const statusStyleMap: Record<HealthStatus, { dot: string; pulse: string }> = {
   healthy: { dot: 'bg-success', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--success)_50%,transparent)]' },
@@ -18,16 +19,12 @@ const statusStyleMap: Record<HealthStatus, { dot: string; pulse: string }> = {
   unhealthy: { dot: 'bg-destructive', pulse: '[--status-pulse-color:color-mix(in_oklch,var(--destructive)_50%,transparent)]' },
 };
 
-const statusCardClass = 'flex items-center gap-2 rounded-md border border-dashed px-4 py-2 text-left text-xs';
+const statusCardClass = tw('flex items-center gap-2 rounded-md border border-dashed px-4 py-2 text-left text-xs');
 
 function StatusDot({ status }: { status: HealthStatus }) {
   return (
     <span
-      className={cn(
-        'inline-block size-2 shrink-0 animate-[status-pulse_3.5s_ease-in-out_infinite] rounded-full',
-        statusStyleMap[status].dot,
-        statusStyleMap[status].pulse,
-      )}
+      className={cn('inline-block size-2 shrink-0 animate-status-pulse rounded-full', statusStyleMap[status].dot, statusStyleMap[status].pulse)}
       aria-hidden="true"
     />
   );
@@ -73,21 +70,21 @@ export function InfoContent() {
       <div className="flex flex-col gap-1">
         <h3 className="px-4 font-medium text-muted-foreground/70 text-sm lowercase">{t('c:support')}</h3>
         <Button variant="ghost" className="w-full justify-start px-3.5 text-left" render={<Link to={appConfig.aboutUrl} draggable={false} />}>
-          <InfoIcon className="mr-2 size-4" aria-hidden="true" />
+          <InfoIcon className="size-4" aria-hidden="true" />
           {t('c:about')}
         </Button>
         <Button variant="ghost" className="w-full justify-start px-3.5 text-left" render={<Link to="/docs" draggable={false} />}>
-          <BookOpenIcon className="mr-2 size-4" aria-hidden="true" />
+          <BookOpenIcon className="size-4" aria-hidden="true" />
           {t('c:api_docs')}
         </Button>
         {appConfig.has.chatSupport && (
           <Button ref={supportRef} variant="ghost" className="w-full justify-start px-3.5 text-left" onClick={() => handleAskForHelp(supportRef)}>
-            <LifeBuoyIcon className="mr-2 size-4" aria-hidden="true" />
+            <LifeBuoyIcon className="size-4" aria-hidden="true" />
             {t('c:support')}
           </Button>
         )}
         <Button ref={contactRef} variant="ghost" className="w-full justify-start px-3.5 text-left" onClick={() => contactFormHandler(contactRef)}>
-          <MailIcon className="mr-2 size-4" aria-hidden="true" />
+          <MailIcon className="size-4" aria-hidden="true" />
           {t('c:contact_us')}
         </Button>
       </div>

@@ -30,7 +30,7 @@ export function Totp() {
     if (!steppedUp) return;
 
     useDialoger.getState().create(
-      <Suspense fallback={<Skeleton className="mx-auto my-3 h-72.75 w-72.75" />}>
+      <Suspense fallback={<Skeleton className="mx-auto my-3 size-72.75" />}>
         <SetupTotp />
       </Suspense>,
       {
@@ -62,12 +62,12 @@ export function Totp() {
       )}
       {hasTotp ? (
         <Button key="deleteTotp" type="button" variant="plain" loading={isPending} disabled={user.mfaRequired} onClick={handleDeleteTOTP}>
-          <TrashIcon className="mr-2 size-4" />
+          <TrashIcon className="size-4" />
           <span>{t('c:delete')}</span>
         </Button>
       ) : (
         <Button key="createTotp" type="button" variant="plain" onClick={openSetupTotp}>
-          <RotateCcwKeyIcon className="mr-2 size-4" />
+          <RotateCcwKeyIcon className="size-4" />
           <span>{t('c:totp_setup')}</span>
         </Button>
       )}

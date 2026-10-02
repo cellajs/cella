@@ -80,7 +80,7 @@ export function ComboboxSelect({
           {selectedOption ? (
             <div className="flex items-center gap-2 truncate">
               {renderAvatar && (
-                <EntityAvatar className="h-6 w-6 shrink-0 text-xs" id={selectedOption.value} name={selectedOption.label} url={selectedOption.url} />
+                <EntityAvatar className="size-6 shrink-0 text-xs" id={selectedOption.value} name={selectedOption.label} url={selectedOption.url} />
               )}
               {renderOption ? renderOption(selectedOption) : <span className="truncate">{selectedOption.label}</span>}
             </div>

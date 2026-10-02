@@ -26,7 +26,7 @@ export function AuthErrorPage() {
         variant={resendTokenId ? 'plain' : 'default'}
         render={<Link to="/auth/authenticate" search={resumeTokenId ? { tokenId: resumeTokenId } : {}} replace />}
       >
-        <LogInIcon className="mr-2" />
+        <LogInIcon />
         {t('c:sign_in')}
       </Button>
     </ErrorNotice>

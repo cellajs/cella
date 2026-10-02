@@ -8,6 +8,7 @@ import { openExamplesSheet } from '~/modules/docs/operations/operation-examples'
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
+import { cn } from '~/utils/cn';
 import { getMethodColor } from '../../helpers/get-method-color';
 
 export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: string[] = []) => {
@@ -80,7 +81,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         sortable: true,
         width: 80,
         renderCell: ({ row }) => (
-          <Badge variant="secondary" className={`bg-transparent font-mono text-xs uppercase shadow-none ${getMethodColor(row.method)}`}>
+          <Badge variant="secondary" className={cn('bg-transparent font-mono text-xs uppercase shadow-none', getMethodColor(row.method))}>
             {row.method.toUpperCase()}
           </Badge>
         ),
@@ -113,7 +114,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         width: 50,
         renderCell: ({ row, tabIndex }) => {
           // No response body means examples are not applicable
-          if (!row.hasResponseBody) return <span className="block w-full text-center text-muted-foreground/50 text-xs">na</span>;
+          if (!row.hasResponseBody) return <span className="block w-full text-center text-muted-foreground/70 text-xs">na</span>;
           // Has response body but no example yet
           if (!row.hasExample) return <span className="block w-full text-center text-muted-foreground">-</span>;
           return (
@@ -124,7 +125,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
               className="justify-center opacity-60 hover:opacity-100"
               onClick={(e) => openExamplesSheet(row, e.currentTarget)}
             >
-              <BirdIcon className="h-4 w-4" />
+              <BirdIcon className="size-4" />
             </Button>
           );
         },
@@ -136,7 +137,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         minBreakpoint: 'md',
         resizable: true,
         width: 200,
-        renderCell: ({ row }) => <code className="truncate font-mono text-muted-foreground/80 text-xs">{row.id}</code>,
+        renderCell: ({ row }) => <code className="truncate font-mono text-muted-foreground text-xs">{row.id}</code>,
       },
       {
         key: 'summary',
