@@ -50,6 +50,7 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
         className="group relative h-14 w-full justify-center text-sidebar-foreground ring-inset transition-[width] duration-200 ease-linear hover:bg-background/30 focus-visible:ring-offset-0 data-[collapsed=true]:w-16 data-[active=true]:bg-background/50"
       >
         <AppNavIcon navItem={navItem} />
+        {!hasSidebarTextLabels && <span className="sr-only">{t(`c:${navItem.id}`)}</span>}
         <AppNavBadge navItem={navItem} isActive={isActive} className="top-2 left-8" />
         {hasSidebarTextLabels && (
           <span className="w-auto overflow-hidden whitespace-nowrap pl-1.5 font-medium opacity-100 transition-[opacity,width] duration-200 ease-linear group-data-[collapsed=true]:w-0 group-data-[collapsed=true]:opacity-0">
@@ -62,6 +63,7 @@ export function NavButton({ navItem, isActive, isCollapsed, onClick }: NavButton
 }
 
 export function BottomBarNavButton({ navItem, isActive, onClick }: Omit<NavButtonProps, 'isCollapsed'>) {
+  const { t } = useTranslation();
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   return (
@@ -78,6 +80,7 @@ export function BottomBarNavButton({ navItem, isActive, onClick }: Omit<NavButto
       )}
     >
       <AppNavIcon navItem={navItem} />
+      <span className="sr-only">{t(`c:${navItem.id}`)}</span>
       <AppNavBadge navItem={navItem} isActive={isActive} className="top-1 right-1" />
     </button>
   );

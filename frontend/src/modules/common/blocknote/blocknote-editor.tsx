@@ -95,6 +95,7 @@ function BlockNote({
   excludeBlockTypes,
   excludeFileBlockTypes,
   titlePlaceholder,
+  ariaLabel,
   extensions,
   members, // for mentions
   filePanel,
@@ -143,6 +144,7 @@ function BlockNote({
     // Caller extensions come first: BlockNote keeps the first extension per key and drops later duplicates.
     extensions: [...(extensions ?? []), checkedExtension(), syntaxHighlighter],
     resolveFileUrl: createResolveFileUrl({ baseFilePanelProps }),
+    ...(ariaLabel && { domAttributes: { editor: { 'aria-label': ariaLabel } } }),
   };
 
   const editor = useCreateBlockNote(

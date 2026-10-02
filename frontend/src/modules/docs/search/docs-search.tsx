@@ -122,29 +122,31 @@ export function DocsSearch() {
         />
         {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h/overflow are neutralized */}
         <ScrollArea className="sm:h-[45vh]">
-          <ComboboxList className="h-full max-h-none overflow-visible">
-            {results === null && recentSearches.length > 0 && <SearchHistoryGroup searches={recentSearches} onRemove={deleteRecentSearch} />}
-            {results === null && recentSearches.length === 0 && (
-              <ContentPlaceholder icon={SearchIcon} title="c:docs.search.text" className="sm:h-[41vh]" />
-            )}
-            {results !== null && results.length === 0 && (
-              <ContentPlaceholder
-                icon={SearchIcon}
-                title="c:no_resource_found"
-                titleProps={{ resource: t('c:results').toLowerCase() }}
-                className="sm:h-[41vh]"
-              />
-            )}
-            {results !== null && results.length > 0 && (
-              <div className="p-1">
-                {results.map((item) => (
-                  <ComboboxItem key={item.id} value={item} className="py-2">
-                    <DocsSearchRow item={item} />
-                  </ComboboxItem>
-                ))}
-              </div>
-            )}
-          </ComboboxList>
+          {results === null && recentSearches.length === 0 && (
+            <ContentPlaceholder icon={SearchIcon} title="c:docs.search.text" className="sm:h-[41vh]" />
+          )}
+          {results !== null && results.length === 0 && (
+            <ContentPlaceholder
+              icon={SearchIcon}
+              title="c:no_resource_found"
+              titleProps={{ resource: t('c:results').toLowerCase() }}
+              className="sm:h-[41vh]"
+            />
+          )}
+          {(results === null ? recentSearches.length > 0 : results.length > 0) && (
+            <ComboboxList className="h-full max-h-none overflow-visible">
+              {results === null && <SearchHistoryGroup searches={recentSearches} onRemove={deleteRecentSearch} />}
+              {results !== null && (
+                <div className="p-1">
+                  {results.map((item) => (
+                    <ComboboxItem key={item.id} value={item} className="py-2">
+                      <DocsSearchRow item={item} />
+                    </ComboboxItem>
+                  ))}
+                </div>
+              )}
+            </ComboboxList>
+          )}
         </ScrollArea>
         {/* Scope chips: outside the tab order (fumadocs pattern), arrow keys stay on the list. */}
         <div className="flex items-center gap-1 border-t p-2">

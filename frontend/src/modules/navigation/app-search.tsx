@@ -155,39 +155,38 @@ export function AppSearch() {
         />
         {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h and overflow are cleared. */}
         <ScrollArea id={'item-search'} ref={scrollAreaRef} className="sm:h-[40vh]">
-          <ComboboxList className="h-full max-h-none overflow-visible">
-            {!isLoading && notFound && !(!searchValue.length && !!recentSearches.length) && (
-              <ComboboxEmpty className="h-full sm:h-[36vh]">
-                <ContentPlaceholder
-                  icon={SearchIcon}
-                  title={debouncedSearchValue.length ? 'c:no_resource_found' : 'c:global_search.text'}
-                  titleProps={{ resource: t('c:results').toLowerCase(), appName: appConfig.name }}
-                />
-              </ComboboxEmpty>
-            )}
-            {notFound && !searchValue.length && !!recentSearches.length && (
-              <SearchHistoryGroup searches={recentSearches} onRemove={deleteItemFromList} />
-            )}
-            {isLoading ? (
-              <SearchResultsSkeleton />
-            ) : (
-              <div className="p-1">
-                {(() => {
-                  const firstWithResults = searchableEntityTypes.find((entityType) => (data[entityType] ?? []).length > 0);
-                  return searchableEntityTypes.map((entityType) => (
-                    <SearchResultBlock
-                      key={entityType}
-                      results={data[entityType] ?? []}
-                      entityType={entityType}
-                      hideSeparator={entityType === firstWithResults}
-                      collapsed={!!collapsedTypes[entityType]}
-                      onToggleCollapsed={() => toggleCollapsed(entityType)}
-                    />
-                  ));
-                })()}
-              </div>
-            )}
-          </ComboboxList>
+          {!isLoading && notFound && !(!searchValue.length && !!recentSearches.length) && (
+            <ComboboxEmpty className="h-full sm:h-[36vh]">
+              <ContentPlaceholder
+                icon={SearchIcon}
+                title={debouncedSearchValue.length ? 'c:no_resource_found' : 'c:global_search.text'}
+                titleProps={{ resource: t('c:results').toLowerCase(), appName: appConfig.name }}
+              />
+            </ComboboxEmpty>
+          )}
+          {isLoading && <SearchResultsSkeleton />}
+          {(notFound ? !searchValue.length && !!recentSearches.length : !isLoading) && (
+            <ComboboxList className="h-full max-h-none overflow-visible">
+              {notFound && <SearchHistoryGroup searches={recentSearches} onRemove={deleteItemFromList} />}
+              {!notFound && (
+                <div className="p-1">
+                  {(() => {
+                    const firstWithResults = searchableEntityTypes.find((entityType) => (data[entityType] ?? []).length > 0);
+                    return searchableEntityTypes.map((entityType) => (
+                      <SearchResultBlock
+                        key={entityType}
+                        results={data[entityType] ?? []}
+                        entityType={entityType}
+                        hideSeparator={entityType === firstWithResults}
+                        collapsed={!!collapsedTypes[entityType]}
+                        onToggleCollapsed={() => toggleCollapsed(entityType)}
+                      />
+                    ));
+                  })()}
+                </div>
+              )}
+            </ComboboxList>
+          )}
         </ScrollArea>
       </div>
     </Combobox>

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { type FieldValues, useFormContext } from 'react-hook-form';
+import type { FieldValues } from 'react-hook-form';
 import type { BaseFormFieldProps } from '~/modules/common/form-fields/type';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
@@ -42,13 +42,7 @@ export function InputFormField<TFieldValues extends FieldValues>({
   inputClassName,
   autocomplete = 'off',
 }: InputFieldProps<TFieldValues>) {
-  const { setFocus } = useFormContext();
-
   const InputComponent = type === 'textarea' ? Textarea : Input;
-
-  const iconClick = () => {
-    setFocus(name.toString());
-  };
 
   return (
     <FormField
@@ -62,18 +56,16 @@ export function InputFormField<TFieldValues extends FieldValues>({
           </FormLabel>
           <div className="relative flex w-full items-center">
             {icon && (
-              <button
-                type="button"
-                tabIndex={-1}
-                onClick={iconClick}
+              <span
+                aria-hidden="true"
                 className={cn(
-                  'absolute left-3 flex size-4 items-center justify-center text-xs',
+                  'pointer-events-none absolute left-3 flex size-4 items-center justify-center text-xs',
                   type === 'textarea' ? 'top-3' : 'top-1/2 -translate-y-1/2',
                 )}
                 style={{ opacity: value || formFieldValue ? 1 : 0.5 }}
               >
                 {icon}
-              </button>
+              </span>
             )}
             <FormControl>
               <InputComponent

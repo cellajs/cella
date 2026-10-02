@@ -13,11 +13,25 @@ interface TooltipButtonProps {
   className?: string;
 }
 
+/** Whether a node renders text of its own; an icon-only trigger has none. */
+function hasText(node: React.ReactNode): boolean {
+  return React.Children.toArray(node).some(
+    (child) =>
+      typeof child === 'string' ||
+      typeof child === 'number' ||
+      (React.isValidElement<{ children?: React.ReactNode }>(child) && hasText(child.props.children)),
+  );
+}
+
 export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps>(function TooltipButton(
   { children, toolTipContent, disabled, side = 'bottom', sideOffset = 8, className, hideWhenDetached, portal = true, ...props },
   _ref,
 ) {
-  if (disabled) return children;
+  // An icon-only trigger takes its accessible name from the tooltip; visible text stays the name otherwise
+  const { 'aria-label': ownLabel, children: triggerContent } = children.props as { 'aria-label'?: string; children?: React.ReactNode };
+  const ariaLabel = ownLabel ?? (hasText(triggerContent) ? undefined : toolTipContent);
+
+  if (disabled) return ariaLabel && !ownLabel ? React.cloneElement(children, { 'aria-label': ariaLabel } as object) : children;
 
   const content = (
     <TooltipContent side={side} {...props} sideOffset={sideOffset} hideWhenDetached={hideWhenDetached}>
@@ -27,7 +41,7 @@ export const TooltipButton = React.forwardRef<HTMLDivElement, TooltipButtonProps
 
   const trigger = (
     <Tooltip>
-      <TooltipTrigger render={children} />
+      <TooltipTrigger render={children} aria-label={ariaLabel} />
       {portal ? <TooltipPortal>{content}</TooltipPortal> : content}
     </Tooltip>
   );

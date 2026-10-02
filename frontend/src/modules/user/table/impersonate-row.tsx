@@ -30,6 +30,7 @@ export function ImpersonateRow({ user, tabIndex }: Props) {
       size="cell"
       tabIndex={tabIndex}
       className="justify-center"
+      aria-label={i18n.t('c:impersonate')}
       data-tooltip="true"
       data-tooltip-content={i18n.t('c:impersonate')}
       onClick={() => handleStartImpersonation(user.id)}

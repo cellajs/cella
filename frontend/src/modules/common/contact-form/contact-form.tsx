@@ -67,6 +67,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             control={form.control}
             name="name"
             label={t('c:name')}
+            autocomplete="name"
             placeholder={t('c:placeholder.your_input', { inputLabel: nameLabel })}
             icon={<UserIcon />}
             required
@@ -76,6 +77,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
             name="email"
             label={t('c:email')}
             type="email"
+            autocomplete="email"
             placeholder={t('c:placeholder.your_input', { inputLabel: emailLabel })}
             icon={<MailIcon />}
             required

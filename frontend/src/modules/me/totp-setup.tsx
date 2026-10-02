@@ -112,7 +112,7 @@ function TotpManualKey({ manualKey }: { manualKey: string }) {
         variant="cell"
         size="icon"
         className="h-full"
-        aria-label="Copy"
+        aria-label={t('c:copy')}
         data-tooltip="true"
         data-tooltip-content={copied ? t('c:copied') : t('c:copy')}
         onClick={() => copyToClipboard(manualKey)}

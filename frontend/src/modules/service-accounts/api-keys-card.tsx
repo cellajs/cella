@@ -53,6 +53,7 @@ export function ApiKeysCard({ organization }: { organization: EnrichedOrganizati
         <div className="flex gap-2 max-sm:flex-col">
           <Input
             value={name}
+            aria-label={t('c:resource_name', { resource: t('c:api_key') })}
             placeholder={t('c:name')}
             onChange={(e) => setName(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
@@ -96,7 +97,7 @@ function SecretOnce({ secret, onDismiss }: { secret: string; onDismiss: () => vo
           variant="cell"
           size="icon"
           className="h-full"
-          aria-label="Copy"
+          aria-label={t('c:copy')}
           data-tooltip="true"
           data-tooltip-content={copied ? t('c:copied') : t('c:copy')}
           onClick={() => copyToClipboard(secret)}

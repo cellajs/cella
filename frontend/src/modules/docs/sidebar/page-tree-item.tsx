@@ -36,94 +36,95 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
   const activeChildIndex = isRoot ? -1 : children.findIndex((c) => c.page.id === activePageId);
 
   return (
-    <Collapsible open={hasChildren && isExpanded}>
-      <SidebarMenuItem className={cn('relative', isRoot ? 'group/page-root' : 'group/page-parent')} data-expanded={isExpanded}>
-        {/* Vertical guideline (parent tier only), reads expanded state from the row scope */}
-        {!isRoot && hasChildren && (
-          <div className="pointer-events-none absolute top-8 bottom-2 left-2.5 hidden w-px bg-muted-foreground/30 group-data-[expanded=true]/page-parent:block" />
-        )}
+    <Collapsible
+      open={hasChildren && isExpanded}
+      render={<SidebarMenuItem className={cn('relative', isRoot ? 'group/page-root' : 'group/page-parent')} data-expanded={isExpanded} />}
+    >
+      {/* Vertical guideline (parent tier only), reads expanded state from the row scope */}
+      {!isRoot && hasChildren && (
+        <div className="pointer-events-none absolute top-8 bottom-2 left-2.5 hidden w-px bg-muted-foreground/30 group-data-[expanded=true]/page-parent:block" />
+      )}
 
-        {/* Sticky tier-1 row: pins just below the scroller top while its subtree scrolls. The wrapper holds the opaque bg,
+      {/* Sticky tier-1 row: pins just below the scroller top while its subtree scrolls. The wrapper holds the opaque bg,
             so the ghost hover (translucent in dark mode) still hides the rows passing underneath. */}
-        <div className={isRoot ? 'sticky top-2 z-10 bg-card' : 'contents'}>
-          <Link
-            to="/docs/page/$"
-            params={{ _splat: page.id }}
-            preload={expanderOnly ? false : 'intent'}
-            draggable={false}
-            data-active={isActive}
-            data-expanded={isExpanded}
-            className={cn(
-              buttonVariants({ variant: 'ghost' }),
-              'group w-full justify-start gap-2 pl-5 text-left lowercase',
-              isRoot
-                ? 'px-3 font-medium data-[active=true]:bg-accent'
-                : 'h-8 font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
-            )}
-            onClick={(e) => {
-              if (e.metaKey || e.ctrlKey) return;
-              if (expanderOnly) {
-                e.preventDefault();
-                onToggle(page.id);
-                return;
-              }
-              // Collapsing is a re-click at the top of the page you are on. Further down that page the click scrolls back up,
-              // and from another page it navigates here; both leave the subtree open.
-              if (hasChildren && isExpanded && isActive) {
-                e.preventDefault();
-                if (getSection() === PAGE_SECTION_ID) return onToggle(page.id);
-                scrollToSectionById(PAGE_SECTION_ID);
-                useSheeter.getState().remove('docs-sidebar');
-                return;
-              }
-              if (hasChildren && !isExpanded) onToggle(page.id);
-              // On mobile the sheet closes only on leaf navigation, so children revealed by an expand stay visible
-              if (!hasChildren) useSheeter.getState().remove('docs-sidebar');
-            }}
-          >
-            {/* Leading dot (parent tier only) */}
-            {!isRoot && (
-              <div className="absolute left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/page-parent:bg-muted-foreground/60" />
-            )}
-            <span className="truncate">{page.name}</span>
-            {hasChildren && (
-              <ChevronDownIcon
-                className={cn(
-                  'ml-auto size-4 shrink-0 opacity-40 transition-transform duration-200',
-                  isRoot ? 'group-data-[expanded=true]/page-root:rotate-180' : 'group-data-[expanded=true]/page-parent:rotate-180',
-                )}
-              />
-            )}
-          </Link>
-        </div>
+      <div className={isRoot ? 'sticky top-2 z-10 bg-card' : 'contents'}>
+        <Link
+          to="/docs/page/$"
+          params={{ _splat: page.id }}
+          preload={expanderOnly ? false : 'intent'}
+          draggable={false}
+          data-active={isActive}
+          data-expanded={isExpanded}
+          className={cn(
+            buttonVariants({ variant: 'ghost' }),
+            'group w-full justify-start gap-2 pl-5 text-left lowercase',
+            isRoot
+              ? 'px-3 font-medium data-[active=true]:bg-accent'
+              : 'h-8 font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
+          )}
+          onClick={(e) => {
+            if (e.metaKey || e.ctrlKey) return;
+            if (expanderOnly) {
+              e.preventDefault();
+              onToggle(page.id);
+              return;
+            }
+            // Collapsing is a re-click at the top of the page you are on. Further down that page the click scrolls back up,
+            // and from another page it navigates here; both leave the subtree open.
+            if (hasChildren && isExpanded && isActive) {
+              e.preventDefault();
+              if (getSection() === PAGE_SECTION_ID) return onToggle(page.id);
+              scrollToSectionById(PAGE_SECTION_ID);
+              useSheeter.getState().remove('docs-sidebar');
+              return;
+            }
+            if (hasChildren && !isExpanded) onToggle(page.id);
+            // On mobile the sheet closes only on leaf navigation, so children revealed by an expand stay visible
+            if (!hasChildren) useSheeter.getState().remove('docs-sidebar');
+          }}
+        >
+          {/* Leading dot (parent tier only) */}
+          {!isRoot && (
+            <div className="absolute left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/page-parent:bg-muted-foreground/60" />
+          )}
+          <span className="truncate">{page.name}</span>
+          {hasChildren && (
+            <ChevronDownIcon
+              className={cn(
+                'ml-auto size-4 shrink-0 opacity-40 transition-transform duration-200',
+                isRoot ? 'group-data-[expanded=true]/page-root:rotate-180' : 'group-data-[expanded=true]/page-parent:rotate-180',
+              )}
+            />
+          )}
+        </Link>
+      </div>
 
-        {hasChildren && (
-          <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
-            {isRoot ? (
-              // A <ul> keeps the nested SidebarMenuItem <li> rows off this row's own <li> (invalid HTML)
-              <ul className="flex list-none flex-col gap-1 py-1">
-                {children.map((child) => (
-                  <PageBranch
-                    key={child.page.id}
-                    node={child}
-                    variant="parent"
-                    activePageId={activePageId}
-                    expandedIds={expandedIds}
-                    onToggle={onToggle}
-                  />
-                ))}
-              </ul>
-            ) : (
-              <div className="relative flex flex-col px-0 py-0.5">
-                <ActiveIndicator activeIndex={activeChildIndex} layoutId={layoutId} isMobile={isMobile} />
-                {children.map((child) => (
-                  <PageLeaf key={child.page.id} page={child.page} isActive={child.page.id === activePageId} />
-                ))}
-              </div>
-            )}
-          </CollapsibleContent>
-        )}
-      </SidebarMenuItem>
+      {hasChildren && (
+        <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
+          {isRoot ? (
+            // A <ul> keeps the nested SidebarMenuItem <li> rows off this row's own <li> (invalid HTML)
+            <ul className="flex list-none flex-col gap-1 py-1">
+              {children.map((child) => (
+                <PageBranch
+                  key={child.page.id}
+                  node={child}
+                  variant="parent"
+                  activePageId={activePageId}
+                  expandedIds={expandedIds}
+                  onToggle={onToggle}
+                />
+              ))}
+            </ul>
+          ) : (
+            <div className="relative flex flex-col px-0 py-0.5">
+              <ActiveIndicator activeIndex={activeChildIndex} layoutId={layoutId} isMobile={isMobile} />
+              {children.map((child) => (
+                <PageLeaf key={child.page.id} page={child.page} isActive={child.page.id === activePageId} />
+              ))}
+            </div>
+          )}
+        </CollapsibleContent>
+      )}
     </Collapsible>
   );
 }

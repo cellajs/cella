@@ -138,7 +138,7 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
         row.locked ? (
           <LockIcon className="size-3.5 opacity-50" aria-label={t('c:locked')} />
         ) : (
-          <Switch checked={row.visible} onCheckedChange={(visible) => toggleHidden(row.id, visible)} />
+          <Switch aria-label={`${row.name}: ${t('c:visible')}`} checked={row.visible} onCheckedChange={(visible) => toggleHidden(row.id, visible)} />
         ),
     },
   ];

@@ -80,6 +80,8 @@ export type CommonBlockNoteProps = {
   excludeFileBlockTypes?: CustomBlockFileTypes[];
   /** Labels an empty heading in block 0, the title of a title document (helpers/title-document). */
   titlePlaceholder?: string;
+  /** Accessible name of the editing area, such as the label of the form field it fills. */
+  ariaLabel?: string;
   extensions?: ExtensionFactoryInstance[];
   members?: Member[]; // for mentions
   onFocus?: () => void;
