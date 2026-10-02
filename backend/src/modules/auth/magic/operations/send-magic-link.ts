@@ -2,11 +2,13 @@ import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import type { Env } from '#/core/context';
+import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { maySignUp } from '#/modules/auth/invitations/operations/may-sign-up';
 import { issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
+import { findAddressGovernance } from '#/modules/connections/connections-queries';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { log } from '#/utils/logger';
@@ -31,6 +33,18 @@ export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect }: Se
   const normalizedEmail = email.toLowerCase().trim();
 
   const existingUser = await findUserByEmail(ctx, { email: normalizedEmail });
+
+  // An address an institution proved inherits its tenant's sign-in policy (D16): while that policy excludes magic
+  // links, the address sends none and the answer points at the institution's entry. The user keeps every other
+  // method and address; an unknown address still gets the silent answer below.
+  if (existingUser) {
+    const governance = await findAddressGovernance(ctx, { email: normalizedEmail });
+    if (governance && governance.status === 'active' && governance.authStrategies.length > 0 && !governance.authStrategies.includes('magic')) {
+      throw new AppError(403, 'sso_required', 'warn', {
+        meta: { connectionId: governance.connectionId, entryPath: `/auth/sso/${governance.connectionId}` },
+      });
+    }
+  }
 
   if (!existingUser) {
     // Registration is closed to the public, but an invited address may still sign up. Anyone else gets the same 204

@@ -2,7 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import type { Context } from 'hono';
 import type { DbContext, Env } from '#/core/context';
 import { findNewDevices } from '#/modules/auth/devices/devices-queries';
-import { findVerifiedOAuthIdentities } from '#/modules/auth/oauth/identities-queries';
+import { findSsoIdentityConnectionIds, findVerifiedOAuthIdentities } from '#/modules/auth/oauth/identities-queries';
 import { findPasskeysByUser } from '#/modules/auth/passkeys/passkeys-queries';
 import { findUserSessions } from '#/modules/auth/sessions/sessions-queries';
 import { findTotp } from '#/modules/auth/totps/totps-queries';
@@ -15,14 +15,15 @@ const NEW_DEVICE_WINDOW = new TimeSpan(1, 'w');
 /** How long a revoked session stays in the list; the sweep drops a row 30 days after its expiry, so nothing lingers longer. */
 const REVOKED_SESSION_WINDOW = new TimeSpan(30, 'd');
 
-/** Fetches passkeys (minus the sensitive credentialId/publicKey), whether TOTP is set, and verified OAuth providers. */
+/** Fetches passkeys (minus the sensitive credentialId/publicKey), whether TOTP is set, verified OAuth providers and the connections the SSO identities came through. */
 export const getAuthInfo = async (ctx: DbContext, { userId }: { userId: string }) => {
-  const [passkeys, totp, oauth] = await Promise.all([
+  const [passkeys, totp, oauth, ssoConnectionIds] = await Promise.all([
     findPasskeysByUser(ctx, { userId }),
     findTotp(ctx, { userId }),
     findVerifiedOAuthIdentities(ctx, { userId }),
+    findSsoIdentityConnectionIds(ctx, { userId }),
   ]);
-  return { passkeys, hasTotp: !!totp, oauth };
+  return { passkeys, hasTotp: !!totp, oauth, ssoConnectionIds };
 };
 
 /**

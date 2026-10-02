@@ -15,6 +15,7 @@ export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
 
     return {
       enabledOAuth: ['github'] as const,
+      institutions: [],
       hasTotp: false,
       sessions: [
         {

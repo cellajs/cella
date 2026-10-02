@@ -1366,6 +1366,37 @@
               "enum": ["github"]
             }
           },
+          "institutions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "connectionId": {
+                  "type": "string"
+                },
+                "displayName": {
+                  "type": "string"
+                },
+                "federation": {
+                  "type": "object",
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    },
+                    "label": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["key", "label"]
+                },
+                "connected": {
+                  "type": "boolean",
+                  "description": "Whether the account already holds an identity through this connection"
+                }
+              },
+              "required": ["connectionId", "displayName", "federation", "connected"]
+            }
+          },
           "hasTotp": {
             "type": "boolean"
           },
@@ -1536,10 +1567,11 @@
             }
           }
         },
-        "required": ["enabledOAuth", "hasTotp", "sessions", "passkeys"],
-        "description": "How the signed-in user signs in: connected OAuth providers, passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.",
+        "required": ["enabledOAuth", "institutions", "hasTotp", "sessions", "passkeys"],
+        "description": "How the signed-in user signs in: connected OAuth providers, the institutions of their organizations (connected or not), passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.",
         "example": {
           "enabledOAuth": ["github"],
+          "institutions": [],
           "hasTotp": false,
           "sessions": [
             {
@@ -2814,9 +2846,25 @@
                     },
                     "retryAfter": {
                       "type": "number"
+                    },
+                    "federations": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "key": {
+                            "type": "string"
+                          },
+                          "label": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["key", "label"]
+                      },
+                      "description": "Federations with a connected institution, for the \"sign in with your institution\" entrance"
                     }
                   },
-                  "required": ["restrictedMode"]
+                  "required": ["restrictedMode", "federations"]
                 }
               }
             }
@@ -3021,6 +3069,9 @@
                       "type": "string"
                     },
                     "inactiveMembershipId": {
+                      "type": "string"
+                    },
+                    "ssoConnectionId": {
                       "type": "string"
                     },
                     "invitation": {
@@ -5855,6 +5906,7 @@
               "application/json": {
                 "example": {
                   "enabledOAuth": ["github"],
+                  "institutions": [],
                   "hasTotp": false,
                   "sessions": [
                     {

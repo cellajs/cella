@@ -225,5 +225,7 @@
   "sso_wrong_institution": "Account from another institution",
   "sso_wrong_institution.text": "You signed in with an account of an institution that is not connected to this organization. Use your account at the connected institution, or sign in another way if you were invited.",
   "sso_email_missing": "No email address shared",
-  "sso_email_missing.text": "Your institution did not share an email address, which a new account needs. Ask your institution's helpdesk to release it, or sign in another way if you were invited."
+  "sso_email_missing.text": "Your institution did not share an email address, which a new account needs. Ask your institution's helpdesk to release it, or sign in another way if you were invited.",
+  "sso_required": "Sign in with your institution",
+  "sso_required.text": "This organization requires signing in through your institution's account. Sign in that way to continue; your other sign-in methods keep working elsewhere."
 }

@@ -1,6 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useSearch } from '@tanstack/react-router';
+import { useNavigate, useSearch } from '@tanstack/react-router';
 import { ArrowRightIcon, MailIcon } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -10,6 +10,7 @@ import { zCheckEmailBody } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
 import type { z } from 'zod';
 import { useShallow } from 'zustand/react/shallow';
+import type { ApiError } from '~/lib/api';
 import { AuthEmailButton } from '~/modules/auth/auth-email-button';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import type { ConditionalMediationResult } from '~/modules/auth/passkey-credentials';
@@ -49,6 +50,7 @@ export function SignInStep() {
   const clearUserStore = useUserStore((state) => state.reset);
   const { tokenId, redirect } = useSearch({ from: '/_public/auth/authenticate' });
   const navigateAfterAuth = useNavigateAfterAuth();
+  const navigate = useNavigate();
 
   const isMobile = window.innerWidth < 640;
   const abortRef = useRef<AbortController | null>(null);
@@ -96,6 +98,12 @@ export function SignInStep() {
     onSuccess: () => {
       setMagicLinkMode('signin');
       setStep('magicLinkSent', form.getValues('email'));
+    },
+    // An address an institution governs sends no link: its entry page takes over, keeping the redirect.
+    onError: (error: ApiError) => {
+      const connectionId = error.type === 'sso_required' ? error.meta?.connectionId : undefined;
+      if (typeof connectionId !== 'string') return;
+      navigate({ to: '/auth/sso/$connectionId', params: { connectionId }, search: redirect ? { redirect } : {}, replace: true });
     },
   });
 

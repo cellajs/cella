@@ -16,7 +16,9 @@ interface VerifiedToken {
 }
 
 /** A person's token names the grant it was issued under, a service account's the API key it was minted with. */
-export type VerifiedAccessToken = (VerifiedToken & { kind: 'user'; grantId: string }) | (VerifiedToken & { kind: 'service'; keyId: string });
+export type VerifiedAccessToken =
+  | (VerifiedToken & { kind: 'user'; grantId: string; authStrategy: string | null; connectionId: string | null })
+  | (VerifiedToken & { kind: 'service'; keyId: string });
 
 /** A bearer value that is a JWT (three segments); this app's opaque keys carry no dots. */
 export function bearerJwtFrom(ctx: Context<Env>): string | null {
@@ -38,14 +40,29 @@ export async function verifyAccessToken(jwt: string, route: { tenantId: string; 
   try {
     const { payload } = await jwtVerify(jwt, await getPublicJwkSet(), { issuer: appConfig.oauthUrl, audience: audiences });
     const claims = payload as typeof payload &
-      Partial<{ actor_kind: IssuedTokenClaims['actor_kind']; tenant_id: string; gid: string; key_id: string }> & {
+      Partial<{
+        actor_kind: IssuedTokenClaims['actor_kind'];
+        tenant_id: string;
+        gid: string;
+        key_id: string;
+        auth_strategy: string | null;
+        connection_id: string | null;
+      }> & {
         scope?: string;
         client_id?: string;
       };
     if (claims.sub && claims.tenant_id && claims.client_id) {
       const scopes = accessScopes.parse(claims.scope);
       const token = { actorId: claims.sub, tenantId: claims.tenant_id, scopes, clientId: claims.client_id };
-      if (claims.actor_kind === 'user' && claims.gid) return { ...token, kind: 'user', grantId: claims.gid };
+      if (claims.actor_kind === 'user' && claims.gid) {
+        return {
+          ...token,
+          kind: 'user',
+          grantId: claims.gid,
+          authStrategy: claims.auth_strategy ?? null,
+          connectionId: claims.connection_id ?? null,
+        };
+      }
       if (claims.actor_kind === 'service' && claims.key_id) return { ...token, kind: 'service', keyId: claims.key_id };
     }
     throw new AppError(401, 'unauthorized', 'warn', { meta: { reason: 'invalid_token' } });

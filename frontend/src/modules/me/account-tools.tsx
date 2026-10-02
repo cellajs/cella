@@ -1,10 +1,11 @@
 import { onlineManager, useMutation, useSuspenseQuery } from '@tanstack/react-query';
-import { CheckIcon, TrashIcon } from 'lucide-react';
+import { BuildingIcon, CheckIcon, TrashIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startOAuthConnect, type User } from 'sdk';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
 import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
+import { ssoStartUrl } from '~/modules/auth/sso-providers';
 import { withStepUp } from '~/modules/auth/step-up';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -63,9 +64,10 @@ export function AccountAuthenticationCard() {
   const { t } = useTranslation();
   const user = useCurrentUser();
   const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
-  const { enabledOAuth } = authData;
+  const { enabledOAuth, institutions } = authData;
 
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
+  const [connectingTo, setConnectingTo] = useState<string | null>(null);
 
   // The backend pins the provider's callback to this account first; the browser then leaves for the provider.
   const { mutate: connectProvider } = useMutation({
@@ -84,6 +86,18 @@ export function AccountAuthenticationCard() {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
     connectProvider(provider);
   };
+
+  // The same pin, then the institution's sign-in with `type=connect`: its callback links the identity to this account.
+  const { mutate: connectInstitution } = useMutation({
+    mutationFn: async (_connectionId: string) => {
+      await withStepUp(() => startOAuthConnect());
+    },
+    onMutate: (connectionId) => setConnectingTo(connectionId),
+    onSuccess: (_data, connectionId) => {
+      window.location.assign(ssoStartUrl({ connectionId }, { type: 'connect', redirectAfter: window.location.pathname + window.location.hash }));
+    },
+    onError: () => setConnectingTo(null),
+  });
 
   return (
     <ToolCard label="c:authentication" description={t('c:authentication.text')} className={cardClass}>
@@ -175,6 +189,43 @@ export function AccountAuthenticationCard() {
                     </Button>
                   );
                 })}
+              </div>
+            </>
+          )
+        }
+
+        {
+          /* Institution accounts: the connections of the organizations the user belongs to */
+          enabledStrategies.includes('sso') && institutions.length > 0 && (
+            <>
+              <HelpText content={t('c:institution_accounts.text')}>
+                <p className="font-semibold">{t('c:institution_accounts')}</p>
+              </HelpText>
+
+              <div className="mb-6 flex flex-col gap-3 sm:items-start">
+                {institutions.map((institution) =>
+                  institution.connected ? (
+                    <div key={institution.connectionId} className="flex items-center justify-center gap-2 px-3 py-2">
+                      <BuildingIcon className="mr-2 size-4" />
+                      <CheckIcon strokeWidth={3} className="size-4.5 text-success" />
+                      {t('c:connected_to_institution', { institution: institution.displayName })}
+                    </div>
+                  ) : (
+                    <Button
+                      key={institution.connectionId}
+                      type="button"
+                      variant="plain"
+                      loading={connectingTo === institution.connectionId}
+                      onClick={() => {
+                        if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
+                        connectInstitution(institution.connectionId);
+                      }}
+                    >
+                      <BuildingIcon className="size-4" />
+                      {t('c:connect_institution', { institution: institution.displayName })}
+                    </Button>
+                  ),
+                )}
               </div>
             </>
           )

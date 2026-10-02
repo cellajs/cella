@@ -4,7 +4,7 @@ import { publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
-import { emailBodySchema, invokableTokenTypes, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
+import { authHealthSchema, emailBodySchema, invokableTokenTypes, tokenWithDataSchema } from '#/modules/auth/general/general-schema';
 import { cookieSchema, locationSchema, validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { mockChannelBase } from '#/schemas/entity-base-mocks';
@@ -18,7 +18,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     summary: 'Auth health check',
     description: 'Returns auth health status including whether the client IP is rate-limited for email enumeration protection.',
     responses: {
-      200: json('Auth health status', z.object({ restrictedMode: z.boolean(), retryAfter: z.number().optional() })),
+      200: json('Auth health status', authHealthSchema),
     },
   }),
   startImpersonation: xRoute({
