@@ -27,6 +27,6 @@
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "chokidar": "^5.0.0",
     "tsx": "^4.23.15",
-    "typescript": "^6.0.3"
+    "typescript": "6.0.3"
   }
 }

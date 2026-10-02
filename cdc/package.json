@@ -33,7 +33,7 @@
     "@opentelemetry/sdk-node": "^0.222.0",
     "@opentelemetry/sdk-trace-base": "^2.11.0",
     "@opentelemetry/semantic-conventions": "^1.43.0",
-    "pg": "^8.23.0",
+    "pg": "^8.23.1",
     "pg-logical-replication": "^2.5.0",
     "pino": "^10.3.1",
     "pino-opentelemetry-transport": "^4.0.2",
@@ -51,7 +51,7 @@
     "shared": "workspace:*",
     "tsup": "^8.5.1",
     "tsx": "^4.23.15",
-    "typescript": "^6.0.3",
+    "typescript": "6.0.3",
     "vitest": "^5.0.3",
     "ws": "^8.22.0",
     "zod": "^4.6.5"
