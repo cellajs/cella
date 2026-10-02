@@ -3,7 +3,11 @@ import { act, type ComponentProps } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-type EditorProps = { editable?: boolean; collaboration?: { fragment: unknown }; updateData: (blocks: string) => void };
+type EditorProps = {
+  editable?: boolean;
+  collaboration?: { fragment: unknown; provider: { awareness: unknown } };
+  updateData: (blocks: string) => void;
+};
 
 // The editor and the static record the props they were rendered with; everything around the host is inert.
 const editors: EditorProps[] = [];
@@ -16,7 +20,7 @@ vi.mock('~/modules/common/blocknote/blocknote-editor', () => ({
 vi.mock('~/modules/common/blocknote/lazy-full-html', () => ({
   BlockNoteFullHtml: ({ defaultValue }: { defaultValue: string }) => <div data-static>{defaultValue}</div>,
 }));
-const connection = { provider: {}, fragment: {}, synced: true, stopped: false, rebuilds: 0, unsynced: false, deleted: false };
+const connection = { awareness: {}, fragment: {}, synced: true, stopped: false, rebuilds: 0, unsynced: false, deleted: false };
 const connectionRequests: (string | undefined)[] = [];
 vi.mock('~/modules/common/blocknote/yjs-connections', () => ({
   useYjsConnection: (editSessionId: string | undefined) => {
@@ -93,6 +97,8 @@ describe('CollaborativeBlockNote states', () => {
     await render();
 
     expect(editors.at(-1)?.collaboration?.fragment).toBe(connection.fragment);
+    // The cursors ride the connection's Awareness, which outlives a switch of transport.
+    expect(editors.at(-1)?.collaboration?.provider.awareness).toBe(connection.awareness);
     expect(editors.at(-1)?.editable).toBe(true);
     expect(showsStatic()).toBe(false);
     expect(status()).toBeNull();

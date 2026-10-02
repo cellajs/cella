@@ -152,7 +152,7 @@ function CollaborativeHost({
         key={yjsConn.rebuilds}
         id={`blocknote-${entityId}`}
         updateData={(blocks) => void updateData(blocks, true)}
-        collaboration={{ provider: yjsConn.provider, fragment: yjsConn.fragment, user: { name: user.name, color: userColor } }}
+        collaboration={{ provider: { awareness: yjsConn.awareness }, fragment: yjsConn.fragment, user: { name: user.name, color: userColor } }}
         {...blockNoteProps}
         editable={blockNoteProps.editable !== false && !stopped}
       />

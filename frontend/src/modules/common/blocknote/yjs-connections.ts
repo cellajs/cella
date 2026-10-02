@@ -4,12 +4,15 @@ import * as decoding from 'lib0/decoding';
 import { useEffect, useState } from 'react';
 import { appConfig, type ProductEntityType } from 'shared';
 import { toWsUrl } from 'shared/utils/ws-url';
+import { Awareness } from 'y-protocols/awareness';
 import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import { create } from 'zustand';
 import type { TKey } from '~/lib/i18n-locales';
 import { yjsTokenKeys, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
+import type { HttpLink } from '~/modules/common/blocknote/yjs-http';
 import { watchPendingStructs } from '~/modules/common/blocknote/yjs-resync';
+import type { AppliedRows, YDocWriter } from '~/modules/common/blocknote/yjs-store';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
 import { queryClient } from '~/query/query-client';
@@ -60,16 +63,47 @@ interface SocketLedger {
   handshakeAt: number;
   /** No `Saved` came within SAVED_FALLBACK_MS of the handshake Step2: a relay that sends none, so y-websocket's `synced` stands in. */
   legacy: boolean;
+  /** The socket's `Generation` frame arrived and matched; sync frames before it are dropped. */
+  generationSeen: boolean;
+  /** The relay saved the handshake's Step2, so it holds every edit the document held when the Step2 went out. */
+  handshakeProven: boolean;
   fallbackTimer?: ReturnType<typeof setTimeout>;
   /** Re-evaluates the connection once the ledger changed; bound with the provider. */
   onChange: () => void;
+  /** Runs as the handshake's Step2 goes out, before the relay can answer it. */
+  onHandshakeSent: () => void;
 }
 
-interface YjsConnection {
+/** The transport syncing a connection's document: the relay's socket, the API's HTTP routes, or none yet. */
+export type YjsTransport = 'none' | 'ws' | 'http';
+
+/** One entity's collaborative document and everything that syncs, stores and shows it. */
+export interface YjsConnection {
   yDoc: Y.Doc;
+  /**
+   * Cursors and presence. The connection owns it and hands it to the provider, so the editor binds one that lives as
+   * long as the document, whatever transport carries it.
+   */
+  awareness: Awareness;
   provider: WebsocketProvider;
   fragment: Y.XmlFragment;
   ledger: SocketLedger;
+  /** What carries the document's edits now; `isClean` asks that transport. */
+  transport: YjsTransport;
+  /** True once the stored document, if any, was applied: the provider connects only then, so its Step1 carries it. */
+  loaded: boolean;
+  /** True once the editor may mount: synced over either transport, or loaded from storage. */
+  ready: boolean;
+  /** True once the document is kept in the per-user database: opened for editing. */
+  stored: boolean;
+  /** Writes the document's updates to the per-user database; null while it is not stored, or without a database. */
+  writer: YDocWriter | null;
+  /** The HTTP transport while the relay is out of reach; null otherwise. */
+  http: HttpLink | null;
+  /** The stored update rows the document holds, which a saved handshake proves the server holds too. */
+  applied: AppliedRows;
+  /** Runs out when the socket has not synced in time after starting, and HTTP takes over if the API answers. */
+  wsDeadline?: ReturnType<typeof setTimeout>;
   refCount: number;
   /** Set once the relay ended the session for good; a stopped connection never reconnects and is not reused. */
   stopped: boolean;
@@ -158,7 +192,15 @@ function ledgerSocket(ledger: SocketLedger): typeof WebSocket {
     constructor(url: string | URL, protocols?: string | string[]) {
       super(url, protocols);
       clearTimeout(ledger.fallbackTimer);
-      Object.assign(ledger, { sent: 0, saved: 0, handshakeAt: 0, legacy: false, fallbackTimer: undefined });
+      Object.assign(ledger, {
+        sent: 0,
+        saved: 0,
+        handshakeAt: 0,
+        legacy: false,
+        generationSeen: false,
+        handshakeProven: false,
+        fallbackTimer: undefined,
+      });
     }
 
     send(data: Parameters<WebSocket['send']>[0]) {
@@ -169,6 +211,7 @@ function ledgerSocket(ledger: SocketLedger): typeof WebSocket {
       if (subtype === YJS_SYNC.STEP2 && ledger.handshakeAt === 0) {
         ledger.handshakeAt = ledger.sent;
         armSavedFallback(ledger);
+        ledger.onHandshakeSent();
       }
     }
   };
@@ -179,10 +222,36 @@ function ledgerSocket(ledger: SocketLedger): typeof WebSocket {
  * every frame after it. Against a relay that sends no `Saved`, the best proof there is: synced, with the handshake
  * Step2 sent.
  */
-function isClean(provider: WebsocketProvider, ledger: SocketLedger) {
+function isSocketClean(provider: WebsocketProvider, ledger: SocketLedger) {
   if (!provider.wsconnected || provider.ws?.readyState !== WebSocket.OPEN || ledger.handshakeAt === 0) return false;
   if (ledger.legacy) return provider.synced;
   return ledger.saved === ledger.sent;
+}
+
+/** True once the server holds every edit of the document, as the transport carrying them proves it. */
+function isClean(conn: YjsConnection) {
+  if (conn.transport === 'http') return conn.http?.clean ?? false;
+  return isSocketClean(conn.provider, conn.ledger);
+}
+
+/** Where an update applied with the provider as origin came from: the relay, unless {@link applyRemoteUpdate} says otherwise. */
+export type RemoteSource = { kind: 'relay' } | { kind: 'http' } | { kind: 'tab'; rowId: number | null };
+
+const RELAY_SOURCE: RemoteSource = { kind: 'relay' };
+let remoteSource: RemoteSource = RELAY_SOURCE;
+
+/**
+ * Applies an update from the HTTP routes or from another tab. Its origin is the provider, so y-websocket does not
+ * send it on, and the connection's `update` listener, which Yjs runs synchronously inside the apply, reads its source
+ * from `source`.
+ */
+export function applyRemoteUpdate(conn: YjsConnection, update: Uint8Array, source: Exclude<RemoteSource, { kind: 'relay' }>) {
+  remoteSource = source;
+  try {
+    Y.applyUpdate(conn.yDoc, update, conn.provider);
+  } finally {
+    remoteSource = RELAY_SOURCE;
+  }
 }
 
 /**
@@ -210,22 +279,65 @@ function endDeleted(editSessionId: string, conn: YjsConnection) {
   if (unsynced) toaster.warning(i18n.t('error:sync_deleted.text'));
 }
 
-/** A fresh document and its provider for the entity's session, connecting with the token held for it. */
-function openDoc(editSessionId: string, entityType: ProductEntityType, tenantId: string) {
+/** What a connection holds per document: a rebuild replaces all of it. */
+type DocParts = Pick<
+  YjsConnection,
+  'yDoc' | 'awareness' | 'provider' | 'fragment' | 'ledger' | 'transport' | 'loaded' | 'ready' | 'stored' | 'writer' | 'http' | 'applied'
+>;
+
+/**
+ * A fresh document, its Awareness and its provider for the entity's session, with the token held for it. The provider
+ * waits for startConnection to connect.
+ */
+function openDoc(editSessionId: string, entityType: ProductEntityType, tenantId: string): DocParts {
   const serverUrl = toWsUrl(appConfig.yjsUrl!);
   // The session is the entity's document, and a token opens that one document only.
   const token = useUserStore.getState().yjsTokens[yjsTokenKey(entityType, editSessionId)];
   if (!token) throw new Error(`[yjs] No token available for ${entityType}:${editSessionId}`);
 
   const yDoc = new Y.Doc();
-  const ledger: SocketLedger = { sent: 0, saved: 0, handshakeAt: 0, legacy: false, onChange: () => {} };
+  const awareness = new Awareness(yDoc);
+  const ledger: SocketLedger = {
+    sent: 0,
+    saved: 0,
+    handshakeAt: 0,
+    legacy: false,
+    generationSeen: false,
+    handshakeProven: false,
+    onChange: () => {},
+    onHandshakeSent: () => {},
+  };
   const provider = new WebsocketProvider(serverUrl, editSessionId, yDoc, {
     params: { token, entityType, tenantId },
-    connect: onlineManager.isOnline() !== false,
+    awareness,
+    // y-websocket's own tab channel exchanges whole documents with no generation, so a tab that rebuilt on a reseeded
+    // document and one that has not would merge two histories. The app's tab channel carries the generation.
+    disableBc: true,
+    connect: false,
     maxBackoffTime: MAX_BACKOFF_MS,
     WebSocketPolyfill: ledgerSocket(ledger),
   });
-  return { yDoc, provider, fragment: yDoc.getXmlFragment('document-store'), ledger };
+  return {
+    yDoc,
+    awareness,
+    provider,
+    fragment: yDoc.getXmlFragment('document-store'),
+    ledger,
+    transport: 'none',
+    loaded: false,
+    ready: false,
+    stored: false,
+    writer: null,
+    http: null,
+    applied: { upTo: 0, ids: new Set() },
+  };
+}
+
+/** Connects a new document's provider while online, once the document is loaded, so its handshake Step1 carries the stored state. */
+function startConnection(conn: YjsConnection) {
+  // Nothing is stored yet, so there is nothing to load first.
+  conn.loaded = true;
+  if (onlineManager.isOnline() !== false) conn.provider.connect();
 }
 
 /**
@@ -238,9 +350,9 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
   const tokenKey = yjsTokenKey(entityType, editSessionId);
   const tokenQueryKey = yjsTokenKeys.entity(entityType, editSessionId);
 
-  // Clears `unsynced` once the relay holds every edit, then lets a connection whose grace period ran out meanwhile go.
+  // Clears `unsynced` once the server holds every edit, then lets a connection whose grace period ran out meanwhile go.
   const settle = () => {
-    if (conn.provider !== provider || !conn.unsynced || !isClean(provider, ledger)) return;
+    if (conn.provider !== provider || !conn.unsynced || !isClean(conn)) return;
     setUnsynced(editSessionId, conn, false);
     reapConnection(editSessionId, conn);
   };
@@ -327,12 +439,22 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
   provider.messageHandlers[YJS_MESSAGE.GENERATION] = (_encoder, decoder) => {
     const generation = decoding.readVarString(decoder);
     if (conn.generation === null) conn.generation = generation;
-    else if (conn.generation !== generation) rebuildConnection(editSessionId, conn, entityType, tenantId, organizationId);
+    else if (conn.generation !== generation) return rebuildConnection(editSessionId, conn, entityType, tenantId, organizationId);
+    ledger.generationSeen = true;
+  };
+
+  // The relay joins a socket to the document's session before it answers the handshake, so peers' updates can arrive
+  // ahead of the socket's `Generation`, and a document of another generation would merge them. They are dropped: the
+  // handshake's Step2, which follows the `Generation`, carries every update the relay logged before it.
+  const readSync = provider.messageHandlers[YJS_MESSAGE.SYNC];
+  provider.messageHandlers[YJS_MESSAGE.SYNC] = (...args) => {
+    if (ledger.generationSeen) readSync(...args);
   };
 
   // One per Step2 or Update this socket sent, in order. Any `Saved` proves the relay sends them.
   provider.messageHandlers[YJS_MESSAGE.SAVED] = () => {
     ledger.saved++;
+    if (ledger.handshakeAt > 0 && ledger.saved >= ledger.handshakeAt) ledger.handshakeProven = true;
     ledger.legacy = false;
     clearTimeout(ledger.fallbackTimer);
     settle();
@@ -340,9 +462,14 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
 
   // A local edit stays unsynced until the relay saved it: y-websocket sends it at once while connected, otherwise the
   // next handshake's Step2 carries it. Settled a microtask later, once y-websocket's own listener sent it. An update the
-  // relay sent, a write from outside the relay included, has the provider as its origin and is no edit of this tab.
-  yDoc.on('update', (_update: Uint8Array, origin: unknown) => {
-    if (origin === provider) return;
+  // relay sent (a write from outside the relay included), an HTTP pull or another tab's edit has the provider as its
+  // origin and is no edit of this tab; the store keeps it by its source.
+  yDoc.on('update', (update: Uint8Array, origin: unknown) => {
+    if (origin === provider) {
+      conn.writer?.append(update, false, remoteSource.kind === 'tab' ? { rowId: remoteSource.rowId } : undefined);
+      return;
+    }
+    conn.writer?.append(update, true);
     setUnsynced(editSessionId, conn, true);
     queueMicrotask(settle);
   });
@@ -362,13 +489,16 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
   }
 }
 
-/** Ends the connection's provider and document. */
+/** Ends the connection's transports, its Awareness and its document. */
 function unbindProvider(conn: YjsConnection) {
   conn.unsubOnline?.();
   conn.unsubToken?.();
   conn.stopResyncWatch?.();
   clearTimeout(conn.ledger.fallbackTimer);
+  clearTimeout(conn.wsDeadline);
+  conn.http?.leave();
   conn.provider.destroy();
+  conn.awareness.destroy();
   conn.yDoc.destroy();
 }
 
@@ -385,12 +515,13 @@ function rebuildConnection(editSessionId: string, conn: YjsConnection, entityTyp
   if (conn.refCount === 0 && !conn.graceTimer) destroyConnection(editSessionId, conn);
   else {
     unbindProvider(conn);
-    Object.assign(conn, openDoc(editSessionId, entityType, tenantId), { generation: null });
+    Object.assign(conn, openDoc(editSessionId, entityType, tenantId), { generation: null, wsDeadline: undefined });
     useYjsSyncStore.setState((s) => ({
       synced: { ...s.synced, [editSessionId]: false },
       rebuilds: { ...s.rebuilds, [editSessionId]: (s.rebuilds[editSessionId] ?? 0) + 1 },
     }));
     bindProvider(editSessionId, conn, entityType, tenantId, organizationId);
+    startConnection(conn);
   }
   if (unsynced) toaster.warning(i18n.t('error:sync_document_replaced.text'));
 }
@@ -410,6 +541,7 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   const conn: YjsConnection = { ...openDoc(editSessionId, entityType, tenantId), refCount: 1, stopped: false, generation: null, unsynced: false };
   bindProvider(editSessionId, conn, entityType, tenantId, organizationId);
   connections.set(editSessionId, conn);
+  startConnection(conn);
   return conn;
 }
 
@@ -486,5 +618,5 @@ export function useYjsConnection(editSessionId: string | undefined, entityType: 
   const deleted = useYjsSyncStore((s) => s.deleted[editSessionId ?? ''] ?? false);
 
   if (!conn) return null;
-  return { provider: conn.provider, fragment: conn.fragment, synced, stopped, rebuilds, unsynced, deleted };
+  return { awareness: conn.awareness, fragment: conn.fragment, synced, stopped, rebuilds, unsynced, deleted };
 }
