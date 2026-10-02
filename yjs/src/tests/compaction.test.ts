@@ -3,6 +3,8 @@ import { fakeStorage, mapUpdate, mockScope, readMap, storageKey, undecodableUpda
 
 const storage = fakeStorage();
 vi.mock('../data/storage', () => storage);
+// A cap of three server rows per request stands for the backend's ten thousand.
+vi.mock('../constants', async (importOriginal) => ({ ...(await importOriginal<typeof import('../constants')>()), YJS_MAX_SERVER_ROW_IDS: 3 }));
 vi.mock('../sync/materialize', () => ({
   postMaterialize: vi.fn().mockResolvedValue('ok'),
   stateToBlocksJson: vi.fn(() => '[{"type":"paragraph"}]'),
@@ -17,6 +19,7 @@ const key = storageKey(scope);
 beforeEach(() => {
   vi.clearAllMocks();
   storage.bases.clear();
+  storage.generations.clear();
   storage.logs.clear();
   // The session row a handshake seeded: every window extends it.
   storage.bases.set(key, mapUpdate('seed', true));
@@ -32,13 +35,15 @@ describe('compactDocument', () => {
   it('merges base and log, posts the blocks JSON for the last editor, then replaces the base and deletes the rows', async () => {
     await storage.appendUpdate(scope, 'user-a', mapUpdate('a', 1));
     await storage.appendUpdate(scope, 'user-b', mapUpdate('b', 2));
-    await storage.appendUpdate(scope, '', mapUpdate('server', 3));
+    await storage.appendUpdate(scope, null, mapUpdate('server', 3));
+    const server = storage.logs.get(key)!.at(-1)!;
 
     expect(await compactDocument(scope)).toBe('ok');
 
     expect(stateToBlocksJson).toHaveBeenCalledTimes(1);
-    // Every sender of the window, newest first: the backend credits the first who may still update the entity.
-    expect(postMaterialize).toHaveBeenCalledWith(scope, ['user-b', 'user-a'], '[{"type":"paragraph"}]');
+    // Every sender of the window, newest first: the backend credits the first who may still update the entity. The
+    // server-origin row credits no one, and is named so the backend can tell the merge holds it.
+    expect(postMaterialize).toHaveBeenCalledWith(scope, ['user-b', 'user-a'], '[{"type":"paragraph"}]', [server.id]);
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, a: 1, b: 2, server: 3 });
     expect(storage.logs.get(key)).toHaveLength(0);
   });
@@ -50,7 +55,7 @@ describe('compactDocument', () => {
 
     expect(await compactDocument(scope)).toBe('ok');
     // The row's sender wrote nothing, so it is not credited.
-    expect(postMaterialize).toHaveBeenCalledWith(scope, ['user-b', 'user-a'], '[{"type":"paragraph"}]');
+    expect(postMaterialize).toHaveBeenCalledWith(scope, ['user-b', 'user-a'], '[{"type":"paragraph"}]', []);
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, a: 1, b: 2 });
     expect(storage.logs.get(key)).toHaveLength(0);
 
@@ -68,28 +73,81 @@ describe('compactDocument', () => {
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
   });
 
-  it('must not credit anyone but a sender in the log: a window without one is kept, never posted', async () => {
-    await storage.appendUpdate(scope, '', mapUpdate('a', 1));
-    expect(await compactDocument(scope)).toBe('permanent');
+  it('folds a window of server rows alone without posting it: the entity row holds the last outside write already', async () => {
+    await storage.appendUpdate(scope, null, mapUpdate('a', 1));
+    await storage.appendUpdate(scope, null, mapUpdate('b', 2));
+
+    expect(await compactDocument(scope)).toBe('ok');
+
     expect(postMaterialize).not.toHaveBeenCalled();
-    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(stateToBlocksJson).not.toHaveBeenCalled();
+    expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, a: 1, b: 2 });
+    expect(storage.logs.get(key)).toHaveLength(0);
   });
 
-  it('must not write or keep a log whose document row is gone: retired, it is discarded whole', async () => {
-    // The document was retired (its description written outside the relay, or its entity deleted) and rows were
-    // appended since: they extend a history the next seed does not share, and merged alone they are a partial document.
-    storage.bases.delete(key);
+  it('must not lose an outside write committed during the POST: the 409 is a retry, and the next window names its row', async () => {
+    await storage.appendUpdate(scope, 'user-1', mapUpdate('typed', 1));
+    let outside = 0;
+    vi.mocked(postMaterialize).mockImplementationOnce(async () => {
+      const appended = await storage.appendUpdate(scope, null, mapUpdate('outside', 2));
+      if (appended.status === 'appended') outside = appended.id;
+      // The backend finds a server row the window lacks.
+      return 'retry';
+    });
+
+    expect(await compactDocument(scope)).toBe('retry');
+    expect(storage.compactState).not.toHaveBeenCalled();
+    expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true });
+
+    expect(await compactDocument(scope)).toBe('ok');
+    expect(vi.mocked(postMaterialize).mock.calls[1][3]).toEqual([outside]);
+    expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, typed: 1, outside: 2 });
+    expect(storage.logs.get(key)).toHaveLength(0);
+  });
+
+  it('must not name more server rows than the backend takes: the oldest fold alone first, and the rest are posted', async () => {
+    await storage.appendUpdate(scope, 'user-1', mapUpdate('typed', 0));
+    for (let i = 1; i <= 5; i++) await storage.appendUpdate(scope, null, mapUpdate(`outside${i}`, i));
+    const serverIds = storage.logs
+      .get(key)!
+      .filter((row) => row.userId === null)
+      .map((row) => row.id);
+
+    expect(await compactDocument(scope)).toBe('ok');
+
+    // Three folded unsaved, then one request for the client's row and the two server rows left.
+    expect(storage.compactState).toHaveBeenCalledTimes(2);
+    expect(storage.compactState.mock.calls[0][2]).toEqual(serverIds.slice(0, 3));
+    expect(postMaterialize).toHaveBeenCalledTimes(1);
+    expect(vi.mocked(postMaterialize).mock.calls[0][3]).toEqual(serverIds.slice(3));
+    expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, typed: 0, outside1: 1, outside2: 2, outside3: 3, outside4: 4, outside5: 5 });
+    expect(storage.logs.get(key)).toHaveLength(0);
+  });
+
+  it('must not write a merge whose rows another compaction folded meanwhile: rolled back, it is a retry', async () => {
     await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
-    await storage.appendUpdate(scope, 'user-2', mapUpdate('b', 2));
-    expect(await compactDocument(scope)).toBe('retired');
+    vi.mocked(postMaterialize).mockImplementationOnce(async () => {
+      // A second relay, during a rollout, folds the same rows into a newer base.
+      storage.bases.set(key, mapUpdate('newer', true));
+      storage.logs.set(key, []);
+      return 'ok';
+    });
+
+    expect(await compactDocument(scope)).toBe('retry');
+    expect(readMap(storage.bases.get(key)!)).toEqual({ newer: true });
+  });
+
+  it('must not write a document retired under the session: nothing is posted or folded', async () => {
+    // The entity was deleted: its retirement took the document row and its log.
+    storage.bases.delete(key);
+    expect(await compactDocument(scope, 'gen-0')).toBe('retired');
     expect(postMaterialize).not.toHaveBeenCalled();
     expect(storage.compactState).not.toHaveBeenCalled();
-    expect(storage.logs.get(key)).toHaveLength(0);
 
-    // Positive control: under its document row, the same log is written.
+    // Positive control: under its document row, a log is written.
     storage.bases.set(key, mapUpdate('seed', true));
     await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
-    expect(await compactDocument(scope)).toBe('ok');
+    expect(await compactDocument(scope, 'gen-0')).toBe('ok');
     expect(readMap(storage.bases.get(key)!)).toEqual({ seed: true, a: 1 });
   });
 
@@ -160,9 +218,10 @@ describe('compactDocument', () => {
     await storage.appendUpdate(scope, 'user-1', mapUpdate('old history', 1));
     const reseed = mapUpdate('reseeded', true);
     vi.mocked(postMaterialize).mockImplementationOnce(async () => {
-      // An outside write retires the document and a handshake reseeds it before this window's base is written.
+      // The document is retired and reseeded, under a new generation, before this window's base is written.
       await storage.deleteDoc(scope);
-      await storage.ensureDoc(scope, reseed);
+      storage.bases.set(key, reseed);
+      storage.generations.set(key, 'gen-reseeded');
       return 'ok';
     });
 

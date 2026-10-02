@@ -37,7 +37,6 @@ vi.mock('../data/permissions', () => ({
 let appendHold: ReturnType<typeof deferred> | null = null;
 const storage = fakeStorage((call) => (call === 'appendUpdate' ? appendHold?.promise : undefined));
 vi.mock('../data/storage', () => storage);
-vi.mock('../data/entity-content', () => ({ loadEntityDescription: vi.fn(async () => null) }));
 vi.mock('../sync/materialize', () => ({ postMaterialize: vi.fn(async () => 'ok'), stateToBlocksJson: vi.fn(() => '[]') }));
 vi.mock('../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
 

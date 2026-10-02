@@ -11,16 +11,20 @@ import { log } from '../lib/pino';
  * - `permanent`: the backend rejected the request itself (a 4xx no later attempt changes: an
  *   invalid body, an unknown type, no materializer); the log stays and cleanup stops retrying.
  * - `retry`: the backend is unavailable, or refused this write for a reason that can change (a
- *   rotated secret, no editor in the window who may still update the entity); the log stays so
- *   the next window, cleanup or sweep tries again.
+ *   rotated secret, no editor in the window who may still update the entity, an outside write the
+ *   merge lacks); the log stays so the next window, cleanup or sweep tries again.
  */
 export type MaterializeResult = 'ok' | 'gone' | 'permanent' | 'retry';
 
 /** Refusals a later attempt can overcome, so they never count as permanent. */
 const retryableStatuses: ReadonlySet<number> = new Set([401, 403, 404, 408, 409, 429]);
 
-/** POST blocks JSON to the materialize route on the backend's internal listener, authenticated by the relay secret; `editors` are the window's senders, newest first. */
-export async function postMaterialize(scope: DocScope, editors: string[], description: string): Promise<MaterializeResult> {
+/**
+ * POST blocks JSON to the materialize route on the backend's internal listener, authenticated by the relay secret.
+ * `editors` are the window's senders, newest first; `serverRowIds` the server-origin rows its merge holds, none
+ * usually. The backend answers 409 when the log holds a server row the merge lacks: a retry.
+ */
+export async function postMaterialize(scope: DocScope, editors: string[], description: string, serverRowIds: number[]): Promise<MaterializeResult> {
   try {
     const res = await fetch(`${env.BACKEND_INTERNAL_URL}/internal/yjs/materialize`, {
       method: 'POST',
@@ -31,6 +35,7 @@ export async function postMaterialize(scope: DocScope, editors: string[], descri
         tenantId: scope.tenantId,
         organizationId: scope.organizationId,
         editors,
+        serverRowIds,
         description,
       }),
     });

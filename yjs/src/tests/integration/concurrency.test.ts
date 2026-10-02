@@ -45,12 +45,16 @@ const paragraph = (text: string) =>
 const seedDescription = paragraph(' could you have a look?');
 /** The stored description the relay seeds from; a test rewrites it as an outside write would. */
 let description = seedDescription;
-vi.mock('../../data/entity-content', () => ({ loadEntityDescription: vi.fn(async () => description) }));
+vi.mock('../../data/entity-content', () => ({ lockEntityDescription: vi.fn(async () => ({ description })) }));
 
 const { runCompaction } = await import('../../sync/relay');
 const { getCollab } = await import('../../sync/session-manager');
-const { loadBase, readLog } = await import('../../data/storage');
-const { descriptionToYUpdate, yUpdateToBlocks } = await import('../../lib/blocknote-seed');
+const { loadDocument } = await import('../../data/storage');
+const { descriptionToSeed, stateToBlocksJson } = await import('#/modules/yjs/helpers/description-update');
+
+/** The document's base state, and the log rows not folded into it. */
+const baseOf = async (doc: DocScope) => (await loadDocument(doc))!.base;
+const readLog = async (doc: DocScope) => (await loadDocument(doc))?.rows ?? [];
 
 const tenantId = 'yjs-e2e-tenant';
 const organizationId = '00000000-0000-4000-a000-000000000031';
@@ -72,7 +76,7 @@ function ctx(entityId: string): DocScope {
 
 /** Text of block 0 in a stored state. */
 function textOf(state: Uint8Array): string {
-  const blocks = yUpdateToBlocks(state) as { content: { type: string; text?: string }[] }[];
+  const blocks = JSON.parse(stateToBlocksJson(state)) as { content: { type: string; text?: string }[] }[];
   return blocks[0].content.map((c) => c.text ?? '').join('');
 }
 
@@ -152,7 +156,7 @@ async function startNextGeneration() {
 
 /** A session a crashed relay left behind: its base seeded from the description, one unwritten edit, both a day old. */
 async function seedOrphan(entityId: string, edit: string) {
-  const base = descriptionToYUpdate(seedDescription)!;
+  const base = descriptionToSeed(seedDescription);
   const doc = new Y.Doc();
   Y.applyUpdate(doc, base);
   const before = Y.encodeStateVector(doc);
@@ -190,7 +194,7 @@ describe('relay end to end', () => {
     const collab = getCollab(ctx(ids.burst))!;
     expect(await runCompaction(collab)).toBe('ok');
 
-    expect(textOf((await loadBase(ctx(ids.burst)))!.state)).toBe('abc could you have a look?');
+    expect(textOf(await baseOf(ctx(ids.burst)))).toBe('abc could you have a look?');
     expect(await readLog(ctx(ids.burst))).toEqual([]);
     expect(materialized.at(-1)?.editedBy).toBe(userId);
     expect(materialized.at(-1)?.description).toContain('abc could you have a look?');
@@ -218,7 +222,7 @@ describe('relay end to end', () => {
     expect(await sessionRows(ids.idle)).toBe(1);
     expect(await readLog(ctx(ids.idle))).toHaveLength(1);
     expect(await runCompaction(getCollab(ctx(ids.idle))!)).toBe('ok');
-    expect(textOf((await loadBase(ctx(ids.idle)))!.state)).toBe(' could you have a look?!');
+    expect(textOf(await baseOf(ctx(ids.idle)))).toBe(' could you have a look?!');
     const written = materialized.filter((entry) => entry.entityId === ids.idle).at(-1);
     expect(written?.description).toContain(' could you have a look?!');
     provider.destroy();
@@ -323,7 +327,7 @@ describe('relay end to end', () => {
     const rows = await readLog(ctx(ids.pull));
     expect(rows[0].userId).toBe(userId);
     // The merged document holds both the server seed and the client's content.
-    const merged = Y.mergeUpdates([(await loadBase(ctx(ids.pull)))!.state, ...rows.map((row) => row.payload)]);
+    const merged = Y.mergeUpdates([await baseOf(ctx(ids.pull)), ...rows.map((row) => row.payload)]);
     const verify = new Y.Doc();
     Y.applyUpdate(verify, merged);
     expect(verify.getXmlFragment('document-store').toString()).toContain('offline paragraph');

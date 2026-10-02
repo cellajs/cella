@@ -8,6 +8,8 @@ export const YJS_CLEANUP_MAX_ATTEMPTS = 12;
 export const YJS_COMPACT_DEBOUNCE_MS = 3000;
 /** Longest wait for compaction after the first update since the last compaction started, however often later updates restart the debounce: bounds how far non-editing viewers fall behind, and the log, while someone types without pause. */
 export const YJS_COMPACT_MAX_WAIT_MS = 10_000;
+/** Server-origin rows one materialize request may name: the backend refuses more with 400, which no retry overcomes. */
+export const YJS_MAX_SERVER_ROW_IDS = 10_000;
 /** Sync messages a socket may queue while its entity access is still being verified. */
 export const YJS_PENDING_QUEUE_CAP = 100;
 export const YJS_AWARENESS_RATE_LIMIT = 2; // Max 2 awareness updates per client per second to prevent spam and DoS

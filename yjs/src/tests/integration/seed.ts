@@ -3,8 +3,8 @@ import type pg from 'pg';
 import { hierarchy } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { mergeState } from '#/modules/yjs/helpers/yjs-state';
-import type { DocKey } from '../../constants';
-import { loadBase, readLog } from '../../data/storage';
+import type { DocKey, DocScope } from '../../constants';
+import { loadDocument } from '../../data/storage';
 
 // Seeds rows as the superuser (bypassing RLS) for the relay's integration tests, whose code under test connects as runtime_role.
 
@@ -130,9 +130,19 @@ export async function cleanupSeed(
 
 /** A document as the relay stored it: its base with every logged row merged in; null when it holds nothing. */
 export async function storedState(doc: DocKey): Promise<Uint8Array | null> {
-  const rows = await readLog(doc);
+  const document = await loadDocument(doc);
   return mergeState(
-    (await loadBase(doc))?.state ?? null,
-    rows.map((row) => row.payload),
+    document?.base ?? null,
+    (document?.rows ?? []).map((row) => row.payload),
   );
+}
+
+/** Inserts a document row holding `state`, as a seed would, and returns its generation. */
+export async function insertDocument(client: pg.Client, scope: DocScope, state: Uint8Array): Promise<string> {
+  const { rows } = await client.query<{ generation: string }>(
+    `INSERT INTO yjs_documents (entity_type, entity_id, tenant_id, organization_id, state)
+     VALUES ($1, $2, $3, $4, $5) RETURNING generation`,
+    [scope.entityType, scope.entityId, scope.tenantId, scope.organizationId, Buffer.from(state)],
+  );
+  return rows[0].generation;
 }

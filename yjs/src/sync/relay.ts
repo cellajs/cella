@@ -2,12 +2,11 @@ import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
+import { descriptionToSeed } from '#/modules/yjs/helpers/description-update';
 import { classifyUpdate, mergeLog } from '#/modules/yjs/helpers/yjs-state';
-import type { DocKey, SocketContext } from '../constants';
+import type { DocKey, DocScope, SocketContext } from '../constants';
 import { YJS_AWARENESS_MAX_ENTRIES, YJS_AWARENESS_RATE_LIMIT, YJS_COMPACT_DEBOUNCE_MS, YJS_COMPACT_MAX_WAIT_MS } from '../constants';
-import { loadEntityDescription } from '../data/entity-content';
-import { appendUpdate, ensureDoc, loadBase, readLog } from '../data/storage';
-import { descriptionToYUpdate } from '../lib/blocknote-seed';
+import { appendUpdate, loadDocument, seedDocument } from '../data/storage';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
 import { broadcastToCollab, type CollabSession, claimAwarenessClient, endCollab, getCollab, leaveCollab, withDocLock } from './session-manager';
@@ -197,21 +196,41 @@ export function handleLeave(doc: DocKey, ws: WebSocket): void {
 }
 
 /**
+ * The seed of a new document: its stored description, and one empty paragraph for none. A description that does not
+ * convert is logged and seeds the empty document too: the session opens, and the next write replaces the description.
+ */
+function seedFrom(scope: DocScope): (description: string | null) => Uint8Array {
+  return (description) => {
+    try {
+      return descriptionToSeed(description);
+    } catch (err) {
+      log.warn(`The description of ${scope.entityType}:${scope.entityId} does not convert: seeding an empty document`, { err });
+      return descriptionToSeed(null);
+    }
+  };
+}
+
+/**
  * The document as the session knows it: the document row (seeded on first sight, under a new generation) plus every
  * logged update that merges; compaction discards the rest. Null once the document was retired under the session (its
- * row gone, or reseeded by another relay): the session ends, and its sockets reconnect into one that seeds afresh.
+ * row gone, or reseeded by another relay) or its entity is gone: the session ends, and its sockets reconnect.
  */
 async function loadDocumentState(collab: CollabSession): Promise<{ state: Uint8Array | null; generation: string } | null> {
   const { scope } = collab;
-  let base = await loadBase(scope);
-  if (collab.generation !== null && base?.generation !== collab.generation) {
+  let document = await loadDocument(scope);
+  if (collab.generation !== null && document?.generation !== collab.generation) {
     endCollab(collab);
     return null;
   }
-  // Fresh document: the server seeds from the stored description, so clients never seed it.
-  base ??= await ensureDoc(scope, descriptionToYUpdate(await loadEntityDescription(scope)));
-  collab.generation = base.generation;
-  return { state: mergeLog(base.state, await readLog(scope)).state, generation: base.generation };
+  // Fresh document: the server seeds it from the stored description, so clients never seed it.
+  document ??= await seedDocument(scope, seedFrom(scope));
+  // Deleted since the socket was authorized: its reconnect is told so.
+  if (!document) {
+    endCollab(collab);
+    return null;
+  }
+  collab.generation = document.generation;
+  return { state: mergeLog(document.base, document.rows).state, generation: document.generation };
 }
 
 /**
@@ -247,8 +266,8 @@ async function handleSyncStep1(ctx: SocketContext, collab: CollabSession, ws: We
 /**
  * Logs the update durably under its sender, in the generation the session loaded, then broadcasts it to peers and
  * schedules compaction; one Yjs cannot decode closes its sender. A document retired or reseeded since takes no update:
- * the session ends, and its sockets reconnect into the new generation. True once the update is logged, or carried
- * nothing: its sender may be told it is saved.
+ * the session ends, and its sockets reconnect. True once the update is logged, or carried nothing: its sender may be
+ * told it is saved.
  */
 async function handleSyncUpdate(collab: CollabSession, userId: string, ws: WebSocket, update: Uint8Array, rawMessage: Uint8Array): Promise<boolean> {
   const kind = classifyUpdate(update);
@@ -264,12 +283,18 @@ async function handleSyncUpdate(collab: CollabSession, userId: string, ws: WebSo
   // document was retired under the session meanwhile, which has ended.
   const generation = collab.generation ?? (await withDocLock(collab, () => loadDocumentState(collab)))?.generation;
   if (!generation) return false;
-  if (!(await appendUpdate(collab.scope, userId, update, generation))) {
+  const appended = await appendUpdate(collab.scope, userId, update, generation);
+  if (appended.status === 'malformed' || appended.status === 'too-large') {
+    refuseFrame(collab.scope, userId, ws, appended.status === 'too-large' ? 'Update too large' : 'Malformed update');
+    return false;
+  }
+  if (appended.status === 'no-document' || appended.status === 'stale-generation') {
     endCollab(collab);
     return false;
   }
   // The session ended while the append ran: its peers are gone, no timer may run on it, and its generation is void.
   if (getCollab(collab.scope) !== collab) return false;
+  if (appended.status === 'empty') return true;
   broadcastToCollab(collab, rawMessage, ws);
   scheduleCompaction(collab);
   return true;

@@ -30,16 +30,15 @@ const gates = new Map<string, Promise<void>>();
 const storage = fakeStorage((call) => gates.get(call));
 vi.mock('../data/storage', () => storage);
 
-// No entity description by default: individual tests override to exercise seeding, and the pg pool in data/db stays uninstantiated.
-vi.mock('../data/entity-content', () => ({ loadEntityDescription: vi.fn().mockResolvedValue(null) }));
-
 vi.mock('../sync/materialize', () => ({ postMaterialize: vi.fn().mockResolvedValue('ok'), stateToBlocksJson: vi.fn(() => '[]') }));
 
 const { handleLeave, handleMessage, peekMessageType, runCompaction } = await import('../sync/relay');
-const { loadEntityDescription } = await import('../data/entity-content');
 const { postMaterialize } = await import('../sync/materialize');
-const { yUpdateToBlocks } = await import('../lib/blocknote-seed');
+const { stateToBlocksJson } = await import('#/modules/yjs/helpers/description-update');
 const { endCollab, getCollab, joinCollab, leaveCollab } = await import('../sync/session-manager');
+
+/** The blocks a document state holds. */
+const blocksOf = (state: Uint8Array) => JSON.parse(stateToBlocksJson(state)) as { type: string; content: { text: string }[] }[];
 
 const ctx = mockSocketContext();
 
@@ -129,16 +128,17 @@ describe('handleMessage: gating and validation', () => {
 });
 
 describe('handleMessage: sync step 1', () => {
-  it('first connection without entity content: seeds an empty doc and answers with an empty Step2 plus a Step1', async () => {
+  it('first connection without entity content: seeds one empty paragraph and answers with it plus a Step1', async () => {
     const { ctx: c, scope, ws } = session();
     await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
 
-    expect(storage.ensureDoc).toHaveBeenCalledWith(scope, null);
+    expect(storage.seedDocument).toHaveBeenCalledWith(scope, expect.any(Function));
+    // From an empty fragment, two first writers would create two block groups, of which the editor shows one.
+    expect(blocksOf(decodeSyncStep2(ws.sent[1])).map((block) => block.type)).toEqual(['paragraph']);
     // The generation comes first, so a client of another one drops its document before it merges the state.
     expect(decodeGeneration(ws.sent[0])).toBe(storage.generations.get(storageKey(scope)));
     const frames = decodeFrames(ws.sent);
     expect(frames.map((f) => f.sync)).toEqual([1, 0]);
-    expect(readMap(decodeSyncStep2(ws.sent[1]))).toEqual({});
   });
 
   it('announces the same generation at every handshake of a document, and a new one once it was retired and reseeded', async () => {
@@ -156,7 +156,7 @@ describe('handleMessage: sync step 1', () => {
     const next = session({ entityId: scope.entityId });
     await handleMessage(next.ctx, next.ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
     expect(decodeGeneration(next.ws.sent[0])).not.toBe(first);
-    expect(storage.ensureDoc).toHaveBeenCalledTimes(2);
+    expect(storage.seedDocument).toHaveBeenCalledTimes(2);
   });
 
   it('must not seed a new generation under a session that loaded another: the session ends with 1013 and a fresh one reseeds', async () => {
@@ -166,13 +166,12 @@ describe('handleMessage: sync step 1', () => {
     await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
     expect(collab.generation).toBe(storage.generations.get(key));
 
-    // The description was written outside the relay, which retired the document; a socket handshakes before the
-    // live stamp notices.
+    // The document was retired; a socket handshakes before the notification or the live stamp ends the session.
     storage.bases.delete(key);
     storage.generations.delete(key);
     await handleMessage(c, peer as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
 
-    expect(storage.ensureDoc).toHaveBeenCalledTimes(1);
+    expect(storage.seedDocument).toHaveBeenCalledTimes(1);
     expect(peer.sent).toHaveLength(0);
     expect(peer.closed).toEqual({ code: 1013, reason: 'Document retired' });
     expect(ws.closed).toEqual({ code: 1013, reason: 'Document retired' });
@@ -181,30 +180,53 @@ describe('handleMessage: sync step 1', () => {
     // Positive control: the reconnect opens a fresh session, which seeds the document anew.
     const next = session({ entityId: scope.entityId });
     await handleMessage(next.ctx, next.ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
-    expect(storage.ensureDoc).toHaveBeenCalledTimes(2);
+    expect(storage.seedDocument).toHaveBeenCalledTimes(2);
     expect(decodeGeneration(next.ws.sent[0])).toBe(storage.generations.get(key));
+  });
+
+  it('must not seed a document for an entity deleted since its socket was authorized: the session ends with 1013', async () => {
+    const { ctx: c, scope, key, ws } = session();
+    storage.gone.add(key);
+
+    await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+
+    expect(storage.bases.has(key)).toBe(false);
+    expect(ws.sent).toEqual([]);
+    // The reconnect's authorization finds the entity deleted and closes with 4410.
+    expect(ws.closed).toEqual({ code: 1013, reason: 'Document retired' });
+    expect(getCollab(scope)).toBeUndefined();
+    storage.gone.delete(key);
   });
 
   it('first connection with entity content: seeds the doc server-side from the stored description', async () => {
     const description = JSON.stringify([
       { id: 'b1', type: 'paragraph', props: {}, content: [{ type: 'text', text: 'seeded', styles: {} }], children: [] },
     ]);
-    vi.mocked(loadEntityDescription).mockResolvedValueOnce(description);
-    const { ctx: c, ws } = session();
+    const { ctx: c, key, ws } = session();
+    storage.descriptions.set(key, description);
 
     await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
 
-    const seed = storage.ensureDoc.mock.calls[0][1] as Uint8Array;
-    expect(seed).not.toBeNull();
-    const blocks = yUpdateToBlocks(decodeSyncStep2(ws.sent[1])) as { content: { text: string }[] }[];
-    expect(blocks[0].content[0].text).toBe('seeded');
+    expect(blocksOf(storage.bases.get(key)!)[0].content[0].text).toBe('seeded');
+    expect(blocksOf(decodeSyncStep2(ws.sent[1]))[0].content[0].text).toBe('seeded');
     // Seeding writes nothing to the log, so a session that only opened the document never materializes.
     expect(storage.appendUpdate).not.toHaveBeenCalled();
   });
 
+  it('seeds a description that does not convert as an empty document, and the session opens', async () => {
+    const { ctx: c, key, ws } = session();
+    storage.descriptions.set(key, JSON.stringify([{ type: 'no-such-block' }]));
+
+    await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
+
+    expect(blocksOf(storage.bases.get(key)!).map((block) => block.type)).toEqual(['paragraph']);
+    expect(decodeGeneration(ws.sent[0])).toBe(storage.generations.get(key));
+    expect(ws.closed).toBeNull();
+  });
+
   it('concurrent Step1s from two sockets seed once, through the document lock', async () => {
     const gate = deferred();
-    gates.set('ensureDoc', gate.promise);
+    gates.set('seedDocument', gate.promise);
     const { ctx: c, scope, ws: ws1, collab } = session();
     const ws2 = mockWebSocket();
     joinCollab(scope, ws2 as never);
@@ -212,13 +234,13 @@ describe('handleMessage: sync step 1', () => {
     const first = handleMessage(c, ws1 as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
     const second = handleMessage(c, ws2 as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
     await flushMicrotasks();
-    expect(storage.ensureDoc).toHaveBeenCalledTimes(1);
+    expect(storage.seedDocument).toHaveBeenCalledTimes(1);
     gate.release();
     await Promise.all([first, second]);
 
     // The second Step1 saw the row the first one created.
-    expect(storage.ensureDoc).toHaveBeenCalledTimes(1);
-    expect(storage.loadBase).toHaveBeenCalledTimes(2);
+    expect(storage.seedDocument).toHaveBeenCalledTimes(1);
+    expect(storage.loadDocument).toHaveBeenCalledTimes(2);
     expect(ws1.sent).toHaveLength(3);
     expect(ws2.sent).toHaveLength(3);
     leaveCollab(collab.scope, ws2 as never);
@@ -233,7 +255,7 @@ describe('handleMessage: sync step 1', () => {
     client.getMap('data').set('mine', 'x');
     await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(client)));
 
-    expect(storage.ensureDoc).not.toHaveBeenCalled();
+    expect(storage.seedDocument).not.toHaveBeenCalled();
     Y.applyUpdate(client, decodeSyncStep2(ws.sent[1]));
     expect(client.getMap('data').toJSON()).toEqual({ base: true, logged: 1, mine: 'x' });
     // The Step1 carries the merged state vector, so the client's reply would contain only `mine`.
@@ -364,14 +386,14 @@ describe('handleMessage: sync update', () => {
     const gate = deferred();
     let slowed = false;
     gates.set('appendUpdate', gate.promise);
-    storage.appendUpdate.mockImplementationOnce(async (_scope: DocScope, userId: string, payload: Uint8Array) => {
+    storage.appendUpdate.mockImplementationOnce(async (_scope: DocScope, userId: string | null, payload: Uint8Array) => {
       slowed = true;
       await gate.promise;
       gates.delete('appendUpdate');
       const list = storage.logs.get(key) ?? [];
       list.push({ id: 1000, payload, userId });
       storage.logs.set(key, list);
-      return true;
+      return { status: 'appended' as const, id: 1000 };
     });
 
     const doc = new Y.Doc();
@@ -464,7 +486,7 @@ describe('handleMessage: Saved', () => {
     await handleMessage(c, ws as never, buildSyncStep2());
     ws.sent.length = 0;
 
-    // The description was written outside the relay, which retired the document: the append finds no row of its generation.
+    // The entity was deleted, which retired the document: the append finds no row of its generation.
     storage.bases.delete(key);
     storage.generations.delete(key);
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
@@ -853,7 +875,7 @@ describe('compaction', () => {
 
     expect(postMaterialize).toHaveBeenCalledTimes(1);
     // As the system, in the document's scope: no joiner's context rides along.
-    expect(postMaterialize).toHaveBeenCalledWith(scope, ['user-2', 'user-1'], '[]');
+    expect(postMaterialize).toHaveBeenCalledWith(scope, ['user-2', 'user-1'], '[]', []);
     const [, merged, ids] = storage.compactState.mock.calls[0] as [never, Uint8Array, number[]];
     expect(readMap(merged)).toEqual({ a: 1, b: 2 });
     expect(ids).toHaveLength(2);
@@ -957,22 +979,23 @@ describe('compaction', () => {
 
   it('a thrown storage error counts as retry, so the compaction timer never sees a rejection', async () => {
     const { collab } = session();
-    storage.readLog.mockRejectedValueOnce(new Error('db down'));
+    storage.loadDocument.mockRejectedValueOnce(new Error('db down'));
     expect(await runCompaction(collab)).toBe('retry');
   });
 
-  it('a compaction that finds the document retired discards its log and ends the session with 1013', async () => {
+  it('a compaction that finds the document retired writes nothing and ends the session with 1013', async () => {
     const { ctx: c, scope, key, ws, collab } = seededSession();
     await handleMessage(c, ws as never, buildSyncStep1(Y.encodeStateVector(new Y.Doc())));
     await handleMessage(c, ws as never, buildSyncStep2(mapUpdate('a', 1)));
-    // The description was written outside the relay, which retired the document, before the window closed.
+    // The entity was deleted before the window closed, and its retirement took the document row and its log.
     storage.bases.delete(key);
     storage.generations.delete(key);
+    storage.logs.delete(key);
 
     await vi.advanceTimersByTimeAsync(3000);
 
     expect(postMaterialize).not.toHaveBeenCalled();
-    expect(storage.logs.get(key)).toHaveLength(0);
+    expect(storage.compactState).not.toHaveBeenCalled();
     expect(ws.closed).toEqual({ code: 1013, reason: 'Document retired' });
     expect(getCollab(scope)).toBeUndefined();
     expect(collab.compactTimer).toBeUndefined();

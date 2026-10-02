@@ -4,7 +4,6 @@ import { fakeStorage, mapUpdate, mockScope, mockWebSocket, readMap, storageKey }
 // Real compaction, materialize, cleanup and sweep over in-memory storage; the backend answers through a stubbed fetch.
 const storage = fakeStorage();
 vi.mock('../data/storage', () => storage);
-vi.mock('../data/entity-content', () => ({ loadEntityDescription: vi.fn(async () => null) }));
 
 const { getCollab, joinCollab, leaveCollab } = await import('../sync/session-manager');
 const { runCompaction } = await import('../sync/relay');
