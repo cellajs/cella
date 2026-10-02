@@ -12,7 +12,10 @@ vi.mock('~/modules/common/blocknote/yjs-tab-channel', () => ({
 }));
 let offlineAccess = true;
 vi.mock('~/modules/ui/ui-store', () => ({ useUIStore: { getState: () => ({ offlineAccess }) } }));
-vi.mock('~/query/local-user-storage', () => ({ subscribeOwnerChange: () => () => {} }));
+const warnOnStoragePressure = vi.fn(async (_opts?: { limitsReached?: boolean }) => {});
+vi.mock('~/modules/common/blocknote/storage-warning', () => ({
+  warnOnStoragePressure: (opts?: { limitsReached?: boolean }) => warnOnStoragePressure(opts),
+}));
 let leader = true;
 vi.mock('~/query/realtime/tab-coordinator', () => ({ isLeader: () => leader, tabCoordinatorStore: { subscribe: () => () => {} } }));
 const resumeConnection = vi.fn();
@@ -20,7 +23,7 @@ vi.mock('~/modules/common/blocknote/yjs-connections', () => ({ resumeConnection:
 
 const { bindLocalUserDb, closeLocalUserDb, getLocalUserDb, LocalUserDatabase } = await import('~/query/local-user-db');
 const store = await import('~/modules/common/blocknote/yjs-store');
-const { createYDocWriter, evictYDocs, flushYjsStore, loadYDoc, resumeYDocs, trimYDoc, watchStoragePressure, watchUnsavedYDocs } = store;
+const { createYDocWriter, evictYDocs, flushYjsStore, loadYDoc, resumeYDocs, trimYDoc, watchUnsavedYDocs } = store;
 
 type Db = InstanceType<typeof LocalUserDatabase>;
 type Writer = NonNullable<ReturnType<typeof createYDocWriter>>;
@@ -40,6 +43,7 @@ beforeEach(() => {
   offlineAccess = true;
   leader = true;
   resumeConnection.mockReset();
+  warnOnStoragePressure.mockClear();
 });
 
 afterEach(async () => {
@@ -449,16 +453,14 @@ describe('yjs store: eviction', () => {
     expect(await storedIds()).toEqual(['old-unsynced', 'young']);
   });
 
-  it('warns once per session: when the limits stay exceeded with nothing left to evict', async () => {
-    const warned = vi.fn();
-    const stop = watchStoragePressure(warned);
+  it('warns after each run, saying when the limits stay reached with nothing left to evict', async () => {
+    await seed('one', 3 * hour);
+    await evictYDocs();
+    expect(warnOnStoragePressure).toHaveBeenLastCalledWith({ limitsReached: false });
+
     for (let i = 0; i <= store.MAX_STORED_DOCS; i++) await seed(`u${i}`, 3 * hour, { unsynced: 1 });
-
     await evictYDocs();
-    await evictYDocs();
-
-    expect(warned).toHaveBeenCalledExactlyOnceWith('budget');
-    stop();
+    expect(warnOnStoragePressure).toHaveBeenLastCalledWith({ limitsReached: true });
   });
 });
 
@@ -496,6 +498,7 @@ describe('yjs store: quota', () => {
     await flushYjsStore();
 
     expect(writer.failed).toBe(true);
+    expect(warnOnStoragePressure).toHaveBeenCalledWith({ limitsReached: true });
     expect(writer.pending).toBe(false);
     expect(onChange).toHaveBeenCalled();
     expect(broadcasts.at(-1)).toMatchObject({ rowId: null });
@@ -518,7 +521,11 @@ describe('yjs store: parking and dropping', () => {
     // Typed after the last commit: only the document holds it.
     doc.getText('t').insert(doc.getText('t').length, 'in memory');
 
-    await writer.park('denied', doc);
+    // Read as park is called: its caller destroys the document right after, so nothing later reaches the parked row.
+    const parking = writer.park('denied', doc);
+    doc.getText('t').insert(doc.getText('t').length, ' too late');
+    doc.destroy();
+    await parking;
 
     expect(await record()).toBeUndefined();
     expect(await rows()).toHaveLength(0);

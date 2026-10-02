@@ -9,17 +9,18 @@ import { liveQuery } from 'dexie';
 import { useEffect, useState } from 'react';
 import { appConfig, type ProductEntityType } from 'shared';
 import type * as Y from 'yjs';
+import { warnOnStoragePressure } from '~/modules/common/blocknote/storage-warning';
 import { postTabUpdate, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
 import { useUIStore } from '~/modules/ui/ui-store';
 import {
   getLocalUserDb,
   type LocalUserDatabase,
+  subscribeOwnerChange,
   type UnsaveableReason,
   type YDocKey,
   type YDocRecord,
   type YDocUpdateRecord,
 } from '~/query/local-user-db';
-import { subscribeOwnerChange } from '~/query/local-user-storage';
 import { isLeader, tabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 
 /** The longest a load may hold up the provider's connect. */
@@ -38,9 +39,6 @@ export const EVICT_MIN_AGE_MS = 60 * 60_000;
 export const EVICT_INTERVAL_MS = 60_000;
 /** Without offline access (session mode), eviction also drops synced documents not opened within this window. */
 export const SESSION_KEEP_MS = 2 * 60 * 60_000;
-/** The device's storage runs low below this many free bytes, or past `LOW_STORAGE_RATIO` of the quota used. */
-export const LOW_STORAGE_BYTES = 100 * 1024 * 1024;
-export const LOW_STORAGE_RATIO = 0.9;
 /** Background connections boot resume opens at a time. */
 export const RESUME_CONCURRENCY = 3;
 
@@ -114,17 +112,19 @@ export interface YDocWriterOptions {
   onChange?: () => void;
 }
 
-/** The storage warning of this session: the device runs low (`device`), or the limits are reached with nothing left to evict (`budget`). */
-export type StoragePressure = 'device' | 'budget';
-
 type DocKeyPath = [ProductEntityType, string];
 const keyPath = (key: YDocKey): DocKeyPath => [key.entityType, key.entityId];
 const rowsOf = (db: LocalUserDatabase, key: YDocKey) => db.yDocUpdates.where('[entityType+entityId]').equals(keyPath(key));
 
 let yjsModule: Promise<typeof Y> | undefined;
+/** Yjs once loaded, for what must read a document before its caller destroys it. */
+let yjsLoaded: typeof Y | undefined;
 /** Yjs, loaded on first use: boot-time code reads this module (teardown, eviction, the sign-out list), and a writer exists only once the editor loaded Yjs. */
 const loadYjs = () => {
-  yjsModule ??= import('yjs');
+  yjsModule ??= import('yjs').then((module) => {
+    yjsLoaded = module;
+    return module;
+  });
   return yjsModule;
 };
 
@@ -317,13 +317,16 @@ class StoreWriter implements YDocWriter {
   park(reason: UnsaveableReason, doc: Y.Doc): Promise<void> {
     const scope = this.scope;
     this.close();
+    // Before `start` the writer knows no generation, so `doc` may hold another history: the stored state alone. After
+    // it, `doc` is read now, since the caller destroys it right after; Yjs is loaded by then, as the writer's first
+    // write loaded it.
+    const state = scope && yjsLoaded ? yjsLoaded.encodeStateAsUpdate(doc) : null;
     return this.enqueueTask(async () => {
       const Yjs = await loadYjs();
       await this.db.transaction('rw', [this.db.yDocs, this.db.yDocStates, this.db.yDocUpdates, this.db.unsaveableYDocs], async () => {
         const record = await this.db.yDocs.get(keyPath(this.key));
         const own = record && (!scope || record.generation === scope.generation) ? record : undefined;
-        // Before `start` the writer knows no generation, so `doc` may hold another history: the stored state alone.
-        const extra = scope ? [Yjs.encodeStateAsUpdate(doc)] : [];
+        const extra = scope ? [state ?? Yjs.encodeStateAsUpdate(doc)] : [];
         if (own) return parkStored(Yjs, this.db, own, reason, extra);
         if (!scope) return;
         await this.db.unsaveableYDocs.add({ ...this.key, ...scope, reason, state: extra[0], at: Date.now() });
@@ -501,7 +504,7 @@ class StoreWriter implements YDocWriter {
     console.warn('[yjs-store] Storing failed; edits stay in memory and still sync online', error);
     this.failed = true;
     this.opts.onChange?.();
-    if (isQuotaError(error)) reportPressure('device');
+    if (isQuotaError(error)) void warnOnStoragePressure({ limitsReached: true });
   }
 }
 
@@ -521,6 +524,7 @@ export async function loadYDoc(key: YDocKey): Promise<LoadedYDoc | null> {
 export function createYDocWriter(key: YDocKey, opts: YDocWriterOptions = {}): YDocWriter | null {
   const db = getLocalUserDb();
   if (!db) return null;
+  void loadYjs();
   return new StoreWriter({ entityType: key.entityType, entityId: key.entityId }, db, opts);
 }
 
@@ -602,7 +606,7 @@ const openKeys = () => new Set([...writers].filter((writer) => !writer.released)
  * Deletes the least recently opened documents while more than `MAX_STORED_DOCS` are stored or more than
  * `MAX_STORED_BYTES` in all, and in session mode every one not opened within `SESSION_KEEP_MS`. Never one with
  * unsynced edits, one open in this tab, or one opened within `EVICT_MIN_AGE_MS` (which may be open in another);
- * parked edits are never evicted. Then checks the device's storage.
+ * parked edits are never evicted. Then warns when the device's storage runs low, or the limits stay reached.
  */
 export async function evictYDocs(): Promise<void> {
   const db = getLocalUserDb();
@@ -635,33 +639,7 @@ export async function evictYDocs(): Promise<void> {
       }
     });
   }
-  if (count > MAX_STORED_DOCS || bytes > MAX_STORED_BYTES) reportPressure('budget');
-  await checkDeviceStorage();
-}
-
-/** Reports `device` pressure when the browser's estimate says storage runs low. */
-async function checkDeviceStorage() {
-  if (typeof navigator === 'undefined' || !navigator.storage?.estimate) return;
-  const estimate = await navigator.storage.estimate().catch(() => null);
-  if (!estimate?.quota || estimate.usage === undefined) return;
-  if (estimate.quota - estimate.usage < LOW_STORAGE_BYTES || estimate.usage / estimate.quota > LOW_STORAGE_RATIO) reportPressure('device');
-}
-
-let pressure: StoragePressure | null = null;
-const pressureListeners = new Set<(pressure: StoragePressure) => void>();
-
-/** Reports storage pressure once per session. */
-function reportPressure(next: StoragePressure) {
-  if (pressure) return;
-  pressure = next;
-  for (const listener of pressureListeners) listener(next);
-}
-
-/** Calls `cb` once with this session's storage warning, now if one was reported already; for the storage warning toast. */
-export function watchStoragePressure(cb: (pressure: StoragePressure) => void): () => void {
-  if (pressure) cb(pressure);
-  pressureListeners.add(cb);
-  return () => pressureListeners.delete(cb);
+  await warnOnStoragePressure({ limitsReached: count > MAX_STORED_DOCS || bytes > MAX_STORED_BYTES });
 }
 
 /** Stored documents with unsynced edits, then parked ones. */

@@ -4,8 +4,7 @@
  * open on the bound user's name, shut while none is bound (signed out, or impersonating).
  */
 
-import { getLocalUserDb, type YDocKey } from '~/query/local-user-db';
-import { subscribeOwnerChange } from '~/query/local-user-storage';
+import { getLocalUserDb, subscribeOwnerChange, type YDocKey } from '~/query/local-user-db';
 
 /**
  * A message between tabs. `update` carries a local edit and the row id its tab stored it under, null when that write

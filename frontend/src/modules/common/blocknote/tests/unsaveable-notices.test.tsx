@@ -69,6 +69,7 @@ function fakeWriter(overrides: Partial<YDocWriter> = {}): YDocWriter {
     }),
     drop: vi.fn(async () => {}),
     failed: false,
+    pending: false,
     ...overrides,
   };
 }

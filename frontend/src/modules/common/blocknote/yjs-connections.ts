@@ -476,11 +476,11 @@ function applyStored(editSessionId: string, conn: YjsConnection, scope: DocScope
   const { record } = stored;
   const key = { entityType: scope.entityType, entityId: editSessionId };
   if (conn.generation !== null && conn.generation !== record.generation) {
-    // Not started, the writer parks or drops by the stored record alone.
-    const writer = createYDocWriter(key);
-    void (record.unsynced ? writer?.park('replaced', conn.yDoc) : writer?.drop())?.catch((error) =>
-      console.warn(`[yjs] Stored document of another generation left for ${editSessionId}`, error),
-    );
+    // Not started, the writer parks or drops by the stored record alone; the empty document is the notice's fallback only.
+    const yDoc = new Y.Doc();
+    const source = { yDoc, writer: createYDocWriter(key), unsynced: record.unsynced === 1, generation: record.generation };
+    parkUnsaveable(source, { ...key, tenantId: scope.tenantId, organizationId: scope.organizationId }, 'replaced');
+    yDoc.destroy();
     return;
   }
   Y.transact(
@@ -901,9 +901,19 @@ export async function resumeConnection(record: YDocRecord): Promise<void> {
       const token = await queryClient.fetchQuery(yjsTokenQueryOptions({ entityType, entityId, tenantId, organizationId }));
       useUserStore.getState().setYjsToken(tokenKey, token);
     } catch (error) {
-      // A refusal leaves the edits stored for the next load, where the editor's own token query meets it; a network
-      // failure is retried when the browser is back online.
-      console.warn(`[yjs] No token to resume ${entityType}:${entityId}`, error);
+      // Deleted, or edit rights lost while the edits waited: they can never be saved, so the stored document is parked
+      // with a notice to copy it. A network failure is retried when the browser is back online.
+      const refusal = yjsTokenRefusal(error);
+      if (!refusal) return console.warn(`[yjs] No token to resume ${entityType}:${entityId}`, error);
+      // Not started, the writer parks the stored document alone; the empty document is the notice's fallback only.
+      const yDoc = new Y.Doc();
+      const scope = { entityType, entityId, tenantId, organizationId };
+      parkUnsaveable(
+        { yDoc, writer: createYDocWriter(record), unsynced: true, generation: record.generation },
+        scope,
+        refusal === 'deleted' ? 'deleted' : 'denied',
+      );
+      yDoc.destroy();
       return;
     }
   }

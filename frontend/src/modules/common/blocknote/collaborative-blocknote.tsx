@@ -164,6 +164,8 @@ function CollaborativeHost({
   return (
     <>
       {status && <SyncStatus text={status} />}
+      {/* Storing failed for good: unsynced edits live in this page only, and the unload warning asks. */}
+      {yjsConn.storageFailed && <SyncStatus text={t('c:storage_unavailable.text')} />}
       <BlockNote
         // New per rebuilt document, so the editor binds the fresh fragment.
         key={yjsConn.rebuilds}

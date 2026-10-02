@@ -2,24 +2,16 @@ import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('shared', () => ({ appConfig: { slug: 'test' } }));
-/** The per-user database's owner listeners, run as local-user-storage runs them after a rebind. */
-const ownerListeners = new Set<(owner: string | null) => void>();
-vi.mock('~/query/local-user-storage', () => ({
-  subscribeOwnerChange: (listener: (owner: string | null) => void) => {
-    ownerListeners.add(listener);
-    return () => ownerListeners.delete(listener);
-  },
-}));
 
-const { bindLocalUserDb, closeLocalUserDb } = await import('~/query/local-user-db');
+const { bindLocalUserDb, closeLocalUserDb, notifyOwnerChange } = await import('~/query/local-user-db');
 const { onTabMessage, postTabUpdate, toTabKey } = await import('~/modules/common/blocknote/yjs-tab-channel');
 type TabMessage = Parameters<Parameters<typeof onTabMessage>[0]>[0];
 
-/** Binds `owner`'s database as sign-in does, and tells the owner listeners. */
+/** Binds `owner`'s database as sign-in does, and tells the owner listeners, as local-user-storage does once bound. */
 function signIn(owner: string | null) {
   if (owner) bindLocalUserDb(owner);
   else closeLocalUserDb();
-  for (const listener of ownerListeners) listener(owner);
+  notifyOwnerChange(owner);
 }
 
 /** Another tab of `owner`: a channel of its own on that user's name. */

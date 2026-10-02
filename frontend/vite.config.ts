@@ -74,10 +74,11 @@ const ON_DEMAND_APP =
   /[\\/]src[\\/]modules[\\/](common[\\/](blocknote|uploader)[\\/]|common[\\/]gleap-support|common[\\/]form-fields[\\/]blocknote|attachment[\\/](render[\\/]|offline[\\/]upload-service))/;
 
 /**
- * Plain Yjs modules that boot-time code reads: the field registry (the cache), and the document store and its tab
- * channel (teardown's flush, eviction, the sign-out list). The store loads Yjs itself only once an editor did.
+ * Plain modules under blocknote/ that boot-time code reads: the Yjs field registry (the cache), the document store, its
+ * tab channel and storage warning (teardown, eviction, the sign-out list), and the parked-edits check the app layout
+ * mounts. Each loads Yjs or BlockNote only on demand, so the boot path stays free of the editor chunk.
  */
-const YJS_REGISTRY = /[\\/]blocknote[\\/]yjs-(editor|store|tab-channel)\./;
+const YJS_REGISTRY = /[\\/]blocknote[\\/](yjs-editor|yjs-store|yjs-tab-channel|storage-warning|parked-notices-on-boot)\./;
 
 const frontendUrl = new URL(appConfig.frontendUrl);
 

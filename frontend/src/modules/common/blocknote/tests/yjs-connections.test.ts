@@ -168,9 +168,6 @@ vi.mock('~/modules/common/blocknote/unsaveable-notices', () => ({
   parkUnsaveable: (conn: { yDoc: unknown; unsynced: boolean }, scope: unknown, reason: string) =>
     parked.push({ reason, scope, doc: conn.yDoc, unsynced: conn.unsynced }),
 }));
-// No user database is bound here, so nothing is stored; the store's boot wiring stays out.
-vi.mock('~/query/local-user-storage', () => ({ subscribeOwnerChange: () => () => {} }));
-vi.mock('~/query/realtime/tab-coordinator', () => ({ isLeader: () => false, tabCoordinatorStore: { subscribe: () => () => {} } }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
 // The API never answers here, so the socket alone syncs; yjs-http.test.ts covers the HTTP link. Its hooks are kept, so
 // a test can give the routes' final answer.

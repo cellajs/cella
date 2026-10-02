@@ -160,6 +160,7 @@ const writer = {
   park: vi.fn(async () => {}),
   drop: vi.fn(async () => {}),
   failed: false,
+  pending: false,
 };
 
 let root: Root | undefined;
@@ -324,9 +325,11 @@ describe('yjs over HTTP: the ledger', () => {
     await advance(5_000);
     expect(pushYjsUpdate).toHaveBeenCalledOnce();
     expect(server.doc.getText('t').toString()).toBe(doc.getText('t').toString());
-    expect(writer.prove).toHaveBeenCalledExactlyOnceWith(
+    expect(writer.prove).toHaveBeenCalledWith(
       expect.objectContaining({ kind: 'handshake', applied: { upTo: 0, ids: new Set() }, vector: expect.any(Uint8Array) }),
     );
+    // Turning clean proves this tab's own rows too.
+    expect(writer.prove).toHaveBeenLastCalledWith({ kind: 'clean' });
     expect(state()?.unsynced).toBe(false);
   });
 

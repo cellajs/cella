@@ -119,12 +119,11 @@ vi.mock('~/query/query-client', () => ({
 vi.mock('~/modules/common/blocknote/query', () => ({
   yjsTokenKeys: { entity: (...key: unknown[]) => key },
   yjsTokenQueryOptions: (params: unknown) => ({ params }),
-  yjsTokenRefusal: () => null,
+  yjsTokenRefusal: (error: { status?: number } | null) => (error?.status === 404 ? 'deleted' : error?.status === 403 ? 'refused' : null),
 }));
 vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
 vi.mock('~/modules/ui/ui-store', () => ({ useUIStore: { getState: () => ({ offlineAccess: true }) } }));
-vi.mock('~/query/local-user-storage', () => ({ subscribeOwnerChange: () => () => {} }));
 vi.mock('~/query/realtime/tab-coordinator', () => ({ isLeader: () => false, tabCoordinatorStore: { subscribe: () => () => {} } }));
 vi.mock('~/modules/common/blocknote/yjs-store', async (importOriginal) => {
   const actual = await importOriginal<typeof import('~/modules/common/blocknote/yjs-store')>();
@@ -598,5 +597,35 @@ describe('yjs connection with the store: boot resume', () => {
     // No editor holds it: it goes after the grace period.
     await act(async () => vi.advanceTimersByTimeAsync(30_000));
     expect(provider.destroy).toHaveBeenCalledOnce();
+  });
+
+  it('parks the stored edits with a notice when the token is refused: the entity went, or edit rights did', async () => {
+    await seedStored('resume-2', 'never to be saved', { unsynced: true });
+    const record = (await db.yDocs.get(keyPath('resume-2')))!;
+    const opened = providers.length;
+    fetchQuery.mockRejectedValueOnce({ status: 403 });
+
+    await resumeConnection(record);
+    await settled();
+
+    expect(providers).toHaveLength(opened);
+    expect(await db.yDocs.get(keyPath('resume-2'))).toBeUndefined();
+    const [parked] = await db.unsaveableYDocs.toArray();
+    expect(parked).toMatchObject({ entityId: 'resume-2', reason: 'denied', generation: 'gen-1' });
+    const check = new Y.Doc();
+    Y.applyUpdate(check, parked.state);
+    expect(check.getText('t').toString()).toBe('never to be saved');
+  });
+
+  it('keeps the stored edits when the token fetch fails on the network: the next reconnect resumes them (positive control)', async () => {
+    await seedStored('resume-3', 'waiting', { unsynced: true });
+    const record = (await db.yDocs.get(keyPath('resume-3')))!;
+    fetchQuery.mockRejectedValueOnce(new TypeError('Failed to fetch'));
+
+    await resumeConnection(record);
+    await settled();
+
+    expect(await db.yDocs.get(keyPath('resume-3'))).toMatchObject({ unsynced: 1 });
+    expect(await db.unsaveableYDocs.count()).toBe(0);
   });
 });

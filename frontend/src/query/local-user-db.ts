@@ -98,6 +98,19 @@ let currentOwnerId: string | null = null;
 /** Listeners for a delete from another tab (its hard sign-out), run after this tab closed and unbound the database. */
 export const deletedElsewhereListeners = new Set<() => void>();
 
+const ownerListeners = new Set<(owner: string | null) => void>();
+
+/** Fires after the DB is rebound or closed, so callbacks see the live instance via `getLocalUserDb()`. Long-lived holders of a `liveQuery` must re-subscribe here. */
+export function subscribeOwnerChange(listener: (owner: string | null) => void): () => void {
+  ownerListeners.add(listener);
+  return () => ownerListeners.delete(listener);
+}
+
+/** Tells the owner listeners that another owner, or none, is bound; local-user-storage runs it once a rebind settled. */
+export function notifyOwnerChange(owner: string | null): void {
+  for (const listener of ownerListeners) listener(owner);
+}
+
 /** All tables share one version ladder: bump the single `version(n)` here, which means concurrent PRs changing it must serialize. */
 export class LocalUserDatabase extends Dexie {
   kv!: Dexie.Table<KvRecord, string>;
