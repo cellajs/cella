@@ -22,7 +22,8 @@ const statusLabel: Record<string, string> = {
   'not-applicable': 'Not Applicable',
 };
 
-const cell = (text: string) => text.replace(/\|/g, '\\|').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ');
+/** Text made safe for a Markdown table cell; backslashes first, so the escapes added after them stay intact. */
+const cell = (text: string) => text.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/\n/g, ' ');
 
 function row(r: LedgerRow) {
   const conformance = r.status ? `Web: ${statusLabel[r.status]}` : `**Open** (${r.open.join(', ')})`;
