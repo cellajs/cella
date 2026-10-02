@@ -342,3 +342,22 @@ describe('CollaborativeBlockNote with Yjs on', () => {
     expect(updateData).not.toHaveBeenCalled();
   });
 });
+
+describe('BlockNote onEditorReady', () => {
+  const renderEditor = (props: BlockNoteProps) =>
+    act(async () => root.render(<BlockNote id="doc" defaultValue={stored} updateData={() => {}} {...props} />));
+
+  it('fires once per editor instance, whatever callback a re-render passes', async () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    await renderEditor({ onEditorReady: first });
+    await renderEditor({ onEditorReady: second });
+
+    expect(first).toHaveBeenCalledOnce();
+    expect(second).not.toHaveBeenCalled();
+
+    // A new editor instance reports itself ready again.
+    await act(async () => root.render(<BlockNote key="rebuilt" id="doc" defaultValue={stored} updateData={() => {}} onEditorReady={second} />));
+    expect(second).toHaveBeenCalledOnce();
+  });
+});

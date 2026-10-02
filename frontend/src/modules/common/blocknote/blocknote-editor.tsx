@@ -70,7 +70,7 @@ type BlockNoteProps = CommonBlockNoteProps & {
   commitOnEveryChange?: boolean;
   collaboration?: CollaborationBundle;
   contentApiRef?: RefObject<BlockNoteContentApi | null>;
-  /** Fires once after the editor is created and mounted. */
+  /** Fires once per editor instance, after it is created and mounted. */
   onEditorReady?: () => void;
 };
 
@@ -178,9 +178,11 @@ function BlockNote({
     [editor],
   );
 
+  // Once per editor instance: a parent passing a new callback has no new editor.
+  const onEditorReadyRef = useLatestRef(onEditorReady);
   useEffect(() => {
-    onEditorReady?.();
-  }, [onEditorReady]);
+    onEditorReadyRef.current?.();
+  }, [editor, onEditorReadyRef]);
 
   useYjsUndoManagerFix(editor, collaborative);
 
