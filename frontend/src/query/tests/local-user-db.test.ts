@@ -67,6 +67,7 @@ it('opens a version 1 database as version 2 with every row intact, and the Yjs t
     syncedVector: null,
     unsynced: 0 as const,
     bytes: 3,
+    updateBytes: 0,
     updatedAt: 1,
     lastOpenedAt: 1,
   };

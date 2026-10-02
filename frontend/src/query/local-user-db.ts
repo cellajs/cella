@@ -58,6 +58,8 @@ export interface YDocRecord extends YDocKey {
   unsynced: 0 | 1;
   /** Base plus update rows, for the byte budget. */
   bytes: number;
+  /** The update rows' share of `bytes`; past a threshold, a trim folds them into the base. */
+  updateBytes: number;
   updatedAt: number;
   lastOpenedAt: number;
 }
