@@ -1,5 +1,5 @@
 import { z } from '@hono/zod-openapi';
-import { supportedOAuthProviders } from '#/modules/auth/identities-db';
+import { supportedOAuthProviders } from '#/modules/auth/oauth/identities-db';
 
 const oauthFlowTypes = ['auth', 'connect', 'invite', 'verify'] as const;
 export type OAuthFlowType = (typeof oauthFlowTypes)[number];

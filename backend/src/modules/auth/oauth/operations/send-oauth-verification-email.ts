@@ -1,19 +1,19 @@
-import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
-import { baseDb as db } from '#/db/db';
+import { baseDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { strategyLabels } from '#/modules/auth/general/helpers/strategy-labels';
-import { identitiesTable } from '#/modules/auth/identities-db';
+import { findIdentityById } from '#/modules/auth/oauth/identities-queries';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import { issueToken, type NewToken } from '#/modules/auth/tokens/token-lifecycle';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import type { PendingSignUp } from '#/modules/auth/tokens/tokens-queries';
-import { type EmailModel, emailsTable } from '#/modules/user/emails-db';
-import { userSelect } from '#/modules/user/helpers/select';
-import { usersTable } from '#/modules/user/user-db';
+import { findEmail, findUserById } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 import { oauthVerificationEmail } from '../../../../../emails';
+
+/** The mail goes out after the callback's transactions, on the base pool. */
+const dbCtx = { var: { db: baseDb } };
 
 type Props = { redirectPath?: string | null } & (
   | { userId: string; identityId: string }
@@ -39,16 +39,16 @@ const verificationFor = async (props: Props) => {
     return { token, name: signUp.name, lng: appConfig.defaultLanguage, providerName: readableProviderName(signUp.issuer), isNewUser: true };
   }
 
-  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, props.userId)).limit(1);
+  const user = await findUserById(dbCtx, { id: props.userId });
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user' });
 
-  const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.id, props.identityId));
+  const identity = await findIdentityById(dbCtx, { id: props.identityId });
   if (!identity) throw new AppError(404, 'not_found', 'warn');
 
   // The address under verification is the provider's, which may differ from the account's own.
   const email = identity.email ?? user.email;
 
-  const [emailInUse]: (EmailModel | undefined)[] = await db.select().from(emailsTable).where(eq(emailsTable.email, email));
+  const emailInUse = await findEmail(dbCtx, { email });
 
   if (emailInUse && identity.verified) {
     throw new AppError(409, 'email_exists', 'warn', { entityType: 'user' });
@@ -73,7 +73,7 @@ const verificationFor = async (props: Props) => {
 export const sendOAuthVerificationEmail = async (props: Props) => {
   const { token, name, lng, providerName, isNewUser } = await verificationFor(props);
 
-  const { token: tokenRecord, rawToken } = await issueToken({ var: { db } }, token);
+  const { token: tokenRecord, rawToken } = await issueToken(dbCtx, token);
 
   const verificationLink = tokenLinkUrl('oauth-verification', rawToken);
 
