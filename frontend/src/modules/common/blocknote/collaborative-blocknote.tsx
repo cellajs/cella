@@ -105,8 +105,6 @@ export function CollaborativeBlockNote({
           provider: yjsConn.provider,
           fragment: yjsConn.fragment,
           user: { name: user.name, color: userColorRef.current },
-          entityType,
-          entityId,
         }
       : undefined;
 

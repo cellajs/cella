@@ -28,7 +28,7 @@ vi.mock('shared', async (importOriginal) => {
   };
 });
 
-// The stream handler's outward boundaries; the Yjs editor registry and the cache ops stay real.
+// The stream handler's outward boundaries; the Yjs-owned field registry and the cache ops stay real.
 vi.mock('~/modules/seen/query', () => ({ invalidateUnseenCounts: vi.fn() }));
 vi.mock('./membership-ops', () => ({
   invalidateChannelList: vi.fn(),
@@ -48,7 +48,7 @@ const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
 const { sourceId } = await import('~/query/offline/stx-utils');
-const { isYjsEditorActive, registerActiveYjsEditor, unregisterActiveYjsEditor } = await import('~/modules/common/blocknote/yjs-editor');
+const { registerYjsOwnedFields } = await import('~/modules/common/blocknote/yjs-editor');
 const { patchCollaborativeDescription, persistStandaloneDescription, useDescriptionUpdate } = await import(
   '~/modules/common/blocknote/use-description-update'
 );
@@ -66,6 +66,8 @@ type TaskRow = {
   projectId: string;
   name: string;
   description: string | null;
+  summary?: string;
+  keywords?: string;
   updatedAt?: string;
   stx: { mutationId: string; sourceId: string; fieldTimestamps: Record<string, string> };
 };
@@ -84,6 +86,9 @@ const row = (description: string | null, overrides: Partial<TaskRow> = {}): Task
   stx: { mutationId: 'm-1', sourceId: 'other-tab', fieldTimestamps: { description: 'T1' } },
   ...overrides,
 });
+
+/** The stx of a server write with these field timestamps. */
+const written = (fieldTimestamps: Record<string, string>) => ({ mutationId: 'm-2', sourceId: 'other-tab', fieldTimestamps });
 
 const listOf = (item: TaskRow) => ({ items: [item], total: 1 });
 const detail = () => queryClient.getQueryData<TaskRow>(detailKey);
@@ -127,23 +132,17 @@ function buildPendingUpdate(id: string) {
   );
 }
 
-const registered: string[] = [];
-const registerEditor = (id = 'task-1') => {
-  registered.push(id);
-  registerActiveYjsEditor(TASK_PRODUCT, id);
-};
-
 afterEach(() => {
-  for (const id of registered.splice(0)) unregisterActiveYjsEditor(TASK_PRODUCT, id);
+  registerYjsOwnedFields(TASK_PRODUCT, ['description']);
   resetFetchPrioritizer();
   queryClient.clear();
   vi.useRealTimers();
 });
 
-describe('server rows and the description without a registered editor', () => {
+describe('server rows and the description', () => {
   it('lands the server description in the detail and in every list holding the row', async () => {
     seedCaches(row('local'));
-    serverReturns(row('server', { stx: { mutationId: 'm-2', sourceId: 'other-tab', fieldTimestamps: { description: 'T2' } } }));
+    serverReturns(row('server', { stx: written({ description: 'T2' }) }));
 
     await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
 
@@ -155,7 +154,7 @@ describe('server rows and the description without a registered editor', () => {
 
   it('writes a detail entry for the row even when none was cached', async () => {
     seedCaches(row('local'), { withDetail: false });
-    serverReturns(row('server'));
+    serverReturns(row('server', { stx: written({ description: 'T2' }) }));
 
     await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
 
@@ -168,7 +167,7 @@ describe('server rows while a mutation for the row is pending', () => {
   it('skips the remote apply on the seq path, so caches keep the optimistic description', async () => {
     seedCaches(row('optimistic'));
     buildPendingUpdate('task-1');
-    serverReturns(row('server'));
+    serverReturns(row('server', { stx: written({ description: 'T2' }) }));
 
     const { status } = await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
 
@@ -187,6 +186,133 @@ describe('server rows while a mutation for the row is pending', () => {
 
     expect(queryFn).not.toHaveBeenCalled();
     expect(detail()?.description).toBe('optimistic');
+  });
+});
+
+describe('Yjs-owned fields on a server row', () => {
+  // The relay has not saved yet: the server row holds the older body under the seeded row's stamp.
+  const staleRead = () => row('older');
+
+  it('keeps a collaborative patch over a read carrying the cached stamp, in the detail and every list', async () => {
+    seedCaches(row('older'));
+    patchCollaborativeDescription(TASK_PRODUCT, row('older'), 'newer');
+    serverReturns(staleRead());
+
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
+
+    expect(detail()?.description).toBe('newer');
+    expect(homeRow()?.description).toBe('newer');
+    expect(filteredRow()?.description).toBe('newer');
+  });
+
+  it('takes the description from a server write of it, which carries a new stamp', async () => {
+    seedCaches(row('older'));
+    patchCollaborativeDescription(TASK_PRODUCT, row('older'), 'newer');
+    serverReturns(row('saved', { stx: written({ description: 'T2' }) }));
+
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
+
+    for (const cached of [detail(), homeRow(), filteredRow()]) {
+      expect(cached).toMatchObject({ description: 'saved', stx: { fieldTimestamps: { description: 'T2' } } });
+    }
+  });
+
+  it('applies an incoming row without a stamp, even over a cached row without one', async () => {
+    seedCaches(row('local', { stx: written({}) }));
+    serverReturns(row('server', { stx: written({}) }));
+
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
+
+    expect(detail()?.description).toBe('server');
+    expect(homeRow()?.description).toBe('server');
+  });
+
+  it('keeps the patch in the lists and builds the new detail from a list copy when no detail is cached', async () => {
+    seedCaches(row('older'), { withDetail: false });
+    patchCollaborativeDescription(TASK_PRODUCT, row('older'), 'newer');
+    serverReturns(staleRead());
+
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
+
+    expect(homeRow()?.description).toBe('newer');
+    expect(filteredRow()?.description).toBe('newer');
+    expect(detail()?.description).toBe('newer');
+  });
+
+  it('keeps each cached copy its own description, while stx and other fields take the server values', async () => {
+    seedCaches(row('list body'), { withDetail: false });
+    queryClient.setQueryData(detailKey, row('detail body'));
+    const serverStx = written({ description: 'T1', name: 'T2' });
+    serverReturns(row('server', { name: 'Renamed', stx: serverStx }));
+
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
+
+    expect(detail()).toMatchObject({ description: 'detail body', name: 'Renamed', stx: serverStx });
+    expect(homeRow()).toMatchObject({ description: 'list body', name: 'Renamed', stx: serverStx });
+    expect(filteredRow()).toMatchObject({ description: 'list body', name: 'Renamed', stx: serverStx });
+  });
+
+  it('guards the seq-less fetch, which writes the detail before applying', async () => {
+    seedCaches(row('older'));
+    patchCollaborativeDescription(TASK_PRODUCT, row('older'), 'newer');
+    const queryFn = detailFetchReturns(staleRead());
+
+    await fetchEntityAndUpdateList('task-1', keys, 'update', 'org-1', 'tenant-1', TASK_PRODUCT);
+
+    expect(queryFn).toHaveBeenCalledOnce();
+    expect(detail()?.description).toBe('newer');
+    expect(homeRow()?.description).toBe('newer');
+    expect(filteredRow()?.description).toBe('newer');
+  });
+
+  it('keeps a patch made while the seq-less fetch was in flight', async () => {
+    seedCaches(row('older'));
+    queryClient.setQueryDefaults(keys.detail.base, {
+      queryFn: async () => {
+        patchCollaborativeDescription(TASK_PRODUCT, row('older'), 'typed meanwhile');
+        return staleRead();
+      },
+    });
+
+    await fetchEntityAndUpdateList('task-1', keys, 'update', 'org-1', 'tenant-1', TASK_PRODUCT);
+
+    expect(detail()?.description).toBe('typed meanwhile');
+    expect(homeRow()?.description).toBe('typed meanwhile');
+  });
+
+  it('guards a seq-less fetch of a row no list holds by the detail cached before the fetch', async () => {
+    queryClient.setQueryData(detailKey, row('newer'));
+    detailFetchReturns(staleRead());
+
+    await fetchEntityAndUpdateList('task-1', keys, 'update', 'org-1', 'tenant-1', TASK_PRODUCT);
+
+    expect(detail()?.description).toBe('newer');
+  });
+
+  it('compares a field with a stamp of its own by that stamp', async () => {
+    registerYjsOwnedFields(TASK_PRODUCT, ['description', 'summary']);
+    seedCaches(row('patched', { summary: 'patched summary', stx: written({ description: 'T1', summary: 'S1' }) }));
+    serverReturns(row('server', { summary: 'server summary', stx: written({ description: 'T2', summary: 'S1' }) }));
+
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
+
+    for (const cached of [detail(), homeRow(), filteredRow()]) {
+      expect(cached).toMatchObject({ description: 'server', summary: 'patched summary' });
+    }
+  });
+
+  it('guards a derived field by the description stamp', async () => {
+    registerYjsOwnedFields(TASK_PRODUCT, ['description', 'keywords']);
+    seedCaches(row('patched', { keywords: 'patched words' }));
+    serverReturns(row('older', { keywords: 'older words' }));
+
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
+    expect(homeRow()).toMatchObject({ description: 'patched', keywords: 'patched words' });
+
+    serverReturns(row('saved', { keywords: 'saved words', stx: written({ description: 'T2' }) }));
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '6,6', keys);
+    expect(homeRow()).toMatchObject({ description: 'saved', keywords: 'saved words' });
+    expect(detail()).toMatchObject({ description: 'saved', keywords: 'saved words' });
   });
 });
 
@@ -316,105 +442,5 @@ describe('useDescriptionUpdate', () => {
     await updateData('standalone', false);
     expect(update).toHaveBeenCalledExactlyOnceWith({ description: 'standalone' });
     expect(homeRow()?.description).toBe('collaborative');
-  });
-});
-
-describe('behaviour the description sync redesign changes', () => {
-  describe('suppression while a Yjs editor is registered', () => {
-    it('copies the cached detail description into the detail and the lists, while stx and other fields take the server values', async () => {
-      registerEditor();
-      seedCaches(row('list body'), { withDetail: false });
-      queryClient.setQueryData(detailKey, row('detail body'));
-      const serverStx = { mutationId: 'm-2', sourceId: 'other-tab', fieldTimestamps: { description: 'T2', name: 'T2' } };
-      serverReturns(row('server', { name: 'Renamed', stx: serverStx }));
-
-      await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
-
-      for (const cached of [detail(), homeRow(), filteredRow()]) {
-        expect(cached).toMatchObject({ description: 'detail body', name: 'Renamed', stx: serverStx });
-      }
-    });
-
-    it('lands the server description everywhere when no detail is cached', async () => {
-      registerEditor();
-      seedCaches(row('local'), { withDetail: false });
-      serverReturns(row('server'));
-
-      await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
-
-      expect(homeRow()?.description).toBe('server');
-      expect(filteredRow()?.description).toBe('server');
-      expect(detail()?.description).toBe('server');
-    });
-
-    it('lifts suppression for every registration of the row once one of them unregisters', async () => {
-      registerEditor();
-      registerEditor();
-      unregisterActiveYjsEditor(TASK_PRODUCT, 'task-1');
-      seedCaches(row('local'));
-      serverReturns(row('server'));
-
-      expect(isYjsEditorActive(TASK_PRODUCT, 'task-1')).toBe(false);
-      await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
-
-      expect(detail()?.description).toBe('server');
-      expect(homeRow()?.description).toBe('server');
-    });
-
-    it('lands the server description through the seq-less fetch, which writes the detail before suppression reads it', async () => {
-      registerEditor();
-      seedCaches(row('local'));
-      const queryFn = detailFetchReturns(row('server'));
-
-      await fetchEntityAndUpdateList('task-1', keys, 'update', 'org-1', 'tenant-1', TASK_PRODUCT);
-
-      expect(queryFn).toHaveBeenCalledOnce();
-      expect(detail()?.description).toBe('server');
-      expect(homeRow()?.description).toBe('server');
-      expect(filteredRow()?.description).toBe('server');
-    });
-  });
-
-  describe('a collaborative patch followed by a stale full-row read', () => {
-    // The relay has not persisted yet: the server row holds the older body under the seeded row's field timestamp.
-    const staleRead = () => row('older');
-
-    it('lets the older description overwrite the patch when no editor is registered', async () => {
-      seedCaches(row('older'));
-      patchCollaborativeDescription(TASK_PRODUCT, row('older'), 'newer');
-      expect(homeRow()?.description).toBe('newer');
-      serverReturns(staleRead());
-
-      await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
-
-      expect(detail()?.description).toBe('older');
-      expect(homeRow()?.description).toBe('older');
-      expect(filteredRow()?.description).toBe('older');
-    });
-
-    it('lets the older description overwrite the patched lists when an editor is registered but no detail is cached', async () => {
-      registerEditor();
-      seedCaches(row('older'), { withDetail: false });
-      patchCollaborativeDescription(TASK_PRODUCT, row('older'), 'newer');
-      serverReturns(staleRead());
-
-      await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
-
-      expect(homeRow()?.description).toBe('older');
-      expect(filteredRow()?.description).toBe('older');
-    });
-
-    it('keeps the patch when an editor is registered and the detail is cached', async () => {
-      registerEditor();
-      seedCaches(row('older'));
-      patchCollaborativeDescription(TASK_PRODUCT, row('older'), 'newer');
-      serverReturns(staleRead());
-
-      await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
-
-      expect(detail()?.description).toBe('newer');
-      expect(homeRow()?.description).toBe('newer');
-      expect(filteredRow()?.description).toBe('newer');
-    });
   });
 });

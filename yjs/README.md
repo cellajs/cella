@@ -115,7 +115,7 @@ Clients need no unload handlers or final flush: an update is durable before peer
 | Access revoked | The socket closes when its token expires and cannot reconnect. Materialization credits the newest editor who may still update the entity; when none may, it is refused and retried, and the log stays until a write succeeds. |
 | Entity deleted | Its deletion retires the document; a session that outlives it gets `410` from materialization and deletes the rows at cleanup or by the sweep. Cleanup does not resurrect the entity. |
 | Description written outside the relay | The write retires the document. Open sessions end with `1013` within a minute, sooner when someone types; clients reconnect, are told the new generation, drop their document, and show the written description, with a notice when they held edits. Edits logged after the write are discarded. |
-| SSE arrives during editing | Active editors suppress Yjs-owned fields, so an older materialized snapshot cannot overwrite the local document |
+| SSE arrives during editing | The cache takes a Yjs-owned field only from a server write of it, which carries a new `stx.fieldTimestamps` stamp. A read that lags the relay keeps the cached value, in every view |
 
 ## Operational constraints
 

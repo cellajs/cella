@@ -201,6 +201,8 @@ The first tab to acquire the Web Lock becomes leader, owns SSE, and forwards not
 
 The template collaborates on attachment descriptions through the Yjs relay (`services.yjs.enabled`); an app adds a product by registering a `yjsMaterializer`. Relay, update log, compaction and materialization semantics: [Yjs worker](../yjs/README.md).
 
+The cache takes a Yjs-owned field, the description or a column derived from it (`registerYjsOwnedFields`), only from a server write of it. When a synced row carries the cached copy's `stx.fieldTimestamps` stamp for the field, the cached value stays, so a read that lags the relay cannot undo a collaborative patch. A derived column has no stamp of its own and follows the description's.
+
 ## Reference
 
 ### SSE wire

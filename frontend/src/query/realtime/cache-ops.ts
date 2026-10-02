@@ -1,7 +1,6 @@
-import type { QueryKey } from '@tanstack/react-query';
 import type { ProductEntityType } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
-import { getYjsOwnedFields, isYjsEditorActive } from '~/modules/common/blocknote/yjs-editor';
+import { getYjsOwnedFields } from '~/modules/common/blocknote/yjs-editor';
 import { resolveHomeChannelId, spliceEntityIntoListCaches } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove } from '~/query/basic/cache-mutations';
 import {
@@ -42,23 +41,25 @@ function isSoftDeleted(entity: ItemData): boolean {
   return typeof deletedAt === 'string' && deletedAt.length > 0;
 }
 
-/** While a Yjs editor is active, restores Yjs-owned fields from cache so a stale server read cannot overwrite local Y.Doc state. */
-function stripYjsOwnedFields(entityType: string, entity: ItemData, detailKey: QueryKey): ItemData {
-  // SSE payloads carry entityType as a runtime string; isActive misses are harmless.
-  const type = entityType as ProductEntityType;
-  if (!isYjsEditorActive(type, entity.id)) return entity;
+/** The stamp a Yjs-owned field is compared by: its own, else the description's, which derived columns follow. */
+function yjsFieldStamp(row: ItemData, field: string): string | undefined {
+  const { stx } = asRecord(row) as { stx?: { fieldTimestamps?: Record<string, string> } };
+  return stx?.fieldTimestamps?.[field] ?? stx?.fieldTimestamps?.description;
+}
 
-  const existing = queryClient.getQueryData<ItemData>(detailKey);
-  if (!existing) return entity;
-
-  const filtered = { ...entity };
-  // ItemData has no index signature, so cast once for the dynamic field copy.
-  const target: Record<string, unknown> = filtered as never;
-  const source: Record<string, unknown> = existing as never;
-  for (const field of getYjsOwnedFields(type)) {
-    if (field in source) target[field] = source[field];
+/**
+ * The cache takes a Yjs-owned field only from a server write of it, which stamps the field anew. An incoming row that carries
+ * the cached copy's stamp keeps the cached value, so a read that lags the relay cannot overwrite a collaborative patch.
+ */
+function guardYjsOwnedFields<T extends ItemData>(entityType: string, incoming: T, cached: ItemData | undefined): T {
+  if (!cached) return incoming;
+  const guarded = { ...incoming };
+  // SSE payloads carry entityType as a runtime string; an unregistered type gets the default fields.
+  for (const field of getYjsOwnedFields(entityType as ProductEntityType)) {
+    const stamp = yjsFieldStamp(incoming, field);
+    if (stamp !== undefined && stamp === yjsFieldStamp(cached, field) && field in cached) asRecord(guarded)[field] = asRecord(cached)[field];
   }
-  return filtered;
+  return guarded;
 }
 
 /** Patches only cached STX metadata for echo-prevented stream events, in place so no React Query observer is notified and optimistic fields survive. */
@@ -154,10 +155,17 @@ function invalidateFilteredLists(entityType: string, orgListKey: readonly unknow
 }
 
 /**
- * Applies server truth to detail and list caches: tombstones remove, new rows enter only home lists.
+ * Applies server truth to detail and list caches: tombstones remove, new rows enter only home lists. Each cached list row
+ * guards its Yjs-owned fields against itself; the detail and rows new to a list guard against `reference`.
  * Returns true when every list lacked the row, so the caller can invalidate opaque filtered lists once.
  */
-function applyServerEntity(entityType: string, entity: ItemData, keys: EntityQueryKeys, organizationId: string | null): boolean {
+function applyServerEntity(
+  entityType: string,
+  entity: ItemData,
+  keys: EntityQueryKeys,
+  organizationId: string | null,
+  reference: ItemData | undefined,
+): boolean {
   if (isSoftDeleted(entity)) {
     removeEntity(entityType, entity.id, organizationId ?? undefined);
     return false;
@@ -169,18 +177,21 @@ function applyServerEntity(entityType: string, entity: ItemData, keys: EntityQue
     return false;
   }
 
-  const filtered = stripYjsOwnedFields(entityType, entity, keys.detail.byId(entity.id));
-  const routedEntity: RoutableItemData = { ...filtered, entityType, organizationId: organizationId ?? undefined };
+  const routedEntity: RoutableItemData = { ...entity, entityType, organizationId: organizationId ?? undefined };
+  const guarded = guardYjsOwnedFields(entityType, entity, reference);
 
   queryClient.setQueryData(keys.detail.byId(entity.id), (old: ItemData | undefined) => {
-    if (!old) return filtered;
-    return { ...old, ...filtered };
+    if (!old) return guarded;
+    return { ...old, ...guarded };
   });
 
   const homeChannelId = resolveHomeChannelId(entityType, routedEntity);
 
   // Shared canonical-home policy: cached rows update in place, new rows insert only into the canonical home list, a row whose parent channel changed is removed.
-  const { seen, spliced, sawFilteredList } = spliceEntityIntoListCaches(queryClient, routedEntity, { removeOnParentChannelChange: true });
+  const { seen, spliced, sawFilteredList } = spliceEntityIntoListCaches(queryClient, routedEntity, {
+    removeOnParentChannelChange: true,
+    rowFor: (cachedItem) => guardYjsOwnedFields(entityType, routedEntity, cachedItem ?? reference),
+  });
 
   // A new row no home list spliced and no filtered list refetches stays invisible: a key-shape bug, canonical data cached outside keys.list.home.
   if (organizationId && homeChannelId && !seen && !spliced && !sawFilteredList) {
@@ -208,6 +219,9 @@ export async function fetchEntityAndUpdateList(
     return;
   }
 
+  // Read before the fetch, which writes the detail: the cached row is the only record of which embedded rows this host referenced.
+  const cached = entityType ? findInCache<ItemData>(entityType, entityId) : undefined;
+
   try {
     const entity = await queryClient.fetchQuery<ItemData>({
       queryKey: keys.detail.byId(entityId),
@@ -216,11 +230,12 @@ export async function fetchEntityAndUpdateList(
     });
     if (!entity) return;
 
-    // Read before applying: the cached row is the only record of which embedded rows this host referenced.
     const touches: EmbeddingTouches = new Map();
-    if (entityType) collectEmbeddingTouches(entityType, findInCache<ItemData>(entityType, entityId), entity, touches);
+    if (entityType) collectEmbeddingTouches(entityType, cached, entity, touches);
 
-    applyServerEntity(entityType ?? '', entity, keys, organizationId ?? null);
+    // The fetch replaced the detail, so its guard compares against a list copy, which a patch made meanwhile also reached, else the row read before.
+    const listCopy = entityType ? findInCache<ItemData>(entityType, (item) => item.id === entityId) : undefined;
+    applyServerEntity(entityType ?? '', entity, keys, organizationId ?? null, listCopy ?? cached);
     if (organizationId) invalidateEmbeddedUsage(touches, organizationId);
     // The notification says create: active filtered lists refetch to place the new row.
     if (action === 'create' && organizationId) {
@@ -277,8 +292,9 @@ export async function fetchRangeAndPatch(
     const embeddingTouches: EmbeddingTouches = new Map();
     for (const entity of items) {
       // Read before applying: the cached row is the only record of which embedded rows this host referenced.
-      collectEmbeddingTouches(entityType, findInCache<ItemData>(entityType, entity.id), entity, embeddingTouches);
-      if (applyServerEntity(entityType, entity, keys, organizationId)) newRows.push(entity);
+      const cached = findInCache<ItemData>(entityType, entity.id);
+      collectEmbeddingTouches(entityType, cached, entity, embeddingTouches);
+      if (applyServerEntity(entityType, entity, keys, organizationId, cached)) newRows.push(entity);
     }
 
     // Filtered lists filter on the server, so one invalidation per flush lets the active ones refetch and place new rows.

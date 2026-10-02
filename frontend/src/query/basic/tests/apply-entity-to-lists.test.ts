@@ -22,7 +22,6 @@ vi.mock('shared', async (importOriginal) => {
     isProduct: hierarchy.isProduct,
   };
 });
-vi.mock('~/query/offline', () => ({ sourceId: 'test-source' }));
 
 // The change* helpers write through the module-singleton queryClient, so tests use that instance.
 const { queryClient } = await import('~/query/query-client');

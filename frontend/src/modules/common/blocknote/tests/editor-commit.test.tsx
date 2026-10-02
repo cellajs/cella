@@ -8,7 +8,7 @@ import type { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import type { BlockNoteContentApi } from '~/modules/common/blocknote/blocknote-editor';
 
-// The editor, its commit paths and the Yjs editor registry are real; only the host's outward boundaries are inert.
+// The editor and its commit paths are real; only the host's outward boundaries are inert.
 vi.mock('~/query/query-client', async () => {
   const { QueryClient } = await import('@tanstack/react-query');
   return { queryClient: new QueryClient() };
@@ -26,7 +26,6 @@ const { customSchema } = await import('~/modules/common/blocknote/blocknote-conf
 const { checkedExtension } = await import('~/modules/common/blocknote/custom-elements/checklist/checklist-extension');
 const { BlockNote } = await import('~/modules/common/blocknote/blocknote-editor');
 const { CollaborativeBlockNote } = await import('~/modules/common/blocknote/collaborative-blocknote');
-const { isYjsEditorActive } = await import('~/modules/common/blocknote/yjs-editor');
 const { setRouter } = await import('~/routes/-router-instance');
 
 type CustomPartialBlock = PartialBlock<typeof customSchema.blockSchema, typeof customSchema.inlineContentSchema, typeof customSchema.styleSchema>;
@@ -80,13 +79,7 @@ const unmount = () => act(async () => root.unmount());
 /** A real edit through the editor: toggles the checklist item's checkbox. */
 const edit = () => act(() => expect(contentApi.current?.toggleChecklist('box-1')).toBe(true));
 
-const bundle = (fragment: Y.XmlFragment, entityId = 'attachment-1') => ({
-  provider: {} as WebsocketProvider,
-  fragment,
-  user: { name: 'Editor', color: '#000000' },
-  entityType: 'attachment' as const,
-  entityId,
-});
+const bundle = (fragment: Y.XmlFragment) => ({ provider: {} as WebsocketProvider, fragment, user: { name: 'Editor', color: '#000000' } });
 const emptyFragment = () => new Y.Doc().getXmlFragment('document-store');
 const seededFragment = () => blocksToYXmlFragment(headless, checklist('todo') as never, emptyFragment());
 
@@ -272,14 +265,6 @@ describe('behaviour the description sync redesign changes', () => {
 
     expect(updateData).toHaveBeenCalledOnce();
     expect(updateData.mock.calls[0][0]).not.toBe(unnormalized);
-  });
-
-  it('registers the entity as an active Yjs editor while a collaborative editor is mounted', async () => {
-    await act(async () => root.render(<BlockNote id="doc" updateData={() => {}} collaboration={bundle(emptyFragment(), 'att-9')} />));
-
-    expect(isYjsEditorActive('attachment', 'att-9')).toBe(true);
-    await unmount();
-    expect(isYjsEditorActive('attachment', 'att-9')).toBe(false);
   });
 
   it('compares the navigation write against the description it mounted with', async () => {

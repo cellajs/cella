@@ -30,10 +30,6 @@ vi.mock('shared', async (importOriginal) => {
   };
 });
 
-vi.mock('~/modules/common/blocknote/yjs-editor', () => ({ isYjsEditorActive: () => false, getYjsOwnedFields: () => [] }));
-
-vi.mock('~/query/offline', () => ({ sourceId: 'test-source' }));
-
 // Real propagation, observed: the deferral tests assert when it runs relative to the delta fetch.
 const propagateEmbeddingsSpy = vi.fn();
 vi.mock('./propagation', async (importOriginal) => {

@@ -8,7 +8,7 @@ import type { FilePanelProps } from '@blocknote/react';
 import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type MouseEventHandler, type RefObject, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
-import { appConfig, type ProductEntityType } from 'shared';
+import { appConfig } from 'shared';
 import { type DescriptionBlock, findSummarySource } from 'shared/utils/derive-description-core';
 import type { WebsocketProvider } from 'y-websocket';
 import type { XmlFragment } from 'yjs';
@@ -30,7 +30,6 @@ import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
 import { useEditorKeyboard } from '~/modules/common/blocknote/hooks/use-editor-keyboard';
 import { useSmartBlur } from '~/modules/common/blocknote/hooks/use-smart-blur';
 import { useUntrustedMediaWarning } from '~/modules/common/blocknote/hooks/use-untrusted-media-warning';
-import { useYjsSseSuppression } from '~/modules/common/blocknote/hooks/use-yjs-sse-suppression';
 import { useYjsUndoManagerFix } from '~/modules/common/blocknote/hooks/use-yjs-undo-manager-fix';
 import type {
   CommonBlockNoteProps,
@@ -44,13 +43,11 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import { getRouter } from '~/routes/-router-instance';
 import { cn } from '~/utils/cn';
 
-/** Yjs connection plus entity identity for SSE suppression; passing this bundle switches the editor into collaborative mode. */
+/** Yjs connection and cursor identity; passing this bundle switches the editor into collaborative mode. */
 export interface CollaborationBundle {
   provider: WebsocketProvider;
   fragment: XmlFragment;
   user: { name: string; color: string };
-  entityType: ProductEntityType;
-  entityId: string;
 }
 
 /** Imperative handle for driving a warm/live editor instance from a parent (collaborative or standalone). */
@@ -185,8 +182,6 @@ function BlockNote({
   }, [onEditorReady]);
 
   useYjsUndoManagerFix(editor, collaborative);
-
-  useYjsSseSuppression(collaboration ? { entityType: collaboration.entityType, entityId: collaboration.entityId } : null);
 
   const checkUntrustedMedia = useUntrustedMediaWarning({ organizationId: baseFilePanelProps?.organizationId });
 
