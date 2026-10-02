@@ -120,6 +120,10 @@
             "name": "streamConnect",
             "description": "Live update stream connections per user: 240 per hour, then blocked for 5 minutes"
           },
+          "yjsHttpLimiter": {
+            "name": "yjsHttp",
+            "description": "Yjs pulls and pushes per user: 7200 per hour, then blocked for 1 minute"
+          },
           "pointsLimiter": {
             "name": "points",
             "description": "API points per actor in a tenant: 1 per request, 1 per item on bulk routes, up to the tenant hourly budget"
@@ -315,7 +319,7 @@
     },
     {
       "name": "yjs",
-      "description": "Endpoints for Yjs collaborative editing support: a short-lived token per entity for the Yjs relay\n    worker. The relay's materialize route, which writes a compacted collaborative document to its entity, is served\n    on the internal listener only.",
+      "description": "Endpoints for Yjs collaborative editing support: a short-lived token per entity for the Yjs relay\n    worker, and pull and push routes that sync a document through the API while the relay is out of reach. The relay's\n    materialize route, which writes a compacted collaborative document to its entity, is served on the internal\n    listener only.",
       "parent": "cella",
       "kind": "module"
     }
@@ -13708,6 +13712,229 @@
                     }
                   },
                   "required": ["token"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/{organizationId}/yjs/pull": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "pullYjsDocument",
+        "tags": ["yjs", "cella"],
+        "summary": "Pull Yjs document",
+        "description": "Returns what the caller's copy of one product entity's collaborative document lacks, for a client that cannot reach the Yjs relay: the document's generation, an update holding what the caller's state vector lacks, and the server's state vector. A document never opened is seeded from the stored description first, as the relay seeds it. The caller must be allowed to update the entity, as for a Yjs token. A POST, since a state vector can outgrow a URL. Costs no API points.",
+        "x-enabled-by": {
+          "service": "yjs"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["yjsHttpLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "entityType": {
+                    "type": "string",
+                    "enum": ["attachment"]
+                  },
+                  "entityId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "stateVector": {
+                    "type": "string",
+                    "maxLength": 262144,
+                    "format": "base64url",
+                    "description": "The caller's state vector: the answer carries what it lacks"
+                  }
+                },
+                "required": ["entityType", "entityId", "stateVector"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Document diff",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "generation": {
+                      "type": "string",
+                      "format": "uuid",
+                      "description": "The document's generation: another one than the caller holds means the server reseeded it"
+                    },
+                    "update": {
+                      "type": "string",
+                      "format": "base64url",
+                      "description": "What the caller's state vector lacks, as one Yjs update"
+                    },
+                    "stateVector": {
+                      "type": "string",
+                      "format": "base64url",
+                      "description": "The server's state vector, so the caller can post what the server lacks"
+                    }
+                  },
+                  "required": ["generation", "update", "stateVector"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/{tenantId}/{organizationId}/yjs/push": {
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "pushYjsUpdate",
+        "tags": ["yjs", "cella"],
+        "summary": "Push Yjs update",
+        "description": "Appends one Yjs update to a product entity's collaborative document, for a client that cannot reach the Yjs relay. The answer follows the commit, so a 200 means the server holds the update; the relay passes it to live sessions and folds it into the document. An update made in another generation than the document's answers 409 with the current one. At most 512 KB of update per request, base64url-encoded. The caller must be allowed to update the entity, as for a Yjs token. Costs no API points.",
+        "x-enabled-by": {
+          "service": "yjs"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
+        "x-rate-limiter": ["yjsHttpLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "organizationId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "entityType": {
+                    "type": "string",
+                    "enum": ["attachment"]
+                  },
+                  "entityId": {
+                    "type": "string",
+                    "maxLength": 50
+                  },
+                  "generation": {
+                    "type": "string",
+                    "format": "uuid",
+                    "description": "The generation the update was made in"
+                  },
+                  "update": {
+                    "type": "string",
+                    "maxLength": 699051,
+                    "format": "base64url",
+                    "description": "One Yjs update of at most 512 KB"
+                  }
+                },
+                "required": ["entityType", "entityId", "generation", "update"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Saved",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "enum": ["appended", "empty"],
+                      "description": "`appended` once the update is logged; `empty` when it carried nothing the document lacked"
+                    }
+                  },
+                  "required": ["status"]
                 }
               }
             }

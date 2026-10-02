@@ -2394,5 +2394,53 @@
       "owner": ["cella"]
     },
     "enabledBy": { "service": "yjs" }
+  },
+  {
+    "id": "pullYjsDocument",
+    "hash": "tag/yjs/POST/{tenantId}/{organizationId}/yjs/pull",
+    "method": "post",
+    "path": "/{tenantId}/{organizationId}/yjs/pull",
+    "tags": ["yjs"],
+    "summary": "Pull Yjs document",
+    "description": "Returns what the caller's copy of one product entity's collaborative document lacks, for a client that cannot reach the Yjs relay: the document's generation, an update holding what the caller's state vector lacks, and the server's state vector. A document never opened is seeded from the stored description first, as the relay seeds it. The caller must be allowed to update the entity, as for a Yjs token. A POST, since a state vector can outgrow a URL. Costs no API points.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["yjsHttpLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["yjs"],
+      "owner": ["cella"]
+    },
+    "enabledBy": { "service": "yjs" }
+  },
+  {
+    "id": "pushYjsUpdate",
+    "hash": "tag/yjs/POST/{tenantId}/{organizationId}/yjs/push",
+    "method": "post",
+    "path": "/{tenantId}/{organizationId}/yjs/push",
+    "tags": ["yjs"],
+    "summary": "Push Yjs update",
+    "description": "Appends one Yjs update to a product entity's collaborative document, for a client that cannot reach the Yjs relay. The answer follows the commit, so a 200 means the server holds the update; the relay passes it to live sessions and folds it into the document. An update made in another generation than the document's answers 409 with the current one. At most 512 KB of update per request, base64url-encoded. The caller must be allowed to update the entity, as for a Yjs token. Costs no API points.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["yjsHttpLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["yjs"],
+      "owner": ["cella"]
+    },
+    "enabledBy": { "service": "yjs" }
   }
 ]
