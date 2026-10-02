@@ -7,6 +7,7 @@ import { findYjsDocument } from '#/modules/yjs/yjs-queries';
 import type { DocKey, DocScope } from '../constants';
 import { db, type Tx, withRlsTx } from './db';
 import { lockEntityDescription } from './entity-content';
+import { logNotifier } from './log-notifier';
 
 /**
  * Every read and write runs as the system (no user context) under the document's own tenant, the one its entity row
@@ -55,10 +56,11 @@ export async function seedDocument(scope: DocScope, toSeed: (description: string
 
 /**
  * Logs a client's update through the log's one way in (`appendYjsUpdate`), under its sender, whom materialize may
- * credit, and notifies every relay at commit. Durable before the update is broadcast: one insert, so concurrent appends
- * never overwrite each other. The update extends one `generation` and is appended only while that document row exists,
- * held under a key-share lock until the insert commits. `onLogged` gets the row id before the commit, so the session
- * counts the row as relayed before its own notification can arrive.
+ * credit. Durable before the update is broadcast: one insert, so concurrent appends never overwrite each other. The
+ * update extends one `generation` and is appended only while that document row exists, held under a key-share lock
+ * until the insert commits. The append notifies nothing in its transaction: once it committed, the relay's notifier
+ * announces the row to every relay with the others of its batch. `onLogged` gets the row id before the commit, so the
+ * session counts the row as relayed before that notice arrives.
  */
 export async function appendUpdate(
   scope: DocScope,
@@ -67,11 +69,13 @@ export async function appendUpdate(
   generation: string,
   onLogged?: (id: number) => void,
 ): Promise<AppendResult> {
-  return asSystem(scope, async (tx) => {
-    const result = await appendYjsUpdate({ var: { db: tx } }, { doc: scope, update: payload, userId: userId || null, generation });
-    if (result.status === 'appended') onLogged?.(result.id);
-    return result;
+  const result = await asSystem(scope, async (tx) => {
+    const appended = await appendYjsUpdate({ var: { db: tx } }, { doc: scope, update: payload, userId: userId || null, generation, notify: false });
+    if (appended.status === 'appended') onLogged?.(appended.id);
+    return appended;
   });
+  if (result.status === 'appended') logNotifier.queue(scope, result.id);
+  return result;
 }
 
 /**

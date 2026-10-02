@@ -379,15 +379,16 @@ setUnseenRowHandler(catchUp);
 
 /**
  * Acts on a notification of the Yjs log channel. A retired document's session ends at once with 1013: its entity was
- * deleted, and each socket's reconnect is closed with 4410. A row the session has not relayed is caught up; the
- * relay's own appends are counted seen before they commit, so their notifications cost nothing. A document without a
- * session on this relay is left alone.
+ * deleted, and each socket's reconnect is closed with 4410. A notice holding any row the session has not relayed is
+ * caught up, not only one whose newest row is new: rows of one batch can commit out of id order, so an earlier read may
+ * have relayed the newest while an older one was uncommitted. The relay's own appends are counted seen before they
+ * commit, so its own batched notices cost nothing. A document without a session on this relay is left alone.
  */
 export function onLogNotice(notice: LogNotice): void {
   const collab = getCollab(notice);
   if (!collab) return;
   if ('retired' in notice) endCollab(collab);
-  else if (!collab.seen.has(notice.logId)) catchUp(collab);
+  else if (notice.logIds.some((id) => !collab.seen.has(id))) catchUp(collab);
 }
 
 /** Catches every session up, after the log listener (re)connects: what was notified while it was down never arrives. */

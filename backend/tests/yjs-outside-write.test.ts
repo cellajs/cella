@@ -209,7 +209,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
 
     await barrier();
     expect(heardFor(attachment.id)).toEqual([
-      { tenantId: tenant.tenantId, entityType: 'attachment', entityId: attachment.id, logId: after.rows[0].id },
+      { tenantId: tenant.tenantId, entityType: 'attachment', entityId: attachment.id, logIds: [after.rows[0].id] },
     ]);
   });
 

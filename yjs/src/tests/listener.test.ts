@@ -38,7 +38,7 @@ const { logListenerStatus, startLogListener, stopLogListener } = await import('.
 
 const onNotice = vi.fn();
 const onListening = vi.fn();
-const notice = { tenantId: 'tenant-1', entityType: 'task', entityId: 'entity-1', logId: 7 };
+const notice = { tenantId: 'tenant-1', entityType: 'task', entityId: 'entity-1', logIds: [7] };
 
 beforeEach(() => {
   vi.useFakeTimers();
