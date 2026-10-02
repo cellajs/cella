@@ -11,7 +11,7 @@ import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 
 // Every sign-in method on, so a route's config switch lets the request through to the guard under test.
-setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'oauth', 'magic'], enabledOAuthProviders: ['github', 'google', 'microsoft'] });
+setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'oauth', 'magic', 'sso'], enabledOAuthProviders: ['github', 'google', 'microsoft'] });
 
 interface Operation {
   operationId: string;

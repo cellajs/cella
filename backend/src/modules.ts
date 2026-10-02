@@ -6,7 +6,6 @@
 import '#/modules/activities/activities-module';
 import '#/modules/attachment/attachment-module';
 import '#/modules/auth/auth-module';
-import '#/modules/domains/domains-module';
 import '#/modules/entities/entities-module';
 import '#/modules/mcp/mcp-module';
 import '#/modules/me/me-module';
@@ -21,5 +20,6 @@ import '#/modules/seen/seen-module';
 import '#/modules/service-accounts/service-accounts-module';
 import '#/modules/system/system-module';
 import '#/modules/tenants/tenants-module';
+import '#/modules/connections/connections-module';
 import '#/modules/user/user-module';
 import '#/modules/yjs/yjs-module';

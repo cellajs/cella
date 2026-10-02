@@ -217,5 +217,13 @@
   "update_resource": "{{resource}} could not be updated. Try again later.",
   "user_mismatch": "User mismatch",
   "user_mismatch.text": "You are already signed in as a user. And this user doesn't match with the link you used.",
-  "verification_not_found": "Failed to verify email, token missing or invalid."
+  "verification_not_found": "Failed to verify email, token missing or invalid.",
+  "sso_not_configured": "Institution sign-in is not set up",
+  "sso_not_configured.text": "This deployment holds no client for the federation yet. An operator sets its client id and secret first.",
+  "sso_not_active": "Institution sign-in not active",
+  "sso_not_active.text": "The institution has not activated access to this app yet, or its connection is disabled. Ask the institution's administrator, or sign in another way if you were invited.",
+  "sso_wrong_institution": "Account from another institution",
+  "sso_wrong_institution.text": "You signed in with an account of an institution that is not connected to this organization. Use your account at the connected institution, or sign in another way if you were invited.",
+  "sso_email_missing": "No email address shared",
+  "sso_email_missing.text": "Your institution did not share an email address, which a new account needs. Ask your institution's helpdesk to release it, or sign in another way if you were invited."
 }

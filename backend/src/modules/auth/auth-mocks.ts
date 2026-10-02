@@ -30,3 +30,15 @@ export const mockTokenDataResponse = (key = 'token-data:default') =>
     userId: mockUuid(),
     inactiveMembershipId: undefined,
   }));
+
+export const mockSsoEntryResponse = (key = 'sso-entry:default') =>
+  withFakerSeed(key, () => {
+    const name = faker.company.name();
+    return {
+      id: mockUuid(),
+      status: 'active' as const,
+      federation: { key: 'surfconext', label: 'SURFconext' },
+      institution: { displayName: 'Utrecht University', logoUrl: null },
+      organization: { id: mockUuid(), name, slug: faker.helpers.slugify(name).toLowerCase(), thumbnailUrl: null },
+    };
+  });

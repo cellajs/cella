@@ -7,7 +7,7 @@ import { resetOrganizationMockEnforcers } from '#/modules/organization/organizat
 import { resetUserMockEnforcers } from '#/modules/user/user-mocks';
 import { overrideConfig } from './fixtures';
 
-type AuthStrategy = 'passkey' | 'oauth' | 'totp' | 'magic';
+type AuthStrategy = 'passkey' | 'oauth' | 'totp' | 'magic' | 'sso';
 type OAuthProvider = 'github' | 'google' | 'microsoft';
 
 type ConfigOverride = { enabledAuthStrategies?: AuthStrategy[]; enabledOAuthProviders?: OAuthProvider[]; selfRegistration?: boolean };

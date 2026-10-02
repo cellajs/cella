@@ -1,4 +1,4 @@
-import type { ConfigMode, ProductEmbedding, RequiredConfig, S3ConfigInput } from '../src/config-builder/types.ts';
+import type { ConfigMode, FederationConfig, ProductEmbedding, RequiredConfig, S3ConfigInput } from '../src/config-builder/types.ts';
 import { nonEmpty } from '../src/config-builder/utils.ts';
 import { hierarchy } from './hierarchy-config.ts';
 
@@ -205,6 +205,12 @@ export const config = {
 
   /** Enabled OAuth providers - currently supports: github, google, microsoft */
   enabledOAuthProviders: ['github'] as const,
+
+  /**
+   * Identity federations institutions sign in through, keyed by federation (the `sso` strategy). Empty here; the
+   * cella default declares `surfconext` as the worked example of the shape.
+   */
+  federations: {} as Record<string, FederationConfig>,
 
   /** Token types used for verification flows */
   tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up'] as const,

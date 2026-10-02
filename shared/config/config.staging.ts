@@ -15,6 +15,9 @@ export const staging = {
   mcpUrl: 'https://staging.cellajs.com/mcp',
   oauthUrl: 'https://staging.cellajs.com/oauth',
   services: { oauth: { enabled: true } },
+  federations: {
+    surfconext: { issuer: 'https://connect.test.surfconext.nl', idpMetadataUrl: 'https://metadata.test.surfconext.nl/idps-metadata.xml' },
+  },
 
   singleVM: true,
 } satisfies DeepPartial<typeof _default>;

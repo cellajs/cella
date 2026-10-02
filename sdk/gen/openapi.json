@@ -217,15 +217,9 @@
     },
     {
       "name": "auth",
-      "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth\n    (Google, Microsoft, GitHub) and passkeys (WebAuthn). They cover sign-up, sign-in, email verification,\n    account linking, and impersonation for system admins.",
+      "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth\n    (Google, Microsoft, GitHub), institutional SSO through a federation (SURFconext) and passkeys (WebAuthn). They\n    cover sign-up, sign-in, email verification, account linking, and impersonation for system admins.",
       "parent": "cella",
       "kind": "module"
-    },
-    {
-      "name": "domains",
-      "description": "Endpoints for managing custom domains for tenants, including adding domains and verifying\n    ownership. Restricted to system administrators.",
-      "parent": "cella",
-      "kind": "hidden"
     },
     {
       "name": "entities",
@@ -308,6 +302,12 @@
     {
       "name": "tenants",
       "description": "Endpoints for managing tenants, which are top-level isolation boundaries used by Row-Level\n    Security (RLS) to partition data. Only system administrators can manage tenants.",
+      "parent": "cella",
+      "kind": "module"
+    },
+    {
+      "name": "connections",
+      "description": "Connections: the institutions a tenant trusts to assert its members' identities through an SSO\n    federation (SURFconext first). System admins create them per tenant; a connection's id is the public entry key of\n    the tenant's SSO sign-in, and its domains decide which asserted institution the sign-in accepts.",
       "parent": "cella",
       "kind": "module"
     },
@@ -1108,6 +1108,82 @@
         },
         "x-tags": ["errors", "cella"]
       },
+      "SsoEntry": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "active", "disabled"],
+            "description": "Only `active` signs in; `pending` means the institution has not activated the app yet"
+          },
+          "federation": {
+            "type": "object",
+            "properties": {
+              "key": {
+                "type": "string"
+              },
+              "label": {
+                "type": "string"
+              }
+            },
+            "required": ["key", "label"]
+          },
+          "institution": {
+            "type": "object",
+            "properties": {
+              "displayName": {
+                "type": "string"
+              },
+              "logoUrl": {
+                "type": ["string", "null"]
+              }
+            },
+            "required": ["displayName", "logoUrl"]
+          },
+          "organization": {
+            "type": ["object", "null"],
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "type": "string"
+              },
+              "slug": {
+                "type": "string"
+              },
+              "thumbnailUrl": {
+                "type": ["string", "null"]
+              }
+            },
+            "required": ["id", "name", "slug", "thumbnailUrl"]
+          }
+        },
+        "required": ["id", "status", "federation", "institution", "organization"],
+        "description": "The sign-in entry of one institution at one organization: the federation it goes through, the institution, the organization, and whether it is active. Public by the connection's id, which is the link an institution shares.",
+        "example": {
+          "id": "a21c1e15-fff0-4c1c-8eda-a33ceec95d7a",
+          "status": "active",
+          "federation": {
+            "key": "surfconext",
+            "label": "SURFconext"
+          },
+          "institution": {
+            "displayName": "Utrecht University",
+            "logoUrl": null
+          },
+          "organization": {
+            "id": "2bfc5bce-ced7-4d32-8cd1-d7e121a2a0af",
+            "name": "Wuckert - Emmerich",
+            "slug": "wuckert---emmerich",
+            "thumbnailUrl": null
+          }
+        },
+        "x-tags": ["data", "auth", "cella"]
+      },
       "Me": {
         "type": "object",
         "properties": {
@@ -1328,7 +1404,7 @@
                 },
                 "authStrategy": {
                   "type": "string",
-                  "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                  "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
                 },
                 "connectionId": {
                   "type": ["string", "null"],
@@ -1777,7 +1853,7 @@
             "type": "array",
             "items": {
               "type": "string",
-              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+              "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
             }
           },
           "createdBy": {
@@ -1801,10 +1877,6 @@
           },
           "updatedAt": {
             "type": ["string", "null"]
-          },
-          "domainsCount": {
-            "type": "integer",
-            "description": "Number of domains claimed by this tenant"
           },
           "organization": {
             "type": ["object", "null"],
@@ -1842,7 +1914,6 @@
           "subscriptionPlan",
           "createdAt",
           "updatedAt",
-          "domainsCount",
           "organization"
         ],
         "description": "The top-level isolation and billing boundary. Tenant and organization are 1:1: a tenant holds one organization, or none until that organization is created. System admins list and update tenants; a signed-in user can create one of their own.",
@@ -1870,7 +1941,6 @@
           "subscriptionPlan": null,
           "createdAt": "2024-02-09T07:11:04.461Z",
           "updatedAt": "2024-03-30T20:43:34.109Z",
-          "domainsCount": 0,
           "organization": {
             "id": "c6e2f31a-be0a-4e1a-a760-f0b106b6bbcb",
             "name": "Lubowitz, Waters and Haley",
@@ -1880,6 +1950,118 @@
           }
         },
         "x-tags": ["data", "tenants", "cella"]
+      },
+      "Connection": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tenantId": {
+            "type": "string",
+            "maxLength": 24
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["sso", "lti"]
+          },
+          "issuer": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "clientId": {
+            "type": ["string", "null"],
+            "maxLength": 255
+          },
+          "deploymentId": {
+            "type": ["string", "null"],
+            "maxLength": 255
+          },
+          "claimValues": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "displayName": {
+            "type": "string",
+            "maxLength": 255
+          },
+          "status": {
+            "type": "string",
+            "enum": ["pending", "active", "disabled"]
+          },
+          "jitProvisioning": {
+            "type": "boolean"
+          },
+          "config": {
+            "type": "object",
+            "properties": {
+              "idpEntityIds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "description": "The institution's IdP entity ids, passed as login_hint"
+              },
+              "logoUrl": {
+                "type": "string",
+                "maxLength": 255,
+                "format": "uri",
+                "description": "The institution's logo, for the entry page"
+              }
+            }
+          },
+          "createdBy": {
+            "type": ["string", "null"],
+            "format": "uuid"
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": [
+          "id",
+          "tenantId",
+          "kind",
+          "issuer",
+          "clientId",
+          "deploymentId",
+          "claimValues",
+          "displayName",
+          "status",
+          "jitProvisioning",
+          "config",
+          "createdBy",
+          "createdAt",
+          "updatedAt"
+        ],
+        "description": "A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization. Its id is the public key of the tenant's SSO entry page. System admins manage connections per tenant; `pending` until the institution activated the service at the federation.",
+        "example": {
+          "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
+          "tenantId": "gc9llm",
+          "kind": "sso",
+          "issuer": "surfconext",
+          "clientId": null,
+          "deploymentId": null,
+          "claimValues": ["uu.nl"],
+          "displayName": "Utrecht University",
+          "status": "active",
+          "jitProvisioning": true,
+          "config": {
+            "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
+          },
+          "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
+          "createdAt": "2024-08-25T16:44:28.368Z",
+          "updatedAt": "2024-10-28T09:20:16.614Z"
+        },
+        "x-tags": ["data", "connections", "cella"]
       },
       "ProtectedResourceMetadata": {
         "type": "object",
@@ -4423,6 +4605,319 @@
         }
       }
     },
+    "/auth/sso/connections/{connectionId}": {
+      "get": {
+        "security": [],
+        "operationId": "getSsoEntry",
+        "tags": ["auth", "cella"],
+        "summary": "Get an SSO entry",
+        "description": "What the entry page of an institution's sign-in shows: the organization, the institution and whether sign-in is active. Public by the connection id, the link an institution shares with its members.",
+        "x-enabled-by": {
+          "strategy": "sso"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "connectionId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSO entry",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "a21c1e15-fff0-4c1c-8eda-a33ceec95d7a",
+                  "status": "active",
+                  "federation": {
+                    "key": "surfconext",
+                    "label": "SURFconext"
+                  },
+                  "institution": {
+                    "displayName": "Utrecht University",
+                    "logoUrl": null
+                  },
+                  "organization": {
+                    "id": "2bfc5bce-ced7-4d32-8cd1-d7e121a2a0af",
+                    "name": "Wuckert - Emmerich",
+                    "slug": "wuckert---emmerich",
+                    "thumbnailUrl": null
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/SsoEntry"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/sso/connections/{connectionId}/start": {
+      "get": {
+        "security": [],
+        "operationId": "startSso",
+        "tags": ["auth", "cella"],
+        "summary": "Sign in through an institution",
+        "description": "Sends the browser to the connection's federation, pinned to the institution's identity providers, so its own picker is skipped. `type=connect` links the institution account to the signed-in user instead; other types are refused.",
+        "x-enabled-by": {
+          "strategy": "sso"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "connectionId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["auth", "connect", "invite", "verify"],
+              "default": "auth"
+            },
+            "required": false,
+            "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "redirectAfter",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the federation",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/sso/federations/{federation}/start": {
+      "get": {
+        "security": [],
+        "operationId": "startSsoFederation",
+        "tags": ["auth", "cella"],
+        "summary": "Sign in through a federation",
+        "description": "Sends the browser to the federation without naming an institution: the federation's own picker lists the connected ones, and the callback finds the connection by the institution the sign-in asserts.",
+        "x-enabled-by": {
+          "strategy": "sso"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 64
+            },
+            "required": true,
+            "name": "federation",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["auth", "connect", "invite", "verify"],
+              "default": "auth"
+            },
+            "required": false,
+            "name": "type",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "redirectAfter",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to the federation",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/auth/sso/callback": {
+      "get": {
+        "security": [],
+        "operationId": "ssoCallback",
+        "tags": ["auth", "cella"],
+        "summary": "Callback for SSO",
+        "description": "The redirect URI registered at every federation. Verifies the tokens, asserts the institution against the connection, signs the user in (creating the account and its membership on a first sign-in) or links the identity, and redirects to the frontend.",
+        "x-enabled-by": {
+          "strategy": "sso"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["tokenLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "code",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "state",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "error",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "error_description",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "error_uri",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "302": {
+            "description": "Redirect to frontend",
+            "headers": {
+              "Location": {
+                "schema": {
+                  "type": "string"
+                },
+                "required": true
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/auth/step-up": {
       "get": {
         "security": [
@@ -4668,508 +5163,6 @@
         "responses": {
           "204": {
             "description": "Link sent"
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/tenants/{tenantId}/domains": {
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getDomains",
-        "tags": ["tenants", "cella"],
-        "summary": "List domains for a tenant",
-        "description": "Returns all domains belonging to a tenant, including verification tokens. System admin access required.",
-        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "List of domains",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "array",
-                  "items": {
-                    "type": "object",
-                    "properties": {
-                      "id": {
-                        "type": "string",
-                        "format": "uuid"
-                      },
-                      "tenantId": {
-                        "type": "string",
-                        "maxLength": 24
-                      },
-                      "domain": {
-                        "type": "string",
-                        "maxLength": 255
-                      },
-                      "verified": {
-                        "type": "boolean"
-                      },
-                      "verificationToken": {
-                        "type": ["string", "null"],
-                        "maxLength": 50
-                      },
-                      "verifiedAt": {
-                        "type": ["string", "null"]
-                      },
-                      "lastCheckedAt": {
-                        "type": ["string", "null"]
-                      },
-                      "createdAt": {
-                        "type": "string"
-                      }
-                    },
-                    "required": ["id", "tenantId", "domain", "verified", "verificationToken", "verifiedAt", "lastCheckedAt", "createdAt"]
-                  }
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "createDomain",
-        "tags": ["tenants", "cella"],
-        "summary": "Add a domain to a tenant",
-        "description": "Adds a new domain to a tenant. The domain starts unverified. System admin access required.",
-        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "properties": {
-                  "domain": {
-                    "type": "string",
-                    "format": "hostname",
-                    "minLength": 4,
-                    "maxLength": 255,
-                    "pattern": "^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$"
-                  }
-                },
-                "required": ["domain"]
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Created domain",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "tenantId": {
-                      "type": "string",
-                      "maxLength": 24
-                    },
-                    "domain": {
-                      "type": "string",
-                      "maxLength": 255
-                    },
-                    "verified": {
-                      "type": "boolean"
-                    },
-                    "verifiedAt": {
-                      "type": ["string", "null"]
-                    },
-                    "lastCheckedAt": {
-                      "type": ["string", "null"]
-                    },
-                    "createdAt": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["id", "tenantId", "domain", "verified", "verifiedAt", "lastCheckedAt", "createdAt"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/tenants/{tenantId}/domains/{id}": {
-      "delete": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "deleteDomain",
-        "tags": ["tenants", "cella"],
-        "summary": "Remove a domain",
-        "description": "Removes a domain from a tenant. System admin access required.",
-        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Domain removed",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "tenantId": {
-                      "type": "string",
-                      "maxLength": 24
-                    },
-                    "domain": {
-                      "type": "string",
-                      "maxLength": 255
-                    },
-                    "verified": {
-                      "type": "boolean"
-                    },
-                    "verifiedAt": {
-                      "type": ["string", "null"]
-                    },
-                    "lastCheckedAt": {
-                      "type": ["string", "null"]
-                    },
-                    "createdAt": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["id", "tenantId", "domain", "verified", "verifiedAt", "lastCheckedAt", "createdAt"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      },
-      "get": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "getDomain",
-        "tags": ["tenants", "cella"],
-        "summary": "Get domain with verification token",
-        "description": "Returns a single domain including its verification token for DNS TXT setup. System admin access required.",
-        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
-        "x-rate-limiter": [],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Domain with verification token",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "id": {
-                      "type": "string",
-                      "format": "uuid"
-                    },
-                    "tenantId": {
-                      "type": "string",
-                      "maxLength": 24
-                    },
-                    "domain": {
-                      "type": "string",
-                      "maxLength": 255
-                    },
-                    "verified": {
-                      "type": "boolean"
-                    },
-                    "verificationToken": {
-                      "type": ["string", "null"],
-                      "maxLength": 50
-                    },
-                    "verifiedAt": {
-                      "type": ["string", "null"]
-                    },
-                    "lastCheckedAt": {
-                      "type": ["string", "null"]
-                    },
-                    "createdAt": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["id", "tenantId", "domain", "verified", "verificationToken", "verifiedAt", "lastCheckedAt", "createdAt"]
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/BadRequestError"
-          },
-          "401": {
-            "$ref": "#/components/responses/UnauthorizedError"
-          },
-          "403": {
-            "$ref": "#/components/responses/ForbiddenError"
-          },
-          "404": {
-            "$ref": "#/components/responses/NotFoundError"
-          },
-          "409": {
-            "$ref": "#/components/responses/ConflictError"
-          },
-          "429": {
-            "$ref": "#/components/responses/TooManyRequestsError"
-          }
-        }
-      }
-    },
-    "/tenants/{tenantId}/domains/{id}/verify": {
-      "post": {
-        "security": [
-          {
-            "cookieAuth": []
-          }
-        ],
-        "operationId": "verifyDomain",
-        "tags": ["tenants", "cella"],
-        "summary": "Verify domain ownership via DNS",
-        "description": "Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-development-verification.<domain> TXT record matching the verification token.",
-        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
-        "x-rate-limiter": ["pointsLimiter"],
-        "x-cache": [],
-        "parameters": [
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "tenantId",
-            "in": "path"
-          },
-          {
-            "schema": {
-              "type": "string",
-              "maxLength": 50
-            },
-            "required": true,
-            "name": "id",
-            "in": "path"
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Verification result",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "success": {
-                      "type": "boolean"
-                    },
-                    "domain": {
-                      "type": "object",
-                      "properties": {
-                        "id": {
-                          "type": "string",
-                          "format": "uuid"
-                        },
-                        "tenantId": {
-                          "type": "string",
-                          "maxLength": 24
-                        },
-                        "domain": {
-                          "type": "string",
-                          "maxLength": 255
-                        },
-                        "verified": {
-                          "type": "boolean"
-                        },
-                        "verificationToken": {
-                          "type": ["string", "null"],
-                          "maxLength": 50
-                        },
-                        "verifiedAt": {
-                          "type": ["string", "null"]
-                        },
-                        "lastCheckedAt": {
-                          "type": ["string", "null"]
-                        },
-                        "createdAt": {
-                          "type": "string"
-                        }
-                      },
-                      "required": ["id", "tenantId", "domain", "verified", "verificationToken", "verifiedAt", "lastCheckedAt", "createdAt"]
-                    },
-                    "diagnostics": {
-                      "type": "object",
-                      "properties": {
-                        "recordsFound": {
-                          "type": "array",
-                          "items": {
-                            "type": "string"
-                          }
-                        },
-                        "expectedToken": {
-                          "type": "string"
-                        }
-                      },
-                      "required": ["recordsFound", "expectedToken"]
-                    }
-                  },
-                  "required": ["success", "domain"]
-                }
-              }
-            }
           },
           "400": {
             "$ref": "#/components/responses/BadRequestError"
@@ -6138,7 +6131,7 @@
                           },
                           "authStrategy": {
                             "type": "string",
-                            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                            "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
                           },
                           "connectionId": {
                             "type": ["string", "null"],
@@ -8197,7 +8190,6 @@
                       "subscriptionPlan": null,
                       "createdAt": "2024-11-25T05:49:32.040Z",
                       "updatedAt": "2024-12-21T15:03:10.241Z",
-                      "domainsCount": 0,
                       "organization": {
                         "id": "ed4a4eac-b4a6-4c0f-ae21-2f50796fe855",
                         "name": "Predovic, Bahringer and Morar",
@@ -8230,7 +8222,6 @@
                       "subscriptionPlan": null,
                       "createdAt": "2024-01-02T16:12:28.968Z",
                       "updatedAt": "2024-01-18T17:11:22.322Z",
-                      "domainsCount": 0,
                       "organization": {
                         "id": "cc2dc65b-1a01-4eb4-922d-b6339b813cf8",
                         "name": "Crooks, Kuphal and Roob-Blick",
@@ -8343,7 +8334,6 @@
                   "subscriptionPlan": null,
                   "createdAt": "2024-02-09T07:11:04.461Z",
                   "updatedAt": "2024-03-30T20:43:34.109Z",
-                  "domainsCount": 0,
                   "organization": {
                     "id": "c6e2f31a-be0a-4e1a-a760-f0b106b6bbcb",
                     "name": "Lubowitz, Waters and Haley",
@@ -8437,7 +8427,7 @@
                     "type": "array",
                     "items": {
                       "type": "string",
-                      "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                      "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
                     }
                   },
                   "restrictions": {
@@ -8500,7 +8490,6 @@
                   "subscriptionPlan": null,
                   "createdAt": "2024-02-09T07:11:04.461Z",
                   "updatedAt": "2024-03-30T20:43:34.109Z",
-                  "domainsCount": 0,
                   "organization": {
                     "id": "c6e2f31a-be0a-4e1a-a760-f0b106b6bbcb",
                     "name": "Lubowitz, Waters and Haley",
@@ -8511,6 +8500,453 @@
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Tenant"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/connections": {
+      "get": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "getConnections",
+        "tags": ["connections", "cella"],
+        "summary": "Get connections",
+        "description": "The tenant's connections: the institutions whose members sign in to its organization through an SSO federation. System admin access required.",
+        "x-enabled-by": {
+          "strategy": "sso"
+        },
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
+        "x-rate-limiter": [],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Connections",
+            "content": {
+              "application/json": {
+                "example": [
+                  {
+                    "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
+                    "tenantId": "gc9llm",
+                    "kind": "sso",
+                    "issuer": "surfconext",
+                    "clientId": null,
+                    "deploymentId": null,
+                    "claimValues": ["uu.nl"],
+                    "displayName": "Utrecht University",
+                    "status": "active",
+                    "jitProvisioning": true,
+                    "config": {
+                      "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
+                    },
+                    "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
+                    "createdAt": "2024-08-25T16:44:28.368Z",
+                    "updatedAt": "2024-10-28T09:20:16.614Z"
+                  }
+                ],
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Connection"
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "post": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "createConnection",
+        "tags": ["connections", "cella"],
+        "summary": "Create connection",
+        "description": "Connects an institution to the tenant: the federation it signs in through, its domains and its IdP entity ids. Starts `pending` until the institution activated the service at the federation; one SSO connection per tenant, and a domain belongs to one connection.",
+        "x-enabled-by": {
+          "strategy": "sso"
+        },
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "issuer": {
+                    "type": "string",
+                    "description": "A federation key in appConfig.federations",
+                    "enum": ["surfconext"]
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$",
+                    "description": "The institution's name, as the federation's metadata lists it"
+                  },
+                  "claimValues": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "hostname",
+                      "minLength": 4,
+                      "maxLength": 255,
+                      "pattern": "^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$"
+                    },
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "description": "The institution's domains as the federation asserts them in the tenant claim; a sign-in must assert one of them"
+                  },
+                  "idpEntityIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "description": "The institution's IdP entity ids, all passed as login_hint"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["pending", "active", "disabled"]
+                  },
+                  "jitProvisioning": {
+                    "type": "boolean"
+                  },
+                  "logoUrl": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "format": "uri"
+                  }
+                },
+                "required": ["issuer", "displayName", "claimValues", "idpEntityIds"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Created connection",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
+                  "tenantId": "gc9llm",
+                  "kind": "sso",
+                  "issuer": "surfconext",
+                  "clientId": null,
+                  "deploymentId": null,
+                  "claimValues": ["uu.nl"],
+                  "displayName": "Utrecht University",
+                  "status": "active",
+                  "jitProvisioning": true,
+                  "config": {
+                    "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
+                  },
+                  "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
+                  "createdAt": "2024-08-25T16:44:28.368Z",
+                  "updatedAt": "2024-10-28T09:20:16.614Z"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Connection"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
+    "/tenants/{tenantId}/connections/{id}": {
+      "put": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "updateConnection",
+        "tags": ["connections", "cella"],
+        "summary": "Update connection",
+        "description": "Changes the name, domains, IdP entity ids, status or provisioning of a connection; the federation stays what it was.",
+        "x-enabled-by": {
+          "strategy": "sso"
+        },
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "displayName": {
+                    "type": "string",
+                    "minLength": 2,
+                    "maxLength": 255,
+                    "pattern": "^[\\p{L}\\d\\-., '&()]+$",
+                    "description": "The institution's name, as the federation's metadata lists it"
+                  },
+                  "claimValues": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "format": "hostname",
+                      "minLength": 4,
+                      "maxLength": 255,
+                      "pattern": "^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$"
+                    },
+                    "minItems": 1,
+                    "maxItems": 20,
+                    "description": "The institution's domains as the federation asserts them in the tenant claim; a sign-in must assert one of them"
+                  },
+                  "idpEntityIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1,
+                      "maxLength": 255
+                    },
+                    "minItems": 1,
+                    "maxItems": 10,
+                    "description": "The institution's IdP entity ids, all passed as login_hint"
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["pending", "active", "disabled"]
+                  },
+                  "jitProvisioning": {
+                    "type": "boolean"
+                  },
+                  "logoUrl": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "format": "uri"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated connection",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
+                  "tenantId": "gc9llm",
+                  "kind": "sso",
+                  "issuer": "surfconext",
+                  "clientId": null,
+                  "deploymentId": null,
+                  "claimValues": ["uu.nl"],
+                  "displayName": "Utrecht University",
+                  "status": "active",
+                  "jitProvisioning": true,
+                  "config": {
+                    "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
+                  },
+                  "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
+                  "createdAt": "2024-08-25T16:44:28.368Z",
+                  "updatedAt": "2024-10-28T09:20:16.614Z"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Connection"
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      },
+      "delete": {
+        "security": [
+          {
+            "cookieAuth": []
+          }
+        ],
+        "operationId": "deleteConnection",
+        "tags": ["connections", "cella"],
+        "summary": "Delete connection",
+        "description": "Removes a connection. Identities and sessions that came through it keep their rows; members stay members.",
+        "x-enabled-by": {
+          "strategy": "sso"
+        },
+        "x-guard": ["userGuard", "sysAdminGuard", "tenantGuard"],
+        "x-rate-limiter": ["pointsLimiter"],
+        "x-cache": [],
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "tenantId",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "maxLength": 50
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Removed connection",
+            "content": {
+              "application/json": {
+                "example": {
+                  "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
+                  "tenantId": "gc9llm",
+                  "kind": "sso",
+                  "issuer": "surfconext",
+                  "clientId": null,
+                  "deploymentId": null,
+                  "claimValues": ["uu.nl"],
+                  "displayName": "Utrecht University",
+                  "status": "active",
+                  "jitProvisioning": true,
+                  "config": {
+                    "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
+                  },
+                  "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
+                  "createdAt": "2024-08-25T16:44:28.368Z",
+                  "updatedAt": "2024-10-28T09:20:16.614Z"
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Connection"
                 }
               }
             }

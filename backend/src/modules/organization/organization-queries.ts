@@ -13,6 +13,16 @@ import { auditUserSelect, createdByUser, updatedByUser } from '#/modules/user/he
 import { getOrderColumns } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
+interface FindOrganizationByTenantOpts {
+  tenantId: string;
+}
+
+/** The organization a tenant holds (organizations.tenant_id is unique); undefined before it is created. */
+export const findOrganizationByTenant = async (ctx: DbContext, { tenantId }: FindOrganizationByTenantOpts) => {
+  const [organization] = await ctx.var.db.select().from(organizationsTable).where(eq(organizationsTable.tenantId, tenantId)).limit(1);
+  return organization;
+};
+
 interface CountOrganizationsByTenantOpts {
   tenantId: string;
 }

@@ -34,7 +34,15 @@ export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
   Partial<
     Pick<
       InsertTokenModel,
-      'userId' | 'createdBy' | 'identityId' | 'inactiveMembershipId' | 'redirectPath' | 'pendingSignUp' | 'sessionId' | 'authStrategy'
+      | 'userId'
+      | 'createdBy'
+      | 'identityId'
+      | 'inactiveMembershipId'
+      | 'redirectPath'
+      | 'pendingSignUp'
+      | 'sessionId'
+      | 'authStrategy'
+      | 'connectionId'
     >
   >;
 
@@ -64,6 +72,7 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
       pendingSignUp: token.pendingSignUp ?? null,
       sessionId: token.sessionId ?? null,
       authStrategy: token.authStrategy ?? null,
+      connectionId: token.connectionId ?? null,
       secret: hashToken(rawToken),
       expiresAt: createDate(tokenPolicies[token.type].ttl),
     })),

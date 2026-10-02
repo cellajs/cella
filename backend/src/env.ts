@@ -20,6 +20,20 @@ const secretString = (name: string, min = minSecretLength) => z.string().min(min
 /** Development and tunnel run on the example `.env`, whose cookie secret is shorter: there an entry only has to be non-empty. */
 const minCookieSecretLength = appConfig.mode === 'development' || appConfig.mode === 'tunnel' ? 1 : minSecretLength;
 
+/**
+ * Per federation in `appConfig.federations`, the client id and secret it was registered with: `SSO_<KEY>_CLIENT_ID`
+ * and `SSO_<KEY>_CLIENT_SECRET`, optional because a federation is live only once both are set.
+ */
+const federationSecrets = Object.fromEntries(
+  Object.keys(appConfig.federations).flatMap((key) => {
+    const prefix = `SSO_${key.toUpperCase()}`;
+    return [
+      [`${prefix}_CLIENT_ID`, z.string().optional()],
+      [`${prefix}_CLIENT_SECRET`, z.string().optional()],
+    ];
+  }),
+) as Record<string, z.ZodOptional<z.ZodString>>;
+
 export const env = createEnv({
   server: {
     NODB: z
@@ -81,6 +95,7 @@ export const env = createEnv({
     MICROSOFT_TENANT_ID: z.string().optional(),
     MICROSOFT_CLIENT_ID: z.string().optional(),
     MICROSOFT_CLIENT_SECRET: z.string().optional(),
+    ...federationSecrets,
 
     TRANSLOADIT_KEY: z.string().optional(),
     TRANSLOADIT_SECRET: z.string().optional(),

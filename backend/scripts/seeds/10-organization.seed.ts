@@ -4,7 +4,6 @@ import { eq } from 'drizzle-orm';
 import { startSpinner, succeedSpinner, warnSpinner } from '#/utils/console';
 
 import { getSeedDb } from '#/db/db';
-import { domainsTable } from '#/modules/domains/domains-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { InsertMembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
 import { OrganizationModel, organizationsTable } from '#/modules/organization/organization-db';
@@ -65,14 +64,6 @@ export const organizationsSeed = async () => {
     .values(tenantRecords)
     .returning()
     .onConflictDoNothing();
-
-  // Seed domains for tenants (one domain per tenant for email matching)
-  const domainRecords = tenants.map((tenant, i) => ({
-    tenantId: tenant.id,
-    domain: `tenant${i + 1}.example`,
-    verified: i < 3, // First 3 tenants have verified domains
-  }));
-  await db.insert(domainsTable).values(domainRecords).onConflictDoNothing();
 
   // Make organizations - one per tenant (1 tenant = 1 org)
   // Set createdBy to admin so system admin can access all orgs via RLS (createdBy match)

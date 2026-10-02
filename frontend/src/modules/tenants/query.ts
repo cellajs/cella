@@ -1,21 +1,6 @@
-import { infiniteQueryOptions, queryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
-import type { CreateDomainResponse, DeleteDomainResponse, Tenant, VerifyDomainResponse } from 'sdk';
-import {
-  type CreateDomainData,
-  createDomain,
-  type DeleteDomainData,
-  deleteDomain,
-  type GetTenantsData,
-  getDomain,
-  getDomains,
-  getTenants,
-  type SelfCreateTenantData,
-  selfCreateTenant,
-  type UpdateTenantData,
-  updateTenant,
-  type VerifyDomainData,
-  verifyDomain,
-} from 'sdk';
+import { infiniteQueryOptions, useMutation, useQueryClient } from '@tanstack/react-query';
+import type { Tenant } from 'sdk';
+import { type GetTenantsData, getTenants, type SelfCreateTenantData, selfCreateTenant, type UpdateTenantData, updateTenant } from 'sdk';
 import { appConfig } from 'shared';
 import type { ApiError } from '~/lib/api';
 import { tenantsSearchDefaults } from '~/modules/tenants/search-params-schemas';
@@ -71,65 +56,6 @@ export const useTenantUpdateMutation = () => {
     mutationFn: ({ path, body }) => updateTenant({ path, body }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: tenantQueryKeys.list.base });
-    },
-  });
-};
-
-const domainQueryKeys = {
-  list: (tenantId: string) => ['domain', 'list', tenantId] as const,
-  detail: (tenantId: string, id: string) => ['domain', 'detail', tenantId, id] as const,
-  create: ['domain', 'create'] as const,
-  delete: ['domain', 'delete'] as const,
-  verify: ['domain', 'verify'] as const,
-};
-
-export const domainsQueryOptions = (tenantId: string) =>
-  queryOptions({
-    queryKey: domainQueryKeys.list(tenantId),
-    queryFn: () => getDomains({ path: { tenantId } }),
-  });
-
-export const domainDetailQueryOptions = (tenantId: string, id: string) =>
-  queryOptions({
-    queryKey: domainQueryKeys.detail(tenantId, id),
-    queryFn: () => getDomain({ path: { tenantId, id } }),
-  });
-
-export const useDomainCreateMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation<CreateDomainResponse, ApiError, MutationData<CreateDomainData>>({
-    mutationKey: domainQueryKeys.create,
-    mutationFn: ({ path, body }) => createDomain({ path, body }),
-    onSuccess: (_, { path }) => {
-      queryClient.invalidateQueries({ queryKey: domainQueryKeys.list(path.tenantId) });
-      queryClient.invalidateQueries({ queryKey: tenantQueryKeys.list.base });
-    },
-  });
-};
-
-export const useDomainDeleteMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation<DeleteDomainResponse, ApiError, MutationData<DeleteDomainData>>({
-    mutationKey: domainQueryKeys.delete,
-    mutationFn: ({ path }) => deleteDomain({ path }),
-    onSuccess: (_, { path }) => {
-      queryClient.invalidateQueries({ queryKey: domainQueryKeys.list(path.tenantId) });
-      queryClient.invalidateQueries({ queryKey: tenantQueryKeys.list.base });
-    },
-  });
-};
-
-export const useDomainVerifyMutation = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation<VerifyDomainResponse, ApiError, MutationData<VerifyDomainData>>({
-    mutationKey: domainQueryKeys.verify,
-    mutationFn: ({ path }) => verifyDomain({ path }),
-    onSuccess: (_, { path }) => {
-      queryClient.invalidateQueries({ queryKey: domainQueryKeys.list(path.tenantId) });
-      queryClient.invalidateQueries({ queryKey: domainQueryKeys.detail(path.tenantId, path.id) });
     },
   });
 };

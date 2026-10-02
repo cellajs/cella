@@ -644,7 +644,7 @@
                   "authStrategy": {
                     "type": "string",
                     "required": true,
-                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
                   },
                   "connectionId": {
                     "type": ["string", "null"],
@@ -1099,7 +1099,7 @@
                   "authStrategy": {
                     "type": "string",
                     "required": true,
-                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
                   },
                   "connectionId": {
                     "type": ["string", "null"],

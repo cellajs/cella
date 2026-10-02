@@ -35,7 +35,6 @@ export const tenantSchema = z
       restrictions: restrictionsSchema,
       authStrategies: z.array(z.enum(authStrategiesEnum)),
     }).omit({ subscriptionData: true }).shape,
-    domainsCount: z.number().int().describe('Number of domains claimed by this tenant'),
     organization: minimalBaseSchema('organization').nullable().describe('The organization this tenant holds, or null if none'),
   })
   .openapi('Tenant', {

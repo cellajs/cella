@@ -23,9 +23,10 @@ export const handleOAuthInitiation = async (
   state: string,
   codeVerifier?: string,
   nonce?: string,
+  extra: Pick<OAuthCookiePayload, 'connectionId'> = {},
 ) => {
   const { type, redirectAfter } = ctx.req.valid('query');
-  const cookieContent: OAuthCookiePayload = { provider, codeVerifier, nonce, type, redirectAfter };
+  const cookieContent: OAuthCookiePayload = { provider, codeVerifier, nonce, type, redirectAfter, ...extra };
 
   if (type === 'connect') {
     // A connect starts from the account page, which explains its refusals.

@@ -16,7 +16,6 @@ export const mockTenantResponse = (key = 'tenant:default') =>
       subscriptionStatus: 'none' as const,
       subscriptionPlan: null,
       ...mockTimestamps(),
-      domainsCount: 0,
       organization: {
         id: mockUuid(),
         name,

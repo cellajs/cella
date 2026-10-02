@@ -1,0 +1,138 @@
+import { and, arrayOverlaps, eq, ne } from 'drizzle-orm';
+import type { DbContext } from '#/core/context';
+import { type ConnectionModel, connectionsTable, type InsertConnectionModel } from '#/modules/connections/connections-db';
+import { organizationsTable } from '#/modules/organization/organization-db';
+
+interface FindConnectionsByTenantOpts {
+  tenantId: string;
+}
+
+export const findConnectionsByTenant = async (ctx: DbContext, { tenantId }: FindConnectionsByTenantOpts) => {
+  return ctx.var.db.select().from(connectionsTable).where(eq(connectionsTable.tenantId, tenantId)).orderBy(connectionsTable.createdAt);
+};
+
+interface FindConnectionByIdOpts {
+  id: string;
+  /** Narrows to one tenant's connection, for the tenant-scoped routes. */
+  tenantId?: string;
+}
+
+export const findConnectionById = async (ctx: DbContext, { id, tenantId }: FindConnectionByIdOpts) => {
+  const [row] = await ctx.var.db
+    .select()
+    .from(connectionsTable)
+    .where(and(eq(connectionsTable.id, id), tenantId ? eq(connectionsTable.tenantId, tenantId) : undefined))
+    .limit(1);
+  return row;
+};
+
+interface FindConnectionEntryOpts {
+  id: string;
+}
+
+/** A connection with the organization its tenant holds (null before the organization exists): what the entry page shows. */
+export const findConnectionEntry = async (ctx: DbContext, { id }: FindConnectionEntryOpts) => {
+  const [row] = await ctx.var.db
+    .select({
+      connection: connectionsTable,
+      organizationId: organizationsTable.id,
+      organizationName: organizationsTable.name,
+      organizationSlug: organizationsTable.slug,
+      organizationThumbnailUrl: organizationsTable.thumbnailUrl,
+    })
+    .from(connectionsTable)
+    .leftJoin(organizationsTable, eq(organizationsTable.tenantId, connectionsTable.tenantId))
+    .where(eq(connectionsTable.id, id))
+    .limit(1);
+  if (!row) return undefined;
+  const { connection, organizationId, organizationName, organizationSlug, organizationThumbnailUrl } = row;
+  return {
+    connection,
+    organization: organizationId
+      ? // Non-null within this branch: the left join returns them on the same row as the id.
+        { id: organizationId, name: organizationName as string, slug: organizationSlug as string, thumbnailUrl: organizationThumbnailUrl }
+      : null,
+  };
+};
+
+interface FindActiveSsoConnectionByClaimOpts {
+  issuer: string;
+  /** The asserted value of the federation's tenant claim, lower case. */
+  claimValue: string;
+}
+
+/** The active SSO connection that accepts the asserted institution value, for a sign-in that started without one. */
+export const findActiveSsoConnectionByClaim = async (ctx: DbContext, { issuer, claimValue }: FindActiveSsoConnectionByClaimOpts) => {
+  const [row] = await ctx.var.db
+    .select()
+    .from(connectionsTable)
+    .where(
+      and(
+        eq(connectionsTable.kind, 'sso'),
+        eq(connectionsTable.issuer, issuer),
+        eq(connectionsTable.status, 'active'),
+        arrayOverlaps(connectionsTable.claimValues, [claimValue]),
+      ),
+    )
+    .limit(1);
+  return row;
+};
+
+interface FindConnectionsClaimingOpts {
+  issuer: string;
+  claimValues: string[];
+  /** The connection being updated, whose own values do not collide. */
+  excludeId?: string;
+}
+
+/** SSO connections of any tenant that already accept one of the values: a domain names one institution, so one connection. */
+export const findConnectionsClaiming = async (ctx: DbContext, { issuer, claimValues, excludeId }: FindConnectionsClaimingOpts) => {
+  return ctx.var.db
+    .select({ id: connectionsTable.id, tenantId: connectionsTable.tenantId, claimValues: connectionsTable.claimValues })
+    .from(connectionsTable)
+    .where(
+      and(
+        eq(connectionsTable.kind, 'sso'),
+        eq(connectionsTable.issuer, issuer),
+        arrayOverlaps(connectionsTable.claimValues, claimValues),
+        excludeId ? ne(connectionsTable.id, excludeId) : undefined,
+      ),
+    );
+};
+
+interface InsertConnectionOpts {
+  values: InsertConnectionModel;
+}
+
+export const insertConnection = async (ctx: DbContext, { values }: InsertConnectionOpts): Promise<ConnectionModel> => {
+  const [row] = await ctx.var.db.insert(connectionsTable).values(values).returning();
+  return row;
+};
+
+interface UpdateConnectionOpts {
+  id: string;
+  tenantId: string;
+  values: Partial<Pick<InsertConnectionModel, 'displayName' | 'claimValues' | 'status' | 'jitProvisioning' | 'config'>>;
+}
+
+export const updateConnection = async (ctx: DbContext, { id, tenantId, values }: UpdateConnectionOpts) => {
+  const [row] = await ctx.var.db
+    .update(connectionsTable)
+    .set(values)
+    .where(and(eq(connectionsTable.id, id), eq(connectionsTable.tenantId, tenantId)))
+    .returning();
+  return row;
+};
+
+interface DeleteConnectionOpts {
+  id: string;
+  tenantId: string;
+}
+
+export const deleteConnection = async (ctx: DbContext, { id, tenantId }: DeleteConnectionOpts) => {
+  const [row] = await ctx.var.db
+    .delete(connectionsTable)
+    .where(and(eq(connectionsTable.id, id), eq(connectionsTable.tenantId, tenantId)))
+    .returning();
+  return row;
+};

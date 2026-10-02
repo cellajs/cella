@@ -38,6 +38,6 @@ export async function updateTenantOp(ctx: UserContext, tenantId: string, updates
 
   log.info('Tenant updated', { tenantId, updates });
 
-  // An update leaves the tenant's domains and organization as they were.
+  // An update leaves the tenant's organization and connections as they were.
   return { ...existing, ...updated, restrictions: normalizeRestrictions(updated.restrictions) };
 }

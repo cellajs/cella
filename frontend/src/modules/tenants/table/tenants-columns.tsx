@@ -1,6 +1,5 @@
 import { Link } from '@tanstack/react-router';
-import i18n from 'i18next';
-import { GlobeIcon, PencilIcon } from 'lucide-react';
+import { PencilIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Tenant } from 'sdk';
@@ -11,11 +10,9 @@ import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import { EntityAvatar } from '~/modules/common/entity-avatar';
 import { openEditSheet } from '~/modules/common/sheeter/open-edit-sheet';
 import type { TriggerRef } from '~/modules/common/sheeter/use-sheeter';
-import { ManageDomainsContent } from '~/modules/tenants/domains/manage-domains-sheet';
 import { UpdateTenantForm } from '~/modules/tenants/update-tenant-form';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '~/modules/ui/card';
 
 const statusOptions = ['active', 'suspended', 'archived'] as const;
 
@@ -25,16 +22,6 @@ export const openUpdateSheet = (tenant: Tenant, triggerRef: TriggerRef) =>
     resource: 'c:tenant',
     triggerRef,
     children: <UpdateTenantForm tenant={tenant} sheet />,
-    after: (
-      <Card className="mb-20">
-        <CardHeader>
-          <CardTitle>{i18n.t('c:domain_other')}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ManageDomainsContent tenant={tenant} />
-        </CardContent>
-      </Card>
-    ),
   });
 
 export const useColumns = () => {
@@ -122,18 +109,6 @@ export const useColumns = () => {
           </Badge>
         );
       },
-    },
-    {
-      key: 'domainsCount',
-      name: t('c:domain_other'),
-      minBreakpoint: 'md',
-      width: 100,
-      renderCell: ({ row }) => (
-        <>
-          <GlobeIcon className="mr-2 opacity-50" />
-          {row.domainsCount ?? 0}
-        </>
-      ),
     },
     dateColumn('createdAt', { name: t('c:created_at') }),
   ];

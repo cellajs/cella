@@ -1,20 +1,22 @@
 import { and, eq } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
-import { type IdentityModel, type InsertIdentityModel, identitiesTable } from '#/modules/auth/oauth/identities-db';
+import { type IdentityKind, type IdentityModel, type InsertIdentityModel, identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { getIsoDate } from '#/utils/iso-date';
 
 interface FindIdentityBySubjectOpts {
   issuer: string;
   /** The issuer's own id for the account. */
   subject: string;
+  /** The trust class the issuer slug lives in; a social provider by default. */
+  kind?: IdentityKind;
 }
 
-/** The OAuth identity a provider account is: keyed on the provider's subject, never on its address. */
-export const findIdentityBySubject = async (ctx: DbContext, { issuer, subject }: FindIdentityBySubjectOpts) => {
+/** The identity an external account is: keyed on (kind, issuer, subject), never on its address. */
+export const findIdentityBySubject = async (ctx: DbContext, { issuer, subject, kind = 'oauth' }: FindIdentityBySubjectOpts) => {
   const [identity] = await ctx.var.db
     .select()
     .from(identitiesTable)
-    .where(and(eq(identitiesTable.kind, 'oauth'), eq(identitiesTable.issuer, issuer), eq(identitiesTable.subject, subject)));
+    .where(and(eq(identitiesTable.kind, kind), eq(identitiesTable.issuer, issuer), eq(identitiesTable.subject, subject)));
   return identity;
 };
 
@@ -40,12 +42,13 @@ export const findVerifiedOAuthIdentities = async (ctx: DbContext, { userId }: Fi
 };
 
 interface InsertIdentityOpts {
-  values: Pick<IdentityModel, 'userId' | 'issuer' | 'subject'> & { email: string };
-  /** Verified now, when an inbox proof in the same flow already stands for it. */
+  values: Pick<IdentityModel, 'userId' | 'issuer' | 'subject'> &
+    Pick<InsertIdentityModel, 'kind' | 'connectionId' | 'data'> & { email: string | null };
+  /** Verified now, when an inbox proof in the same flow already stands for it, or the issuer's assertion is the proof. */
   verified?: boolean;
 }
 
-/** Links a provider account to a user; unverified unless `verified`. */
+/** Links an external account to a user; unverified unless `verified`. */
 export const insertIdentity = async (ctx: DbContext, { values, verified = false }: InsertIdentityOpts): Promise<IdentityModel> => {
   const now = getIsoDate();
   const [identity] = await ctx.var.db
@@ -59,7 +62,7 @@ interface UpdateIdentityOpts {
   id: string;
   /** Only when the identity belongs to this user. */
   userId?: string;
-  values: Partial<Pick<InsertIdentityModel, 'email' | 'verified' | 'verifiedAt' | 'lastUsedAt'>>;
+  values: Partial<Pick<InsertIdentityModel, 'email' | 'verified' | 'verifiedAt' | 'lastUsedAt' | 'data' | 'connectionId'>>;
 }
 
 export const updateIdentity = async (ctx: DbContext, { id, userId, values }: UpdateIdentityOpts) => {

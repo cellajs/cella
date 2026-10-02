@@ -7,6 +7,7 @@ import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { authStrategiesEnum, sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
 
 const tokenTypeEnum = appConfig.tokenTypes;
@@ -45,6 +46,8 @@ export const tokensTable = snakeCase.table(
     sessionId: uuid().references(() => sessionsTable.id, { onDelete: 'cascade' }),
     /** For a `confirm-mfa` challenge: the method the sign-in started with, which the mfa session it ends in records. */
     authStrategy: varchar({ enum: authStrategiesEnum }),
+    /** For a `confirm-mfa` challenge of an SSO sign-in: the connection it came through, recorded on the mfa session too. */
+    connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
     createdBy: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
