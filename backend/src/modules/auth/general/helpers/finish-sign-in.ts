@@ -2,9 +2,9 @@ import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { resolvePostAuthRedirectPath } from '#/modules/auth/general/helpers/redirect-path';
-import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { initiateMfa } from '#/modules/auth/mfa/operations/mfa-challenge';
-import type { AuthStrategy } from '#/modules/auth/sessions-db';
+import { setUserSession } from '#/modules/auth/sessions/operations/create-session';
+import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
 
 /**

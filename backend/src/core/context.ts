@@ -2,7 +2,7 @@ import type { HttpBindings } from '@hono/node-server';
 import type { AccessScope } from 'shared';
 import type { DbOrTx } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
-import type { SessionFacts } from '#/modules/auth/sessions-db';
+import type { SessionFacts } from '#/modules/auth/sessions/sessions-db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import type { RoleBinding } from '#/modules/service-accounts/service-accounts-db';

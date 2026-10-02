@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createSelectSchema } from '#/db/utils/drizzle-schema';
 import { passkeySchema } from '#/modules/auth/passkeys/passkeys-schema';
-import { sessionsTable } from '#/modules/auth/sessions-db';
+import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { inactiveMembershipSchema } from '#/modules/memberships/memberships-schema';
 import { enabledOAuthProvidersSchema, userSchema } from '#/modules/user/user-schema';
 import { validUuidSchema } from '#/schemas';

@@ -5,7 +5,7 @@ import type { DbContext, Env } from '#/core/context';
 import { devicesTable } from '#/modules/auth/devices/devices-db';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
-import { sessionSafeColumns, sessionsTable } from '#/modules/auth/sessions-db';
+import { sessionSafeColumns, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import type { sessionSchema } from '#/modules/me/me-schema';
 import { TimeSpan } from '#/utils/time-span';

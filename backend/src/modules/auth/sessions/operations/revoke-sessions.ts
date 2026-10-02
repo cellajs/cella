@@ -1,18 +1,10 @@
-import { and, eq, gt, inArray, isNull, type SQL } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { dropCachedSessions } from '#/middlewares/guard/session-cache';
 import { authEvents } from '#/modules/auth/auth-events';
-import {
-  type SessionEndReason,
-  type SessionModel,
-  type SessionRevocationReason,
-  type SessionTypes,
-  sessionSafeColumns,
-  sessionsTable,
-} from '#/modules/auth/sessions-db';
+import type { SessionEndReason, SessionModel, SessionTypes } from '#/modules/auth/sessions/sessions-db';
+import { updateSessionsRevoked } from '#/modules/auth/sessions/sessions-queries';
 import { deleteProviderSessionsOfUser } from '#/modules/oauth-server/oauth-server-queries';
-import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
 /** Which of the user's live sessions are revoked: these ids, or all of them (optionally of one type). */
@@ -52,22 +44,19 @@ export const revokeSessions = async (ctx: DbContext, opts: RevokeSessionsOpts): 
   const { userId, reason, by } = opts;
   if ('sessionIds' in opts && opts.sessionIds.length === 0) return [];
 
-  const selection = 'sessionIds' in opts ? inArray(sessionsTable.id, opts.sessionIds) : undefined;
-  const ofType = 'all' in opts && opts.type ? eq(sessionsTable.type, opts.type) : undefined;
+  const ids = 'sessionIds' in opts ? opts.sessionIds : undefined;
+  const type = 'all' in opts ? opts.type : undefined;
 
   const { ended, layered } = await ctx.var.db.transaction(async (tx) => {
-    const stamp = (revocationReason: SessionRevocationReason, where: SQL | undefined) =>
-      tx
-        .update(sessionsTable)
-        .set({ revokedAt: getIsoDate(), revokedBy: by, revocationReason })
-        .where(and(isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, getIsoDate()), where))
-        .returning(sessionSafeColumns);
-
-    const stamped = reason === 'user_deleted' ? [] : await stamp(reason, and(eq(sessionsTable.userId, userId), selection, ofType));
+    const txCtx = { var: { db: tx } };
+    const stamped =
+      reason === 'user_deleted' ? [] : await updateSessionsRevoked(txCtx, { match: { userId, ids, type }, revokedBy: by, revocationReason: reason });
     const endedIds = stamped.map((session) => session.id);
-    const stopped = endedIds.length ? await stamp('impersonation_stopped', inArray(sessionsTable.impersonatorSessionId, endedIds)) : [];
+    const stopped = endedIds.length
+      ? await updateSessionsRevoked(txCtx, { match: { impersonatorSessionIds: endedIds }, revokedBy: by, revocationReason: 'impersonation_stopped' })
+      : [];
 
-    if (deletesProviderSessions.has(reason)) await deleteProviderSessionsOfUser({ var: { db: tx } }, { userId });
+    if (deletesProviderSessions.has(reason)) await deleteProviderSessionsOfUser(txCtx, { userId });
     return { ended: stamped, layered: stopped };
   });
 

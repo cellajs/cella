@@ -1,4 +1,4 @@
-import type { AuthStrategy } from '#/modules/auth/sessions-db';
+import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 
 /** Sign-in methods as people read them; a provider identity's issuer is its strategy slug. */
 export const strategyLabels: Record<AuthStrategy, string> = {

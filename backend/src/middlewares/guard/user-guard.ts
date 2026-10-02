@@ -1,6 +1,6 @@
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
-import { resolveSession } from '#/modules/auth/general/helpers/session';
+import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { isSystemAccessAllowed } from '#/utils/system-access';
 import { updateLastSeenAt } from '../update-last-seen';
 import { loadMemberships } from './membership-cache';

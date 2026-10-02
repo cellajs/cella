@@ -3,7 +3,7 @@ import { nanoid } from 'nanoid';
 import { deletePasskey, deleteTotp, toggleMfa } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import type { StepUpProof } from '#/modules/auth/sessions-db';
+import type { StepUpProof } from '#/modules/auth/sessions/sessions-db';
 import { totpsTable } from '#/modules/auth/totps/totps-db';
 import { usersTable } from '#/modules/user/user-db';
 import { createTotpUser, expectRefusal } from '../helpers';

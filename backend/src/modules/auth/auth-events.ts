@@ -1,5 +1,5 @@
 import { EventEmitter } from 'node:events';
-import type { SessionEndReason } from '#/modules/auth/sessions-db';
+import type { SessionEndReason } from '#/modules/auth/sessions/sessions-db';
 
 /** Auth lifecycle events for other modules; sessions are not CDC-tracked, so they cannot travel the activity bus. Handlers catch their own errors. */
 export const authEvents = new EventEmitter<{

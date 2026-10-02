@@ -1,8 +1,8 @@
 import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
+import type { SessionFacts } from '#/modules/auth/sessions/sessions-db';
 import { getStepUpFacts } from '#/modules/auth/sessions/sessions-queries';
-import type { SessionFacts } from '#/modules/auth/sessions-db';
 import { refuseImpersonation, type StepUpState, stepUpWindow } from '#/modules/auth/step-up/helpers/step-up';
 
 /** Step-up state is read on the base pool, whatever the route's context holds. */

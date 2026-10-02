@@ -5,10 +5,10 @@ import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { resolveSession } from '#/modules/auth/general/helpers/session';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import { githubAuth, googleAuth, microsoftAuth, OAuthCodeExchangeError } from '#/modules/auth/oauth/helpers/providers';
-import { sessionsTable } from '#/modules/auth/sessions-db';
+import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
+import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
@@ -73,7 +73,12 @@ vi.mock('#/modules/auth/oauth/helpers/transform-user-data', () => ({
   })),
 }));
 vi.mock('#/modules/auth/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock());
-vi.mock('#/modules/auth/general/helpers/session', async (importOriginal) => (await import('../test-utils')).sessionMock(importOriginal));
+vi.mock('#/modules/auth/sessions/operations/create-session', async (importOriginal) =>
+  (await import('../test-utils')).createSessionMock(importOriginal),
+);
+vi.mock('#/modules/auth/sessions/operations/resolve-session', async (importOriginal) =>
+  (await import('../test-utils')).resolveSessionMock(importOriginal),
+);
 afterEach(async () => {
   await clearDatabase();
   clearCookieStore();

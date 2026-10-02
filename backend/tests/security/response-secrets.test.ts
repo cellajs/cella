@@ -4,7 +4,7 @@ import { baseDb as db } from '#/db/db';
 import { type SecretColumnTable, secretColumns } from '#/db/secret-columns';
 import { mockPastIsoDate } from '#/mocks';
 import { passkeyChallengesTable } from '#/modules/auth/passkeys/passkey-challenges-db';
-import { sessionsTable } from '#/modules/auth/sessions-db';
+import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
 import { totpsTable } from '#/modules/auth/totps/totps-db';

@@ -8,7 +8,7 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { appErrorHandler } from '#/lib/error';
 import { limiterScope } from '#/middlewares/rate-limiter/helpers';
-import { findSession } from '#/modules/auth/general/helpers/session';
+import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { requireStepUp } from '#/modules/auth/step-up/operations/read-step-up';
 import { clientKindOf } from '#/modules/oauth-server/adapter';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';

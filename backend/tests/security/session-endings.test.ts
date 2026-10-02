@@ -4,7 +4,8 @@ import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { createSession, type SignInContext } from '#/modules/auth/general/helpers/session';
+import type { SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
+import { createSession } from '#/modules/auth/sessions/operations/create-session';
 import { usersTable } from '#/modules/user/user-db';
 import { adminRole, overrideConfig } from '../fixtures';
 import {

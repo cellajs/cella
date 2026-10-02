@@ -1,7 +1,7 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { findUsersByIds } from '#/modules/system/system-queries';
-import { deleteAccounts } from '#/modules/user/helpers/delete-accounts';
+import { deleteAccounts } from '#/modules/user/operations/delete-accounts';
 import { log } from '#/utils/logger';
 
 export async function deleteUsersOp(ctx: UserContext, ids: string[]) {

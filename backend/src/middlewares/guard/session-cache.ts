@@ -1,11 +1,11 @@
 import { TTLCache } from '#/lib/ttl-cache';
-import type { ResolvedSession } from '#/modules/auth/general/helpers/session';
+import type { ResolvedSession } from '#/modules/auth/sessions/operations/resolve-session';
 
 /**
  * Sessions by the hash of their token, for 10 seconds, so a page's burst of requests reads its session once. An entry
  * carries the user's system role and bindings version, so a process drops a user's entries as soon as it learns of a
  * change: the writer through `invalidateCache.user` and `revokeSessions`, the API process through CDC
- * (`modules/auth/general/session-listeners.ts`). Any other process sees the change within the 10 seconds.
+ * (`modules/auth/sessions/session-listeners.ts`). Any other process sees the change within the 10 seconds.
  */
 const sessionCache = new TTLCache<ResolvedSession>({
   maxSize: 5000,

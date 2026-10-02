@@ -1,6 +1,6 @@
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
-import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
+import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import { deleteConsentsOfUsers } from '#/modules/oauth-server/oauth-server-queries';
 import { deleteUsersByIds } from '#/modules/system/system-queries';
 

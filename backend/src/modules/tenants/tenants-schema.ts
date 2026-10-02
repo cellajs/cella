@@ -1,7 +1,7 @@
 import { z } from '@hono/zod-openapi';
 import { schemaTags } from '#/core/openapi-helpers';
 import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schema';
-import { authStrategiesEnum } from '#/modules/auth/sessions-db';
+import { authStrategiesEnum } from '#/modules/auth/sessions/sessions-db';
 import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
 import { minimalBaseSchema, paginationQuerySchema, validNameSchema } from '#/schemas';
 import { mockTenantResponse } from './tenants-mocks';

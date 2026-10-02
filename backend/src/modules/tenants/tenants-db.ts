@@ -3,7 +3,7 @@ import { nanoidTenant } from 'shared/utils/nanoid';
 import { maxLength, tenantIdLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
-import type { AuthStrategy } from '#/modules/auth/sessions-db';
+import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import { defaultRestrictions, type Restrictions } from '#/modules/tenants/tenant-restrictions';
 import { usersTable } from '#/modules/user/user-db';
 

@@ -2,10 +2,10 @@ import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
-import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { mfaFactorRules } from '#/modules/auth/mfa/operations/factor-rules';
+import { setUserSession } from '#/modules/auth/sessions/operations/create-session';
+import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import { readStepUp } from '#/modules/auth/step-up/operations/read-step-up';
 import { findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 
