@@ -17,6 +17,37 @@ export const BASE_URL = `http://localhost:${BACKEND_PORT}${backendMountPath}`;
 export const CDC_HEALTH_PORT = Number(process.env.CDC_HEALTH_PORT ?? appConfig.devPorts.cdcHealth);
 export const CDC_HEALTH_URL = `http://localhost:${CDC_HEALTH_PORT}/health?depth=full`;
 
+// biome-ignore lint/style/noProcessEnv: bench reads the relay's YJS_PORT override like the relay does.
+export const YJS_PORT = Number(process.env.YJS_PORT ?? appConfig.devPorts.yjs);
+/** The relay directly, like BASE_URL: the Vite proxy's `/yjs` path would add a hop to every frame. */
+export const YJS_URL = `ws://localhost:${YJS_PORT}`;
+export const YJS_HEALTH_URL = `http://localhost:${YJS_PORT}/health?depth=full`;
+
+/** Shape of the `yjs-typing` scenario: documents, typing clients per document, typing time and keystroke spacing. */
+export const YJS_TYPING = {
+  // biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
+  docs: Number(process.env.YJS_DOCS ?? 20),
+  // biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
+  typers: Number(process.env.YJS_TYPERS ?? 3),
+  // biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
+  durationS: Number(process.env.YJS_DURATION_S ?? 120),
+  // biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
+  keystrokeMs: (process.env.YJS_KEYSTROKE_MS ?? '200-300').split('-').map(Number) as [number, number],
+  /** Users on the app's SSE stream, as non-editing viewers; defaults to one per document. */
+  // biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
+  sseViewers: process.env.YJS_SSE_VIEWERS === undefined ? undefined : Number(process.env.YJS_SSE_VIEWERS),
+  /** Seconds over which documents start typing; 0 starts them together, which lines up their compaction deadlines. */
+  // biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
+  staggerS: Number(process.env.YJS_STAGGER_S ?? 10),
+  /** First bench attachment to edit: a second run on one stack takes fresh documents with an offset past the first run's. */
+  // biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
+  docOffset: Number(process.env.YJS_DOC_OFFSET ?? 0),
+};
+
+/** Set by the bench CLI for `--short`: scenarios that run outside Artillery's phases shrink themselves. */
+// biome-ignore lint/style/noProcessEnv: bench centralizes process env access here.
+export const BENCH_SHORT = process.env.BENCH_SHORT === '1';
+
 export const SESSION_COOKIE_NAME = `${appConfig.slug}-session-${appConfig.cookieVersion}`;
 
 /** Signs the bench session cookies like the app does; read from backend/.env. */

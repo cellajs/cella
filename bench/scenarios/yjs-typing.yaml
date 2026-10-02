@@ -1,0 +1,26 @@
+# Yjs typing: documents x typing clients on the relay; peer and Saved latency, pg_notify, materializations, fan-out.
+#
+# One VU runs src/yjs-typing.ts, which drives real y-websocket clients: Artillery's websocket engine cannot speak the
+# Yjs protocol. Each document is a bench attachment with typing clients, one character every 200-300 ms, and one idle
+# viewer; users on the SSE stream watch as non-editing viewers. Shape: YJS_DOCS (20), YJS_TYPERS (3),
+# YJS_DURATION_S (120), YJS_KEYSTROKE_MS (200-300), YJS_SSE_VIEWERS (one per document), YJS_STAGGER_S (10),
+# YJS_DOC_OFFSET (0) and YJS_PORT (devPorts.yjs).
+#
+# The driver prints its own report; Artillery's custom histograms are yjs.peer_latency_ms, yjs.saved_latency_ms and
+# yjs.notify_delay_ms. The CLI's HTTP table stays empty by design. Standalone, with a JSON report:
+#
+#   pnpm -C bench yjs-typing --out report.json
+config:
+  target: "{{ $processEnvironment.BASE_URL }}"
+  processor: "../src/processors/yjs-typing.ts"
+  phases:
+    - duration: 1
+      arrivalCount: 1
+      name: "one driver"
+  plugins:
+    ensure:
+      maxErrorRate: 0
+
+scenarios:
+  - flow:
+      - function: "typeTogether"

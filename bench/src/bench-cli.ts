@@ -162,7 +162,8 @@ function runArtillery(
       cwd: BENCH_ROOT,
       // Quiet runs hide Artillery's live report but still pipe output: it exits non-zero when stdout/stderr are ignored.
       stdio: quiet ? 'pipe' : 'inherit',
-      env: createBenchProcessEnv(),
+      // A scenario that drives its own clients inside one VU reads BENCH_SHORT to shrink itself.
+      env: createBenchProcessEnv(short ? { BENCH_SHORT: '1' } : {}),
       encoding: 'utf-8',
       maxBuffer: 50 * 1024 * 1024,
     });
