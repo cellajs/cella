@@ -10,9 +10,10 @@ const dbCtx = { var: { db: baseDb } };
 
 /**
  * Whether a session stands stepped up now, and what its user can offer when it does not. A user with a passkey or
- * TOTP (for a method the app has on) proves one of them: a step-up with it, or a sign-in with it, within the window.
- * A user without proves a fresh first factor: any sign-in within the window, or a step-up through an emailed link.
- * Read fresh from the database, so a stamp set in another process counts at once; an impersonation never stands.
+ * TOTP (for a method the app has on) proves one of them within the window: a step-up with it, the MFA completion that
+ * minted the session (stamped at creation), or a sign-in with it (a passkey sign-in). A user without proves a fresh
+ * first factor: any sign-in within the window, or a step-up through an emailed link. Read fresh from the database, so
+ * a stamp set in another process counts at once; an impersonation never stands.
  */
 export const readStepUp = async (session: SessionFacts): Promise<StepUpState> => {
   const refused: StepUpState = { steppedUp: false, methods: [], factor: null };

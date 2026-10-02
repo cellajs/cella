@@ -90,7 +90,7 @@ A passkey challenge is 32 random bytes, handed to the browser in the signed `pas
 
 `verifyTotp` is the one TOTP check. The secret is encrypted at rest under `DATA_ENCRYPTION_KEY`. A code verifies within a minute of now and only for a time step later than `totps.last_used_step`, which it spends: each code counts once. Every check draws on the account's failure budget, whatever the IP: 5 failures in an hour lock the account's TOTP checks for 30 minutes and mail the owner, and the lockout lives in the database, so every process honours it.
 
-MFA (`users.mfaRequired`) needs both a passkey and an authenticator app, so a lost one can be replaced while the other still signs in; turning it on and deleting a factor run under a row lock (`mfaFactorRules`). A sign-in of such an account issues a `confirm-mfa` token in its cookie and lands on `/auth/mfa`. `completeMfaChallenge` is the only way out: it verifies the offered factor for the challenge's account, spends the challenge and signs in with an `mfa` session.
+MFA (`users.mfaRequired`) needs both a passkey and an authenticator app, so a lost one can be replaced while the other still signs in; turning it on and deleting a factor run under a row lock (`mfaFactorRules`). A sign-in of such an account issues a `confirm-mfa` token in its cookie, carrying the method the sign-in started with, and lands on `/auth/mfa`. `completeMfaChallenge` is the only way out: it verifies the offered factor for the challenge's account, spends the challenge and signs in with an `mfa` session that records that method as `authStrategy` and the factor as its step-up (`steppedUpVia`), so a tenant's sign-in policy and the step-up window read the same row.
 
 ## Step-up
 

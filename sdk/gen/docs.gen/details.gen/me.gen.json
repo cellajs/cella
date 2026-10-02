@@ -646,6 +646,11 @@
                     "required": true,
                     "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
                   },
+                  "connectionId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
+                  },
                   "ipHash": {
                     "type": ["string", "null"],
                     "required": true,
@@ -764,6 +769,7 @@
               "deviceOs": "iOS",
               "browser": "Edge",
               "authStrategy": "passkey",
+              "connectionId": null,
               "ipHash": null,
               "ipSubnetHash": null,
               "ipCountry": null,
@@ -1094,6 +1100,11 @@
                     "type": "string",
                     "required": true,
                     "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                  },
+                  "connectionId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
                   },
                   "ipHash": {
                     "type": ["string", "null"],

@@ -14,6 +14,7 @@ import {
   createTotpUser,
   enableMFAForUser,
   expectRefusal,
+  sessionsOf,
   setCookiePair,
   totpCode,
   wrongTotpCode,
@@ -86,7 +87,7 @@ describe('TOTP Authentication', async () => {
   describe('TOTP Sign-In Flow', () => {
     it('should sign in with valid TOTP code', async () => {
       const user = await createTotpUser(signUpUser.email);
-      const mfaToken = await createMfaToken(user);
+      const mfaToken = await createMfaToken(user, 'magic');
 
       const { response: res } = await call(signInWithTotp, {
         body: { code: totpCode() },
@@ -95,6 +96,11 @@ describe('TOTP Authentication', async () => {
 
       expect(res.status).toBe(204);
       expect(cookieChange(res, 'session')).toBe('set');
+
+      // The session records the method the sign-in started with; the factor is its step-up, not its method.
+      const [session] = await sessionsOf(user.id);
+      expect(session).toMatchObject({ type: 'mfa', authStrategy: 'magic', steppedUpVia: 'totp' });
+      expect(session.steppedUpAt).not.toBeNull();
     });
 
     it('should reject invalid TOTP code', async () => {

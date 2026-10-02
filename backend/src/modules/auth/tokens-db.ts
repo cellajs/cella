@@ -6,7 +6,7 @@ import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { identitiesTable } from '#/modules/auth/oauth/identities-db';
-import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { authStrategiesEnum, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { usersTable } from '#/modules/user/user-db';
 
 const tokenTypeEnum = appConfig.tokenTypes;
@@ -43,6 +43,8 @@ export const tokensTable = snakeCase.table(
     pendingSignUp: jsonb().$type<PendingSignUp>(),
     /** The session a token is bound to: a step-up link stamps only this session. */
     sessionId: uuid().references(() => sessionsTable.id, { onDelete: 'cascade' }),
+    /** For a `confirm-mfa` challenge: the method the sign-in started with, which the mfa session it ends in records. */
+    authStrategy: varchar({ enum: authStrategiesEnum }),
     createdBy: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),

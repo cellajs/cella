@@ -28,6 +28,7 @@ export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
           deviceOs: faker.helpers.arrayElement(['macOS', 'Windows', 'iOS', 'Android']),
           browser: faker.helpers.arrayElement(['Chrome', 'Firefox', 'Safari', 'Edge']),
           authStrategy: 'passkey' as const,
+          connectionId: null,
           ipHash: null,
           ipSubnetHash: null,
           ipCountry: null,

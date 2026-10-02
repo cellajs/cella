@@ -12,7 +12,7 @@ import type { UserWithCounters } from '#/modules/user/helpers/select';
  * then 302 to the resolved post-auth path. The redirect is carried into the MFA challenge so it survives it.
  */
 export const finishSignIn = async (ctx: Context<Env>, user: UserWithCounters, strategy: AuthStrategy, redirectPath?: string | null) => {
-  const mfaRedirectPath = await initiateMfa(ctx, user);
+  const mfaRedirectPath = await initiateMfa(ctx, user, strategy);
 
   const resolvedPath = resolvePostAuthRedirectPath(user, { redirectPath, mfaPath: mfaRedirectPath });
   const redirectUrl = new URL(resolvedPath, appConfig.frontendUrl);
