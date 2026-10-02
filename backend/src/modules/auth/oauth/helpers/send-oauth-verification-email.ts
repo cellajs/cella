@@ -3,7 +3,7 @@ import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { strategyLabels } from '#/modules/auth/general/helpers/notify-sign-in';
+import { strategyLabels } from '#/modules/auth/general/helpers/strategy-labels';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import { issueToken, type NewToken } from '#/modules/auth/tokens/token-lifecycle';

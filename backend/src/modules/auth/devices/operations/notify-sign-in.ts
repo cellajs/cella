@@ -1,12 +1,12 @@
-import { and, eq, gt } from 'drizzle-orm';
 import { appConfig } from 'shared';
-import { baseDb as db } from '#/db/db';
-import { devicesTable } from '#/modules/auth/devices-db';
+import { baseDb } from '#/db/db';
+import { countNotifiedDevices, updateDeviceNotifiedAt } from '#/modules/auth/devices/devices-queries';
 import { sendAccountSecurityEmail, sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import type { SignInContext } from '#/modules/auth/general/helpers/session';
+import { strategyLabels } from '#/modules/auth/general/helpers/strategy-labels';
 import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import type { UserModel } from '#/modules/user/user-db';
-import { getIsoDate, utcStamp } from '#/utils/iso-date';
+import { utcStamp } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
 
@@ -28,16 +28,8 @@ const inboxStrategies: AuthStrategy[] = ['magic', 'email'];
 const NOTICE_BUDGET = 3;
 const NOTICE_WINDOW = new TimeSpan(24, 'h');
 
-/** Sign-in methods as people read them; a provider identity's issuer is its strategy slug. */
-export const strategyLabels: Record<AuthStrategy, string> = {
-  passkey: 'Passkey',
-  totp: 'Authenticator app',
-  github: 'GitHub',
-  google: 'Google',
-  microsoft: 'Microsoft',
-  magic: 'Magic link',
-  email: 'Email',
-};
+/** Notices go out fire-and-forget, without a request, on the base pool. */
+const dbCtx = { var: { db: baseDb } };
 
 /** Country name in the reader's language from the ISO code GeoIP gives. */
 const countryName = (code: string, language: string) => {
@@ -72,18 +64,14 @@ export const notifyNewSignIn = async ({
 
   try {
     const since = new Date(Date.now() - NOTICE_WINDOW.milliseconds()).toISOString();
-    const notifiedRecently = and(eq(devicesTable.userId, user.id), gt(devicesTable.notifiedAt, since));
-    const sent = await db.$count(devicesTable, notifiedRecently);
+    const sent = await countNotifiedDevices(dbCtx, { userId: user.id, since });
 
     if (sent >= NOTICE_BUDGET) {
       log.info('New sign-in notice skipped: daily budget spent', { userId: user.id });
       return;
     }
 
-    await db
-      .update(devicesTable)
-      .set({ notifiedAt: getIsoDate() })
-      .where(and(eq(devicesTable.userId, user.id), eq(devicesTable.deviceIdHash, newDevice.deviceIdHash)));
+    await updateDeviceNotifiedAt(dbCtx, { userId: user.id, deviceIdHash: newDevice.deviceIdHash });
 
     sendAccountSecurityEmail(user, 'new-sign-in', {
       timestamp: utcStamp(),

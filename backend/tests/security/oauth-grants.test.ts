@@ -20,8 +20,8 @@ import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest
 import { baseDb as db, getAdminDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
+import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
 import type { SessionEndReason } from '#/modules/auth/sessions-db';
-import { stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
@@ -976,7 +976,7 @@ describe('OAuth grants', async () => {
       expect(await grantRowsOf(ctx.member.id)).toEqual([]);
 
       // Positive control: the same session once stepped up gets its code.
-      await stampStepUp(stale.id, ctx.member.id, 'email');
+      await updateSessionSteppedUp({ var: { db } }, { id: stale.id, userId: ctx.member.id, via: 'email' });
       const granted = await authorizationCode(oauth.issuer, { ...authorization(ctx), sessionCookie: stale.cookie });
       expect(granted.code).toBeTruthy();
     });

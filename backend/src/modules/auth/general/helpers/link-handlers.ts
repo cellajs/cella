@@ -6,7 +6,7 @@ import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
 import { explainOpenedMagicLink, holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/helpers/magic-link-browser';
 import { claimMagicLinkOwner } from '#/modules/auth/magic/helpers/magic-sign-up';
 import { handleOAuthVerification } from '#/modules/auth/oauth/helpers/handle-oauth-verification';
-import { openStepUpLink } from '#/modules/auth/step-up/helpers/step-up-link';
+import { openStepUpLink } from '#/modules/auth/step-up/operations/open-step-up-link';
 import { forgetLinkRequest, invokeToken } from '#/modules/auth/tokens/token-lifecycle';
 import type { LinkTokenType } from '#/modules/auth/tokens/token-policies';
 import { log } from '#/utils/logger';

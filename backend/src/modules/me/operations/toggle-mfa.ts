@@ -6,7 +6,7 @@ import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
 import { mfaFactorRules } from '#/modules/auth/mfa/operations/factor-rules';
-import { readStepUp } from '#/modules/auth/step-up/helpers/step-up';
+import { readStepUp } from '#/modules/auth/step-up/operations/read-step-up';
 import { findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 
 /**
