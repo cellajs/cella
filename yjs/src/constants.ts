@@ -8,6 +8,13 @@ export const YJS_CLEANUP_MAX_ATTEMPTS = 12;
 export const YJS_COMPACT_DEBOUNCE_MS = 3000;
 /** Longest wait for compaction after the first update since the last compaction started, however often later updates restart the debounce: bounds how far non-editing viewers fall behind, and the log, while someone types without pause. */
 export const YJS_COMPACT_MAX_WAIT_MS = 10_000;
+/**
+ * How long a relay collects its committed appends before it announces them, one notice per document in one statement.
+ * A notifying commit holds a cluster-wide lock through its WAL flush, so one per keystroke serialized every append and
+ * the relay fell behind its typists under load; at most twenty a second per relay leave the lock idle. Other relays'
+ * sockets wait this much longer for the rows.
+ */
+export const YJS_LOG_NOTICE_DELAY_MS = 50;
 /** Server-origin rows one materialize request may name: the backend refuses more with 400, which no retry overcomes. */
 export const YJS_MAX_SERVER_ROW_IDS = 10_000;
 /** Sync messages a socket may queue while its entity access is still being verified. */

@@ -212,7 +212,7 @@ describe('the Yjs log', () => {
     await held.done;
     await barrier();
     if (appended.status !== 'appended') throw new Error('the append must land');
-    expect(heardFor(scope)).toEqual([{ tenantId, entityType, entityId: scope.entityId, logId: appended.id }]);
+    expect(heardFor(scope)).toEqual([{ tenantId, entityType, entityId: scope.entityId, logIds: [appended.id] }]);
 
     const silent = await asSystem((tx) =>
       appendYjsUpdate(ctxOf(tx), { doc: scope, update: textUpdate('b'), userId: null, generation, notify: false }),

@@ -25,7 +25,7 @@ export interface AppendYjsUpdateOpts {
   userId: string | null;
   /** The generation the update extends: a client's own, or the one an outside write just read. */
   generation: string;
-  /** False skips the notification. Default true. */
+  /** False skips the notification: the relay announces its appends after they commit, batched. Default true. */
   notify?: boolean;
 }
 
@@ -35,7 +35,8 @@ export interface AppendYjsUpdateOpts {
  * document row of `generation` is held under FOR KEY SHARE until the caller's transaction ends, so a retirement, which
  * deletes that row first, waits for the insert and then deletes the log row too. The row is inserted and, unless
  * `notify` is false, announced on YJS_LOG_CHANNEL in the same transaction: relays hear of it at commit, and never of a
- * row that rolled back. Runs under the document's tenant context, as `findYjsDocument` does.
+ * row that rolled back. The relay passes false: one notifying commit per keystroke would serialize its appends, so it
+ * announces them after commit, batched. Runs under the document's tenant context, as `findYjsDocument` does.
  */
 export async function appendYjsUpdate(
   ctx: DbContext,
@@ -52,6 +53,6 @@ export async function appendYjsUpdate(
 
   const row = await insertYjsUpdate(ctx, { doc, userId, payload: update });
   const { entityType, entityId, tenantId } = doc;
-  if (notify) await notifyYjsLog(ctx, { notices: [{ tenantId, entityType, entityId, logId: row.id }] });
+  if (notify) await notifyYjsLog(ctx, { notices: [{ tenantId, entityType, entityId, logIds: [row.id] }] });
   return { status: 'appended', id: row.id };
 }

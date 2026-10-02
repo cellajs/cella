@@ -1036,7 +1036,7 @@ describe('catch-up: log rows the session has not relayed', () => {
     const { scope, key, ws, peer, collab } = await liveSession();
     const logId = await outsideWrite(scope, key, 1);
 
-    onLogNotice({ ...scope, logId });
+    onLogNotice({ ...scope, logIds: [logId] });
     await flushMicrotasks();
 
     expect(relayedTo(ws)).toEqual([{ outside: 1 }]);
@@ -1045,7 +1045,7 @@ describe('catch-up: log rows the session has not relayed', () => {
 
     // The same notification again reads nothing and sends nothing.
     storage.readLogOf.mockClear();
-    onLogNotice({ ...scope, logId });
+    onLogNotice({ ...scope, logIds: [logId] });
     await flushMicrotasks();
     expect(storage.readLogOf).not.toHaveBeenCalled();
     expect(relayedTo(ws)).toHaveLength(1);
@@ -1056,8 +1056,8 @@ describe('catch-up: log rows the session has not relayed', () => {
     const { scope, key, ws } = session();
     const logId = await outsideWrite(scope, key, 1);
 
-    onLogNotice({ ...scope, entityId: 'no-session-here', logId });
-    onLogNotice({ ...scope, logId });
+    onLogNotice({ ...scope, entityId: 'no-session-here', logIds: [logId] });
+    onLogNotice({ ...scope, logIds: [logId] });
     await flushMicrotasks();
 
     expect(storage.readLogOf).not.toHaveBeenCalled();
@@ -1084,7 +1084,7 @@ describe('catch-up: log rows the session has not relayed', () => {
 
     const done = handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('mine', 1)));
     await flushMicrotasks();
-    onLogNotice({ ...scope, logId: logged! });
+    onLogNotice({ ...scope, logIds: [logged!] });
     await flushMicrotasks();
     gate.release();
     await done;
@@ -1093,6 +1093,37 @@ describe('catch-up: log rows the session has not relayed', () => {
     expect(relayedTo(ws)).toEqual([]);
     expect(relayedTo(peer)).toEqual([{ mine: 1 }]);
     expect(ws.sent).toEqual([savedFrame]);
+    leaveCollab(scope, peer as never);
+  });
+
+  it('catches up a batched notice whose newest row it relayed already, for an older row that committed after it', async () => {
+    const { scope, key, ws, peer, collab } = await liveSession();
+    const older = await outsideWrite(scope, key, 1);
+    const newer = await outsideWrite(scope, key, 2);
+    // An earlier read relayed the newer row while the older one was still uncommitted.
+    collab.seen.add(newer);
+
+    onLogNotice({ ...scope, logIds: [older, newer] });
+    await flushMicrotasks();
+
+    expect(storage.readLogOf).toHaveBeenCalledTimes(1);
+    expect(relayedTo(ws)).toEqual([{ outside: 1 }]);
+    expect(relayedTo(peer)).toEqual([{ outside: 1 }]);
+    leaveCollab(scope, peer as never);
+  });
+
+  it('must not read for a batched notice of its own appends: each row was counted seen before it committed', async () => {
+    const { ctx: c, scope, ws, peer } = await liveSession();
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('one', 1)));
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('two', 2)));
+    const ids = [...getCollab(scope)!.seen];
+
+    onLogNotice({ ...scope, logIds: ids });
+    await flushMicrotasks();
+
+    expect(ids).toHaveLength(2);
+    expect(storage.readLogOf).not.toHaveBeenCalled();
+    expect(relayedTo(peer)).toEqual([{ one: 1 }, { two: 2 }]);
     leaveCollab(scope, peer as never);
   });
 
@@ -1166,10 +1197,10 @@ describe('catch-up: log rows the session has not relayed', () => {
     for (let i = 0; i < 5; i++) ids.push(await outsideWrite(scope, key, i));
 
     // The first notification starts a read; the four that arrive while it runs queue one more, which reads after them.
-    onLogNotice({ ...scope, logId: ids[0] });
+    onLogNotice({ ...scope, logIds: [ids[0]] });
     await flushMicrotasks();
     const runs = ids.slice(1).map((logId) => {
-      onLogNotice({ ...scope, logId });
+      onLogNotice({ ...scope, logIds: [logId] });
       return relayUnseen(getCollab(scope)!);
     });
     await flushMicrotasks();

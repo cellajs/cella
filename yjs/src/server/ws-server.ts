@@ -8,6 +8,7 @@ import { WebSocketServer } from 'ws';
 import { YJS_MAX_UPDATE_BYTES } from '#/modules/yjs/helpers/yjs-log';
 import { closeDb } from '../data/db';
 import { logListenerStatus, stopLogListener } from '../data/listener';
+import { logNotifier } from '../data/log-notifier';
 import { env } from '../env';
 import { log } from '../lib/pino';
 import { getActiveClientCount, getActiveDocumentCount } from '../sync/session-manager';
@@ -81,6 +82,8 @@ export async function closeWsServer(): Promise<void> {
   }
 
   await stopLogListener();
+  // Rows appended before the sockets closed still reach the other relays.
+  await logNotifier.flush();
   await closeDb();
 
   log.info('Yjs worker stopped');

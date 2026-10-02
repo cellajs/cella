@@ -335,9 +335,12 @@ describe('two relays on one database', () => {
     await recordOutsideWrite(scope, paragraphs('written once'), { updateEntity: true });
     for (const client of [here, there]) await until(() => textsOf(client.doc)[0] === 'written once', 3000);
 
-    // A client's update, logged by its relay, reaches the other relay's client through the same channel.
+    // A client's update, logged by its relay and announced once it committed, in a batch, reaches the other relay's
+    // client through the same channel, both ways: each relay process announces its own appends.
     firstParagraph(here.doc).insert(0, [new Y.XmlText('typed ')]);
     await until(() => textsOf(there.doc)[0] === 'typed written once', 3000);
+    firstParagraph(there.doc).insert(0, [new Y.XmlText('back ')]);
+    await until(() => textsOf(here.doc)[0] === 'back typed written once', 3000);
     expect(here.closes).toEqual([]);
     expect(there.closes).toEqual([]);
     for (const client of [here, there]) client.provider.destroy();
