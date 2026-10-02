@@ -187,13 +187,13 @@
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe list passed on 23 states.",
+          "summary": "axe list passed on 22 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe listitem passed on 23 states.",
+          "summary": "axe listitem passed on 22 states.",
           "where": []
         },
         {
@@ -211,13 +211,13 @@
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-required-children passed on 9 states.",
+          "summary": "axe aria-required-children passed on 8 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-required-parent passed on 9 states.",
+          "summary": "axe aria-required-parent passed on 8 states.",
           "where": []
         }
       ]
@@ -338,26 +338,21 @@
       "level": "AA",
       "en301549": "9.1.4.3",
       "status": "partially-supports",
-      "remarks": "Automated checks found failures on 18 of the reviewed pages and states.",
+      "remarks": "Automated checks found failures on 13 of the reviewed pages and states.",
       "decidedBy": "audit",
       "open": [],
       "evidence": [
         {
           "check": "axe",
           "result": "fail",
-          "summary": "axe color-contrast: Elements must meet minimum color contrast ratio thresholds (481 elements).",
+          "summary": "axe color-contrast: Elements must meet minimum color contrast ratio thresholds (21 elements).",
           "where": [
-            "docs-overview (light)",
-            "docs-operations (light)",
-            "docs-search (light)",
             "account (light)",
             "org-attachments (light)",
             "org-members (light)",
             "org-settings (light)",
             "invite-dialog (light)",
             "member-sheet (light)",
-            "docs-overview (dark)",
-            "docs-search (dark)",
             "account (dark)",
             "org-attachments (dark)",
             "org-members (dark)",
@@ -411,21 +406,16 @@
       "name": "Reflow",
       "level": "AA",
       "en301549": "9.1.4.10",
-      "status": "partially-supports",
-      "remarks": "Automated checks found failures on 4 of the reviewed pages and states.",
+      "status": "supports",
+      "remarks": "Content fits a 320px-wide viewport without sideways scrolling passed on all 26 states.",
       "decidedBy": "audit",
       "open": [],
       "evidence": [
         {
           "check": "probe:reflow",
-          "result": "fail",
-          "summary": "Content fits a 320px-wide viewport without sideways scrolling failed on 4 of 26 states. org-attachments: text \"Hauck, Watsica and Douglas\" is cut off at the edge | org-members: text \"Hauck, Watsica and Douglas\" is cut off at the edge | org-settings: text \"Hauck, Watsica and Douglas\" is cut off at the edge | invite-dialog: text \"Hauck, Watsica and Douglas\" is cut off at the edge",
-          "where": [
-            "org-attachments",
-            "org-members",
-            "org-settings",
-            "invite-dialog"
-          ]
+          "result": "pass",
+          "summary": "Content fits a 320px-wide viewport without sideways scrolling passed on all 26 states.",
+          "where": []
         }
       ]
     },
@@ -448,9 +438,11 @@
       "level": "AA",
       "en301549": "9.1.4.12",
       "status": "partially-supports",
-      "remarks": "Automated checks found failures on 9 of the reviewed pages and states.",
+      "remarks": "Automated checks found failures on 1 of the reviewed pages and states.",
       "decidedBy": "audit",
-      "open": [],
+      "open": [
+        "review"
+      ],
       "evidence": [
         {
           "check": "axe",
@@ -461,15 +453,20 @@
         {
           "check": "probe:text-spacing",
           "result": "fail",
-          "summary": "Text stays fully visible with WCAG text spacing applied failed on 9 of 26 states. docs-operations: \"resendInvitationWithToken\" is cut off; \"generatePasskeyChallenge\" is cut off; \"getStepUpPasskeyChallenge\" is cut off | docs-page: \"Customize & contribute\" is cut off | org-attachments: \"Hauck, Watsica and Douglas\" is cut off | org-members: \"Hauck, Watsica and Douglas\" is cut off; \"admin-test@cellajs.com\" is cut off; \"boyd.quigley92@gmail.com\" is cut off | org-settings: \"Hauck, Watsica and Douglas\" is cut off; \"Visible\" is cut off | system-users: \"alden.cormier83@gmail.com\" is cut off; \"oral.altenwerth@hotmail.com\" is cut off; \"dora.gislason86@hotmail.com\" is cut off | menu-sheet: \"Hauck, Watsica and Douglas\" is cut off; \"Grady, Ebert and Farrell\" is cut off; \"Smith, Lynch and Kozey\" is cut off | invite-dialog: \"Hauck, Watsica and Douglas\" is cut off; \"admin-test@cellajs.com\" is cut off; \"boyd.quigley92@gmail.com\" is cut off | member-sheet: \"Hauck, Watsica and Douglas\" is cut off; \"admin-test@cellajs.com\" is cut off; \"boyd.quigley92@gmail.com\" is cut off",
+          "summary": "Text stays fully visible with WCAG text spacing applied failed on 1 of 26 states. menu-sheet: \"Hauck, Watsica and Douglas\" is cut off; \"Grady, Ebert and Farrell\" is cut off; \"Smith, Lynch and Kozey\" is cut off",
+          "where": [
+            "menu-sheet"
+          ]
+        },
+        {
+          "check": "probe:text-spacing",
+          "result": "review",
+          "summary": "Grid and table cells truncate more with text spacing: check that the full value stays reachable. docs-operations: 10 cells, such as \"resendInvitationWithToken\" | org-members: 10 cells, such as \"admin-test@cellajs.com\" | org-settings: 1 cells, such as \"Visible\"",
           "where": [
             "docs-operations",
-            "docs-page",
-            "org-attachments",
             "org-members",
             "org-settings",
             "system-users",
-            "menu-sheet",
             "invite-dialog",
             "member-sheet"
           ]
@@ -591,20 +588,16 @@
       "name": "Character Key Shortcuts",
       "level": "A",
       "en301549": "9.2.1.4",
-      "status": "partially-supports",
-      "remarks": "Automated checks found failures on 3 of the reviewed pages and states.",
+      "status": "supports",
+      "remarks": "Keyboard shortcuts need Ctrl, Alt or Meta, or can be turned off passed on all 1 states.",
       "decidedBy": "audit",
       "open": [],
       "evidence": [
         {
-          "check": "code:shortcuts",
-          "result": "fail",
-          "summary": "Single-character shortcuts with no way to turn them off or remap them: Shift + A (frontend/src/modules/navigation/app-nav.tsx), Shift + F (frontend/src/modules/navigation/app-nav.tsx), Shift + M (frontend/src/modules/navigation/app-nav.tsx).",
-          "where": [
-            "Shift + A (frontend/src/modules/navigation/app-nav.tsx)",
-            "Shift + F (frontend/src/modules/navigation/app-nav.tsx)",
-            "Shift + M (frontend/src/modules/navigation/app-nav.tsx)"
-          ]
+          "check": "probe:shortcuts",
+          "result": "pass",
+          "summary": "Keyboard shortcuts need Ctrl, Alt or Meta, or can be turned off passed on all 1 states.",
+          "where": []
         }
       ]
     },
@@ -733,9 +726,9 @@
       "name": "Focus Order",
       "level": "A",
       "en301549": "9.2.4.3",
-      "status": "partially-supports",
-      "remarks": "Automated checks found failures on 1 of the reviewed pages and states.",
-      "decidedBy": "audit",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
       "open": [
         "manual",
         "review"
@@ -776,11 +769,9 @@
         },
         {
           "check": "probe:keyboard",
-          "result": "fail",
-          "summary": "Focus stays inside an open overlay failed on 1 of 6 states. invite-dialog: focus falls back to the page body; focus reaches button \"Role\" behind the open overlay; focus reaches button \"View\" behind the open overlay",
-          "where": [
-            "invite-dialog"
-          ]
+          "result": "pass",
+          "summary": "Focus stays inside an open overlay passed on all 6 states.",
+          "where": []
         }
       ]
     },
@@ -799,7 +790,7 @@
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe link-name passed on 24 states.",
+          "summary": "axe link-name passed on 23 states.",
           "where": []
         }
       ]
@@ -835,22 +826,16 @@
       "name": "Focus Visible",
       "level": "AA",
       "en301549": "9.2.4.7",
-      "status": "partially-supports",
-      "remarks": "Automated checks found failures on 5 of the reviewed pages and states.",
+      "status": "supports",
+      "remarks": "A visible change on every element that receives keyboard focus passed on all 26 states.",
       "decidedBy": "audit",
       "open": [],
       "evidence": [
         {
           "check": "probe:keyboard",
-          "result": "fail",
-          "summary": "A visible change on every element that receives keyboard focus failed on 5 of 26 states. docs-overview: button \"BUTTON\" | org-attachments: span \"Select All\"; div \"DIV\"; div \"Name\" | org-members: span \"Select All\"; div \"Name\"; div \"Email\" | system-users: span \"Select All\"; div \"Name\"; div \"DIV\" | system-organizations: span \"Select All\"; div \"Name\"; div \"DIV\"",
-          "where": [
-            "docs-overview",
-            "org-attachments",
-            "org-members",
-            "system-users",
-            "system-organizations"
-          ]
+          "result": "pass",
+          "summary": "A visible change on every element that receives keyboard focus passed on all 26 states.",
+          "where": []
         }
       ]
     },
@@ -987,7 +972,7 @@
         {
           "check": "axe",
           "result": "review",
-          "summary": "axe target-size needs a person to check 8 states: All touch targets must be 24px large, or leave sufficient space.",
+          "summary": "axe target-size needs a person to check 7 states: All touch targets must be 24px large, or leave sufficient space.",
           "where": [
             "docs-operations (light)",
             "docs-schemas (light)",
@@ -995,8 +980,7 @@
             "org-members (light)",
             "org-settings (light)",
             "system-users (light)",
-            "system-organizations (light)",
-            "invite-dialog (light)"
+            "system-organizations (light)"
           ]
         }
       ]
@@ -1197,7 +1181,7 @@
       "level": "AA",
       "en301549": null,
       "status": "supports",
-      "remarks": "Sign-in fields accept autofill and pasted text passed on all 1 states. Sign-in uses passkey, oauth, totp, magic: no password to remember, and one-time codes support autofill (autocomplete=\"one-time-code\").",
+      "remarks": "Sign-in fields accept autofill and pasted text passed on all 1 states. Sign-in uses passkey, oauth, totp, magic, sso: no password to remember, and one-time codes support autofill (autocomplete=\"one-time-code\").",
       "decidedBy": "audit",
       "open": [],
       "evidence": [
@@ -1210,7 +1194,7 @@
         {
           "check": "code:authentication",
           "result": "pass",
-          "summary": "Sign-in uses passkey, oauth, totp, magic: no password to remember, and one-time codes support autofill (autocomplete=\"one-time-code\").",
+          "summary": "Sign-in uses passkey, oauth, totp, magic, sso: no password to remember, and one-time codes support autofill (autocomplete=\"one-time-code\").",
           "where": []
         }
       ]
@@ -1315,7 +1299,7 @@
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe link-name passed on 24 states.",
+          "summary": "axe link-name passed on 23 states.",
           "where": []
         },
         {
