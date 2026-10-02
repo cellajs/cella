@@ -1,6 +1,8 @@
+import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, xRoute } from '#/core/x-routes';
 import { publicGuard } from '#/middlewares/guard';
-import { tokenLimiter } from '#/middlewares/rate-limiter/limiters';
+import { isNoBot } from '#/middlewares/is-no-bot';
+import { spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockSsoEntryResponse } from '#/modules/auth/auth-mocks';
 import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
 import { ssoConnectionParamSchema, ssoEntrySchema, ssoFederationParamSchema } from '#/modules/auth/sso/sso-schema';
@@ -51,5 +53,17 @@ export const authSsoRoutes = createXRoutes(['auth', 'cella'], {
       'The redirect URI registered at every federation. Verifies the tokens, asserts the institution against the connection, signs the user in (creating the account and its membership on a first sign-in) or links the identity, and redirects to the frontend.',
     request: { query: oauthCallbackQuerySchema },
     responses: { 302: { description: 'Redirect to frontend', headers: locationSchema } },
+  }),
+  sendSsoRecoveryLink: xRoute({
+    method: 'post',
+    path: '/sso/recovery-link',
+    xEnabledBy: { strategy: 'sso' },
+    xGuard: [publicGuard],
+    xRateLimiter: [spamLimiter],
+    middleware: isNoBot,
+    summary: 'Send an SSO recovery link',
+    description:
+      'For a browser whose institution sign-in was refused because an account already holds the asserted address: mails a magic link to that address, which returns to the account page to connect the institution account. Takes no input; the browser holds the offer for ten minutes and spends it by asking.',
+    responses: { 200: json('The address the link was sent to', z.object({ email: z.string() })) },
   }),
 });

@@ -33,6 +33,7 @@ export type CookieName =
   | 'magic-requested'
   | 'magic-pending'
   | 'step-up-requested'
+  | 'sso-recovery'
   | `oauth-state-${string}`;
 
 /**

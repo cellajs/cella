@@ -865,6 +865,13 @@ export const zSsoCallbackQuery = z.object({
 });
 
 /**
+ * The address the link was sent to
+ */
+export const zSendSsoRecoveryLinkResponse = z.object({
+  email: z.string(),
+});
+
+/**
  * Step-up state
  */
 export const zGetStepUpResponse = z.object({

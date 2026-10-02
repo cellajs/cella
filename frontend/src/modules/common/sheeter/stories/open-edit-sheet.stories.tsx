@@ -30,6 +30,7 @@ const translations = {
   user: 'User',
   organization: 'Organization',
   tenant: 'Tenant',
+  connection_other: 'Connections',
   unsaved_changes: 'Unsaved changes',
 };
 
@@ -125,12 +126,12 @@ export const TenantSheet: Story = {
   args: { open: (triggerRef) => openUpdateTenantSheet(tenant, triggerRef) },
   play: async ({ canvasElement }) => {
     const sheet = await openAndClose(canvasElement, { id: 'update-tenant', title: 'Edit tenant', container: 'container w-full' });
-    // The form card, then the domains card.
+    // The form card, then the connections card.
     const cards = [...sheet.querySelectorAll('[data-slot="card"]')];
     await expect(cards).toHaveLength(2);
     await expect(cards[0]).toHaveClass('mb-4');
     await expect(cards[0].querySelector('form')).not.toBeNull();
     await expect(cards[1]).toHaveClass('mb-20');
-    await expect(cards[1]).toHaveTextContent('Domains');
+    await expect(cards[1]).toHaveTextContent('Connections');
   },
 };

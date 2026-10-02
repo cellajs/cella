@@ -4969,6 +4969,57 @@
         }
       }
     },
+    "/auth/sso/recovery-link": {
+      "post": {
+        "security": [],
+        "operationId": "sendSsoRecoveryLink",
+        "tags": ["auth", "cella"],
+        "summary": "Send an SSO recovery link",
+        "description": "For a browser whose institution sign-in was refused because an account already holds the asserted address: mails a magic link to that address, which returns to the account page to connect the institution account. Takes no input; the browser holds the offer for ten minutes and spends it by asking.",
+        "x-enabled-by": {
+          "strategy": "sso"
+        },
+        "x-guard": ["publicGuard"],
+        "x-rate-limiter": ["spamLimiter"],
+        "x-cache": [],
+        "responses": {
+          "200": {
+            "description": "The address the link was sent to",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "email": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["email"]
+                }
+              }
+            }
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequestError"
+          },
+          "401": {
+            "$ref": "#/components/responses/UnauthorizedError"
+          },
+          "403": {
+            "$ref": "#/components/responses/ForbiddenError"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFoundError"
+          },
+          "409": {
+            "$ref": "#/components/responses/ConflictError"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequestsError"
+          }
+        }
+      }
+    },
     "/auth/step-up": {
       "get": {
         "security": [

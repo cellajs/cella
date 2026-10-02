@@ -57,7 +57,7 @@ export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims,
   const profile = transformSsoClaims(claims);
   const snapshot = snapshotOf(federation, claims);
   const identity = await findIdentityBySubject(dbCtx, { kind: 'sso', issuer: federation.key, subject: claims.sub });
-  const facts = { federation, connection, profile, snapshot, subject: claims.sub, identity };
+  const facts = { federation, connection, claims, profile, snapshot, subject: claims.sub, identity };
   const extras = { connectionId: connection.id };
 
   if (type === 'connect') {
@@ -79,7 +79,7 @@ export const completeSsoSignIn = async (ctx: Context<Env>, { federation, claims,
     return finishSignIn(ctx, user, federation.key, redirectAfter, extras);
   }
 
-  const user = await provisionSsoUser(facts);
+  const user = await provisionSsoUser(ctx, facts);
   return finishSignIn(ctx, user, federation.key, redirectAfter, extras);
 };
 

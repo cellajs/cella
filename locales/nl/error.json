@@ -1,6 +1,10 @@
 {
   "sso_email_missing": "Geen e-mailadres gedeeld",
   "sso_email_missing.text": "Je instelling heeft geen e-mailadres gedeeld, dat een nieuw account nodig heeft. Vraag de helpdesk van je instelling het vrij te geven, of log op een andere manier in als je bent uitgenodigd.",
+  "sso_email_exists": "Dit adres heeft al een account",
+  "sso_email_exists.text": "Het e-mailadres dat je instelling heeft gedeeld, hoort al bij een account. Is dat van jou, log dan eerst in op dat account en koppel daarna je instellingsaccount via je accountinstellingen.",
+  "sso_recovery_expired": "Dit aanbod is verlopen",
+  "sso_recovery_expired.text": "Log opnieuw in via je instelling om een nieuwe inloglink te krijgen.",
   "sso_not_active": "Inloggen via instelling niet actief",
   "sso_not_active.text": "De instelling heeft de toegang tot deze app nog niet geactiveerd, of de koppeling is uitgeschakeld. Vraag het de beheerder van de instelling, of log op een andere manier in als je bent uitgenodigd.",
   "sso_not_configured": "Inloggen via instelling is niet ingesteld",
