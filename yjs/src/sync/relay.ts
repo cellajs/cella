@@ -165,7 +165,9 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
       if (verdict === 'relay') relayed.push(entry);
     }
     if (relayed.length === 0) return;
-    broadcastToCollab(collab, relayed.length === entries.length ? data : encodeAwarenessMessage(relayed), ws);
+    // The sender receives its relayed entries too: y-websocket closes a socket that received nothing for 30 s, and an
+    // editor alone on its document receives nothing else. An entry at the clock the sender holds changes nothing there.
+    broadcastToCollab(collab, relayed.length === entries.length ? data : encodeAwarenessMessage(relayed));
   }
 }
 

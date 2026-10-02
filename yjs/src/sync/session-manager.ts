@@ -260,7 +260,7 @@ export function claimAwarenessClient(
   return owner ? 'relay' : 'refuse';
 }
 
-/** Sends a frame to every open socket of the session but `exclude`, its sender. */
+/** Sends a frame to every open socket of the session but `exclude`: a sync update skips its sender, awareness reaches it too. */
 export function broadcastToCollab(collab: CollabSession, message: Uint8Array, exclude?: WebSocket): void {
   for (const client of collab.clients) {
     if (client !== exclude && client.readyState === client.OPEN) {
