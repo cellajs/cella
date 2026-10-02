@@ -74,7 +74,8 @@ export interface DeployEffects {
   rollout(argv: string[]): Promise<void>;
   verifyVersion(url: string, sha: string): Promise<boolean>;
   publishEntryFiles(opts: { distDir: string; bucket: string; region: string }): Promise<void>;
-  bootDiagnostics(sinceIso?: string): Promise<void>;
+  /** Print the boot bundles of release `sha` (saying so when there is none) and replay its black-box events from `sinceIso` on. */
+  bootDiagnostics(sha: string, sinceIso?: string): Promise<void>;
   group(title: string): void;
   groupEnd(): void;
   info(msg: string): void;
@@ -294,7 +295,7 @@ export async function runDeploy(
     } catch (err) {
       telemetry?.event(deployEvents.rolloutFailed, { error: errorMessage(err) }, { severity: 'error' });
       fx.info('[deploy] rollout failed; collecting boot diagnostics');
-      await fx.bootDiagnostics(startedAtIso).catch((diagErr) => fx.info(`[deploy] boot diagnostics failed: ${errorMessage(diagErr)}`));
+      await fx.bootDiagnostics(opts.sha, startedAtIso).catch((diagErr) => fx.info(`[deploy] boot diagnostics failed: ${errorMessage(diagErr)}`));
       throw err;
     }
 
@@ -542,11 +543,12 @@ function createRealEffects(): DeployEffects {
       return out.ok;
     },
     publishEntryFiles: publishEntryFilesToBucket,
-    async bootDiagnostics(sinceIso) {
+    async bootDiagnostics(sha, sinceIso) {
       const { main: diag } = await import('./diag');
-      await diag([]);
+      // This release's bundles only: an older release's transcript would read like this deploy's boot.
+      await diag(['--sha', sha]);
       // Re-ship black-box events from VMs that died before their exporter was configured; best-effort like all telemetry.
-      await diag(['--replay', ...(sinceIso ? ['--since', sinceIso] : [])]).catch((err) => {
+      await diag(['--replay', '--sha', sha, ...(sinceIso ? ['--since', sinceIso] : [])]).catch((err) => {
         console.warn(`[deploy] black-box replay failed: ${err instanceof Error ? err.message : String(err)}`);
       });
     },

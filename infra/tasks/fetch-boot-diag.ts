@@ -45,6 +45,82 @@ export function selectDiagnostics(keys: string[], service: string): DiagSelectio
   return { markers, stageDetailKeys, latestFull, failureKeys };
 }
 
+/** A boot transcript key, `<svc>-<YYYYMMDDThhmmssZ>-boot.log`; the sibling `-events.jsonl` shares its stem. */
+function bootLogPattern(service: string): RegExp {
+  return new RegExp(`^${escapeRe(service)}-[0-9]{8}T[0-9]{6}Z?-boot\\.log$`);
+}
+
+/** The release SHA a bundle names on its `release=` header line. */
+export function bundleRelease(body: string): string | undefined {
+  return /^release=(\S+)$/m.exec(body)?.[1];
+}
+
+/** Boot transcripts of one release for one service, read from the bucket. */
+export interface ReleaseBundles {
+  /** Transcripts whose `release=` names the release, newest first. */
+  matches: { key: string; body: string }[];
+  /** The newest transcript of another release, named so it is never mistaken for this one. */
+  newestOther?: { key: string; release?: string };
+}
+
+/**
+ * Read a service's newest boot transcripts (at most `maxScan`) and keep the ones of release `sha`, which may be abbreviated.
+ * Keys carry no release, so this reads bodies; a transcript that fails to read is skipped.
+ */
+export function findReleaseBundles(keys: string[], service: string, sha: string, reader: DiagReader, maxScan = 8): ReleaseBundles {
+  const pattern = bootLogPattern(service);
+  const candidates = keys
+    .filter((key) => pattern.test(key))
+    .sort()
+    .reverse()
+    .slice(0, maxScan);
+  const found: ReleaseBundles = { matches: [] };
+  for (const key of candidates) {
+    let body: string;
+    try {
+      body = reader.cat(key);
+    } catch {
+      continue;
+    }
+    const release = bundleRelease(body);
+    if (release?.startsWith(sha)) found.matches.push({ key, body });
+    else found.newestOther ??= { key, release };
+  }
+  return found;
+}
+
+/**
+ * Print the boot transcript of the release being deployed, or say plainly that it has none. An older release's bundle is only named,
+ * never printed: on a failed rollout it reads like this deploy's boot and hides that the new VM never reported.
+ */
+export function renderReleaseDiagnostics(
+  service: string,
+  sha: string,
+  found: ReleaseBundles,
+  log: (msg: string) => void = console.info,
+  style: 'ci' | 'plain' = 'ci',
+): void {
+  const short = sha.slice(0, 7);
+  const [newest, ...older] = found.matches;
+  if (!newest) {
+    log(
+      style === 'ci'
+        ? `::warning::${service}: no boot bundle for ${short}: its boot runner has not finished (still running, stuck before its upload, or never started)`
+        : `! ${service}: no boot bundle for ${short}: its boot runner has not finished (still running, stuck before its upload, or never started)`,
+    );
+    if (found.newestOther) {
+      log(`  newest ${service} bundle is ${found.newestOther.key}, from release ${found.newestOther.release?.slice(0, 7) ?? 'unknown'}: not shown`);
+    }
+    return;
+  }
+  const failed = /^boot_rc=([1-9][0-9]*)$/m.test(newest.body);
+  const title = `${failed ? '⚠️ ' : ''}${service} boot bundle for ${short} (${newest.key})${failed ? ': boot failed' : ''}`;
+  log(style === 'ci' ? `::group::${title}` : `\n=== ${title} ===`);
+  log(newest.body);
+  if (style === 'ci') log('::endgroup::');
+  if (older.length > 0) log(`  earlier ${short} bundles: ${older.map((match) => match.key).join(', ')}`);
+}
+
 /** Reads objects from the boot-diag prefix. Injectable so render() is testable. */
 export interface DiagReader {
   /** Return raw `aws s3 ls` output for the boot-diag prefix. */

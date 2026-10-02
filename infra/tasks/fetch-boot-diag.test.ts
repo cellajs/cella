@@ -1,11 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  bundleRelease,
   type DiagReader,
   emptyBootDiagGuidance,
+  findReleaseBundles,
   isEmptyPrefixLs,
   parseArgs,
   parseKeys,
   renderDiagnostics,
+  renderReleaseDiagnostics,
   selectDiagnostics,
   summarizeBundles,
 } from './fetch-boot-diag';
@@ -203,6 +206,77 @@ describe('renderDiagnostics', () => {
     // The good object still renders and the failing one is annotated, not thrown.
     expect(logs).toContain('BODY(backend-stage-1-pull)');
     expect(logs.some((l) => l.includes('<<failed to read backend-20260531T090509-boot.log: NoSuchKey>>'))).toBe(true);
+  });
+});
+
+describe('release-scoped bundles', () => {
+  const previous = 'e9a8d485e2481f5e6329e1671bba88e57d60b44d';
+  const deploying = '84b7e22373e6a4720e6fd6c58e1aba647784084a';
+  const body = (release: string, rc = 0) => `service=backend\nrelease=${release}\nboot_rc=${rc}\n\nboot log not found\n`;
+  /** The 0.13.0 bucket: older releases' transcripts, their events and failure captures, nothing from the deploying release. */
+  const bodies: Record<string, string> = {
+    'backend-20260925T142538Z-boot.log': body('aaaa111'),
+    'backend-20260929T211437Z-boot.log': body(previous),
+    'backend-20260929T211437Z-events.jsonl': '{}',
+    'backend-failed-20260923T213658Z.log': body('bbbb222', 1),
+  };
+  const reader = (extra: Record<string, string> = {}): DiagReader & { reads: string[] } => {
+    const all = { ...bodies, ...extra };
+    const reads: string[] = [];
+    return {
+      reads,
+      list: () => '',
+      cat: (key) => {
+        reads.push(key);
+        const found = all[key];
+        if (found === undefined) throw new Error(`NoSuchKey ${key}`);
+        return found;
+      },
+    };
+  };
+
+  it('reads the release from a bundle header', () => {
+    expect(bundleRelease(body(previous))).toBe(previous);
+    expect(bundleRelease('no header')).toBeUndefined();
+  });
+
+  it('finds no bundle for a release whose boot runner never uploaded, and names the newest other one', () => {
+    const found = findReleaseBundles(Object.keys(bodies), 'backend', deploying, reader());
+    expect(found.matches).toEqual([]);
+    expect(found.newestOther).toEqual({ key: 'backend-20260929T211437Z-boot.log', release: previous });
+  });
+
+  it('must not print an older release’s bundle as if it were the deploying one', () => {
+    const logs: string[] = [];
+    const found = findReleaseBundles(Object.keys(bodies), 'backend', deploying, reader());
+    renderReleaseDiagnostics('backend', deploying, found, (line) => logs.push(line));
+    expect(logs[0]).toBe(
+      '::warning::backend: no boot bundle for 84b7e22: its boot runner has not finished (still running, stuck before its upload, or never started)',
+    );
+    expect(logs.join('\n')).not.toContain(`release=${previous}`);
+    expect(logs.join('\n')).toContain('from release e9a8d48: not shown');
+  });
+
+  it('prints the deploying release’s newest bundle, flagged when its boot failed, and accepts an abbreviated SHA', () => {
+    const extra = { 'backend-20261002T075610Z-boot.log': `${body(deploying, 1)}failed_phase=release-command\n` };
+    const r = reader(extra);
+    const found = findReleaseBundles([...Object.keys(bodies), ...Object.keys(extra)], 'backend', '84b7e22', r);
+    expect(found.matches.map((match) => match.key)).toEqual(['backend-20261002T075610Z-boot.log']);
+    // Transcripts only, newest first: events bundles and failure captures are never read.
+    expect(r.reads[0]).toBe('backend-20261002T075610Z-boot.log');
+    expect(r.reads.some((key) => key.endsWith('.jsonl') || key.includes('-failed-'))).toBe(false);
+
+    const logs: string[] = [];
+    renderReleaseDiagnostics('backend', deploying, found, (line) => logs.push(line), 'plain');
+    expect(logs[0]).toBe('\n=== ⚠️ backend boot bundle for 84b7e22 (backend-20261002T075610Z-boot.log): boot failed ===');
+    expect(logs[1]).toContain('failed_phase=release-command');
+  });
+
+  it('caps how many transcripts it reads', () => {
+    const many = Object.fromEntries(Array.from({ length: 12 }, (_, i) => [`backend-202609${String(10 + i)}T000000Z-boot.log`, body('cccc333')]));
+    const r = reader(many);
+    findReleaseBundles(Object.keys(many), 'backend', deploying, r, 8);
+    expect(r.reads).toHaveLength(8);
   });
 });
 
