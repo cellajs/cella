@@ -44,7 +44,7 @@ export async function startSession(email: string | null): Promise<Session> {
   const page = await context.newPage();
   await page.goto(`${baseUrl}/home`, { waitUntil: 'domcontentloaded' });
   await page.locator('main').first().waitFor({ timeout: 60_000 });
-  await page.waitForTimeout(2000);
+  await settle(page);
   const storage = await context.storageState();
   await context.close();
 
@@ -54,19 +54,18 @@ export async function startSession(email: string | null): Promise<Session> {
 interface ContextOptions {
   auth: boolean;
   mode: Mode;
-  viewport?: { width: number; height: number };
-  locale?: string;
 }
 
+export const defaultViewport = { width: 1280, height: 900 };
+
 /** A fresh browser context: theme preset, dev banner dismissed, signed in (with the stored session) when `auth` is set. */
-export async function newContext(session: Session, { auth, mode, viewport = { width: 1280, height: 900 }, locale }: ContextOptions) {
+export async function newContext(session: Session, { auth, mode }: ContextOptions) {
   if (auth && !session.storage) throw new Error('This state needs a signed-in session: pass --email or set ADMIN_EMAIL.');
   const storageState = auth ? (session.storage ?? undefined) : undefined;
   const context = await session.browser.newContext({
-    viewport,
+    viewport: defaultViewport,
     colorScheme: mode,
     reducedMotion: 'reduce',
-    locale,
     serviceWorkers: 'block',
     storageState,
   });
@@ -82,6 +81,34 @@ export async function newContext(session: Session, { auth, mode, viewport = { wi
   return context;
 }
 
+/**
+ * Resolves once the page has stopped adding or changing content for `quiet` ms, or after `cap` ms. Lazy sections,
+ * query results and opening overlays all show up as DOM changes; the network never goes idle in development.
+ */
+export async function settle(page: Page, quiet = 400, cap = 3000) {
+  const waited = page.evaluate(
+    ([quietMs, capMs]) =>
+      new Promise<void>((resolve) => {
+        const done = () => {
+          observer.disconnect();
+          clearTimeout(timer);
+          clearTimeout(limit);
+          resolve();
+        };
+        let timer = setTimeout(done, quietMs);
+        const limit = setTimeout(done, capMs);
+        const observer = new MutationObserver(() => {
+          clearTimeout(timer);
+          timer = setTimeout(done, quietMs);
+        });
+        observer.observe(document, { subtree: true, childList: true, characterData: true });
+      }),
+    [quiet, cap],
+  );
+  // A navigation during the wait tears down the page's script context
+  await waited.catch(() => page.waitForTimeout(quiet));
+}
+
 /** Resolves `{org}` in a scope path. */
 export function resolvePath(session: Session, statePath: string) {
   if (!statePath.includes('{org}')) return statePath;
@@ -94,8 +121,7 @@ export async function openPage(context: BrowserContext, statePath: string): Prom
   const page = await context.newPage();
   await page.goto(`${baseUrl}${statePath}`, { waitUntil: 'domcontentloaded' });
   await page.locator('main, [role="main"], #accessibility-content, form, h1, footer').first().waitFor({ timeout: 30_000 });
-  // Lazy sections and queries settle after the first paint
-  await page.waitForTimeout(1500);
+  await settle(page);
   // A guard that redirects would make the audit judge another page under this state's name
   const landed = new URL(page.url()).pathname;
   const asked = new URL(statePath, baseUrl).pathname;

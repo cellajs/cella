@@ -1,7 +1,7 @@
 import type { Page } from 'playwright';
-import type { ScopeState } from '../scope.ts';
-import type { Session } from '../session.ts';
-import { type EvidenceSet, visit } from './visit.ts';
+import type { Check } from '../findings.ts';
+import { ensureOpen } from '../scope.ts';
+import { defaultViewport, settle } from '../session.ts';
 
 /** Content that may scroll in two dimensions under 1.4.10: data grids, tables, code. */
 const twoDimensional = '[role="grid"], table, pre, code, [data-slot="table-container"]';
@@ -78,37 +78,68 @@ function clippedText(page: Page) {
   });
 }
 
-/** Reflow at 320px (1.4.10), 200% zoom as a 640px viewport (1.4.4), text spacing (1.4.12) and both orientations (1.3.4). */
-export async function probeLayout(session: Session, states: ScopeState[], evidence: EvidenceSet) {
-  const reflow = await visit(session, states, { viewport: { width: 320, height: 640 } }, horizontalOverflow);
-  evidence.addFromProblems(['1.4.10'], 'probe:reflow', 'Content fits a 320px-wide viewport without sideways scrolling', reflow);
+const textLength = (page: Page) =>
+  page
+    .locator('body')
+    .innerText()
+    .then((text) => text.length);
 
-  const zoom = await visit(session, states, { viewport: { width: 640, height: 450 } }, horizontalOverflow);
-  evidence.addFromProblems(['1.4.4'], 'probe:resize', 'Content fits at 200% zoom (a 640px viewport) without loss', zoom);
+/**
+ * 200% zoom as a 640px viewport (1.4.4), reflow at 320px (1.4.10), both orientations (1.3.4) and text spacing (1.4.12).
+ * The open page is resized, as it is for a user who zooms, and left at the default viewport with no extra styles.
+ */
+export const layout: Check = async (page, state) => {
+  const findings: Awaited<ReturnType<Check>> = [];
+  const resize = async (viewport: { width: number; height: number }) => {
+    await page.setViewportSize(viewport);
+    await settle(page);
+    // A breakpoint change may close an overlay or swap it for a drawer
+    await ensureOpen(page, state);
+  };
 
-  const spacing = await visit(session, states, {}, async (page) => {
-    const before = new Set(await clippedText(page));
-    await page.addStyleTag({ content: spacingCss });
-    await page.waitForTimeout(300);
-    const after = await clippedText(page);
-    return after.filter((entry) => !before.has(entry)).map((entry) => `"${entry.split('|')[1]}" is cut off`);
+  await resize({ width: 640, height: 450 });
+  findings.push({
+    criteria: ['1.4.4'],
+    check: 'probe:resize',
+    what: 'Content fits at 200% zoom (a 640px viewport) without loss',
+    problems: await horizontalOverflow(page),
   });
-  evidence.addFromProblems(['1.4.12'], 'probe:text-spacing', 'Text stays fully visible with WCAG text spacing applied', spacing);
 
-  const pages = states.filter((state) => !state.open);
-  const textLength = (page: Page) =>
-    page
-      .locator('body')
-      .innerText()
-      .then((text) => text.length);
-  const portrait = await visit(session, pages, { viewport: { width: 390, height: 844 } }, textLength);
-  const landscape = await visit(session, pages, { viewport: { width: 844, height: 390 } }, textLength);
-  const orientation = new Map(
-    [...portrait].map(([id, length]) => {
-      const other = landscape.get(id) ?? 0;
-      // Narrow layouts show fewer grid rows and columns; only content that disappears counts
-      return [id, Math.min(length, other) < Math.max(length, other) * 0.2 ? [`portrait shows ${length} characters, landscape ${other}`] : []];
-    }),
-  );
-  evidence.addFromProblems(['1.3.4'], 'probe:orientation', 'The same content shows in portrait and landscape', orientation);
-}
+  await resize({ width: 320, height: 640 });
+  findings.push({
+    criteria: ['1.4.10'],
+    check: 'probe:reflow',
+    what: 'Content fits a 320px-wide viewport without sideways scrolling',
+    problems: await horizontalOverflow(page),
+  });
+
+  if (!state.open) {
+    await resize({ width: 390, height: 844 });
+    const portrait = await textLength(page);
+    await resize({ width: 844, height: 390 });
+    const landscape = await textLength(page);
+    // Narrow layouts show fewer grid rows and columns; only content that disappears counts
+    const lost = Math.min(portrait, landscape) < Math.max(portrait, landscape) * 0.2;
+    findings.push({
+      criteria: ['1.3.4'],
+      check: 'probe:orientation',
+      what: 'The same content shows in portrait and landscape',
+      problems: lost ? [`portrait shows ${portrait} characters, landscape ${landscape}`] : [],
+    });
+  }
+  await resize(defaultViewport);
+
+  const before = new Set(await clippedText(page));
+  const style = await page.addStyleTag({ content: spacingCss });
+  await page.waitForTimeout(300);
+  const after = await clippedText(page);
+  await style.evaluate((element) => (element as Element).remove());
+  findings.push({
+    criteria: ['1.4.12'],
+    check: 'probe:text-spacing',
+    what: 'Text stays fully visible with WCAG text spacing applied',
+    problems: after.filter((entry) => !before.has(entry)).map((entry) => `"${entry.split('|')[1]}" is cut off`),
+  });
+
+  return findings;
+};

@@ -1,7 +1,5 @@
 import type { Page } from 'playwright';
-import type { ScopeState } from '../scope.ts';
-import type { Session } from '../session.ts';
-import { type EvidenceSet, visit } from './visit.ts';
+import type { Check } from '../findings.ts';
 
 /** Forms whose required fields can be submitted empty without saving anything. */
 const requiredFieldForms = ['sign-in', 'contact', 'invite-dialog'];
@@ -59,24 +57,29 @@ function inputPurpose(page: Page) {
   });
 }
 
-/** Error identification (3.3.1), input purpose (1.3.5) and paste into sign-in fields (3.3.8). */
-export async function probeForms(session: Session, states: ScopeState[], evidence: EvidenceSet) {
-  const errors = await visit(
-    session,
-    states.filter((state) => requiredFieldForms.includes(state.id)),
-    {},
-    submitEmpty,
-  );
-  evidence.addFromProblems(['3.3.1'], 'probe:form-errors', 'Submitting required fields empty identifies each error in text', errors);
+/** Error identification (3.3.1). Submitting changes the page, so this runs late in a visit. */
+export const formErrors: Check = async (page, state) => {
+  if (!requiredFieldForms.includes(state.id)) return [];
+  const problems = await submitEmpty(page);
+  // A failed submit may raise a toast, which would lie over other controls during the next check
+  await page.waitForFunction(() => !document.querySelector('[data-slot="toast"]'), null, { timeout: 8000 }).catch(() => undefined);
+  return [{ criteria: ['3.3.1'], check: 'probe:form-errors', what: 'Submitting required fields empty identifies each error in text', problems }];
+};
 
-  const inputs = await visit(
-    session,
-    states.filter((state) => personalForms.includes(state.id)),
-    {},
-    inputPurpose,
-  );
-  const purpose = new Map([...inputs].map(([id, found]) => [id, found.purpose]));
-  evidence.addFromProblems(['1.3.5'], 'probe:autocomplete', 'Inputs for personal data declare their purpose', purpose);
-  const signIn = new Map([...inputs].filter(([id]) => id === 'sign-in').map(([id, found]) => [id, [...found.purpose, ...found.paste]]));
-  evidence.addFromProblems(['3.3.8'], 'probe:autocomplete', 'Sign-in fields accept autofill and pasted text', signIn);
-}
+/** Input purpose (1.3.5), and autofill and paste into the sign-in fields (3.3.8). */
+export const inputs: Check = async (page, state) => {
+  if (!personalForms.includes(state.id)) return [];
+  const { purpose, paste } = await inputPurpose(page);
+  const findings: Awaited<ReturnType<Check>> = [
+    { criteria: ['1.3.5'], check: 'probe:autocomplete', what: 'Inputs for personal data declare their purpose', problems: purpose },
+  ];
+  if (state.id === 'sign-in') {
+    findings.push({
+      criteria: ['3.3.8'],
+      check: 'probe:autocomplete',
+      what: 'Sign-in fields accept autofill and pasted text',
+      problems: [...purpose, ...paste],
+    });
+  }
+  return findings;
+};

@@ -46,7 +46,7 @@
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe image-alt passed on 10 states.",
+          "summary": "axe image-alt passed on 5 states.",
           "where": []
         }
       ]
@@ -181,43 +181,43 @@
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-hidden-body passed on 52 states.",
+          "summary": "axe aria-hidden-body passed on 26 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe list passed on 46 states.",
+          "summary": "axe list passed on 23 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe listitem passed on 46 states.",
+          "summary": "axe listitem passed on 23 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe td-headers-attr passed on 2 states.",
+          "summary": "axe td-headers-attr passed on 1 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe th-has-data-cells passed on 2 states.",
+          "summary": "axe th-has-data-cells passed on 1 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-required-children passed on 18 states.",
+          "summary": "axe aria-required-children passed on 9 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-required-parent passed on 18 states.",
+          "summary": "axe aria-required-parent passed on 9 states.",
           "where": []
         }
       ]
@@ -272,14 +272,14 @@
       "level": "AA",
       "en301549": "9.1.3.5",
       "status": "supports",
-      "remarks": "axe autocomplete-valid passed on 26 states. Inputs for personal data declare their purpose passed on all 3 states.",
+      "remarks": "axe autocomplete-valid passed on 13 states. Inputs for personal data declare their purpose passed on all 3 states.",
       "decidedBy": "audit",
       "open": [],
       "evidence": [
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe autocomplete-valid passed on 26 states.",
+          "summary": "axe autocomplete-valid passed on 13 states.",
           "where": []
         },
         {
@@ -305,7 +305,7 @@
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe link-in-text-block passed on 8 states.",
+          "summary": "axe link-in-text-block passed on 4 states.",
           "where": []
         }
       ]
@@ -345,7 +345,7 @@
         {
           "check": "axe",
           "result": "fail",
-          "summary": "axe color-contrast: Elements must meet minimum color contrast ratio thresholds (479 elements).",
+          "summary": "axe color-contrast: Elements must meet minimum color contrast ratio thresholds (481 elements).",
           "where": [
             "docs-overview (light)",
             "docs-operations (light)",
@@ -375,14 +375,14 @@
       "level": "AA",
       "en301549": "9.1.4.4",
       "status": "supports",
-      "remarks": "axe meta-viewport passed on 52 states. Content fits at 200% zoom (a 640px viewport) without loss passed on all 26 states.",
+      "remarks": "axe meta-viewport passed on 26 states. Content fits at 200% zoom (a 640px viewport) without loss passed on all 26 states.",
       "decidedBy": "audit",
       "open": [],
       "evidence": [
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe meta-viewport passed on 52 states.",
+          "summary": "axe meta-viewport passed on 26 states.",
           "where": []
         },
         {
@@ -455,7 +455,7 @@
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe avoid-inline-spacing passed on 46 states.",
+          "summary": "axe avoid-inline-spacing passed on 23 states.",
           "where": []
         },
         {
@@ -512,13 +512,13 @@
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe scrollable-region-focusable passed on 4 states.",
+          "summary": "axe scrollable-region-focusable passed on 2 states.",
           "where": []
         },
         {
           "check": "probe:keyboard",
           "result": "review",
-          "summary": "Tab order recorded on 26 states for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"Install command\" → button \"Copy\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
+          "summary": "Tab order recorded for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"Install command\" → button \"Copy\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
           "where": [
             "marketing-home",
             "features",
@@ -689,14 +689,11 @@
         {
           "check": "axe",
           "result": "review",
-          "summary": "axe bypass needs a person to check 6 states: Page must have means to bypass repeated blocks.",
+          "summary": "axe bypass needs a person to check 3 states: Page must have means to bypass repeated blocks.",
           "where": [
             "docs-search (light)",
             "menu-sheet (light)",
-            "search-sheet (light)",
-            "docs-search (dark)",
-            "menu-sheet (dark)",
-            "search-sheet (dark)"
+            "search-sheet (light)"
           ]
         },
         {
@@ -713,14 +710,14 @@
       "level": "A",
       "en301549": "9.2.4.2",
       "status": "supports",
-      "remarks": "axe document-title passed on 52 states. A distinct, descriptive page title passed on all 19 states.",
+      "remarks": "axe document-title passed on 26 states. A distinct, descriptive page title passed on all 19 states.",
       "decidedBy": "audit",
       "open": [],
       "evidence": [
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe document-title passed on 52 states.",
+          "summary": "axe document-title passed on 26 states.",
           "where": []
         },
         {
@@ -746,16 +743,8 @@
       "evidence": [
         {
           "check": "probe:keyboard",
-          "result": "fail",
-          "summary": "Focus stays inside an open overlay failed on 1 of 7 states. invite-dialog: focus falls back to the page body; focus reaches button \"Role\" behind the open overlay; focus reaches button \"View\" behind the open overlay",
-          "where": [
-            "invite-dialog"
-          ]
-        },
-        {
-          "check": "probe:keyboard",
           "result": "review",
-          "summary": "Tab order recorded on 26 states for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"Install command\" → button \"Copy\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
+          "summary": "Tab order recorded for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"Install command\" → button \"Copy\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
           "where": [
             "marketing-home",
             "features",
@@ -784,6 +773,14 @@
             "invite-dialog",
             "member-sheet"
           ]
+        },
+        {
+          "check": "probe:keyboard",
+          "result": "fail",
+          "summary": "Focus stays inside an open overlay failed on 1 of 6 states. invite-dialog: focus falls back to the page body; focus reaches button \"Role\" behind the open overlay; focus reaches button \"View\" behind the open overlay",
+          "where": [
+            "invite-dialog"
+          ]
         }
       ]
     },
@@ -802,7 +799,7 @@
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe link-name passed on 48 states.",
+          "summary": "axe link-name passed on 24 states.",
           "where": []
         }
       ]
@@ -990,7 +987,7 @@
         {
           "check": "axe",
           "result": "review",
-          "summary": "axe target-size needs a person to check 16 states: All touch targets must be 24px large, or leave sufficient space.",
+          "summary": "axe target-size needs a person to check 8 states: All touch targets must be 24px large, or leave sufficient space.",
           "where": [
             "docs-operations (light)",
             "docs-schemas (light)",
@@ -999,15 +996,7 @@
             "org-settings (light)",
             "system-users (light)",
             "system-organizations (light)",
-            "invite-dialog (light)",
-            "docs-operations (dark)",
-            "docs-schemas (dark)",
-            "org-attachments (dark)",
-            "org-members (dark)",
-            "org-settings (dark)",
-            "system-users (dark)",
-            "system-organizations (dark)",
-            "invite-dialog (dark)"
+            "invite-dialog (light)"
           ]
         }
       ]
@@ -1018,20 +1007,20 @@
       "level": "A",
       "en301549": "9.3.1.1",
       "status": "supports",
-      "remarks": "axe html-has-lang passed on 52 states. axe html-lang-valid passed on 52 states. The page language follows the language the user picks passed on all 20 states.",
+      "remarks": "axe html-has-lang passed on 26 states. axe html-lang-valid passed on 26 states. The page language follows the language the user picks passed on all 20 states.",
       "decidedBy": "audit",
       "open": [],
       "evidence": [
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe html-has-lang passed on 52 states.",
+          "summary": "axe html-has-lang passed on 26 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe html-lang-valid passed on 52 states.",
+          "summary": "axe html-lang-valid passed on 26 states.",
           "where": []
         },
         {
@@ -1158,7 +1147,7 @@
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe form-field-multiple-labels passed on 38 states.",
+          "summary": "axe form-field-multiple-labels passed on 19 states.",
           "where": []
         }
       ]
@@ -1242,31 +1231,31 @@
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-allowed-attr passed on 52 states.",
+          "summary": "axe aria-allowed-attr passed on 26 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-conditional-attr passed on 52 states.",
+          "summary": "axe aria-conditional-attr passed on 26 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-deprecated-role passed on 52 states.",
+          "summary": "axe aria-deprecated-role passed on 26 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-hidden-body passed on 52 states.",
+          "summary": "axe aria-hidden-body passed on 26 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "review",
-          "summary": "axe aria-hidden-focus needs a person to check 14 states: ARIA hidden element must not be focusable or contain focusable elements.",
+          "summary": "axe aria-hidden-focus needs a person to check 7 states: ARIA hidden element must not be focusable or contain focusable elements.",
           "where": [
             "docs-search (light)",
             "sign-in-email (light)",
@@ -1274,99 +1263,89 @@
             "search-sheet (light)",
             "account-sheet (light)",
             "invite-dialog (light)",
-            "member-sheet (light)",
-            "docs-search (dark)",
-            "sign-in-email (dark)",
-            "menu-sheet (dark)",
-            "search-sheet (dark)",
-            "account-sheet (dark)",
-            "invite-dialog (dark)",
-            "member-sheet (dark)"
+            "member-sheet (light)"
           ]
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-prohibited-attr passed on 52 states.",
+          "summary": "axe aria-prohibited-attr passed on 26 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-required-attr passed on 52 states.",
+          "summary": "axe aria-required-attr passed on 26 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-roles passed on 52 states.",
+          "summary": "axe aria-roles passed on 26 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "review",
-          "summary": "axe aria-valid-attr-value needs a person to check 6 states: ARIA attributes must conform to valid values.",
+          "summary": "axe aria-valid-attr-value needs a person to check 3 states: ARIA attributes must conform to valid values.",
           "where": [
             "docs-search (light)",
             "account (light)",
-            "search-sheet (light)",
-            "docs-search (dark)",
-            "account (dark)",
-            "search-sheet (dark)"
+            "search-sheet (light)"
           ]
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-valid-attr passed on 52 states.",
+          "summary": "axe aria-valid-attr passed on 26 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe button-name passed on 50 states.",
+          "summary": "axe button-name passed on 25 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe label passed on 38 states.",
+          "summary": "axe label passed on 19 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe link-name passed on 48 states.",
+          "summary": "axe link-name passed on 24 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe nested-interactive passed on 50 states.",
+          "summary": "axe nested-interactive passed on 25 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-command-name passed on 2 states.",
+          "summary": "axe aria-command-name passed on 1 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe duplicate-id-aria passed on 22 states.",
+          "summary": "axe duplicate-id-aria passed on 11 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-toggle-field-name passed on 14 states.",
+          "summary": "axe aria-toggle-field-name passed on 7 states.",
           "where": []
         },
         {
           "check": "axe",
           "result": "pass",
-          "summary": "axe aria-input-field-name passed on 2 states.",
+          "summary": "axe aria-input-field-name passed on 1 states.",
           "where": []
         }
       ]

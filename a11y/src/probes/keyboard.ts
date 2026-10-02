@@ -1,7 +1,7 @@
 import type { ElementHandle, Page } from 'playwright';
-import type { ScopeState } from '../scope.ts';
-import { devOnlySelectors, type Session } from '../session.ts';
-import { type EvidenceSet, visit } from './visit.ts';
+import type { Check } from '../findings.ts';
+import { overlaySelector } from '../scope.ts';
+import { devOnlySelectors } from '../session.ts';
 
 const maxSteps = 60;
 
@@ -11,13 +11,16 @@ interface Stop {
   key: string;
   name: string;
   obscured: boolean;
+  coveredBy: string;
   /** Inside the overlay that was open when the walk started; null when no overlay was open. */
   inOverlay: boolean | null;
   editable: boolean;
+  /** Tag, role and classes: elements of one kind share their focus styling, so one of them is checked for it. */
+  kind: string;
 }
 
-/** Overlays that hold focus while open. Toasts render as dialogs but never take focus. */
-const overlaySelector = '[role="dialog"]:not([data-slot^="toast"]), [role="alertdialog"]:not([data-slot^="toast"]), [role="menu"], [role="listbox"]';
+/** Two animation frames: enough for the browser to move focus and paint its styles. */
+const painted = (page: Page) => page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
 
 /** Describes the focused element, and whether other content covers all of it. */
 function readFocus(page: Page, devOnly: string[]) {
@@ -35,6 +38,7 @@ function readFocus(page: Page, devOnly: string[]) {
         .slice(0, 40);
       const rect = el.getBoundingClientRect();
       let obscured = false;
+      let coveredBy = 'nothing at its position';
       if (rect.width > 2 && rect.height > 2) {
         const inset = 2;
         const points = [
@@ -44,17 +48,19 @@ function readFocus(page: Page, devOnly: string[]) {
           [rect.left + inset, rect.bottom - inset],
           [rect.right - inset, rect.bottom - inset],
         ];
-        obscured = points.every(([x, y]) => {
-          const hit = document.elementFromPoint(x, y);
-          return !hit || !(el.contains(hit) || hit.contains(el));
-        });
+        const cover = points.map(([x, y]) => document.elementFromPoint(x, y));
+        obscured = cover.every((hit) => !hit || !(el.contains(hit) || hit.contains(el)));
+        // Name what lies on top, so the finding points at the element to fix
+        const top = cover[0];
+        if (obscured && top) coveredBy = `${top.tagName.toLowerCase()}${top.id ? `#${top.id}` : ''}.${[...top.classList].slice(0, 3).join('.')}`;
       }
       const open = document.querySelectorAll(overlays);
       const inOverlay = open.length ? [...open].some((overlay) => overlay.contains(el)) : null;
       const editable = el.matches(
         'input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"]',
       );
-      return { key: parts.join('>'), name: `${el.tagName.toLowerCase()} "${name}"`, obscured, inOverlay, editable };
+      const kind = `${el.tagName}|${el.getAttribute('role') ?? ''}|${el.getAttribute('class') ?? ''}`;
+      return { key: parts.join('>'), name: `${el.tagName.toLowerCase()} "${name}"`, obscured, coveredBy, inOverlay, editable, kind };
     },
     [devOnly, overlaySelector] as const,
   );
@@ -88,115 +94,127 @@ const shot = (page: Page, clip: { x: number; y: number; width: number; height: n
   page.screenshot({ clip, animations: 'disabled', caret: 'hide' });
 
 /**
- * Tabs through each state: focus must show (2.4.7), never be entirely covered (2.4.11), never change the page by
- * itself (3.2.1), never get stuck and close overlays with Escape (2.1.2), and stay inside an open overlay (2.4.3).
+ * Tabs through the page: focus must show (2.4.7), never be entirely covered (2.4.11), never change the page by itself
+ * (3.2.1), never get stuck and close overlays with Escape (2.1.2), and stay inside an open overlay (2.4.3). Escape
+ * closes the state's overlay, so this runs last among the checks that need it open.
  */
-export async function probeKeyboard(session: Session, states: ScopeState[], evidence: EvidenceSet) {
-  const results = await visit(session, states, {}, async (page, state) => {
-    const startUrl = page.url();
-    const invisible: string[] = [];
-    const obscured: string[] = [];
-    const contextChanges: string[] = [];
-    const traps: string[] = [];
-    const escapes: string[] = [];
-    const seen = new Set<string>();
-    const order: string[] = [];
-    const overlayOpen = (await page.locator(overlaySelector).count()) > 0;
+export const keyboardWalk: Check = async (page, state) => {
+  const startUrl = page.url();
+  const invisible: string[] = [];
+  const obscured: string[] = [];
+  const contextChanges: string[] = [];
+  const traps: string[] = [];
+  const escapes: string[] = [];
+  const seen = new Set<string>();
+  const shotKinds = new Set<string>();
+  const order: string[] = [];
+  const overlayOpen = (await page.locator(overlaySelector).count()) > 0;
 
-    // Outside overlays the unfocused look is captured by blurring; inside one, blurring could close it
-    let previous: { handle: ElementHandle; clip: { x: number; y: number; width: number; height: number }; image: Buffer; name: string } | null = null;
-    let repeats = 0;
-    let lastKey = '';
+  // Outside overlays the unfocused look is captured by blurring; inside one, blurring could close it
+  let previous: { clip: { x: number; y: number; width: number; height: number }; image: Buffer; name: string } | null = null;
+  let repeats = 0;
+  let lastKey = '';
 
-    for (let step = 0; step < maxSteps; step++) {
-      await page.keyboard.press('Tab');
-      await page.waitForTimeout(120);
+  for (let step = 0; step < maxSteps; step++) {
+    await page.keyboard.press('Tab');
+    await painted(page);
 
-      if (previous) {
-        const after = await shot(page, previous.clip).catch(() => null);
-        if (after?.equals(previous.image)) invisible.push(previous.name);
-        previous = null;
-      }
-
-      // Scroll spies update the hash as focus scrolls the page, which is not a change of context
-      if (withoutHash(page.url()) !== withoutHash(startUrl)) {
-        contextChanges.push(`focus moved the page to ${new URL(page.url()).pathname}`);
-        break;
-      }
-
-      const stop = await readFocus(page, devOnlySelectors);
-      if (!stop) {
-        if (overlayOpen) escapes.push('focus falls back to the page body');
-        continue;
-      }
-      if (overlayOpen && stop.inOverlay === false) escapes.push(`focus reaches ${stop.name} behind the open overlay`);
-      repeats = stop.key === lastKey ? repeats + 1 : 0;
-      lastKey = stop.key;
-      if (repeats >= 3) {
-        traps.push(`focus stays on ${stop.name}`);
-        break;
-      }
-      if (seen.has(stop.key)) break; // Wrapped around: every stop has been visited
-      seen.add(stop.key);
-      order.push(stop.name);
-      if (stop.obscured) obscured.push(stop.name);
-      // A text field shows focus with its caret, which screenshots hide
-      if (stop.editable) continue;
-
-      const handle = (await page.evaluateHandle(() => document.activeElement)).asElement();
-      const clip = handle && (await focusBox(page, handle).catch(() => null));
-      if (!handle || !clip) continue;
-      const focused = await shot(page, clip).catch(() => null);
-      if (!focused) continue;
-      if (overlayOpen) {
-        previous = { handle, clip, image: focused, name: stop.name };
-        continue;
-      }
-      await handle.evaluate((el) => (el as HTMLElement).blur());
-      await page.waitForTimeout(120);
-      const unfocused = await shot(page, clip).catch(() => null);
-      if (unfocused?.equals(focused)) invisible.push(stop.name);
-      await handle.focus();
+    if (previous) {
+      const after = await shot(page, previous.clip).catch(() => null);
+      if (after?.equals(previous.image)) invisible.push(previous.name);
+      previous = null;
     }
 
-    // When focus already left the overlay, that is the finding; Escape would go to the page behind it
-    if (state.open && !escapes.length) {
-      // Escape goes to the focused element, so put focus back inside the overlay first
-      await page
-        .locator(overlaySelector)
-        .last()
-        .evaluate((overlay) => {
-          const target = overlay.querySelector<HTMLElement>('button, [href], input, [tabindex]:not([tabindex="-1"])') ?? (overlay as HTMLElement);
-          target.focus();
-        })
-        .catch(() => undefined);
-      const before = await page.locator(overlaySelector).count();
-      await page.keyboard.press('Escape');
-      // Closing animations keep the overlay in the DOM for a moment
-      await page.waitForTimeout(1200);
-      if (before > 0 && (await page.locator(overlaySelector).count()) >= before) traps.push('Escape does not close the open overlay');
+    // Scroll spies update the hash as focus scrolls the page, which is not a change of context
+    if (withoutHash(page.url()) !== withoutHash(startUrl)) {
+      contextChanges.push(`focus moved the page to ${new URL(page.url()).pathname}`);
+      break;
     }
 
-    return { invisible, obscured, contextChanges, traps, escapes, order };
-  });
+    const stop = await readFocus(page, devOnlySelectors);
+    if (!stop) {
+      if (overlayOpen) escapes.push('focus falls back to the page body');
+      continue;
+    }
+    if (overlayOpen && stop.inOverlay === false) escapes.push(`focus reaches ${stop.name} behind the open overlay`);
+    repeats = stop.key === lastKey ? repeats + 1 : 0;
+    lastKey = stop.key;
+    if (repeats >= 3) {
+      traps.push(`focus stays on ${stop.name}`);
+      break;
+    }
+    if (seen.has(stop.key)) break; // Wrapped around: every stop has been visited
+    seen.add(stop.key);
+    order.push(stop.name);
+    if (stop.obscured) obscured.push(`${stop.name} is covered by ${stop.coveredBy}`);
+    // A text field shows focus with its caret, which screenshots hide
+    if (stop.editable || shotKinds.has(stop.kind)) continue;
+    shotKinds.add(stop.kind);
 
-  const pick = (field: 'invisible' | 'obscured' | 'contextChanges' | 'traps' | 'escapes') =>
-    new Map([...results].map(([id, result]) => [id, [...new Set(result[field])]]));
+    const handle = (await page.evaluateHandle(() => document.activeElement)).asElement();
+    const clip = handle && (await focusBox(page, handle).catch(() => null));
+    if (!handle || !clip) continue;
+    const focused = await shot(page, clip).catch(() => null);
+    if (!focused) continue;
+    if (overlayOpen) {
+      previous = { clip, image: focused, name: stop.name };
+      continue;
+    }
+    // A re-render may replace the element mid-check; the walk then carries on from wherever focus is
+    const blurred = await handle
+      .evaluate((el) => (el as HTMLElement).blur())
+      .then(
+        () => true,
+        () => false,
+      );
+    if (!blurred) continue;
+    await painted(page);
+    const unfocused = await shot(page, clip).catch(() => null);
+    if (unfocused?.equals(focused)) invisible.push(stop.name);
+    await handle.focus().catch(() => undefined);
+  }
 
-  evidence.addFromProblems(['2.4.7'], 'probe:keyboard', 'A visible change on every element that receives keyboard focus', pick('invisible'));
-  evidence.addFromProblems(['2.4.11'], 'probe:keyboard', 'Focused elements are never entirely covered by other content', pick('obscured'));
-  evidence.addFromProblems(['3.2.1'], 'probe:keyboard', 'Moving focus never navigates or opens anything', pick('contextChanges'));
-  evidence.addFromProblems(['2.1.2'], 'probe:keyboard', 'Focus never gets stuck, and Escape closes overlays', pick('traps'));
+  // When focus already left the overlay, that is the finding; Escape would go to the page behind it
+  if (overlayOpen && state.overlay && !escapes.length) {
+    // Escape goes to the focused element, so put focus back inside the overlay first
+    await page
+      .locator(overlaySelector)
+      .last()
+      .evaluate((overlay) => {
+        const target = overlay.querySelector<HTMLElement>('button, [href], input, [tabindex]:not([tabindex="-1"])') ?? (overlay as HTMLElement);
+        target.focus();
+      })
+      .catch(() => undefined);
+    const open = await page.locator(overlaySelector).count();
+    await page.keyboard.press('Escape');
+    // Closing animations keep the overlay in the DOM for a moment
+    const closed = await page
+      .waitForFunction(([selector, count]) => document.querySelectorAll(selector).length < count, [overlaySelector, open] as const, { timeout: 2000 })
+      .then(
+        () => true,
+        () => false,
+      );
+    if (!closed) traps.push('Escape does not close the open overlay');
+  }
 
-  const overlays = new Map([...pick('escapes')].filter(([id]) => states.find((state) => state.id === id)?.open));
-  evidence.addFromProblems(['2.4.3'], 'probe:keyboard', 'Focus stays inside an open overlay', overlays);
-
-  // The focus order needs a person, so record it as material to review
-  const orders = [...results].map(([id, result]) => `${id}: ${result.order.slice(0, 12).join(' → ')}`);
-  evidence.add(['2.4.3', '2.1.1'], {
-    check: 'probe:keyboard',
-    result: 'review',
-    summary: `Tab order recorded on ${results.size} states for a person to compare with the visual order. ${orders.slice(0, 3).join(' | ')}`,
-    where: [...results.keys()],
-  });
-}
+  const probe = { check: 'probe:keyboard' };
+  const unique = (list: string[]) => [...new Set(list)];
+  const findings: Awaited<ReturnType<Check>> = [
+    { ...probe, criteria: ['2.4.7'], what: 'A visible change on every element that receives keyboard focus', problems: unique(invisible) },
+    { ...probe, criteria: ['2.4.11'], what: 'Focused elements are never entirely covered by other content', problems: unique(obscured) },
+    { ...probe, criteria: ['3.2.1'], what: 'Moving focus never navigates or opens anything', problems: unique(contextChanges) },
+    { ...probe, criteria: ['2.1.2'], what: 'Focus never gets stuck, and Escape closes overlays', problems: unique(traps) },
+    // The focus order needs a person, so record it as material to review
+    {
+      ...probe,
+      criteria: ['2.4.3', '2.1.1'],
+      what: 'Tab order recorded for a person to compare with the visual order.',
+      problems: [],
+      review: order.slice(0, 12).join(' → '),
+    },
+  ];
+  if (state.overlay) {
+    findings.push({ ...probe, criteria: ['2.4.3'], what: 'Focus stays inside an open overlay', problems: unique(escapes) });
+  }
+  return findings;
+};

@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process';
 import { appConfig } from 'shared';
-import type { EvidenceSet } from './probes/visit.ts';
+import type { EvidenceSet } from './findings.ts';
 import { repoRoot } from './session.ts';
 
 const sourceGlobs = ['frontend/src/**/*.ts', 'frontend/src/**/*.tsx', 'frontend/src/**/*.css', ':!**/*.test.*', ':!**/*.stories.*', ':!**/tests/**'];

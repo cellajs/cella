@@ -1,4 +1,5 @@
 import type { Page } from 'playwright';
+import { settle } from './session.ts';
 
 export interface ScopeState {
   id: string;
@@ -7,10 +8,19 @@ export interface ScopeState {
   auth: boolean;
   /** Brings the page into the state to audit, such as an open dialog. Runs after the page has loaded. */
   open?: (page: Page) => Promise<void>;
+  /** `open` leaves an overlay (dialog, sheet, menu) open that holds focus until it closes. */
+  overlay?: true;
 }
 
-/** Waits for an overlay (dialog, sheet, popover) to finish opening. */
-const settle = (page: Page) => page.waitForTimeout(800);
+/** Overlays that hold focus while open. Toasts render as dialogs but never take focus. */
+export const overlaySelector =
+  '[role="dialog"]:not([data-slot^="toast"]), [role="alertdialog"]:not([data-slot^="toast"]), [role="menu"], [role="listbox"]';
+
+/** Opens the state's overlay again when a check (a resize, an Escape) closed it. */
+export async function ensureOpen(page: Page, state: ScopeState) {
+  if (!state.overlay || !state.open || (await page.locator(overlaySelector).count())) return;
+  await state.open(page);
+}
 
 /**
  * The sample of pages and states the audit covers (WCAG-EM steps 2 and 3): every page type, plus the overlays
@@ -32,6 +42,7 @@ export const scope: ScopeState[] = [
   { id: 'docs-page', path: '/docs/page/quickstart', auth: false },
   {
     id: 'docs-search',
+    overlay: true,
     path: '/docs/overview',
     auth: false,
     open: async (page) => {
@@ -49,7 +60,7 @@ export const scope: ScopeState[] = [
     open: async (page) => {
       await page.getByRole('textbox').first().fill('someone@example.com');
       await page.keyboard.press('Enter');
-      await page.waitForTimeout(1500);
+      await settle(page);
     },
   },
   { id: 'auth-error', path: '/auth/error', auth: false },
@@ -66,6 +77,7 @@ export const scope: ScopeState[] = [
   // Overlays
   {
     id: 'menu-sheet',
+    overlay: true,
     path: '/home',
     auth: true,
     open: async (page) => {
@@ -75,6 +87,7 @@ export const scope: ScopeState[] = [
   },
   {
     id: 'search-sheet',
+    overlay: true,
     path: '/home',
     auth: true,
     open: async (page) => {
@@ -84,6 +97,7 @@ export const scope: ScopeState[] = [
   },
   {
     id: 'account-sheet',
+    overlay: true,
     path: '/home',
     auth: true,
     open: async (page) => {
@@ -93,6 +107,7 @@ export const scope: ScopeState[] = [
   },
   {
     id: 'invite-dialog',
+    overlay: true,
     path: '{org}/organization/members',
     auth: true,
     open: async (page) => {
@@ -104,6 +119,7 @@ export const scope: ScopeState[] = [
   },
   {
     id: 'member-sheet',
+    overlay: true,
     path: '{org}/organization/members',
     auth: true,
     open: async (page) => {
