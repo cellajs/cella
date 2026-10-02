@@ -44,7 +44,7 @@ const yjsRoutes = createXRoutes(['yjs', 'cella'], {
     xRateLimiter: [yjsHttpLimiter],
     summary: 'Push Yjs update',
     description:
-      "Appends one Yjs update to a product entity's collaborative document, for a client that cannot reach the Yjs relay. The answer follows the commit, so a 200 means the server holds the update; the relay passes it to live sessions and folds it into the document. An update made in another generation than the document's answers 409 with the current one. At most 512 KB of update per request, base64url-encoded. The caller must be allowed to update the entity, as for a Yjs token. Costs no API points.",
+      "Appends one Yjs update to a product entity's collaborative document, for a client that cannot reach the Yjs relay. The answer follows the commit, so a 200 means the server holds the update; the relay passes it to live sessions and folds it into the document. An update made in another generation than the document's answers 409 `sync_document_replaced` with the current one in `meta.generation`, and with null when the document has no row: pull, which seeds it, then post again. At most 512 KB of update per request, base64url-encoded. The caller must be allowed to update the entity, as for a Yjs token. Costs no API points.",
     request: { params: tenantOrgParamSchema, body: jsonBody(yjsPushBodySchema) },
     responses: { 200: json('Saved', yjsPushResponseSchema) },
   }),
