@@ -1,15 +1,9 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { mfaFactorRules } from '#/modules/auth/general/helpers/mfa';
-import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
-import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
-import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { readStepUp, refuseImpersonation } from '#/modules/auth/step-up/helpers/step-up';
+import { refuseImpersonation } from '#/modules/auth/step-up/helpers/step-up';
 import { getUserSessions } from '#/modules/me/helpers/get-user-info';
-import { findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 import { meRoutes } from '#/modules/me/me-routes';
 import { deleteMyMembershipOp } from '#/modules/me/operations/delete-my-membership';
 import { getConnectedAppsOp } from '#/modules/me/operations/get-connected-apps';
@@ -19,6 +13,7 @@ import { getMyInvitationsOp } from '#/modules/me/operations/get-my-invitations';
 import { getUploadTokenOp } from '#/modules/me/operations/get-upload-token';
 import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-app';
 import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
+import { toggleMfaOp } from '#/modules/me/operations/toggle-mfa';
 import { updateMeOp } from '#/modules/me/operations/update-me';
 import { deleteAccounts } from '#/modules/user/helpers/delete-accounts';
 import { defaultHook } from '#/utils/default-hook';
@@ -32,42 +27,9 @@ app.openapi(meRoutes.getMe, async (ctx) => {
 });
 
 app.openapi(meRoutes.toggleMfa, async (ctx) => {
-  const { user, session } = ctx.var;
-
   const { mfaRequired } = ctx.req.valid('json');
-
-  // The guard refused a session that has not stepped up; the factor that proved this one signs the mfa session minted
-  // below in. Turning MFA on needs both factors enrolled, so a passing step-up always names one.
-  const { factor } = await readStepUp(session);
-
-  // The flag and the sessions it ends change together, after a factor delete that got the lock first.
-  const updatedUser = await mfaFactorRules.locked(user.id, async (tx) => {
-    if (mfaRequired) await mfaFactorRules.assertCanEnable(tx, user.id);
-    const txCtx = { var: { ...ctx.var, db: tx } };
-    const updated = await updateUserMfa(txCtx, { mfaRequired });
-    if (updated.mfaRequired) {
-      // This browser's session gives way to the mfa session minted below; every other regular session ends.
-      await revokeSessions(txCtx, { userId: user.id, sessionIds: [ctx.var.sessionId], reason: 'replaced', by: user.id });
-      await revokeSessions(txCtx, { userId: user.id, all: true, type: 'regular', reason: 'mfa_enabled', by: user.id });
-    }
-    return updated;
-  });
-
-  invalidateCache.user(user.id);
-
-  if (updatedUser.mfaRequired && factor) {
-    // Clear session cookie to enforce fresh login
-    deleteAuthCookie(ctx, 'session');
-
-    await setUserSession(ctx, user, factor, 'mfa');
-  }
-
-  sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');
-
-  // Re-select to include the user_counters subqueries
-  const userWithActivity = await findCurrentUser(ctx);
-
-  return ctx.json(userWithActivity, 200);
+  const data = await toggleMfaOp(ctx, mfaRequired);
+  return ctx.json(data, 200);
 });
 
 app.openapi(meRoutes.getMyAuth, async (ctx) => {

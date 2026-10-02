@@ -98,6 +98,20 @@ export const findUserByFilters = async (ctx: DbContext, { filters }: FindUserByF
   return user;
 };
 
+interface FindUserForUpdateOpts {
+  id: string;
+}
+
+/** Locks the user's row for the rest of the transaction; returns the MFA switch the factor rules read under that lock. */
+export const findUserForUpdate = async (ctx: DbContext, { id }: FindUserForUpdateOpts) => {
+  const [user] = await ctx.var.db
+    .select({ id: usersTable.id, mfaRequired: usersTable.mfaRequired })
+    .from(usersTable)
+    .where(eq(usersTable.id, id))
+    .for('update');
+  return user;
+};
+
 interface InsertUsersOpts {
   users: InsertUserModel[];
   /** Skip rows that already exist (seed re-runs); a skipped user leaves no actor behind. */

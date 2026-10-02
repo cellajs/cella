@@ -1,36 +1,25 @@
 import { decodeBase32 } from '@oslojs/encoding';
-import { and, eq, isNull, lt, or } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb as db } from '#/db/db';
+import { baseDb } from '#/db/db';
 import { settleTotpAttempt, type TotpUser, takeTotpAttempt } from '#/modules/auth/totps/helpers/totp-budget';
 import { matchTOTPStep } from '#/modules/auth/totps/helpers/totp-core';
 import { decryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
-import { totpsTable } from '#/modules/auth/totps/totps-db';
+import { findTotp, updateTotpLastUsedStep } from '#/modules/auth/totps/totps-queries';
 
 const { intervalInSeconds, digits, gracePeriodInSeconds } = appConfig.totp;
 
+/** Factor checks read and write on the base pool, whatever the route's context holds. */
+const dbCtx = { var: { db: baseDb } };
+
 /** The account's stored Base32 secret. */
 const findStoredSecret = async (userId: string) => {
-  const [totp] = await db.select({ secret: totpsTable.secret }).from(totpsTable).where(eq(totpsTable.userId, userId)).limit(1);
+  const totp = await findTotp(dbCtx, { userId });
   if (!totp) throw new AppError(404, 'not_found', 'warn');
 
   return decryptTotpSecret(totp.secret);
-};
-
-/**
- * Moves the account's last used step forward to `step`: false when that step or a later one was used already. Of two
- * checks of one code, exactly one moves it.
- */
-const spendStep = async (userId: string, step: number) => {
-  const [spent] = await db
-    .update(totpsTable)
-    .set({ lastUsedStep: step })
-    .where(and(eq(totpsTable.userId, userId), or(isNull(totpsTable.lastUsedStep), lt(totpsTable.lastUsedStep, step))))
-    .returning({ id: totpsTable.id });
-  return !!spent;
 };
 
 interface VerifyTotpOpts {
@@ -53,7 +42,7 @@ export const verifyTotp = async (ctx: Context<Env>, { user, code, pendingSecret 
 
   const attempt = await takeTotpAttempt(ctx, user.id);
   const step = matchTOTPStep(decodeBase32(secret), intervalInSeconds, digits, code, gracePeriodInSeconds);
-  const spent = step !== null && (pendingSecret !== undefined || (await spendStep(user.id, step)));
+  const spent = step !== null && (pendingSecret !== undefined || !!(await updateTotpLastUsedStep(dbCtx, { userId: user.id, step })));
   await settleTotpAttempt(attempt, user, spent);
 
   if (step === null) throw new AppError(401, 'invalid_token', 'warn');

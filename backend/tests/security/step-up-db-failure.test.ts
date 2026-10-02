@@ -9,8 +9,8 @@ import { insertStaleSession } from './session-helpers';
 /** The error the next TOTP check throws, as the database driver would; null checks the code as usual. */
 const nextCheck = vi.hoisted(() => ({ failure: null as Error | null }));
 
-vi.mock('#/modules/auth/totps/helpers/totps', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('#/modules/auth/totps/helpers/totps')>();
+vi.mock('#/modules/auth/totps/operations/verify-totp', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/modules/auth/totps/operations/verify-totp')>();
   return {
     ...actual,
     verifyTotp: (...args: Parameters<typeof actual.verifyTotp>) => {

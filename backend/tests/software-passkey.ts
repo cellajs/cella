@@ -2,7 +2,7 @@ import { createHash, generateKeyPairSync, randomBytes, sign } from 'node:crypto'
 import { isoCBOR } from '@simplewebauthn/server/helpers';
 import { appConfig } from 'shared';
 
-/** The relying party ID the backend verifies against (`passkeys/helpers/passkey.ts`). */
+/** The relying party ID the backend verifies against (`passkeys/operations/passkey-challenges.ts`). */
 const appRpId = appConfig.mode === 'development' ? 'localhost' : appConfig.domain;
 
 const sha256 = (data: string | Buffer) => createHash('sha256').update(data).digest();

@@ -1,9 +1,9 @@
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
-import { initiateMfa } from '#/modules/auth/general/helpers/mfa';
 import { resolvePostAuthRedirectPath } from '#/modules/auth/general/helpers/redirect-path';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
+import { initiateMfa } from '#/modules/auth/mfa/operations/mfa-challenge';
 import type { AuthStrategy } from '#/modules/auth/sessions-db';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
 

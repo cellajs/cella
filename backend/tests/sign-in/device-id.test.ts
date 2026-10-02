@@ -6,7 +6,7 @@ import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
 // The device id is under test, not the authenticator code: every TOTP check passes.
-vi.mock('#/modules/auth/totps/helpers/totps', () => ({ verifyTotp: vi.fn().mockResolvedValue(0) }));
+vi.mock('#/modules/auth/totps/operations/verify-totp', () => ({ verifyTotp: vi.fn().mockResolvedValue(0) }));
 
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'] });
 

@@ -1,15 +1,14 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
 import type { AuthenticationResponseJSON, RegistrationResponseJSON } from '@simplewebauthn/server';
-import { and, eq } from 'drizzle-orm';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { findCredentialIdsByUser, insertPasskey } from '#/modules/auth/auth-queries';
 import { deviceInfo } from '#/modules/auth/general/helpers/device-info';
-import { completeMfaChallenge, mfaFactorRules, validateConfirmMfaToken } from '#/modules/auth/general/helpers/mfa';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { issuePasskeyChallenge, verifyPasskeyAssertion, verifyPasskeyRegistration } from '#/modules/auth/passkeys/helpers/passkey';
-import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
+import { mfaFactorRules } from '#/modules/auth/mfa/operations/factor-rules';
+import { completeMfaChallenge, validateConfirmMfaToken } from '#/modules/auth/mfa/operations/mfa-challenge';
+import { issuePasskeyChallenge, verifyPasskeyAssertion, verifyPasskeyRegistration } from '#/modules/auth/passkeys/operations/passkey-challenges';
+import { deletePasskey, findCredentialIdsByUser, insertPasskey } from '#/modules/auth/passkeys/passkeys-queries';
 import { authPasskeysRoutes } from '#/modules/auth/passkeys/passkeys-routes';
 import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findUserById } from '#/modules/user/user-queries';
@@ -53,7 +52,7 @@ app.openapi(authPasskeysRoutes.deletePasskey, async (ctx) => {
 
   // The delete rolls back when MFA is on and this was the last passkey: it stays until MFA is turned off.
   await mfaFactorRules.locked(user.id, async (tx) => {
-    await tx.delete(passkeysTable).where(and(eq(passkeysTable.userId, user.id), eq(passkeysTable.id, id)));
+    await deletePasskey({ var: { db: tx } }, { userId: user.id, id });
     await mfaFactorRules.assertKeepsFactors(tx, user.id);
   });
 
