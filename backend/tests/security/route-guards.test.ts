@@ -1,6 +1,6 @@
 import type { OpenAPIHono } from '@hono/zod-openapi';
 import { getMe } from 'sdk';
-import { appConfig } from 'shared';
+import { type ConfigSwitch, isSwitchOn } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Env } from '#/core/context';
@@ -10,7 +10,7 @@ import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData } from './helpers';
 
-// Every sign-in method on, so a route's strategy gate lets the request through to the guard under test.
+// Every sign-in method on, so a route's config switch lets the request through to the guard under test.
 setTestConfig({ enabledAuthStrategies: ['passkey', 'totp', 'oauth', 'magic'], enabledOAuthProviders: ['github', 'google', 'microsoft'] });
 
 interface Operation {
@@ -18,11 +18,12 @@ interface Operation {
   method: string;
   path: string;
   guards: string[];
+  enabledBy?: ConfigSwitch;
 }
 
 const httpMethods = ['get', 'post', 'put', 'patch', 'delete'] as const;
 
-/** Every operation of the API with the guard chain it declares (`x-guard`), from the app's own OpenAPI document. */
+/** Every operation of the API with its guard chain (`x-guard`) and config switch (`x-enabled-by`), from the app's own OpenAPI document. */
 const operationsOf = (app: OpenAPIHono<Env>): Operation[] => {
   const { paths = {} } = app.getOpenAPI31Document({ openapi: '3.1.0', info: { title: 'guards', version: '0' } });
   return Object.entries(paths).flatMap(([path, item]) =>
@@ -35,18 +36,15 @@ const operationsOf = (app: OpenAPIHono<Env>): Operation[] => {
           method: method.toUpperCase(),
           path,
           guards: (operation['x-guard'] as string[] | undefined) ?? [],
+          enabledBy: operation['x-enabled-by'] as ConfigSwitch | undefined,
         },
       ];
     }),
   );
 };
 
-/** A route of a disabled service answers 404 before any guard runs: its `serviceEnabled(<service>)` gate. */
-const serviceIsOn = ({ guards }: Operation) =>
-  guards.every((guard) => {
-    const service = /^serviceEnabled\((\w+)\)$/.exec(guard)?.[1];
-    return !service || appConfig.services[service as keyof typeof appConfig.services]?.enabled !== false;
-  });
+/** A route whose config switch is off is refused before any guard runs (`x-enabled-by`). */
+const switchIsOn = ({ enabledBy }: Operation) => !enabledBy || isSwitchOn(enabledBy);
 
 /**
  * Function-level access follows the guard chain a route declares, so the table is the API itself: every route without
@@ -56,7 +54,7 @@ const serviceIsOn = ({ guards }: Operation) =>
 describe('Route guards', async () => {
   const call = await createAppClient();
   const { baseApp } = await import('#/routes');
-  const operations = operationsOf(baseApp).filter(serviceIsOn);
+  const operations = operationsOf(baseApp).filter(switchIsOn);
   const nonPublic = operations.filter(({ guards }) => !guards.includes('publicGuard'));
   const sysAdminOnly = operations.filter(({ guards }) => guards.includes('sysAdminGuard'));
 

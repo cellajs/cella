@@ -1,4 +1,4 @@
-import { createTotp, generatePasskeyChallenge, generateTotpKey, github, google, microsoft, signInWithTotp, toggleMfa } from 'sdk';
+import { createTotp, generatePasskeyChallenge, generateTotpKey, github, google, invokeToken, microsoft, signInWithTotp, toggleMfa } from 'sdk';
 import { afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, createMfaToken, createTestSession, createTestUser, createTotpUser, type ErrorResponse, expectRefusal } from '../helpers';
@@ -128,5 +128,24 @@ describe('passkey strategy disabled', () => {
     const mfaCookie = authCookie('confirm-mfa', await createMfaToken(user));
     const refused = await passkeySignIn(softwarePasskey().assert('a-challenge'), mfaCookie, 'mfa');
     await expectRefusal(refused, 400, 'forbidden_strategy');
+  });
+});
+
+describe('magic strategy disabled', async () => {
+  beforeAll(() => {
+    setTestConfig({ enabledAuthStrategies: ['passkey', 'totp'], selfRegistration: true });
+  });
+  const call = await createAppClient();
+
+  // The invoke route serves every link type, so only a magic link checks the magic switch.
+  it('must not open a magic link while magic links are off', async () => {
+    const refused = await call(invokeToken, { path: { type: 'magic', token: 'any' }, headers: defaultHeaders });
+    await expectRefusal(refused, 400, 'forbidden_strategy');
+  });
+
+  it('opens other link types while magic links are off (positive control)', async () => {
+    const { response, error } = await call(invokeToken, { path: { type: 'invitation', token: 'any' }, headers: defaultHeaders });
+    expect((error as ErrorResponse | undefined)?.type).not.toBe('forbidden_strategy');
+    expect(response.status).not.toBe(400);
   });
 });

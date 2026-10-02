@@ -8,6 +8,7 @@ import { HashUrlButton } from '~/modules/common/hash-url-button';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { OperationRequest } from '~/modules/docs/operations/operation-request';
 import { OperationResponses } from '~/modules/docs/operations/operation-responses';
+import { SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
 import { Badge } from '~/modules/ui/badge';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '~/modules/ui/card';
 import { cn } from '~/utils/cn';
@@ -74,6 +75,7 @@ export function OperationDetail({ operation, detail: detailProp, className }: Op
               {t('c:deprecated')}
             </Badge>
           )}
+          <SwitchedOffBadge enabledBy={operation.enabledBy} withReason />
         </div>
 
         <Suspense fallback={<Spinner />}>

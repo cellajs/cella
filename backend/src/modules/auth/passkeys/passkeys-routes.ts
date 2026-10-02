@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { publicGuard, stepUpGuard, strategyEnabled, userGuard } from '#/middlewares/guard';
+import { publicGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
 import { passkeyChallengeLimiter, singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockPasskeyChallengeResponse, mockPasskeyResponse } from '#/modules/auth/auth-mocks';
 import {
@@ -16,7 +16,8 @@ const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
   generatePasskeyChallenge: xRoute({
     method: 'post',
     path: '/passkey/generate-challenge',
-    xGuard: [strategyEnabled('passkey'), publicGuard],
+    xEnabledBy: { strategy: 'passkey' },
+    xGuard: [publicGuard],
     xRateLimiter: [passkeyChallengeLimiter],
     summary: 'Generate passkey challenge',
     description: 'Initiates the passkey registration or authentication flow by generating a device bound challenge.',
@@ -26,7 +27,8 @@ const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
   createPasskey: xRoute({
     method: 'post',
     path: '/passkey',
-    xGuard: [strategyEnabled('passkey'), userGuard, stepUpGuard],
+    xEnabledBy: { strategy: 'passkey' },
+    xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Create passkey',
     description:
@@ -47,7 +49,8 @@ const authPasskeysRoutes = createXRoutes(['auth', 'cella'], {
   signInWithPasskey: xRoute({
     method: 'post',
     path: '/passkey-verification',
-    xGuard: [strategyEnabled('passkey'), publicGuard],
+    xEnabledBy: { strategy: 'passkey' },
+    xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('passkey')],
     summary: 'Verify passkey',
     description: 'Validates the signed challenge and completes passkey based authentication.',

@@ -1,6 +1,7 @@
 import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
+import { assertSwitchOn } from '#/middlewares/config-switch';
 import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
 import { explainOpenedMagicLink, holdMagicLinkOutsideItsBrowser } from '#/modules/auth/magic/helpers/magic-link-browser';
 import { claimMagicLinkOwner } from '#/modules/auth/magic/helpers/magic-sign-up';
@@ -18,7 +19,9 @@ type LinkHandler = (ctx: Context<Env>, rawToken: string) => Promise<Response>;
  * until it says what its link does, so no link falls through to another type's handling.
  */
 export const linkHandlers = {
+  // Only a magic link belongs to a sign-in method, so this route's switch is checked here, per token type.
   magic: async (ctx, rawToken) => {
+    assertSwitchOn({ strategy: 'magic' });
     const held = await holdMagicLinkOutsideItsBrowser(ctx, rawToken);
     if (held) return held;
 

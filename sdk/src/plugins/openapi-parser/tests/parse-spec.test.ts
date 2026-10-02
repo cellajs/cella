@@ -1,4 +1,3 @@
-import { appConfig } from 'shared';
 import { config } from 'shared/config/config.default';
 import { describe, expect, it } from 'vitest';
 import { parseOpenApiSpec } from '../parse-spec';
@@ -335,23 +334,23 @@ describe('parseOpenApiSpec, golden fixture', () => {
     expect(detail?.request?.query?.properties?.q).toEqual({ type: 'string', required: false });
   });
 
-  it('skips operations gated by a service disabled in this build', () => {
-    const disabled = Object.entries(appConfig.services).find(([, service]) => service.enabled === false)?.[0];
-    if (!disabled) return; // build has no disabled service; nothing to gate
-
+  it('keeps every switched operation and carries its switch, whatever the config the generator runs under', () => {
     const spec = {
       openapi: '3.1.0',
-      info: { title: 'Gated API', version: '1.0.0' },
+      info: { title: 'Switched API', version: '1.0.0' },
       paths: {
-        '/enabled': { get: { operationId: 'enabledOp', responses: { '200': { description: 'OK' } } } },
-        '/gated': {
-          get: { operationId: 'gatedOp', 'x-service': disabled, responses: { '200': { description: 'OK' } } },
+        '/plain': { get: { operationId: 'plainOp', responses: { '200': { description: 'OK' } } } },
+        '/service': { get: { operationId: 'serviceOp', 'x-enabled-by': { service: 'yjs' }, responses: { '200': { description: 'OK' } } } },
+        '/provider': {
+          get: { operationId: 'providerOp', 'x-enabled-by': { strategy: 'oauth', provider: 'google' }, responses: { '200': { description: 'OK' } } },
         },
       },
     } as OpenApiSpec;
 
-    const ids = parseOpenApiSpec(spec).operations.map((o) => o.id);
-    expect(ids).toContain('enabledOp');
-    expect(ids).not.toContain('gatedOp');
+    const byId = new Map(parseOpenApiSpec(spec).operations.map((o) => [o.id, o]));
+    expect([...byId.keys()]).toEqual(['plainOp', 'serviceOp', 'providerOp']);
+    expect(byId.get('plainOp')).not.toHaveProperty('enabledBy');
+    expect(byId.get('serviceOp')?.enabledBy).toEqual({ service: 'yjs' });
+    expect(byId.get('providerOp')?.enabledBy).toEqual({ strategy: 'oauth', provider: 'google' });
   });
 });

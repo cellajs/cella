@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, xRoute } from '#/core/x-routes';
-import { publicGuard, stepUpGuard, strategyEnabled, userGuard } from '#/middlewares/guard';
+import { publicGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
 import { cookieSchema, locationSchema } from '#/schemas';
@@ -9,7 +9,8 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
   startOAuthConnect: xRoute({
     method: 'post',
     path: '/oauth-connect',
-    xGuard: [strategyEnabled('oauth'), userGuard, stepUpGuard],
+    xEnabledBy: { strategy: 'oauth' },
+    xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Start connecting a provider',
     description:
@@ -19,7 +20,8 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
   github: xRoute({
     method: 'get',
     path: '/github',
-    xGuard: [strategyEnabled({ oauth: 'github' }), publicGuard],
+    xEnabledBy: { strategy: 'oauth', provider: 'github' },
+    xGuard: [publicGuard],
     summary: 'Authenticate with GitHub',
     description:
       'Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.',
@@ -29,7 +31,8 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
   githubCallback: xRoute({
     method: 'get',
     path: '/github/callback',
-    xGuard: [strategyEnabled({ oauth: 'github' }), publicGuard],
+    xEnabledBy: { strategy: 'oauth', provider: 'github' },
+    xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('github')],
     summary: 'Callback for GitHub',
     description: 'Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.',
@@ -39,7 +42,8 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
   google: xRoute({
     method: 'get',
     path: '/google',
-    xGuard: [strategyEnabled({ oauth: 'google' }), publicGuard],
+    xEnabledBy: { strategy: 'oauth', provider: 'google' },
+    xGuard: [publicGuard],
     summary: 'Authenticate with Google',
     description:
       'Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.',
@@ -49,7 +53,8 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
   googleCallback: xRoute({
     method: 'get',
     path: '/google/callback',
-    xGuard: [strategyEnabled({ oauth: 'google' }), publicGuard],
+    xEnabledBy: { strategy: 'oauth', provider: 'google' },
+    xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('google')],
     summary: 'Callback for Google',
     description: 'Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.',
@@ -59,7 +64,8 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
   microsoft: xRoute({
     method: 'get',
     path: '/microsoft',
-    xGuard: [strategyEnabled({ oauth: 'microsoft' }), publicGuard],
+    xEnabledBy: { strategy: 'oauth', provider: 'microsoft' },
+    xGuard: [publicGuard],
     summary: 'Authenticate with Microsoft',
     description:
       'Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.',
@@ -69,7 +75,8 @@ const authOAuthRoutes = createXRoutes(['auth', 'cella'], {
   microsoftCallback: xRoute({
     method: 'get',
     path: '/microsoft/callback',
-    xGuard: [strategyEnabled({ oauth: 'microsoft' }), publicGuard],
+    xEnabledBy: { strategy: 'oauth', provider: 'microsoft' },
+    xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('microsoft')],
     summary: 'Callback for Microsoft',
     description: 'Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.',

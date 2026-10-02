@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { orgGuard, publicGuard, serviceEnabled, tenantGuard, tokenGuard } from '#/middlewares/guard';
+import { orgGuard, publicGuard, tenantGuard, tokenGuard } from '#/middlewares/guard';
 import { mcpRequestLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockProtectedResourceResponse } from '#/modules/oauth-server/oauth-server-mocks';
 import { protectedResourceSchema } from '#/modules/oauth-server/oauth-server-schema';
@@ -10,7 +10,8 @@ const mcpRoutes = createXRoutes(['mcp', 'cella'], {
   getMcpProtectedResourceMetadata: xRoute({
     method: 'get',
     path: '/.well-known/oauth-protected-resource',
-    xGuard: [serviceEnabled('mcp'), publicGuard],
+    xEnabledBy: { service: 'mcp' },
+    xGuard: [publicGuard],
     summary: 'Protected resource metadata',
     description:
       'RFC 9728 metadata of this organization MCP server: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.',
@@ -20,7 +21,8 @@ const mcpRoutes = createXRoutes(['mcp', 'cella'], {
   handleMcp: xRoute({
     method: 'post',
     path: '/',
-    xGuard: [serviceEnabled('mcp'), tokenGuard, tenantGuard, orgGuard],
+    xEnabledBy: { service: 'mcp' },
+    xGuard: [tokenGuard, tenantGuard, orgGuard],
     xRateLimiter: [mcpRequestLimiter],
     summary: 'MCP endpoint',
     description:

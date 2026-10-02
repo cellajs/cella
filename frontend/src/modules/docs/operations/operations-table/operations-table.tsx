@@ -11,6 +11,7 @@ import { OperationsTableBar } from '~/modules/docs/operations/operations-table/o
 import { useColumns } from '~/modules/docs/operations/operations-table/operations-columns';
 import { useFilteredOperations } from '~/modules/docs/operations/operations-table/use-filtered-operations';
 import { useSortedOperations } from '~/modules/docs/operations/operations-table/use-sorted-operations';
+import { isSwitchedOff } from '~/modules/docs/operations/switched-off-badge';
 import { infoQueryOptions, operationsQueryOptions } from '~/modules/docs/query';
 import { useUIStore } from '~/modules/ui/ui-store';
 
@@ -79,6 +80,7 @@ function OperationsTable() {
           cellSelectionMode="none"
           hasNextPage={false}
           rowKeyGetter={(row) => row.hash}
+          rowClass={(row) => (isSwitchedOff(row) ? 'opacity-60' : undefined)}
           isLoading={false}
           isFetching={false}
           limit={sortedOperations.length}

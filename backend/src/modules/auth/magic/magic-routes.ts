@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { publicGuard, strategyEnabled } from '#/middlewares/guard';
+import { publicGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { magicLinkLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { magicLinkBodySchema } from '#/modules/auth/magic/magic-schema';
@@ -10,7 +10,8 @@ const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
   sendMagicLink: xRoute({
     method: 'post',
     path: '/magic/send',
-    xGuard: [strategyEnabled('magic'), publicGuard],
+    xEnabledBy: { strategy: 'magic' },
+    xGuard: [publicGuard],
     xRateLimiter: [magicLinkLimiter, spamLimiter],
     middleware: isNoBot,
     summary: 'Send magic link',
@@ -21,7 +22,8 @@ const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
   getPendingMagicLink: xRoute({
     method: 'get',
     path: '/magic/pending',
-    xGuard: [strategyEnabled('magic'), publicGuard],
+    xEnabledBy: { strategy: 'magic' },
+    xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('magic')],
     summary: 'Get pending magic link',
     description:
@@ -31,7 +33,8 @@ const authMagicLinkRoutes = createXRoutes(['auth', 'cella'], {
   confirmMagicLink: xRoute({
     method: 'post',
     path: '/magic/confirm',
-    xGuard: [strategyEnabled('magic'), publicGuard],
+    xEnabledBy: { strategy: 'magic' },
+    xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('magic')],
     summary: 'Confirm magic link',
     description:

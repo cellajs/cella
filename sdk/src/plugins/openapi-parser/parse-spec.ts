@@ -1,4 +1,4 @@
-import { appConfig } from 'shared';
+import type { ConfigSwitch } from 'shared';
 import { config } from 'shared/config/config.default';
 import type {
   GenComponentSchema,
@@ -18,13 +18,6 @@ import type { OpenApiOperation, OpenApiReferenceObject, OpenApiResponseObject, O
 
 /** Map from pluralized tag names to singular entity types (e.g., 'users' -> 'user') */
 const tagToEntityType = new Map<string, string>(config.entityTypes.map((entityType) => [`${entityType}s`, entityType]));
-
-/** Service modules (appConfig.services) that resolve to disabled in this build's effective config. */
-const disabledServices = new Set(
-  Object.entries(appConfig.services)
-    .filter(([, service]) => service.enabled === false)
-    .map(([slug]) => slug),
-);
 
 // Iterating spec.paths directly preserves order.
 const httpMethods = ['get', 'post', 'put', 'delete', 'patch', 'options', 'head'] as const;
@@ -197,10 +190,6 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
       const op = pathItem[method];
       if (!op?.operationId) continue;
 
-      // Operations gated by a disabled service are dropped from the docs, keeping the SDK a stable superset.
-      const service = op['x-service' as `x-${string}`];
-      if (typeof service === 'string' && disabledServices.has(service)) continue;
-
       // Hidden-tagged operations stay in openapi.json and the SDK but drop from docs and search.
       if ((op.tags ?? []).some((t: string) => hiddenTags.has(t))) {
         hiddenOperationCount++;
@@ -223,6 +212,8 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
       }
 
       const entityType = opTags.map((tag: string) => tagToEntityType.get(tag)).find(Boolean);
+      // Generated once, under whatever config ran the generator, so the docs page decides with its own app's config.
+      const enabledBy = op['x-enabled-by'] as ConfigSwitch | undefined;
 
       operations.push({
         id: op.operationId,
@@ -240,6 +231,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
         extensions,
         tagsByKind: groupTagsByKind(op.tags ?? [], tagKindMap),
         ...(entityType && { entityType }),
+        ...(enabledBy && { enabledBy }),
       });
 
       const operationDetail: GenOperationDetail = { operationId: op.operationId, responses };

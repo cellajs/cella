@@ -1,3 +1,5 @@
+import type { ConfigSwitch } from 'shared';
+
 /**
  * Types for the docs JSON that the openapi-parser plugin writes into `sdk/gen/docs.gen` and the
  * frontend docs module fetches at runtime. The "Gen" prefix marks data generated from the OpenAPI spec.
@@ -41,6 +43,8 @@ export interface GenOperationSummary {
   tagsByKind: Record<string, string[]>;
   /** Entity type derived from tag (e.g., 'user', 'organization'). Only set for entity-related operations. */
   entityType?: string;
+  /** The config switch the operation belongs to (`x-enabled-by`); the docs mark the operation while it is off. */
+  enabledBy?: ConfigSwitch;
 }
 
 export interface GenTagSummary {
@@ -55,7 +59,7 @@ export interface GenInfoSummary {
   version: string;
   description: string;
   openapiVersion: string;
-  /** Operations emitted to the docs (excludes hidden and service-disabled). */
+  /** Operations emitted to the docs (excludes hidden). */
   documentedOperationCount: number;
   /** Operations dropped from the docs by a hidden-kind tag; still present in openapi.json and the SDK. */
   hiddenOperationCount: number;

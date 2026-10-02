@@ -10,12 +10,13 @@ import {
   type XMiddlewareHandler,
   type XMiddlewareOptions,
 } from '#/core/openapi-extensions';
+import { configSwitchGate } from '#/middlewares/config-switch';
 import { errorResponseRefs } from '#/schemas/error-response-schemas';
 
 /**
- * A route that answers 302 is a browser navigation: whatever refuses the request, a gate, a limiter or the handler,
- * answers with a redirect to the error page (`appErrorHandler`). Set before anything can refuse; a handler may point
- * it elsewhere.
+ * A route that answers 302 is a browser navigation: whatever refuses the request, the switch gate, a guard, a limiter
+ * or the handler, answers with a redirect to the error page (`appErrorHandler`). Set before anything can refuse; a
+ * handler may point it elsewhere.
  */
 const errorPageMiddleware: MiddlewareHandler<Env> = async (ctx, next) => {
   ctx.set('errorPagePath', '/auth/error');
@@ -30,7 +31,10 @@ type Route<P extends string, R extends Omit<RouteOptions, 'path'> & { path: P }>
 >;
 
 /**
- * Wraps `createRoute` with extension middleware (xGuard, xRateLimiter), documented in OpenAPI as `x-*` properties.
+ * Wraps `createRoute` with extension middleware, documented in OpenAPI as `x-*` properties. A request passes, in this
+ * order: the error page (a 302 route), the config switch gate (`xEnabledBy`), `xGuard`, `xRateLimiter`, `xCache`, the
+ * route's own `middleware`, then validation and the handler. The switch needs no caller, so a route that is off
+ * answers before any guard shows how it authenticates; `middleware` runs after the guards and may read the actor.
  * The error responses (`errorResponseRefs`) are appended to every route's own.
  * @link https://github.com/honojs/middleware/tree/main/packages/zod-openapi#configure-middleware-for-each-endpoint
  */
@@ -38,9 +42,10 @@ export const createXRoute = <P extends string, R extends Omit<RouteOptions, 'pat
   const extensionMiddleware = collectExtensionMiddleware(config);
   const existing = [config.middleware ?? []].flat();
 
-  // The error page first, so every refusal finds it, a gate leading `xGuard` included.
+  // The error page first, so every refusal finds it, the switch gate's included.
   const errorPage = '302' in config.responses ? [errorPageMiddleware] : [];
-  const middleware = [...errorPage, ...extensionMiddleware, ...existing];
+  const switchGate = config.xEnabledBy ? [configSwitchGate(config.xEnabledBy)] : [];
+  const middleware = [...errorPage, ...switchGate, ...extensionMiddleware, ...existing];
 
   const xMiddlewares = middleware.filter(
     (mw): mw is XMiddlewareHandler => '__extensionType' in mw && typeof (mw as XMiddlewareHandler).__extensionType === 'string',

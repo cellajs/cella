@@ -1,5 +1,5 @@
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { strategyEnabled, userGuard } from '#/middlewares/guard';
+import { userGuard } from '#/middlewares/guard';
 import { passkeyChallengeLimiter, spamLimiter, stepUpLimiter } from '#/middlewares/rate-limiter/limiters';
 import { passkeyChallengeSchema } from '#/modules/auth/passkeys/passkeys-schema';
 import { stepUpBodySchema, stepUpLinkBodySchema, stepUpStateSchema } from '#/modules/auth/step-up/step-up-schema';
@@ -17,7 +17,8 @@ const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
   getStepUpPasskeyChallenge: xRoute({
     method: 'post',
     path: '/step-up/passkey-challenge',
-    xGuard: [strategyEnabled('passkey'), userGuard],
+    xEnabledBy: { strategy: 'passkey' },
+    xGuard: [userGuard],
     xRateLimiter: [passkeyChallengeLimiter],
     summary: 'Get a step-up passkey challenge',
     description:

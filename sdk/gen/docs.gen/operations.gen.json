@@ -59,7 +59,7 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(per-request)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
@@ -220,14 +220,15 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(magic)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["magicLinkLimiter", "spamLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "magic" }
   },
   {
     "id": "getPendingMagicLink",
@@ -243,14 +244,15 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(magic)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "magic" }
   },
   {
     "id": "confirmMagicLink",
@@ -266,14 +268,15 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(magic)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "magic" }
   },
   {
     "id": "generateTotpKey",
@@ -289,14 +292,15 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["strategyEnabled(totp)", "userGuard", "stepUpGuard"],
+      "xGuard": ["userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "totp" }
   },
   {
     "id": "createTotp",
@@ -312,14 +316,15 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(totp)", "userGuard", "stepUpGuard"],
+      "xGuard": ["userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "totp" }
   },
   {
     "id": "deleteTotp",
@@ -358,14 +363,15 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(totp)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["totpVerificationLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "totp" }
   },
   {
     "id": "createPasskey",
@@ -381,14 +387,15 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["strategyEnabled(passkey)", "userGuard", "stepUpGuard"],
+      "xGuard": ["userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "passkey" }
   },
   {
     "id": "deletePasskey",
@@ -427,14 +434,15 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["strategyEnabled(passkey)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["passkeyChallengeLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "passkey" }
   },
   {
     "id": "signInWithPasskey",
@@ -450,14 +458,15 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(passkey)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "passkey" }
   },
   {
     "id": "startOAuthConnect",
@@ -473,14 +482,15 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(oauth)", "userGuard", "stepUpGuard"],
+      "xGuard": ["userGuard", "stepUpGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "oauth" }
   },
   {
     "id": "github",
@@ -496,14 +506,15 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(github)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "oauth", "provider": "github" }
   },
   {
     "id": "google",
@@ -519,14 +530,15 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(google)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "oauth", "provider": "google" }
   },
   {
     "id": "microsoft",
@@ -542,14 +554,15 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(microsoft)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "oauth", "provider": "microsoft" }
   },
   {
     "id": "githubCallback",
@@ -565,14 +578,15 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(github)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "oauth", "provider": "github" }
   },
   {
     "id": "googleCallback",
@@ -588,14 +602,15 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(google)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "oauth", "provider": "google" }
   },
   {
     "id": "microsoftCallback",
@@ -611,14 +626,15 @@
     "hasResponseBody": false,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(microsoft)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": ["tokenLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "oauth", "provider": "microsoft" }
   },
   {
     "id": "getStepUp",
@@ -680,14 +696,15 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["strategyEnabled(passkey)", "userGuard"],
+      "xGuard": ["userGuard"],
       "xRateLimiter": ["passkeyChallengeLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["auth"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "strategy": "passkey" }
   },
   {
     "id": "sendStepUpLink",
@@ -1686,14 +1703,15 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["serviceEnabled(oauth)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["oauth-server"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "service": "oauth" }
   },
   {
     "id": "createOrganizations",
@@ -1984,14 +2002,15 @@
     "hasResponseBody": true,
     "hasExample": true,
     "extensions": {
-      "xGuard": ["serviceEnabled(mcp)", "publicGuard"],
+      "xGuard": ["publicGuard"],
       "xRateLimiter": [],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["mcp"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "service": "mcp" }
   },
   {
     "id": "handleMcp",
@@ -2007,14 +2026,15 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["serviceEnabled(mcp)", "tokenGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["tokenGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["mcpRequestLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["mcp"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "service": "mcp" }
   },
   {
     "id": "membershipInvite",
@@ -2352,13 +2372,14 @@
     "hasResponseBody": true,
     "hasExample": false,
     "extensions": {
-      "xGuard": ["serviceEnabled(yjs)", "userGuard", "tenantGuard", "orgGuard"],
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["pointsLimiter"],
       "xCache": []
     },
     "tagsByKind": {
       "module": ["yjs"],
       "owner": ["cella"]
-    }
+    },
+    "enabledBy": { "service": "yjs" }
   }
 ]
