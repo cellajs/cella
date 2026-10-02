@@ -1,4 +1,4 @@
-import { and, count, eq, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, notInArray, type SQL, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { domainsTable } from '#/modules/domains/domains-db';
@@ -110,6 +110,16 @@ export const findTenantsPaginated = async (ctx: DbContext, opts: FindTenantsPagi
 export const findTenant = async (ctx: DbContext, { where }: { where: SQL | undefined }) => {
   const [row] = await selectTenants(ctx).where(where).limit(1);
   return row ? toTenant(row) : undefined;
+};
+
+interface FindOrphanTenantOpts {
+  createdBy: string;
+}
+
+/** A tenant the user created that holds no organization yet, in its response shape; undefined when none does. */
+export const findOrphanTenant = async (ctx: DbContext, { createdBy }: FindOrphanTenantOpts) => {
+  const tenantsWithOrg = ctx.var.db.select({ tenantId: organizationsTable.tenantId }).from(organizationsTable);
+  return findTenant(ctx, { where: and(eq(tenantsTable.createdBy, createdBy), notInArray(tenantsTable.id, tenantsWithOrg)) });
 };
 
 interface UpdateTenantOpts {

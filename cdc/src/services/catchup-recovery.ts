@@ -1,4 +1,4 @@
-import { recalculateCounters } from '#/modules/entities/helpers/recalculate-counters';
+import { recalculateCounters } from '#/modules/entities/counters-queries';
 import { cdcDb } from '../lib/db';
 import { log } from '../lib/pino';
 import { wsClient } from '../network/websocket-client';
@@ -16,7 +16,7 @@ export async function runPostCatchupRecovery(): Promise<void> {
 
   // Phase 1: recalculate counters from the source-of-truth tables.
   try {
-    const { channelRows, productRows } = await recalculateCounters(cdcDb);
+    const { channelRows, productRows } = await recalculateCounters({ var: { db: cdcDb } });
     const durationMs = Math.round(performance.now() - startMs);
     log.info('Post-catchup counter recalculation complete', { channelRows, productRows, durationMs });
   } catch (error) {

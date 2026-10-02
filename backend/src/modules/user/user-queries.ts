@@ -1,10 +1,12 @@
-import { and, count, eq, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, exists, inArray, type SQL, sql } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { deleteDanglingActors, insertActors } from '#/modules/actors/actors-queries';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { type EmailProof, emailsTable } from '#/modules/user/emails-db';
+import { userMinimalColumns } from '#/modules/user/helpers/audit-user';
 import { memberSelect, userSelect } from '#/modules/user/helpers/select';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
@@ -221,4 +223,33 @@ export const upsertProvenEmail = async (ctx: DbContext, { userId, email, via }: 
     .onConflictDoUpdate({ target: emailsTable.email, set: proofStamps(via, now), setWhere: eq(emailsTable.userId, userId) })
     .returning({ id: emailsTable.id });
   return row;
+};
+
+/** EXISTS filter limiting user rows to those sharing an organization with `myOrgIds`: defense in depth mirroring relatableGuard. */
+export const sharesOrgFilter = (ctx: DbContext, { myOrgIds }: { myOrgIds: string[] }) => {
+  const { db } = ctx.var;
+  return exists(
+    db
+      .select({ id: membershipsTable.id })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, usersTable.id), inArray(membershipsTable.organizationId, myOrgIds))),
+  );
+};
+
+interface FindAuditUsersByIdsOpts {
+  ids: string[];
+}
+
+/** The minimal user columns of these users, for resolving `createdBy` and `updatedBy`. */
+export const findAuditUsersByIds = async (ctx: DbContext, { ids }: FindAuditUsersByIdsOpts) => {
+  return ctx.var.db.select(userMinimalColumns).from(usersTable).where(inArray(usersTable.id, ids));
+};
+
+interface FindUserModelsByIdsOpts {
+  ids: string[];
+}
+
+/** Full user rows by id. */
+export const findUserModelsByIds = async (ctx: DbContext, { ids }: FindUserModelsByIdsOpts) => {
+  return ctx.var.db.select().from(usersTable).where(inArray(usersTable.id, ids));
 };

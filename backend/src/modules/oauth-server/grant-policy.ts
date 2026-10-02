@@ -3,7 +3,7 @@ import { baseDb } from '#/db/db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { oauthClientsTable } from '#/modules/oauth-server/oauth-clients-db';
 import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
-import { loadTenant } from '#/modules/tenants/helpers/load-tenant';
+import { loadTenant } from '#/modules/tenants/operations/load-tenant';
 import { usersTable } from '#/modules/user/user-db';
 
 /** A person's consent to a client, for one tenant's resource. */

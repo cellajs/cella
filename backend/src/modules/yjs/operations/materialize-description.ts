@@ -1,4 +1,3 @@
-import { inArray } from 'drizzle-orm';
 import { isProduct } from 'shared';
 import { uuidv7 } from 'uuidv7';
 import type { UserContext } from '#/core/context';
@@ -6,11 +5,14 @@ import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { tenantReadById } from '#/db/tenant-context';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { usersTable } from '#/modules/user/user-db';
+import { findMembershipsByUserIds } from '#/modules/memberships/memberships-queries';
+import { findUserModelsByIds } from '#/modules/user/user-queries';
 import { sanitizeBlockMediaUrls } from '#/modules/yjs/helpers/sanitize-block-media';
 import { getYjsMaterializer } from '#/modules/yjs/yjs-materializers';
 import { log } from '#/utils/logger';
+
+/** The editors are read on the base pool: the relay calls without a request context. */
+const dbCtx = { var: { db: baseDb } };
 
 export interface MaterializeDescriptionInput {
   entityType: string;
@@ -59,8 +61,8 @@ export async function materializeDescriptionOp(input: MaterializeDescriptionInpu
   }
 
   const [users, memberships] = await Promise.all([
-    baseDb.select().from(usersTable).where(inArray(usersTable.id, input.editors)),
-    baseDb.select().from(membershipsTable).where(inArray(membershipsTable.userId, input.editors)),
+    findUserModelsByIds(dbCtx, { ids: input.editors }),
+    findMembershipsByUserIds(dbCtx, { userIds: input.editors }),
   ]);
 
   for (const editorId of input.editors) {

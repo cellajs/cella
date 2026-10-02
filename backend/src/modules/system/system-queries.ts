@@ -80,3 +80,16 @@ export const findSystemRole = async (ctx: DbContext, { userId, role }: FindSyste
     .limit(1);
   return row;
 };
+
+interface FindSystemRoleHoldersOpts {
+  userIds: string[];
+  role: SystemRoleModel['role'];
+}
+
+/** Which of these users hold `role`. */
+export const findSystemRoleHolders = async (ctx: DbContext, { userIds, role }: FindSystemRoleHoldersOpts) => {
+  return ctx.var.db
+    .select({ userId: systemRolesTable.userId })
+    .from(systemRolesTable)
+    .where(and(inArray(systemRolesTable.userId, userIds), eq(systemRolesTable.role, role)));
+};

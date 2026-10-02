@@ -2,12 +2,12 @@ import type { ChannelEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { issueToken } from '#/modules/auth/tokens/token-lifecycle';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/helpers/invitation-mail';
 import {
   findPendingInactiveMembershipsByChannels,
   stampInactiveMembershipsReminded,
   updateInactiveMembershipToken,
 } from '#/modules/memberships/memberships-queries';
+import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
 import { log } from '#/utils/logger';
 
 interface DispatchDeferredInvitesOpts {

@@ -1,9 +1,8 @@
 import { eq, type SQL } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { sharesOrgFilter } from '#/modules/user/helpers/relatable-filter';
 import { usersTable } from '#/modules/user/user-db';
-import { findUserByFilters } from '#/modules/user/user-queries';
+import { findUserByFilters, sharesOrgFilter } from '#/modules/user/user-queries';
 
 interface GetUserOpts {
   bySlug?: boolean;

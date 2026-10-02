@@ -5,7 +5,7 @@ import { tenantContext } from '#/db/tenant-context';
 import { dispatchMutation } from '#/lib/mutation-bus';
 import { updateAttachment } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentUpdateStxBodySchema } from '#/modules/attachment/attachment-schema';
-import { withAuditUser } from '#/modules/user/helpers/audit-user';
+import { withAuditUser } from '#/modules/user/operations/with-audit-users';
 import { getValidProduct } from '#/permissions/get-valid-product';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';

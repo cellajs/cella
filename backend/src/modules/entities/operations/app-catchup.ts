@@ -4,7 +4,7 @@ import type { DbContext } from '#/core/context';
 import { baseDb as db } from '#/db/db';
 import { findChannelCountersByKeys, findLatestUserActivityId } from '#/modules/entities/entities-queries';
 import { parseCounterCounts } from '#/modules/entities/helpers/parse-counter-counts';
-import { buildPropagationHints } from '#/modules/entities/helpers/propagation-hints';
+import { buildPropagationHints } from '#/modules/entities/operations/propagation-hints';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import { resolveViewReadStatus } from '#/permissions/view-read-status';
 import type { AppCatchupResponse, CatchupView, CatchupViewAnswer } from '#/schemas';

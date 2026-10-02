@@ -1,4 +1,4 @@
-import { and, count, eq, ilike, inArray, isNull, lte, or, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, ilike, inArray, isNull, lte, max, or, type SQL, sql } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { DbContext, OrgContext, UserContext } from '#/core/context';
@@ -6,12 +6,13 @@ import { resolveListTotal } from '#/db/utils/list-total';
 import { lastPostedAtOrder, memberCountsSelect } from '#/modules/memberships/helpers/member-counts';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { type InsertMembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import type { UserMinimalBase } from '#/modules/user/helpers/audit-user';
 import { memberSelect } from '#/modules/user/helpers/select';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
+import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
@@ -506,4 +507,51 @@ export const findPendingMembershipsPaginated = async (ctx: DbContext, opts: Find
       return total;
     },
   });
+};
+
+interface FindMaxDisplayOrdersOpts {
+  userIds: string[];
+}
+
+/** Each user's highest membership `displayOrder`, the baseline for the next; a user without memberships has no row. */
+export const findMaxDisplayOrders = async (ctx: DbContext, { userIds }: FindMaxDisplayOrdersOpts) => {
+  return ctx.var.db
+    .select({ userId: membershipsTable.userId, maxOrder: max(membershipsTable.displayOrder) })
+    .from(membershipsTable)
+    .where(inArray(membershipsTable.userId, userIds))
+    .groupBy(membershipsTable.userId);
+};
+
+interface InsertMembershipRowsOpts {
+  values: InsertMembershipModel[];
+}
+
+export const insertMembershipRows = async (ctx: DbContext, { values }: InsertMembershipRowsOpts) => {
+  return ctx.var.db.insert(membershipsTable).values(values).returning(membershipBaseSelect);
+};
+
+/** Inserts the membership rows that do not exist yet; the unique constraint skips the others. */
+export const insertMissingMembershipRows = async (ctx: DbContext, { values }: InsertMembershipRowsOpts) => {
+  await ctx.var.db.insert(membershipsTable).values(values).onConflictDoNothing();
+};
+
+interface FindMembershipsByUserIdsOpts {
+  userIds: string[];
+}
+
+export const findMembershipsByUserIds = async (ctx: DbContext, { userIds }: FindMembershipsByUserIdsOpts) => {
+  return ctx.var.db.select().from(membershipsTable).where(inArray(membershipsTable.userId, userIds));
+};
+
+interface InactiveMembershipIdOpts {
+  id: string;
+}
+
+export const deleteInactiveMembership = async (ctx: DbContext, { id }: InactiveMembershipIdOpts) => {
+  await ctx.var.db.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id));
+};
+
+/** Stamps a membership invitation rejected now. */
+export const updateInactiveMembershipRejected = async (ctx: DbContext, { id }: InactiveMembershipIdOpts) => {
+  await ctx.var.db.update(inactiveMembershipsTable).set({ rejectedAt: getIsoDate() }).where(eq(inactiveMembershipsTable.id, id));
 };

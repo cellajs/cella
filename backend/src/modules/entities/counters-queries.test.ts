@@ -1,6 +1,6 @@
 import { createEntityHierarchy, createRoleRegistry } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { deepestAncestorExpr } from './recalculate-counters';
+import { deepestAncestorExpr } from './counters-queries';
 
 // Counter recovery and CDC must use the same deepest non-null ancestor.
 describe('deepestAncestorExpr', () => {

@@ -1,7 +1,7 @@
 import { sql } from 'drizzle-orm';
 import type { SeedScript } from '../types';
 import { getSeedDb } from '#/db/db';
-import { recalculateCounters } from '#/modules/entities/helpers/recalculate-counters';
+import { recalculateCounters } from '#/modules/entities/counters-queries';
 import { noteSpinnerWarning, startSpinner, succeedSpinner, updateSpinner } from '#/utils/console';
 
 // Seed scripts use the admin connection for privileged operations.
@@ -85,7 +85,7 @@ export const countersSeed = async () => {
   startSpinner('Recalculating counters...');
 
   await settleCdcSlot();
-  const { channelRows, productRows } = await recalculateCounters(db);
+  const { channelRows, productRows } = await recalculateCounters({ var: { db } });
 
   succeedSpinner(`Recalculated counters for ${channelRows} channel entities, ${productRows} product entities`);
 };
