@@ -45,7 +45,10 @@ const paragraph = (text: string) =>
 const seedDescription = paragraph(' could you have a look?');
 /** The stored description the relay seeds from; a test rewrites it as an outside write would. */
 let description = seedDescription;
-vi.mock('../../data/entity-content', () => ({ lockEntityDescription: vi.fn(async () => ({ description })) }));
+vi.mock('#/modules/yjs/yjs-queries', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('#/modules/yjs/yjs-queries')>()),
+  findEntityDescriptionForShare: vi.fn(async () => ({ description })),
+}));
 
 const { runCompaction } = await import('../../sync/relay');
 const { getCollab } = await import('../../sync/session-manager');

@@ -26,11 +26,12 @@ vi.mock('../../sync/materialize', async (importOriginal) => ({
 }));
 /** When set, a seed transaction waits here after its FOR SHARE read of the entity row, holding the lock. */
 let seedHold: { reached: () => void; release: Promise<void> } | null = null;
-vi.mock('../../data/entity-content', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../data/entity-content')>();
+vi.mock('#/modules/yjs/yjs-queries', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/modules/yjs/yjs-queries')>();
   return {
-    lockEntityDescription: async (...args: Parameters<typeof actual.lockEntityDescription>) => {
-      const read = await actual.lockEntityDescription(...args);
+    ...actual,
+    findEntityDescriptionForShare: async (...args: Parameters<typeof actual.findEntityDescriptionForShare>) => {
+      const read = await actual.findEntityDescriptionForShare(...args);
       if (seedHold) {
         seedHold.reached();
         await seedHold.release;

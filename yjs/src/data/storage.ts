@@ -2,11 +2,11 @@ import { and, asc, eq, inArray, lt, max, sql, TransactionRollbackError } from 'd
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import type { LogRow, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
+import { seedYjsDocument } from '#/modules/yjs/operations/seed-yjs-document';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { findYjsDocument } from '#/modules/yjs/yjs-queries';
 import type { DocKey, DocScope } from '../constants';
 import { db, type Tx, withRlsTx } from './db';
-import { lockEntityDescription } from './entity-content';
 import { logNotifier } from './log-notifier';
 
 /**
@@ -34,24 +34,13 @@ export async function loadDocument(doc: DocKey): Promise<YjsDocumentRead | null>
 }
 
 /**
- * Seeds the document from its entity in one transaction: the description read FOR SHARE, converted by `toSeed`, the
- * document row inserted under a new generation unless one exists, and the document read back. An outside write of the
- * description either commits first and is seeded, or waits for the seed and then finds the document row, into which it
- * appends its update: no write falls between the read and the insert. Concurrent seeds, on this relay or another,
- * converge on the first. Null, with nothing inserted, when the entity has no live row: it was deleted, and its
- * document must not come back.
+ * Seeds the document from its entity in one transaction, as the backend's `seedYjsDocument` does for the API's pull:
+ * the description read FOR SHARE, converted by `toSeed`, the document row inserted under a new generation unless one
+ * exists, and the document read back. Concurrent seeds, on this relay, another or the API, converge on the first. Null,
+ * with nothing inserted, when the entity has no live row: it was deleted, and its document must not come back.
  */
 export async function seedDocument(scope: DocScope, toSeed: (description: string | null) => Uint8Array): Promise<YjsDocumentRead | null> {
-  const { entityType, entityId, tenantId, organizationId } = scope;
-  return asSystem(scope, async (tx) => {
-    const entity = await lockEntityDescription(tx, scope);
-    if (!entity) return null;
-    await tx
-      .insert(yjsDocumentsTable)
-      .values({ entityType, entityId, tenantId, organizationId, state: Buffer.from(toSeed(entity.description)), updatedAt: sql`now()` })
-      .onConflictDoNothing({ target: [yjsDocumentsTable.entityType, yjsDocumentsTable.entityId] });
-    return findYjsDocument({ var: { db: tx } }, { doc: scope });
-  });
+  return asSystem(scope, (tx) => seedYjsDocument({ var: { db: tx } }, { doc: scope, toSeed }));
 }
 
 /**
