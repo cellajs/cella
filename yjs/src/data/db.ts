@@ -12,10 +12,22 @@ const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'produc
 /** The pool opens lazily on first query, so unconditional construction is safe under NODB. */
 export const db = createPgConnection(env.DATABASE_URL, { max: env.YJS_DB_POOL_MAX, sslCa, debug: env.DEBUG });
 
+/** What a relay transaction may read beyond live rows: `includeDeleted` lets RLS show soft-deleted rows too. */
+interface RlsOptions {
+  includeDeleted?: boolean;
+}
+
 /** Runs `fn` in a transaction with tenant/user RLS context: `set_config(..., true)` scopes the vars to the transaction, so pooled connections never leak context. */
-export async function withRlsTx<T>(tenantId: string, userId: string, fn: (tx: Tx) => Promise<T>): Promise<T> {
+export async function withRlsTx<T>(
+  tenantId: string,
+  userId: string,
+  fn: (tx: Tx) => Promise<T>,
+  { includeDeleted = false }: RlsOptions = {},
+): Promise<T> {
   return db.transaction(async (tx) => {
-    await tx.execute(sql`SELECT set_config('app.tenant_id', ${tenantId}, true), set_config('app.user_id', ${userId}, true)`);
+    await tx.execute(
+      sql`SELECT set_config('app.tenant_id', ${tenantId}, true), set_config('app.user_id', ${userId}, true), set_config('app.include_deleted', ${includeDeleted ? 'true' : 'false'}, true)`,
+    );
     return fn(tx);
   });
 }

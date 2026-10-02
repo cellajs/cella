@@ -19,7 +19,7 @@ vi.mock('../../constants', async (importOriginal) => ({
   YJS_LIVE_TOUCH_MS: 100,
   YJS_CLEANUP_DELAY_MS: 500,
 }));
-vi.mock('../../data/permissions', () => ({ authorizeDoc: vi.fn(async (_userId: string, requested: DocScope) => requested) }));
+vi.mock('../../data/permissions', () => ({ authorizeDoc: vi.fn(async (_userId: string, requested: DocScope) => ({ scope: requested })) }));
 vi.mock('../../server/rate-limiter', () => ({ checkConnectionRate: vi.fn(async () => true) }));
 const materialized: { entityId: string; editedBy: string; description: string }[] = [];
 vi.mock('../../sync/materialize', async (importOriginal) => {

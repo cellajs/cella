@@ -8,9 +8,10 @@ import { createExpiredToken, createSignedToken, deferred, openSocket, recordCras
 
 // The real upgrade handler over mocked collaborators: entity access is granted in the requested scope, the relay and session manager are inert.
 // `hold` keeps a verification pending until the test releases it; `error` makes it fail, as an unreachable database does.
-const verifyGate: { delayMs: number; allowed: boolean; hold: Promise<void> | null; error: Error | null } = {
+const verifyGate: { delayMs: number; allowed: boolean; deleted: boolean; hold: Promise<void> | null; error: Error | null } = {
   delayMs: 0,
   allowed: true,
+  deleted: false,
   hold: null,
   error: null,
 };
@@ -19,7 +20,8 @@ vi.mock('../data/permissions', () => ({
     if (verifyGate.hold) await verifyGate.hold;
     if (verifyGate.delayMs) await new Promise((resolve) => setTimeout(resolve, verifyGate.delayMs));
     if (verifyGate.error) throw verifyGate.error;
-    return verifyGate.allowed ? requested : null;
+    if (verifyGate.deleted) return 'deleted';
+    return verifyGate.allowed ? { scope: requested } : 'denied';
   }),
 }));
 // Frames are recorded with the verification state they were applied under; awareness frames bypass the queue.
@@ -273,6 +275,7 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     applied.length = 0;
     verifyGate.delayMs = 0;
     verifyGate.allowed = true;
+    verifyGate.deleted = false;
     verifyGate.hold = null;
     verifyGate.error = null;
   });
@@ -339,6 +342,23 @@ describe('setupConnectionHandler: per-socket ordering', () => {
 
     verification.release();
     expect(await closed).toEqual({ code: 4003, reason: 'Access denied' });
+    await sleep(60);
+    expect(applied.filter((frame) => frame.type === 0)).toHaveLength(0);
+  });
+
+  it('closes the open socket of a deleted entity with 4410, a close frame the client reads, and never applies its queued frames', async () => {
+    const verification = deferred();
+    verifyGate.hold = verification.promise;
+    verifyGate.deleted = true;
+    const before = framesReceived;
+    const token = createSignedToken({ userId: 'user-1', entityId: 'entity-deleted' });
+    // The upgrade succeeds: a refused upgrade reaches a browser as 1006, which it treats as transient.
+    const { ws, closed } = await openSocket(`${baseUrl}/entity-deleted?token=${token}&entityType=task&tenantId=tenant-1`);
+    ws.send(new Uint8Array([0, 2, 7]));
+    await until(() => framesReceived === before + 1);
+
+    verification.release();
+    expect(await closed).toEqual({ code: 4410, reason: 'Entity deleted' });
     await sleep(60);
     expect(applied.filter((frame) => frame.type === 0)).toHaveLength(0);
   });

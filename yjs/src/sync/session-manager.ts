@@ -118,9 +118,10 @@ function dropCollab(key: string, collab: CollabSession): void {
 }
 
 /**
- * Ends a session whose document was retired (its description written by anything but the relay, or its entity
- * deleted): every socket closes with 1013 and reconnects into a fresh session, which reseeds the document and tells
- * each client the new generation. The session leaves the map at once, so no later task of it reaches the new one.
+ * Ends a session whose document was retired (its entity deleted) or reseeded under another generation: every socket
+ * closes with 1013 and reconnects. A deleted entity's reconnect is closed with 4410; any other reconnect opens a fresh
+ * session, which tells each client the generation it finds. The session leaves the map at once, so no later task of it
+ * reaches a newer one.
  */
 export function endCollab(collab: CollabSession): void {
   const key = collabKey(collab.scope);

@@ -29,8 +29,8 @@ vi.mock('../data/permissions', () => ({
   authorizeDoc: vi.fn(async (userId: string, requested: DocScope) => {
     const gate = gates.get(userId) ?? { delayMs: 0, allowed: true };
     if (gate.delayMs) await new Promise((resolve) => setTimeout(resolve, gate.delayMs));
-    if (!gate.allowed || requested.tenantId !== 'tenant-1') return null;
-    return { entityType: requested.entityType, entityId: requested.entityId, tenantId: 'tenant-1', organizationId: 'org-1' };
+    if (!gate.allowed || requested.tenantId !== 'tenant-1') return 'denied';
+    return { scope: { entityType: requested.entityType, entityId: requested.entityId, tenantId: 'tenant-1', organizationId: 'org-1' } };
   }),
 }));
 // A test holds appends open to leave frames waiting in a socket's queue.
