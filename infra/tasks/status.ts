@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { EngineConfig } from '../config/engine-config';
+import { dbExposureConfigured } from '../lib/db-public-endpoint';
 import { deriveInfra } from '../lib/naming';
 import {
   classifyPrincipal,
@@ -24,6 +25,7 @@ import {
   readControlState,
   stateBucket,
 } from '../lib/stack/control-store';
+import { readPendingOperations } from '../lib/stack/pending-operations';
 import { loadStackContext } from '../lib/stack/stack-context';
 import { buildStatusReport } from '../lib/status/registry';
 import type { CheckStatus, ProbeSession, ScalewayFacts, StatusReport } from '../lib/status/types';
@@ -31,6 +33,7 @@ import { checkMark, crossMark, DIVIDER, pc, warningMark, withSpinner } from '../
 import { loadBaseEnvFiles } from '../lib/utils/env-files';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
+import { within } from '../lib/utils/retry';
 import { getFlag } from './args';
 
 /** Everything the report needs about the target stack, from the menu or standalone. */
@@ -51,8 +54,8 @@ function isNoSuchBucket(err: unknown): boolean {
 /**
  * Build the probe session the providers draw on: resolved stack context, the
  * key to probe with (the admin application key, else the key the process was
- * started with), and one memoized best-effort control-store read shared by
- * the state and live providers.
+ * started with), and one memoized best-effort state-bucket read (control
+ * object, lock, checkpoint) shared by the state and live providers.
  */
 export function buildSession(ctx: StatusContext): ProbeSession {
   const identity = resolveOperatorIdentity();
@@ -102,6 +105,12 @@ export function buildSession(ctx: StatusContext): ProbeSession {
           } catch {
             // Leave lock undefined (reported as unknown).
           }
+          try {
+            // One GET of the checkpoint the state backend stores here; no checkpoint stays undefined (reported as unknown).
+            out.pendingOperations = await readPendingOperations(s3, bucket, ctx.mode);
+          } catch {
+            // Leave pendingOperations undefined (reported as unknown).
+          }
         }
       } catch {
         // Leave every field undefined (reported as unknown).
@@ -122,6 +131,7 @@ export function buildSession(ctx: StatusContext): ProbeSession {
     secretKey,
     hasDomain,
     computeDeferredSince: detectComputeDeferred(ctx.stackYaml),
+    dbExposureConfigured: dbExposureConfigured(ctx.mode, ctx.stackYaml),
     scalewayFacts,
   };
 }
@@ -211,20 +221,6 @@ export interface QuickFacts {
   key?: { desc: KeyDescription; role: PrincipalRole; slot: KeySlot };
   /** Probes that did not answer within the budget or errored, by name. */
   unavailable: string[];
-}
-
-/** Race a probe against the budget: a slow Scaleway call must not delay the menu. */
-async function within<T>(ms: number, probe: Promise<T>): Promise<T | undefined> {
-  let timer: NodeJS.Timeout | undefined;
-  const timeout = new Promise<undefined>((resolve) => {
-    timer = setTimeout(() => resolve(undefined), ms);
-    timer.unref?.();
-  });
-  try {
-    return await Promise.race([probe, timeout]);
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 export async function collectQuickFacts(

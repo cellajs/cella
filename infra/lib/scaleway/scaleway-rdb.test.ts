@@ -104,6 +104,28 @@ describe('createRdbClient', () => {
     expect(calls[0]?.body).not.toHaveProperty('expires_at');
   });
 
+  it('reads an instance with its endpoints by id', async () => {
+    const { fn, calls } = makeFetch([{ method: 'GET', match: '/instances/i-1', body: { id: 'i-1', status: 'ready', endpoints: [] } }]);
+
+    expect(await client(fn).getInstance('i-1')).toMatchObject({ status: 'ready', endpoints: [] });
+    expect(calls[0]).toMatchObject({ method: 'GET', url: 'https://api.scaleway.com/rdb/v1/regions/nl-ams/instances/i-1' });
+  });
+
+  it('deletes an endpoint at the region root, not under the instance', async () => {
+    const { fn, calls } = makeFetch([{ method: 'DELETE', match: '/endpoints/', status: 204 }]);
+
+    await client(fn).deleteEndpoint('ep-1');
+
+    expect(calls[0]).toMatchObject({ method: 'DELETE', url: 'https://api.scaleway.com/rdb/v1/regions/nl-ams/endpoints/ep-1' });
+  });
+
+  it('lists the instance ACL rules', async () => {
+    const { fn, calls } = makeFetch([{ method: 'GET', match: '/acls', body: { rules: [{ ip: '1.2.3.4/32' }], total_count: 1 } }]);
+
+    expect(await client(fn).listAclRules('i-1')).toEqual([{ ip: '1.2.3.4/32' }]);
+    expect(calls[0]).toMatchObject({ url: 'https://api.scaleway.com/rdb/v1/regions/nl-ams/instances/i-1/acls' });
+  });
+
   it('surfaces a failed API call rather than returning a partial result', async () => {
     const { fn } = makeFetch([{ method: 'DELETE', match: '/databases/', body: { message: 'denied' }, status: 403 }]);
 

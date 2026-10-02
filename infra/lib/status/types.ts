@@ -1,4 +1,5 @@
 import type { StackState } from '../stack/bootstrap-stack-state';
+import type { PendingOperation } from '../stack/pending-operations';
 
 /** Public JSON contract version for `infra status`. A breaking shape change bumps it. */
 export const STATUS_SCHEMA_VERSION = 1;
@@ -6,7 +7,7 @@ export const STATUS_SCHEMA_VERSION = 1;
 /** A check's verdict. `unknown` means "could not be evaluated", usually a missing key; a check that ran resolves to one of the other four. */
 export type CheckStatus = 'ok' | 'warn' | 'missing' | 'unknown' | 'error';
 
-/** Key tier a check needs (the JSON field keeps its `credential` name until schema v2). `none` reads local files or public HTTP; `scaleway` needs an API key with state-bucket and Secret Manager read, and reports `unknown` (never `error`) when no key is available. */
+/** Key tier a check needs (the JSON field keeps its `credential` name until schema v2). `none` reads local files or public HTTP; `scaleway` needs an API key with state-bucket, Secret Manager and database read, and reports `unknown` (never `error`) when no key is available. */
 export type CredentialTier = 'none' | 'scaleway';
 
 /** A runnable remediation: a one-line description and the exact command. */
@@ -65,6 +66,8 @@ export interface ScalewayFacts {
   lock?: LockFacts;
   /** undefined = control object could not be read. */
   rollout?: RolloutRowFact[];
+  /** Operations an interrupted Pulumi run left in the stack checkpoint; undefined = checkpoint could not be read. */
+  pendingOperations?: PendingOperation[];
 }
 
 /** Everything a provider's `gather` may draw on: stack context, the probe key, and the memoized control-store read that lets the state and live providers share one S3 round-trip. */
@@ -80,6 +83,8 @@ export interface ProbeSession {
   secretKey?: string;
   hasDomain: boolean;
   computeDeferredSince?: string;
+  /** True when the exposure overlay or stack config turns the public DB endpoint on. */
+  dbExposureConfigured?: boolean;
   /** Memoized best-effort control-store read; never rejects. */
   scalewayFacts(): Promise<ScalewayFacts>;
 }

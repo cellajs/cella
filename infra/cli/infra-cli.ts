@@ -1,15 +1,16 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { select } from '@inquirer/prompts';
+import { dbExposureConfigured } from '../lib/db-public-endpoint';
 import { resolveOperatorIdentity } from '../lib/scaleway/operator-identity';
-import { detectComputeDeferred, detectDbPublicEndpoint, pickStackShort } from '../lib/stack/bootstrap-stack-state';
+import { detectComputeDeferred, pickStackShort } from '../lib/stack/bootstrap-stack-state';
 import { loadStackContext } from '../lib/stack/stack-context';
-import { failWithHint, pc, printHeader, warningMark } from '../lib/utils/cli-output';
+import { failWithHint, pc, printHeader, warningMark, withSpinner } from '../lib/utils/cli-output';
 import { loadBaseEnvFiles } from '../lib/utils/env-files';
 import { infraDir } from '../lib/utils/paths';
 import { installedPulumiVersion, pulumiCliLagWarning, sdkPulumiVersion } from '../lib/utils/pulumi-version';
 import { runApply } from './actions/apply';
-import { exposureOverlayPath, runExposeDatabase, runUnexposeDatabase } from './actions/db-exposure';
+import { liveDbEndpoints, runExposeDatabase, runUnexposeDatabase } from './actions/db-exposure';
 import { runFetchAdminKey } from './actions/fetch-admin-key';
 import { runGeoipRefresh } from './actions/geoip-refresh';
 import { runPreview } from './actions/preview';
@@ -119,21 +120,29 @@ if (deferredSince) {
 }
 
 // Two-level action menu: category list, then the actions inside it, with Back returning to the top.
-// The two DB-exposure actions collapse into one status-aware toggle, read from the local stack config already in memory.
+// The two DB-exposure actions collapse into one status-aware toggle: the local exposure config, plus the live instance's public endpoints when
+// the admin application key reads them in time (undefined otherwise).
 const backChoice = { name: '← Back', value: 'back' as const, description: 'Return to the main menu.' };
 
-async function chooseDatabaseAction(dbExposed: boolean): Promise<Exclude<CliMode, 'status'> | 'back'> {
-  const toggle = dbExposed
+async function chooseDatabaseAction(dbExposed: boolean, liveEndpoints: string[] | undefined): Promise<Exclude<CliMode, 'status'> | 'back'> {
+  const strayEndpoint = !dbExposed && (liveEndpoints?.length ?? 0) > 0;
+  const toggle = strayEndpoint
     ? {
-        name: `Public DB access: ${pc.yellow('OPEN')}, close it`,
+        name: `Public DB access: ${pc.yellow('OPEN')} with exposure off, close it`,
         value: 'unexpose-db' as const,
-        description: 'Close the temporary public DB endpoint.',
+        description: `The instance serves public endpoint ${liveEndpoints?.join(', ')} although no exposure is configured: delete it.`,
       }
-    : {
-        name: 'Open temporary public DB access',
-        value: 'expose-db' as const,
-        description: 'Open a temporary DB endpoint locked to your IP (close it after).',
-      };
+    : dbExposed
+      ? {
+          name: `Public DB access: ${pc.yellow('OPEN')}, close it`,
+          value: 'unexpose-db' as const,
+          description: 'Close the temporary public DB endpoint.',
+        }
+      : {
+          name: 'Open temporary public DB access',
+          value: 'expose-db' as const,
+          description: 'Open a temporary DB endpoint locked to your IP (close it after).',
+        };
   return select<Exclude<CliMode, 'status'> | 'back'>({
     message: 'Manage database',
     loop: false,
@@ -201,7 +210,7 @@ async function chooseStackAction(): Promise<Exclude<CliMode, 'status'> | 'back'>
         description: 'Dry run of an Apply infra change (a CI deploy applies the same minus VM policy rules). Read-only.',
       },
       { name: 'Resume', value: 'resume', description: 'Re-sync config and GitHub secrets, and self-heal missing keys.' },
-      { name: 'Unlock', value: 'unlock', description: 'Clear a stale lock from an interrupted run.' },
+      { name: 'Unlock', value: 'unlock', description: 'Clear a stale lock and review the operations an interrupted run left in the Pulumi state.' },
       {
         name: 'Refresh GeoIP data',
         value: 'geoip-refresh',
@@ -218,10 +227,7 @@ async function chooseStackAction(): Promise<Exclude<CliMode, 'status'> | 'back'>
 }
 
 async function chooseAction(ctx: InfraContext): Promise<Exclude<CliMode, 'status'>> {
-  // Exposure state lives in the gitignored overlay; the committed stack yaml is only consulted for stacks predating it.
-  const overlayPath = exposureOverlayPath(ctx.environment);
-  const overlayYaml = existsSync(overlayPath) ? readFileSync(overlayPath, 'utf8') : undefined;
-  const dbExposed = detectDbPublicEndpoint(overlayYaml ?? ctx.stackYaml);
+  const dbExposed = dbExposureConfigured(ctx.environment, ctx.stackYaml);
   const { runStatus } = await import('../tasks/status');
   while (true) {
     const category = await select<'status' | 'database' | 'keys' | 'stack'>({
@@ -241,8 +247,13 @@ async function chooseAction(ctx: InfraContext): Promise<Exclude<CliMode, 'status
       console.info('');
       continue;
     }
+    const liveEndpoints = category === 'database' ? await withSpinner('Reading the database endpoints', () => liveDbEndpoints(ctx)) : undefined;
     const action =
-      category === 'database' ? await chooseDatabaseAction(dbExposed) : category === 'keys' ? await chooseKeysAction() : await chooseStackAction();
+      category === 'database'
+        ? await chooseDatabaseAction(dbExposed, liveEndpoints)
+        : category === 'keys'
+          ? await chooseKeysAction()
+          : await chooseStackAction();
     if (action !== 'back') return action;
   }
 }

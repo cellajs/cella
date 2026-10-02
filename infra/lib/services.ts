@@ -56,6 +56,18 @@ export function deployedServices(serviceConfig: Record<string, EngineServiceEndp
   return placeServices(enabledServices(serviceConfig), singleVM).vm;
 }
 
+/**
+ * The service whose rollout pointer carries `slug`'s release: itself when it boots its own VM, the singleVM host when it runs in the host process or
+ * as a container beside it, undefined when it is disabled.
+ */
+export function rolloutOwner(serviceConfig: Record<string, EngineServiceEndpoint>, singleVM: boolean, slug: string): ServiceName | undefined {
+  const placed = placeServices(enabledServices(serviceConfig), singleVM);
+  const own = placed.vm.find((s) => s.slug === slug);
+  if (own) return own.slug;
+  const onHost = [...placed.coHosted, ...placed.collocated].some((s) => s.slug === slug);
+  return onHost ? placed.vm.find((s) => s.primaryRollout)?.slug : undefined;
+}
+
 /** Enabled workers folded into the host process under singleVM, empty when singleVM is off. Their runtime secrets union onto the host VM and a stop-first one makes the host a singleton host. */
 export function coHostedServices(serviceConfig: Record<string, EngineServiceEndpoint>, singleVM: boolean): readonly ServiceDefinition[] {
   return placeServices(enabledServices(serviceConfig), singleVM).coHosted;

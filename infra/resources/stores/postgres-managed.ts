@@ -1,5 +1,6 @@
 import type * as pulumi from '@pulumi/pulumi';
 import { parseAclInput } from '../../lib/db-exposure-acl';
+import { DB_INSTANCE_RESOURCE } from '../../lib/db-public-endpoint';
 import { CRON_HOME_DATABASE, POSTGRES_ROLE_NAMES } from '../../lib/scaleway/db-privileges';
 import type { ProvisionContext, ProvisionedStore, StoreProvisioner, StoreSecretContribution } from '../../lib/stores';
 
@@ -120,7 +121,7 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
         : undefined;
 
       const instance = new scaleway.databases.Instance(
-        'main-postgres',
+        DB_INSTANCE_RESOURCE,
         {
           name: naming.resource('postgres'),
           region,
@@ -132,6 +133,8 @@ export function postgresManaged(config: PostgresManagedConfig = {}): StoreProvis
           disableBackup: !isProduction,
           privateNetwork: { pnId: privateNetworkId, enableIpam: true },
           settings: replicationSettings,
+          // `loadBalancer` is also an always-present output, so leaving it out keeps an existing endpoint: closing deletes it over the RDB API
+          // (cli/actions/db-exposure.ts), and a refresh of this instance before an expose lets `{}` plan a new one.
           loadBalancer: dbPublicEndpoint ? {} : undefined,
         },
         { deleteBeforeReplace: true, protect: isProduction },

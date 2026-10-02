@@ -288,7 +288,7 @@ docker compose --profile backend run --rm -e ADMIN_EMAIL=you@example.com backend
    ADMIN_EMAIL=you@example.com DATABASE_ADMIN_URL='<printed connection string>' pnpm --filter backend seed:production init
    ```
 
-3. **Close the endpoint again** (and revoke a pasted key):
+3. **Close the endpoint again** (and revoke a pasted key). A deploy does not close it. The close deletes the public endpoint over the RDB API and re-reads the instance until it has none; the menu offers it whenever the live instance has a public endpoint, and `pnpm infra status` warns about one (`db.publicEndpoint`):
 
    ```bash
    pnpm infra   # → "Public DB access: OPEN, close it"
