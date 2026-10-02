@@ -84,20 +84,31 @@ async function putObject(opts: UploadBootDiagnosticsOptions, key: string, body: 
   if (!res.ok) throw new Error(`boot diagnostics upload ${key} -> ${res.status}: ${await res.text()}`);
 }
 
+/** The boot log's tail that travels in a bundle: it accumulates every boot of the VM, and the newest lines name the failure. */
+const bootLogTailChars = 256 * 1024;
+
+/**
+ * Read the VM's boot log, mounted read-only into the runner. The runner's own output is still being appended to it, so this takes
+ * what is there now: one read, never a wait for the end.
+ */
+async function readBootLogTail(logFile: string): Promise<string> {
+  try {
+    const log = await readFile(logFile, 'utf-8');
+    return log.length > bootLogTailChars ? `[earlier ${log.length - bootLogTailChars} characters cut]\n${log.slice(-bootLogTailChars)}` : log;
+  } catch {
+    return 'boot log not found\n';
+  }
+}
+
 export async function uploadBootDiagnostics(opts: UploadBootDiagnosticsOptions): Promise<string[]> {
   const now = opts.now ?? new Date();
   const { keyStamp } = timestamp(now);
-  let log = '';
-  try {
-    log = await readFile(opts.logFile, 'utf-8');
-  } catch {
-    log = 'boot log not found\n';
-  }
+  const log = await readBootLogTail(opts.logFile);
   const parts = [`service=${opts.service}`, `release=${opts.releaseSha}`, `boot_rc=${opts.bootRc}`];
   if (opts.failedPhase) parts.push(`failed_phase=${opts.failedPhase}`);
   if (opts.failure?.trim()) parts.push('', '--- boot error ---', scrubSecretLines(opts.failure));
   parts.push('', scrubSecretLines(log));
-  // The boot runner runs containerized without the host boot log mounted, so the file read above is usually empty and the captured app logs carry the crash reason.
+  // The boot log holds the boot runner's and the release companion's output; the app containers log to Docker, so a crash is in their captured tail.
   if (opts.appLogs?.trim()) parts.push('', '--- app logs ---', scrubSecretLines(opts.appLogs));
   const body = opts.redact(parts.join('\n'));
   const keys = [`boot-diag/${opts.service}-${keyStamp}-boot.log`];

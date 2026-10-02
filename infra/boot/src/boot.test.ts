@@ -73,6 +73,8 @@ describe('boot', () => {
 
     files.set('/etc/app/scw-access-key', `${bootKey.accessKey}\n`);
     files.set('/etc/app/scw-secret-key', `${bootKey.secretKey}\n`);
+    // The host boot log, mounted into the runner: cloud-init's script and earlier output, a secret among it without its name.
+    files.set('/var/log/infra-boot.log', `::cella:: boot start\nlauncher saw ${cookieSecret}\nDATABASE_URL=${dsn}\n`);
     files.set(
       '/etc/app/boot-plan.json',
       JSON.stringify({
@@ -158,6 +160,8 @@ describe('boot', () => {
     ]);
     expect(uploads[2]?.body).toContain('release-command');
     expect(uploads[0]?.body).toContain('auth rejected [REDACTED]');
+    expect(uploads[0]?.body).toContain('::cella:: boot start\nlauncher saw [REDACTED]');
+    expect(uploads[0]?.body).not.toContain('boot log not found');
     expect(sent.some((request) => request.url === 'https://ingest.example/v1/logs')).toBe(true);
     expect(printed.some((line) => line.includes('boot-failed'))).toBe(true);
 

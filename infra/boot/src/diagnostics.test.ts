@@ -48,6 +48,14 @@ async function upload(overrides: Partial<UploadBootDiagnosticsOptions> = {}) {
 }
 
 describe('uploadBootDiagnostics', () => {
+  it('carries the tail of a long boot log, naming the cut', async () => {
+    const log = `${'old boot line\n'.repeat(30_000)}[release-command] [migrate] Running migrations...\n`;
+    const { bodies } = await upload({ logFile: await bootLog(log) });
+    expect(bodies[0]).toContain('[release-command] [migrate] Running migrations...');
+    expect(bodies[0]).toMatch(/\[earlier \d+ characters cut\]/);
+    expect(bodies[0]?.length).toBeLessThan(300 * 1024);
+  });
+
   it('names the failed phase and its error ahead of the boot log', async () => {
     const { bodies } = await upload({ failedPhase: 'release-command', failure: 'docker compose run timed out after 180s' });
     expect(bodies[0]).toContain('boot_rc=1\nfailed_phase=release-command\n\n--- boot error ---\ndocker compose run timed out after 180s');

@@ -256,7 +256,7 @@ export async function boot(opts: BootOptions): Promise<void> {
     bootRc = 1;
     failure = errorMessage(err);
     logger.log('error', 'boot-failed', { ...(failedPhase ? { phase: failedPhase } : {}), message: errorMessage(err) });
-    // The boot runner runs containerized without the host boot log mounted, so the crashed container's own output is captured here for the diagnostics.
+    // The app containers log to Docker, outside the boot log, so a crashed container's own output is captured here for the diagnostics.
     appLogs = await captureServiceLogs(plan, exec).catch(() => undefined);
     bootSpan.end('error', { message: errorMessage(err) });
     const failureBody = [
