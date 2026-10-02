@@ -48,7 +48,7 @@ export function ApiKeysCard({ organization }: { organization: EnrichedOrganizati
   };
 
   return (
-    <ToolCard label="c:api_keys" id="api-keys" description={t('c:api_keys.text')}>
+    <ToolCard label="c:api_keys" description={t('c:api_keys.text')}>
       <div className="flex flex-col gap-4">
         <div className="flex gap-2 max-sm:flex-col">
           <Input
