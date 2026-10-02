@@ -5,7 +5,9 @@ import { signUpUser } from '../fixtures';
 import { createTestUser, sessionsOf } from '../helpers';
 import { clearDatabase } from '../test-utils';
 
-vi.mock('#/modules/auth/general/helpers/enroll-device', () => ({ enrollDevice: vi.fn().mockRejectedValue(new Error('devices table unavailable')) }));
+vi.mock('#/modules/auth/devices/operations/enroll-device', () => ({
+  enrollDevice: vi.fn().mockRejectedValue(new Error('devices table unavailable')),
+}));
 
 afterEach(async () => await clearDatabase());
 

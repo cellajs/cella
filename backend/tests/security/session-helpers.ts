@@ -5,8 +5,8 @@ import type { SessionLostType } from 'shared/utils/session-lost';
 import { expect, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { authCookieName } from '#/modules/auth/general/helpers/cookie';
+import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
 import { type SessionTypes, type StepUpProof, sessionsTable } from '#/modules/auth/sessions-db';
-import { stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { streamSubscriberManager } from '#/modules/entities/stream';
 import { hashToken } from '#/utils/hash-token';
@@ -37,7 +37,7 @@ export const insertStaleSession = (user: { id: string }) => insertSession(user, 
 /** A stale session that then stepped up with `via`: only its stamp proves presence. */
 export async function insertSteppedUpSession(user: { id: string }, via: StepUpProof = 'totp'): Promise<TestSession> {
   const session = await insertStaleSession(user);
-  await stampStepUp(session.id, user.id, via);
+  await updateSessionSteppedUp({ var: { db } }, { id: session.id, userId: user.id, via });
   return session;
 }
 

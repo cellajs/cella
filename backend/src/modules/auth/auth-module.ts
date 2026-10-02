@@ -1,6 +1,6 @@
 import { defineBackendModule } from '#/lib/module';
+import { pruneDevices } from './devices/operations/prune-devices';
 import { authGeneralHandlers } from './general/general-handlers';
-import { pruneDevices } from './jobs/prune-devices';
 import { authMagicLinkHandlers } from './magic/magic-handlers';
 import { authOAuthHandlers } from './oauth/oauth-handlers';
 import { authPasskeysHandlers } from './passkeys/passkeys-handlers';

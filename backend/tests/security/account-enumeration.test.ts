@@ -2,7 +2,7 @@ import { inArray } from 'drizzle-orm';
 import { nanoid } from 'nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { enrollDevice } from '#/modules/auth/general/helpers/enroll-device';
+import { enrollDevice } from '#/modules/auth/devices/operations/enroll-device';
 import { requestsTable } from '#/modules/requests/requests-db';
 import { accountExistsEmail, requestResponseEmail } from '../../emails';
 import { defaultHeaders } from '../fixtures';

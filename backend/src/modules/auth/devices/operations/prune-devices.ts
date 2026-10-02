@@ -1,8 +1,10 @@
-import { lt, sql } from 'drizzle-orm';
-import { baseDb as db } from '#/db/db';
-import { devicesTable } from '#/modules/auth/devices-db';
+import { baseDb } from '#/db/db';
+import { deleteExcessDevices, deleteStaleDevices } from '#/modules/auth/devices/devices-queries';
 import { log } from '#/utils/logger';
 import { TimeSpan } from '#/utils/time-span';
+
+/** The daily job runs without a request, on the base pool. */
+const dbCtx = { var: { db: baseDb } };
 
 /** The device id cookie lives 400 days from its last sign-in, so a row unseen for that long can never match again. */
 const DEVICE_TTL = new TimeSpan(400, 'd');
@@ -14,20 +16,8 @@ const MAX_DEVICES_PER_USER = 50;
 export async function pruneDevices(now: Date = new Date()): Promise<number> {
   const seenBefore = new Date(now.getTime() - DEVICE_TTL.milliseconds()).toISOString();
 
-  const expired = await db.delete(devicesTable).where(lt(devicesTable.lastSeenAt, seenBefore)).returning({ userId: devicesTable.userId });
-
-  const excess = await db
-    .delete(devicesTable)
-    .where(
-      sql`(${devicesTable.userId}, ${devicesTable.deviceIdHash}) in (
-        select user_id, device_id_hash from (
-          select user_id, device_id_hash, row_number() over (partition by user_id order by last_seen_at desc) as position
-          from ${devicesTable}
-        ) ranked
-        where position > ${MAX_DEVICES_PER_USER}
-      )`,
-    )
-    .returning({ userId: devicesTable.userId });
+  const expired = await deleteStaleDevices(dbCtx, { seenBefore });
+  const excess = await deleteExcessDevices(dbCtx, { maxPerUser: MAX_DEVICES_PER_USER });
 
   const count = expired.length + excess.length;
   if (count) log.info('Pruned devices', { expired: expired.length, excess: excess.length });

@@ -2,7 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import { and, desc, eq, getColumns, gt, isNull, or, sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import type { DbContext, Env } from '#/core/context';
-import { devicesTable } from '#/modules/auth/devices-db';
+import { devicesTable } from '#/modules/auth/devices/devices-db';
 import { identitiesTable } from '#/modules/auth/identities-db';
 import { passkeysTable } from '#/modules/auth/passkeys/passkeys-db';
 import { sessionSafeColumns, sessionsTable } from '#/modules/auth/sessions-db';
