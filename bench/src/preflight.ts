@@ -1,3 +1,4 @@
+import { readdirSync } from 'node:fs';
 import pg from 'pg';
 import { appConfig } from 'shared';
 import { BASE_URL, CDC_HEALTH_PORT, DB_URL } from './config';
@@ -37,4 +38,25 @@ export async function isInfrastructureReady(): Promise<boolean> {
     if (!(await isServiceHealthy(url))) return false;
   }
   return true;
+}
+
+/**
+ * The newest migration the database has applied and the newest one this checkout ships. Another checkout's `pnpm dev`
+ * on the same ports runs its own schema, so a caller that tests this checkout compares the two before it runs.
+ */
+export async function getSchemaVersions(): Promise<{ applied: string | null; checkout: string | null }> {
+  const entries = readdirSync(new URL('../../backend/drizzle/', import.meta.url), { withFileTypes: true });
+  const folders = entries.filter((entry) => entry.isDirectory()).map((entry) => entry.name);
+  const checkout = folders.sort().at(-1) ?? null;
+
+  // Migration folder names start with their timestamp, so the highest name is the newest. Schema as in backend `migrateConfig`.
+  const pool = new pg.Pool({ connectionString: DB_URL, connectionTimeoutMillis: 2000 });
+  try {
+    const { rows } = await pool.query<{ name: string | null }>('SELECT max(name) AS name FROM "drizzle-backend".__drizzle_migrations');
+    return { applied: rows[0]?.name ?? null, checkout };
+  } catch {
+    return { applied: null, checkout };
+  } finally {
+    await pool.end();
+  }
 }
