@@ -163,6 +163,11 @@ vi.mock('~/modules/common/blocknote/query', () => ({
 }));
 vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
+// The API never answers here, so the socket alone syncs; yjs-http.test.ts covers the HTTP link.
+vi.mock('~/modules/common/blocknote/yjs-http', () => ({
+  WS_SYNC_DEADLINE_MS: 5_000,
+  createHttpLink: () => ({ enter: () => new Promise(() => {}), leave: () => {}, queue: () => {}, pull: async () => {}, clean: false }),
+}));
 
 const { useUserStore, yjsTokenKey } = await import('~/modules/user/user-store');
 const { applyRemoteUpdate, useYjsConnection } = await import('~/modules/common/blocknote/yjs-connections');

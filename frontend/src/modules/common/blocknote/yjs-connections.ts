@@ -10,11 +10,12 @@ import * as Y from 'yjs';
 import { create } from 'zustand';
 import type { TKey } from '~/lib/i18n-locales';
 import { yjsTokenKeys, yjsTokenQueryOptions, yjsTokenRefusal } from '~/modules/common/blocknote/query';
-import type { HttpLink } from '~/modules/common/blocknote/yjs-http';
+import { createHttpLink, type HttpLink, WS_SYNC_DEADLINE_MS } from '~/modules/common/blocknote/yjs-http';
 import { watchPendingStructs } from '~/modules/common/blocknote/yjs-resync';
 import type { AppliedRows, YDocWriter } from '~/modules/common/blocknote/yjs-store';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
+import type { UnsaveableReason } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 
 const GRACE_PERIOD_MS = 30_000;
@@ -38,14 +39,26 @@ const YJS_MESSAGE = { SYNC: 0, GENERATION: 4, SAVED: 5 } as const;
 const YJS_SYNC = { STEP2: 1, UPDATE: 2 } as const;
 
 /**
+ * Why a connection stopped for good: edit rights withdrawn (`denied`), a document or update the relay or the HTTP
+ * routes refuse (`refused`), or tokens the relay kept refusing (`expired`).
+ */
+export type YjsStopReason = 'denied' | 'refused' | 'expired';
+
+const STOP_MESSAGES: Record<YjsStopReason, TKey> = {
+  denied: 'error:no_permission_for_sync.text',
+  refused: 'error:sync_failed.text',
+  expired: 'error:sync_token_expired.text',
+};
+
+/**
  * Closes after which no reconnect can succeed: access denied, a document or update the relay refuses, and a frame
  * too big for the relay, which a reconnect would send again. Every other close is transient: y-websocket backs off,
  * reconnects with the current token and resyncs, so edits made meanwhile reach the relay.
  */
-const FINAL_CLOSES: ReadonlyMap<number, TKey> = new Map<number, TKey>([
-  [YJS_CLOSE.ACCESS_DENIED, 'error:no_permission_for_sync.text'],
-  [YJS_CLOSE.BAD_REQUEST, 'error:sync_failed.text'],
-  [1009, 'error:sync_failed.text'],
+const FINAL_CLOSES: ReadonlyMap<number, YjsStopReason> = new Map<number, YjsStopReason>([
+  [YJS_CLOSE.ACCESS_DENIED, 'denied'],
+  [YJS_CLOSE.BAD_REQUEST, 'refused'],
+  [1009, 'refused'],
 ]);
 
 /**
@@ -98,7 +111,7 @@ export interface YjsConnection {
   stored: boolean;
   /** Writes the document's updates to the per-user database; null while it is not stored, or without a database. */
   writer: YDocWriter | null;
-  /** The HTTP transport while the relay is out of reach; null otherwise. */
+  /** The HTTP transport, which carries the document while the relay is out of reach; created as the provider is bound. */
   http: HttpLink | null;
   /** The stored update rows the document holds, which a saved handshake proves the server holds too. */
   applied: AppliedRows;
@@ -132,6 +145,12 @@ interface YjsSyncState {
   synced: Record<string, boolean>;
   /** editSessionId → true once its connection stopped for good */
   stopped: Record<string, boolean>;
+  /** editSessionId → why its connection stopped, when a final answer said so */
+  stopReason: Record<string, YjsStopReason>;
+  /** editSessionId → true once its editor may mount: synced over either transport, or loaded from storage */
+  ready: Record<string, boolean>;
+  /** editSessionId → the transport carrying its edits */
+  transport: Record<string, YjsTransport>;
   /** editSessionId → how often its document was rebuilt after a reseed; the editor remounts on the new fragment */
   rebuilds: Record<string, number>;
   /** editSessionId → true while its document holds local edits the relay has not saved */
@@ -140,7 +159,16 @@ interface YjsSyncState {
   deleted: Record<string, boolean>;
 }
 
-const useYjsSyncStore = create<YjsSyncState>(() => ({ synced: {}, stopped: {}, rebuilds: {}, unsynced: {}, deleted: {} }));
+const useYjsSyncStore = create<YjsSyncState>(() => ({
+  synced: {},
+  stopped: {},
+  stopReason: {},
+  ready: {},
+  transport: {},
+  rebuilds: {},
+  unsynced: {},
+  deleted: {},
+}));
 
 /** Asks before the page unloads: edits the relay has not saved live only in this tab. */
 function warnBeforeUnload(event: BeforeUnloadEvent) {
@@ -164,6 +192,27 @@ function setUnsynced(editSessionId: string, conn: YjsConnection, unsynced: boole
   conn.unsynced = unsynced;
   useYjsSyncStore.setState((s) => ({ unsynced: { ...s.unsynced, [editSessionId]: unsynced } }));
   guardUnload();
+}
+
+/** Lets the connection's editor mount: synced over either transport, or loaded from storage. Stays until a rebuild. */
+function setReady(editSessionId: string, conn: YjsConnection) {
+  if (conn.ready) return;
+  conn.ready = true;
+  useYjsSyncStore.setState((s) => ({ ready: { ...s.ready, [editSessionId]: true } }));
+}
+
+function setTransport(editSessionId: string, conn: YjsConnection, transport: YjsTransport) {
+  if (conn.transport === transport) return;
+  conn.transport = transport;
+  useYjsSyncStore.setState((s) => ({ transport: { ...s.transport, [editSessionId]: transport } }));
+}
+
+/** Offline, or stopped: no transport carries an edit, so the deadline goes and HTTP leaves. Back online, the provider's next attempt rearms it. */
+function pauseTransports(editSessionId: string, conn: YjsConnection) {
+  clearTimeout(conn.wsDeadline);
+  conn.wsDeadline = undefined;
+  conn.http?.leave();
+  setTransport(editSessionId, conn, 'none');
 }
 
 /** The relay has `SAVED_FALLBACK_MS` from the handshake Step2 to send this socket's first `Saved`. */
@@ -255,15 +304,19 @@ export function applyRemoteUpdate(conn: YjsConnection, update: Uint8Array, sourc
 }
 
 /**
- * Ends a connection for good: no reconnect, and its editor turns read-only (useYjsConnection reports `stopped`), so
- * nothing typed after this is lost unsynced. `message` is the toast naming the reason, if any.
+ * Ends a connection for good: no reconnect over either transport, and its editor turns read-only (useYjsConnection
+ * reports `stopped`), so nothing typed after this is lost unsynced. `reason`, if any, names why, in a toast too.
  */
-function stopConnection(editSessionId: string, conn: YjsConnection, message: TKey | null) {
+function stopConnection(editSessionId: string, conn: YjsConnection, reason: YjsStopReason | null) {
   if (conn.stopped) return;
   conn.stopped = true;
   conn.provider.disconnect();
-  useYjsSyncStore.setState((s) => ({ stopped: { ...s.stopped, [editSessionId]: true } }));
-  if (message) toaster.warning(i18n.t(message));
+  pauseTransports(editSessionId, conn);
+  useYjsSyncStore.setState((s) => ({
+    stopped: { ...s.stopped, [editSessionId]: true },
+    stopReason: reason ? { ...s.stopReason, [editSessionId]: reason } : s.stopReason,
+  }));
+  if (reason) toaster.warning(i18n.t(STOP_MESSAGES[reason]));
 }
 
 /**
@@ -277,6 +330,25 @@ function endDeleted(editSessionId: string, conn: YjsConnection) {
   stopConnection(editSessionId, conn, null);
   reapConnection(editSessionId, conn);
   if (unsynced) toaster.warning(i18n.t('error:sync_deleted.text'));
+}
+
+/**
+ * Ends a connection on the HTTP routes' final answer, as the relay's matching close ends it: another generation
+ * rebuilds it, a deleted entity ends it as deleted, and lost rights or a refused update stop it. Edits no server holds
+ * are parked first.
+ */
+function endOverHttp(
+  editSessionId: string,
+  conn: YjsConnection,
+  reason: UnsaveableReason,
+  entityType: ProductEntityType,
+  tenantId: string,
+  organizationId: string,
+) {
+  if (reason === 'replaced') return rebuildConnection(editSessionId, conn, entityType, tenantId, organizationId);
+  if (conn.unsynced) conn.writer?.park(reason, conn.yDoc).catch((error) => console.error('[yjs] Parking unsaveable edits failed', error));
+  if (reason === 'deleted') return endDeleted(editSessionId, conn);
+  stopConnection(editSessionId, conn, reason);
 }
 
 /** What a connection holds per document: a rebuild replaces all of it. */
@@ -360,8 +432,10 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
 
   // A withdrawn token stays withdrawn across an offline blip: reconnect only while one is held.
   conn.unsubOnline = onlineManager.subscribe((isOnline) => {
-    if (!isOnline) provider.disconnect();
-    else if (!conn.stopped && useUserStore.getState().yjsTokens[tokenKey]) provider.connect();
+    if (!isOnline) {
+      provider.disconnect();
+      pauseTransports(editSessionId, conn);
+    } else if (!conn.stopped && useUserStore.getState().yjsTokens[tokenKey]) provider.connect();
   });
 
   // Keep provider params on the latest token so a reconnect (after sleep, or the relay's close at expiry) uses a fresh one.
@@ -378,7 +452,7 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
       // Signed out: unsaved edits go with the session, as the user's local database does, and no later user sees them.
       // TODO(offline): decide again whether sign-out discards unsaved edits, or asks first while some are unsaved, once documents are stored offline.
       if (!state.user) setUnsynced(editSessionId, conn, false);
-      stopConnection(editSessionId, conn, state.user ? 'error:no_permission_for_sync.text' : null);
+      stopConnection(editSessionId, conn, state.user ? 'denied' : null);
       reapConnection(editSessionId, conn);
     }
   });
@@ -420,15 +494,15 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
       }
       if (refusedTokens.size < MAX_TOKEN_FAILURES) return;
       console.warn(`[yjs] Circuit breaker: ${refusedTokens.size} tokens refused in a row for ${editSessionId}`);
-      stopConnection(editSessionId, conn, 'error:sync_token_expired.text');
+      stopConnection(editSessionId, conn, 'expired');
       return;
     }
 
     // The entity was deleted, and its document with it: final, and nothing the document holds can be saved.
     if (event.code === YJS_CLOSE.ENTITY_DELETED) return endDeleted(editSessionId, conn);
 
-    const message = FINAL_CLOSES.get(event.code);
-    if (message) stopConnection(editSessionId, conn, message);
+    const reason = FINAL_CLOSES.get(event.code);
+    if (reason) stopConnection(editSessionId, conn, reason);
   });
 
   // The relay announces the document's generation before it answers a handshake. The first one is the document's. A
@@ -470,6 +544,8 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
       return;
     }
     conn.writer?.append(update, true);
+    // Off the socket, the HTTP link keeps the edit: it posts it, or batches it into its next handshake.
+    if (conn.transport !== 'ws') conn.http?.queue(update);
     setUnsynced(editSessionId, conn, true);
     queueMicrotask(settle);
   });
@@ -487,6 +563,38 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
   } else {
     provider.on('sync', handleSync);
   }
+
+  // HTTP takes over when a socket attempt has not synced within WS_SYNC_DEADLINE_MS while the API answers. y-websocket
+  // keeps reconnecting with backoff meanwhile, and the first sync hands the document back. No switch disconnects it.
+  conn.http = createHttpLink(
+    conn,
+    { entityType, entityId: editSessionId, tenantId, organizationId },
+    { onChange: settle, end: (reason) => endOverHttp(editSessionId, conn, reason, entityType, tenantId, organizationId) },
+  );
+  const enterHttp = async () => {
+    const link = conn.http;
+    if (!link || !(await link.enter()) || conn.http !== link || conn.stopped || provider.synced) return;
+    setTransport(editSessionId, conn, 'http');
+    setReady(editSessionId, conn);
+    // The link may have reported its ledger before the transport was its own.
+    settle();
+  };
+  provider.on('status', ({ status }) => {
+    if (status !== 'connecting' || conn.wsDeadline || conn.transport === 'http' || provider.synced) return;
+    conn.wsDeadline = setTimeout(() => {
+      conn.wsDeadline = undefined;
+      if (!conn.stopped && !provider.synced && onlineManager.isOnline() !== false) void enterHttp();
+    }, WS_SYNC_DEADLINE_MS);
+  });
+  provider.on('sync', (isSynced: boolean) => {
+    if (!isSynced) return;
+    clearTimeout(conn.wsDeadline);
+    conn.wsDeadline = undefined;
+    // A post in flight settles; the socket's handshake proves the whole document by itself.
+    conn.http?.leave();
+    setTransport(editSessionId, conn, 'ws');
+    setReady(editSessionId, conn);
+  });
 }
 
 /** Ends the connection's transports, its Awareness and its document. */
@@ -518,6 +626,8 @@ function rebuildConnection(editSessionId: string, conn: YjsConnection, entityTyp
     Object.assign(conn, openDoc(editSessionId, entityType, tenantId), { generation: null, wsDeadline: undefined });
     useYjsSyncStore.setState((s) => ({
       synced: { ...s.synced, [editSessionId]: false },
+      ready: { ...s.ready, [editSessionId]: false },
+      transport: { ...s.transport, [editSessionId]: 'none' },
       rebuilds: { ...s.rebuilds, [editSessionId]: (s.rebuilds[editSessionId] ?? 0) + 1 },
     }));
     bindProvider(editSessionId, conn, entityType, tenantId, organizationId);
@@ -553,10 +663,13 @@ function destroyConnection(editSessionId: string, conn: YjsConnection) {
   useYjsSyncStore.setState((s) => {
     const { [editSessionId]: _synced, ...synced } = s.synced;
     const { [editSessionId]: _stopped, ...stopped } = s.stopped;
+    const { [editSessionId]: _stopReason, ...stopReason } = s.stopReason;
+    const { [editSessionId]: _ready, ...ready } = s.ready;
+    const { [editSessionId]: _transport, ...transport } = s.transport;
     const { [editSessionId]: _rebuilds, ...rebuilds } = s.rebuilds;
     const { [editSessionId]: _unsynced, ...unsynced } = s.unsynced;
     const { [editSessionId]: _deleted, ...deleted } = s.deleted;
-    return { synced, stopped, rebuilds, unsynced, deleted };
+    return { synced, stopped, stopReason, ready, transport, rebuilds, unsynced, deleted };
   });
 }
 
@@ -587,11 +700,13 @@ function releaseConnection(editSessionId: string) {
 
 /**
  * Ref-counted Yjs connection kept alive for a grace period after the last consumer unmounts, so a remount reuses it,
- * and after that for as long as it holds edits the relay has not saved; `undefined` disables it. `stopped` turns true
- * once the relay ended the session for good: the editor must go read-only. `deleted` turns true with it when the
- * entity was deleted, and the edits its document held were discarded. `synced` drops back to false while a reseeded
- * document syncs afresh, and `rebuilds` counts those, so the editor remounts on the new fragment. `unsynced` is true
- * while the document holds local edits the relay has not saved.
+ * and after that for as long as it holds edits the server has not saved; `undefined` disables it. `ready` turns true
+ * once the editor may mount: synced over the relay's socket or over HTTP, or loaded from storage. `transport` names
+ * what carries the edits: `ws`, `http` while the relay is out of reach, or `none` before the first sync and while
+ * offline. `stopped` turns true once the session ended for good, with `stopReason` saying why when a final answer did:
+ * the editor must go read-only. `deleted` turns true with it when the entity was deleted. `ready` and `synced` drop
+ * back to false while a reseeded document syncs afresh, and `rebuilds` counts those, so the editor remounts on the new
+ * fragment. `unsynced` is true while the document holds local edits the server has not saved.
  */
 export function useYjsConnection(editSessionId: string | undefined, entityType: ProductEntityType, tenantId: string, organizationId: string) {
   const [conn, setConn] = useState<YjsConnection | null>(() => {
@@ -612,11 +727,14 @@ export function useYjsConnection(editSessionId: string | undefined, entityType: 
   }, [editSessionId, entityType, tenantId, organizationId]);
 
   const synced = useYjsSyncStore((s) => s.synced[editSessionId ?? ''] ?? false);
+  const ready = useYjsSyncStore((s) => s.ready[editSessionId ?? ''] ?? false);
+  const transport = useYjsSyncStore((s) => s.transport[editSessionId ?? ''] ?? 'none');
   const stopped = useYjsSyncStore((s) => s.stopped[editSessionId ?? ''] ?? false);
+  const stopReason = useYjsSyncStore((s) => s.stopReason[editSessionId ?? ''] ?? null);
   const rebuilds = useYjsSyncStore((s) => s.rebuilds[editSessionId ?? ''] ?? 0);
   const unsynced = useYjsSyncStore((s) => s.unsynced[editSessionId ?? ''] ?? false);
   const deleted = useYjsSyncStore((s) => s.deleted[editSessionId ?? ''] ?? false);
 
   if (!conn) return null;
-  return { awareness: conn.awareness, fragment: conn.fragment, synced, stopped, rebuilds, unsynced, deleted };
+  return { awareness: conn.awareness, fragment: conn.fragment, ready, transport, synced, stopped, stopReason, rebuilds, unsynced, deleted };
 }
