@@ -31,7 +31,12 @@ const dbCtx = { var: { db: baseDb } };
 
 /** What a new token records besides its secret and expiry, which issuing sets. */
 export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
-  Partial<Pick<InsertTokenModel, 'userId' | 'createdBy' | 'identityId' | 'inactiveMembershipId' | 'redirectPath' | 'pendingSignUp' | 'sessionId'>>;
+  Partial<
+    Pick<
+      InsertTokenModel,
+      'userId' | 'createdBy' | 'identityId' | 'inactiveMembershipId' | 'redirectPath' | 'pendingSignUp' | 'sessionId' | 'authStrategy'
+    >
+  >;
 
 /**
  * Issues tokens: a random raw value per token, stored only as its hash, expiring after its type's `ttl`. Each first
@@ -58,6 +63,7 @@ export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{
       redirectPath: token.redirectPath ?? null,
       pendingSignUp: token.pendingSignUp ?? null,
       sessionId: token.sessionId ?? null,
+      authStrategy: token.authStrategy ?? null,
       secret: hashToken(rawToken),
       expiresAt: createDate(tokenPolicies[token.type].ttl),
     })),

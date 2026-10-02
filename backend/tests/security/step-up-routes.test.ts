@@ -288,8 +288,10 @@ describe('account-security routes need a step-up', async () => {
     await expectStepUpRequired(await call(deleteTotp, { headers: (await signedIn('magic')).headers }));
     expect(await totpsOf()).toHaveLength(1);
 
-    // Positive control: a sign-in with the authenticator app a minute ago stands as its proof.
-    expect((await call(deleteTotp, { headers: (await signedIn('totp')).headers })).response.status).toBe(204);
+    // Positive control: a magic-link sign-in that completed MFA with the authenticator app a minute ago stands as its
+    // proof; the mfa session carries the factor as its step-up, never as its method.
+    const mfa = await insertTestSession(user, { authStrategy: 'magic', type: 'mfa', steppedUpVia: 'totp', ageMs: 60 * 1000 });
+    expect((await call(deleteTotp, { headers: asSession(mfa.id, mfa.cookie).headers })).response.status).toBe(204);
     expect(await totpsOf()).toHaveLength(0);
   });
 });

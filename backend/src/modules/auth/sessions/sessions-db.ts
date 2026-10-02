@@ -25,7 +25,10 @@ export type SessionRevocationReason = (typeof sessionRevocationReasons)[number];
 /** Why sessions end: a revocation, or `user_deleted`, whose delete takes the session rows along. */
 export type SessionEndReason = SessionRevocationReason | 'user_deleted';
 
-/** How a session last proved its user's presence again: a second factor, or an emailed link for a user without one. */
+/**
+ * How a session last proved its user's presence again: a second factor (a step-up, or the MFA completion that minted the
+ * session), or an emailed link for a user without one.
+ */
 export const stepUpProofs = ['passkey', 'totp', 'email'] as const;
 export type StepUpProof = (typeof stepUpProofs)[number];
 
@@ -50,7 +53,10 @@ export const sessionsTable = snakeCase.table(
       .default('desktop'),
     deviceOs: varchar({ length: maxLength.field }),
     browser: varchar({ length: maxLength.field }),
+    /** The method that started the sign-in. A second factor never replaces it: an MFA completion stamps `steppedUpVia`. */
     authStrategy: varchar({ enum: authStrategiesEnum }).notNull(),
+    /** The SSO connection the sign-in came through; null for every other method. Its FK arrives with the connections table. */
+    connectionId: uuid(),
     ipHash: varchar({ length: 64 }),
     ipSubnetHash: varchar({ length: 64 }),
     ipCountry: varchar({ length: 2 }),
@@ -85,9 +91,9 @@ const { secret: _secret, ...safeColumns } = getTableColumns(sessionsTable);
 /** Every column but the secret: what any response may carry. */
 export const sessionSafeColumns = safeColumns;
 
-const { id, userId, type, authStrategy, createdAt, expiresAt, impersonatorSessionId } = safeColumns;
+const { id, userId, type, authStrategy, connectionId, createdAt, expiresAt, impersonatorSessionId } = safeColumns;
 /** The columns of {@link SessionFacts}. */
-export const sessionFactColumns = { id, userId, type, authStrategy, createdAt, expiresAt, impersonatorSessionId };
+export const sessionFactColumns = { id, userId, type, authStrategy, connectionId, createdAt, expiresAt, impersonatorSessionId };
 
 /** Raw session model including sensitive secret field - use only when secret access is required. */
 export type UnsafeSessionModel = typeof sessionsTable.$inferSelect;

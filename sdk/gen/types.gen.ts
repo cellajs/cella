@@ -291,6 +291,7 @@ export type MeAuthData = {
     deviceOs: string | null;
     browser: string | null;
     authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic';
+    connectionId: string | null;
     ipHash: string | null;
     ipSubnetHash: string | null;
     ipCountry: string | null;
@@ -2920,6 +2921,7 @@ export type RevokeMySessionsResponses = {
       deviceOs: string | null;
       browser: string | null;
       authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic';
+      connectionId: string | null;
       ipHash: string | null;
       ipSubnetHash: string | null;
       ipCountry: string | null;

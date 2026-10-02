@@ -11,14 +11,14 @@ import { findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 
 /**
  * Turns MFA on or off for the signed-in user. Turning it on ends every other regular session and replaces this
- * browser's with an mfa session, signed by the factor that stepped this session up.
+ * browser's with an mfa session: same sign-in method, stepped up by the factor that proved this session.
  * @returns The user as `getMe` returns it, with the new MFA flag and the new session's sign-in time.
  */
 export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
   const { user, session } = ctx.var;
 
-  // The guard refused a session that has not stepped up; the factor that proved this one signs the mfa session minted
-  // below in. Turning MFA on needs both factors enrolled, so a passing step-up always names one.
+  // The guard refused a session that has not stepped up; the factor that proved this one is the step-up of the mfa
+  // session minted below. Turning MFA on needs both factors enrolled, so a passing step-up always names one.
   const { factor } = await readStepUp(session);
 
   // The flag and the sessions it ends change together, after a factor delete that got the lock first.
@@ -40,7 +40,7 @@ export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
     // Clear session cookie to enforce fresh login
     deleteAuthCookie(ctx, 'session');
 
-    await setUserSession(ctx, user, factor, 'mfa');
+    await setUserSession(ctx, user, session.authStrategy, 'mfa', { steppedUpVia: factor });
   }
 
   sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');

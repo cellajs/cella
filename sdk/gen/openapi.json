@@ -1326,6 +1326,10 @@
                   "type": "string",
                   "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
                 },
+                "connectionId": {
+                  "type": ["string", "null"],
+                  "format": "uuid"
+                },
                 "ipHash": {
                   "type": ["string", "null"],
                   "maxLength": 64
@@ -1392,6 +1396,7 @@
                 "deviceOs",
                 "browser",
                 "authStrategy",
+                "connectionId",
                 "ipHash",
                 "ipSubnetHash",
                 "ipCountry",
@@ -1468,6 +1473,7 @@
               "deviceOs": "iOS",
               "browser": "Edge",
               "authStrategy": "passkey",
+              "connectionId": null,
               "ipHash": null,
               "ipSubnetHash": null,
               "ipCountry": null,
@@ -5865,6 +5871,7 @@
                       "deviceOs": "iOS",
                       "browser": "Edge",
                       "authStrategy": "passkey",
+                      "connectionId": null,
                       "ipHash": null,
                       "ipSubnetHash": null,
                       "ipCountry": null,
@@ -6129,6 +6136,10 @@
                             "type": "string",
                             "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
                           },
+                          "connectionId": {
+                            "type": ["string", "null"],
+                            "format": "uuid"
+                          },
                           "ipHash": {
                             "type": ["string", "null"],
                             "maxLength": 64
@@ -6188,6 +6199,7 @@
                           "deviceOs",
                           "browser",
                           "authStrategy",
+                          "connectionId",
                           "ipHash",
                           "ipSubnetHash",
                           "ipCountry",
