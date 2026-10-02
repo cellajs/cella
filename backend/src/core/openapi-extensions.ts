@@ -1,5 +1,5 @@
 import type { MiddlewareHandler } from 'hono';
-import type { AccessScopedEntityType } from 'shared';
+import type { AccessScopedEntityType, ConfigSwitch } from 'shared';
 import type { Env } from '#/core/context';
 
 export type MiddlewareArray<E extends Env = Env> = readonly MiddlewareHandler<E>[];
@@ -14,8 +14,14 @@ export type ExtensionMetadata = {
   kind: 'middleware' | 'metadata';
 };
 
-/** Add new extensions here to expose them in the OpenAPI spec. */
+/** Add new extensions here to expose them in the OpenAPI spec. In the order they apply to a request. */
 export const extensionMap = {
+  'x-enabled-by': {
+    id: 'xEnabledBy',
+    description: 'Config switch the endpoint belongs to: a service, a sign-in method or an OAuth provider; refused before the guards while it is off',
+    required: false,
+    kind: 'metadata',
+  },
   'x-guard': { id: 'xGuard', description: 'Authorization middleware applied to the endpoint', required: true, kind: 'middleware' },
   'x-rate-limiter': { id: 'xRateLimiter', description: 'Rate limiting rules applied to the endpoint', required: false, kind: 'middleware' },
   'x-cache': { id: 'xCache', description: 'Caching strategy applied to the endpoint', required: false, kind: 'middleware' },
@@ -53,6 +59,8 @@ export type XTool = {
 
 /** When adding an extension to `extensionMap`, add its prop here too. */
 export type XMiddlewareOptions = {
+  /** The config switch the route belongs to; `createXRoute` refuses the route while it is off, before its guards. */
+  xEnabledBy?: ConfigSwitch;
   xGuard: MiddlewareArray;
   xRateLimiter?: MiddlewareArray;
   xCache?: MiddlewareArray;
@@ -67,10 +75,10 @@ export const collectExtensionMiddleware = (config: Record<string, unknown>): Mid
     .filter(({ kind }) => kind === 'middleware')
     .flatMap(({ id }) => (config[id] as MiddlewareHandler<Env>[]) ?? []);
 
-/** The route prop ids of every extension (`xGuard`, `xRateLimiter`, `xCache`, `xTool`), kept out of the spec. */
+/** The route prop ids of every extension (`xGuard`, `xRateLimiter`, `xCache`, `xTool`, `xEnabledBy`), kept out of the spec. */
 export const getExtensionPropIds = (): string[] => Object.values(extensionMap).map(({ id }) => id);
 
-/** The metadata extensions a route declares, under their spec keys (`xTool` as `x-tool`). */
+/** The metadata extensions a route declares, under their spec keys (`xTool` as `x-tool`, `xEnabledBy` as `x-enabled-by`). */
 export const createMetadataExtensions = (config: Record<string, unknown>): Record<string, unknown> =>
   Object.fromEntries(
     Object.entries(extensionMap)

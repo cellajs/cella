@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { publicGuard, type StrategyGate, strategyEnabled, sysAdminGuard, userGuard } from '#/middlewares/guard';
+import { publicGuard, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
@@ -8,9 +8,6 @@ import { emailBodySchema, invokableTokenTypes, tokenWithDataSchema } from '#/mod
 import { cookieSchema, locationSchema, validIdSchema, validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { mockChannelBase } from '#/schemas/entity-base-mocks';
-
-/** A magic link belongs to the magic-link method; the other invokable tokens (invitations, verification) to none. */
-const magicLinkStrategy: StrategyGate = (ctx) => (ctx.req.param('type') === 'magic' ? 'magic' : null);
 
 const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
   health: xRoute({
@@ -56,7 +53,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
   invokeToken: xRoute({
     method: 'get',
     path: '/invoke-token/{type}/{token}',
-    xGuard: [strategyEnabled(magicLinkStrategy), publicGuard],
+    xGuard: [publicGuard],
     xRateLimiter: [tokenLimiter('token')],
     middleware: isNoBot,
     summary: 'Invoke token session',

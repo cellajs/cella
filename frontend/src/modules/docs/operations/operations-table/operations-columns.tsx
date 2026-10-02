@@ -5,6 +5,7 @@ import type { GenExtensionDefinition, GenOperationSummary } from 'sdk/docs-types
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { openOperationSheet } from '~/modules/docs/operations/operation-detail';
 import { openExamplesSheet } from '~/modules/docs/operations/operation-examples';
+import { SwitchedOffBadge } from '~/modules/docs/operations/switched-off-badge';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Input } from '~/modules/ui/input';
@@ -104,6 +105,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
             <span dir="rtl" className="block min-w-0 flex-1 truncate text-left">
               &lrm;{row.path}
             </span>
+            <SwitchedOffBadge enabledBy={row.enabledBy} />
           </Button>
         ),
       },

@@ -10,6 +10,13 @@
     "description": "⚠️ ATTENTION: PRERELEASE!\n                  This API is organized into modules based on logical domains.",
     "x-extensions": [
       {
+        "key": "x-enabled-by",
+        "id": "xEnabledBy",
+        "description": "Config switch the endpoint belongs to: a service, a sign-in method or an OAuth provider; refused before the guards while it is off",
+        "required": false,
+        "kind": "metadata"
+      },
+      {
         "key": "x-guard",
         "id": "xGuard",
         "description": "Authorization middleware applied to the endpoint",
@@ -55,50 +62,6 @@
           "tokenGuard": {
             "name": "token",
             "description": "Requires an access token from the authorization server and sets the consenting user or service account as the actor"
-          },
-          "strategyEnabled(per-request)": {
-            "name": "per-request enabled",
-            "description": "Refused while the sign-in method the request names is switched off"
-          },
-          "strategyEnabled(magic)": {
-            "name": "magic enabled",
-            "description": "Refused while magic sign-in is switched off"
-          },
-          "strategyEnabled(oauth)": {
-            "name": "oauth enabled",
-            "description": "Refused while oauth sign-in is switched off"
-          },
-          "strategyEnabled(github)": {
-            "name": "github enabled",
-            "description": "Refused while github sign-in is switched off"
-          },
-          "strategyEnabled(google)": {
-            "name": "google enabled",
-            "description": "Refused while google sign-in is switched off"
-          },
-          "strategyEnabled(microsoft)": {
-            "name": "microsoft enabled",
-            "description": "Refused while microsoft sign-in is switched off"
-          },
-          "strategyEnabled(passkey)": {
-            "name": "passkey enabled",
-            "description": "Refused while passkey sign-in is switched off"
-          },
-          "strategyEnabled(totp)": {
-            "name": "totp enabled",
-            "description": "Refused while totp sign-in is switched off"
-          },
-          "serviceEnabled(mcp)": {
-            "name": "mcp enabled",
-            "description": "Answers 404 while the mcp service is switched off"
-          },
-          "serviceEnabled(oauth)": {
-            "name": "oauth enabled",
-            "description": "Answers 404 while the oauth service is switched off"
-          },
-          "serviceEnabled(yjs)": {
-            "name": "yjs enabled",
-            "description": "Answers 404 while the yjs service is switched off"
           }
         }
       },
@@ -2761,7 +2724,7 @@
         "tags": ["auth", "cella"],
         "summary": "Invoke token session",
         "description": "Opens an emailed link of a link-carried token type: a magic link or a provider address verification signs in, a step-up link proves presence on this browser's session, an invitation hands the app a single-use token session in a cookie. Redirects to the app.",
-        "x-guard": ["strategyEnabled(per-request)", "publicGuard"],
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "parameters": [
@@ -3170,7 +3133,10 @@
         "tags": ["auth", "cella"],
         "summary": "Send magic link",
         "description": "Sends a magic link sign-in email to the specified address. Always returns 204 to prevent email enumeration.",
-        "x-guard": ["strategyEnabled(magic)", "publicGuard"],
+        "x-enabled-by": {
+          "strategy": "magic"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": ["magicLinkLimiter", "spamLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3227,7 +3193,10 @@
         "tags": ["auth", "cella"],
         "summary": "Get pending magic link",
         "description": "For a magic link opened in a browser that did not request it: the address it signs in, so the holder can recognize the account before confirming.",
-        "x-guard": ["strategyEnabled(magic)", "publicGuard"],
+        "x-enabled-by": {
+          "strategy": "magic"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "responses": {
@@ -3275,7 +3244,10 @@
         "tags": ["auth", "cella"],
         "summary": "Confirm magic link",
         "description": "Signs in with the magic link this browser holds, confirmed from the app page. A form post from the app origin; redirects like opening the link.",
-        "x-guard": ["strategyEnabled(magic)", "publicGuard"],
+        "x-enabled-by": {
+          "strategy": "magic"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "responses": {
@@ -3322,7 +3294,10 @@
         "tags": ["auth", "cella"],
         "summary": "Generate TOTP key",
         "description": "Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.",
-        "x-guard": ["strategyEnabled(totp)", "userGuard", "stepUpGuard"],
+        "x-enabled-by": {
+          "strategy": "totp"
+        },
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -3381,7 +3356,10 @@
         "tags": ["auth", "cella"],
         "summary": "Set TOTP",
         "description": "Confirms TOTP setup by verifying a code from the authenticator app for the first time. On success, TOTP is registered for current user.",
-        "x-guard": ["strategyEnabled(totp)", "userGuard", "stepUpGuard"],
+        "x-enabled-by": {
+          "strategy": "totp"
+        },
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3470,7 +3448,10 @@
         "tags": ["auth", "cella"],
         "summary": "Verify TOTP",
         "description": "Validates the TOTP code and completes TOTP based authentication.",
-        "x-guard": ["strategyEnabled(totp)", "publicGuard"],
+        "x-enabled-by": {
+          "strategy": "totp"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": ["totpVerificationLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3535,7 +3516,10 @@
         "tags": ["auth", "cella"],
         "summary": "Create passkey",
         "description": "Register a passkey for passwordless authentication by verifying a signed challenge and linking it to the current user. Multiple passkeys can be created for different devices/browsers.",
-        "x-guard": ["strategyEnabled(passkey)", "userGuard", "stepUpGuard"],
+        "x-enabled-by": {
+          "strategy": "passkey"
+        },
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3736,7 +3720,10 @@
         "tags": ["auth", "cella"],
         "summary": "Generate passkey challenge",
         "description": "Initiates the passkey registration or authentication flow by generating a device bound challenge.",
-        "x-guard": ["strategyEnabled(passkey)", "publicGuard"],
+        "x-enabled-by": {
+          "strategy": "passkey"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": ["passkeyChallengeLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3811,7 +3798,10 @@
         "tags": ["auth", "cella"],
         "summary": "Verify passkey",
         "description": "Validates the signed challenge and completes passkey based authentication.",
-        "x-guard": ["strategyEnabled(passkey)", "publicGuard"],
+        "x-enabled-by": {
+          "strategy": "passkey"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -3915,7 +3905,10 @@
         "tags": ["auth", "cella"],
         "summary": "Start connecting a provider",
         "description": "Pins this browser's next provider sign-in with `type=connect` to the current user, for ten minutes and once: the provider's callback connects the provider account to the user that started it. Call it right before sending the browser to the provider.",
-        "x-guard": ["strategyEnabled(oauth)", "userGuard", "stepUpGuard"],
+        "x-enabled-by": {
+          "strategy": "oauth"
+        },
+        "x-guard": ["userGuard", "stepUpGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "responses": {
@@ -3959,7 +3952,11 @@
         "tags": ["auth", "cella"],
         "summary": "Authenticate with GitHub",
         "description": "Starts OAuth authentication with GitHub. Can be used for account connection, email verification, invitation process, defaults to authentication.",
-        "x-guard": ["strategyEnabled(github)", "publicGuard"],
+        "x-enabled-by": {
+          "strategy": "oauth",
+          "provider": "github"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -4022,7 +4019,11 @@
         "tags": ["auth", "cella"],
         "summary": "Authenticate with Google",
         "description": "Starts OAuth authentication with Google. Can be used for account connection, email verification, invitation process, defaults to authentication.",
-        "x-guard": ["strategyEnabled(google)", "publicGuard"],
+        "x-enabled-by": {
+          "strategy": "oauth",
+          "provider": "google"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -4085,7 +4086,11 @@
         "tags": ["auth", "cella"],
         "summary": "Authenticate with Microsoft",
         "description": "Starts OAuth authentication with Microsoft. Can be used for account connection, email verification, invitation process, defaults to authentication.",
-        "x-guard": ["strategyEnabled(microsoft)", "publicGuard"],
+        "x-enabled-by": {
+          "strategy": "oauth",
+          "provider": "microsoft"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -4148,7 +4153,11 @@
         "tags": ["auth", "cella"],
         "summary": "Callback for GitHub",
         "description": "Handles GitHub OAuth callback, retrieves user identity, and establishes a session or links account.",
-        "x-guard": ["strategyEnabled(github)", "publicGuard"],
+        "x-enabled-by": {
+          "strategy": "oauth",
+          "provider": "github"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4233,7 +4242,11 @@
         "tags": ["auth", "cella"],
         "summary": "Callback for Google",
         "description": "Handles Google OAuth callback, retrieves user identity, and establishes a session or links account.",
-        "x-guard": ["strategyEnabled(google)", "publicGuard"],
+        "x-enabled-by": {
+          "strategy": "oauth",
+          "provider": "google"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4318,7 +4331,11 @@
         "tags": ["auth", "cella"],
         "summary": "Callback for Microsoft",
         "description": "Handles Microsoft OAuth callback, retrieves user identity, and establishes a session or links account.",
-        "x-guard": ["strategyEnabled(microsoft)", "publicGuard"],
+        "x-enabled-by": {
+          "strategy": "oauth",
+          "provider": "microsoft"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "parameters": [
@@ -4560,7 +4577,10 @@
         "tags": ["auth", "cella"],
         "summary": "Get a step-up passkey challenge",
         "description": "Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it.",
-        "x-guard": ["strategyEnabled(passkey)", "userGuard"],
+        "x-enabled-by": {
+          "strategy": "passkey"
+        },
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["passkeyChallengeLimiter"],
         "x-cache": [],
         "responses": {
@@ -8869,7 +8889,10 @@
         "tags": ["oauth-server", "cella"],
         "summary": "Protected resource metadata (API)",
         "description": "RFC 9728 metadata of this tenant as an API resource: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.",
-        "x-guard": ["serviceEnabled(oauth)", "publicGuard"],
+        "x-enabled-by": {
+          "service": "oauth"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -11351,7 +11374,10 @@
         "tags": ["mcp", "cella"],
         "summary": "Protected resource metadata",
         "description": "RFC 9728 metadata of this organization MCP server: its resource identifier, the authorization server that issues tokens for it, and the scopes it understands.",
-        "x-guard": ["serviceEnabled(mcp)", "publicGuard"],
+        "x-enabled-by": {
+          "service": "mcp"
+        },
+        "x-guard": ["publicGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -11424,7 +11450,10 @@
         "tags": ["mcp", "cella"],
         "summary": "MCP endpoint",
         "description": "Model Context Protocol (JSON-RPC 2.0 over Streamable HTTP) endpoint. Requires an access token from the authorization server; exposes the MCP tools that modules registered (initialize, tools/list, tools/call). A call outside the token scopes answers 403 with a WWW-Authenticate challenge naming the scope to step up to.",
-        "x-guard": ["serviceEnabled(mcp)", "tokenGuard", "tenantGuard", "orgGuard"],
+        "x-enabled-by": {
+          "service": "mcp"
+        },
+        "x-guard": ["tokenGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["mcpRequestLimiter"],
         "x-cache": [],
         "parameters": [
@@ -13610,7 +13639,10 @@
         "tags": ["yjs", "cella"],
         "summary": "Get Yjs token",
         "description": "Returns an Ed25519-signed token for collaboratively editing one product entity the caller may update. It names the entity, its tenant and organization, and expires after five minutes; the Yjs relay worker verifies it with the public key alone, without a backend callback, and closes the socket when it expires.",
-        "x-guard": ["serviceEnabled(yjs)", "userGuard", "tenantGuard", "orgGuard"],
+        "x-enabled-by": {
+          "service": "yjs"
+        },
+        "x-guard": ["userGuard", "tenantGuard", "orgGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [

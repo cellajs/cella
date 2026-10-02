@@ -1,36 +1,33 @@
+import type { ConfigSwitch } from 'shared';
 import { describe, expect, it } from 'vitest';
-import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
 import { authMagicLinkRoutes } from '#/modules/auth/magic/magic-routes';
 import { authOAuthRoutes } from '#/modules/auth/oauth/oauth-routes';
 import { authPasskeysRoutes } from '#/modules/auth/passkeys/passkeys-routes';
 import { authTotpsRoutes } from '#/modules/auth/totps/totps-routes';
 
 /**
- * Every route of a sign-in method leads its guard chain with that method's gate, so switching the method off in
- * `appConfig` refuses the route before any handler runs. The routes that stay reachable while their method is off
- * (deleting a factor) are listed here; any other route without the gate fails.
+ * Every route of a sign-in method names that method as its config switch (`xEnabledBy`), so switching the method off
+ * in `appConfig` refuses the route before its guards run. The routes that stay reachable while their method is off
+ * (deleting a factor) are listed here; any other route without the switch fails. The magic link route checks its
+ * switch per token type, in its handler (enforcement.test.ts).
  */
 const strategyRoutes = { totp: authTotpsRoutes, passkey: authPasskeysRoutes, magic: authMagicLinkRoutes, oauth: authOAuthRoutes };
 const reachableWhileOff = new Set(['deletePasskey', 'deleteTotp']);
 
-const guardsOf = (route: object) => (route as { 'x-guard'?: string[] })['x-guard'] ?? [];
+const switchOf = (route: object) => (route as { 'x-enabled-by'?: ConfigSwitch })['x-enabled-by'];
 
-describe('auth routes lead with their sign-in method gate', () => {
+describe('auth routes name their sign-in method as their switch', () => {
   for (const [method, routes] of Object.entries(strategyRoutes)) {
-    const gated = Object.entries(routes).filter(([name]) => !reachableWhileOff.has(name));
-    it.each(gated)(`${method}: %s is gated first`, (_name, route) => {
-      expect(guardsOf(route)[0]).toMatch(/^strategyEnabled\(/);
+    const switched = Object.entries(routes).filter(([name]) => !reachableWhileOff.has(name));
+    it.each(switched)(`${method}: %s is switched by ${method}`, (_name, route) => {
+      expect(switchOf(route)).toMatchObject({ strategy: method });
     });
   }
 
   it('leaves factor deletion reachable while its method is off', () => {
     for (const name of reachableWhileOff) {
       const route = { ...authPasskeysRoutes, ...authTotpsRoutes }[name as 'deletePasskey' | 'deleteTotp'];
-      expect(guardsOf(route).some((guard) => guard.startsWith('strategyEnabled('))).toBe(false);
+      expect(switchOf(route)).toBeUndefined();
     }
-  });
-
-  it('the token invoke route gates magic links per request', () => {
-    expect(guardsOf(authGeneralRoutes.invokeToken)[0]).toBe('strategyEnabled(per-request)');
   });
 });

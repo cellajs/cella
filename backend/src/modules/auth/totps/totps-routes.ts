@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { publicGuard, stepUpGuard, strategyEnabled, userGuard } from '#/middlewares/guard';
+import { publicGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
 import { singlePointsLimiter, totpVerificationLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTotpKeyResponse } from '#/modules/auth/auth-mocks';
 import { totpCreateBodySchema } from '#/modules/auth/totps/totps-schema';
@@ -10,7 +10,8 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
   generateTotpKey: xRoute({
     method: 'post',
     path: '/totp/generate-key',
-    xGuard: [strategyEnabled('totp'), userGuard, stepUpGuard],
+    xEnabledBy: { strategy: 'totp' },
+    xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Generate TOTP key',
     description: 'Generates a new TOTP key for current user and returns a provisioning URI and Base32 manual key.',
@@ -19,7 +20,8 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
   createTotp: xRoute({
     method: 'post',
     path: '/totp',
-    xGuard: [strategyEnabled('totp'), userGuard, stepUpGuard],
+    xEnabledBy: { strategy: 'totp' },
+    xGuard: [userGuard, stepUpGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Set TOTP',
     description:
@@ -40,7 +42,8 @@ const authTotpsRoutes = createXRoutes(['auth', 'cella'], {
   signInWithTotp: xRoute({
     method: 'post',
     path: '/totp-verification',
-    xGuard: [strategyEnabled('totp'), publicGuard],
+    xEnabledBy: { strategy: 'totp' },
+    xGuard: [publicGuard],
     xRateLimiter: [totpVerificationLimiter],
     summary: 'Verify TOTP',
     description: 'Validates the TOTP code and completes TOTP based authentication.',
