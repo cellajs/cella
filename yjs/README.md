@@ -4,11 +4,11 @@ This document covers the Yjs worker: a WebSocket relay for **real-time collabora
 
 ### TL;DR
 
-During collaborative editing, the Yjs service is the only component that saves the shared editing
-state. It starts each session from the stored description, sends edits to connected clients, and
-turns the merged result into normal stored entity data through the backend. Editing clients merge
-and display changes but do not save them directly. Other viewers receive the saved result through
-the usual live-update system.
+During collaborative editing, the Yjs service saves the shared editing state. It starts each
+session from the stored description, sends edits to connected clients, and turns the merged result
+into normal stored entity data through the backend. A description written through the API joins the
+live document as an update, so nobody's editing session ends. Other viewers receive the saved result
+through the usual live-update system.
 
 ## How it fits
 
