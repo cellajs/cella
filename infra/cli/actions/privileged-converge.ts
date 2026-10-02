@@ -20,15 +20,17 @@ export interface PrivilegedConvergeOptions {
   operation: string;
   /**
    * Config mutation applied after the lock is held and rollout config is reconciled, right before `pulumi up`.
-   * Returns an alternate `--config-file` for the `up`, or undefined to converge the committed config.
+   * Returns an alternate `--config-file` for the `up`, or undefined to converge the committed config. A throw ends the run before the `up`.
    */
-  prepare?: (env: NodeJS.ProcessEnv, stack: string) => string | undefined;
+  prepare?: (env: NodeJS.ProcessEnv, stack: string) => string | undefined | Promise<string | undefined>;
   /** Show the plan (`pulumi preview --diff`) and confirm it once before `up`; `up` then skips its own preview. Declining ends the run with `completed: false`. */
   confirmPlan?: boolean;
   /** After a completed `up`, prove the live IAM grants and database privileges match what the program declares; the outcome lands in `verified`. */
   verifyAfter?: boolean;
   /** Capture the engine and provider log of the `up` under infra/.debug/, for an update Pulumi reports but the provider never sent. */
   debugProvider?: boolean;
+  /** Read-only check after a completed `up`, while the Owner API key is still valid; a throw is reported as a warning. */
+  afterUp?: (env: NodeJS.ProcessEnv) => Promise<void>;
 }
 
 export interface PrivilegedConvergeResult {
@@ -134,7 +136,7 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
         process.exit(sync.status ?? 1);
       }
 
-      const configFile = opts.prepare?.(env, stack);
+      const configFile = await opts.prepare?.(env, stack);
 
       if (opts.confirmPlan) {
         const previewArgs = ['preview', '--stack', stack, '--diff', ...(configFile ? ['--config-file', configFile] : [])];
@@ -213,6 +215,9 @@ export async function runPrivilegedConverge(context: InfraContext, opts: Privile
       } else if (result.errors.length === 0) {
         console.info(`${pc.green('✓')} live grants and privileges match the program`);
       }
+    }
+    if (completed && opts.afterUp) {
+      await opts.afterUp(env).catch((error) => console.warn(`${warningMark} ${errorMessage(error)}`));
     }
   } finally {
     await ownerKey.release();

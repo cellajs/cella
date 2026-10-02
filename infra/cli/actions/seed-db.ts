@@ -1,11 +1,11 @@
 import { spawnSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { confirm } from '@inquirer/prompts';
-import { pulumiConfigRm, pulumiConfigSet } from '../../lib/stack/pulumi-up';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import type { InfraContext } from '../shared';
-import { DB_ACL_KEY, DB_ENDPOINT_KEY, detectPublicIp, readDbCa, readPublicDsn, removeExposureOverlay, writeExposureOverlay } from './db-exposure';
+import { detectPublicIp, prepareClose, prepareExpose, readDbCa, readPublicDsn, removeExposureOverlay } from './db-exposure';
 import { runPrivilegedConverge } from './privileged-converge';
 
 /**
@@ -30,15 +30,13 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
     return;
   }
 
+  // Exposure keys go into the gitignored overlay, never the committed stack config; see db-exposure.ts.
   const { env, stack, completed } = await runPrivilegedConverge(context, {
     operation: 'seed-db',
-    prepare: (e, s) => {
-      // Exposure keys go into the gitignored overlay, never the committed stack config; see db-exposure.ts.
-      const overlay = writeExposureOverlay(context.stackPath, context.environment);
-      pulumiConfigSet(e, s, DB_ENDPOINT_KEY, 'true', { configFile: overlay });
-      pulumiConfigSet(e, s, DB_ACL_KEY, `${detected}/32`, { secret: true, configFile: overlay });
-      return overlay;
-    },
+    prepare: prepareExpose(context, `${detected}/32`),
+  }).catch((error: unknown) => {
+    console.error(`${crossMark} exposing the database stopped: ${errorMessage(error)}`);
+    process.exit(1);
   });
   if (!completed) {
     console.error(`${crossMark} converge did not complete; run "Stop public DB exposure" to ensure it is closed.`);
@@ -62,15 +60,7 @@ export async function runSeedDatabase(context: InfraContext): Promise<void> {
     console.info(`\n${checkMark} ${pc.bold('Seeds completed.')}`);
   } finally {
     console.info(pc.dim('\n-> Closing the public endpoint...\n'));
-    const closed = await runPrivilegedConverge(context, {
-      operation: 'unseed-db',
-      prepare: (e, s) => {
-        // Compat cleanup for stacks predating the overlay; converging the committed key-free config is what closes the endpoint.
-        if (context.stackYaml?.includes(DB_ENDPOINT_KEY)) pulumiConfigRm(e, s, DB_ENDPOINT_KEY);
-        if (context.stackYaml?.includes(DB_ACL_KEY)) pulumiConfigRm(e, s, DB_ACL_KEY);
-        return undefined;
-      },
-    }).then(
+    const closed = await runPrivilegedConverge(context, { operation: 'unseed-db', prepare: prepareClose(context) }).then(
       (result) => {
         if (!result.completed) return false;
         removeExposureOverlay(context.environment);

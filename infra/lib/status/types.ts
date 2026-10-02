@@ -7,7 +7,7 @@ export const STATUS_SCHEMA_VERSION = 1;
 /** A check's verdict. `unknown` means "could not be evaluated", usually a missing key; a check that ran resolves to one of the other four. */
 export type CheckStatus = 'ok' | 'warn' | 'missing' | 'unknown' | 'error';
 
-/** Key tier a check needs (the JSON field keeps its `credential` name until schema v2). `none` reads local files or public HTTP; `scaleway` needs an API key with state-bucket and Secret Manager read, and reports `unknown` (never `error`) when no key is available. */
+/** Key tier a check needs (the JSON field keeps its `credential` name until schema v2). `none` reads local files or public HTTP; `scaleway` needs an API key with state-bucket, Secret Manager and database read, and reports `unknown` (never `error`) when no key is available. */
 export type CredentialTier = 'none' | 'scaleway';
 
 /** A runnable remediation: a one-line description and the exact command. */
@@ -83,6 +83,8 @@ export interface ProbeSession {
   secretKey?: string;
   hasDomain: boolean;
   computeDeferredSince?: string;
+  /** True when the exposure overlay or stack config turns the public DB endpoint on. */
+  dbExposureConfigured?: boolean;
   /** Memoized best-effort control-store read; never rejects. */
   scalewayFacts(): Promise<ScalewayFacts>;
 }

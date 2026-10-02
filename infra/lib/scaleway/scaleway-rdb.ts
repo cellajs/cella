@@ -9,6 +9,24 @@ export interface RdbInstance {
   status: string;
   engine?: string;
   node_type?: string;
+  endpoints?: RdbEndpoint[];
+}
+
+/** One way into an instance. Scaleway sets exactly one of `private_network`, `load_balancer` and `direct_access`; `load_balancer` is the public one. */
+export interface RdbEndpoint {
+  id: string;
+  ip?: string | null;
+  port?: number;
+  hostname?: string | null;
+  private_network?: Record<string, unknown> | null;
+  load_balancer?: Record<string, unknown> | null;
+  direct_access?: Record<string, unknown> | null;
+}
+
+/** One ACL rule on the instance's public endpoints. */
+export interface RdbAclRule {
+  ip: string;
+  description?: string;
 }
 
 export interface RdbDatabase {
@@ -58,6 +76,10 @@ interface PrivilegeListResponse {
   privileges: RdbPrivilege[];
   total_count: number;
 }
+interface AclListResponse {
+  rules: RdbAclRule[];
+  total_count: number;
+}
 
 export interface RdbClientOptions {
   secretKey: string;
@@ -80,6 +102,20 @@ export function createRdbClient(opts: RdbClientOptions) {
     async findInstance(name: string): Promise<RdbInstance | undefined> {
       const res = await scwFetch<InstanceListResponse>(auth, 'GET', `${base}/instances?name=${encodeURIComponent(name)}`);
       return res.instances.find((instance) => instance.name === name);
+    },
+
+    async getInstance(instanceId: string): Promise<RdbInstance> {
+      return scwFetch<RdbInstance>(auth, 'GET', instanceBase(instanceId));
+    },
+
+    /** Endpoints live at the region root, not under their instance. Deleting the private-network one cuts every service off the database. */
+    async deleteEndpoint(endpointId: string): Promise<void> {
+      await scwSend(auth, 'DELETE', `${base}/endpoints/${encodeURIComponent(endpointId)}`);
+    },
+
+    async listAclRules(instanceId: string): Promise<RdbAclRule[]> {
+      const res = await scwFetch<AclListResponse>(auth, 'GET', `${instanceBase(instanceId)}/acls`);
+      return res.rules;
     },
 
     async listDatabases(instanceId: string): Promise<RdbDatabase[]> {

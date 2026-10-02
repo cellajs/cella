@@ -1,4 +1,5 @@
 import { componentsProvider } from './providers/components';
+import { databaseProvider } from './providers/database';
 import { dnsProvider } from './providers/dns';
 import { githubProvider } from './providers/github';
 import { liveProvider } from './providers/live';
@@ -23,6 +24,7 @@ export const statusProviders: readonly StatusProvider<any>[] = [
   componentsProvider,
   dnsProvider,
   storesProvider,
+  databaseProvider,
 ];
 
 /** Priority order for the single top-level `nextAction`: the earliest problematic check wins, following the setup to deploy to operate lifecycle. A trailing `.` matches by id prefix. */
@@ -37,6 +39,7 @@ const NEXT_ACTION_PRIORITY = [
   'config.computeDeferred',
   'rollout',
   'live.',
+  'db.publicEndpoint',
   'dns.zone',
   'state.lock',
   'state.pendingOperations',

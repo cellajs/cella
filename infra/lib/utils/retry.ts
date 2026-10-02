@@ -49,3 +49,17 @@ export async function pollUntil<T>(probe: (attempt: number) => Promise<T | undef
   }
   return undefined;
 }
+
+/** Race a probe against a budget: undefined when it has not settled in `ms`, so a slow Scaleway call cannot hold up a menu. */
+export async function within<T>(ms: number, probe: Promise<T>): Promise<T | undefined> {
+  let timer: NodeJS.Timeout | undefined;
+  const timeout = new Promise<undefined>((resolve) => {
+    timer = setTimeout(() => resolve(undefined), ms);
+    timer.unref?.();
+  });
+  try {
+    return await Promise.race([probe, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}

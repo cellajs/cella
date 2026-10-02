@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { ComponentsFact } from './providers/components';
+import type { DbEndpointFacts } from './providers/database';
 import type { GithubFacts } from './providers/github';
 import { expectedRelease, type LiveServiceFact } from './providers/live';
 import type { IdentityFacts } from './providers/stack';
@@ -24,6 +25,7 @@ interface Facts {
   components?: ComponentsFact;
   dns?: { host: string; resolvedIps?: string[] };
   stores?: StoreValidationFact[];
+  db?: DbEndpointFacts;
 }
 
 /** A fully-healthy bootstrapped staging stack; override per test. */
@@ -49,6 +51,7 @@ function base(overrides: Partial<Facts> = {}): Facts {
     components: { slug: 'backend', url: 'https://api.example.com/health?depth=full', httpStatus: 200, issues: [] },
     dns: { host: 'app.example.com', resolvedIps: ['1.2.3.4'] },
     stores: [{ id: 'primary', kind: 'postgres-managed' }],
+    db: { instance: 'cella-postgres', found: true, endpoints: [] },
     ...overrides,
   };
 }
@@ -79,6 +82,7 @@ function reportFor(facts: Facts, sessionOverrides: Partial<ProbeSession> = {}) {
     components: facts.components,
     dns: facts.dns,
     stores: facts.stores,
+    db: facts.db,
   };
   const checks = statusProviders.flatMap((provider) => provider.evaluate(factsByDomain[provider.domain] as never, s));
   return assembleReport(s, checks);
@@ -381,5 +385,42 @@ describe('pending operations', () => {
 
   it('is unknown, not ok, when the checkpoint could not be read', () => {
     expect(find(withPending(undefined).checks, 'state.pendingOperations')?.status).toBe('unknown');
+  });
+});
+
+describe('database public endpoint', () => {
+  const live = (endpoints: string[], aclRules?: number): DbEndpointFacts => ({ instance: 'cella-postgres', found: true, endpoints, aclRules });
+
+  it('a private-only instance with exposure off is ok', () => {
+    expect(find(reportFor(base()).checks, 'db.publicEndpoint')).toMatchObject({ status: 'ok', detail: 'private only', credential: 'scaleway' });
+  });
+
+  it('warns about a public endpoint left open while exposure is off', () => {
+    const report = reportFor(base({ db: live(['51.158.210.62:6317'], 0) }));
+    const check = find(report.checks, 'db.publicEndpoint');
+    expect(check).toMatchObject({ status: 'warn', detail: '51.158.210.62:6317 is open although exposure is off (0 ACL rule(s))' });
+    expect(check?.nextAction?.description).toContain('Manage database');
+    expect(report.nextAction?.description).toContain('Manage database');
+  });
+
+  it('shows the ACL rule count of an endpoint opened on purpose', () => {
+    const report = reportFor(base({ db: live(['51.158.210.62:6317'], 1) }), { dbExposureConfigured: true });
+    expect(find(report.checks, 'db.publicEndpoint')).toMatchObject({
+      status: 'warn',
+      detail: 'open at 51.158.210.62:6317 with 1 ACL rule(s); close it when done',
+    });
+  });
+
+  it('warns when exposure is on but no endpoint exists', () => {
+    const report = reportFor(base({ db: live([], 1) }), { dbExposureConfigured: true });
+    expect(find(report.checks, 'db.publicEndpoint')?.detail).toContain('no public endpoint');
+  });
+
+  it('is unknown when the instance could not be read or found, and absent before bootstrap', () => {
+    expect(find(reportFor(base({ db: undefined })).checks, 'db.publicEndpoint')?.status).toBe('unknown');
+    expect(find(reportFor(base({ db: { instance: 'cella-postgres', found: false, endpoints: [] } })).checks, 'db.publicEndpoint')?.status).toBe(
+      'unknown',
+    );
+    expect(find(reportFor(base(), { stackState: 'partial' }).checks, 'db.publicEndpoint')).toBeUndefined();
   });
 });

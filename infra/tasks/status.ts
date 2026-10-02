@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import type { EngineConfig } from '../config/engine-config';
+import { dbExposureConfigured } from '../lib/db-public-endpoint';
 import { deriveInfra } from '../lib/naming';
 import {
   classifyPrincipal,
@@ -32,6 +33,7 @@ import { checkMark, crossMark, DIVIDER, pc, warningMark, withSpinner } from '../
 import { loadBaseEnvFiles } from '../lib/utils/env-files';
 import { runIfMain } from '../lib/utils/is-main';
 import { infraDir } from '../lib/utils/paths';
+import { within } from '../lib/utils/retry';
 import { getFlag } from './args';
 
 /** Everything the report needs about the target stack, from the menu or standalone. */
@@ -129,6 +131,7 @@ export function buildSession(ctx: StatusContext): ProbeSession {
     secretKey,
     hasDomain,
     computeDeferredSince: detectComputeDeferred(ctx.stackYaml),
+    dbExposureConfigured: dbExposureConfigured(ctx.mode, ctx.stackYaml),
     scalewayFacts,
   };
 }
@@ -218,20 +221,6 @@ export interface QuickFacts {
   key?: { desc: KeyDescription; role: PrincipalRole; slot: KeySlot };
   /** Probes that did not answer within the budget or errored, by name. */
   unavailable: string[];
-}
-
-/** Race a probe against the budget: a slow Scaleway call must not delay the menu. */
-async function within<T>(ms: number, probe: Promise<T>): Promise<T | undefined> {
-  let timer: NodeJS.Timeout | undefined;
-  const timeout = new Promise<undefined>((resolve) => {
-    timer = setTimeout(() => resolve(undefined), ms);
-    timer.unref?.();
-  });
-  try {
-    return await Promise.race([probe, timeout]);
-  } finally {
-    clearTimeout(timer);
-  }
 }
 
 export async function collectQuickFacts(

@@ -5,13 +5,19 @@ import { join } from 'node:path';
 import { confirm, input } from '@inquirer/prompts';
 import { appStores } from '../../config/stores.config';
 import { parseAclInput } from '../../lib/db-exposure-acl';
+import { closePublicEndpoints, dbInstanceUrn, endpointAddress, exposureOverlayPath, publicEndpoints } from '../../lib/db-public-endpoint';
+import { deriveInfra } from '../../lib/naming';
+import { resolveOperatorIdentity } from '../../lib/scaleway/operator-identity';
+import { createRdbClient, type RdbEndpoint } from '../../lib/scaleway/scaleway-rdb';
 import { pulumiConfigRm, pulumiConfigSet } from '../../lib/stack/pulumi-up';
 import { checkMark, crossMark, pc, warningMark } from '../../lib/utils/cli-output';
+import { errorMessage } from '../../lib/utils/errors';
 import { infraDir } from '../../lib/utils/paths';
 import { hardenPublicDsn } from '../../lib/utils/public-dsn';
+import { within } from '../../lib/utils/retry';
 import type { InfraContext } from '../shared';
 import { printRevokeReminder } from './owner-key';
-import { runPrivilegedConverge } from './privileged-converge';
+import { type PrivilegedConvergeOptions, runPrivilegedConverge } from './privileged-converge';
 
 // Pulumi config keys consumed by resources/stores/postgres-managed.ts and the outputs it exports.
 export const DB_ENDPOINT_KEY = 'infra:dbPublicEndpoint';
@@ -20,14 +26,6 @@ export const DB_ACL_KEY = 'infra:dbPublicAcl';
 const PUBLIC_DSN_OUTPUT = 'connectionStringAdminPublic';
 const DB_CA_OUTPUT = 'caCertificate';
 const PRIMARY_STORE_ID = Object.keys(appStores)[0] ?? 'primary';
-
-/**
- * Gitignored per-environment stack config overlay carrying the DB-exposure keys, applied with `pulumi up --config-file`.
- * The committed `Pulumi.<env>.yaml` never records an open endpoint, so any normal deploy converges the endpoint closed again.
- */
-export function exposureOverlayPath(environment: string): string {
-  return join(infraDir, `Pulumi.${environment}.exposure.yaml`);
-}
 
 /**
  * Create the exposure overlay by copying the committed stack config, which carries `encryptionsalt` so secret config encrypts with the same passphrase.
@@ -91,18 +89,104 @@ export function writeDbCaFile(env: NodeJS.ProcessEnv, stack: string, environment
   return caPath;
 }
 
-/** Converge with the exposure semantics: a declined retry loop is a hard stop. */
+/** The secret key a converge env authenticates with: the Owner API key, or the key minted from it. */
+function convergeSecretKey(env: NodeJS.ProcessEnv): string {
+  if (!env.SCW_SECRET_KEY) throw new Error('the converge environment carries no SCW_SECRET_KEY');
+  return env.SCW_SECRET_KEY;
+}
+
+/** The managed PostgreSQL instance, looked up by its name over the RDB API. */
+async function findDbInstance(context: InfraContext, secretKey: string) {
+  const { naming, region } = deriveInfra(context.appConfig);
+  const client = createRdbClient({ secretKey, region });
+  const name = naming.resource('postgres');
+  const instance = await client.findInstance(name);
+  if (!instance) throw new Error(`no managed database instance named '${name}' in ${region}`);
+  return { client, instanceId: instance.id };
+}
+
+/** The instance's live public endpoints and ACL rules, read over the RDB API (RelationalDatabasesReadOnly is enough). */
+export async function readDbExposure(context: InfraContext, secretKey: string): Promise<{ endpoints: RdbEndpoint[]; aclRules: number }> {
+  const { client, instanceId } = await findDbInstance(context, secretKey);
+  const [instance, rules] = await Promise.all([client.getInstance(instanceId), client.listAclRules(instanceId)]);
+  return { endpoints: publicEndpoints(instance), aclRules: rules.length };
+}
+
+/** The live public endpoints, read with the admin application key within `budgetMs`. Undefined without that key, without an answer in time and on any error, so the menu falls back to the config. */
+export async function liveDbEndpoints(context: InfraContext, budgetMs = 4_000): Promise<string[] | undefined> {
+  const admin = resolveOperatorIdentity().admin;
+  if (!admin) return undefined;
+  const read = readDbExposure(context, admin.secretKey).then(
+    (exposure) => exposure.endpoints.map(endpointAddress),
+    () => undefined,
+  );
+  return within(budgetMs, read);
+}
+
+/**
+ * `pulumi refresh` of the database instance alone, so the state records the endpoints it has. The state keeps an endpoint deleted outside Pulumi,
+ * and the program's `loadBalancer: {}` would then plan no new one.
+ */
+function refreshDbInstance(env: NodeJS.ProcessEnv, stack: string): void {
+  const args = ['refresh', '--stack', stack, '--target', dbInstanceUrn(stack), '--yes', '--skip-preview', '--non-interactive'];
+  console.info(`\n→ Reading the database instance into the state\n  $ pulumi ${args.join(' ')}`);
+  const result = spawnSync('pulumi', args, { cwd: infraDir, env, stdio: 'inherit' });
+  if (result.status !== 0) throw new Error(`pulumi refresh of the database instance exited ${result.status}`);
+}
+
+/** The converge `prepare` of every expose: refresh the instance so the `up` creates the endpoint whatever the state held, then write the overlay. */
+export function prepareExpose(context: InfraContext, acl: string): NonNullable<PrivilegedConvergeOptions['prepare']> {
+  return (env, stack) => {
+    refreshDbInstance(env, stack);
+    const overlay = writeExposureOverlay(context.stackPath, context.environment);
+    pulumiConfigSet(env, stack, DB_ENDPOINT_KEY, 'true', { configFile: overlay });
+    // Encrypt the ACL: it records the operator's source IP and must not sit in plaintext in the overlay.
+    pulumiConfigSet(env, stack, DB_ACL_KEY, acl, { secret: true, configFile: overlay });
+    return overlay;
+  };
+}
+
+/**
+ * The converge `prepare` of every close. Converging config without the exposure keys never removes the endpoint, so this deletes every public
+ * endpoint over the RDB API, waits until a re-read of the instance shows none, and refreshes the instance so the state records none either.
+ */
+export function prepareClose(context: InfraContext): NonNullable<PrivilegedConvergeOptions['prepare']> {
+  return async (env, stack) => {
+    // Compat: stacks predating the overlay hold the exposure keys in the committed config.
+    if (context.stackYaml?.includes(DB_ENDPOINT_KEY)) pulumiConfigRm(env, stack, DB_ENDPOINT_KEY);
+    if (context.stackYaml?.includes(DB_ACL_KEY)) pulumiConfigRm(env, stack, DB_ACL_KEY);
+    const { client, instanceId } = await findDbInstance(context, convergeSecretKey(env));
+    const { deleted } = await closePublicEndpoints({
+      getInstance: () => client.getInstance(instanceId),
+      deleteEndpoint: (endpointId) => client.deleteEndpoint(endpointId),
+      log: (line) => console.info(pc.dim(`  ${line}`)),
+    });
+    console.info(
+      deleted.length > 0 ? `${checkMark} Deleted public endpoint ${deleted.join(', ')}.` : pc.dim('  The instance has no public endpoint.'),
+    );
+    refreshDbInstance(env, stack);
+    return undefined;
+  };
+}
+
+/** Converge with the exposure semantics: a throw or a declined retry loop is a hard stop. */
 async function convergeOrExit(
   context: InfraContext,
   operation: string,
-  prepare: (env: NodeJS.ProcessEnv, stack: string) => string | undefined,
+  hooks: Pick<PrivilegedConvergeOptions, 'prepare' | 'afterUp'>,
 ): Promise<{ env: NodeJS.ProcessEnv; stack: string; ownerKeyPasted: boolean }> {
-  const { env, stack, completed, ownerKeyPasted } = await runPrivilegedConverge(context, { operation, prepare });
-  if (!completed) {
+  let result: Awaited<ReturnType<typeof runPrivilegedConverge>>;
+  try {
+    result = await runPrivilegedConverge(context, { operation, ...hooks });
+  } catch (error) {
+    console.error(`${crossMark} ${operation} stopped: ${errorMessage(error)}`);
+    process.exit(1);
+  }
+  if (!result.completed) {
     console.error(`${crossMark} converge did not complete; stack config may be partially applied. Re-run to finish.`);
     process.exit(1);
   }
-  return { env, stack, ownerKeyPasted };
+  return result;
 }
 
 /**
@@ -134,22 +218,27 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
 
   console.warn(
     `\n${pc.yellow(pc.bold('⚠  This opens an internet-reachable database endpoint'))}, restricted to: ${pc.cyan(acl)}.\n` +
-      `  ${pc.dim(`Exposure lives only in the gitignored overlay Pulumi.${context.environment}.exposure.yaml; the committed stack config stays clean,`)}\n` +
-      `  ${pc.dim('so the next CI deploy converges the endpoint closed. Run "Stop public DB exposure" when done sooner.')}\n`,
+      `  ${pc.dim(`Exposure lives only in the gitignored overlay Pulumi.${context.environment}.exposure.yaml; the committed stack config stays clean.`)}\n` +
+      `  ${pc.dim('A deploy does not remove the endpoint: run "Stop public DB exposure" when done.')}\n`,
   );
   if (!(await confirm({ message: 'Proceed with exposing the database?', default: false }))) {
     console.info('Aborted; no changes made.');
     return;
   }
 
-  const { env, stack, ownerKeyPasted } = await convergeOrExit(context, 'expose-db', (e, s) => {
-    const overlay = writeExposureOverlay(context.stackPath, context.environment);
-    pulumiConfigSet(e, s, DB_ENDPOINT_KEY, 'true', { configFile: overlay });
-    // Encrypt the ACL: it records the operator's source IP and must not sit in plaintext in the overlay.
-    pulumiConfigSet(e, s, DB_ACL_KEY, acl, { secret: true, configFile: overlay });
-    return overlay;
+  let live: { endpoints: RdbEndpoint[]; aclRules: number } | undefined;
+  const { env, stack, ownerKeyPasted } = await convergeOrExit(context, 'expose-db', {
+    prepare: prepareExpose(context, acl),
+    afterUp: async (e) => {
+      live = await readDbExposure(context, convergeSecretKey(e));
+    },
   });
 
+  if (live && live.endpoints.length === 0) {
+    console.warn(`${warningMark} The up completed, but the instance has no public endpoint. Re-run "Open temporary public DB access".`);
+  } else if (live) {
+    console.info(`${checkMark} Public endpoint ${live.endpoints.map(endpointAddress).join(', ')} is open with ${live.aclRules} ACL rule(s).`);
+  }
   const dsn = readPublicDsn(env, stack);
   if (!dsn) {
     console.warn(
@@ -168,7 +257,7 @@ export async function runExposeDatabase(context: InfraContext): Promise<void> {
   if (ownerKeyPasted) printRevokeReminder();
 }
 
-/** Close the database's public endpoint: clear the opt-in config, tear down the load balancer and ACL, verify the database is private-only again. */
+/** Close the database's public endpoint: delete it over the RDB API, converge without the exposure config, and confirm the instance has none left. */
 export async function runUnexposeDatabase(context: InfraContext): Promise<void> {
   console.info(pc.dim('\nStop public DB exposure: remove the public endpoint and ACL, return to private-only.\n'));
   if (!(await confirm({ message: 'Close the public database endpoint now?', default: true }))) {
@@ -176,18 +265,19 @@ export async function runUnexposeDatabase(context: InfraContext): Promise<void> 
     return;
   }
 
-  const { env, stack, ownerKeyPasted } = await convergeOrExit(context, 'unexpose-db', (e, s) => {
-    // Compat: stacks predating the overlay hold the exposure keys in the committed config and must have them removed for the converge to close the endpoint.
-    // Overlay-based exposure needs no config change: converging the committed file, which lacks the keys, is the close.
-    if (context.stackYaml?.includes(DB_ENDPOINT_KEY)) pulumiConfigRm(e, s, DB_ENDPOINT_KEY);
-    if (context.stackYaml?.includes(DB_ACL_KEY)) pulumiConfigRm(e, s, DB_ACL_KEY);
-    return undefined;
+  let left: RdbEndpoint[] | undefined;
+  const { ownerKeyPasted } = await convergeOrExit(context, 'unexpose-db', {
+    prepare: prepareClose(context),
+    afterUp: async (env) => {
+      left = (await readDbExposure(context, convergeSecretKey(env))).endpoints;
+    },
   });
   removeExposureOverlay(context.environment);
 
-  const dsn = readPublicDsn(env, stack);
-  if (dsn) {
-    console.warn(`${warningMark} Public DSN output is still present: the endpoint may not have torn down. Re-run "Stop public DB exposure".`);
+  if (!left) {
+    console.warn(`${warningMark} Could not re-read the instance after the up; the delete before it was confirmed. Check "Show status".`);
+  } else if (left.length > 0) {
+    console.warn(`${warningMark} The instance has public endpoint ${left.map(endpointAddress).join(', ')} again. Re-run "Stop public DB exposure".`);
   } else {
     console.info(`\n${checkMark} ${pc.bold('Public endpoint closed.')} The database is private-only again.`);
   }
