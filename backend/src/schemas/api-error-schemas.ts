@@ -34,7 +34,8 @@ export const apiErrorSchema = z
     meta: z.record(z.string(), z.union([z.number(), z.string(), z.array(z.string()), z.boolean(), z.null()])).optional(),
   })
   .openapi('ApiError', {
-    description: 'Standard error response returned by all API endpoints.',
+    description:
+      'The body of every error response. `type` is a stable code to branch on, `message` is readable text, and `requestId` identifies the request in the server logs.',
     example: mockApiError(),
     'x-tags': schemaTags('errors', 'cella'),
   });

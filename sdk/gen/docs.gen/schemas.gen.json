@@ -22,7 +22,7 @@
         "stx": {
           "type": "object",
           "required": true,
-          "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+          "description": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.",
           "properties": {
             "mutationId": {
               "type": "string",
@@ -60,13 +60,13 @@
           "type": ["object", "null"],
           "required": true,
           "ref": "#/components/schemas/UserMinimalBase",
-          "refDescription": "Minimal user data for references."
+          "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
         },
         "updatedBy": {
           "type": ["object", "null"],
           "required": true,
           "ref": "#/components/schemas/UserMinimalBase",
-          "refDescription": "Minimal user data for references."
+          "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
         },
         "deletedAt": {
           "type": ["string", "null"],
@@ -133,7 +133,7 @@
       "module": ["attachments"],
       "owner": ["cella"]
     },
-    "description": "A product entity for file attachment metadata.",
+    "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
     "example": {
       "createdAt": "2024-05-01T22:40:37.374Z",
       "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
@@ -214,7 +214,7 @@
       "module": ["entities"],
       "owner": ["cella"]
     },
-    "description": "Base schema for entities with memberships (e.g. organization).",
+    "description": "The fields every channel entity shares, such as organization; a channel owns memberships and roles. Used where a response names a channel without its details, such as the channel an invitation is for.",
     "example": {
       "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",
       "createdAt": "2024-11-30T08:11:29.841Z",
@@ -249,13 +249,13 @@
           "type": ["object", "null"],
           "required": true,
           "ref": "#/components/schemas/UserMinimalBase",
-          "refDescription": "Minimal user data for references."
+          "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
         },
         "updatedBy": {
           "type": ["object", "null"],
           "required": true,
           "ref": "#/components/schemas/UserMinimalBase",
-          "refDescription": "Minimal user data for references."
+          "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
         },
         "entityType": {
           "type": "string",
@@ -271,7 +271,7 @@
       "module": ["entities"],
       "owner": ["cella"]
     },
-    "description": "Base schema for content entities with creator tracking (e.g. attachment).",
+    "description": "The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields.",
     "example": {
       "id": "7e460470-da58-4733-a7ff-0d31897ecf8d",
       "createdAt": "2024-07-02T14:28:38.152Z",
@@ -362,7 +362,7 @@
           "type": ["object", "null"],
           "required": true,
           "ref": "#/components/schemas/StxBase",
-          "refDescription": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution."
+          "refDescription": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID."
         },
         "batchUntilSeq": {
           "type": ["integer", "null"],
@@ -423,7 +423,7 @@
       "module": ["entities"],
       "owner": ["cella"]
     },
-    "description": "Realtime notification delivered via SSE for entity and membership changes.",
+    "description": "A live notification that a product entity or a membership changed, naming the entity, its path and sequence range rather than the row. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.",
     "example": {
       "kind": "product",
       "action": "update",
@@ -470,7 +470,7 @@
       "module": ["me"],
       "owner": ["cella"]
     },
-    "description": "An OAuth consent (grant) of the current user.",
+    "description": "An app the signed-in user consented to: its OAuth client, the scopes it may use and when the consent expires. Listed under Connected apps in account settings, where the user can revoke it.",
     "example": {
       "id": "01J9Z2Q0X7ZQ4S5M8NX3F2ABCD",
       "clientId": "https://vscode.dev/oauth/client-metadata.json",
@@ -491,7 +491,7 @@
         "user": {
           "type": "object",
           "required": true,
-          "description": "A user with profile data and activity timestamps.",
+          "description": "A full user account: profile, preferences such as language and newsletter, the MFA setting and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },
@@ -565,7 +565,11 @@
           },
           "ref": "#/components/schemas/User"
         },
-        "isSystemAdmin": { "type": "boolean", "required": true, "description": "Whether the current user has system admin privileges." }
+        "isSystemAdmin": {
+          "type": "boolean",
+          "required": true,
+          "description": "Whether the user holds the system admin role and the request comes from an allowed IP address."
+        }
       }
     },
     "schemaTag": "data",
@@ -574,7 +578,7 @@
       "module": ["me"],
       "owner": ["cella"]
     },
-    "description": "The currently authenticated user with their system admin status.",
+    "description": "The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.",
     "example": {
       "user": {
         "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
@@ -761,7 +765,7 @@
       "module": ["me"],
       "owner": ["cella"]
     },
-    "description": "Authentication metadata for the current user session.",
+    "description": "How the signed-in user signs in: connected OAuth providers, passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.",
     "example": {
       "enabledOAuth": ["github"],
       "hasTotp": false,
@@ -836,7 +840,7 @@
       "module": ["me"],
       "owner": ["cella"]
     },
-    "description": "A signed token authorizing file uploads to the configured storage provider.",
+    "description": "Permission to upload files with one upload template, signed for the upload service, with the storage prefix the files land under. A client requests one before uploading; the template decides whether files are stored public or private.",
     "example": {
       "publicBucket": false,
       "sub": "x1lsgegsw6imziogthaolhvy",
@@ -891,7 +895,7 @@
           "type": ["object", "null"],
           "required": true,
           "ref": "#/components/schemas/UserMinimalBase",
-          "refDescription": "Minimal user data for references."
+          "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
         },
         "organizationId": { "type": "string", "required": true, "format": "uuid" }
       }
@@ -902,7 +906,7 @@
       "module": ["memberships"],
       "owner": ["cella"]
     },
-    "description": "A membership record for a user who has not yet accepted an invitation.",
+    "description": "An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.",
     "example": {
       "id": "4fa889f9-15ca-4730-a060-e4167170b7db",
       "channelType": "organization",
@@ -963,7 +967,7 @@
       "module": ["memberships"],
       "owner": ["cella"]
     },
-    "description": "Core membership fields shared across active and inactive memberships.",
+    "description": "A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
     "example": {
       "id": "ee163b99-3dce-4900-a23a-1256a303215e",
       "tenantId": "7om1aq",
@@ -997,7 +1001,7 @@
       "module": ["oauth-server"],
       "owner": ["cella"]
     },
-    "description": "RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.",
+    "description": "How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.",
     "example": {
       "resource": "http://localhost:3000/api/t/m5jfjs",
       "authorization_servers": ["http://localhost:3000/oauth"],
@@ -1041,13 +1045,13 @@
           "type": ["object", "null"],
           "required": true,
           "ref": "#/components/schemas/UserMinimalBase",
-          "refDescription": "Minimal user data for references."
+          "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
         },
         "updatedBy": {
           "type": ["object", "null"],
           "required": true,
           "ref": "#/components/schemas/UserMinimalBase",
-          "refDescription": "Minimal user data for references."
+          "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
         },
         "publishedAt": {
           "type": ["string", "null"],
@@ -1143,7 +1147,7 @@
             "membership": {
               "type": "object",
               "required": false,
-              "description": "Core membership fields shared across active and inactive memberships.",
+              "description": "A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
               "properties": {
                 "id": { "type": "string", "required": true, "format": "uuid" },
                 "tenantId": { "type": "string", "required": true, "maxLength": 24 },
@@ -1228,7 +1232,7 @@
               "ref": "#/components/schemas/UserMinimalBase",
               "items": {
                 "type": "object",
-                "description": "Minimal user data for references.",
+                "description": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`.",
                 "properties": {
                   "id": { "type": "string", "required": true },
                   "name": { "type": "string", "required": true },
@@ -1256,7 +1260,7 @@
       "module": ["organizations"],
       "owner": ["cella"]
     },
-    "description": "The main channel entity is an organization.",
+    "description": "The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.",
     "example": {
       "createdAt": "2024-12-25T15:04:42.969Z",
       "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
@@ -1344,7 +1348,7 @@
       "module": ["requests"],
       "owner": ["cella"]
     },
-    "description": "A contact or waitlist submission from an unauthenticated user.",
+    "description": "A message from the public site: a contact message, a waitlist sign-up or a newsletter subscription. Anyone can send one, signed in or not; system admins list them.",
     "example": {
       "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
       "email": "al.braun57@gmail.com",
@@ -1400,7 +1404,7 @@
       "module": ["service-accounts"],
       "owner": ["cella"]
     },
-    "description": "An API key of a service account; the secret is never returned after creation.",
+    "description": "A secret key a service account authenticates with, sent as `Authorization: Bearer` or `x-api-key`. Only its prefix and last four characters are returned after creation; it can expire and be revoked.",
     "example": {
       "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
       "actorId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
@@ -1481,7 +1485,7 @@
       "module": ["service-accounts"],
       "owner": ["cella"]
     },
-    "description": "The actor an API key runs as, with its role bindings.",
+    "description": "An actor that is not a person, in one tenant: API keys run as it, and it holds role bindings like a member holds memberships. An organization admin creates one, for example with Create API key in organization settings.",
     "example": {
       "id": "764ce6e7-55fc-4f5d-b661-0c777df71d45",
       "tenantId": "yug3pr",
@@ -1604,7 +1608,7 @@
       "module": ["tenants"],
       "owner": ["cella"]
     },
-    "description": "A tenant representing an isolated data partition for multi-tenancy.",
+    "description": "The top-level isolation and billing boundary. Tenant and organization are 1:1: a tenant holds one organization, or none until that organization is created. System admins list and update tenants; a signed-in user can create one of their own.",
     "example": {
       "id": "l6ddop",
       "name": "Lubowitz, Waters and Haley",
@@ -1721,7 +1725,7 @@
       "module": ["users"],
       "owner": ["cella"]
     },
-    "description": "A user with profile data and activity timestamps.",
+    "description": "A full user account: profile, preferences such as language and newsletter, the MFA setting and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.",
     "example": {
       "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
       "entityType": "user",
@@ -1786,7 +1790,7 @@
       "module": ["users"],
       "owner": ["cella"]
     },
-    "description": "Base user schema with essential fields for identification and display.",
+    "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
     "example": {
       "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
       "createdAt": "2024-01-28T04:41:50.387Z",
@@ -1827,7 +1831,7 @@
       "module": ["users"],
       "owner": ["cella"]
     },
-    "description": "Minimal user data for references.",
+    "description": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`.",
     "example": {
       "id": "0e0eced6-ecd8-4ea4-906d-160fbd840741",
       "name": "Durward Cummerata",
@@ -1889,7 +1893,7 @@
       "schema": ["errors"],
       "owner": ["cella"]
     },
-    "description": "Standard error response returned by all API endpoints.",
+    "description": "The body of every error response. `type` is a stable code to branch on, `message` is readable text, and `requestId` identifies the request in the server logs.",
     "example": {
       "name": "BadRequestError",
       "message": "error:bad_request_action",
@@ -1952,7 +1956,7 @@
       "schema": ["errors"],
       "owner": ["cella"]
     },
-    "description": "Error returned when the request is malformed or contains invalid data.",
+    "description": "The request is malformed or fails validation (400). `type` names the problem, such as `invalid_request`.",
     "extendsRef": "#/components/schemas/ApiError",
     "example": {
       "name": "BadRequestError",
@@ -2016,7 +2020,7 @@
       "schema": ["errors"],
       "owner": ["cella"]
     },
-    "description": "Error returned when the request conflicts with current resource state.",
+    "description": "The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying.",
     "extendsRef": "#/components/schemas/ApiError",
     "example": {
       "name": "BadRequestError",
@@ -2080,7 +2084,7 @@
       "schema": ["errors"],
       "owner": ["cella"]
     },
-    "description": "Error returned when the user lacks permission for the requested action.",
+    "description": "The caller is known but may not do this (403): their role denies the action, a recent step-up is required, or the action is refused while impersonating. `type` names the reason, such as `step_up_required`.",
     "extendsRef": "#/components/schemas/ApiError",
     "example": {
       "name": "BadRequestError",
@@ -2144,7 +2148,7 @@
       "schema": ["errors"],
       "owner": ["cella"]
     },
-    "description": "Error returned when the requested resource cannot be found.",
+    "description": "The resource does not exist, or the caller may not read it (404). Both get the same answer, so a response never confirms that an id exists.",
     "extendsRef": "#/components/schemas/ApiError",
     "example": {
       "name": "BadRequestError",
@@ -2192,7 +2196,7 @@
       "schema": ["base"],
       "owner": ["cella"]
     },
-    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+    "description": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.",
     "example": {
       "mutationId": "ad54dc2c-11e4-430b-95c7-39ea0ae52213",
       "sourceId": "7762c287-9155-4500-95f3-d63ec6185e0c",
@@ -2252,7 +2256,7 @@
       "schema": ["errors"],
       "owner": ["cella"]
     },
-    "description": "Error returned when rate limits are exceeded.",
+    "description": "A rate limit refused the request (429). The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.",
     "extendsRef": "#/components/schemas/ApiError",
     "example": {
       "name": "BadRequestError",
@@ -2316,7 +2320,7 @@
       "schema": ["errors"],
       "owner": ["cella"]
     },
-    "description": "Error returned when authentication is missing or invalid.",
+    "description": "The request carries no valid session, API key or access token, or it expired (401). Sign in again, or send a valid key or token.",
     "extendsRef": "#/components/schemas/ApiError",
     "example": {
       "name": "BadRequestError",

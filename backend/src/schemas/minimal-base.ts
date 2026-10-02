@@ -19,7 +19,7 @@ export const minimalBaseSchema = <T extends string>(entityType: T) =>
 
 /** Minimal user schema for references (e.g. createdBy, updatedBy). */
 export const userMinimalBaseSchema = minimalBaseSchema('user').openapi('UserMinimalBase', {
-  description: 'Minimal user data for references.',
+  description: 'The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`.',
   example: mockUserMinimalBase(),
   'x-tags': schemaTags('base', 'users', 'cella'),
 });

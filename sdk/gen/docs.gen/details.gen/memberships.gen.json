@@ -416,7 +416,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "Base schema for entities with memberships (e.g. organization).",
+          "description": "The fields every channel entity shares, such as organization; a channel owns memberships and roles. Used where a response names a channel without its details, such as the channel an invitation is for.",
           "properties": {
             "id": { "type": "string", "required": true },
             "name": { "type": "string", "required": true },
@@ -528,7 +528,7 @@
               "itemType": "object",
               "items": {
                 "type": "object",
-                "description": "Base user schema with essential fields for identification and display.",
+                "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
                 "properties": {
                   "id": { "type": "string", "required": true },
                   "name": { "type": "string", "required": true },
@@ -793,7 +793,7 @@
                     "type": ["object", "null"],
                     "required": true,
                     "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "Minimal user data for references."
+                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
                   }
                 }
               }

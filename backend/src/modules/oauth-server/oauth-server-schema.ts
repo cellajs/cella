@@ -12,7 +12,8 @@ export const protectedResourceSchema = z
     resource_documentation: z.string(),
   })
   .openapi('ProtectedResourceMetadata', {
-    description: 'RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.',
+    description:
+      'How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.',
     example: mockProtectedResourceResponse(),
     'x-tags': schemaTags('data', 'oauth-server', 'cella'),
   });

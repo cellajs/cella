@@ -14,7 +14,12 @@ import { getOrgCache, setOrgCache } from './org-cache';
  * the RLS transaction.
  */
 export const orgGuard = xMiddleware(
-  { functionName: 'orgGuard', type: 'x-guard', name: 'org', description: 'Validates organization membership within tenant context' },
+  {
+    functionName: 'orgGuard',
+    type: 'x-guard',
+    name: 'org',
+    description: 'Requires being in the organization: a member of it or of a channel below it, or a system admin',
+  },
   async (ctx, next) => {
     const organizationId = ctx.req.param('organizationId');
     if (!organizationId) throw new AppError(400, 'invalid_request', 'error', { meta: { reason: 'Missing organizationId parameter' } });

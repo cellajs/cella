@@ -5,6 +5,7 @@ import { appConfig } from 'shared';
 import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import { Button } from '~/modules/ui/button';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { cn } from '~/utils/cn';
@@ -44,9 +45,11 @@ function ThemeDropdownContent({ items, isMobile }: { items: ThemeItem[]; isMobil
 
 interface UserThemeProps {
   buttonClassName?: string;
+  /** Names the button in a tooltip below it. */
+  tooltip?: boolean;
 }
 
-export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
+export function UserTheme({ buttonClassName = '', tooltip = false }: UserThemeProps) {
   const { t } = useTranslation();
   const mode = useUIStore((state) => state.mode);
   const setMode = useUIStore((state) => state.setMode);
@@ -60,17 +63,18 @@ export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
 
   const themes = objectEntries(appConfig.theme.colors) as [keyof typeof appConfig.theme.colors, string][];
 
+  const label = t('c:change_theme');
+  const withTooltip = (button: React.ComponentProps<typeof TooltipButton>['children']) => (
+    <TooltipButton toolTipContent={label} disabled={!tooltip}>
+      {button}
+    </TooltipButton>
+  );
+
   if (!themes.length) {
-    return (
-      <Button
-        variant="ghost"
-        size="icon"
-        className={buttonClassName}
-        aria-label="changeTheme"
-        onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}
-      >
+    return withTooltip(
+      <Button variant="ghost" size="icon" className={buttonClassName} aria-label={label} onClick={() => setMode(mode === 'light' ? 'dark' : 'light')}>
         {mode === 'light' ? <SunIcon className="size-5" /> : <MoonIcon className="size-5" />}
-      </Button>
+      </Button>,
     );
   }
 
@@ -122,16 +126,16 @@ export function UserTheme({ buttonClassName = '' }: UserThemeProps) {
     });
   };
 
-  return (
+  return withTooltip(
     <Button
       ref={triggerRef}
       variant="ghost"
       size="icon"
       className={cn('data-dropdowner-active:bg-accent', buttonClassName)}
-      aria-label="Change theme"
+      aria-label={label}
       onClick={openDropdown}
     >
       {mode === 'light' ? <SunIcon className="size-5" /> : <MoonIcon className="size-5" />}
-    </Button>
+    </Button>,
   );
 }

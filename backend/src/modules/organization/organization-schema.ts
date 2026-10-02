@@ -51,7 +51,8 @@ export const organizationSchema = z
     included: organizationIncludedSchema,
   })
   .openapi('Organization', {
-    description: 'The main channel entity is an organization.',
+    description:
+      "The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.",
     example: mockOrganizationResponse(),
     'x-tags': schemaTags('data', 'organizations', 'cella'),
   });

@@ -40,7 +40,8 @@ export const inactiveMembershipSchema = z
     createdBy: nullableUserMinimalBaseSchema,
   })
   .openapi('InactiveMembership', {
-    description: 'A membership record for a user who has not yet accepted an invitation.',
+    description:
+      "An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.",
     example: mockInactiveMembershipResponse(),
     'x-tags': schemaTags('data', 'memberships', 'cella'),
   });
@@ -48,7 +49,8 @@ export const inactiveMembershipSchema = z
 export const membershipBaseSchema = membershipSchema
   .omit({ createdAt: true, createdBy: true, updatedAt: true, updatedBy: true })
   .openapi('MembershipBase', {
-    description: 'Core membership fields shared across active and inactive memberships.',
+    description:
+      "A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
     example: mockMembershipBase(),
     'x-tags': schemaTags('base', 'memberships', 'cella'),
   });

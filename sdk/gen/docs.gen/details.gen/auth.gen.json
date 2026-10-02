@@ -297,7 +297,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "Base schema for entities with memberships (e.g. organization).",
+          "description": "The fields every channel entity shares, such as organization; a channel owns memberships and roles. Used where a response names a channel without its details, such as the channel an invitation is for.",
           "properties": {
             "id": { "type": "string", "required": true },
             "name": { "type": "string", "required": true },

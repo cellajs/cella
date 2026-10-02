@@ -14,7 +14,7 @@ const proofSuccessStatusCodes = [200, 201, 204, 302];
 /** Keyed per user when authenticated, so invite flows behind a shared NAT IP get their own budget. */
 export const spamLimiter = rateLimiter('success', 'spam', [['userId', 'ip']], {
   limits: { successStatusCodes: [200, 201, 204] },
-  description: 'Max 10 requests/hour per user (per IP when anonymous) for email-sending endpoints',
+  description: 'Emails sent per user, per IP when anonymous: 10 per hour',
 });
 
 /**
@@ -23,7 +23,7 @@ export const spamLimiter = rateLimiter('success', 'spam', [['userId', 'ip']], {
  */
 export const emailEnumLimiter = rateLimiter('limit', 'emailEnum', ['ip'], {
   limits: { points: 30, duration: 60 * 60, blockDuration: 60 * 30 },
-  description: 'Max 30 address lookups/hour per IP, then blocks the IP for 30 min',
+  description: 'Address lookups per IP, hits included: 30 per hour, then blocked for 30 minutes',
 });
 
 export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
@@ -31,18 +31,18 @@ export const tokenLimiter = (tokenType: string): MiddlewareHandler<Env> =>
     limits: { successStatusCodes: proofSuccessStatusCodes },
     functionName: 'tokenLimiter',
     name: 'token',
-    description: 'Blocks IP for 30 min after 10 consecutive token failures',
+    description: 'Failed link, callback and passkey sign-ins per IP: 10 per hour, then blocked for 30 minutes',
   });
 
 export const presignedUrlLimiter = rateLimiter('limit', 'presignedUrl', [['userId', 'ip']], {
   limits: { points: 2000, duration: 60 * 60, blockDuration: 60 * 15 },
-  description: 'Max 2000 requests/hour per user for presigned URLs',
+  description: 'File links per user: 2000 per hour, then blocked for 15 minutes',
 });
 
 /** Keyed by IP, across accounts. Each account also has its own budget, with a lockout mail, in `verifyTotp`. */
 export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerification', ['ip'], {
   limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30, successStatusCodes: proofSuccessStatusCodes },
-  description: 'Blocks IP for 30 min after 5 failed TOTP attempts',
+  description: 'Failed TOTP codes per IP: 5 per hour, then blocked for 30 minutes',
 });
 
 /**
@@ -52,18 +52,18 @@ export const totpVerificationLimiter = rateLimiter('failseries', 'totpVerificati
  */
 export const stepUpLimiter = rateLimiter('failseries', 'stepUp', ['userId'], {
   limits: { points: 5, duration: 60 * 60, blockDuration: 60 * 30, successStatusCodes: [200, 201, 204], failStatusCodes: [401, 404] },
-  description: 'Blocks the account for 30 min after 5 failed second-factor checks on step-up',
+  description: 'Failed step-up checks per account: 5 per hour, then blocked for 30 minutes',
 });
 
 export const magicLinkLimiter = rateLimiter('limit', 'magicLink', ['email'], {
   limits: { points: 2, duration: 60 * 30, blockDuration: 0 },
-  description: 'Max 2 magic link emails per 30 min per email address',
+  description: 'Magic link emails per address: 2 per 30 minutes',
 });
 
 /** Generation uses a flat limit because it has no failure signal; verification has the brute-force limiter. */
 export const passkeyChallengeLimiter = rateLimiter('limit', 'passkeyChallenge', ['ip'], {
   limits: { points: 30, duration: 60 * 60, blockDuration: 60 * 5 },
-  description: 'Max 30 passkey challenges/hour per IP',
+  description: 'Passkey challenges per IP: 30 per hour, then blocked for 5 minutes',
 });
 
 /**
@@ -79,7 +79,7 @@ export const pointsLimiter = (cost = 1) =>
     },
     functionName: 'pointsLimiter',
     name: 'points',
-    description: `Consumes ${cost || 'dynamic'} API point(s) per request against per-tenant hourly budget`,
+    description: 'API points per actor in a tenant: 1 per request, 1 per item on bulk routes, up to the tenant hourly budget',
     getConsumePoints: cost > 0 ? undefined : bulkBodyLength,
     getPointsBudget: (ctx) => {
       const tenant = ctx.var.tenant;
@@ -95,31 +95,31 @@ export const pointsLimiter = (cost = 1) =>
  */
 export const clientMetadataFetchLimiter = rateLimiter('limit', 'clientMetadataFetch', ['ip'], {
   limits: { points: 60, duration: 60, blockDuration: 60 },
-  description: 'Max 60 client metadata document fetches per minute per IP',
+  description: 'Client metadata fetches per IP: 60 per minute, then blocked for 1 minute',
 });
 
 /** Per-second ceiling for API keys: a runaway integration hits this long before the hourly points budget. */
 export const serviceBurstLimiter = rateLimiter('limit', 'serviceBurst', ['actorId'], {
   limits: { points: 30, duration: 1, blockDuration: 0 },
-  description: 'Max 30 requests/second per service account',
+  description: 'Requests per actor with an API key or access token: 30 per second',
 });
 
 /** Per-second ceiling for MCP endpoint requests, a bucket of its own: the route a tool call runs charges the burst. */
 export const mcpRequestLimiter = rateLimiter('limit', 'mcpRequest', ['actorId'], {
   limits: { points: 30, duration: 1, blockDuration: 0 },
-  description: 'Max 30 MCP requests/second per account',
+  description: 'MCP requests per actor: 30 per second',
 });
 
 /** Backpressure for the read fan-out one SSE notification triggers; a 429 rides the client's invalidate-and-backoff. */
 export const syncReadLimiter = rateLimiter('limit', 'syncRead', [['userId', 'ip']], {
   limits: { points: 5000, duration: 60 * 60, blockDuration: 60 * 5 },
-  description: 'Max 5000 sync-driven reads/hour per user (delta lists, unseen counts)',
+  description: 'Sync reads per user: 5000 per hour, then blocked for 5 minutes',
 });
 
 /** Bounds stream connection attempts per user. The client's 5-30s reconnect backoff stays far below this. */
 export const streamConnectLimiter = rateLimiter('limit', 'streamConnect', [['userId', 'ip']], {
   limits: { points: 240, duration: 60 * 60, blockDuration: 60 * 5 },
-  description: 'Max 240 SSE stream connects/hour per user',
+  description: 'Live update stream connections per user: 240 per hour, then blocked for 5 minutes',
 });
 
 /** Cost = length of the request body array. Attach to routes taking `{ ids: [...] }` or a top-level array body. */

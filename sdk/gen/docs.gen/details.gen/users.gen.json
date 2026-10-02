@@ -15,7 +15,7 @@
               "itemType": "object",
               "items": {
                 "type": "object",
-                "description": "Base user schema with essential fields for identification and display.",
+                "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
                 "properties": {
                   "id": { "type": "string", "required": true },
                   "name": { "type": "string", "required": true },
@@ -216,7 +216,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "Base user schema with essential fields for identification and display.",
+          "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
           "properties": {
             "id": { "type": "string", "required": true },
             "name": { "type": "string", "required": true },

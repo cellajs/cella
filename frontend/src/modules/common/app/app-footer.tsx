@@ -61,13 +61,19 @@ export function AppFooterLinks({ links = defaultFooterLinks, className = '' }: F
 }
 
 export function AppFooter({ className = '' }) {
+  const { t } = useTranslation();
   return (
     <footer className={cn('flex flex-col gap-2', className)}>
       <div className="flex items-center gap-4">
         <UserLanguage />
         <div className="mr-1 opacity-20 first:hidden">|</div>
-        <Link to="/about" draggable={false} className="focus-effect active:press rounded-md transition-transform hover:scale-105">
-          <Logo height={25} />
+        <Link
+          to="/about"
+          draggable={false}
+          className="focus-effect active:press rounded-md transition-transform hover:scale-105"
+          aria-label={t('c:go_to_about')}
+        >
+          <Logo height={25} title={t('c:go_to_about')} />
         </Link>
         <div className="ml-1 opacity-20">|</div>
         <UserTheme />

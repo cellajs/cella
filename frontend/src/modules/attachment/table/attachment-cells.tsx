@@ -123,7 +123,7 @@ export function DownloadCell({ row, tabIndex }: DownloadCellProps) {
       tabIndex={tabIndex}
       disabled={isInProgress}
       className="justify-center"
-      aria-label="Download"
+      aria-label={t('c:download')}
       data-tooltip="true"
       data-tooltip-content={t('c:download')}
       onClick={handleDownload}

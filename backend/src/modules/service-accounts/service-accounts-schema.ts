@@ -28,7 +28,8 @@ export const apiKeyParamSchema = idInTenantOrgParamSchema.extend({ keyId: validI
 export const serviceAccountSchema = z
   .object({ ...createSelectSchema(serviceAccountsTable).shape, status: z.enum(serviceAccountStatuses), bindings: z.array(roleBindingSchema) })
   .openapi('ServiceAccount', {
-    description: 'The actor an API key runs as, with its role bindings.',
+    description:
+      'An actor that is not a person, in one tenant: API keys run as it, and it holds role bindings like a member holds memberships. An organization admin creates one, for example with Create API key in organization settings.',
     example: mockServiceAccountResponse(),
     'x-tags': schemaTags('data', 'service-accounts', 'cella'),
   });
@@ -36,7 +37,8 @@ export const serviceAccountSchema = z
 export const apiKeySchema = createSelectSchema(apiKeysTable)
   .extend({ scopes: z.array(scopeEnum).nullable() })
   .openapi('ApiKey', {
-    description: 'An API key of a service account; the secret is never returned after creation.',
+    description:
+      'A secret key a service account authenticates with, sent as `Authorization: Bearer` or `x-api-key`. Only its prefix and last four characters are returned after creation; it can expire and be revoked.',
     example: mockApiKeyResponse(),
     'x-tags': schemaTags('data', 'service-accounts', 'cella'),
   });
@@ -44,7 +46,7 @@ export const apiKeySchema = createSelectSchema(apiKeysTable)
 /** Returned once, at creation or roll: the only time the plaintext key exists outside the caller. */
 export const createdApiKeySchema = apiKeySchema
   .extend({ secret: z.string().describe('The plaintext API key; store it now, it is not shown again.') })
-  .openapi({ description: 'A newly issued API key with its plaintext secret.', example: mockCreatedApiKeyResponse() });
+  .openapi({ description: 'A newly created API key with its full secret, returned this once only.', example: mockCreatedApiKeyResponse() });
 
 const apiKeyInputSchema = z.object({
   name: validNameSchema,

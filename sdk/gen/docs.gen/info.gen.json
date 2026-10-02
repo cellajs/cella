@@ -22,28 +22,34 @@
       "values": {
         "serviceGuard": {
           "name": "service",
-          "description": "Requires a secret API key or an access token and sets the service account or the consenting user as the actor"
+          "description": "Requires a secret API key or an access token; acts as its service account or consenting user, limited to its scopes"
         },
-        "userGuard": { "name": "user", "description": "Requires valid session and sets auth context (user, memberships, baseDb)" },
-        "actorGuard": { "name": "actor", "description": "Requires a session cookie, a secret API key, or an access token and sets the actor" },
-        "orgGuard": { "name": "org", "description": "Validates organization membership within tenant context" },
-        "publicGuard": { "name": "public", "description": "No authentication required; provides baseDb without RLS context" },
+        "userGuard": { "name": "user", "description": "Requires a session cookie; acts as the signed-in user" },
+        "actorGuard": {
+          "name": "actor",
+          "description": "Requires a session cookie, a secret API key or an access token; acts as the user or service account it proves"
+        },
+        "orgGuard": {
+          "name": "org",
+          "description": "Requires being in the organization: a member of it or of a channel below it, or a system admin"
+        },
+        "publicGuard": { "name": "public", "description": "No sign-in required" },
         "relatableGuard": {
           "name": "relatable",
-          "description": "Checks that the requesting user shares at least one organization with the target user"
+          "description": "Requires sharing an organization with the user the request names, or being a system admin"
         },
         "stepUpGuard": {
           "name": "stepUp",
-          "description": "Requires a recent proof of presence on this session: the enrolled passkey or TOTP, else a fresh sign-in or a confirmed email link. Refuses impersonation."
+          "description": "Requires a recent proof of presence on this session: a passkey or TOTP the user holds, else a fresh sign-in or emailed link; refuses impersonation"
         },
-        "sysAdminGuard": { "name": "sysAdmin", "description": "Requires system admin + IP whitelist, never an impersonation" },
+        "sysAdminGuard": { "name": "sysAdmin", "description": "Requires the system admin role and an allowed IP address; refuses impersonation" },
         "tenantGuard": {
           "name": "tenant",
-          "description": "Requires userGuard or serviceGuard, validates tenant access, and sets baseDb + tenantId context"
+          "description": "Requires being in the tenant: a member, a system admin, or its creator while it has no organization"
         },
         "tokenGuard": {
           "name": "token",
-          "description": "Requires an access token from the authorization server and sets the consenting user or service account as the actor"
+          "description": "Requires an access token, no session or API key; acts as its service account or consenting user, limited to its scopes"
         }
       }
     },
@@ -54,21 +60,36 @@
       "required": false,
       "kind": "middleware",
       "values": {
-        "spamLimiter": { "name": "spam", "description": "Max 10 requests/hour per user (per IP when anonymous) for email-sending endpoints" },
-        "emailEnumLimiter": { "name": "emailEnum", "description": "Max 30 address lookups/hour per IP, then blocks the IP for 30 min" },
-        "presignedUrlLimiter": { "name": "presignedUrl", "description": "Max 2000 requests/hour per user for presigned URLs" },
-        "totpVerificationLimiter": { "name": "totpVerification", "description": "Blocks IP for 30 min after 5 failed TOTP attempts" },
-        "stepUpLimiter": { "name": "stepUp", "description": "Blocks the account for 30 min after 5 failed second-factor checks on step-up" },
-        "magicLinkLimiter": { "name": "magicLink", "description": "Max 2 magic link emails per 30 min per email address" },
-        "passkeyChallengeLimiter": { "name": "passkeyChallenge", "description": "Max 30 passkey challenges/hour per IP" },
-        "clientMetadataFetchLimiter": { "name": "clientMetadataFetch", "description": "Max 60 client metadata document fetches per minute per IP" },
-        "serviceBurstLimiter": { "name": "serviceBurst", "description": "Max 30 requests/second per service account" },
-        "mcpRequestLimiter": { "name": "mcpRequest", "description": "Max 30 MCP requests/second per account" },
-        "syncReadLimiter": { "name": "syncRead", "description": "Max 5000 sync-driven reads/hour per user (delta lists, unseen counts)" },
-        "streamConnectLimiter": { "name": "streamConnect", "description": "Max 240 SSE stream connects/hour per user" },
-        "pointsLimiter": { "name": "points", "description": "Consumes 1 API point(s) per request against per-tenant hourly budget" },
-        "tokenLimiter": { "name": "token", "description": "Blocks IP for 30 min after 10 consecutive token failures" },
-        "insertEntityLock": { "name": "insertEntityLock", "description": "Prevents concurrent entity creation for the same tenant" }
+        "spamLimiter": { "name": "spam", "description": "Emails sent per user, per IP when anonymous: 10 per hour" },
+        "emailEnumLimiter": { "name": "emailEnum", "description": "Address lookups per IP, hits included: 30 per hour, then blocked for 30 minutes" },
+        "presignedUrlLimiter": { "name": "presignedUrl", "description": "File links per user: 2000 per hour, then blocked for 15 minutes" },
+        "totpVerificationLimiter": { "name": "totpVerification", "description": "Failed TOTP codes per IP: 5 per hour, then blocked for 30 minutes" },
+        "stepUpLimiter": { "name": "stepUp", "description": "Failed step-up checks per account: 5 per hour, then blocked for 30 minutes" },
+        "magicLinkLimiter": { "name": "magicLink", "description": "Magic link emails per address: 2 per 30 minutes" },
+        "passkeyChallengeLimiter": {
+          "name": "passkeyChallenge",
+          "description": "Passkey challenges per IP: 30 per hour, then blocked for 5 minutes"
+        },
+        "clientMetadataFetchLimiter": {
+          "name": "clientMetadataFetch",
+          "description": "Client metadata fetches per IP: 60 per minute, then blocked for 1 minute"
+        },
+        "serviceBurstLimiter": { "name": "serviceBurst", "description": "Requests per actor with an API key or access token: 30 per second" },
+        "mcpRequestLimiter": { "name": "mcpRequest", "description": "MCP requests per actor: 30 per second" },
+        "syncReadLimiter": { "name": "syncRead", "description": "Sync reads per user: 5000 per hour, then blocked for 5 minutes" },
+        "streamConnectLimiter": {
+          "name": "streamConnect",
+          "description": "Live update stream connections per user: 240 per hour, then blocked for 5 minutes"
+        },
+        "pointsLimiter": {
+          "name": "points",
+          "description": "API points per actor in a tenant: 1 per request, 1 per item on bulk routes, up to the tenant hourly budget"
+        },
+        "tokenLimiter": {
+          "name": "token",
+          "description": "Failed link, callback and passkey sign-ins per IP: 10 per hour, then blocked for 30 minutes"
+        },
+        "insertEntityLock": { "name": "insertEntityLock", "description": "Creates per tenant: 1 at a time" }
       }
     },
     {

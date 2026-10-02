@@ -22,6 +22,16 @@ export interface GenExtensionDefinition {
   values?: Record<string, GenExtensionValueMetadata>;
 }
 
+/** The MCP tool a route is exposed as (`x-tool`); the tool's name is the operation id. */
+export interface GenOperationTool {
+  /** What the tool does, written for a model */
+  description: string;
+  /** Whether the client asks its user before running the tool */
+  approvalRequired: boolean;
+  /** The entity the tool acts on: with the method it names the scope a token needs */
+  entity: string;
+}
+
 /** Minimal operation data for table and sidebar rendering. */
 export interface GenOperationSummary {
   id: string;
@@ -45,6 +55,8 @@ export interface GenOperationSummary {
   entityType?: string;
   /** The config switch the operation belongs to (`x-enabled-by`); the docs mark the operation while it is off. */
   enabledBy?: ConfigSwitch;
+  /** The MCP tool the operation is exposed as (`x-tool`). */
+  tool?: GenOperationTool;
 }
 
 export interface GenTagSummary {

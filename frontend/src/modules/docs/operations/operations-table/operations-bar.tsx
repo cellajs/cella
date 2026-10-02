@@ -9,6 +9,7 @@ import { TableSearch } from '~/modules/common/data-table/table-search';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { FocusView } from '~/modules/common/focus-view';
 import { ResponsiveSelect } from '~/modules/common/form-fields/responsive-select';
+import { mcpToolFilter } from '~/modules/docs/operations/operations-table/use-filtered-operations';
 import { ViewModeToggle } from '~/modules/docs/operations/view-mode-toggle';
 
 interface OperationsTableBarProps {
@@ -19,6 +20,8 @@ interface OperationsTableBarProps {
   setColumns: Dispatch<SetStateAction<ColumnOrColumnGroup<GenOperationSummary>[]>>;
   /** Tag-kind filter values found in the dataset, e.g. `{ owner: ['cella','app'] }`, one dropdown group each. */
   tagFilters: Record<string, string[]>;
+  /** Whether any operation is an MCP tool, which adds the MCP tools option. */
+  hasMcpTools: boolean;
 }
 
 /** Display order for tag-kind groups in the filter dropdown. */
@@ -31,7 +34,7 @@ const labelFor = (kind: string, value: string): string => {
   return cap;
 };
 
-export function OperationsTableBar({ total, searchVars, setSearch, columns, setColumns, tagFilters }: OperationsTableBarProps) {
+export function OperationsTableBar({ total, searchVars, setSearch, columns, setColumns, tagFilters, hasMcpTools }: OperationsTableBarProps) {
   const { t } = useTranslation();
   const { q, tag } = searchVars;
 
@@ -55,7 +58,11 @@ export function OperationsTableBar({ total, searchVars, setSearch, columns, setC
   ];
 
   const tagOptions = orderedKinds.flatMap((kind) => tagFilters[kind].map((value) => ({ value: `${kind}:${value}`, label: labelFor(kind, value) })));
-  const filterOptions = [{ value: 'all', label: t('c:all') }, ...tagOptions];
+  const filterOptions = [
+    { value: 'all', label: t('c:all') },
+    ...tagOptions,
+    ...(hasMcpTools ? [{ value: mcpToolFilter, label: t('c:docs.mcp_tools') }] : []),
+  ];
 
   return (
     <TableBarContainer searchVars={searchVars}>

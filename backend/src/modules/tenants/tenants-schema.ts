@@ -39,7 +39,8 @@ export const tenantSchema = z
     organization: minimalBaseSchema('organization').nullable().describe('The organization this tenant holds, or null if none'),
   })
   .openapi('Tenant', {
-    description: 'A tenant representing an isolated data partition for multi-tenancy.',
+    description:
+      'The top-level isolation and billing boundary. Tenant and organization are 1:1: a tenant holds one organization, or none until that organization is created. System admins list and update tenants; a signed-in user can create one of their own.',
     example: mockTenantResponse(),
     'x-tags': schemaTags('data', 'tenants', 'cella'),
   });

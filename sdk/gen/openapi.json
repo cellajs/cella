@@ -25,43 +25,43 @@
         "values": {
           "serviceGuard": {
             "name": "service",
-            "description": "Requires a secret API key or an access token and sets the service account or the consenting user as the actor"
+            "description": "Requires a secret API key or an access token; acts as its service account or consenting user, limited to its scopes"
           },
           "userGuard": {
             "name": "user",
-            "description": "Requires valid session and sets auth context (user, memberships, baseDb)"
+            "description": "Requires a session cookie; acts as the signed-in user"
           },
           "actorGuard": {
             "name": "actor",
-            "description": "Requires a session cookie, a secret API key, or an access token and sets the actor"
+            "description": "Requires a session cookie, a secret API key or an access token; acts as the user or service account it proves"
           },
           "orgGuard": {
             "name": "org",
-            "description": "Validates organization membership within tenant context"
+            "description": "Requires being in the organization: a member of it or of a channel below it, or a system admin"
           },
           "publicGuard": {
             "name": "public",
-            "description": "No authentication required; provides baseDb without RLS context"
+            "description": "No sign-in required"
           },
           "relatableGuard": {
             "name": "relatable",
-            "description": "Checks that the requesting user shares at least one organization with the target user"
+            "description": "Requires sharing an organization with the user the request names, or being a system admin"
           },
           "stepUpGuard": {
             "name": "stepUp",
-            "description": "Requires a recent proof of presence on this session: the enrolled passkey or TOTP, else a fresh sign-in or a confirmed email link. Refuses impersonation."
+            "description": "Requires a recent proof of presence on this session: a passkey or TOTP the user holds, else a fresh sign-in or emailed link; refuses impersonation"
           },
           "sysAdminGuard": {
             "name": "sysAdmin",
-            "description": "Requires system admin + IP whitelist, never an impersonation"
+            "description": "Requires the system admin role and an allowed IP address; refuses impersonation"
           },
           "tenantGuard": {
             "name": "tenant",
-            "description": "Requires userGuard or serviceGuard, validates tenant access, and sets baseDb + tenantId context"
+            "description": "Requires being in the tenant: a member, a system admin, or its creator while it has no organization"
           },
           "tokenGuard": {
             "name": "token",
-            "description": "Requires an access token from the authorization server and sets the consenting user or service account as the actor"
+            "description": "Requires an access token, no session or API key; acts as its service account or consenting user, limited to its scopes"
           }
         }
       },
@@ -74,63 +74,63 @@
         "values": {
           "spamLimiter": {
             "name": "spam",
-            "description": "Max 10 requests/hour per user (per IP when anonymous) for email-sending endpoints"
+            "description": "Emails sent per user, per IP when anonymous: 10 per hour"
           },
           "emailEnumLimiter": {
             "name": "emailEnum",
-            "description": "Max 30 address lookups/hour per IP, then blocks the IP for 30 min"
+            "description": "Address lookups per IP, hits included: 30 per hour, then blocked for 30 minutes"
           },
           "presignedUrlLimiter": {
             "name": "presignedUrl",
-            "description": "Max 2000 requests/hour per user for presigned URLs"
+            "description": "File links per user: 2000 per hour, then blocked for 15 minutes"
           },
           "totpVerificationLimiter": {
             "name": "totpVerification",
-            "description": "Blocks IP for 30 min after 5 failed TOTP attempts"
+            "description": "Failed TOTP codes per IP: 5 per hour, then blocked for 30 minutes"
           },
           "stepUpLimiter": {
             "name": "stepUp",
-            "description": "Blocks the account for 30 min after 5 failed second-factor checks on step-up"
+            "description": "Failed step-up checks per account: 5 per hour, then blocked for 30 minutes"
           },
           "magicLinkLimiter": {
             "name": "magicLink",
-            "description": "Max 2 magic link emails per 30 min per email address"
+            "description": "Magic link emails per address: 2 per 30 minutes"
           },
           "passkeyChallengeLimiter": {
             "name": "passkeyChallenge",
-            "description": "Max 30 passkey challenges/hour per IP"
+            "description": "Passkey challenges per IP: 30 per hour, then blocked for 5 minutes"
           },
           "clientMetadataFetchLimiter": {
             "name": "clientMetadataFetch",
-            "description": "Max 60 client metadata document fetches per minute per IP"
+            "description": "Client metadata fetches per IP: 60 per minute, then blocked for 1 minute"
           },
           "serviceBurstLimiter": {
             "name": "serviceBurst",
-            "description": "Max 30 requests/second per service account"
+            "description": "Requests per actor with an API key or access token: 30 per second"
           },
           "mcpRequestLimiter": {
             "name": "mcpRequest",
-            "description": "Max 30 MCP requests/second per account"
+            "description": "MCP requests per actor: 30 per second"
           },
           "syncReadLimiter": {
             "name": "syncRead",
-            "description": "Max 5000 sync-driven reads/hour per user (delta lists, unseen counts)"
+            "description": "Sync reads per user: 5000 per hour, then blocked for 5 minutes"
           },
           "streamConnectLimiter": {
             "name": "streamConnect",
-            "description": "Max 240 SSE stream connects/hour per user"
+            "description": "Live update stream connections per user: 240 per hour, then blocked for 5 minutes"
           },
           "pointsLimiter": {
             "name": "points",
-            "description": "Consumes 1 API point(s) per request against per-tenant hourly budget"
+            "description": "API points per actor in a tenant: 1 per request, 1 per item on bulk routes, up to the tenant hourly budget"
           },
           "tokenLimiter": {
             "name": "token",
-            "description": "Blocks IP for 30 min after 10 consecutive token failures"
+            "description": "Failed link, callback and passkey sign-ins per IP: 10 per hour, then blocked for 30 minutes"
           },
           "insertEntityLock": {
             "name": "insertEntityLock",
-            "description": "Prevents concurrent entity creation for the same tenant"
+            "description": "Creates per tenant: 1 at a time"
           }
         }
       },
@@ -446,7 +446,7 @@
           }
         },
         "required": ["id", "name", "slug", "thumbnailUrl", "entityType"],
-        "description": "Minimal user data for references.",
+        "description": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`.",
         "example": {
           "id": "0e0eced6-ecd8-4ea4-906d-160fbd840741",
           "name": "Durward Cummerata",
@@ -493,7 +493,7 @@
           }
         },
         "required": ["id", "name", "createdAt", "updatedAt", "slug", "thumbnailUrl", "bannerUrl", "description", "email", "entityType"],
-        "description": "Base user schema with essential fields for identification and display.",
+        "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
         "example": {
           "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
           "createdAt": "2024-01-28T04:41:50.387Z",
@@ -541,7 +541,7 @@
           }
         },
         "required": ["id", "name", "createdAt", "updatedAt", "tenantId", "entityType", "slug", "thumbnailUrl", "bannerUrl"],
-        "description": "Base schema for entities with memberships (e.g. organization).",
+        "description": "The fields every channel entity shares, such as organization; a channel owns memberships and roles. Used where a response names a channel without its details, such as the channel an invitation is for.",
         "example": {
           "id": "288d15c3-2a96-4d92-903e-dcbb54ecd23d",
           "createdAt": "2024-11-30T08:11:29.841Z",
@@ -602,7 +602,7 @@
           }
         },
         "required": ["id", "name", "createdAt", "updatedAt", "description", "createdBy", "updatedBy", "entityType", "keywords"],
-        "description": "Base schema for content entities with creator tracking (e.g. attachment).",
+        "description": "The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields.",
         "example": {
           "id": "7e460470-da58-4733-a7ff-0d31897ecf8d",
           "createdAt": "2024-07-02T14:28:38.152Z",
@@ -672,7 +672,7 @@
           }
         },
         "required": ["id", "tenantId", "channelType", "channelId", "userId", "role", "archived", "muted", "displayOrder", "organizationId"],
-        "description": "Core membership fields shared across active and inactive memberships.",
+        "description": "A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
         "example": {
           "id": "ee163b99-3dce-4900-a23a-1256a303215e",
           "tenantId": "7om1aq",
@@ -713,7 +713,7 @@
           }
         },
         "required": ["mutationId", "sourceId", "fieldTimestamps"],
-        "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+        "description": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.",
         "example": {
           "mutationId": "ad54dc2c-11e4-430b-95c7-39ea0ae52213",
           "sourceId": "7762c287-9155-4500-95f3-d63ec6185e0c",
@@ -844,7 +844,7 @@
           "spreadWindow",
           "propagation"
         ],
-        "description": "Realtime notification delivered via SSE for entity and membership changes.",
+        "description": "A live notification that a product entity or a membership changed, naming the entity, its path and sequence range rather than the row. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.",
         "example": {
           "kind": "product",
           "action": "update",
@@ -882,7 +882,7 @@
             }
           }
         ],
-        "description": "Error returned when the request is malformed or contains invalid data.",
+        "description": "The request is malformed or fails validation (400). `type` names the problem, such as `invalid_request`.",
         "example": {
           "name": "BadRequestError",
           "message": "error:bad_request_action",
@@ -963,7 +963,7 @@
           }
         },
         "required": ["name", "message", "type", "status", "severity"],
-        "description": "Standard error response returned by all API endpoints.",
+        "description": "The body of every error response. `type` is a stable code to branch on, `message` is readable text, and `requestId` identifies the request in the server logs.",
         "example": {
           "name": "BadRequestError",
           "message": "error:bad_request_action",
@@ -989,7 +989,7 @@
             }
           }
         ],
-        "description": "Error returned when authentication is missing or invalid.",
+        "description": "The request carries no valid session, API key or access token, or it expired (401). Sign in again, or send a valid key or token.",
         "example": {
           "name": "BadRequestError",
           "message": "error:bad_request_action",
@@ -1015,7 +1015,7 @@
             }
           }
         ],
-        "description": "Error returned when the user lacks permission for the requested action.",
+        "description": "The caller is known but may not do this (403): their role denies the action, a recent step-up is required, or the action is refused while impersonating. `type` names the reason, such as `step_up_required`.",
         "example": {
           "name": "BadRequestError",
           "message": "error:bad_request_action",
@@ -1041,7 +1041,7 @@
             }
           }
         ],
-        "description": "Error returned when the requested resource cannot be found.",
+        "description": "The resource does not exist, or the caller may not read it (404). Both get the same answer, so a response never confirms that an id exists.",
         "example": {
           "name": "BadRequestError",
           "message": "error:bad_request_action",
@@ -1067,7 +1067,7 @@
             }
           }
         ],
-        "description": "Error returned when the request conflicts with current resource state.",
+        "description": "The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying.",
         "example": {
           "name": "BadRequestError",
           "message": "error:bad_request_action",
@@ -1093,7 +1093,7 @@
             }
           }
         ],
-        "description": "Error returned when rate limits are exceeded.",
+        "description": "A rate limit refused the request (429). The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.",
         "example": {
           "name": "BadRequestError",
           "message": "error:bad_request_action",
@@ -1112,11 +1112,11 @@
           },
           "isSystemAdmin": {
             "type": "boolean",
-            "description": "Whether the current user has system admin privileges."
+            "description": "Whether the user holds the system admin role and the request comes from an allowed IP address."
           }
         },
         "required": ["user", "isSystemAdmin"],
-        "description": "The currently authenticated user with their system admin status.",
+        "description": "The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.",
         "example": {
           "user": {
             "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
@@ -1249,7 +1249,7 @@
           "lastStartedAt",
           "lastSignInAt"
         ],
-        "description": "A user with profile data and activity timestamps.",
+        "description": "A full user account: profile, preferences such as language and newsletter, the MFA setting and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.",
         "example": {
           "id": "3c6f6c47-89c3-4946-870e-f4ee338ae389",
           "entityType": "user",
@@ -1452,7 +1452,7 @@
           }
         },
         "required": ["enabledOAuth", "hasTotp", "sessions", "passkeys"],
-        "description": "Authentication metadata for the current user session.",
+        "description": "How the signed-in user signs in: connected OAuth providers, passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.",
         "example": {
           "enabledOAuth": ["github"],
           "hasTotp": false,
@@ -1561,7 +1561,7 @@
           "createdBy",
           "organizationId"
         ],
-        "description": "A membership record for a user who has not yet accepted an invitation.",
+        "description": "An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.",
         "example": {
           "id": "4fa889f9-15ca-4730-a060-e4167170b7db",
           "channelType": "organization",
@@ -1622,7 +1622,7 @@
           }
         },
         "required": ["publicBucket", "sub", "s3", "signature", "params"],
-        "description": "A signed token authorizing file uploads to the configured storage provider.",
+        "description": "Permission to upload files with one upload template, signed for the upload service, with the storage prefix the files land under. A client requests one before uploading; the template decides whether files are stored public or private.",
         "example": {
           "publicBucket": false,
           "sub": "x1lsgegsw6imziogthaolhvy",
@@ -1669,7 +1669,7 @@
           }
         },
         "required": ["id", "clientId", "clientName", "scopes", "resources", "createdAt", "expiresAt"],
-        "description": "An OAuth consent (grant) of the current user.",
+        "description": "An app the signed-in user consented to: its OAuth client, the scopes it may use and when the consent expires. Listed under Connected apps in account settings, where the user can revoke it.",
         "example": {
           "id": "01J9Z2Q0X7ZQ4S5M8NX3F2ABCD",
           "clientId": "https://vscode.dev/oauth/client-metadata.json",
@@ -1708,7 +1708,7 @@
           }
         },
         "required": ["createdAt", "id", "message", "email", "type", "wasInvited"],
-        "description": "A contact or waitlist submission from an unauthenticated user.",
+        "description": "A message from the public site: a contact message, a waitlist sign-up or a newsletter subscription. Anyone can send one, signed in or not; system admins list them.",
         "example": {
           "id": "e68c8b33-2f0c-44fd-8cfc-a9c440c0ea73",
           "email": "al.braun57@gmail.com",
@@ -1835,7 +1835,7 @@
           "domainsCount",
           "organization"
         ],
-        "description": "A tenant representing an isolated data partition for multi-tenancy.",
+        "description": "The top-level isolation and billing boundary. Tenant and organization are 1:1: a tenant holds one organization, or none until that organization is created. System admins list and update tenants; a signed-in user can create one of their own.",
         "example": {
           "id": "l6ddop",
           "name": "Lubowitz, Waters and Haley",
@@ -1900,7 +1900,7 @@
           }
         },
         "required": ["resource", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"],
-        "description": "RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.",
+        "description": "How an OAuth client gets an access token for this API or an MCP endpoint (RFC 9728): the authorization servers that issue tokens and the scopes accepted. A client finds it through the `WWW-Authenticate` header of a 401 response.",
         "example": {
           "resource": "http://localhost:3000/api/t/m5jfjs",
           "authorization_servers": ["http://localhost:3000/oauth"],
@@ -2157,7 +2157,7 @@
           "setupConfig",
           "included"
         ],
-        "description": "The main channel entity is an organization.",
+        "description": "The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.",
         "example": {
           "createdAt": "2024-12-25T15:04:42.969Z",
           "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
@@ -2379,7 +2379,7 @@
           "keys",
           "organizationId"
         ],
-        "description": "A product entity for file attachment metadata.",
+        "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
         "example": {
           "createdAt": "2024-05-01T22:40:37.374Z",
           "id": "bad021eb-efc6-48ff-835e-959b96d6abdd",
@@ -2490,7 +2490,7 @@
           }
         },
         "required": ["id", "tenantId", "name", "status", "bindings", "oauthClientId", "createdBy", "updatedBy", "createdAt", "updatedAt"],
-        "description": "The actor an API key runs as, with its role bindings.",
+        "description": "An actor that is not a person, in one tenant: API keys run as it, and it holds role bindings like a member holds memberships. An organization admin creates one, for example with Create API key in organization settings.",
         "example": {
           "id": "764ce6e7-55fc-4f5d-b661-0c777df71d45",
           "tenantId": "yug3pr",
@@ -2578,7 +2578,7 @@
           "createdBy",
           "createdAt"
         ],
-        "description": "An API key of a service account; the secret is never returned after creation.",
+        "description": "A secret key a service account authenticates with, sent as `Authorization: Bearer` or `x-api-key`. Only its prefix and last four characters are returned after creation; it can expire and be revoked.",
         "example": {
           "id": "f3c10bf5-c7cd-4d71-886d-aaaf26240582",
           "actorId": "e76689f8-afe7-4c1a-aad6-09f237f1bb30",
@@ -8711,7 +8711,7 @@
                             "required": ["lastSeenAt"]
                           }
                         ],
-                        "description": "Base user schema with essential fields for identification and display.",
+                        "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
                         "example": {
                           "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
                           "createdAt": "2024-01-28T04:41:50.387Z",
@@ -8843,7 +8843,7 @@
                       "required": ["lastSeenAt"]
                     }
                   ],
-                  "description": "Base user schema with essential fields for identification and display.",
+                  "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
                   "example": {
                     "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
                     "createdAt": "2024-01-28T04:41:50.387Z",
@@ -9234,7 +9234,7 @@
                             }
                           }
                         ],
-                        "description": "The main channel entity is an organization.",
+                        "description": "The channel entity every other channel nests under, owning memberships and roles. Tenant and organization are 1:1: an organization belongs to one tenant, and that tenant holds no other. Returned with `included` data: the signed-in user's membership, counts and member previews.",
                         "example": {
                           "createdAt": "2024-12-25T15:04:42.969Z",
                           "id": "7aa47ec1-149b-44dc-b1fd-c23099d93e7d",
@@ -12391,7 +12391,7 @@
                             "required": ["lastSeenAt", "membership"]
                           }
                         ],
-                        "description": "Base user schema with essential fields for identification and display.",
+                        "description": "The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.",
                         "example": {
                           "id": "6fb222e4-a6f7-4f94-8076-fe0ea7550e0f",
                           "createdAt": "2024-01-28T04:41:50.387Z",
@@ -12961,7 +12961,7 @@
                           "required": ["secret"]
                         }
                       ],
-                      "description": "A newly issued API key with its plaintext secret.",
+                      "description": "A newly created API key with its full secret, returned this once only.",
                       "example": {
                         "id": "d4710b9b-020b-4142-9ab9-1d886a432815",
                         "actorId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",
@@ -13488,7 +13488,7 @@
                       "required": ["secret"]
                     }
                   ],
-                  "description": "A newly issued API key with its plaintext secret.",
+                  "description": "A newly created API key with its full secret, returned this once only.",
                   "example": {
                     "id": "d4710b9b-020b-4142-9ab9-1d886a432815",
                     "actorId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",

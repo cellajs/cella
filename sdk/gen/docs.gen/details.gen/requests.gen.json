@@ -16,7 +16,7 @@
               "ref": "#/components/schemas/Request",
               "items": {
                 "type": "object",
-                "description": "A contact or waitlist submission from an unauthenticated user.",
+                "description": "A message from the public site: a contact message, a waitlist sign-up or a newsletter subscription. Anyone can send one, signed in or not; system admins list them.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": { "type": "string", "required": true, "format": "uuid" },

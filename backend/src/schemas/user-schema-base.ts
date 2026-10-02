@@ -8,7 +8,8 @@ export const userBaseSchema = channelBaseSchema
   .omit({ entityType: true, tenantId: true })
   .extend({ description: z.string().nullable(), email: z.email(), entityType: z.literal('user') })
   .openapi('UserBase', {
-    description: 'Base user schema with essential fields for identification and display.',
+    description:
+      'The user fields shown to other users: name, slug, profile images, description and email. User lookups and member lists return it with the last-seen time added; member lists add the membership too.',
     example: mockUserBase(),
     'x-tags': schemaTags('base', 'users', 'cella'),
   });

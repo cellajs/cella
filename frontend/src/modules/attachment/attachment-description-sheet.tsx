@@ -92,7 +92,7 @@ export function openAttachmentDescriptionSheet(attachment: Attachment, triggerRe
       side: 'right',
       className: tw('max-w-full lg:max-w-3xl'),
       title: attachment.name,
-      description: i18n.t('c:description'),
+      description: i18n.t('c:attachment_description.text'),
     },
   );
 }

@@ -6,6 +6,7 @@ import type { GenTagSummary } from 'sdk/docs-types';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { Logo } from '~/modules/common/logo';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
+import { TooltipButton } from '~/modules/common/tooltip-button';
 import { openDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { ApiReferenceSection } from '~/modules/docs/sidebar/api-reference-section';
 import { LinksSection } from '~/modules/docs/sidebar/links-section';
@@ -36,36 +37,42 @@ export function DocsSidebar({ tags }: DocsSidebarProps) {
       <div aria-hidden="true" className="sticky top-0 z-20 -mb-4 h-2 shrink-0 bg-card" data-slot="sticky-mask" />
 
       <div className="my-2 flex items-center gap-2 px-4 pt-2">
-        <Link
-          to="/about"
-          draggable={false}
-          className="focus-effect ml-1 flex h-8 items-center rounded-md transition-transform hover:scale-105 active:scale-100"
-          aria-label="Go to homepage"
-          onClick={closeSheet}
-        >
-          <Logo iconOnly height={28} />
-        </Link>
-        <div aria-hidden="true" className="h-5 w-px bg-border" />
-        <Link
-          to="/docs"
-          draggable={false}
-          className="focus-effect flex h-8 items-center rounded-md px-1 font-medium transition-opacity hover:opacity-70"
-          onClick={closeSheet}
-        >
-          Docs
-        </Link>
-        <div className="ml-auto flex items-center gap-1">
-          <Button
-            ref={searchTriggerRef}
-            variant="ghost"
-            size="icon"
-            className="size-9"
-            aria-label={t('c:search')}
-            onClick={() => openDocsSearch(searchTriggerRef)}
+        <TooltipButton toolTipContent={t('c:go_to_about')}>
+          <Link
+            to="/about"
+            draggable={false}
+            className="focus-effect ml-1 flex h-8 items-center rounded-md transition-transform hover:scale-105 active:scale-100"
+            aria-label={t('c:go_to_about')}
+            onClick={closeSheet}
           >
-            <SearchIcon className="size-5" />
-          </Button>
-          <UserTheme buttonClassName="size-9" />
+            <Logo iconOnly height={28} title={null} />
+          </Link>
+        </TooltipButton>
+        <div aria-hidden="true" className="h-5 w-px bg-border" />
+        <TooltipButton toolTipContent={t('c:go_to_docs')}>
+          <Link
+            to="/docs"
+            draggable={false}
+            className="focus-effect flex h-8 items-center rounded-md px-1 font-medium transition-opacity hover:opacity-70"
+            onClick={closeSheet}
+          >
+            {t('c:docs')}
+          </Link>
+        </TooltipButton>
+        <div className="ml-auto flex items-center gap-1">
+          <TooltipButton toolTipContent={t('c:search')}>
+            <Button
+              ref={searchTriggerRef}
+              variant="ghost"
+              size="icon"
+              className="size-9"
+              aria-label={t('c:search')}
+              onClick={() => openDocsSearch(searchTriggerRef)}
+            >
+              <SearchIcon className="size-5" />
+            </Button>
+          </TooltipButton>
+          <UserTheme buttonClassName="size-9" tooltip />
         </div>
       </div>
 

@@ -16,7 +16,7 @@ export const userGuard = xMiddleware(
     type: 'x-guard',
     security: [{ cookieAuth: [] }],
     name: 'user',
-    description: 'Requires valid session and sets auth context (user, memberships, baseDb)',
+    description: 'Requires a session cookie; acts as the signed-in user',
   },
   async (ctx, next) => {
     // A refused cookie is deleted, so the browser stops presenting it.

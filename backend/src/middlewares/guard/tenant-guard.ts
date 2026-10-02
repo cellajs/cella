@@ -32,7 +32,7 @@ export const tenantGuard = xMiddleware(
     functionName: 'tenantGuard',
     type: 'x-guard',
     name: 'tenant',
-    description: 'Requires userGuard or serviceGuard, validates tenant access, and sets baseDb + tenantId context',
+    description: 'Requires being in the tenant: a member, a system admin, or its creator while it has no organization',
   },
   async (ctx, next) => {
     const rawTenantId = ctx.req.param('tenantId');

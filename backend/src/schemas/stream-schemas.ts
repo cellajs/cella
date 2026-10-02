@@ -41,7 +41,8 @@ export const streamNotificationSchema = z
     propagation: propagationHintSchema.nullable().describe('Embedded-product propagation hint for cross-product cache invalidation'),
   })
   .openapi('StreamNotification', {
-    description: 'Realtime notification delivered via SSE for entity and membership changes.',
+    description:
+      'A live notification that a product entity or a membership changed, naming the entity, its path and sequence range rather than the row. It arrives as a `change` event on `/entities/app/stream`; the client then fetches the changed rows through the regular API.',
     example: mockStreamNotification(),
     'x-tags': schemaTags('data', 'entities', 'cella'),
   });
