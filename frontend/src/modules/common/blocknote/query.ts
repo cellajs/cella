@@ -8,8 +8,15 @@ const YJS_TOKEN_REFETCH_MS = 4 * 60 * 1000;
 
 export const yjsTokenKeys = { entity: (entityType: ProductEntityType, entityId: string) => ['yjs', 'token', entityType, entityId] as const };
 
-/** 403 or 404: the caller may not edit the entity, or it is gone; no retry changes that. */
-export const isYjsTokenRefusal = (error: unknown) => error instanceof ApiError && (error.status === 403 || error.status === 404);
+/**
+ * Why the backend will not issue a token, which no retry changes: `refused` for a 403, the caller may not edit the
+ * entity; `deleted` for a 404, the entity is gone. Null for any other error.
+ */
+export const yjsTokenRefusal = (error: unknown) => {
+  if (!(error instanceof ApiError)) return null;
+  if (error.status === 404) return 'deleted';
+  return error.status === 403 ? 'refused' : null;
+};
 
 /** The Yjs token for one entity, refreshed before it expires. */
 export const yjsTokenQueryOptions = (params: { entityType: ProductEntityType; entityId: string; tenantId: string; organizationId: string }) =>
@@ -25,7 +32,7 @@ export const yjsTokenQueryOptions = (params: { entityType: ProductEntityType; en
     refetchIntervalInBackground: true,
     // Overrides the app-wide `false`: backgrounded tabs throttle the interval, so refetch on focus when stale.
     refetchOnWindowFocus: true,
-    retry: (count, error) => !isYjsTokenRefusal(error) && count < 3,
+    retry: (count, error) => !yjsTokenRefusal(error) && count < 3,
     // A bearer token, never persisted; no global error toast, since collaborative mode stays disabled on failure.
     meta: { persist: false, suppressGlobalErrorToast: true },
   });

@@ -128,6 +128,7 @@
   "delete_mfa_last": "You can't delete {{method}} while MFA is active.",
   "delete_resource": "Delete {{resource}}",
   "delete_resource_notice.text": "As an admin you can permanently delete the {{resource}} {{name}}. All members will lose access to this {{resource}} and its data. Please note that this action is irreversible.",
+  "deleted": "Deleted",
   "deploy": "Deploy",
   "deploying": "Deploying...",
   "deployment": "Deployment",

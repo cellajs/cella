@@ -49,8 +49,8 @@ function SyncStatus({ text }: { text: string }) {
  * BlockNote host for an entity description, with one save mode fixed by config. With Yjs on, edits save through the
  * relay alone: the live editor shows once its connection synced, and until then the static, with a status saying why
  * (connecting, offline, refused). A connection the relay ended for good leaves its editor read-only with a notice: its
- * document may hold edits nobody saved. With Yjs off, a standalone editor writes through `updateData`. Without edit
- * rights, the static alone.
+ * document may hold edits nobody saved. A deleted entity shows the static, saying so. With Yjs off, a standalone editor
+ * writes through `updateData`. Without edit rights, the static alone.
  */
 export function CollaborativeBlockNote(props: CollaborativeBlockNoteProps) {
   const { entityId, tenantId, organizationId, description, canEdit, waitingFallback, className, dense, clickOpensPreview } = props;
@@ -98,7 +98,7 @@ function CollaborativeHost({
   const [userColor] = useState(getRandomColor);
 
   // The token names this entity only; the relay closes the socket when it expires, and the refreshed token reconnects it.
-  const { token, refused } = useYjsToken({ entityType, entityId, tenantId, organizationId, enabled: isOnline });
+  const { token, refused, deleted: tokenDeleted } = useYjsToken({ entityType, entityId, tenantId, organizationId, enabled: isOnline });
 
   // Once synced, the connection stays for the mount, also when its token is refused: a stopped editor shows what was typed.
   const [joined, setJoined] = useState<string | null>(null);
@@ -106,7 +106,9 @@ function CollaborativeHost({
   if (yjsConn?.synced && joined !== entityId) setJoined(entityId);
 
   const stopped = yjsConn?.stopped ?? false;
-  const connecting = isOnline && !refused && !stopped && !yjsConn?.synced;
+  // The token route answered 404, or the relay closed with 4410: the document went with the entity.
+  const deleted = tokenDeleted || (yjsConn?.deleted ?? false);
+  const connecting = isOnline && !refused && !deleted && !stopped && !yjsConn?.synced;
   const [connectingNoticed, setConnectingNoticed] = useState(false);
   useEffect(() => {
     if (!connecting) return;
@@ -118,17 +120,19 @@ function CollaborativeHost({
   }, [connecting]);
 
   // Not synced yet, or a reseeded document syncing afresh: nothing was typed into it, so the editor that replaces the
-  // static once it synced loses nothing.
-  if (!yjsConn?.synced) {
-    const status = stopped
-      ? t('c:collaboration_stopped.text')
-      : refused
-        ? t('c:read_only')
-        : !isOnline
-          ? t('c:offline')
-          : connectingNoticed
-            ? t('c:connecting')
-            : null;
+  // static once it synced loses nothing. A deleted entity's document is gone, with the edits it held unsaved.
+  if (deleted || !yjsConn?.synced) {
+    const status = deleted
+      ? t('c:deleted')
+      : stopped
+        ? t('c:collaboration_stopped.text')
+        : refused
+          ? t('c:read_only')
+          : !isOnline
+            ? t('c:offline')
+            : connectingNoticed
+              ? t('c:connecting')
+              : null;
     return (
       <>
         {status && <SyncStatus text={status} />}
