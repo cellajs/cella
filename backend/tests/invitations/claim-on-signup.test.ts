@@ -2,10 +2,10 @@ import { eq } from 'drizzle-orm';
 import { membershipInvite } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { markEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
-import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { handleCreateUser } from '#/modules/user/operations/create-account';
+import { markEmailVerified } from '#/modules/user/operations/email-proof';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createOrganizationAdminUser, createTestOrganization, createTestSession } from '../helpers';
 import { createAppClient } from '../test-client';
@@ -61,7 +61,7 @@ describe('Pending invitations are claimed by an inbox proof', async () => {
     // Opening the emailed link binds the invitation and its token to the account that proved the address.
     await createInvitation({ organization, email: invitedEmail, createdBy: user.id, boundTo: user.id, token: 'invoked' });
 
-    await markEmailVerified(db, { userId: user.id, email: invitedEmail, via: 'magic' });
+    await markEmailVerified({ var: { db } }, { userId: user.id, email: invitedEmail, via: 'magic' });
 
     expect(await tokensFor(invitedEmail)).toHaveLength(1);
   });

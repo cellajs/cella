@@ -7,8 +7,6 @@ import { type DbOrTx, baseDb as db } from '#/db/db';
 import { maySignUp } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { finishSignIn } from '#/modules/auth/general/helpers/finish-sign-in';
-import { addProvenEmail, requireEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
-import { handleCreateUser } from '#/modules/auth/general/helpers/user';
 import { type IdentityModel, identitiesTable } from '#/modules/auth/identities-db';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
@@ -16,6 +14,8 @@ import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
 import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import type { PendingSignUp, TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
+import { handleCreateUser } from '#/modules/user/operations/create-account';
+import { addProvenEmail, requireEmailVerified } from '#/modules/user/operations/email-proof';
 import type { UserModel } from '#/modules/user/user-db';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
@@ -232,9 +232,9 @@ const verifyCallbackFlow = async ({
     // The click proved the inbox: the account's own address is stamped, a differing provider address joins the ledger
     // (or is refused when another account holds it by now). Either way it is a magic-link sign-in identifier from here.
     if (verifyToken.email === user.email) {
-      await requireEmailVerified(tx, { userId: user.id, email: verifyToken.email, via: provider });
+      await requireEmailVerified({ var: { db: tx } }, { userId: user.id, email: verifyToken.email, via: provider });
     } else {
-      await addProvenEmail(tx, { userId: user.id, email: verifyToken.email, via: provider });
+      await addProvenEmail({ var: { db: tx } }, { userId: user.id, email: verifyToken.email, via: provider });
     }
   });
 
