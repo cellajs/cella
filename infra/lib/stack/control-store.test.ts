@@ -17,6 +17,7 @@ import {
   setPending,
   stateBucket,
   updateServiceRollout,
+  withoutPending,
   writeControlState,
 } from './control-store';
 
@@ -229,6 +230,14 @@ describe('rollout transitions', () => {
 
   it('emptyRollout starts at seq 0 with no pointers', () => {
     expect(emptyRollout()).toEqual({ seq: 0 });
+  });
+
+  it('withoutPending drops every deploy intent and keeps the active pointers', () => {
+    // The state the failed 0.13.0 deploy left: the preflight must plan the active generation, not the pending release.
+    const active = { id: 'f9a8', sha: 'e9a8d48', seq: 3 };
+    const rollout = { backend: { seq: 3, pendingSha: '84b7e22', active }, frontend: { seq: 0, pendingSha: '84b7e22' }, cdc: { seq: 2 } };
+    expect(withoutPending(rollout)).toEqual({ backend: { seq: 3, active }, frontend: { seq: 0 }, cdc: { seq: 2 } });
+    expect(rollout.backend.pendingSha).toBe('84b7e22');
   });
 });
 

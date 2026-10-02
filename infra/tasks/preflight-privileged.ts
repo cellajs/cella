@@ -1,7 +1,7 @@
 import { spawn } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { adoptStateBackendEnv, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
+import { adoptStateBackendEnv, PLAN_LIVE_ONLY_ENV, stateBackendUrl, stateBucket } from '../lib/stack/control-store';
 import { PRIVILEGED_UP_ENV } from '../lib/stack/privileged-up';
 import { ExitCodeError } from '../lib/utils/errors';
 import { runIfMain } from '../lib/utils/is-main';
@@ -133,11 +133,14 @@ export function previewFailureMessage(code: number | null, stdout: string, stder
   return `pulumi preview exited ${code}: ${detail}`;
 }
 
-/** `pulumi preview --json` under the privileged marker, so VM policy rules are diffed too. Read-only: the CI key can run it. */
+/**
+ * `pulumi preview --json` under the privileged marker, so VM policy rules are diffed too. Read-only: the CI key can run it.
+ * It plans live generations only: the release PR's check runs outside the deploy, where a pending sha would plan a generation without minted keys.
+ */
 export async function runPrivilegedPreview(stack: string, env: NodeJS.ProcessEnv = process.env): Promise<PreviewStep[]> {
   const child = spawn('pulumi', ['preview', '--stack', stack, '--json', '--non-interactive'], {
     cwd: infraDir,
-    env: { ...env, [PRIVILEGED_UP_ENV]: '1' },
+    env: { ...env, [PRIVILEGED_UP_ENV]: '1', [PLAN_LIVE_ONLY_ENV]: '1' },
     stdio: ['ignore', 'pipe', 'pipe'],
   });
   let stdout = '';
