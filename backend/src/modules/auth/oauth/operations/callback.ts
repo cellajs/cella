@@ -109,8 +109,9 @@ const authCallbackFlow = async ({ providerUser, provider, identity = null }: Bas
 
 /** No account until the provider's address is proven: the sign-up waits on its verification mail. */
 const pendingSignUp = (providerUser: TransformedUser, provider: EnabledOAuthProvider): OAuthFlowResult => {
-  const { name, slug, firstName } = providerUser;
-  return { type: 'pending', signUp: { issuer: provider, subject: providerUser.id, name, slug, firstName }, email: providerUser.email };
+  const { name, slug, firstName, lastName } = providerUser;
+  const signUp = { issuer: provider, subject: providerUser.id, name, slug, firstName, lastName: lastName || undefined };
+  return { type: 'pending', signUp, email: providerUser.email };
 };
 
 /**
@@ -281,8 +282,8 @@ const completeSignUp = async ({
     const spent = await spendCookieToken(ctx, 'oauth-verification', { deleteCookie: 'after-commit', txCtx });
     if (spent?.id !== verifyToken.id) throw new AppError(401, 'oauth-verification_expired', 'warn');
 
-    const { name, slug, firstName } = signUp;
-    const user = await handleCreateUser(txCtx, { newUser: { email, name, slug, firstName }, via: provider });
+    const { name, slug, firstName, lastName } = signUp;
+    const user = await handleCreateUser(txCtx, { newUser: { email, name, slug, firstName, lastName }, via: provider });
     const values = { userId: user.id, issuer: provider, subject: signUp.subject, email };
     const newIdentity = await insertIdentity(txCtx, { values, verified: true });
     return { userId: user.id, identity: newIdentity };

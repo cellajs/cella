@@ -176,7 +176,7 @@ describe('SSO sign-in through an institution', async () => {
     expect(cookieChange(response, 'session')).toBe('set');
 
     const [user] = await getUserByEmail(studentEmail);
-    expect(user).toMatchObject({ name: 'Sanne de Vries', firstName: 'Sanne' });
+    expect(user).toMatchObject({ name: 'Sanne de Vries', firstName: 'Sanne', lastName: 'de Vries' });
 
     const [identity] = await identitiesOf(user.id);
     expect(identity).toMatchObject({ kind: 'sso', issuer: 'surfconext', subject, email: studentEmail, verified: true, connectionId: connection.id });

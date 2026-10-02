@@ -24,6 +24,8 @@ export type PendingSignUp = {
   name: string;
   slug: string;
   firstName: string;
+  /** Absent on tokens issued before the family name was carried, and when the provider asserts none. */
+  lastName?: string;
 };
 
 /** Tokens for email verification and invitation. Rows expired for over 30 days are swept nightly by maintain_partitions(). */

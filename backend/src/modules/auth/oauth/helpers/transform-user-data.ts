@@ -56,7 +56,8 @@ export const transformGithubUserData = (user: GithubUserProps, emails: GithubUse
   };
 };
 
+/** GitHub has one name string: the first word is the given name, everything after it the family name ("de Vries"). */
 const splitFullName = (name: string) => {
-  const [firstName, lastName] = name.split(' ');
-  return { firstName: firstName || '', lastName: lastName || '' };
+  const [firstName = '', ...rest] = name.trim().split(/\s+/);
+  return { firstName, lastName: rest.join(' ') };
 };

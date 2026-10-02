@@ -721,6 +721,8 @@ describe('OAuth Authentication', async () => {
       expect(mailer.prepareEmails).not.toHaveBeenCalled();
 
       const [account] = await db.select().from(usersTable).where(eq(usersTable.email, providerEmail));
+      // The account starts with the provider's names. Its avatar is not taken over: avatars come from the app's CDN only.
+      expect(account).toMatchObject({ name: 'Test User', firstName: 'Test', lastName: 'User', thumbnailUrl: null });
       const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
       expect(address).toMatchObject({ userId: account.id, verified: true, lastVerifiedVia: 'github' });
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
@@ -826,7 +828,7 @@ describe('OAuth Authentication', async () => {
           email: providerEmail,
           userId: null,
           identityId: null,
-          pendingSignUp: expect.objectContaining({ issuer: 'github', subject: 'github-user-id' }),
+          pendingSignUp: expect.objectContaining({ issuer: 'github', subject: 'github-user-id', firstName: 'Test', lastName: 'User' }),
         }),
       ]);
       // The mail asks to finish signing up, not to connect a provider to an account the visitor does not have.
@@ -856,7 +858,8 @@ describe('OAuth Authentication', async () => {
       expect(cookieChange(res, 'session')).toBe('set');
 
       const [account] = await accountsFor(providerEmail);
-      expect(account).toBeDefined();
+      // The names the provider asserted at the start waited on the verification with the sign-up.
+      expect(account).toMatchObject({ name: 'Test User', firstName: 'Test', lastName: 'User', thumbnailUrl: null });
       const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
       expect(address).toMatchObject({ userId: account.id, verified: true, lastVerifiedVia: 'github' });
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
