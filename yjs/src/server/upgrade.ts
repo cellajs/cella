@@ -7,8 +7,8 @@ import { type SocketContext, YJS_PENDING_QUEUE_CAP } from '../constants';
 import { authorizeDoc } from '../data/permissions';
 import { log } from '../lib/pino';
 import { createSerialQueue } from '../lib/serial-queue';
-import { handleMessage, peekMessageType, refuseFrame, YMessage } from '../sync/relay';
-import { joinCollab, leaveCollab } from '../sync/session-manager';
+import { handleLeave, handleMessage, peekMessageType, refuseFrame, YMessage } from '../sync/relay';
+import { joinCollab } from '../sync/session-manager';
 import { verifyToken } from './auth';
 import { stripYjsPrefix } from './path-prefix';
 import { checkConnectionRate } from './rate-limiter';
@@ -207,7 +207,8 @@ async function admitUpgrade(
  * never interleave. Awareness bypasses the queue and is relayed only for a joined socket; the
  * latest frame sent before the join waits for it, so a new editor's presence shows at once.
  * Closing an unjoined socket drops whatever has not started. A joined socket's queue drains first,
- * so updates it sent just before closing still reach the log, and then it leaves the session.
+ * so updates it sent just before closing still reach the log, and then it leaves the session,
+ * whose other sockets drop the presence it held.
  */
 export function setupConnectionHandler(server: WebSocketServer): void {
   server.on('connection', (ws, ctx: SocketContext) => {
@@ -249,7 +250,7 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       }
       void queue.enqueue(() => {
         joined = null;
-        leaveCollab(scope, ws);
+        handleLeave(scope, ws);
       });
     };
 

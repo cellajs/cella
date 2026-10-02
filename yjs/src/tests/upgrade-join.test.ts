@@ -1,6 +1,8 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket as WsWebSocket } from 'ws';
+import { WebsocketProvider } from 'y-websocket';
+import * as Y from 'yjs';
 import type { DocScope } from '../constants';
 import {
   awarenessUpdate,
@@ -119,6 +121,36 @@ describe('upgrade: Saved', () => {
     await until(() => saved() === 3);
     expect(logged().map((row) => readMap(row.payload))).toEqual([{ a: 1 }, { b: 2 }]);
     expect(editor.received).toEqual([savedFrame, savedFrame, savedFrame]);
+  });
+});
+
+describe('upgrade: presence leave', () => {
+  it("must not leave a closed socket's cursor at its peers until y-protocols times it out after 30 s", async () => {
+    const doc = 'doc-presence-leave';
+    usedDocs.add(doc);
+    // A y-websocket client, whose awareness applies what the relay sends as the app's does.
+    const token = createSignedToken({ userId: 'user-p', entityType, entityId: doc, tenantId: 'tenant-1' });
+    const peer = new WebsocketProvider(relay.baseUrl, doc, new Y.Doc(), {
+      params: { token, entityType, tenantId: 'tenant-1' },
+      WebSocketPolyfill: WsWebSocket as never,
+      disableBc: true,
+    });
+    // The relay's own frames, which the app's client reads.
+    peer.messageHandlers[4] = () => {};
+    peer.messageHandlers[5] = () => {};
+    try {
+      await until(() => peer.synced);
+      const editor = await open('user-e', doc);
+      await until(() => clientCount(doc) === 2);
+      editor.ws.send(buildAwarenessMessage(awarenessUpdate({ clientId: 77, clock: 3 })));
+      await until(() => peer.awareness.getStates().has(77));
+
+      editor.ws.close(1000);
+      await until(() => !peer.awareness.getStates().has(77), 1000);
+      expect(peer.awareness.getStates().has(peer.awareness.clientID)).toBe(true);
+    } finally {
+      peer.destroy();
+    }
   });
 });
 

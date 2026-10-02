@@ -3,6 +3,7 @@ import * as Y from 'yjs';
 import type { DocScope } from '../constants';
 import {
   awarenessClientIds,
+  awarenessEntries,
   awarenessUpdate,
   buildAwarenessMessage,
   buildSyncStep1,
@@ -34,7 +35,7 @@ vi.mock('../data/entity-content', () => ({ loadEntityDescription: vi.fn().mockRe
 
 vi.mock('../sync/materialize', () => ({ postMaterialize: vi.fn().mockResolvedValue('ok'), stateToBlocksJson: vi.fn(() => '[]') }));
 
-const { handleMessage, peekMessageType, runCompaction } = await import('../sync/relay');
+const { handleLeave, handleMessage, peekMessageType, runCompaction } = await import('../sync/relay');
 const { loadEntityDescription } = await import('../data/entity-content');
 const { postMaterialize } = await import('../sync/materialize');
 const { yUpdateToBlocks } = await import('../lib/blocknote-seed');
@@ -578,14 +579,14 @@ describe('handleMessage: awareness', () => {
   });
 });
 
-describe('handleMessage: awareness ownership', () => {
-  /** A socket joined to the session under its own user. */
-  const joined = (scope: DocScope, userId: string) => {
-    const ws = mockWebSocket();
-    joinCollab(scope, ws as never);
-    return { ws, ctx: mockSocketContext({ userId, requested: scope }) };
-  };
+/** A socket joined to the session under its own user. */
+function joined(scope: DocScope, userId: string) {
+  const ws = mockWebSocket();
+  joinCollab(scope, ws as never);
+  return { ws, ctx: mockSocketContext({ userId, requested: scope }) };
+}
 
+describe('handleMessage: awareness ownership', () => {
   it("must not relay a presence state for another user's client", async () => {
     const { scope, collab } = session();
     const peer = joined(scope, 'user-peer');
@@ -743,6 +744,98 @@ describe('handleMessage: awareness ownership', () => {
     expect(peer.ws.sent).toHaveLength(0);
     expect(sender.ws.closed).toEqual({ code: 4400, reason: 'Malformed awareness' });
     for (const ws of [peer.ws, sender.ws]) leaveCollab(collab.scope, ws as never);
+  });
+});
+
+describe('handleLeave: presence', () => {
+  /** Announces presence entries from a socket, past the rate limit. */
+  async function announce(socket: ReturnType<typeof joined>, ...entries: Parameters<typeof awarenessUpdate>) {
+    vi.advanceTimersByTime(600);
+    await handleMessage(socket.ctx, socket.ws as never, buildAwarenessMessage(awarenessUpdate(...entries)));
+  }
+
+  it('removes the clients a leaving socket held from the sockets that stay, one clock past the last relayed', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const editor = joined(scope, 'user-editor');
+    await announce(editor, { clientId: 10, clock: 1 }, { clientId: 11, clock: 4 });
+    await announce(editor, { clientId: 10, clock: 6 });
+    const before = editor.ws.sent.length;
+
+    handleLeave(scope, editor.ws as never);
+
+    expect(awarenessEntries(peer.ws.sent.at(-1)!)).toEqual([
+      { clientId: 10, clock: 7, state: null },
+      { clientId: 11, clock: 5, state: null },
+    ]);
+    expect(editor.ws.sent).toHaveLength(before);
+    expect(collab.awarenessOwners.size).toBe(0);
+    leaveCollab(collab.scope, peer.ws as never);
+  });
+
+  it('must not count a clock its peers never received: a frame the rate limit dropped leaves the last relayed one', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const editor = joined(scope, 'user-editor');
+    await announce(editor, { clientId: 20, clock: 1 });
+    await handleMessage(editor.ctx, editor.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 20, clock: 9 })));
+    expect(peer.ws.sent).toHaveLength(1);
+
+    handleLeave(scope, editor.ws as never);
+    expect(awarenessEntries(peer.ws.sent.at(-1)!)).toEqual([{ clientId: 20, clock: 2, state: null }]);
+    leaveCollab(collab.scope, peer.ws as never);
+  });
+
+  it('must not remove a client another socket of its user took over', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const first = joined(scope, 'user-a');
+    await announce(first, { clientId: 50, clock: 1 });
+    // A reconnect of the same user takes its client over before the old socket's close is processed.
+    const reconnect = joined(scope, 'user-a');
+    await announce(reconnect, { clientId: 50, clock: 2 });
+    const before = peer.ws.sent.length;
+
+    handleLeave(scope, first.ws as never);
+    expect(peer.ws.sent).toHaveLength(before);
+
+    // Positive control: the socket holding it now removes it when it leaves.
+    handleLeave(scope, reconnect.ws as never);
+    expect(awarenessEntries(peer.ws.sent.at(-1)!)).toEqual([{ clientId: 50, clock: 3, state: null }]);
+    leaveCollab(collab.scope, peer.ws as never);
+  });
+
+  it('sends nothing for a socket that held no client, one that removed its own, or the last socket of the session', async () => {
+    const { scope, ws, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const silent = joined(scope, 'user-silent');
+    const removed = joined(scope, 'user-removed');
+    await announce(removed, { clientId: 30, clock: 1 });
+    await announce(removed, { clientId: 30, clock: 2, state: null });
+    const before = peer.ws.sent.length;
+
+    handleLeave(scope, silent.ws as never);
+    handleLeave(scope, removed.ws as never);
+    handleLeave(scope, ws as never);
+    expect(peer.ws.sent).toHaveLength(before);
+
+    // The last socket leaves to no one, and its session waits out the grace period as before.
+    await announce(peer, { clientId: 40, clock: 1 });
+    const sent = peer.ws.sent.length;
+    handleLeave(scope, peer.ws as never);
+    expect(peer.ws.sent).toHaveLength(sent);
+    expect(collab.cleanupTimer).toBeDefined();
+  });
+
+  it('must not reach a newer session of the document from a socket of one that ended', async () => {
+    const { scope, collab } = session();
+    const editor = joined(scope, 'user-editor');
+    await announce(editor, { clientId: 60, clock: 1 });
+    endCollab(collab);
+    const next = session({ entityId: scope.entityId });
+
+    handleLeave(scope, editor.ws as never);
+    expect(next.ws.sent).toEqual([]);
   });
 });
 

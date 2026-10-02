@@ -9,8 +9,8 @@ export interface CollabSession {
   /** The document as its entity row places it; compaction, materialize and cleanup act in it as the system, never as a joiner. */
   scope: DocScope;
   clients: Set<WebSocket>;
-  /** Awareness client id → the socket holding it and its user; no other user's socket relays that id. Up to YJS_AWARENESS_MAX_CLIENTS per socket. */
-  awarenessOwners: Map<number, { ws: WebSocket; userId: string }>;
+  /** Awareness client id → the socket holding it, its user and the last clock relayed for it; no other user's socket relays that id. Up to YJS_AWARENESS_MAX_CLIENTS per socket. */
+  awarenessOwners: Map<number, { ws: WebSocket; userId: string; clock: number }>;
   /** Document lock: seeding, compaction and finishing (cleanup or the startup sweep) run one at a time through this chain. */
   chain: Promise<unknown>;
   /** The generation of the document row the session loaded at its first handshake, null before. A row gone or of another generation since was retired: the session ends. */
@@ -183,23 +183,33 @@ export async function finishOrphan(scope: DocScope): Promise<FinishOutcome> {
   return outcome;
 }
 
+/** An awareness client a socket held when it left, at the last clock relayed for it. */
+export interface ReleasedClient {
+  clientId: number;
+  clock: number;
+}
+
 /**
- * When the last client leaves, a grace period runs before the session is finished: its log compacted and forgotten.
+ * Takes a socket out of its session and frees the awareness clients it held, which it returns so its peers can drop
+ * them. When the last client leaves, a grace period runs before the session is finished: its log compacted and forgotten.
  * A retryable failure keeps the log and retries, up to YJS_CLEANUP_MAX_ATTEMPTS, and a permanent refusal or the last
  * failed attempt keeps it for the next session or the startup sweep. A socket that joins while cleanup runs keeps the
  * session; when it leaves again first, the cleanup its leave arms takes over, so what it logged is compacted too. A
  * session leaves the map only while it has no client and no timer armed on it, so the relay always finds a joined
  * socket's session.
  */
-export function leaveCollab(doc: DocKey, ws: WebSocket): void {
+export function leaveCollab(doc: DocKey, ws: WebSocket): ReleasedClient[] {
   const key = collabKey(doc);
   const collab = collabSessions.get(key);
   // Only a client of the live session leaves it: a socket that never joined it, or left it already, changes nothing.
-  if (!collab?.clients.delete(ws)) return;
+  if (!collab?.clients.delete(ws)) return [];
+  const released: ReleasedClient[] = [];
   for (const [clientId, owner] of collab.awarenessOwners) {
-    if (owner.ws === ws) collab.awarenessOwners.delete(clientId);
+    if (owner.ws !== ws) continue;
+    collab.awarenessOwners.delete(clientId);
+    released.push({ clientId, clock: owner.clock });
   }
-  if (collab.clients.size > 0) return;
+  if (collab.clients.size > 0) return released;
 
   let attempts = 0;
   const cleanup = async () => {
@@ -227,6 +237,7 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
   };
 
   collab.cleanupTimer = setTimeout(cleanup, YJS_CLEANUP_DELAY_MS);
+  return released;
 }
 
 /** How many awareness clients a socket holds in its session. */
@@ -240,14 +251,14 @@ function heldClientCount(collab: CollabSession, ws: WebSocket): number {
  * Decides one awareness entry from a socket of `userId`: `relay` it, `drop` it (another user's socket holds its client),
  * or `refuse` the socket, which announced more clients than it may hold. An announcement takes a client no socket holds,
  * or one another socket of the same user holds (a reconnect takes its client over), while the socket holds fewer than
- * YJS_AWARENESS_MAX_CLIENTS. A removal takes nothing and frees a client the socket holds: y-websocket re-sends every
- * change it applies, including the removal of each peer it timed out.
+ * YJS_AWARENESS_MAX_CLIENTS, and the client keeps the highest clock relayed for it. A removal takes nothing and frees a
+ * client the socket holds: y-websocket re-sends every change it applies, including the removal of each peer it timed out.
  */
 export function claimAwarenessClient(
   collab: CollabSession,
   ws: WebSocket,
   userId: string,
-  entry: { clientId: number; removes: boolean },
+  entry: { clientId: number; clock: number; removes: boolean },
 ): 'relay' | 'drop' | 'refuse' {
   const owner = collab.awarenessOwners.get(entry.clientId);
   if (owner && owner.userId !== userId) return 'drop';
@@ -255,13 +266,15 @@ export function claimAwarenessClient(
     if (owner?.ws === ws) collab.awarenessOwners.delete(entry.clientId);
     return 'relay';
   }
-  if (owner?.ws === ws) return 'relay';
-  if (heldClientCount(collab, ws) < YJS_AWARENESS_MAX_CLIENTS) {
-    collab.awarenessOwners.set(entry.clientId, { ws, userId });
+  const clock = Math.max(owner?.clock ?? 0, entry.clock);
+  if (owner?.ws !== ws && heldClientCount(collab, ws) < YJS_AWARENESS_MAX_CLIENTS) {
+    collab.awarenessOwners.set(entry.clientId, { ws, userId, clock });
     return 'relay';
   }
-  // A client another socket of this user holds stays with it; a free one would grow the session past the cap.
-  return owner ? 'relay' : 'refuse';
+  // A free client would grow the session past the cap; one this socket or another socket of its user holds stays there.
+  if (!owner) return 'refuse';
+  owner.clock = clock;
+  return 'relay';
 }
 
 /** Sends a frame to every open socket of the session but `exclude`: a sync update skips its sender, awareness reaches it too. */

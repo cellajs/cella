@@ -10,7 +10,7 @@ import { descriptionToYUpdate } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
 import { classifyUpdate, mergeLog } from './document-state';
-import { broadcastToCollab, type CollabSession, claimAwarenessClient, endCollab, getCollab, withDocLock } from './session-manager';
+import { broadcastToCollab, type CollabSession, claimAwarenessClient, endCollab, getCollab, leaveCollab, withDocLock } from './session-manager';
 
 /** Message types on the socket: y-websocket's sync and awareness, and the relay's own `Generation` and `Saved`, which must match the frontend's yjs-connections.ts. */
 export const YMessage = {
@@ -173,7 +173,7 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
     // Presence for another user's client would move or remove their cursor.
     const relayed: AwarenessEntry[] = [];
     for (const entry of entries) {
-      const verdict = claimAwarenessClient(collab, ws, ctx.userId, { clientId: entry.clientId, removes: entry.state === 'null' });
+      const verdict = claimAwarenessClient(collab, ws, ctx.userId, { clientId: entry.clientId, clock: entry.clock, removes: entry.state === 'null' });
       if (verdict === 'refuse') return refuseFrame(scope, ctx.userId, ws, 'Too many awareness clients');
       if (verdict === 'relay') relayed.push(entry);
     }
@@ -182,6 +182,18 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
     // editor alone on its document receives nothing else. An entry at the clock the sender holds changes nothing there.
     broadcastToCollab(collab, relayed.length === entries.length ? data : encodeAwarenessMessage(relayed));
   }
+}
+
+/**
+ * Takes a socket out of its session and removes the presence it held from the sockets that stay: a null state for each
+ * of its clients, one clock past the last relayed, which y-protocols applies like the client's own removal, so peers
+ * drop its cursor at once, without waiting for their 30 s timeout. A client another socket of its user took over stays.
+ */
+export function handleLeave(doc: DocKey, ws: WebSocket): void {
+  const released = leaveCollab(doc, ws);
+  const collab = getCollab(doc);
+  if (!collab || released.length === 0) return;
+  broadcastToCollab(collab, encodeAwarenessMessage(released.map(({ clientId, clock }) => ({ clientId, clock: clock + 1, state: 'null' }))));
 }
 
 /**
