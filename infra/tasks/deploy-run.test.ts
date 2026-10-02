@@ -157,6 +157,8 @@ describe('runDeploy sequencing', () => {
       'task:ensure-state-bucket',
       'exec:pulumi:login',
       'lease:acquire:deploy',
+      // Leftover pointers are reconciled before anything plans the stack.
+      'task:sync-rollout-config',
       'task:preflight-privileged',
       'task:wait-for-images',
       'task:mint-generation-keys',

@@ -164,6 +164,9 @@ export async function runDeploy(
       lease = await fx.lease(stack, 'deploy');
     });
     await step('Pre-install Pulumi providers', () => fx.task('install-pulumi-providers'));
+    // Under the lock, before anything plans the stack: drop pointers a failed deploy left behind, so neither the preflight nor the stack update
+    // plans that release's generation again, and adopt the live VM as the overlap partner.
+    await step('Reconcile rollout pointers', () => fx.task('sync-rollout-config', ['--stack', stack, '--reset-pending']));
     // Privileged changes (a database privilege, a VM policy rule) need an operator Apply first: fail here, in seconds, with that command.
     await step('Preflight privileged changes', () => fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]));
 
@@ -243,10 +246,7 @@ export async function runDeploy(
     });
 
     await step('Repair errored LB certificates', () => fx.task('repair-certs', ['--stack', stack]));
-    await step('Base stack update', async () => {
-      await fx.task('sync-rollout-config', ['--stack', stack]);
-      await fx.update(stack);
-    });
+    await step('Base stack update', () => fx.update(stack));
     await step('Verify VM IAM grants', async () => {
       // One assertion per principal: exact sets AND exact path condition; a dormant principal must also hold no key.
       const rows = JSON.parse(env.vm_assert_json) as Array<{ app: string; sets: string[]; condition: string; dormant?: boolean }>;

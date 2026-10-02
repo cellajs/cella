@@ -108,6 +108,31 @@ export function formatPending(mode: string, pending: PendingPrivilegedChange[]):
   return lines.join('\n');
 }
 
+/**
+ * The error a failed `pulumi preview --json` reports. Pulumi writes program and provider errors into the JSON on stdout as `diagnostics`, while
+ * stderr carries SDK warnings, so the error diagnostics come first and the stderr tail is the fallback.
+ */
+export function previewFailureMessage(code: number | null, stdout: string, stderr: string): string {
+  let errors: string[] = [];
+  try {
+    const parsed = JSON.parse(stdout) as { diagnostics?: { message?: string; severity?: string }[] };
+    errors = (parsed.diagnostics ?? [])
+      .filter((diagnostic) => diagnostic.severity === 'error' && diagnostic.message?.trim())
+      .map((diagnostic) =>
+        (diagnostic.message ?? '')
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .slice(0, 3)
+          .join(' | '),
+      );
+  } catch {
+    // Not JSON: Pulumi failed before the preview started.
+  }
+  const detail = errors.length > 0 ? errors.join(' || ') : stderr.trim().split('\n').slice(-5).join(' | ');
+  return `pulumi preview exited ${code}: ${detail}`;
+}
+
 /** `pulumi preview --json` under the privileged marker, so VM policy rules are diffed too. Read-only: the CI key can run it. */
 export async function runPrivilegedPreview(stack: string, env: NodeJS.ProcessEnv = process.env): Promise<PreviewStep[]> {
   const child = spawn('pulumi', ['preview', '--stack', stack, '--json', '--non-interactive'], {
@@ -124,7 +149,7 @@ export async function runPrivilegedPreview(stack: string, env: NodeJS.ProcessEnv
     stderr += chunk.toString();
   });
   const code = await new Promise<number | null>((done) => child.once('close', done));
-  if (code !== 0) throw new Error(`pulumi preview exited ${code}: ${stderr.trim().split('\n').slice(-5).join(' | ')}`);
+  if (code !== 0) throw new Error(previewFailureMessage(code, stdout, stderr));
   const parsed = JSON.parse(stdout) as { steps?: PreviewStep[] };
   return parsed.steps ?? [];
 }
