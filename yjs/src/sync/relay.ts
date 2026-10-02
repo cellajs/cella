@@ -3,7 +3,7 @@ import * as encoding from 'lib0/encoding';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
 import type { DocKey, SocketContext } from '../constants';
-import { YJS_AWARENESS_MAX_ENTRIES, YJS_AWARENESS_RATE_LIMIT, YJS_COMPACT_DEBOUNCE_MS } from '../constants';
+import { YJS_AWARENESS_MAX_ENTRIES, YJS_AWARENESS_RATE_LIMIT, YJS_COMPACT_DEBOUNCE_MS, YJS_COMPACT_MAX_WAIT_MS } from '../constants';
 import { loadEntityDescription } from '../data/entity-content';
 import { appendUpdate, ensureDoc, loadBase, readLog } from '../data/storage';
 import { descriptionToYUpdate } from '../lib/blocknote-seed';
@@ -242,17 +242,30 @@ async function handleSyncUpdate(collab: CollabSession, userId: string, ws: WebSo
   scheduleCompaction(collab);
 }
 
-/** One compaction per quiet window; a new update restarts the wait. */
+/**
+ * One compaction per quiet window; a new update restarts the wait, up to a deadline YJS_COMPACT_MAX_WAIT_MS after the
+ * first update since the last run, so someone typing without pause still reaches viewers and the row.
+ */
 export function scheduleCompaction(collab: CollabSession): void {
   if (collab.compactTimer) clearTimeout(collab.compactTimer);
-  collab.compactTimer = setTimeout(() => {
-    collab.compactTimer = undefined;
-    void runCompaction(collab);
-  }, YJS_COMPACT_DEBOUNCE_MS);
+  const now = Date.now();
+  collab.compactDueAt ??= now + YJS_COMPACT_MAX_WAIT_MS;
+  collab.compactTimer = setTimeout(
+    () => {
+      collab.compactTimer = undefined;
+      void runCompaction(collab);
+    },
+    Math.max(0, Math.min(YJS_COMPACT_DEBOUNCE_MS, collab.compactDueAt - now)),
+  );
 }
 
-/** Compacts under the document lock; a thrown error counts as retryable and leaves the log in place. A retired document ends the session. */
+/**
+ * Compacts under the document lock; a thrown error counts as retryable and leaves the log in place. A retired document
+ * ends the session. The deadline clears as the run starts, whatever its outcome: an update from then on may be logged
+ * after the run reads the log, and its window takes a deadline of its own.
+ */
 export async function runCompaction(collab: CollabSession): Promise<CompactionResult> {
+  collab.compactDueAt = undefined;
   return withDocLock(collab, async () => {
     try {
       const result = await compactDocument(collab.scope, collab.generation);

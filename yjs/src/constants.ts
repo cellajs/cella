@@ -4,8 +4,10 @@ export const YJS_CLEANUP_DELAY_MS = 5 * 60 * 1000;
 export const YJS_LIVE_TOUCH_MS = YJS_CLEANUP_DELAY_MS / 5;
 /** Cleanup attempts before a session whose final write keeps failing is forgotten (an hour at the retry interval); its rows stay for the next session or the startup sweep. */
 export const YJS_CLEANUP_MAX_ATTEMPTS = 12;
-/** Debounces compaction (merge the log into the base state and materialize) after the last received update; bounds description freshness for non-editing viewers. */
+/** Debounces compaction (merge the log into the base state and materialize) after the last received update, up to YJS_COMPACT_MAX_WAIT_MS. */
 export const YJS_COMPACT_DEBOUNCE_MS = 3000;
+/** Longest wait for compaction after the first update since the last compaction started, however often later updates restart the debounce: bounds how far non-editing viewers fall behind, and the log, while someone types without pause. */
+export const YJS_COMPACT_MAX_WAIT_MS = 10_000;
 /** Sync messages a socket may queue while its entity access is still being verified. */
 export const YJS_PENDING_QUEUE_CAP = 100;
 export const YJS_AWARENESS_RATE_LIMIT = 2; // Max 2 awareness updates per client per second to prevent spam and DoS

@@ -645,6 +645,80 @@ describe('compaction', () => {
     expect(storage.logs.get(key)).toHaveLength(0);
   });
 
+  let keystroke = 0;
+  /** One update a second from the session's socket for `seconds` seconds: each restarts the debounce. */
+  async function typeFor(seconds: number, { ctx: c, ws }: ReturnType<typeof seededSession>) {
+    for (let i = 0; i < seconds; i++) {
+      await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate(`key-${++keystroke}`, i)));
+      await vi.advanceTimersByTimeAsync(1000);
+    }
+  }
+
+  it('compacts a lone update after the three-second debounce', async () => {
+    const { ctx: c, ws } = seededSession();
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
+    await vi.advanceTimersByTimeAsync(2999);
+    expect(postMaterialize).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(postMaterialize).toHaveBeenCalledTimes(1);
+  });
+
+  it('must not let continuous typing hold compaction off: it runs ten seconds after the first update, and ten seconds later again', async () => {
+    const opened = seededSession();
+    for (let second = 1; second <= 20; second++) {
+      await typeFor(1, opened);
+      expect(postMaterialize).toHaveBeenCalledTimes(Math.floor(second / 10));
+    }
+    // Each run wrote the ten updates of its window.
+    expect(storage.compactState.mock.calls.map(([, , ids]) => (ids as number[]).length)).toEqual([10, 10]);
+  });
+
+  it('gives the next burst a deadline of its own after a run, whatever its outcome', async () => {
+    const opened = seededSession();
+    vi.mocked(postMaterialize).mockResolvedValueOnce('retry');
+    await typeFor(10, opened);
+    expect(postMaterialize).toHaveBeenCalledTimes(1);
+    expect(opened.collab.compactDueAt).toBeUndefined();
+
+    // Quiet for a minute, then typing again: the burst waits ten seconds of its own, not the first one's long-past deadline.
+    await vi.advanceTimersByTimeAsync(60_000);
+    await typeFor(9, opened);
+    expect(postMaterialize).toHaveBeenCalledTimes(1);
+    await typeFor(1, opened);
+    expect(postMaterialize).toHaveBeenCalledTimes(2);
+  });
+
+  it('must not queue runs back to back behind a slow one: updates logged during a run wait for a deadline of their own', async () => {
+    const opened = seededSession();
+    const gate = deferred();
+    vi.mocked(postMaterialize).mockImplementationOnce(async () => {
+      await gate.promise;
+      return 'ok';
+    });
+    await typeFor(10, opened);
+    expect(postMaterialize).toHaveBeenCalledTimes(1);
+
+    // The backend holds the first write for nine seconds while typing goes on.
+    await typeFor(9, opened);
+    gate.release();
+    await flushMicrotasks();
+    expect(postMaterialize).toHaveBeenCalledTimes(1);
+    await typeFor(1, opened);
+    expect(postMaterialize).toHaveBeenCalledTimes(2);
+  });
+
+  it('must not leave a compaction timer or deadline on a session that ended', async () => {
+    const { ctx: c, ws, collab } = seededSession();
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
+    expect(collab.compactDueAt).toBeDefined();
+
+    endCollab(collab);
+    expect(collab.compactTimer).toBeUndefined();
+    expect(collab.compactDueAt).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(postMaterialize).not.toHaveBeenCalled();
+  });
+
   it('an update appended during an in-flight materialize survives compaction', async () => {
     const { ctx: c, key, ws, collab } = seededSession();
     await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));

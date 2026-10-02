@@ -17,6 +17,8 @@ export interface CollabSession {
   generation: string | null;
   cleanupTimer?: ReturnType<typeof setTimeout>;
   compactTimer?: ReturnType<typeof setTimeout>;
+  /** When the armed compaction runs at the latest: YJS_COMPACT_MAX_WAIT_MS after the first update since the last run started. */
+  compactDueAt?: number;
   /** Stamps the session row live every YJS_LIVE_TOUCH_MS while the session lasts. */
   liveTimer: ReturnType<typeof setInterval>;
 }
@@ -111,6 +113,7 @@ function dropCollab(key: string, collab: CollabSession): void {
   clearInterval(collab.liveTimer);
   collab.cleanupTimer = undefined;
   collab.compactTimer = undefined;
+  collab.compactDueAt = undefined;
   if (collabSessions.get(key) === collab) collabSessions.delete(key);
 }
 
@@ -206,6 +209,7 @@ export function leaveCollab(doc: DocKey, ws: WebSocket): void {
       clearTimeout(collab.compactTimer);
       collab.compactTimer = undefined;
     }
+    collab.compactDueAt = undefined;
     attempts++;
 
     const outcome = await finishCollab(key, collab);

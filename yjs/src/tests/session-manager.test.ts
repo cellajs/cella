@@ -68,6 +68,7 @@ describe('joinCollab / leaveCollab', () => {
     const ws = mockWebSocket();
     const collab = joinCollab(ctx, ws as never);
     collab.compactTimer = setTimeout(() => {}, 3000);
+    collab.compactDueAt = Date.now() + 10_000;
     leaveCollab(ctx, ws as never);
 
     await vi.advanceTimersByTimeAsync(GRACE);
@@ -75,6 +76,7 @@ describe('joinCollab / leaveCollab', () => {
     expect(compactDocument).toHaveBeenCalledWith(ctx, null);
     expect(deleteDoc).not.toHaveBeenCalled();
     expect(collab.compactTimer).toBeUndefined();
+    expect(collab.compactDueAt).toBeUndefined();
     expect(getCollab(ctx)).toBeUndefined();
   });
 

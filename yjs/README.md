@@ -28,7 +28,7 @@ entity description + derived fields
 Postgres → CDC → SSE → non-editing viewers
 ```
 
-Keystrokes merge at character level and reach peers as soon as they are durable. Once per quiet window the relay compacts the log and the backend writes the description, plus whatever the entity's registered materializer derives, through its normal update pipeline.
+Keystrokes merge at character level and reach peers as soon as they are durable. Once per quiet window, and at least every ten seconds while someone keeps typing, the relay compacts the log and the backend writes the description, plus whatever the entity's registered materializer derives, through its normal update pipeline.
 
 ## Connection and auth
 
@@ -84,7 +84,7 @@ The relay first tells the client the document's generation (its own message type
 
 Sync frames from one socket run one at a time in arrival order through a serial queue whose first task is the socket's entity verification and join; a burst of keystrokes can never interleave. Each update is appended to `yjs_updates` before it is broadcast to peers, so peers only ever see durable content. An update Yjs cannot decode is never logged or relayed: its socket closes with 4400.
 
-Three seconds after the last received update the log is compacted, under the document lock: base and log are merged, the merged blocks are sent to `/internal/yjs/materialize` on the backend's internal listener with the window's editors, newest first, and on success the base is replaced and exactly the rows that were read are deleted. A row appended during the write survives for the next round. The backend takes the tenant and organization from the entity row, refusing a body that names another, sanitizes media URLs and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check as the newest editor who may still update the entity. The template registers the attachment update op; an app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and materialization returns `400` for a product without one. Only a written window folds into the base, so the base holds only written state and the log every edit the entity has not received.
+Three seconds after the last received update, and at most ten seconds after the first one since the last compaction started, the log is compacted, under the document lock: base and log are merged, the merged blocks are sent to `/internal/yjs/materialize` on the backend's internal listener with the window's editors, newest first, and on success the base is replaced and exactly the rows that were read are deleted. A row appended during the write survives for the next round. The backend takes the tenant and organization from the entity row, refusing a body that names another, sanitizes media URLs and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check as the newest editor who may still update the entity. The template registers the attachment update op; an app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and materialization returns `400` for a product without one. Only a written window folds into the base, so the base holds only written state and the log every edit the entity has not received.
 
 | Result | Behavior |
 | --- | --- |
