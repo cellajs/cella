@@ -131,7 +131,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
     const bodies = [
       { ...bodyFor(ownScope(), 'no editors'), editors: [] },
       { ...bodyFor(ownScope(), 'fractional row id'), serverRowIds: [1.5] },
-      { ...bodyFor(ownScope(), 'too many row ids'), serverRowIds: Array.from({ length: 201 }, (_, i) => i + 1) },
+      { ...bodyFor(ownScope(), 'too many row ids'), serverRowIds: Array.from({ length: 10_001 }, (_, i) => i + 1) },
     ];
     for (const refused of bodies) await expectRefusal(await materialize(refused), 400, 'invalid_request', refused.description);
     expect((await stored())?.description).toBe(original);
@@ -195,7 +195,9 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
     const serverRowIds = await serverRowsOf(live.id);
     expect(serverRowIds).toHaveLength(1);
 
-    const { status } = await materialize({ ...bodyFor(ownScope(), 'merged with the write', [owner.user.id], live.id), serverRowIds });
+    // At the cap: the ids the window merged, and ids of rows long folded.
+    const atCap = [...serverRowIds, ...Array.from({ length: 10_000 - serverRowIds.length }, (_, i) => Number.MAX_SAFE_INTEGER - i)];
+    const { status } = await materialize({ ...bodyFor(ownScope(), 'merged with the write', [owner.user.id], live.id), serverRowIds: atCap });
     expect(status).toBe(200);
     expect((await live.read())?.description).toContain('merged with the write');
     // The relay's own write records nothing.

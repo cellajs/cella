@@ -15,9 +15,9 @@ const materializeBodySchema = z.object({
   description: z.string(),
   // The log's senders, newest first; the relay sends at most 20.
   editors: z.array(z.uuid()).min(1).max(50),
-  // The window's server-origin rows; absent reads as none, so a relay from before release 2 gets 409 for a window
-  // that holds one.
-  serverRowIds: z.array(z.number().int()).max(200).default([]),
+  // The window's server-origin rows, ids only, so the body stays small at the cap; absent reads as none, so a relay from
+  // before release 2 gets 409 for a window that holds one.
+  serverRowIds: z.array(z.number().int()).max(10_000).default([]),
 });
 
 /**
