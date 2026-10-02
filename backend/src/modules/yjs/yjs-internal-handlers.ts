@@ -15,6 +15,9 @@ const materializeBodySchema = z.object({
   description: z.string(),
   // The log's senders, newest first; the relay sends at most 20.
   editors: z.array(z.uuid()).min(1).max(50),
+  // The window's server-origin rows; absent reads as none, so a relay from before release 2 gets 409 for a window
+  // that holds one.
+  serverRowIds: z.array(z.number().int()).max(200).default([]),
 });
 
 /**
@@ -23,7 +26,7 @@ const materializeBodySchema = z.object({
  */
 const app = new Hono<Env>();
 
-/** Persists a compacted collaborative document to its entity. Refusals are `AppError`s as on every route; the relay reads the status alone, 410 meaning the entity is gone, so its rows can go too. */
+/** Persists a compacted collaborative document to its entity. Refusals are `AppError`s as on every route; the relay reads the status alone: 410 means the entity is gone, so its rows can go too, and 409 that the window lacks an outside write, so it retries. */
 app.post('/materialize', async (ctx) => {
   const secret = ctx.req.header('x-yjs-relay-secret');
   if (!secret || !safeEqual(secret, modeSecret('YJS_RELAY_SECRET'))) {

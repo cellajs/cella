@@ -1,5 +1,6 @@
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
+import { vi } from 'vitest';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { adminDb } from '../helpers';
@@ -49,3 +50,28 @@ export async function seedAttachment(opts: { tenantId: string; organizationId: s
     },
   };
 }
+
+/** A transaction holding the attachment row FOR UPDATE until released, as a write in flight holds it. */
+export async function holdAttachmentRow(id: string) {
+  const held = Promise.withResolvers<void>();
+  const released = Promise.withResolvers<void>();
+  const done = adminDb.transaction(async (tx) => {
+    await tx.select({ id: attachmentsTable.id }).from(attachmentsTable).where(eq(attachmentsTable.id, id)).for('update');
+    held.resolve();
+    await released.promise;
+  });
+  await Promise.race([held.promise, done]);
+  return { release: () => released.resolve(), done };
+}
+
+/** Resolves once `count` sessions on the worker's database wait for a lock: requests queued behind a held row. */
+export const lockWaiters = (count: number) =>
+  vi.waitUntil(
+    async () => {
+      const { rows } = await adminDb.execute<{ waiting: number }>(
+        sql`SELECT count(*)::int AS waiting FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'`,
+      );
+      return rows[0].waiting >= count;
+    },
+    { timeout: 5000, interval: 10 },
+  );

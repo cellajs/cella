@@ -10,7 +10,6 @@ import * as Y from 'yjs';
 import type { ActorContext } from '#/core/context';
 import { generateServerHLC } from '#/core/stx';
 import { baseDb } from '#/db/db';
-import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { updateAttachmentOp } from '#/modules/attachment/operations/update-attachment';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
@@ -23,7 +22,7 @@ import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from './fixtures';
 import { adminDb, expectRefusal } from './helpers';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
-import { seedAttachment } from './security/yjs-helpers';
+import { holdAttachmentRow, lockWaiters, seedAttachment } from './security/yjs-helpers';
 import { createAppClient } from './test-client';
 import { setTestConfig } from './test-utils';
 
@@ -160,31 +159,6 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
     await vi.waitUntil(() => heard.includes(token), { timeout: 5000, interval: 10 });
   };
 
-  /** Resolves once `count` sessions on this worker's database wait for a lock. */
-  const lockWaiters = (count: number) =>
-    vi.waitUntil(
-      async () => {
-        const { rows } = await adminDb.execute<{ waiting: number }>(
-          sql`SELECT count(*)::int AS waiting FROM pg_stat_activity WHERE datname = current_database() AND wait_event_type = 'Lock'`,
-        );
-        return rows[0].waiting >= count;
-      },
-      { timeout: 5000, interval: 10 },
-    );
-
-  /** A transaction holding the attachment row FOR UPDATE until released, as a write in flight holds it. */
-  const holdRow = async (entityId: string) => {
-    const held = Promise.withResolvers<void>();
-    const released = Promise.withResolvers<void>();
-    const done = adminDb.transaction(async (tx) => {
-      await tx.select({ id: attachmentsTable.id }).from(attachmentsTable).where(eq(attachmentsTable.id, entityId)).for('update');
-      held.resolve();
-      await released.promise;
-    });
-    await Promise.race([held.promise, done]);
-    return { release: () => released.resolve(), done };
-  };
-
   /** A relay append of a client's update, as the relay's storage makes it, held uncommitted until released. */
   const holdAppend = async (scope: YjsDocScope, update: Uint8Array, generation: string) => {
     const appended = Promise.withResolvers<void>();
@@ -300,7 +274,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
 
   it('serializes concurrent writes on the entity row: the document reads as the last, in one block group (7)', async () => {
     const { attachment } = await arrange(description(block('one', 'Status: draft')));
-    const holder = await holdRow(attachment.id);
+    const holder = await holdAttachmentRow(attachment.id);
     const first = put(attachment.id, description(block('one', 'Status: review')));
     await lockWaiters(1);
     const second = put(attachment.id, description(block('one', 'Status: done')));

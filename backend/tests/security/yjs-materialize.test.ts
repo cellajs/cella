@@ -1,20 +1,26 @@
+import { and, asc, eq, isNull } from 'drizzle-orm';
+import { updateAttachment } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { generateServerHLC } from '#/core/stx';
 import { modeSecret } from '#/env';
-import { adminRole } from '../fixtures';
-import { expectRefusal } from '../helpers';
+import { descriptionToSeed } from '#/modules/yjs/helpers/description-update';
+import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
+import { mockStxBase } from '#/schemas/sync-transaction-mocks';
+import { adminRole, defaultHeaders } from '../fixtures';
+import { adminDb, expectRefusal } from '../helpers';
 import { createAppClient } from '../test-client';
 import { setTestConfig } from '../test-utils';
 import { clearSecurityTestData, createOrgUser, createTestTenant, type TestTenant } from './helpers';
-import { paragraph, seedAttachment } from './yjs-helpers';
+import { holdAttachmentRow, lockWaiters, paragraph, seedAttachment } from './yjs-helpers';
 
 setTestConfig({ enabledAuthStrategies: ['passkey'] });
 
 /**
  * The relay's materialize route (internal listener only) writes a collaborative description in the entity row's scope,
- * credited to the newest editor of the log who may still update the entity. When none may, the edits stay with the
- * relay; a deleted entity answers 410 so the relay can drop its rows.
+ * credited to the newest editor of the log who may still update the entity. A deleted entity answers 410, and a merge
+ * that lacks an outside write of the document 409.
  */
 describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope', async () => {
   const call = await createAppClient();
@@ -25,6 +31,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   let member: Awaited<ReturnType<typeof createOrgUser>>;
   let admin: Awaited<ReturnType<typeof createOrgUser>>;
   let attachment: Awaited<ReturnType<typeof seedAttachment>>;
+  const removals: (() => Promise<void>)[] = [];
 
   const materialize = async (body: Record<string, unknown>, secret: string | null = modeSecret('YJS_RELAY_SECRET')) => {
     const response = await internalApp.fetch(
@@ -66,8 +73,52 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
 
   afterAll(async () => {
     await attachment.remove();
+    for (const remove of removals) await remove();
     await clearSecurityTestData();
   });
+
+  /** An attachment of the owner with a collaborative document, as the relay seeds it from the row. */
+  const withDocument = async () => {
+    const live = await seedAttachment({
+      tenantId: owner.tenantId,
+      organizationId: owner.organization.id,
+      createdBy: owner.user.id,
+      description: original,
+    });
+    removals.push(async () => {
+      await adminDb.delete(yjsUpdatesTable).where(eq(yjsUpdatesTable.entityId, live.id));
+      await adminDb.delete(yjsDocumentsTable).where(eq(yjsDocumentsTable.entityId, live.id));
+      await live.remove();
+    });
+    await adminDb.insert(yjsDocumentsTable).values({
+      entityType: 'attachment',
+      entityId: live.id,
+      ...ownScope(),
+      state: Buffer.from(descriptionToSeed(original)),
+    });
+    return live;
+  };
+
+  /** An outside write of the description, as the REST API takes it: it appends a server-origin row to the log. */
+  const writeOutside = (entityId: string, text: string) =>
+    call(updateAttachment, {
+      path: { organizationId: owner.organization.id, tenantId: owner.tenantId, id: entityId },
+      body: {
+        ops: { description: paragraph(text) },
+        stx: { ...mockStxBase(`stx:${generateId()}`), fieldTimestamps: { description: generateServerHLC('test-client') } },
+      },
+      headers: { ...defaultHeaders, Cookie: owner.sessionCookie },
+    });
+
+  /** The ids of a document's server-origin log rows, oldest first. */
+  const serverRowsOf = async (entityId: string) =>
+    (
+      await adminDb
+        .select({ id: yjsUpdatesTable.id })
+        .from(yjsUpdatesTable)
+        .where(and(eq(yjsUpdatesTable.entityId, entityId), isNull(yjsUpdatesTable.userId)))
+        .orderBy(asc(yjsUpdatesTable.id))
+    ).map((row) => row.id);
 
   it('must not write without the relay secret or with a wrong one', async () => {
     const refused = await materialize(bodyFor(ownScope(), 'no secret'), null);
@@ -77,8 +128,12 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   });
 
   it('refuses a body the schema rejects as every route does', async () => {
-    const { status, body } = await materialize({ ...bodyFor(ownScope(), 'no editors'), editors: [] });
-    await expectRefusal({ status, body }, 400, 'invalid_request');
+    const bodies = [
+      { ...bodyFor(ownScope(), 'no editors'), editors: [] },
+      { ...bodyFor(ownScope(), 'fractional row id'), serverRowIds: [1.5] },
+      { ...bodyFor(ownScope(), 'too many row ids'), serverRowIds: Array.from({ length: 201 }, (_, i) => i + 1) },
+    ];
+    for (const refused of bodies) await expectRefusal(await materialize(refused), 400, 'invalid_request', refused.description);
     expect((await stored())?.description).toBe(original);
   });
 
@@ -119,5 +174,62 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs materialize scope
   it('answers 410 for an entity that no longer exists, so the relay can drop its rows', async () => {
     const { status, body } = await materialize(bodyFor(ownScope(), 'too late', [owner.user.id], generateId()));
     await expectRefusal({ status, body }, 410, 'not_found');
+  });
+
+  it('must not write a merge that lacks an outside write of the document: 409, and the row keeps the write (12, X4)', async () => {
+    const live = await withDocument();
+    expect((await writeOutside(live.id, 'written outside')).response.status).toBe(200);
+    const [serverRow] = await serverRowsOf(live.id);
+
+    // A relay from before release 2 sends no ids, which reads as none.
+    const legacy = bodyFor(ownScope(), 'stale merge', [owner.user.id], live.id);
+    for (const serverRowIds of [[], [serverRow + 1], undefined]) {
+      await expectRefusal(await materialize({ ...legacy, serverRowIds }), 409, 'field_conflict', String(serverRowIds));
+    }
+    expect((await live.read())?.description).toContain('written outside');
+  });
+
+  it('writes a merge whose window holds every server row of the document (13, positive control)', async () => {
+    const live = await withDocument();
+    expect((await writeOutside(live.id, 'written outside')).response.status).toBe(200);
+    const serverRowIds = await serverRowsOf(live.id);
+    expect(serverRowIds).toHaveLength(1);
+
+    const { status } = await materialize({ ...bodyFor(ownScope(), 'merged with the write', [owner.user.id], live.id), serverRowIds });
+    expect(status).toBe(200);
+    expect((await live.read())?.description).toContain('merged with the write');
+    // The relay's own write records nothing.
+    expect(await serverRowsOf(live.id)).toEqual(serverRowIds);
+  });
+
+  it('must not let a merge in flight overwrite an outside write that commits first: the row ends as the write, in both orders (14, X4)', async () => {
+    const staleMerge = (entityId: string) => materialize({ ...bodyFor(ownScope(), 'stale merge', [owner.user.id], entityId), serverRowIds: [] });
+
+    // The write takes the row first: it commits with its server row, and the merge, which lacks it, is refused.
+    const first = await withDocument();
+    const heldFirst = await holdAttachmentRow(first.id);
+    const write = writeOutside(first.id, 'written outside');
+    await lockWaiters(1);
+    const merge = staleMerge(first.id);
+    await lockWaiters(2);
+    heldFirst.release();
+    await heldFirst.done;
+    expect((await write).response.status).toBe(200);
+    await expectRefusal(await merge, 409, 'field_conflict');
+    expect((await first.read())?.description).toContain('written outside');
+
+    // The merge takes the row first: it holds no server row to miss, and the write then writes over it.
+    const second = await withDocument();
+    const heldSecond = await holdAttachmentRow(second.id);
+    const laterMerge = staleMerge(second.id);
+    await lockWaiters(1);
+    const laterWrite = writeOutside(second.id, 'written outside');
+    await lockWaiters(2);
+    heldSecond.release();
+    await heldSecond.done;
+    expect((await laterMerge).status).toBe(200);
+    expect((await laterWrite).response.status).toBe(200);
+    expect((await second.read())?.description).toContain('written outside');
+    expect(await serverRowsOf(second.id)).toHaveLength(1);
   });
 });

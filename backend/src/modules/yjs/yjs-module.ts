@@ -2,6 +2,7 @@ import { appConfig, type ProductEntityType, type TrackedEventType } from 'shared
 import type { Tx } from '#/db/create-connection';
 import { defineBackendModule } from '#/lib/module';
 import type { MutationHandler, MutationPayload } from '#/lib/mutation-bus';
+import { assertMaterializeWindow } from './helpers/materialize-window';
 import { recordYjsOutsideWrite, type YjsWrittenRow } from './helpers/record-outside-write';
 import { yjsHandlers } from './yjs-handlers';
 import { retireYjsDocuments } from './yjs-log';
@@ -21,15 +22,21 @@ const writtenRowOf = ({ id, tenantId, organizationId, description }: PayloadRow)
 /**
  * A description written by anything but the relay (a REST update, an MCP tool, an import) becomes an update of the
  * collaborative document of each row whose description changed, in the writing transaction. The relay's own
- * materialization carries `materialized` and records nothing. Only entity types with a materializer hold documents.
+ * materialization carries `materialized` and records nothing: it is refused (409) when its merge lacks an outside
+ * write. Only entity types with a materializer hold documents.
  */
 const recordOnUpdate = (entityType: ProductEntityType): MutationHandler => {
   return async (ctx, { before = [], after = [], materialized }) => {
-    if (materialized || !getYjsMaterializer(entityType)) return;
-    const changed = after.filter((row, index) => row.description !== before[index]?.description);
-    const rows = changed.flatMap((row) => writtenRowOf(row) ?? []);
+    if (!getYjsMaterializer(entityType)) return;
     // The bus runs handlers in the write's transaction, after its UPDATE.
-    await recordYjsOutsideWrite(ctx.var.db as Tx, entityType, rows);
+    const tx = ctx.var.db as Tx;
+    if (materialized) return assertMaterializeWindow(tx, entityType, after);
+    const changed = after.filter((row, index) => row.description !== before[index]?.description);
+    await recordYjsOutsideWrite(
+      tx,
+      entityType,
+      changed.flatMap((row) => writtenRowOf(row) ?? []),
+    );
   };
 };
 
