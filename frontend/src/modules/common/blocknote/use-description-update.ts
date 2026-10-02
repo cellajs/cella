@@ -1,5 +1,6 @@
 import type { ProductEntityType } from 'shared';
 import { patchDescriptionCaches } from '~/modules/common/blocknote/description-cache';
+import { deriveDescriptionFields } from '~/modules/common/blocknote/description-derivation';
 import { getEntityQueryKeys } from '~/query/basic/entity-query-registry';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 
@@ -8,7 +9,7 @@ type DescribedEntity = { id: string; organizationId: string; description: string
 /**
  * Collaborative-session half of description persistence: the relay owns the write (materializing
  * through the same update op), so only the caches are patched until its row arrives over SSE.
- * `extra` carries fields views derive from the document (a title, a summary).
+ * The patch carries the type's registered derivation; `extra` fields apply after it, so a caller can override them.
  */
 export function patchCollaborativeDescription(
   entityType: ProductEntityType,
@@ -21,7 +22,7 @@ export function patchCollaborativeDescription(
     entityType,
     entity.id,
     { detailKey: keys.detail.byId(entity.id), listKey: keys.list.org(entity.organizationId) },
-    { description, ...extra, updatedAt: new Date().toISOString() },
+    { description, ...deriveDescriptionFields(entityType, description), ...extra, updatedAt: new Date().toISOString() },
   );
 }
 

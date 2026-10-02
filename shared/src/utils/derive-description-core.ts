@@ -87,6 +87,10 @@ export type DerivedDocument = {
   name: string;
   /** Search text of every block, link and media URL terms included, whitespace-collapsed, at most 900 characters. */
   keywords: string;
+  /** The `findSummarySource` block as a one-block document (`JSON.stringify([block])`), rendered at view time; empty without one. */
+  summary: string;
+  /** Plain-text length of the summary block, 0 without one. */
+  summaryLength: number;
   /** Attachment entity ids referenced by media blocks (unique, document order), as in `counts`. */
   attachments: string[];
   /** Mentioned user ids (unique, document order): mention nodes at any depth, then HTML mention spans. */
@@ -100,6 +104,8 @@ export type DerivedDocument = {
 const htmlMentionPattern = /data-mention-id=["']([0-9a-f-]{36})["']/gi;
 
 const keywordsBudget = 900;
+
+const emptySummary = () => ({ summary: '', summaryLength: 0 });
 
 /** Walks any parsed JSON, collecting `{ type: 'mention', props: { id } }` nodes at any depth. */
 const collectMentionNodes = (node: unknown, into: Set<string>): void => {
@@ -139,9 +145,9 @@ const attempt = <T>(derive: () => T, empty: () => T): T => {
 
 /**
  * One parse of a stored description (BlockNote JSON, or HTML in older bodies), deriving what the
- * write paths store and the notification fan-out reads. Mention ids come from the body itself, so
- * a caller decides who may be told about them. Never throws: a malformed body must not fail the
- * write it is derived from.
+ * write paths store, the client's collaborative patches carry, and the notification fan-out
+ * reads. Mention ids come from the body itself, so a caller decides who may be told about them.
+ * Never throws: a malformed body must not fail the write it is derived from.
  */
 export const deriveDocument = (description: string | null | undefined): DerivedDocument => {
   const parsed = description ? parseJson(description) : undefined;
@@ -160,6 +166,10 @@ export const deriveDocument = (description: string | null | undefined): DerivedD
         .slice(0, keywordsBudget),
     () => '',
   );
+  const { summary, summaryLength } = attempt(() => {
+    const found = findSummarySource(blocks);
+    return isRecord(found.source) ? { summary: JSON.stringify([found.source]), summaryLength: found.summaryLength } : emptySummary();
+  }, emptySummary);
   const counts = attempt(() => countDescriptionBlocks(blocks), emptyDescriptionCounts);
 
   const mentions = new Set<string>();
@@ -171,5 +181,5 @@ export const deriveDocument = (description: string | null | undefined): DerivedD
     }
   }
 
-  return { name, keywords, attachments: counts.attachments, mentions: [...mentions], counts, blocks };
+  return { name, keywords, summary, summaryLength, attachments: counts.attachments, mentions: [...mentions], counts, blocks };
 };

@@ -9,6 +9,7 @@ import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote }
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type MouseEventHandler, type RefObject, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
 import { appConfig, type ProductEntityType } from 'shared';
+import { type DescriptionBlock, findSummarySource } from 'shared/utils/derive-description-core';
 import type { WebsocketProvider } from 'y-websocket';
 import type { XmlFragment } from 'yjs';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
@@ -153,11 +154,9 @@ function BlockNote({
       getContent: () => JSON.stringify(editor.document),
       focusSummaryEnd: () => {
         editor.focus();
-        // Must match the collapsed summary source in deriveDescriptionProps.
-        const doc = editor.document as CustomBlock[];
-        const summaryBlock =
-          doc.find((b) => b.type !== 'checklistItem' && Array.isArray(b.content) && b.content.some((c) => 'text' in c && !!c.text.trim())) ?? doc[0];
-        if (summaryBlock) editor.setTextCursorPosition(summaryBlock, 'end');
+        // The block the derived summary shows, so the cursor lands where the collapsed view ends.
+        const { source } = findSummarySource(editor.document as DescriptionBlock[]);
+        if (source) editor.setTextCursorPosition(source as CustomBlock, 'end');
       },
       placeCursorAtPoint: (clientX, clientY) => {
         editor.focus();

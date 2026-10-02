@@ -4,6 +4,7 @@ import i18n from 'i18next';
 import { type Attachment, type GetAttachmentsData, getAttachment, getAttachments } from 'sdk';
 import { zAttachment } from 'sdk/zod.gen';
 import { appConfig } from 'shared';
+import { deriveDocument } from 'shared/utils/derive-description-core';
 import { selectRecentActivity } from '~/modules/attachment/helpers/activity-feed';
 import type {
   CreateAttachmentInput,
@@ -14,6 +15,8 @@ import type {
 } from '~/modules/attachment/query-mutations';
 import { createAttachmentsMutationFn, deleteAttachmentsMutationFn, updateAttachmentMutationFn } from '~/modules/attachment/query-mutations';
 import { attachmentsSearchDefaults } from '~/modules/attachment/search-params-schemas';
+import { registerDescriptionDerivation } from '~/modules/common/blocknote/description-derivation';
+import { registerYjsOwnedFields } from '~/modules/common/blocknote/yjs-editor';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { insertEntitiesIntoHome } from '~/query/basic/apply-entity-to-lists';
 import { cacheRemove, cacheUpdate, removeDetailQueriesById } from '~/query/basic/cache-mutations';
@@ -52,6 +55,11 @@ registerEntityQueryKeys('attachment', keys, (organizationId, tenantId, seqCursor
   });
 });
 export const attachmentQueryKeys = keys;
+
+// `keywords` is derived from the description, so it follows the description's stamp.
+registerYjsOwnedFields('attachment', ['description', 'keywords']);
+// The derivation `update-attachment.ts` runs on every description write.
+registerDescriptionDerivation('attachment', (description) => ({ keywords: deriveDocument(description).keywords }));
 
 const attachmentsMutationKeyBase = ['attachment'] as const;
 const handleError = createResourceError('attachment');
