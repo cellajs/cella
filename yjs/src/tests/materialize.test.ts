@@ -1,6 +1,6 @@
 import { appConfig } from 'shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { descriptionToYUpdate } from '../lib/blocknote-seed';
+import { descriptionToSeed } from '#/modules/yjs/helpers/description-update';
 import { postMaterialize, stateToBlocksJson } from '../sync/materialize';
 import { mockScope } from './helpers';
 
@@ -9,7 +9,7 @@ const ctx = mockScope();
 const description = JSON.stringify([
   { id: 'b1', type: 'paragraph', props: {}, content: [{ type: 'text', text: 'hello', styles: {} }], children: [] },
 ]);
-const state = descriptionToYUpdate(description)!;
+const state = descriptionToSeed(description);
 
 const fetchMock = vi.fn();
 
@@ -26,7 +26,7 @@ describe('postMaterialize', () => {
   it("sends the relay secret only to the backend's internal listener, never the public API", async () => {
     fetchMock.mockResolvedValueOnce({ ok: true, status: 200 });
 
-    const result = await postMaterialize(ctx, ['user-1'], '[]');
+    const result = await postMaterialize(ctx, ['user-1'], '[]', [41]);
 
     expect(result).toBe('ok');
     const [url, init] = fetchMock.mock.calls[0];
@@ -34,29 +34,36 @@ describe('postMaterialize', () => {
     expect(String(url).startsWith(appConfig.backendUrl)).toBe(false);
     expect(init.headers['x-yjs-relay-secret']).toBe('test-yjs-relay-secret-for-unit-tests');
     expect(init.headers).not.toHaveProperty('x-yjs-secret');
-    expect(JSON.parse(init.body)).toMatchObject({ entityType: ctx.entityType, entityId: ctx.entityId, tenantId: ctx.tenantId, editors: ['user-1'] });
+    expect(JSON.parse(init.body)).toMatchObject({
+      entityType: ctx.entityType,
+      entityId: ctx.entityId,
+      tenantId: ctx.tenantId,
+      editors: ['user-1'],
+      serverRowIds: [41],
+    });
   });
 
   it('classifies a rejected request as permanent, and refusals that can change and 5xx as retry', async () => {
     for (const status of [400, 413, 422]) {
       fetchMock.mockResolvedValueOnce({ ok: false, status });
-      expect(await postMaterialize(ctx, ['user-1'], '[]'), `status ${status}`).toBe('permanent');
+      expect(await postMaterialize(ctx, ['user-1'], '[]', []), `status ${status}`).toBe('permanent');
     }
-    // Access, scope and secret refusals can change: an editor who lost access must not cost the log.
+    // Access, scope and secret refusals can change: an editor who lost access must not cost the log. A 409 names an
+    // outside write the merge lacks, committed during the POST: the next window holds it.
     for (const status of [401, 403, 404, 409, 429, 503]) {
       fetchMock.mockResolvedValueOnce({ ok: false, status });
-      expect(await postMaterialize(ctx, ['user-1'], '[]'), `status ${status}`).toBe('retry');
+      expect(await postMaterialize(ctx, ['user-1'], '[]', []), `status ${status}`).toBe('retry');
     }
   });
 
   it('classifies 410 as gone: the entity no longer exists, so its log has nowhere to go', async () => {
     fetchMock.mockResolvedValueOnce({ ok: false, status: 410 });
-    expect(await postMaterialize(ctx, ['user-1'], '[]')).toBe('gone');
+    expect(await postMaterialize(ctx, ['user-1'], '[]', [])).toBe('gone');
   });
 
   it('classifies network errors as retry', async () => {
     fetchMock.mockRejectedValueOnce(new Error('ECONNREFUSED'));
-    expect(await postMaterialize(ctx, ['user-1'], '[]')).toBe('retry');
+    expect(await postMaterialize(ctx, ['user-1'], '[]', [])).toBe('retry');
   });
 });
 

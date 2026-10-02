@@ -36,17 +36,27 @@ const verifications = new WeakMap<WebSocket, Promise<void>>();
 /** `type:id` of the document a socket asks for, for log lines. */
 const docLabel = (ctx: SocketContext) => `${ctx.requested.entityType}:${ctx.requested.entityId}`;
 
-/** Authorizes the socket's user against the entity row after the connection is established, locally through the shared permission engine; on success the socket takes the row's scope, on failure it is disconnected and its queued sync frames never run. */
+/**
+ * Authorizes the socket's user against the entity row after the connection is established, locally through the shared
+ * permission engine; on success the socket takes the row's scope, on failure it is disconnected and its queued sync
+ * frames never run. A deleted entity closes with 4410, a refusal with 4003: close frames on the open socket, since a
+ * browser reads no code from a refused upgrade.
+ */
 async function verifyEntityAsync(ws: WebSocket, ctx: SocketContext): Promise<void> {
   try {
-    const scope = await authorizeDoc(ctx.userId, ctx.requested);
+    const verdict = await authorizeDoc(ctx.userId, ctx.requested);
     if (ws.readyState !== ws.OPEN) return;
-    if (!scope) {
+    if (verdict === 'deleted') {
+      log.info(`Entity deleted for ${docLabel(ctx)}`);
+      ws.close(4410, 'Entity deleted');
+      return;
+    }
+    if (verdict === 'denied') {
       log.warn(`Entity access denied for ${docLabel(ctx)}`);
       ws.close(4003, 'Access denied');
       return;
     }
-    ctx.scope = scope;
+    ctx.scope = verdict.scope;
     log.debug(`Entity verified for ${docLabel(ctx)}`, { userId: ctx.userId });
   } catch (err) {
     if (ws.readyState !== ws.OPEN) return;

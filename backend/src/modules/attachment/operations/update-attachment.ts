@@ -2,7 +2,9 @@ import type { z } from '@hono/zod-openapi';
 import { deriveDocument } from 'shared/utils/derive-description-core';
 import type { ActorContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
+import { stripChangedFields } from '#/db/utils/strip-changed-fields';
 import { dispatchMutation } from '#/lib/mutation-bus';
+import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { updateAttachment } from '#/modules/attachment/attachment-queries';
 import { attachmentContract, type attachmentUpdateStxBodySchema } from '#/modules/attachment/attachment-schema';
 import { withAuditUser } from '#/modules/user/operations/with-audit-users';
@@ -44,7 +46,9 @@ export async function updateAttachmentOp(
         : {}),
       updatedAt: getIsoDate(),
       updatedBy: actorId,
-      ...(resolved.changed ? { stx: resolved.stx } : {}),
+      // The stx names the fields this write wrote, for CDC and the yjs module's handler: a write that changes none keeps
+      // the stored stx without the earlier write's set.
+      stx: resolved.changed ? resolved.stx : stripChangedFields(attachmentsTable.stx),
     };
     const updated = await updateAttachment(txCtx, { id, values });
     // Inside the transaction, `before`/`after` index-aligned as the mutation bus contract requires.

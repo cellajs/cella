@@ -179,27 +179,37 @@ export interface MockWebSocket {
 
 /** Use at top level: vi.mock('../data/storage', () => storageMock()) */
 export const storageMock = () => ({
-  loadBase: vi.fn().mockResolvedValue(null),
-  ensureDoc: vi.fn().mockResolvedValue({ state: new Uint8Array(), generation: 'gen-1' }),
-  appendUpdate: vi.fn().mockResolvedValue(true),
-  readLog: vi.fn().mockResolvedValue([]),
-  compactState: vi.fn().mockResolvedValue(true),
+  loadDocument: vi.fn().mockResolvedValue(null),
+  seedDocument: vi.fn().mockResolvedValue({ generation: 'gen-1', base: new Uint8Array(), rows: [] }),
+  appendUpdate: vi.fn().mockResolvedValue({ status: 'appended', id: 1 }),
+  readLogOf: vi.fn().mockResolvedValue([]),
+  compactState: vi.fn().mockResolvedValue('ok'),
   discardLogRows: vi.fn().mockResolvedValue(undefined),
   deleteDoc: vi.fn().mockResolvedValue(undefined),
-  touchDoc: vi.fn().mockResolvedValue(true),
+  touchDoc: vi.fn().mockResolvedValue({ exists: true, lastLogId: null }),
   listStaleDocs: vi.fn().mockResolvedValue([]),
 });
+
+/** A logged row as the fake storage keeps it: a client's under its sender, a server-origin one with none. */
+interface FakeRow {
+  id: number;
+  payload: Uint8Array;
+  userId: string | null;
+}
 
 /**
  * In-memory stand-in for the storage module with the real append/read/compact semantics, so relay
  * tests exercise ordering and durability. `delay` (a promise factory per call name) lets a test
- * hold one call open to interleave another.
+ * hold one call open to interleave another. A seed converts the description a test sets in
+ * `descriptions` (none by default), and an entity in `gone` has no live row to seed from.
  */
 export function fakeStorage(delay?: (call: string) => Promise<void> | undefined) {
   const bases = new Map<string, Uint8Array>();
   /** The generation of each base; a base a test sets without one reads as `gen-0`. Every seed gets a new one. */
   const generations = new Map<string, string>();
-  const logs = new Map<string, { id: number; payload: Uint8Array; userId: string | null }[]>();
+  const logs = new Map<string, FakeRow[]>();
+  const descriptions = new Map<string, string | null>();
+  const gone = new Set<string>();
   let nextId = 1;
   let seeds = 0;
   const key = storageKey;
@@ -211,45 +221,62 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
     const state = bases.get(k);
     return state ? { state, generation: generations.get(k) ?? 'gen-0' } : null;
   };
+  const read = (k: string) => {
+    const current = row(k);
+    return current ? { generation: current.generation, base: current.state, rows: [...(logs.get(k) ?? [])] } : null;
+  };
   const store = {
     bases,
     generations,
     logs,
-    loadBase: vi.fn(async (doc: DocKey) => {
-      await wait('loadBase');
-      return row(key(doc));
+    descriptions,
+    gone,
+    loadDocument: vi.fn(async (doc: DocKey) => {
+      await wait('loadDocument');
+      return read(key(doc));
     }),
-    ensureDoc: vi.fn(async (scope: DocScope, seed: Uint8Array | null) => {
-      await wait('ensureDoc');
-      if (!bases.has(key(scope))) {
-        bases.set(key(scope), seed ?? new Uint8Array());
-        generations.set(key(scope), `gen-${++seeds}`);
+    seedDocument: vi.fn(async (scope: DocScope, toSeed: (description: string | null) => Uint8Array) => {
+      await wait('seedDocument');
+      const k = key(scope);
+      if (gone.has(k)) return null;
+      if (!bases.has(k)) {
+        bases.set(k, toSeed(descriptions.get(k) ?? null));
+        generations.set(k, `gen-${++seeds}`);
       }
-      return row(key(scope))!;
+      return read(k);
     }),
-    /** A test seeds a log without a `generation`; the relay always names one, and appends only to its row. */
-    appendUpdate: vi.fn(async (scope: DocScope, userId: string, payload: Uint8Array, generation?: string) => {
+    /** A test arranges a log without a `generation`; the relay always names one, and appends only to its row. */
+    appendUpdate: vi.fn(async (scope: DocScope, userId: string | null, payload: Uint8Array, generation?: string, onLogged?: (id: number) => void) => {
       await wait('appendUpdate');
-      if (generation !== undefined && row(key(scope))?.generation !== generation) return false;
+      const current = row(key(scope));
+      if (generation !== undefined && !current) return { status: 'no-document' as const };
+      if (generation !== undefined && current && current.generation !== generation) {
+        return { status: 'stale-generation' as const, generation: current.generation };
+      }
       const list = logs.get(key(scope)) ?? [];
-      list.push({ id: nextId++, payload, userId: userId || null });
+      const id = nextId++;
+      list.push({ id, payload, userId: userId || null });
       logs.set(key(scope), list);
-      return true;
+      onLogged?.(id);
+      return { status: 'appended' as const, id };
     }),
-    readLog: vi.fn(async (doc: DocKey) => {
-      await wait('readLog');
-      return [...(logs.get(key(doc)) ?? [])];
+    readLogOf: vi.fn(async (doc: DocKey, generation: string) => {
+      await wait('readLogOf');
+      const current = row(key(doc));
+      return current?.generation === generation ? [...(logs.get(key(doc)) ?? [])] : null;
     }),
     compactState: vi.fn(async (doc: DocKey, merged: Uint8Array, ids: number[], generation?: string) => {
       await wait('compactState');
       const current = row(key(doc));
-      if (!current || (generation !== undefined && current.generation !== generation)) return false;
+      if (!current || (generation !== undefined && current.generation !== generation)) return 'retired' as const;
+      const log = logs.get(key(doc)) ?? [];
+      if (ids.some((id) => !log.some((logged) => logged.id === id))) return 'overlap' as const;
       bases.set(key(doc), merged);
       logs.set(
         key(doc),
-        (logs.get(key(doc)) ?? []).filter((row) => !ids.includes(row.id)),
+        log.filter((logged) => !ids.includes(logged.id)),
       );
-      return true;
+      return 'ok' as const;
     }),
     discardLogRows: vi.fn(async (doc: DocKey, ids: number[]) => {
       await wait('discardLogRows');
@@ -266,7 +293,8 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
     }),
     touchDoc: vi.fn(async (doc: DocKey) => {
       await wait('touchDoc');
-      return bases.has(key(doc));
+      const log = logs.get(key(doc)) ?? [];
+      return { exists: bases.has(key(doc)), lastLogId: bases.has(key(doc)) ? (log.at(-1)?.id ?? null) : null };
     }),
     listStaleDocs: vi.fn(async (): Promise<DocScope[]> => []),
   };

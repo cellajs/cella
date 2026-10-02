@@ -44,6 +44,7 @@ export function extractYjsDetails(body: Record<string, unknown>): Record<string,
     documents: body.documents ?? null,
     clients: body.clients ?? null,
     eventLoopLagMs: body.eventLoopLagMs ?? null,
+    listener: body.listener ?? null,
   };
 }
 

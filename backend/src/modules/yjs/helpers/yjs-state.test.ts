@@ -1,6 +1,19 @@
 import { describe, expect, it, vi } from 'vitest';
 import * as Y from 'yjs';
-import { mapUpdate, readMap } from './helpers';
+
+/** A one-key document, as an update. */
+function mapUpdate(key: string, value: unknown): Uint8Array {
+  const doc = new Y.Doc();
+  doc.getMap('data').set(key, value);
+  return Y.encodeStateAsUpdate(doc);
+}
+
+/** The keys a state holds. */
+function readMap(state: Uint8Array): Record<string, unknown> {
+  const doc = new Y.Doc();
+  Y.applyUpdate(doc, state);
+  return doc.getMap('data').toJSON();
+}
 
 // Yjs merges nearly any update that decodes; a test marks a payload whose merge throws to reach the one-at-a-time path.
 const unmergeable = new Set<Uint8Array>();
@@ -15,7 +28,7 @@ vi.mock('yjs', async (importOriginal) => {
   };
 });
 
-const { classifyUpdate, isIntegrable, mergeLog, mergeState } = await import('../sync/document-state');
+const { classifyUpdate, isIntegrable, mergeLog, mergeState } = await import('./yjs-state');
 
 const row = (id: number, payload: Uint8Array) => ({ id, payload, userId: `user-${id}` });
 

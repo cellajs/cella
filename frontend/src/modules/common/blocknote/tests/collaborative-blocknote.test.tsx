@@ -16,7 +16,7 @@ vi.mock('~/modules/common/blocknote/blocknote-editor', () => ({
 vi.mock('~/modules/common/blocknote/lazy-full-html', () => ({
   BlockNoteFullHtml: ({ defaultValue }: { defaultValue: string }) => <div data-static>{defaultValue}</div>,
 }));
-const connection = { provider: {}, fragment: {}, synced: true, stopped: false, rebuilds: 0, unsynced: false };
+const connection = { provider: {}, fragment: {}, synced: true, stopped: false, rebuilds: 0, unsynced: false, deleted: false };
 const connectionRequests: (string | undefined)[] = [];
 vi.mock('~/modules/common/blocknote/yjs-connections', () => ({
   useYjsConnection: (editSessionId: string | undefined) => {
@@ -24,7 +24,7 @@ vi.mock('~/modules/common/blocknote/yjs-connections', () => ({
     return editSessionId ? { ...connection } : null;
   },
 }));
-const tokenState: { token: string | undefined; refused: boolean } = { token: 'token', refused: false };
+const tokenState: { token: string | undefined; refused: boolean; deleted: boolean } = { token: 'token', refused: false, deleted: false };
 const tokenRequests: { enabled: boolean }[] = [];
 vi.mock('~/modules/common/blocknote/hooks/use-yjs-token', () => ({
   useYjsToken: (params: { enabled: boolean }) => {
@@ -84,8 +84,8 @@ afterEach(async () => {
   tokenRequests.length = 0;
   updateData.mockClear();
   online = true;
-  Object.assign(tokenState, { token: 'token', refused: false });
-  Object.assign(connection, { fragment: {}, synced: true, stopped: false, rebuilds: 0, unsynced: false });
+  Object.assign(tokenState, { token: 'token', refused: false, deleted: false });
+  Object.assign(connection, { fragment: {}, synced: true, stopped: false, rebuilds: 0, unsynced: false, deleted: false });
 });
 
 describe('CollaborativeBlockNote states', () => {
@@ -149,13 +149,23 @@ describe('CollaborativeBlockNote states', () => {
     expect(editors.at(-1)?.editable).toBe(true);
   });
 
-  it('token refused: the static saying read only, and no connection', async () => {
+  it('token refused (403): the static saying read only, and no connection', async () => {
     Object.assign(tokenState, { token: undefined, refused: true });
     await render();
 
     expect(showsStatic()).toBe(true);
     expect(editors).toHaveLength(0);
     expect(status()).toBe('c:read_only');
+    expect(connectionRequests.every((id) => id === undefined)).toBe(true);
+  });
+
+  it('entity gone (token 404): the static saying deleted, and no connection', async () => {
+    Object.assign(tokenState, { token: undefined, deleted: true });
+    await render();
+
+    expect(showsStatic()).toBe(true);
+    expect(editors).toHaveLength(0);
+    expect(status()).toBe('c:deleted');
     expect(connectionRequests.every((id) => id === undefined)).toBe(true);
   });
 
@@ -251,5 +261,29 @@ describe('CollaborativeBlockNote after the relay ends the session', () => {
     expect(last?.collaboration).toBeDefined();
     expect(last?.editable).toBe(false);
     expect(status()).toBe('c:collaboration_stopped.text');
+  });
+});
+
+describe('CollaborativeBlockNote after the entity is deleted', () => {
+  it('must not show an editor whose unsaved edits were discarded: the relay closed with 4410, and the static says deleted', async () => {
+    await render();
+    const rendered = editors.length;
+
+    // The connection stopped as deleted, while the token it holds is still valid.
+    Object.assign(connection, { stopped: true, deleted: true });
+    await render();
+
+    expect(editors).toHaveLength(rendered);
+    expect(showsStatic()).toBe(true);
+    expect(status()).toBe('c:deleted');
+  });
+
+  it('shows deleted, not collaboration stopped, for a connection the relay closed with 4410 before it synced', async () => {
+    Object.assign(connection, { synced: false, stopped: true, deleted: true });
+    await render();
+
+    expect(showsStatic()).toBe(true);
+    expect(editors).toHaveLength(0);
+    expect(status()).toBe('c:deleted');
   });
 });

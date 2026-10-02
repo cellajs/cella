@@ -4,7 +4,7 @@ import { deferred, mockScope, mockWebSocket, storageMock } from './helpers';
 vi.mock('../data/storage', () => storageMock());
 vi.mock('../sync/compaction', () => ({ compactDocument: vi.fn().mockResolvedValue('ok') }));
 
-const { getCollab, joinCollab, leaveCollab, broadcastToCollab, withDocLock } = await import('../sync/session-manager');
+const { getCollab, joinCollab, leaveCollab, broadcastToCollab, setUnseenRowHandler, withDocLock } = await import('../sync/session-manager');
 const { deleteDoc, touchDoc } = await import('../data/storage');
 const { compactDocument } = await import('../sync/compaction');
 
@@ -322,6 +322,38 @@ describe('live stamps', () => {
     await vi.advanceTimersByTimeAsync(LIVE_STAMP * 3);
     expect(touchDoc).toHaveBeenCalledTimes(2 + GRACE / LIVE_STAMP);
   });
+
+  it('catches up when the newest log row is one the session never relayed: a notification was missed', async () => {
+    const caughtUp = vi.fn();
+    setUnseenRowHandler(caughtUp);
+    try {
+      const collab = joinCollab(uniqueCtx(), mockWebSocket() as never);
+      collab.generation = 'gen-1';
+      collab.seen.add(7);
+      vi.mocked(touchDoc).mockResolvedValueOnce({ exists: true, lastLogId: 7 }).mockResolvedValueOnce({ exists: true, lastLogId: 8 });
+
+      await vi.advanceTimersByTimeAsync(LIVE_STAMP);
+      expect(caughtUp).not.toHaveBeenCalled();
+      await vi.advanceTimersByTimeAsync(LIVE_STAMP);
+      expect(caughtUp).toHaveBeenCalledExactlyOnceWith(collab);
+    } finally {
+      setUnseenRowHandler(() => undefined);
+    }
+  });
+
+  it('must not catch up a session that has not loaded its document: its handshake answers with all of it', async () => {
+    const caughtUp = vi.fn();
+    setUnseenRowHandler(caughtUp);
+    try {
+      vi.mocked(touchDoc).mockResolvedValue({ exists: true, lastLogId: 9 });
+      joinCollab(uniqueCtx(), mockWebSocket() as never);
+      await vi.advanceTimersByTimeAsync(LIVE_STAMP);
+      expect(caughtUp).not.toHaveBeenCalled();
+    } finally {
+      vi.mocked(touchDoc).mockResolvedValue({ exists: true, lastLogId: null });
+      setUnseenRowHandler(() => undefined);
+    }
+  });
 });
 
 describe('a retired document', () => {
@@ -331,9 +363,9 @@ describe('a retired document', () => {
     const peer = mockWebSocket();
     const collab = joinCollab(ctx, ws as never);
     joinCollab(ctx, peer as never);
-    // The first handshake loaded the row; then its description was written outside the relay, which deleted it.
+    // The first handshake loaded the row; then its entity was deleted, and its notification never arrived.
     collab.generation = 'gen-1';
-    vi.mocked(touchDoc).mockResolvedValueOnce(false);
+    vi.mocked(touchDoc).mockResolvedValueOnce({ exists: false, lastLogId: null });
 
     await vi.advanceTimersByTimeAsync(LIVE_STAMP);
 
@@ -349,7 +381,7 @@ describe('a retired document', () => {
   it('must not end a session whose document is not seeded yet: a stamp that finds no row before the first handshake is no verdict', async () => {
     const ctx = uniqueCtx();
     const ws = mockWebSocket();
-    vi.mocked(touchDoc).mockResolvedValueOnce(false).mockResolvedValueOnce(false);
+    vi.mocked(touchDoc).mockResolvedValueOnce({ exists: false, lastLogId: null }).mockResolvedValueOnce({ exists: false, lastLogId: null });
     const collab = joinCollab(ctx, ws as never);
     await vi.advanceTimersByTimeAsync(LIVE_STAMP);
     expect(touchDoc).toHaveBeenCalledTimes(2);

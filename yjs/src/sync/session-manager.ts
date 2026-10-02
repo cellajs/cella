@@ -15,6 +15,13 @@ export interface CollabSession {
   chain: Promise<unknown>;
   /** The generation of the document row the session loaded at its first handshake, null before. A row gone or of another generation since was retired: the session ends. */
   generation: string | null;
+  /**
+   * Log rows the session's sockets hold: rows it appended, relayed or loaded into a handshake. A row outside it (an
+   * outside write, another relay's append) is relayed once, by `relayUnseen`; compaction drops the rows it removes.
+   */
+  seen: Set<number>;
+  /** A catch-up queued on the document lock that has not started yet: a later call joins it, since its read comes after. */
+  queuedCatchUp?: Promise<void>;
   cleanupTimer?: ReturnType<typeof setTimeout>;
   compactTimer?: ReturnType<typeof setTimeout>;
   /** When the armed compaction runs at the latest: YJS_COMPACT_MAX_WAIT_MS after the first update since the last run started. */
@@ -32,6 +39,11 @@ function collabKey({ tenantId, entityType, entityId }: DocKey): string {
 
 export function getCollab(doc: DocKey): CollabSession | undefined {
   return collabSessions.get(collabKey(doc));
+}
+
+/** Every session this relay holds, for a catch-up after its notifications may have been missed. */
+export function getCollabs(): CollabSession[] {
+  return [...collabSessions.values()];
 }
 
 export function getActiveDocumentCount(): number {
@@ -56,15 +68,24 @@ export function withDocLock<T>(collab: CollabSession, fn: () => Promise<T>): Pro
   return run;
 }
 
+/** What the live stamp runs when the log holds a row the session never relayed: the relay's catch-up, set by sync/relay.ts. */
+let onUnseenRow: (collab: CollabSession) => void = () => undefined;
+
+export function setUnseenRowHandler(handler: (collab: CollabSession) => void): void {
+  onUnseenRow = handler;
+}
+
 /**
  * Stamps the document row live; a failed stamp is logged, and the next one comes a beat later. A row that is gone once
- * the session has loaded it was retired: the session ends, and its sockets reconnect into one that reseeds.
+ * the session has loaded it was retired: the session ends, and its sockets reconnect, to be told the entity is gone. A
+ * newest log row the session never relayed means a notification was missed: the catch-up relays it.
  */
 function markLive(collab: CollabSession): void {
   const loaded = collab.generation !== null;
   touchDoc(collab.scope).then(
-    (exists) => {
+    ({ exists, lastLogId }) => {
       if (!exists && loaded) endCollab(collab);
+      else if (loaded && lastLogId !== null && !collab.seen.has(lastLogId)) onUnseenRow(collab);
     },
     (err) => log.warn(`Marking ${collabKey(collab.scope)} live failed`, { err }),
   );
@@ -81,6 +102,7 @@ function openCollab(scope: DocScope, clients: WebSocket[]): CollabSession {
     awarenessOwners: new Map(),
     chain: Promise.resolve(),
     generation: null,
+    seen: new Set(),
     // A session never keeps the process alive at shutdown.
     liveTimer: setInterval(() => markLive(collab), YJS_LIVE_TOUCH_MS).unref(),
   };
@@ -118,9 +140,10 @@ function dropCollab(key: string, collab: CollabSession): void {
 }
 
 /**
- * Ends a session whose document was retired (its description written by anything but the relay, or its entity
- * deleted): every socket closes with 1013 and reconnects into a fresh session, which reseeds the document and tells
- * each client the new generation. The session leaves the map at once, so no later task of it reaches the new one.
+ * Ends a session whose document was retired (its entity deleted) or reseeded under another generation: every socket
+ * closes with 1013 and reconnects. A deleted entity's reconnect is closed with 4410; any other reconnect opens a fresh
+ * session, which tells each client the generation it finds. The session leaves the map at once, so no later task of it
+ * reaches a newer one.
  */
 export function endCollab(collab: CollabSession): void {
   const key = collabKey(collab.scope);

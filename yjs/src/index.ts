@@ -1,10 +1,12 @@
 import { appConfig } from 'shared';
 import { waitForBackend } from 'shared/utils/wait-for-backend';
 import { setupGracefulShutdown } from 'shared/utils/worker-lifecycle';
+import { startLogListener } from './data/listener';
 import { env } from './env';
 import { log } from './lib/pino';
 import { otel } from './lib/tracing';
 import { closeWsServer, startWsServer } from './server/ws-server';
+import { onLogNotice, relayUnseenEverywhere } from './sync/relay';
 import { runStartupSweep } from './sync/sweep';
 
 export { closeWsServer };
@@ -18,6 +20,8 @@ export async function startYjsWorker(): Promise<void> {
 
   // Starts first so the container platform sees an open port before waitForBackend runs.
   startWsServer();
+  // Outside writes and other relays' appends reach live sessions through the log channel; without a database, none come.
+  if (!env.NODB) startLogListener(onLogNotice, relayUnseenEverywhere);
 
   otel.start();
   otel.verifyConnection();

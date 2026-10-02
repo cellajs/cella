@@ -1,10 +1,16 @@
 import { randomUUID } from 'node:crypto';
+import { sql } from 'drizzle-orm';
 import type pg from 'pg';
-import { hierarchy } from 'shared';
+import { hierarchy, toTableName } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
-import type { DocKey } from '../../constants';
-import { loadBase, readLog } from '../../data/storage';
-import { mergeState } from '../../sync/document-state';
+import { descriptionToUpdate } from '#/modules/yjs/helpers/description-update';
+import type { YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
+import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
+import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
+import { findYjsDocument } from '#/modules/yjs/yjs-queries';
+import type { DocKey, DocScope } from '../../constants';
+import { withRlsTx } from '../../data/db';
+import { loadDocument } from '../../data/storage';
 
 // Seeds rows as the superuser (bypassing RLS) for the relay's integration tests, whose code under test connects as runtime_role.
 
@@ -130,9 +136,66 @@ export async function cleanupSeed(
 
 /** A document as the relay stored it: its base with every logged row merged in; null when it holds nothing. */
 export async function storedState(doc: DocKey): Promise<Uint8Array | null> {
-  const rows = await readLog(doc);
+  const document = await loadDocument(doc);
   return mergeState(
-    (await loadBase(doc))?.state ?? null,
-    rows.map((row) => row.payload),
+    document?.base ?? null,
+    (document?.rows ?? []).map((row) => row.payload),
   );
 }
+
+/** Inserts a document row holding `state`, as a seed would, and returns its generation. */
+export async function insertDocument(client: pg.Client, scope: DocScope, state: Uint8Array): Promise<string> {
+  const { rows } = await client.query<{ generation: string }>(
+    `INSERT INTO yjs_documents (entity_type, entity_id, tenant_id, organization_id, state)
+     VALUES ($1, $2, $3, $4, $5) RETURNING generation`,
+    [scope.entityType, scope.entityId, scope.tenantId, scope.organizationId, Buffer.from(state)],
+  );
+  return rows[0].generation;
+}
+
+/** The update an outside write of `description` makes to a document as `read` holds it: what the backend appends. */
+export function outsideUpdate(read: YjsDocumentRead, description: string): Uint8Array {
+  const update = descriptionToUpdate(mergeLog(read.base, read.rows).state, description);
+  if (!update) throw new Error('The description changes nothing');
+  return update;
+}
+
+/** Appends an outside write's update as the backend does: a server-origin row, notified unless `notify` is false. */
+export function appendOutsideWrite(scope: DocScope, update: Uint8Array, generation: string, notify = true): Promise<AppendResult> {
+  return withRlsTx(scope.tenantId, '', (tx) => appendYjsUpdate({ var: { db: tx } }, { doc: scope, update, userId: null, generation, notify }));
+}
+
+/**
+ * An outside write as the backend records it, in one transaction under the document's tenant: the entity row updated
+ * when `updateEntity` (the row lock a seed's FOR SHARE meets), the document read FOR SHARE, the description diffed into
+ * it and appended as a server-origin row, notified unless `notify` is false. Null when no document row exists.
+ */
+export function recordOutsideWrite(
+  scope: DocScope,
+  description: string,
+  { notify = true, updateEntity = false }: { notify?: boolean; updateEntity?: boolean } = {},
+): Promise<AppendResult | null> {
+  return withRlsTx(scope.tenantId, '', async (tx) => {
+    if (updateEntity) {
+      await tx.execute(
+        sql`UPDATE ${sql.raw(`"${toTableName(scope.entityType)}"`)} SET "description" = ${description} WHERE "id" = ${scope.entityId}`,
+      );
+    }
+    const ctx = { var: { db: tx } };
+    const read = await findYjsDocument(ctx, { doc: scope });
+    if (!read) return null;
+    return appendYjsUpdate(ctx, { doc: scope, update: outsideUpdate(read, description), userId: null, generation: read.generation, notify });
+  });
+}
+
+/** Blocks JSON with one paragraph per text, ids `b1`, `b2`…, as the editor stores a description. */
+export const paragraphs = (...texts: string[]) =>
+  JSON.stringify(
+    texts.map((text, i) => ({
+      id: `b${i + 1}`,
+      type: 'paragraph',
+      props: { backgroundColor: 'default', textColor: 'default', textAlignment: 'left' },
+      content: text ? [{ type: 'text', text, styles: {} }] : [],
+      children: [],
+    })),
+  );

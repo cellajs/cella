@@ -1,5 +1,4 @@
 import * as Y from 'yjs';
-import type { LogRow } from '../data/storage';
 
 /** Base state plus log payloads merged once; null when there is nothing at all. */
 export function mergeState(base: Uint8Array | null, payloads: Uint8Array[]): Uint8Array | null {
@@ -14,7 +13,10 @@ export function mergeState(base: Uint8Array | null, payloads: Uint8Array[]): Uin
  * merge, is left out, so one bad row never blocks the document or the rows logged after it. Rows merge in one call,
  * and one at a time only when that call throws. The base is written by compaction and seeding alone, so it is trusted.
  */
-export function mergeLog(base: Uint8Array | null, rows: readonly LogRow[]): { state: Uint8Array | null; rejected: LogRow[] } {
+export function mergeLog<Row extends { payload: Uint8Array }>(
+  base: Uint8Array | null,
+  rows: readonly Row[],
+): { state: Uint8Array | null; rejected: Row[] } {
   const rejected = rows.filter((row) => classifyUpdate(row.payload) === 'malformed');
   const decodable = rejected.length > 0 ? rows.filter((row) => !rejected.includes(row)) : rows;
   try {
