@@ -111,7 +111,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
       isDialog={isDialog}
       opts={{ duration: 20, loop: true, startIndex: startIndexRef.current ?? 0, watchDrag }}
       plugins={isDialog ? [] : [Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })]}
-      className="group h-full w-full"
+      className="group size-full"
       setApi={handleSetApi}
     >
       {/* z-20 matches the zoom controls: at z-10 the viewer, a flex item with the same index, paints over the title. */}
@@ -121,7 +121,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
             {/* The visible name is the dialog's accessible name; with no name, a screen-reader-only title labels it. */}
             {currentItem.name ? (
               <DialogTitle className="ml-1 flex h-6 min-w-0 items-center gap-2 truncate text-base leading-6 tracking-tight max-sm:text-sm">
-                {currentItem.contentType && <FilePlaceholder contentType={currentItem.contentType} className="icon-md shrink-0" strokeWidth={2} />}
+                {currentItem.contentType && <FilePlaceholder contentType={currentItem.contentType} className="size-4 shrink-0" strokeWidth={2} />}
                 <span className="truncate">{currentItem.name}</span>
               </DialogTitle>
             ) : (
@@ -133,20 +133,21 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 size="icon"
                 aria-expanded={descriptionOpen}
                 aria-label={i18n.t('c:description')}
-                className="-my-1 size-8 shrink-0 opacity-70 hover:opacity-100 active:translate-y-0!"
+                className="-my-1 size-8 shrink-0 opacity-70 hover:opacity-100"
+                press={false}
                 onClick={() => setDescriptionOpen(!descriptionOpen)}
               >
                 <span className="relative size-5">
                   <InfoIcon
                     className={cn(
-                      'absolute inset-0 h-5 w-5 transition-all duration-200 motion-reduce:transition-none',
+                      'absolute inset-0 size-5 transition-all duration-200 motion-reduce:transition-none',
                       descriptionOpen ? 'rotate-90 opacity-0' : 'rotate-0 opacity-100',
                     )}
                     strokeWidth={1.5}
                   />
                   <ChevronUpIcon
                     className={cn(
-                      'absolute inset-0 h-5 w-5 transition-all duration-200 motion-reduce:transition-none',
+                      'absolute inset-0 size-5 transition-all duration-200 motion-reduce:transition-none',
                       descriptionOpen ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0',
                     )}
                     strokeWidth={1.5}
@@ -163,7 +164,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 className="-my-1 size-8 opacity-70 hover:opacity-100"
                 onClick={() => window.open(currentItem.url, '_blank')}
               >
-                <ExternalLinkIcon className="h-5 w-5" strokeWidth={1.5} />
+                <ExternalLinkIcon className="size-5" strokeWidth={1.5} />
               </Button>
             )}
 
@@ -177,7 +178,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 className="-my-1 size-8 opacity-70 hover:opacity-100"
                 onClick={() => download(currentItem.url, currentItem.filename || 'file')}
               >
-                {isInProgress ? <Spinner className="size-5 text-foreground/80" noDelay /> : <DownloadIcon className="h-5 w-5" strokeWidth={1.5} />}
+                {isInProgress ? <Spinner className="size-5 text-foreground/80" noDelay /> : <DownloadIcon className="size-5" strokeWidth={1.5} />}
               </Button>
             )}
 
@@ -197,7 +198,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                   descriptionOpen ? 'opacity-100' : 'opacity-0',
                 )}
               >
-                <p className="mt-2 ml-1 max-w-3xl text-sm opacity-80 max-sm:mx-auto">{descriptionText}</p>
+                <p className="mt-2 ml-1 max-w-3xl text-muted-foreground text-sm max-sm:mx-auto">{descriptionText}</p>
               </div>
             </div>
           )}

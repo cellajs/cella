@@ -13,8 +13,8 @@ export function CustomTextAlignSelect() {
     <Components.Generic.Menu.Root portalElement={portalElement}>
       <Components.Generic.Menu.Trigger>
         <Components.FormattingToolbar.Button className="bn-dropdown-button" label="Text align select" mainTooltip="Select text align">
-          <MoveHorizontalIcon className="icon-lg" />
-          <ChevronDownIcon className="icon-sm" />
+          <MoveHorizontalIcon className="size-5" />
+          <ChevronDownIcon className="size-3.5" />
         </Components.FormattingToolbar.Button>
       </Components.Generic.Menu.Trigger>
       <Components.Generic.Menu.Dropdown>

@@ -84,7 +84,7 @@ export const AvatarOverflowIndicator = React.forwardRef<HTMLSpanElement, React.H
     return (
       <span
         ref={ref}
-        className={cn('relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-background shadow-xs', className)}
+        className={cn('relative flex size-10 shrink-0 items-center justify-center rounded-full bg-background shadow-xs', className)}
         {...props}
       >
         +{count - limit + 1}

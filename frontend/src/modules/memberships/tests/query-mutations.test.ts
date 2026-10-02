@@ -1,8 +1,12 @@
 import '~/query/tests/query-client-env';
 import type { MembershipBase } from 'sdk';
+import { hierarchy } from 'shared';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import type { Member } from '~/modules/memberships/types';
+
+// The organization's least privileged role, whatever the app calls it.
+const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 // The hooks return their options, so each lifecycle callback runs without rendering.
 vi.mock('@tanstack/react-query', async (importOriginal) => ({
@@ -38,7 +42,7 @@ const membership = (id: string, overrides: Partial<MembershipBase> = {}) =>
     userId: 'me',
     channelType: 'organization',
     channelId: `channel-${id}`,
-    role: 'member',
+    role: memberRole,
     ...overrides,
   }) as MembershipBase;
 
@@ -94,10 +98,10 @@ const scope = { entityId: 'org-1', entityType: 'organization', tenantId: 'tenant
 // Members lists are paged in the app; the untagged copies also seed flat lists, which the writes handle too.
 const pagedKey = [...membersListQueryOptions(scope).queryKey];
 const searchKey = [...membersListQueryOptions({ ...scope, q: 'ada' }).queryKey];
-const roleKey = [...membersListQueryOptions({ ...scope, role: 'member' }).queryKey];
+const roleKey = [...membersListQueryOptions({ ...scope, role: memberRole }).queryKey];
 const otherChannelKey = [...membersListQueryOptions({ ...scope, entityId: 'org-2' }).queryKey];
 
-const member = (id: string, role: MembershipBase['role'] = 'member') =>
+const member = (id: string, role: MembershipBase['role'] = memberRole) =>
   ({ id, name: id, membership: membership(`m-${id}`, { userId: id, channelId: 'org-1', role }) }) as Member;
 
 type MemberList = { items: Member[]; total: number } | { pages: { items: Member[]; total: number }[]; pageParams: unknown[] };
@@ -146,8 +150,8 @@ describe('useMemberUpdateMutation', () => {
     }
     expect(listItems(readList(pagedKey))?.map((row) => [row.id, row.membership.role])).toEqual([
       ['u1', 'admin'],
-      ['u2', 'member'],
-      ['u3', 'member'],
+      ['u2', memberRole],
+      ['u3', memberRole],
     ]);
     expect(new Set(pageTotals(readList(pagedKey)))).toEqual(new Set([3]));
     expect(firstPageParam(readList(pagedKey))).toEqual({ page: 0, offset: 0 });

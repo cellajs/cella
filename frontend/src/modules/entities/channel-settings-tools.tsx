@@ -77,7 +77,7 @@ export function DeleteToolCard({ name, resource, dialogId, renderDialog }: Delet
       description={<Trans t={t} i18nKey="c:delete_resource_notice.text" values={{ name, resource: resourceName }} />}
     >
       <Button ref={deleteButtonRef} variant="destructive" className="w-full sm:w-auto" onClick={openDeleteDialog}>
-        <TrashIcon className="mr-2 size-4" />
+        <TrashIcon className="size-4" />
         <span>{t('c:delete_resource', { resource: resourceName })}</span>
       </Button>
     </ToolCard>

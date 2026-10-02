@@ -26,7 +26,7 @@ export const useColumns = () => {
 
         renderCell: ({ row }) => (
           <>
-            <EntityAvatar type={row.entity.entityType} className="h-8 w-8" id={row.entity.id} name={row.entity.name} url={row.entity.thumbnailUrl} />
+            <EntityAvatar type={row.entity.entityType} className="size-8" id={row.entity.id} name={row.entity.name} url={row.entity.thumbnailUrl} />
             <span className="ml-2 truncate font-medium">{row.entity.name || '-'}</span>
           </>
         ),
@@ -45,7 +45,7 @@ export const useColumns = () => {
         placeholderValue: '-',
         renderCell: ({ row }) =>
           row.inactiveMembership.role ? (
-            <div className="group relative inline-flex h-full w-full items-center gap-1">{t(`c:${row.inactiveMembership.role}`)}</div>
+            <div className="group relative inline-flex size-full items-center gap-1">{t(`c:${row.inactiveMembership.role}`)}</div>
           ) : null,
       },
       dateColumn<Invitation>('createdAt', { name: t('c:invited_at'), sortable: false, get: (row) => row.inactiveMembership.createdAt }),

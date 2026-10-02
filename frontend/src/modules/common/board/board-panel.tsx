@@ -11,12 +11,7 @@ interface BoardPanelHeaderProps {
 
 export function BoardPanelHeader({ leading, title, actions, isCollapsed, className }: BoardPanelHeaderProps) {
   return (
-    <div
-      className={cn(
-        'space-between z-50 flex min-h-13 flex-row items-center gap-2 rounded-lg rounded-b-none border border-b-0 p-2 max-sm:hidden',
-        className,
-      )}
-    >
+    <div className={cn('z-50 flex min-h-13 flex-row items-center gap-2 rounded-lg rounded-b-none border border-b-0 p-2 max-sm:hidden', className)}>
       {leading}
       {!isCollapsed && title}
       {!isCollapsed && actions && (
@@ -111,7 +106,7 @@ export function CollapsedPanelView({ mainCount, sections = EMPTY_SECTIONS, class
         </div>
       ))}
 
-      <div className="flex grow items-center justify-center text-gray-500 text-xs">
+      <div className="flex grow items-center justify-center text-muted-foreground text-xs">
         <div className="absolute top-[calc(50%-0.5rem)]">{mainCount}</div>
       </div>
 

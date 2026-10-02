@@ -139,7 +139,7 @@ function EnumSelectMenu<TValue extends string>({
         if (value != null) onSelect(value);
       }}
     >
-      <ComboboxList ref={listRef} className="rounded-lg p-1 outline-none" tabIndex={-1}>
+      <ComboboxList ref={listRef} className="rounded-lg p-1 outline-hidden" tabIndex={-1}>
         {normalized.map((opt) => (
           <ComboboxItem key={opt.value} value={opt.value} className="flex items-center gap-2">
             <span className="flex-1 text-foreground">{opt.label}</span>

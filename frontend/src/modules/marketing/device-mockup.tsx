@@ -20,7 +20,7 @@ export function DeviceMockup({ lightItems, darkItems, type, className }: DeviceM
   const items = mode === 'dark' ? darkItems : lightItems;
 
   const { ref, inView } = useInView();
-  const mockupClass = `transition-opacity duration-700 ease-out ${inView ? 'opacity-100' : 'opacity-0'}`;
+  const mockupClass = cn('transition-opacity duration-700 ease-out', inView ? 'opacity-100' : 'opacity-0');
 
   return (
     <div className={cn(mockupClass, className)} ref={ref}>

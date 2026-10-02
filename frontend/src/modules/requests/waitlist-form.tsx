@@ -66,7 +66,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
           control={form.control}
           name="email"
           render={({ field }) => (
-            <FormItem className={`${!email ? '' : 'hidden'} w-full grow gap-0`}>
+            <FormItem className={cn('w-full grow gap-0', email && 'hidden')}>
               <FormControl>
                 <Input
                   {...field}
@@ -88,7 +88,7 @@ export function WaitlistForm({ email, inputClassName, buttonContent, buttonClass
           ) : (
             <>
               {t('c:join')}
-              <ArrowRightIcon className="ml-2" />
+              <ArrowRightIcon />
             </>
           )}
         </SubmitButton>

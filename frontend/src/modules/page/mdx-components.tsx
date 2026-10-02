@@ -4,6 +4,7 @@ import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { HashUrlButton } from '~/modules/common/hash-url-button';
 import { getHashUrl } from '~/modules/docs/hash-url';
 import { CodeBlock } from '~/modules/page/code-block';
+import { cn } from '~/utils/cn';
 
 /** Internal /docs links route; `#` anchors scroll via the spy store, which queues until lazy content is laid out; external links open a new tab. */
 function MdxLink({ href = '', children, ...props }: ComponentProps<'a'>) {
@@ -37,10 +38,10 @@ function MdxLink({ href = '', children, ...props }: ComponentProps<'a'>) {
 }
 
 /** h2 with a hover copy-link button: the copied URL uses the bare hash slug while the DOM id keeps its `spy-` prefix. */
-function MdxHeading({ id = '', children, ...props }: ComponentProps<'h2'>) {
+function MdxHeading({ id = '', className, children, ...props }: ComponentProps<'h2'>) {
   const hash = id.replace(/^spy-/, '');
   return (
-    <h2 id={id} className="group" {...props}>
+    <h2 id={id} className={cn('group', className)} {...props}>
       {children}
       {hash && <HashUrlButton className="ms-2" url={getHashUrl(hash)} />}
     </h2>

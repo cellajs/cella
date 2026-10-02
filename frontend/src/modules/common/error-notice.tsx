@@ -9,6 +9,7 @@ import { type ErrorNoticeError, getErrorInfo, handleAskForHelp } from '~/modules
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '~/modules/ui/card';
 import type { BoundaryType } from '~/routes/types';
+import { cn } from '~/utils/cn';
 
 export type { ErrorNoticeError } from '~/modules/common/error-helpers';
 
@@ -70,16 +71,16 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
               </CardDescription>
             </CardHeader>
             {error && 'status' in error && (
-              <CardContent className="whitespace-pre-wrap px-0 py-4 font-mono text-red-600">
+              <CardContent className="whitespace-pre-wrap px-0 py-4 font-mono text-destructive">
                 {error.type && (
                   <Button
                     variant="link"
                     size="sm"
                     onClick={() => setShowError((prev) => !prev)}
-                    className="flex w-full items-center whitespace-pre-wrap text-red-600"
+                    className="flex w-full items-center whitespace-pre-wrap text-destructive"
                   >
                     <span>{showError ? t('c:hide_details') : t('c:show_details')}</span>
-                    {<ChevronUpIcon className={`ml-2 transition-transform ${showError ? 'rotate-0' : 'rotate-180'}`} />}
+                    {<ChevronUpIcon className={cn('transition-transform', showError ? 'rotate-0' : 'rotate-180')} />}
                   </Button>
                 )}
 
@@ -124,12 +125,12 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
               ) : (
                 <>
                   <Button onClick={handleGoToHome} variant="secondary">
-                    <HouseIcon className="mr-2" />
+                    <HouseIcon />
                     {t('c:home')}
                   </Button>
                   {!location.pathname.endsWith('/error') && severity !== 'info' && (
                     <Button onClick={handleReload}>
-                      <RefreshCwIcon className="mr-2" />
+                      <RefreshCwIcon />
                       {t('c:reload')}
                     </Button>
                   )}
@@ -137,7 +138,7 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
               )}
               {severity && ['warn', 'error'].includes(severity) && (
                 <Button ref={contactButtonRef} variant="plain" onClick={() => handleAskForHelp(contactButtonRef)}>
-                  <MessageCircleQuestionMarkIcon className="mr-2" />
+                  <MessageCircleQuestionMarkIcon />
                   {t('c:contact_support')}
                 </Button>
               )}

@@ -14,6 +14,7 @@ import { membersListQueryOptions } from '~/modules/memberships/query';
 import type { Member } from '~/modules/memberships/types';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { flattenInfiniteData } from '~/query/basic/flatten';
+import { tw } from '~/utils/tw';
 
 const sheetId = 'attachment-description';
 
@@ -86,7 +87,7 @@ export function openAttachmentDescriptionSheet(attachment: Attachment, triggerRe
       id: sheetId,
       triggerRef,
       side: 'right',
-      className: 'max-w-full lg:max-w-3xl',
+      className: tw('max-w-full lg:max-w-3xl'),
       title: attachment.name,
       description: i18n.t('c:description'),
     },

@@ -1,4 +1,7 @@
 import { useState } from 'react';
+import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
+import { getTypeColorClass, type JsonViewerTheme } from './types';
 import { highlightText, JSON_SCHEMA_TYPES } from './utils';
 
 interface InlinePrimitiveValueProps {
@@ -62,7 +65,7 @@ export function InlinePrimitiveValue({ value, theme, searchText }: InlinePrimiti
 interface PrimitiveValueProps {
   value: unknown;
   type: string;
-  theme: { string: string; number: string; boolean: string; null: string; schemaType: string; searchMatch: string };
+  theme: Pick<JsonViewerTheme, 'string' | 'number' | 'boolean' | 'null' | 'schemaType' | 'structureType' | 'searchMatch'>;
   collapseStringsAfterLength: number;
   searchText: string;
   openapiMode?: 'spec' | 'schema';
@@ -70,7 +73,7 @@ interface PrimitiveValueProps {
 
 export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength, searchText, openapiMode }: PrimitiveValueProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const baseClass = 'break-word whitespace-pre-line';
+  const baseClass = tw('wrap-break-word whitespace-pre-line');
 
   switch (type) {
     case 'string': {
@@ -78,17 +81,7 @@ export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength,
 
       // Schema-mode type keywords render unquoted and in their type color.
       if (openapiMode === 'schema' && JSON_SCHEMA_TYPES.has(str)) {
-        const typeClass =
-          str === 'string'
-            ? theme.string
-            : str === 'number' || str === 'integer'
-              ? theme.number
-              : str === 'boolean'
-                ? theme.boolean
-                : str === 'null'
-                  ? theme.null
-                  : 'text-purple-600 dark:text-purple-400'; // for array/object
-        return <span className={`${baseClass} ${theme.schemaType} ${typeClass}`}>{str}</span>;
+        return <span className={cn(baseClass, theme.schemaType, getTypeColorClass(str, theme))}>{str}</span>;
       }
 
       const shouldTruncate = str.length > collapseStringsAfterLength;
@@ -98,7 +91,7 @@ export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength,
       return (
         // biome-ignore lint/a11y/useKeyWithClickEvents: developer-facing JSON viewer; expanding a truncated string is a visual mouse affordance.
         <span
-          className={`${baseClass} inline-block max-w-[600px] align-top ${shouldTruncate ? 'cursor-pointer' : ''}`}
+          className={cn(baseClass, 'inline-block max-w-[600px] align-top', shouldTruncate && 'cursor-pointer')}
           onClick={shouldTruncate ? () => setIsExpanded(!isExpanded) : undefined}
           title={shouldTruncate ? (isExpanded ? 'Click to collapse' : 'Click to expand') : undefined}
         >
@@ -128,9 +121,9 @@ export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength,
       );
     }
     case 'null':
-      return <span className={`${baseClass} ${theme.null}`}>null</span>;
+      return <span className={cn(baseClass, theme.null)}>null</span>;
     case 'undefined':
-      return <span className={`${baseClass} ${theme.null}`}>undefined</span>;
+      return <span className={cn(baseClass, theme.null)}>undefined</span>;
     default:
       return <span className={baseClass}>{String(value)}</span>;
   }

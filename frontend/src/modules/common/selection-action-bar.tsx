@@ -44,7 +44,7 @@ export function SelectionActionBar({ count, onClear, children }: SelectionAction
           <TooltipButton toolTipContent={t('c:clear_selection')} side="top">
             <Button variant="ghost" onClick={onClear}>
               <SquareXIcon />
-              <span className="ml-1 max-lg:hidden">{t('c:clear')}</span>
+              <span className="max-lg:hidden">{t('c:clear')}</span>
             </Button>
           </TooltipButton>
         </motion.div>

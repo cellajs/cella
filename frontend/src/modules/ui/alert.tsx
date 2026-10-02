@@ -9,12 +9,12 @@ export const alertVariants = cva(
     variants: {
       variant: {
         default: 'bg-card text-card-foreground',
-        brand: '[--intent-color:var(--brand)]',
-        destructive: '[--intent-color:var(--destructive)]',
-        success: '[--intent-color:var(--success)]',
+        brand: 'intent-brand',
+        destructive: 'intent-destructive',
+        success: 'intent-success',
         plain: 'border-primary/20 bg-background/80 text-primary',
         secondary: 'bg-secondary text-secondary-foreground',
-        warning: '[--intent-color:var(--warning)]',
+        warning: 'intent-warning',
       },
       soft: { true: '', false: '' },
     },

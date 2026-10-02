@@ -2,6 +2,7 @@ import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useMountedState } from '~/hooks/use-mounted-state';
 import { Skeleton } from '~/modules/ui/skeleton';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '~/modules/ui/table';
+import { cn } from '~/utils/cn';
 
 interface DataTableSkeletonProps {
   rowCount?: number;
@@ -26,7 +27,7 @@ export function DataTableSkeleton({
   const effectiveColumnCount = isMobile ? Math.min(columnCount, 3) : columnCount;
 
   return (
-    <div className={`w-full space-y-3 overflow-auto transition-opacity duration-500 ${hasMounted ? 'opacity-100' : 'opacity-0'}`}>
+    <div className={cn('w-full space-y-3 overflow-auto transition-opacity duration-500', hasMounted ? 'opacity-100' : 'opacity-0')}>
       <Table>
         <TableHeader>
           {Array.from({ length: 1 }).map((_, i) => (

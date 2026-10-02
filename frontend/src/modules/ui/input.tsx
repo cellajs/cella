@@ -1,8 +1,10 @@
 import type * as React from 'react';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
-export const inputClass =
-  'placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground border-input h-10 w-full min-w-0 rounded-md border bg-background px-3 py-2 text-base shadow-xs transition-[color,box-shadow] outline-none disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 text-sm focus-effect aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive';
+export const inputClass = tw(
+  'focus-effect h-10 w-full min-w-0 rounded-md border border-input bg-background px-3 py-2 text-md shadow-xs outline-hidden transition-[color,box-shadow] selection:bg-primary selection:text-primary-foreground placeholder:text-muted-foreground disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 sm:text-sm dark:aria-invalid:ring-destructive/40',
+);
 
 export function Input({ className, type, ...props }: React.ComponentProps<'input'>) {
   return <input type={type} data-slot="input" className={cn(inputClass, className)} {...props} />;

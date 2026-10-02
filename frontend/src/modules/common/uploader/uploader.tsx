@@ -17,7 +17,7 @@ export function Uploader() {
 
   if (!uppy || !uploaderData) return null;
 
-  if (error) return <div className="py-3 text-red-600">{error}</div>;
+  if (error) return <div className="py-3 text-destructive">{error}</div>;
 
   return (
     <Dialog

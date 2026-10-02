@@ -42,7 +42,7 @@ export function MenuSheetHeader() {
   return (
     <div className="relative h-14 p-3 pb-1">
       <div className="flex h-10 items-center justify-between">
-        <Link to="/home" draggable={false} className="focus-effect block rounded-md transition-transform hover:scale-105 active:translate-y-[.05rem]">
+        <Link to="/home" draggable={false} className="focus-effect active:press block rounded-md transition-transform hover:scale-105">
           <Logo className="mx-1 h-8" />
         </Link>
 

@@ -8,6 +8,7 @@ import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
 import { SidebarMenuItem } from '~/modules/ui/sidebar';
 import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 import { useSheeter } from '../../common/sheeter/use-sheeter';
 import { ActiveIndicator } from './active-indicator';
 
@@ -22,7 +23,7 @@ const tagTypeConfig = {
     linkTo: '/docs/schemas' as const,
     getHash: (name: string) => name,
     getSearch: (collapse: boolean, name: string) => ({ schemaTag: collapse ? undefined : name }),
-    triggerClassName: 'justify-start lowercase',
+    triggerClassName: tw('justify-start lowercase'),
   },
 };
 
@@ -95,14 +96,14 @@ function CollapsibleTagItemBase<T>({
             />
           }
         >
-          <div className="absolute left-[0.53rem] h-1 w-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/tag:bg-muted-foreground/60" />
+          <div className="absolute left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/tag:bg-muted-foreground/60" />
           <span>{tag.name}</span>
-          <span className="ml-2 text-muted-foreground/90 text-xs opacity-0 transition-opacity group-data-[expanded=true]/tag:hidden sm:group-hover:opacity-100">
+          <span className="text-muted-foreground text-xs opacity-0 transition-opacity group-data-[expanded=true]/tag:hidden sm:group-hover:opacity-100">
             {tag.count}
           </span>
           <ChevronDownIcon className="invisible ml-auto size-4 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/tag:rotate-180" />
         </CollapsibleTrigger>
-        <CollapsibleContent className={cn('overflow-hidden', !isMobile && 'data-closed:animate-collapsible-up data-open:animate-collapsible-down')}>
+        <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
           <div className="relative flex flex-col px-0 py-1">
             <ActiveIndicator activeIndex={activeItemIndex} layoutId={layoutId} isMobile={isMobile} />
             {items.map((item, index) => (

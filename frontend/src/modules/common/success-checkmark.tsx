@@ -13,7 +13,7 @@ export function SuccessCheckmark({ className, size = 50 }: SuccessCheckmarkProps
       style={{ width: size, height: size }}
     >
       <svg
-        className="block animate-[checkmark-fill_.4s_ease-in-out_.7s_forwards,checkmark-scale_.3s_ease-in-out_1.2s_both] rounded-full shadow-[inset_0_0_0_#4bb71b] [stroke-miterlimit:10]"
+        className="block animate-[checkmark-fill_.4s_ease-in-out_.7s_forwards,checkmark-scale_.3s_ease-in-out_1.2s_both] rounded-full shadow-[inset_0_0_0_var(--success)] [stroke-miterlimit:10]"
         width={size}
         height={size}
         xmlns="http://www.w3.org/2000/svg"
@@ -22,14 +22,14 @@ export function SuccessCheckmark({ className, size = 50 }: SuccessCheckmarkProps
         aria-label="Success"
       >
         <circle
-          className="animate-[checkmark-stroke_.6s_cubic-bezier(0.65,0,0.45,1)_.3s_forwards] fill-white stroke-4 stroke-[#4bb71b] [stroke-dasharray:166] [stroke-dashoffset:166] [stroke-miterlimit:10]"
+          className="animate-[checkmark-stroke_.6s_cubic-bezier(0.65,0,0.45,1)_.3s_forwards] fill-white stroke-4 stroke-success [stroke-dasharray:166] [stroke-dashoffset:166] [stroke-miterlimit:10]"
           cx="26"
           cy="26"
           r="25"
           fill="none"
         />
         <path
-          className="origin-center animate-[checkmark-stroke_.3s_cubic-bezier(0.65,0,0.45,1)_1.1s_forwards] stroke-4 stroke-[#4bb71b] [stroke-dasharray:48] [stroke-dashoffset:48]"
+          className="origin-center animate-[checkmark-stroke_.3s_cubic-bezier(0.65,0,0.45,1)_1.1s_forwards] stroke-4 stroke-success [stroke-dasharray:48] [stroke-dashoffset:48]"
           fill="none"
           d="M14.1 27.2l7.1 7.2 16.7-16.8"
         />

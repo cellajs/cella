@@ -60,7 +60,7 @@ export function LocalTabNav({ tabs, activeId, onTabChange, title, avatar, classN
               data-active={isActive || undefined}
               onClick={() => select(id)}
             >
-              <span className="block group-active:translate-y-[.05rem]">{truncateMiddle(t(label), 20)}</span>
+              <span className="group-active:press block">{truncateMiddle(t(label), 20)}</span>
               {isActive && <ActiveTabMarker indicator={indicator} />}
             </button>
           );

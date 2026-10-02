@@ -1,5 +1,9 @@
 import '~/query/tests/query-client-env';
+import { hierarchy } from 'shared';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+
+// The organization's least privileged role, whatever the app calls it.
+const memberRole = hierarchy.getLeastPrivilegedRole('organization');
 
 // Every list endpoint answers an empty page; each case reads the request the factory sent.
 vi.mock('sdk', async (importOriginal) => {
@@ -234,14 +238,14 @@ describe('export fetchers', () => {
   });
 
   it('members: the channel scopes the request, search defaults fill it and the rows include counts', async () => {
-    await fetchMembersForExport({ ...channel, role: 'member', limit: 1000, offset: 1000 });
+    await fetchMembersForExport({ ...channel, role: memberRole, limit: 1000, offset: 1000 });
 
     expect(sdk.getMembers).toHaveBeenCalledWith({
       query: {
         q: undefined,
         sort: 'lastSeenAt',
         order: 'desc',
-        role: 'member',
+        role: memberRole,
         limit: '1000',
         offset: '1000',
         entityId: 'org-1',

@@ -18,13 +18,8 @@ function ComboboxTrigger({ className, children, ...props }: ComboboxPrimitive.Tr
 
 function ComboboxClear({ className, ...props }: ComboboxPrimitive.Clear.Props) {
   return (
-    <ComboboxPrimitive.Clear
-      data-slot="combobox-clear"
-      render={<InputGroupButton variant="ghost" size="icon-xs" />}
-      className={cn(className)}
-      {...props}
-    >
-      <XIcon className="icon-sm pointer-events-none" />
+    <ComboboxPrimitive.Clear data-slot="combobox-clear" render={<InputGroupButton variant="ghost" size="size-3" />} className={className} {...props}>
+      <XIcon className="pointer-events-none size-3.5" />
     </ComboboxPrimitive.Clear>
   );
 }
@@ -43,7 +38,7 @@ function ComboboxInput({
       <InputGroupAddon align="inline-end">
         {showTrigger && (
           <InputGroupButton
-            size="icon-xs"
+            size="size-3"
             variant="ghost"
             render={<ComboboxTrigger />}
             data-slot="input-group-button"
@@ -153,7 +148,7 @@ function ComboboxEmpty({ className, ...props }: ComboboxPrimitive.Empty.Props) {
 }
 
 function ComboboxGroup({ className, ...props }: ComboboxPrimitive.Group.Props) {
-  return <ComboboxPrimitive.Group data-slot="combobox-group" className={cn(className)} {...props} />;
+  return <ComboboxPrimitive.Group data-slot="combobox-group" className={className} {...props} />;
 }
 
 function ComboboxGroupLabel({ className, ...props }: ComboboxPrimitive.GroupLabel.Props) {
@@ -179,7 +174,7 @@ function ComboboxValue(props: ComboboxPrimitive.Value.Props) {
 }
 
 function ComboboxLabel({ className, ...props }: ComboboxPrimitive.Label.Props) {
-  return <ComboboxPrimitive.Label data-slot="combobox-label" className={cn(className)} {...props} />;
+  return <ComboboxPrimitive.Label data-slot="combobox-label" className={className} {...props} />;
 }
 
 function ComboboxChips({ className, ...props }: ComboboxPrimitive.Chips.Props) {
@@ -205,7 +200,7 @@ function ComboboxChipRemove({ className, ...props }: ComboboxPrimitive.ChipRemov
       className={cn('-mr-1 inline-flex size-4 items-center justify-center rounded-full opacity-60 hover:opacity-100', className)}
       {...props}
     >
-      <XIcon className="icon-xs" />
+      <XIcon className="size-3" />
     </ComboboxPrimitive.ChipRemove>
   );
 }

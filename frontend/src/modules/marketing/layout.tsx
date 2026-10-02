@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { TKey } from '~/lib/i18n-locales';
-import { Spinner } from '~/modules/common/spinner';
+import { PageSpinner } from '~/modules/common/spinner';
 import { BackgroundCurve } from '~/modules/marketing/about/hero';
 import { MarketingFooter } from '~/modules/marketing/footer';
 import { MarketingNav } from '~/modules/marketing/nav';
@@ -18,7 +18,7 @@ export function MarketingLayout({ title, children }: MarketingLayoutProps) {
   return (
     <div>
       <MarketingNav />
-      <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
+      <Suspense fallback={<PageSpinner />}>
         <div className="max-w-none px-0">
           <section className="rich-gradient relative py-14 pb-16 sm:min-h-40 sm:py-20">
             {title && (

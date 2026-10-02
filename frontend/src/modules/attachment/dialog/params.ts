@@ -1,5 +1,6 @@
 import type { DialogData } from '~/modules/common/dialoger/use-dialoger';
 import { getRouter } from '~/routes/-router-instance';
+import { tw } from '~/utils/tw';
 
 /** Search param holding the open attachment's id. Its presence is the dialog's open state. */
 export const ATTACHMENT_DIALOG_PARAM = 'attachmentDialogId';
@@ -8,17 +9,17 @@ export const ATTACHMENT_DIALOG_PARAM = 'attachmentDialogId';
 const ATTACHMENT_DIALOG_EXTRA_PARAMS = ['groupId'] as const;
 
 /** Chrome shared by both ways of opening the carousel (URL-driven and imperative). */
-export const attachmentDialogClassName = 'min-w-full h-dvh max-h-dvh border-0 p-0 rounded-none flex flex-col mt-0';
+export const attachmentDialogClassName = tw('mt-0 flex h-dvh max-h-dvh min-w-full flex-col rounded-none border-0 p-0');
 
 /** Wrapper the carousel is mounted in, identical for both dialog entry points. */
-export const attachmentDialogContentClassName = 'relative -z-1 flex h-dvh grow flex-wrap justify-center p-2';
+export const attachmentDialogContentClassName = tw('relative -z-1 flex h-dvh grow flex-wrap justify-center p-2');
 
 /**
  * Per-slide stage insets: a fitted image stays clear of the fixed header (3rem) and, from `sm` up where the pan/zoom
  * viewer renders them, the zoom controls (3.25rem from the bottom). Zoomed-in content still slides under the
  * translucent chrome because overflow clips at the padding edge.
  */
-export const attachmentDialogStageClassName = 'pt-12 sm:pb-14';
+export const attachmentDialogStageClassName = tw('pt-12 sm:pb-14');
 
 export function openAttachmentDialogSearch(attachmentId: string, groupId?: string | null) {
   return (prev: Record<string, unknown>) => ({ ...prev, [ATTACHMENT_DIALOG_PARAM]: attachmentId, groupId: groupId || undefined });

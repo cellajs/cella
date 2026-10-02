@@ -393,8 +393,11 @@ describe('Attachment mentions (template notification source)', async () => {
         .onConflictDoUpdate({ target: notificationPreferencesTable.userId, set: { commentEmail } });
 
     const offerCommentEmail = () => onTestFinished(overrideConfig(appConfig.has, { commentEmail: true }));
+    // Each case starts with comment email not offered, whatever the app's default is.
+    let restoreCommentEmail: () => void;
 
     beforeAll(async () => {
+      restoreCommentEmail = overrideConfig(appConfig.has, { commentEmail: false });
       const row = buildInsertableProduct(
         'attachment',
         { id: replySubjectId, tenantId: tenant.tenantId, ...plan.channelIdColumns, createdBy: tenant.user.id, updatedBy: null, deletedBy: null },
@@ -404,6 +407,7 @@ describe('Attachment mentions (template notification source)', async () => {
     });
 
     afterAll(async () => {
+      restoreCommentEmail();
       await db.delete(notificationsTable).where(eq(notificationsTable.subjectId, replySubjectId));
       await db.delete(attachmentsTable).where(eq(attachmentsTable.id, replySubjectId));
       await db.delete(notificationPreferencesTable).where(eq(notificationPreferencesTable.userId, member.id));

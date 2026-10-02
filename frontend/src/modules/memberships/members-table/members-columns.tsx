@@ -58,7 +58,7 @@ export const useColumns = (isAdmin: boolean, isSheet: boolean, entityType: Chann
         resizable: true,
         placeholderValue: '-',
         renderCell: ({ row }) =>
-          row.membership ? <div className="group relative inline-flex h-full w-full items-center gap-1">{t(row.membership.role)}</div> : null,
+          row.membership ? <div className="group relative inline-flex size-full items-center gap-1">{t(row.membership.role)}</div> : null,
         exportValue: (row) => row.membership && t(row.membership.role),
         width: 100,
         ...(isAdmin && {

@@ -51,11 +51,11 @@ export function ExpandableList<T>({ items, renderItem, initialDisplayCount, alwa
             setExpanded(true);
           }}
         >
-          <Badge size="sm" className="mr-2 aspect-square px-1 py-0">
+          <Badge size="sm" className="aspect-square px-1 py-0">
             {items.length - initialDisplayCount}
           </Badge>
           {t(expandText)}
-          <ChevronDownIcon className="ml-2 opacity-50 transition-opacity group-hover:opacity-100" />
+          <ChevronDownIcon className="opacity-50 transition-opacity group-hover:opacity-100" />
         </Button>
       )}
     </>

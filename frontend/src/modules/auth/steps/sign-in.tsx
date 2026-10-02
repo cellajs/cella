@@ -136,7 +136,7 @@ export function SignInStep() {
       )}
 
       {(emailEnabled || isMagicLinkEnabled) && (
-        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="mt-0! flex flex-col gap-4">
+        <form onSubmit={form.handleSubmit(onSubmit, defaultOnInvalid)} className="flex flex-col gap-4">
           <FormField
             control={form.control}
             name="email"
@@ -157,7 +157,7 @@ export function SignInStep() {
             )}
           />
 
-          <SubmitButton loading={isMagicLinkEnabled && isSending} className="w-full gap-2">
+          <SubmitButton loading={isMagicLinkEnabled && isSending} className="w-full">
             {isMagicLinkEnabled ? (
               <>
                 <MailIcon />
@@ -166,7 +166,7 @@ export function SignInStep() {
             ) : (
               <>
                 {t('c:sign_in')}
-                <ArrowRightIcon className="ml-2" />
+                <ArrowRightIcon />
               </>
             )}
           </SubmitButton>

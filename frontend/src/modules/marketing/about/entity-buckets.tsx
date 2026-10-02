@@ -110,7 +110,7 @@ function DashedBorder({ animated = false, paused = false }: { animated?: boolean
   }, []);
 
   return (
-    <svg ref={ref} className="pointer-events-none absolute inset-0 h-full w-full" aria-hidden="true">
+    <svg ref={ref} className="pointer-events-none absolute inset-0 size-full" aria-hidden="true">
       {size.w > 0 && (
         <motion.rect
           x={1}

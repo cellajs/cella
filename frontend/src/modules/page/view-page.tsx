@@ -46,7 +46,7 @@ function ViewPage({ slug }: ViewPageProps) {
             {page.updatedAt && <PageUpdatedAt updatedAt={page.updatedAt} />}
 
             {renderMode === 'default' && (
-              <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" />}>
+              <Suspense fallback={<Spinner className="my-16 size-6 opacity-50" />}>
                 <MDXProvider components={mdxComponents}>
                   <Content />
                 </MDXProvider>
@@ -56,7 +56,7 @@ function ViewPage({ slug }: ViewPageProps) {
 
             {renderMode === 'overview' && (
               <>
-                <Suspense fallback={<Spinner className="my-16 h-6 w-6 opacity-50" />}>
+                <Suspense fallback={<Spinner className="my-16 size-6 opacity-50" />}>
                   <MDXProvider components={mdxComponents}>
                     <Content />
                   </MDXProvider>

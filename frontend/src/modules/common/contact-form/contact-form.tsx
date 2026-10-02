@@ -62,7 +62,7 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
   return (
     <div className="flex w-full flex-col gap-4 md:flex-row md:gap-10">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="w-full space-y-4 md:space-y-6">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="flex w-full flex-col gap-4 md:gap-6">
           <InputFormField
             control={form.control}
             name="name"

@@ -41,6 +41,7 @@ import type {
 } from '~/modules/common/blocknote/types';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { getRouter } from '~/routes/-router-instance';
+import { cn } from '~/utils/cn';
 
 /** Yjs connection plus entity identity for SSE suppression; passing this bundle switches the editor into collaborative mode. */
 export interface CollaborationBundle {
@@ -264,7 +265,7 @@ function BlockNote({
       editable={editable}
       autoFocus={autoFocus}
       ref={blockNoteRef}
-      className={`${dense ? 'bn-dense' : ''} ${titlePlaceholder ? 'bn-title-placeholder' : ''} ${className}`}
+      className={cn(dense && 'bn-dense', titlePlaceholder && 'bn-title-placeholder', className)}
       // The block-0 title placeholder rides a CSS var: BlockNote's own placeholders are per block type (styles.css)
       {...(titlePlaceholder && { style: { '--bn-title-placeholder': JSON.stringify(titlePlaceholder) } as React.CSSProperties })}
       data-color-scheme={mode}

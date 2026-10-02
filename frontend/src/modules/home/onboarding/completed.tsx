@@ -42,7 +42,7 @@ export function OnboardingCompleted() {
   }, [mutate, setSectionsDefault, hasOrganization, orgQuery.isFetching]);
 
   return (
-    <div className="relative z-1 mx-auto flex h-svh min-w-full max-w-3xl flex-col items-center justify-center space-y-6 p-4 text-center">
+    <div className="relative z-1 mx-auto flex h-svh min-w-full max-w-3xl flex-col items-center justify-center gap-6 p-4 text-center">
       {isExploding && <Confetti fire />}
 
       {user.userFlags.finishedOnboarding && (
@@ -55,7 +55,7 @@ export function OnboardingCompleted() {
 
       {!hasOrganization && !orgQuery.isFetching && createOrganization && (
         <Button ref={createButtonRef} variant="secondary" onClick={() => createOrganization(createButtonRef)}>
-          <PlusIcon className="mr-2" />
+          <PlusIcon />
           {t('c:create_resource', { resource: t('c:organization').toLowerCase() })}
         </Button>
       )}

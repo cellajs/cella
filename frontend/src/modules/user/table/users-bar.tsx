@@ -12,6 +12,7 @@ import { DeleteUsers } from '~/modules/user/delete-users';
 import { InviteUsers } from '~/modules/user/invite-users';
 import type { BaseUser, UsersRouteSearchParams } from '~/modules/user/types';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
+import { tw } from '~/utils/tw';
 
 type UsersTableBarProps = BaseTableBarProps<BaseUser, UsersRouteSearchParams>;
 
@@ -38,7 +39,7 @@ export function UsersTableBar({ selected, queryKey, searchVars, setSearch, colum
       id: 'invite-users',
       triggerRef: inviteButtonRef,
       drawerOnMobile: false,
-      className: 'w-auto shadow-none border relative z-60 max-w-4xl',
+      className: tw('relative z-60 w-auto max-w-4xl border shadow-none'),
       container: { ref: inviteContainerRef, overlay: true },
       title: t('c:invite'),
       titleContent: <UnsavedBadge title={t('c:invite')} />,

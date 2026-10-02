@@ -25,12 +25,12 @@ export function SearchHistoryGroup({ searches, onRemove }: SearchHistoryGroupPro
             <span className="truncate font-medium">{search}</span>
           </div>
           <div className="flex items-center">
-            <span className="mx-3 text-xs opacity-50 max-sm:hidden">{index}</span>
+            <span className="mx-3 text-muted-foreground/70 text-xs max-sm:hidden">{index}</span>
             <Button
               variant="ghost"
               size="icon"
               aria-label={t('c:remove')}
-              className="h-6 w-6 p-0"
+              className="size-6 p-0"
               onClick={(event) => {
                 event.stopPropagation();
                 onRemove(search);

@@ -7,7 +7,7 @@ import { baseDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { issuePasskeyChallenge, verifyPasskeyAssertion } from '#/modules/auth/passkeys/operations/passkey-challenges';
 import { findCredentialIdsByUser } from '#/modules/auth/passkeys/passkeys-queries';
-import { readStepUp, stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
+import { readStepUp, refuseImpersonation, stampStepUp } from '#/modules/auth/step-up/helpers/step-up';
 import { authStepUpRoutes } from '#/modules/auth/step-up/step-up-routes';
 import { issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
@@ -25,7 +25,8 @@ app.openapi(authStepUpRoutes.getStepUp, async (ctx) => {
 });
 
 app.openapi(authStepUpRoutes.getStepUpPasskeyChallenge, async (ctx) => {
-  const { user } = ctx.var;
+  const { user, session } = ctx.var;
+  refuseImpersonation(session);
 
   // Issued for this account and for a step-up only: a sign-in or MFA challenge never answers as a step-up proof.
   const challenge = await issuePasskeyChallenge(ctx, { purpose: 'step-up', userId: user.id });
@@ -36,6 +37,7 @@ app.openapi(authStepUpRoutes.getStepUpPasskeyChallenge, async (ctx) => {
 
 app.openapi(authStepUpRoutes.stepUp, async (ctx) => {
   const { user, session } = ctx.var;
+  refuseImpersonation(session);
   const { passkeyData, totpCode } = ctx.req.valid('json');
 
   const via = passkeyData ? 'passkey' : totpCode ? 'totp' : null;
@@ -58,6 +60,7 @@ app.openapi(authStepUpRoutes.stepUp, async (ctx) => {
 
 app.openapi(authStepUpRoutes.sendStepUpLink, async (ctx) => {
   const { user, session } = ctx.var;
+  refuseImpersonation(session);
   const { redirect } = ctx.req.valid('json');
 
   // An emailed link stands in for a second factor only while the user holds none.
