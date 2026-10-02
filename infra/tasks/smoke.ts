@@ -99,8 +99,8 @@ export interface SmokeOptions {
 }
 
 /**
- * Component-health retry budget. The exclusive cdc replacement frees its replication slot only at the final reap and the fresh worker's
- * WebSocket reconnect backs off up to 30s, so `cdc=unhealthy(worker_disconnected)` can persist for ~2 minutes after cutover. The 120s budget outlasts that.
+ * Component-health retry budget. The old cdc worker frees its replication slot only when its VM is reaped (and PostgreSQL notices, up to a minute later),
+ * and the fresh worker's WebSocket reconnect backs off up to 30s, so a non-healthy `cdc` can persist for ~2 minutes after cutover. The 120s budget outlasts that.
  */
 export const COMPONENTS_RETRY_ATTEMPTS = 15;
 export const COMPONENTS_RETRY_DELAY_MS = 8_000;

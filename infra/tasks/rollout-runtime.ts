@@ -22,6 +22,9 @@ const deployHealthAttempts = 120;
 const deployHealthIntervalMs = 3000;
 const deployHealthTimeoutMs = 8000;
 
+/** The health gate's polling span; the boot runner's release ceiling (resources/cloud-init.ts) must fit inside it with room for the boot before it. */
+export const deployHealthGateSeconds = (deployHealthAttempts * deployHealthIntervalMs) / 1000;
+
 export interface RolloutRuntimeOptions {
   stack: string;
   /** Scaleway LB zone; defaults to `<region>-1` from the environment. */

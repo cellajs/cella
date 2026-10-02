@@ -42,7 +42,7 @@ It owns the whole pipeline ([deploy flow](../cella/DEPLOYMENT.md#deploy-flow)). 
 
 Three rules:
 
-1. **Create-then-replace.** A release never mutates a running server: each deploy provisions a new immutable **generation** per service, moves LB traffic once it provably serves the expected version, then destroys the displaced one. Exception: `singleVM` replaces the backend host in place, with a serving gap ([rollout strategies](../cella/DEPLOYMENT.md#rollout-strategies)).
+1. **Create-then-replace.** A release never mutates a running server: each deploy provisions a new immutable **generation** per service, moves LB traffic once it provably serves the expected version, then destroys the displaced one. Under `singleVM` the backend host overlaps too, and its in-process cdc and jobs move once the old VM is reaped ([rollout strategies](../cella/DEPLOYMENT.md#rollout-strategies)).
 2. **Content-addressed identity.** A generation id hashes the release SHA plus static config: a re-run is a no-op and a manual `pulumi up` cannot start a competing generation.
 3. **Least-privilege keys, per mode.** Principals are per app×mode (`<slug>-<mode>-…`) in one IAM group, resolved by the canonical names in [lib/scaleway/principals.ts](lib/scaleway/principals.ts); no principal id is persisted or exported ([key tiers](../cella/DEPLOYMENT.md#credentials)).
 
@@ -56,7 +56,7 @@ Three rules:
 
 ## Observability
 
-The deploy command opens an OTel trace: every pipeline step is a span, and audit events (`deploy.started`, `<service> promoted to generation <id>`, `deploy.failed`, ...) stream to the OTLP endpoint. Each VM's **boot runner** joins the trace through the boot plan's `traceparent` and reports boot phases, failures and a crash-log tail. Every VM also uploads **boot diagnostics** (logs and JSONL events) to a dedicated bucket: `pnpm --filter infra diag` reads them, `--replay` re-ships them. The boot runner redacts by value: each secret it handled (the boot and service keys, every hydrated runtime secret) and any URL userinfo is replaced in its console output, its telemetry and every uploaded object, whatever name printed it. Set the destination with `OTEL_EXPORTER_OTLP_ENDPOINT`/`OTEL_EXPORTER_OTLP_HEADERS`, or seed the `maple-secret-ingest-key` secret.
+The deploy command opens an OTel trace: every pipeline step is a span, and audit events (`deploy.started`, `<service> promoted to generation <id>`, `deploy.failed`, ...) stream to the OTLP endpoint. Each VM's **boot runner** joins the trace through the boot plan's `traceparent` and reports boot phases, failures and a crash-log tail. Every VM also uploads **boot diagnostics** (logs and JSONL events) to a dedicated bucket: `pnpm --filter infra diag --sha <sha>` prints one release's bundle for each service that boots its own VM (under `singleVM`, the host alone), or says that release has none; without `--sha` it prints each service's newest; `--replay` re-ships them. A failed deploy runs it for the release it was deploying. The boot runner redacts by value: each secret it handled (the boot and service keys, every hydrated runtime secret) and any URL userinfo is replaced in its console output, its telemetry and every uploaded object, whatever name printed it. Set the destination with `OTEL_EXPORTER_OTLP_ENDPOINT`/`OTEL_EXPORTER_OTLP_HEADERS`, or seed the `maple-secret-ingest-key` secret.
 
 ## Status command
 

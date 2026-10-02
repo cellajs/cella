@@ -43,6 +43,13 @@ export interface CloudInitParams {
   telemetry?: { endpoint: string; keyHeader: string; keyEnvVar: string };
 }
 
+/**
+ * Ceiling on the release companion (migrations, job store install, admin seed). It must fail and upload its diagnostics while the deploy's health gate
+ * still polls (`deployHealthGateSeconds`, counted from the end of the provisioning update, by which the companion has barely started), or the deploy
+ * reports a failure with no bundle to show. The backend's own lock and statement timeouts (MODE=migrate) sit below it.
+ */
+export const releaseCommandTimeoutSeconds = 180;
+
 /** VM config paths, namespaced under `/etc/<slug>` so the engine hardcodes no app name. */
 const bootPaths = (slug: string) => {
   const etcDir = `/etc/${slug}`;
@@ -71,12 +78,18 @@ ${content}
 ${marker}`;
 };
 
+/**
+ * The VM's boot log: cloud-init's own script and the boot unit append to it, the serial console replays it, and the boot runner
+ * reads it, mounted read-only at the same path, into every diagnostics bundle.
+ */
+const bootLogPath = '/var/log/infra-boot.log';
+
 // The service name and release SHA travel in the boot plan (JSON, so structurally
 // escaped) and the boot runner logs them itself; keeping them out of this shell
 // header means no per-deploy value is interpolated into a bash command position.
 // `slug` is validated kebab-case at the config boundary (config/engine-config.ts).
 const bootHeader = (slug: string): string => `#!/bin/bash
-exec > >(tee -a /var/log/infra-boot.log 2>/dev/null > /dev/console) 2>&1
+exec > >(tee -a ${bootLogPath} 2>/dev/null > /dev/console) 2>&1
 set -uo pipefail
 say() { echo "::${slug}:: $*" ; }
 trap 'rc=$?; if [ "$rc" -ne 0 ]; then say "BOOT FAILED (exit $rc)"; fi' EXIT
@@ -87,7 +100,7 @@ Description=Replay the first-boot log to the serial console
 After=multi-user.target
 [Service]
 Type=oneshot
-ExecStart=/bin/sh -c 'cat /var/log/infra-boot.log 2>/dev/null > /dev/console'
+ExecStart=/bin/sh -c 'cat ${bootLogPath} 2>/dev/null > /dev/console'
 [Install]
 WantedBy=multi-user.target`;
 
@@ -117,14 +130,15 @@ function bootPlan(p: CloudInitParams): string {
       credentials: { scwAccessKeyFile: paths.accessKey, scwSecretKeyFile: paths.secretKey },
       ...(p.handoffSecretId ? { serviceKeyHandoff: { secretId: p.handoffSecretId, cacheFile: `${paths.etcDir}/service-key.json` } } : {}),
       ...(p.exportS3Env ? { exportS3Env: true } : {}),
-      bootDiagnostics: { bucket: p.bootDiagBucket, logFile: '/var/log/infra-boot.log' },
+      bootDiagnostics: { bucket: p.bootDiagBucket, logFile: bootLogPath },
       releaseCommand: {
         enabled: p.runRelease,
-        command: ['docker', 'compose', '--profile', p.profile, 'run', '--rm', `${p.profile}-release`],
+        command: ['docker', 'compose', '--profile', p.profile, 'run', '--rm', '--name', `${p.profile}-release-run`, `${p.profile}-release`],
+        containerName: `${p.profile}-release-run`,
       },
       docker: { composeFile: '/opt/app/compose.yml' },
       files: { compose: p.composeContent, env: p.envFileContent, runtimeSecretManifest: parseRuntimeSecretManifest(JSON.parse(p.manifestContent)) },
-      timeouts: { privateNetworkSeconds: 150, pullAttempts: 12, pullRetrySeconds: 10 },
+      timeouts: { privateNetworkSeconds: 150, pullAttempts: 12, pullRetrySeconds: 10, releaseCommandSeconds: releaseCommandTimeoutSeconds },
     } satisfies BootPlan,
     null,
     2,
@@ -149,17 +163,22 @@ const writeBootEnv = (p: CloudInitParams): string => {
 chmod 600 ${paths.bootEnv}`;
 };
 
-/** Log the host daemon into the registry, then run the boot runner container. It drives the host Docker daemon through the mounted socket, reaches the private network via `--network host`, and writes its outputs to the host paths the daemon mounts. The registry host and boot-image ref arrive via the EnvironmentFile (bootEnv), so this script is fixed apart from the slug-namespaced paths. */
+/**
+ * Log the host daemon into the registry, then run the boot runner container. It drives the host Docker daemon through the mounted socket, reaches the private network via `--network host`, and writes its outputs to the host paths the daemon mounts.
+ * The boot log is mounted read-only for the diagnostics upload; `touch` first, because Docker creates a missing bind source as a directory. The registry host and boot-image ref arrive via the EnvironmentFile (bootEnv), so this script is fixed apart from the slug-namespaced paths.
+ */
 const bootLauncher = (p: CloudInitParams): string => {
   const paths = bootPaths(p.slug);
   return `#!/bin/bash
 set -uo pipefail
 docker login "$REGISTRY_HOST" -u nologin --password-stdin < ${paths.secretKey}
+touch ${bootLogPath}
 exec docker run --rm --network host \\
   -v /var/run/docker.sock:/var/run/docker.sock \\
   -v /opt/app:/opt/app \\
   -v ${paths.etcDir}:${paths.etcDir} \\
   -v /etc/runtime-secrets:/etc/runtime-secrets \\
+  -v ${bootLogPath}:${bootLogPath}:ro \\
   "$BOOT_IMAGE" \\
   boot --plan ${paths.plan}`;
 };
@@ -172,7 +191,7 @@ Wants=docker.service network-online.target
 [Service]
 Type=oneshot
 EnvironmentFile=${bootEnvPath}
-ExecStart=/bin/bash -lc 'set -o pipefail; ${launcherPath} 2>&1 | tee -a /var/log/infra-boot.log > /dev/console'
+ExecStart=/bin/bash -lc 'set -o pipefail; ${launcherPath} 2>&1 | tee -a ${bootLogPath} > /dev/console'
 [Install]
 WantedBy=multi-user.target`;
 

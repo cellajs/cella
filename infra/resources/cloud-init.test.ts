@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { deployHealthGateSeconds } from '../tasks/rollout-runtime';
 import { bootPlanIn } from '../tests/helpers/pulumi-mock';
-import { type CloudInitParams, renderCloudInit } from './cloud-init';
+import { type CloudInitParams, releaseCommandTimeoutSeconds, renderCloudInit } from './cloud-init';
 
 function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
   return {
@@ -48,6 +49,11 @@ describe('renderCloudInit', () => {
     expect(out).toContain('docker login "$REGISTRY_HOST" -u nologin --password-stdin < /etc/cella/scw-secret-key');
     expect(out).toContain('docker run --rm --network host');
     expect(out).toContain('-v /var/run/docker.sock:/var/run/docker.sock');
+    // The boot log reaches the diagnostics upload read-only, at the path the plan names; it exists before the mount, or Docker would create a directory there.
+    expect(out).toContain('  -v /var/log/infra-boot.log:/var/log/infra-boot.log:ro \\\n');
+    expect(out.indexOf('touch /var/log/infra-boot.log')).toBeGreaterThan(-1);
+    expect(out.indexOf('touch /var/log/infra-boot.log')).toBeLessThan(out.indexOf('exec docker run'));
+    expect(bootPlanIn(out, '/etc/cella/boot-plan.json').plan.bootDiagnostics.logFile).toBe('/var/log/infra-boot.log');
     expect(out).toContain('BOOT_IMAGE=rg.fr-par.scw.cloud/my-namespace/infra-boot:abc123def');
     expect(out).toContain('EnvironmentFile=/etc/cella/boot.env');
     expect(out).toContain('boot --plan /etc/cella/boot-plan.json');
@@ -124,6 +130,25 @@ describe('renderCloudInit', () => {
     expect(withRelease).toContain('"docker",');
     expect(withRelease).toContain('"backend-release"');
     expect(withoutRelease).toContain('"enabled": false');
+  });
+
+  it('names the release container and bounds its run inside the deploy health gate', () => {
+    const { plan } = bootPlanIn(renderCloudInit(params({ runRelease: true })), '/etc/cella/boot-plan.json');
+    expect(plan.releaseCommand.containerName).toBe('backend-release-run');
+    expect(plan.releaseCommand.command).toEqual([
+      'docker',
+      'compose',
+      '--profile',
+      'backend',
+      'run',
+      '--rm',
+      '--name',
+      'backend-release-run',
+      'backend-release',
+    ]);
+    expect(plan.timeouts.releaseCommandSeconds).toBe(releaseCommandTimeoutSeconds);
+    // The companion starts about a minute into the gate (private NIC, hydration, pull); its failure and upload must land before the gate gives up.
+    expect(releaseCommandTimeoutSeconds + 120).toBeLessThanOrEqual(deployHealthGateSeconds);
   });
 
   it('emits a log-scrub sed pattern that actually matches secret-bearing lines', () => {

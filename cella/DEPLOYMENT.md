@@ -80,7 +80,7 @@ One final stack update reaps every displaced generation
 (CI passes `--defer-reap` and runs that update as a follow-up `reap` job)
 ```
 
-The primary service owns migrations. `cdc` has no public health endpoint. Its replacement is confirmed by the primary public service coming up healthy.
+The primary service owns migrations. Its boot runner gives the migrate companion 180 seconds, and the companion's database sessions carry a 30-second `lock_timeout` and a 120-second `statement_timeout`, so a migration blocked by another session fails the boot inside the deploy's 6-minute health gate and uploads diagnostics that name the wait and the open transactions. A migration that needs longer runs outside the deploy. `cdc` has no public health endpoint. Its replacement is confirmed by the primary public service coming up healthy.
 
 **Rollback:** nothing is retained for two generations. Commit a revert and redeploy: same forward path, every service recreated (cdc in place), cached generation reused because `genId` is content-addressed.
 
@@ -125,9 +125,9 @@ Each service declares its `replacementStrategy` in [config/services.config.ts](.
 
 | Strategy | When | Behavior | Downtime |
 | --- | --- | --- | --- |
-| **start-first** | backend, frontend, yjs, mcp (LB-backed) | Pulumi provisions the pending generation (`vm-<svc>-<genId>`) next to the active one. [tasks/cutover.ts](../infra/tasks/cutover.ts) reconciles the live LB server list with idempotent `SetBackendServers` calls: expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It always issues the corrective call, so an empty or stale pool is repaired. | None (LB overlap). |
+| **start-first** | backend, frontend, yjs, mcp (LB-backed) | Pulumi provisions the pending generation (`vm-<svc>-<genId>`) next to the active one. [tasks/cutover.ts](../infra/tasks/cutover.ts) reconciles the live LB server list with idempotent `SetBackendServers` calls: expand to `[old,new]`, health/version-gate through the public LB, contract to `[new]`, drain. It always issues the corrective call, so an empty or stale pool is repaired. A failed gate hands the pool back to `[old]` and leaves the follower pools on the old generation. | None (LB overlap). |
 | **stop-first** | cdc (holds one Postgres replication slot), jobs (the one cron scheduler) | Pulumi provisions only the new generation, replacing the old in the same `up`. The new worker takes the slot the old one releases on drain (lossless: the slot retains the WAL position). | Worker gap during replacement. |
-| **exclusive** (`singleVM`) | the backend VM when it hosts a stop-first worker | Plan marked `exclusive` in [tasks/rollout-plans.ts](../infra/tasks/rollout-plans.ts): `drainSeconds` 0, no old IPs. The cutover health-gates, then points the LB pool straight at the new generation. | Yes, on that host. Split-VM (the default) is unaffected. |
+| **singleton host** (`singleVM`) | the backend VM when it runs a stop-first worker in-process | start-first with LB overlap: the old VM serves until the new one passes its gate. PostgreSQL lets one session hold the replication slot and pg-boss claims each cron period once, so the new process's cdc and jobs wait until the old VM is gone; the rollout reaps it right after promotion, `--defer-reap` or not ([tasks/rollout-plans.ts](../infra/tasks/rollout-plans.ts) marks the plan `singletonHost`). | None for HTTP. Realtime events pause from cutover until the slot moves (the reap plus up to a minute); activities are still written. |
 
 ### Runtime secret delivery
 

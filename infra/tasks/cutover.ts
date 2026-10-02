@@ -116,7 +116,14 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
 
   if (plan.healthAfterExpand) {
     record('health-gate new generation (/health == SHA)');
-    if (!(await plan.healthGate())) return { ok: false, aborted: 'unhealthy', steps };
+    if (!(await plan.healthGate())) {
+      // The old generation is still running: hand it the whole pool back so the failed one takes no traffic. With none, [new] is all there is.
+      if (plan.oldIps.length > 0) {
+        record(`restore LB to [old] (${plan.oldIps.join(',')}): new generation failed its gate`);
+        await setServers(plan.oldIps);
+      }
+      return { ok: false, aborted: 'unhealthy', steps };
+    }
   }
 
   // Phase 2: contract to the verified new generation only, skipped when the live list is already exactly `[new]`.
@@ -128,7 +135,7 @@ export async function sequenceCutover(plan: CutoverPlan): Promise<CutoverResult>
     record('LB already serving [new]');
   }
 
-  // Nothing drains when no old generation was behind the LB (first deploy, or an exclusive host whose old VM is already destroyed).
+  // Nothing drains when no old generation was behind the LB (a first deploy, or an active generation whose VM is gone).
   if (plan.oldIps.length > 0) {
     record(`drain old generation for ${plan.drainSeconds}s (drainPolicy=${plan.drainPolicy ?? 'requests'})`);
     if (plan.drainSeconds > 0) await sleep(plan.drainSeconds * 1000);

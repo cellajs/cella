@@ -1,6 +1,16 @@
 import { isMain } from '../lib/utils/is-main';
 import { getFlag } from './args';
-import { createAwsReader, emptyBootDiagGuidance, parseKeys, renderDiagnostics, selectDiagnostics, summarizeBundles } from './fetch-boot-diag';
+import {
+  createAwsReader,
+  type DiagReader,
+  emptyBootDiagGuidance,
+  findReleaseBundles,
+  parseKeys,
+  renderDiagnostics,
+  renderReleaseDiagnostics,
+  selectDiagnostics,
+  summarizeBundles,
+} from './fetch-boot-diag';
 
 interface ResolvedTarget {
   bucket: string;
@@ -9,14 +19,15 @@ interface ResolvedTarget {
   slug: string;
 }
 
-/** Derive bucket/region/service-list from appConfig for the given app mode. */
+/** Derive bucket/region/service-list from appConfig for the given app mode. Only services that boot a VM of their own upload bundles: under singleVM, the host alone. */
 async function resolveTarget(mode: string): Promise<ResolvedTarget> {
   process.env.APP_MODE = mode;
   const { loadEngineConfig } = await import('../config/engine-config');
   const appConfig = await loadEngineConfig();
   const { deriveInfra } = await import('../lib/naming');
-  const { serviceNames } = await import('../compose/compose');
+  const { deployedServices } = await import('../lib/services');
   const { naming, region } = deriveInfra(appConfig);
+  const serviceNames = deployedServices(appConfig.services, appConfig.singleVM).map((service) => service.slug);
   return { bucket: naming.bootDiagBucket, region, serviceNames, slug: appConfig.slug };
 }
 
@@ -38,19 +49,38 @@ export function keyStampIso(key: string): string | undefined {
   return `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6, 8)}T${s.slice(9, 11)}:${s.slice(11, 13)}:${s.slice(13, 15)}Z`;
 }
 
+/**
+ * Event bundles to replay: the services' `-events.jsonl` keys, stamped at or after `sinceIso` and, with `bootLogKeys`, only those
+ * uploaded beside one of these boot transcripts (a release's own, see `findReleaseBundles`).
+ */
+export function selectEventKeys(keys: string[], services: readonly string[], opts: { sinceIso?: string; bootLogKeys?: string[] } = {}): string[] {
+  const stems = opts.bootLogKeys ? new Set(opts.bootLogKeys.map((key) => key.replace(/-boot\.log$/, ''))) : undefined;
+  return keys.filter((key) => {
+    if (!key.endsWith('-events.jsonl') || !services.some((service) => key.startsWith(`${service}-`))) return false;
+    if (stems && !stems.has(key.replace(/-events\.jsonl$/, ''))) return false;
+    if (!opts.sinceIso) return true;
+    const stamp = keyStampIso(key);
+    return stamp !== undefined && stamp >= opts.sinceIso;
+  });
+}
+
 /** Re-ship black-box event JSONL to the configured OTLP backend (post-hoc replay). */
-async function replayEvents(keys: string[], services: readonly string[], reader: { cat(key: string): string }, sinceIso?: string): Promise<void> {
+async function replayEvents(
+  keys: string[],
+  services: readonly string[],
+  reader: DiagReader,
+  opts: { sinceIso?: string; sha?: string },
+): Promise<void> {
   const { otlpConfigFromEnv } = await import('../lib/telemetry/emitter');
   const { logsPayload } = await import('../lib/telemetry/otlp');
   const { telemetrySink } = await import('../config/telemetry.config');
   const config = otlpConfigFromEnv();
   if (!config) throw new Error(`diag --replay needs an OTLP target: set OTEL_EXPORTER_OTLP_ENDPOINT or ${telemetrySink.keyEnvVar}`);
-  const eventKeys = keys.filter((key) => {
-    if (!key.endsWith('-events.jsonl') || !services.some((service) => key.includes(`/${service}-`))) return false;
-    if (!sinceIso) return true;
-    const stamp = keyStampIso(key);
-    return stamp !== undefined && stamp >= sinceIso;
-  });
+  const { sha } = opts;
+  const bootLogKeys = sha
+    ? services.flatMap((service) => findReleaseBundles(keys, service, sha, reader).matches.map((match) => match.key))
+    : undefined;
+  const eventKeys = selectEventKeys(keys, services, { sinceIso: opts.sinceIso, bootLogKeys });
   if (eventKeys.length === 0) {
     console.info('[diag] no black-box event bundles to replay');
     return;
@@ -77,6 +107,9 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   const wantList = argv.includes('--list');
   const wantReplay = argv.includes('--replay');
   const sinceIso = getFlag(argv, '--since');
+  // The release whose bundles to show; abbreviated SHAs work, but too short a prefix would match every release.
+  const sha = getFlag(argv, '--sha');
+  if (sha !== undefined && !/^[0-9a-f]{7,40}$/.test(sha)) throw new Error(`diag --sha takes a git SHA of 7 to 40 hex characters, got '${sha}'`);
 
   const target = await resolveTarget(mode);
   const bucket = getFlag(argv, '--bucket') ?? target.bucket;
@@ -99,11 +132,15 @@ export async function main(argv = process.argv.slice(2)): Promise<void> {
   }
 
   if (wantReplay) {
-    await replayEvents(keys, services, reader, sinceIso);
+    await replayEvents(keys, services, reader, { sinceIso, sha });
     return;
   }
 
   const style = process.env.GITHUB_ACTIONS === 'true' ? 'ci' : 'plain';
+  if (sha) {
+    for (const service of services) renderReleaseDiagnostics(service, sha, findReleaseBundles(keys, service, sha, reader), console.info, style);
+    return;
+  }
   for (const service of services) {
     renderDiagnostics(service, selectDiagnostics(keys, service), reader, console.info, style);
   }

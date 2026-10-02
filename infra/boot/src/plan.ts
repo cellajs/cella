@@ -43,10 +43,12 @@ export interface BootPlan {
   /** Export the service key as S3_ACCESS_KEY_ID/S3_ACCESS_KEY_SECRET into the runtime env (backend uploads/presigning). */
   exportS3Env?: boolean;
   bootDiagnostics: { bucket: string; logFile: string };
-  releaseCommand: { enabled: boolean; command: [string, ...string[]] };
+  /** `containerName` is the companion's fixed `--name`, removed before a run and after a timed-out one. */
+  releaseCommand: { enabled: boolean; command: [string, ...string[]]; containerName?: string };
   docker: { composeFile: string };
   files: { compose: string; env: string; runtimeSecretManifest: RuntimeSecretManifestEntry[] };
-  timeouts: { privateNetworkSeconds: number; pullAttempts: number; pullRetrySeconds: number };
+  /** `releaseCommandSeconds` bounds the release companion run; see resources/cloud-init.ts for how it fits the deploy's health gate. */
+  timeouts: { privateNetworkSeconds: number; pullAttempts: number; pullRetrySeconds: number; releaseCommandSeconds: number };
 }
 
 const topLevelKeys = new Set([
@@ -85,6 +87,13 @@ function booleanField(obj: Record<string, unknown>, key: string): boolean {
 function numberField(obj: Record<string, unknown>, key: string): number {
   const value = obj[key];
   if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) throw new Error(`boot plan: '${key}' must be a positive number`);
+  return value;
+}
+
+/** A Docker container name: it reaches `docker rm` as an argument, so only the characters Docker itself allows. */
+function containerNameField(obj: Record<string, unknown>, key: string): string {
+  const value = stringField(obj, key);
+  if (!/^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/.test(value)) throw new Error(`boot plan: '${key}' is not a valid container name`);
   return value;
 }
 
@@ -190,7 +199,11 @@ export function parseBootPlanJson(json: string, planPath: string): BootPlan {
     ...(serviceKeyHandoff ? { serviceKeyHandoff } : {}),
     ...(exportS3Env !== undefined ? { exportS3Env } : {}),
     bootDiagnostics: { bucket: stringField(bootDiagnostics, 'bucket'), logFile },
-    releaseCommand: { enabled: booleanField(releaseCommand, 'enabled'), command: commandField(releaseCommand, 'command') },
+    releaseCommand: {
+      enabled: booleanField(releaseCommand, 'enabled'),
+      command: commandField(releaseCommand, 'command'),
+      ...(releaseCommand.containerName === undefined ? {} : { containerName: containerNameField(releaseCommand, 'containerName') }),
+    },
     docker: { composeFile },
     files: {
       compose: stringField(files, 'compose'),
@@ -201,6 +214,7 @@ export function parseBootPlanJson(json: string, planPath: string): BootPlan {
       privateNetworkSeconds: numberField(timeouts, 'privateNetworkSeconds'),
       pullAttempts: numberField(timeouts, 'pullAttempts'),
       pullRetrySeconds: numberField(timeouts, 'pullRetrySeconds'),
+      releaseCommandSeconds: numberField(timeouts, 'releaseCommandSeconds'),
     },
   };
 }

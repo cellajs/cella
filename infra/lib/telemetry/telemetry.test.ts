@@ -91,6 +91,43 @@ describe('createTelemetry', () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
+  it('queues concurrent flushes so a record is exported once, and exports one buffered mid-flush on the next', async () => {
+    const fetchImpl = fetchOk();
+    const t = createTelemetry({ resource: {}, endpoint: 'https://ingest.example/v1', fetchImpl });
+    t.event('boot.step.running');
+    const first = t.flush();
+    t.event('boot.step.completed');
+    await Promise.all([first, t.flush(), t.flush()]);
+    const exported = fetchImpl.mock.calls.flatMap(([, init]) =>
+      JSON.parse(String(init?.body)).resourceLogs[0].scopeLogs[0].logRecords.map((record: { eventName: string }) => record.eventName),
+    );
+    expect(exported).toEqual(['boot.step.running', 'boot.step.completed']);
+  });
+
+  it('aborts an export the sink never answers, so later flushes still run', async () => {
+    vi.useFakeTimers();
+    try {
+      const errors: string[] = [];
+      const hanging = vi.fn<FetchLike>(
+        (_url, init) => new Promise((_resolve, reject) => init?.signal?.addEventListener('abort', () => reject(new Error('aborted')))),
+      );
+      const t = createTelemetry({
+        resource: {},
+        endpoint: 'https://ingest.example/v1',
+        fetchImpl: hanging,
+        exportTimeoutMs: 5_000,
+        onError: (m) => errors.push(m),
+      });
+      t.event('boot.started');
+      const flushed = t.flush();
+      await vi.advanceTimersByTimeAsync(5_000);
+      await expect(flushed).resolves.toBeUndefined();
+      expect(errors[0]).toMatch(/export failed: aborted/);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('without an endpoint stays build-only: events land in the black-box JSONL', async () => {
     const t = createTelemetry({ resource: {}, now: () => 1000 });
     t.event('boot.failed', { service: 'cdc' }, { severity: 'error' });

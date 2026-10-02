@@ -7,19 +7,13 @@ import { sizing } from '../config/sizing';
 import { deriveGenId } from '../lib/gen-id';
 import { type RuntimeSecretConsumer, unionRuntimeSecrets } from '../lib/runtime-secrets';
 import { type Generation, selectGenerations } from '../lib/select-generations';
-import {
-  coHostedServices,
-  collocatedServices,
-  deployedServices,
-  effectiveStrategy as resolveEffectiveStrategy,
-  type ServiceDefinition,
-} from '../lib/services';
+import { coHostedServices, collocatedServices, deployedServices, type ServiceDefinition } from '../lib/services';
 import { controlState } from './control';
 
 // Each service gets a VM except workers co-hosted on the backend and containers collocated on the host under singleVM, which route through the host VM.
 export const enabled = deployedServices(appConfig.services, appConfig.singleVM);
 
-// Workers folded into the host backend process under singleVM, empty in a split-VM deploy. Their secrets union onto the host VM and a `stop-first` one forces a stop-first host cutover.
+// Workers folded into the host backend process under singleVM, empty in a split-VM deploy. Their secrets union onto the host VM.
 export const coHosted = coHostedServices(appConfig.services, appConfig.singleVM);
 
 // `placement: 'host'` containers the boot runner starts beside the host container under singleVM, empty in a split-VM deploy.
@@ -32,11 +26,6 @@ export function secretConsumersFor(svc: ServiceDefinition): RuntimeSecretConsume
     return [svc.slug, ...coHosted.map((s) => s.slug), ...collocated.map((s) => s.slug)] as RuntimeSecretConsumer[];
   }
   return [svc.slug as RuntimeSecretConsumer];
-}
-
-/** The VM replacement strategy under this app config; the resolution rule lives in lib/services.ts so the rollout plan shares it. */
-export function effectiveStrategy(svc: ServiceDefinition): ServiceDefinition['replacementStrategy'] {
-  return resolveEffectiveStrategy(appConfig.services, appConfig.singleVM, svc);
 }
 
 export type { Generation } from '../lib/select-generations';
@@ -60,8 +49,6 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
     port: svc.healthPort,
     // Fingerprint keys are hashed into every genId, so renaming one re-rolls all generations.
     runRelease: svc.runRelease ?? false,
-    // Fold in the strategy only when singleVM changes it, keeping the split-VM fingerprint byte-stable.
-    ...(effectiveStrategy(svc) !== svc.replacementStrategy ? { singleVmStrategy: effectiveStrategy(svc) } : {}),
     bindings: svc.bindings ?? {},
     ...(collocatedSlugs.length > 0 ? { collocated: collocatedSlugs } : {}),
     blocks,
@@ -70,11 +57,14 @@ function serviceFingerprint(svc: ServiceDefinition): unknown {
   };
 }
 
-/** The live and pending content-addressed generations for a service. Selection is the pure function in lib/select-generations.ts; a singleVM host inherits exclusivity when it owns the replication slot in-process. */
+/**
+ * The live and pending content-addressed generations for a service. Selection is the pure function in lib/select-generations.ts.
+ * The singleVM host keeps its old generation through the cutover like any start-first service: its in-process stop-first workers wait for the old VM to go.
+ */
 export function activeGenerations(svc: ServiceDefinition): Generation[] {
   const fingerprint = serviceFingerprint(svc);
   return selectGenerations(controlState.rollout[svc.slug], {
-    exclusive: effectiveStrategy(svc) === 'stop-first',
+    exclusive: svc.replacementStrategy === 'stop-first',
     genIdFor: (sha) => deriveGenId(sha, fingerprint),
   });
 }

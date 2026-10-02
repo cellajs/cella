@@ -1,7 +1,14 @@
 import type { ServiceName } from '../compose/compose';
 import type { GenerationMetadata } from '../lib/generation-metadata';
 import { serviceNames } from '../lib/services';
-import { controlActor, controlContextForStack, emptyRollout, readControlState, writeControlState } from '../lib/stack/control-store';
+import {
+  controlActor,
+  controlContextForStack,
+  emptyRollout,
+  readControlState,
+  type ServiceRollout,
+  writeControlState,
+} from '../lib/stack/control-store';
 import { tryStackOutputRaw } from '../lib/stack/run-pulumi';
 import { isRecord } from '../lib/utils/guards';
 import { isMain } from '../lib/utils/is-main';
@@ -61,6 +68,20 @@ export function seedCandidates(metadata: RolloutGeneration[]): Map<string, Rollo
   return seeds;
 }
 
+/**
+ * Services whose `active` pointer names a generation the stack no longer has, while the stack does run generations for that service: the VM was
+ * destroyed outside a promotion. Planning such a pointer as the overlap partner would recreate the old release's VM, so the pointer is dropped and the
+ * next cutover runs as a first deploy. A service with no live generation at all (disabled, folded under singleVM) is left alone.
+ */
+export function staleActiveServices(rollout: Record<string, ServiceRollout>, metadata: RolloutGeneration[]): string[] {
+  const live = generationsByService(metadata.filter((item) => item.genId.length > 0));
+  return Object.entries(rollout).flatMap(([service, entry]) => {
+    const generations = live.get(service);
+    if (!entry.active || !generations) return [];
+    return generations.some((item) => item.genId === entry.active?.id) ? [] : [service];
+  });
+}
+
 export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<void> {
   const stack = getFlag(argv, '--stack');
   if (!stack) throw new Error('Usage: sync-rollout-config.ts --stack <stack>');
@@ -71,24 +92,25 @@ export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<v
     return;
   }
 
-  const seeds = seedCandidates(parseRolloutGenerations(rawMetadata));
+  const metadata = parseRolloutGenerations(rawMetadata);
+  const seeds = seedCandidates(metadata);
   if (seeds.size === 0) {
     console.info('[sync-rollout-config] no content-addressed generations in live state yet; nothing to seed');
     return;
   }
 
-  await seedActivePointers(stack, seeds);
+  await reconcileActivePointers(stack, seeds, metadata);
 }
 
 /**
- * Initialize the `active` pointer for any service that has none yet: first adoption
+ * Drop every stale `active` pointer (see `staleActiveServices`), then initialize the `active` pointer for any service that has none yet: first adoption
  * of a live generation into the control object. Deliberately NEVER promotes a pending
- * generation or demotes an existing active: the orchestrator (deploy-service)
+ * generation or demotes a live active: the orchestrator (deploy-service)
  * owns promotion after a health-gated cutover, so a freshly provisioned but
  * un-cutover generation must not be treated as live. A service that already has an `active` OR a `pendingSha`
- * is skipped entirely. Skipped (with a warning) when no S3 creds are present.
+ * is not seeded. Skipped (with a warning) when no S3 creds are present.
  */
-async function seedActivePointers(stack: string, seeds: Map<string, RolloutGeneration>): Promise<void> {
+async function reconcileActivePointers(stack: string, seeds: Map<string, RolloutGeneration>, metadata: RolloutGeneration[]): Promise<void> {
   if (seeds.size === 0) return;
   const ctx = await controlContextForStack(stack, (msg) => console.warn(`[sync-rollout-config] ${msg}`));
   if (!ctx) return;
@@ -96,7 +118,15 @@ async function seedActivePointers(stack: string, seeds: Map<string, RolloutGener
   const { state, etag } = await readControlState(s3, bucket, key);
 
   let changed = false;
+  const stale = new Set(staleActiveServices(state.rollout, metadata));
+  for (const svc of stale) {
+    const { active, ...rest } = state.rollout[svc] ?? emptyRollout();
+    state.rollout[svc] = rest;
+    console.warn(`[sync-rollout-config] dropped ${svc}'s active gen=${active?.id} sha=${active?.sha}: the stack no longer has its VM`);
+    changed = true;
+  }
   for (const [svc, gen] of seeds) {
+    if (stale.has(svc)) continue;
     const current = state.rollout[svc] ?? emptyRollout();
     // Do not seed over an existing active, nor while a deploy intent is pending:
     // the orchestrator promotes the pending generation after its health gate.
@@ -107,7 +137,7 @@ async function seedActivePointers(stack: string, seeds: Map<string, RolloutGener
     changed = true;
   }
   if (!changed) {
-    console.info('[sync-rollout-config] all services already have an active pointer or a pending deploy; nothing to seed');
+    console.info('[sync-rollout-config] all services already have a live active pointer or a pending deploy; nothing to seed');
     return;
   }
   state.updatedAt = new Date().toISOString();

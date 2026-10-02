@@ -11,12 +11,15 @@ if (!mode) {
 }
 process.env.APP_MODE = mode;
 
+const shaIndex = argv.indexOf('--sha');
+const sha = shaIndex >= 0 ? argv[shaIndex + 1] : undefined;
+
 const { main } = await import('./deploy-run');
 await main(argv).catch(async (err: unknown) => {
   const { failWithHint } = await import('../lib/utils/cli-output');
   failWithHint(err instanceof Error ? err.message : String(err), {
-    command: 'pnpm --filter infra diag',
-    description: 'Re-running is safe (generations are content-addressed). For a boot crash, read diagnostics:',
+    command: `pnpm --filter infra diag --mode ${mode}${sha ? ` --sha ${sha}` : ''}`,
+    description: "Re-running is safe (generations are content-addressed). For a boot crash, read this release's diagnostics:",
   });
 });
 

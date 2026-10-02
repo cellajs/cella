@@ -1,7 +1,8 @@
 import type { Pool, PoolClient } from 'pg';
 import { resolvePostgresSslCa } from 'shared/utils/postgres-tls';
 import { env } from '../env';
-import { createPgConnection, type DB, type PgDB } from './create-connection';
+import { createPgConnection, type DB, type PgDB, type SessionTimeouts } from './create-connection';
+import { migrateSessionTimeouts } from './migrate-timeouts';
 
 export type { DB, DbOrTx, PgDB, Tx } from './create-connection';
 
@@ -10,7 +11,8 @@ export const migrateConfig = { migrationsFolder: 'drizzle', migrationsSchema: 'd
 // In production we require a verified TLS connection to the managed PostgreSQL.
 const sslCa = resolvePostgresSslCa(env.DATABASE_SSL_CA, env.NODE_ENV === 'production' && !env.NODB);
 
-const connect = (connectionString: string, max: number): PgDB => createPgConnection(connectionString, { max, sslCa, debug: env.DEBUG });
+const connect = (connectionString: string, max: number, sessionTimeouts?: SessionTimeouts): PgDB =>
+  createPgConnection(connectionString, { max, sslCa, debug: env.DEBUG, sessionTimeouts });
 
 /** Probes exempt from the NODB throw: `prepared.ts` reads `select`, the pool probe reads `$client`. */
 const noDbProbeKeys: ReadonlySet<string | symbol> = new Set(['select', '$client']);
@@ -68,7 +70,8 @@ export const hasAdminDb = (): boolean => !env.NODB && !!env.DATABASE_ADMIN_URL;
 export const getAdminDb = (purpose: string): PgDB => {
   if (env.NODB) throw new Error(`Admin database access (${purpose}) attempted while NODB is set.`);
   if (!env.DATABASE_ADMIN_URL) throw new Error(`DATABASE_ADMIN_URL is required for ${purpose}`);
-  adminConnection ??= connect(env.DATABASE_ADMIN_URL, 5);
+  // The migrate companion bounds every admin statement, so a blocked lock fails the release with a named error.
+  adminConnection ??= connect(env.DATABASE_ADMIN_URL, 5, env.MODE === 'migrate' ? migrateSessionTimeouts : undefined);
   return adminConnection;
 };
 

@@ -1,7 +1,7 @@
 /** Minimal structural `fetch` type for raw HTTP against the Scaleway APIs. Shaped so native `fetch` is directly assignable and `resolveFetch` needs no cast. */
 export type FetchLike = (
   url: string,
-  init?: { method?: string; headers?: Record<string, string>; body?: string },
+  init?: { method?: string; headers?: Record<string, string>; body?: string; signal?: AbortSignal },
 ) => Promise<{
   ok: boolean;
   status: number;

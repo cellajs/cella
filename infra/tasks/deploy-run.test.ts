@@ -93,8 +93,8 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     publishEntryFiles: async () => {
       ops.push('publish-entry');
     },
-    bootDiagnostics: async () => {
-      ops.push('boot-diag');
+    bootDiagnostics: async (sha) => {
+      ops.push(`boot-diag:${sha}`);
     },
     group: () => {},
     groupEnd: () => {},
@@ -177,7 +177,7 @@ describe('runDeploy sequencing', () => {
     // the co-hosted follower (yjs), which is absent from the rollout matrices.
     expect(ops.some((op) => op.startsWith('verify:') && op.endsWith('/health'))).toBe(true);
     expect(ops).toContain('verify:https://www.cellajs.com/yjs/health');
-    expect(ops).not.toContain('boot-diag');
+    expect(ops.some((op) => op.startsWith('boot-diag'))).toBe(false);
   });
 
   it('stops before the stack update when the preflight finds a pending privileged change', async () => {
@@ -210,10 +210,10 @@ describe('runDeploy sequencing', () => {
     expect(process.exitCode).toBe(exitCodeBefore);
   });
 
-  it('collects boot diagnostics, releases the lock, and skips publish when the rollout fails', async () => {
+  it('collects the deploying release’s boot diagnostics, releases the lock, and skips publish when the rollout fails', async () => {
     const { fx, ops } = makeFake({ rolloutFails: true });
     await expect(runDeploy(baseOpts, fx, fakeDeployEnv)).rejects.toThrow(/cutover failed/);
-    expect(ops).toContain('boot-diag');
+    expect(ops).toContain(`boot-diag:${baseOpts.sha}`);
     expect(ops).not.toContain('publish-entry');
     expect(ops.at(-1)).toBe('lease:release');
   });
