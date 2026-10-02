@@ -1,0 +1,50 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "ignore": ["shared/config/config.template.ts"],
+  "workspaces": {
+    ".": {
+      "entry": ["cella/cella.config.ts", "cella/migrations/run.ts", "cella/migrations/*/*.ts", "cella/skills/**/*.mjs"],
+      // Git hooks run lefthook; migration READMEs run their codemods with `pnpm exec tsx` from the root.
+      "ignoreDependencies": ["@evilmartians/lefthook", "tsx"]
+    },
+    "backend": {
+      "entry": [
+        "scripts/*.ts",
+        // Loaded by readdir in scripts/scripts-discovery.ts.
+        "scripts/migrations/*.migration.ts",
+        "scripts/seeds/*.seed.ts",
+        "emails/index.ts",
+        "emails/preview-route.ts",
+        "tests/**/*.ts",
+        // Unused by cella itself; apps import it to derive search keywords from descriptions.
+        "src/utils/extract-keywords.ts"
+      ],
+      // The service image installs only `dependencies` (shared/src/keep-on-disk.ts). shared/src imports these, and the
+      // bundle loads them from disk or by name (pino transports), so they are listed here without an import in this workspace.
+      "ignoreDependencies": ["@opentelemetry/.+", "^pino(-.+)?$"]
+    },
+    "bench": {
+      // Artillery loads the processors from scenarios/*.yaml; bench-cli spawns the poller; data-setup imports every *.bench.ts.
+      "entry": ["src/processors/*.ts", "src/cdc-poller.ts", "src/seeds/*.bench.ts"],
+      "ignoreDependencies": ["artillery", "artillery-plugin-ensure"]
+    },
+    "cdc": {
+      "entry": ["src/**/*.type-check.ts"],
+      "ignoreDependencies": ["@opentelemetry/.+", "^pino(-.+)?$"]
+    },
+    "frontend": {
+      "ignoreBinaries": ["pkill"]
+    },
+    "infra": {
+      "entry": ["index.ts", "tasks/*.ts", "boot/src/entry.ts"]
+    },
+    "shared": {
+      // pino resolves transport targets by name.
+      "ignoreDependencies": ["pino-opentelemetry-transport", "pino-pretty"]
+    },
+    "yjs": {
+      "entry": ["src/tests/integration/global-setup.ts"],
+      "ignoreDependencies": ["@opentelemetry/.+", "^pino(-.+)?$"]
+    }
+  }
+}
