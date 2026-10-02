@@ -1,11 +1,13 @@
 import { and, count, eq, type SQL, sql } from 'drizzle-orm';
+import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
+import { deleteDanglingActors, insertActors } from '#/modules/actors/actors-queries';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { memberSelect, userSelect } from '#/modules/user/helpers/select';
 import { userCountersTable } from '#/modules/user/user-counters-db';
-import { usersTable } from '#/modules/user/user-db';
+import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
 import { getOrderColumns } from '#/utils/order-column';
 
 interface FindUsersPaginatedOpts {
@@ -94,4 +96,34 @@ export const findUserByFilters = async (ctx: DbContext, { filters }: FindUserByF
     .where(and(...filters))
     .limit(1);
   return user;
+};
+
+interface InsertUsersOpts {
+  users: InsertUserModel[];
+  /** Skip rows that already exist (seed re-runs); a skipped user leaves no actor behind. */
+  onConflictDoNothing?: boolean;
+}
+
+/**
+ * The only way to insert users: the `actors` row of kind `user` goes first, in one transaction, so a failed user
+ * insert (taken email, slug race) leaves no orphan actor and a missed call site fails on the foreign key.
+ */
+export const insertUsers = async (ctx: DbContext, { users, onConflictDoNothing = false }: InsertUsersOpts): Promise<UserModel[]> => {
+  if (users.length === 0) return [];
+  const withIds = users.map((user) => ({ ...user, id: user.id ?? generateId() }));
+
+  return ctx.var.db.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
+    const ids = withIds.map(({ id }) => id);
+    const actorIds = await insertActors(txCtx, { ids, kind: 'user', onConflictDoNothing });
+    const userInsert = tx.insert(usersTable).values(withIds).returning();
+    const inserted = onConflictDoNothing ? await userInsert.onConflictDoNothing() : await userInsert;
+
+    // Only actors this call created and whose user row was skipped; an id that already existed keeps its user.
+    if (onConflictDoNothing && inserted.length < withIds.length) {
+      const insertedIds = new Set(inserted.map((user) => user.id));
+      await deleteDanglingActors(txCtx, { ids: actorIds.filter((id) => !insertedIds.has(id)) });
+    }
+    return inserted;
+  });
 };

@@ -7,8 +7,8 @@ import { claimEmailForUser } from '#/modules/auth/general/helpers/claim-email';
 import type { EmailProof } from '#/modules/auth/general/helpers/mark-email-verified';
 import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
 import { emailsTable } from '#/modules/user/emails-db';
-import { insertUsers } from '#/modules/user/helpers/insert-users';
 import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
+import { insertUsers } from '#/modules/user/user-queries';
 import { getIsoDate } from '#/utils/iso-date';
 
 /**
@@ -36,15 +36,17 @@ export const handleCreateUser = async (ctx: DbContext, { newUser, via }: HandleC
   try {
     const normalizedEmail = newUser.email.toLowerCase().trim();
 
-    const [user] = await insertUsers(db, [
-      {
-        slug: slugAvailable ? newUser.slug : `${newUser.slug}-${nanoid(5)}`,
-        firstName: newUser.firstName,
-        email: normalizedEmail,
-        name: newUser.name,
-        language: appConfig.defaultLanguage,
-      },
-    ]);
+    const [user] = await insertUsers(ctx, {
+      users: [
+        {
+          slug: slugAvailable ? newUser.slug : `${newUser.slug}-${nanoid(5)}`,
+          firstName: newUser.firstName,
+          email: normalizedEmail,
+          name: newUser.name,
+          language: appConfig.defaultLanguage,
+        },
+      ],
+    });
 
     // The account's one email row, proven at creation. A taken address never gets here: the users insert above
     // already failed on its unique email.

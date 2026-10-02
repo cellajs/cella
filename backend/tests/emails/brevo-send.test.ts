@@ -1,9 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { mailer, neutralizeBrevoTags } from '#/lib/mailer';
-import { describeDigestRow, renderSectionsHtml } from '#/modules/notification/digest/build-digest';
 import { digestEmail } from '#/modules/notification/emails/digest-email';
 import { mentionEmail } from '#/modules/notification/emails/mention-email';
-import { htmlToExcerpt } from '#/modules/notification/helpers/render-digest-html';
+import { describeDigestRow, htmlToExcerpt, renderSectionsHtml } from '#/modules/notification/helpers/render-digest-html';
 import type { SafeHtmlPolicy } from '../../emails/components/safe-html';
 import { emailPreviewFixtures } from '../../emails/preview-fixtures';
 import { render } from '../../emails/renderer/render';

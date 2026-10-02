@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { describeDigestRow } from '#/modules/notification/digest/build-digest';
 import { mentionEmail } from '#/modules/notification/emails/mention-email';
+import { describeDigestRow } from '#/modules/notification/helpers/render-digest-html';
 import { magicLinkEmail, memberAddedEmail, memberInviteEmail, memberInviteWithTokenEmail, systemInviteEmail } from '../../emails';
 import { EmailButton } from '../../emails/components';
 import { render } from '../../emails/renderer/render';

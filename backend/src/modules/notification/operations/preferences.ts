@@ -13,7 +13,7 @@ const toResponse = (row: { mentionEmail: boolean; commentEmail: boolean; digest:
 });
 
 export async function getPreferencesOp(ctx: UserContext): Promise<Preferences> {
-  return toResponse(await findOrCreatePreferences(ctx, ctx.var.user.id));
+  return toResponse(await findOrCreatePreferences(ctx, { userId: ctx.var.user.id }));
 }
 
 /**
@@ -25,6 +25,6 @@ export async function getPreferencesOp(ctx: UserContext): Promise<Preferences> {
  */
 export async function updatePreferencesOp(ctx: UserContext, input: PreferencesUpdate): Promise<Preferences> {
   const userId = ctx.var.user.id;
-  await findOrCreatePreferences(ctx, userId);
-  return toResponse(await updatePreferences(ctx, userId, input));
+  await findOrCreatePreferences(ctx, { userId });
+  return toResponse(await updatePreferences(ctx, { userId, values: input }));
 }

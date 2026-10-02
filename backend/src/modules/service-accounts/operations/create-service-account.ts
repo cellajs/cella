@@ -1,12 +1,11 @@
 import { type EntityRole, hierarchy } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { insertServiceAccount } from '#/modules/service-accounts/helpers/insert-service-accounts';
-import { issueApiKey } from '#/modules/service-accounts/helpers/issue-api-key';
-import { requireOrgAdmin } from '#/modules/service-accounts/helpers/managed-service-account';
-import { countServiceAccounts } from '#/modules/service-accounts/service-accounts-queries';
+import { generateApiKey } from '#/modules/service-accounts/helpers/api-key';
+import { countServiceAccounts, insertApiKey, insertServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 import type { CreateServiceAccountInput } from '#/modules/service-accounts/service-accounts-schema';
 import { assertTenantQuota } from '#/modules/tenants/tenant-restrictions';
+import { getValidChannel } from '#/permissions';
 import { log } from '#/utils/logger';
 
 /**
@@ -17,7 +16,7 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
   const { db, tenantId, organizationId, isSystemAdmin } = ctx.var;
   const creatorId = ctx.var.actor.id;
 
-  const { membership } = await requireOrgAdmin(ctx);
+  const { membership } = await getValidChannel(ctx, organizationId, 'organization', 'update');
   // Roles are listed most-privileged first; a lower index is a higher role. Widened: a membership's role type also
   // spans channel roles the organization does not declare.
   const roles: readonly EntityRole[] = hierarchy.getRoles('organization');
@@ -28,30 +27,34 @@ export async function createServiceAccountOp(ctx: UserContext, input: CreateServ
 
   assertTenantQuota(ctx, 'serviceAccount', await countServiceAccounts(ctx, { tenantId }));
 
-  // Account and first key land together: a failed key issue never leaves a keyless account behind.
-  const { serviceAccount, issued } = await db.transaction(async (tx) => {
-    const serviceAccount = await insertServiceAccount(tx, {
-      tenantId,
-      name: input.name,
-      bindings: [{ channelType: 'organization', channelId: organizationId, organizationId, role: input.role }],
-      createdBy: creatorId,
+  // Account and first key land together: a failed key insert never leaves a keyless account behind.
+  const { serviceAccount, apiKey } = await db.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
+    const serviceAccount = await insertServiceAccount(txCtx, {
+      values: {
+        tenantId,
+        name: input.name,
+        bindings: [{ channelType: 'organization', channelId: organizationId, organizationId, role: input.role }],
+        createdBy: creatorId,
+      },
     });
-    const issued = input.key
-      ? await issueApiKey(tx, {
-          actorId: serviceAccount.id,
-          tenantId,
-          name: input.key.name,
-          scopes: input.key.scopes ?? null,
-          expiresAt: input.key.expiresAt,
-          createdBy: creatorId,
-        })
-      : null;
-    return { serviceAccount, issued };
+    if (!input.key) return { serviceAccount, apiKey: null };
+
+    const { key: secret, parsed } = generateApiKey('secret');
+    const apiKey = await insertApiKey(txCtx, {
+      values: {
+        actorId: serviceAccount.id,
+        tenantId,
+        name: input.key.name,
+        scopes: input.key.scopes ?? null,
+        expiresAt: input.key.expiresAt,
+        createdBy: creatorId,
+        ...parsed,
+      },
+    });
+    return { serviceAccount, apiKey: { ...apiKey, secret } };
   });
 
-  log.info('Service account created', { serviceAccountId: serviceAccount.id, withKey: issued !== null });
-  return {
-    serviceAccount,
-    ...(issued && { apiKey: { ...issued.apiKey, secret: issued.secret } }),
-  };
+  log.info('Service account created', { serviceAccountId: serviceAccount.id, withKey: apiKey !== null });
+  return { serviceAccount, ...(apiKey && { apiKey }) };
 }

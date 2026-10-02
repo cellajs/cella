@@ -1690,6 +1690,25 @@
    "summary": "crossTenantGuard is removed: it repeated what userGuard sets (user, memberships, db = baseDb), and a route without tenantGuard is cross-tenant by itself. noImpersonationGuard is removed: refuseImpersonation(session) moves to modules/auth/step-up/helpers/step-up and runs in the handlers of the step-up routes and revokeMySessions; sysAdminGuard refuses an impersonation (403 impersonation_forbidden, no security alert) before its role check, so every system route, startImpersonation included, refuses one. stepUpLimiter counts only 401 and 404 as failures, so the refusal spends none of the user's attempts. Apps drop both guards from their own routes."
   },
  {
+   "id": "20261001T2116-helpers-to-queries",
+   "version": "next",
+   "title": "Database helpers move into query files",
+   "kind": "manual",
+   "syncBreaking": true,
+   "clientCacheBump": false,
+   "script": null,
+   "roots": [
+    "backend/src",
+    "backend/tests",
+    "backend/scripts",
+    "bench/src"
+   ],
+   "requires": [
+    "pnpm check"
+   ],
+   "summary": "A module's helpers/ folder holds database-free code only; reads and writes are queries in <module>-queries.ts taking (ctx, opts). insertUsers moves to user-queries ({ users, onConflictDoNothing }), insertActors and deleteDanglingActors to the new actors-queries ({ ids, kind }), insertServiceAccount to service-accounts-queries ({ values }). issueApiKey is replaced by generateApiKey plus the insertApiKey query; managed-service-account.ts is gone, so operations call getValidChannel(ctx, organizationId, 'organization', 'update') and findServiceAccountInTenant themselves; updateServiceAccount is a tenant-scoped query. Notification reads leave helpers/: accessForUserIds becomes getUserAccess and findChannelNames moves to notification-queries, findSubjectNames to notification-sources, findReadableSubjectIds to operations/readable-subjects, and readableAccess is inlined in the fan-out. digest/run-digest and digest/build-digest move to operations/; describeDigestRow, renderSectionsHtml and DigestSection to helpers/render-digest-html. Every notification query takes (ctx, opts); background callers pass { var: { db: baseDb } }. The unused generateUniqueSlug is removed."
+  },
+ {
   "id": "20261001T2116-tailwind-class-conventions",
   "version": "next",
   "title": "Tailwind class conventions",

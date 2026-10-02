@@ -1,7 +1,7 @@
 import type { SeedScript } from '../types';
 import { getSeedDb } from '#/db/db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { insertUsers } from '#/modules/user/helpers/insert-users';
+import { insertUsers } from '#/modules/user/user-queries';
 import { usersTable } from '#/modules/user/user-db';
 import { env } from '#/env';
 import pc from 'picocolors';
@@ -52,7 +52,7 @@ export const initSeed = async () => {
   const adminId = isProduction ? undefined : defaultAdminUser.id;
   const adminRecord = mockAdmin(adminId, adminEmail);
 
-  const [adminUser] = await insertUsers(db, [adminRecord], { onConflictDoNothing: true });
+  const [adminUser] = await insertUsers({ var: { db } }, { users: [adminRecord], onConflictDoNothing: true });
 
   // Insert system role row into the database
   await db.insert(systemRolesTable).values({ userId: adminUser.id, role: 'admin' }).onConflictDoNothing();

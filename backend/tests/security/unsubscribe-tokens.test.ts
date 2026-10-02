@@ -85,7 +85,7 @@ describe('Unsubscribe links', () => {
       ['digest', { ...everythingOn, digest: 'off' }],
     ] as const) {
       const owner = await signUp(`${category}-reader`);
-      await findOrCreatePreferences({ var: { db: baseDb } }, owner.id);
+      await findOrCreatePreferences({ var: { db: baseDb } }, { userId: owner.id });
 
       const { status, location } = await openLink(buildUnsubscribeLink(owner.id, category));
 

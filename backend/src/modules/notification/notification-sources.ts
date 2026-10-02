@@ -3,6 +3,7 @@ import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { ProductEntityType } from 'shared';
 import { textFromDocument } from 'shared/blocknote';
 import type { DbOrTx } from '#/db/db';
+import { tenantReadById } from '#/db/tenant-context';
 import type { productColumns } from '#/db/utils/product-columns';
 import { publishedRowsPredicate } from '#/db/utils/published-predicate';
 import type { ModuleNotifications, NotificationSubjectRow } from '#/lib/module';
@@ -76,6 +77,41 @@ export async function loadSubjectNames(source: NotificationSource, tx: DbOrTx, i
   const table = productTable(source.entityType);
   const rows = await tx.select({ id: table.id, name: table.name }).from(table).where(liveRows(table, ids));
   return new Map(rows.map((row) => [String(row.id), String(row.name ?? '')]));
+}
+
+// Across tenants: product rows are read under a tenant transaction, since on a bare connection the fail-closed RLS
+// policy returns nothing. One round trip per tenant and source type, normally one in total.
+
+interface SubjectRef {
+  tenantId: string;
+  entityType: string;
+  /** The subject or context id; a ref without one is skipped. */
+  id: string | null;
+}
+
+/** Display names for subject rows, keyed by id. */
+export async function findSubjectNames(refs: SubjectRef[]): Promise<Map<string, string>> {
+  const names = new Map<string, string>();
+  for (const { tenantId, entityType, ids } of groupByTenantAndType(refs)) {
+    const source = getNotificationSource(entityType);
+    if (!source) continue;
+    const found = await tenantReadById(tenantId, (tx) => loadSubjectNames(source, tx, ids));
+    for (const [id, name] of found) names.set(id, name);
+  }
+  return names;
+}
+
+/** The refs' ids per tenant and entity type: one tenant transaction and source read each. */
+export function groupByTenantAndType(refs: SubjectRef[]) {
+  const groups = new Map<string, { tenantId: string; entityType: string; ids: Set<string> }>();
+  for (const { tenantId, entityType, id } of refs) {
+    if (!id) continue;
+    const key = `${tenantId}:${entityType}`;
+    const group = groups.get(key) ?? { tenantId, entityType, ids: new Set<string>() };
+    group.ids.add(id);
+    groups.set(key, group);
+  }
+  return [...groups.values()].map((group) => ({ ...group, ids: [...group.ids] }));
 }
 
 // Hoisted: the registration listener above runs at import time. Product tables all carry

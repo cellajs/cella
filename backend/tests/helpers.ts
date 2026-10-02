@@ -22,9 +22,9 @@ import { mockOrganization } from '#/modules/organization/organization-mocks';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
-import { insertUsers } from '#/modules/user/helpers/insert-users';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { mockEmail, mockUser } from '#/modules/user/user-mocks';
+import { insertUsers } from '#/modules/user/user-queries';
 import type { apiErrorSchema } from '#/schemas';
 import { hashToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders } from './fixtures';
@@ -109,7 +109,7 @@ export async function rawJsonRequest(path: string, cookie: string, init: { metho
 /** User with a verified email, for OAuth/passkey tests. */
 export async function createUser(email: string) {
   const userRecord = mockUser({ email });
-  const [user] = await insertUsers(db, [userRecord]);
+  const [user] = await insertUsers({ var: { db } }, { users: [userRecord] });
   await db.insert(emailsTable).values(mockEmail(user));
   return user;
 }
@@ -141,7 +141,7 @@ export async function createTotpUser(email: string) {
 
 export async function createTestUser(email: string) {
   const userRecord = mockUser({ email });
-  const [user] = await insertUsers(db, [userRecord]);
+  const [user] = await insertUsers({ var: { db } }, { users: [userRecord] });
   await db.insert(emailsTable).values(mockEmail(user));
   return user;
 }

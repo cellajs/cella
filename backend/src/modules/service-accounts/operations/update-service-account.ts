@@ -1,9 +1,9 @@
-import { eq } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
+import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { requireManagedServiceAccount } from '#/modules/service-accounts/helpers/managed-service-account';
-import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import { updateServiceAccount } from '#/modules/service-accounts/service-accounts-queries';
 import type { UpdateServiceAccountInput } from '#/modules/service-accounts/service-accounts-schema';
+import { getValidChannel } from '#/permissions';
 import { getIsoDate } from '#/utils/iso-date';
 import { log } from '#/utils/logger';
 
@@ -12,12 +12,13 @@ import { log } from '#/utils/logger';
  * every process with the commit: the account's keys and tokens, and for an installed app its users' tokens in the tenant.
  */
 export async function updateServiceAccountOp(ctx: UserContext, id: string, input: UpdateServiceAccountInput) {
-  const account = await requireManagedServiceAccount(ctx, id);
-  const [updated] = await ctx.var.db
-    .update(serviceAccountsTable)
-    .set({ ...input, updatedAt: getIsoDate(), updatedBy: ctx.var.actor.id })
-    .where(eq(serviceAccountsTable.id, account.id))
-    .returning();
+  await getValidChannel(ctx, ctx.var.organizationId, 'organization', 'update');
+  const updated = await updateServiceAccount(ctx, {
+    id,
+    tenantId: ctx.var.tenantId,
+    values: { ...input, updatedAt: getIsoDate(), updatedBy: ctx.var.actor.id },
+  });
+  if (!updated) throw new AppError(404, 'not_found', 'warn', { meta: { resource: 'serviceAccount' } });
   invalidateCache.serviceAccount(updated);
   log.info('Service account updated', { serviceAccountId: id, status: updated.status });
   return updated;

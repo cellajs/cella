@@ -1,8 +1,10 @@
 import { and, count, desc, eq, gt, ilike, isNull, or, type SQL, sql } from 'drizzle-orm';
+import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { type ListTotalSource, resolveListTotal } from '#/db/utils/list-total';
-import { apiKeySafeColumns, apiKeysTable } from '#/modules/service-accounts/api-keys-db';
-import { serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
+import { insertActors } from '#/modules/actors/actors-queries';
+import { type ApiKeyModel, apiKeySafeColumns, apiKeysTable, type InsertApiKeyModel } from '#/modules/service-accounts/api-keys-db';
+import { type InsertServiceAccountModel, type ServiceAccountModel, serviceAccountsTable } from '#/modules/service-accounts/service-accounts-db';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 
 interface InTenantOpts {
@@ -48,6 +50,38 @@ export async function listServiceAccounts(ctx: DbContext, { tenantId, q, offset,
     },
   };
   return resolveListTotal(itemsQuery, totalSource);
+}
+
+interface InsertServiceAccountOpts {
+  values: InsertServiceAccountModel;
+}
+
+/** The only way to insert a service account: its `actors` row of kind `service` goes first, in one transaction. */
+export async function insertServiceAccount(ctx: DbContext, { values }: InsertServiceAccountOpts): Promise<ServiceAccountModel> {
+  const id = values.id ?? generateId();
+  return ctx.var.db.transaction(async (tx) => {
+    await insertActors({ var: { db: tx } }, { ids: [id], kind: 'service' });
+    const [account] = await tx
+      .insert(serviceAccountsTable)
+      .values({ ...values, id })
+      .returning();
+    return account;
+  });
+}
+
+interface UpdateServiceAccountOpts extends InTenantOpts {
+  id: string;
+  values: Partial<Pick<InsertServiceAccountModel, 'name' | 'status' | 'updatedAt' | 'updatedBy'>>;
+}
+
+/** The updated account, or undefined when no such account exists in the tenant. */
+export async function updateServiceAccount(ctx: DbContext, { id, tenantId, values }: UpdateServiceAccountOpts) {
+  const [account] = await ctx.var.db
+    .update(serviceAccountsTable)
+    .set(values)
+    .where(and(eq(serviceAccountsTable.id, id), eq(serviceAccountsTable.tenantId, tenantId)))
+    .returning();
+  return account;
 }
 
 /** Accounts are disabled, never deleted (D18); only active ones count against the quota. */
@@ -101,8 +135,22 @@ export async function findApiKeyWithAccount(ctx: DbContext, { key, actorId }: Fi
   return row;
 }
 
-export async function findApiKeysByActor(ctx: DbContext, { actorId }: { actorId: string }) {
+interface FindApiKeysByActorOpts {
+  actorId: string;
+}
+
+export async function findApiKeysByActor(ctx: DbContext, { actorId }: FindApiKeysByActorOpts) {
   return ctx.var.db.select(apiKeySafeColumns).from(apiKeysTable).where(eq(apiKeysTable.actorId, actorId)).orderBy(desc(apiKeysTable.createdAt));
+}
+
+interface InsertApiKeyOpts {
+  /** Prefix, last four and hash of a generated key (`generateApiKey`); the plaintext is never stored. */
+  values: InsertApiKeyModel;
+}
+
+export async function insertApiKey(ctx: DbContext, { values }: InsertApiKeyOpts): Promise<ApiKeyModel> {
+  const [apiKey] = await ctx.var.db.insert(apiKeysTable).values(values).returning(apiKeySafeColumns);
+  return apiKey;
 }
 
 interface ScheduleApiKeyExpiryOpts {

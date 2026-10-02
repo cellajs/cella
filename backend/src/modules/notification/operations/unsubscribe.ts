@@ -1,8 +1,8 @@
-import { eq } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
-import { usersTable } from '#/modules/user/user-db';
+import { updateUser } from '#/modules/system/system-queries';
+import { findUserById } from '#/modules/user/user-queries';
 import { type UnsubscribeCategory, verifyCategoryToken } from '../helpers/category-token';
 import { findOrCreatePreferences, updatePreferences } from '../notification-queries';
 
@@ -25,15 +25,15 @@ export async function unsubscribeNotificationsOp(userId: string, category: Unsub
     throw new AppError(401, 'unsubscribe_failed', 'warn', { entityType: 'user', ...errorPage });
   }
 
-  const [user] = await baseDb.select({ id: usersTable.id }).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+  const dbCtx = { var: { db: baseDb } };
+  const user = await findUserById(dbCtx, { id: userId });
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', ...errorPage });
 
   if (category === 'newsletter') {
-    await baseDb.update(usersTable).set({ newsletter: false }).where(eq(usersTable.id, user.id));
+    await updateUser(dbCtx, { id: user.id, values: { newsletter: false } });
   } else {
-    const dbCtx = { var: { db: baseDb } };
-    await findOrCreatePreferences(dbCtx, user.id);
-    await updatePreferences(dbCtx, user.id, disableFor(category));
+    await findOrCreatePreferences(dbCtx, { userId: user.id });
+    await updatePreferences(dbCtx, { userId: user.id, values: disableFor(category) });
   }
 
   return new URL('/auth/unsubscribed', appConfig.frontendUrl);
