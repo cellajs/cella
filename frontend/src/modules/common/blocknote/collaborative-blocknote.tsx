@@ -171,6 +171,11 @@ function CollaborativeHost({
         updateData={(blocks) => void updateData(blocks, true)}
         collaboration={{ provider: { awareness: yjsConn.awareness }, fragment: yjsConn.fragment, user: { name: user.name, color: userColor } }}
         {...blockNoteProps}
+        // Opened for editing: from the first focus on, the document is stored and stays editable offline.
+        onFocus={() => {
+          yjsConn.markStored();
+          blockNoteProps.onFocus?.();
+        }}
         editable={blockNoteProps.editable !== false && !stopped}
       />
     </>
