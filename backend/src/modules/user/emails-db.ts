@@ -1,5 +1,5 @@
 import { boolean, index, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
-import type { EnabledOAuthProvider } from 'shared';
+import type { EnabledOAuthProvider, FederationKey } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
@@ -30,8 +30,11 @@ export const emailsTable = snakeCase.table(
   (table) => [index('emails_user_id_idx').on(table.userId)],
 );
 
-/** What proved the inbox: a magic-link click, or the click on the verification mail sent for a provider address. */
-export type EmailProof = 'magic' | EnabledOAuthProvider;
+/**
+ * What proved the inbox: a magic-link click, the click on the verification mail sent for a provider address, or a
+ * sign-in through a federation that operates the mailbox it asserts (`addressAuthority`).
+ */
+export type EmailProof = 'magic' | EnabledOAuthProvider | FederationKey;
 
 export type EmailModel = typeof emailsTable.$inferSelect;
 export type InsertEmailModel = typeof emailsTable.$inferInsert;

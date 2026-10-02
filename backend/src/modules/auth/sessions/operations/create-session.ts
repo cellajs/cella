@@ -60,7 +60,9 @@ const enrollNewDevice = async (userId: string, deviceId: string): Promise<NewDev
 /** What a sign-in may record on the session besides its method. */
 export interface SessionExtras {
   /** The second factor an MFA completion presented: the session starts stepped up by it. */
-  steppedUpVia?: StepUpProof;
+  steppedUpVia?: StepUpProof | null;
+  /** The connection (an institution's trust) an SSO sign-in came through. */
+  connectionId?: string | null;
 }
 
 /**
@@ -74,7 +76,7 @@ export const createSession = async (
   strategy: AuthStrategy,
   type: SessionTypes = 'regular',
   impersonatorSessionId: string | null = null,
-  { steppedUpVia = null }: { steppedUpVia?: StepUpProof | null } = {},
+  { steppedUpVia = null, connectionId = null }: SessionExtras = {},
 ) => {
   const { rawIp, country, asn, device, deviceId } = context;
 
@@ -107,6 +109,7 @@ export const createSession = async (
     impersonatorSessionId,
     steppedUpAt: steppedUpVia ? now : null,
     steppedUpVia,
+    connectionId,
   };
 
   if (type !== 'impersonation') {

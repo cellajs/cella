@@ -238,6 +238,31 @@ export type TooManyRequestsError = ApiError & {
 };
 
 /**
+ * The sign-in entry of one institution at one organization: the federation it goes through, the institution, the organization, and whether it is active. Public by the connection's id, which is the link an institution shares.
+ */
+export type SsoEntry = {
+  id: string;
+  /**
+   * Only `active` signs in; `pending` means the institution has not activated the app yet
+   */
+  status: 'pending' | 'active' | 'disabled';
+  federation: {
+    key: string;
+    label: string;
+  };
+  institution: {
+    displayName: string;
+    logoUrl: string | null;
+  };
+  organization: {
+    id: string;
+    name: string;
+    slug: string;
+    thumbnailUrl: string | null;
+  } | null;
+};
+
+/**
  * The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.
  */
 export type Me = {
@@ -277,10 +302,22 @@ export type User = {
 };
 
 /**
- * How the signed-in user signs in: connected OAuth providers, passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.
+ * How the signed-in user signs in: connected OAuth providers, the institutions of their organizations (connected or not), passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.
  */
 export type MeAuthData = {
   enabledOAuth: Array<'github'>;
+  institutions: Array<{
+    connectionId: string;
+    displayName: string;
+    federation: {
+      key: string;
+      label: string;
+    };
+    /**
+     * Whether the account already holds an identity through this connection
+     */
+    connected: boolean;
+  }>;
   hasTotp: boolean;
   sessions: Array<{
     id: string;
@@ -290,7 +327,7 @@ export type MeAuthData = {
     deviceType: 'desktop' | 'mobile';
     deviceOs: string | null;
     browser: string | null;
-    authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic';
+    authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'surfconext';
     connectionId: string | null;
     ipHash: string | null;
     ipSubnetHash: string | null;
@@ -412,17 +449,13 @@ export type Tenant = {
      */
     allowUnregisteredClients: boolean;
   };
-  authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic'>;
+  authStrategies: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'surfconext'>;
   createdBy: string | null;
   subscriptionId: string | null;
   subscriptionStatus: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
   subscriptionPlan: string | null;
   createdAt: string;
   updatedAt: string | null;
-  /**
-   * Number of domains claimed by this tenant
-   */
-  domainsCount: number;
   /**
    * The organization this tenant holds, or null if none
    */
@@ -433,6 +466,35 @@ export type Tenant = {
     thumbnailUrl: string | null;
     entityType: 'organization';
   } | null;
+};
+
+/**
+ * A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization. Its id is the public key of the tenant's SSO entry page. System admins manage connections per tenant; `pending` until the institution activated the service at the federation.
+ */
+export type Connection = {
+  id: string;
+  tenantId: string;
+  kind: 'sso' | 'lti';
+  issuer: string;
+  clientId: string | null;
+  deploymentId: string | null;
+  claimValues: Array<string>;
+  displayName: string;
+  status: 'pending' | 'active' | 'disabled';
+  jitProvisioning: boolean;
+  config: {
+    /**
+     * The institution's IdP entity ids, passed as login_hint
+     */
+    idpEntityIds?: Array<string>;
+    /**
+     * The institution's logo, for the entry page
+     */
+    logoUrl?: string;
+  };
+  createdBy: string | null;
+  createdAt: string;
+  updatedAt: string | null;
 };
 
 /**
@@ -643,6 +705,13 @@ export type GetAuthHealthResponses = {
   200: {
     restrictedMode: boolean;
     retryAfter?: number;
+    /**
+     * Federations with a connected institution, for the "sign in with your institution" entrance
+     */
+    federations: Array<{
+      key: string;
+      label: string;
+    }>;
   };
 };
 
@@ -783,6 +852,7 @@ export type GetTokenDataResponses = {
     email: string;
     userId?: string;
     inactiveMembershipId?: string;
+    ssoConnectionId?: string;
     invitation?: {
       entityType: 'organization';
       entityName: string;
@@ -1855,6 +1925,177 @@ export type MicrosoftCallbackErrors = {
 
 export type MicrosoftCallbackError = MicrosoftCallbackErrors[keyof MicrosoftCallbackErrors];
 
+export type GetSsoEntryData = {
+  body?: never;
+  path: {
+    connectionId: string;
+  };
+  query?: never;
+  url: '/auth/sso/connections/{connectionId}';
+};
+
+export type GetSsoEntryErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetSsoEntryError = GetSsoEntryErrors[keyof GetSsoEntryErrors];
+
+export type GetSsoEntryResponses = {
+  /**
+   * SSO entry
+   */
+  200: SsoEntry;
+};
+
+export type GetSsoEntryResponse = GetSsoEntryResponses[keyof GetSsoEntryResponses];
+
+export type StartSsoData = {
+  body?: never;
+  path: {
+    connectionId: string;
+  };
+  query?: {
+    type?: 'auth' | 'connect' | 'invite' | 'verify';
+    redirectAfter?: string;
+  };
+  url: '/auth/sso/connections/{connectionId}/start';
+};
+
+export type StartSsoErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type StartSsoError = StartSsoErrors[keyof StartSsoErrors];
+
+export type StartSsoFederationData = {
+  body?: never;
+  path: {
+    federation: string;
+  };
+  query?: {
+    type?: 'auth' | 'connect' | 'invite' | 'verify';
+    redirectAfter?: string;
+  };
+  url: '/auth/sso/federations/{federation}/start';
+};
+
+export type StartSsoFederationErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type StartSsoFederationError = StartSsoFederationErrors[keyof StartSsoFederationErrors];
+
+export type SsoCallbackData = {
+  body?: never;
+  path?: never;
+  query: {
+    code?: string;
+    state: string;
+    error?: string;
+    error_description?: string;
+    error_uri?: string;
+  };
+  url: '/auth/sso/callback';
+};
+
+export type SsoCallbackErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type SsoCallbackError = SsoCallbackErrors[keyof SsoCallbackErrors];
+
 export type GetStepUpData = {
   body?: never;
   path?: never;
@@ -2063,296 +2304,6 @@ export type SendStepUpLinkResponses = {
 };
 
 export type SendStepUpLinkResponse = SendStepUpLinkResponses[keyof SendStepUpLinkResponses];
-
-export type GetDomainsData = {
-  body?: never;
-  path: {
-    tenantId: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}/domains';
-};
-
-export type GetDomainsErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetDomainsError = GetDomainsErrors[keyof GetDomainsErrors];
-
-export type GetDomainsResponses = {
-  /**
-   * List of domains
-   */
-  200: Array<{
-    id: string;
-    tenantId: string;
-    domain: string;
-    verified: boolean;
-    verificationToken: string | null;
-    verifiedAt: string | null;
-    lastCheckedAt: string | null;
-    createdAt: string;
-  }>;
-};
-
-export type GetDomainsResponse = GetDomainsResponses[keyof GetDomainsResponses];
-
-export type CreateDomainData = {
-  body: {
-    domain: string;
-  };
-  path: {
-    tenantId: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}/domains';
-};
-
-export type CreateDomainErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type CreateDomainError = CreateDomainErrors[keyof CreateDomainErrors];
-
-export type CreateDomainResponses = {
-  /**
-   * Created domain
-   */
-  200: {
-    id: string;
-    tenantId: string;
-    domain: string;
-    verified: boolean;
-    verifiedAt: string | null;
-    lastCheckedAt: string | null;
-    createdAt: string;
-  };
-};
-
-export type CreateDomainResponse = CreateDomainResponses[keyof CreateDomainResponses];
-
-export type DeleteDomainData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}/domains/{id}';
-};
-
-export type DeleteDomainErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type DeleteDomainError = DeleteDomainErrors[keyof DeleteDomainErrors];
-
-export type DeleteDomainResponses = {
-  /**
-   * Domain removed
-   */
-  200: {
-    id: string;
-    tenantId: string;
-    domain: string;
-    verified: boolean;
-    verifiedAt: string | null;
-    lastCheckedAt: string | null;
-    createdAt: string;
-  };
-};
-
-export type DeleteDomainResponse = DeleteDomainResponses[keyof DeleteDomainResponses];
-
-export type GetDomainData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}/domains/{id}';
-};
-
-export type GetDomainErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type GetDomainError = GetDomainErrors[keyof GetDomainErrors];
-
-export type GetDomainResponses = {
-  /**
-   * Domain with verification token
-   */
-  200: {
-    id: string;
-    tenantId: string;
-    domain: string;
-    verified: boolean;
-    verificationToken: string | null;
-    verifiedAt: string | null;
-    lastCheckedAt: string | null;
-    createdAt: string;
-  };
-};
-
-export type GetDomainResponse = GetDomainResponses[keyof GetDomainResponses];
-
-export type VerifyDomainData = {
-  body?: never;
-  path: {
-    tenantId: string;
-    id: string;
-  };
-  query?: never;
-  url: '/tenants/{tenantId}/domains/{id}/verify';
-};
-
-export type VerifyDomainErrors = {
-  /**
-   * Bad request: problem processing request.
-   */
-  400: BadRequestError;
-  /**
-   * Unauthorized: authentication required.
-   */
-  401: UnauthorizedError;
-  /**
-   * Forbidden: insufficient permissions.
-   */
-  403: ForbiddenError;
-  /**
-   * Not found: resource does not exist.
-   */
-  404: NotFoundError;
-  /**
-   * Conflict: resource state conflict.
-   */
-  409: ConflictError;
-  /**
-   * Rate limit: too many requests.
-   */
-  429: TooManyRequestsError;
-};
-
-export type VerifyDomainError = VerifyDomainErrors[keyof VerifyDomainErrors];
-
-export type VerifyDomainResponses = {
-  /**
-   * Verification result
-   */
-  200: {
-    success: boolean;
-    domain: {
-      id: string;
-      tenantId: string;
-      domain: string;
-      verified: boolean;
-      verificationToken: string | null;
-      verifiedAt: string | null;
-      lastCheckedAt: string | null;
-      createdAt: string;
-    };
-    diagnostics?: {
-      recordsFound: Array<string>;
-      expectedToken: string;
-    };
-  };
-};
-
-export type VerifyDomainResponse = VerifyDomainResponses[keyof VerifyDomainResponses];
 
 export type CheckSlugData = {
   body: {
@@ -2920,7 +2871,7 @@ export type RevokeMySessionsResponses = {
       deviceType: 'desktop' | 'mobile';
       deviceOs: string | null;
       browser: string | null;
-      authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic';
+      authStrategy: 'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'surfconext';
       connectionId: string | null;
       ipHash: string | null;
       ipSubnetHash: string | null;
@@ -4221,7 +4172,7 @@ export type UpdateTenantData = {
     subscriptionId?: string | null;
     subscriptionStatus?: 'none' | 'trialing' | 'active' | 'past_due' | 'paused' | 'canceled';
     subscriptionPlan?: string | null;
-    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic'>;
+    authStrategies?: Array<'github' | 'google' | 'microsoft' | 'passkey' | 'totp' | 'email' | 'magic' | 'surfconext'>;
     /**
      * Partial restrictions override
      */
@@ -4282,6 +4233,232 @@ export type UpdateTenantResponses = {
 };
 
 export type UpdateTenantResponse = UpdateTenantResponses[keyof UpdateTenantResponses];
+
+export type GetConnectionsData = {
+  body?: never;
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/connections';
+};
+
+export type GetConnectionsErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type GetConnectionsError = GetConnectionsErrors[keyof GetConnectionsErrors];
+
+export type GetConnectionsResponses = {
+  /**
+   * Connections
+   */
+  200: Array<Connection>;
+};
+
+export type GetConnectionsResponse = GetConnectionsResponses[keyof GetConnectionsResponses];
+
+export type CreateConnectionData = {
+  body: {
+    /**
+     * A federation key in appConfig.federations
+     */
+    issuer: 'surfconext';
+    /**
+     * The institution's name, as the federation's metadata lists it
+     */
+    displayName: string;
+    /**
+     * The institution's domains as the federation asserts them in the tenant claim; a sign-in must assert one of them
+     */
+    claimValues: Array<string>;
+    /**
+     * The institution's IdP entity ids, all passed as login_hint
+     */
+    idpEntityIds: Array<string>;
+    status?: 'pending' | 'active' | 'disabled';
+    jitProvisioning?: boolean;
+    logoUrl?: string;
+  };
+  path: {
+    tenantId: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/connections';
+};
+
+export type CreateConnectionErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type CreateConnectionError = CreateConnectionErrors[keyof CreateConnectionErrors];
+
+export type CreateConnectionResponses = {
+  /**
+   * Created connection
+   */
+  200: Connection;
+};
+
+export type CreateConnectionResponse = CreateConnectionResponses[keyof CreateConnectionResponses];
+
+export type DeleteConnectionData = {
+  body?: never;
+  path: {
+    tenantId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/connections/{id}';
+};
+
+export type DeleteConnectionErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type DeleteConnectionError = DeleteConnectionErrors[keyof DeleteConnectionErrors];
+
+export type DeleteConnectionResponses = {
+  /**
+   * Removed connection
+   */
+  200: Connection;
+};
+
+export type DeleteConnectionResponse = DeleteConnectionResponses[keyof DeleteConnectionResponses];
+
+export type UpdateConnectionData = {
+  body: {
+    /**
+     * The institution's name, as the federation's metadata lists it
+     */
+    displayName?: string;
+    /**
+     * The institution's domains as the federation asserts them in the tenant claim; a sign-in must assert one of them
+     */
+    claimValues?: Array<string>;
+    /**
+     * The institution's IdP entity ids, all passed as login_hint
+     */
+    idpEntityIds?: Array<string>;
+    status?: 'pending' | 'active' | 'disabled';
+    jitProvisioning?: boolean;
+    logoUrl?: string;
+  };
+  path: {
+    tenantId: string;
+    id: string;
+  };
+  query?: never;
+  url: '/tenants/{tenantId}/connections/{id}';
+};
+
+export type UpdateConnectionErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type UpdateConnectionError = UpdateConnectionErrors[keyof UpdateConnectionErrors];
+
+export type UpdateConnectionResponses = {
+  /**
+   * Updated connection
+   */
+  200: Connection;
+};
+
+export type UpdateConnectionResponse = UpdateConnectionResponses[keyof UpdateConnectionResponses];
 
 export type GetUsersData = {
   body?: never;

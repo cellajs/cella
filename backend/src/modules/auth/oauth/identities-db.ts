@@ -3,12 +3,14 @@ import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
+import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
 
 export const supportedOAuthProviders = ['github', 'google', 'microsoft'] as const;
 
-/** Trust class of an external identity: social OAuth today; SSO federations and LTI launches reuse the table later. */
+/** Trust class of an external identity: social OAuth, an institution's SSO federation, or (later) an LTI launch. */
 export const identityKinds = ['oauth', 'sso', 'lti'] as const;
+export type IdentityKind = (typeof identityKinds)[number];
 
 /**
  * External identities of a user, keyed on the issuer's own subject: (kind, issuer, subject). A user can hold several.
@@ -25,16 +27,16 @@ export const identitiesTable = snakeCase.table(
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
     kind: varchar({ enum: identityKinds }).notNull().default('oauth'),
-    // Always a slug, namespaced by kind: a supported OAuth provider for 'oauth'; its issuer URL lives in config, not here.
+    // Always a slug, namespaced by kind: an OAuth provider for 'oauth', a federation key for 'sso'; the issuer URL lives in config.
     issuer: varchar({ length: maxLength.field }).notNull(),
     subject: varchar({ length: maxLength.field }).notNull(),
     email: varchar({ length: maxLength.field }),
     verified: boolean().notNull().default(false),
     verifiedAt: timestamp({ mode: 'string' }),
-    // Later: the sso_connections row this identity came through.
-    connectionId: varchar({ length: maxLength.field }),
-    // Claims snapshot for non-social kinds (affiliations, acr, LTI context); nothing reads it yet.
-    data: jsonb(),
+    /** The connection (an institution's trust) an sso identity came through; null for social identities. */
+    connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
+    /** Claims snapshot for non-social kinds (affiliations, acr, LTI context); nothing reads it for authorization. */
+    data: jsonb().$type<Record<string, unknown>>(),
     lastUsedAt: timestamp({ mode: 'string' }),
   },
   (table) => [

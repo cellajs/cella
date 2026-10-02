@@ -20,6 +20,9 @@ export const development = {
   oauthUrl: 'http://localhost:3000/oauth',
   // The authorization server runs locally so the MCP consent flow can be exercised end to end.
   services: { oauth: { enabled: true }, mcp: { enabled: true } },
+  federations: {
+    surfconext: { issuer: 'https://connect.test.surfconext.nl', idpMetadataUrl: 'https://metadata.test.surfconext.nl/idps-metadata.xml' },
+  },
 
   // Shared Cella Maps key is referer-restricted to official domains and rejects localhost.
   // Leave empty locally so the contact-form map gracefully skips rendering. Set your own key to enable.

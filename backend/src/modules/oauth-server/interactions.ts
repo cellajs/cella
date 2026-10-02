@@ -12,7 +12,7 @@ import { findSession } from '#/modules/auth/sessions/operations/resolve-session'
 import { requireStepUp } from '#/modules/auth/step-up/operations/read-step-up';
 import { clientKindOf } from '#/modules/oauth-server/adapter';
 import { grantRefusal, type UserGrantRefusal } from '#/modules/oauth-server/grant-policy';
-import { deleteProviderSession, getConsentTargetNames } from '#/modules/oauth-server/oauth-server-queries';
+import { deleteProviderSession, getConsentTargetNames, stampGrantSignIn } from '#/modules/oauth-server/oauth-server-queries';
 import { parseResource, type ResourceRef } from '#/modules/oauth-server/resources';
 
 type InteractionEnv = { Bindings: HttpBindings; Variables: Env['Variables'] };
@@ -90,6 +90,8 @@ export function createInteractionsApp(provider: Provider): Hono<InteractionEnv> 
     grant.addOIDCScope(details.scopes.join(' '));
     grant.addResourceScope(resource, details.scopes.join(' '));
     const grantId = await grant.save();
+    // The tokens issued under this grant carry how this session signed in (D8).
+    await stampGrantSignIn({ var: { db: baseDb } }, { grantId, authStrategy: session.authStrategy, connectionId: session.connectionId });
 
     const redirectTo = await provider.interactionResult(
       c.env.incoming,

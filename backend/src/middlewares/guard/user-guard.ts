@@ -31,7 +31,14 @@ export const userGuard = xMiddleware(
 
     const memberships = await loadMemberships(user.id, bindingsVersion);
     ctx.set('memberships', memberships);
-    ctx.set('actor', { kind: 'user', id: user.id, bindings: memberships, scopes: null });
+    ctx.set('actor', {
+      kind: 'user',
+      id: user.id,
+      bindings: memberships,
+      scopes: null,
+      authStrategy: session.authStrategy,
+      connectionId: session.connectionId,
+    });
 
     if (ctx.req.method === 'GET') updateLastSeenAt(user.id);
 

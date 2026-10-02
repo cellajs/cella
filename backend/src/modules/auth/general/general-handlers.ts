@@ -10,6 +10,7 @@ import { getTokenDataOp } from '#/modules/auth/invitations/operations/get-token-
 import { resendInvitationEmail } from '#/modules/auth/invitations/operations/resend-invitation';
 import { startImpersonationOp, stopImpersonationOp } from '#/modules/auth/sessions/operations/impersonation';
 import { signOutOp } from '#/modules/auth/sessions/operations/sign-out';
+import { listSignInFederations } from '#/modules/auth/sso/operations/list-sign-in-federations';
 import '#/modules/auth/sessions/session-listeners';
 import { openLinkToken } from '#/modules/auth/tokens/operations/open-link-token';
 import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
@@ -20,9 +21,9 @@ const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(authGeneralRoutes.health, async (ctx) => {
   // Check emailEnum rate limit status without consuming points
-  const { isLimited, retryAfter } = await checkIpRateLimitStatus(ctx, emailEnumLimiter);
+  const [{ isLimited, retryAfter }, federations] = await Promise.all([checkIpRateLimitStatus(ctx, emailEnumLimiter), listSignInFederations()]);
 
-  return ctx.json({ restrictedMode: isLimited, ...(retryAfter && { retryAfter }) }, 200);
+  return ctx.json({ restrictedMode: isLimited, ...(retryAfter && { retryAfter }), federations }, 200);
 });
 
 app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {

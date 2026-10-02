@@ -178,6 +178,166 @@
     }
   },
   {
+    "name": "SsoEntry",
+    "ref": "#/components/schemas/SsoEntry",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true },
+        "status": {
+          "type": "string",
+          "required": true,
+          "description": "Only `active` signs in; `pending` means the institution has not activated the app yet",
+          "enum": ["pending", "active", "disabled"]
+        },
+        "federation": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "key": { "type": "string", "required": true },
+            "label": { "type": "string", "required": true }
+          }
+        },
+        "institution": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "displayName": { "type": "string", "required": true },
+            "logoUrl": {
+              "type": ["string", "null"],
+              "required": true
+            }
+          }
+        },
+        "organization": {
+          "type": ["object", "null"],
+          "required": true,
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "name": { "type": "string", "required": true },
+            "slug": { "type": "string", "required": true },
+            "thumbnailUrl": {
+              "type": ["string", "null"],
+              "required": true
+            }
+          }
+        }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["auth"],
+      "owner": ["cella"]
+    },
+    "description": "The sign-in entry of one institution at one organization: the federation it goes through, the institution, the organization, and whether it is active. Public by the connection's id, which is the link an institution shares.",
+    "example": {
+      "id": "a21c1e15-fff0-4c1c-8eda-a33ceec95d7a",
+      "status": "active",
+      "federation": { "key": "surfconext", "label": "SURFconext" },
+      "institution": { "displayName": "Utrecht University", "logoUrl": null },
+      "organization": {
+        "id": "2bfc5bce-ced7-4d32-8cd1-d7e121a2a0af",
+        "name": "Wuckert - Emmerich",
+        "slug": "wuckert---emmerich",
+        "thumbnailUrl": null
+      }
+    }
+  },
+  {
+    "name": "Connection",
+    "ref": "#/components/schemas/Connection",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "required": true, "format": "uuid" },
+        "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+        "kind": {
+          "type": "string",
+          "required": true,
+          "enum": ["sso", "lti"]
+        },
+        "issuer": { "type": "string", "required": true, "maxLength": 255 },
+        "clientId": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "deploymentId": {
+          "type": ["string", "null"],
+          "required": true,
+          "maxLength": 255
+        },
+        "claimValues": { "type": "array", "required": true, "itemType": "string" },
+        "displayName": { "type": "string", "required": true, "maxLength": 255 },
+        "status": {
+          "type": "string",
+          "required": true,
+          "enum": ["pending", "active", "disabled"]
+        },
+        "jitProvisioning": { "type": "boolean", "required": true },
+        "config": {
+          "type": "object",
+          "required": true,
+          "properties": {
+            "idpEntityIds": {
+              "type": "array",
+              "required": false,
+              "description": "The institution's IdP entity ids, passed as login_hint",
+              "itemType": "string",
+              "minLength": 1,
+              "maxLength": 255
+            },
+            "logoUrl": {
+              "type": "string",
+              "required": false,
+              "description": "The institution's logo, for the entry page",
+              "format": "uri",
+              "maxLength": 255
+            }
+          }
+        },
+        "createdBy": {
+          "type": ["string", "null"],
+          "required": true,
+          "format": "uuid"
+        },
+        "createdAt": { "type": "string", "required": true },
+        "updatedAt": {
+          "type": ["string", "null"],
+          "required": true
+        }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["connections"],
+      "owner": ["cella"]
+    },
+    "description": "A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization. Its id is the public key of the tenant's SSO entry page. System admins manage connections per tenant; `pending` until the institution activated the service at the federation.",
+    "example": {
+      "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
+      "tenantId": "gc9llm",
+      "kind": "sso",
+      "issuer": "surfconext",
+      "clientId": null,
+      "deploymentId": null,
+      "claimValues": ["uu.nl"],
+      "displayName": "Utrecht University",
+      "status": "active",
+      "jitProvisioning": true,
+      "config": {
+        "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
+      },
+      "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
+      "createdAt": "2024-08-25T16:44:28.368Z",
+      "updatedAt": "2024-10-28T09:20:16.614Z"
+    }
+  },
+  {
     "name": "ChannelBase",
     "ref": "#/components/schemas/ChannelBase",
     "type": "object",
@@ -618,6 +778,31 @@
           "itemType": "string",
           "enum": ["github"]
         },
+        "institutions": {
+          "type": "array",
+          "required": true,
+          "itemType": "object",
+          "items": {
+            "type": "object",
+            "properties": {
+              "connectionId": { "type": "string", "required": true },
+              "displayName": { "type": "string", "required": true },
+              "federation": {
+                "type": "object",
+                "required": true,
+                "properties": {
+                  "key": { "type": "string", "required": true },
+                  "label": { "type": "string", "required": true }
+                }
+              },
+              "connected": {
+                "type": "boolean",
+                "required": true,
+                "description": "Whether the account already holds an identity through this connection"
+              }
+            }
+          }
+        },
         "hasTotp": { "type": "boolean", "required": true },
         "sessions": {
           "type": "array",
@@ -656,7 +841,7 @@
               "authStrategy": {
                 "type": "string",
                 "required": true,
-                "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
               },
               "connectionId": {
                 "type": ["string", "null"],
@@ -770,9 +955,10 @@
       "module": ["me"],
       "owner": ["cella"]
     },
-    "description": "How the signed-in user signs in: connected OAuth providers, passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.",
+    "description": "How the signed-in user signs in: connected OAuth providers, the institutions of their organizations (connected or not), passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.",
     "example": {
       "enabledOAuth": ["github"],
+      "institutions": [],
       "hasTotp": false,
       "sessions": [
         {
@@ -1559,7 +1745,7 @@
           "type": "array",
           "required": true,
           "itemType": "string",
-          "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+          "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
         },
         "createdBy": {
           "type": ["string", "null"],
@@ -1586,7 +1772,6 @@
           "type": ["string", "null"],
           "required": true
         },
-        "domainsCount": { "type": "integer", "required": true, "description": "Number of domains claimed by this tenant" },
         "organization": {
           "type": ["object", "null"],
           "required": true,
@@ -1637,7 +1822,6 @@
       "subscriptionPlan": null,
       "createdAt": "2024-02-09T07:11:04.461Z",
       "updatedAt": "2024-03-30T20:43:34.109Z",
-      "domainsCount": 0,
       "organization": {
         "id": "c6e2f31a-be0a-4e1a-a760-f0b106b6bbcb",
         "name": "Lubowitz, Waters and Haley",

@@ -14,4 +14,7 @@ export const tunnel = {
   yjsUrl: 'wss://cella.ngrok.dev/yjs',
   mcpUrl: 'https://cella.ngrok.dev/mcp',
   oauthUrl: 'https://cella.ngrok.dev/oauth',
+  federations: {
+    surfconext: { issuer: 'https://connect.test.surfconext.nl', idpMetadataUrl: 'https://metadata.test.surfconext.nl/idps-metadata.xml' },
+  },
 } satisfies DeepPartial<typeof _default>;

@@ -40,7 +40,7 @@ export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
     // Clear session cookie to enforce fresh login
     deleteAuthCookie(ctx, 'session');
 
-    await setUserSession(ctx, user, session.authStrategy, 'mfa', { steppedUpVia: factor });
+    await setUserSession(ctx, user, session.authStrategy, 'mfa', { steppedUpVia: factor, connectionId: session.connectionId });
   }
 
   sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');

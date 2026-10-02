@@ -7,8 +7,8 @@
   },
   {
     "name": "auth",
-    "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth\n    (Google, Microsoft, GitHub) and passkeys (WebAuthn). They cover sign-up, sign-in, email verification,\n    account linking, and impersonation for system admins.",
-    "count": 31,
+    "description": "Endpoints for authentication, supporting multiple sign-in methods including OAuth\n    (Google, Microsoft, GitHub), institutional SSO through a federation (SURFconext) and passkeys (WebAuthn). They\n    cover sign-up, sign-in, email verification, account linking, and impersonation for system admins.",
+    "count": 35,
     "kind": "module"
   },
   {
@@ -92,7 +92,13 @@
   {
     "name": "tenants",
     "description": "Endpoints for managing tenants, which are top-level isolation boundaries used by Row-Level\n    Security (RLS) to partition data. Only system administrators can manage tenants.",
-    "count": 8,
+    "count": 3,
+    "kind": "module"
+  },
+  {
+    "name": "connections",
+    "description": "Connections: the institutions a tenant trusts to assert its members' identities through an SSO\n    federation (SURFconext first). System admins create them per tenant; a connection's id is the public entry key of\n    the tenant's SSO sign-in, and its domains decide which asserted institution the sign-in accepts.",
+    "count": 4,
     "kind": "module"
   },
   {

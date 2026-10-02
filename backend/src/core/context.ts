@@ -2,7 +2,7 @@ import type { HttpBindings } from '@hono/node-server';
 import type { AccessScope } from 'shared';
 import type { DbOrTx } from '#/db/db';
 import type { ServiceAccountId, UserId } from '#/db/utils/ids';
-import type { SessionFacts } from '#/modules/auth/sessions/sessions-db';
+import type { AuthStrategy, SessionFacts } from '#/modules/auth/sessions/sessions-db';
 import type { MembershipBaseModel } from '#/modules/memberships/helpers/select';
 import type { OrganizationModel } from '#/modules/organization/organization-db';
 import type { RoleBinding } from '#/modules/service-accounts/service-accounts-db';
@@ -14,8 +14,19 @@ type Bindings = HttpBindings & {
   /* ... */
 };
 
-/** A user: its bindings are its membership rows; a session is unmasked, a delegated token (OAuth) carries the token's scopes. */
-type UserActor = { kind: 'user'; id: UserId; bindings: MembershipBaseModel[]; scopes: readonly AccessScope[] | null };
+/**
+ * A user: its bindings are its membership rows; a session is unmasked, a delegated token (OAuth) carries the token's
+ * scopes. `authStrategy` and `connectionId` say how the person signed in: the session's method and SSO connection, or
+ * those of the session that authorized a delegated token; null when a token predates the claim.
+ */
+type UserActor = {
+  kind: 'user';
+  id: UserId;
+  bindings: MembershipBaseModel[];
+  scopes: readonly AccessScope[] | null;
+  authStrategy?: AuthStrategy | null;
+  connectionId?: string | null;
+};
 
 /** A service account behind an API key: `bindings` are its stored role bindings, `scopes` the key's mask (null = unmasked). */
 type ServiceActor = {

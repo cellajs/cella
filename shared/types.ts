@@ -21,6 +21,8 @@ export type MenuSection = {
 };
 
 export type EnabledOAuthProvider = (typeof appConfig.enabledOAuthProviders)[number];
+/** A federation in `appConfig.federations`: a session strategy, an identities issuer slug and an env prefix. */
+export type FederationKey = keyof typeof appConfig.federations & string;
 
 export type UploadTemplateId = (typeof appConfig.uploadTemplateIds)[number];
 

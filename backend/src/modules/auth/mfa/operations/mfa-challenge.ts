@@ -17,10 +17,10 @@ import { findUserById } from '#/modules/user/user-queries';
  * is off. The token carries the method the sign-in started with (`strategy`), so the session the challenge ends in
  * records it.
  */
-export const initiateMfa = async (ctx: Context<Env>, user: UserModel, strategy: AuthStrategy) => {
+export const initiateMfa = async (ctx: Context<Env>, user: UserModel, strategy: AuthStrategy, connectionId: string | null = null) => {
   if (!user.mfaRequired) return null;
 
-  await issueCookieToken(ctx, { type: 'confirm-mfa', userId: user.id, email: user.email, createdBy: user.id, authStrategy: strategy });
+  await issueCookieToken(ctx, { type: 'confirm-mfa', userId: user.id, email: user.email, createdBy: user.id, authStrategy: strategy, connectionId });
 
   return '/auth/mfa';
 };
@@ -67,5 +67,5 @@ export const completeMfaChallenge = async (ctx: Context<Env>, proof: MfaProof) =
 
   await spendConfirmMfaToken(ctx);
   // A challenge issued before the method was recorded on it (a deploy within its ten minutes) falls back to the factor.
-  await setUserSession(ctx, user, token.authStrategy ?? proof.strategy, 'mfa', { steppedUpVia: proof.strategy });
+  await setUserSession(ctx, user, token.authStrategy ?? proof.strategy, 'mfa', { steppedUpVia: proof.strategy, connectionId: token.connectionId });
 };
