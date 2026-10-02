@@ -37,7 +37,7 @@ export async function pushYjsUpdateOp(
 
   switch (result.status) {
     case 'appended':
-      await queueYjsLogNotice({ tenantId: doc.tenantId, entityType, entityId: doc.entityId, logId: result.id });
+      await queueYjsLogNotice({ tenantId: doc.tenantId, entityType, entityId: doc.entityId, logIds: [result.id] });
       return { status: 'appended' };
     case 'empty':
       return { status: 'empty' };

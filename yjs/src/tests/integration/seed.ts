@@ -182,7 +182,7 @@ export async function pushOverHttp(
   );
   if (notice && result.status === 'appended') {
     const { tenantId, entityType, entityId } = scope;
-    await notifyYjsLog({ var: { db } }, { notices: [{ tenantId, entityType, entityId, logId: result.id }] });
+    await notifyYjsLog({ var: { db } }, { notices: [{ tenantId, entityType, entityId, logIds: [result.id] }] });
   }
   return result;
 }

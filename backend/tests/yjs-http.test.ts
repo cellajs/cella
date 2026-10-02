@@ -376,14 +376,14 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs over HTTP', async
 
       const [first] = (await stored(attachment.id)).rows;
       await barrier();
-      expect(heardFor(attachment.id)).toEqual([{ tenantId: owner.tenantId, entityType: 'attachment', entityId: attachment.id, logId: first.id }]);
+      expect(heardFor(attachment.id)).toEqual([{ tenantId: owner.tenantId, entityType: 'attachment', entityId: attachment.id, logIds: [first.id] }]);
 
       // Each request sends its own: two pushes, two notifications, each with its row.
       expect((await push(owner.sessionCookie, attachment.id, generation, typeInto(client, 'two '))).response.status).toBe(200);
       expect((await push(owner.sessionCookie, attachment.id, generation, typeInto(client, 'three '))).response.status).toBe(200);
       const rows = (await stored(attachment.id)).rows;
       await barrier();
-      expect(heardFor(attachment.id).map((notice) => notice && 'logId' in notice && notice.logId)).toEqual(rows.map((row) => row.id));
+      expect(heardFor(attachment.id).map((notice) => notice && 'logIds' in notice && notice.logIds)).toEqual(rows.map((row) => [row.id]));
     });
 
     it('must not log or announce an append whose transaction rolls back', async () => {
