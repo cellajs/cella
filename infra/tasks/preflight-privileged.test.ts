@@ -1,5 +1,15 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { applyHint, classifyPreviewSteps, formatPending, isPrivilegedUrn, main, type PreviewStep, readPath, splitUrn } from './preflight-privileged';
+import {
+  applyHint,
+  classifyPreviewSteps,
+  formatPending,
+  isPrivilegedUrn,
+  main,
+  type PreviewStep,
+  previewFailureMessage,
+  readPath,
+  splitUrn,
+} from './preflight-privileged';
 
 const urn = (type: string, name: string) => `urn:pulumi:production::infra::${type}::${name}`;
 
@@ -110,5 +120,34 @@ describe('main', () => {
   it('skips a mode without a set-up stack', async () => {
     const effects = production([{ op: 'create', urn: urn('scaleway:iam/policy:Policy', 'vm-backend-policy') }]);
     await expect(main(['--mode', 'staging'], effects)).resolves.toBe(undefined);
+  });
+});
+
+describe('previewFailureMessage', () => {
+  const sdkWarnings =
+    'SDK 2026/10/02 10:04:12 WARN Response has no supported checksum.\nSDK 2026/10/02 10:04:15 WARN Response has no supported checksum.';
+
+  it('reports the error diagnostics from the JSON on stdout, not the SDK warnings on stderr', () => {
+    // The 0.14.0 release PR shape: the program threw, and stderr held only checksum warnings.
+    const stdout = JSON.stringify({
+      steps: [],
+      diagnostics: [
+        { severity: 'warning', message: 'Multiple variable sources detected' },
+        {
+          severity: 'error',
+          message:
+            "error: Running program '/infra/index.ts' failed with an unhandled exception:\n\nError: compute: planning a NEW backend generation without INFRA_GENERATION_KEYS_FILE\n    at createGenerationVm (compute.ts:1:5843)\n    at more",
+        },
+      ],
+    });
+    const message = previewFailureMessage(1, stdout, sdkWarnings);
+    expect(message).toContain('planning a NEW backend generation without INFRA_GENERATION_KEYS_FILE');
+    expect(message).not.toContain('checksum');
+    expect(message).not.toContain('at more');
+  });
+
+  it('falls back to the stderr tail when stdout is not JSON or holds no error', () => {
+    expect(previewFailureMessage(255, '', 'error: no stack named production')).toBe('pulumi preview exited 255: error: no stack named production');
+    expect(previewFailureMessage(1, JSON.stringify({ diagnostics: [{ severity: 'warning', message: 'w' }] }), sdkWarnings)).toContain('checksum');
   });
 });
