@@ -5,7 +5,8 @@ import type { StxBase } from '#/schemas';
 
 /**
  * Reference to the entity's standard update op; the relay invokes it with the server clock (`serverOrigin`) and marks
- * the write as its own (`materialized`), which the op forwards to `dispatchMutation` so the document is not retired.
+ * the write as its own (`materialized`). The op forwards the mark to `dispatchMutation` in its transaction, after the
+ * UPDATE, so the yjs module's handler records no outside write for it.
  */
 export type YjsMaterializer = (
   ctx: UserContext,
