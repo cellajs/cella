@@ -23,7 +23,7 @@ export async function startOauthServer(options: { port?: number; inProcess?: boo
   if (!options.inProcess) {
     otel.start();
     otel.verifyConnection();
-    if (env.NODE_ENV === 'development') await waitForBackend(2000, 60_000);
+    if (env.NODE_ENV === 'development') await waitForBackend(2000, 60_000, appConfig.devPorts.api);
   }
 
   await ensureSigningKeys();
