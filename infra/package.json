@@ -28,7 +28,7 @@
     "tsperf": "rm -rf tsconfig.tsbuildinfo && tsgo --noEmit --extendedDiagnostics"
   },
   "dependencies": {
-    "@aws-sdk/client-s3": "^3.1143.0",
+    "@aws-sdk/client-s3": "^3.1144.0",
     "@inquirer/core": "^12.0.3",
     "@inquirer/prompts": "^8.7.2",
     "@pulumi/pulumi": "^3.266.0",
@@ -42,7 +42,7 @@
     "@typescript/native-preview": "7.0.0-dev.20260707.2",
     "tsup": "^8.5.1",
     "tsx": "^4.23.15",
-    "typescript": "^6.0.3",
+    "typescript": "6.0.3",
     "vitest": "^5.0.3"
   }
 }
