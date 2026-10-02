@@ -1,5 +1,6 @@
 import type { ElementHandle, Page } from 'playwright';
 import type { Check } from '../findings.ts';
+import { writePacketFile } from '../review-packet.ts';
 import { overlaySelector } from '../scope.ts';
 import { devOnlySelectors } from '../session.ts';
 
@@ -10,6 +11,9 @@ const withoutHash = (url: string) => url.split('#')[0];
 interface Stop {
   key: string;
   name: string;
+  /** Top-left corner on the page, to compare the Tab order with the visual order. */
+  x: number;
+  y: number;
   obscured: boolean;
   coveredBy: string;
   /** Inside the overlay that was open when the walk started; null when no overlay was open. */
@@ -60,7 +64,8 @@ function readFocus(page: Page, devOnly: string[]) {
         'input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]), textarea, [contenteditable="true"]',
       );
       const kind = `${el.tagName}|${el.getAttribute('role') ?? ''}|${el.getAttribute('class') ?? ''}`;
-      return { key: parts.join('>'), name: `${el.tagName.toLowerCase()} "${name}"`, obscured, coveredBy, inOverlay, editable, kind };
+      const [x, y] = [Math.round(rect.left + window.scrollX), Math.round(rect.top + window.scrollY)];
+      return { key: parts.join('>'), name: `${el.tagName.toLowerCase()} "${name}"`, x, y, obscured, coveredBy, inOverlay, editable, kind };
     },
     [devOnly, overlaySelector] as const,
   );
@@ -108,6 +113,7 @@ export const keyboardWalk: Check = async (page, state) => {
   const seen = new Set<string>();
   const shotKinds = new Set<string>();
   const order: string[] = [];
+  const stops: { name: string; x: number; y: number }[] = [];
   const overlayOpen = (await page.locator(overlaySelector).count()) > 0;
 
   // The element focus just left, to compare its focused look with how it looks now. Blurring it would not do: a grid
@@ -151,6 +157,7 @@ export const keyboardWalk: Check = async (page, state) => {
     if (seen.has(stop.key)) break; // Wrapped around: every stop has been visited
     seen.add(stop.key);
     order.push(stop.name);
+    stops.push({ name: stop.name, x: stop.x, y: stop.y });
     if (stop.obscured) obscured.push(`${stop.name} is covered by ${stop.coveredBy}`);
     // A text field shows focus with its caret, which screenshots hide
     if (stop.editable || shotKinds.has(stop.kind)) continue;
@@ -185,6 +192,8 @@ export const keyboardWalk: Check = async (page, state) => {
       );
     if (!closed) traps.push('Escape does not close the open overlay');
   }
+
+  writePacketFile(state.id, 'tab-order.json', `${JSON.stringify(stops, null, 2)}\n`);
 
   const probe = { check: 'probe:keyboard' };
   const unique = (list: string[]) => [...new Set(list)];

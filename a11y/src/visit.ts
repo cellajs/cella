@@ -6,6 +6,7 @@ import { layout } from './probes/layout.ts';
 import { statusMessages, tooltips } from './probes/overlays.ts';
 import { languageSwitch, pageStructure } from './probes/page-structure.ts';
 import { shortcutsOff } from './probes/shortcuts.ts';
+import { reviewPacket } from './review-packet.ts';
 import { ensureOpen, type ScopeState } from './scope.ts';
 import { type Mode, newContext, openPage, resolvePath, type Session } from './session.ts';
 
@@ -43,6 +44,7 @@ export async function visitState(session: Session, state: ScopeState, mode: Mode
     if (parts.probes) for (const check of [statusMessages, pageStructure, inputs]) await run(check);
     const scan = parts.axe ? await axeScan(page, where) : null;
     if (parts.probes) {
+      await run(reviewPacket);
       await run(layout);
       await run(tooltips);
       await ensureOpen(page, state);

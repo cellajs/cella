@@ -28,6 +28,7 @@ All URLs come from the app config, so the audit follows whatever ports the stack
 | `pnpm a11y --only axe` | Refresh some parts only (`axe`, `probes`, `code`); the other parts' evidence is kept |
 | `pnpm a11y --workers 2` | States audited at the same time (default 4); lower it on a busy machine |
 | `pnpm -C a11y report` | Render the ledger as a draft VPAT and a checklist for the manual pass |
+| `pnpm -C a11y decide --file decisions.json` | Record a reviewer's decisions (an agent's or a person's) with their evidence |
 
 A visit that fails (a page that redirects, a check that cannot run) is reported, the command exits with an error, and
 the run writes `ledger-partial.json`: an incomplete run never replaces the ledger.
@@ -52,8 +53,23 @@ the run writes `ledger-partial.json`: an incomplete run never replaces the ledge
 
 Each criterion in [criteria.ts](src/criteria.ts) names its checks: `axe`, a browser `probe`, a `code` check or
 `manual`. Any failure makes the row Partially Supports. A row becomes Supports or Not Applicable only when all its
-checks ran and none of them is manual. Everything else stays open until a person decides it: set `status` and
-`remarks` in the ledger and set `decidedBy` to `"human"`.
+checks ran and none of them is manual. Everything else stays open until a reviewer decides it.
+
+## Reviewing the open rows
+
+Every full run leaves a packet per state in `a11y/results/review/`: a screenshot, the accessibility tree, facts about
+the page and the Tab order. A reviewer judges the open criteria from those, the source and the live app, and records
+each decision with its evidence through `decide`.
+
+- **An agent** follows the `a11y-review` skill ([cella/skills/a11y-review](../cella/skills/a11y-review/SKILL.md)). Its
+  decision is stored as `decidedBy: "agent"` and marked in the draft report: provisional until a person confirms it.
+  Agents find most real failures and also report some that are not there, and a missed failure would publish a
+  wrong Supports.
+- **A person** confirms the agent's rows and decides what needs assistive technology (`--by human`).
+  `a11y/results/manual-pass.md` lists both.
+
+A reviewer's decision survives later runs. If the audit later finds a failure on a row a reviewer called Supports, the
+row goes back to Partially Supports.
 
 ## Scope
 
