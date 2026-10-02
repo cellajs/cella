@@ -5,13 +5,13 @@ import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { isRecognizedBrowser } from '#/modules/auth/devices/operations/recognized-browser';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
-import { linkHandlers } from '#/modules/auth/general/helpers/link-handlers';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
 import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accept-invitation-token';
 import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
 import { startImpersonationOp, stopImpersonationOp } from '#/modules/auth/sessions/operations/impersonation';
 import { signOutOp } from '#/modules/auth/sessions/operations/sign-out';
 import '#/modules/auth/sessions/session-listeners';
+import { openLinkToken } from '#/modules/auth/tokens/operations/open-link-token';
 import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
 import { defaultHook } from '#/utils/default-hook';
@@ -36,7 +36,7 @@ app.openapi(authGeneralRoutes.checkEmail, async (ctx) => {
 
 app.openapi(authGeneralRoutes.invokeToken, async (ctx) => {
   const { token, type: tokenType } = ctx.req.valid('param');
-  return linkHandlers[tokenType](ctx, token);
+  return openLinkToken(ctx, tokenType, token);
 });
 
 app.openapi(authGeneralRoutes.getTokenData, async (ctx) => {

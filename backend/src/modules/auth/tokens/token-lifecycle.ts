@@ -1,88 +1,67 @@
-import { and, eq, gt, isNull, or, type SQL, sql } from 'drizzle-orm';
 import type { Context } from 'hono';
 import type { TokenType } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext, Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb, type DbOrTx, type Tx } from '#/db/db';
+import { baseDb, type Tx } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
-import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
-import { type CookieTokenType, type LinkTokenType, type TokenReplacement, tokenPolicies } from '#/modules/auth/tokens/token-policies';
-import { type TokenRecord, tokenColumns } from '#/modules/auth/tokens/tokens-queries';
-import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens-db';
+import { findLiveSession } from '#/modules/auth/sessions/sessions-queries';
+import { type CookieTokenType, type LinkTokenType, tokenPolicies } from '#/modules/auth/tokens/token-policies';
+import {
+  deleteBoundToken,
+  deleteReplacedTokens,
+  findBoundToken,
+  findLinkToken,
+  findTokenBySingleUse,
+  insertTokens,
+  type TokenRecord,
+  updateTokenRedeemed,
+  updateTokenUser,
+} from '#/modules/auth/tokens/tokens-queries';
+import type { InsertTokenModel } from '#/modules/auth/tokens-db';
 import { findUserByEmail } from '#/modules/user/user-queries';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
-import { getIsoDate } from '#/utils/iso-date';
 import { createDate } from '#/utils/time-span';
+
+/** Token reads and writes without a caller's transaction run on the base pool, whatever the route's context holds. */
+const dbCtx = { var: { db: baseDb } };
 
 /** What a new token records besides its secret and expiry, which issuing sets. */
 export type NewToken = Pick<InsertTokenModel, 'type' | 'email'> &
   Partial<Pick<InsertTokenModel, 'userId' | 'createdBy' | 'identityId' | 'inactiveMembershipId' | 'redirectPath' | 'pendingSignUp' | 'sessionId'>>;
 
-/** The subject each replacement rule names; undefined replaces nothing. See `tokenReplacements`. */
-const replacementSubjects = {
-  'address-or-account': (token) =>
-    token.userId ? or(eq(tokensTable.email, token.email), eq(tokensTable.userId, token.userId)) : eq(tokensTable.email, token.email),
-  identity: ({ identityId, pendingSignUp }) => {
-    if (identityId) return eq(tokensTable.identityId, identityId);
-    if (!pendingSignUp) return undefined;
-    return and(
-      sql`${tokensTable.pendingSignUp}->>'issuer' = ${pendingSignUp.issuer}`,
-      sql`${tokensTable.pendingSignUp}->>'subject' = ${pendingSignUp.subject}`,
-    );
-  },
-  invitation: (token) =>
-    token.inactiveMembershipId
-      ? eq(tokensTable.inactiveMembershipId, token.inactiveMembershipId)
-      : and(eq(tokensTable.email, token.email), isNull(tokensTable.inactiveMembershipId)),
-  account: (token) => (token.userId ? eq(tokensTable.userId, token.userId) : undefined),
-  session: (token) => (token.sessionId ? eq(tokensTable.sessionId, token.sessionId) : undefined),
-  none: () => undefined,
-} satisfies Record<TokenReplacement, (token: NewToken) => SQL | undefined>;
-
-/** The earlier tokens a new one replaces, by its type's `replaces` rule, so only the newest one for a subject works. */
-const replacedBy = (token: NewToken): SQL | undefined => {
-  const subject = replacementSubjects[tokenPolicies[token.type].replaces](token);
-  return subject && and(eq(tokensTable.type, token.type), subject);
-};
-
 /**
  * Issues tokens: a random raw value per token, stored only as its hash, expiring after its type's `ttl`. Each first
- * deletes the tokens it replaces (see `replacedBy`). Pass the caller's transaction in `ctx` when the issue must commit
- * with other writes.
+ * deletes the tokens it replaces (see `tokenReplacements`). Pass the caller's transaction in `ctx` when the issue must
+ * commit with other writes.
  * @returns Per token, in the given order: the stored row and the raw value. The raw value exists only here; it goes
  *   into the link or cookie that carries the token.
  */
 export const issueTokens = async (ctx: DbContext, tokens: NewToken[]): Promise<{ token: TokenRecord; rawToken: string }[]> => {
   if (!tokens.length) return [];
-  const { db } = ctx.var;
 
-  const replaced = tokens.map(replacedBy).filter((filter) => filter !== undefined);
-  if (replaced.length) await db.delete(tokensTable).where(or(...replaced));
+  await deleteReplacedTokens(ctx, { tokens });
 
   const issued = tokens.map((token) => ({ token, id: generateId(), rawToken: nanoid(40) }));
-  const rows = await db
-    .insert(tokensTable)
-    .values(
-      issued.map(({ token, id, rawToken }) => ({
-        id,
-        type: token.type,
-        email: token.email,
-        userId: token.userId ?? null,
-        createdBy: token.createdBy ?? null,
-        identityId: token.identityId ?? null,
-        inactiveMembershipId: token.inactiveMembershipId ?? null,
-        redirectPath: token.redirectPath ?? null,
-        pendingSignUp: token.pendingSignUp ?? null,
-        sessionId: token.sessionId ?? null,
-        secret: hashToken(rawToken),
-        expiresAt: createDate(tokenPolicies[token.type].ttl),
-      })),
-    )
-    .returning(tokenColumns);
+  const rows = await insertTokens(ctx, {
+    values: issued.map(({ token, id, rawToken }) => ({
+      id,
+      type: token.type,
+      email: token.email,
+      userId: token.userId ?? null,
+      createdBy: token.createdBy ?? null,
+      identityId: token.identityId ?? null,
+      inactiveMembershipId: token.inactiveMembershipId ?? null,
+      redirectPath: token.redirectPath ?? null,
+      pendingSignUp: token.pendingSignUp ?? null,
+      sessionId: token.sessionId ?? null,
+      secret: hashToken(rawToken),
+      expiresAt: createDate(tokenPolicies[token.type].ttl),
+    })),
+  });
 
   const rowsById = new Map(rows.map((row) => [row.id, row]));
   return issued.map(({ id, rawToken }) => {
@@ -103,7 +82,7 @@ export const issueToken = async (ctx: DbContext, token: NewToken) => {
  * type's `ttl`. The raw value lives only in that cookie.
  */
 export const issueCookieToken = async (ctx: Context<Env>, token: NewToken & { type: CookieTokenType }) => {
-  const { token: record, rawToken } = await issueToken({ var: { db: baseDb } }, token);
+  const { token: record, rawToken } = await issueToken(dbCtx, token);
   await setAuthCookie(ctx, token.type, rawToken, tokenPolicies[token.type].ttl);
   return record;
 };
@@ -123,7 +102,7 @@ const refuseOtherAccount = async (ctx: Context<Env>, type: LinkTokenType, token:
   if (!signedIn) return;
 
   const { user } = signedIn;
-  const ownerId = token.userId ?? (await findUserByEmail({ var: { db: baseDb } }, { email: token.email }))?.id;
+  const ownerId = token.userId ?? (await findUserByEmail(dbCtx, { email: token.email }))?.id;
   if (ownerId !== user.id) throw new AppError(409, 'user_mismatch', 'warn');
 };
 
@@ -135,19 +114,9 @@ const heldByThisBrowser = async (ctx: Context<Env>, token: TokenRecord) => {
   const cookie = await getAuthCookie(ctx, token.type);
   if (!cookie) return null;
 
-  const [held] = await baseDb
-    .select(tokenColumns)
-    .from(tokensTable)
-    .where(and(eq(tokensTable.id, token.id), eq(tokensTable.singleUseToken, hashToken(cookie))))
-    .limit(1);
+  const held = await findTokenBySingleUse(dbCtx, { id: token.id, cookie });
   return held && !isExpiredDate(held.expiresAt) ? held : null;
 };
-
-interface LinkTokenOpts {
-  type: LinkTokenType;
-  /** The raw value from the link. */
-  rawToken: string;
-}
 
 /**
  * Settles the account of a link issued without one, in the transaction that redeems it, and returns its user id: the
@@ -155,26 +124,13 @@ interface LinkTokenOpts {
  */
 export type ClaimTokenOwner = (tx: Tx, token: TokenRecord) => Promise<string>;
 
-interface InvokeTokenOpts extends LinkTokenOpts {
+interface InvokeTokenOpts {
+  type: LinkTokenType;
+  /** The raw value from the link. */
+  rawToken: string;
   /** For a link issued without an account (a sign-up link); runs only in the redemption that wins. */
   claimOwner?: ClaimTokenOwner;
 }
-
-/** The link token a raw value names, read without redeeming it; undefined when there is none. */
-export const findLinkToken = async ({ type, rawToken }: LinkTokenOpts): Promise<TokenRecord | undefined> => {
-  const [token] = await baseDb
-    .select(tokenColumns)
-    .from(tokensTable)
-    .where(and(eq(tokensTable.secret, hashToken(rawToken)), eq(tokensTable.type, type)))
-    .limit(1);
-  return token;
-};
-
-/** Deletes the unopened link a raw value names, so neither its URL nor a confirmation page can redeem it any more. */
-export const withdrawLinkToken = async ({ type, rawToken }: LinkTokenOpts) => {
-  const secret = hashToken(rawToken);
-  await baseDb.delete(tokensTable).where(and(eq(tokensTable.secret, secret), eq(tokensTable.type, type), isNull(tokensTable.invokedAt)));
-};
 
 /**
  * Redeems a link token (a magic link, an invitation or a verification link) from the raw value in its URL. The first
@@ -189,7 +145,7 @@ export const withdrawLinkToken = async ({ type, rawToken }: LinkTokenOpts) => {
 export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimOwner }: InvokeTokenOpts): Promise<TokenRecord> => {
   const { singleUseWindow } = tokenPolicies[type];
 
-  const token = await findLinkToken({ type, rawToken });
+  const token = await findLinkToken(dbCtx, { type, rawToken });
   if (!token) throw new AppError(401, `${type}_not_found`, 'warn');
 
   await refuseOtherAccount(ctx, type, token);
@@ -204,29 +160,19 @@ export const invokeToken = async (ctx: Context<Env>, { type, rawToken, claimOwne
 
   // Compare-and-set on `invokedAt IS NULL`: of two concurrent redemptions exactly one binds a browser.
   const rawSingleUse = nanoid(40);
-  const redeem = async (db: DbOrTx) => {
-    const [redeemed] = await db
-      .update(tokensTable)
-      .set({
-        // Hash at rest: the raw value lives only in the browser's cookie.
-        singleUseToken: hashToken(rawSingleUse),
-        invokedAt: getIsoDate(),
-        expiresAt: createDate(singleUseWindow),
-      })
-      .where(and(eq(tokensTable.id, token.id), isNull(tokensTable.invokedAt)))
-      .returning(tokenColumns);
-    return redeemed;
-  };
+  const redeem = (redeemCtx: DbContext) =>
+    // Hash at rest: the raw value lives only in the browser's cookie.
+    updateTokenRedeemed(redeemCtx, { id: token.id, singleUseToken: hashToken(rawSingleUse), expiresAt: createDate(singleUseWindow) });
 
   const redeemed =
     token.userId || !claimOwner
-      ? await redeem(baseDb)
+      ? await redeem(dbCtx)
       : await baseDb.transaction(async (tx) => {
-          const won = await redeem(tx);
+          const txCtx = { var: { db: tx } };
+          const won = await redeem(txCtx);
           if (!won) return won;
           const userId = await claimOwner(tx, won);
-          const [owned] = await tx.update(tokensTable).set({ userId }).where(eq(tokensTable.id, won.id)).returning(tokenColumns);
-          return owned;
+          return updateTokenUser(txCtx, { id: won.id, userId });
         });
 
   if (redeemed) {
@@ -259,20 +205,6 @@ export const requestedHere = async (ctx: Context<Env>, type: RequestedLinkType, 
 export const forgetLinkRequest = (ctx: Context<Env>, type: RequestedLinkType) => deleteAuthCookie(ctx, `${type}-requested`);
 
 /**
- * Names the row a browser's cookie of `type` binds it to, by the hash of the cookie's value: after a link's redemption
- * the cookie holds its single-use value, a cookie-carried token's cookie holds the token itself.
- */
-const boundTo = (type: TokenType, cookie: string) => {
-  const hashedColumn = tokenPolicies[type].carrier === 'link' ? tokensTable.singleUseToken : tokensTable.secret;
-  return and(eq(tokensTable.type, type), eq(hashedColumn, hashToken(cookie)));
-};
-
-const selectBoundToken = async (type: TokenType, cookie: string) => {
-  const [token] = await baseDb.select(tokenColumns).from(tokensTable).where(boundTo(type, cookie)).limit(1);
-  return token;
-};
-
-/**
  * The live token this browser's cookie of `type` binds it to: a redeemed link (invitation, verification) or a
  * cookie-carried token (a second-factor challenge), for a flow that cannot go on without it. Reads only; nothing is
  * spent.
@@ -281,26 +213,25 @@ const selectBoundToken = async (type: TokenType, cookie: string) => {
  */
 export const readBoundToken = async (ctx: Context<Env>, type: TokenType): Promise<TokenRecord> => {
   const cookie = await getAuthCookie(ctx, type);
-  const token = cookie ? await selectBoundToken(type, cookie) : undefined;
+  const token = cookie ? await findBoundToken(dbCtx, { type, cookie }) : undefined;
   if (!token) throw new AppError(401, `${type}_not_found`, 'warn');
   if (isExpiredDate(token.expiresAt)) throw expired(token);
 
   return token;
 };
 
-interface SpendCookieTokenOpts {
-  /**
-   * The caller's transaction, when the spend must commit with its other writes. The cookie is then the caller's to
-   * delete once the transaction has committed: a rollback leaves the browser its token for the next attempt.
-   */
-  db?: DbOrTx;
-}
+/**
+ * When the spend deletes this browser's cookie. `now`: the spend runs on the pool and is final at once. `after-commit`:
+ * the spend runs in the caller's transaction, final only at its commit, so the cookie is the caller's to delete then;
+ * a rollback leaves the browser its token for the next attempt.
+ */
+type SpendCookieTokenOpts = { deleteCookie: 'now' } | { deleteCookie: 'after-commit'; txCtx: DbContext };
 
 /**
- * Spends the token this browser's cookie of `type` binds it to: deletes its row and, on the pool, the cookie. A flow
- * that grants something for the spend, such as a session after a second factor, goes on only with the returned row: of
- * two concurrent completions exactly one gets it. Call it once the proof has succeeded; a failed attempt leaves the
- * token for the next try.
+ * Spends the token this browser's cookie of `type` binds it to: deletes its row and, with `deleteCookie: 'now'`, the
+ * cookie. A flow that grants something for the spend, such as a session after a second factor, goes on only with the
+ * returned row: of two concurrent completions exactly one gets it. Call it once the proof has succeeded; a failed
+ * attempt leaves the token for the next try.
  * A token issued for one session serves only that session: once it has ended, the token is spent without granting.
  * @returns The spent token, or null when there was nothing live to spend (no cookie, never issued, spent or expired,
  *   or its session has ended).
@@ -308,25 +239,15 @@ interface SpendCookieTokenOpts {
 export const spendCookieToken = async (
   ctx: Context<Env>,
   type: TokenType,
-  { db = baseDb }: SpendCookieTokenOpts = {},
+  opts: SpendCookieTokenOpts = { deleteCookie: 'now' },
 ): Promise<TokenRecord | null> => {
+  const spendCtx = opts.deleteCookie === 'after-commit' ? opts.txCtx : dbCtx;
   const cookie = await getAuthCookie(ctx, type);
-  // On a transaction the spend is final only at its commit, so the cookie stays until the caller deletes it then.
-  if (db === baseDb) deleteAuthCookie(ctx, type);
+  if (opts.deleteCookie === 'now') deleteAuthCookie(ctx, type);
   if (!cookie) return null;
 
-  const [spent] = await db.delete(tokensTable).where(boundTo(type, cookie)).returning(tokenColumns);
+  const spent = await deleteBoundToken(spendCtx, { type, cookie });
   if (!spent || isExpiredDate(spent.expiresAt)) return null;
-  if (spent.sessionId && !(await isLiveSession(db, spent.sessionId))) return null;
+  if (spent.sessionId && !(await findLiveSession(spendCtx, { id: spent.sessionId }))) return null;
   return spent;
-};
-
-/** Whether a session is still live: neither revoked nor expired. */
-const isLiveSession = async (db: DbOrTx, sessionId: string) => {
-  const [live] = await db
-    .select({ id: sessionsTable.id })
-    .from(sessionsTable)
-    .where(and(eq(sessionsTable.id, sessionId), isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, getIsoDate())))
-    .limit(1);
-  return !!live;
 };

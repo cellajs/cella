@@ -4,11 +4,12 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { updateSessionSteppedUp } from '#/modules/auth/sessions/sessions-queries';
-import { findLinkToken, forgetLinkRequest, invokeToken, requestedHere } from '#/modules/auth/tokens/token-lifecycle';
+import { forgetLinkRequest, invokeToken, requestedHere } from '#/modules/auth/tokens/token-lifecycle';
+import { findLinkToken } from '#/modules/auth/tokens/tokens-queries';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { log } from '#/utils/logger';
 
-/** The stamp is written on the base pool, whatever the route's context holds. */
+/** The link is read and the stamp written on the base pool, whatever the route's context holds. */
 const dbCtx = { var: { db: baseDb } };
 
 /**
@@ -19,7 +20,7 @@ const dbCtx = { var: { db: baseDb } };
  *   session behind it ended.
  */
 export const openStepUpLink = async (ctx: Context<Env>, rawToken: string) => {
-  const token = await findLinkToken({ type: 'step-up', rawToken });
+  const token = await findLinkToken(dbCtx, { type: 'step-up', rawToken });
   if (!token) throw new AppError(401, 'step-up_not_found', 'warn');
   if (!(await requestedHere(ctx, 'step-up', token.id))) throw new AppError(403, 'step_up_other_browser', 'warn');
 

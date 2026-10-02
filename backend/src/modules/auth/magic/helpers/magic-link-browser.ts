@@ -2,10 +2,15 @@ import type { Context } from 'hono';
 import { appConfig } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
+import { baseDb } from '#/db/db';
 import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { findLinkToken, requestedHere, withdrawLinkToken } from '#/modules/auth/tokens/token-lifecycle';
+import { requestedHere } from '#/modules/auth/tokens/token-lifecycle';
+import { deleteUnopenedLinkToken, findLinkToken } from '#/modules/auth/tokens/tokens-queries';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { TimeSpan } from '#/utils/time-span';
+
+/** Magic links are read on the base pool, whatever the route's context holds. */
+const dbCtx = { var: { db: baseDb } };
 
 /** How long a link opened in another browser waits for its holder to confirm. */
 const heldLinkLifetime = new TimeSpan(10, 'm');
@@ -15,7 +20,7 @@ export const confirmSignInPath = '/auth/confirm-sign-in';
 
 /** The unopened, unexpired magic link a raw value names, or undefined. */
 export const findOpenableMagicLink = async (rawToken: string) => {
-  const token = await findLinkToken({ type: 'magic', rawToken });
+  const token = await findLinkToken(dbCtx, { type: 'magic', rawToken });
   if (!token) throw new AppError(401, 'magic_not_found', 'warn');
   if (token.invokedAt || isExpiredDate(token.expiresAt)) throw new AppError(401, 'magic_expired', 'warn');
   return token;
@@ -29,7 +34,7 @@ export const findOpenableMagicLink = async (rawToken: string) => {
  */
 export const explainOpenedMagicLink = async (err: unknown, rawToken: string): Promise<never> => {
   if (err instanceof AppError && err.type === 'magic_expired') {
-    const token = await findLinkToken({ type: 'magic', rawToken });
+    const token = await findLinkToken(dbCtx, { type: 'magic', rawToken });
     if (token?.invokedAt && !isExpiredDate(token.expiresAt)) throw new AppError(401, 'magic_opened', 'info');
   }
   throw err;
@@ -42,7 +47,7 @@ export const explainOpenedMagicLink = async (err: unknown, rawToken: string): Pr
  * scanner, signs nobody in and is not used up. Returns the redirect to that page, or null to open the link directly.
  */
 export const holdMagicLinkOutsideItsBrowser = async (ctx: Context<Env>, rawToken: string) => {
-  const token = await findLinkToken({ type: 'magic', rawToken });
+  const token = await findLinkToken(dbCtx, { type: 'magic', rawToken });
   // An unknown link takes the direct path, which refuses it the same way it always has. So does an opened one: only the
   // browser holding that link's own single-use cookie gets back in, and a `magic` cookie from any other link does not.
   if (!token || token.invokedAt) return null;
@@ -61,5 +66,5 @@ export const dropHeldMagicLink = async (ctx: Context<Env>) => {
   const rawToken = await getAuthCookie(ctx, 'magic-pending');
   if (!rawToken) return;
   deleteAuthCookie(ctx, 'magic-pending');
-  await withdrawLinkToken({ type: 'magic', rawToken });
+  await deleteUnopenedLinkToken(dbCtx, { type: 'magic', rawToken });
 };

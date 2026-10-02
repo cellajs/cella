@@ -276,7 +276,7 @@ const completeSignUp = async ({
     if (!(await maySignUp({ var: { db: tx } }, { email }))) throw new AppError(403, 'sign_up_restricted', 'info');
 
     // Of two concurrent completions only the one that spends the verification creates the account.
-    const spent = await spendCookieToken(ctx, 'oauth-verification', { db: tx });
+    const spent = await spendCookieToken(ctx, 'oauth-verification', { deleteCookie: 'after-commit', txCtx: { var: { db: tx } } });
     if (spent?.id !== verifyToken.id) throw new AppError(401, 'oauth-verification_expired', 'warn');
 
     const { name, slug, firstName } = signUp;
