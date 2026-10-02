@@ -1,7 +1,7 @@
 import type { ChannelEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
-import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
+import { resendInvitationEmail } from '#/modules/auth/invitations/operations/resend-invitation';
 import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
 import { sendInvitationMails } from '#/modules/memberships/helpers/invitation-mail';
 import type { InactiveMembershipModel } from '#/modules/memberships/inactive-memberships-db';

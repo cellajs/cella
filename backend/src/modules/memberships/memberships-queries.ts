@@ -156,6 +156,36 @@ export const updateInactiveMembershipToken = async (ctx: DbContext, { id, tokenI
   return db.update(inactiveMembershipsTable).set({ tokenId }).where(eq(inactiveMembershipsTable.id, id));
 };
 
+interface FindPendingInactiveMembershipOpts {
+  id: string;
+  /** Lock the row for the caller's transaction, so a concurrent answer, rejection or resend waits for it. */
+  forUpdate?: boolean;
+}
+
+/** A membership invitation by id while it stands: not rejected. */
+export const findPendingInactiveMembership = async (ctx: DbContext, { id, forUpdate = false }: FindPendingInactiveMembershipOpts) => {
+  const query = ctx.var.db
+    .select()
+    .from(inactiveMembershipsTable)
+    .where(and(eq(inactiveMembershipsTable.id, id), isNull(inactiveMembershipsTable.rejectedAt)));
+  const [invitation] = forUpdate ? await query.for('update') : await query;
+  return invitation;
+};
+
+interface FindPendingInactiveMembershipByEmailOpts {
+  email: string;
+}
+
+/** A membership invitation to the address that stands, not rejected; undefined when none does. */
+export const findPendingInactiveMembershipByEmail = async (ctx: DbContext, { email }: FindPendingInactiveMembershipByEmailOpts) => {
+  const [invitation] = await ctx.var.db
+    .select({ id: inactiveMembershipsTable.id })
+    .from(inactiveMembershipsTable)
+    .where(and(eq(inactiveMembershipsTable.email, email), isNull(inactiveMembershipsTable.rejectedAt)))
+    .limit(1);
+  return invitation;
+};
+
 interface FindMembershipByIdInOrgOpts {
   membershipId: string;
 }

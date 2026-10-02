@@ -4,7 +4,7 @@ import { generateId } from 'shared/utils/entity-id';
 import type { Env } from '#/core/context';
 import { baseDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
-import { maySignUp } from '#/modules/auth/auth-queries';
+import { maySignUp } from '#/modules/auth/invitations/operations/may-sign-up';
 import { issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import { findUserByEmail } from '#/modules/user/user-queries';
