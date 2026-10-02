@@ -1,11 +1,12 @@
-import { onlineManager, useMutation, useSuspenseQuery } from '@tanstack/react-query';
+import { onlineManager, useMutation, useQuery, useSuspenseQuery } from '@tanstack/react-query';
+import { useSearch } from '@tanstack/react-router';
 import { BuildingIcon, CheckIcon, TrashIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { startOAuthConnect, type User } from 'sdk';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
 import { mapOAuthProviders } from '~/modules/auth/oauth-providers';
-import { ssoStartUrl } from '~/modules/auth/sso-providers';
+import { ssoEntryQueryOptions, ssoStartUrl } from '~/modules/auth/sso-providers';
 import { withStepUp } from '~/modules/auth/step-up';
 import type { CallbackArgs } from '~/modules/common/data-table/types';
 import { useDialoger } from '~/modules/common/dialoger/use-dialoger';
@@ -19,6 +20,7 @@ import { PasskeysList } from '~/modules/me/passkeys/list';
 import { meAuthQueryOptions } from '~/modules/me/query';
 import { SessionsList } from '~/modules/me/sessions-list';
 import { Totp } from '~/modules/me/totp';
+import { Alert, AlertDescription } from '~/modules/ui/alert';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { UpdateUserForm } from '~/modules/user/update-user-form';
@@ -64,7 +66,16 @@ export function AccountAuthenticationCard() {
   const { t } = useTranslation();
   const user = useCurrentUser();
   const { data: authData } = useSuspenseQuery(meAuthQueryOptions());
-  const { enabledOAuth, institutions } = authData;
+  const { enabledOAuth } = authData;
+
+  // An SSO recovery link lands here naming the connection to connect. The user need not be a member of its
+  // organization yet, so it is offered beside the institutions of their own organizations.
+  const { connect } = useSearch({ from: '/_app/account' });
+  const listed = authData.institutions.find((institution) => institution.connectionId === connect);
+  const { data: entry } = useQuery({ ...ssoEntryQueryOptions(connect ?? ''), enabled: !!connect && !listed });
+  const offered = entry?.status === 'active' ? { connectionId: entry.id, displayName: entry.institution.displayName, connected: false } : undefined;
+  const institutions = offered ? [...authData.institutions, offered] : authData.institutions;
+  const toConnect = [listed, offered].find((institution) => institution && !institution.connected);
 
   const [loadingProvider, setLoadingProvider] = useState<EnabledOAuthProvider | null>(null);
   const [connectingTo, setConnectingTo] = useState<string | null>(null);
@@ -202,6 +213,12 @@ export function AccountAuthenticationCard() {
                 <p className="font-semibold">{t('c:institution_accounts')}</p>
               </HelpText>
 
+              {toConnect && (
+                <Alert className="mb-3">
+                  <AlertDescription>{t('c:connect_institution_prompt.text', { institution: toConnect.displayName })}</AlertDescription>
+                </Alert>
+              )}
+
               <div className="mb-6 flex flex-col gap-3 sm:items-start">
                 {institutions.map((institution) =>
                   institution.connected ? (
@@ -214,7 +231,7 @@ export function AccountAuthenticationCard() {
                     <Button
                       key={institution.connectionId}
                       type="button"
-                      variant="plain"
+                      variant={institution.connectionId === toConnect?.connectionId ? 'default' : 'plain'}
                       loading={connectingTo === institution.connectionId}
                       onClick={() => {
                         if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));

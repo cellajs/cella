@@ -733,6 +733,30 @@
     "enabledBy": { "strategy": "sso" }
   },
   {
+    "id": "sendSsoRecoveryLink",
+    "hash": "tag/auth/POST/auth/sso/recovery-link",
+    "method": "post",
+    "path": "/auth/sso/recovery-link",
+    "tags": ["auth"],
+    "summary": "Send an SSO recovery link",
+    "description": "For a browser whose institution sign-in was refused because an account already holds the asserted address: mails a magic link to that address, which returns to the account page to connect the institution account. Takes no input; the browser holds the offer for ten minutes and spends it by asking.",
+    "deprecated": false,
+    "hasParams": false,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["spamLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    },
+    "enabledBy": { "strategy": "sso" }
+  },
+  {
     "id": "getStepUp",
     "hash": "tag/auth/GET/auth/step-up",
     "method": "get",

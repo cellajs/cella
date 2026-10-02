@@ -189,6 +189,7 @@ export const config = {
   federations: {
     surfconext: {
       label: 'SURFconext',
+      logo: '/static/auth/surfconext-logo.svg',
       issuer: 'https://connect.surfconext.nl',
       idpMetadataUrl: 'https://metadata.surfconext.nl/idps-metadata.xml',
       scopes: ['openid'],

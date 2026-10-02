@@ -1,16 +1,19 @@
 import { eq } from 'drizzle-orm';
-import { getSsoEntry, ssoCallback, startSso, startSsoFederation } from 'sdk';
+import { getSsoEntry, sendMagicLink, sendSsoRecoveryLink, ssoCallback, startSso, startSsoFederation } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { setUserSession } from '#/modules/auth/sessions/operations/create-session';
 import { resolveSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { exchangeFederationCode } from '#/modules/auth/sso/helpers/federation-client';
+import { roleFromClaims } from '#/modules/auth/sso/role-from-claims';
+import { tokensTable } from '#/modules/auth/tokens-db';
 import { connectionsTable, type InsertConnectionModel } from '#/modules/connections/connections-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import {
@@ -56,6 +59,11 @@ vi.mock('#/modules/auth/sso/helpers/federations', async (importOriginal) => {
       redirectUri: `${appConfig.backendAuthUrl}/sso/callback`,
     }),
   };
+});
+// The role seam is the app's to fill: a test stands in for an app's mapping, the default stays real.
+vi.mock('#/modules/auth/sso/role-from-claims', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/modules/auth/sso/role-from-claims')>();
+  return { ...actual, roleFromClaims: vi.fn(actual.roleFromClaims) };
 });
 vi.mock('#/modules/auth/general/helpers/cookie', async () => (await import('../test-utils')).cookieMock());
 vi.mock('#/modules/auth/sessions/operations/create-session', async (importOriginal) =>
@@ -234,7 +242,30 @@ describe('SSO sign-in through an institution', async () => {
     expect(await getUserByEmail(studentEmail)).toHaveLength(0);
 
     await createUser(studentEmail);
-    await expectRefusal(await signInThrough(connection.id), 409, 'oauth_email_exists');
+    await expectRefusal(await signInThrough(connection.id), 409, 'sso_email_exists');
+    expect(await identitiesOf((await getUserByEmail(studentEmail))[0].id)).toHaveLength(0);
+  });
+
+  it('the role of a granted membership comes from the role seam, which reads every claim of the sign-in', async () => {
+    const { organization, connection } = await seedConnection();
+    const claims = claimsOf({ eduperson_affiliation: ['employee', 'member'] });
+    vi.mocked(roleFromClaims).mockReturnValueOnce(adminRole);
+
+    expect((await signInThrough(connection.id, claims)).response.status).toBe(302);
+
+    const [user] = await getUserByEmail(studentEmail);
+    expect(await membershipsOf(user.id)).toMatchObject([{ channelId: organization.id, role: adminRole }]);
+    expect(vi.mocked(roleFromClaims).mock.calls.at(-1)?.[0]).toMatchObject({
+      federation: 'surfconext',
+      connection: { id: connection.id },
+      claims: { eduperson_affiliation: ['employee', 'member'] },
+    });
+
+    // A later sign-in keeps the role: the seam is not asked again.
+    const asked = vi.mocked(roleFromClaims).mock.calls.length;
+    expect((await signInThrough(connection.id, claimsOf())).response.status).toBe(302);
+    expect(vi.mocked(roleFromClaims).mock.calls).toHaveLength(asked);
+    expect(await membershipsOf(user.id)).toMatchObject([{ role: adminRole }]);
   });
 
   it('with provisioning off, only an invited address gets an account, and the invitation keeps its role', async () => {
@@ -311,6 +342,18 @@ describe('SSO sign-in through an institution', async () => {
       expect(lastSessionCall()).toEqual(['surfconext', 'regular', { connectionId: connection.id }]);
     });
 
+    it('grants the membership of a connect with the role the seam gives', async () => {
+      const { organization, connection } = await seedConnection();
+      const user = await createUser('l.jansen@hu.nl');
+      await pinConnect(user);
+      vi.mocked(roleFromClaims).mockReturnValueOnce(adminRole);
+
+      const started = (await start(connection.id, { type: 'connect' })).response;
+      expect((await finish(stateOf(started), claimsOf({ email: 'l.jansen@hu.nl' }))).response.status).toBe(302);
+
+      expect(await membershipsOf(user.id)).toMatchObject([{ channelId: organization.id, role: adminRole }]);
+    });
+
     it('refuses an institution account that belongs to another user, and a connect without a pin', async () => {
       const { connection } = await seedConnection();
       const holder = await createUser('holder@hu.nl');
@@ -323,6 +366,84 @@ describe('SSO sign-in through an institution', async () => {
       expect(await identitiesOf(user.id)).toHaveLength(0);
 
       expect((await start(connection.id, { type: 'connect' })).response.status).toBe(401);
+    });
+  });
+
+  describe('recovery: the asserted address already has an account', () => {
+    beforeAll(() => setTestConfig({ enabledAuthStrategies: ['passkey', 'magic', 'sso'] }));
+    afterAll(() => setTestConfig({ enabledAuthStrategies: ['passkey', 'sso'] }));
+
+    const recover = () => call(sendSsoRecoveryLink, { headers: defaultHeaders });
+    const magicTokensOf = (userId: string) => db.select().from(tokensTable).where(eq(tokensTable.userId, userId));
+    const requireSso = (tenantId: string) =>
+      db
+        .update(tenantsTable)
+        .set({ authStrategies: ['surfconext'] as never })
+        .where(eq(tenantsTable.id, tenantId));
+
+    it('offers one sign-in link to that address, which returns to connect the institution account', async () => {
+      const { connection } = await seedConnection();
+      const user = await createUser(studentEmail);
+
+      // Nothing to recover from before a sign-in at the institution collided.
+      await expectRefusal(await recover(), 401, 'sso_recovery_expired');
+
+      await expectRefusal(await signInThrough(connection.id), 409, 'sso_email_exists');
+      const sent = await recover();
+
+      expect(sent.response.status).toBe(200);
+      expect(sent.data).toEqual({ email: studentEmail });
+      expect(await magicTokensOf(user.id)).toMatchObject([
+        { type: 'magic', email: studentEmail, redirectPath: `/account?connect=${connection.id}#authentication` },
+      ]);
+
+      // Spent by asking: another link takes another sign-in at the institution.
+      await expectRefusal(await recover(), 401, 'sso_recovery_expired');
+      expect(await magicTokensOf(user.id)).toHaveLength(1);
+    });
+
+    it('keeps the offer while magic links are switched off', async () => {
+      const { connection } = await seedConnection();
+      await createUser(studentEmail);
+      await expectRefusal(await signInThrough(connection.id), 409, 'sso_email_exists');
+
+      setTestConfig({ enabledAuthStrategies: ['passkey', 'sso'] });
+      await expectRefusal(await recover(), 400, 'forbidden_strategy');
+      setTestConfig({ enabledAuthStrategies: ['passkey', 'magic', 'sso'] });
+
+      expect((await recover()).response.status).toBe(200);
+    });
+
+    it('recovers an account whose identifier at the institution changed, even where the tenant requires SSO', async () => {
+      const { organization, connection } = await seedConnection();
+      const user = await createUser(studentEmail);
+      await linkIdentity(user, { kind: 'sso', issuer: 'surfconext', subject: 'the-subject-before', connectionId: connection.id });
+      await db.update(emailsTable).set({ lastVerifiedVia: 'surfconext' }).where(eq(emailsTable.email, studentEmail));
+      await requireSso(organization.tenantId);
+
+      // The institution proved the address and its tenant excludes magic links: the address sends none on request.
+      await expectRefusal(await call(sendMagicLink, { body: { email: studentEmail }, headers: defaultHeaders }), 403, 'sso_required');
+
+      // The same person under a new subject collides with their own account; having signed in there, the link goes out.
+      await expectRefusal(await signInThrough(connection.id), 409, 'sso_email_exists');
+      expect((await recover()).response.status).toBe(200);
+      expect(await magicTokensOf(user.id)).toMatchObject([{ type: 'magic', email: studentEmail }]);
+    });
+
+    it('does not lift the policy for a sign-in through another institution', async () => {
+      const { organization, connection } = await seedConnection();
+      const other = await seedConnection({ displayName: 'Universiteit Utrecht', claimValues: ['uu.nl'] });
+      const user = await createUser(studentEmail);
+      await linkIdentity(user, { kind: 'sso', issuer: 'surfconext', subject: 'the-subject-before', connectionId: connection.id });
+      await db.update(emailsTable).set({ lastVerifiedVia: 'surfconext' }).where(eq(emailsTable.email, studentEmail));
+      await requireSso(organization.tenantId);
+
+      // An account at another connected institution that asserts the same address.
+      const refused = await signInThrough(other.connection.id, claimsOf({ sub: 'someone-at-uu', schac_home_organization: 'uu.nl' }));
+      await expectRefusal(refused, 409, 'sso_email_exists');
+
+      await expectRefusal(await recover(), 403, 'sso_required');
+      expect(await magicTokensOf(user.id)).toHaveLength(0);
     });
   });
 });
