@@ -42,14 +42,14 @@ export interface SpliceResult {
 
 /**
  * Applies an entity across org list caches by canonical-home placement: existing rows update in place, unknown rows enter only an unfiltered home list.
- * A parent move removes the cached row when `removeOnParentChannelChange` is set.
+ * A parent move removes the cached row when `removeOnParentChannelChange` is set; `rowFor` builds each list's row from its cached copy.
  */
 export function spliceEntityIntoListCaches(
   queryClient: QueryClient,
   entity: RoutableItemData,
-  opts: { removeOnParentChannelChange?: boolean } = {},
+  opts: { removeOnParentChannelChange?: boolean; rowFor?: (cachedItem: ItemData | undefined) => ItemData } = {},
 ): SpliceResult {
-  const { removeOnParentChannelChange = false } = opts;
+  const { removeOnParentChannelChange = false, rowFor } = opts;
   const { entityType, organizationId = null } = entity;
   const keys = getEntityQueryKeys(entityType);
   const homeChannelId = resolveHomeChannelId(entityType, entity);
@@ -74,7 +74,7 @@ export function spliceEntityIntoListCaches(
     const isHomeList = !!organizationId && !!homeChannelId && matchesCanonicalHome(queryKey, organizationId, homeChannelId);
     seen = seen || !!cachedItem;
     spliced ||= !cachedItem && isHomeList;
-    change(queryKey, [entity], cachedItem || !isHomeList ? 'update' : 'create');
+    change(queryKey, [rowFor ? rowFor(cachedItem) : entity], cachedItem || !isHomeList ? 'update' : 'create');
   }
 
   return { seen, spliced, sawFilteredList };

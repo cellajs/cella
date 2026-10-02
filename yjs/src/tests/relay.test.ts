@@ -3,6 +3,7 @@ import * as Y from 'yjs';
 import type { DocScope } from '../constants';
 import {
   awarenessClientIds,
+  awarenessEntries,
   awarenessUpdate,
   buildAwarenessMessage,
   buildSyncStep1,
@@ -19,6 +20,7 @@ import {
   mockSocketContext,
   mockWebSocket,
   readMap,
+  savedFrame,
   storageKey,
   undecodableUpdate,
 } from './helpers';
@@ -33,7 +35,7 @@ vi.mock('../data/entity-content', () => ({ loadEntityDescription: vi.fn().mockRe
 
 vi.mock('../sync/materialize', () => ({ postMaterialize: vi.fn().mockResolvedValue('ok'), stateToBlocksJson: vi.fn(() => '[]') }));
 
-const { handleMessage, peekMessageType, runCompaction } = await import('../sync/relay');
+const { handleLeave, handleMessage, peekMessageType, runCompaction } = await import('../sync/relay');
 const { loadEntityDescription } = await import('../data/entity-content');
 const { postMaterialize } = await import('../sync/materialize');
 const { yUpdateToBlocks } = await import('../lib/blocknote-seed');
@@ -271,13 +273,15 @@ describe('handleMessage: sync update', () => {
     const done = handleMessage(c, ws as never, raw);
     await flushMicrotasks();
     expect(peer.sent).toHaveLength(0);
+    expect(ws.sent).toHaveLength(0);
     gate.release();
     await done;
 
     expect(storage.logs.get(key)).toHaveLength(1);
     expect(storage.logs.get(key)?.[0].userId).toBe(c.userId);
     expect(peer.sent[0]).toEqual(raw);
-    expect(ws.sent).toHaveLength(0);
+    // The sender gets no copy of its update, only word that it is logged.
+    expect(ws.sent).toEqual([savedFrame]);
     leaveCollab(collab.scope, peer as never);
   });
 
@@ -394,6 +398,125 @@ describe('handleMessage: sync update', () => {
   });
 });
 
+describe('handleMessage: Saved', () => {
+  const step1 = () => buildSyncStep1(Y.encodeStateVector(new Y.Doc()));
+
+  it('tells the sender alone, once the update is logged', async () => {
+    const { ctx: c, scope, key, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+
+    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(ws.sent).toEqual([savedFrame]);
+    expect(peer.sent.map(peekMessageType)).toEqual([0]);
+    leaveCollab(collab.scope, peer as never);
+  });
+
+  it('answers a Step2 that carries nothing, which logs nothing', async () => {
+    const { ctx: c, ws } = session();
+    await handleMessage(c, ws as never, buildSyncStep2());
+    expect(storage.appendUpdate).not.toHaveBeenCalled();
+    expect(ws.sent).toEqual([savedFrame]);
+  });
+
+  it('answers an update dropped while the reply that carries it is pending, and the reply after it', async () => {
+    const { ctx: c, key, ws } = session();
+    await handleMessage(c, ws as never, step1());
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('early', 1)));
+    expect(storage.appendUpdate).not.toHaveBeenCalled();
+    expect(ws.sent.slice(3)).toEqual([savedFrame]);
+
+    await handleMessage(c, ws as never, buildSyncStep2(mapUpdate('early', 1)));
+    expect(storage.logs.get(key)?.map((row) => readMap(row.payload))).toEqual([{ early: 1 }]);
+    expect(ws.sent.slice(3)).toEqual([savedFrame, savedFrame]);
+  });
+
+  it('must not answer a Step1: the handshake answer is the generation, a Step2 and a Step1', async () => {
+    const { ctx: c, ws } = session();
+    await handleMessage(c, ws as never, step1());
+    await handleMessage(c, ws as never, step1());
+    expect(ws.sent.map(peekMessageType)).toEqual([4, 0, 0, 4, 0, 0]);
+  });
+
+  it('must not answer a frame it refuses: the socket closes with 4400 and is told nothing', async () => {
+    // An update and a reply Yjs cannot decode, a sync payload cut short, a message type cut short.
+    const refused = [
+      buildSyncUpdate(undecodableUpdate),
+      buildSyncStep2(undecodableUpdate),
+      new Uint8Array([0, 2, 0x85]),
+      new Uint8Array([0x80, 0x80]),
+    ];
+    for (const frame of refused) {
+      const { ctx: c, ws } = session();
+      await handleMessage(c, ws as never, frame);
+      expect(ws.closed?.code).toBe(4400);
+      expect(ws.sent).toEqual([]);
+    }
+  });
+
+  it('must not answer an update a retired document took no part of: the session ends with 1013 and its socket is told nothing', async () => {
+    const { ctx: c, scope, key, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+    await handleMessage(c, ws as never, step1());
+    await handleMessage(c, ws as never, buildSyncStep2());
+    ws.sent.length = 0;
+
+    // The description was written outside the relay, which retired the document: the append finds no row of its generation.
+    storage.bases.delete(key);
+    storage.generations.delete(key);
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+
+    expect(storage.logs.get(key)).toBeUndefined();
+    expect(ws.closed).toEqual({ code: 1013, reason: 'Document retired' });
+    expect(ws.sent).toEqual([]);
+    expect(peer.sent).toEqual([]);
+    expect(getCollab(collab.scope)).toBeUndefined();
+  });
+
+  it('must not answer an update logged while its session ended: that generation is void', async () => {
+    const { ctx: c, key, ws, collab } = session();
+    await handleMessage(c, ws as never, step1());
+    await handleMessage(c, ws as never, buildSyncStep2());
+    ws.sent.length = 0;
+    const gate = deferred();
+    gates.set('appendUpdate', gate.promise);
+
+    const done = handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+    await flushMicrotasks();
+    endCollab(collab);
+    gate.release();
+    await done;
+
+    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(ws.sent).toEqual([]);
+  });
+
+  it('must not answer an update whose append failed', async () => {
+    const { ctx: c, ws } = session();
+    storage.appendUpdate.mockRejectedValueOnce(new Error('db down'));
+    await expect(handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)))).rejects.toThrow('db down');
+    expect(ws.sent).toEqual([]);
+  });
+
+  it('must not send to a socket that closed while its update was logged', async () => {
+    const { ctx: c, key, ws } = session();
+    const gate = deferred();
+    gates.set('appendUpdate', gate.promise);
+    const done = handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+    await flushMicrotasks();
+    ws.close(1000);
+    gate.release();
+    await done;
+
+    // Queued before the close, the update still reaches the log.
+    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(ws.sent).toEqual([]);
+  });
+});
+
 describe('handleMessage: awareness', () => {
   it('is broadcast to peers from a verified socket and rate limited per client', async () => {
     const { ctx: c, scope, ws, collab } = session();
@@ -456,14 +579,14 @@ describe('handleMessage: awareness', () => {
   });
 });
 
-describe('handleMessage: awareness ownership', () => {
-  /** A socket joined to the session under its own user. */
-  const joined = (scope: DocScope, userId: string) => {
-    const ws = mockWebSocket();
-    joinCollab(scope, ws as never);
-    return { ws, ctx: mockSocketContext({ userId, requested: scope }) };
-  };
+/** A socket joined to the session under its own user. */
+function joined(scope: DocScope, userId: string) {
+  const ws = mockWebSocket();
+  joinCollab(scope, ws as never);
+  return { ws, ctx: mockSocketContext({ userId, requested: scope }) };
+}
 
+describe('handleMessage: awareness ownership', () => {
   it("must not relay a presence state for another user's client", async () => {
     const { scope, collab } = session();
     const peer = joined(scope, 'user-peer');
@@ -624,6 +747,98 @@ describe('handleMessage: awareness ownership', () => {
   });
 });
 
+describe('handleLeave: presence', () => {
+  /** Announces presence entries from a socket, past the rate limit. */
+  async function announce(socket: ReturnType<typeof joined>, ...entries: Parameters<typeof awarenessUpdate>) {
+    vi.advanceTimersByTime(600);
+    await handleMessage(socket.ctx, socket.ws as never, buildAwarenessMessage(awarenessUpdate(...entries)));
+  }
+
+  it('removes the clients a leaving socket held from the sockets that stay, one clock past the last relayed', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const editor = joined(scope, 'user-editor');
+    await announce(editor, { clientId: 10, clock: 1 }, { clientId: 11, clock: 4 });
+    await announce(editor, { clientId: 10, clock: 6 });
+    const before = editor.ws.sent.length;
+
+    handleLeave(scope, editor.ws as never);
+
+    expect(awarenessEntries(peer.ws.sent.at(-1)!)).toEqual([
+      { clientId: 10, clock: 7, state: null },
+      { clientId: 11, clock: 5, state: null },
+    ]);
+    expect(editor.ws.sent).toHaveLength(before);
+    expect(collab.awarenessOwners.size).toBe(0);
+    leaveCollab(collab.scope, peer.ws as never);
+  });
+
+  it('must not count a clock its peers never received: a frame the rate limit dropped leaves the last relayed one', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const editor = joined(scope, 'user-editor');
+    await announce(editor, { clientId: 20, clock: 1 });
+    await handleMessage(editor.ctx, editor.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 20, clock: 9 })));
+    expect(peer.ws.sent).toHaveLength(1);
+
+    handleLeave(scope, editor.ws as never);
+    expect(awarenessEntries(peer.ws.sent.at(-1)!)).toEqual([{ clientId: 20, clock: 2, state: null }]);
+    leaveCollab(collab.scope, peer.ws as never);
+  });
+
+  it('must not remove a client another socket of its user took over', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const first = joined(scope, 'user-a');
+    await announce(first, { clientId: 50, clock: 1 });
+    // A reconnect of the same user takes its client over before the old socket's close is processed.
+    const reconnect = joined(scope, 'user-a');
+    await announce(reconnect, { clientId: 50, clock: 2 });
+    const before = peer.ws.sent.length;
+
+    handleLeave(scope, first.ws as never);
+    expect(peer.ws.sent).toHaveLength(before);
+
+    // Positive control: the socket holding it now removes it when it leaves.
+    handleLeave(scope, reconnect.ws as never);
+    expect(awarenessEntries(peer.ws.sent.at(-1)!)).toEqual([{ clientId: 50, clock: 3, state: null }]);
+    leaveCollab(collab.scope, peer.ws as never);
+  });
+
+  it('sends nothing for a socket that held no client, one that removed its own, or the last socket of the session', async () => {
+    const { scope, ws, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const silent = joined(scope, 'user-silent');
+    const removed = joined(scope, 'user-removed');
+    await announce(removed, { clientId: 30, clock: 1 });
+    await announce(removed, { clientId: 30, clock: 2, state: null });
+    const before = peer.ws.sent.length;
+
+    handleLeave(scope, silent.ws as never);
+    handleLeave(scope, removed.ws as never);
+    handleLeave(scope, ws as never);
+    expect(peer.ws.sent).toHaveLength(before);
+
+    // The last socket leaves to no one, and its session waits out the grace period as before.
+    await announce(peer, { clientId: 40, clock: 1 });
+    const sent = peer.ws.sent.length;
+    handleLeave(scope, peer.ws as never);
+    expect(peer.ws.sent).toHaveLength(sent);
+    expect(collab.cleanupTimer).toBeDefined();
+  });
+
+  it('must not reach a newer session of the document from a socket of one that ended', async () => {
+    const { scope, collab } = session();
+    const editor = joined(scope, 'user-editor');
+    await announce(editor, { clientId: 60, clock: 1 });
+    endCollab(collab);
+    const next = session({ entityId: scope.entityId });
+
+    handleLeave(scope, editor.ws as never);
+    expect(next.ws.sent).toEqual([]);
+  });
+});
+
 describe('compaction', () => {
   it('runs once after the debounce, names the editors newest first, and deletes exactly the rows it read', async () => {
     const { ctx: c, scope, key, ws } = seededSession();
@@ -643,6 +858,80 @@ describe('compaction', () => {
     expect(readMap(merged)).toEqual({ a: 1, b: 2 });
     expect(ids).toHaveLength(2);
     expect(storage.logs.get(key)).toHaveLength(0);
+  });
+
+  let keystroke = 0;
+  /** One update a second from the session's socket for `seconds` seconds: each restarts the debounce. */
+  async function typeFor(seconds: number, { ctx: c, ws }: ReturnType<typeof seededSession>) {
+    for (let i = 0; i < seconds; i++) {
+      await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate(`key-${++keystroke}`, i)));
+      await vi.advanceTimersByTimeAsync(1000);
+    }
+  }
+
+  it('compacts a lone update after the three-second debounce', async () => {
+    const { ctx: c, ws } = seededSession();
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
+    await vi.advanceTimersByTimeAsync(2999);
+    expect(postMaterialize).not.toHaveBeenCalled();
+    await vi.advanceTimersByTimeAsync(1);
+    expect(postMaterialize).toHaveBeenCalledTimes(1);
+  });
+
+  it('must not let continuous typing hold compaction off: it runs ten seconds after the first update, and ten seconds later again', async () => {
+    const opened = seededSession();
+    for (let second = 1; second <= 20; second++) {
+      await typeFor(1, opened);
+      expect(postMaterialize).toHaveBeenCalledTimes(Math.floor(second / 10));
+    }
+    // Each run wrote the ten updates of its window.
+    expect(storage.compactState.mock.calls.map(([, , ids]) => (ids as number[]).length)).toEqual([10, 10]);
+  });
+
+  it('gives the next burst a deadline of its own after a run, whatever its outcome', async () => {
+    const opened = seededSession();
+    vi.mocked(postMaterialize).mockResolvedValueOnce('retry');
+    await typeFor(10, opened);
+    expect(postMaterialize).toHaveBeenCalledTimes(1);
+    expect(opened.collab.compactDueAt).toBeUndefined();
+
+    // Quiet for a minute, then typing again: the burst waits ten seconds of its own, not the first one's long-past deadline.
+    await vi.advanceTimersByTimeAsync(60_000);
+    await typeFor(9, opened);
+    expect(postMaterialize).toHaveBeenCalledTimes(1);
+    await typeFor(1, opened);
+    expect(postMaterialize).toHaveBeenCalledTimes(2);
+  });
+
+  it('must not queue runs back to back behind a slow one: updates logged during a run wait for a deadline of their own', async () => {
+    const opened = seededSession();
+    const gate = deferred();
+    vi.mocked(postMaterialize).mockImplementationOnce(async () => {
+      await gate.promise;
+      return 'ok';
+    });
+    await typeFor(10, opened);
+    expect(postMaterialize).toHaveBeenCalledTimes(1);
+
+    // The backend holds the first write for nine seconds while typing goes on.
+    await typeFor(9, opened);
+    gate.release();
+    await flushMicrotasks();
+    expect(postMaterialize).toHaveBeenCalledTimes(1);
+    await typeFor(1, opened);
+    expect(postMaterialize).toHaveBeenCalledTimes(2);
+  });
+
+  it('must not leave a compaction timer or deadline on a session that ended', async () => {
+    const { ctx: c, ws, collab } = seededSession();
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('a', 1)));
+    expect(collab.compactDueAt).toBeDefined();
+
+    endCollab(collab);
+    expect(collab.compactTimer).toBeUndefined();
+    expect(collab.compactDueAt).toBeUndefined();
+    await vi.advanceTimersByTimeAsync(10_000);
+    expect(postMaterialize).not.toHaveBeenCalled();
   });
 
   it('an update appended during an in-flight materialize survives compaction', async () => {

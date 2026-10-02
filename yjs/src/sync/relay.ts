@@ -3,18 +3,26 @@ import * as encoding from 'lib0/encoding';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
 import type { DocKey, SocketContext } from '../constants';
-import { YJS_AWARENESS_MAX_ENTRIES, YJS_AWARENESS_RATE_LIMIT, YJS_COMPACT_DEBOUNCE_MS } from '../constants';
+import { YJS_AWARENESS_MAX_ENTRIES, YJS_AWARENESS_RATE_LIMIT, YJS_COMPACT_DEBOUNCE_MS, YJS_COMPACT_MAX_WAIT_MS } from '../constants';
 import { loadEntityDescription } from '../data/entity-content';
 import { appendUpdate, ensureDoc, loadBase, readLog } from '../data/storage';
 import { descriptionToYUpdate } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
 import { classifyUpdate, mergeLog } from './document-state';
-import { broadcastToCollab, type CollabSession, claimAwarenessClient, endCollab, getCollab, withDocLock } from './session-manager';
+import { broadcastToCollab, type CollabSession, claimAwarenessClient, endCollab, getCollab, leaveCollab, withDocLock } from './session-manager';
 
-/** Message types on the socket: y-websocket's sync and awareness, and the relay's own `Generation`, which must match the frontend's yjs-connections.ts. */
-export const YMessage = { Sync: 0, Awareness: 1, Generation: 4 } as const;
+/** Message types on the socket: y-websocket's sync and awareness, and the relay's own `Generation` and `Saved`, which must match the frontend's yjs-connections.ts. */
+export const YMessage = {
+  Sync: 0,
+  Awareness: 1,
+  Generation: 4,
+  /** Empty body, to the sender alone, after each of its Step2 or Update frames the relay logged, found empty or dropped as covered by a pending reply. */
+  Saved: 5,
+} as const;
 const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
+
+const savedFrame = encoding.encode((encoder) => encoding.writeVarUint(encoder, YMessage.Saved));
 
 const awarenessTimestamps = new WeakMap<WebSocket, number>();
 
@@ -54,6 +62,11 @@ function encodeGeneration(generation: string): Uint8Array {
   encoding.writeVarUint(encoder, YMessage.Generation);
   encoding.writeVarString(encoder, generation);
   return encoding.toUint8Array(encoder);
+}
+
+/** Tells a socket that one more of its Step2 or Update frames was handled; a socket that closed meanwhile is told nothing. */
+function sendSaved(ws: WebSocket): void {
+  if (ws.readyState === ws.OPEN) ws.send(savedFrame);
 }
 
 /** Closes a socket whose frame the relay refuses: its client is broken or hostile, and nothing it sent reaches the log or a peer. */
@@ -134,12 +147,12 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
       await handleSyncStep1(ctx, collab, ws, payload);
     } else if (syncType === YSync.Step2) {
       ctx.awaitingReply = false;
-      await handleSyncUpdate(collab, ctx.userId, ws, payload, data);
+      if (await handleSyncUpdate(collab, ctx.userId, ws, payload, data)) sendSaved(ws);
     } else if (syncType === YSync.Update) {
       // Sent before the client read the relay's answer: its reply carries what the relay lacks, and a client about to
-      // drop its document for another generation must log nothing of it.
-      if (ctx.awaitingReply) return;
-      await handleSyncUpdate(collab, ctx.userId, ws, payload, data);
+      // drop its document for another generation must log nothing of it. The update counts as handled, and the reply
+      // that carries it gets a `Saved` of its own.
+      if (ctx.awaitingReply || (await handleSyncUpdate(collab, ctx.userId, ws, payload, data))) sendSaved(ws);
     }
   } else if (messageType === YMessage.Awareness) {
     if (ws.readyState !== ws.OPEN) return;
@@ -160,7 +173,7 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
     // Presence for another user's client would move or remove their cursor.
     const relayed: AwarenessEntry[] = [];
     for (const entry of entries) {
-      const verdict = claimAwarenessClient(collab, ws, ctx.userId, { clientId: entry.clientId, removes: entry.state === 'null' });
+      const verdict = claimAwarenessClient(collab, ws, ctx.userId, { clientId: entry.clientId, clock: entry.clock, removes: entry.state === 'null' });
       if (verdict === 'refuse') return refuseFrame(scope, ctx.userId, ws, 'Too many awareness clients');
       if (verdict === 'relay') relayed.push(entry);
     }
@@ -169,6 +182,18 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
     // editor alone on its document receives nothing else. An entry at the clock the sender holds changes nothing there.
     broadcastToCollab(collab, relayed.length === entries.length ? data : encodeAwarenessMessage(relayed));
   }
+}
+
+/**
+ * Takes a socket out of its session and removes the presence it held from the sockets that stay: a null state for each
+ * of its clients, one clock past the last relayed, which y-protocols applies like the client's own removal, so peers
+ * drop its cursor at once, without waiting for their 30 s timeout. A client another socket of its user took over stays.
+ */
+export function handleLeave(doc: DocKey, ws: WebSocket): void {
+  const released = leaveCollab(doc, ws);
+  const collab = getCollab(doc);
+  if (!collab || released.length === 0) return;
+  broadcastToCollab(collab, encodeAwarenessMessage(released.map(({ clientId, clock }) => ({ clientId, clock: clock + 1, state: 'null' }))));
 }
 
 /**
@@ -222,37 +247,58 @@ async function handleSyncStep1(ctx: SocketContext, collab: CollabSession, ws: We
 /**
  * Logs the update durably under its sender, in the generation the session loaded, then broadcasts it to peers and
  * schedules compaction; one Yjs cannot decode closes its sender. A document retired or reseeded since takes no update:
- * the session ends, and its sockets reconnect into the new generation.
+ * the session ends, and its sockets reconnect into the new generation. True once the update is logged, or carried
+ * nothing: its sender may be told it is saved.
  */
-async function handleSyncUpdate(collab: CollabSession, userId: string, ws: WebSocket, update: Uint8Array, rawMessage: Uint8Array): Promise<void> {
+async function handleSyncUpdate(collab: CollabSession, userId: string, ws: WebSocket, update: Uint8Array, rawMessage: Uint8Array): Promise<boolean> {
   const kind = classifyUpdate(update);
   // A client's Step2 reply carries nothing when it holds nothing the relay lacks.
-  if (kind === 'empty') return;
+  if (kind === 'empty') return true;
   // Logged, it would break every later merge of the document.
-  if (kind === 'malformed') return refuseFrame(collab.scope, userId, ws);
+  if (kind === 'malformed') {
+    refuseFrame(collab.scope, userId, ws);
+    return false;
+  }
 
   // Before any handshake loaded the document, the update takes the generation a handshake would load; none, when the
   // document was retired under the session meanwhile, which has ended.
   const generation = collab.generation ?? (await withDocLock(collab, () => loadDocumentState(collab)))?.generation;
-  if (!generation) return;
-  if (!(await appendUpdate(collab.scope, userId, update, generation))) return endCollab(collab);
-  // The session ended while the append ran: its peers are gone, and no timer may run on it.
-  if (getCollab(collab.scope) !== collab) return;
+  if (!generation) return false;
+  if (!(await appendUpdate(collab.scope, userId, update, generation))) {
+    endCollab(collab);
+    return false;
+  }
+  // The session ended while the append ran: its peers are gone, no timer may run on it, and its generation is void.
+  if (getCollab(collab.scope) !== collab) return false;
   broadcastToCollab(collab, rawMessage, ws);
   scheduleCompaction(collab);
+  return true;
 }
 
-/** One compaction per quiet window; a new update restarts the wait. */
+/**
+ * One compaction per quiet window; a new update restarts the wait, up to a deadline YJS_COMPACT_MAX_WAIT_MS after the
+ * first update since the last run, so someone typing without pause still reaches viewers and the row.
+ */
 export function scheduleCompaction(collab: CollabSession): void {
   if (collab.compactTimer) clearTimeout(collab.compactTimer);
-  collab.compactTimer = setTimeout(() => {
-    collab.compactTimer = undefined;
-    void runCompaction(collab);
-  }, YJS_COMPACT_DEBOUNCE_MS);
+  const now = Date.now();
+  collab.compactDueAt ??= now + YJS_COMPACT_MAX_WAIT_MS;
+  collab.compactTimer = setTimeout(
+    () => {
+      collab.compactTimer = undefined;
+      void runCompaction(collab);
+    },
+    Math.max(0, Math.min(YJS_COMPACT_DEBOUNCE_MS, collab.compactDueAt - now)),
+  );
 }
 
-/** Compacts under the document lock; a thrown error counts as retryable and leaves the log in place. A retired document ends the session. */
+/**
+ * Compacts under the document lock; a thrown error counts as retryable and leaves the log in place. A retired document
+ * ends the session. The deadline clears as the run starts, whatever its outcome: an update from then on may be logged
+ * after the run reads the log, and its window takes a deadline of its own.
+ */
 export async function runCompaction(collab: CollabSession): Promise<CompactionResult> {
+  collab.compactDueAt = undefined;
   return withDocLock(collab, async () => {
     try {
       const result = await compactDocument(collab.scope, collab.generation);

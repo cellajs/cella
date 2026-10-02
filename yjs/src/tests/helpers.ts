@@ -66,8 +66,11 @@ export function mockSocketContext(overrides: { userId?: string; requested?: DocS
 /** The fake storage's key for a document: its tenant, type and id. */
 export const storageKey = ({ tenantId, entityType, entityId }: DocKey) => `${tenantId}:${entityType}:${entityId}`;
 
-const YMessage = { Sync: 0, Awareness: 1, Generation: 4 } as const;
+const YMessage = { Sync: 0, Awareness: 1, Generation: 4, Saved: 5 } as const;
 const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
+
+/** The relay's `Saved` frame: its message type and no body. */
+export const savedFrame = Uint8Array.of(YMessage.Saved);
 
 export function buildSyncStep1(stateVector: Uint8Array): Uint8Array {
   const encoder = encoding.createEncoder();
@@ -107,19 +110,20 @@ export function awarenessUpdate(...entries: { clientId: number; clock?: number; 
   return encoding.toUint8Array(encoder);
 }
 
-/** The client ids an awareness frame carries. */
-export function awarenessClientIds(message: Uint8Array): number[] {
+/** The entries an awareness frame carries, each state parsed (null for a removal). */
+export function awarenessEntries(message: Uint8Array): { clientId: number; clock: number; state: unknown }[] {
   const decoder = decoding.createDecoder(message);
   decoding.readVarUint(decoder); // MESSAGE_AWARENESS
   const update = decoding.createDecoder(decoding.readVarUint8Array(decoder));
-  const ids: number[] = [];
+  const entries: { clientId: number; clock: number; state: unknown }[] = [];
   for (let count = decoding.readVarUint(update); count > 0; count--) {
-    ids.push(decoding.readVarUint(update));
-    decoding.readVarUint(update);
-    decoding.readVarString(update);
+    entries.push({ clientId: decoding.readVarUint(update), clock: decoding.readVarUint(update), state: JSON.parse(decoding.readVarString(update)) });
   }
-  return ids;
+  return entries;
 }
+
+/** The client ids an awareness frame carries. */
+export const awarenessClientIds = (message: Uint8Array) => awarenessEntries(message).map(({ clientId }) => clientId);
 
 export function buildAwarenessMessage(data: Uint8Array): Uint8Array {
   const encoder = encoding.createEncoder();

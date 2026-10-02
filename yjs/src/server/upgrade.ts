@@ -7,8 +7,8 @@ import { type SocketContext, YJS_PENDING_QUEUE_CAP } from '../constants';
 import { authorizeDoc } from '../data/permissions';
 import { log } from '../lib/pino';
 import { createSerialQueue } from '../lib/serial-queue';
-import { handleMessage, peekMessageType, refuseFrame, YMessage } from '../sync/relay';
-import { joinCollab, leaveCollab } from '../sync/session-manager';
+import { handleLeave, handleMessage, peekMessageType, refuseFrame, YMessage } from '../sync/relay';
+import { joinCollab } from '../sync/session-manager';
 import { verifyToken } from './auth';
 import { stripYjsPrefix } from './path-prefix';
 import { checkConnectionRate } from './rate-limiter';
@@ -207,7 +207,8 @@ async function admitUpgrade(
  * never interleave. Awareness bypasses the queue and is relayed only for a joined socket; the
  * latest frame sent before the join waits for it, so a new editor's presence shows at once.
  * Closing an unjoined socket drops whatever has not started. A joined socket's queue drains first,
- * so updates it sent just before closing still reach the log, and then it leaves the session.
+ * so updates it sent just before closing still reach the log, and then it leaves the session,
+ * whose other sockets drop the presence it held.
  */
 export function setupConnectionHandler(server: WebSocketServer): void {
   server.on('connection', (ws, ctx: SocketContext) => {
@@ -219,8 +220,11 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       });
     };
 
+    // A frame whose handling failed may not be logged and gets no `Saved`: the socket closes, and the client's next
+    // handshake uploads what the relay lacks.
     const queue = createSerialQueue((err) => {
       log.error(`Error handling message for ${docLabel(ctx)}`, { err });
+      if (ws.readyState === ws.OPEN) ws.close(1011, 'Frame handling failed');
     });
     const verification = verifications.get(ws);
     void queue.enqueue(async () => {
@@ -249,7 +253,7 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       }
       void queue.enqueue(() => {
         joined = null;
-        leaveCollab(scope, ws);
+        handleLeave(scope, ws);
       });
     };
 
@@ -263,8 +267,12 @@ export function setupConnectionHandler(server: WebSocketServer): void {
         else if (!queue.closed) heldAwareness = data;
         return;
       }
-      // Bounds memory while a slow verification holds the queue; a verified socket is not capped.
-      if (!ctx.scope && queue.size >= YJS_PENDING_QUEUE_CAP) return;
+      // Bounds memory while a slow verification holds the queue; a verified socket is not capped. A frame dropped here
+      // gets no `Saved`, so the socket closes, and the client's next handshake carries what it held.
+      if (!ctx.scope && queue.size >= YJS_PENDING_QUEUE_CAP) {
+        if (ws.readyState === ws.OPEN) ws.close(1011, 'Too many frames before verification');
+        return;
+      }
       void queue.enqueue(() => handleMessage(ctx, ws, data));
     };
 

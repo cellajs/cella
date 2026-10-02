@@ -29,18 +29,15 @@ vi.mock('shared', async (importOriginal) => {
   };
 });
 
-vi.mock('~/modules/common/blocknote/yjs-editor', () => ({ isYjsEditorActive: () => false, getYjsOwnedFields: () => [] }));
-
-vi.mock('~/query/offline', () => ({ sourceId: 'test-source' }));
-
 const { createEntityKeys } = await import('~/query/basic/create-query-keys');
 const { registerEntityQueryKeys, registerEqualityFilterKeys } = await import('~/query/basic/entity-query-registry');
 const { queryClient } = await import('~/query/query-client');
 const { fetchEntityAndUpdateList, fetchRangeAndPatch, removeEntity } = await import('./cache-ops');
 
-// The synthetic 'task' and 'comment' types exist only in this file's shared mock, hence the casts.
+// The synthetic 'task', 'comment' and 'label' types exist only in this file's shared mock, hence the casts.
 const TASK = 'task' as EntityType;
 const COMMENT = 'comment' as ProductEntityType;
+const LABEL = 'label' as EntityType;
 
 describe('realtime cache ops', () => {
   afterEach(() => {
@@ -85,6 +82,23 @@ describe('realtime cache ops', () => {
 
     expect(status).toBe('ok');
     expect([...(embeddingTouches.get('label' as ProductEntityType) ?? [])].sort()).toEqual(['added', 'dropped']);
+  });
+
+  it('diffs the embedding column of a seq-less fetch against the row cached before the fetch wrote the detail', async () => {
+    const keys = createEntityKeys<Record<string, never>>('attachment');
+    const labelKeys = createEntityKeys<Record<string, never>>(LABEL);
+    registerEntityQueryKeys('attachment', keys, async () => ({ items: [], total: 0 }));
+    registerEntityQueryKeys(LABEL, labelKeys, async () => ({ items: [], total: 0 }));
+    queryClient.setQueryDefaults(keys.detail.base, {
+      queryFn: async () => ({ id: 'attachment-1', organizationId: 'org-1', labels: ['keep', 'added'] }),
+    });
+
+    queryClient.setQueryData(keys.detail.byId('attachment-1'), { id: 'attachment-1', organizationId: 'org-1', labels: ['keep', 'dropped'] });
+    queryClient.setQueryData(labelKeys.list.org('org-1'), { items: [], total: 0 });
+
+    await fetchEntityAndUpdateList('attachment-1', keys, 'update', 'org-1', 'tenant-1', 'attachment');
+
+    expect(queryClient.getQueryState(labelKeys.list.org('org-1'))?.isInvalidated).toBe(true);
   });
 
   it('inserts a brand-new row into the canonical home list and bumps total', async () => {

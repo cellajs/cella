@@ -32,7 +32,7 @@ describe('BlockNoteFullHtml onReady and defaultValue changes', () => {
 
   afterEach(() => act(() => root.render(null)));
 
-  it('fires onReady once per mount, on the first non-empty HTML, through both passes and a changed defaultValue', async () => {
+  it('fires onReady once per mount, on the first computed HTML, through both passes and a changed defaultValue', async () => {
     const onReady = vi.fn();
     await render(paragraphs('ready first'), onReady);
     await settle();
@@ -51,13 +51,26 @@ describe('BlockNoteFullHtml onReady and defaultValue changes', () => {
     expect(onReady).toHaveBeenCalledTimes(2);
   });
 
-  it('never fires onReady for an empty description', async () => {
+  it('fires onReady once for an empty description, which has nothing to wait for', async () => {
     const onReady = vi.fn();
     await render('', onReady);
     await settle();
 
     expect(container.textContent).toBe('');
-    expect(onReady).not.toHaveBeenCalled();
+    expect(onReady).toHaveBeenCalledOnce();
+
+    await render(paragraphs('filled later'), onReady);
+    await settle();
+    expect(onReady).toHaveBeenCalledOnce();
+  });
+
+  it('fires onReady for a document whose blocks all render nothing', async () => {
+    const onReady = vi.fn();
+    await render(JSON.stringify([{ id: 'x', type: 'not-a-block', props: {}, content: [], children: [] }]), onReady);
+    await settle();
+
+    expect(container.textContent).toBe('');
+    expect(onReady).toHaveBeenCalledOnce();
   });
 
   it('fires onReady for a document of one empty paragraph, whose HTML is not empty', async () => {

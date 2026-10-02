@@ -94,7 +94,7 @@ interface BlockNoteFullHtmlProps {
   /** Needed to resolve private (id-referenced) inline media via presigned URLs. */
   tenantId?: string;
   organizationId?: string;
-  /** Fires once when the description HTML has been computed (first non-empty paint). */
+  /** Fires once per mount, when the document's HTML is first computed: for an empty document too. */
   onReady?: () => void;
 }
 
@@ -143,27 +143,28 @@ function BlockNoteFullHtml({
   const mode = useUIStore((state) => state.mode);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [renderState, setRenderState] = useState<{ html: string; mediaItems: CarouselItemData[] }>(() => ({
+  // `ready` once a first pass is computed, an empty one included: an empty document has nothing to wait for.
+  const [renderState, setRenderState] = useState<{ html: string; mediaItems: CarouselItemData[]; ready: boolean }>(() => {
     // A precomputed first pass paints the document at full height in the first commit (no pop-in).
-    html: firstPassHtmlCache.get(firstPassKey(defaultValue, propOrganizationId)) ?? '',
-    mediaItems: [],
-  }));
+    const cached = firstPassHtmlCache.get(firstPassKey(defaultValue, propOrganizationId));
+    return { html: cached ?? '', mediaItems: [], ready: cached !== undefined };
+  });
 
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
   const readyFiredRef = useRef(false);
   useEffect(() => {
-    if (renderState.html && !readyFiredRef.current) {
+    if (renderState.ready && !readyFiredRef.current) {
       readyFiredRef.current = true;
       onReadyRef.current?.();
     }
-  }, [renderState.html]);
+  }, [renderState.ready]);
 
   // blocksToFullHTML calls flushSync, which cannot run during render or commit, so useEffect plus queueMicrotask keeps it outside both.
   useEffect(() => {
     const parsed = getParsedContent(defaultValue);
     if (!parsed) {
-      setRenderState({ html: '', mediaItems: [] });
+      setRenderState({ html: '', mediaItems: [], ready: true });
       return;
     }
     const blocks = renderableBlocks(parsed, { organizationId: propOrganizationId });
@@ -174,13 +175,13 @@ function BlockNoteFullHtml({
     const cached = firstPassHtmlCache.get(cacheKey);
     if (cached !== undefined) {
       // Covers defaultValue changes after mount; on first mount the initializer already painted it.
-      setRenderState((prev) => (prev.html === cached ? prev : { html: cached, mediaItems: [] }));
+      setRenderState((prev) => (prev.html === cached && prev.ready ? prev : { html: cached, mediaItems: [], ready: true }));
     } else {
       queueMicrotask(() => {
         if (cancelled) return;
         const html = toFullHtml(blocks) ?? '';
         cacheFirstPass(cacheKey, html);
-        setRenderState({ html, mediaItems: [] });
+        setRenderState({ html, mediaItems: [], ready: true });
       });
     }
 
@@ -191,7 +192,7 @@ function BlockNoteFullHtml({
       const { resolved, media } = await processBlocks(blocks, resolveUrl);
       if (cancelled) return;
 
-      setRenderState({ html: toFullHtml(resolved) ?? '', mediaItems: media });
+      setRenderState({ html: toFullHtml(resolved) ?? '', mediaItems: media, ready: true });
     }
 
     resolveUrls(blocks);

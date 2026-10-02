@@ -14,6 +14,7 @@ import { membersListQueryOptions } from '~/modules/memberships/query';
 import type { Member } from '~/modules/memberships/types';
 import { findInCache } from '~/query/basic/find-in-list-cache';
 import { flattenInfiniteData } from '~/query/basic/flatten';
+import { cn } from '~/utils/cn';
 import { tw } from '~/utils/tw';
 
 const sheetId = 'attachment-description';
@@ -22,7 +23,8 @@ const sheetId = 'attachment-description';
  * Collaborative description editor for one attachment. Grants and the mention audience come
  * from the row's home channel (deepest ancestor, organization for org-homed rows), so an app that
  * re-homes attachments below the organization needs no change here. Read-only without update
- * permission; the relay persists collaborative sessions, the update mutation the standalone fallback.
+ * permission; the relay persists collaborative sessions, the update mutation the editor of an app
+ * with Yjs off.
  */
 function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
   const { tenantId, organizationId } = attachment;
@@ -42,10 +44,11 @@ function AttachmentDescriptionForm({ attachment }: { attachment: Attachment }) {
   const { mutateAsync } = useAttachmentUpdateMutation(tenantId, organizationId);
   const updateData = useDescriptionUpdate('attachment', attachment, (ops) => mutateAsync({ id: attachment.id, ops }));
 
-  // Faded, inert render of the stored description while the relay syncs: the live editor replaces it
-  // at the same height, so the swap does not reflow. Without a description the box only holds the height.
+  // The stored description wherever no live editor is. Faded and inert while the relay syncs: the live
+  // editor replaces it at the same height, so the swap does not reflow. Without a description the box
+  // only holds the height.
   const waitingFallback = (
-    <div className="pointer-events-none min-h-40 select-none opacity-50">
+    <div className={cn('min-h-40', canEdit && 'pointer-events-none select-none opacity-50')}>
       {attachment.description && (
         <Suspense fallback={null}>
           <BlockNoteFullHtml

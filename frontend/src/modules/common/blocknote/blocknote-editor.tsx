@@ -8,10 +8,12 @@ import type { FilePanelProps } from '@blocknote/react';
 import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote } from '@blocknote/react';
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type MouseEventHandler, type RefObject, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
-import { appConfig, type ProductEntityType } from 'shared';
+import { appConfig } from 'shared';
+import { type DescriptionBlock, findSummarySource } from 'shared/utils/derive-description-core';
 import type { WebsocketProvider } from 'y-websocket';
 import type { XmlFragment } from 'yjs';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { useLatestRef } from '~/hooks/use-latest-ref';
 import { customSchema } from '~/modules/common/blocknote/blocknote-config';
 import { checkedExtension } from '~/modules/common/blocknote/custom-elements/checklist/checklist-extension';
 import { Mention } from '~/modules/common/blocknote/custom-elements/mention/mention-menu';
@@ -29,7 +31,6 @@ import { shadCNComponents } from '~/modules/common/blocknote/helpers/shad-cn';
 import { useEditorKeyboard } from '~/modules/common/blocknote/hooks/use-editor-keyboard';
 import { useSmartBlur } from '~/modules/common/blocknote/hooks/use-smart-blur';
 import { useUntrustedMediaWarning } from '~/modules/common/blocknote/hooks/use-untrusted-media-warning';
-import { useYjsSseSuppression } from '~/modules/common/blocknote/hooks/use-yjs-sse-suppression';
 import { useYjsUndoManagerFix } from '~/modules/common/blocknote/hooks/use-yjs-undo-manager-fix';
 import type {
   CommonBlockNoteProps,
@@ -43,13 +44,11 @@ import { useUIStore } from '~/modules/ui/ui-store';
 import { getRouter } from '~/routes/-router-instance';
 import { cn } from '~/utils/cn';
 
-/** Yjs connection plus entity identity for SSE suppression; passing this bundle switches the editor into collaborative mode. */
+/** Yjs connection and cursor identity; passing this bundle switches the editor into collaborative mode. */
 export interface CollaborationBundle {
   provider: WebsocketProvider;
   fragment: XmlFragment;
   user: { name: string; color: string };
-  entityType: ProductEntityType;
-  entityId: string;
 }
 
 /** Imperative handle for driving a warm/live editor instance from a parent (collaborative or standalone). */
@@ -62,6 +61,8 @@ export interface BlockNoteContentApi {
   placeCursorAtPoint: (clientX: number, clientY: number) => void;
   /** Toggle a checklist item's `checked` prop by its checkboxId. Returns false if not found. */
   toggleChecklist: (checkboxId: string) => boolean;
+  /** Commit the document as blur does: a cache patch while collaborative, a write for a standalone editor once changed. */
+  commit: () => void;
 }
 
 type BlockNoteProps = CommonBlockNoteProps & {
@@ -71,7 +72,7 @@ type BlockNoteProps = CommonBlockNoteProps & {
   commitOnEveryChange?: boolean;
   collaboration?: CollaborationBundle;
   contentApiRef?: RefObject<BlockNoteContentApi | null>;
-  /** Fires once after the editor is created and mounted. */
+  /** Fires once per editor instance, after it is created and mounted. */
   onEditorReady?: () => void;
 };
 
@@ -147,17 +148,64 @@ function BlockNote({
       : baseOptions,
   );
 
+  useYjsUndoManagerFix(editor, collaborative);
+
+  const checkUntrustedMedia = useUntrustedMediaWarning({ organizationId: baseFilePanelProps?.organizationId });
+
+  // Escape and blur both commit, so the same document is offered twice; the second call is skipped.
+  const lastCommittedRef = useRef<string | null>(null);
+
+  const handleUpdateData = (editor: CustomBlockNoteEditor) => {
+    const strBlocks = JSON.stringify(editor.document);
+    if (strBlocks === defaultValue || strBlocks === lastCommittedRef.current || !updateData) return;
+
+    lastCommittedRef.current = strBlocks;
+    checkUntrustedMedia(editor.document);
+    updateData(strBlocks);
+  };
+
+  // A user change since mount: a standalone editor commits only after one, so an untouched editor never writes back a
+  // document the description has moved past since, or one it only serializes differently.
+  const touchedRef = useRef(false);
+  useEffect(
+    () =>
+      editor.onChange(() => {
+        touchedRef.current = true;
+      }, false),
+    [editor],
+  );
+
+  // Collaborative: an empty editor may mean Yjs has not synced yet, so it is never written.
+  // Standalone: an emptied document is a real edit, and an untouched one is none; handleUpdateData skips unchanged content.
+  const commitDocument = () => {
+    if (collaborative ? editor.isEmpty : !touchedRef.current) return;
+    handleUpdateData(editor);
+  };
+
+  const handleKeyDown = useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit: commitDocument });
+
+  // A host dismissed by an outside press (a sheet) unmounts the editor while it still has focus, so
+  // no blur fires; the cleanup commits what blur would have, after a user change: a REST write
+  // standalone, a cache patch collaborative, whose write the relay owns. lastCommittedRef keeps a
+  // blur that did fire from committing twice.
+  const commitDocumentRef = useRef(commitDocument);
+  commitDocumentRef.current = commitDocument;
+  useEffect(() => {
+    if (!editable || commitOnEveryChange) return;
+    return () => {
+      if (touchedRef.current) commitDocumentRef.current();
+    };
+  }, [editable, commitOnEveryChange]);
+
   useImperativeHandle(
     contentApiRef,
     () => ({
       getContent: () => JSON.stringify(editor.document),
       focusSummaryEnd: () => {
         editor.focus();
-        // Must match the collapsed summary source in deriveDescriptionProps.
-        const doc = editor.document as CustomBlock[];
-        const summaryBlock =
-          doc.find((b) => b.type !== 'checklistItem' && Array.isArray(b.content) && b.content.some((c) => 'text' in c && !!c.text.trim())) ?? doc[0];
-        if (summaryBlock) editor.setTextCursorPosition(summaryBlock, 'end');
+        // The block the derived summary shows, so the cursor lands where the collapsed view ends.
+        const { source } = findSummarySource(editor.document as DescriptionBlock[]);
+        if (source) editor.setTextCursorPosition(source as CustomBlock, 'end');
       },
       placeCursorAtPoint: (clientX, clientY) => {
         editor.focus();
@@ -177,52 +225,21 @@ function BlockNote({
         editor.updateBlock(found, { props: { checked: !checked.checked } });
         return true;
       },
+      commit: () => commitDocumentRef.current(),
     }),
     [editor],
   );
 
+  // Once per editor instance: a parent passing a new callback has no new editor. It runs after the change
+  // subscription, so an edit the parent makes on ready (a queued checklist toggle) counts as a user change.
+  const onEditorReadyRef = useLatestRef(onEditorReady);
   useEffect(() => {
-    onEditorReady?.();
-  }, [onEditorReady]);
+    onEditorReadyRef.current?.();
+  }, [editor, onEditorReadyRef]);
 
-  useYjsUndoManagerFix(editor, collaborative);
-
-  useYjsSseSuppression(collaboration ? { entityType: collaboration.entityType, entityId: collaboration.entityId } : null);
-
-  const checkUntrustedMedia = useUntrustedMediaWarning({ organizationId: baseFilePanelProps?.organizationId });
-
-  // Escape and blur both commit, so the same document is offered twice; the second call is skipped.
-  const lastCommittedRef = useRef<string | null>(null);
-
-  const handleUpdateData = (editor: CustomBlockNoteEditor) => {
-    const strBlocks = JSON.stringify(editor.document);
-    if (strBlocks === defaultValue || strBlocks === lastCommittedRef.current || !updateData) return;
-
-    lastCommittedRef.current = strBlocks;
-    checkUntrustedMedia(editor.document);
-    updateData(strBlocks);
-  };
-
-  // Collaborative: an empty editor may mean Yjs has not synced yet, so it is never written.
-  // Standalone: an emptied document is a real edit; handleUpdateData skips unchanged content.
-  const commitDocument = () => {
-    if (collaborative && editor.isEmpty) return;
-    handleUpdateData(editor);
-  };
-
-  const handleKeyDown = useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit: commitDocument });
-
-  // A host dismissed by an outside press (a sheet) unmounts the editor while it still has focus, so
-  // no blur fires; the cleanup commits what blur would have. Standalone only: the relay owns
-  // collaborative writes. lastCommittedRef keeps a blur that did fire from committing twice.
-  const commitDocumentRef = useRef(commitDocument);
-  commitDocumentRef.current = commitDocument;
-  useEffect(() => {
-    if (!editable || commitOnEveryChange || collaborative) return;
-    return () => commitDocumentRef.current();
-  }, [editable, commitOnEveryChange, collaborative]);
-
-  const handleOnBeforeLoad = () => onBeforeLoad?.(editor);
+  // The latest callback, so a navigation compares with the props current then.
+  const onBeforeLoadRef = useLatestRef(onBeforeLoad);
+  const hasOnBeforeLoad = !!onBeforeLoad;
 
   const renderUppyFilePanel = useCallback(
     (props: FilePanelProps) => {
@@ -252,10 +269,11 @@ function BlockNote({
   };
 
   useEffect(() => {
-    if (!onBeforeLoad || !editable) return;
-    const unsubscribe = getRouter().subscribe('onBeforeLoad', handleOnBeforeLoad);
-    return () => unsubscribe();
-  }, []);
+    if (!hasOnBeforeLoad || !editable) return;
+    return getRouter().subscribe('onBeforeLoad', () => {
+      if (touchedRef.current) onBeforeLoadRef.current?.(editor);
+    });
+  }, [hasOnBeforeLoad, editable, editor, onBeforeLoadRef]);
 
   return (
     <BlockNoteView

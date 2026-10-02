@@ -1,17 +1,22 @@
 import { setTimeout as sleep } from 'node:timers/promises';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { WebSocket as WsWebSocket } from 'ws';
+import { WebsocketProvider } from 'y-websocket';
+import * as Y from 'yjs';
 import type { DocScope } from '../constants';
 import {
   awarenessUpdate,
   buildAwarenessMessage,
+  buildSyncStep2,
   buildSyncUpdate,
   createSignedToken,
   deferred,
   fakeStorage,
   mapUpdate,
   openSocket,
+  readMap,
   recordCrashes,
+  savedFrame,
   startRelayServer,
   storageKey,
   until,
@@ -80,6 +85,90 @@ describe('upgrade: a closing socket', () => {
     await until(() => storage.logs.get(storageKey(docOf(doc)))?.length === 3);
     // The socket left its session once its updates were logged.
     await until(() => clientCount(doc) === 0);
+  });
+});
+
+describe('upgrade: Saved', () => {
+  it('answers Step2 and update frames one by one in the order the socket sent them, each once it is handled', async () => {
+    const doc = 'doc-saved-order';
+    const editor = await open('user-a', doc);
+    await until(() => clientCount(doc) === 1);
+    const saved = () => editor.received.filter((frame) => frame[0] === savedFrame[0]).length;
+    const logged = () => storage.logs.get(storageKey(docOf(doc))) ?? [];
+
+    // The first append is held: the empty Step2 behind it waits in the queue, though it logs nothing.
+    const first = deferred();
+    appendHold = first;
+    const appends = storage.appendUpdate.mock.calls.length;
+    editor.ws.send(buildSyncUpdate(mapUpdate('a', 1)));
+    editor.ws.send(buildSyncStep2());
+    editor.ws.send(buildSyncUpdate(mapUpdate('b', 2)));
+    await until(() => storage.appendUpdate.mock.calls.length === appends + 1);
+    await sleep(30);
+    expect(saved()).toBe(0);
+
+    // Released, the first update is answered, then the Step2; the last update's append is held in turn.
+    const last = deferred();
+    appendHold = last;
+    first.release();
+    await until(() => saved() === 2);
+    await sleep(30);
+    expect(saved()).toBe(2);
+    expect(logged()).toHaveLength(1);
+
+    appendHold = null;
+    last.release();
+    await until(() => saved() === 3);
+    expect(logged().map((row) => readMap(row.payload))).toEqual([{ a: 1 }, { b: 2 }]);
+    expect(editor.received).toEqual([savedFrame, savedFrame, savedFrame]);
+  });
+
+  it('must not leave a socket open without the Saved of a frame whose handling failed: it closes with 1011', async () => {
+    const doc = 'doc-saved-failure';
+    const editor = await open('user-a', doc);
+    await until(() => clientCount(doc) === 1);
+    storage.appendUpdate.mockRejectedValueOnce(new Error('db down'));
+
+    editor.ws.send(buildSyncUpdate(mapUpdate('a', 1)));
+    expect(await editor.closed).toEqual({ code: 1011, reason: 'Frame handling failed' });
+    expect(editor.received).toEqual([]);
+
+    // Positive control: the reconnect's update is logged and saved.
+    const again = await open('user-a', doc);
+    await until(() => clientCount(doc) === 1);
+    again.ws.send(buildSyncUpdate(mapUpdate('a', 1)));
+    await until(() => again.received.length === 1);
+    expect(again.received).toEqual([savedFrame]);
+  });
+});
+
+describe('upgrade: presence leave', () => {
+  it("must not leave a closed socket's cursor at its peers until y-protocols times it out after 30 s", async () => {
+    const doc = 'doc-presence-leave';
+    usedDocs.add(doc);
+    // A y-websocket client, whose awareness applies what the relay sends as the app's does.
+    const token = createSignedToken({ userId: 'user-p', entityType, entityId: doc, tenantId: 'tenant-1' });
+    const peer = new WebsocketProvider(relay.baseUrl, doc, new Y.Doc(), {
+      params: { token, entityType, tenantId: 'tenant-1' },
+      WebSocketPolyfill: WsWebSocket as never,
+      disableBc: true,
+    });
+    // The relay's own frames, which the app's client reads.
+    peer.messageHandlers[4] = () => {};
+    peer.messageHandlers[5] = () => {};
+    try {
+      await until(() => peer.synced);
+      const editor = await open('user-e', doc);
+      await until(() => clientCount(doc) === 2);
+      editor.ws.send(buildAwarenessMessage(awarenessUpdate({ clientId: 77, clock: 3 })));
+      await until(() => peer.awareness.getStates().has(77));
+
+      editor.ws.close(1000);
+      await until(() => !peer.awareness.getStates().has(77), 1000);
+      expect(peer.awareness.getStates().has(peer.awareness.clientID)).toBe(true);
+    } finally {
+      peer.destroy();
+    }
   });
 });
 

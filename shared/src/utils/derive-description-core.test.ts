@@ -43,8 +43,8 @@ describe('countDescriptionBlocks', () => {
     expect(counts.expandable).toBe(false);
   });
 
-  it('ignores media blocks with empty references', () => {
-    const counts = countDescriptionBlocks([media('image', '', '')]);
+  it('ignores media blocks with empty or blank references', () => {
+    const counts = countDescriptionBlocks([media('image', '', ''), media('video', '  ')]);
     expect(counts.attachmentCount).toBe(0);
     expect(counts.attachments).toEqual([]);
   });
@@ -130,12 +130,56 @@ describe('deriveDocument', () => {
   });
 
   it('derives nothing from an empty, absent or malformed body, and never throws', () => {
-    const empty = { name: '', keywords: '', attachments: [], mentions: [], blocks: [] };
+    const empty = { name: '', keywords: '', summary: '', summaryLength: 0, attachments: [], mentions: [], blocks: [] };
     for (const body of [null, undefined, '', '[]', '<p>no mentions here</p>', '[{"type":', '{"type":"heading"}']) {
       expect(deriveDocument(body)).toMatchObject(empty);
       expect(deriveDocument(body).counts.attachmentCount).toBe(0);
     }
     const { blocks: _blocks, ...malformed } = empty;
     expect(deriveDocument('[null, {"type": "paragraph", "children": [null]}]')).toMatchObject(malformed);
+  });
+});
+
+describe('deriveDocument summary', () => {
+  const summaryOf = (blocks: DescriptionBlock[]) => deriveDocument(JSON.stringify(blocks));
+  const emptyParagraph: DescriptionBlock = { type: 'paragraph', props: {}, content: [] };
+
+  it('is the first block with text, as a one-block document, with its plain-text length', () => {
+    const first = {
+      type: 'paragraph',
+      props: {},
+      content: [
+        { type: 'text', text: 'Ship ' },
+        { type: 'text', text: 'it', styles: { bold: true } },
+      ],
+    };
+    const derived = summaryOf([first, paragraph('second')]);
+    expect(derived.summary).toBe(JSON.stringify([first]));
+    expect(JSON.parse(derived.summary)).toEqual([first]);
+    expect(derived.summaryLength).toBe('Ship it'.length);
+  });
+
+  it('skips checklist items, and falls back to the first block when they are all there is', () => {
+    expect(summaryOf([checklist(true, 'skip me'), paragraph('the summary')]).summary).toBe(JSON.stringify([paragraph('the summary')]));
+    const onlyChecklist = summaryOf([checklist(false, 'first'), checklist(true, 'second')]);
+    expect(onlyChecklist.summary).toBe(JSON.stringify([checklist(false, 'first')]));
+    expect(onlyChecklist.summaryLength).toBe('first'.length);
+  });
+
+  it('skips a leading image or empty paragraph', () => {
+    const image = media('image', 'https://example.com/a.png');
+    expect(summaryOf([image, paragraph('caption')]).summary).toBe(JSON.stringify([paragraph('caption')]));
+    expect(summaryOf([emptyParagraph, paragraph('body')]).summary).toBe(JSON.stringify([paragraph('body')]));
+  });
+
+  it('is the first block, with length 0, when no block has text', () => {
+    const image = media('image', 'https://example.com/a.png');
+    expect(summaryOf([image, emptyParagraph])).toMatchObject({ summary: JSON.stringify([image]), summaryLength: 0 });
+  });
+
+  it('is empty for an empty, malformed or non-block description', () => {
+    for (const body of [null, '', '[]', '[{"type":', '<p>legacy html</p>', '{"type":"paragraph"}', '[null]', '["text"]']) {
+      expect(deriveDocument(body)).toMatchObject({ summary: '', summaryLength: 0 });
+    }
   });
 });
