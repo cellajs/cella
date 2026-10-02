@@ -1,5 +1,86 @@
 # Changelog
 
+## [0.13.0](https://github.com/cellajs/cella/compare/0.12.2...0.13.0) (2026-10-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **auth:** second factors move to queries and operations ([#1253](https://github.com/cellajs/cella/issues/1253))
+* **backend:** database helpers move into query files ([#1251](https://github.com/cellajs/cella/issues/1251))
+
+### 🎉 New features
+
+* **ui:** toasts render through base ui toast and sonner is removed ([#1215](https://github.com/cellajs/cella/issues/1215)) ([440d2ad](https://github.com/cellajs/cella/commit/440d2addc48657ccd605bd05fcaf3a00c40b8828))
+
+
+### 🐞 Bug fixes
+
+* a taken slug no longer reports the organization limit, plus dense-line cleanups ([#1228](https://github.com/cellajs/cella/issues/1228)) ([cd1c98c](https://github.com/cellajs/cella/commit/cd1c98c6c18ad70795b6e58bce8e27a37f556958))
+* **auth:** rate limits count an IP or address under a pseudonym ([#1209](https://github.com/cellajs/cella/issues/1209)) ([b3eacc3](https://github.com/cellajs/cella/commit/b3eacc3ee079ecff7c7e2adc5c8e89ba6c30baaa))
+* **auth:** refusals on browser navigations redirect to the error page ([#1207](https://github.com/cellajs/cella/issues/1207)) ([0b962ee](https://github.com/cellajs/cella/commit/0b962eeeb5a91d31c31c6bbe28adda59cdf949ca))
+* **bench:** clean up seeds through the primary key and keep the cdc slot ([#1212](https://github.com/cellajs/cella/issues/1212)) ([3ef0c71](https://github.com/cellajs/cella/commit/3ef0c71fc94d454ec35ea67f812508434ae6c422))
+* **blocknote:** checklist shortcuts create the app's checklist block ([#1227](https://github.com/cellajs/cella/issues/1227)) ([8cd9986](https://github.com/cellajs/cella/commit/8cd9986b4a7b359821e01cc09ffbfc3889f796bc))
+* **frontend:** api keys card no longer hijacks its settings section scroll ([#1257](https://github.com/cellajs/cella/issues/1257)) ([3022b75](https://github.com/cellajs/cella/commit/3022b75c23fd802e40c6cc7859b631be64472481))
+* **frontend:** css fixes ([#1248](https://github.com/cellajs/cella/issues/1248)) ([6e224e0](https://github.com/cellajs/cella/commit/6e224e0b801a7d07a3dd1c88bf734960ce81d5c6))
+* one write per mention edit, comment emails, filter-aware list refetch and test db lock ([#1225](https://github.com/cellajs/cella/issues/1225)) ([59d163e](https://github.com/cellajs/cella/commit/59d163e33531075514e5f82cae14c5a7f3c44210))
+* scaffold config template, tunnel script and sheet close order ([#1211](https://github.com/cellajs/cella/issues/1211)) ([f3f9b58](https://github.com/cellajs/cella/commit/f3f9b5829e46bc93d02063a9a2a253052a228150))
+* **sync:** act on projectcampus's 2026-10-01 sync feedback ([#1252](https://github.com/cellajs/cella/issues/1252)) ([ced4c7d](https://github.com/cellajs/cella/commit/ced4c7d798289bd79c4d60f8b51dac702842d6dc))
+* **sync:** act on raak's 2026-09-30 sync feedback ([#1210](https://github.com/cellajs/cella/issues/1210)) ([48c9440](https://github.com/cellajs/cella/commit/48c94407ed190b405cb3b6019ecafafd9a329b59))
+* **test:** restore coverage in the root vitest run ([#1216](https://github.com/cellajs/cella/issues/1216)) ([205bab6](https://github.com/cellajs/cella/commit/205bab62819bdcddd7f45595e3ace231d2faa821))
+* tier 2 follow-ups and app sync feedback (tenants table, table export, notifications, dev:single mcp) ([#1224](https://github.com/cellajs/cella/issues/1224)) ([622e0ad](https://github.com/cellajs/cella/commit/622e0ade5762a888b3d13d835f2bacb6cf8567fc))
+* **ui:** alignment follow-ups for kit boundary, atoms, overlay exits, row confirm and hover card ([#1239](https://github.com/cellajs/cella/issues/1239)) ([dd10bb3](https://github.com/cellajs/cella/commit/dd10bb3fdaa31196b1c6f29d3f8337a7d201cecd))
+* **ui:** base ui wiring bugs found in the shadcn alignment audit ([#1230](https://github.com/cellajs/cella/issues/1230)) ([dac8ba9](https://github.com/cellajs/cella/commit/dac8ba917c9426f505c4fcf43808950d502c3376))
+
+
+### 🔧 Small improvements
+
+* **auth:** guard caches without broadcast, memberships versioned ([#1242](https://github.com/cellajs/cella/issues/1242)) ([4402741](https://github.com/cellajs/cella/commit/4402741a7b509d95276de7e6e333209d848f6da0))
+* **auth:** parse the device from the User-Agent without ua-parser-js ([#1255](https://github.com/cellajs/cella/issues/1255)) ([3eaa9b5](https://github.com/cellajs/cella/commit/3eaa9b54b8e68c13aa71e76dcb94c4f70146df75))
+* **auth:** second factors move to queries and operations ([#1253](https://github.com/cellajs/cella/issues/1253)) ([7b90881](https://github.com/cellajs/cella/commit/7b90881aa635bdd5177b94b8df56e806b5f1650a))
+* **backend:** database helpers move into query files ([#1251](https://github.com/cellajs/cella/issues/1251)) ([adc4c11](https://github.com/cellajs/cella/commit/adc4c110cf4035762ec89004e2978506a4ca52f3))
+* **blocknote:** title documents as a template, not enforced ([#1222](https://github.com/cellajs/cella/issues/1222)) ([991458e](https://github.com/cellajs/cella/commit/991458e47060406a8c8fa7074549017263917182))
+* **docs:** smoother mobile docs sidebar, scrolling and navigation ([#1241](https://github.com/cellajs/cella/issues/1241)) ([4bd8a42](https://github.com/cellajs/cella/commit/4bd8a42acfe5fec6396997d0a3b73d851cb312ce))
+* **emails:** one layout and one message body for every template ([#1223](https://github.com/cellajs/cella/issues/1223)) ([eba8255](https://github.com/cellajs/cella/commit/eba8255825244bae8b9ac752ca0f945ad59dd9f5))
+* **errors:** one request id in error bodies, headers and logs ([#1243](https://github.com/cellajs/cella/issues/1243)) ([9e71aa6](https://github.com/cellajs/cella/commit/9e71aa6ebc2092d4967a29596104c6da48d274b0))
+* **frontend:** enable the React Compiler ([#1247](https://github.com/cellajs/cella/issues/1247)) ([f2c2a75](https://github.com/cellajs/cella/commit/f2c2a75613a5bc52941a25b59215ed46caaa2568))
+* **frontend:** narrower subscriptions, data-grid hot paths and compositor-only animations ([#1246](https://github.com/cellajs/cella/issues/1246)) ([2fb4512](https://github.com/cellajs/cella/commit/2fb4512b5b6645a6cb217997a92825e70e6a92a4))
+* **guards:** drop crossTenantGuard and noImpersonationGuard ([#1250](https://github.com/cellajs/cella/issues/1250)) ([64b00aa](https://github.com/cellajs/cella/commit/64b00aa189e04e514ba1702e44170dcba12bad55))
+* **routes:** config switches leave xGuard as xEnabledBy ([#1256](https://github.com/cellajs/cella/issues/1256)) ([69d1350](https://github.com/cellajs/cella/commit/69d13501e539e214071933e50c5a122df5dd2f15))
+* **routes:** gates in xGuard, xTool runs the route handler, revokeSessions ([#1226](https://github.com/cellajs/cella/issues/1226)) ([5c0cb0a](https://github.com/cellajs/cella/commit/5c0cb0aa7996e98f8943ba5e11e3806e6583e957))
+* **sdk:** one schema resolver, docs types owned by the sdk, config factory ([#1217](https://github.com/cellajs/cella/issues/1217)) ([db6dfdb](https://github.com/cellajs/cella/commit/db6dfdb9150a657110e1f209c3eb241e2be13bea))
+* sheet exits, status panel, oauth sign-up mail and dependency bumps ([#1240](https://github.com/cellajs/cella/issues/1240)) ([34f8654](https://github.com/cellajs/cella/commit/34f8654b9123294788c9e76a8e30eb731470da37))
+* **style:** one style command over one finding shape ([#1220](https://github.com/cellajs/cella/issues/1220)) ([a81e335](https://github.com/cellajs/cella/commit/a81e3353ba1051ef25cc9fc8aad59882a26e239d))
+* **tenants:** fold the held organization into Tenant ([#1244](https://github.com/cellajs/cella/issues/1244)) ([588b5e1](https://github.com/cellajs/cella/commit/588b5e1656aa55348aaf91248839cfe4ee166011))
+* **test:** run backend tests in parallel on per-worker databases ([#1237](https://github.com/cellajs/cella/issues/1237)) ([d695224](https://github.com/cellajs/cella/commit/d6952245c5558009fb18894bcdb946ffd560f710))
+* tier 2 loc reduction with route helpers, shared table pieces and one prose engine ([#1218](https://github.com/cellajs/cella/issues/1218)) ([fc4c737](https://github.com/cellajs/cella/commit/fc4c7379081c4f835a539ea1b3b4fa0f52d6c009))
+* **ui:** build render props on base ui useRender and remove Slot ([#1233](https://github.com/cellajs/cella/issues/1233)) ([619f79b](https://github.com/cellajs/cella/commit/619f79b1261cb2f0b2e557067120c8a747112d81))
+
+
+### 📖 Documentation
+
+* **openapi:** one shape for every named schema ([#1249](https://github.com/cellajs/cella/issues/1249)) ([97a307c](https://github.com/cellajs/cella/commit/97a307c23956cd0037da5c9ae294b690845e73cc))
+
+
+### 🏗️ Build & deps
+
+* run storybook tests on the release pr only ([#1221](https://github.com/cellajs/cella/issues/1221)) ([f9bef0f](https://github.com/cellajs/cella/commit/f9bef0f343449f8b635f7b23d08e761b843fdfcf))
+
+
+### 🧹 Chores
+
+* **deps:** service dependencies are what the bundle loads from disk ([#1254](https://github.com/cellajs/cella/issues/1254)) ([fc2a4ac](https://github.com/cellajs/cella/commit/fc2a4acaf0b794781e7b71bc2fa82d15d6a0707a))
+* general improvements ([#1245](https://github.com/cellajs/cella/issues/1245)) ([d5f44e7](https://github.com/cellajs/cella/commit/d5f44e77880ae6634544ea3478d09d2d03c27200))
+* remove dead backend code (activities list API, cache metrics, sync meters) ([#1214](https://github.com/cellajs/cella/issues/1214)) ([5ee8c73](https://github.com/cellajs/cella/commit/5ee8c7362b5fa865b36130c0b96b78e8b72d4223))
+* remove dead frontend files, unused ui components and dead shared exports ([#1213](https://github.com/cellajs/cella/issues/1213)) ([1059629](https://github.com/cellajs/cella/commit/10596291ffaa9a21e1389f3a8f01552e99eb35c8))
+* remove unused report scripts and the custom node loader ([#1219](https://github.com/cellajs/cella/issues/1219)) ([bfead59](https://github.com/cellajs/cella/commit/bfead59035467c3cca9cfa2298f31c1ffe1fc4bc))
+* **ui:** let upstream shadcn base ui classes port unchanged ([#1232](https://github.com/cellajs/cella/issues/1232)) ([03a9d50](https://github.com/cellajs/cella/commit/03a9d505a100ed9adfbfed2a4b77f0f674130d75))
+
+
+### 🎨 Styles
+
+* line width 150 with shallow objects collapsed ([#1229](https://github.com/cellajs/cella/issues/1229)) ([25d1833](https://github.com/cellajs/cella/commit/25d183326355a1de182eb15c775b61833d1f681d))
+* readability fixes for lines the 150 reformat made long ([#1231](https://github.com/cellajs/cella/issues/1231)) ([fe807b2](https://github.com/cellajs/cella/commit/fe807b238b827fa8f7cf7aaf7b453e19afdfda89))
+
 ## [0.12.2](https://github.com/cellajs/cella/compare/0.12.1...0.12.2) (2026-09-29)
 
 
