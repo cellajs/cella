@@ -86,6 +86,25 @@ export const findSessionBySecret = async (ctx: DbContext, { secret }: FindSessio
   return result;
 };
 
+interface FindSessionStatesOpts {
+  ids: string[];
+}
+
+/** What decides whether these sessions still back a stream: owner, revocation, expiry and the admin session behind an impersonation. */
+export const findSessionStates = async (ctx: DbContext, { ids }: FindSessionStatesOpts) => {
+  return ctx.var.db
+    .select({
+      id: sessionsTable.id,
+      userId: sessionsTable.userId,
+      revokedAt: sessionsTable.revokedAt,
+      revocationReason: sessionsTable.revocationReason,
+      expiresAt: sessionsTable.expiresAt,
+      impersonatorSessionId: sessionsTable.impersonatorSessionId,
+    })
+    .from(sessionsTable)
+    .where(inArray(sessionsTable.id, ids));
+};
+
 interface FindSessionByIdOpts {
   id: string;
 }

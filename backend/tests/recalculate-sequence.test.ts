@@ -5,7 +5,7 @@ import { baseDb as db, getSeedDb } from '#/db/db';
 import { buildInsertableProduct } from '#/mocks';
 import { attachmentsTable } from '#/modules/attachment/attachment-db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
-import { recalculateCounters } from '#/modules/entities/helpers/recalculate-counters';
+import { recalculateCounters } from '#/modules/entities/counters-queries';
 import { getEntityTable } from '#/tables';
 import { clearSecurityTestData, createTestTenant, type TestTenant } from './security/helpers';
 import { createAppClient } from './test-client';
@@ -93,7 +93,7 @@ describe('recalculateCounters (sequence + frontier)', async () => {
 
   it('rebuilds sequence, subtree and self-family counters from row state', async () => {
     // Recalculation is an admin path (seed and CDC recovery): it reads every RLS table without tenant context.
-    await recalculateCounters(seedDb);
+    await recalculateCounters({ var: { db: seedDb } });
 
     const readCounts = async (channelKey: string) => {
       const [counterRow] = await db

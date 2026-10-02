@@ -1,13 +1,11 @@
-import { and, eq, getColumns, gt, inArray, isNull, type SQL, sql } from 'drizzle-orm';
+import { eq, getColumns, gt, inArray, isNull, type SQL } from 'drizzle-orm';
 import type { AnyPgTable, PgColumn } from 'drizzle-orm/pg-core';
 import type { ProductEntityType, SeenTrackedProductType } from 'shared';
 import { appConfig, hierarchy, seenWindowMs } from 'shared';
-import { generateId } from 'shared/utils/entity-id';
 import type { UserContext } from '#/core/context';
 import { tenantContext } from '#/db/tenant-context';
-import { homeChannelIdSql } from '#/db/utils/home-channel';
 import { draftVisibleRowsPredicate } from '#/db/utils/published-predicate';
-import { seenRecencySql } from '#/modules/seen/seen-queries';
+import { findSeenCandidates, insertSeenBy, seenRecencySql } from '#/modules/seen/seen-queries';
 import { actorFrom } from '#/permissions/access';
 import { resolveCollectionReadFilter } from '#/permissions/collection-scope';
 import { buildCollectionReadWhere } from '#/permissions/row-predicates';
@@ -60,8 +58,6 @@ export async function markSeenOp(ctx: UserContext, entityIds: string[], productT
 
   const orgTable = entityTable as OrgScopedEntityTable;
 
-  const channelIdColumn = homeChannelIdSql(productType, entityTable);
-
   const windowCutoff = new Date(Date.now() - seenWindowMs).toISOString();
 
   const actor = actorFrom(ctx);
@@ -78,56 +74,15 @@ export async function markSeenOp(ctx: UserContext, entityIds: string[], productT
 
   // Use tenantContext to set RLS session vars; entity tables have row-level security.
   const { validIds, newCount } = await tenantContext(ctx, async (txCtx) => {
-    const db = txCtx.var.db;
-    const validEntities: { id: string; channelId: string }[] = await db
-      .select({ id: orgTable.id, channelId: channelIdColumn })
-      .from(entityTable)
-      .where(and(...filters));
-
+    const validEntities = await findSeenCandidates(txCtx, { productType, where: filters });
     const vIds = validEntities.map((e) => e.id);
-    const ctxIdMap = new Map(validEntities.map((e) => [e.id, e.channelId]));
-
-    if (vIds.length === 0) {
-      return { validIds: vIds, entityChannelIdMap: ctxIdMap, newCount: 0 };
-    }
+    if (vIds.length === 0) return { validIds: vIds, newCount: 0 };
 
     log.debug(`markSeen: ${vIds.length}/${entityIds.length} valid entities`);
 
-    // Partitioning prevents a unique user/product arbiter, so concurrent duplicates are tolerated by EXISTS reads and corrected by counter recalculation.
-    const values = sql.join(
-      vIds.map(
-        (entityId) =>
-          sql`(${generateId()}::uuid, ${user.id}::uuid, ${entityId}::uuid, ${productType}, ${ctxIdMap.get(entityId) ?? organization.id}::uuid, ${organization.id}::uuid, ${organization.tenantId}, now())`,
-      ),
-      sql`, `,
-    );
-
-    const result = await db.execute<{ new_count: number }>(sql`
-      WITH candidate (id, user_id, product_id, product_type, channel_id, organization_id, tenant_id, created_at) AS (
-        VALUES ${values}
-      ),
-      inserted AS (
-        INSERT INTO seen_by (id, user_id, product_id, product_type, channel_id, organization_id, tenant_id, created_at)
-        SELECT c.id, c.user_id, c.product_id, c.product_type, c.channel_id, c.organization_id, c.tenant_id, c.created_at
-        FROM candidate c
-        WHERE NOT EXISTS (
-          SELECT 1 FROM seen_by sb WHERE sb.user_id = c.user_id AND sb.product_id = c.product_id
-        )
-        RETURNING product_id
-      ),
-      counters AS (
-        INSERT INTO product_counters (product_id, product_type, view_count, last_viewed_at)
-        SELECT product_id, ${productType}, 1, now()
-        FROM inserted
-        ON CONFLICT (product_id) DO UPDATE SET
-          view_count = product_counters.view_count + 1,
-          last_viewed_at = now()
-      )
-      SELECT count(*)::int AS new_count FROM inserted
-    `);
-
-    const nc = Number(result.rows[0]?.new_count ?? 0);
-    return { validIds: vIds, entityChannelIdMap: ctxIdMap, newCount: nc };
+    const rows = validEntities.map(({ id, channelId }) => ({ productId: id, channelId: channelId ?? organization.id }));
+    const nc = await insertSeenBy(txCtx, { userId: user.id, productType, organizationId: organization.id, tenantId: organization.tenantId, rows });
+    return { validIds: vIds, newCount: nc };
   });
 
   if (validIds.length === 0) {

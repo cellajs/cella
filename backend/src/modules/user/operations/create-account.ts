@@ -3,7 +3,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { extractPgError } from '#/lib/error';
-import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
 import type { EmailProof } from '#/modules/user/emails-db';
 import { claimEmailForUser } from '#/modules/user/operations/claim-email';
 import type { InsertUserModel, UserModel } from '#/modules/user/user-db';

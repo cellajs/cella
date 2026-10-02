@@ -4,8 +4,7 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
-import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/helpers/invitation-mail';
-import { getMembershipEntityIds, insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
+import { getMembershipEntityIds } from '#/modules/memberships/helpers/membership-helpers';
 import { membershipAsSeenBy } from '#/modules/memberships/helpers/select';
 import {
   countMembershipsByChannel,
@@ -15,6 +14,8 @@ import {
   insertInactiveMemberships,
   stampInactiveMembershipsReminded,
 } from '#/modules/memberships/memberships-queries';
+import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
+import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 import { log } from '#/utils/logger';
 

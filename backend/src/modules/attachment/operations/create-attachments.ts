@@ -11,7 +11,7 @@ import { attachmentContract, type attachmentCreateManyStxBodySchema } from '#/mo
 import { resolveAttachmentPlacement } from '#/modules/attachment/helpers/attachment-placement';
 import { namesOwnStorage } from '#/modules/attachment/helpers/storage-key';
 import { getOrganizationEntityCount } from '#/modules/entities/entities-queries';
-import { withAuditUsers } from '#/modules/user/helpers/audit-user';
+import { withAuditUsers } from '#/modules/user/operations/with-audit-users';
 import { buildSubjectFromEntity } from '#/permissions/build-subject';
 import { canCreateEntity } from '#/permissions/can-create';
 import { checkIdempotency } from '#/utils/idempotency';
