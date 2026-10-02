@@ -4,10 +4,11 @@ import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { deleteDanglingActors, insertActors } from '#/modules/actors/actors-queries';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
-import { emailsTable } from '#/modules/user/emails-db';
+import { type EmailProof, emailsTable } from '#/modules/user/emails-db';
 import { memberSelect, userSelect } from '#/modules/user/helpers/select';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
+import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 
 interface FindUsersPaginatedOpts {
@@ -166,4 +167,48 @@ export const insertUsers = async (ctx: DbContext, { users, onConflictDoNothing =
     }
     return inserted;
   });
+};
+
+interface EmailProofOpts {
+  userId: string;
+  email: string;
+  via: EmailProof;
+}
+
+/** The columns an inbox proof writes: the stamps every time, `verifiedAt` only when it was never set. */
+const proofStamps = (via: EmailProof, now: string) => ({
+  verified: true,
+  verifiedAt: sql<string>`coalesce(${emailsTable.verifiedAt}, ${now})`,
+  lastVerifiedVia: via,
+  lastVerifiedAt: now,
+});
+
+/** Stores an address as proven now, `via` the proof. Fails on the unique address when any account holds it. */
+export const insertEmail = async (ctx: DbContext, { userId, email, via }: EmailProofOpts) => {
+  const now = getIsoDate();
+  await ctx.var.db.insert(emailsTable).values({ email, userId, verified: true, verifiedAt: now, lastVerifiedVia: via, lastVerifiedAt: now });
+};
+
+/** Stamps a proof on the user's own row for the address; undefined when the user has no row for it. */
+export const updateEmailProof = async (ctx: DbContext, { userId, email, via }: EmailProofOpts) => {
+  const [stamped] = await ctx.var.db
+    .update(emailsTable)
+    .set(proofStamps(via, getIsoDate()))
+    .where(and(eq(emailsTable.email, email), eq(emailsTable.userId, userId)))
+    .returning({ id: emailsTable.id });
+  return stamped;
+};
+
+/**
+ * Stores a proven address for the user, or stamps the proof when the row is already theirs, in one statement: insert, or
+ * on a taken address update only when this user holds it. Undefined when another account holds the address.
+ */
+export const upsertProvenEmail = async (ctx: DbContext, { userId, email, via }: EmailProofOpts) => {
+  const now = getIsoDate();
+  const [row] = await ctx.var.db
+    .insert(emailsTable)
+    .values({ email, userId, verified: true, verifiedAt: now, lastVerifiedVia: via, lastVerifiedAt: now })
+    .onConflictDoUpdate({ target: emailsTable.email, set: proofStamps(via, now), setWhere: eq(emailsTable.userId, userId) })
+    .returning({ id: emailsTable.id });
+  return row;
 };

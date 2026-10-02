@@ -2,11 +2,11 @@ import { and, eq } from 'drizzle-orm';
 import { acceptInvitationToken, handleMembershipInvitation, membershipInvite } from 'sdk';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { markEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { defaultRestrictions } from '#/modules/tenants/tenant-restrictions';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { markEmailVerified } from '#/modules/user/operations/email-proof';
 import { getIsoDate } from '#/utils/iso-date';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
 import { createTestOrganization, createTestSession, createTestUser, expectRefusal, mailsTo } from '../helpers';
@@ -101,7 +101,7 @@ describe('Rejected invitations', async () => {
     await markRejected(rejected.inactiveMembership.id);
     const pending = await createInvitation({ organization: await createTestOrganization(), email: owner.email, createdBy: owner.id });
 
-    expect(await markEmailVerified(db, { userId: owner.id, email: owner.email, via: 'magic' })).toBe(true);
+    expect(await markEmailVerified({ var: { db } }, { userId: owner.id, email: owner.email, via: 'magic' })).toBe(true);
 
     const boundUserOf = async (id: string) =>
       (await db.select({ userId: inactiveMembershipsTable.userId }).from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, id)))[0]
