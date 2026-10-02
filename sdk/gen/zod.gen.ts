@@ -238,7 +238,6 @@ export const zUser = z.object({
   updatedAt: z.string().nullable(),
   updatedBy: z.uuid().nullable(),
   lastSeenAt: z.string().nullable(),
-  lastStartedAt: z.string().nullable(),
   lastSignInAt: z.string().nullable(),
 });
 
@@ -409,10 +408,8 @@ export const zTenant = z.object({
 export const zConnection = z.object({
   id: z.uuid(),
   tenantId: z.string().max(24),
-  kind: z.enum(['sso', 'lti']),
+  kind: z.enum(['sso']),
   issuer: z.string().max(255),
-  clientId: z.string().max(255).nullable(),
-  deploymentId: z.string().max(255).nullable(),
   claimValues: z.array(z.string()),
   displayName: z.string().max(255),
   status: z.enum(['pending', 'active', 'disabled']),

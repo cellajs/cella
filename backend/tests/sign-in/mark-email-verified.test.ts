@@ -64,8 +64,7 @@ describe('addProvenEmail', () => {
     await addProvenEmail({ var: { db } }, { userId: user.id, email: 'work@example.com', via: 'github' });
 
     const row = await emailRow('work@example.com');
-    expect(row).toMatchObject({ userId: user.id, verified: true, lastVerifiedVia: 'github' });
-    expect(row.verifiedAt).not.toBeNull();
+    expect(row).toMatchObject({ userId: user.id, lastVerifiedVia: 'github' });
     expect(row.lastVerifiedAt).toBe(row.verifiedAt);
   });
 

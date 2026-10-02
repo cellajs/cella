@@ -1,32 +1,19 @@
 import { and, eq, getColumns, isNotNull, isNull, sql } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { DbContext, UserContext } from '#/core/context';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
-import { userSelect } from '#/modules/user/helpers/select';
-import { userCountersTable } from '#/modules/user/user-counters-db';
+import { userActorJoin, userSelect } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
 import { channelBaseSchema } from '#/schemas/entity-base';
 import { getEntityTable } from '#/tables';
 import { pick } from '#/utils/pick';
 
-interface UpsertLastStartedOpts {
-  lastStartedAt: string;
-}
-
-/** Upsert the lastStartedAt counter for a user (avoids CDC noise on users table). */
-export const upsertLastStarted = async (ctx: UserContext, { lastStartedAt }: UpsertLastStartedOpts) => {
-  const { db, userId } = ctx.var;
-  return db
-    .insert(userCountersTable)
-    .values({ userId, lastStartedAt })
-    .onConflictDoUpdate({ target: userCountersTable.userId, set: { lastStartedAt } });
-};
-
-/** Select a user by ID with activity timestamps (from user_counters). */
+/** Select the current user with the activity times of its `actors` row. */
 export const findCurrentUser = async (ctx: UserContext) => {
   const { db, userId } = ctx.var;
-  const [user] = await db.select(userSelect).from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+  const [user] = await db.select(userSelect).from(usersTable).innerJoin(actorsTable, userActorJoin).where(eq(usersTable.id, userId)).limit(1);
   return user;
 };
 

@@ -13,7 +13,7 @@ import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
 import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/operations/send-oauth-verification-email';
 import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import type { PendingSignUp, TokenRecord } from '#/modules/auth/tokens/tokens-queries';
-import type { UserWithCounters } from '#/modules/user/helpers/select';
+import type { UserWithActivity } from '#/modules/user/helpers/select';
 import { handleCreateUser } from '#/modules/user/operations/create-account';
 import { addProvenEmail, requireEmailVerified } from '#/modules/user/operations/email-proof';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
@@ -24,7 +24,7 @@ import { getIsoDate } from '#/utils/iso-date';
 const dbCtx = { var: { db: baseDb } };
 
 type OAuthFlowResult =
-  | { type: 'verified'; user: UserWithCounters; identity: IdentityModel }
+  | { type: 'verified'; user: UserWithActivity; identity: IdentityModel }
   | {
       /** A provider account a proven user connected, awaiting the click on its verification mail. */
       type: 'unverified';

@@ -7,7 +7,7 @@ import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
 
-/** Tenant columns a response carries; subscriptionData stays server-side. */
+/** Tenant columns a response carries. */
 const tenantColumns = pick(tenantsTable, [
   'id',
   'name',

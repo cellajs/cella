@@ -5,7 +5,7 @@ import slugify from 'slugify';
 import { mockPaginated, mockPastIsoDate, mockUuid, withFakerSeed } from '#/mocks';
 import { mockMembershipBase } from '#/modules/memberships/memberships-mocks';
 import type { InsertEmailModel } from '#/modules/user/emails-db';
-import type { UserWithCounters } from '#/modules/user/helpers/select';
+import type { UserWithActivity } from '#/modules/user/helpers/select';
 import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
 
 type MockUserOptions = { email?: string; enforceUnique?: boolean };
@@ -51,13 +51,13 @@ const generateUser = ({ email: emailOverride, enforceUnique = false }: MockUserO
 /** Generates a full insertable user while enforcing unique email and slug values. */
 export const mockUser = (overrides: Pick<MockUserOptions, 'email'> = {}): InsertUserModel => generateUser({ ...overrides, enforceUnique: true });
 
-export const mockUserResponse = (key = 'user:default'): UserWithCounters =>
+export const mockUserResponse = (key = 'user:default'): UserWithActivity =>
   withFakerSeed(key, () => {
     const user = generateUser();
-    return { ...user, lastStartedAt: user.createdAt, lastSignInAt: user.createdAt, lastSeenAt: user.createdAt };
+    return { ...user, lastSignInAt: user.createdAt, lastSeenAt: user.createdAt };
   });
 
-export interface UserListItem extends UserWithCounters {
+export interface UserListItem extends UserWithActivity {
   memberships: ReturnType<typeof mockMembershipBase>[];
   role?: SystemRole;
 }
@@ -87,5 +87,5 @@ export const mockAdmin = (id: string | undefined, email: string): InsertUserMode
 };
 
 export const mockEmail = (user: UserModel): InsertEmailModel => {
-  return { email: user.email, userId: user.id, verified: true, verifiedAt: mockPastIsoDate() };
+  return { email: user.email, userId: user.id, verifiedAt: mockPastIsoDate() };
 };

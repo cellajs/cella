@@ -10,7 +10,7 @@ import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findMembershipsByUserIdsAndChannel } from '#/modules/memberships/memberships-queries';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
-import type { UserWithCounters } from '#/modules/user/helpers/select';
+import type { UserWithActivity } from '#/modules/user/helpers/select';
 import { addProvenEmail } from '#/modules/user/operations/email-proof';
 import { findUserById } from '#/modules/user/user-queries';
 import { getIsoDate } from '#/utils/iso-date';
@@ -29,7 +29,7 @@ const dbCtx = { var: { db: baseDb } };
 export const connectSsoIdentity = async (
   ctx: Context<Env>,
   { federation, connection, claims, profile, snapshot, subject, identity }: SsoSignInFacts,
-): Promise<UserWithCounters> => {
+): Promise<UserWithActivity> => {
   // Spent only while the session that issued it lives: a connect abandoned before a sign-out cannot be finished.
   const pin = await spendCookieToken(ctx, 'oauth-connect');
   if (!pin?.userId || !pin.sessionId) throw new AppError(401, 'oauth-connect_not_found', 'warn');

@@ -26,7 +26,6 @@ export const tenantsTable = snakeCase.table(
     subscriptionId: varchar({ length: maxLength.field }),
     subscriptionStatus: varchar({ enum: subscriptionStatusValues }).notNull().default('none'),
     subscriptionPlan: varchar({ length: maxLength.field }),
-    subscriptionData: json(),
     createdAt: timestampColumns.createdAt,
     updatedAt: timestampColumns.updatedAt,
   },

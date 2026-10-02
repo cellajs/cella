@@ -1218,7 +1218,6 @@
             "createdAt": "2024-05-02T20:53:18.498Z",
             "updatedAt": "2024-05-02T20:53:18.498Z",
             "updatedBy": null,
-            "lastStartedAt": "2024-05-02T20:53:18.498Z",
             "lastSignInAt": "2024-05-02T20:53:18.498Z",
             "lastSeenAt": "2024-05-02T20:53:18.498Z"
           },
@@ -1300,9 +1299,6 @@
           "lastSeenAt": {
             "type": ["string", "null"]
           },
-          "lastStartedAt": {
-            "type": ["string", "null"]
-          },
           "lastSignInAt": {
             "type": ["string", "null"]
           }
@@ -1326,7 +1322,6 @@
           "updatedAt",
           "updatedBy",
           "lastSeenAt",
-          "lastStartedAt",
           "lastSignInAt"
         ],
         "description": "A full user account: profile, preferences such as language and newsletter, the MFA setting and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.",
@@ -1350,7 +1345,6 @@
           "createdAt": "2024-06-15T02:53:22.776Z",
           "updatedAt": "2024-06-15T02:53:22.776Z",
           "updatedBy": null,
-          "lastStartedAt": "2024-06-15T02:53:22.776Z",
           "lastSignInAt": "2024-06-15T02:53:22.776Z",
           "lastSeenAt": "2024-06-15T02:53:22.776Z"
         },
@@ -1996,18 +1990,10 @@
           },
           "kind": {
             "type": "string",
-            "enum": ["sso", "lti"]
+            "enum": ["sso"]
           },
           "issuer": {
             "type": "string",
-            "maxLength": 255
-          },
-          "clientId": {
-            "type": ["string", "null"],
-            "maxLength": 255
-          },
-          "deploymentId": {
-            "type": ["string", "null"],
             "maxLength": 255
           },
           "claimValues": {
@@ -2063,8 +2049,6 @@
           "tenantId",
           "kind",
           "issuer",
-          "clientId",
-          "deploymentId",
           "claimValues",
           "displayName",
           "status",
@@ -2080,8 +2064,6 @@
           "tenantId": "gc9llm",
           "kind": "sso",
           "issuer": "surfconext",
-          "clientId": null,
-          "deploymentId": null,
           "claimValues": ["uu.nl"],
           "displayName": "Utrecht University",
           "status": "active",
@@ -5655,7 +5637,6 @@
                     "createdAt": "2024-05-02T20:53:18.498Z",
                     "updatedAt": "2024-05-02T20:53:18.498Z",
                     "updatedBy": null,
-                    "lastStartedAt": "2024-05-02T20:53:18.498Z",
                     "lastSignInAt": "2024-05-02T20:53:18.498Z",
                     "lastSeenAt": "2024-05-02T20:53:18.498Z"
                   },
@@ -5782,7 +5763,6 @@
                   "createdAt": "2024-06-15T02:53:22.776Z",
                   "updatedAt": "2024-06-15T02:53:22.776Z",
                   "updatedBy": null,
-                  "lastStartedAt": "2024-06-15T02:53:22.776Z",
                   "lastSignInAt": "2024-06-15T02:53:22.776Z",
                   "lastSeenAt": "2024-06-15T02:53:22.776Z"
                 },
@@ -5905,7 +5885,6 @@
                   "createdAt": "2024-06-15T02:53:22.776Z",
                   "updatedAt": "2024-06-15T02:53:22.776Z",
                   "updatedBy": null,
-                  "lastStartedAt": "2024-06-15T02:53:22.776Z",
                   "lastSignInAt": "2024-06-15T02:53:22.776Z",
                   "lastSeenAt": "2024-06-15T02:53:22.776Z"
                 },
@@ -8052,7 +8031,6 @@
                   "createdAt": "2024-06-15T02:53:22.776Z",
                   "updatedAt": "2024-06-15T02:53:22.776Z",
                   "updatedBy": null,
-                  "lastStartedAt": "2024-06-15T02:53:22.776Z",
                   "lastSignInAt": "2024-06-15T02:53:22.776Z",
                   "lastSeenAt": "2024-06-15T02:53:22.776Z"
                 },
@@ -8667,8 +8645,6 @@
                     "tenantId": "gc9llm",
                     "kind": "sso",
                     "issuer": "surfconext",
-                    "clientId": null,
-                    "deploymentId": null,
                     "claimValues": ["uu.nl"],
                     "displayName": "Utrecht University",
                     "status": "active",
@@ -8808,8 +8784,6 @@
                   "tenantId": "gc9llm",
                   "kind": "sso",
                   "issuer": "surfconext",
-                  "clientId": null,
-                  "deploymentId": null,
                   "claimValues": ["uu.nl"],
                   "displayName": "Utrecht University",
                   "status": "active",
@@ -8950,8 +8924,6 @@
                   "tenantId": "gc9llm",
                   "kind": "sso",
                   "issuer": "surfconext",
-                  "clientId": null,
-                  "deploymentId": null,
                   "claimValues": ["uu.nl"],
                   "displayName": "Utrecht University",
                   "status": "active",
@@ -9035,8 +9007,6 @@
                   "tenantId": "gc9llm",
                   "kind": "sso",
                   "issuer": "surfconext",
-                  "clientId": null,
-                  "deploymentId": null,
                   "claimValues": ["uu.nl"],
                   "displayName": "Utrecht University",
                   "status": "active",
@@ -9183,7 +9153,6 @@
                       "createdAt": "2024-12-14T16:10:19.376Z",
                       "updatedAt": "2024-12-14T16:10:19.376Z",
                       "updatedBy": null,
-                      "lastStartedAt": "2024-12-14T16:10:19.376Z",
                       "lastSignInAt": "2024-12-14T16:10:19.376Z",
                       "lastSeenAt": "2024-12-14T16:10:19.376Z",
                       "memberships": [
@@ -9221,7 +9190,6 @@
                       "createdAt": "2024-01-03T10:14:05.394Z",
                       "updatedAt": "2024-01-03T10:14:05.394Z",
                       "updatedBy": null,
-                      "lastStartedAt": "2024-01-03T10:14:05.394Z",
                       "lastSignInAt": "2024-01-03T10:14:05.394Z",
                       "lastSeenAt": "2024-01-03T10:14:05.394Z",
                       "memberships": [
@@ -9379,7 +9347,6 @@
                   "createdAt": "2024-06-15T02:53:22.776Z",
                   "updatedAt": "2024-06-15T02:53:22.776Z",
                   "updatedBy": null,
-                  "lastStartedAt": "2024-06-15T02:53:22.776Z",
                   "lastSignInAt": "2024-06-15T02:53:22.776Z",
                   "lastSeenAt": "2024-06-15T02:53:22.776Z"
                 },

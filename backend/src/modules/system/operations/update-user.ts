@@ -41,7 +41,7 @@ export async function updateUserOp(ctx: UserContext, id: string, input: UpdateUs
   invalidateCache.user(updatedUser.id);
   log.info('User updated', { userId: updatedUser.id });
 
-  // Re-select to include the user_counters subqueries
+  // Re-select to include the activity times of the user's actors row
   const userWithActivity = await findUserById(ctx, { id: updatedUser.id });
 
   return userWithActivity;

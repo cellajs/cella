@@ -19,19 +19,9 @@
               "kind": {
                 "type": "string",
                 "required": true,
-                "enum": ["sso", "lti"]
+                "enum": ["sso"]
               },
               "issuer": { "type": "string", "required": true, "maxLength": 255 },
-              "clientId": {
-                "type": ["string", "null"],
-                "required": true,
-                "maxLength": 255
-              },
-              "deploymentId": {
-                "type": ["string", "null"],
-                "required": true,
-                "maxLength": 255
-              },
               "claimValues": { "type": "array", "required": true, "itemType": "string" },
               "displayName": { "type": "string", "required": true, "maxLength": 255 },
               "status": {
@@ -82,8 +72,6 @@
             "tenantId": "gc9llm",
             "kind": "sso",
             "issuer": "surfconext",
-            "clientId": null,
-            "deploymentId": null,
             "claimValues": ["uu.nl"],
             "displayName": "Utrecht University",
             "status": "active",
@@ -166,19 +154,9 @@
             "kind": {
               "type": "string",
               "required": true,
-              "enum": ["sso", "lti"]
+              "enum": ["sso"]
             },
             "issuer": { "type": "string", "required": true, "maxLength": 255 },
-            "clientId": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 255
-            },
-            "deploymentId": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 255
-            },
             "claimValues": { "type": "array", "required": true, "itemType": "string" },
             "displayName": { "type": "string", "required": true, "maxLength": 255 },
             "status": {
@@ -227,8 +205,6 @@
           "tenantId": "gc9llm",
           "kind": "sso",
           "issuer": "surfconext",
-          "clientId": null,
-          "deploymentId": null,
           "claimValues": ["uu.nl"],
           "displayName": "Utrecht University",
           "status": "active",
@@ -363,19 +339,9 @@
             "kind": {
               "type": "string",
               "required": true,
-              "enum": ["sso", "lti"]
+              "enum": ["sso"]
             },
             "issuer": { "type": "string", "required": true, "maxLength": 255 },
-            "clientId": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 255
-            },
-            "deploymentId": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 255
-            },
             "claimValues": { "type": "array", "required": true, "itemType": "string" },
             "displayName": { "type": "string", "required": true, "maxLength": 255 },
             "status": {
@@ -424,8 +390,6 @@
           "tenantId": "gc9llm",
           "kind": "sso",
           "issuer": "surfconext",
-          "clientId": null,
-          "deploymentId": null,
           "claimValues": ["uu.nl"],
           "displayName": "Utrecht University",
           "status": "active",
@@ -555,19 +519,9 @@
             "kind": {
               "type": "string",
               "required": true,
-              "enum": ["sso", "lti"]
+              "enum": ["sso"]
             },
             "issuer": { "type": "string", "required": true, "maxLength": 255 },
-            "clientId": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 255
-            },
-            "deploymentId": {
-              "type": ["string", "null"],
-              "required": true,
-              "maxLength": 255
-            },
             "claimValues": { "type": "array", "required": true, "itemType": "string" },
             "displayName": { "type": "string", "required": true, "maxLength": 255 },
             "status": {
@@ -616,8 +570,6 @@
           "tenantId": "gc9llm",
           "kind": "sso",
           "issuer": "surfconext",
-          "clientId": null,
-          "deploymentId": null,
           "claimValues": ["uu.nl"],
           "displayName": "Utrecht University",
           "status": "active",

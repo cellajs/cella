@@ -6,8 +6,6 @@ export const mockConnectionResponse = (key = 'connection:default') =>
     tenantId: mockTenantId(),
     kind: 'sso' as const,
     issuer: 'surfconext',
-    clientId: null,
-    deploymentId: null,
     claimValues: ['uu.nl'],
     displayName: 'Utrecht University',
     status: 'active' as const,

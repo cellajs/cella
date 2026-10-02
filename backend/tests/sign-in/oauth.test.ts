@@ -491,7 +491,7 @@ describe('OAuth Authentication', async () => {
       expect(verifiedAccount.verified).toBe(true);
 
       const [row] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
-      expect(row).toMatchObject({ userId: user.id, verified: true, lastVerifiedVia: 'github' });
+      expect(row).toMatchObject({ userId: user.id, verifiedAt: expect.any(String), lastVerifiedVia: 'github' });
       // The primary is untouched.
       const [primary] = await db.select().from(emailsTable).where(eq(emailsTable.email, 'local-account@example.com'));
       expect(primary.userId).toBe(user.id);
@@ -724,7 +724,7 @@ describe('OAuth Authentication', async () => {
       // The account starts with the provider's names. Its avatar is not taken over: avatars come from the app's CDN only.
       expect(account).toMatchObject({ name: 'Test User', firstName: 'Test', lastName: 'User', thumbnailUrl: null });
       const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
-      expect(address).toMatchObject({ userId: account.id, verified: true, lastVerifiedVia: 'github' });
+      expect(address).toMatchObject({ userId: account.id, verifiedAt: expect.any(String), lastVerifiedVia: 'github' });
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
       expect(identity).toMatchObject({ issuer: 'github', subject: 'github-user-id', verified: true });
 
@@ -861,7 +861,7 @@ describe('OAuth Authentication', async () => {
       // The names the provider asserted at the start waited on the verification with the sign-up.
       expect(account).toMatchObject({ name: 'Test User', firstName: 'Test', lastName: 'User', thumbnailUrl: null });
       const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, providerEmail));
-      expect(address).toMatchObject({ userId: account.id, verified: true, lastVerifiedVia: 'github' });
+      expect(address).toMatchObject({ userId: account.id, verifiedAt: expect.any(String), lastVerifiedVia: 'github' });
       const [identity] = await db.select().from(identitiesTable).where(eq(identitiesTable.userId, account.id));
       expect(identity).toMatchObject({ issuer: 'github', subject: 'github-user-id', verified: true });
       // The verification is spent with the sign-up, and this browser's cookie for it goes once that has committed.

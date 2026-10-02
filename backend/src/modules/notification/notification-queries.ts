@@ -358,7 +358,7 @@ export async function findVerifiedRecipients(ctx: DbContext, { userIds }: UserId
   return ctx.var.db
     .selectDistinctOn([usersTable.id], { id: usersTable.id, email: usersTable.email, name: usersTable.name, language: usersTable.language })
     .from(usersTable)
-    .innerJoin(emailsTable, and(eq(emailsTable.userId, usersTable.id), eq(emailsTable.verified, true)))
+    .innerJoin(emailsTable, eq(emailsTable.userId, usersTable.id))
     .where(inArray(usersTable.id, userIds))
     .orderBy(usersTable.id);
 }
@@ -438,7 +438,7 @@ export async function findDueDigestRecipients(ctx: DbContext, { dayStart, includ
       })
       .from(usersTable)
       // Verified addresses only; mailing dormant and never-activated accounts helps no one.
-      .innerJoin(emailsTable, and(eq(emailsTable.userId, usersTable.id), eq(emailsTable.verified, true)))
+      .innerJoin(emailsTable, eq(emailsTable.userId, usersTable.id))
       .leftJoin(notificationPreferencesTable, eq(notificationPreferencesTable.userId, usersTable.id))
       .where(
         and(

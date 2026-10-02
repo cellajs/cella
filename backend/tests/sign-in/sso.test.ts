@@ -191,7 +191,7 @@ describe('SSO sign-in through an institution', async () => {
     expect(identity.data).toMatchObject({ eduperson_affiliation: ['student', 'member'], acr: claimsOf().acr });
 
     const [address] = await db.select().from(emailsTable).where(eq(emailsTable.email, studentEmail));
-    expect(address).toMatchObject({ userId: user.id, verified: true, lastVerifiedVia: 'surfconext' });
+    expect(address).toMatchObject({ userId: user.id, verifiedAt: expect.any(String), lastVerifiedVia: 'surfconext' });
 
     expect(await membershipsOf(user.id)).toMatchObject([{ channelType: 'organization', channelId: organization.id, role: memberRole }]);
 
@@ -336,7 +336,7 @@ describe('SSO sign-in through an institution', async () => {
       ]);
       // The institution operates the mailbox it asserts: the address joins the account's ledger.
       expect(await db.select().from(emailsTable).where(eq(emailsTable.email, 'lars@student.hu.nl'))).toMatchObject([
-        { userId: user.id, verified: true },
+        { userId: user.id, lastVerifiedVia: 'surfconext' },
       ]);
       expect(await membershipsOf(user.id)).toMatchObject([{ channelId: organization.id, role: memberRole }]);
       expect(lastSessionCall()).toEqual(['surfconext', 'regular', { connectionId: connection.id }]);

@@ -1,25 +1,8 @@
 import type { UserContext } from '#/core/context';
-import { findCurrentUser, upsertLastStarted } from '#/modules/me/me-queries';
-import { getIsoDate } from '#/utils/iso-date';
-
-const THROTTLE_MS = 60 * 1000; // 1 minute
-const lastStartedMemory = new Map<string, number>();
+import { findCurrentUser } from '#/modules/me/me-queries';
 
 export async function getMeOp(ctx: UserContext) {
   const isSystemAdmin = ctx.var.isSystemAdmin;
-  const userId = ctx.var.userId;
-
-  // Throttle lastStartedAt upsert; fire-and-forget like lastSeenAt.
-  const now = Date.now();
-  const last = lastStartedMemory.get(userId) ?? 0;
-  if (now - last >= THROTTLE_MS) {
-    lastStartedMemory.set(userId, now);
-    const lastStartedAt = getIsoDate();
-    upsertLastStarted(ctx, { lastStartedAt }).catch(() => {
-      lastStartedMemory.delete(userId);
-    });
-  }
-
   const user = await findCurrentUser(ctx);
 
   return { user, isSystemAdmin };

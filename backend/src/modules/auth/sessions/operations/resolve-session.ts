@@ -5,7 +5,7 @@ import { getCachedSession, setCachedSession } from '#/middlewares/guard/session-
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import type { SessionFacts } from '#/modules/auth/sessions/sessions-db';
 import { findSessionBySecret } from '#/modules/auth/sessions/sessions-queries';
-import type { UserWithCounters } from '#/modules/user/helpers/select';
+import type { UserWithActivity } from '#/modules/user/helpers/select';
 import { hashToken } from '#/utils/hash-token';
 import { isExpiredDate } from '#/utils/is-expired-date';
 import { isSystemAccessAllowed } from '#/utils/system-access';
@@ -16,7 +16,7 @@ const dbCtx = { var: { db: baseDb } };
 /** A live session as a request presents it, with its user. */
 export interface ResolvedSession {
   session: SessionFacts;
-  user: UserWithCounters;
+  user: UserWithActivity;
   /** Holds the admin system role. The rights also need an allowlisted request address, checked per request. */
   hasSystemRole: boolean;
   /** `actors.bindings_version` at this read: the version the user's cached memberships must match. */

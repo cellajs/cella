@@ -1,7 +1,7 @@
 import type { SideEffectBlock, SideEffectProducer } from '../types';
 
 /** Regenerable tables converted to UNLOGGED; shared with the verification block. */
-export const unloggedTables = ['rate_limits', 'user_counters', 'channel_counters', 'product_counters'];
+export const unloggedTables = ['rate_limits', 'channel_counters', 'product_counters'];
 
 async function run(): Promise<SideEffectBlock> {
   const alterStatements = unloggedTables

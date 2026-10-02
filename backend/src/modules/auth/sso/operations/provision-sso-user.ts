@@ -14,7 +14,7 @@ import type { ConnectionModel } from '#/modules/connections/connections-db';
 import { findPendingOrganizationInvitation } from '#/modules/memberships/memberships-queries';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { findOrganizationByTenant } from '#/modules/organization/organization-queries';
-import type { UserWithCounters } from '#/modules/user/helpers/select';
+import type { UserWithActivity } from '#/modules/user/helpers/select';
 import { handleCreateUser } from '#/modules/user/operations/create-account';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
@@ -46,7 +46,7 @@ export interface SsoSignInFacts {
 export const provisionSsoUser = async (
   ctx: Context<Env>,
   { federation, connection, claims, profile, snapshot, subject }: SsoSignInFacts,
-): Promise<UserWithCounters> => {
+): Promise<UserWithActivity> => {
   const email = profile.email;
   if (!email) throw new AppError(400, 'sso_email_missing', 'warn', { meta: { strategy: federation.key } });
 

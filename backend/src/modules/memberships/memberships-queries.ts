@@ -3,14 +3,14 @@ import { alias } from 'drizzle-orm/pg-core';
 import type { ChannelEntityType, EntityRole } from 'shared';
 import type { DbContext, OrgContext, UserContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { lastPostedAtOrder, memberCountsSelect } from '#/modules/memberships/helpers/member-counts';
 import { membershipBaseSelect } from '#/modules/memberships/helpers/select';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { type InsertMembershipModel, membershipsTable } from '#/modules/memberships/memberships-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import type { UserMinimalBase } from '#/modules/user/helpers/audit-user';
-import { memberSelect } from '#/modules/user/helpers/select';
-import { userCountersTable } from '#/modules/user/user-counters-db';
+import { lastSeenOrder, memberSelect, userActorJoin } from '#/modules/user/helpers/select';
 import { usersTable } from '#/modules/user/user-db';
 import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
@@ -394,8 +394,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
       name: usersTable.name,
       email: usersTable.email,
       createdAt: usersTable.createdAt,
-      // COALESCE so never-signed-in members sort as oldest: plain DESC is NULLS FIRST in Postgres
-      lastSeenAt: sql`COALESCE((SELECT ${userCountersTable.lastSeenAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id}), '-infinity')`,
+      lastSeenAt: lastSeenOrder,
       role: membershipsTable.role,
       // Latest live product row by the member in the viewed channel; RLS-guarded like the counts
       lastPostedAt: lastPostedAtOrder(entityType, entityId, organizationId),
@@ -412,6 +411,7 @@ export const findMembersPaginated = async (ctx: DbContext, opts: FindMembersPagi
     })
     .from(usersTable)
     .innerJoin(membershipsTable, eq(membershipsTable.userId, usersTable.id))
+    .innerJoin(actorsTable, userActorJoin)
     .where(and(...membersFilters, or(...$or)));
 
   const itemsQuery = membersQuery

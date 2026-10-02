@@ -297,7 +297,6 @@ export type User = {
   updatedAt: string | null;
   updatedBy: string | null;
   lastSeenAt: string | null;
-  lastStartedAt: string | null;
   lastSignInAt: string | null;
 };
 
@@ -474,10 +473,8 @@ export type Tenant = {
 export type Connection = {
   id: string;
   tenantId: string;
-  kind: 'sso' | 'lti';
+  kind: 'sso';
   issuer: string;
-  clientId: string | null;
-  deploymentId: string | null;
   claimValues: Array<string>;
   displayName: string;
   status: 'pending' | 'active' | 'disabled';

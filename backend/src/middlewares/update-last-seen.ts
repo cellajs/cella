@@ -1,5 +1,6 @@
+import { eq } from 'drizzle-orm';
 import { baseDb as db } from '#/db/db';
-import { userCountersTable } from '#/modules/user/user-counters-db';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { getIsoDate } from '#/utils/iso-date';
 
 const THROTTLE_MS = 5 * 60 * 1000; // 5 minutes
@@ -15,10 +16,9 @@ export const updateLastSeenAt = (userId: string): void => {
 
   lastSeenMemory.set(userId, now);
 
-  const timestamp = getIsoDate();
-  db.insert(userCountersTable)
-    .values({ userId, lastSeenAt: timestamp })
-    .onConflictDoUpdate({ target: userCountersTable.userId, set: { lastSeenAt: timestamp } })
+  db.update(actorsTable)
+    .set({ lastSeenAt: getIsoDate() })
+    .where(eq(actorsTable.id, userId))
     .catch(() => {
       // Reset memory on failure so next request retries
       lastSeenMemory.delete(userId);
