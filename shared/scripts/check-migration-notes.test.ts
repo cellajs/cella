@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { migrationNoteFindings, noteCodemod, parseMigrationNote } from './check-migration-notes.ts';
+import { migrationNoteFindings, parseMigrationNote } from './check-migration-notes.ts';
 
 const lines = (...rows: string[]) => rows.join('\n');
 const note = lines(
@@ -52,13 +52,6 @@ describe('parseMigrationNote', () => {
   });
 });
 
-describe('noteCodemod', () => {
-  it('is the one non-test .ts file in the folder', () => {
-    expect(noteCodemod(['README.md', 'rename.test.ts', 'rename.ts'])).toBe('rename.ts');
-    expect(noteCodemod(['README.md', 'renames.json'])).toBeNull();
-  });
-});
-
 describe('migrationNoteFindings', () => {
   const read = (sources: Record<string, string>) => (file: string) => sources[file];
   const messages = (files: string[], sources: Record<string, string>) =>
@@ -67,7 +60,7 @@ describe('migrationNoteFindings', () => {
   it('passes a well-formed note and ignores the files beside the folders', () => {
     const files = [
       'cella/migrations/README.md',
-      'cella/migrations/run.ts',
+      'cella/migrations/_TEMPLATE.md',
       'cella/migrations/20261002T0614-config-switch/README.md',
       'cella/migrations/20261002T0614-config-switch/rename.ts',
     ];

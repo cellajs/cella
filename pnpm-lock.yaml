@@ -23,8 +23,8 @@ importers:
         specifier: ^2.5.14
         version: 2.5.14
       '@cellajs/cli':
-        specifier: ^0.2.3
-        version: 0.2.3(@shikijs/themes@4.4.3)(@types/node@26.6.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
+        specifier: ^0.3.0
+        version: 0.3.0(@shikijs/themes@4.4.3)(@types/node@26.6.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       '@commitlint/cli':
         specifier: ^21.2.3
         version: 21.2.3(@types/node@26.6.3)(conventional-commits-parser@7.1.2)(typescript@6.0.3)
@@ -280,7 +280,7 @@ importers:
         version: 5.0.3(@opentelemetry/api@1.9.1)(@types/node@26.6.3)(@vitest/browser-playwright@5.0.3)(@vitest/coverage-v8@5.0.3)(@vitest/ui@5.0.3)(jsdom@30.1.1)(vite@8.3.1(@types/node@26.6.3)(esbuild@0.28.2)(jiti@2.7.0)(terser@5.48.0)(tsx@4.23.15)(yaml@2.9.1))
       web-push:
         specifier: ^3.6.7
-        version: 3.6.7(supports-color@8.1.1)
+        version: 3.6.7
       ws:
         specifier: ^8.22.0
         version: 8.22.0
@@ -2124,8 +2124,8 @@ packages:
     resolution: {integrity: sha512-ctxtJ/eA+t+6q2++vj5j7FYX3nRu311q1wfYH3xjlLOsczhlhxAg2FWNUXhpGvAw3BWo1xBcvOV6/YLc2r5FJw==}
     hasBin: true
 
-  '@cellajs/cli@0.2.3':
-    resolution: {integrity: sha512-u0CbZuj+WH54blNI+I8mWTFDLJ2H+t3Ut42bQufXbq/lqsptP3Jf97XmoHEgH2U0IXPkq4KC9OpLq9/zfIIKWQ==}
+  '@cellajs/cli@0.3.0':
+    resolution: {integrity: sha512-v99mPdrXJZLXB+BgnW7NMUtxuDGVYL6QzwGK/ekGPz3CPeJ1TZt3jDAzcxdpkd7aXgngPhs3lAdgylVYoyYbRA==}
     engines: {node: 26.x}
     hasBin: true
 
@@ -2764,15 +2764,6 @@ packages:
   '@inquirer/core@10.3.2':
     resolution: {integrity: sha512-43RTuEbfP8MbKzedNqBrlhhNKVwoK//vUFNW3Q3vZ88BLcrs4kYpGg+B2mm5p2K/HfygoCxuKwJJiv8PbGmE0A==}
     engines: {node: '>=18'}
-    peerDependencies:
-      '@types/node': '>=18'
-    peerDependenciesMeta:
-      '@types/node':
-        optional: true
-
-  '@inquirer/core@11.2.1':
-    resolution: {integrity: sha512-Qd6GJT1yVyrZZCfN8W2qKF5ApmqryXRhRKCuip8h01x2w/esJQ2XIYc6f9abMIHgKQdBfFTSOdbHRLAhuM09UA==}
-    engines: {node: '>=23.5.0 || ^22.13.0 || ^20.17.0'}
     peerDependencies:
       '@types/node': '>=18'
     peerDependenciesMeta:
@@ -13350,9 +13341,9 @@ snapshots:
     dependencies:
       css-tree: 3.2.1
 
-  '@cellajs/cli@0.2.3(@shikijs/themes@4.4.3)(@types/node@26.6.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
+  '@cellajs/cli@0.3.0(@shikijs/themes@4.4.3)(@types/node@26.6.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)':
     dependencies:
-      '@inquirer/core': 11.2.1(@types/node@26.6.3)
+      '@inquirer/core': 12.0.3(@types/node@26.6.3)
       '@inquirer/prompts': 8.7.2(@types/node@26.6.3)
       '@pierre/diffs': 1.5.1(@shikijs/themes@4.4.3)(react-dom@19.3.0(react@19.3.0))(react@19.3.0)
       commander: 15.0.0
@@ -13918,18 +13909,6 @@ snapshots:
     optionalDependencies:
       '@types/node': 26.6.3
 
-  '@inquirer/core@11.2.1(@types/node@26.6.3)':
-    dependencies:
-      '@inquirer/ansi': 2.0.8
-      '@inquirer/figures': 2.0.9
-      '@inquirer/type': 4.1.1(@types/node@26.6.3)
-      cli-width: 4.1.0
-      fast-wrap-ansi: 0.2.2
-      mute-stream: 3.0.0
-      signal-exit: 4.1.0
-    optionalDependencies:
-      '@types/node': 26.6.3
-
   '@inquirer/core@12.0.3(@types/node@26.6.3)':
     dependencies:
       '@inquirer/ansi': 2.0.8
@@ -14420,7 +14399,7 @@ snapshots:
     dependencies:
       agent-base: 7.1.4
       http-proxy-agent: 7.0.2
-      https-proxy-agent: 7.0.6(supports-color@8.1.1)
+      https-proxy-agent: 7.0.6
       lru-cache: 11.5.3
       socks-proxy-agent: 8.0.5
     transitivePeerDependencies:
@@ -17019,7 +16998,7 @@ snapshots:
   '@typespec/ts-http-runtime@0.3.9':
     dependencies:
       http-proxy-agent: 7.0.2
-      https-proxy-agent: 7.0.6(supports-color@8.1.1)
+      https-proxy-agent: 7.0.6
       tslib: 2.8.1
     transitivePeerDependencies:
       - supports-color
@@ -19440,7 +19419,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  https-proxy-agent@7.0.6(supports-color@8.1.1):
+  https-proxy-agent@7.0.6:
     dependencies:
       agent-base: 7.1.4
       debug: 4.4.3(supports-color@8.1.1)
@@ -23351,11 +23330,11 @@ snapshots:
 
   web-namespaces@2.0.1: {}
 
-  web-push@3.6.7(supports-color@8.1.1):
+  web-push@3.6.7:
     dependencies:
       asn1.js: 5.4.1
       http_ece: 1.2.0
-      https-proxy-agent: 7.0.6(supports-color@8.1.1)
+      https-proxy-agent: 7.0.6
       jws: 4.0.1
       minimist: 1.2.8
     transitivePeerDependencies:

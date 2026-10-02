@@ -1,16 +1,16 @@
 /**
  * Shape of the migration notes in `cella/migrations/<id>/`: each folder holds a README.md that opens with frontmatter,
- * then the title and a one-paragraph summary. `cella/migrations/run.ts` reads notes with the same parser.
+ * then the title and a one-paragraph summary. Apps read the notes with `pnpm cella migrate`, which expects this shape.
  */
 import type { Finding } from './repo-files.ts';
 
 /** A note folder name: `<YYYYMMDDThhmm>-<slug>`, UTC minute precision. */
-export const noteIdPattern = /^\d{8}T\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const noteIdPattern = /^\d{8}T\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 const notesDir = 'cella/migrations/';
 
 /** One note README, parsed. Fields fall back to empty values when `errors` is not empty. */
-export interface MigrationNote {
+interface MigrationNote {
   /** Changes upstream in a way app-specific code must follow. */
   syncBreaking: boolean;
   /** Bumped `clientCacheVersion` or shipped a lens module. */
@@ -77,11 +77,6 @@ export function parseMigrationNote(source: string): MigrationNote {
   if (!summary || /^(#|>|[-*|]|```|\d+\.)/.test(summary)) note.errors.push('the title must be followed by a one-paragraph summary');
   else note.summary = summary.replace(/\s*\n\s*/g, ' ');
   return note;
-}
-
-/** The note's codemod: the one non-test `.ts` file among `fileNames`, or null. */
-export function noteCodemod(fileNames: string[]): string | null {
-  return fileNames.find((name) => name.endsWith('.ts') && !name.endsWith('.test.ts')) ?? null;
 }
 
 /** Findings for every note folder among `files`: folder name, README shape, and `roots` only beside a codemod. */

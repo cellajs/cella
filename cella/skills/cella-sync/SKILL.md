@@ -26,9 +26,9 @@ advances one stage (steps 6 and 7).
 ## 1. Preflight
 
 1. Clean working tree, fresh branch (sync creates `cella/sync/<date>` itself).
-2. Run `pnpm exec tsx cella/migrations/run.ts` before merging (a new app records its baseline on
-   this first run), then read the README of each migration upstream added since the last sync
-   BEFORE resolving conflicts; conflicts usually belong to one of them.
+2. Once the first run has merged, `pnpm cella migrate` lists the migration notes that arrived
+   (the merge already recorded them, conflicts or not). Read each one (`--show <id>`) BEFORE
+   resolving conflicts; conflicts usually belong to one of them.
 3. Skim `git log --oneline <old>..cella-upstream/main`. Upstream commits that ADOPT this app's
    contributions come back as conflicts where ours = theirs + app payload.
 
@@ -74,8 +74,8 @@ app-owned module folder (`owner: 'app'`) that started as an upstream module.
 ## 5. Migration bookkeeping
 
 Run the `migrate` skill; entries whose change originated here or arrived by an earlier sync are
-verified (README "Verify" steps) and marked, not re-applied. Handle the pending migrations in the
-sync PR when you can; one left for later stays listed by `run.ts` until it is recorded.
+verified (README "Verify" steps) and marked, not re-applied. Handle the open notes in the sync PR
+when you can; one left for later stays listed by `pnpm cella migrate` until it is marked.
 
 ## 6. Commit, then drift triage
 
