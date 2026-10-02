@@ -361,3 +361,40 @@ describe('BlockNote onEditorReady', () => {
     expect(second).toHaveBeenCalledOnce();
   });
 });
+
+describe('BlockNote commit through the content api', () => {
+  it('commits a checklist toggle made on ready as a user change of a standalone editor', async () => {
+    const updateData = vi.fn();
+    const toggleOnReady = () => {
+      contentApi.current?.toggleChecklist('box-1');
+      contentApi.current?.commit();
+    };
+    await act(async () =>
+      root.render(<BlockNote id="doc" defaultValue={stored} updateData={updateData} contentApiRef={contentApi} onEditorReady={toggleOnReady} />),
+    );
+
+    expect(updateData).toHaveBeenCalledExactlyOnceWith(contentApi.current?.getContent());
+    expect(updateData.mock.calls[0][0]).not.toBe(stored);
+  });
+
+  it('commits nothing for an untouched standalone editor', async () => {
+    const updateData = vi.fn();
+    await act(async () => root.render(<BlockNote id="doc" defaultValue={stored} updateData={updateData} contentApiRef={contentApi} />));
+
+    act(() => contentApi.current?.commit());
+
+    expect(updateData).not.toHaveBeenCalled();
+  });
+
+  it('hands a collaborative toggle to updateData, the cache patch', async () => {
+    const updateData = vi.fn();
+    await act(async () =>
+      root.render(<BlockNote id="doc" defaultValue="" updateData={updateData} contentApiRef={contentApi} collaboration={bundle(seededFragment())} />),
+    );
+
+    await edit();
+    act(() => contentApi.current?.commit());
+
+    expect(updateData).toHaveBeenCalledExactlyOnceWith(contentApi.current?.getContent());
+  });
+});

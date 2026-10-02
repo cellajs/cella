@@ -61,6 +61,8 @@ export interface BlockNoteContentApi {
   placeCursorAtPoint: (clientX: number, clientY: number) => void;
   /** Toggle a checklist item's `checked` prop by its checkboxId. Returns false if not found. */
   toggleChecklist: (checkboxId: string) => boolean;
+  /** Commit the document as blur does: a cache patch while collaborative, a write for a standalone editor once changed. */
+  commit: () => void;
 }
 
 type BlockNoteProps = CommonBlockNoteProps & {
@@ -146,44 +148,6 @@ function BlockNote({
       : baseOptions,
   );
 
-  useImperativeHandle(
-    contentApiRef,
-    () => ({
-      getContent: () => JSON.stringify(editor.document),
-      focusSummaryEnd: () => {
-        editor.focus();
-        // The block the derived summary shows, so the cursor lands where the collapsed view ends.
-        const { source } = findSummarySource(editor.document as DescriptionBlock[]);
-        if (source) editor.setTextCursorPosition(source as CustomBlock, 'end');
-      },
-      placeCursorAtPoint: (clientX, clientY) => {
-        editor.focus();
-        const at = editor.prosemirrorView?.posAtCoords({ left: clientX, top: clientY });
-        if (at && typeof at.pos === 'number') editor._tiptapEditor.commands.setTextSelection(at.pos);
-      },
-      toggleChecklist: (checkboxId) => {
-        let found: CustomBlock | null = null;
-        walkBlocks(editor.document as CustomBlock[], (block) => {
-          if (block.type === 'checklistItem' && (block.props as { checkboxId?: string }).checkboxId === checkboxId) {
-            found = block;
-            return false;
-          }
-        });
-        if (!found) return false;
-        const checked = (found as CustomBlock).props as { checked?: boolean };
-        editor.updateBlock(found, { props: { checked: !checked.checked } });
-        return true;
-      },
-    }),
-    [editor],
-  );
-
-  // Once per editor instance: a parent passing a new callback has no new editor.
-  const onEditorReadyRef = useLatestRef(onEditorReady);
-  useEffect(() => {
-    onEditorReadyRef.current?.();
-  }, [editor, onEditorReadyRef]);
-
   useYjsUndoManagerFix(editor, collaborative);
 
   const checkUntrustedMedia = useUntrustedMediaWarning({ organizationId: baseFilePanelProps?.organizationId });
@@ -231,6 +195,46 @@ function BlockNote({
       if (touchedRef.current) commitDocumentRef.current();
     };
   }, [editable, commitOnEveryChange, collaborative]);
+
+  useImperativeHandle(
+    contentApiRef,
+    () => ({
+      getContent: () => JSON.stringify(editor.document),
+      focusSummaryEnd: () => {
+        editor.focus();
+        // The block the derived summary shows, so the cursor lands where the collapsed view ends.
+        const { source } = findSummarySource(editor.document as DescriptionBlock[]);
+        if (source) editor.setTextCursorPosition(source as CustomBlock, 'end');
+      },
+      placeCursorAtPoint: (clientX, clientY) => {
+        editor.focus();
+        const at = editor.prosemirrorView?.posAtCoords({ left: clientX, top: clientY });
+        if (at && typeof at.pos === 'number') editor._tiptapEditor.commands.setTextSelection(at.pos);
+      },
+      toggleChecklist: (checkboxId) => {
+        let found: CustomBlock | null = null;
+        walkBlocks(editor.document as CustomBlock[], (block) => {
+          if (block.type === 'checklistItem' && (block.props as { checkboxId?: string }).checkboxId === checkboxId) {
+            found = block;
+            return false;
+          }
+        });
+        if (!found) return false;
+        const checked = (found as CustomBlock).props as { checked?: boolean };
+        editor.updateBlock(found, { props: { checked: !checked.checked } });
+        return true;
+      },
+      commit: () => commitDocumentRef.current(),
+    }),
+    [editor],
+  );
+
+  // Once per editor instance: a parent passing a new callback has no new editor. It runs after the change
+  // subscription, so an edit the parent makes on ready (a queued checklist toggle) counts as a user change.
+  const onEditorReadyRef = useLatestRef(onEditorReady);
+  useEffect(() => {
+    onEditorReadyRef.current?.();
+  }, [editor, onEditorReadyRef]);
 
   // The latest callback, so a navigation compares with the props current then.
   const onBeforeLoadRef = useLatestRef(onBeforeLoad);

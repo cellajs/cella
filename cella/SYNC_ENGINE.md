@@ -203,6 +203,13 @@ The template collaborates on attachment descriptions through the Yjs relay (`ser
 
 The cache takes a Yjs-owned field, the description or a column derived from it (`registerYjsOwnedFields`), only from a server write of it. When a synced row carries the cached copy's `stx.fieldTimestamps` stamp for the field, the cached value stays, so a read that lags the relay cannot undo a collaborative patch. A derived column has no stamp of its own and follows the description's.
 
+An app that shows a description in place, a static view that turns into the editor, builds it on `useDescriptionSlot` and `<DescriptionLayers>` (`frontend/src/modules/common/blocknote/`; the `common/blocknote/DescriptionSlot` story runs it):
+
+- **One editor instance** serves the static view, the editor warmed invisibly behind it and the live editor. The app owns `editing`, its warm triggers, how editing ends and both views.
+- **The hand-off** back to the static holds the editor until the static is ready, at most 250 ms, unless the app passes `holdOnExit: false`. The hook returns `staticOverride`, the editor's content, which the static shows until the cache has it; it drops once the description equals it or moves past the value it replaced.
+- **A checklist toggle** on the static runs through the editor and commits like an edit.
+- **Warm reasons**: the app warms and cools the editor per reason (`warm('hover')`, `cool('hover')`). The hook cools what the app does not: nothing warms without edit rights, a hidden tab drops every reason, a reason not renewed for 30 seconds expires, and a tab keeps at most two warm editors outside editing. Editing and the hold are never cooled.
+
 ## Reference
 
 ### SSE wire
