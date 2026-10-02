@@ -16,7 +16,11 @@ import { insertEmail, insertUsers } from '#/modules/user/user-queries';
 const isAddressConstraint = (constraint = '') => /^(users|emails)_email_/.test(constraint);
 
 interface HandleCreateUserProps {
-  newUser: InsertUserModel;
+  /**
+   * What a sign-up may set on the new account. A provider's avatar is left out on purpose: avatars are served from
+   * the app's own CDN only, so a profile picture hosted elsewhere is never stored.
+   */
+  newUser: Pick<InsertUserModel, 'slug' | 'email' | 'name' | 'firstName' | 'lastName'>;
   /** What proved the inbox before the account is created: a magic-link click, or a provider's verification mail. */
   via: EmailProof;
 }
@@ -38,6 +42,8 @@ export const handleCreateUser = async (ctx: DbContext, { newUser, via }: HandleC
         {
           slug: slugAvailable ? newUser.slug : `${newUser.slug}-${nanoid(5)}`,
           firstName: newUser.firstName,
+          // Providers assert an empty string for a missing family name; the column holds null for "none".
+          lastName: newUser.lastName || null,
           email: normalizedEmail,
           name: newUser.name,
           language: appConfig.defaultLanguage,
