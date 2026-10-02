@@ -466,6 +466,7 @@
       // scripts, build configuration, Vite plugins, and CLI runtime.
       "includes": [
         "shared/src/config-builder/app-config.ts",
+        "shared/src/config-builder/dev-port-offset.ts",
         "infra/**",
         "**/scripts/**",
         "**/*.config.ts",

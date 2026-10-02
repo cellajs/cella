@@ -109,6 +109,7 @@ export const config = {
   /**
    * Local dev service listen ports and Vite proxy targets. Offset the whole block together
    * with the dev `frontendUrl` port (unique per app) so parallel local stacks never collide.
+   * Keep that offset in the tens: a linked git worktree adds 100 per worktree on its own.
    * `frontend` is the Vite fallback for when `frontendUrl` carries no port (tunnel mode).
    */
   devPorts: {

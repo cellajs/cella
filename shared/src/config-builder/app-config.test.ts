@@ -44,3 +44,35 @@ describe('appConfig service endpoints', () => {
     expect(appConfig.services.mcp.publicUrl).toBe('https://mcp.example');
   });
 });
+
+describe('appConfig dev port offset', () => {
+  const port = (url: string) => Number(new URL(url).port);
+
+  it('moves devPorts and the localhost URL family together', async () => {
+    const base = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '0' });
+    const shifted = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '100' });
+    expect(shifted.devPortOffset).toBe(100);
+    expect(shifted.devPorts.api).toBe(base.devPorts.api + 100);
+    expect(shifted.devPorts.internal).toBe(base.devPorts.internal + 100);
+    expect(port(shifted.frontendUrl)).toBe(port(base.frontendUrl) + 100);
+    expect(port(shifted.backendUrl)).toBe(port(base.backendUrl) + 100);
+    expect(port(shifted.yjsUrl)).toBe(port(base.yjsUrl) + 100);
+    expect(shifted.services.frontend.publicUrl).toBe(shifted.frontendUrl);
+  });
+
+  it('writes generated text with the configured ports', async () => {
+    const base = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '0' });
+    process.env = { ...originalEnv, APP_MODE: 'development', DEV_PORT_OFFSET: '100' };
+    vi.resetModules();
+    const { appConfig, withConfiguredDevPorts } = await import('./app-config.ts');
+    expect(appConfig.backendUrl).not.toBe(base.backendUrl);
+    expect(withConfiguredDevPorts(`{"url":"${appConfig.backendUrl}"}`)).toBe(`{"url":"${base.backendUrl}"}`);
+  });
+
+  it('leaves an env URL override and the other modes unshifted', async () => {
+    const overridden = await loadAppConfig({ APP_MODE: 'development', DEV_PORT_OFFSET: '100', FRONTEND_URL: 'http://localhost:3000' });
+    expect(overridden.frontendUrl).toBe('http://localhost:3000');
+    expect((await loadAppConfig({ APP_MODE: 'production', DEV_PORT_OFFSET: '100' })).devPortOffset).toBe(0);
+    expect((await loadAppConfig({ APP_MODE: 'test', DEV_PORT_OFFSET: '100' })).devPortOffset).toBe(0);
+  });
+});

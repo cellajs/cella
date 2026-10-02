@@ -17,7 +17,7 @@
     "build:staging": "cross-env NODE_ENV=staging tsup",
     "docker:up": "docker compose up",
     "docker:down": "docker compose down",
-    "stop": "pnpm docker:down",
+    "stop": "tsx scripts/stop-database.ts",
     "seed": "tsx scripts/seeds.ts",
     "migrate": "tsx scripts/migrate.ts",
     "jobs": "tsx scripts/jobs.ts",

@@ -1,7 +1,7 @@
 import { hierarchy } from './config/config.default.ts';
 
 export { hierarchy, roles } from './config/config.default.ts';
-export { appConfig } from './src/config-builder/app-config.ts';
+export { appConfig, withConfiguredDevPorts } from './src/config-builder/app-config.ts';
 export { type ConfigSwitch, isSwitchOn } from './src/config-builder/config-switch.ts';
 export type { ConfigMode } from './src/config-builder/types.ts';
 
