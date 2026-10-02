@@ -19,9 +19,11 @@ function parseArgs() {
 }
 
 interface PollState {
-  prevEvents: number;
-  prevTime: number;
-  samples: { opsPerSec: number; p95: number; walLag: number }[];
+  /** The previous sample's `eventsProcessed`: a rise means this run produced events. */
+  prevEvents: number | null;
+  /** Set at the first rise. Events of an earlier scenario stay in the worker's minute, and are no reason to report. */
+  active: boolean;
+  samples: { opsPerSec: number; eventsLastMinute: number; p95: number; walLag: number }[];
 }
 
 async function poll(state: PollState, quiet: boolean) {
@@ -29,35 +31,36 @@ async function poll(state: PollState, quiet: boolean) {
     const res = await fetch(CDC_HEALTH_URL);
     if (!res.ok) return;
 
+    // The worker's metrics cover a rolling minute: `eventsProcessed` is the events in it, not a running total, and
+    // `throughput` is their rate. A difference of two `eventsProcessed` samples drops whatever aged out between them.
     const body = (await res.json()) as {
-      metrics?: { eventsProcessed: number; processingLatency?: { p95?: number }; walLagBytes?: number; batchSize?: { avg?: number } };
+      metrics?: {
+        eventsProcessed: number;
+        throughput?: number;
+        processingLatency?: { p95?: number };
+        walLagBytes?: number;
+        batchSize?: { avg?: number };
+      };
     };
     const m = body.metrics;
     if (!m) return;
 
-    const now = Date.now();
-    const totalEvents = m.eventsProcessed;
-
-    let opsPerSec = 0;
-    if (state.prevTime > 0 && totalEvents > state.prevEvents) {
-      const dt = (now - state.prevTime) / 1000;
-      opsPerSec = Math.round((totalEvents - state.prevEvents) / dt);
-    }
-    state.prevEvents = totalEvents;
-    state.prevTime = now;
-
+    const opsPerSec = m.throughput ?? 0;
+    const eventsLastMinute = m.eventsProcessed;
     const p95 = m.processingLatency?.p95 ?? 0;
     const walLag = m.walLagBytes ?? 0;
     const batchAvg = m.batchSize?.avg ?? 0;
 
-    state.samples.push({ opsPerSec, p95, walLag });
+    if (state.prevEvents !== null && eventsLastMinute > state.prevEvents) state.active = true;
+    state.prevEvents = eventsLastMinute;
+    if (state.active) state.samples.push({ opsPerSec, eventsLastMinute, p95, walLag });
 
     if (quiet) return;
 
     console.info(
       `${pc.cyan('CDC')} ${pc.bold(String(opsPerSec))} ops/s | ` +
         `p95=${pc.yellow(String(p95))}ms | ` +
-        `events=${totalEvents} | ` +
+        `events/min=${eventsLastMinute} | ` +
         `lag=${walLag}B | ` +
         `batch=${batchAvg}`,
     );
@@ -78,7 +81,8 @@ function printSummary(samples: PollState['samples']) {
   const max = (arr: number[]) => Math.max(...arr);
 
   console.info(`\n${pc.cyan('CDC Summary')}`);
-  console.info(`  Throughput: avg=${avg(throughputs)} ops/s, peak=${max(throughputs)} ops/s`);
+  console.info(`  Throughput (rolling minute): avg=${avg(throughputs)} ops/s, peak=${max(throughputs)} ops/s`);
+  console.info(`  Events in one minute: peak=${max(samples.map((s) => s.eventsLastMinute))}`);
   console.info(`  p95 latency: avg=${avg(p95s)}ms, max=${max(p95s)}ms`);
   console.info(`  Samples: ${samples.length}`);
 }
@@ -90,7 +94,7 @@ function printSummary(samples: PollState['samples']) {
  */
 async function main() {
   const { interval, duration, quiet } = parseArgs();
-  const state: PollState = { prevEvents: 0, prevTime: 0, samples: [] };
+  const state: PollState = { prevEvents: null, active: false, samples: [] };
 
   if (!quiet) {
     const limit = duration > 0 ? ` for ${duration}s` : '';

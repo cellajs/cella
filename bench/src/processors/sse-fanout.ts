@@ -13,9 +13,10 @@ interface ArtilleryEvents {
   emit(kind: 'histogram', name: string, value: number): void;
 }
 
+/** An app-stream change: `product` for a product entity, with its `productType`. */
 interface Notification {
   kind: string;
-  entityType: string | null;
+  productType: string | null;
   seq: number | null;
   batchUntilSeq: number | null;
   syncWindow: number | null;
@@ -56,10 +57,10 @@ export async function subscribeAndReact(context: { vars: Record<string, unknown>
   };
 
   const onNotification = (n: Notification) => {
-    if (n.kind !== 'entity' || n.seq == null) return;
+    if (n.kind !== 'product' || n.seq == null) return;
     events.emit('counter', 'sse.notifications', 1);
     const until = n.batchUntilSeq ?? n.seq;
-    const scope = `${n.entityType}:${n.channelId ?? n.organizationId}`;
+    const scope = `${n.productType}:${n.channelId ?? n.organizationId}`;
 
     if (SSE_SYNC_MODE === 'immediate') {
       events.emit('histogram', 'sync.reaction_delay_ms', 0);
