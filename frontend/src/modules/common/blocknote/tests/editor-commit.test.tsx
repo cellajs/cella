@@ -344,7 +344,16 @@ describe('CollaborativeBlockNote with Yjs on', () => {
   });
 
   it('makes no REST write on navigation or unmount, however the document changed: unmount patches the cache', async () => {
-    liveConnection = { awareness: undefined, fragment: seededFragment(), synced: true, stopped: false, rebuilds: 0, unsynced: false };
+    liveConnection = {
+      awareness: undefined,
+      fragment: seededFragment(),
+      ready: true,
+      transport: 'ws',
+      synced: true,
+      stopped: false,
+      rebuilds: 0,
+      unsynced: false,
+    };
     const updateData = vi.fn();
     await renderHost({ updateData });
     expect(contentApi.current?.getContent()).toBe(stored);

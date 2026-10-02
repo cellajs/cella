@@ -7,6 +7,7 @@ import { UploadHostProvider } from '~/modules/common/blocknote/custom-file-panel
 import { useYjsToken } from '~/modules/common/blocknote/hooks/use-yjs-token';
 import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
 import { useYjsConnection } from '~/modules/common/blocknote/yjs-connections';
+import { useStoredYDoc } from '~/modules/common/blocknote/yjs-store';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { getRandomColor } from '~/utils/random-color';
 
@@ -47,10 +48,10 @@ function SyncStatus({ text }: { text: string }) {
 
 /**
  * BlockNote host for an entity description, with one save mode fixed by config. With Yjs on, edits save through the
- * relay alone: the live editor shows once its connection synced, and until then the static, with a status saying why
- * (connecting, offline, refused). A connection the relay ended for good leaves its editor read-only with a notice: its
- * document may hold edits nobody saved. A deleted entity shows the static, saying so. With Yjs off, a standalone editor
- * writes through `updateData`. Without edit rights, the static alone.
+ * relay, or through the API's HTTP routes while the relay is out of reach: the live editor shows once its connection is
+ * ready (synced, or loaded from storage), and until then the static, with a status saying why (connecting, offline).
+ * Lost edit rights, a deleted entity and a refused document show the static, saying so. With Yjs off, a standalone
+ * editor writes through `updateData`. Without edit rights, the static alone.
  */
 export function CollaborativeBlockNote(props: CollaborativeBlockNoteProps) {
   const { entityId, tenantId, organizationId, description, canEdit, waitingFallback, className, dense, clickOpensPreview } = props;
@@ -78,7 +79,7 @@ export function CollaborativeBlockNote(props: CollaborativeBlockNoteProps) {
   return uploadHostProps ? <UploadHostProvider baseFilePanelProps={uploadHostProps}>{host}</UploadHostProvider> : host;
 }
 
-/** The live editor once the connection synced, the static with a status until then. */
+/** The live editor once the connection is ready, the static with a status until then and once the document cannot be edited. */
 function CollaborativeHost({
   entityType,
   entityId,
@@ -100,15 +101,22 @@ function CollaborativeHost({
   // The token names this entity only; the relay closes the socket when it expires, and the refreshed token reconnects it.
   const { token, refused, deleted: tokenDeleted } = useYjsToken({ entityType, entityId, tenantId, organizationId, enabled: isOnline });
 
-  // Once synced, the connection stays for the mount, also when its token is refused: a stopped editor shows what was typed.
+  // A stored document opens without a token, offline too: its editor mounts from storage.
+  const stored = useStoredYDoc({ entityType, entityId })?.stored ?? false;
+  // Once ready, the connection stays for the mount, also when its token is refused: a stopped editor shows what was typed.
   const [joined, setJoined] = useState<string | null>(null);
-  const yjsConn = useYjsConnection(token || joined === entityId ? entityId : undefined, entityType, tenantId, organizationId);
-  if (yjsConn?.synced && joined !== entityId) setJoined(entityId);
+  const yjsConn = useYjsConnection(token || stored || joined === entityId ? entityId : undefined, entityType, tenantId, organizationId);
+  if (yjsConn?.ready && joined !== entityId) setJoined(entityId);
 
   const stopped = yjsConn?.stopped ?? false;
-  // The token route answered 404, or the relay closed with 4410: the document went with the entity.
+  const stopReason = yjsConn?.stopReason ?? null;
+  // The token or HTTP routes answered 404, or the relay closed with 4410: the document went with the entity.
   const deleted = tokenDeleted || (yjsConn?.deleted ?? false);
-  const connecting = isOnline && !refused && !deleted && !stopped && !yjsConn?.synced;
+  // Edit rights withdrawn: the token or HTTP routes answered 403, or the relay closed with 4003.
+  const denied = refused || stopReason === 'denied';
+  const stoppedText = stopReason === 'expired' ? t('error:sync_token_expired.text') : t('c:collaboration_stopped.text');
+  // Not ready yet, or ready from storage before either transport synced it.
+  const connecting = isOnline && !denied && !deleted && !stopped && (!yjsConn?.ready || yjsConn.transport === 'none');
   const [connectingNoticed, setConnectingNoticed] = useState(false);
   useEffect(() => {
     if (!connecting) return;
@@ -119,15 +127,16 @@ function CollaborativeHost({
     };
   }, [connecting]);
 
-  // Not synced yet, or a reseeded document syncing afresh: nothing was typed into it, so the editor that replaces the
-  // static once it synced loses nothing. A deleted entity's document is gone, with the edits it held unsaved.
-  if (deleted || !yjsConn?.synced) {
+  // Not ready yet, or a reseeded document syncing afresh: nothing was typed into it, so the editor that replaces the
+  // static once it is ready loses nothing. A deleted entity, lost rights or a refused document leave nothing to edit:
+  // edits the server never saved are offered as a copy, outside the editor.
+  if (!yjsConn?.ready || deleted || denied || stopReason === 'refused') {
     const status = deleted
       ? t('c:deleted')
-      : stopped
-        ? t('c:collaboration_stopped.text')
-        : refused
-          ? t('c:read_only')
+      : denied
+        ? t('c:read_only')
+        : stopped
+          ? stoppedText
           : !isOnline
             ? t('c:offline')
             : connectingNoticed
@@ -141,9 +150,17 @@ function CollaborativeHost({
     );
   }
 
-  // Nothing typed after the relay ended the session could reach it, so the editor stops taking edits. Offline, it takes
-  // them in memory, and the connection keeps them until the relay saved them.
-  const status = stopped ? t('c:collaboration_stopped.text') : !isOnline && yjsConn.unsynced ? t('c:collaboration_offline.text') : null;
+  // Nothing typed after the session ended could reach a server, so the editor stops taking edits. Offline, it takes
+  // them, and the connection keeps them until a server saved them. Over HTTP, peers' edits arrive with each pull.
+  const status = stopped
+    ? stoppedText
+    : !isOnline
+      ? t(yjsConn.unsynced ? 'c:collaboration_offline.text' : 'c:offline')
+      : yjsConn.transport === 'http'
+        ? t('c:sync_limited.text')
+        : connectingNoticed
+          ? t('c:connecting')
+          : null;
   return (
     <>
       {status && <SyncStatus text={status} />}

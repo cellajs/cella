@@ -657,6 +657,7 @@
   "suspended": "Suspended",
   "sync_engine": "Sync engine",
   "sync_failed": "Sync failed",
+  "sync_limited.text": "Live sync is unavailable. Your edits save through the server, and others' edits arrive every few seconds.",
   "synced": "Synced",
   "syncing": "Syncing",
   "system_panel": "System panel",

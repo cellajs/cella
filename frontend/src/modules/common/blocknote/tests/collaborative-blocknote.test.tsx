@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { act, type ComponentProps } from 'react';
+import { act, type ComponentProps, useEffect } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -9,18 +9,32 @@ type EditorProps = {
   updateData: (blocks: string) => void;
 };
 
-// The editor and the static record the props they were rendered with; everything around the host is inert.
+// The editor and the static record the props they were rendered with, and the editor its mounts; everything around the host is inert.
 const editors: EditorProps[] = [];
+let editorMounts = 0;
 vi.mock('~/modules/common/blocknote/blocknote-editor', () => ({
   BlockNote: (props: EditorProps) => {
     editors.push(props);
+    useEffect(() => {
+      editorMounts++;
+    }, []);
     return null;
   },
 }));
 vi.mock('~/modules/common/blocknote/lazy-full-html', () => ({
   BlockNoteFullHtml: ({ defaultValue }: { defaultValue: string }) => <div data-static>{defaultValue}</div>,
 }));
-const connection = { awareness: {}, fragment: {}, synced: true, stopped: false, rebuilds: 0, unsynced: false, deleted: false };
+const connectionDefaults = {
+  ready: true,
+  transport: 'ws' as 'none' | 'ws' | 'http',
+  synced: true,
+  stopped: false,
+  stopReason: null as 'denied' | 'refused' | 'expired' | null,
+  rebuilds: 0,
+  unsynced: false,
+  deleted: false,
+};
+const connection = { awareness: {}, fragment: {}, ...connectionDefaults };
 const connectionRequests: (string | undefined)[] = [];
 vi.mock('~/modules/common/blocknote/yjs-connections', () => ({
   useYjsConnection: (editSessionId: string | undefined) => {
@@ -38,6 +52,9 @@ vi.mock('~/modules/common/blocknote/hooks/use-yjs-token', () => ({
 }));
 let online = true;
 vi.mock('~/hooks/use-online-manager', () => ({ useOnlineManager: () => online }));
+// Whether the per-user database holds the document: a stored one opens without a token.
+let stored = false;
+vi.mock('~/modules/common/blocknote/yjs-store', () => ({ useStoredYDoc: () => ({ stored, unsynced: false }) }));
 vi.mock('~/modules/user/user-store', () => ({ useCurrentUser: () => ({ name: 'Editor' }) }));
 vi.mock('~/modules/common/blocknote/custom-file-panel/upload-host', () => ({
   UploadHostProvider: ({ children }: { children: unknown }) => children,
@@ -84,12 +101,14 @@ afterEach(async () => {
   root = undefined;
   vi.useRealTimers();
   editors.length = 0;
+  editorMounts = 0;
+  stored = false;
   connectionRequests.length = 0;
   tokenRequests.length = 0;
   updateData.mockClear();
   online = true;
   Object.assign(tokenState, { token: 'token', refused: false, deleted: false });
-  Object.assign(connection, { fragment: {}, synced: true, stopped: false, rebuilds: 0, unsynced: false, deleted: false });
+  Object.assign(connection, { fragment: {}, ...connectionDefaults });
 });
 
 describe('CollaborativeBlockNote states', () => {
@@ -126,22 +145,22 @@ describe('CollaborativeBlockNote states', () => {
 
     // The token arrives, and the relay is slow: still connecting.
     tokenState.token = 'token';
-    connection.synced = false;
+    Object.assign(connection, { ready: false, transport: 'none', synced: false });
     await render({ waitingFallback: undefined, description: 'written elsewhere' });
     expect(connectionRequests.at(-1)).toBe('attachment-1');
     expect(editors).toHaveLength(0);
     expect(status()).toBe('c:connecting');
 
-    connection.synced = true;
+    Object.assign(connection, { ready: true, transport: 'ws', synced: true });
     await render({ waitingFallback: undefined, description: 'written elsewhere' });
     expect(editors.at(-1)?.collaboration).toBeDefined();
     expect(container.querySelector('[data-static]')).toBeNull();
     expect(status()).toBeNull();
   });
 
-  it('offline at mount: the static saying offline, then the editor once online and synced', async () => {
+  it('offline with nothing stored: the static saying offline, then the editor once online and synced', async () => {
     online = false;
-    connection.synced = false;
+    Object.assign(connection, { ready: false, transport: 'none', synced: false });
     await render();
 
     expect(showsStatic()).toBe(true);
@@ -149,7 +168,7 @@ describe('CollaborativeBlockNote states', () => {
     expect(status()).toBe('c:offline');
 
     online = true;
-    connection.synced = true;
+    Object.assign(connection, { ready: true, transport: 'ws', synced: true });
     await render();
     expect(showsStatic()).toBe(false);
     expect(editors.at(-1)?.editable).toBe(true);
@@ -185,12 +204,13 @@ describe('CollaborativeBlockNote states', () => {
     expect(connectionRequests).toHaveLength(0);
   });
 
-  it('offline mid-session: the editor stays editable and says edits are kept while it holds unsaved ones', async () => {
+  it('offline mid-session: the editor stays editable, saying offline, and that edits are kept while it holds unsaved ones', async () => {
     await render();
     online = false;
+    connection.transport = 'none';
     await render();
     expect(editors.at(-1)?.editable).toBe(true);
-    expect(status()).toBeNull();
+    expect(status()).toBe('c:offline');
 
     connection.unsynced = true;
     await render();
@@ -200,28 +220,39 @@ describe('CollaborativeBlockNote states', () => {
     expect(status()).toBe('c:collaboration_offline.text');
   });
 
-  it('a token refused mid-session keeps the stopped editor and what it holds, read-only', async () => {
+  it('must not keep an editor once edit rights are withdrawn mid-session (token 403): the static says read only', async () => {
     await render();
+    const rendered = editors.length;
     Object.assign(tokenState, { token: undefined, refused: true });
-    connection.stopped = true;
+    Object.assign(connection, { stopped: true, stopReason: 'denied' });
     await render();
 
-    expect(connectionRequests.at(-1)).toBe('attachment-1');
-    expect(editors.at(-1)?.collaboration).toBeDefined();
-    expect(editors.at(-1)?.editable).toBe(false);
-    expect(status()).toBe('c:collaboration_stopped.text');
+    expect(editors).toHaveLength(rendered);
+    expect(showsStatic()).toBe(true);
+    expect(status()).toBe('c:read_only');
+  });
+
+  it('must not keep an editor once the relay or the HTTP routes deny access (4003, 403): the static says read only', async () => {
+    await render();
+    const rendered = editors.length;
+    Object.assign(connection, { stopped: true, stopReason: 'denied' });
+    await render();
+
+    expect(editors).toHaveLength(rendered);
+    expect(showsStatic()).toBe(true);
+    expect(status()).toBe('c:read_only');
   });
 
   it('renders no static for a null waitingFallback', async () => {
-    connection.synced = false;
+    Object.assign(connection, { ready: false, synced: false });
     await render({ waitingFallback: null, description: 'stored' });
 
     expect(container.querySelector('[data-static]')).toBeNull();
     expect(editors).toHaveLength(0);
   });
 
-  it('stopped before it ever synced: the static with the stopped notice', async () => {
-    Object.assign(connection, { synced: false, stopped: true });
+  it('stopped before it was ever ready: the static with the stopped notice', async () => {
+    Object.assign(connection, { ready: false, synced: false, stopped: true, stopReason: 'refused' });
     await render();
 
     expect(showsStatic()).toBe(true);
@@ -236,37 +267,115 @@ describe('CollaborativeBlockNote after the relay reseeded the document', () => {
     const dropped = editors.at(-1)?.collaboration?.fragment;
     expect(dropped).toBe(connection.fragment);
 
-    // The connection replaced its document; the new one has not synced yet.
-    Object.assign(connection, { fragment: {}, synced: false, rebuilds: 1 });
+    // The connection replaced its document; the new one is not ready yet.
+    Object.assign(connection, { fragment: {}, ready: false, transport: 'none', synced: false, rebuilds: 1 });
     const rendered = editors.length;
     await render();
     expect(editors).toHaveLength(rendered);
     expect(showsStatic()).toBe(true);
 
-    connection.synced = true;
+    Object.assign(connection, { ready: true, transport: 'ws', synced: true });
     await render();
+    expect(editorMounts).toBe(2);
     expect(showsStatic()).toBe(false);
     expect(editors.at(-1)?.collaboration?.fragment).toBe(connection.fragment);
     expect(editors.at(-1)?.collaboration?.fragment).not.toBe(dropped);
   });
 });
 
-describe('CollaborativeBlockNote after the relay ends the session', () => {
-  it('must not accept edits once the collaborative connection stopped for good', async () => {
+describe('CollaborativeBlockNote after the session ends', () => {
+  it('must not accept edits once the relay kept refusing tokens: the read-only editor keeps what it holds, which stays stored', async () => {
     await render();
     // Positive control: a live collaborative editor is editable.
     expect(editors.at(-1)?.collaboration).toBeDefined();
     expect(editors.at(-1)?.editable).toBe(true);
     expect(status()).toBeNull();
 
-    connection.stopped = true;
+    Object.assign(connection, { stopped: true, stopReason: 'expired' });
     await render();
 
     const last = editors.at(-1);
     // The same collaborative editor, showing what it holds, turned read-only with a notice.
     expect(last?.collaboration).toBeDefined();
     expect(last?.editable).toBe(false);
+    expect(editorMounts).toBe(1);
+    expect(status()).toBe('error:sync_token_expired.text');
+  });
+
+  it('must not keep an editor on a document the relay or the HTTP routes refuse (4400, 1009, 400): the static says collaboration stopped', async () => {
+    await render();
+    const rendered = editors.length;
+    Object.assign(connection, { stopped: true, stopReason: 'refused' });
+    await render();
+
+    expect(editors).toHaveLength(rendered);
+    expect(showsStatic()).toBe(true);
     expect(status()).toBe('c:collaboration_stopped.text');
+  });
+});
+
+describe('CollaborativeBlockNote off the relay', () => {
+  it('a stored document offline: the live editor from storage, opened without a token, saying offline', async () => {
+    online = false;
+    stored = true;
+    tokenState.token = undefined;
+    Object.assign(connection, { transport: 'none', synced: false });
+    await render();
+
+    expect(connectionRequests.at(-1)).toBe('attachment-1');
+    expect(showsStatic()).toBe(false);
+    expect(editors.at(-1)?.editable).toBe(true);
+    expect(status()).toBe('c:offline');
+
+    // An edit made offline is kept, and the status says so.
+    connection.unsynced = true;
+    await render();
+    expect(editors.at(-1)?.editable).toBe(true);
+    expect(status()).toBe('c:collaboration_offline.text');
+  });
+
+  it('a stored document online before either transport synced it: the live editor, saying connecting after a second', async () => {
+    vi.useFakeTimers();
+    stored = true;
+    Object.assign(connection, { transport: 'none', synced: false });
+    await render();
+
+    expect(editors.at(-1)?.editable).toBe(true);
+    expect(status()).toBeNull();
+    await act(async () => vi.advanceTimersByTime(1_000));
+    expect(status()).toBe('c:connecting');
+
+    Object.assign(connection, { transport: 'ws', synced: true });
+    await render();
+    expect(status()).toBeNull();
+    expect(editorMounts).toBe(1);
+  });
+
+  it('the relay out of reach while the API answers: the live editor over HTTP, saying live sync is limited', async () => {
+    connection.transport = 'http';
+    await render();
+
+    expect(showsStatic()).toBe(false);
+    expect(editors.at(-1)?.editable).toBe(true);
+    expect(status()).toBe('c:sync_limited.text');
+  });
+
+  it('must not remount the editor across a switch of transport: ws, then http, then ws again keep one instance', async () => {
+    await render();
+    const fragment = editors.at(-1)?.collaboration?.fragment;
+    expect(status()).toBeNull();
+
+    connection.transport = 'http';
+    await render();
+    expect(status()).toBe('c:sync_limited.text');
+
+    connection.transport = 'ws';
+    await render();
+    expect(status()).toBeNull();
+
+    expect(editorMounts).toBe(1);
+    expect(editors.at(-1)?.collaboration?.fragment).toBe(fragment);
+    expect(editors.every((editor) => editor.editable)).toBe(true);
   });
 });
 
@@ -284,8 +393,8 @@ describe('CollaborativeBlockNote after the entity is deleted', () => {
     expect(status()).toBe('c:deleted');
   });
 
-  it('shows deleted, not collaboration stopped, for a connection the relay closed with 4410 before it synced', async () => {
-    Object.assign(connection, { synced: false, stopped: true, deleted: true });
+  it('shows deleted, not collaboration stopped, for a connection the relay closed with 4410 before it was ready', async () => {
+    Object.assign(connection, { ready: false, synced: false, stopped: true, deleted: true });
     await render();
 
     expect(showsStatic()).toBe(true);
