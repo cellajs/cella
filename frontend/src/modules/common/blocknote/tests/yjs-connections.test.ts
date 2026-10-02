@@ -3,19 +3,68 @@ import { act, createElement } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+/** The browser socket the provider's WebSocket polyfill extends; it records what it sends. */
+class FakeSocket {
+  static readonly OPEN = 1;
+  readonly OPEN = 1;
+  readyState = 1;
+  frames: Uint8Array[] = [];
+  send(data: Uint8Array) {
+    this.frames.push(data);
+  }
+  close() {}
+}
+vi.stubGlobal('WebSocket', FakeSocket);
+
 class MockProvider {
   params: Record<string, string>;
   shouldConnect = true;
   synced = false;
+  wsconnected = false;
+  ws: FakeSocket | null = null;
   doc: MockDoc;
-  /** Message type → handler, as y-websocket keeps them per provider; the relay's generation frame is type 4. */
+  /** The socket class y-websocket opens each connection attempt with. */
+  private socketClass: new (
+    url: string,
+  ) => FakeSocket;
+  /** Message type → handler, as y-websocket keeps them per provider; the relay's generation frame is type 4, `Saved` type 5. */
   messageHandlers: ((encoder: unknown, decoder: unknown, provider: unknown, emitSynced: boolean, type: number) => void)[] = [];
   private listeners = new Map<string, Set<(...args: unknown[]) => void>>();
 
-  constructor(_url: string, _room: string, doc: MockDoc, opts: { params: Record<string, string> }) {
+  constructor(
+    _url: string,
+    _room: string,
+    doc: MockDoc,
+    opts: { params: Record<string, string>; WebSocketPolyfill: new (url: string) => FakeSocket },
+  ) {
     this.params = { ...opts.params };
     this.doc = doc;
+    this.socketClass = opts.WebSocketPolyfill;
     providers.push(this);
+  }
+
+  /** A connection attempt that opens, as y-websocket makes it: a new socket, 'connecting', then 'connected'. */
+  openSocket() {
+    this.ws = new this.socketClass('ws://relay');
+    this.emit('status', { status: 'connecting' });
+    this.wsconnected = true;
+    this.emit('status', { status: 'connected' });
+  }
+  /** The socket closes; y-websocket resets `synced` with it. */
+  dropSocket() {
+    this.ws = null;
+    this.wsconnected = false;
+    this.synced = false;
+    this.emit('status', { status: 'disconnected' });
+  }
+  /** A sync frame y-websocket sends: a Step1 (0), Step2 (1) or Update (2). */
+  sendSync(subtype: number) {
+    this.ws?.send(new Uint8Array([0, subtype, 0]));
+  }
+  /** The relay's answer to the handshake: its Step2, after which y-websocket reports the document synced. */
+  receiveStep2() {
+    this.synced = true;
+    this.emit('sync', true);
   }
 
   on(event: string, cb: (...args: unknown[]) => void) {
@@ -56,7 +105,10 @@ class MockDoc {
 vi.mock('y-websocket', () => ({ WebsocketProvider: MockProvider }));
 vi.mock('yjs', () => ({ Doc: MockDoc, default: { Doc: MockDoc } }));
 // The generation frame's decoder stands in for the string it carries.
-vi.mock('lib0/decoding', () => ({ readVarString: (decoder: unknown) => decoder }));
+vi.mock('lib0/decoding', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('lib0/decoding')>()),
+  readVarString: (decoder: unknown) => decoder,
+}));
 vi.mock('~/modules/common/toaster/toaster', () => ({ toaster: { warning: (...args: unknown[]) => warning(...args) } }));
 vi.mock('i18next', () => ({ default: { t: (k: string) => k }, t: (k: string) => k }));
 vi.mock('shared', () => ({ appConfig: { yjsUrl: 'http://localhost:1234' } }));
@@ -275,5 +327,189 @@ describe('yjs connection: token refusals', () => {
     }
     expect(provider.disconnect).not.toHaveBeenCalled();
     expect(state()?.stopped).toBe(false);
+  });
+});
+
+describe('yjs connection: edits the relay has not saved', () => {
+  /** A local edit, as the editor makes it: y-websocket sends it at once while connected, then the document reports it. */
+  const editLocally = async (provider: MockProvider) => {
+    if (provider.wsconnected) provider.sendSync(2);
+    await act(async () => provider.doc.onUpdate?.(new Uint8Array(), 'editor'));
+  };
+  /** The relay's `Saved` for the oldest frame of this socket it has not confirmed yet. */
+  const relaySaved = (provider: MockProvider) => act(async () => provider.messageHandlers[5]?.(undefined, undefined, provider, true, 5));
+  /** A socket opens, y-websocket sends its Step1, the relay answers with its Step2 and Step1, and y-websocket answers that with its Step2. */
+  const handshake = (provider: MockProvider) =>
+    act(async () => {
+      provider.openSocket();
+      provider.sendSync(0);
+      provider.receiveStep2();
+      provider.sendSync(1);
+    });
+  /** True when the page asks before it unloads. */
+  const unloadAsks = () => {
+    const event = new Event('beforeunload', { cancelable: true });
+    window.dispatchEvent(event);
+    return event.defaultPrevented;
+  };
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('stays unsynced until the relay saved the handshake Step2 and every frame after it', async () => {
+    const { provider, state } = await mountConnection();
+    await act(async () => {
+      provider.openSocket();
+      provider.sendSync(0);
+    });
+    // An edit sent before the handshake answer: the relay confirms it, but only the handshake Step2 covers what it lacked.
+    await editLocally(provider);
+    expect(state()?.unsynced).toBe(true);
+    await act(async () => provider.receiveStep2());
+    await relaySaved(provider);
+    expect(state()?.unsynced).toBe(true);
+
+    await act(async () => provider.sendSync(1));
+    expect(state()?.unsynced).toBe(true);
+    await relaySaved(provider);
+    expect(state()?.unsynced).toBe(false);
+
+    // A later edit waits for its own `Saved`.
+    await editLocally(provider);
+    expect(state()?.unsynced).toBe(true);
+    await relaySaved(provider);
+    expect(state()?.unsynced).toBe(false);
+  });
+
+  it('counts afresh on each socket: what the last one left unconfirmed travels in the next handshake', async () => {
+    const { provider, state } = await mountConnection();
+    await handshake(provider);
+    await relaySaved(provider);
+    await editLocally(provider);
+    expect(state()?.unsynced).toBe(true);
+
+    await act(async () => provider.dropSocket());
+    await handshake(provider);
+    await relaySaved(provider);
+    expect(state()?.unsynced).toBe(false);
+  });
+
+  it('marks an edit made while disconnected unsynced until a later handshake Step2 is saved', async () => {
+    const { provider, state } = await mountConnection();
+    await handshake(provider);
+    await relaySaved(provider);
+    expect(state()?.unsynced).toBe(false);
+
+    await act(async () => provider.dropSocket());
+    await editLocally(provider);
+    expect(state()?.unsynced).toBe(true);
+
+    // The relay's answer alone proves nothing: the edit travels in this client's Step2.
+    await act(async () => {
+      provider.openSocket();
+      provider.receiveStep2();
+    });
+    expect(state()?.unsynced).toBe(true);
+    await act(async () => provider.sendSync(1));
+    await relaySaved(provider);
+    expect(state()?.unsynced).toBe(false);
+  });
+
+  it('falls back to synced against a relay that sends no Saved within 10 s of the handshake Step2', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const { provider, state } = await mountConnection();
+    await act(async () => {
+      provider.openSocket();
+      provider.sendSync(0);
+    });
+    await editLocally(provider);
+    expect(state()?.unsynced).toBe(true);
+
+    // A relay slow to answer gets no fallback before the handshake Step2 carried what it lacks.
+    await act(async () => vi.advanceTimersByTime(15_000));
+    await act(async () => provider.receiveStep2());
+    expect(state()?.unsynced).toBe(true);
+
+    await act(async () => provider.sendSync(1));
+    await act(async () => vi.advanceTimersByTime(9_999));
+    expect(state()?.unsynced).toBe(true);
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(state()?.unsynced).toBe(false);
+  });
+
+  it('keeps a released connection holding unsaved edits past its grace period, and destroys it once the relay saved them', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const { provider, state } = await mountConnection();
+    await handshake(provider);
+    await relaySaved(provider);
+    expect(unloadAsks()).toBe(false);
+
+    await act(async () => provider.dropSocket());
+    await editLocally(provider);
+    expect(state()?.unsynced).toBe(true);
+    expect(unloadAsks()).toBe(true);
+
+    await act(async () => root?.unmount());
+    root = undefined;
+    await act(async () => vi.advanceTimersByTime(30_000));
+    expect(provider.destroy).not.toHaveBeenCalled();
+
+    // Back online: the handshake carries the edit, and once the relay saved it the connection goes.
+    await handshake(provider);
+    expect(provider.destroy).not.toHaveBeenCalled();
+    await relaySaved(provider);
+    expect(provider.destroy).toHaveBeenCalledTimes(1);
+    expect(unloadAsks()).toBe(false);
+  });
+
+  it('destroys a released connection with nothing unsaved when its grace period ends (positive control)', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    const { provider } = await mountConnection();
+    await handshake(provider);
+    await editLocally(provider);
+    await relaySaved(provider);
+    await relaySaved(provider);
+
+    await act(async () => root?.unmount());
+    root = undefined;
+    await act(async () => vi.advanceTimersByTime(29_999));
+    expect(provider.destroy).not.toHaveBeenCalled();
+    await act(async () => vi.advanceTimersByTime(1));
+    expect(provider.destroy).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the document of a stopped connection that holds unsaved edits, until sign-out discards it', async () => {
+    const { provider, tokenKey, state } = await mountConnection();
+    await handshake(provider);
+    await relaySaved(provider);
+    await editLocally(provider);
+    await close(provider, 4003);
+    expect(state()?.stopped).toBe(true);
+    expect(state()?.unsynced).toBe(true);
+
+    await act(async () => root?.unmount());
+    root = undefined;
+    expect(provider.destroy).not.toHaveBeenCalled();
+
+    // Signed out: the token goes with the user, and so do the edits.
+    await act(async () => useUserStore.getState().setYjsToken(tokenKey, null));
+    expect(provider.destroy).toHaveBeenCalledTimes(1);
+    expect(unloadAsks()).toBe(false);
+  });
+
+  it('drops a reseeded document without a notice once the relay saved every edit it held', async () => {
+    const { provider, state } = await mountConnection();
+    await announce(provider, 'gen-1');
+    await handshake(provider);
+    await editLocally(provider);
+    await relaySaved(provider);
+    await relaySaved(provider);
+    expect(state()?.unsynced).toBe(false);
+
+    await announce(provider, 'gen-2');
+    expect(provider.destroy).toHaveBeenCalledTimes(1);
+    expect(state()?.rebuilds).toBe(1);
+    expect(warning).not.toHaveBeenCalled();
   });
 });
