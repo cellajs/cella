@@ -29,7 +29,7 @@ export function ConnectedAppsList() {
       {items.map((app) => (
         <Card key={app.id} className="w-full py-0 sm:py-0">
           <CardContent className="flex items-center gap-3 p-3!">
-            <PlugZapIcon className="icon-lg shrink-0 opacity-70" />
+            <PlugZapIcon className="size-5 shrink-0 opacity-70" />
             <div className="flex min-w-0 grow flex-col gap-1">
               <span className="truncate font-medium">{app.clientName}</span>
               <div className="flex flex-wrap items-center gap-2">
@@ -39,7 +39,7 @@ export function ConnectedAppsList() {
             </div>
             <Button variant="plain" size="sm" className="ml-auto" loading={isPending} onClick={() => handleRevoke(app.id)}>
               <UnplugIcon />
-              <span className="ml-1 max-md:hidden">{t('c:revoke')}</span>
+              <span className="max-md:hidden">{t('c:revoke')}</span>
             </Button>
           </CardContent>
         </Card>

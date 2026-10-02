@@ -14,7 +14,7 @@ export function WaitlistStep() {
   return (
     <>
       <div className="text-center text-2xl">
-        <h1 className="text-xxl">{t('c:request_access')}</h1>
+        <h1>{t('c:request_access')}</h1>
         {email.length > 0 && <AuthEmailButton email={email} onClick={resetSteps} className="mt-2" />}
       </div>
       <LegalNotice email={email} mode="waitlist" />

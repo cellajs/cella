@@ -32,7 +32,7 @@ export const useColumns = (path: { tenantId: string; organizationId: string }, c
 
       width: 100,
       placeholderValue: '-',
-      renderCell: ({ row }) => (row.role ? <div className="group relative inline-flex h-full w-full items-center gap-1">{t(row.role)}</div> : null),
+      renderCell: ({ row }) => (row.role ? <div className="group relative inline-flex size-full items-center gap-1">{t(row.role)}</div> : null),
     },
     dateColumn('createdAt', { name: t('c:invited_at') }),
     {

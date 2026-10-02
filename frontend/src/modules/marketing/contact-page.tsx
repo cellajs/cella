@@ -30,7 +30,7 @@ export function ContactPage() {
         <div className="flex flex-wrap justify-evenly gap-2">
           {methods.map((method) => (
             <div key={method.title} className="mb-10 h-48 w-40 text-center sm:w-48">
-              <div className="mx-auto mb-5 flex h-24 w-24 items-center justify-center rounded-full bg-accent/50 text-primary sm:h-32 sm:w-32">
+              <div className="mx-auto mb-5 flex size-24 items-center justify-center rounded-full bg-accent/50 text-primary sm:size-32">
                 <method.icon className="size-12" strokeWidth={1} />
               </div>
               <div className="text-center">

@@ -57,7 +57,7 @@ export function ResendInvitationButton({ resendData, wrapperClassName, buttonPro
         loading={isPending}
         disabled={disabledResend}
       >
-        <MailIcon className="mr-2" />
+        <MailIcon />
         {t('c:resend')}
       </Button>
     </TooltipButton>

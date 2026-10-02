@@ -7,6 +7,7 @@ import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
 import { Card, CardContent } from '~/modules/ui/card';
 import { useCurrentUser } from '~/modules/user/user-store';
+import { cn } from '~/utils/cn';
 import { dateShort } from '~/utils/date-short';
 
 interface PasskeyTileProps {
@@ -26,15 +27,15 @@ export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPassk
 
   return (
     <Card className="group/tile w-full py-0 transition-all sm:py-0 sm:has-[button:focus]:ring-2" data-expanded={expanded}>
-      <CardContent className="flex gap-2 p-2! sm:gap-3 sm:p-3! lg:items-center">
-        <DeviceIcon className="size-4 max-sm:mt-0.5 sm:h-8 sm:w-8" strokeWidth={1.5} />
+      <CardContent className="flex gap-2 p-2 sm:gap-3 sm:p-3 lg:items-center">
+        <DeviceIcon className="size-4 max-sm:mt-0.5 sm:size-8" strokeWidth={1.5} />
 
         <div className="flex w-full flex-col gap-1 overflow-hidden">
           <div className="flex items-start gap-1 max-md:flex-col md:gap-2">
             <span className="text-sm max-sm:hidden">{passkey.deviceName || t('c:unknown_device')}</span>
             <TooltipButton toolTipContent={passkey.nameOnDevice} side="top">
               <Badge size="xs" variant="outline" className="max-w-48 truncate">
-                <KeyRoundIcon className="icon-xs shrink-0" />
+                <KeyRoundIcon className="size-3 shrink-0" />
                 <span className="truncate">{passkey.nameOnDevice}</span>
               </Badge>
             </TooltipButton>
@@ -60,7 +61,7 @@ export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPassk
             >
               <div className="group-data-[expanded=true]/tile:hidden">More</div>
               <div className="group-data-[expanded=false]/tile:hidden">Less</div>
-              <ChevronDownIcon className={`icon-xs ml-1 transition-transform ${expanded ? 'rotate-180' : ''}`} />
+              <ChevronDownIcon className={cn('size-3 transition-transform', expanded && 'rotate-180')} />
             </Button>
           </div>
         </div>
@@ -74,7 +75,7 @@ export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPassk
           onClick={() => handleDeletePasskey(passkey.id)}
         >
           <TrashIcon />
-          <span className="ml-1 max-md:hidden">{t('c:delete')}</span>
+          <span className="max-md:hidden">{t('c:delete')}</span>
         </Button>
       </CardContent>
     </Card>

@@ -4,9 +4,9 @@ import { Button } from '~/modules/ui/button';
 import { cn } from '~/utils/cn';
 
 const sizeConfig = {
-  sm: { icon: 'icon-md', button: 'size-6' },
-  md: { icon: 'icon-lg', button: 'size-7' },
-  lg: { icon: 'icon-xl', button: 'size-8' },
+  sm: { icon: 'size-4', button: 'size-6' },
+  md: { icon: 'size-5', button: 'size-7' },
+  lg: { icon: 'size-6', button: 'size-8' },
 } as const;
 
 interface CloseButtonProps {

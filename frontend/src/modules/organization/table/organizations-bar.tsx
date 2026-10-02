@@ -15,6 +15,7 @@ import type { EnrichedOrganization, OrganizationsRouteSearchParams } from '~/mod
 import { CreateNewsletterForm } from '~/modules/system/create-newsletter-form';
 import { NewsletterPreview } from '~/modules/system/newsletter-preview';
 import { useListQueryTotal } from '~/query/basic/use-list-query-total';
+import { tw } from '~/utils/tw';
 
 type OrganizationsTableBarProps = BaseTableBarProps<EnrichedOrganization, OrganizationsRouteSearchParams>;
 
@@ -59,7 +60,7 @@ export function OrganizationsTableBar({
       id: 'create-newsletter',
       side: 'right',
       triggerRef: newsletterButtonRef,
-      className: 'max-w-full lg:max-w-4xl',
+      className: tw('max-w-full lg:max-w-4xl'),
       title: t('c:newsletter'),
       titleContent: <UnsavedBadge title={t('c:newsletter')} />,
       description: t('c:newsletter.text'),

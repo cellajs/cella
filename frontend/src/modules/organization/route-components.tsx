@@ -2,7 +2,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import { getRouteApi } from '@tanstack/react-router';
 import { Suspense } from 'react';
 import { SlotTabHost } from '~/modules/common/page/slot-tab-host';
-import { Spinner } from '~/modules/common/spinner';
+import { PageSpinner } from '~/modules/common/spinner';
 import { organizationQueryOptions } from '~/modules/organization/query';
 import { lazyNamed } from '~/utils/lazy-named';
 
@@ -24,7 +24,7 @@ export function OrganizationRouteComponent() {
   const tenantId = orgRouteApi.useRouteContext({ select: (c) => c.tenantId });
   const { data } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
   return (
-    <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
+    <Suspense fallback={<PageSpinner />}>
       <OrganizationPage key={data.id} organizationId={data.id} tenantId={tenantId} />
     </Suspense>
   );
@@ -69,7 +69,7 @@ export function OrganizationToolComponent() {
   const { tool } = orgToolApi.useParams();
   const { data } = useSuspenseQuery(organizationQueryOptions(organizationId, tenantId));
   return (
-    <Suspense fallback={<Spinner className="mt-[45vh] h-10 w-10" />}>
+    <Suspense fallback={<PageSpinner />}>
       <SlotTabHost slot="organization.tabs" toolId={tool} context={data} />
     </Suspense>
   );

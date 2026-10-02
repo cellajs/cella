@@ -83,7 +83,7 @@ export const WithDescription: Story = {
 export const RequiredWithIcon: Story = {
   args: { control: undefined as never, name: 'title', label: 'Search', required: true },
   render: function Render() {
-    return <InputFormFieldStory label="Search" placeholder="Search records" required icon={<SearchIcon className="icon-sm" />} />;
+    return <InputFormFieldStory label="Search" placeholder="Search records" required icon={<SearchIcon className="size-3.5" />} />;
   },
 };
 
@@ -105,7 +105,7 @@ export const Textarea: Story = {
 export const Disabled: Story = {
   args: { control: undefined as never, name: 'title', label: 'Project name', disabled: true, value: 'Raak' },
   render: function Render() {
-    return <InputFormFieldStory label="Project name" disabled value="Raak" icon={<MailIcon className="icon-sm" />} />;
+    return <InputFormFieldStory label="Project name" disabled value="Raak" icon={<MailIcon className="size-3.5" />} />;
   },
 };
 

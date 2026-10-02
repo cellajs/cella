@@ -112,7 +112,7 @@ export function CollaborativeBlockNote({
 
   // A reseeded document syncs afresh: the editor comes back on the new fragment once it did.
   const rebuilding = collaborative && !wsReady;
-  if (waitingForSync || rebuilding) return waitingFallback ?? <Spinner className="my-8 h-6 w-6 opacity-50" />;
+  if (waitingForSync || rebuilding) return waitingFallback ?? <Spinner className="my-8 size-6 opacity-50" />;
 
   const uploadHostProps = blockNoteProps.baseFilePanelProps;
 

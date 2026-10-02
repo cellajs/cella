@@ -11,7 +11,7 @@ export function InputGroup({ className, ...props }: React.ComponentProps<'div'>)
       data-slot="input-group"
       role="group"
       className={cn(
-        'group/input-group relative flex w-full items-center rounded-md border border-input bg-background shadow-xs outline-none transition-[color,box-shadow]',
+        'group/input-group relative flex w-full items-center rounded-md border border-input bg-background shadow-xs outline-hidden transition-[color,box-shadow]',
         'h-10 min-w-0 has-[>textarea]:h-auto',
 
         'has-[>[data-align=inline-start]]:[&>input]:pl-2',
@@ -73,8 +73,8 @@ const inputGroupButtonVariants = cva('flex items-center gap-2 text-sm shadow-non
     size: {
       xs: "h-6 gap-1 rounded-[calc(var(--radius)-5px)] px-2 has-[>svg]:px-2 [&>svg:not([class*='size-'])]:size-3.5",
       sm: 'h-8 gap-1.5 rounded-md px-2.5 has-[>svg]:px-2.5',
-      'icon-xs': 'size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0',
-      'icon-sm': 'size-8 p-0 has-[>svg]:p-0',
+      'size-3': 'size-6 rounded-[calc(var(--radius)-5px)] p-0 has-[>svg]:p-0',
+      'size-3.5': 'size-8 p-0 has-[>svg]:p-0',
     },
   },
   defaultVariants: { size: 'xs' },

@@ -85,7 +85,7 @@ export function UserCombobox({ value, onValueChange, channel }: Props) {
         render={
           <button
             type="button"
-            className="hover:transparent relative flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1 rounded-md border border-input bg-background p-1.5 pr-10 text-left active:translate-y-0!"
+            className="relative flex min-h-10 w-full cursor-pointer flex-wrap items-center gap-1 rounded-md border border-input bg-background p-1.5 pr-10 text-left"
           />
         }
       >
@@ -157,8 +157,8 @@ export function UserCombobox({ value, onValueChange, channel }: Props) {
                           data-already-member={alreadyMember}
                           className="group w-full justify-between"
                         >
-                          <div className="group flex items-center space-x-2 outline-0 ring-0">
-                            <EntityAvatar type={entityType} className="h-8 w-8" id={id} name={name} url={thumbnailUrl} />
+                          <div className="flex items-center gap-2 outline-0 ring-0">
+                            <EntityAvatar type={entityType} className="size-8" id={id} name={name} url={thumbnailUrl} />
                             <span className="truncate font-medium underline-offset-4 group-hover:underline group-data-[already-member=true]:no-underline">
                               {isMobile ? email : name}
                             </span>

@@ -6,6 +6,7 @@ import { checklistItemConfig } from 'shared/utils/blocknote-schema-configs';
 import { nanoid } from 'shared/utils/nanoid';
 import { ChecklistItemRender } from '~/modules/common/blocknote/custom-elements/checklist/checklist-item-render';
 import type { CustomBlockNoteEditor, IconType } from '~/modules/common/blocknote/types';
+import { cn } from '~/utils/cn';
 
 // A CustomBlockNoteEditor annotation would make customSchema reference itself through this block spec (TS2502 circular type).
 // biome-ignore lint/suspicious/noExplicitAny: schema-agnostic editor type; see note above
@@ -87,7 +88,7 @@ export const checklistItemBlock = createReactBlockSpec(
           <div contentEditable={false} className="checklist-checkbox-wrapper">
             <input type="checkbox" checked={isChecked} readOnly data-checkbox-id={block.props.checkboxId} className="checklist-checkbox" />
           </div>
-          <p className={`checklist-content ${isChecked ? 'checklist-checked' : ''}`} ref={contentRef} />
+          <p className={cn('checklist-content', isChecked && 'checklist-checked')} ref={contentRef} />
         </div>
       );
     },

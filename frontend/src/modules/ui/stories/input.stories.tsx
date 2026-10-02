@@ -53,7 +53,7 @@ export const WithHelperText: Story = {
     <div className="grid items-center gap-1.5">
       <Label htmlFor="email-2">{args.placeholder}</Label>
       <Input {...args} id="email-2" />
-      <p className="text-foreground/60 text-sm">Enter your email address.</p>
+      <p className="text-muted-foreground text-sm">Enter your email address.</p>
     </div>
   ),
 };

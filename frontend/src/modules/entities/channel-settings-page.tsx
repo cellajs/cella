@@ -13,13 +13,13 @@ export function ChannelSettingsPage<C extends ChannelEntityType>({ entity }: Cha
 
   return (
     <div className="container mx-auto my-4 gap-4 md:flex md:flex-row">
-      <div className="mx-auto flex h-auto flex-col max-md:hidden md:w-[30%] md:min-w-48">
+      <div className="mx-auto flex h-auto flex-col max-md:hidden md:w-3/10 md:min-w-48">
         <div className="max-md:block! sticky top-15 z-10 max-h-[calc(100dvh-3.75rem)] overflow-y-auto p-1 md:mt-2">
           <PageAside tabs={sections} className="pb-2" />
         </div>
       </div>
 
-      <div className="flex flex-col gap-8 md:w-[70%]">
+      <div className="flex flex-col gap-8 md:w-7/10">
         {sections.map((tool) => (
           <AsideAnchor key={tool.id} id={tool.id} extraOffset>
             <Suspense fallback={null}>{tool.render(entity)}</Suspense>

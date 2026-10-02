@@ -13,6 +13,8 @@ import { MediaThumbnail } from '~/modules/common/media-thumbnail';
 import { Spinner } from '~/modules/common/spinner';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
+import { cn } from '~/utils/cn';
+import { tw } from '~/utils/tw';
 
 interface ThumbnailCellProps {
   row: Attachment;
@@ -24,7 +26,7 @@ export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
   const navigate = useNavigate();
   const cellRef = useRef<HTMLButtonElement | null>(null);
 
-  const wrapClass = 'relative flex space-x-2 items-center justify-center w-full h-full';
+  const wrapClass = tw('relative flex size-full items-center justify-center gap-2');
 
   // Table cells prefer the tiny thumbnail; non-image types have none and fall back to the mid-size preview.
   const { url } = useAttachmentUrl(row, { preferredVariant: 'thumbnail' });
@@ -71,7 +73,7 @@ function SyncStatusBadge({ attachmentId }: { attachmentId: string }) {
 
   return (
     <div
-      className={`absolute -right-0.5 -bottom-0.5 rounded-full p-0.5 ${isFailed ? 'bg-destructive' : 'bg-muted-foreground'}`}
+      className={cn('absolute -right-0.5 -bottom-0.5 rounded-full p-0.5', isFailed ? 'bg-destructive' : 'bg-muted-foreground')}
       data-tooltip="true"
       data-tooltip-content={tooltip}
     >

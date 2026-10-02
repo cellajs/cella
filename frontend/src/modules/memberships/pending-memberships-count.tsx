@@ -7,6 +7,7 @@ import { toaster } from '~/modules/common/toaster/toaster';
 import type { EnrichedChannel } from '~/modules/entities/types';
 import { Button } from '~/modules/ui/button';
 import { lazyNamed } from '~/utils/lazy-named';
+import { tw } from '~/utils/tw';
 
 const PendingMembershipsTable = lazyNamed(() => import('~/modules/memberships/pending-table/pending-memberships-table'), 'PendingMembershipsTable');
 
@@ -32,7 +33,7 @@ export function PendingMembershipsCount({ channel }: { channel: EnrichedChannel 
         id: 'pending-invites',
         triggerRef: buttonRef,
         side: 'right',
-        className: 'max-w-full lg:max-w-4xl',
+        className: tw('max-w-full lg:max-w-4xl'),
         title: t('c:pending_invitations'),
         description: t('c:pending_invitations.text', { entityType: t(`c:${channel.entityType}`).toLowerCase() }),
       },

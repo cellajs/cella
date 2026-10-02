@@ -1,6 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { crossTenantGuard, noImpersonationGuard, stepUpGuard, userGuard } from '#/middlewares/guard';
+import { stepUpGuard, userGuard } from '#/middlewares/guard';
 import { bulkPointsLimiter, singlePointsLimiter } from '#/middlewares/rate-limiter/limiters';
 import {
   connectedAppSchema,
@@ -30,7 +30,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
   getMyInvitations: xRoute({
     method: 'get',
     path: '/invitations',
-    xGuard: [userGuard, crossTenantGuard],
+    xGuard: [userGuard],
     summary: 'Get list of invitations',
     description: 'Returns a list of pending memberships with entity data.',
     responses: { 200: json('Invitations pending', paginationSchema(mePendingInvitationSchema), mockPaginatedInvitationsResponse()) },
@@ -66,7 +66,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
   revokeMySessions: xRoute({
     method: 'delete',
     path: '/sessions',
-    xGuard: [userGuard, noImpersonationGuard],
+    xGuard: [userGuard],
     xRateLimiter: [bulkPointsLimiter],
     summary: 'Revoke sessions',
     description:
@@ -78,7 +78,7 @@ const meRoutes = createXRoutes(['me', 'cella'], {
   deleteMyMembership: xRoute({
     method: 'delete',
     path: '/leave',
-    xGuard: [userGuard, crossTenantGuard],
+    xGuard: [userGuard],
     xRateLimiter: [singlePointsLimiter],
     summary: 'Leave entity',
     description: 'Removes the current user from an entity they are a member of.',

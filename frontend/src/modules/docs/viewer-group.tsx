@@ -49,7 +49,7 @@ export function ViewerGroup({ schema, zodCode, typeCode, example, defaultInspect
           .filter((item) => item.show)
           .map(({ value, icon: Icon, label, ariaLabel }) => (
             <ToggleGroupItem key={value} value={value} aria-label={ariaLabel} className="opacity-50 hover:opacity-70 data-pressed:opacity-100">
-              <Icon className="mr-1.5 h-4 w-4" />
+              <Icon className="mr-1.5 size-4" />
               <span className="text-xs lowercase">{label}</span>
             </ToggleGroupItem>
           ))}

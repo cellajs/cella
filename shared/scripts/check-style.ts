@@ -1,7 +1,7 @@
 /**
  * The style check (`pnpm style`, also in `pnpm lint`, `pnpm check` and CI): terminology, prose rules for comments and
- * docs, comment placement and frontend conventions in one pass. Exits non-zero on any finding. `--audit` also prints
- * review markers, which never fail; path arguments limit the files checked.
+ * docs, comment placement, frontend conventions and Tailwind class names in one pass. Exits non-zero on any finding.
+ * `--audit` also prints review markers, which never fail; path arguments limit the files checked.
  */
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -9,6 +9,7 @@ import { findAppVocabularyFindings, findProductNameFindings, loadAllowlist } fro
 import { commentFindings } from './check-comment-style.ts';
 import { docFindings } from './check-doc-style.ts';
 import { frontendFindings, frontendStores } from './check-frontend-style.ts';
+import { tailwindContext, tailwindFindings } from './check-tailwind-classes.ts';
 import { type Finding, formatFinding, isRequested, repoFiles, repoRoot } from './repo-files.ts';
 
 const audit = process.argv.includes('--audit');
@@ -16,6 +17,7 @@ const roots = process.argv.slice(2).filter((arg) => arg !== '--audit');
 const allowlist = await loadAllowlist();
 const files = repoFiles();
 const stores = frontendStores(files);
+const tailwind = await tailwindContext(files, allowlist.markerClasses);
 
 const findings: Finding[] = [];
 for (const file of files.filter((file) => isRequested(file, roots))) {
@@ -30,6 +32,7 @@ for (const file of files.filter((file) => isRequested(file, roots))) {
     ...findProductNameFindings(file, source),
     ...prose,
     ...frontendFindings(file, source, stores),
+    ...tailwindFindings(file, source, tailwind),
   ];
   findings.push(...inFile.sort((a, b) => (a.line ?? 0) - (b.line ?? 0) || (a.column ?? 0) - (b.column ?? 0)));
 }

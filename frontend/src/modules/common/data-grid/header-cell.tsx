@@ -19,7 +19,7 @@ import {
 } from './utils/grid-utils';
 
 const resizeHandleClassname =
-  'cursor-col-resize absolute inset-y-0 end-0 w-4 after:content-[""] after:absolute after:top-1/2 after:-translate-y-1/2 after:end-0 after:h-4 after:w-0.5 after:rounded-full after:bg-foreground/30 hover:after:bg-primary/80';
+  'cursor-col-resize absolute inset-y-0 inset-e-0 w-4 after:content-[""] after:absolute after:top-1/2 after:-translate-y-1/2 after:inset-e-0 after:h-4 after:w-0.5 after:rounded-full after:bg-foreground/30 hover:after:bg-primary/80';
 
 const draggableColumnType = 'grid-column';
 type ColumnDragData = { type: typeof draggableColumnType; columnKey: string };
@@ -79,7 +79,7 @@ export function HeaderCell<R, SR>({
     column,
     'border-t-0',
     column.headerCellClass,
-    { 'cursor-pointer': sortable, 'touch-action-none': resizable, 'opacity-40': isDragging, 'z-3': column.frozen },
+    { 'cursor-pointer': sortable, 'touch-none': resizable, 'opacity-40': isDragging, 'z-3': column.frozen },
     // aria-selected is never true without cell selection, so the focus outline comes from :focus-visible.
     !isCellSelectionEnabled && 'focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-solid focus-visible:-outline-offset-2',
   );

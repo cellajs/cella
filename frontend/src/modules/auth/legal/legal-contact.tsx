@@ -13,13 +13,13 @@ export function LegalContact({ addressOnly = false, className }: { addressOnly?:
   const bankAccount = appConfig.company.bankAccount;
 
   return (
-    <div className={cn('flex', className)}>
+    <div className={cn('not-prose flex', className)}>
       <span className="mr-6 flex flex-col items-center">
         <BuildingIcon className="mt-1 shrink-0" />
         <span className="mt-1 w-px grow bg-border" />
       </span>
-      <ul className="m-0! list-none pl-0">
-        <li className="mt-0! mb-2">
+      <ul>
+        <li className="mb-2">
           <strong>{companyFull}</strong>
         </li>
         <li>{streetAddress}</li>

@@ -72,7 +72,7 @@ export function SessionsList() {
           disabled={isPending}
           onClick={() => handleRevoke(revocable.map((session) => session.id))}
         >
-          <UnplugIcon className="mr-2" />
+          <UnplugIcon />
           {t('c:revoke_all')}
         </Button>
       )}

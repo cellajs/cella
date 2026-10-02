@@ -54,8 +54,8 @@ export function SlugFormField<TFieldValues extends FieldValues>({
 
   const inputClassName = cn({
     'ring-2 sm:focus-visible:ring-2': isSlugAvailable !== 'blank',
-    'ring-green-500 focus-visible:ring-green-500': isSlugAvailable === 'available',
-    'ring-red-500 focus-visible:ring-red-500': isSlugAvailable === 'notAvailable',
+    'ring-success focus-visible:ring-success': isSlugAvailable === 'available',
+    'ring-destructive focus-visible:ring-destructive': isSlugAvailable === 'notAvailable',
   });
 
   const form = useFormContext<{ slug: string }>();
@@ -121,7 +121,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
             {label}
             <span className="ml-1 opacity-50">*</span>
           </FormLabel>
-          <InputGroup className={cn('', inputClassName)}>
+          <InputGroup className={inputClassName}>
             <SlugInput type={entityType} onFocus={() => setDeviating(true)} value={formFieldValue || ''} {...rest} />
             {prefix && (
               <InputGroupAddon>
@@ -134,7 +134,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
             {previousSlug && previousSlug !== slug && (
               <InputGroupAddon align="inline-end">
                 <Button variant="ghost" size="sm" aria-label={t('c:revert_handle')} onClick={revertSlug} className="h-full">
-                  <UndoIcon /> <span className="ml-1 max-sm:hidden">{t('c:revert')}</span>
+                  <UndoIcon /> <span className="max-sm:hidden">{t('c:revert')}</span>
                 </Button>
               </InputGroupAddon>
             )}

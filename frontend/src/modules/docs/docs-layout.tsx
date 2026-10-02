@@ -13,6 +13,7 @@ import { toggleDocsSearch } from '~/modules/docs/search/open-docs-search';
 import { DocsSidebar } from '~/modules/docs/sidebar/docs-sidebar';
 import { FloatingNav, type FloatingNavItem } from '~/modules/navigation/floating-nav/floating-nav';
 import { ScrollArea } from '~/modules/ui/scroll-area';
+import { tw } from '~/utils/tw';
 
 const MIN_SIDEBAR_WIDTH = 220;
 const MAX_SIDEBAR_WIDTH = 400;
@@ -97,7 +98,7 @@ function DocsLayout() {
         triggerRef,
         title: i18n.t('c:docs'),
         headerClassName: 'hidden',
-        className: 'w-72 p-0',
+        className: tw('w-72 p-0'),
         closeSheetOnRouteChange: false,
       });
     }
@@ -135,7 +136,7 @@ function DocsLayout() {
   return (
     <div ref={wrapperRef} className="contents [--docs-sidebar-width:clamp(220px,24vw,288px)]" style={sidebarWidthStyle}>
       <aside ref={sidebarRef} className="fixed inset-y-0 left-0 z-30 flex w-(--docs-sidebar-width) bg-background focus-view:hidden">
-        <ScrollArea className="h-full w-full">{sidebarContent}</ScrollArea>
+        <ScrollArea className="size-full">{sidebarContent}</ScrollArea>
         <button
           type="button"
           aria-label="Resize sidebar"

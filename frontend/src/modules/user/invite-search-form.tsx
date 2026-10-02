@@ -51,7 +51,7 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
   if (form.loading) return null;
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col gap-6">
         <FormField
           control={form.control}
           name="emails"
@@ -79,7 +79,7 @@ export function InviteSearchForm({ channel, dialog: isDialog }: Props) {
                 {form.getValues('emails')?.length}
               </Badge>
             )}
-            <SendIcon className="mr-2" />
+            <SendIcon />
             {t('c:invite')}
           </SubmitButton>
           {form.isDirty && (

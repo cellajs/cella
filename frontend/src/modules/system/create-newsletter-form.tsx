@@ -95,7 +95,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="h-max space-y-6 pb-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} id="newsletter-form" className="flex h-max flex-col gap-6 pb-8">
         <InputFormField
           control={form.control}
           inputClassName="font-bold"
@@ -115,7 +115,7 @@ export function CreateNewsletterForm({ organizationIds, callback }: CreateNewsle
             id: `${appConfig.name}-blocknote-newsletter`,
             trailingBlock: false,
             className:
-              'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring max-focus-visible:ring-transparent max-focus-visible:ring-offset-0 flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-effect disabled:cursor-not-allowed disabled:opacity-50',
+              'min-h-20 pl-10 pr-6 p-3 border-input ring-offset-background placeholder:text-muted-foreground focus-visible:ring-ring flex w-full rounded-md border text-sm file:border-0 file:bg-transparent file:text-sm file:font-medium focus-effect disabled:cursor-not-allowed disabled:opacity-50',
             // Newsletter images go to the public bucket under the system prefix, where email clients load them.
             baseFilePanelProps: { mediaMode: 'public-no-attachment', templateId: 'newsletter', organizationId: systemUploadPrefix },
             excludeFileBlockTypes: ['video', 'audio', 'file'],

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import type { GenOperationSummary } from 'sdk/docs-types';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
 import { Spinner } from '~/modules/common/spinner';
+import { tw } from '~/utils/tw';
 import { typesIndexQueryOptions, zodIndexQueryOptions } from '../helpers/extract-types';
 import { schemasQueryOptions, tagDetailsQueryOptions } from '../query';
 import { ResponsesAccordion } from './operation-responses';
@@ -25,7 +26,7 @@ export function openExamplesSheet(operation: GenOperationSummary, trigger: HTMLB
       id: `examples-${operation.id}`,
       triggerRef: { current: trigger },
       side: 'right',
-      className: 'max-w-full lg:max-w-4xl',
+      className: tw('max-w-full lg:max-w-4xl'),
       title: i18n.t('c:docs.success_response'),
     },
   );
