@@ -47,17 +47,27 @@ function yjsFieldStamp(row: ItemData, field: string): string | undefined {
   return stx?.fieldTimestamps?.[field] ?? stx?.fieldTimestamps?.description;
 }
 
+/** Whether a row carries sync metadata: in one that does, a field without a stamp was not written since the create. */
+function hasStx(row: ItemData): boolean {
+  const { stx } = asRecord(row);
+  return typeof stx === 'object' && stx !== null;
+}
+
 /**
  * The cache takes a Yjs-owned field only from a server write of it, which stamps the field anew. An incoming row that carries
- * the cached copy's stamp keeps the cached value, so a read that lags the relay cannot overwrite a collaborative patch.
+ * the cached copy's stamp keeps the cached value, so a read that lags the relay cannot overwrite a collaborative patch. A
+ * create stamps no field, so two rows that both carry `stx` and neither stamp count as unwritten too; a row without `stx`
+ * applies. A server-side backfill of an owned field that stamps nothing reaches a client through a `clientCacheVersion` bump.
  */
 function guardYjsOwnedFields<T extends ItemData>(entityType: string, incoming: T, cached: ItemData | undefined): T {
   if (!cached) return incoming;
   const guarded = { ...incoming };
+  const bothCarryStx = hasStx(incoming) && hasStx(cached);
   // SSE payloads carry entityType as a runtime string; an unregistered type gets the default fields.
   for (const field of getYjsOwnedFields(entityType as ProductEntityType)) {
     const stamp = yjsFieldStamp(incoming, field);
-    if (stamp !== undefined && stamp === yjsFieldStamp(cached, field) && field in cached) asRecord(guarded)[field] = asRecord(cached)[field];
+    const unwritten = stamp === yjsFieldStamp(cached, field) && (stamp !== undefined || bothCarryStx);
+    if (unwritten && field in cached) asRecord(guarded)[field] = asRecord(cached)[field];
   }
   return guarded;
 }

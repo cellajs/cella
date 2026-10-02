@@ -60,7 +60,7 @@ interface DescriptionSlotOptions {
 export interface DescriptionSlot {
   /** The editor's `contentApiRef`. */
   apiRef: RefObject<BlockNoteContentApi | null>;
-  /** The editor's `onEditorReady`: applies queued toggles, then the pending cursor. Stable. */
+  /** The editor's `onEditorReady`: a frame later, applies queued toggles, then the pending cursor. Stable. */
   onEditorReady: () => void;
   /** The static's `onReady`: releases the held editor. Stable. */
   onStaticReady: () => void;
@@ -86,7 +86,8 @@ export interface DescriptionSlot {
  * The lifecycle of a description shown in place, with one editor instance: the static, the editor warmed invisibly
  * behind it, the live editor, and the hand-off back without a blink. The app owns `editing`, its warm triggers, how
  * editing ends and both views; `<DescriptionLayers>` stacks them. The hook cools idle editors itself: never without
- * edit rights, none in a hidden tab, a reason after 30 s idle, and at most two per tab outside editing.
+ * edit rights, none in a hidden tab, a reason after 30 s idle, and at most two per tab outside editing. The slot places
+ * and focuses the cursor itself, so its editor takes no `autoFocus`: that focuses the start after the slot's cursor.
  */
 export function useDescriptionSlot({
   editing,
@@ -192,10 +193,17 @@ export function useDescriptionSlot({
     return () => cancelAnimationFrame(frame);
   }, [editing, flushCursor]);
 
+  // A frame after ready: the editor's first effect pass is over, so a remount of its view in dev StrictMode no longer drops
+  // the focus and selection the cursor flush places.
+  const readyFrame = useRef(0);
   const onEditorReady = useCallback(() => {
-    flushToggles();
-    flushCursor();
+    cancelAnimationFrame(readyFrame.current);
+    readyFrame.current = requestAnimationFrame(() => {
+      flushToggles();
+      flushCursor();
+    });
   }, [flushToggles, flushCursor]);
+  useEffect(() => () => cancelAnimationFrame(readyFrame.current), []);
 
   const onStaticReady = useCallback(() => setHolding(false), []);
 

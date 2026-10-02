@@ -217,9 +217,32 @@ describe('Yjs-owned fields on a server row', () => {
     }
   });
 
-  it('applies an incoming row without a stamp, even over a cached row without one', async () => {
+  it('keeps the cached value when neither row stamps the field: a create stamps none, so it was not written since', async () => {
     seedCaches(row('local', { stx: written({}) }));
     serverReturns(row('server', { stx: written({}) }));
+
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
+
+    expect(detail()?.description).toBe('local');
+    expect(homeRow()?.description).toBe('local');
+  });
+
+  it('keeps a patch on a row never edited since its create when another field is written meanwhile', async () => {
+    seedCaches(row('created', { stx: written({}) }));
+    patchCollaborativeDescription(TASK_PRODUCT, row('created', { stx: written({}) }), 'edited');
+    // Another user's write of a different field: the stale row stamps that field alone.
+    serverReturns(row('created', { name: 'Reordered', stx: written({ name: 'T5' }) }));
+
+    await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
+
+    expect(detail()).toMatchObject({ description: 'edited', name: 'Reordered' });
+    expect(homeRow()).toMatchObject({ description: 'edited', name: 'Reordered' });
+  });
+
+  it('applies an incoming row that carries no stx at all', async () => {
+    seedCaches(row('local', { stx: written({}) }));
+    const { stx: _stx, ...withoutStx } = row('server');
+    serverReturns(withoutStx as TaskRow);
 
     await fetchRangeAndPatch(TASK, 'org-1', 'tenant-1', '5,5', keys);
 

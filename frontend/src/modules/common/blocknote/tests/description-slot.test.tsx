@@ -282,6 +282,9 @@ describe('checklist toggles on the static', () => {
     expect(api.toggleChecklist).not.toHaveBeenCalled();
 
     await render({ synced: true });
+    // A frame after ready, so a dev StrictMode remount of the editor's view keeps what the flush applies.
+    expect(api.toggleChecklist).not.toHaveBeenCalled();
+    await nextFrame();
     expect(api.toggleChecklist).toHaveBeenCalledExactlyOnceWith('box-1');
     expect(api.commit).toHaveBeenCalledOnce();
     expect(shownText()).toBe('stored+box-1');
@@ -306,9 +309,20 @@ describe('checklist toggles on the static', () => {
     clickCheckbox();
 
     await render({ synced: true });
+    await nextFrame();
     expect(api.toggleChecklist).toHaveBeenCalledTimes(2);
     expect(api.commit).toHaveBeenCalledOnce();
     expect(shownText()).toBe('stored+box-1+box-1');
+  });
+
+  it('applies nothing when the slot unmounts before the frame after ready', async () => {
+    await render({ synced: false });
+    clickCheckbox();
+    await render({ synced: true });
+
+    await act(async () => root.unmount());
+    await act(() => vi.advanceTimersToNextFrame());
+    expect(api.toggleChecklist).not.toHaveBeenCalled();
   });
 
   it('leaves a text click to the app', async () => {
@@ -379,6 +393,8 @@ describe('the cursor', () => {
     expect(api.focusSummaryEnd).not.toHaveBeenCalled();
 
     await render({ synced: true, editing: true });
+    expect(api.focusSummaryEnd).not.toHaveBeenCalled();
+    await nextFrame();
     expect(api.focusSummaryEnd).toHaveBeenCalledOnce();
   });
 });
