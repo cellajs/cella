@@ -3,6 +3,7 @@ import type { EntityRole } from 'shared';
 import type { DbContext } from '#/core/context';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
+import { type SystemRoleModel, systemRolesTable } from '#/modules/system/system-roles-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { usersTable } from '#/modules/user/user-db';
 
@@ -63,4 +64,19 @@ export const findNewsletterRecipients = async (ctx: DbContext, { organizationIds
         eq(usersTable.newsletter, true),
       ),
     );
+};
+
+interface FindSystemRoleOpts {
+  userId: string;
+  role: SystemRoleModel['role'];
+}
+
+/** The user's system role row when they hold `role`; undefined otherwise. */
+export const findSystemRole = async (ctx: DbContext, { userId, role }: FindSystemRoleOpts) => {
+  const [row] = await ctx.var.db
+    .select({ role: systemRolesTable.role })
+    .from(systemRolesTable)
+    .where(and(eq(systemRolesTable.userId, userId), eq(systemRolesTable.role, role)))
+    .limit(1);
+  return row;
 };

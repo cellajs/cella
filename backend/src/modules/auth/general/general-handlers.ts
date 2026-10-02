@@ -1,28 +1,20 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { eq } from 'drizzle-orm';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb } from '#/db/db';
 import { checkIpRateLimitStatus } from '#/middlewares/rate-limiter/helpers';
 import { emailEnumLimiter } from '#/middlewares/rate-limiter/limiters';
 import { isRecognizedBrowser } from '#/modules/auth/devices/operations/recognized-browser';
 import { authGeneralRoutes } from '#/modules/auth/general/general-routes';
-import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { linkHandlers } from '#/modules/auth/general/helpers/link-handlers';
 import { resendInvitationEmail } from '#/modules/auth/general/helpers/resend-invitation';
-import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
-import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
-import { readOwnSession, setUserSession } from '#/modules/auth/general/helpers/session';
 import { acceptInvitationTokenOp } from '#/modules/auth/general/operations/accept-invitation-token';
 import { getTokenDataOp } from '#/modules/auth/general/operations/get-token-data';
-import '#/modules/auth/general/session-listeners';
-import { dropHeldMagicLink } from '#/modules/auth/magic/helpers/magic-link-browser';
-import { sessionsTable } from '#/modules/auth/sessions-db';
+import { startImpersonationOp, stopImpersonationOp } from '#/modules/auth/sessions/operations/impersonation';
+import { signOutOp } from '#/modules/auth/sessions/operations/sign-out';
+import '#/modules/auth/sessions/session-listeners';
 import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findInvitationToken } from '#/modules/auth/tokens/tokens-queries';
-import { findUserById } from '#/modules/user/user-queries';
 import { defaultHook } from '#/utils/default-hook';
-import { log } from '#/utils/logger';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
@@ -69,40 +61,12 @@ app.openapi(authGeneralRoutes.acceptInvitationToken, async (ctx) => {
 
 app.openapi(authGeneralRoutes.startImpersonation, async (ctx) => {
   const { targetUserId } = ctx.req.valid('json');
-
-  const user = await findUserById(ctx, { id: targetUserId });
-
-  if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { targetUserId } });
-
-  const adminUser = ctx.var.user;
-  await setUserSession(ctx, user, 'passkey', 'impersonation');
-
-  log.info('Started impersonation', { adminId: adminUser.id, targetUserId });
-  sendAccountSecurityEmail(user, 'impersonation-started', { adminName: adminUser.name || adminUser.email });
-
+  await startImpersonationOp(ctx, { targetUserId });
   return ctx.body(null, 204);
 });
 
 app.openapi(authGeneralRoutes.stopImpersonation, async (ctx) => {
-  // userGuard read an impersonation only from its own cookie, on top of the admin session this browser holds.
-  const { session } = ctx.var;
-  if (session.type !== 'impersonation' || !session.impersonatorSessionId) {
-    throw new AppError(400, 'invalid_request', 'warn');
-  }
-
-  const [admin] = await baseDb
-    .select({ userId: sessionsTable.userId })
-    .from(sessionsTable)
-    .where(eq(sessionsTable.id, session.impersonatorSessionId));
-  if (!admin) throw new AppError(401, 'unauthorized', 'warn');
-
-  await revokeSessions(ctx, { userId: session.userId, sessionIds: [session.id], reason: 'impersonation_stopped', by: admin.userId });
-
-  // The admin's session cookie never left this browser: without the impersonation cookie it authenticates again.
-  deleteAuthCookie(ctx, 'impersonation');
-
-  log.info('Stopped impersonation', { adminId: admin.userId, targetUserId: session.userId });
-
+  await stopImpersonationOp(ctx);
   return ctx.body(null, 204);
 });
 
@@ -117,37 +81,7 @@ app.openapi(authGeneralRoutes.resendInvitationWithToken, async (ctx) => {
 });
 
 app.openapi(authGeneralRoutes.signOut, async (ctx) => {
-  // A magic link this browser opened lets it back in, with no other proof, until its single-use window closes: spent
-  // first, so it goes whatever becomes of the session below and the next person at a shared computer cannot reopen it.
-  if (await getAuthCookie(ctx, 'magic')) await spendCookieToken(ctx, 'magic');
-  // A link held here for confirmation, never confirmed, goes as well. A provider connect started here dies with the
-  // session below: its pin serves only the session that started it.
-  await dropHeldMagicLink(ctx);
-
-  // A second-factor challenge this browser holds ends too: its cookie goes and its token row is spent.
-  if (await getAuthCookie(ctx, 'confirm-mfa')) {
-    await spendCookieToken(ctx, 'confirm-mfa');
-    log.info('User mfa canceled');
-
-    // Canceling from the MFA page carries no session cookie: ending the challenge is then the whole sign-out.
-    if (!(await getAuthCookie(ctx, 'session'))) return ctx.body(null, 204);
-  }
-
-  // The browser's session cookie goes, and an impersonation layered on it, which `revokeSessions` revokes with it.
-  const sessionToken = await getAuthCookie(ctx, 'session');
-  deleteAuthCookie(ctx, 'session');
-  if (await getAuthCookie(ctx, 'impersonation')) deleteAuthCookie(ctx, 'impersonation');
-
-  const { session: currentSession } = await readOwnSession(sessionToken);
-
-  await revokeSessions(ctx, {
-    userId: currentSession.userId,
-    sessionIds: [currentSession.id],
-    reason: 'sign_out',
-    by: currentSession.userId,
-  });
-  log.info('User signed out', { userId: currentSession.userId });
-
+  await signOutOp(ctx);
   return ctx.body(null, 204);
 });
 

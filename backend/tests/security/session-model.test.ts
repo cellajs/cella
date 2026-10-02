@@ -3,7 +3,7 @@ import { getMe, startImpersonation, stopImpersonation } from 'sdk';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { sessionsTable } from '#/modules/auth/sessions-db';
+import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { hashToken } from '#/utils/hash-token';
 import { defaultHeaders } from '../fixtures';
 import { authCookie, cookieChange, cookiesAfter, createSystemAdminUser, createTestUser, sessionRow } from '../helpers';

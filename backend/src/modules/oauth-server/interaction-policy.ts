@@ -2,7 +2,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import { Context } from 'hono';
 import { interactionPolicy } from 'oidc-provider';
 import { appConfig } from 'shared';
-import { findSession } from '#/modules/auth/general/helpers/session';
+import { findSession } from '#/modules/auth/sessions/operations/resolve-session';
 
 /**
  * The user of the live app session a request to the authorization server presents, or null without one. It is read as

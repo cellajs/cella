@@ -7,7 +7,7 @@ import { baseDb as db } from '#/db/db';
 import { activityBus } from '#/lib/activity-bus';
 import { clearSessionCache } from '#/middlewares/guard/session-cache';
 import { actorsTable } from '#/modules/actors/actors-db';
-import { sessionsTable } from '#/modules/auth/sessions-db';
+import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
 import { defaultHeaders, memberRole } from '../fixtures';

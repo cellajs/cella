@@ -1,6 +1,6 @@
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createSession } from '#/modules/auth/general/helpers/session';
+import { createSession } from '#/modules/auth/sessions/operations/create-session';
 import { signUpUser } from '../fixtures';
 import { createTestUser, sessionsOf } from '../helpers';
 import { clearDatabase } from '../test-utils';

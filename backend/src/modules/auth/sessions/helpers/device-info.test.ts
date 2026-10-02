@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type ClientHints, type DeviceInfo, parseDevice } from '#/modules/auth/general/helpers/device-info';
+import { type ClientHints, type DeviceInfo, parseDevice } from '#/modules/auth/sessions/helpers/device-info';
 
 const ua = {
   chromeWindows: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36',

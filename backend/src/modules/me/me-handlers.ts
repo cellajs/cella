@@ -15,7 +15,7 @@ import { revokeConnectedAppOp } from '#/modules/me/operations/revoke-connected-a
 import { revokeMySessionsOp } from '#/modules/me/operations/revoke-my-sessions';
 import { toggleMfaOp } from '#/modules/me/operations/toggle-mfa';
 import { updateMeOp } from '#/modules/me/operations/update-me';
-import { deleteAccounts } from '#/modules/user/helpers/delete-accounts';
+import { deleteAccounts } from '#/modules/user/operations/delete-accounts';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 

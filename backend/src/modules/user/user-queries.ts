@@ -112,6 +112,32 @@ export const findUserForUpdate = async (ctx: DbContext, { id }: FindUserForUpdat
   return user;
 };
 
+interface FindLastSignInAtOpts {
+  userId: string;
+}
+
+/** The user's counters row with the time of their last sign-in; undefined for a user who never signed in. */
+export const findLastSignInAt = async (ctx: DbContext, { userId }: FindLastSignInAtOpts) => {
+  const [counters] = await ctx.var.db
+    .select({ lastSignInAt: userCountersTable.lastSignInAt })
+    .from(userCountersTable)
+    .where(eq(userCountersTable.userId, userId));
+  return counters;
+};
+
+interface UpsertLastSignInAtOpts {
+  userId: string;
+  lastSignInAt: string;
+}
+
+/** lastSignInAt lives in user_counters to avoid CDC noise on the users table. */
+export const upsertLastSignInAt = async (ctx: DbContext, { userId, lastSignInAt }: UpsertLastSignInAtOpts) => {
+  await ctx.var.db
+    .insert(userCountersTable)
+    .values({ userId, lastSignInAt })
+    .onConflictDoUpdate({ target: userCountersTable.userId, set: { lastSignInAt } });
+};
+
 interface InsertUsersOpts {
   users: InsertUserModel[];
   /** Skip rows that already exist (seed re-runs); a skipped user leaves no actor behind. */

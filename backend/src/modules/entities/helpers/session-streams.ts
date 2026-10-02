@@ -1,6 +1,6 @@
 import { and, eq, inArray } from 'drizzle-orm';
 import { baseDb } from '#/db/db';
-import { type SessionEndReason, sessionsTable } from '#/modules/auth/sessions-db';
+import { type SessionEndReason, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import type { AppStreamSubscriber } from '#/modules/entities/helpers/dispatch-to-stream';
 import { type BaseStreamSubscriber, type StreamErrorPayload, streamSubscriberManager, writeError } from '#/modules/entities/stream';
 import { systemRolesTable } from '#/modules/system/system-roles-db';

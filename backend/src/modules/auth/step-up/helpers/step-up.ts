@@ -1,5 +1,5 @@
 import { AppError } from '#/core/error';
-import type { SessionFacts } from '#/modules/auth/sessions-db';
+import type { SessionFacts } from '#/modules/auth/sessions/sessions-db';
 import { TimeSpan } from '#/utils/time-span';
 
 /**

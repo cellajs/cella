@@ -3,8 +3,8 @@ import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { baseDb as db } from '#/db/db';
 import { authCookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { newSessionToken } from '#/modules/auth/general/helpers/session';
-import { sessionsTable } from '#/modules/auth/sessions-db';
+import { newSessionToken } from '#/modules/auth/sessions/helpers/session-token';
+import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { emailsTable } from '#/modules/user/emails-db';
 
 /**

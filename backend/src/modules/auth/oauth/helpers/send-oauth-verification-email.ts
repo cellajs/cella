@@ -5,7 +5,7 @@ import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { strategyLabels } from '#/modules/auth/general/helpers/strategy-labels';
 import { identitiesTable } from '#/modules/auth/identities-db';
-import type { AuthStrategy } from '#/modules/auth/sessions-db';
+import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import { issueToken, type NewToken } from '#/modules/auth/tokens/token-lifecycle';
 import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
 import type { PendingSignUp } from '#/modules/auth/tokens/tokens-queries';

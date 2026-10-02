@@ -1,5 +1,5 @@
 import type { UserContext } from '#/core/context';
-import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
+import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 
 /**
  * Revokes the user's own sessions by id. Revoking the session behind this request is a sign-out; the others end from
