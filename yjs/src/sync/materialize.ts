@@ -1,6 +1,6 @@
+import { stateToBlocksJson as blocksJsonOf } from '#/modules/yjs/helpers/description-update';
 import type { DocScope } from '../constants';
 import { env } from '../env';
-import { yUpdateToBlocks } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
 
 /**
@@ -55,10 +55,10 @@ export async function postMaterialize(scope: DocScope, editors: string[], descri
   }
 }
 
-/** Convert a Y.Doc state to blocks JSON; null when the state can't be parsed. */
+/** Convert a Y.Doc state to blocks JSON with the backend's headless converter; null when the state can't be parsed. */
 export function stateToBlocksJson(state: Uint8Array): string | null {
   try {
-    return JSON.stringify(yUpdateToBlocks(state));
+    return blocksJsonOf(state);
   } catch (err) {
     log.error('Failed to convert Y.Doc state to blocks', { err });
     return null;

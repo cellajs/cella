@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { descriptionToYUpdate, yUpdateToBlocks } from '../lib/blocknote-seed';
+import { descriptionToSeed, stateToBlocksJson } from '#/modules/yjs/helpers/description-update';
+
+/** Blocks → the seed the relay stores → blocks, as materialization reads them. */
+const roundTrip = (blocks: unknown[]) =>
+  JSON.parse(stateToBlocksJson(descriptionToSeed(JSON.stringify(blocks)))) as {
+    type: string;
+    props: Record<string, unknown>;
+    content: unknown;
+    children: { type: string; props: Record<string, unknown> }[];
+  }[];
 
 const block = (type: string, props: Record<string, unknown> = {}, content?: unknown, children: unknown[] = []) => ({
   id: crypto.randomUUID(),
@@ -12,18 +21,15 @@ const block = (type: string, props: Record<string, unknown> = {}, content?: unkn
 const text = (t: string) => [{ type: 'text', text: t, styles: {} }];
 
 // Guards schema parity: every custom block/inline type the frontend editor supports
-// must survive blocks → Y.Doc → blocks through the server schema.
-describe('descriptionToYUpdate / yUpdateToBlocks round-trip', () => {
+// must survive blocks → Y.Doc → blocks through the server schema, headless.
+describe('seed and materialize round-trip', () => {
   it('round-trips default blocks (paragraph, heading, table-free basics)', () => {
     const blocks = [
       block('heading', { level: 2 }, text('Title')),
       block('paragraph', {}, text('Hello world')),
       block('bulletListItem', {}, text('Item')),
     ];
-    const update = descriptionToYUpdate(JSON.stringify(blocks));
-    expect(update).not.toBeNull();
-
-    const restored = yUpdateToBlocks(update!);
+    const restored = roundTrip(blocks);
     expect(restored.map((b) => b.type)).toEqual(['heading', 'paragraph', 'bulletListItem']);
     expect(restored[1].content).toMatchObject([{ type: 'text', text: 'Hello world' }]);
   });
@@ -35,7 +41,7 @@ describe('descriptionToYUpdate / yUpdateToBlocks round-trip', () => {
       // External media without an attachment row keeps the empty default
       block('video', { url: 'https://example.com/clip.mp4', name: 'clip' }),
     ];
-    const restored = yUpdateToBlocks(descriptionToYUpdate(JSON.stringify(blocks))!);
+    const restored = roundTrip(blocks);
 
     expect(restored[0].props).toMatchObject({ attachmentId: 'att-uuid-1', url: 'att-uuid-1' });
     expect(restored[1].props).toMatchObject({ attachmentId: 'att-uuid-2' });
@@ -48,7 +54,7 @@ describe('descriptionToYUpdate / yUpdateToBlocks round-trip', () => {
         block('checklistItem', { checkboxId: 'cb-2', checked: false }, text('nested')),
       ]),
     ];
-    const restored = yUpdateToBlocks(descriptionToYUpdate(JSON.stringify(blocks))!);
+    const restored = roundTrip(blocks);
 
     expect(restored[0].type).toBe('checklistItem');
     expect(restored[0].props).toMatchObject({ checkboxId: 'cb-1', checked: true });
@@ -64,7 +70,7 @@ describe('descriptionToYUpdate / yUpdateToBlocks round-trip', () => {
         { type: 'text', text: ' hello', styles: {} },
       ]),
     ];
-    const restored = yUpdateToBlocks(descriptionToYUpdate(JSON.stringify(blocks))!);
+    const restored = roundTrip(blocks);
 
     expect(restored[0].type).toBe('notify');
     expect(restored[0].props).toMatchObject({ type: 'warning' });
@@ -74,17 +80,18 @@ describe('descriptionToYUpdate / yUpdateToBlocks round-trip', () => {
 
   it('round-trips code blocks with language', () => {
     const blocks = [block('codeBlock', { language: 'typescript' }, text('const x = 1;'))];
-    const restored = yUpdateToBlocks(descriptionToYUpdate(JSON.stringify(blocks))!);
+    const restored = roundTrip(blocks);
 
     expect(restored[0].type).toBe('codeBlock');
     expect(restored[0].props).toMatchObject({ language: 'typescript' });
   });
 
-  it('returns null for empty, invalid, or blank descriptions', () => {
-    expect(descriptionToYUpdate(null)).toBeNull();
-    expect(descriptionToYUpdate('')).toBeNull();
-    expect(descriptionToYUpdate('[]')).toBeNull();
-    expect(descriptionToYUpdate('not json')).toBeNull();
-    expect(descriptionToYUpdate('{"not":"an array"}')).toBeNull();
+  it('seeds one empty paragraph for no description, and throws on one that is not a blocks array', () => {
+    for (const description of [null, '', '[]']) {
+      expect(JSON.parse(stateToBlocksJson(descriptionToSeed(description))).map((b: { type: string }) => b.type)).toEqual(['paragraph']);
+    }
+    // The relay logs these and seeds the empty document.
+    expect(() => descriptionToSeed('not json')).toThrow();
+    expect(() => descriptionToSeed('{"not":"an array"}')).toThrow();
   });
 });
