@@ -2274,3 +2274,42 @@ export const zGetYjsTokenQuery = z.object({
 export const zGetYjsTokenResponse = z.object({
   token: z.string(),
 });
+
+export const zPullYjsDocumentBody = z.object({
+  entityType: z.enum(['attachment']),
+  entityId: z.string().max(50),
+  stateVector: z.string().max(262144),
+});
+
+export const zPullYjsDocumentPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Document diff
+ */
+export const zPullYjsDocumentResponse = z.object({
+  generation: z.uuid(),
+  update: z.string(),
+  stateVector: z.string(),
+});
+
+export const zPushYjsUpdateBody = z.object({
+  entityType: z.enum(['attachment']),
+  entityId: z.string().max(50),
+  generation: z.uuid(),
+  update: z.string().max(699051),
+});
+
+export const zPushYjsUpdatePath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Saved
+ */
+export const zPushYjsUpdateResponse = z.object({
+  status: z.enum(['appended', 'empty']),
+});

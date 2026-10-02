@@ -12,6 +12,12 @@ export const YJS_LOG_NOTICE_MAX_IDS = 200;
 /** The largest update the log takes: the cap the relay's socket puts on one frame. */
 export const YJS_MAX_UPDATE_BYTES = 2 * 1024 * 1024;
 
+/**
+ * The largest update one HTTP push carries. Base64url-encoded, a third larger, it stays under the API's 1 MB JSON body
+ * limit. The frontend posts in chunks of this size (HTTP_CHUNK_BYTES in yjs-http.ts).
+ */
+export const YJS_HTTP_CHUNK_BYTES = 512 * 1024;
+
 /** A collaborative document: its entity, and the tenant its rows are stored and read under. */
 export interface YjsDocKey {
   entityType: string;

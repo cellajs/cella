@@ -6194,3 +6194,135 @@ export type GetYjsTokenResponses = {
 };
 
 export type GetYjsTokenResponse = GetYjsTokenResponses[keyof GetYjsTokenResponses];
+
+export type PullYjsDocumentData = {
+  body: {
+    entityType: 'attachment';
+    entityId: string;
+    /**
+     * The caller's state vector: the answer carries what it lacks
+     */
+    stateVector: string;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/yjs/pull';
+};
+
+export type PullYjsDocumentErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type PullYjsDocumentError = PullYjsDocumentErrors[keyof PullYjsDocumentErrors];
+
+export type PullYjsDocumentResponses = {
+  /**
+   * Document diff
+   */
+  200: {
+    /**
+     * The document's generation: another one than the caller holds means the server reseeded it
+     */
+    generation: string;
+    /**
+     * What the caller's state vector lacks, as one Yjs update
+     */
+    update: string;
+    /**
+     * The server's state vector, so the caller can post what the server lacks
+     */
+    stateVector: string;
+  };
+};
+
+export type PullYjsDocumentResponse = PullYjsDocumentResponses[keyof PullYjsDocumentResponses];
+
+export type PushYjsUpdateData = {
+  body: {
+    entityType: 'attachment';
+    entityId: string;
+    /**
+     * The generation the update was made in
+     */
+    generation: string;
+    /**
+     * One Yjs update of at most 512 KB
+     */
+    update: string;
+  };
+  path: {
+    tenantId: string;
+    organizationId: string;
+  };
+  query?: never;
+  url: '/{tenantId}/{organizationId}/yjs/push';
+};
+
+export type PushYjsUpdateErrors = {
+  /**
+   * Bad request: problem processing request.
+   */
+  400: BadRequestError;
+  /**
+   * Unauthorized: authentication required.
+   */
+  401: UnauthorizedError;
+  /**
+   * Forbidden: insufficient permissions.
+   */
+  403: ForbiddenError;
+  /**
+   * Not found: resource does not exist.
+   */
+  404: NotFoundError;
+  /**
+   * Conflict: resource state conflict.
+   */
+  409: ConflictError;
+  /**
+   * Rate limit: too many requests.
+   */
+  429: TooManyRequestsError;
+};
+
+export type PushYjsUpdateError = PushYjsUpdateErrors[keyof PushYjsUpdateErrors];
+
+export type PushYjsUpdateResponses = {
+  /**
+   * Saved
+   */
+  200: {
+    /**
+     * `appended` once the update is logged; `empty` when it carried nothing the document lacked
+     */
+    status: 'appended' | 'empty';
+  };
+};
+
+export type PushYjsUpdateResponse = PushYjsUpdateResponses[keyof PushYjsUpdateResponses];

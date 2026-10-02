@@ -14,7 +14,18 @@ import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import type { DocScope } from '../../constants';
 import { createSignedToken, deferred, startRelayServer, until } from '../helpers';
-import { cleanupSeed, paragraphs, recordOutsideWrite, seedAttachment, seedEntityHierarchy, seedMembership, seedOrg, seedUser } from './seed';
+import {
+  cleanupSeed,
+  outsideUpdate,
+  paragraphs,
+  pushOverHttp,
+  recordOutsideWrite,
+  seedAttachment,
+  seedEntityHierarchy,
+  seedMembership,
+  seedOrg,
+  seedUser,
+} from './seed';
 
 // The relay end to end over the real database (runtime_role) as the backend writes to it: real authorization of entity
 // rows, the seed transaction and the log listener, with outside writes and deletions made as the backend makes them.
@@ -26,11 +37,12 @@ vi.mock('../../sync/materialize', async (importOriginal) => ({
 }));
 /** When set, a seed transaction waits here after its FOR SHARE read of the entity row, holding the lock. */
 let seedHold: { reached: () => void; release: Promise<void> } | null = null;
-vi.mock('../../data/entity-content', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../data/entity-content')>();
+vi.mock('#/modules/yjs/yjs-queries', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('#/modules/yjs/yjs-queries')>();
   return {
-    lockEntityDescription: async (...args: Parameters<typeof actual.lockEntityDescription>) => {
-      const read = await actual.lockEntityDescription(...args);
+    ...actual,
+    findEntityDescriptionForShare: async (...args: Parameters<typeof actual.findEntityDescriptionForShare>) => {
+      const read = await actual.findEntityDescriptionForShare(...args);
       if (seedHold) {
         seedHold.reached();
         await seedHold.release;
@@ -40,7 +52,8 @@ vi.mock('../../data/entity-content', async (importOriginal) => {
   };
 });
 
-const { onLogNotice, relayUnseenEverywhere } = await import('../../sync/relay');
+const { onLogNotice, relayUnseenEverywhere, runCompaction } = await import('../../sync/relay');
+const { postMaterialize } = await import('../../sync/materialize');
 const { getCollab } = await import('../../sync/session-manager');
 const { logListenerStatus, startLogListener, stopLogListener } = await import('../../data/listener');
 const { listenerApplicationName, withRlsTx } = await import('../../data/db');
@@ -178,6 +191,32 @@ describe('outside writes reach live sessions', () => {
     expect(listens).toBe(before + 1);
     await until(() => textsOf(client.doc)[0] === 'while down', 2000);
     expect(client.closes).toEqual([]);
+    client.provider.destroy();
+  });
+});
+
+describe('a push over HTTP', () => {
+  it('reaches a live client without a reconnect: appended with no notification in its transaction, announced after its commit', async () => {
+    const scope = await attachment(paragraphs('typed in the editor'));
+    const client = await connectClient(relay.baseUrl, scope);
+    const read = (await loadDocument(scope))!;
+    // A client that cannot reach the relay, another user's.
+    const pusher = randomUUID();
+
+    const pushed = await pushOverHttp(scope, outsideUpdate(read, paragraphs('pushed over HTTP')), read.generation, pusher);
+    expect(pushed.status).toBe('appended');
+    // The live stamp runs at its real minute: the notice brought it.
+    await until(() => textsOf(client.doc)[0] === 'pushed over HTTP', 2000);
+    expect(client.closes).toEqual([]);
+    expect(client.generations).toHaveLength(1);
+    expect(blockGroups(client.doc)).toBe(1);
+
+    // Its compaction credits the pushing user, the window's only editor.
+    expect(await runCompaction(getCollab(scope)!)).toBe('ok');
+    const [materialized, editors, description] = vi.mocked(postMaterialize).mock.calls.at(-1)!;
+    expect(materialized).toEqual(scope);
+    expect(editors).toEqual([pusher]);
+    expect(description).toContain('pushed over HTTP');
     client.provider.destroy();
   });
 });

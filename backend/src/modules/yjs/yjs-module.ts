@@ -65,8 +65,9 @@ defineBackendModule({
   owner: 'cella',
   scope: ['backend'],
   description: `Endpoints for Yjs collaborative editing support: a short-lived token per entity for the Yjs relay
-    worker. The relay's materialize route, which writes a compacted collaborative document to its entity, is served
-    on the internal listener only.`,
+    worker, and pull and push routes that sync a document through the API while the relay is out of reach. The relay's
+    materialize route, which writes a compacted collaborative document to its entity, is served on the internal
+    listener only.`,
   routes: [{ path: '/:tenantId/:organizationId/yjs', app: yjsHandlers, phase: 'tenant' }],
   onMutation,
 });

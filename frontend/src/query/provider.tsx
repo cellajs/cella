@@ -2,6 +2,7 @@ import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client
 import { useEffect, useState } from 'react';
 import { appConfig } from 'shared';
 import { downloadService } from '~/modules/attachment/offline/download-service';
+import { startYjsStore } from '~/modules/common/blocknote/yjs-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { initChannelEnrichment } from '~/query/enrichment/init-enrichment';
 // Side-effect import: starts the auth-driven localUserDb lifecycle and eager kv hydration before any route beforeLoad runs.
@@ -44,6 +45,9 @@ export function QueryClientProvider({ children }: { children: React.ReactNode })
   useEffect(() => {
     cleanupOrphanedSessions();
   }, []);
+
+  // Stored collaborative documents: evicted past their limits, and unsynced ones uploaded by the leader tab.
+  useEffect(() => startYjsStore(), []);
 
   // Started at mount, not module eval, to avoid a circular-import TDZ during HMR: provider -> download-service -> attachment/query -> realtime -> query/index -> provider.
   useEffect(() => {

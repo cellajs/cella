@@ -73,8 +73,12 @@ const packageOf = (id: string) => {
 const ON_DEMAND_APP =
   /[\\/]src[\\/]modules[\\/](common[\\/](blocknote|uploader)[\\/]|common[\\/]gleap-support|common[\\/]form-fields[\\/]blocknote|attachment[\\/](render[\\/]|offline[\\/]upload-service))/;
 
-/** The Yjs field registry is a plain map of field names that boot-time cache code reads. */
-const YJS_REGISTRY = /[\\/]blocknote[\\/]yjs-editor/;
+/**
+ * Plain modules under blocknote/ that boot-time code reads: the Yjs field registry (the cache), the document store, its
+ * tab channel and storage warning (teardown, eviction, the sign-out list), and the parked-edits check the app layout
+ * mounts. Each loads Yjs or BlockNote only on demand, so the boot path stays free of the editor chunk.
+ */
+const YJS_REGISTRY = /[\\/]blocknote[\\/](yjs-editor|yjs-store|yjs-tab-channel|storage-warning|parked-notices-on-boot)\./;
 
 const frontendUrl = new URL(appConfig.frontendUrl);
 

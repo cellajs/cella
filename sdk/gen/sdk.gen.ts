@@ -218,6 +218,12 @@ import type {
   PostAppCatchupData,
   PostAppCatchupErrors,
   PostAppCatchupResponses,
+  PullYjsDocumentData,
+  PullYjsDocumentErrors,
+  PullYjsDocumentResponses,
+  PushYjsUpdateData,
+  PushYjsUpdateErrors,
+  PushYjsUpdateResponses,
   ResendInvitationWithTokenData,
   ResendInvitationWithTokenErrors,
   ResendInvitationWithTokenResponses,
@@ -443,6 +449,12 @@ import {
   zMicrosoftQuery,
   zPostAppCatchupBody,
   zPostAppCatchupResponse,
+  zPullYjsDocumentBody,
+  zPullYjsDocumentPath,
+  zPullYjsDocumentResponse,
+  zPushYjsUpdateBody,
+  zPushYjsUpdatePath,
+  zPushYjsUpdateResponse,
   zResendInvitationWithTokenBody,
   zResendInvitationWithTokenResponse,
   zResendPendingInvitationPath,
@@ -4462,4 +4474,93 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
     ],
     url: '/{tenantId}/{organizationId}/yjs/token',
     ...options,
+  });
+
+/**
+ * Pull Yjs document
+ *
+ * Returns what the caller's copy of one product entity's collaborative document lacks, for a client that cannot reach the Yjs relay: the document's generation, an update holding what the caller's state vector lacks, and the server's state vector. A document never opened is seeded from the stored description first, as the relay seeds it. The caller must be allowed to update the entity, as for a Yjs token. A POST, since a state vector can outgrow a URL. Costs no API points.
+ *
+ * **POST /{tenantId}/{organizationId}/yjs/pull** ·· [pullYjsDocument](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/POST/{tenantId}/{organizationId}/yjs/pull) ·· [pullYjsDocument](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/yjs/pull) ·· _yjs_cella_
+ *
+ * @param {pullYjsDocumentData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {enum=} options.body.entityType - `enum` (optional)
+ * @param {string=} options.body.entityId - `string` (optional)
+ * @param {string=} options.body.stateVector - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const pullYjsDocument = <ThrowOnError extends boolean = true>(
+  options: Options<PullYjsDocumentData, ThrowOnError>,
+): RequestResult<PullYjsDocumentResponses, PullYjsDocumentErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<PullYjsDocumentResponses, PullYjsDocumentErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zPullYjsDocumentBody,
+          path: zPullYjsDocumentPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zPullYjsDocumentResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/yjs/pull',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Push Yjs update
+ *
+ * Appends one Yjs update to a product entity's collaborative document, for a client that cannot reach the Yjs relay. The answer follows the commit, so a 200 means the server holds the update; the relay passes it to live sessions and folds it into the document. An update made in another generation than the document's answers 409 `sync_document_replaced` with the current one in `meta.generation`, and with null when the document has no row: pull, which seeds it, then post again. At most 512 KB of update per request, base64url-encoded. The caller must be allowed to update the entity, as for a Yjs token. Costs no API points.
+ *
+ * **POST /{tenantId}/{organizationId}/yjs/push** ·· [pushYjsUpdate](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/POST/{tenantId}/{organizationId}/yjs/push) ·· [pushYjsUpdate](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/yjs/push) ·· _yjs_cella_
+ *
+ * @param {pushYjsUpdateData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {enum=} options.body.entityType - `enum` (optional)
+ * @param {string=} options.body.entityId - `string` (optional)
+ * @param {string=} options.body.generation - `string` (optional)
+ * @param {string=} options.body.update - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const pushYjsUpdate = <ThrowOnError extends boolean = true>(
+  options: Options<PushYjsUpdateData, ThrowOnError>,
+): RequestResult<PushYjsUpdateResponses, PushYjsUpdateErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<PushYjsUpdateResponses, PushYjsUpdateErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zPushYjsUpdateBody,
+          path: zPushYjsUpdatePath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zPushYjsUpdateResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/yjs/push',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });

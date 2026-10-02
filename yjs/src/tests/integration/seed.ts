@@ -7,9 +7,10 @@ import { descriptionToUpdate } from '#/modules/yjs/helpers/description-update';
 import type { YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
 import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
+import { notifyYjsLog } from '#/modules/yjs/operations/notify-yjs-log';
 import { findYjsDocument } from '#/modules/yjs/yjs-queries';
 import type { DocKey, DocScope } from '../../constants';
-import { withRlsTx } from '../../data/db';
+import { db, withRlsTx } from '../../data/db';
 import { loadDocument } from '../../data/storage';
 
 // Seeds rows as the superuser (bypassing RLS) for the relay's integration tests, whose code under test connects as runtime_role.
@@ -163,6 +164,27 @@ export function outsideUpdate(read: YjsDocumentRead, description: string): Uint8
 /** Appends an outside write's update as the backend does: a server-origin row, notified unless `notify` is false. */
 export function appendOutsideWrite(scope: DocScope, update: Uint8Array, generation: string, notify = true): Promise<AppendResult> {
   return withRlsTx(scope.tenantId, '', (tx) => appendYjsUpdate({ var: { db: tx } }, { doc: scope, update, userId: null, generation, notify }));
+}
+
+/**
+ * A client's update pushed over HTTP, as the API's push makes it: appended under its sender in a transaction that
+ * notifies nothing, then, unless `notice` is false, announced in one notification after the commit.
+ */
+export async function pushOverHttp(
+  scope: DocScope,
+  update: Uint8Array,
+  generation: string,
+  userId: string,
+  { notice = true }: { notice?: boolean } = {},
+): Promise<AppendResult> {
+  const result = await withRlsTx(scope.tenantId, userId, (tx) =>
+    appendYjsUpdate({ var: { db: tx } }, { doc: scope, update, userId, generation, notify: false }),
+  );
+  if (notice && result.status === 'appended') {
+    const { tenantId, entityType, entityId } = scope;
+    await notifyYjsLog({ var: { db } }, { notices: [{ tenantId, entityType, entityId, logIds: [result.id] }] });
+  }
+  return result;
 }
 
 /**

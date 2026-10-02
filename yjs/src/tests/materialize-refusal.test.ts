@@ -7,7 +7,7 @@ vi.mock('../data/storage', () => storage);
 
 const { getCollab, joinCollab, leaveCollab } = await import('../sync/session-manager');
 const { runCompaction } = await import('../sync/relay');
-const { runStartupSweep } = await import('../sync/sweep');
+const { runSweep } = await import('../sync/sweep');
 
 const GRACE = 5 * 60 * 1000;
 const fetchMock = vi.fn();
@@ -97,7 +97,7 @@ describe('a refused materialize keeps the edits', () => {
     storage.logs.set(orphanKey, storage.logs.get(key)!);
     fetchMock.mockResolvedValue({ ok: false, status: 404 });
 
-    await runStartupSweep();
+    await runSweep();
 
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(storage.deleteDoc).not.toHaveBeenCalled();
@@ -128,7 +128,7 @@ describe("a deleted entity's rows go", () => {
     storage.listStaleDocs.mockResolvedValueOnce([orphan]);
     fetchMock.mockResolvedValue({ ok: false, status: 410 });
 
-    await runStartupSweep();
+    await runSweep();
 
     expect(storage.deleteDoc).toHaveBeenCalledWith(orphan);
     expect(storage.logs.has(storageKey(orphan))).toBe(false);

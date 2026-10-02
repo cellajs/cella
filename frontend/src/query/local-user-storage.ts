@@ -6,7 +6,7 @@ import { seenStore } from '~/modules/seen/seen-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { userStore } from '~/modules/user/user-store';
 import { extraLocalUserStores } from '~/query/extra-local-user-stores';
-import { bindLocalUserDb, closeLocalUserDb, deletedElsewhereListeners } from '~/query/local-user-db';
+import { bindLocalUserDb, closeLocalUserDb, deletedElsewhereListeners, notifyOwnerChange } from '~/query/local-user-db';
 import { resetPersisters } from '~/query/persister';
 import { syncStore } from '~/query/realtime/sync-store';
 
@@ -22,14 +22,8 @@ const localUserStores = [seenStore, syncStore, useNavigationStore, useDraftStore
 let boundOwner: string | null = null;
 let readyPromise: Promise<void> = Promise.resolve();
 
-/** Listeners notified after every actual owner change (new owner id, or `null` on sign-out). */
-const ownerListeners = new Set<(owner: string | null) => void>();
-
-/** Fires after the DB is rebound or closed, so callbacks see the live instance via `getLocalUserDb()`. Long-lived holders of a `liveQuery` must re-subscribe here. */
-export function subscribeOwnerChange(listener: (owner: string | null) => void): () => void {
-  ownerListeners.add(listener);
-  return () => ownerListeners.delete(listener);
-}
+// The owner listeners live with the database, so light modules subscribe without loading every per-user store.
+export { subscribeOwnerChange } from '~/query/local-user-db';
 
 /** Owner to bind: the current user, unless impersonating (then ephemeral, no durable DB). */
 function resolveOwner(): string | null {
@@ -64,7 +58,7 @@ function syncOwner(): void {
   if (owner === boundOwner) return;
   if (owner) bindOwner(owner);
   else unbind();
-  for (const listener of ownerListeners) listener(boundOwner);
+  notifyOwnerChange(boundOwner);
 }
 
 /** Resolves once `localUserDb` is open and all local user stores have rehydrated for the current owner. */

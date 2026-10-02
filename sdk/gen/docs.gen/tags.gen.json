@@ -103,8 +103,8 @@
   },
   {
     "name": "yjs",
-    "description": "Endpoints for Yjs collaborative editing support: a short-lived token per entity for the Yjs relay\n    worker. The relay's materialize route, which writes a compacted collaborative document to its entity, is served\n    on the internal listener only.",
-    "count": 1,
+    "description": "Endpoints for Yjs collaborative editing support: a short-lived token per entity for the Yjs relay\n    worker, and pull and push routes that sync a document through the API while the relay is out of reach. The relay's\n    materialize route, which writes a compacted collaborative document to its entity, is served on the internal\n    listener only.",
+    "count": 3,
     "kind": "module"
   }
 ]

@@ -11,7 +11,7 @@ export interface CollabSession {
   clients: Set<WebSocket>;
   /** Awareness client id → the socket holding it, its user and the last clock relayed for it; no other user's socket relays that id. Up to YJS_AWARENESS_MAX_CLIENTS per socket. */
   awarenessOwners: Map<number, { ws: WebSocket; userId: string; clock: number }>;
-  /** Document lock: seeding, compaction and finishing (cleanup or the startup sweep) run one at a time through this chain. */
+  /** Document lock: seeding, compaction and finishing (cleanup or the sweep) run one at a time through this chain. */
   chain: Promise<unknown>;
   /** The generation of the document row the session loaded at its first handshake, null before. A row gone or of another generation since was retired: the session ends. */
   generation: string | null;
@@ -93,7 +93,7 @@ function markLive(collab: CollabSession): void {
 
 /**
  * Opens the document's session in `scope`. It stamps its row live at once and every YJS_LIVE_TOUCH_MS while it lasts,
- * so the startup sweep of another relay generation never takes it for an orphan, however long it idles.
+ * so the sweep of another relay generation never takes it for an orphan, however long it idles.
  */
 function openCollab(scope: DocScope, clients: WebSocket[]): CollabSession {
   const collab: CollabSession = {
@@ -193,7 +193,7 @@ async function finishCollab(key: string, collab: CollabSession): Promise<FinishO
 }
 
 /**
- * Finishes the log of a document the startup sweep found unwritten, as a cleanup does. The session it opens for it has
+ * Finishes the log of a document the sweep found unwritten, as a cleanup does. The session it opens for it has
  * no socket but sits in the map, so a socket that joins meanwhile joins it: its handshake waits for the document lock,
  * and it keeps the session. The session is forgotten unless a socket joined; a document that already has a session
  * here is left to it.
@@ -216,7 +216,7 @@ export interface ReleasedClient {
  * Takes a socket out of its session and frees the awareness clients it held, which it returns so its peers can drop
  * them. When the last client leaves, a grace period runs before the session is finished: its log compacted and forgotten.
  * A retryable failure keeps the log and retries, up to YJS_CLEANUP_MAX_ATTEMPTS, and a permanent refusal or the last
- * failed attempt keeps it for the next session or the startup sweep. A socket that joins while cleanup runs keeps the
+ * failed attempt keeps it for the next session or the sweep. A socket that joins while cleanup runs keeps the
  * session; when it leaves again first, the cleanup its leave arms takes over, so what it logged is compacted too. A
  * session leaves the map only while it has no client and no timer armed on it, so the relay always finds a joined
  * socket's session.

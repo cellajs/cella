@@ -3,7 +3,7 @@
   "version": "v1",
   "description": "⚠️ ATTENTION: PRERELEASE!\n                  This API is organized into modules based on logical domains.",
   "openapiVersion": "3.1.0",
-  "documentedOperationCount": 102,
+  "documentedOperationCount": 104,
   "hiddenOperationCount": 0,
   "extensions": [
     {
@@ -81,6 +81,7 @@
           "name": "streamConnect",
           "description": "Live update stream connections per user: 240 per hour, then blocked for 5 minutes"
         },
+        "yjsHttpLimiter": { "name": "yjsHttp", "description": "Yjs pulls and pushes per user: 7200 per hour, then blocked for 1 minute" },
         "pointsLimiter": {
           "name": "points",
           "description": "API points per actor in a tenant: 1 per request, 1 per item on bulk routes, up to the tenant hourly budget"

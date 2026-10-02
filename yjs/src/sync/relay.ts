@@ -2,7 +2,7 @@ import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
-import { descriptionToSeed } from '#/modules/yjs/helpers/description-update';
+import { descriptionToSeedOrEmpty } from '#/modules/yjs/helpers/description-update';
 import type { LogNotice } from '#/modules/yjs/helpers/yjs-log';
 import { classifyUpdate, mergeLog } from '#/modules/yjs/helpers/yjs-state';
 import type { DocKey, DocScope, SocketContext } from '../constants';
@@ -220,14 +220,10 @@ export function handleLeave(doc: DocKey, ws: WebSocket): void {
  * convert is logged and seeds the empty document too: the session opens, and the next write replaces the description.
  */
 function seedFrom(scope: DocScope): (description: string | null) => Uint8Array {
-  return (description) => {
-    try {
-      return descriptionToSeed(description);
-    } catch (err) {
-      log.warn(`The description of ${scope.entityType}:${scope.entityId} does not convert: seeding an empty document`, { err });
-      return descriptionToSeed(null);
-    }
-  };
+  return (description) =>
+    descriptionToSeedOrEmpty(description, (err) =>
+      log.warn(`The description of ${scope.entityType}:${scope.entityId} does not convert: seeding an empty document`, { err }),
+    );
 }
 
 /**
