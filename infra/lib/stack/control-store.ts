@@ -196,6 +196,17 @@ export function promote(current: ServiceRollout | undefined, resolved: { id: str
   return { seq, active: { id: resolved.id, sha: resolved.sha, seq } };
 }
 
+/** Env marker the privileged preflight sets on its preview, so the program plans live generations only. */
+export const PLAN_LIVE_ONLY_ENV = 'INFRA_PLAN_LIVE_ONLY';
+
+/**
+ * The rollout with every pending deploy intent dropped and the `active` pointers kept. A pending sha plans a new generation, which needs keys only
+ * the deploy mints; the preflight checks privileged resources, which no generation touches, so it plans without one.
+ */
+export function withoutPending(rollout: Record<string, ServiceRollout>): Record<string, ServiceRollout> {
+  return Object.fromEntries(Object.entries(rollout).map(([svc, { pendingSha: _, ...entry }]) => [svc, entry]));
+}
+
 /** Read the control object. Returns the empty state and no etag when the object does not exist yet. */
 export async function readControlState(s3: S3Like, bucket: string, key: string): Promise<{ state: ControlState; etag?: string }> {
   const { body, etag } = await getObjectText(s3, bucket, key);

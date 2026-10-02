@@ -99,7 +99,9 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Mention edit activity', async
     });
     expect(result.response.status).toBe(200);
 
-    // The fan-out runs after the activity is persisted; writes of one transaction are persisted in one insert.
+    // Writes of one transaction are persisted in one insert, so the first update activity seen is the whole edit. The inbox alone proves
+    // nothing about it: the create fan-out re-reads the row, so a late one sees the edited body and mentions the member first.
+    await waitFor(async () => (await updateActivities()).length > 0, 15_000, 'update activity for the edit');
     await waitFor(async () => (await memberInbox()).length > 0, 15_000, 'mention notification for the member');
 
     const activities = await updateActivities();

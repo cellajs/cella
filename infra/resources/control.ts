@@ -1,6 +1,14 @@
 import * as pulumi from '@pulumi/pulumi';
 import { makeS3Client } from '../lib/scaleway/s3-client';
-import { type ControlState, controlKey, emptyControlState, readControlState, stateBucket } from '../lib/stack/control-store';
+import {
+  type ControlState,
+  controlKey,
+  emptyControlState,
+  PLAN_LIVE_ONLY_ENV,
+  readControlState,
+  stateBucket,
+  withoutPending,
+} from '../lib/stack/control-store';
 import { errorMessage } from '../lib/utils/errors';
 import { mode, naming, region } from '../pulumi-context';
 
@@ -19,7 +27,8 @@ async function loadControlState(): Promise<ControlState> {
     const s3 = await makeS3Client(region, accessKey, secretKey);
     // One control object per deployment, keyed by the stack (= mode).
     const { state } = await readControlState(s3, stateBucket(naming.slug), controlKey(mode));
-    return state;
+    // The preflight preview runs outside the deploy, where a pending sha (left by a failed deploy, or a deploy still rolling) has no minted keys.
+    return process.env[PLAN_LIVE_ONLY_ENV] === '1' ? { ...state, rollout: withoutPending(state.rollout) } : state;
   } catch (err) {
     // readControlState returns the empty state for a missing object, so only real failures reach here; the control object is the only source of rollout state, so fail closed.
     throw new Error(`control-store: failed to read rollout state, aborting deploy (${errorMessage(err)})`);
