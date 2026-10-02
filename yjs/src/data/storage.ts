@@ -147,7 +147,7 @@ export interface LiveStamp {
   lastLogId: number | null;
 }
 
-/** Stamps the document row live, so no startup sweep takes it for an orphan, and reads its newest log row. Creates no row. */
+/** Stamps the document row live, so no sweep takes it for an orphan, and reads its newest log row. Creates no row. */
 export async function touchDoc(doc: DocKey): Promise<LiveStamp> {
   return asSystem(doc, async (tx) => {
     const stamped = await tx
@@ -164,7 +164,7 @@ export async function touchDoc(doc: DocKey): Promise<LiveStamp> {
   });
 }
 
-/** Tenants swept concurrently by the startup sweep; bounds the startup query fan-out on large installs. */
+/** Tenants swept concurrently by the sweep; bounds its query fan-out on large installs. */
 export const SWEEP_TENANT_CONCURRENCY = 4;
 
 async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Promise<DocScope[]> {
@@ -203,7 +203,7 @@ async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Pr
 
 /**
  * Documents with an uncompacted log that no session stamped for longer than the cleanup grace (a session stamps its
- * row every YJS_LIVE_TOUCH_MS), with no younger log row: the log a relay crash left unwritten. An idle document with
+ * row every YJS_LIVE_TOUCH_MS), with no younger log row: the log a relay crash left unwritten, or rows posted over HTTP. An idle document with
  * nothing logged is not listed, its row is at rest. Cross-tenant by design, so the sweep visits every tenant through
  * its own tenant-scoped transaction, a bounded number at a time; a contextless query on the fail-closed policy returns
  * nothing.

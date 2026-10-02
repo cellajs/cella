@@ -9,7 +9,7 @@ import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import type { DocScope } from '../../constants';
 import { createSignedToken, startRelayServer, until } from '../helpers';
-import { appendOutsideWrite, cleanupSeed, outsideUpdate, seedOrg, storedState } from './seed';
+import { appendOutsideWrite, cleanupSeed, outsideUpdate, pushOverHttp, seedOrg, storedState } from './seed';
 
 // The real relay end to end over real sockets and the real database (runtime_role). The backend round trips are
 // stubbed: access is granted in the requested scope, the description seeds from a document the test can rewrite, and
@@ -51,6 +51,7 @@ vi.mock('#/modules/yjs/yjs-queries', async (importOriginal) => ({
 }));
 
 const { runCompaction } = await import('../../sync/relay');
+const { startPeriodicSweep } = await import('../../sync/sweep');
 const { getCollab } = await import('../../sync/session-manager');
 const { loadDocument } = await import('../../data/storage');
 const { descriptionToSeed, stateToBlocksJson } = await import('#/modules/yjs/helpers/description-update');
@@ -71,7 +72,12 @@ const ids = {
   survivor: '40000000-0000-4000-a000-000000000005',
   outside: '40000000-0000-4000-a000-000000000006',
   late: '40000000-0000-4000-a000-000000000007',
+  pushed: '40000000-0000-4000-a000-000000000008',
+  posted: '40000000-0000-4000-a000-000000000009',
+  stamped: '40000000-0000-4000-a000-00000000000a',
 };
+/** Another user's client, which reaches the API but not the relay. */
+const pusherId = '00000000-0000-4000-a000-0000000000e3';
 
 function ctx(entityId: string): DocScope {
   return { entityType, entityId, tenantId, organizationId };
@@ -152,9 +158,9 @@ function firstText(doc: Y.Doc): Y.XmlText {
 /** A relay generation started next to this one, as a start-first rollout does: its own sessions and pool, one database. */
 async function startNextGeneration() {
   vi.resetModules();
-  const { runStartupSweep } = await import('../../sync/sweep');
+  const { runSweep } = await import('../../sync/sweep');
   const { closeDb } = await import('../../data/db');
-  return { runStartupSweep, closeDb };
+  return { runSweep, closeDb };
 }
 
 /** A session a crashed relay left behind: its base seeded from the description, one unwritten edit, both a day old. */
@@ -174,6 +180,16 @@ async function seedOrphan(entityId: string, edit: string) {
      VALUES ($1, $2, $3, $4, $5, $6, now() - interval '1 day')`,
     [entityType, entityId, tenantId, organizationId, userId, Buffer.from(Y.encodeStateAsUpdate(doc, before))],
   );
+}
+
+/** A document seeded from the description a day ago, with nothing logged since and no session on any relay. */
+async function seedAtRest(entityId: string): Promise<string> {
+  const { rows } = await admin.query<{ generation: string }>(
+    `INSERT INTO yjs_documents (entity_type, entity_id, tenant_id, organization_id, state, updated_at)
+     VALUES ($1, $2, $3, $4, $5, now() - interval '1 day') RETURNING generation`,
+    [entityType, entityId, tenantId, organizationId, Buffer.from(descriptionToSeed(seedDescription))],
+  );
+  return rows[0].generation;
 }
 
 const sessionRows = async (entityId: string) => (await admin.query('SELECT 1 FROM yjs_documents WHERE entity_id = $1', [entityId])).rowCount;
@@ -217,7 +233,7 @@ describe('relay end to end', () => {
 
     const next = await startNextGeneration();
     try {
-      await next.runStartupSweep();
+      await next.runSweep();
     } finally {
       await next.closeDb();
     }
@@ -289,6 +305,69 @@ describe('relay end to end', () => {
     expect(materialized.filter((entry) => entry.entityId === ids.outside).at(-1)?.editedBy).toBe(userId);
     provider.destroy();
     doc.destroy();
+  });
+
+  it('a push over HTTP logged without its notice reaches a live client at the live stamp, and its compaction credits the pusher', async () => {
+    const { doc, provider, generations, closes } = await connectClient(ids.pushed);
+    const read = (await loadDocument(ctx(ids.pushed)))!;
+
+    // The API stopped between the push's commit and its notice.
+    const pushed = await pushOverHttp(ctx(ids.pushed), outsideUpdate(read, paragraph('Pushed: could you have a look?')), read.generation, pusherId, {
+      notice: false,
+    });
+    expect(pushed.status).toBe('appended');
+
+    await until(() => firstText(doc).toString() === 'Pushed: could you have a look?');
+    expect(closes).toEqual([]);
+    expect(generations).toHaveLength(1);
+    expect(blockGroups(doc)).toBe(1);
+
+    expect(await runCompaction(getCollab(ctx(ids.pushed))!)).toBe('ok');
+    expect(textOf(await baseOf(ctx(ids.pushed)))).toBe('Pushed: could you have a look?');
+    expect(materialized.filter((entry) => entry.entityId === ids.pushed).at(-1)?.editedBy).toBe(pusherId);
+    provider.destroy();
+    doc.destroy();
+  });
+
+  // A run lists every tenant of the shared test database, so a run takes as long as that database is large.
+  it('the periodic sweep writes what was posted over HTTP while the relay stays up, and skips a document a session stamps (D15)', {
+    timeout: 60_000,
+  }, async () => {
+    // Two documents no session on this relay holds, each with a push logged now: the stamped one first, so its log is
+    // as old as the other's at every run. Another relay's live session stamps it every YJS_LIVE_TOUCH_MS.
+    for (const entityId of [ids.stamped, ids.posted]) {
+      const generation = await seedAtRest(entityId);
+      const read = (await loadDocument(ctx(entityId)))!;
+      const pushed = await pushOverHttp(ctx(entityId), outsideUpdate(read, paragraph(`Posted to ${entityId}`)), generation, pusherId);
+      expect(pushed.status).toBe('appended');
+    }
+    const stamp = () => admin.query('UPDATE yjs_documents SET updated_at = now() WHERE entity_id = $1', [ids.stamped]);
+    await stamp();
+    const stamper = setInterval(() => void stamp(), 100);
+    const stop = startPeriodicSweep();
+    try {
+      // Once the push is older than the grace (500 ms here), a run writes it, credited to the pusher.
+      await until(async () => (await readLog(ctx(ids.posted))).length === 0, 25_000);
+      expect(textOf(await baseOf(ctx(ids.posted)))).toBe(`Posted to ${ids.posted}`);
+      expect(materialized.filter((entry) => entry.entityId === ids.posted).at(-1)).toMatchObject({
+        editedBy: pusherId,
+        description: expect.stringContaining(`Posted to ${ids.posted}`),
+      });
+      expect(await sessionRows(ids.posted)).toBe(1);
+      expect(getCollab(ctx(ids.posted))).toBeUndefined();
+
+      // The same listing saw the stamped document, its log as old: it keeps the log for the session that holds it.
+      expect(await readLog(ctx(ids.stamped))).toHaveLength(1);
+      expect(materialized.some((entry) => entry.entityId === ids.stamped)).toBe(false);
+
+      // Positive control: once its session ends, a run writes it too.
+      clearInterval(stamper);
+      await until(async () => (await readLog(ctx(ids.stamped))).length === 0, 25_000);
+      expect(materialized.filter((entry) => entry.entityId === ids.stamped).at(-1)?.editedBy).toBe(pusherId);
+    } finally {
+      clearInterval(stamper);
+      stop();
+    }
   });
 
   it('must not log an update sent on a deleted document before its session ends: a restore reseeds without it', async () => {
