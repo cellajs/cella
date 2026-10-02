@@ -16,6 +16,8 @@ export function PreferencesContent() {
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
   const toggleDetailedMenu = useNavigationStore((state) => state.toggleDetailedMenu);
   const toggleKeepOpenPreference = useNavigationStore((state) => state.toggleKeepOpenPreference);
+  const keyboardShortcuts = useNavigationStore((state) => state.keyboardShortcuts);
+  const toggleKeyboardShortcuts = useNavigationStore((state) => state.toggleKeyboardShortcuts);
 
   const showDesktopMenuOption = appConfig.menuStructure.some(({ subentityType }) => subentityType);
 
@@ -58,6 +60,17 @@ export function PreferencesContent() {
             </label>
           </div>
         )}
+        <div className="flex items-center gap-4 px-4">
+          <Switch
+            id="keyboardShortcuts"
+            checked={keyboardShortcuts}
+            onCheckedChange={toggleKeyboardShortcuts}
+            aria-label={t('c:keyboard_shortcuts')}
+          />
+          <label htmlFor="keyboardShortcuts" className="cursor-pointer select-none font-medium text-sm leading-none">
+            {t('c:keyboard_shortcuts')}
+          </label>
+        </div>
       </div>
 
       {pwaEnabled && (

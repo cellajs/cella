@@ -5,6 +5,7 @@ import { keyboardWalk } from './probes/keyboard.ts';
 import { layout } from './probes/layout.ts';
 import { statusMessages, tooltips } from './probes/overlays.ts';
 import { languageSwitch, pageStructure } from './probes/page-structure.ts';
+import { shortcutsOff } from './probes/shortcuts.ts';
 import { ensureOpen, type ScopeState } from './scope.ts';
 import { type Mode, newContext, openPage, resolvePath, type Session } from './session.ts';
 
@@ -48,6 +49,7 @@ export async function visitState(session: Session, state: ScopeState, mode: Mode
       await run(formErrors);
       await run(keyboardWalk);
       await run(languageSwitch);
+      await run(shortcutsOff);
     }
     return { findings, scan };
   } finally {

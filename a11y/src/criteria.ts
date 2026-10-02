@@ -45,7 +45,7 @@ export const criteria: Criterion[] = [
   c('1.4.13', 'Content on Hover or Focus', 'AA', ['probe:hover-content', 'manual']),
   c('2.1.1', 'Keyboard', 'A', ['axe', 'probe:keyboard', 'manual']),
   c('2.1.2', 'No Keyboard Trap', 'A', ['probe:keyboard']),
-  c('2.1.4', 'Character Key Shortcuts', 'A', ['code:shortcuts']),
+  c('2.1.4', 'Character Key Shortcuts', 'A', ['probe:shortcuts']),
   c('2.2.1', 'Timing Adjustable', 'A', ['code:timing']),
   c('2.2.2', 'Pause, Stop, Hide', 'A', ['code:motion', 'manual']),
   c('2.3.1', 'Three Flashes or Below Threshold', 'A', ['code:motion']),

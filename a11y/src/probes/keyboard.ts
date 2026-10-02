@@ -110,8 +110,9 @@ export const keyboardWalk: Check = async (page, state) => {
   const order: string[] = [];
   const overlayOpen = (await page.locator(overlaySelector).count()) > 0;
 
-  // Outside overlays the unfocused look is captured by blurring; inside one, blurring could close it
-  let previous: { clip: { x: number; y: number; width: number; height: number }; image: Buffer; name: string } | null = null;
+  // The element focus just left, to compare its focused look with how it looks now. Blurring it would not do: a grid
+  // keeps its selected-cell ring until another cell takes over, and a blur can close an overlay.
+  let previous: { handle: ElementHandle; width: number; height: number; image: Buffer; name: string } | null = null;
   let repeats = 0;
   let lastKey = '';
 
@@ -120,8 +121,12 @@ export const keyboardWalk: Check = async (page, state) => {
     await painted(page);
 
     if (previous) {
-      const after = await shot(page, previous.clip).catch(() => null);
-      if (after?.equals(previous.image)) invisible.push(previous.name);
+      // Measured again: moving focus may have scrolled the page. A box cut differently by the viewport cannot be compared.
+      const clip = await focusBox(page, previous.handle).catch(() => null);
+      if (clip && clip.width === previous.width && clip.height === previous.height) {
+        const after = await shot(page, clip).catch(() => null);
+        if (after?.equals(previous.image)) invisible.push(previous.name);
+      }
       previous = null;
     }
 
@@ -155,23 +160,7 @@ export const keyboardWalk: Check = async (page, state) => {
     const clip = handle && (await focusBox(page, handle).catch(() => null));
     if (!handle || !clip) continue;
     const focused = await shot(page, clip).catch(() => null);
-    if (!focused) continue;
-    if (overlayOpen) {
-      previous = { clip, image: focused, name: stop.name };
-      continue;
-    }
-    // A re-render may replace the element mid-check; the walk then carries on from wherever focus is
-    const blurred = await handle
-      .evaluate((el) => (el as HTMLElement).blur())
-      .then(
-        () => true,
-        () => false,
-      );
-    if (!blurred) continue;
-    await painted(page);
-    const unfocused = await shot(page, clip).catch(() => null);
-    if (unfocused?.equals(focused)) invisible.push(stop.name);
-    await handle.focus().catch(() => undefined);
+    if (focused) previous = { handle, width: clip.width, height: clip.height, image: focused, name: stop.name };
   }
 
   // When focus already left the overlay, that is the finding; Escape would go to the page behind it

@@ -13,8 +13,8 @@ function search(pattern: string, globs = sourceGlobs) {
 
 const files = (lines: string[]) => [...new Set(lines.map((line) => line.split(':')[0]))];
 
-/** Keyboard shortcuts made of a printable character alone or with Shift only. */
-function characterShortcuts() {
+/** Keyboard shortcuts made of a printable character alone or with Shift only, each as `combination (file)`. */
+export function characterShortcuts() {
   const found: string[] = [];
   for (const line of search(String.raw`\['[^']+'[[:space:]]*,[[:space:]]*\(`)) {
     const combo = /\['([^']+)'/.exec(line)?.[1];
@@ -64,19 +64,6 @@ export function runCodeChecks(evidence: EvidenceSet) {
           where: files(autoplay),
         }
       : { check: 'code:autoplay', result: 'not-applicable', summary: 'No audio or video plays automatically.', where: [] },
-  );
-
-  const shortcuts = characterShortcuts();
-  evidence.add(
-    ['2.1.4'],
-    shortcuts.length
-      ? {
-          check: 'code:shortcuts',
-          result: 'fail',
-          summary: `Single-character shortcuts with no way to turn them off or remap them: ${shortcuts.join(', ')}.`,
-          where: shortcuts,
-        }
-      : { check: 'code:shortcuts', result: 'pass', summary: 'Every keyboard shortcut includes Ctrl, Alt or Meta.', where: [] },
   );
 
   const sessionSpan = search(String.raw`new TimeSpan\(1, 'w'\)`, ['backend/src/modules/auth/sessions/**/*.ts']);
