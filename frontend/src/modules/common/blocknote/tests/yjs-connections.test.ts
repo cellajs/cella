@@ -91,6 +91,9 @@ const providers: MockProvider[] = [];
 let onlineListener: ((online: boolean) => void) | undefined;
 const warning = vi.fn();
 const invalidateQueries = vi.fn();
+const fetchQuery = vi.fn();
+/** Observers of the token query: an open editor holds one. */
+let tokenObservers = 1;
 
 /** A document that records its `update` listener, so a test can make a local edit. */
 class MockDoc {
@@ -121,8 +124,18 @@ vi.mock('@tanstack/react-query', () => ({
     },
   },
 }));
-vi.mock('~/query/query-client', () => ({ queryClient: { invalidateQueries: (...args: unknown[]) => invalidateQueries(...args) } }));
-vi.mock('~/modules/common/blocknote/query', () => ({ yjsTokenKeys: { entity: (...key: unknown[]) => key } }));
+vi.mock('~/query/query-client', () => ({
+  queryClient: {
+    invalidateQueries: (...args: unknown[]) => invalidateQueries(...args),
+    fetchQuery: (...args: unknown[]) => fetchQuery(...args),
+    getQueryCache: () => ({ find: () => ({ getObserversCount: () => tokenObservers }) }),
+  },
+}));
+vi.mock('~/modules/common/blocknote/query', () => ({
+  yjsTokenKeys: { entity: (...key: unknown[]) => key },
+  yjsTokenQueryOptions: (params: unknown) => ({ params }),
+  isYjsTokenRefusal: () => false,
+}));
 vi.mock('~/modules/common/blocknote/yjs-resync', () => ({ watchPendingStructs: () => () => {} }));
 vi.mock('~/env', () => ({ isDebugMode: false }));
 
@@ -143,7 +156,7 @@ async function mountConnection() {
   useUserStore.getState().setYjsToken(tokenKey, 'token-v1');
   let latest: Connection = null;
   const Harness = () => {
-    latest = useYjsConnection(entityId, 'attachment', 'tenant-1');
+    latest = useYjsConnection(entityId, 'attachment', 'tenant-1', 'org-1');
     return null;
   };
   const container = document.createElement('div');
@@ -166,6 +179,7 @@ const announce = async (provider: MockProvider, generation: string) => {
 beforeEach(() => {
   warning.mockClear();
   invalidateQueries.mockClear();
+  fetchQuery.mockReset();
 });
 
 afterEach(async () => {
@@ -299,6 +313,30 @@ describe('yjs connection: token refusals', () => {
     expect(warning).not.toHaveBeenCalled();
     // Each refusal asks for a fresh token.
     expect(invalidateQueries).toHaveBeenCalledTimes(20);
+  });
+
+  it('fetches its own token after a refusal while no editor observes the token query', async () => {
+    const { provider, tokenKey } = await mountConnection();
+    tokenObservers = 0;
+    fetchQuery.mockResolvedValueOnce('token-fresh');
+    try {
+      await refuseToken(provider);
+      await act(async () => {});
+
+      expect(fetchQuery).toHaveBeenCalledOnce();
+      expect(useUserStore.getState().yjsTokens[tokenKey]).toBe('token-fresh');
+    } finally {
+      tokenObservers = 1;
+    }
+  });
+
+  it('leaves the refetch to the token query while an editor observes it (positive control)', async () => {
+    const { provider } = await mountConnection();
+
+    await refuseToken(provider);
+
+    expect(invalidateQueries).toHaveBeenCalledOnce();
+    expect(fetchQuery).not.toHaveBeenCalled();
   });
 
   it('must not retry forever via tokens the relay keeps refusing: it stops after five refused tokens', async () => {

@@ -8,7 +8,7 @@ import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import { create } from 'zustand';
 import type { TKey } from '~/lib/i18n-locales';
-import { yjsTokenKeys } from '~/modules/common/blocknote/query';
+import { isYjsTokenRefusal, yjsTokenKeys, yjsTokenQueryOptions } from '~/modules/common/blocknote/query';
 import { watchPendingStructs } from '~/modules/common/blocknote/yjs-resync';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
@@ -215,7 +215,7 @@ function openDoc(editSessionId: string, entityType: ProductEntityType, tenantId:
  * final close, rebuilds it when the relay reseeded the document, reports the first sync, and tracks the edits the relay
  * has not saved yet.
  */
-function bindProvider(editSessionId: string, conn: YjsConnection, entityType: ProductEntityType, tenantId: string) {
+function bindProvider(editSessionId: string, conn: YjsConnection, entityType: ProductEntityType, tenantId: string, organizationId: string) {
   const { provider, yDoc, ledger } = conn;
   const tokenKey = yjsTokenKey(entityType, editSessionId);
 
@@ -273,7 +273,18 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
     // expired token again, and that must not end collaboration for good once the API is back.
     if (event.code === YJS_CLOSE.TOKEN_INVALID) {
       refusedTokens.add(attemptToken);
-      void queryClient.invalidateQueries({ queryKey: yjsTokenKeys.entity(entityType, editSessionId) });
+      const tokenQueryKey = yjsTokenKeys.entity(entityType, editSessionId);
+      void queryClient.invalidateQueries({ queryKey: tokenQueryKey });
+      // An open editor's token query refetches on the invalidation. A connection kept only for unsaved edits has none
+      // observing the key, so it fetches its own token, and a refusal withdraws it like the query's would.
+      if (!queryClient.getQueryCache().find({ queryKey: tokenQueryKey })?.getObserversCount()) {
+        queryClient
+          .fetchQuery(yjsTokenQueryOptions({ entityType, entityId: editSessionId, tenantId, organizationId }))
+          .then((token) => useUserStore.getState().setYjsToken(tokenKey, token))
+          .catch((error) => {
+            if (isYjsTokenRefusal(error)) useUserStore.getState().setYjsToken(tokenKey, null);
+          });
+      }
       if (refusedTokens.size < MAX_TOKEN_FAILURES) return;
       console.warn(`[yjs] Circuit breaker: ${refusedTokens.size} tokens refused in a row for ${editSessionId}`);
       stopConnection(editSessionId, conn, 'error:sync_token_expired.text');
@@ -291,7 +302,7 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
   provider.messageHandlers[YJS_MESSAGE.GENERATION] = (_encoder, decoder) => {
     const generation = decoding.readVarString(decoder);
     if (conn.generation === null) conn.generation = generation;
-    else if (conn.generation !== generation) rebuildConnection(editSessionId, conn, entityType, tenantId);
+    else if (conn.generation !== generation) rebuildConnection(editSessionId, conn, entityType, tenantId, organizationId);
   };
 
   // One per Step2 or Update this socket sent, in order. Any `Saved` proves the relay sends them.
@@ -341,7 +352,7 @@ function unbindProvider(conn: YjsConnection) {
  * dropped document held edits the relay never saved, since the description they see next is the one written elsewhere.
  * A connection that only waited for those edits to be saved has nothing left to wait for, and goes.
  */
-function rebuildConnection(editSessionId: string, conn: YjsConnection, entityType: ProductEntityType, tenantId: string) {
+function rebuildConnection(editSessionId: string, conn: YjsConnection, entityType: ProductEntityType, tenantId: string, organizationId: string) {
   const { unsynced } = conn;
   setUnsynced(editSessionId, conn, false);
   if (conn.refCount === 0 && !conn.graceTimer) destroyConnection(editSessionId, conn);
@@ -352,12 +363,12 @@ function rebuildConnection(editSessionId: string, conn: YjsConnection, entityTyp
       synced: { ...s.synced, [editSessionId]: false },
       rebuilds: { ...s.rebuilds, [editSessionId]: (s.rebuilds[editSessionId] ?? 0) + 1 },
     }));
-    bindProvider(editSessionId, conn, entityType, tenantId);
+    bindProvider(editSessionId, conn, entityType, tenantId, organizationId);
   }
   if (unsynced) toaster.warning(i18n.t('error:sync_document_replaced.text'));
 }
 
-function acquireConnection(editSessionId: string, entityType: ProductEntityType, tenantId: string): YjsConnection {
+function acquireConnection(editSessionId: string, entityType: ProductEntityType, tenantId: string, organizationId: string): YjsConnection {
   const existing = connections.get(editSessionId);
 
   if (existing) {
@@ -370,7 +381,7 @@ function acquireConnection(editSessionId: string, entityType: ProductEntityType,
   }
 
   const conn: YjsConnection = { ...openDoc(editSessionId, entityType, tenantId), refCount: 1, stopped: false, generation: null, unsynced: false };
-  bindProvider(editSessionId, conn, entityType, tenantId);
+  bindProvider(editSessionId, conn, entityType, tenantId, organizationId);
   connections.set(editSessionId, conn);
   return conn;
 }
@@ -421,7 +432,7 @@ function releaseConnection(editSessionId: string) {
  * reseeded document syncs afresh, and `rebuilds` counts those, so the editor remounts on the new fragment. `unsynced`
  * is true while the document holds local edits the relay has not saved.
  */
-export function useYjsConnection(editSessionId: string | undefined, entityType: ProductEntityType, tenantId: string) {
+export function useYjsConnection(editSessionId: string | undefined, entityType: ProductEntityType, tenantId: string, organizationId: string) {
   const [conn, setConn] = useState<YjsConnection | null>(() => {
     return editSessionId ? (connections.get(editSessionId) ?? null) : null;
   });
@@ -431,13 +442,13 @@ export function useYjsConnection(editSessionId: string | undefined, entityType: 
       setConn(null);
       return;
     }
-    const acquired = acquireConnection(editSessionId, entityType, tenantId);
+    const acquired = acquireConnection(editSessionId, entityType, tenantId, organizationId);
     setConn(acquired);
     return () => {
       releaseConnection(editSessionId);
       setConn(null);
     };
-  }, [editSessionId, entityType, tenantId]);
+  }, [editSessionId, entityType, tenantId, organizationId]);
 
   const synced = useYjsSyncStore((s) => s.synced[editSessionId ?? ''] ?? false);
   const stopped = useYjsSyncStore((s) => s.stopped[editSessionId ?? ''] ?? false);

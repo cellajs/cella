@@ -102,7 +102,7 @@ function CollaborativeHost({
 
   // Once synced, the connection stays for the mount, also when its token is refused: a stopped editor shows what was typed.
   const [joined, setJoined] = useState<string | null>(null);
-  const yjsConn = useYjsConnection(token || joined === entityId ? entityId : undefined, entityType, tenantId);
+  const yjsConn = useYjsConnection(token || joined === entityId ? entityId : undefined, entityType, tenantId, organizationId);
   if (yjsConn?.synced && joined !== entityId) setJoined(entityId);
 
   const stopped = yjsConn?.stopped ?? false;

@@ -198,17 +198,8 @@ function BlockNote({
     updateData(strBlocks);
   };
 
-  // Collaborative: an empty editor may mean Yjs has not synced yet, so it is never written.
-  // Standalone: an emptied document is a real edit; handleUpdateData skips unchanged content.
-  const commitDocument = () => {
-    if (collaborative && editor.isEmpty) return;
-    handleUpdateData(editor);
-  };
-
-  const handleKeyDown = useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit: commitDocument });
-
-  // A user change since mount: unmount and navigation commit only after one, so an untouched editor never writes back
-  // a document the description has moved past since, or one it only serializes differently.
+  // A user change since mount: a standalone editor commits only after one, so an untouched editor never writes back a
+  // document the description has moved past since, or one it only serializes differently.
   const touchedRef = useRef(false);
   useEffect(
     () =>
@@ -217,6 +208,15 @@ function BlockNote({
       }, false),
     [editor],
   );
+
+  // Collaborative: an empty editor may mean Yjs has not synced yet, so it is never written.
+  // Standalone: an emptied document is a real edit, and an untouched one is none; handleUpdateData skips unchanged content.
+  const commitDocument = () => {
+    if (collaborative ? editor.isEmpty : !touchedRef.current) return;
+    handleUpdateData(editor);
+  };
+
+  const handleKeyDown = useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit: commitDocument });
 
   // A host dismissed by an outside press (a sheet) unmounts the editor while it still has focus, so
   // no blur fires; the cleanup commits what blur would have. Standalone only: the relay owns

@@ -3,6 +3,7 @@ import type { Duplex } from 'node:stream';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { WebSocket as WsWebSocket } from 'ws';
+import { YJS_PENDING_QUEUE_CAP } from '../constants';
 import { createExpiredToken, createSignedToken, deferred, openSocket, recordCrashes, startRelayServer, until } from './helpers';
 
 // The real upgrade handler over mocked collaborators: entity access is granted in the requested scope, the relay and session manager are inert.
@@ -307,6 +308,23 @@ describe('setupConnectionHandler: per-socket ordering', () => {
     await until(() => applied.length === 5);
     expect(applied.at(-1)).toEqual({ type: 1, verified: true, body: 8 });
     ws.close();
+  });
+
+  it('must not drop a sync frame past the pending cap silently: the socket closes with 1011 and none applies', async () => {
+    const verification = deferred();
+    verifyGate.hold = verification.promise;
+    const before = framesReceived;
+    const token = createSignedToken({ userId: 'user-1', entityId: 'entity-cap' });
+    const { ws, closed } = await openSocket(`${baseUrl}/entity-cap?token=${token}&entityType=task&tenantId=tenant-1`);
+
+    // One frame more than the queue holds while verification is pending: the dropped one would never get its `Saved`.
+    for (let i = 0; i <= YJS_PENDING_QUEUE_CAP; i++) ws.send(new Uint8Array([0, 2, i % 250]));
+    await until(() => framesReceived === before + YJS_PENDING_QUEUE_CAP + 1);
+
+    expect(await closed).toEqual({ code: 1011, reason: 'Too many frames before verification' });
+    verification.release();
+    await sleep(60);
+    expect(applied.filter((frame) => frame.type === 0)).toHaveLength(0);
   });
 
   it('denied verification closes the socket and never applies the queued sync frames', async () => {

@@ -267,8 +267,12 @@ export function setupConnectionHandler(server: WebSocketServer): void {
         else if (!queue.closed) heldAwareness = data;
         return;
       }
-      // Bounds memory while a slow verification holds the queue; a verified socket is not capped.
-      if (!ctx.scope && queue.size >= YJS_PENDING_QUEUE_CAP) return;
+      // Bounds memory while a slow verification holds the queue; a verified socket is not capped. A frame dropped here
+      // gets no `Saved`, so the socket closes, and the client's next handshake carries what it held.
+      if (!ctx.scope && queue.size >= YJS_PENDING_QUEUE_CAP) {
+        if (ws.readyState === ws.OPEN) ws.close(1011, 'Too many frames before verification');
+        return;
+      }
       void queue.enqueue(() => handleMessage(ctx, ws, data));
     };
 

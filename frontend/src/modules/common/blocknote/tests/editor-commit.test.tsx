@@ -181,6 +181,17 @@ describe('standalone BlockNote commits', () => {
     expect(updateData).not.toHaveBeenCalled();
   });
 
+  it('does not commit on blur or Escape when untouched, though defaultValue moved after mount', async () => {
+    const updateData = vi.fn();
+    await renderEditor({ defaultValue: stored, updateData });
+
+    await renderEditor({ defaultValue: otherStored, updateData });
+    await blur();
+    await pressEscape();
+
+    expect(updateData).not.toHaveBeenCalled();
+  });
+
   it('does not commit on unmount when untouched, though defaultValue moved after mount', async () => {
     const updateData = vi.fn();
     await renderEditor({ defaultValue: stored, updateData });
