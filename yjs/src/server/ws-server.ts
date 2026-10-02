@@ -7,6 +7,7 @@ import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { WebSocketServer } from 'ws';
 import { YJS_MAX_UPDATE_BYTES } from '#/modules/yjs/yjs-log';
 import { closeDb } from '../data/db';
+import { logListenerStatus, stopLogListener } from '../data/listener';
 import { env } from '../env';
 import { log } from '../lib/pino';
 import { getActiveClientCount, getActiveDocumentCount } from '../sync/session-manager';
@@ -16,14 +17,17 @@ let httpServer: Server | null = null;
 let wss: WebSocketServer | null = null;
 
 /** The shared health app, mounted on both the bare path and the `/yjs` prefix, since the load balancer forwards `/yjs/...` without stripping it. */
-function buildHttpApp(): Hono {
+export function buildHttpApp(): Hono {
   // biome-ignore lint/style/noProcessEnv: RELEASE_SHA is baked into the image by Docker, not part of the validated env schema
   const version = process.env.RELEASE_SHA ?? 'unknown';
   const healthApp = createHealthApp({
     version,
     full: () => {
       const eventLoopLagMs = getEventLoopLagMs();
-      const status = eventLoopLagMs >= 1000 ? 'unhealthy' : eventLoopLagMs >= 100 ? 'degraded' : 'healthy';
+      // A listener that is down leaves outside writes to the live stamp, up to a minute late: degraded, not down.
+      const listener = logListenerStatus();
+      const lagging = eventLoopLagMs >= 1000 ? 'unhealthy' : eventLoopLagMs >= 100 ? 'degraded' : 'healthy';
+      const status = lagging === 'healthy' && listener === 'connecting' ? 'degraded' : lagging;
       return {
         httpStatus: 200,
         body: {
@@ -34,6 +38,7 @@ function buildHttpApp(): Hono {
           documents: getActiveDocumentCount(),
           clients: getActiveClientCount(),
           eventLoopLagMs,
+          listener,
         },
       };
     },
@@ -75,6 +80,7 @@ export async function closeWsServer(): Promise<void> {
     httpServer = null;
   }
 
+  await stopLogListener();
   await closeDb();
 
   log.info('Yjs worker stopped');

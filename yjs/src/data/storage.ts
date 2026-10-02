@@ -1,4 +1,4 @@
-import { and, eq, inArray, lt, sql, TransactionRollbackError } from 'drizzle-orm';
+import { and, asc, eq, inArray, lt, max, sql, TransactionRollbackError } from 'drizzle-orm';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { type AppendResult, appendYjsUpdate, type LogRow, readYjsDocument, type YjsDocumentRead } from '#/modules/yjs/yjs-log';
@@ -55,10 +55,42 @@ export async function seedDocument(scope: DocScope, toSeed: (description: string
  * Logs a client's update through the log's one way in (`appendYjsUpdate`), under its sender, whom materialize may
  * credit, and notifies every relay at commit. Durable before the update is broadcast: one insert, so concurrent appends
  * never overwrite each other. The update extends one `generation` and is appended only while that document row exists,
- * held under a key-share lock until the insert commits.
+ * held under a key-share lock until the insert commits. `onLogged` gets the row id before the commit, so the session
+ * counts the row as relayed before its own notification can arrive.
  */
-export async function appendUpdate(scope: DocScope, userId: string | null, payload: Uint8Array, generation: string): Promise<AppendResult> {
-  return asSystem(scope, (tx) => appendYjsUpdate(tx, scope, payload, { userId: userId || null, generation }));
+export async function appendUpdate(
+  scope: DocScope,
+  userId: string | null,
+  payload: Uint8Array,
+  generation: string,
+  onLogged?: (id: number) => void,
+): Promise<AppendResult> {
+  return asSystem(scope, async (tx) => {
+    const result = await appendYjsUpdate(tx, scope, payload, { userId: userId || null, generation });
+    if (result.status === 'appended') onLogged?.(result.id);
+    return result;
+  });
+}
+
+/**
+ * The log of the document's `generation`, oldest first, with that document row held under a key-share lock so no
+ * retirement deletes it meanwhile. Null when no row of that generation exists: retired, or reseeded since.
+ */
+export async function readLogOf(doc: DocKey, generation: string): Promise<LogRow[] | null> {
+  return asSystem(doc, async (tx) => {
+    const [document] = await tx
+      .select({ generation: yjsDocumentsTable.generation })
+      .from(yjsDocumentsTable)
+      .where(and(docWhere(doc), eq(yjsDocumentsTable.generation, generation)))
+      .for('key share');
+    if (!document) return null;
+    const rows = await tx
+      .select({ id: yjsUpdatesTable.id, payload: yjsUpdatesTable.payload, userId: yjsUpdatesTable.userId })
+      .from(yjsUpdatesTable)
+      .where(logWhere(doc))
+      .orderBy(asc(yjsUpdatesTable.id));
+    return rows.map((row) => ({ ...row, payload: new Uint8Array(row.payload) }));
+  });
 }
 
 /** How a fold ended: written, the document retired or reseeded since the read, or another compaction took its rows. */
@@ -114,15 +146,26 @@ export async function deleteDoc(doc: DocKey): Promise<void> {
   });
 }
 
-/** Stamps the document row live, so no startup sweep takes it for an orphan, and reports whether the row exists: a retired document has none. Creates no row. */
-export async function touchDoc(doc: DocKey): Promise<boolean> {
+/** What a live stamp learns: whether the document row exists (a retired document has none), and the newest log row id. */
+export interface LiveStamp {
+  exists: boolean;
+  lastLogId: number | null;
+}
+
+/** Stamps the document row live, so no startup sweep takes it for an orphan, and reads its newest log row. Creates no row. */
+export async function touchDoc(doc: DocKey): Promise<LiveStamp> {
   return asSystem(doc, async (tx) => {
-    const rows = await tx
+    const stamped = await tx
       .update(yjsDocumentsTable)
       .set({ updatedAt: sql`now()` })
       .where(docWhere(doc))
       .returning({ entityId: yjsDocumentsTable.entityId });
-    return rows.length > 0;
+    if (stamped.length === 0) return { exists: false, lastLogId: null };
+    const [last] = await tx
+      .select({ id: max(yjsUpdatesTable.id).mapWith(Number) })
+      .from(yjsUpdatesTable)
+      .where(logWhere(doc));
+    return { exists: true, lastLogId: last?.id ?? null };
   });
 }
 

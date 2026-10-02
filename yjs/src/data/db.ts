@@ -1,6 +1,7 @@
+import process from 'node:process';
 import { sql } from 'drizzle-orm';
-import type pg from 'pg';
-import { resolvePostgresSslCa } from 'shared/utils/postgres-tls';
+import pg from 'pg';
+import { resolvePostgresSslCa, stripPostgresSslParams, verifiedPostgresSsl } from 'shared/utils/postgres-tls';
 import { createPgConnection, type Tx } from '#/db/create-connection';
 import { env } from '../env';
 
@@ -29,6 +30,24 @@ export async function withRlsTx<T>(
       sql`SELECT set_config('app.tenant_id', ${tenantId}, true), set_config('app.user_id', ${userId}, true), set_config('app.include_deleted', ${includeDeleted ? 'true' : 'false'}, true)`,
     );
     return fn(tx);
+  });
+}
+
+/** The name the log listener's connection carries in `pg_stat_activity`: one per relay process. */
+export const listenerApplicationName = `yjs-log-listener:${process.pid}`;
+
+/**
+ * One connection outside the pool, on the pool's URL and TLS, for the log listener: LISTEN belongs to a session, and a
+ * pooled connection goes back to the pool. TCP keepalive ends it when the peer or a middlebox drops it while idle.
+ */
+export function createListenerClient(): pg.Client {
+  return new pg.Client({
+    connectionString: stripPostgresSslParams(env.DATABASE_URL),
+    ssl: verifiedPostgresSsl(env.DATABASE_URL, sslCa),
+    connectionTimeoutMillis: 10_000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 30_000,
+    application_name: listenerApplicationName,
   });
 }
 

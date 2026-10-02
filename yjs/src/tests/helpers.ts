@@ -182,10 +182,11 @@ export const storageMock = () => ({
   loadDocument: vi.fn().mockResolvedValue(null),
   seedDocument: vi.fn().mockResolvedValue({ generation: 'gen-1', base: new Uint8Array(), rows: [] }),
   appendUpdate: vi.fn().mockResolvedValue({ status: 'appended', id: 1 }),
+  readLogOf: vi.fn().mockResolvedValue([]),
   compactState: vi.fn().mockResolvedValue('ok'),
   discardLogRows: vi.fn().mockResolvedValue(undefined),
   deleteDoc: vi.fn().mockResolvedValue(undefined),
-  touchDoc: vi.fn().mockResolvedValue(true),
+  touchDoc: vi.fn().mockResolvedValue({ exists: true, lastLogId: null }),
   listStaleDocs: vi.fn().mockResolvedValue([]),
 });
 
@@ -245,7 +246,7 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
       return read(k);
     }),
     /** A test arranges a log without a `generation`; the relay always names one, and appends only to its row. */
-    appendUpdate: vi.fn(async (scope: DocScope, userId: string | null, payload: Uint8Array, generation?: string) => {
+    appendUpdate: vi.fn(async (scope: DocScope, userId: string | null, payload: Uint8Array, generation?: string, onLogged?: (id: number) => void) => {
       await wait('appendUpdate');
       const current = row(key(scope));
       if (generation !== undefined && !current) return { status: 'no-document' as const };
@@ -256,7 +257,13 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
       const id = nextId++;
       list.push({ id, payload, userId: userId || null });
       logs.set(key(scope), list);
+      onLogged?.(id);
       return { status: 'appended' as const, id };
+    }),
+    readLogOf: vi.fn(async (doc: DocKey, generation: string) => {
+      await wait('readLogOf');
+      const current = row(key(doc));
+      return current?.generation === generation ? [...(logs.get(key(doc)) ?? [])] : null;
     }),
     compactState: vi.fn(async (doc: DocKey, merged: Uint8Array, ids: number[], generation?: string) => {
       await wait('compactState');
@@ -286,7 +293,8 @@ export function fakeStorage(delay?: (call: string) => Promise<void> | undefined)
     }),
     touchDoc: vi.fn(async (doc: DocKey) => {
       await wait('touchDoc');
-      return bases.has(key(doc));
+      const log = logs.get(key(doc)) ?? [];
+      return { exists: bases.has(key(doc)), lastLogId: bases.has(key(doc)) ? (log.at(-1)?.id ?? null) : null };
     }),
     listStaleDocs: vi.fn(async (): Promise<DocScope[]> => []),
   };

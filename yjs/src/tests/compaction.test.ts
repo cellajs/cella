@@ -137,6 +137,24 @@ describe('compactDocument', () => {
     expect(readMap(storage.bases.get(key)!)).toEqual({ newer: true });
   });
 
+  it('tells its observer the rows it read before anything folds, and the rows that left the log', async () => {
+    await storage.appendUpdate(scope, 'user-x', undecodableUpdate);
+    await storage.appendUpdate(scope, 'user-1', mapUpdate('a', 1));
+    const [bad, good] = storage.logs.get(key)!;
+    const events: string[] = [];
+    vi.mocked(postMaterialize).mockImplementationOnce(async () => {
+      events.push('post');
+      return 'ok';
+    });
+
+    await compactDocument(scope, null, {
+      read: (rows) => events.push(`read ${rows.map((row) => row.id)}`),
+      removed: (ids) => events.push(`removed ${ids}`),
+    });
+
+    expect(events).toEqual([`removed ${bad.id}`, `read ${good.id}`, 'post', `removed ${good.id}`]);
+  });
+
   it('must not write a document retired under the session: nothing is posted or folded', async () => {
     // The entity was deleted: its retirement took the document row and its log.
     storage.bases.delete(key);

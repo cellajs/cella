@@ -20,6 +20,14 @@ function editorsNewestFirst(rows: LogRow[]): string[] {
 /** `empty`: nothing was logged since the last compaction, so nothing was written. `retired`: the document row is gone, or of another generation than the session's. The other values are the materialize outcome. */
 export type CompactionResult = 'empty' | 'ok' | 'gone' | 'permanent' | 'retry' | 'retired';
 
+/** What a live session learns from its compaction: the window read, before any of it folds, and the rows that left the log. */
+export interface CompactionObserver {
+  /** The rows the merge holds, oldest first: the session relays the ones its sockets lack before they fold into the base. */
+  read(rows: LogRow[]): void;
+  /** Rows deleted from the log: folded into the base, or discarded because no merge accepts them. */
+  removed(ids: number[]): void;
+}
+
 /**
  * Writes the merged document to the entity through the backend, then folds the update log into the base state. Runs
  * as the system in the document's own scope, whoever joined the session; the caller holds the document lock. Base and
@@ -42,7 +50,7 @@ export type CompactionResult = 'empty' | 'ok' | 'gone' | 'permanent' | 'retry' |
  * apply, and kept it would fail every window. A document gone, or of another `generation` than the session's, was
  * retired or reseeded: nothing is touched.
  */
-export async function compactDocument(scope: DocScope, generation: string | null = null): Promise<CompactionResult> {
+export async function compactDocument(scope: DocScope, generation: string | null = null, observer?: CompactionObserver): Promise<CompactionResult> {
   const document = await loadDocument(scope);
   if (document === null) return generation === null ? 'empty' : 'retired';
   if (generation !== null && document.generation !== generation) return 'retired';
@@ -56,13 +64,13 @@ export async function compactDocument(scope: DocScope, generation: string | null
         bytes: row.payload.length,
       });
     }
-    await discardLogRows(
-      scope,
-      rejected.map((row) => row.id),
-    );
+    const discarded = rejected.map((row) => row.id);
+    await discardLogRows(scope, discarded);
+    observer?.removed(discarded);
   }
   const rows = document.rows.filter((row) => !rejected.includes(row));
   if (rows.length === 0 || !state) return 'empty';
+  observer?.read(rows);
   const ids = rows.map((row) => row.id);
 
   const serverRows = rows.filter((row) => row.userId === null);
@@ -79,7 +87,8 @@ export async function compactDocument(scope: DocScope, generation: string | null
       const batchIds = batch.map((row) => row.id);
       const folded = merged ? await compactState(scope, merged, batchIds, document.generation) : 'ok';
       if (folded !== 'ok') return folded === 'overlap' ? 'retry' : 'retired';
-      return compactDocument(scope, document.generation);
+      observer?.removed(batchIds);
+      return compactDocument(scope, document.generation, observer);
     }
     const json = stateToBlocksJson(state);
     if (json === null) {
@@ -97,5 +106,7 @@ export async function compactDocument(scope: DocScope, generation: string | null
     log.warn(`Compaction: another compaction folded rows of ${scope.entityType}:${scope.entityId}, retrying`);
     return 'retry';
   }
-  return folded === 'retired' ? 'retired' : 'ok';
+  if (folded === 'retired') return 'retired';
+  observer?.removed(ids);
+  return 'ok';
 }

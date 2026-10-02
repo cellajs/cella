@@ -9,7 +9,7 @@ import { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
 import type { DocScope } from '../../constants';
 import { createSignedToken, startRelayServer, until } from '../helpers';
-import { cleanupSeed, seedOrg, storedState } from './seed';
+import { appendOutsideWrite, cleanupSeed, outsideUpdate, seedOrg, storedState } from './seed';
 
 // The real relay end to end over real sockets and the real database (runtime_role). The backend round trips are
 // stubbed: access is granted in the requested scope, the description seeds from a document the test can rewrite, and
@@ -178,6 +178,7 @@ const sessionRows = async (entityId: string) => (await admin.query('SELECT 1 FRO
 /** The top-level children of the editor's fragment: one block group for one document, two when two histories were merged. */
 const blockGroups = (doc: Y.Doc) => doc.getXmlFragment('document-store').length;
 
+// No log listener runs here: an outside write reaches a session at its live stamp (outside-write.test.ts listens).
 describe('relay end to end', () => {
   it('a burst of keystrokes right after sync all persist and materialize (the lost-first-update regression)', async () => {
     const { doc, provider } = await connectClient(ids.burst);
@@ -261,43 +262,38 @@ describe('relay end to end', () => {
     doc.destroy();
   });
 
-  it('must not merge a surviving client document into a reseeded one: an outside write ends the session, and the reconnect learns a new generation', async () => {
+  it('an outside write logged without a notification reaches a live client at the live stamp, in the same session and generation', async () => {
     const { doc, provider, generations, closes } = await connectClient(ids.outside);
-    const [before] = generations;
-    expect(before).toBeTruthy();
-    firstText(doc).insert(0, 'mine ');
+    const text = firstText(doc);
+    // Read before the client's edit is logged, as a write whose handler runs while someone types.
+    const read = (await loadDocument(ctx(ids.outside)))!;
+    text.insert(text.length, ' again');
     await until(async () => (await readLog(ctx(ids.outside))).length >= 1);
 
-    // The description is written outside the relay: the backend retires the document in that transaction.
-    description = paragraph('rewritten elsewhere');
-    await admin.query('DELETE FROM yjs_updates WHERE entity_id = $1', [ids.outside]);
-    await admin.query('DELETE FROM yjs_documents WHERE entity_id = $1', [ids.outside]);
+    // The write keeps the block and changes its start: the edit typed at its end concurrently survives.
+    const appended = await appendOutsideWrite(ctx(ids.outside), outsideUpdate(read, paragraph('So, could you have a look?')), read.generation, false);
+    expect(appended.status).toBe('appended');
 
-    // The live stamp notices and ends the session; the client reconnects, is told the new generation, and drops its
-    // document (this test client, like the app's, destroys the connection) before it merges or uploads anything.
-    await until(async () => closes.includes(1013));
-    await until(async () => generations.length === 2);
-    expect(generations[1]).not.toBe(before);
-    expect(provider.wsconnected).toBe(false);
+    await until(() => text.toString() === 'So, could you have a look? again');
+    expect(closes).toEqual([]);
+    expect(generations).toHaveLength(1);
+    expect(blockGroups(doc)).toBe(1);
+    expect(provider.wsconnected).toBe(true);
 
-    // A fresh client sees the outside write in one history, and the log holds nothing of the dropped document.
-    const fresh = await connectClient(ids.outside);
-    expect(fresh.generations[0]).toBe(generations[1]);
-    expect(blockGroups(fresh.doc)).toBe(1);
-    expect(textOf(Y.encodeStateAsUpdate(fresh.doc))).toBe('rewritten elsewhere');
-    await sleep(100);
-    expect(await readLog(ctx(ids.outside))).toEqual([]);
-    fresh.provider.destroy();
-    fresh.doc.destroy();
+    // The window is mixed: posted, credited to the client, and the stored document holds both.
+    expect(await runCompaction(getCollab(ctx(ids.outside))!)).toBe('ok');
+    expect(textOf(await baseOf(ctx(ids.outside)))).toBe('So, could you have a look? again');
+    expect(materialized.filter((entry) => entry.entityId === ids.outside).at(-1)?.editedBy).toBe(userId);
+    provider.destroy();
     doc.destroy();
-    description = seedDescription;
   });
 
-  it('must not log an update sent on a retired document before its session ends: the reseed never merges it', async () => {
+  it('must not log an update sent on a deleted document before its session ends: a restore reseeds without it', async () => {
     const { doc, provider, closes } = await connectClient(ids.late);
 
-    // Retired as the backend does, and typed into at once, before the live stamp notices.
-    description = paragraph('rewritten elsewhere');
+    // Retired as the backend's deletion does, here without its notification, and typed into at once, before the live
+    // stamp notices. Access stays granted, as after a restore.
+    description = paragraph('restored elsewhere');
     await admin.query('DELETE FROM yjs_documents WHERE entity_id = $1', [ids.late]);
     await admin.query('DELETE FROM yjs_updates WHERE entity_id = $1', [ids.late]);
     firstText(doc).insert(0, 'late ');
@@ -307,10 +303,10 @@ describe('relay end to end', () => {
     doc.destroy();
     expect(await readLog(ctx(ids.late))).toEqual([]);
 
-    // The reseed holds the outside write alone, in one history.
+    // The reseed holds the restored description alone, in one history.
     const fresh = await connectClient(ids.late);
     expect(blockGroups(fresh.doc)).toBe(1);
-    expect(textOf(Y.encodeStateAsUpdate(fresh.doc))).toBe('rewritten elsewhere');
+    expect(textOf(Y.encodeStateAsUpdate(fresh.doc))).toBe('restored elsewhere');
     expect(await readLog(ctx(ids.late))).toEqual([]);
     fresh.provider.destroy();
     fresh.doc.destroy();
