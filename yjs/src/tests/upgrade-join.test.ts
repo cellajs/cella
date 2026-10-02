@@ -122,6 +122,24 @@ describe('upgrade: Saved', () => {
     expect(logged().map((row) => readMap(row.payload))).toEqual([{ a: 1 }, { b: 2 }]);
     expect(editor.received).toEqual([savedFrame, savedFrame, savedFrame]);
   });
+
+  it('must not leave a socket open without the Saved of a frame whose handling failed: it closes with 1011', async () => {
+    const doc = 'doc-saved-failure';
+    const editor = await open('user-a', doc);
+    await until(() => clientCount(doc) === 1);
+    storage.appendUpdate.mockRejectedValueOnce(new Error('db down'));
+
+    editor.ws.send(buildSyncUpdate(mapUpdate('a', 1)));
+    expect(await editor.closed).toEqual({ code: 1011, reason: 'Frame handling failed' });
+    expect(editor.received).toEqual([]);
+
+    // Positive control: the reconnect's update is logged and saved.
+    const again = await open('user-a', doc);
+    await until(() => clientCount(doc) === 1);
+    again.ws.send(buildSyncUpdate(mapUpdate('a', 1)));
+    await until(() => again.received.length === 1);
+    expect(again.received).toEqual([savedFrame]);
+  });
 });
 
 describe('upgrade: presence leave', () => {

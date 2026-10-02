@@ -220,8 +220,11 @@ export function setupConnectionHandler(server: WebSocketServer): void {
       });
     };
 
+    // A frame whose handling failed may not be logged and gets no `Saved`: the socket closes, and the client's next
+    // handshake uploads what the relay lacks.
     const queue = createSerialQueue((err) => {
       log.error(`Error handling message for ${docLabel(ctx)}`, { err });
+      if (ws.readyState === ws.OPEN) ws.close(1011, 'Frame handling failed');
     });
     const verification = verifications.get(ws);
     void queue.enqueue(async () => {
