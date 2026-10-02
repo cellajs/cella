@@ -24,6 +24,9 @@ const dockerCallTimeoutSeconds = 60;
 /** Seconds between heartbeats of a running phase: an event and a flush each, so a stuck phase shows up live in the telemetry sink. */
 const heartbeatSeconds = 30;
 
+/** Output lines per phase exported as telemetry records; the console and the boot log keep every line. */
+const outputLinesPerPhase = 200;
+
 export interface BootOptions {
   planPath: string;
   exec?: ExecFn;
@@ -82,7 +85,8 @@ function startServices(plan: BootPlan): [string, ...string[]] {
 async function pullImage(plan: BootPlan, exec: ExecFn): Promise<void> {
   await retry(
     () =>
-      mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'pull', ...startServices(plan)], {
+      // `--quiet` drops the per-layer progress frames; errors still print.
+      mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'pull', '--quiet', ...startServices(plan)], {
         cwd: '/opt/app',
         timeoutMs: pullAttemptTimeoutSeconds * 1000,
       }),
@@ -101,12 +105,12 @@ async function removeReleaseContainer(plan: BootPlan, exec: ExecFn): Promise<voi
  * Run the one-shot release companion (migrations) within `timeouts.releaseCommandSeconds`, so a migration stuck on a lock fails the boot and the
  * diagnostics upload names it. On a timeout the CLI is killed and the companion's container removed, so it stops holding database locks.
  */
-async function runReleaseCommand(plan: BootPlan, exec: ExecFn): Promise<void> {
+async function runReleaseCommand(plan: BootPlan, exec: ExecFn, streamingExec: ExecFn): Promise<void> {
   if (!plan.releaseCommand.enabled) return;
   const [command, ...args] = plan.releaseCommand.command;
   await removeReleaseContainer(plan, exec);
   try {
-    await mustExec(exec, command, args, { cwd: '/opt/app', timeoutMs: plan.timeouts.releaseCommandSeconds * 1000 });
+    await mustExec(streamingExec, command, args, { cwd: '/opt/app', timeoutMs: plan.timeouts.releaseCommandSeconds * 1000 });
   } catch (err) {
     await removeReleaseContainer(plan, exec);
     throw err;
@@ -165,8 +169,28 @@ export async function boot(opts: BootOptions): Promise<void> {
   // Exports run in the background: flush swallows its errors and bounds each request, so the sink can neither fail nor stall the boot.
   const flushInBackground = () => void telemetry.flush();
   let failedPhase: string | undefined;
+  let currentPhase = 'boot';
+  let phaseOutputLines = 0;
+  // A command's output reaches the console (tee'd to the boot log and the serial console) and telemetry as it prints, redacted like every other channel.
+  const streamLine = (line: string, stream: 'stdout' | 'stderr') => {
+    const text = redactor.redact(scrubSecretLines(line));
+    console.info(`[${currentPhase}] ${text}`);
+    phaseOutputLines += 1;
+    if (phaseOutputLines <= outputLinesPerPhase) {
+      telemetry.event(bootEvents.output, { service: plan.service, step: currentPhase, stream }, { body: text, ctx: bootSpan.ctx });
+    } else if (phaseOutputLines === outputLinesPerPhase + 1) {
+      telemetry.event(
+        bootEvents.outputCapped,
+        { service: plan.service, step: currentPhase, cap: outputLinesPerPhase },
+        { severity: 'warn', ctx: bootSpan.ctx },
+      );
+    }
+  };
+  const streamingExec: ExecFn = (command, args, opts) => exec(command, args, { ...opts, onLine: streamLine });
   const phase = async (step: string, run: () => Promise<unknown>): Promise<void> => {
     logger.log('info', step);
+    currentPhase = step;
+    phaseOutputLines = 0;
     const startedAt = Date.now();
     const elapsedSeconds = () => Math.round((Date.now() - startedAt) / 1000);
     const heartbeat = setInterval(() => {
@@ -193,7 +217,7 @@ export async function boot(opts: BootOptions): Promise<void> {
   try {
     await phase('wait-private-network', () => waitForPrivateNetwork({ exec, timeoutSeconds: plan.timeouts.privateNetworkSeconds }));
     await phase('write-app-files', () => writeAppFiles(plan));
-    await phase('docker-login', () => dockerLogin(plan, secretKey, exec));
+    await phase('docker-login', () => dockerLogin(plan, secretKey, streamingExec));
     // Swap the baked boot key for the real service key via the single-access handoff bundle, cache-first on reboots.
     // A consumed bundle on first boot means interception, so this phase throws and the boot halts.
     let serviceKey = { accessKey, secretKey };
@@ -222,9 +246,9 @@ export async function boot(opts: BootOptions): Promise<void> {
       // Ship what was buffered before the key arrived (the boot start and the first phases).
       flushInBackground();
     }
-    await phase('pull-image', () => pullImage(plan, exec));
-    await phase('release-command', () => runReleaseCommand(plan, exec));
-    await phase('start-service', () => startService(plan, exec));
+    await phase('pull-image', () => pullImage(plan, streamingExec));
+    await phase('release-command', () => runReleaseCommand(plan, exec, streamingExec));
+    await phase('start-service', () => startService(plan, streamingExec));
     logger.log('info', 'boot-complete');
     bootSpan.end('ok');
     telemetry.event(bootEvents.completed, { service: plan.service, sha: plan.releaseSha });

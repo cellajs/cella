@@ -124,10 +124,15 @@ describe('boot', () => {
     const ok = (stdout = ''): ExecResult => ({ code: 0, stdout, stderr: '' });
     // The migrate companion dies printing its connection string; the container log tail repeats secrets it saw, the
     // service key and the boot key among them, each without the name that would get its line scrubbed.
-    const exec: ExecFn = async (command, args) => {
+    const exec: ExecFn = async (command, args, opts) => {
       const line = [command, ...args].join(' ');
       if (line === 'ip -4 addr show') return ok('inet 10.0.0.12/24 scope global ens2');
-      if (line.includes('run --rm backend-release')) return { code: 1, stdout: '', stderr: `migrate: dial ${dsn} refused (auth ${dbPassword})` };
+      if (line.includes('run --rm backend-release')) {
+        // Streamed as it prints, the way execCommand hands lines over, and returned whole.
+        const stderr = `migrate: dial ${dsn} refused (auth ${dbPassword})`;
+        opts?.onLine?.(stderr, 'stderr');
+        return { code: 1, stdout: '', stderr };
+      }
       if (line.includes(' logs ')) {
         return ok(
           [
@@ -260,7 +265,8 @@ describe('boot', () => {
       vi.stubGlobal(
         'fetch',
         vi.fn(async (url: string, init?: { body?: string }) => {
-          if (url.includes('/secrets/')) return new Response(JSON.stringify({ data: Buffer.from('ik-123').toString('base64') }), { status: 200 });
+          if (url.includes('/secrets/'))
+            return new Response(JSON.stringify({ data: Buffer.from('ik-1234567890').toString('base64') }), { status: 200 });
           sent.push({ url, body: String(init?.body ?? '') });
           return new Response('', { status: url.startsWith('https://ingest.example/') ? sinkStatus : 200 });
         }),
@@ -313,6 +319,30 @@ describe('boot', () => {
       expect(sinkEvents(sent).filter((record) => record.eventName === 'boot.step.running')).toHaveLength(2);
       // Every heartbeat and export timer is stopped once the boot returns.
       expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('streams the release companion output to the console and as capped telemetry records', async () => {
+      writeSinkPlan();
+      const sent = stubNetwork(200);
+      const printed: string[] = [];
+      vi.mocked(console.info).mockImplementation((line: unknown) => void printed.push(String(line)));
+      const exec: ExecFn = async (command, args, opts) => {
+        const line = [command, ...args].join(' ');
+        if (line === 'ip -4 addr show') return { code: 0, stdout: 'inet 10.0.0.12/24 scope global ens2', stderr: '' };
+        if (line.includes(' run --rm ')) {
+          for (let index = 1; index <= 250; index++) opts?.onLine?.(`[migrate] step ${index} with ik-1234567890`, 'stdout');
+        }
+        return { code: 0, stdout: '', stderr: '' };
+      };
+      await boot({ planPath: '/etc/app/boot-plan.json', exec });
+
+      expect(printed).toContain('[release-command] [migrate] step 1 with [REDACTED]');
+      expect(printed).toContain('[release-command] [migrate] step 250 with [REDACTED]');
+      const output = sinkEvents(sent).filter((record) => record.eventName === 'boot.output');
+      expect(output).toHaveLength(200);
+      expect(output[0]?.body?.stringValue).toBe('[migrate] step 1 with [REDACTED]');
+      expect(sinkEvents(sent).filter((record) => record.eventName === 'boot.output.capped')).toHaveLength(1);
+      expect(sent.map((request) => request.body).join('\n')).not.toContain('ik-1234567890');
     });
 
     it('boots and uploads its diagnostics while the sink rejects every export', async () => {

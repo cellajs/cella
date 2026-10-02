@@ -13,6 +13,8 @@ export interface ExecOptions {
   input?: string;
   /** Kill the child's process group (SIGTERM, then SIGKILL after {@link killGraceMs}) once it runs this long. Absent = no limit. */
   timeoutMs?: number;
+  /** Receives each output line as it arrives, the last carriage-return frame of a redrawn line only; the result still carries the whole output. */
+  onLine?: (line: string, stream: 'stdout' | 'stderr') => void;
 }
 
 export type ExecFn = (command: string, args: string[], opts?: ExecOptions) => Promise<ExecResult>;
@@ -23,9 +25,42 @@ const killGraceMs = 10_000;
 /** Exit code reported for a timed-out child. */
 const timedOutCode = 124;
 
+/** A partial line longer than this is cut to its tail, so a progress bar redrawn without a newline cannot grow without bound. */
+const maxPendingLine = 64 * 1024;
+
+/** Split a stream's chunks into lines for `onLine`. A thrown callback never reaches the child's handling. */
+function lineSplitter(stream: 'stdout' | 'stderr', onLine: ExecOptions['onLine']): { push(chunk: string): void; end(): void } {
+  let pending = '';
+  const emit = (raw: string) => {
+    const line = raw.endsWith('\r') ? raw.slice(0, -1) : raw;
+    const frame = line.slice(line.lastIndexOf('\r') + 1).trimEnd();
+    if (!frame || !onLine) return;
+    try {
+      onLine(frame, stream);
+    } catch {
+      // Streaming is best-effort.
+    }
+  };
+  return {
+    push(chunk) {
+      pending += chunk;
+      for (let newline = pending.indexOf('\n'); newline >= 0; newline = pending.indexOf('\n')) {
+        emit(pending.slice(0, newline));
+        pending = pending.slice(newline + 1);
+      }
+      if (pending.length > maxPendingLine) pending = pending.slice(-maxPendingLine);
+    },
+    end() {
+      if (pending) emit(pending);
+      pending = '';
+    },
+  };
+}
+
 /**
- * Run a command and buffer its output. With `timeoutMs` the child leads its own process group, so the kill also reaches what it spawned
- * (`docker compose` runs as a CLI plugin child of `docker`), and the result settles even when a survivor still holds the pipes.
+ * Run a command, streaming its output lines to `onLine` and buffering it for the result. With `timeoutMs` the child leads its own
+ * process group, so the kill also reaches what it spawned (`docker compose` runs as a CLI plugin child of `docker`), and the result
+ * settles even when a survivor still holds the pipes.
  */
 export const execCommand: ExecFn = (command, args, opts = {}) =>
   new Promise((resolve, reject) => {
@@ -36,10 +71,13 @@ export const execCommand: ExecFn = (command, args, opts = {}) =>
     let timedOut = false;
     let settled = false;
     const timers: NodeJS.Timeout[] = [];
+    const lines = { stdout: lineSplitter('stdout', opts.onLine), stderr: lineSplitter('stderr', opts.onLine) };
     const settle = (result: ExecResult) => {
       if (settled) return;
       settled = true;
       for (const timer of timers) clearTimeout(timer);
+      lines.stdout.end();
+      lines.stderr.end();
       resolve(result);
     };
     const killGroup = (signal: NodeJS.Signals) => {
@@ -65,11 +103,13 @@ export const execCommand: ExecFn = (command, args, opts = {}) =>
     }
     child.stdout.setEncoding('utf-8');
     child.stderr.setEncoding('utf-8');
-    child.stdout.on('data', (chunk) => {
+    child.stdout.on('data', (chunk: string) => {
       stdout += chunk;
+      lines.stdout.push(chunk);
     });
-    child.stderr.on('data', (chunk) => {
+    child.stderr.on('data', (chunk: string) => {
       stderr += chunk;
+      lines.stderr.push(chunk);
     });
     child.on('error', (err) => {
       if (settled) return;

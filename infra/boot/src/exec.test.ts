@@ -18,6 +18,28 @@ describe('execCommand', () => {
   });
 });
 
+describe('execCommand streaming', () => {
+  it('hands over each line as it arrives, keeps the last frame of a redrawn line, and still returns the whole output', async () => {
+    const lines: Array<[string, string]> = [];
+    const script = "printf 'first\\nprogress 10%%\\rprogress 90%%\\rdone\\r\\n'; printf 'oops\\n' >&2; printf 'no newline'";
+    const result = await execCommand('sh', ['-c', script], { onLine: (line, stream) => lines.push([stream, line]) });
+    // The two pipes may interleave either way, so each stream is checked on its own.
+    expect(lines.filter(([stream]) => stream === 'stdout').map(([, line]) => line)).toEqual(['first', 'done', 'no newline']);
+    expect(lines.filter(([stream]) => stream === 'stderr').map(([, line]) => line)).toEqual(['oops']);
+    expect(result.stdout).toBe('first\nprogress 10%\rprogress 90%\rdone\r\nno newline');
+    expect(result.stderr).toBe('oops\n');
+  });
+
+  it('keeps running when the line callback throws', async () => {
+    const result = await execCommand('sh', ['-c', 'echo a; echo b'], {
+      onLine: () => {
+        throw new Error('sink down');
+      },
+    });
+    expect(result).toEqual({ code: 0, stdout: 'a\nb\n', stderr: '' });
+  });
+});
+
 describe('mustExec', () => {
   it('names the timeout and keeps the output tail', async () => {
     await expect(mustExec(execCommand, 'sh', ['-c', 'echo "[migrate] Running migrations..."; sleep 30'], { timeoutMs: 200 })).rejects.toThrow(
