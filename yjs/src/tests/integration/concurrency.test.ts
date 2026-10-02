@@ -1,4 +1,3 @@
-import { setTimeout as sleep } from 'node:timers/promises';
 import * as decoding from 'lib0/decoding';
 import pg from 'pg';
 import { appConfig } from 'shared';
@@ -225,11 +224,24 @@ describe('relay end to end', () => {
     const text = firstText(doc);
     text.insert(text.length, '!');
     await until(async () => (await readLog(ctx(ids.idle))).length >= 1);
+    // Only the other generation's sweep may fold the log here: the live session's own compaction, due three seconds after
+    // the edit, would fold it too, which says nothing about the sweep.
+    const live = getCollab(ctx(ids.idle))!;
+    clearTimeout(live.compactTimer);
+    live.compactTimer = undefined;
+    live.compactDueAt = undefined;
     // A day passes with nothing more logged, so the row and its log look stale; the live session stamps its row meanwhile.
     await admin.query("UPDATE yjs_documents SET updated_at = now() - interval '1 day' WHERE entity_id = $1", [ids.idle]);
     await admin.query("UPDATE yjs_updates SET created_at = now() - interval '1 day' WHERE entity_id = $1", [ids.idle]);
     await seedOrphan(ids.orphan, 'orphaned');
-    await sleep(1000);
+    // The live session's next stamp, every YJS_LIVE_TOUCH_MS, makes the row fresh again; the sweep runs after it.
+    await until(async () => {
+      const { rows } = await admin.query<{ fresh: boolean }>(
+        "SELECT updated_at > now() - interval '1 minute' AS fresh FROM yjs_documents WHERE entity_id = $1",
+        [ids.idle],
+      );
+      return rows[0]?.fresh === true;
+    });
 
     const next = await startNextGeneration();
     try {
@@ -341,9 +353,11 @@ describe('relay end to end', () => {
       const pushed = await pushOverHttp(ctx(entityId), outsideUpdate(read, paragraph(`Posted to ${entityId}`)), generation, pusherId);
       expect(pushed.status).toBe('appended');
     }
-    const stamp = () => admin.query('UPDATE yjs_documents SET updated_at = now() WHERE entity_id = $1', [ids.stamped]);
-    await stamp();
-    const stamper = setInterval(() => void stamp(), 100);
+    // A live session stamps its row every minute. A stamp an hour ahead stands for one that keeps stamping, without a
+    // timer racing the sweep's grace on a loaded machine.
+    const stampAt = (interval: string) =>
+      admin.query(`UPDATE yjs_documents SET updated_at = now() + interval '${interval}' WHERE entity_id = $1`, [ids.stamped]);
+    await stampAt('1 hour');
     const stop = startPeriodicSweep();
     try {
       // Once the push is older than the grace (500 ms here), a run writes it, credited to the pusher.
@@ -360,12 +374,11 @@ describe('relay end to end', () => {
       expect(await readLog(ctx(ids.stamped))).toHaveLength(1);
       expect(materialized.some((entry) => entry.entityId === ids.stamped)).toBe(false);
 
-      // Positive control: once its session ends, a run writes it too.
-      clearInterval(stamper);
+      // Positive control: once its session ends and its stamp ages past the grace, a run writes it too.
+      await stampAt('-1 day');
       await until(async () => (await readLog(ctx(ids.stamped))).length === 0, 25_000);
       expect(materialized.filter((entry) => entry.entityId === ids.stamped).at(-1)?.editedBy).toBe(pusherId);
     } finally {
-      clearInterval(stamper);
       stop();
     }
   });
