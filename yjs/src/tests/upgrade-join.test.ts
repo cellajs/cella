@@ -5,13 +5,16 @@ import type { DocScope } from '../constants';
 import {
   awarenessUpdate,
   buildAwarenessMessage,
+  buildSyncStep2,
   buildSyncUpdate,
   createSignedToken,
   deferred,
   fakeStorage,
   mapUpdate,
   openSocket,
+  readMap,
   recordCrashes,
+  savedFrame,
   startRelayServer,
   storageKey,
   until,
@@ -80,6 +83,42 @@ describe('upgrade: a closing socket', () => {
     await until(() => storage.logs.get(storageKey(docOf(doc)))?.length === 3);
     // The socket left its session once its updates were logged.
     await until(() => clientCount(doc) === 0);
+  });
+});
+
+describe('upgrade: Saved', () => {
+  it('answers Step2 and update frames one by one in the order the socket sent them, each once it is handled', async () => {
+    const doc = 'doc-saved-order';
+    const editor = await open('user-a', doc);
+    await until(() => clientCount(doc) === 1);
+    const saved = () => editor.received.filter((frame) => frame[0] === savedFrame[0]).length;
+    const logged = () => storage.logs.get(storageKey(docOf(doc))) ?? [];
+
+    // The first append is held: the empty Step2 behind it waits in the queue, though it logs nothing.
+    const first = deferred();
+    appendHold = first;
+    const appends = storage.appendUpdate.mock.calls.length;
+    editor.ws.send(buildSyncUpdate(mapUpdate('a', 1)));
+    editor.ws.send(buildSyncStep2());
+    editor.ws.send(buildSyncUpdate(mapUpdate('b', 2)));
+    await until(() => storage.appendUpdate.mock.calls.length === appends + 1);
+    await sleep(30);
+    expect(saved()).toBe(0);
+
+    // Released, the first update is answered, then the Step2; the last update's append is held in turn.
+    const last = deferred();
+    appendHold = last;
+    first.release();
+    await until(() => saved() === 2);
+    await sleep(30);
+    expect(saved()).toBe(2);
+    expect(logged()).toHaveLength(1);
+
+    appendHold = null;
+    last.release();
+    await until(() => saved() === 3);
+    expect(logged().map((row) => readMap(row.payload))).toEqual([{ a: 1 }, { b: 2 }]);
+    expect(editor.received).toEqual([savedFrame, savedFrame, savedFrame]);
   });
 });
 

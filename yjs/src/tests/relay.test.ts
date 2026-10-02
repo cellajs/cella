@@ -19,6 +19,7 @@ import {
   mockSocketContext,
   mockWebSocket,
   readMap,
+  savedFrame,
   storageKey,
   undecodableUpdate,
 } from './helpers';
@@ -271,13 +272,15 @@ describe('handleMessage: sync update', () => {
     const done = handleMessage(c, ws as never, raw);
     await flushMicrotasks();
     expect(peer.sent).toHaveLength(0);
+    expect(ws.sent).toHaveLength(0);
     gate.release();
     await done;
 
     expect(storage.logs.get(key)).toHaveLength(1);
     expect(storage.logs.get(key)?.[0].userId).toBe(c.userId);
     expect(peer.sent[0]).toEqual(raw);
-    expect(ws.sent).toHaveLength(0);
+    // The sender gets no copy of its update, only word that it is logged.
+    expect(ws.sent).toEqual([savedFrame]);
     leaveCollab(collab.scope, peer as never);
   });
 
@@ -391,6 +394,125 @@ describe('handleMessage: sync update', () => {
     Y.applyUpdate(verify, merged);
     expect(verify.getText('t').toString()).toBe('abc');
     expect(collab.compactTimer).toBeUndefined();
+  });
+});
+
+describe('handleMessage: Saved', () => {
+  const step1 = () => buildSyncStep1(Y.encodeStateVector(new Y.Doc()));
+
+  it('tells the sender alone, once the update is logged', async () => {
+    const { ctx: c, scope, key, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+
+    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(ws.sent).toEqual([savedFrame]);
+    expect(peer.sent.map(peekMessageType)).toEqual([0]);
+    leaveCollab(collab.scope, peer as never);
+  });
+
+  it('answers a Step2 that carries nothing, which logs nothing', async () => {
+    const { ctx: c, ws } = session();
+    await handleMessage(c, ws as never, buildSyncStep2());
+    expect(storage.appendUpdate).not.toHaveBeenCalled();
+    expect(ws.sent).toEqual([savedFrame]);
+  });
+
+  it('answers an update dropped while the reply that carries it is pending, and the reply after it', async () => {
+    const { ctx: c, key, ws } = session();
+    await handleMessage(c, ws as never, step1());
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('early', 1)));
+    expect(storage.appendUpdate).not.toHaveBeenCalled();
+    expect(ws.sent.slice(3)).toEqual([savedFrame]);
+
+    await handleMessage(c, ws as never, buildSyncStep2(mapUpdate('early', 1)));
+    expect(storage.logs.get(key)?.map((row) => readMap(row.payload))).toEqual([{ early: 1 }]);
+    expect(ws.sent.slice(3)).toEqual([savedFrame, savedFrame]);
+  });
+
+  it('must not answer a Step1: the handshake answer is the generation, a Step2 and a Step1', async () => {
+    const { ctx: c, ws } = session();
+    await handleMessage(c, ws as never, step1());
+    await handleMessage(c, ws as never, step1());
+    expect(ws.sent.map(peekMessageType)).toEqual([4, 0, 0, 4, 0, 0]);
+  });
+
+  it('must not answer a frame it refuses: the socket closes with 4400 and is told nothing', async () => {
+    // An update and a reply Yjs cannot decode, a sync payload cut short, a message type cut short.
+    const refused = [
+      buildSyncUpdate(undecodableUpdate),
+      buildSyncStep2(undecodableUpdate),
+      new Uint8Array([0, 2, 0x85]),
+      new Uint8Array([0x80, 0x80]),
+    ];
+    for (const frame of refused) {
+      const { ctx: c, ws } = session();
+      await handleMessage(c, ws as never, frame);
+      expect(ws.closed?.code).toBe(4400);
+      expect(ws.sent).toEqual([]);
+    }
+  });
+
+  it('must not answer an update a retired document took no part of: the session ends with 1013 and its socket is told nothing', async () => {
+    const { ctx: c, scope, key, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+    await handleMessage(c, ws as never, step1());
+    await handleMessage(c, ws as never, buildSyncStep2());
+    ws.sent.length = 0;
+
+    // The description was written outside the relay, which retired the document: the append finds no row of its generation.
+    storage.bases.delete(key);
+    storage.generations.delete(key);
+    await handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+
+    expect(storage.logs.get(key)).toBeUndefined();
+    expect(ws.closed).toEqual({ code: 1013, reason: 'Document retired' });
+    expect(ws.sent).toEqual([]);
+    expect(peer.sent).toEqual([]);
+    expect(getCollab(collab.scope)).toBeUndefined();
+  });
+
+  it('must not answer an update logged while its session ended: that generation is void', async () => {
+    const { ctx: c, key, ws, collab } = session();
+    await handleMessage(c, ws as never, step1());
+    await handleMessage(c, ws as never, buildSyncStep2());
+    ws.sent.length = 0;
+    const gate = deferred();
+    gates.set('appendUpdate', gate.promise);
+
+    const done = handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+    await flushMicrotasks();
+    endCollab(collab);
+    gate.release();
+    await done;
+
+    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(ws.sent).toEqual([]);
+  });
+
+  it('must not answer an update whose append failed', async () => {
+    const { ctx: c, ws } = session();
+    storage.appendUpdate.mockRejectedValueOnce(new Error('db down'));
+    await expect(handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)))).rejects.toThrow('db down');
+    expect(ws.sent).toEqual([]);
+  });
+
+  it('must not send to a socket that closed while its update was logged', async () => {
+    const { ctx: c, key, ws } = session();
+    const gate = deferred();
+    gates.set('appendUpdate', gate.promise);
+    const done = handleMessage(c, ws as never, buildSyncUpdate(mapUpdate('k', 1)));
+    await flushMicrotasks();
+    ws.close(1000);
+    gate.release();
+    await done;
+
+    // Queued before the close, the update still reaches the log.
+    expect(storage.logs.get(key)).toHaveLength(1);
+    expect(ws.sent).toEqual([]);
   });
 });
 

@@ -66,8 +66,11 @@ export function mockSocketContext(overrides: { userId?: string; requested?: DocS
 /** The fake storage's key for a document: its tenant, type and id. */
 export const storageKey = ({ tenantId, entityType, entityId }: DocKey) => `${tenantId}:${entityType}:${entityId}`;
 
-const YMessage = { Sync: 0, Awareness: 1, Generation: 4 } as const;
+const YMessage = { Sync: 0, Awareness: 1, Generation: 4, Saved: 5 } as const;
 const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
+
+/** The relay's `Saved` frame: its message type and no body. */
+export const savedFrame = Uint8Array.of(YMessage.Saved);
 
 export function buildSyncStep1(stateVector: Uint8Array): Uint8Array {
   const encoder = encoding.createEncoder();
