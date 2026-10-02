@@ -32,7 +32,8 @@ interface UIStoreState {
   reset: () => void;
 }
 
-const browserMode = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+// Guarded so tests in a node environment can import modules that reach this store
+const browserMode = typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
 const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'impersonating' | 'publicAlertsSeen' | 'focusView' | 'uiLocks'> = {
   mode: browserMode,

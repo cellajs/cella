@@ -17,7 +17,7 @@ findSubjectNames to notification-sources, findReadableSubjectIds to operations/r
 and readableAccess is inlined in the fan-out. digest/run-digest and digest/build-digest move to
 operations/; describeDigestRow, renderSectionsHtml and DigestSection to helpers/render-digest-html.
 Every notification query takes (ctx, opts); background callers pass { var: { db: baseDb } }. The
-unused generateUniqueSlug is removed.
+unused generateUniqueSlug is removed; an app that calls it copies it into its own module.
 
 ## What & why
 
@@ -40,6 +40,7 @@ No script: manual.
 5. `requireOrgAdmin` / `requireManagedServiceAccount` become `getValidChannel(ctx, organizationId, 'organization', 'update')`, then `findServiceAccountInTenant` and a 404.
 6. Notification queries take a context: outside a request pass `{ var: { db: baseDb } }`.
 7. Notification imports: `digest/run-digest` and `digest/build-digest` are in `operations/`; `describeDigestRow`, `renderSectionsHtml` and `DigestSection` in `helpers/render-digest-html`; `findReadableSubjectIds` in `operations/readable-subjects`; `findSubjectNames` in `notification-sources`.
+8. An app that calls `generateUniqueSlug` copies it from `backend/src/modules/entities/helpers/generate-slug.ts` at tag `0.12.2` into its own module; it queries the database, so it belongs in a queries file.
 
 ## Verify
 

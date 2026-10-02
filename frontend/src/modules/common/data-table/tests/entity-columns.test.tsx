@@ -4,7 +4,9 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { createElement, Fragment, type ReactElement, type ReactNode } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { appConfig, hierarchy, isChannel } from 'shared';
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { hiddenMemberCountColumns } from '~/members-config';
 import type { EllipsisOption } from '~/modules/common/data-table/table-ellipsis';
 
 /** The options of the ellipsis cell rendered last. */
@@ -282,6 +284,19 @@ describe('csv export', () => {
   // The export writes dates in the long localized format; with a comma in it, the cell is quoted.
   const dateCell = (value: string | number) => `"${dayjs.utc(value).local().format('lll')}"`;
 
+  // Count columns follow the hierarchy and the members config, so an app's own entities keep these tests valid.
+  // Organizations show the last channel and the first product below them, as organizations-columns does.
+  const orgDescendants = hierarchy.getOrderedDescendants('organization');
+  const lastChannel = orgDescendants.filter((type) => isChannel(type)).at(-1);
+  const firstProduct = orgDescendants.find((type) => !isChannel(type));
+  const orgCountTypes = orgDescendants.filter((type) => type === lastChannel || type === firstProduct);
+  // Members show the stat product types, then the sub-channels, minus the hidden ones.
+  const statTypes: readonly string[] = appConfig.memberStatProductTypes;
+  const memberCountTypes = [...statTypes, ...orgDescendants.filter((type) => isChannel(type) && type !== 'organization')].filter(
+    (type) => !(hiddenMemberCountColumns as readonly string[]).includes(type),
+  );
+  const cells = (types: readonly string[], cell: (type: string) => string) => types.map(cell).join(',');
+
   it('organizations: visible columns with names as text, the role, counts and dates, and a dash when missing', async () => {
     const rows = [
       {
@@ -289,7 +304,7 @@ describe('csv export', () => {
         name: 'Tenant 48',
         createdAt: created,
         membership: { role: 'admin' },
-        included: { counts: { membership: { admin: 2, member: 5 }, entities: { attachment: 0 } } },
+        included: { counts: { membership: { admin: 2, member: 5 }, entities: Object.fromEntries(orgCountTypes.map((type) => [type, 0])) } },
       },
       { id: 'org-12', name: 'Organization 12', createdAt: null, membership: null, included: {} },
       // A row fetched for the export carries the caller's membership under `included`.
@@ -297,10 +312,10 @@ describe('csv export', () => {
     ];
 
     expect(await csvLines(columnsOf(organizations.useColumns), rows)).toEqual([
-      'c:name,c:your_role,c:created_at,c:admin,c:member,c:attachment',
-      `Tenant 48,admin,${dateCell(created)},2,5,0`,
-      'Organization 12,-,-,-,-,-',
-      'Seven,member,-,-,-,-',
+      `c:name,c:your_role,c:created_at,c:admin,c:member,${cells(orgCountTypes, (type) => `c:${type}`)}`,
+      `Tenant 48,admin,${dateCell(created)},2,5,${cells(orgCountTypes, () => '0')}`,
+      `Organization 12,-,-,-,-,${cells(orgCountTypes, () => '-')}`,
+      `Seven,member,-,-,-,${cells(orgCountTypes, () => '-')}`,
     ]);
   });
 
@@ -314,16 +329,17 @@ describe('csv export', () => {
         membership: { role: 'member' },
         createdAt: created,
         lastSeenAt: seenAt,
-        counts: { memberships: {}, products: { attachment: 3 }, activity: { attachment: postedAt } },
+        counts: { memberships: {}, products: Object.fromEntries(statTypes.map((type) => [type, 3])), activity: { [statTypes[0]]: postedAt } },
       },
       { id: 'user-12', name: 'Organization 12', email: null, membership: null, createdAt: null, lastSeenAt: null },
     ];
 
     const columns = columnsOf(() => members.useColumns(true, false, 'organization'));
+    // Channel counts are absent from the row, so their cells are dashes.
     expect(await csvLines(columns, rows)).toEqual([
-      'c:name,c:email,c:role,c:created_at,c:last_seen_at,c:last_post,c:attachment',
-      `Tenant 48,ada@example.com,member,${dateCell(created)},${dateCell(seenAt)},${dateCell(postedAt)},3`,
-      'Organization 12,-,-,-,-,-,-',
+      `c:name,c:email,c:role,c:created_at,c:last_seen_at,c:last_post,${cells(memberCountTypes, (type) => `c:${type}`)}`,
+      `Tenant 48,ada@example.com,member,${dateCell(created)},${dateCell(seenAt)},${dateCell(postedAt)},${cells(memberCountTypes, (type) => (statTypes.includes(type) ? '3' : '-'))}`,
+      `Organization 12,-,-,-,-,-,${cells(memberCountTypes, () => '-')}`,
     ]);
   });
 });

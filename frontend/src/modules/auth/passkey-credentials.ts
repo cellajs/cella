@@ -10,7 +10,6 @@ import {
 import { generatePasskeyChallenge, getStepUpPasskeyChallenge } from 'sdk';
 import { appConfig } from 'shared';
 import type { PasskeyCredentialProps } from '~/modules/auth/types';
-import { generatePasskeyName } from '~/modules/me/helpers';
 import { getCurrentUser } from '~/modules/user/user-store';
 
 const relyingPartyId = appConfig.mode === 'development' ? 'localhost' : appConfig.domain;
@@ -96,4 +95,50 @@ const getChallenge = async (body: PasskeyCredentialProps) => {
   const { challenge, credentialIds } = await generatePasskeyChallenge({ body });
 
   return { challenge, credentialIds };
+};
+
+const generatePasskeyName = () => {
+  const nouns = [
+    'Phoenix',
+    'Dragon',
+    'Griffin',
+    'Unicorn',
+    'Wizard',
+    'Elf',
+    'Sorcerer',
+    'Knight',
+    'Titan',
+    'Valkyrie',
+    'Fenix',
+    'Samurai',
+    'Ninja',
+    'Guardian',
+    'Sentinel',
+  ];
+  const adjectives = [
+    'Mighty',
+    'Brave',
+    'Swift',
+    'Golden',
+    'Silent',
+    'Fiery',
+    'Lucky',
+    'Clever',
+    'Shadow',
+    'Bright',
+    'Fierce',
+    'Noble',
+    'Wise',
+    'Bold',
+    'Gallant',
+    'Valiant',
+    'Radiant',
+    'Stellar',
+    'Luminous',
+    'Ethereal',
+  ];
+
+  const adjective = adjectives[Math.floor(Math.random() * adjectives.length)];
+  const noun = nouns[Math.floor(Math.random() * nouns.length)];
+  return `${adjective}${noun}`;
 };
