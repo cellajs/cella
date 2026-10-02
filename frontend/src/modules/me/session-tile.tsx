@@ -1,6 +1,7 @@
 import { ChevronDownIcon, MonitorIcon, ShieldCheckIcon, SmartphoneIcon, UnplugIcon } from 'lucide-react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { appConfig } from 'shared';
 import type { Session } from '~/modules/me/types';
 import { Badge } from '~/modules/ui/badge';
 import { Button } from '~/modules/ui/button';
@@ -19,6 +20,11 @@ interface SessionTileProps {
 
 export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending }: SessionTileProps) {
   const { t, i18n } = useTranslation();
+  /** A federation names itself in config; every other method has a locale key. */
+  const strategyLabel = (strategy: NonNullable<Session['authStrategy']>) =>
+    strategy in appConfig.federations
+      ? appConfig.federations[strategy as keyof typeof appConfig.federations].label
+      : t(`c:${strategy as Exclude<typeof strategy, keyof typeof appConfig.federations>}`);
 
   const [expanded, setExpanded] = useState(false);
 
@@ -96,7 +102,7 @@ export function SessionTile({ session, isCurrentDevice, handleRevoke, isPending 
             )}
             {session.authStrategy && (
               <p className="hidden truncate capitalize max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby={t('c:strategy')}>
-                {t(`c:${session.authStrategy}`)}
+                {strategyLabel(session.authStrategy)}
               </p>
             )}
             <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby="os">

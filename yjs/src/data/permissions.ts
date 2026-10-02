@@ -15,30 +15,11 @@ import {
 } from 'shared';
 import { asRecord } from 'shared/utils/as-record';
 import { membershipsTable } from '#/modules/memberships/memberships-db';
+import { getTableColumnNames } from '#/modules/yjs/yjs-queries';
 import type { DocScope } from '../constants';
 import { type Tx, withRlsTx } from './db';
 
 // Constraint: no app-owned entity schema imports. App-declared entity tables are resolved dynamically from the DB.
-
-/** Column names per table, read once from Postgres and cached per process, so the relay selects only columns a table has. */
-const tableColumnsCache = new Map<string, Promise<Set<string>>>();
-
-export function getTableColumnNames(tx: Tx, table: string): Promise<Set<string>> {
-  let cached = tableColumnsCache.get(table);
-  if (!cached) {
-    cached = tx
-      .execute<{ column_name: string }>(
-        sql`SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = ${table}`,
-      )
-      .then((r) => new Set(r.rows.map((row) => row.column_name)))
-      .catch((err) => {
-        tableColumnsCache.delete(table); // don't cache failures
-        throw err;
-      });
-    tableColumnsCache.set(table, cached);
-  }
-  return cached;
-}
 
 /** Runs on an RLS-scoped transaction, so the result is limited to the active tenant. */
 export async function loadMemberships(tx: Tx, userId: string): Promise<AccessMembership[]> {
@@ -66,7 +47,7 @@ export async function resolveEntityScope(
   if (!(appConfig.entityTypes as readonly string[]).includes(entityType)) return null;
 
   const table = toTableName(entityType);
-  const existing = await getTableColumnNames(tx, table);
+  const existing = await getTableColumnNames({ var: { db: tx } }, { table });
   if (!existing.has('id')) return null; // unknown / non-conforming table
 
   // Logical keys the permission engine may read; an absent `publishedAt` column counts as published. `deletedAt` tells a

@@ -28,7 +28,6 @@ export const secretLookingColumns = {
   devices: ['deviceIdHash'],
   sessions: ['ipHash', 'ipSubnetHash', 'deviceIdHash'],
   // The DNS TXT value an admin must configure: shown on purpose.
-  domains: ['verificationToken'],
   // The public half of the signing key, served on the JWKS endpoint.
   signing_keys: ['publicJwk'],
 } as const satisfies Record<string, readonly string[]>;

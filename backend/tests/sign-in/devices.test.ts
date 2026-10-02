@@ -170,8 +170,10 @@ describe('new sign-in notice', () => {
 describe('new sign-in notice through the sign-in endpoint', async () => {
   const call = await createAppClient();
 
+  // A GitHub sign-in that continues into its MFA challenge: the notice names the method, and a method through the
+  // inbox (magic link) would send no notice at all.
   const signInWithMfa = async (user: { id: string; email: string }, deviceCookie?: string) => {
-    const mfaToken = await createMfaToken(user);
+    const mfaToken = await createMfaToken(user, 'github');
     const cookies = [authCookie('confirm-mfa', mfaToken), deviceCookie].filter(Boolean).join('; ');
     const { response } = await call(signInWithTotp, { body: { code: '123456' }, headers: { ...defaultHeaders, Cookie: cookies } });
     expect(response.status).toBe(204);
@@ -184,7 +186,7 @@ describe('new sign-in notice through the sign-in endpoint', async () => {
 
     const deviceCookie = await signInWithMfa(user);
     await vi.waitFor(() => expect(notices()).toHaveLength(1));
-    expect(notices()[0].details.strategy).toBe('Authenticator app');
+    expect(notices()[0].details.strategy).toBe('GitHub');
 
     await signInWithMfa(user, deviceCookie);
     // Let a wrongly sent second notice surface before asserting there is none.

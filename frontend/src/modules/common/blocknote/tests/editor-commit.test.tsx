@@ -4,9 +4,8 @@ import { blocksToYXmlFragment } from '@blocknote/core/yjs';
 import { act, type ComponentProps, createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import type { WebsocketProvider } from 'y-websocket';
 import * as Y from 'yjs';
-import type { BlockNoteContentApi } from '~/modules/common/blocknote/blocknote-editor';
+import type { BlockNoteContentApi, CollaborationBundle } from '~/modules/common/blocknote/blocknote-editor';
 
 // The editor and its commit paths are real; only the host's outward boundaries are inert.
 vi.mock('~/query/query-client', async () => {
@@ -81,7 +80,12 @@ const unmount = () => act(async () => root.unmount());
 /** A real edit through the editor: toggles the checklist item's checkbox. */
 const edit = () => act(() => expect(contentApi.current?.toggleChecklist('box-1')).toBe(true));
 
-const bundle = (fragment: Y.XmlFragment) => ({ provider: {} as WebsocketProvider, fragment, user: { name: 'Editor', color: '#000000' } });
+// No Awareness: the editor runs without cursors.
+const bundle = (fragment: Y.XmlFragment) => ({
+  provider: {} as CollaborationBundle['provider'],
+  fragment,
+  user: { name: 'Editor', color: '#000000' },
+});
 const emptyFragment = () => new Y.Doc().getXmlFragment('document-store');
 const seededFragment = () => blocksToYXmlFragment(headless, checklist('todo') as never, emptyFragment());
 
@@ -340,7 +344,16 @@ describe('CollaborativeBlockNote with Yjs on', () => {
   });
 
   it('makes no REST write on navigation or unmount, however the document changed: unmount patches the cache', async () => {
-    liveConnection = { provider: {}, fragment: seededFragment(), synced: true, stopped: false, rebuilds: 0, unsynced: false };
+    liveConnection = {
+      awareness: undefined,
+      fragment: seededFragment(),
+      ready: true,
+      transport: 'ws',
+      synced: true,
+      stopped: false,
+      rebuilds: 0,
+      unsynced: false,
+    };
     const updateData = vi.fn();
     await renderHost({ updateData });
     expect(contentApi.current?.getContent()).toBe(stored);

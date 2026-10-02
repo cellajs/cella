@@ -55,6 +55,19 @@ export function descriptionToSeed(description: string | null): Uint8Array {
 }
 
 /**
+ * The seed of a new document as `descriptionToSeed` makes it, or the empty document when the description does not
+ * convert: the document opens, and the next write replaces the description. `onUnconvertible` hears why.
+ */
+export function descriptionToSeedOrEmpty(description: string | null, onUnconvertible: (err: unknown) => void): Uint8Array {
+  try {
+    return descriptionToSeed(description);
+  } catch (err) {
+    onUnconvertible(err);
+    return descriptionToSeed(null);
+  }
+}
+
+/**
  * The Yjs update that turns `state` (a document's base and log, merged) into `description`. The blocks are diffed into
  * the fragment, so a block the description leaves as it is keeps its elements, and an edit made in it concurrently
  * merges. The update is the conversion transaction's own `update` event, and null when nothing changes: encoding the

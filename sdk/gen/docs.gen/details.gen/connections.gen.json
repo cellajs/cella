@@ -1,0 +1,685 @@
+[
+  {
+    "operationId": "getConnections",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Connections",
+        "contentType": "application/json",
+        "schema": {
+          "type": "array",
+          "itemType": "object",
+          "ref": "#/components/schemas/Connection",
+          "items": {
+            "type": "object",
+            "description": "A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization. Its id is the public key of the tenant's SSO entry page. System admins manage connections per tenant; `pending` until the institution activated the service at the federation.",
+            "properties": {
+              "id": { "type": "string", "required": true, "format": "uuid" },
+              "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+              "kind": {
+                "type": "string",
+                "required": true,
+                "enum": ["sso", "lti"]
+              },
+              "issuer": { "type": "string", "required": true, "maxLength": 255 },
+              "clientId": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 255
+              },
+              "deploymentId": {
+                "type": ["string", "null"],
+                "required": true,
+                "maxLength": 255
+              },
+              "claimValues": { "type": "array", "required": true, "itemType": "string" },
+              "displayName": { "type": "string", "required": true, "maxLength": 255 },
+              "status": {
+                "type": "string",
+                "required": true,
+                "enum": ["pending", "active", "disabled"]
+              },
+              "jitProvisioning": { "type": "boolean", "required": true },
+              "config": {
+                "type": "object",
+                "required": true,
+                "properties": {
+                  "idpEntityIds": {
+                    "type": "array",
+                    "required": false,
+                    "description": "The institution's IdP entity ids, passed as login_hint",
+                    "itemType": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "logoUrl": {
+                    "type": "string",
+                    "required": false,
+                    "description": "The institution's logo, for the entry page",
+                    "format": "uri",
+                    "maxLength": 255
+                  }
+                }
+              },
+              "createdBy": {
+                "type": ["string", "null"],
+                "required": true,
+                "format": "uuid"
+              },
+              "createdAt": { "type": "string", "required": true },
+              "updatedAt": {
+                "type": ["string", "null"],
+                "required": true
+              }
+            },
+            "ref": "#/components/schemas/Connection"
+          },
+          "contentType": "application/json"
+        },
+        "example": [
+          {
+            "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
+            "tenantId": "gc9llm",
+            "kind": "sso",
+            "issuer": "surfconext",
+            "clientId": null,
+            "deploymentId": null,
+            "claimValues": ["uu.nl"],
+            "displayName": "Utrecht University",
+            "status": "active",
+            "jitProvisioning": true,
+            "config": {
+              "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
+            },
+            "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
+            "createdAt": "2024-08-25T16:44:28.368Z",
+            "updatedAt": "2024-10-28T09:20:16.614Z"
+          }
+        ]
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "createConnection",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Created connection",
+        "name": "Connection",
+        "ref": "#/components/schemas/Connection",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization. Its id is the public key of the tenant's SSO entry page. System admins manage connections per tenant; `pending` until the institution activated the service at the federation.",
+          "properties": {
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "kind": {
+              "type": "string",
+              "required": true,
+              "enum": ["sso", "lti"]
+            },
+            "issuer": { "type": "string", "required": true, "maxLength": 255 },
+            "clientId": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "deploymentId": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "claimValues": { "type": "array", "required": true, "itemType": "string" },
+            "displayName": { "type": "string", "required": true, "maxLength": 255 },
+            "status": {
+              "type": "string",
+              "required": true,
+              "enum": ["pending", "active", "disabled"]
+            },
+            "jitProvisioning": { "type": "boolean", "required": true },
+            "config": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "idpEntityIds": {
+                  "type": "array",
+                  "required": false,
+                  "description": "The institution's IdP entity ids, passed as login_hint",
+                  "itemType": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "logoUrl": {
+                  "type": "string",
+                  "required": false,
+                  "description": "The institution's logo, for the entry page",
+                  "format": "uri",
+                  "maxLength": 255
+                }
+              }
+            },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "createdAt": { "type": "string", "required": true },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            }
+          },
+          "ref": "#/components/schemas/Connection",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
+          "tenantId": "gc9llm",
+          "kind": "sso",
+          "issuer": "surfconext",
+          "clientId": null,
+          "deploymentId": null,
+          "claimValues": ["uu.nl"],
+          "displayName": "Utrecht University",
+          "status": "active",
+          "jitProvisioning": true,
+          "config": {
+            "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
+          },
+          "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
+          "createdAt": "2024-08-25T16:44:28.368Z",
+          "updatedAt": "2024-10-28T09:20:16.614Z"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "issuer": {
+            "type": "string",
+            "required": true,
+            "description": "A federation key in appConfig.federations",
+            "enum": ["surfconext"]
+          },
+          "displayName": {
+            "type": "string",
+            "required": true,
+            "description": "The institution's name, as the federation's metadata lists it",
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "claimValues": {
+            "type": "array",
+            "required": true,
+            "description": "The institution's domains as the federation asserts them in the tenant claim; a sign-in must assert one of them",
+            "minItems": 1,
+            "maxItems": 20,
+            "itemType": "string",
+            "format": "hostname",
+            "minLength": 4,
+            "maxLength": 255
+          },
+          "idpEntityIds": {
+            "type": "array",
+            "required": true,
+            "description": "The institution's IdP entity ids, all passed as login_hint",
+            "minItems": 1,
+            "maxItems": 10,
+            "itemType": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "status": {
+            "type": "string",
+            "required": false,
+            "enum": ["pending", "active", "disabled"]
+          },
+          "jitProvisioning": { "type": "boolean", "required": false },
+          "logoUrl": {
+            "type": "string",
+            "required": false,
+            "format": "uri",
+            "maxLength": 255
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "updateConnection",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Updated connection",
+        "name": "Connection",
+        "ref": "#/components/schemas/Connection",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization. Its id is the public key of the tenant's SSO entry page. System admins manage connections per tenant; `pending` until the institution activated the service at the federation.",
+          "properties": {
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "kind": {
+              "type": "string",
+              "required": true,
+              "enum": ["sso", "lti"]
+            },
+            "issuer": { "type": "string", "required": true, "maxLength": 255 },
+            "clientId": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "deploymentId": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "claimValues": { "type": "array", "required": true, "itemType": "string" },
+            "displayName": { "type": "string", "required": true, "maxLength": 255 },
+            "status": {
+              "type": "string",
+              "required": true,
+              "enum": ["pending", "active", "disabled"]
+            },
+            "jitProvisioning": { "type": "boolean", "required": true },
+            "config": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "idpEntityIds": {
+                  "type": "array",
+                  "required": false,
+                  "description": "The institution's IdP entity ids, passed as login_hint",
+                  "itemType": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "logoUrl": {
+                  "type": "string",
+                  "required": false,
+                  "description": "The institution's logo, for the entry page",
+                  "format": "uri",
+                  "maxLength": 255
+                }
+              }
+            },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "createdAt": { "type": "string", "required": true },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            }
+          },
+          "ref": "#/components/schemas/Connection",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
+          "tenantId": "gc9llm",
+          "kind": "sso",
+          "issuer": "surfconext",
+          "clientId": null,
+          "deploymentId": null,
+          "claimValues": ["uu.nl"],
+          "displayName": "Utrecht University",
+          "status": "active",
+          "jitProvisioning": true,
+          "config": {
+            "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
+          },
+          "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
+          "createdAt": "2024-08-25T16:44:28.368Z",
+          "updatedAt": "2024-10-28T09:20:16.614Z"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "body": {
+        "type": "object",
+        "properties": {
+          "displayName": {
+            "type": "string",
+            "required": false,
+            "description": "The institution's name, as the federation's metadata lists it",
+            "minLength": 2,
+            "maxLength": 255
+          },
+          "claimValues": {
+            "type": "array",
+            "required": false,
+            "description": "The institution's domains as the federation asserts them in the tenant claim; a sign-in must assert one of them",
+            "minItems": 1,
+            "maxItems": 20,
+            "itemType": "string",
+            "format": "hostname",
+            "minLength": 4,
+            "maxLength": 255
+          },
+          "idpEntityIds": {
+            "type": "array",
+            "required": false,
+            "description": "The institution's IdP entity ids, all passed as login_hint",
+            "minItems": 1,
+            "maxItems": 10,
+            "itemType": "string",
+            "minLength": 1,
+            "maxLength": 255
+          },
+          "status": {
+            "type": "string",
+            "required": false,
+            "enum": ["pending", "active", "disabled"]
+          },
+          "jitProvisioning": { "type": "boolean", "required": false },
+          "logoUrl": {
+            "type": "string",
+            "required": false,
+            "format": "uri",
+            "maxLength": 255
+          }
+        },
+        "required": true,
+        "contentType": "application/json"
+      }
+    }
+  },
+  {
+    "operationId": "deleteConnection",
+    "responses": [
+      {
+        "status": 200,
+        "description": "Removed connection",
+        "name": "Connection",
+        "ref": "#/components/schemas/Connection",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization. Its id is the public key of the tenant's SSO entry page. System admins manage connections per tenant; `pending` until the institution activated the service at the federation.",
+          "properties": {
+            "id": { "type": "string", "required": true, "format": "uuid" },
+            "tenantId": { "type": "string", "required": true, "maxLength": 24 },
+            "kind": {
+              "type": "string",
+              "required": true,
+              "enum": ["sso", "lti"]
+            },
+            "issuer": { "type": "string", "required": true, "maxLength": 255 },
+            "clientId": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "deploymentId": {
+              "type": ["string", "null"],
+              "required": true,
+              "maxLength": 255
+            },
+            "claimValues": { "type": "array", "required": true, "itemType": "string" },
+            "displayName": { "type": "string", "required": true, "maxLength": 255 },
+            "status": {
+              "type": "string",
+              "required": true,
+              "enum": ["pending", "active", "disabled"]
+            },
+            "jitProvisioning": { "type": "boolean", "required": true },
+            "config": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "idpEntityIds": {
+                  "type": "array",
+                  "required": false,
+                  "description": "The institution's IdP entity ids, passed as login_hint",
+                  "itemType": "string",
+                  "minLength": 1,
+                  "maxLength": 255
+                },
+                "logoUrl": {
+                  "type": "string",
+                  "required": false,
+                  "description": "The institution's logo, for the entry page",
+                  "format": "uri",
+                  "maxLength": 255
+                }
+              }
+            },
+            "createdBy": {
+              "type": ["string", "null"],
+              "required": true,
+              "format": "uuid"
+            },
+            "createdAt": { "type": "string", "required": true },
+            "updatedAt": {
+              "type": ["string", "null"],
+              "required": true
+            }
+          },
+          "ref": "#/components/schemas/Connection",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "920c1ebd-e058-4d64-bb56-872875fd1102",
+          "tenantId": "gc9llm",
+          "kind": "sso",
+          "issuer": "surfconext",
+          "clientId": null,
+          "deploymentId": null,
+          "claimValues": ["uu.nl"],
+          "displayName": "Utrecht University",
+          "status": "active",
+          "jitProvisioning": true,
+          "config": {
+            "idpEntityIds": ["https://login.uu.nl/nidp/saml2/metadata"]
+          },
+          "createdBy": "3a1733e5-db1b-4f23-a822-aff57488fb99",
+          "createdAt": "2024-08-25T16:44:28.368Z",
+          "updatedAt": "2024-10-28T09:20:16.614Z"
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "tenantId": { "type": "string", "required": true, "maxLength": 50 },
+          "id": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      }
+    }
+  }
+]

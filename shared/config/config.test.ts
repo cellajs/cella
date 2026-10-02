@@ -21,4 +21,7 @@ export const test = {
   mcpUrl: development.mcpUrl,
   oauthUrl: development.oauthUrl,
   services: { yjs: { enabled: true }, mcp: { enabled: true }, oauth: { enabled: true } },
+  federations: {
+    surfconext: { issuer: 'https://connect.test.surfconext.nl', idpMetadataUrl: 'https://metadata.test.surfconext.nl/idps-metadata.xml' },
+  },
 } satisfies DeepPartial<typeof _default>;

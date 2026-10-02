@@ -11,7 +11,7 @@ import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { newSessionToken } from '#/modules/auth/sessions/helpers/session-token';
-import { type AuthStrategy, type SessionTypes, sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { type AuthStrategy, type SessionTypes, type StepUpProof, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens-db';
 import { generateTOTP } from '#/modules/auth/totps/helpers/totp-core';
 import { encryptTotpSecret } from '#/modules/auth/totps/helpers/totp-secret-encryption';
@@ -115,8 +115,9 @@ export async function createUser(email: string) {
 }
 
 /** A second-factor challenge for `user`, as a first factor leaves it; returns the raw value its cookie carries. */
-export async function createMfaToken(user: { id: string; email: string }) {
-  return (await insertTestToken('confirm-mfa', user, { expiresInMs: 10 * 60 * 1000 })).raw;
+/** A live MFA challenge for the user, as a sign-in with `authStrategy` issues it. */
+export async function createMfaToken(user: { id: string; email: string }, authStrategy: AuthStrategy = 'magic') {
+  return (await insertTestToken('confirm-mfa', user, { expiresInMs: 10 * 60 * 1000, authStrategy })).raw;
 }
 
 /** The Base32 authenticator secret `createTotpUser` stores. */
@@ -214,6 +215,8 @@ interface TestSessionOpts {
   expiresInMs?: number;
   /** For an impersonation: the admin session it is layered on. */
   impersonatorSessionId?: string;
+  /** Stamps the session stepped up by this proof at its creation, as an MFA completion does. */
+  steppedUpVia?: StepUpProof;
 }
 
 /**
@@ -222,10 +225,18 @@ interface TestSessionOpts {
  */
 export async function insertTestSession(
   user: { id: string },
-  { type = 'regular', authStrategy = 'passkey', ageMs = 0, expiresInMs = 7 * 24 * 60 * 60 * 1000, impersonatorSessionId }: TestSessionOpts = {},
+  {
+    type = 'regular',
+    authStrategy = 'passkey',
+    ageMs = 0,
+    expiresInMs = 7 * 24 * 60 * 60 * 1000,
+    impersonatorSessionId,
+    steppedUpVia,
+  }: TestSessionOpts = {},
 ) {
   const { token, secret } = newSessionToken();
   const id = generateId();
+  const createdAt = new Date(Date.now() - ageMs).toISOString();
 
   await db.insert(sessionsTable).values({
     id,
@@ -233,9 +244,11 @@ export async function insertTestSession(
     userId: user.id,
     type,
     authStrategy,
-    createdAt: new Date(Date.now() - ageMs).toISOString(),
+    createdAt,
     expiresAt: new Date(Date.now() + expiresInMs).toISOString(),
     impersonatorSessionId,
+    steppedUpAt: steppedUpVia ? createdAt : null,
+    steppedUpVia: steppedUpVia ?? null,
   });
 
   const cookieName = type === 'impersonation' ? 'impersonation' : 'session';

@@ -637,6 +637,102 @@
     "enabledBy": { "strategy": "oauth", "provider": "microsoft" }
   },
   {
+    "id": "getSsoEntry",
+    "hash": "tag/auth/GET/auth/sso/connections/{connectionId}",
+    "method": "get",
+    "path": "/auth/sso/connections/{connectionId}",
+    "tags": ["auth"],
+    "summary": "Get an SSO entry",
+    "description": "What the entry page of an institution's sign-in shows: the organization, the institution and whether sign-in is active. Public by the connection id, the link an institution shares with its members.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    },
+    "enabledBy": { "strategy": "sso" }
+  },
+  {
+    "id": "startSso",
+    "hash": "tag/auth/GET/auth/sso/connections/{connectionId}/start",
+    "method": "get",
+    "path": "/auth/sso/connections/{connectionId}/start",
+    "tags": ["auth"],
+    "summary": "Sign in through an institution",
+    "description": "Sends the browser to the connection's federation, pinned to the institution's identity providers, so its own picker is skipped. `type=connect` links the institution account to the signed-in user instead; other types are refused.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    },
+    "enabledBy": { "strategy": "sso" }
+  },
+  {
+    "id": "startSsoFederation",
+    "hash": "tag/auth/GET/auth/sso/federations/{federation}/start",
+    "method": "get",
+    "path": "/auth/sso/federations/{federation}/start",
+    "tags": ["auth"],
+    "summary": "Sign in through a federation",
+    "description": "Sends the browser to the federation without naming an institution: the federation's own picker lists the connected ones, and the callback finds the connection by the institution the sign-in asserts.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    },
+    "enabledBy": { "strategy": "sso" }
+  },
+  {
+    "id": "ssoCallback",
+    "hash": "tag/auth/GET/auth/sso/callback",
+    "method": "get",
+    "path": "/auth/sso/callback",
+    "tags": ["auth"],
+    "summary": "Callback for SSO",
+    "description": "The redirect URI registered at every federation. Verifies the tokens, asserts the institution against the connection, signs the user in (creating the account and its membership on a first sign-in) or links the identity, and redirects to the frontend.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": false,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["publicGuard"],
+      "xRateLimiter": ["tokenLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["auth"],
+      "owner": ["cella"]
+    },
+    "enabledBy": { "strategy": "sso" }
+  },
+  {
     "id": "getStepUp",
     "hash": "tag/auth/GET/auth/step-up",
     "method": "get",
@@ -726,121 +822,6 @@
     },
     "tagsByKind": {
       "module": ["auth"],
-      "owner": ["cella"]
-    }
-  },
-  {
-    "id": "getDomains",
-    "hash": "tag/tenants/GET/tenants/{tenantId}/domains",
-    "method": "get",
-    "path": "/tenants/{tenantId}/domains",
-    "tags": ["tenants"],
-    "summary": "List domains for a tenant",
-    "description": "Returns all domains belonging to a tenant, including verification tokens. System admin access required.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["userGuard", "sysAdminGuard", "tenantGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    },
-    "tagsByKind": {
-      "module": ["tenants"],
-      "owner": ["cella"]
-    }
-  },
-  {
-    "id": "createDomain",
-    "hash": "tag/tenants/POST/tenants/{tenantId}/domains",
-    "method": "post",
-    "path": "/tenants/{tenantId}/domains",
-    "tags": ["tenants"],
-    "summary": "Add a domain to a tenant",
-    "description": "Adds a new domain to a tenant. The domain starts unverified. System admin access required.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": true,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["userGuard", "sysAdminGuard", "tenantGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
-    },
-    "tagsByKind": {
-      "module": ["tenants"],
-      "owner": ["cella"]
-    }
-  },
-  {
-    "id": "getDomain",
-    "hash": "tag/tenants/GET/tenants/{tenantId}/domains/{id}",
-    "method": "get",
-    "path": "/tenants/{tenantId}/domains/{id}",
-    "tags": ["tenants"],
-    "summary": "Get domain with verification token",
-    "description": "Returns a single domain including its verification token for DNS TXT setup. System admin access required.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["userGuard", "sysAdminGuard", "tenantGuard"],
-      "xRateLimiter": [],
-      "xCache": []
-    },
-    "tagsByKind": {
-      "module": ["tenants"],
-      "owner": ["cella"]
-    }
-  },
-  {
-    "id": "deleteDomain",
-    "hash": "tag/tenants/DELETE/tenants/{tenantId}/domains/{id}",
-    "method": "delete",
-    "path": "/tenants/{tenantId}/domains/{id}",
-    "tags": ["tenants"],
-    "summary": "Remove a domain",
-    "description": "Removes a domain from a tenant. System admin access required.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["userGuard", "sysAdminGuard", "tenantGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
-    },
-    "tagsByKind": {
-      "module": ["tenants"],
-      "owner": ["cella"]
-    }
-  },
-  {
-    "id": "verifyDomain",
-    "hash": "tag/tenants/POST/tenants/{tenantId}/domains/{id}/verify",
-    "method": "post",
-    "path": "/tenants/{tenantId}/domains/{id}/verify",
-    "tags": ["tenants"],
-    "summary": "Verify domain ownership via DNS",
-    "description": "Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-development-verification.<domain> TXT record matching the verification token.",
-    "deprecated": false,
-    "hasParams": true,
-    "hasRequestBody": false,
-    "hasResponseBody": true,
-    "hasExample": false,
-    "extensions": {
-      "xGuard": ["userGuard", "sysAdminGuard", "tenantGuard"],
-      "xRateLimiter": ["pointsLimiter"],
-      "xCache": []
-    },
-    "tagsByKind": {
-      "module": ["tenants"],
       "owner": ["cella"]
     }
   },
@@ -1642,6 +1623,102 @@
     }
   },
   {
+    "id": "getConnections",
+    "hash": "tag/connections/GET/tenants/{tenantId}/connections",
+    "method": "get",
+    "path": "/tenants/{tenantId}/connections",
+    "tags": ["connections"],
+    "summary": "Get connections",
+    "description": "The tenant's connections: the institutions whose members sign in to its organization through an SSO federation. System admin access required.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["userGuard", "sysAdminGuard", "tenantGuard"],
+      "xRateLimiter": [],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["connections"],
+      "owner": ["cella"]
+    },
+    "enabledBy": { "strategy": "sso" }
+  },
+  {
+    "id": "createConnection",
+    "hash": "tag/connections/POST/tenants/{tenantId}/connections",
+    "method": "post",
+    "path": "/tenants/{tenantId}/connections",
+    "tags": ["connections"],
+    "summary": "Create connection",
+    "description": "Connects an institution to the tenant: the federation it signs in through, its domains and its IdP entity ids. Starts `pending` until the institution activated the service at the federation; one SSO connection per tenant, and a domain belongs to one connection.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["userGuard", "sysAdminGuard", "tenantGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["connections"],
+      "owner": ["cella"]
+    },
+    "enabledBy": { "strategy": "sso" }
+  },
+  {
+    "id": "updateConnection",
+    "hash": "tag/connections/PUT/tenants/{tenantId}/connections/{id}",
+    "method": "put",
+    "path": "/tenants/{tenantId}/connections/{id}",
+    "tags": ["connections"],
+    "summary": "Update connection",
+    "description": "Changes the name, domains, IdP entity ids, status or provisioning of a connection; the federation stays what it was.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["userGuard", "sysAdminGuard", "tenantGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["connections"],
+      "owner": ["cella"]
+    },
+    "enabledBy": { "strategy": "sso" }
+  },
+  {
+    "id": "deleteConnection",
+    "hash": "tag/connections/DELETE/tenants/{tenantId}/connections/{id}",
+    "method": "delete",
+    "path": "/tenants/{tenantId}/connections/{id}",
+    "tags": ["connections"],
+    "summary": "Delete connection",
+    "description": "Removes a connection. Identities and sessions that came through it keep their rows; members stay members.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": false,
+    "hasResponseBody": true,
+    "hasExample": true,
+    "extensions": {
+      "xGuard": ["userGuard", "sysAdminGuard", "tenantGuard"],
+      "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["connections"],
+      "owner": ["cella"]
+    },
+    "enabledBy": { "strategy": "sso" }
+  },
+  {
     "id": "getUsers",
     "hash": "tag/users/GET/users/users",
     "method": "get",
@@ -2387,6 +2464,54 @@
     "extensions": {
       "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
       "xRateLimiter": ["pointsLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["yjs"],
+      "owner": ["cella"]
+    },
+    "enabledBy": { "service": "yjs" }
+  },
+  {
+    "id": "pullYjsDocument",
+    "hash": "tag/yjs/POST/{tenantId}/{organizationId}/yjs/pull",
+    "method": "post",
+    "path": "/{tenantId}/{organizationId}/yjs/pull",
+    "tags": ["yjs"],
+    "summary": "Pull Yjs document",
+    "description": "Returns what the caller's copy of one product entity's collaborative document lacks, for a client that cannot reach the Yjs relay: the document's generation, an update holding what the caller's state vector lacks, and the server's state vector. A document never opened is seeded from the stored description first, as the relay seeds it. The caller must be allowed to update the entity, as for a Yjs token. A POST, since a state vector can outgrow a URL. Costs no API points.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["yjsHttpLimiter"],
+      "xCache": []
+    },
+    "tagsByKind": {
+      "module": ["yjs"],
+      "owner": ["cella"]
+    },
+    "enabledBy": { "service": "yjs" }
+  },
+  {
+    "id": "pushYjsUpdate",
+    "hash": "tag/yjs/POST/{tenantId}/{organizationId}/yjs/push",
+    "method": "post",
+    "path": "/{tenantId}/{organizationId}/yjs/push",
+    "tags": ["yjs"],
+    "summary": "Push Yjs update",
+    "description": "Appends one Yjs update to a product entity's collaborative document, for a client that cannot reach the Yjs relay. The answer follows the commit, so a 200 means the server holds the update; the relay passes it to live sessions and folds it into the document. An update made in another generation than the document's answers 409 `sync_document_replaced` with the current one in `meta.generation`, and with null when the document has no row: pull, which seeds it, then post again. At most 512 KB of update per request, base64url-encoded. The caller must be allowed to update the entity, as for a Yjs token. Costs no API points.",
+    "deprecated": false,
+    "hasParams": true,
+    "hasRequestBody": true,
+    "hasResponseBody": true,
+    "hasExample": false,
+    "extensions": {
+      "xGuard": ["userGuard", "tenantGuard", "orgGuard"],
+      "xRateLimiter": ["yjsHttpLimiter"],
       "xCache": []
     },
     "tagsByKind": {

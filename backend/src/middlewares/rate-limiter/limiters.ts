@@ -122,6 +122,15 @@ export const streamConnectLimiter = rateLimiter('limit', 'streamConnect', [['use
   description: 'Live update stream connections per user: 240 per hour, then blocked for 5 minutes',
 });
 
+/**
+ * Yjs over HTTP per user, pulls and pushes together, in place of API points: a socket costs none, and an editing tab
+ * pulls every 10 seconds and pushes at most every 2. A client backs off on the 429.
+ */
+export const yjsHttpLimiter = rateLimiter('limit', 'yjsHttp', [['userId', 'ip']], {
+  limits: { points: 7200, duration: 60 * 60, blockDuration: 60 },
+  description: 'Yjs pulls and pushes per user: 7200 per hour, then blocked for 1 minute',
+});
+
 /** Cost = length of the request body array. Attach to routes taking `{ ids: [...] }` or a top-level array body. */
 export const bulkPointsLimiter = pointsLimiter(0);
 

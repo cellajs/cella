@@ -66,7 +66,7 @@ app.openapi(authPasskeysRoutes.generatePasskeyChallenge, async (ctx) => {
 
   // The second factor of an MFA challenge is the one case with a known account, so its passkeys may be offered. A
   // sign-in challenge names none: the passkey the browser picks names its account.
-  const user = type === 'mfa' ? await validateConfirmMfaToken(ctx) : null;
+  const user = type === 'mfa' ? (await validateConfirmMfaToken(ctx)).user : null;
 
   const challenge = await issuePasskeyChallenge(ctx, { purpose: type, userId: user?.id });
 

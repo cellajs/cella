@@ -7,8 +7,10 @@ description: Build, launch, and drive the cella frontend to verify UI changes at
 
 ## Launch
 
-- Dev server: `cd frontend && pnpm dev` → http://localhost:3000 (plain HTTP). Marketing pages (`/about`, `/features`, `/sync-engine`, `/docs`) render without the backend; the "Offline · Connection lost" toast without a backend is expected, not a regression.
-- Port 3000 is cella's; 3020/4020 etc. belong to other checkouts (projectcampus). Check `lsof -iTCP:3000 -sTCP:LISTEN` before starting.
+- Dev server: `cd frontend && pnpm dev` (plain HTTP). The main checkout serves http://localhost:3000. A linked git worktree gets ports of its own (3100 and 4100-4106, then 3200, ...): Vite prints the URL, and `appConfig.frontendUrl` holds it. Marketing pages (`/about`, `/features`, `/sync-engine`, `/docs`) render without the backend; the "Offline · Connection lost" toast without a backend is expected, not a regression.
+- Never pass `--port`, and never start a server on the main checkout's ports from a worktree: the app URLs are built from the config, so a server on another port fails with "Failed to fetch". 3020/4020 etc. belong to other apps (projectcampus).
+- The worktree's Vite proxies `/api` to the worktree's own backend port, so pages that need data need that backend running. It migrates the database named in `backend/.env` on boot, and that is the main checkout's database unless the worktree has its own: give a branch with migrations its own database first, and never run a second CDC worker on a shared one.
+- `pnpm stop` ends this checkout's Vite only.
 - Typecheck: `cd frontend && pnpm ts` (tsgo). Lint: `pnpm exec biome check <file>` from repo root.
 
 ## Drive (browser)

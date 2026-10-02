@@ -191,6 +191,30 @@ export const zTooManyRequestsError = zApiError.and(
 );
 
 /**
+ * The sign-in entry of one institution at one organization: the federation it goes through, the institution, the organization, and whether it is active. Public by the connection's id, which is the link an institution shares.
+ */
+export const zSsoEntry = z.object({
+  id: z.string(),
+  status: z.enum(['pending', 'active', 'disabled']),
+  federation: z.object({
+    key: z.string(),
+    label: z.string(),
+  }),
+  institution: z.object({
+    displayName: z.string(),
+    logoUrl: z.string().nullable(),
+  }),
+  organization: z
+    .object({
+      id: z.string(),
+      name: z.string(),
+      slug: z.string(),
+      thumbnailUrl: z.string().nullable(),
+    })
+    .nullable(),
+});
+
+/**
  * A full user account: profile, preferences such as language and newsletter, the MFA setting and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.
  */
 export const zUser = z.object({
@@ -227,10 +251,21 @@ export const zMe = z.object({
 });
 
 /**
- * How the signed-in user signs in: connected OAuth providers, passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.
+ * How the signed-in user signs in: connected OAuth providers, the institutions of their organizations (connected or not), passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.
  */
 export const zMeAuthData = z.object({
   enabledOAuth: z.array(z.enum(['github'])),
+  institutions: z.array(
+    z.object({
+      connectionId: z.string(),
+      displayName: z.string(),
+      federation: z.object({
+        key: z.string(),
+        label: z.string(),
+      }),
+      connected: z.boolean(),
+    }),
+  ),
   hasTotp: z.boolean(),
   sessions: z.array(
     z.object({
@@ -241,7 +276,8 @@ export const zMeAuthData = z.object({
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.string().max(255).nullable(),
       browser: z.string().max(255).nullable(),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic']),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'surfconext']),
+      connectionId: z.uuid().nullable(),
       ipHash: z.string().max(64).nullable(),
       ipSubnetHash: z.string().max(64).nullable(),
       ipCountry: z.string().max(2).nullable(),
@@ -349,14 +385,13 @@ export const zTenant = z.object({
     }),
     allowUnregisteredClients: z.boolean(),
   }),
-  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'])),
+  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'surfconext'])),
   createdBy: z.uuid().nullable(),
   subscriptionId: z.string().max(255).nullable(),
   subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']),
   subscriptionPlan: z.string().max(255).nullable(),
   createdAt: z.string(),
   updatedAt: z.string().nullable(),
-  domainsCount: z.int(),
   organization: z
     .object({
       id: z.string(),
@@ -366,6 +401,29 @@ export const zTenant = z.object({
       entityType: z.enum(['organization']),
     })
     .nullable(),
+});
+
+/**
+ * A tenant's trust in an external party that asserts user identities: an institution reached through an SSO federation, whose members sign in to the tenant's organization. Its id is the public key of the tenant's SSO entry page. System admins manage connections per tenant; `pending` until the institution activated the service at the federation.
+ */
+export const zConnection = z.object({
+  id: z.uuid(),
+  tenantId: z.string().max(24),
+  kind: z.enum(['sso', 'lti']),
+  issuer: z.string().max(255),
+  clientId: z.string().max(255).nullable(),
+  deploymentId: z.string().max(255).nullable(),
+  claimValues: z.array(z.string()),
+  displayName: z.string().max(255),
+  status: z.enum(['pending', 'active', 'disabled']),
+  jitProvisioning: z.boolean(),
+  config: z.object({
+    idpEntityIds: z.array(z.string().min(1).max(255)).optional(),
+    logoUrl: z.url().max(255).optional(),
+  }),
+  createdBy: z.uuid().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string().nullable(),
 });
 
 /**
@@ -528,6 +586,12 @@ export const zApiKey = z.object({
 export const zGetAuthHealthResponse = z.object({
   restrictedMode: z.boolean(),
   retryAfter: z.number().optional(),
+  federations: z.array(
+    z.object({
+      key: z.string(),
+      label: z.string(),
+    }),
+  ),
 });
 
 export const zCheckEmailBody = z.object({
@@ -558,6 +622,7 @@ export const zGetTokenDataResponse = z.object({
   email: z.email(),
   userId: z.string().optional(),
   inactiveMembershipId: z.string().optional(),
+  ssoConnectionId: z.string().optional(),
   invitation: z
     .object({
       entityType: z.enum(['organization']),
@@ -764,6 +829,41 @@ export const zMicrosoftCallbackQuery = z.object({
   error_uri: z.string().optional(),
 });
 
+export const zGetSsoEntryPath = z.object({
+  connectionId: z.string().max(50),
+});
+
+/**
+ * SSO entry
+ */
+export const zGetSsoEntryResponse = zSsoEntry;
+
+export const zStartSsoPath = z.object({
+  connectionId: z.string().max(50),
+});
+
+export const zStartSsoQuery = z.object({
+  type: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
+  redirectAfter: z.string().optional(),
+});
+
+export const zStartSsoFederationPath = z.object({
+  federation: z.string().min(1).max(64),
+});
+
+export const zStartSsoFederationQuery = z.object({
+  type: z.enum(['auth', 'connect', 'invite', 'verify']).optional().default('auth'),
+  redirectAfter: z.string().optional(),
+});
+
+export const zSsoCallbackQuery = z.object({
+  code: z.string().optional(),
+  state: z.string(),
+  error: z.string().optional(),
+  error_description: z.string().optional(),
+  error_uri: z.string().optional(),
+});
+
 /**
  * Step-up state
  */
@@ -815,116 +915,6 @@ export const zSendStepUpLinkBody = z.object({
  * Link sent
  */
 export const zSendStepUpLinkResponse = z.void();
-
-export const zGetDomainsPath = z.object({
-  tenantId: z.string().max(50),
-});
-
-/**
- * List of domains
- */
-export const zGetDomainsResponse = z.array(
-  z.object({
-    id: z.uuid(),
-    tenantId: z.string().max(24),
-    domain: z.string().max(255),
-    verified: z.boolean(),
-    verificationToken: z.string().max(50).nullable(),
-    verifiedAt: z.string().nullable(),
-    lastCheckedAt: z.string().nullable(),
-    createdAt: z.string(),
-  }),
-);
-
-export const zCreateDomainBody = z.object({
-  domain: z
-    .string()
-    .min(4)
-    .max(255)
-    .regex(/^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/),
-});
-
-export const zCreateDomainPath = z.object({
-  tenantId: z.string().max(50),
-});
-
-/**
- * Created domain
- */
-export const zCreateDomainResponse = z.object({
-  id: z.uuid(),
-  tenantId: z.string().max(24),
-  domain: z.string().max(255),
-  verified: z.boolean(),
-  verifiedAt: z.string().nullable(),
-  lastCheckedAt: z.string().nullable(),
-  createdAt: z.string(),
-});
-
-export const zDeleteDomainPath = z.object({
-  tenantId: z.string().max(50),
-  id: z.string().max(50),
-});
-
-/**
- * Domain removed
- */
-export const zDeleteDomainResponse = z.object({
-  id: z.uuid(),
-  tenantId: z.string().max(24),
-  domain: z.string().max(255),
-  verified: z.boolean(),
-  verifiedAt: z.string().nullable(),
-  lastCheckedAt: z.string().nullable(),
-  createdAt: z.string(),
-});
-
-export const zGetDomainPath = z.object({
-  tenantId: z.string().max(50),
-  id: z.string().max(50),
-});
-
-/**
- * Domain with verification token
- */
-export const zGetDomainResponse = z.object({
-  id: z.uuid(),
-  tenantId: z.string().max(24),
-  domain: z.string().max(255),
-  verified: z.boolean(),
-  verificationToken: z.string().max(50).nullable(),
-  verifiedAt: z.string().nullable(),
-  lastCheckedAt: z.string().nullable(),
-  createdAt: z.string(),
-});
-
-export const zVerifyDomainPath = z.object({
-  tenantId: z.string().max(50),
-  id: z.string().max(50),
-});
-
-/**
- * Verification result
- */
-export const zVerifyDomainResponse = z.object({
-  success: z.boolean(),
-  domain: z.object({
-    id: z.uuid(),
-    tenantId: z.string().max(24),
-    domain: z.string().max(255),
-    verified: z.boolean(),
-    verificationToken: z.string().max(50).nullable(),
-    verifiedAt: z.string().nullable(),
-    lastCheckedAt: z.string().nullable(),
-    createdAt: z.string(),
-  }),
-  diagnostics: z
-    .object({
-      recordsFound: z.array(z.string()),
-      expectedToken: z.string(),
-    })
-    .optional(),
-});
 
 export const zCheckSlugBody = z.object({
   slug: z
@@ -1089,7 +1079,8 @@ export const zRevokeMySessionsResponse = z.object({
       deviceType: z.enum(['desktop', 'mobile']),
       deviceOs: z.string().max(255).nullable(),
       browser: z.string().max(255).nullable(),
-      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic']),
+      authStrategy: z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'surfconext']),
+      connectionId: z.uuid().nullable(),
       ipHash: z.string().max(64).nullable(),
       ipSubnetHash: z.string().max(64).nullable(),
       ipCountry: z.string().max(2).nullable(),
@@ -1452,7 +1443,7 @@ export const zUpdateTenantBody = z.object({
   subscriptionId: z.string().max(255).nullish(),
   subscriptionStatus: z.enum(['none', 'trialing', 'active', 'past_due', 'paused', 'canceled']).optional(),
   subscriptionPlan: z.string().max(255).nullish(),
-  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'])).optional(),
+  authStrategies: z.array(z.enum(['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic', 'surfconext'])).optional(),
   restrictions: z
     .object({
       quotas: z.record(z.string(), z.int().gte(0)).optional(),
@@ -1474,6 +1465,91 @@ export const zUpdateTenantPath = z.object({
  * Updated tenant
  */
 export const zUpdateTenantResponse = zTenant;
+
+export const zGetConnectionsPath = z.object({
+  tenantId: z.string().max(50),
+});
+
+/**
+ * Connections
+ */
+export const zGetConnectionsResponse = z.array(zConnection);
+
+export const zCreateConnectionBody = z.object({
+  issuer: z.enum(['surfconext']),
+  displayName: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u),
+  claimValues: z
+    .array(
+      z
+        .string()
+        .min(4)
+        .max(255)
+        .regex(/^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/),
+    )
+    .min(1)
+    .max(20),
+  idpEntityIds: z.array(z.string().min(1).max(255)).min(1).max(10),
+  status: z.enum(['pending', 'active', 'disabled']).optional(),
+  jitProvisioning: z.boolean().optional(),
+  logoUrl: z.url().max(255).optional(),
+});
+
+export const zCreateConnectionPath = z.object({
+  tenantId: z.string().max(50),
+});
+
+/**
+ * Created connection
+ */
+export const zCreateConnectionResponse = zConnection;
+
+export const zDeleteConnectionPath = z.object({
+  tenantId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * Removed connection
+ */
+export const zDeleteConnectionResponse = zConnection;
+
+export const zUpdateConnectionBody = z.object({
+  displayName: z
+    .string()
+    .min(2)
+    .max(255)
+    .regex(/^[\p{L}\d\-., '&()]+$/u)
+    .optional(),
+  claimValues: z
+    .array(
+      z
+        .string()
+        .min(4)
+        .max(255)
+        .regex(/^(?=.{1,253}$)[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)+$/),
+    )
+    .min(1)
+    .max(20)
+    .optional(),
+  idpEntityIds: z.array(z.string().min(1).max(255)).min(1).max(10).optional(),
+  status: z.enum(['pending', 'active', 'disabled']).optional(),
+  jitProvisioning: z.boolean().optional(),
+  logoUrl: z.url().max(255).optional(),
+});
+
+export const zUpdateConnectionPath = z.object({
+  tenantId: z.string().max(50),
+  id: z.string().max(50),
+});
+
+/**
+ * Updated connection
+ */
+export const zUpdateConnectionResponse = zConnection;
 
 export const zGetUsersQuery = z.object({
   q: z.string().max(255).optional(),
@@ -2271,4 +2347,43 @@ export const zGetYjsTokenQuery = z.object({
  */
 export const zGetYjsTokenResponse = z.object({
   token: z.string(),
+});
+
+export const zPullYjsDocumentBody = z.object({
+  entityType: z.enum(['attachment']),
+  entityId: z.string().max(50),
+  stateVector: z.string().max(262144),
+});
+
+export const zPullYjsDocumentPath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Document diff
+ */
+export const zPullYjsDocumentResponse = z.object({
+  generation: z.uuid(),
+  update: z.string(),
+  stateVector: z.string(),
+});
+
+export const zPushYjsUpdateBody = z.object({
+  entityType: z.enum(['attachment']),
+  entityId: z.string().max(50),
+  generation: z.uuid(),
+  update: z.string().max(699051),
+});
+
+export const zPushYjsUpdatePath = z.object({
+  tenantId: z.string().max(50),
+  organizationId: z.string().max(50),
+});
+
+/**
+ * Saved
+ */
+export const zPushYjsUpdateResponse = z.object({
+  status: z.enum(['appended', 'empty']),
 });

@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 import type { OpenAPIHono } from '@hono/zod-openapi';
-import { accessScopes, appConfig } from 'shared';
+import { accessScopes, appConfig, withConfiguredDevPorts } from 'shared';
 import type { Env } from '#/core/context';
 import { buildExtensionEntries } from '#/core/openapi-extensions';
 import { getRegisteredTags } from '#/core/openapi-tag-registry';
@@ -94,7 +94,8 @@ const registerOpenApiDocs = async (app: OpenAPIHono<Env>) => {
   normalizeOpenApiDocument(openApiDoc as unknown as Record<string, unknown>);
 
   const cachePath = './openapi.cache.json';
-  const nextDoc = JSON.stringify(openApiDoc, null, 2);
+  // The SDK and docs are generated from this file and committed, so a checkout on shifted dev ports writes the configured URLs.
+  const nextDoc = withConfiguredDevPorts(JSON.stringify(openApiDoc, null, 2));
 
   try {
     const currentDoc = await fs.readFile(cachePath, 'utf-8');

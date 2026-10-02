@@ -6,7 +6,8 @@ import { maxLength } from '#/db/utils/constraints';
 import type { UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { identitiesTable } from '#/modules/auth/oauth/identities-db';
-import { sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { authStrategiesEnum, sessionsTable } from '#/modules/auth/sessions/sessions-db';
+import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
 
 const tokenTypeEnum = appConfig.tokenTypes;
@@ -23,6 +24,8 @@ export type PendingSignUp = {
   name: string;
   slug: string;
   firstName: string;
+  /** Absent on tokens issued before the family name was carried, and when the provider asserts none. */
+  lastName?: string;
 };
 
 /** Tokens for email verification and invitation. Rows expired for over 30 days are swept nightly by maintain_partitions(). */
@@ -43,6 +46,10 @@ export const tokensTable = snakeCase.table(
     pendingSignUp: jsonb().$type<PendingSignUp>(),
     /** The session a token is bound to: a step-up link stamps only this session. */
     sessionId: uuid().references(() => sessionsTable.id, { onDelete: 'cascade' }),
+    /** For a `confirm-mfa` challenge: the method the sign-in started with, which the mfa session it ends in records. */
+    authStrategy: varchar({ enum: authStrategiesEnum }),
+    /** For a `confirm-mfa` challenge of an SSO sign-in: the connection it came through, recorded on the mfa session too. */
+    connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
     createdBy: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),

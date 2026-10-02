@@ -91,8 +91,10 @@ One Dexie database per signed-in user, `${appConfig.slug}:${userId}`, holds ever
 | `blobs` | Attachment bytes: uploads pending sync and cached downloads |
 | `downloadQueue` | Background download work |
 | `failedSync` | Replayed offline mutations quarantined after a 4xx error, for export and manual repair |
+| `yDocs`, `yDocStates`, `yDocUpdates` | Collaborative documents the user opened for editing, so they open from storage and stay editable offline: a trimmed state plus the updates no server has confirmed yet. At most about 200 documents or 50 MB, least recently used evicted first, never one with unsaved edits |
+| `unsaveableYDocs` | Edits that can no longer be saved (access lost, entity deleted), kept until the user copies or discards them |
 
-The database follows authentication, not routes: signing in binds it, sign-out deletes it, and involuntary session loss only closes it, so offline work survives signing back in. The delete reaches every other tab of the same user through IndexedDB's `versionchange`, which is how those tabs sign out too.
+The database follows authentication, not routes: signing in binds it, sign-out deletes it (after asking when it holds edits no server has), and involuntary session loss only closes it, so offline work survives signing back in. The delete reaches every other tab of the same user through IndexedDB's `versionchange`, which is how those tabs sign out too.
 
 ## Cold start to live
 

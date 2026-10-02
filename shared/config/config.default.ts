@@ -1,4 +1,4 @@
-import type { ConfigMode, ProductEmbedding, RequiredConfig, S3ConfigInput } from '../src/config-builder/types.ts';
+import type { ConfigMode, FederationConfig, ProductEmbedding, RequiredConfig, S3ConfigInput } from '../src/config-builder/types.ts';
 import { nonEmpty } from '../src/config-builder/utils.ts';
 import { hierarchy } from './hierarchy-config.ts';
 
@@ -139,7 +139,9 @@ export const config = {
   /**
    * Local dev listen ports, also the Vite proxy targets. Ports are machine-global, so an app must
    * offset this whole block together with the port in the `frontendUrl` family (e.g. +20). With
-   * two stacks up, whichever backend binds :4000 first answers every app's `/api` proxy.
+   * two stacks up, whichever backend binds :4000 first answers every app's `/api` proxy. Keep the
+   * app's offset in the tens: a linked git worktree adds 100 per worktree on its own, or
+   * `DEV_PORT_OFFSET` sets that by hand (shared/README.md).
    * `PORT`-style env vars still override at runtime. `frontend` is the Vite fallback for when
    * `frontendUrl` carries no port (tunnel mode); otherwise the URL port wins. `internal` is the
    * backend's internal listener, which the cdc and yjs workers dial (`INTERNAL_PORT` overrides it).
@@ -174,12 +176,30 @@ export const config = {
   apiVersion: 'v1',
   // Session cookies use the host-locked __Host- prefix; changing this version invalidates them.
   cookieVersion: 'v3',
-  clientCacheVersion: 'v10-access-hardening',
+  clientCacheVersion: 'v11-sso-connections',
 
   // Authentication
 
-  enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic'] as const,
+  enabledAuthStrategies: ['passkey', 'oauth', 'totp', 'magic', 'sso'] as const,
   enabledOAuthProviders: ['github'] as const,
+  /**
+   * Identity federations institutions sign in through (`sso`). The key is the session strategy, the identities
+   * issuer slug and the env prefix of the client secret (`SSO_<KEY>_CLIENT_ID` / `SSO_<KEY>_CLIENT_SECRET`); a
+   * federation is live when those are set. Mode configs point a key at its test issuer. A tenant's connection names
+   * one entry and the institution behind it.
+   */
+  federations: {
+    surfconext: {
+      label: 'SURFconext',
+      issuer: 'https://connect.surfconext.nl',
+      idpMetadataUrl: 'https://metadata.surfconext.nl/idps-metadata.xml',
+      scopes: ['openid'],
+      clientAuthMethod: 'client_secret_basic',
+      tenantClaim: 'schac_home_organization',
+      snapshotClaims: ['eduperson_affiliation', 'eduperson_scoped_affiliation'],
+      addressAuthority: true,
+    },
+  } satisfies Record<string, FederationConfig>,
   tokenTypes: ['oauth-verification', 'invitation', 'confirm-mfa', 'magic', 'oauth-connect', 'step-up'] as const,
 
   /**

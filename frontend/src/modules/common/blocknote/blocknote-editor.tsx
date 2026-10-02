@@ -11,7 +11,7 @@ import { type MouseEventHandler, type RefObject, useCallback, useEffect, useImpe
 import { appConfig } from 'shared';
 import { mediaBlockTypes } from 'shared/blocknote';
 import { type DescriptionBlock, findSummarySource } from 'shared/utils/derive-description-core';
-import type { WebsocketProvider } from 'y-websocket';
+import type { Awareness } from 'y-protocols/awareness';
 import type { XmlFragment } from 'yjs';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
 import { useLatestRef } from '~/hooks/use-latest-ref';
@@ -47,7 +47,8 @@ import { cn } from '~/utils/cn';
 
 /** Yjs connection and cursor identity; passing this bundle switches the editor into collaborative mode. */
 export interface CollaborationBundle {
-  provider: WebsocketProvider;
+  /** BlockNote reads only the Awareness of a provider: the connection's own, which outlives a switch of transport. */
+  provider: { awareness: Awareness };
   fragment: XmlFragment;
   user: { name: string; color: string };
 }

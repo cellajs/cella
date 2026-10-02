@@ -1,10 +1,22 @@
 // Database-free: the Yjs log's limits, keys, row shapes and notice codec, which the relay shares through `#/`.
 
-/** The channel every append and retirement notifies on, in the writing transaction: a wake-up for relays, never content. */
+/**
+ * The channel appends and retirements notify on: a wake-up for relays, never content. The backend notifies in the
+ * writing transaction; a relay announces its own appends once they committed, batched per document.
+ */
 export const YJS_LOG_CHANNEL = 'yjs_log';
+
+/** Log ids one notice carries at most: at the longest keys and ids it stays below the 8,000-byte limit on a notification. */
+export const YJS_LOG_NOTICE_MAX_IDS = 200;
 
 /** The largest update the log takes: the cap the relay's socket puts on one frame. */
 export const YJS_MAX_UPDATE_BYTES = 2 * 1024 * 1024;
+
+/**
+ * The largest update one HTTP push carries. Base64url-encoded, a third larger, it stays under the API's 1 MB JSON body
+ * limit. The frontend posts in chunks of this size (HTTP_CHUNK_BYTES in yjs-http.ts).
+ */
+export const YJS_HTTP_CHUNK_BYTES = 512 * 1024;
 
 /** A collaborative document: its entity, and the tenant its rows are stored and read under. */
 export interface YjsDocKey {
@@ -32,18 +44,29 @@ export interface YjsDocumentRead {
   rows: LogRow[];
 }
 
-/** What a relay hears on YJS_LOG_CHANNEL: a row appended to a document's log, or the document retired. Keys only. */
+/**
+ * What a relay hears on YJS_LOG_CHANNEL: rows appended to a document's log, one or more and never none, or the document
+ * retired. Keys only. A relay acts on a notice holding any row it has not relayed: rows of one batch can commit out of
+ * id order, so a receiver may have read the newest while an older one was still uncommitted.
+ */
 export type LogNotice =
-  | { tenantId: string; entityType: string; entityId: string; logId: number }
+  | { tenantId: string; entityType: string; entityId: string; logIds: number[] }
   | { tenantId: string; entityType: string; entityId: string; retired: true };
 
-/** The payload of a notice: short keys, so it stays far below the 8,000-byte limit on a notification. */
+/**
+ * The payload of a notice: short keys, so it stays far below the 8,000-byte limit on a notification. One row travels
+ * as `id`; more as `ids`, with the newest also as `id`, which a relay that reads `id` alone (release 2) still acts on.
+ */
 export function encodeLogNotice(notice: LogNotice): string {
   const key = { t: notice.tenantId, e: notice.entityType, i: notice.entityId };
-  return JSON.stringify('retired' in notice ? { ...key, retired: true } : { ...key, id: notice.logId });
+  if ('retired' in notice) return JSON.stringify({ ...key, retired: true });
+  const { logIds } = notice;
+  const id = Math.max(...logIds);
+  return JSON.stringify(logIds.length === 1 ? { ...key, id } : { ...key, id, ids: logIds });
 }
 
 const isKey = (value: unknown): value is string => typeof value === 'string' && value.length > 0;
+const isLogId = (value: unknown): value is number => typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
 
 /** The notice a payload carries, or null for anything else. Never throws: any session on the database may notify on the channel. */
 export function decodeLogNotice(payload: string): LogNotice | null {
@@ -54,9 +77,10 @@ export function decodeLogNotice(payload: string): LogNotice | null {
     return null;
   }
   if (typeof parsed !== 'object' || parsed === null) return null;
-  const { t, e, i, id, retired } = parsed as Record<string, unknown>;
+  const { t, e, i, id, ids, retired } = parsed as Record<string, unknown>;
   if (!isKey(t) || !isKey(e) || !isKey(i)) return null;
   const key = { tenantId: t, entityType: e, entityId: i };
   if (retired === true) return { ...key, retired: true };
-  return typeof id === 'number' && Number.isSafeInteger(id) && id > 0 ? { ...key, logId: id } : null;
+  if (ids !== undefined) return Array.isArray(ids) && ids.length > 0 && ids.every(isLogId) ? { ...key, logIds: ids } : null;
+  return isLogId(id) ? { ...key, logIds: [id] } : null;
 }

@@ -2,11 +2,12 @@ import { and, asc, eq, inArray, lt, max, sql, TransactionRollbackError } from 'd
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import type { LogRow, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
+import { seedYjsDocument } from '#/modules/yjs/operations/seed-yjs-document';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import { findYjsDocument } from '#/modules/yjs/yjs-queries';
 import type { DocKey, DocScope } from '../constants';
 import { db, type Tx, withRlsTx } from './db';
-import { lockEntityDescription } from './entity-content';
+import { logNotifier } from './log-notifier';
 
 /**
  * Every read and write runs as the system (no user context) under the document's own tenant, the one its entity row
@@ -33,32 +34,22 @@ export async function loadDocument(doc: DocKey): Promise<YjsDocumentRead | null>
 }
 
 /**
- * Seeds the document from its entity in one transaction: the description read FOR SHARE, converted by `toSeed`, the
- * document row inserted under a new generation unless one exists, and the document read back. An outside write of the
- * description either commits first and is seeded, or waits for the seed and then finds the document row, into which it
- * appends its update: no write falls between the read and the insert. Concurrent seeds, on this relay or another,
- * converge on the first. Null, with nothing inserted, when the entity has no live row: it was deleted, and its
- * document must not come back.
+ * Seeds the document from its entity in one transaction, as the backend's `seedYjsDocument` does for the API's pull:
+ * the description read FOR SHARE, converted by `toSeed`, the document row inserted under a new generation unless one
+ * exists, and the document read back. Concurrent seeds, on this relay, another or the API, converge on the first. Null,
+ * with nothing inserted, when the entity has no live row: it was deleted, and its document must not come back.
  */
 export async function seedDocument(scope: DocScope, toSeed: (description: string | null) => Uint8Array): Promise<YjsDocumentRead | null> {
-  const { entityType, entityId, tenantId, organizationId } = scope;
-  return asSystem(scope, async (tx) => {
-    const entity = await lockEntityDescription(tx, scope);
-    if (!entity) return null;
-    await tx
-      .insert(yjsDocumentsTable)
-      .values({ entityType, entityId, tenantId, organizationId, state: Buffer.from(toSeed(entity.description)), updatedAt: sql`now()` })
-      .onConflictDoNothing({ target: [yjsDocumentsTable.entityType, yjsDocumentsTable.entityId] });
-    return findYjsDocument({ var: { db: tx } }, { doc: scope });
-  });
+  return asSystem(scope, (tx) => seedYjsDocument({ var: { db: tx } }, { doc: scope, toSeed }));
 }
 
 /**
  * Logs a client's update through the log's one way in (`appendYjsUpdate`), under its sender, whom materialize may
- * credit, and notifies every relay at commit. Durable before the update is broadcast: one insert, so concurrent appends
- * never overwrite each other. The update extends one `generation` and is appended only while that document row exists,
- * held under a key-share lock until the insert commits. `onLogged` gets the row id before the commit, so the session
- * counts the row as relayed before its own notification can arrive.
+ * credit. Durable before the update is broadcast: one insert, so concurrent appends never overwrite each other. The
+ * update extends one `generation` and is appended only while that document row exists, held under a key-share lock
+ * until the insert commits. The append notifies nothing in its transaction: once it committed, the relay's notifier
+ * announces the row to every relay with the others of its batch. `onLogged` gets the row id before the commit, so the
+ * session counts the row as relayed before that notice arrives.
  */
 export async function appendUpdate(
   scope: DocScope,
@@ -67,11 +58,13 @@ export async function appendUpdate(
   generation: string,
   onLogged?: (id: number) => void,
 ): Promise<AppendResult> {
-  return asSystem(scope, async (tx) => {
-    const result = await appendYjsUpdate({ var: { db: tx } }, { doc: scope, update: payload, userId: userId || null, generation });
-    if (result.status === 'appended') onLogged?.(result.id);
-    return result;
+  const result = await asSystem(scope, async (tx) => {
+    const appended = await appendYjsUpdate({ var: { db: tx } }, { doc: scope, update: payload, userId: userId || null, generation, notify: false });
+    if (appended.status === 'appended') onLogged?.(appended.id);
+    return appended;
   });
+  if (result.status === 'appended') logNotifier.queue(scope, result.id);
+  return result;
 }
 
 /**
@@ -154,7 +147,7 @@ export interface LiveStamp {
   lastLogId: number | null;
 }
 
-/** Stamps the document row live, so no startup sweep takes it for an orphan, and reads its newest log row. Creates no row. */
+/** Stamps the document row live, so no sweep takes it for an orphan, and reads its newest log row. Creates no row. */
 export async function touchDoc(doc: DocKey): Promise<LiveStamp> {
   return asSystem(doc, async (tx) => {
     const stamped = await tx
@@ -171,7 +164,7 @@ export async function touchDoc(doc: DocKey): Promise<LiveStamp> {
   });
 }
 
-/** Tenants swept concurrently by the startup sweep; bounds the startup query fan-out on large installs. */
+/** Tenants swept concurrently by the sweep; bounds its query fan-out on large installs. */
 export const SWEEP_TENANT_CONCURRENCY = 4;
 
 async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Promise<DocScope[]> {
@@ -210,7 +203,7 @@ async function listStaleDocsForTenant(tenantId: string, olderThanMs: number): Pr
 
 /**
  * Documents with an uncompacted log that no session stamped for longer than the cleanup grace (a session stamps its
- * row every YJS_LIVE_TOUCH_MS), with no younger log row: the log a relay crash left unwritten. An idle document with
+ * row every YJS_LIVE_TOUCH_MS), with no younger log row: the log a relay crash left unwritten, or rows posted over HTTP. An idle document with
  * nothing logged is not listed, its row is at rest. Cross-tenant by design, so the sweep visits every tenant through
  * its own tenant-scoped transaction, a bounded number at a time; a contextless query on the fail-closed policy returns
  * nothing.

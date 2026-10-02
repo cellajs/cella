@@ -1,13 +1,20 @@
 /** Grace period after the last client leaves before the session row is compacted and deleted; also the retry interval when the backend cannot take the final write. */
 export const YJS_CLEANUP_DELAY_MS = 5 * 60 * 1000;
-/** How often a session stamps its row live: well inside YJS_CLEANUP_DELAY_MS, the startup sweep's cutoff, so no relay's sweep takes a live session for an orphan. */
+/** How often a session stamps its row live: well inside YJS_CLEANUP_DELAY_MS, the sweep's cutoff, so no relay's sweep takes a live session for an orphan. */
 export const YJS_LIVE_TOUCH_MS = YJS_CLEANUP_DELAY_MS / 5;
-/** Cleanup attempts before a session whose final write keeps failing is forgotten (an hour at the retry interval); its rows stay for the next session or the startup sweep. */
+/** Cleanup attempts before a session whose final write keeps failing is forgotten (an hour at the retry interval); its rows stay for the next session or the sweep. */
 export const YJS_CLEANUP_MAX_ATTEMPTS = 12;
 /** Debounces compaction (merge the log into the base state and materialize) after the last received update, up to YJS_COMPACT_MAX_WAIT_MS. */
 export const YJS_COMPACT_DEBOUNCE_MS = 3000;
 /** Longest wait for compaction after the first update since the last compaction started, however often later updates restart the debounce: bounds how far non-editing viewers fall behind, and the log, while someone types without pause. */
 export const YJS_COMPACT_MAX_WAIT_MS = 10_000;
+/**
+ * How long a relay collects its committed appends before it announces them, one notice per document in one statement.
+ * A notifying commit holds a cluster-wide lock through its WAL flush, so one per keystroke serialized every append and
+ * the relay fell behind its typists under load; at most twenty a second per relay leave the lock idle. Other relays'
+ * sockets wait this much longer for the rows.
+ */
+export const YJS_LOG_NOTICE_DELAY_MS = 50;
 /** Server-origin rows one materialize request may name: the backend refuses more with 400, which no retry overcomes. */
 export const YJS_MAX_SERVER_ROW_IDS = 10_000;
 /** Sync messages a socket may queue while its entity access is still being verified. */

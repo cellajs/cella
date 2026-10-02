@@ -598,13 +598,38 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "How the signed-in user signs in: connected OAuth providers, passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.",
+          "description": "How the signed-in user signs in: connected OAuth providers, the institutions of their organizations (connected or not), passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.",
           "properties": {
             "enabledOAuth": {
               "type": "array",
               "required": true,
               "itemType": "string",
               "enum": ["github"]
+            },
+            "institutions": {
+              "type": "array",
+              "required": true,
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "connectionId": { "type": "string", "required": true },
+                  "displayName": { "type": "string", "required": true },
+                  "federation": {
+                    "type": "object",
+                    "required": true,
+                    "properties": {
+                      "key": { "type": "string", "required": true },
+                      "label": { "type": "string", "required": true }
+                    }
+                  },
+                  "connected": {
+                    "type": "boolean",
+                    "required": true,
+                    "description": "Whether the account already holds an identity through this connection"
+                  }
+                }
+              }
             },
             "hasTotp": { "type": "boolean", "required": true },
             "sessions": {
@@ -644,7 +669,12 @@
                   "authStrategy": {
                     "type": "string",
                     "required": true,
-                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
+                  },
+                  "connectionId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
                   },
                   "ipHash": {
                     "type": ["string", "null"],
@@ -751,6 +781,7 @@
         },
         "example": {
           "enabledOAuth": ["github"],
+          "institutions": [],
           "hasTotp": false,
           "sessions": [
             {
@@ -764,6 +795,7 @@
               "deviceOs": "iOS",
               "browser": "Edge",
               "authStrategy": "passkey",
+              "connectionId": null,
               "ipHash": null,
               "ipSubnetHash": null,
               "ipCountry": null,
@@ -1093,7 +1125,12 @@
                   "authStrategy": {
                     "type": "string",
                     "required": true,
-                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic"]
+                    "enum": ["github", "google", "microsoft", "passkey", "totp", "email", "magic", "surfconext"]
+                  },
+                  "connectionId": {
+                    "type": ["string", "null"],
+                    "required": true,
+                    "format": "uuid"
                   },
                   "ipHash": {
                     "type": ["string", "null"],

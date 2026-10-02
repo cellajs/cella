@@ -122,3 +122,40 @@ export async function deleteGrant(ctx: DbContext, { grantId }: DeleteGrantOpts):
     .returning({ accountId: oidcPayloadsTable.accountId });
   return grant?.accountId ?? null;
 }
+
+interface StampGrantSignInOpts {
+  grantId: string;
+  /** How the person signed in to the session that consented, and through which SSO connection. */
+  authStrategy: string;
+  connectionId: string | null;
+}
+
+/**
+ * Records on the grant how its consenting session was signed in (D8), so the tokens issued under it carry the method
+ * and a tenant's sign-in policy reaches delegated tokens. Written next to the provider's own payload; a later consent
+ * stamps it again.
+ */
+export const stampGrantSignIn = async (ctx: DbContext, { grantId, authStrategy, connectionId }: StampGrantSignInOpts) => {
+  const stamp = { authStrategy, connectionId };
+  await ctx.var.db
+    .update(oidcPayloadsTable)
+    .set({ payload: sql`${oidcPayloadsTable.payload} || ${JSON.stringify(stamp)}::jsonb` })
+    .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId)));
+};
+
+interface FindGrantSignInOpts {
+  grantId: string;
+}
+
+/** The sign-in facts stamped on a grant; nulls for a grant consented before the stamp existed. */
+export const findGrantSignIn = async (ctx: DbContext, { grantId }: FindGrantSignInOpts) => {
+  const [row] = await ctx.var.db
+    .select({
+      authStrategy: sql<string | null>`${oidcPayloadsTable.payload} ->> 'authStrategy'`,
+      connectionId: sql<string | null>`${oidcPayloadsTable.payload} ->> 'connectionId'`,
+    })
+    .from(oidcPayloadsTable)
+    .where(and(eq(oidcPayloadsTable.type, 'Grant'), eq(oidcPayloadsTable.id, grantId)))
+    .limit(1);
+  return row ?? { authStrategy: null, connectionId: null };
+};

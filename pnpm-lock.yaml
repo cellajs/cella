@@ -349,18 +349,33 @@ importers:
       '@types/pg':
         specifier: ^8.23.1
         version: 8.23.1
+      '@types/ws':
+        specifier: ^8.18.2
+        version: 8.18.2
       artillery:
         specifier: ^2.0.34
         version: 2.0.34(patch_hash=4a3a3ec7f9f0440ca256977f0c66e784c0f7d0be498ebbd7e22bceb54d2f7c4b)(@types/node@26.6.3)(supports-color@8.1.1)
       artillery-plugin-ensure:
         specifier: ^1.27.0
         version: 1.27.0(supports-color@8.1.1)
+      lib0:
+        specifier: ^0.2.119
+        version: 0.2.119
       tsx:
         specifier: ^4.23.15
         version: 4.23.15
       typescript:
         specifier: 6.0.3
         version: 6.0.3
+      ws:
+        specifier: ^8.22.0
+        version: 8.22.0
+      y-websocket:
+        specifier: ^3.1.0
+        version: 3.1.0(yjs@13.6.33)
+      yjs:
+        specifier: ^13.6.33
+        version: 13.6.33
 
   cdc:
     dependencies:
@@ -716,6 +731,9 @@ importers:
       y-prosemirror:
         specifier: ^1.3.7
         version: 1.3.7(prosemirror-model@1.25.12)(prosemirror-state@1.4.4)(prosemirror-view@1.42.5)(y-protocols@1.0.7(yjs@13.6.33))(yjs@13.6.33)
+      y-protocols:
+        specifier: ^1.0.7
+        version: 1.0.7(yjs@13.6.33)
       y-websocket:
         specifier: ^3.1.0
         version: 3.1.0(yjs@13.6.33)

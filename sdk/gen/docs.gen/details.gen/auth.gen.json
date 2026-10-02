@@ -10,7 +10,20 @@
           "type": "object",
           "properties": {
             "restrictedMode": { "type": "boolean", "required": true },
-            "retryAfter": { "type": "number", "required": false }
+            "retryAfter": { "type": "number", "required": false },
+            "federations": {
+              "type": "array",
+              "required": true,
+              "description": "Federations with a connected institution, for the \"sign in with your institution\" entrance",
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "key": { "type": "string", "required": true },
+                  "label": { "type": "string", "required": true }
+                }
+              }
+            }
           },
           "contentType": "application/json"
         }
@@ -207,6 +220,7 @@
             "email": { "type": "string", "required": true, "format": "email" },
             "userId": { "type": "string", "required": false },
             "inactiveMembershipId": { "type": "string", "required": false },
+            "ssoConnectionId": { "type": "string", "required": false },
             "invitation": {
               "type": "object",
               "required": false,
@@ -1695,6 +1709,320 @@
   },
   {
     "operationId": "microsoftCallback",
+    "responses": [
+      { "status": 302, "description": "Redirect to frontend" },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "query": {
+        "properties": {
+          "code": { "type": "string", "required": false },
+          "state": { "type": "string", "required": true },
+          "error": { "type": "string", "required": false },
+          "error_description": { "type": "string", "required": false },
+          "error_uri": { "type": "string", "required": false }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "getSsoEntry",
+    "responses": [
+      {
+        "status": 200,
+        "description": "SSO entry",
+        "name": "SsoEntry",
+        "ref": "#/components/schemas/SsoEntry",
+        "contentType": "application/json",
+        "schema": {
+          "type": "object",
+          "description": "The sign-in entry of one institution at one organization: the federation it goes through, the institution, the organization, and whether it is active. Public by the connection's id, which is the link an institution shares.",
+          "properties": {
+            "id": { "type": "string", "required": true },
+            "status": {
+              "type": "string",
+              "required": true,
+              "description": "Only `active` signs in; `pending` means the institution has not activated the app yet",
+              "enum": ["pending", "active", "disabled"]
+            },
+            "federation": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "key": { "type": "string", "required": true },
+                "label": { "type": "string", "required": true }
+              }
+            },
+            "institution": {
+              "type": "object",
+              "required": true,
+              "properties": {
+                "displayName": { "type": "string", "required": true },
+                "logoUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                }
+              }
+            },
+            "organization": {
+              "type": ["object", "null"],
+              "required": true,
+              "properties": {
+                "id": { "type": "string", "required": true },
+                "name": { "type": "string", "required": true },
+                "slug": { "type": "string", "required": true },
+                "thumbnailUrl": {
+                  "type": ["string", "null"],
+                  "required": true
+                }
+              }
+            }
+          },
+          "ref": "#/components/schemas/SsoEntry",
+          "contentType": "application/json"
+        },
+        "example": {
+          "id": "a21c1e15-fff0-4c1c-8eda-a33ceec95d7a",
+          "status": "active",
+          "federation": { "key": "surfconext", "label": "SURFconext" },
+          "institution": { "displayName": "Utrecht University", "logoUrl": null },
+          "organization": {
+            "id": "2bfc5bce-ced7-4d32-8cd1-d7e121a2a0af",
+            "name": "Wuckert - Emmerich",
+            "slug": "wuckert---emmerich",
+            "thumbnailUrl": null
+          }
+        }
+      },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "connectionId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "startSso",
+    "responses": [
+      { "status": 302, "description": "Redirect to the federation" },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "connectionId": { "type": "string", "required": true, "maxLength": 50 }
+        }
+      },
+      "query": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "required": false,
+            "enum": ["auth", "connect", "invite", "verify"]
+          },
+          "redirectAfter": { "type": "string", "required": false }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "startSsoFederation",
+    "responses": [
+      { "status": 302, "description": "Redirect to the federation" },
+      {
+        "status": 400,
+        "description": "Bad request: problem processing request.",
+        "name": "BadRequestError",
+        "ref": "#/components/responses/BadRequestError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 401,
+        "description": "Unauthorized: authentication required.",
+        "name": "UnauthorizedError",
+        "ref": "#/components/responses/UnauthorizedError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 403,
+        "description": "Forbidden: insufficient permissions.",
+        "name": "ForbiddenError",
+        "ref": "#/components/responses/ForbiddenError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 404,
+        "description": "Not found: resource does not exist.",
+        "name": "NotFoundError",
+        "ref": "#/components/responses/NotFoundError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 409,
+        "description": "Conflict: resource state conflict.",
+        "name": "ConflictError",
+        "ref": "#/components/responses/ConflictError",
+        "contentType": "application/json"
+      },
+      {
+        "status": 429,
+        "description": "Rate limit: too many requests.",
+        "name": "TooManyRequestsError",
+        "ref": "#/components/responses/TooManyRequestsError",
+        "contentType": "application/json"
+      }
+    ],
+    "request": {
+      "path": {
+        "properties": {
+          "federation": {
+            "type": "string",
+            "required": true,
+            "minLength": 1,
+            "maxLength": 64
+          }
+        }
+      },
+      "query": {
+        "properties": {
+          "type": {
+            "type": "string",
+            "required": false,
+            "enum": ["auth", "connect", "invite", "verify"]
+          },
+          "redirectAfter": { "type": "string", "required": false }
+        }
+      }
+    }
+  },
+  {
+    "operationId": "ssoCallback",
     "responses": [
       { "status": 302, "description": "Redirect to frontend" },
       {

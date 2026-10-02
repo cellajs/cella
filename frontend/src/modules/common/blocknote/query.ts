@@ -1,5 +1,6 @@
 import { queryOptions } from '@tanstack/react-query';
-import { getYjsToken } from 'sdk';
+import { fromBase64UrlEncoded, toBase64UrlEncoded } from 'lib0/buffer';
+import { getYjsToken, pullYjsDocument, pushYjsUpdate } from 'sdk';
 import type { ProductEntityType } from 'shared';
 import { ApiError } from '~/lib/api';
 
@@ -36,3 +37,19 @@ export const yjsTokenQueryOptions = (params: { entityType: ProductEntityType; en
     // A bearer token, never persisted; no global error toast, since collaborative mode stays disabled on failure.
     meta: { persist: false, suppressGlobalErrorToast: true },
   });
+
+/** One collaborative document on the HTTP routes: its entity and the scope they check it in. */
+type YjsDocParams = { entityType: ProductEntityType; entityId: string; tenantId: string; organizationId: string };
+
+/** What the server holds of a document that `stateVector` lacks, with the document's generation and the server's state vector. */
+export const pullYjsDiff = async ({ entityType, entityId, tenantId, organizationId }: YjsDocParams, stateVector: Uint8Array) => {
+  const body = { entityType, entityId, stateVector: toBase64UrlEncoded(stateVector) };
+  const answer = await pullYjsDocument({ path: { tenantId, organizationId }, body });
+  return { generation: answer.generation, update: fromBase64UrlEncoded(answer.update), stateVector: fromBase64UrlEncoded(answer.stateVector) };
+};
+
+/** Appends one update of at most 512 KB, made in `generation`; resolves once the server holds it. */
+export const pushYjsDiff = async ({ entityType, entityId, tenantId, organizationId }: YjsDocParams, generation: string, update: Uint8Array) => {
+  const body = { entityType, entityId, generation, update: toBase64UrlEncoded(update) };
+  await pushYjsUpdate({ path: { tenantId, organizationId }, body });
+};

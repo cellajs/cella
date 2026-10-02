@@ -21,9 +21,9 @@ import type {
   CreateAttachmentsData,
   CreateAttachmentsErrors,
   CreateAttachmentsResponses,
-  CreateDomainData,
-  CreateDomainErrors,
-  CreateDomainResponses,
+  CreateConnectionData,
+  CreateConnectionErrors,
+  CreateConnectionResponses,
   CreateOrganizationsData,
   CreateOrganizationsErrors,
   CreateOrganizationsResponses,
@@ -45,9 +45,9 @@ import type {
   DeleteAttachmentsData,
   DeleteAttachmentsErrors,
   DeleteAttachmentsResponses,
-  DeleteDomainData,
-  DeleteDomainErrors,
-  DeleteDomainResponses,
+  DeleteConnectionData,
+  DeleteConnectionErrors,
+  DeleteConnectionResponses,
   DeleteMeData,
   DeleteMeErrors,
   DeleteMembershipsData,
@@ -102,12 +102,9 @@ import type {
   GetConnectedAppsData,
   GetConnectedAppsErrors,
   GetConnectedAppsResponses,
-  GetDomainData,
-  GetDomainErrors,
-  GetDomainResponses,
-  GetDomainsData,
-  GetDomainsErrors,
-  GetDomainsResponses,
+  GetConnectionsData,
+  GetConnectionsErrors,
+  GetConnectionsResponses,
   GetMcpProtectedResourceMetadataData,
   GetMcpProtectedResourceMetadataErrors,
   GetMcpProtectedResourceMetadataResponses,
@@ -159,6 +156,9 @@ import type {
   GetServiceAccountsData,
   GetServiceAccountsErrors,
   GetServiceAccountsResponses,
+  GetSsoEntryData,
+  GetSsoEntryErrors,
+  GetSsoEntryResponses,
   GetStepUpData,
   GetStepUpErrors,
   GetStepUpPasskeyChallengeData,
@@ -218,6 +218,12 @@ import type {
   PostAppCatchupData,
   PostAppCatchupErrors,
   PostAppCatchupResponses,
+  PullYjsDocumentData,
+  PullYjsDocumentErrors,
+  PullYjsDocumentResponses,
+  PushYjsUpdateData,
+  PushYjsUpdateErrors,
+  PushYjsUpdateResponses,
   ResendInvitationWithTokenData,
   ResendInvitationWithTokenErrors,
   ResendInvitationWithTokenResponses,
@@ -254,12 +260,18 @@ import type {
   SignOutData,
   SignOutErrors,
   SignOutResponses,
+  SsoCallbackData,
+  SsoCallbackErrors,
   StartImpersonationData,
   StartImpersonationErrors,
   StartImpersonationResponses,
   StartOAuthConnectData,
   StartOAuthConnectErrors,
   StartOAuthConnectResponses,
+  StartSsoData,
+  StartSsoErrors,
+  StartSsoFederationData,
+  StartSsoFederationErrors,
   StepUpData,
   StepUpErrors,
   StepUpResponses,
@@ -277,6 +289,9 @@ import type {
   UpdateAttachmentData,
   UpdateAttachmentErrors,
   UpdateAttachmentResponses,
+  UpdateConnectionData,
+  UpdateConnectionErrors,
+  UpdateConnectionResponses,
   UpdateMeData,
   UpdateMeErrors,
   UpdateMembershipData,
@@ -298,9 +313,6 @@ import type {
   UpdateUserData,
   UpdateUserErrors,
   UpdateUserResponses,
-  VerifyDomainData,
-  VerifyDomainErrors,
-  VerifyDomainResponses,
 } from './types.gen';
 import {
   zAcceptInvitationTokenResponse,
@@ -315,9 +327,9 @@ import {
   zCreateAttachmentsBody,
   zCreateAttachmentsPath,
   zCreateAttachmentsResponse,
-  zCreateDomainBody,
-  zCreateDomainPath,
-  zCreateDomainResponse,
+  zCreateConnectionBody,
+  zCreateConnectionPath,
+  zCreateConnectionResponse,
   zCreateOrganizationsBody,
   zCreateOrganizationsPath,
   zCreateOrganizationsResponse,
@@ -334,8 +346,8 @@ import {
   zDeleteAttachmentsBody,
   zDeleteAttachmentsPath,
   zDeleteAttachmentsResponse,
-  zDeleteDomainPath,
-  zDeleteDomainResponse,
+  zDeleteConnectionPath,
+  zDeleteConnectionResponse,
   zDeleteMembershipsBody,
   zDeleteMembershipsPath,
   zDeleteMembershipsQuery,
@@ -369,10 +381,8 @@ import {
   zGetAttachmentsResponse,
   zGetAuthHealthResponse,
   zGetConnectedAppsResponse,
-  zGetDomainPath,
-  zGetDomainResponse,
-  zGetDomainsPath,
-  zGetDomainsResponse,
+  zGetConnectionsPath,
+  zGetConnectionsResponse,
   zGetMcpProtectedResourceMetadataPath,
   zGetMcpProtectedResourceMetadataResponse,
   zGetMembersPath,
@@ -404,6 +414,8 @@ import {
   zGetServiceAccountsPath,
   zGetServiceAccountsQuery,
   zGetServiceAccountsResponse,
+  zGetSsoEntryPath,
+  zGetSsoEntryResponse,
   zGetStepUpPasskeyChallengeResponse,
   zGetStepUpResponse,
   zGetTenantsQuery,
@@ -443,6 +455,12 @@ import {
   zMicrosoftQuery,
   zPostAppCatchupBody,
   zPostAppCatchupResponse,
+  zPullYjsDocumentBody,
+  zPullYjsDocumentPath,
+  zPullYjsDocumentResponse,
+  zPushYjsUpdateBody,
+  zPushYjsUpdatePath,
+  zPushYjsUpdateResponse,
   zResendInvitationWithTokenBody,
   zResendInvitationWithTokenResponse,
   zResendPendingInvitationPath,
@@ -467,9 +485,14 @@ import {
   zSignInWithTotpBody,
   zSignInWithTotpResponse,
   zSignOutResponse,
+  zSsoCallbackQuery,
   zStartImpersonationBody,
   zStartImpersonationResponse,
   zStartOAuthConnectResponse,
+  zStartSsoFederationPath,
+  zStartSsoFederationQuery,
+  zStartSsoPath,
+  zStartSsoQuery,
   zStepUpBody,
   zStepUpResponse,
   zStopImpersonationResponse,
@@ -482,6 +505,9 @@ import {
   zUpdateAttachmentPath,
   zUpdateAttachmentQuery,
   zUpdateAttachmentResponse,
+  zUpdateConnectionBody,
+  zUpdateConnectionPath,
+  zUpdateConnectionResponse,
   zUpdateMeBody,
   zUpdateMembershipBody,
   zUpdateMembershipPath,
@@ -501,8 +527,6 @@ import {
   zUpdateUserBody,
   zUpdateUserPath,
   zUpdateUserResponse,
-  zVerifyDomainPath,
-  zVerifyDomainResponse,
 } from './zod.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<
@@ -1408,6 +1432,127 @@ export const microsoftCallback = <ThrowOnError extends boolean = true>(
   });
 
 /**
+ * Get an SSO entry
+ *
+ * What the entry page of an institution's sign-in shows: the organization, the institution and whether sign-in is active. Public by the connection id, the link an institution shares with its members.
+ *
+ * **GET /auth/sso/connections/{connectionId}** ·· [getSsoEntry](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/sso/connections/{connectionId}) ·· [getSsoEntry](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/sso/connections/{connectionId}) ·· _auth_cella_
+ *
+ * @param {getSsoEntryData} options
+ * @param {string} options.path.connectionid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getSsoEntry = <ThrowOnError extends boolean = true>(
+  options: Options<GetSsoEntryData, ThrowOnError>,
+): RequestResult<GetSsoEntryResponses, GetSsoEntryErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetSsoEntryResponses, GetSsoEntryErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetSsoEntryPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetSsoEntryResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/sso/connections/{connectionId}',
+    ...options,
+  });
+
+/**
+ * Sign in through an institution
+ *
+ * Sends the browser to the connection's federation, pinned to the institution's identity providers, so its own picker is skipped. `type=connect` links the institution account to the signed-in user instead; other types are refused.
+ *
+ * **GET /auth/sso/connections/{connectionId}/start** ·· [startSso](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/sso/connections/{connectionId}/start) ·· [startSso](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/sso/connections/{connectionId}/start) ·· _auth_cella_
+ *
+ * @param {startSsoData} options
+ * @param {string} options.path.connectionid - `string`
+ * @param {enum=} options.query.type - `enum` (optional)
+ * @param {string=} options.query.redirectafter - `string` (optional)
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ */
+export const startSso = <ThrowOnError extends boolean = true>(
+  options: Options<StartSsoData, ThrowOnError>,
+): RequestResult<unknown, StartSsoErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<unknown, StartSsoErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zStartSsoPath,
+          query: zStartSsoQuery.optional(),
+        })
+        .parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/sso/connections/{connectionId}/start',
+    ...options,
+  });
+
+/**
+ * Sign in through a federation
+ *
+ * Sends the browser to the federation without naming an institution: the federation's own picker lists the connected ones, and the callback finds the connection by the institution the sign-in asserts.
+ *
+ * **GET /auth/sso/federations/{federation}/start** ·· [startSsoFederation](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/sso/federations/{federation}/start) ·· [startSsoFederation](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/sso/federations/{federation}/start) ·· _auth_cella_
+ *
+ * @param {startSsoFederationData} options
+ * @param {string} options.path.federation - `string`
+ * @param {enum=} options.query.type - `enum` (optional)
+ * @param {string=} options.query.redirectafter - `string` (optional)
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ */
+export const startSsoFederation = <ThrowOnError extends boolean = true>(
+  options: Options<StartSsoFederationData, ThrowOnError>,
+): RequestResult<unknown, StartSsoFederationErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<unknown, StartSsoFederationErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zStartSsoFederationPath,
+          query: zStartSsoFederationQuery.optional(),
+        })
+        .parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/sso/federations/{federation}/start',
+    ...options,
+  });
+
+/**
+ * Callback for SSO
+ *
+ * The redirect URI registered at every federation. Verifies the tokens, asserts the institution against the connection, signs the user in (creating the account and its membership on a first sign-in) or links the identity, and redirects to the frontend.
+ *
+ * **GET /auth/sso/callback** ·· [ssoCallback](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/GET/auth/sso/callback) ·· [ssoCallback](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/auth/sso/callback) ·· _auth_cella_
+ *
+ * @param {ssoCallbackData} options
+ * @param {string=} options.query.code - `string` (optional)
+ * @param {string} options.query.state - `string`
+ * @param {string=} options.query.error - `string` (optional)
+ * @param {string=} options.query.error_description - `string` (optional)
+ * @param {string=} options.query.error_uri - `string` (optional)
+ * @returns Possible status codes: 302, 400, 401, 403, 404, 409, 429
+ */
+export const ssoCallback = <ThrowOnError extends boolean = true>(
+  options: Options<SsoCallbackData, ThrowOnError>,
+): RequestResult<unknown, SsoCallbackErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<unknown, SsoCallbackErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: zSsoCallbackQuery,
+        })
+        .parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/sso/callback',
+    ...options,
+  });
+
+/**
  * Get step-up state
  *
  * Whether this session stands stepped up for account-security actions, and what the user can offer to step up: a passkey or TOTP they hold, else an emailed confirmation link or a new sign-in.
@@ -1556,194 +1701,6 @@ export const sendStepUpLink = <ThrowOnError extends boolean = true>(
       'Content-Type': 'application/json',
       ...options?.headers,
     },
-  });
-
-/**
- * List domains for a tenant
- *
- * Returns all domains belonging to a tenant, including verification tokens. System admin access required.
- *
- * **GET /tenants/{tenantId}/domains** ·· [getDomains](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants/{tenantId}/domains) ·· [getDomains](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/tenants/{tenantId}/domains) ·· _tenants_cella_
- *
- * @param {getDomainsData} options
- * @param {string} options.path.tenantid - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getDomains = <ThrowOnError extends boolean = true>(
-  options: Options<GetDomainsData, ThrowOnError>,
-): RequestResult<GetDomainsResponses, GetDomainsErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetDomainsResponses, GetDomainsErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: zGetDomainsPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetDomainsResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v3',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/{tenantId}/domains',
-    ...options,
-  });
-
-/**
- * Add a domain to a tenant
- *
- * Adds a new domain to a tenant. The domain starts unverified. System admin access required.
- *
- * **POST /tenants/{tenantId}/domains** ·· [createDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/{tenantId}/domains) ·· [createDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/{tenantId}/domains) ·· _tenants_cella_
- *
- * @param {createDomainData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string=} options.body.domain - `string` (optional)
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const createDomain = <ThrowOnError extends boolean = true>(
-  options: Options<CreateDomainData, ThrowOnError>,
-): RequestResult<CreateDomainResponses, CreateDomainErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<CreateDomainResponses, CreateDomainErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: zCreateDomainBody,
-          path: zCreateDomainPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zCreateDomainResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v3',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/{tenantId}/domains',
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      ...options.headers,
-    },
-  });
-
-/**
- * Remove a domain
- *
- * Removes a domain from a tenant. System admin access required.
- *
- * **DELETE /tenants/{tenantId}/domains/{id}** ·· [deleteDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/DELETE/tenants/{tenantId}/domains/{id}) ·· [deleteDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
- *
- * @param {deleteDomainData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const deleteDomain = <ThrowOnError extends boolean = true>(
-  options: Options<DeleteDomainData, ThrowOnError>,
-): RequestResult<DeleteDomainResponses, DeleteDomainErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).delete<DeleteDomainResponses, DeleteDomainErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: zDeleteDomainPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zDeleteDomainResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v3',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/{tenantId}/domains/{id}',
-    ...options,
-  });
-
-/**
- * Get domain with verification token
- *
- * Returns a single domain including its verification token for DNS TXT setup. System admin access required.
- *
- * **GET /tenants/{tenantId}/domains/{id}** ·· [getDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/GET/tenants/{tenantId}/domains/{id}) ·· [getDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/tenants/{tenantId}/domains/{id}) ·· _tenants_cella_
- *
- * @param {getDomainData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const getDomain = <ThrowOnError extends boolean = true>(
-  options: Options<GetDomainData, ThrowOnError>,
-): RequestResult<GetDomainResponses, GetDomainErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).get<GetDomainResponses, GetDomainErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: zGetDomainPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zGetDomainResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v3',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/{tenantId}/domains/{id}',
-    ...options,
-  });
-
-/**
- * Verify domain ownership via DNS
- *
- * Looks up DNS TXT records for the domain to verify ownership. Checks for a _cella-development-verification.<domain> TXT record matching the verification token.
- *
- * **POST /tenants/{tenantId}/domains/{id}/verify** ·· [verifyDomain](https://www.cellajs.com/docs/operations?operationTag=tenants#tag/tenants/POST/tenants/{tenantId}/domains/{id}/verify) ·· [verifyDomain](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/{tenantId}/domains/{id}/verify) ·· _tenants_cella_
- *
- * @param {verifyDomainData} options
- * @param {string} options.path.tenantid - `string`
- * @param {string} options.path.id - `string`
- * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
- */
-export const verifyDomain = <ThrowOnError extends boolean = true>(
-  options: Options<VerifyDomainData, ThrowOnError>,
-): RequestResult<VerifyDomainResponses, VerifyDomainErrors, ThrowOnError, 'data'> =>
-  (options.client ?? client).post<VerifyDomainResponses, VerifyDomainErrors, ThrowOnError, 'data'>({
-    requestValidator: async (data) =>
-      await z
-        .object({
-          body: z.never().optional(),
-          path: zVerifyDomainPath,
-          query: z.never().optional(),
-        })
-        .parseAsync(data),
-    responseValidator: async (data) => await zVerifyDomainResponse.parseAsync(data),
-    responseStyle: 'data',
-    security: [
-      {
-        in: 'cookie',
-        name: 'cella-development-session-v3',
-        type: 'apiKey',
-      },
-    ],
-    url: '/tenants/{tenantId}/domains/{id}/verify',
-    ...options,
   });
 
 /**
@@ -3085,6 +3042,173 @@ export const updateTenant = <ThrowOnError extends boolean = true>(
       },
     ],
     url: '/tenants/{tenantId}',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Get connections
+ *
+ * The tenant's connections: the institutions whose members sign in to its organization through an SSO federation. System admin access required.
+ *
+ * **GET /tenants/{tenantId}/connections** ·· [getConnections](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/GET/tenants/{tenantId}/connections) ·· [getConnections](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/GET/tenants/{tenantId}/connections) ·· _connections_cella_
+ *
+ * @param {getConnectionsData} options
+ * @param {string} options.path.tenantid - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const getConnections = <ThrowOnError extends boolean = true>(
+  options: Options<GetConnectionsData, ThrowOnError>,
+): RequestResult<GetConnectionsResponses, GetConnectionsErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).get<GetConnectionsResponses, GetConnectionsErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zGetConnectionsPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zGetConnectionsResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/connections',
+    ...options,
+  });
+
+/**
+ * Create connection
+ *
+ * Connects an institution to the tenant: the federation it signs in through, its domains and its IdP entity ids. Starts `pending` until the institution activated the service at the federation; one SSO connection per tenant, and a domain belongs to one connection.
+ *
+ * **POST /tenants/{tenantId}/connections** ·· [createConnection](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/POST/tenants/{tenantId}/connections) ·· [createConnection](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/tenants/{tenantId}/connections) ·· _connections_cella_
+ *
+ * @param {createConnectionData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {enum=} options.body.issuer - `enum` (optional)
+ * @param {string=} options.body.displayName - `string` (optional)
+ * @param {any[]=} options.body.claimValues - `any[]` (optional)
+ * @param {any[]=} options.body.idpEntityIds - `any[]` (optional)
+ * @param {enum=} options.body.status - `enum` (optional)
+ * @param {boolean=} options.body.jitProvisioning - `boolean` (optional)
+ * @param {string=} options.body.logoUrl - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const createConnection = <ThrowOnError extends boolean = true>(
+  options: Options<CreateConnectionData, ThrowOnError>,
+): RequestResult<CreateConnectionResponses, CreateConnectionErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<CreateConnectionResponses, CreateConnectionErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zCreateConnectionBody,
+          path: zCreateConnectionPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zCreateConnectionResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/connections',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Delete connection
+ *
+ * Removes a connection. Identities and sessions that came through it keep their rows; members stay members.
+ *
+ * **DELETE /tenants/{tenantId}/connections/{id}** ·· [deleteConnection](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/DELETE/tenants/{tenantId}/connections/{id}) ·· [deleteConnection](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/DELETE/tenants/{tenantId}/connections/{id}) ·· _connections_cella_
+ *
+ * @param {deleteConnectionData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.id - `string`
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const deleteConnection = <ThrowOnError extends boolean = true>(
+  options: Options<DeleteConnectionData, ThrowOnError>,
+): RequestResult<DeleteConnectionResponses, DeleteConnectionErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).delete<DeleteConnectionResponses, DeleteConnectionErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: zDeleteConnectionPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zDeleteConnectionResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/connections/{id}',
+    ...options,
+  });
+
+/**
+ * Update connection
+ *
+ * Changes the name, domains, IdP entity ids, status or provisioning of a connection; the federation stays what it was.
+ *
+ * **PUT /tenants/{tenantId}/connections/{id}** ·· [updateConnection](https://www.cellajs.com/docs/operations?operationTag=connections#tag/connections/PUT/tenants/{tenantId}/connections/{id}) ·· [updateConnection](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/PUT/tenants/{tenantId}/connections/{id}) ·· _connections_cella_
+ *
+ * @param {updateConnectionData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.id - `string`
+ * @param {string=} options.body.displayName - `string` (optional)
+ * @param {any[]=} options.body.claimValues - `any[]` (optional)
+ * @param {any[]=} options.body.idpEntityIds - `any[]` (optional)
+ * @param {enum=} options.body.status - `enum` (optional)
+ * @param {boolean=} options.body.jitProvisioning - `boolean` (optional)
+ * @param {string=} options.body.logoUrl - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const updateConnection = <ThrowOnError extends boolean = true>(
+  options: Options<UpdateConnectionData, ThrowOnError>,
+): RequestResult<UpdateConnectionResponses, UpdateConnectionErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).put<UpdateConnectionResponses, UpdateConnectionErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zUpdateConnectionBody,
+          path: zUpdateConnectionPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zUpdateConnectionResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/tenants/{tenantId}/connections/{id}',
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -4462,4 +4586,93 @@ export const getYjsToken = <ThrowOnError extends boolean = true>(
     ],
     url: '/{tenantId}/{organizationId}/yjs/token',
     ...options,
+  });
+
+/**
+ * Pull Yjs document
+ *
+ * Returns what the caller's copy of one product entity's collaborative document lacks, for a client that cannot reach the Yjs relay: the document's generation, an update holding what the caller's state vector lacks, and the server's state vector. A document never opened is seeded from the stored description first, as the relay seeds it. The caller must be allowed to update the entity, as for a Yjs token. A POST, since a state vector can outgrow a URL. Costs no API points.
+ *
+ * **POST /{tenantId}/{organizationId}/yjs/pull** ·· [pullYjsDocument](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/POST/{tenantId}/{organizationId}/yjs/pull) ·· [pullYjsDocument](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/yjs/pull) ·· _yjs_cella_
+ *
+ * @param {pullYjsDocumentData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {enum=} options.body.entityType - `enum` (optional)
+ * @param {string=} options.body.entityId - `string` (optional)
+ * @param {string=} options.body.stateVector - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const pullYjsDocument = <ThrowOnError extends boolean = true>(
+  options: Options<PullYjsDocumentData, ThrowOnError>,
+): RequestResult<PullYjsDocumentResponses, PullYjsDocumentErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<PullYjsDocumentResponses, PullYjsDocumentErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zPullYjsDocumentBody,
+          path: zPullYjsDocumentPath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zPullYjsDocumentResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/yjs/pull',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+  });
+
+/**
+ * Push Yjs update
+ *
+ * Appends one Yjs update to a product entity's collaborative document, for a client that cannot reach the Yjs relay. The answer follows the commit, so a 200 means the server holds the update; the relay passes it to live sessions and folds it into the document. An update made in another generation than the document's answers 409 `sync_document_replaced` with the current one in `meta.generation`, and with null when the document has no row: pull, which seeds it, then post again. At most 512 KB of update per request, base64url-encoded. The caller must be allowed to update the entity, as for a Yjs token. Costs no API points.
+ *
+ * **POST /{tenantId}/{organizationId}/yjs/push** ·· [pushYjsUpdate](https://www.cellajs.com/docs/operations?operationTag=yjs#tag/yjs/POST/{tenantId}/{organizationId}/yjs/push) ·· [pushYjsUpdate](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/{tenantId}/{organizationId}/yjs/push) ·· _yjs_cella_
+ *
+ * @param {pushYjsUpdateData} options
+ * @param {string} options.path.tenantid - `string`
+ * @param {string} options.path.organizationid - `string`
+ * @param {enum=} options.body.entityType - `enum` (optional)
+ * @param {string=} options.body.entityId - `string` (optional)
+ * @param {string=} options.body.generation - `string` (optional)
+ * @param {string=} options.body.update - `string` (optional)
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const pushYjsUpdate = <ThrowOnError extends boolean = true>(
+  options: Options<PushYjsUpdateData, ThrowOnError>,
+): RequestResult<PushYjsUpdateResponses, PushYjsUpdateErrors, ThrowOnError, 'data'> =>
+  (options.client ?? client).post<PushYjsUpdateResponses, PushYjsUpdateErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: zPushYjsUpdateBody,
+          path: zPushYjsUpdatePath,
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zPushYjsUpdateResponse.parseAsync(data),
+    responseStyle: 'data',
+    security: [
+      {
+        in: 'cookie',
+        name: 'cella-development-session-v3',
+        type: 'apiKey',
+      },
+    ],
+    url: '/{tenantId}/{organizationId}/yjs/push',
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
   });

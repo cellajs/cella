@@ -29,6 +29,35 @@ Start these first (bench checks they are reachable and exits with guidance if no
 
 `--all` waits 15 seconds between scenarios so a saturating one does not slow the next. A single-scenario run stays verbose with a live comparison table. The Vitest smoke test `bench/src/tests/all-scenarios.test.ts` runs `--all --short` to catch broken scenarios and skips itself when the stack is down.
 
+## Collaborative typing
+
+`yjs-typing` measures the Yjs relay under people typing together. Artillery cannot speak the Yjs protocol, so its one VU runs `src/yjs-typing.ts`, which drives real y-websocket clients against the relay port. Each document is a bench attachment with a few typing clients and one idle viewer, and some users watch the SSE stream as non-editing viewers. Documents start spread over ten seconds, and every client is a user of its own.
+
+```sh
+pnpm bench yjs-typing                                  # through the CLI, with the CDC poller
+pnpm -C bench yjs-typing --out report.json             # on its own, with a JSON report
+YJS_DOCS=40 YJS_DURATION_S=60 pnpm bench yjs-typing    # another shape
+```
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `YJS_DOCS` | 20 | Documents edited at once |
+| `YJS_TYPERS` | 3 | Typing clients per document |
+| `YJS_DURATION_S` | 120 | Typing time |
+| `YJS_KEYSTROKE_MS` | `200-300` | Spacing of one client's keystrokes |
+| `YJS_SSE_VIEWERS` | one per document | Users on the SSE stream |
+| `YJS_STAGGER_S` | 10 | Seconds over which documents start typing; 0 starts them together |
+| `YJS_DOC_OFFSET` | 0 | First bench attachment: a second run on one database takes fresh documents |
+| `YJS_PORT` | `devPorts.yjs` | The relay's port |
+
+The report covers:
+
+- **Latency.** From a keystroke to the document's viewer receiving it, and to the relay's `Saved` answer.
+- **The log channel.** `pg_notify` per second on `yjs_log`, and how long a probe notification on it takes to arrive.
+- **Materializations.** Writes of each document to its entity row per minute, the longest gap between them while typing, and the CDC activities and SSE notifications they cause.
+- **The stack.** CPU, memory and database connections of the relay, API and CDC worker (found by port), the Postgres container's CPU, and the database's sessions, wait events, commits and WAL.
+- **After typing.** How long until every edit is saved, the same on every client, and written to the entity row.
+
 ## Interpreting results
 
 Bench measures the live dev stack. Before calling a result a regression:

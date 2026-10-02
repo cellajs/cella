@@ -1,17 +1,24 @@
 import { getTableColumns, sql } from 'drizzle-orm';
 import { type AnyPgColumn, index, integer, snakeCase, timestamp, uuid, varchar } from 'drizzle-orm/pg-core';
+import { appConfig, type FederationKey } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import type { ActorId, UserId } from '#/db/utils/ids';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
 import { actorsTable } from '#/modules/actors/actors-db';
+import { connectionsTable } from '#/modules/connections/connections-db';
 import { usersTable } from '#/modules/user/user-db';
 
 export const sessionTypeEnum = ['regular', 'impersonation', 'mfa'] as const;
 export type SessionTypes = (typeof sessionTypeEnum)[number];
 
-export const authStrategiesEnum = ['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'] as const;
-export type AuthStrategy = (typeof authStrategiesEnum)[number];
+const baseAuthStrategies = ['github', 'google', 'microsoft', 'passkey', 'totp', 'email', 'magic'] as const;
+/** A sign-in method as a session records it: a built-in one, or a federation key from `appConfig.federations`. */
+export type AuthStrategy = (typeof baseAuthStrategies)[number] | FederationKey;
+export const authStrategiesEnum = [...baseAuthStrategies, ...(Object.keys(appConfig.federations) as FederationKey[])] as [
+  AuthStrategy,
+  ...AuthStrategy[],
+];
 
 /**
  * Why a session was revoked before its expiry. The owner's acts: `sign_out` from the session itself, `other_session`
@@ -25,7 +32,10 @@ export type SessionRevocationReason = (typeof sessionRevocationReasons)[number];
 /** Why sessions end: a revocation, or `user_deleted`, whose delete takes the session rows along. */
 export type SessionEndReason = SessionRevocationReason | 'user_deleted';
 
-/** How a session last proved its user's presence again: a second factor, or an emailed link for a user without one. */
+/**
+ * How a session last proved its user's presence again: a second factor (a step-up, or the MFA completion that minted the
+ * session), or an emailed link for a user without one.
+ */
 export const stepUpProofs = ['passkey', 'totp', 'email'] as const;
 export type StepUpProof = (typeof stepUpProofs)[number];
 
@@ -50,7 +60,10 @@ export const sessionsTable = snakeCase.table(
       .default('desktop'),
     deviceOs: varchar({ length: maxLength.field }),
     browser: varchar({ length: maxLength.field }),
+    /** The method that started the sign-in. A second factor never replaces it: an MFA completion stamps `steppedUpVia`. */
     authStrategy: varchar({ enum: authStrategiesEnum }).notNull(),
+    /** The connection (an institution's trust) an SSO sign-in came through; null for every other method. */
+    connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
     ipHash: varchar({ length: 64 }),
     ipSubnetHash: varchar({ length: 64 }),
     ipCountry: varchar({ length: 2 }),
@@ -85,9 +98,9 @@ const { secret: _secret, ...safeColumns } = getTableColumns(sessionsTable);
 /** Every column but the secret: what any response may carry. */
 export const sessionSafeColumns = safeColumns;
 
-const { id, userId, type, authStrategy, createdAt, expiresAt, impersonatorSessionId } = safeColumns;
+const { id, userId, type, authStrategy, connectionId, createdAt, expiresAt, impersonatorSessionId } = safeColumns;
 /** The columns of {@link SessionFacts}. */
-export const sessionFactColumns = { id, userId, type, authStrategy, createdAt, expiresAt, impersonatorSessionId };
+export const sessionFactColumns = { id, userId, type, authStrategy, connectionId, createdAt, expiresAt, impersonatorSessionId };
 
 /** Raw session model including sensitive secret field - use only when secret access is required. */
 export type UnsafeSessionModel = typeof sessionsTable.$inferSelect;

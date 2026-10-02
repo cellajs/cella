@@ -73,8 +73,12 @@ const packageOf = (id: string) => {
 const ON_DEMAND_APP =
   /[\\/]src[\\/]modules[\\/](common[\\/](blocknote|uploader)[\\/]|common[\\/]gleap-support|common[\\/]form-fields[\\/]blocknote|attachment[\\/](render[\\/]|offline[\\/]upload-service))/;
 
-/** The Yjs field registry is a plain map of field names that boot-time cache code reads. */
-const YJS_REGISTRY = /[\\/]blocknote[\\/]yjs-editor/;
+/**
+ * Plain modules under blocknote/ that boot-time code reads: the Yjs field registry (the cache), the document store, its
+ * tab channel and storage warning (teardown, eviction, the sign-out list), and the parked-edits check the app layout
+ * mounts. Each loads Yjs or BlockNote only on demand, so the boot path stays free of the editor chunk.
+ */
+const YJS_REGISTRY = /[\\/]blocknote[\\/](yjs-editor|yjs-store|yjs-tab-channel|storage-warning|parked-notices-on-boot)\./;
 
 const frontendUrl = new URL(appConfig.frontendUrl);
 
@@ -420,11 +424,15 @@ const viteConfig = {
     // The bundle re-evaluates shared/src/config-builder/app-config.ts in the
     // browser, so mode selection and the URL overrides it reads must survive
     // into this replacement object; NODE_ENV alone silently rebakes production.
-    'process.env': Object.fromEntries(
-      (['NODE_ENV', 'APP_MODE', 'FRONTEND_URL', 'BACKEND_URL', 'BACKEND_AUTH_URL', 'YJS_URL', 'MCP_URL'] as const)
-        .filter((key) => process.env[key] !== undefined)
-        .map((key) => [key, process.env[key]]),
-    ),
+    // The dev port offset is passed as resolved here: the browser cannot derive it from the checkout.
+    'process.env': {
+      ...Object.fromEntries(
+        (['NODE_ENV', 'APP_MODE', 'FRONTEND_URL', 'BACKEND_URL', 'BACKEND_AUTH_URL', 'YJS_URL', 'MCP_URL'] as const)
+          .filter((key) => process.env[key] !== undefined)
+          .map((key) => [key, process.env[key]]),
+      ),
+      ...(appConfig.devPortOffset ? { DEV_PORT_OFFSET: String(appConfig.devPortOffset) } : {}),
+    },
     // Injected into lib/sw.ts for the push badge recount and API path exclusions
     __BACKEND_URL__: JSON.stringify(appConfig.backendUrl),
     // Release identifier for observability (lib/maple.ts serviceVersion)

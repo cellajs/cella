@@ -5,7 +5,29 @@ export type DeepPartial<T> = T extends object
   : T;
 
 export type ConfigMode = 'development' | 'tunnel' | 'staging' | 'production' | 'test';
-export type BaseAuthStrategies = 'passkey' | 'oauth' | 'totp' | 'magic';
+export type BaseAuthStrategies = 'passkey' | 'oauth' | 'totp' | 'magic' | 'sso';
+
+/**
+ * An identity federation institutions sign in through (the `sso` method): public metadata only. The key it sits
+ * under in `federations` is the session strategy, the identities issuer slug and the env prefix of its client
+ * secret (`SSO_<KEY>_CLIENT_ID`, `SSO_<KEY>_CLIENT_SECRET`).
+ */
+export interface FederationConfig {
+  /** Shown on sign-in buttons and in session lists. */
+  label: string;
+  /** OIDC issuer; endpoints come from its discovery document. Mode configs point a key at a test issuer. */
+  issuer: string;
+  /** SAML metadata feed listing the federation's institutions (entity ids, names, logos, domains); optional. */
+  idpMetadataUrl?: string;
+  scopes: readonly string[];
+  clientAuthMethod: 'client_secret_basic' | 'client_secret_post';
+  /** The claim that names the institution; a connection accepts a list of its values. */
+  tenantClaim: string;
+  /** Claims kept as a snapshot on the identity row; nothing in the template reads them for authorization. */
+  snapshotClaims: readonly string[];
+  /** Whether the institution operates the mailbox it asserts, so a sign-in through it proves the address. */
+  addressAuthority: boolean;
+}
 export type BaseOAuthProviders = 'github' | 'google' | 'microsoft';
 
 /** Only host and region are required; app-config derives the rest from the slug. */
@@ -206,6 +228,7 @@ export interface RequiredConfig<T extends ConfigStringArrays = ConfigStringArray
 
   enabledAuthStrategies: readonly BaseAuthStrategies[];
   enabledOAuthProviders: readonly BaseOAuthProviders[];
+  federations: Record<string, FederationConfig>;
   totp: TotpConfig;
   maxSessionsPerUser: number;
 

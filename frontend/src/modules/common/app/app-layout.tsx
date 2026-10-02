@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { DownAlert } from '~/modules/common/alerter/down-alert';
 import { AppContent } from '~/modules/common/app/app-content';
+import { ParkedNoticesOnBoot } from '~/modules/common/blocknote/parked-notices-on-boot';
 import { Dialoger } from '~/modules/common/dialoger/provider';
 import { Dropdowner } from '~/modules/common/dropdowner/provider';
 import { ErrorNotice, type ErrorNoticeError } from '~/modules/common/error-notice';
@@ -33,6 +34,7 @@ function AppLayout() {
           <AppContent />
         </SidebarWrapper>
         <TabCoordinator />
+        <ParkedNoticesOnBoot />
         <AppStream />
         <SeenTracker />
         <Suspense fallback={null}>

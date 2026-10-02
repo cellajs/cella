@@ -187,6 +187,28 @@ export const findPendingInactiveMembershipByEmail = async (ctx: DbContext, { ema
   return invitation;
 };
 
+interface FindPendingOrganizationInvitationOpts {
+  email: string;
+  organizationId: string;
+}
+
+/** An invitation to the address into the organization itself that stands, not rejected: it names the role a sign-in must not pre-empt. */
+export const findPendingOrganizationInvitation = async (ctx: DbContext, { email, organizationId }: FindPendingOrganizationInvitationOpts) => {
+  const [invitation] = await ctx.var.db
+    .select({ id: inactiveMembershipsTable.id })
+    .from(inactiveMembershipsTable)
+    .where(
+      and(
+        eq(inactiveMembershipsTable.email, email),
+        eq(inactiveMembershipsTable.channelType, 'organization'),
+        eq(inactiveMembershipsTable.channelId, organizationId),
+        isNull(inactiveMembershipsTable.rejectedAt),
+      ),
+    )
+    .limit(1);
+  return invitation;
+};
+
 interface FindMembershipByIdInOrgOpts {
   membershipId: string;
 }

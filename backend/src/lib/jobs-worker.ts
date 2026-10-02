@@ -49,7 +49,7 @@ export async function startJobsWorker(options: { port?: number; inProcess?: bool
     otel.start();
     otel.verifyConnection();
     // The API installs the job store at boot in development; production installs it from the migrate companion.
-    if (env.NODE_ENV === 'development') await waitForBackend(2000, 60_000);
+    if (env.NODE_ENV === 'development') await waitForBackend(2000, 60_000, appConfig.devPorts.api);
   }
 
   const boss = await startMaintainer();

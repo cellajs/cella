@@ -24,6 +24,17 @@ describe('transformGithubUserData', () => {
   it('throws when there is no primary email', () => {
     expect(() => transformGithubUserData(githubUser, [ghEmail('only@example.com', false, true)])).toThrow('no_email_found');
   });
+
+  it('splits the one name string on its first space, keeping a family name of several words whole', () => {
+    const primary = [ghEmail('primary@example.com', true, true)];
+    const named = (name: string | null) => transformGithubUserData({ ...githubUser, name } as GithubUserProps, primary);
+
+    expect(named('Octo Cat')).toMatchObject({ firstName: 'Octo', lastName: 'Cat' });
+    expect(named('Sanne de Vries')).toMatchObject({ firstName: 'Sanne', lastName: 'de Vries' });
+    expect(named('Octo')).toMatchObject({ firstName: 'Octo', lastName: '' });
+    // Without a profile name the login stands in as the given name.
+    expect(named(null)).toMatchObject({ firstName: 'octocat', lastName: '' });
+  });
 });
 
 describe('transformSocialUserData', () => {

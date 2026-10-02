@@ -10,7 +10,7 @@ import { deleteAuthCookie, getAuthCookie, setAuthCookie } from '#/modules/auth/g
 import { newSessionToken } from '#/modules/auth/sessions/helpers/session-token';
 import { collectSignInContext, type SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
-import type { AuthStrategy, SessionTypes } from '#/modules/auth/sessions/sessions-db';
+import type { AuthStrategy, SessionTypes, StepUpProof } from '#/modules/auth/sessions/sessions-db';
 import { findLiveOwnSessions, insertSession } from '#/modules/auth/sessions/sessions-queries';
 import { findSystemRole } from '#/modules/system/system-queries';
 import type { UserModel } from '#/modules/user/user-db';
@@ -57,10 +57,18 @@ const enrollNewDevice = async (userId: string, deviceId: string): Promise<NewDev
   }
 };
 
+/** What a sign-in may record on the session besides its method. */
+export interface SessionExtras {
+  /** The second factor an MFA completion presented: the session starts stepped up by it. */
+  steppedUpVia?: StepUpProof | null;
+  /** The connection (an institution's trust) an SSO sign-in came through. */
+  connectionId?: string | null;
+}
+
 /**
  * Stores a session for the user and returns what its cookie needs: the random token, which exists only there, since the
- * row keeps its hash. An impersonation names the admin session it is layered on. Database only, so it runs without a
- * request.
+ * row keeps its hash. `strategy` is the method that started the sign-in; a second factor goes in `steppedUpVia`. An
+ * impersonation names the admin session it is layered on. Database only, so it runs without a request.
  */
 export const createSession = async (
   user: Pick<UserModel, 'id'>,
@@ -68,6 +76,7 @@ export const createSession = async (
   strategy: AuthStrategy,
   type: SessionTypes = 'regular',
   impersonatorSessionId: string | null = null,
+  { steppedUpVia = null, connectionId = null }: SessionExtras = {},
 ) => {
   const { rawIp, country, asn, device, deviceId } = context;
 
@@ -79,6 +88,7 @@ export const createSession = async (
   const timeSpan = type === 'impersonation' ? new TimeSpan(1, 'h') : new TimeSpan(1, 'w');
 
   const sessionId = generateId();
+  const now = getIsoDate();
   const session = {
     id: sessionId,
     secret,
@@ -94,9 +104,12 @@ export const createSession = async (
     ipCountry: country,
     ipAsn: asn,
     deviceIdHash: deviceId ? hashDeviceIdForUser(deviceId, user.id) : null,
-    createdAt: getIsoDate(),
+    createdAt: now,
     expiresAt: createDate(timeSpan),
     impersonatorSessionId,
+    steppedUpAt: steppedUpVia ? now : null,
+    steppedUpVia,
+    connectionId,
   };
 
   if (type !== 'impersonation') {
@@ -123,7 +136,13 @@ export const createSession = async (
  * Signs the user in on this browser: stores a session, sets its cookie and sends the sign-in notices. An impersonation
  * gets a cookie of its own, layered over the admin's session cookie, which stays: stopping returns the browser to it.
  */
-export const setUserSession = async (ctx: Context<Env>, user: UserModel, strategy: AuthStrategy, type: SessionTypes = 'regular'): Promise<void> => {
+export const setUserSession = async (
+  ctx: Context<Env>,
+  user: UserModel,
+  strategy: AuthStrategy,
+  type: SessionTypes = 'regular',
+  extras: SessionExtras = {},
+): Promise<void> => {
   const isSystemAdmin = !!(await findSystemRole(dbCtx, { userId: user.id, role: 'admin' }));
 
   if (isSystemAdmin || type === 'impersonation') {
@@ -132,7 +151,7 @@ export const setUserSession = async (ctx: Context<Env>, user: UserModel, strateg
 
   const context = await collectSignInContext(ctx, type);
   const impersonatorSessionId = type === 'impersonation' ? ctx.var.sessionId : null;
-  const { sessionToken, timeSpan, newDevice } = await createSession(user, context, strategy, type, impersonatorSessionId);
+  const { sessionToken, timeSpan, newDevice } = await createSession(user, context, strategy, type, impersonatorSessionId, extras);
 
   if (type === 'impersonation') await setAuthCookie(ctx, 'impersonation', sessionToken, timeSpan);
   else {
