@@ -27,8 +27,9 @@ export function patchCollaborativeDescription(
 }
 
 /**
- * Standalone half (no relay, offline, no permission token): the prepared update mutation, skipped
- * for an unchanged body and for a row deleted meanwhile, because an unmount flush would resurrect it.
+ * Standalone half, for an app with Yjs off: the prepared update mutation, skipped for an unchanged
+ * body and for a row deleted meanwhile, because an unmount flush would resurrect it. With Yjs on, an
+ * editor never writes a description through REST.
  */
 export async function persistStandaloneDescription(
   entityType: ProductEntityType,

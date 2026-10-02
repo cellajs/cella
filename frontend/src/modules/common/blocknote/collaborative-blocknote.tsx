@@ -1,14 +1,12 @@
-import i18n from 'i18next';
-import { type ComponentProps, type ReactNode, useEffect, useRef, useState } from 'react';
+import { type ComponentProps, type ReactNode, Suspense, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig, type ProductEntityType } from 'shared';
 import { useOnlineManager } from '~/hooks/use-online-manager';
 import { BlockNote } from '~/modules/common/blocknote/blocknote-editor';
 import { UploadHostProvider } from '~/modules/common/blocknote/custom-file-panel/upload-host';
 import { useYjsToken } from '~/modules/common/blocknote/hooks/use-yjs-token';
+import { BlockNoteFullHtml } from '~/modules/common/blocknote/lazy-full-html';
 import { useYjsConnection } from '~/modules/common/blocknote/yjs-connections';
-import { Spinner } from '~/modules/common/spinner';
-import { toaster } from '~/modules/common/toaster/toaster';
 import { useCurrentUser } from '~/modules/user/user-store';
 import { getRandomColor } from '~/utils/random-color';
 
@@ -22,128 +20,165 @@ type CollaborativeBlockNoteProps = PassthroughProps & {
   entityId: string;
   tenantId: string;
   organizationId: string;
-  /** Unconditional update permission; collaboration only activates when it holds (the relay re-verifies). */
+  /** Unconditional update permission. Without it the static shows, and no token is fetched or connection opened; the relay re-verifies. */
   canEdit: boolean;
-  /** Stored description blocks (the entity row's source of truth outside a session). */
+  /** Stored description blocks, which the static renders: the entity row's source of truth outside a session. */
   description: string | null;
-  /** Persistence policy; receives the live collaboration state per call. */
+  /** Commits the editor's document: a cache patch while collaborative, a REST write for a type with Yjs off. */
   updateData: (description: string, collaborative: boolean) => Promise<void> | void;
-  /** Rendered while waiting for the token and the first WS sync (avoids an empty flash). Defaults to a spinner. */
+  /** The static, shown whenever no live editor is; `null` renders none. Defaults to `description` rendered as HTML. */
   waitingFallback?: ReactNode;
 };
 
-/** How long the token fetch, connect and first sync may take before the editor opens standalone. */
-const SYNC_TIMEOUT_MS = 5_000;
+/** How long a connection may take before the static says it is connecting: a quick one shows no notice, so its swap to the editor does not reflow. */
+const CONNECTING_NOTICE_MS = 1_000;
+
+/** Whether descriptions save through the Yjs relay: one save mode for every type, fixed by config. */
+const isYjsEnabled = () => appConfig.services.yjs.enabled && !!appConfig.yjsUrl;
+
+/** One line above the description saying why it is read-only, or what happens to its edits. */
+function SyncStatus({ text }: { text: string }) {
+  return (
+    <p role="status" className="mb-2 text-muted-foreground text-sm">
+      {text}
+    </p>
+  );
+}
 
 /**
- * BlockNote host for an entity description: owns the token, online and permission gates, the relay connection, and the
- * standalone fallback. A collaborative editor whose connection the relay ended for good turns read-only with a notice:
- * saving its document through the standalone path would overwrite the collaborators' latest edits it never received.
+ * BlockNote host for an entity description, with one save mode fixed by config. With Yjs on, edits save through the
+ * relay alone: the live editor shows once its connection synced, and until then the static, with a status saying why
+ * (connecting, offline, refused). A connection the relay ended for good leaves its editor read-only with a notice: its
+ * document may hold edits nobody saved. With Yjs off, a standalone editor writes through `updateData`. Without edit
+ * rights, the static alone.
  */
-export function CollaborativeBlockNote({
+export function CollaborativeBlockNote(props: CollaborativeBlockNoteProps) {
+  const { entityId, tenantId, organizationId, description, canEdit, waitingFallback, className, dense, clickOpensPreview } = props;
+
+  const descriptionHtml = (
+    <Suspense fallback={null}>
+      <BlockNoteFullHtml
+        id={`blocknote-${entityId}-static`}
+        defaultValue={description ?? ''}
+        tenantId={tenantId}
+        organizationId={organizationId}
+        className={className}
+        dense={dense}
+        clickOpensPreview={clickOpensPreview}
+      />
+    </Suspense>
+  );
+  const staticView = waitingFallback === undefined ? descriptionHtml : waitingFallback;
+
+  if (!canEdit) return staticView;
+  const host = isYjsEnabled() ? <CollaborativeHost {...props} staticView={staticView} /> : <StandaloneHost {...props} />;
+
+  // The upload dialog renders above the editor so it survives an editor remount.
+  const uploadHostProps = props.baseFilePanelProps;
+  return uploadHostProps ? <UploadHostProvider baseFilePanelProps={uploadHostProps}>{host}</UploadHostProvider> : host;
+}
+
+/** The live editor once the connection synced, the static with a status until then. */
+function CollaborativeHost({
   entityType,
   entityId,
   tenantId,
   organizationId,
-  canEdit,
-  description,
+  canEdit: _canEdit,
+  description: _description,
   updateData,
-  waitingFallback,
+  waitingFallback: _waitingFallback,
+  staticView,
   ...blockNoteProps
-}: CollaborativeBlockNoteProps) {
+}: CollaborativeBlockNoteProps & { staticView: ReactNode }) {
   const { t } = useTranslation();
   const user = useCurrentUser();
-
   const isOnline = useOnlineManager();
-  const wantsCollaboration = appConfig.services.yjs.enabled && !!appConfig.yjsUrl && isOnline && canEdit;
-  // The token names this entity only; the relay closes the socket when it expires, and the refreshed token reconnects it.
-  const { token: yjsToken, refused } = useYjsToken({ entityType, entityId, tenantId, organizationId, enabled: wantsCollaboration });
-  const canCollaborate = wantsCollaboration && !!yjsToken;
-
-  // Once collaborative, hold the connection across an offline blip: releasing it lets the grace period destroy the shared doc under a mounted editor.
-  const committedRef = useRef<'collab' | 'solo' | null>(null);
-  const keepConnection = canCollaborate || committedRef.current === 'collab';
-
-  // The token proves update permission; entity-level access is verified asynchronously by the relay.
-  const yjsConn = useYjsConnection(keepConnection ? entityId : undefined, entityType, tenantId);
-  const wsReady = yjsConn?.synced ?? false;
-
-  // Wait briefly for the token and WS sync before falling back to standalone, so the editor is not mounted twice.
-  const [syncTimedOut, setSyncTimedOut] = useState(false);
-  const toastShownRef = useRef(false);
-  useEffect(() => {
-    if (!wantsCollaboration || refused || wsReady) return;
-    const timer = setTimeout(() => {
-      setSyncTimedOut(true);
-      if (!toastShownRef.current) {
-        toastShownRef.current = true;
-        toaster.warning(i18n.t('error:sync_failed.text'));
-      }
-    }, SYNC_TIMEOUT_MS);
-    return () => clearTimeout(timer);
-  }, [wantsCollaboration, refused, wsReady]);
-
-  // useCreateBlockNote captures the Yjs config at creation, so a solo/collab switch remounts the editor and discards
-  // an open upload dialog and unsynced text. Commit the mode once per mount; reopening re-evaluates from scratch.
-  const liveCollaborative = canCollaborate && wsReady;
-  if (committedRef.current === null) {
-    if (liveCollaborative) committedRef.current = 'collab';
-    else if (!wantsCollaboration || refused || syncTimedOut) committedRef.current = 'solo';
-  }
-  const committed = committedRef.current;
-  const waitingForSync = committed === null;
-  const collaborative = committed === 'collab';
-  // Nothing typed after the relay ended the session could reach it, so the editor stops taking edits.
-  const collaborationStopped = collaborative && (yjsConn?.stopped ?? false);
-
   // Stable random color for cursor labels
-  const userColorRef = useRef(getRandomColor());
+  const [userColor] = useState(getRandomColor);
 
-  const collaborationBundle =
-    collaborative && yjsConn
-      ? {
-          provider: yjsConn.provider,
-          fragment: yjsConn.fragment,
-          user: { name: user.name, color: userColorRef.current },
-        }
-      : undefined;
+  // The token names this entity only; the relay closes the socket when it expires, and the refreshed token reconnects it.
+  const { token, refused } = useYjsToken({ entityType, entityId, tenantId, organizationId, enabled: isOnline });
 
-  // A reseeded document syncs afresh: the editor comes back on the new fragment once it did.
-  const rebuilding = collaborative && !wsReady;
-  if (waitingForSync || rebuilding) return waitingFallback ?? <Spinner className="my-8 size-6 opacity-50" />;
+  // Once synced, the connection stays for the mount, also when its token is refused: a stopped editor shows what was typed.
+  const [joined, setJoined] = useState<string | null>(null);
+  const yjsConn = useYjsConnection(token || joined === entityId ? entityId : undefined, entityType, tenantId);
+  if (yjsConn?.synced && joined !== entityId) setJoined(entityId);
 
-  const uploadHostProps = blockNoteProps.baseFilePanelProps;
+  const stopped = yjsConn?.stopped ?? false;
+  const connecting = isOnline && !refused && !stopped && !yjsConn?.synced;
+  const [connectingNoticed, setConnectingNoticed] = useState(false);
+  useEffect(() => {
+    if (!connecting) return;
+    const timer = setTimeout(() => setConnectingNoticed(true), CONNECTING_NOTICE_MS);
+    return () => {
+      clearTimeout(timer);
+      setConnectingNoticed(false);
+    };
+  }, [connecting]);
 
-  const editor = (
+  // Not synced yet, or a reseeded document syncing afresh: nothing was typed into it, so the editor that replaces the
+  // static once it synced loses nothing.
+  if (!yjsConn?.synced) {
+    const status = stopped
+      ? t('c:collaboration_stopped.text')
+      : refused
+        ? t('c:read_only')
+        : !isOnline
+          ? t('c:offline')
+          : connectingNoticed
+            ? t('c:connecting')
+            : null;
+    return (
+      <>
+        {status && <SyncStatus text={status} />}
+        {staticView}
+      </>
+    );
+  }
+
+  // Nothing typed after the relay ended the session could reach it, so the editor stops taking edits. Offline, it takes
+  // them in memory, and the connection keeps them until the relay saved them.
+  const status = stopped ? t('c:collaboration_stopped.text') : !isOnline && yjsConn.unsynced ? t('c:collaboration_offline.text') : null;
+  return (
     <>
-      {collaborationStopped && (
-        <p role="status" className="mb-2 text-muted-foreground text-sm">
-          {t('c:collaboration_stopped.text')}
-        </p>
-      )}
+      {status && <SyncStatus text={status} />}
       <BlockNote
-        // Stable for this mount, and new per rebuilt document; the key also guards against reusing a standalone editor
-        // instance as collaborative.
-        key={collaborative ? `collab-${yjsConn?.rebuilds ?? 0}` : 'solo'}
+        // New per rebuilt document, so the editor binds the fresh fragment.
+        key={yjsConn.rebuilds}
         id={`blocknote-${entityId}`}
-        defaultValue={description ?? undefined}
-        updateData={(blocks) => void updateData(blocks, collaborative)}
-        collaboration={collaborationBundle}
-        onBeforeLoad={
-          collaborative
-            ? undefined
-            : (editor) => {
-                const strBlocks = JSON.stringify(editor.document);
-                if (description === null || strBlocks === description) return;
-                void updateData(strBlocks, collaborative);
-              }
-        }
+        updateData={(blocks) => void updateData(blocks, true)}
+        collaboration={{ provider: yjsConn.provider, fragment: yjsConn.fragment, user: { name: user.name, color: userColor } }}
         {...blockNoteProps}
-        editable={blockNoteProps.editable !== false && !collaborationStopped}
+        editable={blockNoteProps.editable !== false && !stopped}
       />
     </>
   );
+}
 
-  // The upload dialog renders above the editor so it survives an editor remount.
-  return uploadHostProps ? <UploadHostProvider baseFilePanelProps={uploadHostProps}>{editor}</UploadHostProvider> : editor;
+/** The editor of a type with Yjs off, built from `description` and writing through `updateData`. */
+function StandaloneHost({
+  entityType: _entityType,
+  entityId,
+  tenantId: _tenantId,
+  organizationId: _organizationId,
+  canEdit: _canEdit,
+  description,
+  updateData,
+  waitingFallback: _waitingFallback,
+  ...blockNoteProps
+}: CollaborativeBlockNoteProps) {
+  return (
+    <BlockNote
+      id={`blocknote-${entityId}`}
+      defaultValue={description ?? undefined}
+      updateData={(blocks) => void updateData(blocks, false)}
+      onBeforeLoad={(editor) => {
+        const strBlocks = JSON.stringify(editor.document);
+        if (description === null || strBlocks === description) return;
+        void updateData(strBlocks, false);
+      }}
+      {...blockNoteProps}
+    />
+  );
 }

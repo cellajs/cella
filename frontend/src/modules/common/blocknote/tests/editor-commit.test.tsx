@@ -13,7 +13,6 @@ vi.mock('~/query/query-client', async () => {
   const { QueryClient } = await import('@tanstack/react-query');
   return { queryClient: new QueryClient() };
 });
-// Offline, so CollaborativeBlockNote opens the standalone editor at once.
 vi.mock('~/hooks/use-online-manager', () => ({ useOnlineManager: () => false }));
 vi.mock('~/modules/common/blocknote/hooks/use-yjs-token', () => ({ useYjsToken: () => ({ token: undefined, refused: false }) }));
 vi.mock('~/modules/common/blocknote/yjs-connections', () => ({ useYjsConnection: () => null }));
@@ -27,6 +26,7 @@ const { checkedExtension } = await import('~/modules/common/blocknote/custom-ele
 const { BlockNote } = await import('~/modules/common/blocknote/blocknote-editor');
 const { CollaborativeBlockNote } = await import('~/modules/common/blocknote/collaborative-blocknote');
 const { setRouter } = await import('~/routes/-router-instance');
+const { appConfig } = await import('shared');
 
 type CustomPartialBlock = PartialBlock<typeof customSchema.blockSchema, typeof customSchema.inlineContentSchema, typeof customSchema.styleSchema>;
 
@@ -86,7 +86,17 @@ const seededFragment = () => blocksToYXmlFragment(headless, checklist('todo') as
 type BlockNoteProps = Partial<ComponentProps<typeof BlockNote>>;
 type HostProps = Partial<ComponentProps<typeof CollaborativeBlockNote>>;
 
-/** CollaborativeBlockNote offline: the standalone editor on the stored description. */
+/** A type with Yjs off: CollaborativeBlockNote hosts the standalone editor on the stored description. */
+const withYjsOff = () => {
+  const enabled = appConfig.services.yjs.enabled;
+  beforeEach(() => {
+    appConfig.services.yjs.enabled = false;
+  });
+  afterEach(() => {
+    appConfig.services.yjs.enabled = enabled;
+  });
+};
+
 const renderHost = (props: HostProps) =>
   act(async () =>
     root.render(
@@ -211,6 +221,8 @@ describe('collaborative BlockNote commits', () => {
 });
 
 describe('CollaborativeBlockNote standalone navigation write', () => {
+  withYjsOff();
+
   it('writes the editor document as a standalone update when it differs from the description', async () => {
     const updateData = vi.fn();
     await renderHost({ updateData });
@@ -241,6 +253,8 @@ describe('CollaborativeBlockNote standalone navigation write', () => {
 });
 
 describe('behaviour the description sync redesign changes', () => {
+  withYjsOff();
+
   it('commits on unmount when defaultValue changed after mount, though the user never touched the document', async () => {
     const updateData = vi.fn();
     const renderEditor = (defaultValue: string) =>
