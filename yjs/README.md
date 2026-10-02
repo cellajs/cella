@@ -19,6 +19,7 @@ BlockNote editors
 Yjs relay
   ├─ authorize connections and fan out live updates
   ├─ append every update to `yjs_updates`, compact into `yjs_documents`
+  ├─ relay rows others appended (outside writes, other relays), woken by LISTEN
   └─ materialize changed content through the API
         │
         ▼
@@ -38,14 +39,15 @@ ws://host:port/{entityId}?token=...&entityType=...&tenantId=...
 
 A token names one entity: the backend issues it at `GET /{tenantId}/{organizationId}/yjs/token?entityType=&entityId=` to a user who may update that row, with the row's tenant and organization, for five minutes. Before completing the handshake, the relay validates required parameters, the token's Ed25519 signature and expiry, that its entity type, entity id and tenant are the requested ones, and the per-user rate limit. The relay holds only the public half of the backend's signing key, so nothing on the relay can mint a token. Malformed requests fail as HTTP 400, a token for another document as 403 and rate limits as 429, each with a JSON `{ code, reason }` body, which a browser sees as close code 1006. The relay ends the connection once that answer is flushed, and a peer that resets the connection mid-handshake ends only its own socket. An invalid or expired token closes after the handshake with code 4001, so the client can refetch its token and reconnect with backoff. A socket also closes with 4001 when its token expires: the client reconnects with the token it refreshed meanwhile, and a user who lost access gets no new token, so revoking access reaches an open socket within five minutes.
 
-Entity authorization runs after the socket opens, via an RLS-scoped read of the entity row and the user's memberships by the shared permission engine (no backend round trip). It refuses a row in another tenant or organization than the token names, a draft the user did not author, and a row the user may not update, and otherwise returns the document's scope as the row states it. Sync frames wait in the socket's serial queue behind it, up to 100; one more closes the socket with `1011`, since the relay would owe it a `Saved` it never sends. A denied socket's queued frames never run. The socket joins the document's session only once authorized: until then it receives no peer frames, and it relays no awareness. Its latest awareness frame waits for the join, so a new editor's presence shows at once; a denied socket's is dropped. Sessions are keyed by tenant, entity type and id, and a session's scope is the row's, never a joiner's: seeding, logging, compaction and materialization act in it as the system. Frames that arrive while a socket closes are dropped; updates it sent before closing and that still wait in its queue are logged before it leaves the session, unless the session ended under it meanwhile: those belong to a generation its next handshake drops.
+Entity authorization runs after the socket opens, via an RLS-scoped read of the entity row and the user's memberships by the shared permission engine (no backend round trip). It refuses a row in another tenant or organization than the token names, a draft the user did not author, and a row the user may not update, and otherwise returns the document's scope as the row states it. The read includes soft-deleted rows, so a deletion is told apart: a deleted row the user may update, or a missing one (the token proves the user could update it within five minutes), closes with `4410`. A deleted row the user may not update gets `4003`, like any refusal, so the code reveals nothing to someone without access. Sync frames wait in the socket's serial queue behind it, up to 100; one more closes the socket with `1011`, since the relay would owe it a `Saved` it never sends. A denied socket's queued frames never run. The socket joins the document's session only once authorized: until then it receives no peer frames, and it relays no awareness. Its latest awareness frame waits for the join, so a new editor's presence shows at once; a denied socket's is dropped. Sessions are keyed by tenant, entity type and id, and a session's scope is the row's, never a joiner's: seeding, logging, compaction and materialization act in it as the system. Frames that arrive while a socket closes are dropped; updates it sent before closing and that still wait in its queue are logged before it leaves the session, unless the session ended under it meanwhile: those belong to a generation its next handshake drops.
 
 | Close code | Meaning |
 | --- | --- |
 | `1011` | Handling a frame failed in the relay, or more than 100 sync frames arrived before authorization; the client reconnects |
-| `1013` | The socket's session ended: its document was retired. The client reconnects and handshakes again |
+| `1013` | The socket's session ended: its entity was deleted, or its document was reseeded. The client reconnects and handshakes again; a deleted entity's reconnect gets `4410` |
 | `4001` | Invalid or expired token, or the socket's token expired |
 | `4003` | Entity access denied |
+| `4410` | Entity deleted. Final: the client stops and drops edits it never saved |
 | `4400` | Missing or invalid entity scope, a frame no decoder accepts (its message type, a sync frame, an update or an awareness update), or a socket announcing a fifth awareness client |
 | `4503` | Authorization unavailable |
 
@@ -66,15 +68,21 @@ Two tables, both under the same tenant-scoped RLS policies:
 | Table | Holds |
 | --- | --- |
 | `yjs_documents` | One row per document: the compacted base state, seeded from the entity's description on the first connect and replaced on compaction, with the generation of its seed. The row outlives the session, so it holds one merged state per collaboratively edited entity, about the size of its description's Yjs encoding. |
-| `yjs_updates` | An append-only log of received updates, one row per frame in arrival order, with the sending user; the window not compacted yet. |
+| `yjs_updates` | An append-only log of updates in arrival order, the window not compacted yet: one row per client frame, with the sending user, and one per outside write, with none (server-origin). |
 
-The document as the relay knows it is the base plus every logged update, merged in one call when it is read. Nothing merged is ever held in memory across an await, so concurrent frames cannot overwrite each other.
+The document as the relay knows it is the base plus every logged update, merged in one call when it is read. Base and log are one read: the document row is held `FOR SHARE` while the log is read, so a compaction on another relay never pairs an old base with a newer log. Nothing merged is ever held in memory across an await, so concurrent frames cannot overwrite each other. Every append, the relay's and the backend's, goes through `appendYjsUpdate` in `backend/src/modules/yjs/yjs-log.ts`.
 
 ### Seeding and generations
 
-When no document row exists, the relay loads the entity's `description` with the same schema introspection as `permissions.ts`, converts the blocks to the `document-store` Yjs fragment, and inserts that state as the base under a new generation. Seeding runs under a per-document lock, so concurrent first connections converge on one seed. Seeding writes no log row, so opening an untouched document never updates the entity.
+When no document row exists, the first handshake seeds it in one transaction: it reads the entity's `description` `FOR SHARE`, converts the blocks to the `document-store` Yjs fragment with the headless BlockNote converter, inserts that state as the base under a new generation, and reads the row back. An outside write either commits first and is seeded, or waits for the seed and then finds the document row, into which it appends its update. A missing or empty description seeds one empty paragraph: from an empty fragment, two first writers would create two top-level block groups, of which the editor shows one. A description that does not convert is logged and seeds the same empty document. An entity with no live row seeds nothing, and the session ends. Seeding runs under a per-document lock, so concurrent first connections on one relay converge on one seed, and on several relays the insert does. Seeding writes no log row, so opening an untouched document never updates the entity.
 
-Two seeds of one description are two Yjs histories: a client document that survived a session (an editor open while offline, a socket closed at token expiry, a relay restart) and met a reseed would merge into a second top-level block group, of which the editor shows one. So the row is kept across sessions and retired only when its history is void: the backend deletes both tables' rows, in the writing transaction, when a description is written by anything but the relay (a REST update; the yjs module's `<type>.updated` handler, skipping the relay's own writes, which carry `materialized`) and when the entity is deleted (`<type>.deleted`), through `retireYjsDocuments`. A module that dispatches neither event calls it itself. A session whose document was retired ends at its next live stamp, compaction, handshake or update: its sockets close with `1013` and reconnect into a fresh session, which reseeds. Every log row belongs to one generation: `appendUpdate` inserts only while the document row of the session's generation exists, holding it under a key-share lock, and the retire deletes the document row before the log, so an update sent after a retire is never logged and a reseed never merges one. `compactState` writes only the generation it read.
+**Outside writes are updates.** A description written by anything but the relay (a REST update, an MCP tool, an import) does not end live sessions. The backend's `<type>.updated` handler diffs the written blocks into the document as committed and appends the result as a server-origin row, in the writing transaction. Live editors receive it as a remote change, in place, and keep editing; the generation stays.
+
+**Retirement is for deletions only.** Two seeds of one description are two Yjs histories: a client document that survived a session (an editor open while offline, a socket closed at token expiry, a relay restart) and met a reseed would merge into a second block group. So the row is kept across sessions and retired only when its entity is deleted: the `<type>.deleted` handler deletes both tables' rows through `retireYjsDocuments` and notifies, and the session ends at once with `1013`. The reconnect is closed with `4410`. A restore, which cella has none of, seeds a new generation from the row. Every log row belongs to one generation: `appendYjsUpdate` inserts only while the document row of the session's generation exists, holding it under a key-share lock, and the retire deletes the document row before the log, so an update sent after a retire is never logged. `compactState` writes only the generation it read.
+
+### Wake-up
+
+Each relay holds one dedicated connection, outside its pool, that listens on the `yjs_log` channel. Every append and every retirement notifies there in its own transaction: delivered at commit, never on rollback, with keys only. A session keeps the ids of the log rows its sockets hold (its own appends, counted before they commit, and every row it relayed or loaded into a handshake). On a notification for a row it has not seen, the relay reads the session's log and broadcasts the rows it lacks, oldest first, to every socket, then schedules compaction; a retirement ends the session. A notification can be missed, so the same catch-up runs at every handshake, before every compaction folds, at the live stamp when the newest log row is unseen, and for every session after the connection is replaced, which happens with a 1 to 30 second backoff. A missed notification thus costs at most a minute. Two relays holding one document (a start-first rollout) each relay the other's appends this way.
 
 ### Handshake
 
@@ -84,16 +92,18 @@ The relay first tells the client the document's generation (its own message type
 
 Sync frames from one socket run one at a time in arrival order through a serial queue whose first task is the socket's entity verification and join; a burst of keystrokes can never interleave. Each update is appended to `yjs_updates` before it is broadcast to peers, so peers only ever see durable content. An update Yjs cannot decode is never logged or relayed: its socket closes with 4400.
 
-Three seconds after the last received update, and at most ten seconds after the first one since the last compaction started, the log is compacted, under the document lock: base and log are merged, the merged blocks are sent to `/internal/yjs/materialize` on the backend's internal listener with the window's editors, newest first, and on success the base is replaced and exactly the rows that were read are deleted. A row appended during the write survives for the next round. The backend takes the tenant and organization from the entity row, refusing a body that names another, sanitizes media URLs and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check as the newest editor who may still update the entity. The template registers the attachment update op; an app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and materialization returns `400` for a product without one. Only a written window folds into the base, so the base holds only written state and the log every edit the entity has not received.
+Three seconds after the last received update, and at most ten seconds after the first one since the last compaction started, the log is compacted, under the document lock: base and log are merged, the merged blocks are sent to `/internal/yjs/materialize` on the backend's internal listener with the window's editors, newest first, and on success the base is replaced and exactly the rows that were read are deleted. A window of server-origin rows alone is not sent: its merge is the last outside write, which the entity row already holds, so it folds unsaved. A mixed window names its server rows in `serverRowIds` (`[]` for none, at most 10,000; more fold alone first). The backend answers `409` when the log holds a server row the window lacks, an outside write committed during the POST, which the stale merge would overwrite: a retry, and the next window holds it. The fold locks the document row and is rolled back when fewer of its rows are left than it merged, since another compaction (a second relay) took them. A row appended during the write survives for the next round. The backend takes the tenant and organization from the entity row, refusing a body that names another, sanitizes media URLs and hands the document to the entity's registered materializer, which runs the normal update operation and its permission check as the newest editor who may still update the entity. The template registers the attachment update op; an app registers one per collaborative product through `defineBackendModule({ yjsMaterializer })`, and materialization returns `400` for a product without one. Only a written window folds into the base, so the base holds only written state and the log every edit the entity has not received.
 
 | Result | Behavior |
 | --- | --- |
 | `2xx` | Compact: replace the base, delete the merged rows |
+| Server rows alone | Never posted: fold into the base unsaved |
 | `410` | Gone: the entity no longer exists. Cleanup and sweep delete the document's rows |
-| `401`, `403`, `404`, `408`, `409`, `429`, `5xx` or network failure | Retry: the secret or the editors' access can change. Keep the log; the next window, cleanup or sweep retries |
+| `401`, `403`, `404`, `408`, `409`, `429`, `5xx` or network failure | Retry: the secret or the editors' access can change, and a `409` names an outside write the merge lacks. Keep the log; the next window, cleanup or sweep retries |
 | Other `4xx` | Permanent: an invalid request or no materializer registered. Keep the log; cleanup keeps it without retrying |
 | Unparseable merged state | Permanent, never posted. Keep the log |
-| No document row (retired) | Never posted: the rows extend a history the next seed does not share, and merged alone they are a partial document. The log is discarded and the session ends with `1013` |
+| No document row (retired), or another generation | Never posted: the retirement took the log too, and a reseeded document's log is the new session's. The session ends with `1013` |
+| Another compaction folded the rows | Retry: the fold is rolled back, and the next window reads the base it wrote |
 | A log row no merge accepts | Discarded before the window is merged, with its sender logged, so it never blocks the document; a joining client gets the rest |
 
 ### Disconnect and recovery
@@ -113,13 +123,14 @@ Clients need no final flush: an update is durable before peers see it.
 | The backend is unavailable | Materialization is retried on the next window, at cleanup, or by the sweep; the log stays until the backend recovers |
 | The relay restarts | Clients reconnect with complete documents into the same history, since the document row outlived the session. The startup sweep writes the logs the crash left. |
 | Access revoked | The socket closes when its token expires and cannot reconnect. Materialization credits the newest editor who may still update the entity; when none may, it is refused and retried, and the log stays until a write succeeds. |
-| Entity deleted | Its deletion retires the document; a session that outlives it gets `410` from materialization and deletes the rows at cleanup or by the sweep. Cleanup does not resurrect the entity. |
-| Description written outside the relay | The write retires the document. Open sessions end with `1013` within a minute, sooner when someone types; clients reconnect, are told the new generation, drop their document, and show the written description, with a notice when they held edits. Edits logged after the write are discarded. |
+| Entity deleted | Its deletion retires the document and notifies: open sessions end at once with `1013`, and the reconnect is closed with `4410`. The client stops, and drops edits it never saved with a notice. A session that outlives a missed notification ends at its next live stamp, compaction, handshake or update. Cleanup does not resurrect the entity. |
+| Description written outside the relay | The write becomes an update to the document, which live editors receive in place, with no reconnect and the same generation. Earlier edits are overridden where the write differs; edits made concurrently in blocks it keeps survive. Text typed into a block the write removes is lost with the block. |
+| The log listener's connection drops | It is replaced with backoff, and every session catches up. Meanwhile outside writes reach live editors at the next live stamp, within a minute, and health reports `degraded`. |
 | SSE arrives during editing | The cache takes a Yjs-owned field only from a server write of it, which carries a new `stx.fieldTimestamps` stamp. A read that lags the relay keeps the cached value, in every view |
 
 ## Operational constraints
 
-- **Live collaboration is process-local.** Clients editing one entity must reach the same relay instance (single instance or entity-affinity routing). Two relays holding one document share its log but not each other's live updates, and two compactions that overlap can each fold a different window, the later base write dropping rows the earlier one merged. A start-first rollout is safe: live sessions stamp their row, and the new relay's sweep visits only documents no session holds.
+- **Live collaboration is meant for one relay per document.** Two relays holding one document (a start-first rollout) share its log and relay each other's appends through the log channel, a database round trip later than peers on one relay. Overlapping compactions cannot drop rows: a fold whose rows another one took is rolled back. A start-first rollout is safe: live sessions stamp their row, and the new relay's sweep visits only documents no session holds.
 - **No server-side edit history**: the base holds a merged snapshot and the log only what is not compacted yet. Undo, redo, and per-edit history live in clients.
 - **Fragment and schema must stay aligned.** The `document-store` fragment and React-free shared BlockNote schema must match the frontend binding (custom blocks have round-trip tests).
 - **Seeds are server-generated and never merged.** A reseed is a new generation, and a client never merges two.
@@ -131,22 +142,22 @@ Clients need no final flush: an update is durable before peers see it.
 | Endpoint | Response |
 | --- | --- |
 | `GET /health` on `YJS_PORT` | 204 |
-| `GET /health?depth=full` | JSON: version, uptime, connection, document, client, and event-loop-lag data. Degraded at 100 ms lag, unhealthy at 1 second. |
+| `GET /health?depth=full` | JSON: version, uptime, connection, document, client, event-loop-lag data, and `listener` (`listening`, `connecting`, or `off` without a database). Degraded at 100 ms lag or while the listener reconnects, unhealthy at 1 second lag. |
 | Any other path | 404 |
 
 Environment, validated in `src/env.ts` (loads the backend's `.env`):
 
 | Variable | Purpose |
 | --- | --- |
-| `DATABASE_URL` | RLS-scoped reads, log appends and compaction writes |
+| `DATABASE_URL` | RLS-scoped reads, log appends and compaction writes, and the log listener's connection |
 | `DATABASE_SSL_CA` | Base64 PEM CA for PostgreSQL TLS, required in production unless `NODB` |
 | `YJS_TOKEN_PUBLIC_KEY` | Public half of the backend's `YJS_TOKEN_PRIVATE_KEY` (base64url Ed25519): verifies editor tokens, cannot sign one. `pnpm --filter backend yjs:public-key` prints it |
 | `YJS_RELAY_SECRET` | Authenticates the relay on the backend's materialize route, minimum 16 characters |
 | `BACKEND_INTERNAL_URL` | The backend's internal listener, default port `devPorts.internal` |
 | `YJS_PORT` | WebSocket and health port, default 4002 (`devPorts.yjs`) |
-| `YJS_DB_POOL_MAX` | PostgreSQL pool size, default 10 |
+| `YJS_DB_POOL_MAX` | PostgreSQL pool size, default 10. The log listener holds one more connection, outside the pool |
 | `MAPLE_SECRET_INGEST_KEY` | Optional telemetry ingest key |
-| `NODB` | In-memory connection limiter and no TLS CA requirement. Database reads still open lazily. |
+| `NODB` | In-memory connection limiter, no TLS CA requirement and no log listener. Database reads still open lazily. |
 | `NODE_ENV`, `PINO_LOG_LEVEL`, `DEBUG` | Runtime mode and logging. `DEBUG` also prints every query, with its values, in the `development` app mode only |
 
 The backend counterpart in `backend/src/modules/yjs/` issues tokens, serves `/internal/yjs/materialize` on the internal listener only (the public API has no path to it), sanitizes media URLs, and indexes the materializers modules register.
