@@ -5,6 +5,7 @@ import {
   collocatedServices,
   deployedServices,
   enabledServices,
+  isSingletonHost,
   placeServices,
   principalSecretScopeSlugs,
   principalServices,
@@ -85,6 +86,24 @@ describe('service registry: singleVM (deployedServices / coHostedServices)', () 
     const cfg = { yjs: { enabled: false }, mcp: { enabled: true } };
     expect(coHostedServices(cfg, true).map((s) => s.slug)).not.toContain('yjs');
     expect(deployedServices(cfg, true).map((s) => s.slug)).not.toContain('yjs');
+  });
+});
+
+describe('isSingletonHost', () => {
+  const backend = services.find((s) => s.slug === 'backend')!;
+  const yjs = services.find((s) => s.slug === 'yjs')!;
+
+  it('is true for the singleVM host running the stop-first cdc and jobs workers in-process', () => {
+    expect(isSingletonHost(allOn, true, backend)).toBe(true);
+  });
+
+  it('is false under split-VM, where cdc and jobs own their VMs', () => {
+    expect(isSingletonHost(allOn, false, backend)).toBe(false);
+  });
+
+  it('is false for a non-host service and when no stop-first worker is enabled', () => {
+    expect(isSingletonHost(allOn, true, yjs)).toBe(false);
+    expect(isSingletonHost({ ...allOff, cdc: { enabled: false }, jobs: { enabled: false } }, true, backend)).toBe(false);
   });
 });
 

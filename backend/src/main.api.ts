@@ -71,7 +71,7 @@ const main = async () => {
     // Single-VM: this API process also runs every enabled service in-process, through each subsystem's own start().
     if (appConfig.singleVM) {
       if (appConfig.services.cdc.enabled) {
-        console.warn(`${timestamp()} [startup] singleVM + cdc: API holds the replication slot, deploy must be exclusive (no blue-green)`);
+        console.info(`${timestamp()} [startup] singleVM + cdc: this process takes the replication slot once the previous generation releases it`);
         // The replication loop never resolves, so detach it and log failures to prevent unhandled rejections.
         void (await import('cdc-worker')).runCdcWorker().catch((error) => {
           console.error(`${timestamp()} [startup] in-process cdc worker crashed:`, error);

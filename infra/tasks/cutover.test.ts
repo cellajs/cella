@@ -165,6 +165,21 @@ describe('sequenceCutover: start-first', () => {
     expect(slept).toBe(false);
   });
 
+  it('hands the pool back to [old] when the gate after expansion fails', async () => {
+    const lb = recordingSetServers();
+    const res = await sequenceCutover(lbPlan({ healthAfterExpand: true, healthGate: async () => false, setServers: lb.fn }));
+    expect(res).toMatchObject({ ok: false, aborted: 'unhealthy' });
+    expect(lb.calls).toEqual([['10.0.0.4', '10.0.0.9'], ['10.0.0.4']]);
+    expect(res.steps.some((s) => s.startsWith('restore LB to [old]'))).toBe(true);
+  });
+
+  it('leaves [new] in place when the gate fails and no old generation exists', async () => {
+    const lb = recordingSetServers();
+    const res = await sequenceCutover(lbPlan({ oldIps: [], healthAfterExpand: true, healthGate: async () => false, setServers: lb.fn }));
+    expect(res.ok).toBe(false);
+    expect(lb.calls).toEqual([['10.0.0.9']]);
+  });
+
   it('skips the drain sleep when drainSeconds is 0', async () => {
     let slept = false;
     await sequenceCutover(

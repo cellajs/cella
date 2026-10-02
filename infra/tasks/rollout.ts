@@ -14,8 +14,8 @@ export interface RolloutServicePlan {
   healthUrl?: string;
   /** Co-hosted worker slugs (singleVM) whose LB backends follow this VM. */
   repointBackendKeys?: string[];
-  /** singleVM host whose effective strategy is stop-first: the provisioning update replaces the VM in place, so no old generation exists to overlap with or drain. */
-  exclusive?: boolean;
+  /** singleVM host running a stop-first worker in-process: the worker moves to the new generation only once the old VM is gone, so the rollout reaps it right after promotion. */
+  singletonHost?: boolean;
 }
 
 /** Every effect the waved rollout performs, injected so wave sequencing is unit-testable. rollout-runtime.ts holds the Pulumi, control-object, LB, and health-polling implementation. */
@@ -74,10 +74,10 @@ export async function activateService(
   const backendId = backendIds[service];
   if (!backendId) throw new Error(`Could not resolve LB backend id for ${service}`);
 
-  // Serving generation before this deploy; empty on a first deploy or an exclusive host (whose old VM the provisioning update already destroyed), where the reconciler drives the LB straight to [new] once it is healthy.
+  // Serving generation before this deploy; empty on a first deploy or when its VM is gone, where the reconciler drives the LB straight to [new] once it is healthy.
   const activeRef = current?.active;
-  const oldGen = activeRef && !plan.exclusive ? generations.find((item) => item.service === service && item.genId === activeRef.id) : undefined;
-  const oldIps = oldGen ? [oldGen.privateIp] : [];
+  const oldGen = activeRef ? generations.find((item) => item.service === service && item.genId === activeRef.id) : undefined;
+  const oldIps = oldGen && oldGen.genId !== target.genId ? [oldGen.privateIp] : [];
 
   rt.info(`[deploy ${service}] reconciling LB: old=[${oldIps.join(',') || '<none>'}] -> new=[${target.privateIp}] (gen ${target.genId})`);
   const healthUrl = plan.healthUrl;
@@ -95,21 +95,29 @@ export async function activateService(
     sleep: rt.sleep,
     log: rt.info,
   });
-  if (!cutover.ok) throw new Error(`Cutover failed for ${service}: ${cutover.aborted}`);
-
-  // Repoint the LB pools following this service's VM (co-hosted workers' pools, its own internal pool). Pulumi ignores their live server lists, so cutover must remove reaped-generation IPs.
-  for (const key of plan.repointBackendKeys ?? []) {
-    const followerBackendId = backendIds[key];
-    if (!followerBackendId) {
-      rt.info(`[deploy ${service}] follower pool '${key}' has no LB backend id, skipping repoint`);
-      continue;
-    }
-    rt.info(`[deploy ${service}] repointing follower pool '${key}' -> [${target.privateIp}]`);
-    await rt.lbSetServers(followerBackendId, [target.privateIp]);
+  if (!cutover.ok) {
+    // The follower pools still name the old generation, which keeps serving. With none, the new VM is the only one left, so they follow it: a late boot then serves without a redeploy.
+    if (oldIps.length === 0) await repointFollowers(plan, target.privateIp, backendIds, rt);
+    throw new Error(`Cutover failed for ${service}: ${cutover.aborted}`);
   }
+
+  await repointFollowers(plan, target.privateIp, backendIds, rt);
 
   rt.info(`[deploy ${service}] promoting generation ${target.genId}`);
   await rt.promote(service, { id: target.genId, sha });
+}
+
+/** Repoint the LB pools following a service's VM (co-hosted workers' pools, its own internal pool). Pulumi ignores their live server lists, so cutover must remove reaped-generation IPs. */
+async function repointFollowers(plan: RolloutServicePlan, ip: string, backendIds: Record<string, string>, rt: RolloutRuntime): Promise<void> {
+  for (const key of plan.repointBackendKeys ?? []) {
+    const followerBackendId = backendIds[key];
+    if (!followerBackendId) {
+      rt.info(`[deploy ${plan.service}] follower pool '${key}' has no LB backend id, skipping repoint`);
+      continue;
+    }
+    rt.info(`[deploy ${plan.service}] repointing follower pool '${key}' -> [${ip}]`);
+    await rt.lbSetServers(followerBackendId, [ip]);
+  }
 }
 
 export interface WavedRolloutPlan {
@@ -129,7 +137,8 @@ export interface WavedRolloutPlan {
  * Two-wave rollout. Wave 1 deploys the primary service alone, which must promote first because consumers bake its promoted generation's address at plan time.
  * Wave 2 records pending intent for every remaining service, provisions all their generations in ONE stack update that also reaps the primary's displaced
  * generation, then health-gates and cuts each service over concurrently. A final update reaps every remaining displaced generation, or `skipFinalReap` defers
- * that to a separate reap run. Any cutover failure skips the reap because a displaced generation may still be serving.
+ * that to a separate reap run. A singleton host with no wave 2 is reaped right after its promotion either way. Any cutover failure skips the reap because a
+ * displaced generation may still be serving.
  */
 export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime): Promise<void> {
   const { sha } = plan;
@@ -145,6 +154,13 @@ export async function runWavedRollout(plan: WavedRolloutPlan, rt: RolloutRuntime
     const generations = await rt.readGenerations();
     const backendIds = await backendIdsFor([plan.primary]);
     await activateService(plan.primary, sha, generations, backendIds, rt);
+
+    // The wave-2 update reaps the primary's displaced generation; without one, a singleton host's old VM would keep the cdc slot and the cron claim until the deferred reap.
+    if (plan.primary.singletonHost && plan.rest.length === 0) {
+      rt.info(`[rollout] reaping ${plan.primary.service}'s displaced generation so its in-process stop-first workers move to the new one`);
+      await rt.update([plan.primary.service]);
+      return;
+    }
   }
 
   if (plan.rest.length > 0) {

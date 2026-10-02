@@ -240,22 +240,58 @@ describe('runWavedRollout update batching', () => {
   });
 });
 
-describe('activateService exclusive singleVM host', () => {
-  it('ignores the displaced generation and drives the LB straight to [new]', async () => {
-    // The provisioning update destroyed b-old in the same pass that created b-new; only b-new exists in the outputs.
-    const fake = makeFake({
-      generations: [gen('backend', 'b-new', SHA, '10.0.0.2')],
+describe('singleVM singleton host', () => {
+  /** The wave-1 update kept b-old beside b-new: the host overlaps like any start-first service. */
+  function hostFixture(overrides: Partial<FakeOptions> = {}): FakeOptions {
+    return {
+      generations: [gen('backend', 'b-old', 'sha-old', '10.0.0.1'), gen('backend', 'b-new', SHA, '10.0.0.2')],
       active: { backend: { id: 'b-old', sha: 'sha-old' } },
       backendIds: { backend: 'b-bid', frontend: 'f-bid' },
       initialLb: { 'b-bid': ['10.0.0.1'], 'f-bid': ['10.0.0.1'] },
-    });
-    const plan: RolloutServicePlan = { ...backendPlan, exclusive: true, drainSeconds: 0, repointBackendKeys: ['frontend'] };
-    await activateService(plan, SHA, await fake.rt.readGenerations(), await fake.rt.readLbBackendIds(), fake.rt);
+      ...overrides,
+    };
+  }
+  const hostPlan: RolloutServicePlan = { ...backendPlan, singletonHost: true, repointBackendKeys: ['frontend'] };
 
-    // One LB write per pool: no [dead, new] overlap step, and the follower pool moves too.
-    expect(fake.lbHistory.get('b-bid')).toEqual([['10.0.0.1'], ['10.0.0.2']]);
+  it('overlaps [old, new] before contracting, then moves the follower pool', async () => {
+    const fake = makeFake(hostFixture());
+    await runWavedRollout({ sha: SHA, primary: hostPlan, rest: [], skipFinalReap: true }, fake.rt);
+    expect(fake.lbHistory.get('b-bid')).toEqual([['10.0.0.1'], ['10.0.0.1', '10.0.0.2'], ['10.0.0.2']]);
     expect(fake.lbHistory.get('f-bid')?.at(-1)).toEqual(['10.0.0.2']);
-    expect(fake.ops).toContain('promote:backend:b-new');
+  });
+
+  it('reaps the old VM right after promotion, deferred reap or not', async () => {
+    const fake = makeFake(hostFixture());
+    await runWavedRollout({ sha: SHA, primary: hostPlan, rest: [], skipFinalReap: true }, fake.rt);
+    // The provisioning update, then one reap update after the promote and nothing after it.
+    expect(fake.ops.filter((op) => op === 'update')).toHaveLength(2);
+    expect(fake.ops.lastIndexOf('update')).toBeGreaterThan(fake.ops.indexOf('promote:backend:b-new'));
+    expect(fake.ops.at(-1)).toBe('update');
+  });
+
+  it('leaves the reap to the wave-2 update when there is one', async () => {
+    const fake = makeFake(cellaFixture());
+    await runWavedRollout({ sha: SHA, primary: { ...backendPlan, singletonHost: true }, rest: [frontendPlan], skipFinalReap: true }, fake.rt);
+    expect(fake.ops.filter((op) => op === 'update')).toHaveLength(2);
+    expect(fake.ops.at(-1)).not.toBe('update');
+  });
+
+  it('keeps the old VM serving every pool and reaps nothing when the gate fails', async () => {
+    const fake = makeFake(hostFixture({ unhealthyUrls: ['https://api/health'] }));
+    await expect(runWavedRollout({ sha: SHA, primary: hostPlan, rest: [], skipFinalReap: true }, fake.rt)).rejects.toThrow(/backend/);
+    expect(fake.lbHistory.get('b-bid')?.at(-1)).toEqual(['10.0.0.1']);
+    // The follower pool is never written, so it keeps naming the old VM.
+    expect(fake.ops.some((op) => op.startsWith('lb:f-bid'))).toBe(false);
+    expect(fake.ops).not.toContain('promote:backend:b-new');
+    expect(fake.ops.filter((op) => op === 'update')).toHaveLength(1);
+  });
+
+  it('points the follower pools at the new VM when the gate fails and the active VM is gone', async () => {
+    // The incident shape: the control object names b-old, whose VM no longer exists, and the followers still name its address.
+    const fake = makeFake(hostFixture({ generations: [gen('backend', 'b-new', SHA, '10.0.0.2')], unhealthyUrls: ['https://api/health'] }));
+    await expect(runWavedRollout({ sha: SHA, primary: hostPlan, rest: [] }, fake.rt)).rejects.toThrow(/backend/);
+    expect(fake.lbHistory.get('b-bid')?.at(-1)).toEqual(['10.0.0.2']);
+    expect(fake.lbHistory.get('f-bid')?.at(-1)).toEqual(['10.0.0.2']);
   });
 });
 

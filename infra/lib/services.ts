@@ -56,7 +56,7 @@ export function deployedServices(serviceConfig: Record<string, EngineServiceEndp
   return placeServices(enabledServices(serviceConfig), singleVM).vm;
 }
 
-/** Enabled workers folded into the host process under singleVM, empty when singleVM is off. Their runtime secrets union onto the host VM and a co-hosted `exclusive` worker forces an exclusive host cutover. */
+/** Enabled workers folded into the host process under singleVM, empty when singleVM is off. Their runtime secrets union onto the host VM and a stop-first one makes the host a singleton host. */
 export function coHostedServices(serviceConfig: Record<string, EngineServiceEndpoint>, singleVM: boolean): readonly ServiceDefinition[] {
   return placeServices(enabledServices(serviceConfig), singleVM).coHosted;
 }
@@ -66,21 +66,16 @@ export function collocatedServices(serviceConfig: Record<string, EngineServiceEn
   return placeServices(enabledServices(serviceConfig), singleVM).collocated;
 }
 
-/** Resolve the VM replacement strategy. A singleVM host folding a stop-first worker must cut over stop-first too, so two replication-slot consumers never run at once. */
-export function effectiveStrategy(
-  serviceConfig: Record<string, EngineServiceEndpoint>,
-  singleVM: boolean,
-  svc: ServiceDefinition,
-): ServiceDefinition['replacementStrategy'] {
-  const host = deployedServices(serviceConfig, singleVM).find((s) => s.primaryRollout)?.slug;
-  if (
-    singleVM &&
-    svc.slug === host &&
-    [...coHostedServices(serviceConfig, singleVM), ...collocatedServices(serviceConfig, singleVM)].some((s) => s.replacementStrategy === 'stop-first')
-  ) {
-    return 'stop-first';
-  }
-  return svc.replacementStrategy;
+/**
+ * True for the singleVM host when it runs a stop-first worker (the cdc replication slot, the cron maintainer). The host still cuts over start-first:
+ * PostgreSQL lets one session hold the slot and pg-boss claims each cron period once, so the new generation's copies wait while the old VM lives.
+ * They take over only once the old VM is gone, so the rollout reaps it right after promotion.
+ */
+export function isSingletonHost(serviceConfig: Record<string, EngineServiceEndpoint>, singleVM: boolean, svc: ServiceDefinition): boolean {
+  if (!singleVM || !svc.primaryRollout) return false;
+  const placed = placeServices(enabledServices(serviceConfig), singleVM);
+  if (!placed.vm.some((s) => s.slug === svc.slug)) return false;
+  return [...placed.coHosted, ...placed.collocated].some((s) => s.replacementStrategy === 'stop-first');
 }
 
 /** Secret folders `service`'s VMs read, over `definitions`: itself plus, for the singleVM host, every folded co-hosted worker and collocated container. The host's secret-path grant must union identically or hydration 403s on the folded secrets. */

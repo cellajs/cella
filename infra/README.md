@@ -42,7 +42,7 @@ It owns the whole pipeline ([deploy flow](../cella/DEPLOYMENT.md#deploy-flow)). 
 
 Three rules:
 
-1. **Create-then-replace.** A release never mutates a running server: each deploy provisions a new immutable **generation** per service, moves LB traffic once it provably serves the expected version, then destroys the displaced one. Exception: `singleVM` replaces the backend host in place, with a serving gap ([rollout strategies](../cella/DEPLOYMENT.md#rollout-strategies)).
+1. **Create-then-replace.** A release never mutates a running server: each deploy provisions a new immutable **generation** per service, moves LB traffic once it provably serves the expected version, then destroys the displaced one. Under `singleVM` the backend host overlaps too, and its in-process cdc and jobs move once the old VM is reaped ([rollout strategies](../cella/DEPLOYMENT.md#rollout-strategies)).
 2. **Content-addressed identity.** A generation id hashes the release SHA plus static config: a re-run is a no-op and a manual `pulumi up` cannot start a competing generation.
 3. **Least-privilege keys, per mode.** Principals are per app×mode (`<slug>-<mode>-…`) in one IAM group, resolved by the canonical names in [lib/scaleway/principals.ts](lib/scaleway/principals.ts); no principal id is persisted or exported ([key tiers](../cella/DEPLOYMENT.md#credentials)).
 

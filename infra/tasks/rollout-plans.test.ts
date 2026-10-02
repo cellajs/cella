@@ -20,22 +20,26 @@ describe('planForService', () => {
     expect(plan.repointBackendKeys).toContain('backend-internal');
   });
 
-  it('builds an exclusive plan without LB requirements', () => {
+  it('builds a stop-first plan without LB requirements', () => {
     const plan = planForService('cdc');
     expect(plan.strategy).toBe('stop-first');
     expect(plan.healthUrl).toBeUndefined();
-    expect(plan.exclusive).toBeUndefined();
+    expect(plan.singletonHost).toBeUndefined();
   });
 
-  it('marks the singleVM host exclusive with nothing to drain (its stop-first worker folds in)', () => {
+  it('marks the singleVM host a singleton host that still overlaps and drains (its stop-first worker folds in)', () => {
     setEngineConfig(fakeConfig({ singleVM: true }));
     try {
       const plan = planForService('backend', 'https://www.cellajs.com/api');
-      expect(plan).toMatchObject({ strategy: 'start-first', exclusive: true, drainSeconds: 0 });
+      expect(plan).toMatchObject({ strategy: 'start-first', singletonHost: true, drainSeconds: 10 });
       expect(plan.healthUrl).toBe('https://www.cellajs.com/api/health');
     } finally {
       setEngineConfig(fakeConfig());
     }
+  });
+
+  it('leaves the split-VM backend an ordinary start-first plan', () => {
+    expect(planForService('backend', 'https://www.cellajs.com/api').singletonHost).toBeUndefined();
   });
 
   it('requires a health URL for start-first services', () => {

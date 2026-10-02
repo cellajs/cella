@@ -1,7 +1,7 @@
 import type { ServiceName } from '../compose/compose';
 import { engineConfig } from '../config/engine-config';
 import { healthContract } from '../config/health.config';
-import { coHostedServices, collocatedServices, effectiveStrategy, servicesByName } from '../lib/services';
+import { coHostedServices, collocatedServices, isSingletonHost, servicesByName } from '../lib/services';
 import type { RolloutServicePlan } from './rollout';
 
 function normalizeHealthUrl(explicit?: string): string | undefined {
@@ -11,7 +11,7 @@ function normalizeHealthUrl(explicit?: string): string | undefined {
 
 /**
  * Resolve one service's rollout plan from the service registry. Validates the
- * service exists and that a non-exclusive service has an LB route and health
+ * service exists and that a start-first service has an LB route and health
  * URL (the only defined deploy path).
  */
 export function planForService(serviceFlag: string, healthUrl?: string): RolloutServicePlan {
@@ -20,21 +20,18 @@ export function planForService(serviceFlag: string, healthUrl?: string): Rollout
   if (!definition) throw new Error(`Unknown service '${serviceFlag}'`);
   const service = definition.slug;
 
-  // A singleVM host folding a stop-first worker replaces its VM within the provisioning update: the LB pool moves straight to [new] and there is no displaced generation left to drain.
-  const exclusive =
-    definition.replacementStrategy !== 'stop-first' && effectiveStrategy(appConfig.services, appConfig.singleVM, definition) === 'stop-first';
-
   const plan: RolloutServicePlan = {
     service,
     strategy: definition.replacementStrategy,
     drainPolicy: definition.drainPolicy,
-    drainSeconds: exclusive ? 0 : (definition.drainSeconds ?? 10),
+    drainSeconds: definition.drainSeconds ?? 10,
     healthUrl: normalizeHealthUrl(healthUrl),
   };
-  if (exclusive) plan.exclusive = true;
+  // A singleVM host running a stop-first worker overlaps like any start-first service; its old VM is reaped right after promotion so the worker can move.
+  if (isSingletonHost(appConfig.services, appConfig.singleVM, definition)) plan.singletonHost = true;
 
   if (definition.replacementStrategy !== 'stop-first') {
-    if (!definition.lbRoute) throw new Error(`Service '${service}' is not exclusive and has no LB route; no deploy path is defined.`);
+    if (!definition.lbRoute) throw new Error(`Service '${service}' is start-first and has no LB route; no deploy path is defined.`);
     if (!plan.healthUrl) throw new Error(`Service '${service}' has no health URL.`);
   }
 
