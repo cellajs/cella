@@ -2,9 +2,9 @@ import { randomUUID } from 'node:crypto';
 import type pg from 'pg';
 import { hierarchy } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
+import { mergeState } from '#/modules/yjs/helpers/yjs-state';
 import type { DocKey } from '../../constants';
 import { loadBase, readLog } from '../../data/storage';
-import { mergeState } from '../../sync/document-state';
 
 // Seeds rows as the superuser (bypassing RLS) for the relay's integration tests, whose code under test connects as runtime_role.
 

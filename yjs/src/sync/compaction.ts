@@ -1,7 +1,7 @@
+import { mergeLog } from '#/modules/yjs/helpers/yjs-state';
 import type { DocScope } from '../constants';
 import { compactState, discardLogRows, type LogRow, loadBase, readLog } from '../data/storage';
 import { log } from '../lib/pino';
-import { mergeLog } from './document-state';
 import { postMaterialize, stateToBlocksJson } from './materialize';
 
 /** Editors a materialize request names at most, so its size stays bounded however many sockets wrote. */

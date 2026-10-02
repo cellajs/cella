@@ -4,11 +4,11 @@ import { appConfig } from 'shared';
 import { testDatabaseUrl } from 'shared/test-db';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { DbOrTx } from '#/db/create-connection';
+import { mergeState } from '#/modules/yjs/helpers/yjs-state';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
 import type { DocScope } from '../../constants';
 import { db, withRlsTx } from '../../data/db';
 import { appendUpdate, compactState, deleteDoc, discardLogRows, ensureDoc, loadBase, readLog, touchDoc } from '../../data/storage';
-import { mergeState } from '../../sync/document-state';
 import { mapUpdate, readMap, undecodableUpdate } from '../helpers';
 import { cleanupSeed, seedOrg } from './seed';
 

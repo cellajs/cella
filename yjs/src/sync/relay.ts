@@ -2,6 +2,7 @@ import * as decoding from 'lib0/decoding';
 import * as encoding from 'lib0/encoding';
 import type { WebSocket } from 'ws';
 import * as Y from 'yjs';
+import { classifyUpdate, mergeLog } from '#/modules/yjs/helpers/yjs-state';
 import type { DocKey, SocketContext } from '../constants';
 import { YJS_AWARENESS_MAX_ENTRIES, YJS_AWARENESS_RATE_LIMIT, YJS_COMPACT_DEBOUNCE_MS, YJS_COMPACT_MAX_WAIT_MS } from '../constants';
 import { loadEntityDescription } from '../data/entity-content';
@@ -9,7 +10,6 @@ import { appendUpdate, ensureDoc, loadBase, readLog } from '../data/storage';
 import { descriptionToYUpdate } from '../lib/blocknote-seed';
 import { log } from '../lib/pino';
 import { type CompactionResult, compactDocument } from './compaction';
-import { classifyUpdate, mergeLog } from './document-state';
 import { broadcastToCollab, type CollabSession, claimAwarenessClient, endCollab, getCollab, leaveCollab, withDocLock } from './session-manager';
 
 /** Message types on the socket: y-websocket's sync and awareness, and the relay's own `Generation` and `Saved`, which must match the frontend's yjs-connections.ts. */
