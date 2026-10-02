@@ -1,8 +1,9 @@
 import { defineConfig } from 'tsup';
 import { appKeepOnDisk } from '../backend/src/bundle-config.ts';
 import { keepOnDisk } from '../shared/src/keep-on-disk.ts';
+import pkg from './package.json' with { type: 'json' };
 
-const { noExternal, external } = keepOnDisk(['pg-logical-replication', ...appKeepOnDisk]);
+const { noExternal, external } = keepOnDisk(appKeepOnDisk, pkg.dependencies);
 
 export default defineConfig({
   entry: ['src/yjs-worker.ts'],

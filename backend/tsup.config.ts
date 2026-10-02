@@ -1,9 +1,10 @@
 import { defineConfig } from 'tsup';
 import { keepOnDisk } from '../shared/src/keep-on-disk.ts';
 import { appKeepOnDisk } from './src/bundle-config.ts';
+import pkg from './package.json' with { type: 'json' };
 
 // @ngrok/ngrok: native addon, loaded by platform-specific .node file.
-const { noExternal, external } = keepOnDisk(['@ngrok/ngrok', ...appKeepOnDisk]);
+const { noExternal, external } = keepOnDisk(['@ngrok/ngrok', ...appKeepOnDisk], pkg.dependencies);
 
 export default defineConfig({
   entry: {
