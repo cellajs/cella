@@ -165,28 +165,26 @@ export function AppSearch() {
             </ComboboxEmpty>
           )}
           {isLoading && <SearchResultsSkeleton />}
-          {(notFound ? !searchValue.length && !!recentSearches.length : !isLoading) && (
-            <ComboboxList className="h-full max-h-none overflow-visible">
-              {notFound && <SearchHistoryGroup searches={recentSearches} onRemove={deleteItemFromList} />}
-              {!notFound && (
-                <div className="p-1">
-                  {(() => {
-                    const firstWithResults = searchableEntityTypes.find((entityType) => (data[entityType] ?? []).length > 0);
-                    return searchableEntityTypes.map((entityType) => (
-                      <SearchResultBlock
-                        key={entityType}
-                        results={data[entityType] ?? []}
-                        entityType={entityType}
-                        hideSeparator={entityType === firstWithResults}
-                        collapsed={!!collapsedTypes[entityType]}
-                        onToggleCollapsed={() => toggleCollapsed(entityType)}
-                      />
-                    ));
-                  })()}
-                </div>
-              )}
-            </ComboboxList>
-          )}
+          <ComboboxList className="h-full max-h-none overflow-visible" hidden={notFound ? !!searchValue.length || !recentSearches.length : isLoading}>
+            {notFound && <SearchHistoryGroup searches={recentSearches} onRemove={deleteItemFromList} />}
+            {!notFound && (
+              <div className="p-1">
+                {(() => {
+                  const firstWithResults = searchableEntityTypes.find((entityType) => (data[entityType] ?? []).length > 0);
+                  return searchableEntityTypes.map((entityType) => (
+                    <SearchResultBlock
+                      key={entityType}
+                      results={data[entityType] ?? []}
+                      entityType={entityType}
+                      hideSeparator={entityType === firstWithResults}
+                      collapsed={!!collapsedTypes[entityType]}
+                      onToggleCollapsed={() => toggleCollapsed(entityType)}
+                    />
+                  ));
+                })()}
+              </div>
+            )}
+          </ComboboxList>
         </ScrollArea>
       </div>
     </Combobox>

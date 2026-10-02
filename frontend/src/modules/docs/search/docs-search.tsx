@@ -133,20 +133,18 @@ export function DocsSearch() {
               className="sm:h-[41vh]"
             />
           )}
-          {(results === null ? recentSearches.length > 0 : results.length > 0) && (
-            <ComboboxList className="h-full max-h-none overflow-visible">
-              {results === null && <SearchHistoryGroup searches={recentSearches} onRemove={deleteRecentSearch} />}
-              {results !== null && (
-                <div className="p-1">
-                  {results.map((item) => (
-                    <ComboboxItem key={item.id} value={item} className="py-2">
-                      <DocsSearchRow item={item} />
-                    </ComboboxItem>
-                  ))}
-                </div>
-              )}
-            </ComboboxList>
-          )}
+          <ComboboxList className="h-full max-h-none overflow-visible" hidden={results === null ? !recentSearches.length : !results.length}>
+            {results === null && <SearchHistoryGroup searches={recentSearches} onRemove={deleteRecentSearch} />}
+            {results !== null && (
+              <div className="p-1">
+                {results.map((item) => (
+                  <ComboboxItem key={item.id} value={item} className="py-2">
+                    <DocsSearchRow item={item} />
+                  </ComboboxItem>
+                ))}
+              </div>
+            )}
+          </ComboboxList>
         </ScrollArea>
         {/* Scope chips: outside the tab order (fumadocs pattern), arrow keys stay on the list. */}
         <div className="flex items-center gap-1 border-t p-2">

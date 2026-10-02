@@ -43,6 +43,8 @@ function inputPurpose(page: Page) {
     const paste: string[] = [];
     const personal = /e-?mail|first|last|full.?name|^name$|phone|tel|username/i;
     for (const input of document.querySelectorAll<HTMLInputElement>('input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"])')) {
+      // A disabled or read-only field collects nothing, so 1.3.5 does not apply
+      if (input.disabled || input.readOnly) continue;
       const label = (input.labels?.[0]?.textContent ?? input.getAttribute('aria-label') ?? '').trim();
       const isPersonal = input.type === 'email' || input.type === 'tel' || personal.test(input.name) || personal.test(label);
       const token = input.getAttribute('autocomplete');
