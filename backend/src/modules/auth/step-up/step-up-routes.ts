@@ -1,5 +1,5 @@
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import { noImpersonationGuard, strategyEnabled, userGuard } from '#/middlewares/guard';
+import { strategyEnabled, userGuard } from '#/middlewares/guard';
 import { passkeyChallengeLimiter, spamLimiter, stepUpLimiter } from '#/middlewares/rate-limiter/limiters';
 import { passkeyChallengeSchema } from '#/modules/auth/passkeys/passkeys-schema';
 import { stepUpBodySchema, stepUpLinkBodySchema, stepUpStateSchema } from '#/modules/auth/step-up/step-up-schema';
@@ -17,7 +17,7 @@ const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
   getStepUpPasskeyChallenge: xRoute({
     method: 'post',
     path: '/step-up/passkey-challenge',
-    xGuard: [strategyEnabled('passkey'), userGuard, noImpersonationGuard],
+    xGuard: [strategyEnabled('passkey'), userGuard],
     xRateLimiter: [passkeyChallengeLimiter],
     summary: 'Get a step-up passkey challenge',
     description:
@@ -27,7 +27,7 @@ const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
   stepUp: xRoute({
     method: 'post',
     path: '/step-up',
-    xGuard: [userGuard, noImpersonationGuard],
+    xGuard: [userGuard],
     xRateLimiter: [stepUpLimiter],
     summary: 'Step up with a second factor',
     description:
@@ -38,7 +38,7 @@ const authStepUpRoutes = createXRoutes(['auth', 'cella'], {
   sendStepUpLink: xRoute({
     method: 'post',
     path: '/step-up/link',
-    xGuard: [userGuard, noImpersonationGuard],
+    xGuard: [userGuard],
     xRateLimiter: [spamLimiter],
     summary: 'Email a step-up link',
     description:

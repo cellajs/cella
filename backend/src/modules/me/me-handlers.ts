@@ -7,7 +7,7 @@ import { mfaFactorRules } from '#/modules/auth/general/helpers/mfa';
 import { revokeSessions } from '#/modules/auth/general/helpers/revoke-sessions';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/general/helpers/session';
-import { readStepUp } from '#/modules/auth/step-up/helpers/step-up';
+import { readStepUp, refuseImpersonation } from '#/modules/auth/step-up/helpers/step-up';
 import { getUserSessions } from '#/modules/me/helpers/get-user-info';
 import { findCurrentUser, updateUserMfa } from '#/modules/me/me-queries';
 import { meRoutes } from '#/modules/me/me-routes';
@@ -82,6 +82,8 @@ app.openapi(meRoutes.getMyInvitations, async (ctx) => {
 });
 
 app.openapi(meRoutes.revokeMySessions, async (ctx) => {
+  // The admin acts as the user, never on the user's sessions.
+  refuseImpersonation(ctx.var.session);
   const { ids } = ctx.req.valid('json');
   const { data, rejectedIds, signedOut } = await revokeMySessionsOp(ctx, ids);
   if (signedOut) deleteAuthCookie(ctx, 'session');

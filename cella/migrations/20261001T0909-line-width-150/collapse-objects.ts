@@ -10,11 +10,15 @@
  * break without the collapse. Generated trees (`sdk/gen`, `*.gen.*`, `drizzle/`, `api.gen/`) are skipped:
  * they regenerate.
  *
+ * In an app, files identical to the upstream commit in `cella/cella.manifest.json` are skipped too: they
+ * arrived formatted, and line breaks upstream kept on purpose would collapse into drift.
+ *
  * Usage (from the repo root):
  *   pnpm exec tsx cella/migrations/<id>/collapse-objects.ts inventory [roots…]
  *   pnpm exec tsx cella/migrations/<id>/collapse-objects.ts rewrite   [roots…]
  */
 
+import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import { extname, join, normalize } from 'node:path'
 import ts from 'typescript'
@@ -40,6 +44,16 @@ const biomeIncludes = (): { roots: string[]; excluded: string[] } => {
     roots: globs.filter((glob) => !glob.startsWith('!')).map(toPath).filter(existsSync),
     excluded: globs.filter((glob) => glob.startsWith('!')).map(toPath),
   }
+}
+
+/** Files byte-identical to the last synced upstream commit; empty without a sync manifest (cella itself). */
+const upstreamIdentical = (): { commit: string; files: Set<string> } | null => {
+  if (!existsSync('cella/cella.manifest.json')) return null
+  const commit: string | undefined = JSON.parse(readFileSync('cella/cella.manifest.json', 'utf8'))?.upstream?.commit
+  if (!commit) return null
+  const git = (...args: string[]) => execFileSync('git', args, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }).split('\0').filter(Boolean)
+  const changed = new Set(git('diff', '--name-only', '-z', commit, '--'))
+  return { commit, files: new Set(git('ls-tree', '-r', '--name-only', '-z', commit).filter((file) => !changed.has(file))) }
 }
 
 const listFiles = (root: string, excluded: string[]): string[] => {
@@ -111,10 +125,16 @@ if (mode !== 'inventory' && mode !== 'rewrite') {
 }
 const includes = biomeIncludes()
 const roots = rootArgs.length > 0 ? rootArgs.map((root) => normalize(root)) : includes.roots
+const upstream = upstreamIdentical()
 
 let fileCount = 0
 let editCount = 0
+let skipCount = 0
 for (const file of roots.flatMap((root) => listFiles(root, includes.excluded))) {
+  if (upstream?.files.has(file)) {
+    skipCount++
+    continue
+  }
   const text = readFileSync(file, 'utf8')
   const kind = file.endsWith('x') ? ts.ScriptKind.TSX : ts.ScriptKind.TS
   const sf = ts.createSourceFile(file, text, ts.ScriptTarget.Latest, true, kind)
@@ -128,4 +148,5 @@ for (const file of roots.flatMap((root) => listFiles(root, includes.excluded))) 
   writeFileSync(file, next)
 }
 
+if (upstream) console.log(`skipped ${skipCount} files identical to upstream ${upstream.commit.slice(0, 9)}`)
 console.log(`${mode}: ${editCount} braces in ${fileCount} files${mode === 'inventory' ? ' (run rewrite, then biome format --write)' : ''}`)

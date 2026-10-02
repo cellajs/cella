@@ -1,14 +1,6 @@
 import { z } from '@hono/zod-openapi';
 import { createXRoutes, json, jsonBody, xRoute } from '#/core/x-routes';
-import {
-  crossTenantGuard,
-  noImpersonationGuard,
-  publicGuard,
-  type StrategyGate,
-  strategyEnabled,
-  sysAdminGuard,
-  userGuard,
-} from '#/middlewares/guard';
+import { publicGuard, type StrategyGate, strategyEnabled, sysAdminGuard, userGuard } from '#/middlewares/guard';
 import { isNoBot } from '#/middlewares/is-no-bot';
 import { emailEnumLimiter, spamLimiter, tokenLimiter } from '#/middlewares/rate-limiter/limiters';
 import { mockTokenDataResponse } from '#/modules/auth/auth-mocks';
@@ -35,9 +27,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
   startImpersonation: xRoute({
     method: 'post',
     path: '/impersonation/start',
-    // The impersonation refusal comes first: under an impersonation the system role check would judge the impersonated
-    // user, refuse them as no admin and raise a security alert about the admin's own request.
-    xGuard: [userGuard, noImpersonationGuard, sysAdminGuard],
+    xGuard: [userGuard, sysAdminGuard],
     summary: 'Start impersonating',
     description: 'Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.',
     request: { body: jsonBody(z.object({ targetUserId: validIdSchema })) },
@@ -89,7 +79,7 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
   acceptInvitationToken: xRoute({
     method: 'post',
     path: '/invitation-token/accept',
-    xGuard: [userGuard, crossTenantGuard],
+    xGuard: [userGuard],
     xRateLimiter: [tokenLimiter('token')],
     middleware: isNoBot,
     summary: 'Accept invitation token as current user',
