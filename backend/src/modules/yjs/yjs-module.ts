@@ -1,11 +1,10 @@
 import { appConfig, type ProductEntityType, type TrackedEventType } from 'shared';
-import type { Tx } from '#/db/create-connection';
 import { defineBackendModule } from '#/lib/module';
 import type { MutationHandler, MutationPayload } from '#/lib/mutation-bus';
-import { assertMaterializeWindow } from './helpers/materialize-window';
-import { recordYjsOutsideWrite, type YjsWrittenRow } from './helpers/record-outside-write';
+import { assertMaterializeWindow } from './operations/assert-materialize-window';
+import { recordYjsOutsideWrite, type YjsWrittenRow } from './operations/record-outside-write';
+import { retireYjsDocuments } from './operations/retire-yjs-documents';
 import { yjsHandlers } from './yjs-handlers';
-import { retireYjsDocuments } from './yjs-log';
 import { getYjsMaterializer } from './yjs-materializers';
 
 type PayloadRow = NonNullable<MutationPayload['before']>[number];
@@ -40,14 +39,9 @@ const recordOnUpdate = (entityType: ProductEntityType): MutationHandler => {
   return async (ctx, { before = [], after = [], materialized }) => {
     if (!getYjsMaterializer(entityType)) return;
     // The bus runs handlers in the write's transaction, after its UPDATE.
-    const tx = ctx.var.db as Tx;
-    if (materialized) return assertMaterializeWindow(tx, entityType, after);
+    if (materialized) return assertMaterializeWindow(ctx, { entityType, rows: after });
     const written = after.filter((row, index) => wroteDescription(row, before[index]));
-    await recordYjsOutsideWrite(
-      tx,
-      entityType,
-      written.flatMap((row) => writtenRowOf(row) ?? []),
-    );
+    await recordYjsOutsideWrite(ctx, { entityType, rows: written.flatMap((row) => writtenRowOf(row) ?? []) });
   };
 };
 
@@ -55,7 +49,7 @@ const recordOnUpdate = (entityType: ProductEntityType): MutationHandler => {
 const retireOnDelete = (entityType: ProductEntityType): MutationHandler => {
   return async (ctx, { before = [] }) => {
     if (!getYjsMaterializer(entityType)) return;
-    await retireYjsDocuments(ctx.var.db, entityType, idsOf(before));
+    await retireYjsDocuments(ctx, { entityType, entityIds: idsOf(before) });
   };
 };
 

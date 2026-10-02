@@ -1,5 +1,5 @@
 import type pg from 'pg';
-import { decodeLogNotice, type LogNotice, YJS_LOG_CHANNEL } from '#/modules/yjs/yjs-log';
+import { decodeLogNotice, type LogNotice, YJS_LOG_CHANNEL } from '#/modules/yjs/helpers/yjs-log';
 import { log } from '../lib/pino';
 import { createListenerClient } from './db';
 

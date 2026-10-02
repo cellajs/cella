@@ -5,7 +5,7 @@ import { Hono } from 'hono';
 import { createHealthApp } from 'shared/health-app';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { WebSocketServer } from 'ws';
-import { YJS_MAX_UPDATE_BYTES } from '#/modules/yjs/yjs-log';
+import { YJS_MAX_UPDATE_BYTES } from '#/modules/yjs/helpers/yjs-log';
 import { closeDb } from '../data/db';
 import { logListenerStatus, stopLogListener } from '../data/listener';
 import { env } from '../env';

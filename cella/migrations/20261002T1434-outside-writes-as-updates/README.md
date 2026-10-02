@@ -7,10 +7,10 @@ clientCacheBump: false
 
 A description written through the API (REST, MCP, an import) becomes a Yjs update of the live document in the writing
 transaction (`recordYjsOutsideWrite`). It no longer ends editing sessions. Only a delete retires a document, and the
-relay closes its sockets with 4410. The backend owns the one way into the log (`appendYjsUpdate`, `readYjsDocument` in
-`yjs-log.ts`), and relays wake on `pg_notify`. Update ops must clear `stx.changedFields` on a write that changes no
-field. `useYjsToken` returns `deleted`, and `isYjsTokenRefusal` is now `yjsTokenRefusal`. Deploy the backend and the
-relay together.
+relay closes its sockets with 4410. The backend owns the one way into the log (`appendYjsUpdate` in `yjs/operations/`,
+`findYjsDocument` in `yjs-queries.ts`), and relays wake on `pg_notify`. Update ops must clear `stx.changedFields` on a
+write that changes no field. `useYjsToken` returns `deleted`, and `isYjsTokenRefusal` is now `yjsTokenRefusal`. Deploy
+the backend and the relay together.
 
 ## What & why
 
@@ -32,7 +32,7 @@ No script: manual.
 ## Manual steps
 
 1. Update ops of collaborative products store the resolved stx when a field changed, and `stripChangedFields(table.stx)` when none did, as `updateAttachmentOp` does. The yjs handler reads `stx.changedFields` to tell a description write.
-2. A write path that dispatches no `<type>.updated` calls `recordYjsOutsideWrite(tx, entityType, rows)` in its transaction, after its UPDATE. `retireYjsDocuments` (now in `yjs-log.ts`, and it notifies) is for deletions only.
+2. A write path that dispatches no `<type>.updated` calls `recordYjsOutsideWrite({ var: { db: tx } }, { entityType, rows })` from `#/modules/yjs/operations/record-outside-write` in its transaction, after its UPDATE. `retireYjsDocuments(ctx, { entityType, entityIds })`, now in `#/modules/yjs/operations/retire-yjs-documents` and notifying, is for deletions only.
 3. Dispatch `<type>.updated` inside the write transaction (tenant context set): outside one, RLS hides the document and nothing is recorded.
 4. Remove app code that expects a reload or a new generation after an API write; editors receive it as an update.
 5. Where a collaborative document exists, a description the editor schema cannot hold, or a change over 2 MB, is refused with 400 `invalid_request`. App tests writing such bodies expect that.

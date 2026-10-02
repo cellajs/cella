@@ -4,8 +4,10 @@ import type pg from 'pg';
 import { hierarchy, toTableName } from 'shared';
 import type { TestEntityHierarchyPlan } from 'shared/testing/entity-hierarchy';
 import { descriptionToUpdate } from '#/modules/yjs/helpers/description-update';
+import type { YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
 import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
-import { type AppendResult, appendYjsUpdate, readYjsDocument, type YjsDocumentRead } from '#/modules/yjs/yjs-log';
+import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
+import { findYjsDocument } from '#/modules/yjs/yjs-queries';
 import type { DocKey, DocScope } from '../../constants';
 import { withRlsTx } from '../../data/db';
 import { loadDocument } from '../../data/storage';
@@ -160,7 +162,7 @@ export function outsideUpdate(read: YjsDocumentRead, description: string): Uint8
 
 /** Appends an outside write's update as the backend does: a server-origin row, notified unless `notify` is false. */
 export function appendOutsideWrite(scope: DocScope, update: Uint8Array, generation: string, notify = true): Promise<AppendResult> {
-  return withRlsTx(scope.tenantId, '', (tx) => appendYjsUpdate(tx, scope, update, { userId: null, generation, notify }));
+  return withRlsTx(scope.tenantId, '', (tx) => appendYjsUpdate({ var: { db: tx } }, { doc: scope, update, userId: null, generation, notify }));
 }
 
 /**
@@ -179,9 +181,10 @@ export function recordOutsideWrite(
         sql`UPDATE ${sql.raw(`"${toTableName(scope.entityType)}"`)} SET "description" = ${description} WHERE "id" = ${scope.entityId}`,
       );
     }
-    const read = await readYjsDocument(tx, scope);
+    const ctx = { var: { db: tx } };
+    const read = await findYjsDocument(ctx, { doc: scope });
     if (!read) return null;
-    return appendYjsUpdate(tx, scope, outsideUpdate(read, description), { userId: null, generation: read.generation, notify });
+    return appendYjsUpdate(ctx, { doc: scope, update: outsideUpdate(read, description), userId: null, generation: read.generation, notify });
   });
 }
 

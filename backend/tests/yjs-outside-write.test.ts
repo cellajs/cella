@@ -15,10 +15,11 @@ import { updateAttachmentOp } from '#/modules/attachment/operations/update-attac
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { usersTable } from '#/modules/user/user-db';
 import { descriptionToSeed, descriptionToUpdate, stateToBlocksJson, YJS_FRAGMENT_NAME } from '#/modules/yjs/helpers/description-update';
+import { decodeLogNotice, YJS_LOG_CHANNEL, type YjsDocScope } from '#/modules/yjs/helpers/yjs-log';
 import { mergeLog, mergeState } from '#/modules/yjs/helpers/yjs-state';
+import { appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { materializeDescriptionOp } from '#/modules/yjs/operations/materialize-description';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
-import { appendYjsUpdate, decodeLogNotice, YJS_LOG_CHANNEL, type YjsDocScope } from '#/modules/yjs/yjs-log';
 import { mockStxBase } from '#/schemas/sync-transaction-mocks';
 import { defaultHeaders } from './fixtures';
 import { adminDb, expectRefusal } from './helpers';
@@ -177,7 +178,7 @@ describe.skipIf(appConfig.services.yjs.enabled === false)('Yjs outside writes', 
     const released = Promise.withResolvers<void>();
     const done = baseDb.transaction(async (tx) => {
       await tx.execute(sql`SELECT set_config('app.tenant_id', ${scope.tenantId}, true), set_config('app.user_id', '', true)`);
-      const result = await appendYjsUpdate(tx, scope, update, { userId: tenant.user.id, generation, notify: false });
+      const result = await appendYjsUpdate({ var: { db: tx } }, { doc: scope, update, userId: tenant.user.id, generation, notify: false });
       appended.resolve();
       await released.promise;
       return result;

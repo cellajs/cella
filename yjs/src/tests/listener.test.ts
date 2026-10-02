@@ -1,6 +1,6 @@
 import { EventEmitter } from 'node:events';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { encodeLogNotice, YJS_LOG_CHANNEL } from '#/modules/yjs/yjs-log';
+import { encodeLogNotice, YJS_LOG_CHANNEL } from '#/modules/yjs/helpers/yjs-log';
 import { flushMicrotasks } from './helpers';
 
 /** A pg.Client stand-in: `connect` and `LISTEN` succeed unless a test says otherwise, and the test drives its events. */

@@ -46,7 +46,7 @@ const { logListenerStatus, startLogListener, stopLogListener } = await import('.
 const { listenerApplicationName, withRlsTx } = await import('../../data/db');
 const { loadDocument } = await import('../../data/storage');
 const { stateToBlocksJson } = await import('#/modules/yjs/helpers/description-update');
-const { retireYjsDocuments } = await import('#/modules/yjs/yjs-log');
+const { retireYjsDocuments } = await import('#/modules/yjs/operations/retire-yjs-documents');
 
 const tenantId = 'yjs-outside-tenant';
 const organizationId = '60000000-0000-4000-a000-000000000001';
@@ -257,7 +257,7 @@ describe('a deleted entity', () => {
       userId,
       async (tx) => {
         await tx.execute(sql`UPDATE attachments SET deleted_at = now(), deleted_by = ${userId} WHERE id = ${scope.entityId}`);
-        await retireYjsDocuments(tx, 'attachment', [scope.entityId]);
+        await retireYjsDocuments({ var: { db: tx } }, { entityType: 'attachment', entityIds: [scope.entityId] });
       },
       { includeDeleted: true },
     );

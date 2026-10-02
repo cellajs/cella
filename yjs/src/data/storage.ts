@@ -1,7 +1,9 @@
 import { and, asc, eq, inArray, lt, max, sql, TransactionRollbackError } from 'drizzle-orm';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
+import type { LogRow, YjsDocumentRead } from '#/modules/yjs/helpers/yjs-log';
+import { type AppendResult, appendYjsUpdate } from '#/modules/yjs/operations/append-yjs-update';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
-import { type AppendResult, appendYjsUpdate, type LogRow, readYjsDocument, type YjsDocumentRead } from '#/modules/yjs/yjs-log';
+import { findYjsDocument } from '#/modules/yjs/yjs-queries';
 import type { DocKey, DocScope } from '../constants';
 import { db, type Tx, withRlsTx } from './db';
 import { lockEntityDescription } from './entity-content';
@@ -23,11 +25,11 @@ const logWhere = ({ entityType, entityId, tenantId }: DocKey) =>
 export type { AppendResult, LogRow, YjsDocumentRead };
 
 /**
- * The document in one consistent read (`readYjsDocument`): its row under FOR SHARE, so a compaction's base replace on
+ * The document in one consistent read (`findYjsDocument`): its row under FOR SHARE, so a compaction's base replace on
  * any relay commits before it or waits, then its log, oldest first. Null when no row exists: never seeded, or retired.
  */
 export async function loadDocument(doc: DocKey): Promise<YjsDocumentRead | null> {
-  return asSystem(doc, (tx) => readYjsDocument(tx, doc));
+  return asSystem(doc, (tx) => findYjsDocument({ var: { db: tx } }, { doc }));
 }
 
 /**
@@ -47,7 +49,7 @@ export async function seedDocument(scope: DocScope, toSeed: (description: string
       .insert(yjsDocumentsTable)
       .values({ entityType, entityId, tenantId, organizationId, state: Buffer.from(toSeed(entity.description)), updatedAt: sql`now()` })
       .onConflictDoNothing({ target: [yjsDocumentsTable.entityType, yjsDocumentsTable.entityId] });
-    return readYjsDocument(tx, scope);
+    return findYjsDocument({ var: { db: tx } }, { doc: scope });
   });
 }
 
@@ -66,7 +68,7 @@ export async function appendUpdate(
   onLogged?: (id: number) => void,
 ): Promise<AppendResult> {
   return asSystem(scope, async (tx) => {
-    const result = await appendYjsUpdate(tx, scope, payload, { userId: userId || null, generation });
+    const result = await appendYjsUpdate({ var: { db: tx } }, { doc: scope, update: payload, userId: userId || null, generation });
     if (result.status === 'appended') onLogged?.(result.id);
     return result;
   });
