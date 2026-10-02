@@ -31,16 +31,15 @@ Global chain in `backend/src/middlewares/app.ts`: log context → referrer overr
 
 Route-level guards in `backend/src/middlewares/guard/`:
 
-- `userGuard`: validates the session and sets `ctx.var.user`, `ctx.var.memberships`, `ctx.var.actor`, `ctx.var.db` (baseDb).
+- `userGuard`: validates the session and sets `ctx.var.user`, `ctx.var.memberships`, `ctx.var.actor`, `ctx.var.db` (baseDb). A route without `tenantGuard` reads across tenants: its handlers use `tenantRead()` for product entity queries.
 - `serviceGuard`: a secret API key (`Authorization: Bearer <slug>_sk_…` or `x-api-key`) or an access token from the app's authorization server; sets `ctx.var.actor` (a service account, or the consenting user masked by the token scopes). Never system admin.
 - `actorGuard`: a session, an API key or an access token, for routes whose operation takes `ActorContext`. `tokenGuard`: access tokens only (the MCP face), answering 401 with the RFC 9728 challenge.
 - Contexts, narrowest first: `DbContext` (a connection), `ActorContext` (actor + tenant, no user row), `OrgContext` (plus the organization), `UserContext` (a signed-in user, session fields only behind `userGuard`). Type an operation on the narrowest it needs. Every guard declares the OpenAPI `security` it accepts; `createXRoute` emits it per operation.
 - `tenantGuard`: verifies tenant membership, loads the tenant row, and sets `ctx.var.db = baseDb` and `ctx.var.tenantId`.
 - `orgGuard`: resolves the organization and verifies membership.
 - `publicGuard`: unauthenticated routes. Sets `ctx.var.db` to baseDb.
-- `crossTenantGuard`: authenticated cross-tenant routes. Sets `ctx.var.db = baseDb`. Handlers use `tenantRead()` for product entity queries.
 - `stepUpGuard`: after `userGuard` on account-security routes: the session must have proven its user's presence again recently, never an impersonation; else 403 `step_up_required` naming the methods. The routes, the proofs and the window: [Authentication](./AUTHENTICATION.md#step-up).
-- Also: `sysAdminGuard`, `relatableGuard`, `noImpersonationGuard` (after `userGuard`: the browser's own session, never an impersonation; 403 `impersonation_forbidden`).
+- Also: `sysAdminGuard` (never an impersonation: 403 `impersonation_forbidden` before the role check), `relatableGuard`.
 
 ### Database access patterns
 

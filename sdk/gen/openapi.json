@@ -28,14 +28,6 @@
             "name": "actor",
             "description": "Requires a session cookie, a secret API key, or an access token and sets the actor"
           },
-          "crossTenantGuard": {
-            "name": "crossTenant",
-            "description": "Requires userGuard and sets baseDb for cross-tenant access"
-          },
-          "noImpersonationGuard": {
-            "name": "noImpersonation",
-            "description": "Refused while impersonating: the admin acts as the user, never on the account itself"
-          },
           "orgGuard": {
             "name": "org",
             "description": "Validates organization membership within tenant context"
@@ -54,7 +46,7 @@
           },
           "sysAdminGuard": {
             "name": "sysAdmin",
-            "description": "Requires system admin + IP whitelist"
+            "description": "Requires system admin + IP whitelist, never an impersonation"
           },
           "tenantGuard": {
             "name": "tenant",
@@ -2934,7 +2926,7 @@
         "tags": ["auth", "cella"],
         "summary": "Accept invitation token as current user",
         "description": "Accepts the membership invitation held in the single-use token session as the signed-in user, also when it was sent to a different email address. Only an invitation not yet bound to another user can be accepted this way.",
-        "x-guard": ["userGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["tokenLimiter"],
         "x-cache": [],
         "responses": {
@@ -2991,7 +2983,7 @@
         "tags": ["auth", "cella"],
         "summary": "Start impersonating",
         "description": "Allows a system admin to impersonate a specific user by ID, returning a temporary impersonation session.",
-        "x-guard": ["userGuard", "noImpersonationGuard", "sysAdminGuard"],
+        "x-guard": ["userGuard", "sysAdminGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "requestBody": {
@@ -4474,7 +4466,7 @@
         "tags": ["auth", "cella"],
         "summary": "Step up with a second factor",
         "description": "Proves the user is present on this session with a passkey assertion (to a step-up passkey challenge) or a TOTP code of a factor they hold. Account-security actions then pass for ten minutes.",
-        "x-guard": ["userGuard", "noImpersonationGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["stepUpLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -4568,7 +4560,7 @@
         "tags": ["auth", "cella"],
         "summary": "Get a step-up passkey challenge",
         "description": "Issues a passkey challenge for a step-up of this session, bound to the current user, with the user's passkeys to offer. Only a step-up answers it.",
-        "x-guard": ["strategyEnabled(passkey)", "userGuard", "noImpersonationGuard"],
+        "x-guard": ["strategyEnabled(passkey)", "userGuard"],
         "x-rate-limiter": ["passkeyChallengeLimiter"],
         "x-cache": [],
         "responses": {
@@ -4626,7 +4618,7 @@
         "tags": ["auth", "cella"],
         "summary": "Email a step-up link",
         "description": "For a user without a passkey or TOTP: emails a confirmation link that steps up this session when opened in this browser within ten minutes. The link signs nobody in.",
-        "x-guard": ["userGuard", "noImpersonationGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["spamLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -5908,7 +5900,7 @@
         "tags": ["me", "cella"],
         "summary": "Get list of invitations",
         "description": "Returns a list of pending memberships with entity data.",
-        "x-guard": ["userGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "responses": {
@@ -6048,7 +6040,7 @@
         "tags": ["me", "cella"],
         "summary": "Revoke sessions",
         "description": "Revokes sessions of the current user by id. The rows stay for the audit trail and the sessions list shows them as revoked for 30 days. Revoking the current session signs out.",
-        "x-guard": ["userGuard", "noImpersonationGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "requestBody": {
@@ -6247,7 +6239,7 @@
         "tags": ["me", "cella"],
         "summary": "Leave entity",
         "description": "Removes the current user from an entity they are a member of.",
-        "x-guard": ["userGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [
@@ -8519,7 +8511,7 @@
         "tags": ["users", "cella"],
         "summary": "Get list of users",
         "description": "Returns a list of users. Only system admins receive the system `role`, and only they may filter or sort by it.",
-        "x-guard": ["userGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -8756,7 +8748,7 @@
         "tags": ["users", "cella"],
         "summary": "Get user",
         "description": "Retrieves a user by ID. The requesting user must share at least one organization membership. Pass ?slug=true to resolve by slug instead.",
-        "x-guard": ["userGuard", "crossTenantGuard", "relatableGuard"],
+        "x-guard": ["userGuard", "relatableGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -9442,7 +9434,7 @@
         "tags": ["organizations", "cella", "channel"],
         "summary": "Get list of organizations",
         "description": "Returns a list of organizations.",
-        "x-guard": ["userGuard", "crossTenantGuard", "relatableGuard"],
+        "x-guard": ["userGuard", "relatableGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
         "parameters": [
@@ -12018,7 +12010,7 @@
         "tags": ["memberships", "cella"],
         "summary": "Respond to membership invitation",
         "description": "Accepting activates the associated membership. Rejecting simply removes the invitation token.",
-        "x-guard": ["userGuard", "crossTenantGuard"],
+        "x-guard": ["userGuard"],
         "x-rate-limiter": ["pointsLimiter"],
         "x-cache": [],
         "parameters": [

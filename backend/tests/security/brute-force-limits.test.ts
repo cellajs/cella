@@ -12,6 +12,7 @@ import {
   authCookie,
   cookieChange,
   createMfaToken,
+  createSystemAdminUser,
   createTestUser,
   createTotpUser,
   type ErrorResponse,
@@ -22,7 +23,7 @@ import {
 } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
-import { insertSession } from './session-helpers';
+import { insertImpersonation, insertSession } from './session-helpers';
 
 vi.unmock('#/middlewares/rate-limiter/core');
 /** A fresh client IP per test: limiter rows outlive a run, and the IP-keyed budgets must start empty. */
@@ -71,6 +72,21 @@ describe('brute-force budgets', async () => {
     const { response } = await call(stepUp, { body: { totpCode: totpCode() }, headers: session.headers });
     expect(response.status).toBe(429);
     expect((await sessionRow(session.id)).steppedUpAt).toBeNull();
+  });
+
+  it("must not spend the user's step-up budget via an impersonation's refused attempts", async () => {
+    const admin = await createSystemAdminUser(`step-up-limit-admin-${nanoid(8)}@security-test.com`);
+    const user = await createTotpUser(`step-up-limit-impersonated-${nanoid(8)}@security-test.com`);
+    const impersonation = await insertImpersonation(await insertSession(admin), user);
+
+    // More refusals than the five failures the account allows: none of them is a guess at the user's factor.
+    for (let attempt = 0; attempt < 6; attempt++) {
+      const { response } = await call(stepUp, { body: { totpCode: wrongTotpCode() }, headers: impersonation.headers });
+      expect(response.status).toBe(403);
+    }
+
+    const own = await insertSession(user);
+    expect((await call(stepUp, { body: { totpCode: totpCode() }, headers: own.headers })).response.status).toBe(204);
   });
 
   it('lets the owner through with the right code before the budget runs out (positive control)', async () => {

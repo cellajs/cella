@@ -19,11 +19,6 @@
         },
         "userGuard": { "name": "user", "description": "Requires valid session and sets auth context (user, memberships, baseDb)" },
         "actorGuard": { "name": "actor", "description": "Requires a session cookie, a secret API key, or an access token and sets the actor" },
-        "crossTenantGuard": { "name": "crossTenant", "description": "Requires userGuard and sets baseDb for cross-tenant access" },
-        "noImpersonationGuard": {
-          "name": "noImpersonation",
-          "description": "Refused while impersonating: the admin acts as the user, never on the account itself"
-        },
         "orgGuard": { "name": "org", "description": "Validates organization membership within tenant context" },
         "publicGuard": { "name": "public", "description": "No authentication required; provides baseDb without RLS context" },
         "relatableGuard": {
@@ -34,7 +29,7 @@
           "name": "stepUp",
           "description": "Requires a recent proof of presence on this session: the enrolled passkey or TOTP, else a fresh sign-in or a confirmed email link. Refuses impersonation."
         },
-        "sysAdminGuard": { "name": "sysAdmin", "description": "Requires system admin + IP whitelist" },
+        "sysAdminGuard": { "name": "sysAdmin", "description": "Requires system admin + IP whitelist, never an impersonation" },
         "tenantGuard": {
           "name": "tenant",
           "description": "Requires userGuard or serviceGuard, validates tenant access, and sets baseDb + tenantId context"

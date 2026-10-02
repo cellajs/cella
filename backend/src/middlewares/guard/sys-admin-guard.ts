@@ -5,15 +5,22 @@ import { scrubUrl } from 'shared/utils/scrub-url';
 import { AppError } from '#/core/error';
 import { setMiddlewareExtension } from '#/core/x-middleware';
 import { sendSecurityInboxEmail } from '#/modules/auth/general/helpers/send-account-security-email';
+import { refuseImpersonation } from '#/modules/auth/step-up/helpers/step-up';
 import { getIp } from '#/utils/get-ip';
 import { env } from '../../env';
 
 const allowList = env.SYSTEM_ADMIN_IP_ALLOWLIST === 'none' ? [] : env.SYSTEM_ADMIN_IP_ALLOWLIST.split(',');
 
-/** Only users holding the 'admin' system role proceed; anyone else triggers a security notification. */
+/**
+ * Only users holding the 'admin' system role proceed; anyone else triggers a security notification. An impersonation
+ * is refused first: system administration is done as oneself, and the role check would judge the impersonated user
+ * and raise an alert about the admin's own request.
+ */
 const sysAdminCheck: MiddlewareHandler = async (ctx, next) => {
   const user = ctx.var.user;
   const isSystemAdmin = ctx.var.isSystemAdmin;
+
+  refuseImpersonation(ctx.var.session);
 
   if (!isSystemAdmin) {
     const ip = getIp(ctx) ?? 'unknown';
@@ -44,5 +51,5 @@ export const sysAdminGuard = setMiddlewareExtension(combinedMiddleware, {
   functionName: 'sysAdminGuard',
   type: 'x-guard',
   name: 'sysAdmin',
-  description: 'Requires system admin + IP whitelist',
+  description: 'Requires system admin + IP whitelist, never an impersonation',
 });
