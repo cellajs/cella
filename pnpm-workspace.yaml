@@ -36,6 +36,7 @@ packages:
   - studio
   - yjs
   - bench
+  - a11y
 patchedDependencies:
   artillery@2.0.34: patches/artillery@2.0.34.patch
 peerDependencyRules:

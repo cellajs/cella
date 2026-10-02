@@ -1,0 +1,1480 @@
+{
+  "edition": "VPAT® 2.5Rev WCAG",
+  "standard": "WCAG 2.2 Level AA",
+  "auditedAt": "2026-10-02",
+  "scope": [
+    "marketing-home",
+    "features",
+    "sync-engine",
+    "contact",
+    "legal-privacy",
+    "legal-accessibility",
+    "docs-overview",
+    "docs-operations",
+    "docs-schemas",
+    "docs-page",
+    "docs-search",
+    "sign-in",
+    "sign-in-email",
+    "auth-error",
+    "home",
+    "account",
+    "org-attachments",
+    "org-members",
+    "org-settings",
+    "system-users",
+    "system-organizations",
+    "menu-sheet",
+    "search-sheet",
+    "account-sheet",
+    "invite-dialog",
+    "member-sheet"
+  ],
+  "criteria": [
+    {
+      "id": "1.1.1",
+      "name": "Non-text Content",
+      "level": "A",
+      "en301549": "9.1.1.1",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe image-alt passed on 10 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "1.2.1",
+      "name": "Audio-only and Video-only (Prerecorded)",
+      "level": "A",
+      "en301549": "9.1.2.1",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "code:media",
+          "result": "review",
+          "summary": "The app plays media in frontend/src/modules/attachment/render/audio.tsx, frontend/src/modules/attachment/render/video.tsx. A person decides whether it publishes media of its own or only plays files users upload.",
+          "where": [
+            "frontend/src/modules/attachment/render/audio.tsx",
+            "frontend/src/modules/attachment/render/video.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.2.2",
+      "name": "Captions (Prerecorded)",
+      "level": "A",
+      "en301549": "9.1.2.2",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "code:media",
+          "result": "review",
+          "summary": "The app plays media in frontend/src/modules/attachment/render/audio.tsx, frontend/src/modules/attachment/render/video.tsx. A person decides whether it publishes media of its own or only plays files users upload.",
+          "where": [
+            "frontend/src/modules/attachment/render/audio.tsx",
+            "frontend/src/modules/attachment/render/video.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.2.3",
+      "name": "Audio Description or Media Alternative (Prerecorded)",
+      "level": "A",
+      "en301549": "9.1.2.3",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "code:media",
+          "result": "review",
+          "summary": "The app plays media in frontend/src/modules/attachment/render/audio.tsx, frontend/src/modules/attachment/render/video.tsx. A person decides whether it publishes media of its own or only plays files users upload.",
+          "where": [
+            "frontend/src/modules/attachment/render/audio.tsx",
+            "frontend/src/modules/attachment/render/video.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.2.4",
+      "name": "Captions (Live)",
+      "level": "AA",
+      "en301549": "9.1.2.4",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "code:media",
+          "result": "review",
+          "summary": "The app plays media in frontend/src/modules/attachment/render/audio.tsx, frontend/src/modules/attachment/render/video.tsx. A person decides whether it publishes media of its own or only plays files users upload.",
+          "where": [
+            "frontend/src/modules/attachment/render/audio.tsx",
+            "frontend/src/modules/attachment/render/video.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.2.5",
+      "name": "Audio Description (Prerecorded)",
+      "level": "AA",
+      "en301549": "9.1.2.5",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "code:media",
+          "result": "review",
+          "summary": "The app plays media in frontend/src/modules/attachment/render/audio.tsx, frontend/src/modules/attachment/render/video.tsx. A person decides whether it publishes media of its own or only plays files users upload.",
+          "where": [
+            "frontend/src/modules/attachment/render/audio.tsx",
+            "frontend/src/modules/attachment/render/video.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.3.1",
+      "name": "Info and Relationships",
+      "level": "A",
+      "en301549": "9.1.3.1",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 14 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [
+        "manual"
+      ],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-hidden-body passed on 52 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "fail",
+          "summary": "axe list: <ul> and <ol> must only directly contain <li>, <script> or <template> elements (10 elements).",
+          "where": [
+            "docs-overview (light)",
+            "docs-operations (light)",
+            "docs-schemas (light)",
+            "docs-page (light)",
+            "menu-sheet (light)",
+            "docs-overview (dark)",
+            "docs-operations (dark)",
+            "docs-schemas (dark)",
+            "docs-page (dark)",
+            "menu-sheet (dark)"
+          ]
+        },
+        {
+          "check": "axe",
+          "result": "fail",
+          "summary": "axe listitem: <li> elements must be contained in a <ul> or <ol> (48 elements).",
+          "where": [
+            "docs-overview (light)",
+            "docs-operations (light)",
+            "docs-schemas (light)",
+            "docs-page (light)",
+            "docs-overview (dark)",
+            "docs-operations (dark)",
+            "docs-schemas (dark)",
+            "docs-page (dark)"
+          ]
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe td-headers-attr passed on 2 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe th-has-data-cells passed on 2 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "fail",
+          "summary": "axe aria-required-children: Certain ARIA roles must contain particular children (4 elements).",
+          "where": [
+            "docs-search (light)",
+            "search-sheet (light)",
+            "docs-search (dark)",
+            "search-sheet (dark)"
+          ]
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-required-parent passed on 18 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "1.3.2",
+      "name": "Meaningful Sequence",
+      "level": "A",
+      "en301549": "9.1.3.2",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "1.3.3",
+      "name": "Sensory Characteristics",
+      "level": "A",
+      "en301549": "9.1.3.3",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "1.3.4",
+      "name": "Orientation",
+      "level": "AA",
+      "en301549": "9.1.3.4",
+      "status": "supports",
+      "remarks": "The same content shows in portrait and landscape passed on all 19 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:orientation",
+          "result": "pass",
+          "summary": "The same content shows in portrait and landscape passed on all 19 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "1.3.5",
+      "name": "Identify Input Purpose",
+      "level": "AA",
+      "en301549": "9.1.3.5",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 2 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe autocomplete-valid passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "probe:autocomplete",
+          "result": "fail",
+          "summary": "Inputs for personal data declare their purpose failed on 2 of 3 states. contact: \"Name*\" has no autocomplete purpose; \"Email*\" has no autocomplete purpose | account: \"First name*\" has no autocomplete purpose; \"Last name*\" has no autocomplete purpose",
+          "where": [
+            "contact",
+            "account"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.4.1",
+      "name": "Use of Color",
+      "level": "A",
+      "en301549": "9.1.4.1",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe link-in-text-block passed on 8 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "1.4.2",
+      "name": "Audio Control",
+      "level": "A",
+      "en301549": "9.1.4.2",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "code:autoplay",
+          "result": "review",
+          "summary": "Autoplay is set in frontend/src/modules/attachment/attachments-carousel.tsx; check that none of it plays sound.",
+          "where": [
+            "frontend/src/modules/attachment/attachments-carousel.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.4.3",
+      "name": "Contrast (Minimum)",
+      "level": "AA",
+      "en301549": "9.1.4.3",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 18 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "fail",
+          "summary": "axe color-contrast: Elements must meet minimum color contrast ratio thresholds (479 elements).",
+          "where": [
+            "docs-overview (light)",
+            "docs-operations (light)",
+            "docs-search (light)",
+            "account (light)",
+            "org-attachments (light)",
+            "org-members (light)",
+            "org-settings (light)",
+            "invite-dialog (light)",
+            "member-sheet (light)",
+            "docs-overview (dark)",
+            "docs-search (dark)",
+            "account (dark)",
+            "org-attachments (dark)",
+            "org-members (dark)",
+            "org-settings (dark)",
+            "account-sheet (dark)",
+            "invite-dialog (dark)",
+            "member-sheet (dark)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.4.4",
+      "name": "Resize Text",
+      "level": "AA",
+      "en301549": "9.1.4.4",
+      "status": "supports",
+      "remarks": "axe meta-viewport passed on 52 states. Content fits at 200% zoom (a 640px viewport) without loss passed on all 26 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe meta-viewport passed on 52 states.",
+          "where": []
+        },
+        {
+          "check": "probe:resize",
+          "result": "pass",
+          "summary": "Content fits at 200% zoom (a 640px viewport) without loss passed on all 26 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "1.4.5",
+      "name": "Images of Text",
+      "level": "AA",
+      "en301549": "9.1.4.5",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "1.4.10",
+      "name": "Reflow",
+      "level": "AA",
+      "en301549": "9.1.4.10",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 4 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:reflow",
+          "result": "fail",
+          "summary": "Content fits a 320px-wide viewport without sideways scrolling failed on 4 of 26 states. org-attachments: text \"Hauck, Watsica and Douglas\" is cut off at the edge | org-members: text \"Hauck, Watsica and Douglas\" is cut off at the edge | org-settings: text \"Hauck, Watsica and Douglas\" is cut off at the edge | invite-dialog: text \"Hauck, Watsica and Douglas\" is cut off at the edge",
+          "where": [
+            "org-attachments",
+            "org-members",
+            "org-settings",
+            "invite-dialog"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.4.11",
+      "name": "Non-text Contrast",
+      "level": "AA",
+      "en301549": "9.1.4.11",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "1.4.12",
+      "name": "Text Spacing",
+      "level": "AA",
+      "en301549": "9.1.4.12",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 9 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe avoid-inline-spacing passed on 46 states.",
+          "where": []
+        },
+        {
+          "check": "probe:text-spacing",
+          "result": "fail",
+          "summary": "Text stays fully visible with WCAG text spacing applied failed on 9 of 26 states. docs-operations: \"resendInvitationWithToken\" is cut off; \"generatePasskeyChallenge\" is cut off; \"getStepUpPasskeyChallenge\" is cut off | docs-page: \"Customize & contribute\" is cut off | org-attachments: \"Hauck, Watsica and Douglas\" is cut off | org-members: \"Hauck, Watsica and Douglas\" is cut off; \"admin-test@cellajs.com\" is cut off; \"boyd.quigley92@gmail.com\" is cut off | org-settings: \"Hauck, Watsica and Douglas\" is cut off; \"Visible\" is cut off | system-users: \"alden.cormier83@gmail.com\" is cut off; \"oral.altenwerth@hotmail.com\" is cut off; \"dora.gislason86@hotmail.com\" is cut off | menu-sheet: \"Hauck, Watsica and Douglas\" is cut off; \"Grady, Ebert and Farrell\" is cut off; \"Smith, Lynch and Kozey\" is cut off | invite-dialog: \"Hauck, Watsica and Douglas\" is cut off; \"admin-test@cellajs.com\" is cut off; \"boyd.quigley92@gmail.com\" is cut off | member-sheet: \"Hauck, Watsica and Douglas\" is cut off; \"admin-test@cellajs.com\" is cut off; \"boyd.quigley92@gmail.com\" is cut off",
+          "where": [
+            "docs-operations",
+            "docs-page",
+            "org-attachments",
+            "org-members",
+            "org-settings",
+            "system-users",
+            "menu-sheet",
+            "invite-dialog",
+            "member-sheet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.4.13",
+      "name": "Content on Hover or Focus",
+      "level": "AA",
+      "en301549": "9.1.4.13",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": [
+        {
+          "check": "probe:hover-content",
+          "result": "pass",
+          "summary": "Tooltips are hoverable and dismissible with Escape passed on all 9 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.1.1",
+      "name": "Keyboard",
+      "level": "A",
+      "en301549": "9.2.1.1",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual",
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe scrollable-region-focusable passed on 4 states.",
+          "where": []
+        },
+        {
+          "check": "probe:keyboard",
+          "result": "review",
+          "summary": "Tab order recorded on 26 states for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"INPUT\" → button \"BUTTON\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
+          "where": [
+            "marketing-home",
+            "features",
+            "sync-engine",
+            "contact",
+            "legal-privacy",
+            "legal-accessibility",
+            "docs-overview",
+            "docs-operations",
+            "docs-schemas",
+            "docs-page",
+            "docs-search",
+            "sign-in",
+            "sign-in-email",
+            "auth-error",
+            "home",
+            "account",
+            "org-attachments",
+            "org-members",
+            "org-settings",
+            "system-users",
+            "system-organizations",
+            "menu-sheet",
+            "search-sheet",
+            "account-sheet",
+            "invite-dialog",
+            "member-sheet"
+          ]
+        },
+        {
+          "check": "code:keyboard-handlers",
+          "result": "review",
+          "summary": "12 elements handle pointer events without a keyboard equivalent, in frontend/src/modules/attachment/render/attachment-render.tsx, frontend/src/modules/attachment/table/description-cell.tsx, frontend/src/modules/common/blocknote/full-html.tsx, frontend/src/modules/common/board/board-panel.tsx, frontend/src/modules/common/data-grid/cell.tsx, frontend/src/modules/common/form-fields/select-emails.tsx, frontend/src/modules/common/json-viewer/json-node.tsx, frontend/src/modules/common/json-viewer/primitive-value.tsx, frontend/src/modules/docs/tag-table.tsx, frontend/src/modules/marketing/about/sync-diagram.tsx, frontend/src/modules/navigation/menu-sheet/sheet-panel.tsx; check that each has a keyboard path.",
+          "where": [
+            "frontend/src/modules/attachment/render/attachment-render.tsx",
+            "frontend/src/modules/attachment/table/description-cell.tsx",
+            "frontend/src/modules/common/blocknote/full-html.tsx",
+            "frontend/src/modules/common/board/board-panel.tsx",
+            "frontend/src/modules/common/data-grid/cell.tsx",
+            "frontend/src/modules/common/form-fields/select-emails.tsx",
+            "frontend/src/modules/common/json-viewer/json-node.tsx",
+            "frontend/src/modules/common/json-viewer/primitive-value.tsx",
+            "frontend/src/modules/docs/tag-table.tsx",
+            "frontend/src/modules/marketing/about/sync-diagram.tsx",
+            "frontend/src/modules/navigation/menu-sheet/sheet-panel.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2.1.2",
+      "name": "No Keyboard Trap",
+      "level": "A",
+      "en301549": "9.2.1.2",
+      "status": "supports",
+      "remarks": "Focus never gets stuck, and Escape closes overlays passed on all 26 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:keyboard",
+          "result": "pass",
+          "summary": "Focus never gets stuck, and Escape closes overlays passed on all 26 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.1.4",
+      "name": "Character Key Shortcuts",
+      "level": "A",
+      "en301549": "9.2.1.4",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 3 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "code:shortcuts",
+          "result": "fail",
+          "summary": "Single-character shortcuts with no way to turn them off or remap them: Shift + A (frontend/src/modules/navigation/app-nav.tsx), Shift + F (frontend/src/modules/navigation/app-nav.tsx), Shift + M (frontend/src/modules/navigation/app-nav.tsx).",
+          "where": [
+            "Shift + A (frontend/src/modules/navigation/app-nav.tsx)",
+            "Shift + F (frontend/src/modules/navigation/app-nav.tsx)",
+            "Shift + M (frontend/src/modules/navigation/app-nav.tsx)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2.2.1",
+      "name": "Timing Adjustable",
+      "level": "A",
+      "en301549": "9.2.2.1",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "code:timing",
+          "result": "review",
+          "summary": "Sessions last a week, beyond the 20-hour exception. Sign-in challenges (passkey, email link, step-up) expire after 5 to 10 minutes and can be requested again. Toasts close after 4 seconds; check that none carries information users need to act on.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.2.2",
+      "name": "Pause, Stop, Hide",
+      "level": "A",
+      "en301549": "9.2.2.2",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual",
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "code:motion",
+          "result": "review",
+          "summary": "Looping animations in frontend/src/modules/attachment/attachments-carousel.tsx, frontend/src/modules/common/data-table/infinite-loader.tsx, frontend/src/modules/docs/code-viewer.tsx, frontend/src/modules/home/onboarding/welcome-text.tsx, frontend/src/modules/marketing/about/about-page.tsx, frontend/src/modules/ui/skeleton.tsx; check that any that runs longer than 5 seconds beside other content can be paused or stops with reduced motion.",
+          "where": [
+            "frontend/src/modules/attachment/attachments-carousel.tsx",
+            "frontend/src/modules/common/data-table/infinite-loader.tsx",
+            "frontend/src/modules/docs/code-viewer.tsx",
+            "frontend/src/modules/home/onboarding/welcome-text.tsx",
+            "frontend/src/modules/marketing/about/about-page.tsx",
+            "frontend/src/modules/ui/skeleton.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2.3.1",
+      "name": "Three Flashes or Below Threshold",
+      "level": "A",
+      "en301549": "9.2.3.1",
+      "status": "supports",
+      "remarks": "Nothing in the interface flashes or blinks.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "code:motion",
+          "result": "pass",
+          "summary": "Nothing in the interface flashes or blinks.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.4.1",
+      "name": "Bypass Blocks",
+      "level": "A",
+      "en301549": "9.2.4.1",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 8 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "review",
+          "summary": "axe bypass needs a person to check 8 states: Page must have means to bypass repeated blocks.",
+          "where": [
+            "docs-search (light)",
+            "auth-error (light)",
+            "menu-sheet (light)",
+            "search-sheet (light)",
+            "docs-search (dark)",
+            "auth-error (dark)",
+            "menu-sheet (dark)",
+            "search-sheet (dark)"
+          ]
+        },
+        {
+          "check": "probe:landmarks",
+          "result": "fail",
+          "summary": "A main landmark or skip link to bypass repeated navigation failed on 8 of 19 states. marketing-home: no main landmark and no skip link | features: no main landmark and no skip link | sync-engine: no main landmark and no skip link | contact: no main landmark and no skip link | legal-privacy: no main landmark and no skip link | legal-accessibility: no main landmark and no skip link | sign-in: no main landmark and no skip link | auth-error: no main landmark and no skip link",
+          "where": [
+            "marketing-home",
+            "features",
+            "sync-engine",
+            "contact",
+            "legal-privacy",
+            "legal-accessibility",
+            "sign-in",
+            "auth-error"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2.4.2",
+      "name": "Page Titled",
+      "level": "A",
+      "en301549": "9.2.4.2",
+      "status": "supports",
+      "remarks": "axe document-title passed on 52 states. A distinct, descriptive page title passed on all 19 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe document-title passed on 52 states.",
+          "where": []
+        },
+        {
+          "check": "probe:titles",
+          "result": "pass",
+          "summary": "A distinct, descriptive page title passed on all 19 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.4.3",
+      "name": "Focus Order",
+      "level": "A",
+      "en301549": "9.2.4.3",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 1 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [
+        "manual",
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "probe:keyboard",
+          "result": "fail",
+          "summary": "Focus stays inside an open overlay failed on 1 of 7 states. invite-dialog: focus falls back to the page body; focus reaches button \"All▼\" behind the open overlay; focus reaches button \"View\" behind the open overlay",
+          "where": [
+            "invite-dialog"
+          ]
+        },
+        {
+          "check": "probe:keyboard",
+          "result": "review",
+          "summary": "Tab order recorded on 26 states for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"INPUT\" → button \"BUTTON\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
+          "where": [
+            "marketing-home",
+            "features",
+            "sync-engine",
+            "contact",
+            "legal-privacy",
+            "legal-accessibility",
+            "docs-overview",
+            "docs-operations",
+            "docs-schemas",
+            "docs-page",
+            "docs-search",
+            "sign-in",
+            "sign-in-email",
+            "auth-error",
+            "home",
+            "account",
+            "org-attachments",
+            "org-members",
+            "org-settings",
+            "system-users",
+            "system-organizations",
+            "menu-sheet",
+            "search-sheet",
+            "account-sheet",
+            "invite-dialog",
+            "member-sheet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2.4.4",
+      "name": "Link Purpose (In Context)",
+      "level": "A",
+      "en301549": "9.2.4.4",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 2 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [
+        "manual"
+      ],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "fail",
+          "summary": "axe link-name: Links must have discernible text (4 elements).",
+          "where": [
+            "docs-operations (light)",
+            "docs-operations (dark)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2.4.5",
+      "name": "Multiple Ways",
+      "level": "AA",
+      "en301549": "9.2.4.5",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "2.4.6",
+      "name": "Headings and Labels",
+      "level": "AA",
+      "en301549": "9.2.4.6",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "2.4.7",
+      "name": "Focus Visible",
+      "level": "AA",
+      "en301549": "9.2.4.7",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 5 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:keyboard",
+          "result": "fail",
+          "summary": "A visible change on every element that receives keyboard focus failed on 5 of 26 states. docs-overview: button \"BUTTON\" | org-attachments: span \"Select All\"; div \"DIV\"; div \"Name\" | org-members: span \"Select All\"; div \"Name\"; div \"Email\" | system-users: span \"Select All\"; div \"Name\"; div \"DIV\" | system-organizations: span \"Select All\"; div \"Name\"; div \"DIV\"",
+          "where": [
+            "docs-overview",
+            "org-attachments",
+            "org-members",
+            "system-users",
+            "system-organizations"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2.4.11",
+      "name": "Focus Not Obscured (Minimum)",
+      "level": "AA",
+      "en301549": null,
+      "status": "supports",
+      "remarks": "Focused elements are never entirely covered by other content passed on all 26 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:keyboard",
+          "result": "pass",
+          "summary": "Focused elements are never entirely covered by other content passed on all 26 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.5.1",
+      "name": "Pointer Gestures",
+      "level": "A",
+      "en301549": "9.2.5.1",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "code:gestures",
+          "result": "review",
+          "summary": "Gesture handlers in frontend/src/hooks/use-breakpoints.tsx, frontend/src/modules/attachment/render/image-zoom.ts, frontend/src/modules/attachment/render/use-pan-zoom.ts, frontend/src/modules/common/sheeter/drawer.tsx, frontend/src/modules/navigation/floating-nav/button.tsx, frontend/src/modules/ui/toast.tsx; check each has a single-pointer alternative such as a button.",
+          "where": [
+            "frontend/src/hooks/use-breakpoints.tsx",
+            "frontend/src/modules/attachment/render/image-zoom.ts",
+            "frontend/src/modules/attachment/render/use-pan-zoom.ts",
+            "frontend/src/modules/common/sheeter/drawer.tsx",
+            "frontend/src/modules/navigation/floating-nav/button.tsx",
+            "frontend/src/modules/ui/toast.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2.5.2",
+      "name": "Pointer Cancellation",
+      "level": "A",
+      "en301549": "9.2.5.2",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "2.5.3",
+      "name": "Label in Name",
+      "level": "A",
+      "en301549": "9.2.5.3",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "axe",
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "2.5.4",
+      "name": "Motion Actuation",
+      "level": "A",
+      "en301549": "9.2.5.4",
+      "status": "not-applicable",
+      "remarks": "No function responds to shaking or tilting the device.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "code:motion-actuation",
+          "result": "not-applicable",
+          "summary": "No function responds to shaking or tilting the device.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.5.7",
+      "name": "Dragging Movements",
+      "level": "AA",
+      "en301549": null,
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual",
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "code:dragging",
+          "result": "review",
+          "summary": "Drag and drop in frontend/src/modules/common/blocknote/custom-side-menu/side-menu.tsx, frontend/src/modules/common/board/board-layout.tsx, frontend/src/modules/common/data-grid/header-cell.tsx, frontend/src/modules/common/data-grid/row-drag.tsx, frontend/src/modules/navigation/menu-sheet/item-edit-wrapper.tsx, frontend/src/modules/navigation/menu-sheet/menu-sheet.tsx; check each has a single-pointer alternative.",
+          "where": [
+            "frontend/src/modules/common/blocknote/custom-side-menu/side-menu.tsx",
+            "frontend/src/modules/common/board/board-layout.tsx",
+            "frontend/src/modules/common/data-grid/header-cell.tsx",
+            "frontend/src/modules/common/data-grid/row-drag.tsx",
+            "frontend/src/modules/navigation/menu-sheet/item-edit-wrapper.tsx",
+            "frontend/src/modules/navigation/menu-sheet/menu-sheet.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2.5.8",
+      "name": "Target Size (Minimum)",
+      "level": "AA",
+      "en301549": null,
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "review",
+          "summary": "axe target-size needs a person to check 18 states: All touch targets must be 24px large, or leave sufficient space.",
+          "where": [
+            "contact (light)",
+            "docs-operations (light)",
+            "docs-schemas (light)",
+            "org-attachments (light)",
+            "org-members (light)",
+            "org-settings (light)",
+            "system-users (light)",
+            "system-organizations (light)",
+            "invite-dialog (light)",
+            "contact (dark)",
+            "docs-operations (dark)",
+            "docs-schemas (dark)",
+            "org-attachments (dark)",
+            "org-members (dark)",
+            "org-settings (dark)",
+            "system-users (dark)",
+            "system-organizations (dark)",
+            "invite-dialog (dark)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3.1.1",
+      "name": "Language of Page",
+      "level": "A",
+      "en301549": "9.3.1.1",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 1 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe html-has-lang passed on 52 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe html-lang-valid passed on 52 states.",
+          "where": []
+        },
+        {
+          "check": "probe:language",
+          "result": "fail",
+          "summary": "The page language follows the language the user picks failed on 1 of 20 states. auth-error (nl): after choosing Nederlands, <html lang=\"en\">",
+          "where": [
+            "auth-error (nl)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3.1.2",
+      "name": "Language of Parts",
+      "level": "AA",
+      "en301549": "9.3.1.2",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "3.2.1",
+      "name": "On Focus",
+      "level": "A",
+      "en301549": "9.3.2.1",
+      "status": "supports",
+      "remarks": "Moving focus never navigates or opens anything passed on all 26 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:keyboard",
+          "result": "pass",
+          "summary": "Moving focus never navigates or opens anything passed on all 26 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "3.2.2",
+      "name": "On Input",
+      "level": "A",
+      "en301549": "9.3.2.2",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "3.2.3",
+      "name": "Consistent Navigation",
+      "level": "AA",
+      "en301549": "9.3.2.3",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "3.2.4",
+      "name": "Consistent Identification",
+      "level": "AA",
+      "en301549": "9.3.2.4",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "3.2.6",
+      "name": "Consistent Help",
+      "level": "A",
+      "en301549": null,
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "3.3.1",
+      "name": "Error Identification",
+      "level": "A",
+      "en301549": "9.3.3.1",
+      "status": "supports",
+      "remarks": "Submitting required fields empty identifies each error in text passed on all 3 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:form-errors",
+          "result": "pass",
+          "summary": "Submitting required fields empty identifies each error in text passed on all 3 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "3.3.2",
+      "name": "Labels or Instructions",
+      "level": "A",
+      "en301549": "9.3.3.2",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe form-field-multiple-labels passed on 38 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "3.3.3",
+      "name": "Error Suggestion",
+      "level": "AA",
+      "en301549": "9.3.3.3",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "3.3.4",
+      "name": "Error Prevention (Legal, Financial, Data)",
+      "level": "AA",
+      "en301549": "9.3.3.4",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "3.3.7",
+      "name": "Redundant Entry",
+      "level": "A",
+      "en301549": null,
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": []
+    },
+    {
+      "id": "3.3.8",
+      "name": "Accessible Authentication (Minimum)",
+      "level": "AA",
+      "en301549": null,
+      "status": "supports",
+      "remarks": "Sign-in fields accept autofill and pasted text passed on all 1 states. Sign-in uses passkey, oauth, totp, magic: no password to remember, and one-time codes support autofill (autocomplete=\"one-time-code\").",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:autocomplete",
+          "result": "pass",
+          "summary": "Sign-in fields accept autofill and pasted text passed on all 1 states.",
+          "where": []
+        },
+        {
+          "check": "code:authentication",
+          "result": "pass",
+          "summary": "Sign-in uses passkey, oauth, totp, magic: no password to remember, and one-time codes support autofill (autocomplete=\"one-time-code\").",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "4.1.2",
+      "name": "Name, Role, Value",
+      "level": "A",
+      "en301549": "9.4.1.2",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 24 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [
+        "manual",
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "fail",
+          "summary": "axe button-name: Buttons must have discernible text (186 elements).",
+          "where": [
+            "marketing-home (light)",
+            "contact (light)",
+            "home (light)",
+            "account (light)",
+            "org-attachments (light)",
+            "org-members (light)",
+            "org-settings (light)",
+            "system-users (light)",
+            "system-organizations (light)",
+            "menu-sheet (light)",
+            "invite-dialog (light)",
+            "marketing-home (dark)",
+            "contact (dark)",
+            "home (dark)",
+            "account (dark)",
+            "org-attachments (dark)",
+            "org-members (dark)",
+            "org-settings (dark)",
+            "system-users (dark)",
+            "system-organizations (dark)",
+            "menu-sheet (dark)",
+            "invite-dialog (dark)"
+          ]
+        },
+        {
+          "check": "axe",
+          "result": "fail",
+          "summary": "axe label: Form elements must have labels (4 elements).",
+          "where": [
+            "marketing-home (light)",
+            "account (light)",
+            "marketing-home (dark)",
+            "account (dark)"
+          ]
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-allowed-attr passed on 52 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-conditional-attr passed on 52 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-deprecated-role passed on 52 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-hidden-body passed on 52 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "review",
+          "summary": "axe aria-hidden-focus needs a person to check 14 states: ARIA hidden element must not be focusable or contain focusable elements.",
+          "where": [
+            "docs-search (light)",
+            "sign-in-email (light)",
+            "menu-sheet (light)",
+            "search-sheet (light)",
+            "account-sheet (light)",
+            "invite-dialog (light)",
+            "member-sheet (light)",
+            "docs-search (dark)",
+            "sign-in-email (dark)",
+            "menu-sheet (dark)",
+            "search-sheet (dark)",
+            "account-sheet (dark)",
+            "invite-dialog (dark)",
+            "member-sheet (dark)"
+          ]
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-prohibited-attr passed on 52 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-required-attr passed on 52 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-roles passed on 52 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "review",
+          "summary": "axe aria-valid-attr-value needs a person to check 6 states: ARIA attributes must conform to valid values.",
+          "where": [
+            "docs-search (light)",
+            "account (light)",
+            "search-sheet (light)",
+            "docs-search (dark)",
+            "account (dark)",
+            "search-sheet (dark)"
+          ]
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-valid-attr passed on 52 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "fail",
+          "summary": "axe link-name: Links must have discernible text (4 elements).",
+          "where": [
+            "docs-operations (light)",
+            "docs-operations (dark)"
+          ]
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe nested-interactive passed on 50 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-command-name passed on 2 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe duplicate-id-aria passed on 22 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "fail",
+          "summary": "axe aria-toggle-field-name: ARIA toggle fields must have an accessible name (6 elements).",
+          "where": [
+            "account (light)",
+            "org-settings (light)",
+            "account (dark)",
+            "org-settings (dark)"
+          ]
+        },
+        {
+          "check": "axe",
+          "result": "fail",
+          "summary": "axe aria-input-field-name: ARIA input fields must have an accessible name (2 elements).",
+          "where": [
+            "org-settings (light)",
+            "org-settings (dark)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "4.1.3",
+      "name": "Status Messages",
+      "level": "AA",
+      "en301549": "9.4.1.3",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": [
+        {
+          "check": "probe:status-messages",
+          "result": "pass",
+          "summary": "Status messages render inside a live region passed on all 1 states.",
+          "where": []
+        }
+      ]
+    }
+  ]
+}
