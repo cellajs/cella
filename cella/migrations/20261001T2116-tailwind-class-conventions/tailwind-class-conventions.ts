@@ -3,6 +3,7 @@
  *
  * - `icon-xs|sm|md|lg|xl` become `size-3|3.5|4|5|6` (the icon-* utilities are removed).
  * - `[--intent-color:var(--x)]` becomes the `intent-x` utility, `text-[0.6rem]` becomes `text-2xs`.
+ * - The press nudge `(group-)active:translate-y-[.05rem]` becomes the `press` utility (`active:press`).
  * - Button content is spaced by the button's own gap: margins (`mr-2`, `ml-1`, …) on direct children of `<Button>`,
  *   `<SubmitButton>` and `buttonVariants(...)` elements are removed when the button has more than one child.
  * - Shared components name their groups: children of `<Button variant="cell">`, `<Toggle variant="tile">` and
@@ -161,6 +162,10 @@ function rewrite(file: string, source: string, counts: Counts): string {
   text = text.replace(INTENT_RE, (_m, token: string) => {
     counts['[--intent-color:…] -> intent-*'] = (counts['[--intent-color:…] -> intent-*'] ?? 0) + 1
     return `intent-${token}`
+  })
+  text = text.replace(/(?<![\w/-])((?:group-)?active(?:\/[a-z-]+)?):translate-y-\[\.05rem\]/g, (_m, variant: string) => {
+    counts['translate-y-[.05rem] -> press'] = (counts['translate-y-[.05rem] -> press'] ?? 0) + 1
+    return `${variant}:press`
   })
   text = text.replace(/text-\[0\.6rem\]/g, () => {
     counts['text-[0.6rem] -> text-2xs'] = (counts['text-[0.6rem] -> text-2xs'] ?? 0) + 1

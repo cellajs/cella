@@ -56,16 +56,10 @@ export function UserCell({ user, tabIndex, compactable, className, readOnly }: B
         navigate({ to: '.', replace: false, resetScroll: false, search: (prev) => ({ ...prev, userSheetId: user.id }) });
       }}
     >
-      <EntityAvatar
-        type="user"
-        className="size-8 group-active/cell-button:translate-y-[.05rem]"
-        id={user.id}
-        name={user.name}
-        url={user.thumbnailUrl}
-      />
+      <EntityAvatar type="user" className="group-active/cell-button:press size-8" id={user.id} name={user.name} url={user.thumbnailUrl} />
       <span
         className={cn(
-          'truncate decoration-foreground/20 underline-offset-3 group-hover/cell-button:underline group-active/cell-button:translate-y-[.05rem] group-active/cell-button:decoration-foreground/50',
+          'group-active/cell-button:press truncate decoration-foreground/20 underline-offset-3 group-hover/cell-button:underline group-active/cell-button:decoration-foreground/50',
           { [compactUserNameClass]: compactable },
         )}
       >

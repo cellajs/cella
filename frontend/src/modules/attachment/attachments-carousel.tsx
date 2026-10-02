@@ -133,7 +133,8 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
                 size="icon"
                 aria-expanded={descriptionOpen}
                 aria-label={i18n.t('c:description')}
-                className="-my-1 size-8 shrink-0 opacity-70 hover:opacity-100 active:translate-y-0!"
+                className="-my-1 size-8 shrink-0 opacity-70 hover:opacity-100"
+                press={false}
                 onClick={() => setDescriptionOpen(!descriptionOpen)}
               >
                 <span className="relative size-5">

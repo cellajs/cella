@@ -295,6 +295,12 @@
 /* Active while a FocusViewContainer is in focus view, e.g. `focus-view:hidden` for chrome outside a `.focus-view-scope`. */
 @custom-variant focus-view (&:where(.focus-view *));
 
+/* Press feedback through a state variant (`active:press`, `group-active/name:press`). `transform` stacks on the
+   `translate` of translate utilities, so a centered `-translate-y-1/2` stays centered; an inline transform wins. */
+@utility press {
+  transform: translateY(0.05rem);
+}
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;

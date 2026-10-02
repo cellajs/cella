@@ -4,7 +4,7 @@ import type * as React from 'react';
 import { cn } from '~/utils/cn';
 
 export const toggleVariants = cva(
-  'focus-effect inline-flex items-center justify-center rounded-md font-medium text-sm shadow-xs transition-colors hover:bg-muted hover:text-muted-foreground active:translate-y-[.05rem] disabled:pointer-events-none disabled:opacity-50 data-pressed:bg-accent data-pressed:text-accent-foreground',
+  'focus-effect active:press inline-flex items-center justify-center rounded-md font-medium text-sm shadow-xs transition-colors hover:bg-muted hover:text-muted-foreground disabled:pointer-events-none disabled:opacity-50 data-pressed:bg-accent data-pressed:text-accent-foreground',
   {
     variants: {
       variant: {

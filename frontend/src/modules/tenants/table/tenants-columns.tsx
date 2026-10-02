@@ -71,14 +71,8 @@ export const useColumns = () => {
               />
             }
           >
-            <EntityAvatar
-              type="organization"
-              className="size-8 group-active/cell-button:translate-y-[.05rem]"
-              id={org.id}
-              name={org.name}
-              url={org.thumbnailUrl}
-            />
-            <span className="truncate font-medium decoration-foreground/20 underline-offset-3 group-hover/cell-button:underline group-active/cell-button:translate-y-[.05rem] group-active/cell-button:decoration-foreground/50">
+            <EntityAvatar type="organization" className="group-active/cell-button:press size-8" id={org.id} name={org.name} url={org.thumbnailUrl} />
+            <span className="group-active/cell-button:press truncate font-medium decoration-foreground/20 underline-offset-3 group-hover/cell-button:underline group-active/cell-button:decoration-foreground/50">
               {org.name || '-'}
             </span>
           </Button>

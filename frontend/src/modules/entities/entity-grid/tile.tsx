@@ -18,7 +18,7 @@ export function ChannelGridTile({ entity }: { entity: ChannelTileEntity }) {
   const { to, params, search } = getChannelRoute(entity);
   const counts = entity.included?.counts;
   return (
-    <Card className="overflow-hidden px-0 pt-0 shadow-xs transition sm:px-0 sm:pt-0 [&:has(.tile-link:active)]:translate-y-[.05rem] [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background [&:has(.tile-link:hover)]:shadow-sm">
+    <Card className="has-[.tile-link:active]:press overflow-hidden px-0 pt-0 shadow-xs transition sm:px-0 sm:pt-0 [&:has(.tile-link:focus-visible)]:ring-2 [&:has(.tile-link:focus-visible)]:ring-ring [&:has(.tile-link:focus-visible)]:ring-offset-2 [&:has(.tile-link:focus-visible)]:ring-offset-background [&:has(.tile-link:hover)]:shadow-sm">
       <CardContent className="p-0 sm:p-0">
         <Link
           to={to}

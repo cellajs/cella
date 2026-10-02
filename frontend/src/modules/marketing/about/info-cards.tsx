@@ -31,7 +31,7 @@ export function InfoCards() {
               rel="noreferrer"
               draggable={false}
               key={id}
-              className="group focus-effect relative flex h-96 w-64 shrink-0 flex-col justify-between rounded-lg border p-5 hover:cursor-pointer hover:border-primary hover:ring-4 hover:ring-primary/10 active:translate-y-[.05rem] sm:w-80"
+              className="group focus-effect active:press relative flex h-96 w-64 shrink-0 flex-col justify-between rounded-lg border p-5 hover:cursor-pointer hover:border-primary hover:ring-4 hover:ring-primary/10 sm:w-80"
             >
               <div className="flex items-center gap-2">
                 <img

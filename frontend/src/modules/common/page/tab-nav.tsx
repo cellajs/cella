@@ -242,7 +242,7 @@ export function PageTabNav({ tabs: explicitTabs, parentRouteId, grants, pairs, s
 
             return (
               <>
-                <span className="block group-active:translate-y-[.05rem]">{truncateMiddle(t(label), 20)}</span>
+                <span className="group-active:press block">{truncateMiddle(t(label), 20)}</span>
                 {showAsActive && <ActiveTabMarker indicator={indicator} />}
               </>
             );

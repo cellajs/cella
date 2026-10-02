@@ -18,7 +18,8 @@ export function CallToAction() {
           variant="ghost"
           size="xl"
           onClick={() => window.open(appConfig.company.githubUrl, '_blank', 'noopener')}
-          className="glow-button relative rounded-full bg-background/95 px-10 hover:bg-background! active:bg-background [&:not(.absolute)]:active:translate-y-0!"
+          className="glow-button relative rounded-full bg-background/95 px-10 hover:bg-background! active:bg-background"
+          press={false}
           aria-label="Start building"
         >
           {t('c:start_building')}

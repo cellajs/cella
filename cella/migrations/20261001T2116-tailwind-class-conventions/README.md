@@ -5,8 +5,8 @@
 The `icon-xs…icon-xl` utilities are removed: icons use `size-3…size-6`. Buttons space their content with a gap, so
 margins on a button's children (`mr-2` on icons) double the spacing. Button's cell variant, Toggle's tile variant and
 the accordion header name their groups (`group/cell-button`, `group/toggle`, `group/accordion-header`), so children
-use `group-hover/cell-button:` and the like. `intent-*` and `text-2xs` replace `[--intent-color:var(--x)]` and
-`text-[0.6rem]`.
+use `group-hover/cell-button:` and the like. `intent-*`, `text-2xs` and `active:press` replace `[--intent-color:var(--x)]`,
+`text-[0.6rem]` and `active:translate-y-[.05rem]`.
 
 ## Blast radius
 
@@ -26,7 +26,9 @@ pnpm lint:fix
 1. Buttons whose children are a fixed multi-column layout (not an icon and a label) add `gap-0`.
 2. Custom `JsonViewerTheme` objects add `structureType` (the array/object type color).
 3. Calls to `ApiReferenceSection` drop the `isMobile` prop.
-4. `pnpm style` now fails on class names that compile to no CSS: fix each one, or list a deliberate hook under
+4. Buttons that cancelled the press nudge with `active:translate-y-0!` pass `press={false}` instead; the class no
+   longer cancels it, since the nudge is now a `transform`.
+5. `pnpm style` now fails on class names that compile to no CSS: fix each one, or list a deliberate hook under
    `markerClasses` in `shared/config/vocabulary-allowlist.ts` with its reason.
 
 ## Verify
