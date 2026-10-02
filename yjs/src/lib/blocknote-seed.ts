@@ -1,10 +1,8 @@
 import { ServerBlockNoteEditor } from '@blocknote/server-util';
 import { serverBlockNoteSchema } from 'shared/utils/blocknote-server-schema';
 import * as Y from 'yjs';
+import { YJS_FRAGMENT_NAME } from '#/modules/yjs/helpers/description-update';
 import { log } from './pino';
-
-/** Fragment name the client editor binds to: must match yjs-connections.ts in the frontend. */
-export const YJS_FRAGMENT_NAME = 'document-store';
 
 // One shared editor instance: schema construction is expensive and conversions are stateless.
 const editor = ServerBlockNoteEditor.create({ schema: serverBlockNoteSchema });
