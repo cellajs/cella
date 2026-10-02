@@ -10,6 +10,9 @@ export interface UploadBootDiagnosticsOptions {
   service: string;
   releaseSha: string;
   bootRc: number;
+  /** The boot phase that threw, and its error: the boot log is usually not mounted into the runner, so this is what names a failed boot. */
+  failedPhase?: string;
+  failure?: string;
   logFile: string;
   appLogs?: string;
   /** Black-box event stream (JSONL of OTLP log records), uploaded alongside the raw log. */
@@ -90,7 +93,10 @@ export async function uploadBootDiagnostics(opts: UploadBootDiagnosticsOptions):
   } catch {
     log = 'boot log not found\n';
   }
-  const parts = [`service=${opts.service}`, `release=${opts.releaseSha}`, `boot_rc=${opts.bootRc}`, '', scrubSecretLines(log)];
+  const parts = [`service=${opts.service}`, `release=${opts.releaseSha}`, `boot_rc=${opts.bootRc}`];
+  if (opts.failedPhase) parts.push(`failed_phase=${opts.failedPhase}`);
+  if (opts.failure?.trim()) parts.push('', '--- boot error ---', scrubSecretLines(opts.failure));
+  parts.push('', scrubSecretLines(log));
   // The boot runner runs containerized without the host boot log mounted, so the file read above is usually empty and the captured app logs carry the crash reason.
   if (opts.appLogs?.trim()) parts.push('', '--- app logs ---', scrubSecretLines(opts.appLogs));
   const body = opts.redact(parts.join('\n'));

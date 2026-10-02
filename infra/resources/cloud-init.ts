@@ -43,6 +43,13 @@ export interface CloudInitParams {
   telemetry?: { endpoint: string; keyHeader: string; keyEnvVar: string };
 }
 
+/**
+ * Ceiling on the release companion (migrations, job store install, admin seed). It must fail and upload its diagnostics while the deploy's health gate
+ * still polls (`deployHealthGateSeconds`, counted from the end of the provisioning update, by which the companion has barely started), or the deploy
+ * reports a failure with no bundle to show. The backend's own lock and statement timeouts (MODE=migrate) sit below it.
+ */
+export const releaseCommandTimeoutSeconds = 180;
+
 /** VM config paths, namespaced under `/etc/<slug>` so the engine hardcodes no app name. */
 const bootPaths = (slug: string) => {
   const etcDir = `/etc/${slug}`;
@@ -120,11 +127,12 @@ function bootPlan(p: CloudInitParams): string {
       bootDiagnostics: { bucket: p.bootDiagBucket, logFile: '/var/log/infra-boot.log' },
       releaseCommand: {
         enabled: p.runRelease,
-        command: ['docker', 'compose', '--profile', p.profile, 'run', '--rm', `${p.profile}-release`],
+        command: ['docker', 'compose', '--profile', p.profile, 'run', '--rm', '--name', `${p.profile}-release-run`, `${p.profile}-release`],
+        containerName: `${p.profile}-release-run`,
       },
       docker: { composeFile: '/opt/app/compose.yml' },
       files: { compose: p.composeContent, env: p.envFileContent, runtimeSecretManifest: parseRuntimeSecretManifest(JSON.parse(p.manifestContent)) },
-      timeouts: { privateNetworkSeconds: 150, pullAttempts: 12, pullRetrySeconds: 10 },
+      timeouts: { privateNetworkSeconds: 150, pullAttempts: 12, pullRetrySeconds: 10, releaseCommandSeconds: releaseCommandTimeoutSeconds },
     } satisfies BootPlan,
     null,
     2,

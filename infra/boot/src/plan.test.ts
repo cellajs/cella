@@ -23,7 +23,7 @@ function plan(overrides: Record<string, unknown> = {}): string {
       env: 'BACKEND_TAG=abc',
       runtimeSecretManifest: [{ envVar: 'COOKIE_SECRET', secretId: 'uuid', required: true }],
     },
-    timeouts: { privateNetworkSeconds: 150, pullAttempts: 2, pullRetrySeconds: 1 },
+    timeouts: { privateNetworkSeconds: 150, pullAttempts: 2, pullRetrySeconds: 1, releaseCommandSeconds: 180 },
     ...overrides,
   });
 }
@@ -46,6 +46,16 @@ describe('parseBootPlanJson', () => {
     expect(parseBootPlanJson(plan()).services).toBeUndefined();
     expect(parseBootPlanJson(plan({ services: ['backend', 'frontend'] })).services).toEqual(['backend', 'frontend']);
     expect(() => parseBootPlanJson(plan({ services: [] }))).toThrow(/non-empty command array/);
+  });
+
+  it('requires a release ceiling and accepts only a plain container name', () => {
+    const timeouts = { privateNetworkSeconds: 150, pullAttempts: 2, pullRetrySeconds: 1 };
+    expect(() => parseBootPlanJson(plan({ timeouts }))).toThrow(/releaseCommandSeconds/);
+    const command = ['docker', 'compose', 'run', '--name', 'backend-release-run', 'backend-release'];
+    expect(
+      parseBootPlanJson(plan({ releaseCommand: { enabled: true, command, containerName: 'backend-release-run' } })).releaseCommand.containerName,
+    ).toBe('backend-release-run');
+    expect(() => parseBootPlanJson(plan({ releaseCommand: { enabled: true, command, containerName: 'x; rm -rf /' } }))).toThrow(/container name/);
   });
 
   it('rejects empty release commands', () => {

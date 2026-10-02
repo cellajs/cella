@@ -80,7 +80,7 @@ One final stack update reaps every displaced generation
 (CI passes `--defer-reap` and runs that update as a follow-up `reap` job)
 ```
 
-The primary service owns migrations. `cdc` has no public health endpoint. Its replacement is confirmed by the primary public service coming up healthy.
+The primary service owns migrations. Its boot runner gives the migrate companion 180 seconds, and the companion's database sessions carry a 30-second `lock_timeout` and a 120-second `statement_timeout`, so a migration blocked by another session fails the boot inside the deploy's 6-minute health gate and uploads diagnostics that name the wait and the open transactions. A migration that needs longer runs outside the deploy. `cdc` has no public health endpoint. Its replacement is confirmed by the primary public service coming up healthy.
 
 **Rollback:** nothing is retained for two generations. Commit a revert and redeploy: same forward path, every service recreated (cdc in place), cached generation reused because `genId` is content-addressed.
 

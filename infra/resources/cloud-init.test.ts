@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
+import { deployHealthGateSeconds } from '../tasks/rollout-runtime';
 import { bootPlanIn } from '../tests/helpers/pulumi-mock';
-import { type CloudInitParams, renderCloudInit } from './cloud-init';
+import { type CloudInitParams, releaseCommandTimeoutSeconds, renderCloudInit } from './cloud-init';
 
 function params(overrides: Partial<CloudInitParams> = {}): CloudInitParams {
   return {
@@ -124,6 +125,25 @@ describe('renderCloudInit', () => {
     expect(withRelease).toContain('"docker",');
     expect(withRelease).toContain('"backend-release"');
     expect(withoutRelease).toContain('"enabled": false');
+  });
+
+  it('names the release container and bounds its run inside the deploy health gate', () => {
+    const { plan } = bootPlanIn(renderCloudInit(params({ runRelease: true })), '/etc/cella/boot-plan.json');
+    expect(plan.releaseCommand.containerName).toBe('backend-release-run');
+    expect(plan.releaseCommand.command).toEqual([
+      'docker',
+      'compose',
+      '--profile',
+      'backend',
+      'run',
+      '--rm',
+      '--name',
+      'backend-release-run',
+      'backend-release',
+    ]);
+    expect(plan.timeouts.releaseCommandSeconds).toBe(releaseCommandTimeoutSeconds);
+    // The companion starts about a minute into the gate (private NIC, hydration, pull); its failure and upload must land before the gate gives up.
+    expect(releaseCommandTimeoutSeconds + 120).toBeLessThanOrEqual(deployHealthGateSeconds);
   });
 
   it('emits a log-scrub sed pattern that actually matches secret-bearing lines', () => {

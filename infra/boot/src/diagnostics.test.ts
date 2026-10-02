@@ -48,6 +48,11 @@ async function upload(overrides: Partial<UploadBootDiagnosticsOptions> = {}) {
 }
 
 describe('uploadBootDiagnostics', () => {
+  it('names the failed phase and its error ahead of the boot log', async () => {
+    const { bodies } = await upload({ failedPhase: 'release-command', failure: 'docker compose run timed out after 180s' });
+    expect(bodies[0]).toContain('boot_rc=1\nfailed_phase=release-command\n\n--- boot error ---\ndocker compose run timed out after 180s');
+  });
+
   it('uploads full and failure logs for failed boots', async () => {
     const { keys, requests } = await upload({ logFile: await bootLog('hello boot') });
     expect(keys).toEqual(['boot-diag/backend-20260619T120000Z-boot.log', 'boot-diag/backend-failed-20260619T120000Z.log']);

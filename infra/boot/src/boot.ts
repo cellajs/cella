@@ -15,6 +15,12 @@ import { fetchServiceKey } from './service-key';
 /** Seconds to wait for the started container to become healthy before failing the boot. */
 const startupTimeoutSeconds = 120;
 
+/** Ceiling on one `docker compose pull` attempt: a stalled transfer is killed and retried. A cold pull of the backend image takes well under a minute. */
+const pullAttemptTimeoutSeconds = 240;
+
+/** Ceiling on the quick docker calls (registry login, log capture, container cleanup). */
+const dockerCallTimeoutSeconds = 60;
+
 export interface BootOptions {
   planPath: string;
   exec?: ExecFn;
@@ -59,7 +65,10 @@ async function writeAppFiles(plan: BootPlan): Promise<void> {
 
 async function dockerLogin(plan: BootPlan, secretKey: string, exec: ExecFn): Promise<void> {
   const [registryHost = ''] = plan.registry.split('/');
-  await mustExec(exec, 'docker', ['login', registryHost, '-u', 'nologin', '--password-stdin'], { input: secretKey });
+  await mustExec(exec, 'docker', ['login', registryHost, '-u', 'nologin', '--password-stdin'], {
+    input: secretKey,
+    timeoutMs: dockerCallTimeoutSeconds * 1000,
+  });
 }
 
 /** Compose services this VM runs: explicit names (plans written before container collocation carry none). */
@@ -68,16 +77,37 @@ function startServices(plan: BootPlan): [string, ...string[]] {
 }
 
 async function pullImage(plan: BootPlan, exec: ExecFn): Promise<void> {
-  await retry(() => mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'pull', ...startServices(plan)], { cwd: '/opt/app' }), {
-    attempts: plan.timeouts.pullAttempts,
-    delayMs: plan.timeouts.pullRetrySeconds * 1000,
-  });
+  await retry(
+    () =>
+      mustExec(exec, 'docker', ['compose', '--profile', plan.profile, 'pull', ...startServices(plan)], {
+        cwd: '/opt/app',
+        timeoutMs: pullAttemptTimeoutSeconds * 1000,
+      }),
+    { attempts: plan.timeouts.pullAttempts, delayMs: plan.timeouts.pullRetrySeconds * 1000 },
+  );
 }
 
+/** Force-remove the release companion's container, best-effort: a leftover from an interrupted boot would block the fixed name, and a killed CLI leaves it running. */
+async function removeReleaseContainer(plan: BootPlan, exec: ExecFn): Promise<void> {
+  const name = plan.releaseCommand.containerName;
+  if (!name) return;
+  await exec('docker', ['rm', '--force', name], { timeoutMs: dockerCallTimeoutSeconds * 1000 }).catch(() => undefined);
+}
+
+/**
+ * Run the one-shot release companion (migrations) within `timeouts.releaseCommandSeconds`, so a migration stuck on a lock fails the boot and the
+ * diagnostics upload names it. On a timeout the CLI is killed and the companion's container removed, so it stops holding database locks.
+ */
 async function runReleaseCommand(plan: BootPlan, exec: ExecFn): Promise<void> {
   if (!plan.releaseCommand.enabled) return;
   const [command, ...args] = plan.releaseCommand.command;
-  await mustExec(exec, command, args, { cwd: '/opt/app' });
+  await removeReleaseContainer(plan, exec);
+  try {
+    await mustExec(exec, command, args, { cwd: '/opt/app', timeoutMs: plan.timeouts.releaseCommandSeconds * 1000 });
+  } catch (err) {
+    await removeReleaseContainer(plan, exec);
+    throw err;
+  }
 }
 
 /**
@@ -89,7 +119,8 @@ async function startService(plan: BootPlan, exec: ExecFn): Promise<void> {
     exec,
     'docker',
     ['compose', '--profile', plan.profile, 'up', '-d', '--wait', '--wait-timeout', String(startupTimeoutSeconds), ...startServices(plan)],
-    { cwd: '/opt/app' },
+    // `--wait-timeout` bounds the health wait; the kill is the backstop for a CLI that hangs past it.
+    { cwd: '/opt/app', timeoutMs: (startupTimeoutSeconds + dockerCallTimeoutSeconds) * 1000 },
   );
 }
 
@@ -97,6 +128,7 @@ async function startService(plan: BootPlan, exec: ExecFn): Promise<void> {
 async function captureServiceLogs(plan: BootPlan, exec: ExecFn): Promise<string> {
   const res = await exec('docker', ['compose', '--profile', plan.profile, 'logs', '--no-color', '--tail', '200', ...startServices(plan)], {
     cwd: '/opt/app',
+    timeoutMs: dockerCallTimeoutSeconds * 1000,
   });
   return scrubSecretLines((res.stdout || res.stderr || '').trim());
 }
@@ -127,12 +159,14 @@ export async function boot(opts: BootOptions): Promise<void> {
   });
   const bootSpan = telemetry.startSpan(`boot ${plan.service}`, { service: plan.service, sha: plan.releaseSha });
   telemetry.event(bootEvents.started, { service: plan.service, sha: plan.releaseSha });
+  let failedPhase: string | undefined;
   const phase = async (step: string, run: () => Promise<unknown>): Promise<void> => {
     logger.log('info', step);
     const startedAt = Date.now();
     try {
       await run();
     } catch (err) {
+      failedPhase = step;
       telemetry.event(bootEvents.stepFailed, { service: plan.service, step, error: errorMessage(err) }, { severity: 'error', ctx: bootSpan.ctx });
       throw err;
     }
@@ -144,6 +178,7 @@ export async function boot(opts: BootOptions): Promise<void> {
   };
   let bootRc = 0;
   let appLogs: string | undefined;
+  let failure: string | undefined;
 
   try {
     await phase('wait-private-network', () => waitForPrivateNetwork({ exec, timeoutSeconds: plan.timeouts.privateNetworkSeconds }));
@@ -181,7 +216,8 @@ export async function boot(opts: BootOptions): Promise<void> {
     telemetry.event(bootEvents.completed, { service: plan.service, sha: plan.releaseSha });
   } catch (err) {
     bootRc = 1;
-    logger.log('error', 'boot-failed', { message: errorMessage(err) });
+    failure = errorMessage(err);
+    logger.log('error', 'boot-failed', { ...(failedPhase ? { phase: failedPhase } : {}), message: errorMessage(err) });
     // The boot runner runs containerized without the host boot log mounted, so the crashed container's own output is captured here for the diagnostics.
     appLogs = await captureServiceLogs(plan, exec).catch(() => undefined);
     bootSpan.end('error', { message: errorMessage(err) });
@@ -209,6 +245,8 @@ export async function boot(opts: BootOptions): Promise<void> {
         service: plan.service,
         releaseSha: plan.releaseSha,
         bootRc,
+        failedPhase,
+        failure,
         logFile: plan.bootDiagnostics.logFile,
         appLogs,
         events: telemetry.eventsJsonl(),

@@ -2,6 +2,7 @@ import process from 'node:process';
 import { migrate as pgMigrate } from 'drizzle-orm/node-postgres/migrator';
 import pc from 'picocolors';
 import { getAdminDb, migrateConfig } from '#/db/db';
+import { describeMigrateTimeout, describeOpenTransactions } from '#/db/migrate-timeouts';
 import { timestamp } from '#/utils/console';
 import { createDbRoles } from '../scripts/db/create-db-roles';
 
@@ -36,6 +37,13 @@ try {
   if (cause) {
     const causeMsg = cause instanceof Error ? `${cause.message}${cause.stack ? `\n${cause.stack}` : ''}` : String(cause);
     console.error(pc.red(`${timestamp()} [migrate]   cause: ${causeMsg}`));
+  }
+  // A session timeout means another session held what this run needed: name the wait and the open transactions.
+  const timeoutHint = describeMigrateTimeout(error);
+  if (timeoutHint) {
+    console.error(pc.red(`${timestamp()} [migrate]   ${timeoutHint}`));
+    const sessions = await describeOpenTransactions(getAdminDb('migrate diagnostics')).catch(() => []);
+    for (const session of sessions) console.error(`${timestamp()} [migrate]   open transaction: ${session}`);
   }
   // Log to OTel because one-shot container output is not collected, then wait through the batch interval.
   const { baseLog } = await import('#/lib/pino');

@@ -99,7 +99,7 @@ describe('boot', () => {
             { envVar: 'SINK_INGEST_KEY', secretId: 'sink-id', required: false },
           ],
         },
-        timeouts: { privateNetworkSeconds: 5, pullAttempts: 1, pullRetrySeconds: 1 },
+        timeouts: { privateNetworkSeconds: 5, pullAttempts: 1, pullRetrySeconds: 1, releaseCommandSeconds: 180 },
       }),
     );
 
@@ -160,5 +160,67 @@ describe('boot', () => {
     for (const secret of [bootKey.secretKey, serviceKey.secretKey, dbPassword, cookieSecret, sinkKey]) {
       expect(channels).not.toContain(secret);
     }
+  });
+
+  it('kills a stuck release companion, removes its container and names the phase in the upload', async () => {
+    files.set('/etc/app/scw-access-key', 'SCWBOOTACCESSKEY0001\n');
+    files.set('/etc/app/scw-secret-key', 'boot-sk-1111-2222-3333\n');
+    files.set(
+      '/etc/app/boot-plan.json',
+      JSON.stringify({
+        schemaVersion: 1,
+        service: 'backend',
+        profile: 'backend',
+        releaseSha: 'abc123',
+        imageContract: 'docker-node-boot-v1',
+        registry: 'rg.nl-ams.scw.cloud/ns',
+        region: 'nl-ams',
+        credentials: { scwAccessKeyFile: '/etc/app/scw-access-key', scwSecretKeyFile: '/etc/app/scw-secret-key' },
+        bootDiagnostics: { bucket: 'app-boot-diag', logFile: '/var/log/infra-boot.log' },
+        releaseCommand: {
+          enabled: true,
+          command: ['docker', 'compose', 'run', '--rm', '--name', 'backend-release-run', 'backend-release'],
+          containerName: 'backend-release-run',
+        },
+        docker: { composeFile: '/opt/app/compose.yml' },
+        files: { compose: 'services: {}', env: 'BACKEND_TAG=abc123', runtimeSecretManifest: [] },
+        timeouts: { privateNetworkSeconds: 5, pullAttempts: 1, pullRetrySeconds: 1, releaseCommandSeconds: 180 },
+      }),
+    );
+    const sent: Array<{ url: string; body: string }> = [];
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string, init?: { body?: string }) => {
+        sent.push({ url, body: String(init?.body ?? '') });
+        return new Response('', { status: 200 });
+      }),
+    );
+    vi.spyOn(console, 'info').mockImplementation(() => {});
+
+    const calls: Array<{ line: string; timeoutMs?: number }> = [];
+    const exec: ExecFn = async (command, args, opts) => {
+      const line = [command, ...args].join(' ');
+      calls.push({ line, timeoutMs: opts?.timeoutMs });
+      if (line === 'ip -4 addr show') return { code: 0, stdout: 'inet 10.0.0.12/24 scope global ens2', stderr: '' };
+      // The migrate companion waits on a lock until the ceiling kills it.
+      if (line.includes(' run --rm ')) return { code: 124, stdout: '[migrate] Running migrations...', stderr: '', timedOut: true };
+      return { code: 0, stdout: '', stderr: '' };
+    };
+
+    const error = await boot({ planPath: '/etc/app/boot-plan.json', exec }).catch((err: unknown) => err);
+
+    expect((error as Error).message).toMatch(/timed out after 180s/);
+    const run = calls.findIndex((call) => call.line.includes(' run --rm '));
+    expect(calls[run]?.timeoutMs).toBe(180_000);
+    // Cleared before the run (a leftover from an interrupted boot) and after the kill (the container outlives its CLI).
+    expect(calls[run - 1]?.line).toBe('docker rm --force backend-release-run');
+    expect(calls[run + 1]?.line).toBe('docker rm --force backend-release-run');
+    // No docker call runs without a ceiling.
+    expect(calls.filter((call) => call.line.startsWith('docker ')).every((call) => call.timeoutMs !== undefined)).toBe(true);
+
+    const bootLog = sent.find((request) => /\/boot-diag\/backend-\d{8}T\d{6}Z-boot\.log$/.test(request.url));
+    expect(bootLog?.body).toContain('release=abc123');
+    expect(bootLog?.body).toContain('failed_phase=release-command');
+    expect(bootLog?.body).toContain('[migrate] Running migrations...');
   });
 });
