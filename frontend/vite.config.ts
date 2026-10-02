@@ -424,11 +424,15 @@ const viteConfig = {
     // The bundle re-evaluates shared/src/config-builder/app-config.ts in the
     // browser, so mode selection and the URL overrides it reads must survive
     // into this replacement object; NODE_ENV alone silently rebakes production.
-    'process.env': Object.fromEntries(
-      (['NODE_ENV', 'APP_MODE', 'FRONTEND_URL', 'BACKEND_URL', 'BACKEND_AUTH_URL', 'YJS_URL', 'MCP_URL'] as const)
-        .filter((key) => process.env[key] !== undefined)
-        .map((key) => [key, process.env[key]]),
-    ),
+    // The dev port offset is passed as resolved here: the browser cannot derive it from the checkout.
+    'process.env': {
+      ...Object.fromEntries(
+        (['NODE_ENV', 'APP_MODE', 'FRONTEND_URL', 'BACKEND_URL', 'BACKEND_AUTH_URL', 'YJS_URL', 'MCP_URL'] as const)
+          .filter((key) => process.env[key] !== undefined)
+          .map((key) => [key, process.env[key]]),
+      ),
+      ...(appConfig.devPortOffset ? { DEV_PORT_OFFSET: String(appConfig.devPortOffset) } : {}),
+    },
     // Injected into lib/sw.ts for the push badge recount and API path exclusions
     __BACKEND_URL__: JSON.stringify(appConfig.backendUrl),
     // Release identifier for observability (lib/maple.ts serviceVersion)

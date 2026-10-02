@@ -202,7 +202,7 @@ Prod deploys are immutable VM generations on Scaleway (Pulumi + S3 control objec
 
 ## Commands
 
-- `pnpm dev`: Dev servers for every package, including the `oauth/` and `mcp/` workers (each exits at once while its `appConfig.services` entry is disabled). Start PostgreSQL first with `pnpm docker`.
+- `pnpm dev`: Dev servers for every package, including the `oauth/` and `mcp/` workers (each exits at once while its `appConfig.services` entry is disabled). Start PostgreSQL first with `pnpm docker`. A linked git worktree runs its stack on ports of its own, never the main checkout's (`appConfig.frontendUrl` names them, never pass `--port`): [Dev ports](../shared/README.md#dev-ports).
 - `pnpm check`: Runs `sdk` + typecheck + `lens:check` + `lint:fix` (which includes the style and doc checks).
 - `pnpm generate`: Create Drizzle migrations from schema changes.
 - `pnpm sdk`: Regenerate OpenAPI spec and frontend SDK.
