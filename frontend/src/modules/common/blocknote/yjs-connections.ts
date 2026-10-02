@@ -243,6 +243,7 @@ function bindProvider(editSessionId: string, conn: YjsConnection, entityType: Pr
     // Withdrawn (access revoked, the entity gone, or signed out), also while offline: the token cannot come back.
     if (prevState.yjsTokens[tokenKey]) {
       // Signed out: unsaved edits go with the session, as the user's local database does, and no later user sees them.
+      // TODO(offline): decide again whether sign-out discards unsaved edits, or asks first while some are unsaved, once documents are stored offline.
       if (!state.user) setUnsynced(editSessionId, conn, false);
       stopConnection(editSessionId, conn, state.user ? 'error:no_permission_for_sync.text' : null);
       reapConnection(editSessionId, conn);
