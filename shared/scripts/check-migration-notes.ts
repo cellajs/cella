@@ -26,6 +26,16 @@ export interface MigrationNote {
 
 const booleanKeys = ['syncBreaking', 'clientCacheBump'] as const;
 
+/** The lines after the frontmatter, without HTML comment lines (a comment opens at the start of a line). */
+function bodyLines(lines: string[]): string[] {
+  let inComment = false;
+  return lines.filter((line) => {
+    if (!inComment && !line.trimStart().startsWith('<!--')) return true;
+    inComment = !line.includes('-->');
+    return false;
+  });
+}
+
 /** Parse a note README; every shape problem lands in `errors`. */
 export function parseMigrationNote(source: string): MigrationNote {
   const note: MigrationNote = { syncBreaking: false, clientCacheBump: false, roots: [], title: '', summary: '', errors: [] };
@@ -55,10 +65,7 @@ export function parseMigrationNote(source: string): MigrationNote {
   for (const key of booleanKeys) if (close !== -1 && !seen.has(key)) note.errors.push(`frontmatter is missing ${key}`);
 
   // Body: the title, then the summary paragraph. Blank lines and HTML comments in between are skipped.
-  const body = lines
-    .slice(close + 1)
-    .join('\n')
-    .replace(/<!--[\s\S]*?-->/g, '');
+  const body = bodyLines(lines.slice(close + 1)).join('\n');
   const blocks = body
     .split(/\n\s*\n/)
     .map((block) => block.trim())
