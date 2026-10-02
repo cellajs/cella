@@ -201,14 +201,11 @@ The first tab to acquire the Web Lock becomes leader, owns SSE, and forwards not
 
 The template collaborates on attachment descriptions through the Yjs relay (`services.yjs.enabled`); an app adds a product by registering a `yjsMaterializer`. Relay, update log, compaction and materialization semantics: [Yjs worker](../yjs/README.md).
 
+With Yjs on, a description saves through the relay only, never as a REST write, so it never enters the replay queue. Until its editor has synced, the description shows read-only with a status (connecting, offline, view only), and an edit the relay has not confirmed stays in the client until it is.
+
 The cache takes a Yjs-owned field, the description or a column derived from it (`registerYjsOwnedFields`), only from a server write of it. When a synced row carries the cached copy's `stx.fieldTimestamps` stamp for the field, the cached value stays, so a read that lags the relay cannot undo a collaborative patch. A derived column has no stamp of its own and follows the description's.
 
-An app that shows a description in place, a static view that turns into the editor, builds it on `useDescriptionSlot` and `<DescriptionLayers>` (`frontend/src/modules/common/blocknote/`; the `common/blocknote/DescriptionSlot` story runs it):
-
-- **One editor instance** serves the static view, the editor warmed invisibly behind it and the live editor. The app owns `editing`, its warm triggers, how editing ends and both views.
-- **The hand-off** back to the static holds the editor until the static is ready, at most 250 ms, unless the app passes `holdOnExit: false`. The hook returns `staticOverride`, the editor's content, which the static shows until the cache has it; it drops once the description equals it or moves past the value it replaced.
-- **A checklist toggle** on the static runs through the editor and commits like an edit.
-- **Warm reasons**: the app warms and cools the editor per reason (`warm('hover')`, `cool('hover')`). The hook cools what the app does not: nothing warms without edit rights, a hidden tab drops every reason, a reason not renewed for 30 seconds expires, and a tab keeps at most two warm editors outside editing. Editing and the hold are never cooled.
+An app that shows a description in place, a static view that turns into the editor, builds it on `useDescriptionSlot` and `<DescriptionLayers>` (`frontend/src/modules/common/blocknote/`). One editor instance is warmed behind the static and handed back to it without a blink, a checklist toggle on the static commits like an edit, and the hook cools warm editors the app forgets. The `common/blocknote/DescriptionSlot` story runs it.
 
 ## Reference
 
