@@ -452,14 +452,14 @@ function createRealEffects(): DeployEffects {
           import('../lib/telemetry/sink-key'),
           import('../config/telemetry.config'),
         ]);
-        const key = await sinkIngestKeyFromSecretManager().catch((err) => {
-          console.warn(`[deploy] telemetry ingest key lookup failed: ${errorMessage(err)}`);
-          return undefined;
-        });
-        if (key) {
-          config = { endpoint: telemetrySink.endpoint, headers: { [telemetrySink.keyHeader]: key } };
+        const lookup = await sinkIngestKeyFromSecretManager().catch((err: unknown) => ({ missing: `lookup failed: ${errorMessage(err)}` }));
+        if ('key' in lookup) {
+          config = { endpoint: telemetrySink.endpoint, headers: { [telemetrySink.keyHeader]: lookup.key } };
           // In-process consumers (black-box replay on failure) resolve via env.
-          process.env[telemetrySink.keyEnvVar] ??= key;
+          process.env[telemetrySink.keyEnvVar] ??= lookup.key;
+        } else {
+          // An annotation in CI: a deploy whose telemetry goes nowhere must say so where someone reads it.
+          console.warn(`${inActions ? '::warning::' : ''}[deploy] telemetry ingest key unavailable: ${lookup.missing}`);
         }
       }
       if (!config) console.info('[deploy] telemetry export disabled (no OTLP endpoint or ingest key); black box only');
