@@ -1,6 +1,6 @@
 import { AppError } from '#/core/error';
 import type { Tx } from '#/db/db';
-import { maySignUp } from '#/modules/auth/auth-queries';
+import { maySignUp } from '#/modules/auth/invitations/operations/may-sign-up';
 import type { TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { handleCreateUser } from '#/modules/user/operations/create-account';
 import { findUserByEmail } from '#/modules/user/user-queries';
