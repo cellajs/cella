@@ -171,9 +171,9 @@
       "name": "Info and Relationships",
       "level": "A",
       "en301549": "9.1.3.1",
-      "status": "partially-supports",
-      "remarks": "Automated checks found failures on 14 of the reviewed pages and states.",
-      "decidedBy": "audit",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
       "open": [
         "manual"
       ],
@@ -186,35 +186,15 @@
         },
         {
           "check": "axe",
-          "result": "fail",
-          "summary": "axe list: <ul> and <ol> must only directly contain <li>, <script> or <template> elements (10 elements).",
-          "where": [
-            "docs-overview (light)",
-            "docs-operations (light)",
-            "docs-schemas (light)",
-            "docs-page (light)",
-            "menu-sheet (light)",
-            "docs-overview (dark)",
-            "docs-operations (dark)",
-            "docs-schemas (dark)",
-            "docs-page (dark)",
-            "menu-sheet (dark)"
-          ]
+          "result": "pass",
+          "summary": "axe list passed on 46 states.",
+          "where": []
         },
         {
           "check": "axe",
-          "result": "fail",
-          "summary": "axe listitem: <li> elements must be contained in a <ul> or <ol> (48 elements).",
-          "where": [
-            "docs-overview (light)",
-            "docs-operations (light)",
-            "docs-schemas (light)",
-            "docs-page (light)",
-            "docs-overview (dark)",
-            "docs-operations (dark)",
-            "docs-schemas (dark)",
-            "docs-page (dark)"
-          ]
+          "result": "pass",
+          "summary": "axe listitem passed on 46 states.",
+          "where": []
         },
         {
           "check": "axe",
@@ -230,14 +210,9 @@
         },
         {
           "check": "axe",
-          "result": "fail",
-          "summary": "axe aria-required-children: Certain ARIA roles must contain particular children (4 elements).",
-          "where": [
-            "docs-search (light)",
-            "search-sheet (light)",
-            "docs-search (dark)",
-            "search-sheet (dark)"
-          ]
+          "result": "pass",
+          "summary": "axe aria-required-children passed on 18 states.",
+          "where": []
         },
         {
           "check": "axe",
@@ -296,8 +271,8 @@
       "name": "Identify Input Purpose",
       "level": "AA",
       "en301549": "9.1.3.5",
-      "status": "partially-supports",
-      "remarks": "Automated checks found failures on 2 of the reviewed pages and states.",
+      "status": "supports",
+      "remarks": "axe autocomplete-valid passed on 26 states. Inputs for personal data declare their purpose passed on all 3 states.",
       "decidedBy": "audit",
       "open": [],
       "evidence": [
@@ -309,12 +284,9 @@
         },
         {
           "check": "probe:autocomplete",
-          "result": "fail",
-          "summary": "Inputs for personal data declare their purpose failed on 2 of 3 states. contact: \"Name*\" has no autocomplete purpose; \"Email*\" has no autocomplete purpose | account: \"First name*\" has no autocomplete purpose; \"Last name*\" has no autocomplete purpose",
-          "where": [
-            "contact",
-            "account"
-          ]
+          "result": "pass",
+          "summary": "Inputs for personal data declare their purpose passed on all 3 states.",
+          "where": []
         }
       ]
     },
@@ -546,7 +518,7 @@
         {
           "check": "probe:keyboard",
           "result": "review",
-          "summary": "Tab order recorded on 26 states for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"INPUT\" → button \"BUTTON\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
+          "summary": "Tab order recorded on 26 states for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"Install command\" → button \"Copy\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
           "where": [
             "marketing-home",
             "features",
@@ -707,9 +679,9 @@
       "name": "Bypass Blocks",
       "level": "A",
       "en301549": "9.2.4.1",
-      "status": "partially-supports",
-      "remarks": "Automated checks found failures on 8 of the reviewed pages and states.",
-      "decidedBy": "audit",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
       "open": [
         "review"
       ],
@@ -717,32 +689,21 @@
         {
           "check": "axe",
           "result": "review",
-          "summary": "axe bypass needs a person to check 8 states: Page must have means to bypass repeated blocks.",
+          "summary": "axe bypass needs a person to check 6 states: Page must have means to bypass repeated blocks.",
           "where": [
             "docs-search (light)",
-            "auth-error (light)",
             "menu-sheet (light)",
             "search-sheet (light)",
             "docs-search (dark)",
-            "auth-error (dark)",
             "menu-sheet (dark)",
             "search-sheet (dark)"
           ]
         },
         {
           "check": "probe:landmarks",
-          "result": "fail",
-          "summary": "A main landmark or skip link to bypass repeated navigation failed on 8 of 19 states. marketing-home: no main landmark and no skip link | features: no main landmark and no skip link | sync-engine: no main landmark and no skip link | contact: no main landmark and no skip link | legal-privacy: no main landmark and no skip link | legal-accessibility: no main landmark and no skip link | sign-in: no main landmark and no skip link | auth-error: no main landmark and no skip link",
-          "where": [
-            "marketing-home",
-            "features",
-            "sync-engine",
-            "contact",
-            "legal-privacy",
-            "legal-accessibility",
-            "sign-in",
-            "auth-error"
-          ]
+          "result": "pass",
+          "summary": "A main landmark or skip link to bypass repeated navigation passed on all 19 states.",
+          "where": []
         }
       ]
     },
@@ -786,7 +747,7 @@
         {
           "check": "probe:keyboard",
           "result": "fail",
-          "summary": "Focus stays inside an open overlay failed on 1 of 7 states. invite-dialog: focus falls back to the page body; focus reaches button \"All▼\" behind the open overlay; focus reaches button \"View\" behind the open overlay",
+          "summary": "Focus stays inside an open overlay failed on 1 of 7 states. invite-dialog: focus falls back to the page body; focus reaches button \"Role\" behind the open overlay; focus reaches button \"View\" behind the open overlay",
           "where": [
             "invite-dialog"
           ]
@@ -794,7 +755,7 @@
         {
           "check": "probe:keyboard",
           "result": "review",
-          "summary": "Tab order recorded on 26 states for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"INPUT\" → button \"BUTTON\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
+          "summary": "Tab order recorded on 26 states for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"Install command\" → button \"Copy\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
           "where": [
             "marketing-home",
             "features",
@@ -831,21 +792,18 @@
       "name": "Link Purpose (In Context)",
       "level": "A",
       "en301549": "9.2.4.4",
-      "status": "partially-supports",
-      "remarks": "Automated checks found failures on 2 of the reviewed pages and states.",
-      "decidedBy": "audit",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
       "open": [
         "manual"
       ],
       "evidence": [
         {
           "check": "axe",
-          "result": "fail",
-          "summary": "axe link-name: Links must have discernible text (4 elements).",
-          "where": [
-            "docs-operations (light)",
-            "docs-operations (dark)"
-          ]
+          "result": "pass",
+          "summary": "axe link-name passed on 48 states.",
+          "where": []
         }
       ]
     },
@@ -1032,9 +990,8 @@
         {
           "check": "axe",
           "result": "review",
-          "summary": "axe target-size needs a person to check 18 states: All touch targets must be 24px large, or leave sufficient space.",
+          "summary": "axe target-size needs a person to check 16 states: All touch targets must be 24px large, or leave sufficient space.",
           "where": [
-            "contact (light)",
             "docs-operations (light)",
             "docs-schemas (light)",
             "org-attachments (light)",
@@ -1043,7 +1000,6 @@
             "system-users (light)",
             "system-organizations (light)",
             "invite-dialog (light)",
-            "contact (dark)",
             "docs-operations (dark)",
             "docs-schemas (dark)",
             "org-attachments (dark)",
@@ -1061,8 +1017,8 @@
       "name": "Language of Page",
       "level": "A",
       "en301549": "9.3.1.1",
-      "status": "partially-supports",
-      "remarks": "Automated checks found failures on 1 of the reviewed pages and states.",
+      "status": "supports",
+      "remarks": "axe html-has-lang passed on 52 states. axe html-lang-valid passed on 52 states. The page language follows the language the user picks passed on all 20 states.",
       "decidedBy": "audit",
       "open": [],
       "evidence": [
@@ -1080,11 +1036,9 @@
         },
         {
           "check": "probe:language",
-          "result": "fail",
-          "summary": "The page language follows the language the user picks failed on 1 of 20 states. auth-error (nl): after choosing Nederlands, <html lang=\"en\">",
-          "where": [
-            "auth-error (nl)"
-          ]
+          "result": "pass",
+          "summary": "The page language follows the language the user picks passed on all 20 states.",
+          "where": []
         }
       ]
     },
@@ -1277,54 +1231,14 @@
       "name": "Name, Role, Value",
       "level": "A",
       "en301549": "9.4.1.2",
-      "status": "partially-supports",
-      "remarks": "Automated checks found failures on 24 of the reviewed pages and states.",
-      "decidedBy": "audit",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
       "open": [
         "manual",
         "review"
       ],
       "evidence": [
-        {
-          "check": "axe",
-          "result": "fail",
-          "summary": "axe button-name: Buttons must have discernible text (186 elements).",
-          "where": [
-            "marketing-home (light)",
-            "contact (light)",
-            "home (light)",
-            "account (light)",
-            "org-attachments (light)",
-            "org-members (light)",
-            "org-settings (light)",
-            "system-users (light)",
-            "system-organizations (light)",
-            "menu-sheet (light)",
-            "invite-dialog (light)",
-            "marketing-home (dark)",
-            "contact (dark)",
-            "home (dark)",
-            "account (dark)",
-            "org-attachments (dark)",
-            "org-members (dark)",
-            "org-settings (dark)",
-            "system-users (dark)",
-            "system-organizations (dark)",
-            "menu-sheet (dark)",
-            "invite-dialog (dark)"
-          ]
-        },
-        {
-          "check": "axe",
-          "result": "fail",
-          "summary": "axe label: Form elements must have labels (4 elements).",
-          "where": [
-            "marketing-home (light)",
-            "account (light)",
-            "marketing-home (dark)",
-            "account (dark)"
-          ]
-        },
         {
           "check": "axe",
           "result": "pass",
@@ -1409,12 +1323,21 @@
         },
         {
           "check": "axe",
-          "result": "fail",
-          "summary": "axe link-name: Links must have discernible text (4 elements).",
-          "where": [
-            "docs-operations (light)",
-            "docs-operations (dark)"
-          ]
+          "result": "pass",
+          "summary": "axe button-name passed on 50 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe label passed on 38 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe link-name passed on 48 states.",
+          "where": []
         },
         {
           "check": "axe",
@@ -1436,23 +1359,15 @@
         },
         {
           "check": "axe",
-          "result": "fail",
-          "summary": "axe aria-toggle-field-name: ARIA toggle fields must have an accessible name (6 elements).",
-          "where": [
-            "account (light)",
-            "org-settings (light)",
-            "account (dark)",
-            "org-settings (dark)"
-          ]
+          "result": "pass",
+          "summary": "axe aria-toggle-field-name passed on 14 states.",
+          "where": []
         },
         {
           "check": "axe",
-          "result": "fail",
-          "summary": "axe aria-input-field-name: ARIA input fields must have an accessible name (2 elements).",
-          "where": [
-            "org-settings (light)",
-            "org-settings (dark)"
-          ]
+          "result": "pass",
+          "summary": "axe aria-input-field-name passed on 2 states.",
+          "where": []
         }
       ]
     },
