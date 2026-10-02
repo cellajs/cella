@@ -1,4 +1,17 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Product view-count helpers move to the entities module
+
+findAttachmentViewCount is deleted; the shared findProductViewCount / productViewCountSelect /
+productViewCountJoin (entities-queries.ts) and productViewCountSchema (entities-schema.ts) replace
+the per-module copies, and the attachment module is rewritten onto them. No DB or wire change.
+Forks: swap imports (opts key entityId->productId), replace inline coalesce-select/leftJoin/schema
+fields with the helpers, delete fork-local duplicates like findItemViewCount. Apps that PIN the
+attachment module must hand-apply the rewrite or their pinned copy silently keeps the deleted-export
+pattern.
 
 ## What & why
 

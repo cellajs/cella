@@ -1,4 +1,15 @@
+---
+syncBreaking: true
+clientCacheBump: false
+roots: backend/src, backend/tests, backend/scripts, frontend/src, shared, cdc/src, yjs/src
+---
+
 # Drop the redundant `Entity` suffix from single-family identifiers
+
+ChannelEntityBase->ChannelBase, ProductEntityBase->ProductBase, getValid*Entity->getValid*,
+EnrichedChannelEntity->EnrichedChannel, bare channelEntity->channel and the rest of the
+single-family Entity identifiers (48 ids + 9 files). Allow-list codemod; internal rename, no
+wire-shape change.
 
 ## What & why
 

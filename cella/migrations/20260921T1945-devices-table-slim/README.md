@@ -1,4 +1,18 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # devices keeps only what is read: the key and three timestamps
+
+devices drops lastStrategy, deviceName, deviceType, deviceOs, browser and ipCountry: every sign-in
+wrote them and nothing read them, since the new sign-in notice builds its text from the request and
+the sessions list reads the same facts from the session row. The table is now (userId, deviceIdHash,
+firstSeenAt, lastSeenAt, notifiedAt) and enrollDevice(userId, deviceId) loses its context and
+strategy parameters. No API change. Apps run pnpm generate (six DROP COLUMN statements, no prompts;
+an app applying this together with 20260921T1433-devices-table gets the table in its final shape),
+drop the last two arguments from their own enrollDevice calls, and read a dropped column from the
+session row of that sign-in.
 
 ## What & why
 

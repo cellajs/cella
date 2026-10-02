@@ -1,4 +1,19 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Organization is the spine, not a configurable root
+
+The hierarchy builder declares the organization with organization({ roles, elevated }) as the only
+parentless entity and channel() requires a parent; hierarchy.rootChannelType, RootChannelType,
+rootRoles/getRootRole (now organizationRoles/getOrganizationRole), resolveRootMembershipRole (now
+resolveOrganizationMembershipRole) and the rootChannelId test-plan option (now organizationId) are
+gone, and every root-detection idiom becomes the literal 'organization'. Organization-bound tables
+declare organizationForeignKey(table). getValidProduct requires tenant + organization scope on the
+request context (500 otherwise) and reads wrong-tenant, wrong-organization, deleted, draft and
+missing rows as one 404 before the engine; getValidChannel compares whichever of the two the context
+set. No DB or wire change.
 
 ## What & why
 

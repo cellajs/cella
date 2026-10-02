@@ -1,4 +1,15 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Table filter bars drop the dead sticky wiring
+
+TableBarContainer no longer wraps filter rows in StickyBox: enableSticky defaulted to false and no
+bar ever set it, so offsetTop, enableSticky, the focusView subscription and the group/sticky classes
+were dead. The container is now a plain flex row plus the search-vars scroll reset, and
+EntityGridBar drops its isSheet prop (it only fed offsetTop). App-owned bars remove offsetTop from
+<TableBarContainer> and isSheet from <EntityGridBar>. StickyBox itself is untouched.
 
 ## What & why
 

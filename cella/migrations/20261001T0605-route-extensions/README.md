@@ -1,4 +1,18 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Route extensions: gates in xGuard, xTool runs the route, revokeSessions
+
+Route props 'x-service' and 'x-strategy' are removed: their checks are gates leading xGuard,
+serviceEnabled(service) (404 while the service is off) and strategyEnabled(method) (400 while the
+sign-in method is off); routes reachable while their method is off carry no gate. 'x-tool' becomes
+xTool: { description, approvalRequired, entity } without enabled, category and execute, placed after
+xCache: an MCP tool call validates its arguments with the route's schemas and runs the route's own
+handler through the app with the caller's token, so the route's guards, limiters and cache apply.
+endSessions is revokeSessions (helpers/revoke-sessions.ts). Apps edit their own routes and calls by
+hand; no database change.
 
 ## What & why
 

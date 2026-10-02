@@ -1,4 +1,14 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Hierarchy instance-only row-location API
+
+Free row-location functions, entity guards (isChannelEntity/isProductEntity/getChannelRoles), and
+the AncestorSource/CountsHierarchy/TopologyHierarchy types are removed; the EntityHierarchy instance
+is the only API. Mechanical rewrite: fn(h, ...) to h.fn(...), guards to
+hierarchy.isChannel/isProduct/getRoles, topology params typed EntityHierarchy. No wire or DB change.
 
 ## What & why
 

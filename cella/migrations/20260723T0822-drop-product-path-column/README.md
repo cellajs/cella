@@ -1,4 +1,14 @@
+---
+syncBreaking: true
+clientCacheBump: true
+---
+
 # Drop the product tables' stored path column
+
+Product rows compute their location path from ancestor id columns (hierarchy.computeProductPath) in
+CDC batching, move detection, and stream notifications; the stored generated column is dropped
+(wire: product responses lose the path field, clientCacheVersion bumped to v4-no-product-path).
+Channel tables keep their generated path for channel_counters ancestry.
 
 ## What & why
 

@@ -1,4 +1,18 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Node.js 26 is the required runtime
+
+engines.node moves from 24.x to 26.x in every package, and CI workflows, Dockerfile,
+infra/boot/Dockerfile, the infra boot:build target and @types/node follow. Every developer machine,
+CI runner and image needs Node 26. Node 25+ defines a global localStorage that is undefined without
+--localstorage-file, which makes zustand persist crash on write in node-env vitest runs;
+frontend/vitest.setup.ts now deletes that global when there is no window. Synced files arrive
+migrated. Apps update their own workflows, Dockerfiles, Node version pins and engines fields, and
+copy the vitest guard into any setup file of their own. Node 25+ images ship no corepack, so a
+Dockerfile installs pnpm from npm at the packageManager pin.
 
 ## What & why
 

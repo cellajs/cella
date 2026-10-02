@@ -1,4 +1,24 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # OAuth authorization server: keystore, consent, connected apps
+
+Adds node-oidc-provider as the MODE=oauth process on the same origin under /oauth/*
+(AUTH_SUBSTRATE_PLAN Phase D): oidc_payloads adapter, signing_keys (RS256, encrypted private JWK,
+current + next), oauth_clients for pre-registered apps, service_accounts.oauth_client_id for
+installations, tenants.restrictions.allowConsentedClients. Grant types authorization_code +
+refresh_token + client_credentials; client auth none (Client ID Metadata Documents) and
+client_secret_basic (clients rows and service accounts with their secret keys). Every token carries
+an RFC 8707 resource (<backendUrl>/t/<tenant> or <mcpUrl>/<tenant>/<org>/mcp). Consent page at
+/oauth/consent reads the session; GET/DELETE /me/connected-apps list and revoke grants; serviceGuard
+and actorGuard accept the JWT and resolve the consenting user (masked by token scopes) or the
+service account. Apps add oauthUrl, services.oauth and devPorts.oauth to config, the three tables to
+the RLS grant list, the oauth service to registry-enumerating infra tests, and the locale keys.
+Review round: oauth/ workspace package and singleVM fold (add oauth to pnpm-workspace.yaml), consent
+page at /auth/consent, oidc_payloads.account_id + hourly sweep job, unique current/next signing key,
+API-face protected resource metadata, health probe.
 
 ## What & why
 

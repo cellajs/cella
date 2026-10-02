@@ -1,4 +1,14 @@
+---
+syncBreaking: true
+clientCacheBump: false
+roots: frontend/src
+---
+
 # Adopt the Sonner-style toaster API
+
+Rewrite toaster(message, severity, options) calls to Sonner-style toaster.success/info/warning/error
+methods. TypeScript-AST codemod handles literal severities and reports dynamic calls for manual
+review; internal API only, no wire-shape change.
 
 ## What & why
 

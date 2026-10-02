@@ -1,4 +1,15 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Error bodies carry one request id
+
+The ApiError body drops logId: requestId is the single id, equal to the X-Request-Id response header
+and the requestId on every log line of the request. The server generates it for every request and
+ignores an incoming X-Request-Id; the request span records it as http.response.header.x-request-id
+and log lines keep the trace id as trace_id. The frontend ApiError exposes requestId, and the error
+toast and details panel label it with c:request_id. Apps rename their own logId reads to requestId.
 
 ## What & why
 

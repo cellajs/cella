@@ -1,4 +1,14 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Public read is a flag, not a mode
+
+Deleted the single-member PublicReadMode union. PublicReadGrants values are now `true`, the config
+builder's publicRead() takes no argument, and GrantSource's public variant is { type: 'public' }.
+Decision logic unchanged (still the shared 'public' row condition over the row's publicAt); no
+wire-shape or database change. Manual: single-token edits at each call site.
 
 ## What & why
 

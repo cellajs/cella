@@ -1,4 +1,18 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Config switch: xEnabledBy replaces the serviceEnabled and strategyEnabled gates
+
+A route names its config switch in xEnabledBy: { service }, { strategy } or { strategy: 'oauth',
+provider }. createXRoute runs it after the error page and before xGuard: 404 route_not_found for a
+service, 400 forbidden_strategy for a sign-in method, 400 unsupported_oauth for a provider.
+serviceEnabled, strategyEnabled and StrategyGate are removed. invokeToken checks the magic switch in
+the magic link handler (assertSwitchOn from #/middlewares/config-switch). ConfigSwitch and
+isSwitchOn are exported from shared. The spec carries x-enabled-by; parse-spec copies it into the
+docs as enabledBy and drops nothing, and the docs page marks an operation whose switch is off in its
+own config. Apps move their gates out of xGuard into xEnabledBy.
 
 ## What & why
 

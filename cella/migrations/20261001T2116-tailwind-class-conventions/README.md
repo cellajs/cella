@@ -1,4 +1,21 @@
+---
+syncBreaking: true
+clientCacheBump: false
+roots: frontend/src
+---
+
 # Tailwind class conventions
+
+The icon-xs to icon-xl utilities are removed; icons use size-3 to size-6. Button content is spaced
+by a gap on the button base (gap-2, gap-1.5 for sm and xs, gap-1 for micro), so margins on a
+button's direct children are dropped. Button's cell variant, Toggle's tile variant and the accordion
+header name their groups (group/cell-button, group/toggle, group/accordion-header) and their
+children use the named variants. intent-* replaces [--intent-color:var(--x)] and text-2xs replaces
+text-[0.6rem]. The press nudge is the press utility (active:press, a transform); Button takes
+press={false} where apps cancelled it with active:translate-y-0!. JsonViewerTheme gains
+structureType and ApiReferenceSection drops its isMobile prop. pnpm style fails on class names that
+compile to no CSS; deliberate hooks go under markerClasses in shared/config/vocabulary-allowlist.ts.
+The codemod rewrites the classes; pnpm lint:fix re-sorts them.
 
 ## What & why
 

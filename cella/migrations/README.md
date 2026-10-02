@@ -11,15 +11,18 @@ after pulling it.
   timestamp is the stable id and sort key; a date alone collides under high merge activity. Each
   folder holds a `README.md` (from [`_TEMPLATE.md`](./_TEMPLATE.md)) and whatever the sweep needs
   (codemod script, data files, SQL).
-- **[`manifest.json`](./manifest.json)**: the machine-readable index, one entry per folder with
-  `version` (the cella release it ships in), `kind`, sync-breaking flag, codemod path, scan roots,
-  and follow-up commands. Version lives here, never in the folder name, so a folder is never
-  renamed after apps have run it.
-- **[`run.ts`](./run.ts)**: the planner. It diffs `manifest.json` against the app's applied-set
-  and prints the migrations still to run, in order.
+- **The README describes the migration.** Its frontmatter carries `syncBreaking`,
+  `clientCacheBump` and, beside a codemod, the codemod's `roots`; the title and the paragraph under
+  it are the summary. The codemod is the one non-test `.ts` file in the folder. There is no
+  central index, so two PRs that each add a migration never conflict. `pnpm style` checks the
+  shape.
+- **[`run.ts`](./run.ts)**: the planner. It reads the folders, diffs them against the app's
+  applied-set and prints the migrations still to run, in order.
 
 The applied-set is the app-owned file `cella/cella.migrations.json`, listing the ids already run.
 Pending is a plain set difference, so it works the same whether the app tracks releases or a branch.
+A new app has no applied-set: the first `run.ts` run records every migration already on disk as
+applied, because the scaffold's code holds them all. Run it before the app's first sync merges.
 
 ## For apps: applying migrations
 
@@ -45,10 +48,9 @@ feeds it the plan.
 Ship the migration in the same PR as the breaking change:
 
 1. Create `cella/migrations/<YYYYMMDDThhmm>-<slug>/README.md` from [`_TEMPLATE.md`](./_TEMPLATE.md)
-   (`date -u +%Y%m%dT%H%M` for the prefix) plus the codemod / SQL / data files it needs.
-2. Add an entry to [`manifest.json`](./manifest.json). Set `version` to the target release, or
-   `"next"` if unknown, and backfill it when the release is cut.
-3. Keep codemods entity-agnostic and driven by allow-lists or explicit maps, so apps extend them
+   (`date -u +%Y%m%dT%H%M` for the prefix) plus the codemod / SQL / data files it needs. Nothing
+   else to register.
+2. Keep codemods entity-agnostic and driven by allow-lists or explicit maps, so apps extend them
    via a flag (e.g. `--extra-renames`) instead of editing the shipped script, which would conflict
    on the next sync.
 

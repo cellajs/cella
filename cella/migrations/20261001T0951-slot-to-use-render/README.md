@@ -1,4 +1,16 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Slot replaced by Base UI useRender
+
+frontend/src/modules/ui/slot.tsx is removed: Button, Badge, ButtonGroupText, BreadcrumbLink and the
+sidebar parts with a render prop build on Base UI's useRender, like upstream shadcn. Props merge as
+before (the render element wins, class names join, both handlers run), refs now merge where Slot
+dropped the outer one, and render also accepts Base UI's function form. Apps that import
+~/modules/ui/slot rebuild those components on useRender; render={<Link />} call sites are
+unaffected.
 
 ## What & why
 

@@ -1,4 +1,17 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Sign-out lifecycle: session-bound streams and cross-tab teardown
+
+The sign-out route flushes seen batches and drops the push subscription before the session ends;
+teardownUserState clears the app badge. LocalUserDatabase closes for good on a delete from another
+tab and runs deletedElsewhereListeners, so every tab of the user signs out with the deleting one
+instead of recreating the database. Backend: ctx.var.sessionId and AppStreamSubscriber.sessionId;
+sign-out and session termination emit authEvents session.deleted, and the entities listeners close
+the matching SSE streams with the unauthorized error; keepAlive now exits on closed or aborted
+streams.
 
 ## What & why
 

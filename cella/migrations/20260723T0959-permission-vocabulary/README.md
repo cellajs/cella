@@ -1,4 +1,18 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Permission vocabulary consolidation
+
+Access/Policy/Permission naming rule: AccessPolicies family ->
+PolicyMatrix/EntityPolicies/PolicyEntry, accessPolicies -> policyMatrix,
+PermissionValue/NormalizedPermissionValue -> PolicyCellInput/PolicyCell, ActionPermissionState ->
+CanState, resolvePermission -> resolveCan, PermissionMembership -> AccessMembership,
+isAllowed/enabled -> allowed, PermissionTopology removed (options.hierarchy +
+options.entityActions), config DSL ({ subject, contexts }) -> ({ entityType, channels }), collection
+scopes subChannelIds -> homeChannelIds/channelIds, AncestorScope -> IntermediateScope,
+permission-manager/ -> engine/, actor.ts -> access.ts. No wire-shape or DB change.
 
 ## What & why
 

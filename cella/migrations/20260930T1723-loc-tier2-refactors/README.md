@@ -1,4 +1,17 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Route helpers, overlay and form cleanup, one prose rule table
+
+createXRoutes, xRoute, json and jsonBody shorten route files, and createXRoute adds
+errorResponseRefs itself; app route files keep compiling and the OpenAPI document is unchanged. The
+overlay stores drop the write-only triggerRefs registry (setTriggerRef is a deprecated no-op; delete
+the calls). The stepper keeps only the vertical variant, SelectEmails replaces ui/tag-input and
+utils/is-email and accepts a chip exactly when the invite schema does. The prose checks run from one
+rule table in one process: agent-vocabulary.ts is removed, VocabularyAllowlist gains proseExclude,
+and an app that edited check-comment-style.ts to skip paths moves them there.
 
 ## What & why
 

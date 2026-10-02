@@ -1,4 +1,16 @@
+---
+syncBreaking: true
+clientCacheBump: true
+---
+
 # Batch presigned URLs replace the single presign endpoint
+
+GET /attachments/presigned-url (getPresignedUrl) -> POST /attachments/presigned-urls
+(getPresignedUrls): up to 50 id+variant items per call, uniform rejectedIds (no 403/404 existence
+oracle). Backend getPresignedUrlOp/findAttachmentById/presignedUrlQuerySchema ->
+getPresignedUrlsOp/findAttachmentsByIds/presignedUrlsBodySchema. Frontend getPrivateFileUrlById
+delegates to the presign-batch coalescer (flush window, in-flight dedupe, 1h memo); per-id denials
+reject with PresignRejectedError. No DB change.
 
 ## What & why
 

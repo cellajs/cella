@@ -1,13 +1,14 @@
 ---
 name: migrate
-description: Apply pending cella upstream migrations to an app after a sync. Computes the pending set from cella/migrations/manifest.json, runs each migration's codemod or manual steps in order, gates on pnpm check, and records what was applied.
+description: Apply pending cella upstream migrations to an app after a sync. Computes the pending set from the cella/migrations folders, runs each migration's codemod or manual steps in order, gates on pnpm check, and records what was applied.
 ---
 
 # Applying cella migrations to an app
 
 Run after a `cella sync` pull, or whenever `cella/migrations/run.ts` reports pending work. One
 migration at a time, in array order (later migrations may assume earlier ones ran). Never batch or
-skip ahead: apply, gate, record, next.
+skip ahead: apply, gate, record, next. Pending migrations are a to-do list, not a gate: one left
+for later stays listed until it is recorded.
 
 ## 1. Inventory
 
@@ -17,28 +18,26 @@ From the repo root:
 pnpm exec tsx cella/migrations/run.ts --json
 ```
 
-Elements carry `id`, `title`, `kind`, `syncBreaking`, `clientCacheBump`, `script`, `roots`,
-`requires`, `summary`. Address `warnings` (manifest and folders disagree) first. Empty list: up to
-date, stop.
+Elements carry `id`, `title`, `kind` (`codemod` or `manual`), `syncBreaking`, `clientCacheBump`,
+`script`, `roots`, `summary`. Address `warnings` (a folder without a README, or a README out of
+shape) first. Empty list: up to date, stop.
 
 ## 2. For each pending migration, in array order
 
-Read `cella/migrations/<id>/README.md` in full first (the manifest is only a summary). Then:
+Read `cella/migrations/<id>/README.md` in full first (the plan shows only its summary). Then:
 
-- **`kind: codemod` or `mixed`**: report mode first, read what it will touch, then apply:
+- **`kind: codemod`**: report mode first, read what it will touch, then apply:
   ```sh
   pnpm exec tsx <script> inventory <roots>   # or the exact command in the README
   pnpm exec tsx <script> rewrite   <roots>
   ```
   If the app renamed or added entities, pass the migration's customization flag (e.g.
   `--extra-renames app-renames.json`); never edit the shipped script.
-- **`kind: sql`**: follow the README's **Manual steps** and **Verify** sections exactly (SQL,
-  drizzle regen, rename-prompt answers).
-- **`kind: manual`**: work the numbered **Manual steps** (per-file changes a codemod skips)
-  wherever the app customized that code.
+- **Both kinds**: work the numbered **Manual steps** (per-file changes a codemod skips, SQL,
+  drizzle regen, rename-prompt answers) wherever the app customized that code.
 
-Then run every command in `requires` (e.g. `pnpm generate`, `pnpm sdk`) and every follow-up in
-the README's **Verify** section (recalculation runbooks, seed steps).
+Then run every command and follow-up in the README's **Verify** section (`pnpm generate`,
+`pnpm sdk`, recalculation runbooks, seed steps).
 
 ## 3. Validate
 

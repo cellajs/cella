@@ -1,4 +1,15 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Per-channel elevatedGrants and explicit rootRoles
+
+Global elevatedRoles export removed: channels declare elevated (compiled to hierarchy.elevatedGrants
+${channelType}:${role} keys); an empty set makes non-home grants home-scoped, so forks must declare
+elevation to keep subtree reads. resolveParentMembershipRole splits into
+resolveAssociatedMembershipRole and a throwing resolveRootMembershipRole; channels auto-creating
+root membership rows declare a complete rootRoles map. Tests inject elevation via elevateAcross.
 
 ## What & why
 

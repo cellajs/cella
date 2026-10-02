@@ -1,4 +1,14 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # FormDescription removed: field help moves into a FormLabel popover
+
+field.tsx no longer exports FormDescription; FormLabel gains a help prop rendering a question-mark
+popover. Fork call sites move description content into help={...} on the sibling FormLabel and drop
+the import; bare description paragraphs switch to FieldDescription (now a plain <p>, collapse
+behavior gone).
 
 ## What & why
 

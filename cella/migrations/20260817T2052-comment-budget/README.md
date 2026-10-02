@@ -1,4 +1,19 @@
+---
+syncBreaking: false
+clientCacheBump: false
+roots: frontend/src, backend/src, shared, cdc/src, yjs/src, infra
+---
+
 # Comment budget: delete comments that restate their own code
+
+check-frontend-style.ts loses the export-description rule, which required a JSDoc on every exported
+function and const and so produced hundreds of docs paraphrasing their own identifier.
+cella/AGENTS.md gains a Comment budget (members, locals, JSX, no-repeats) governing which comments
+earn their place. trim-comment-budget.ts deletes the docs the old rule produced under two
+conservative rules, name-restating and boilerplate, protecting tool directives, @tag JSDoc,
+TODO/FIXME, fork: markers, .stories. files and generated trees. A third duplicate rule is
+report-only: it cannot tell a copied note from the same local pattern recurring. Comment-only, so an
+app may skip it, at the cost of comment-only conflicts in shared files on the next sync.
 
 ## What & why
 

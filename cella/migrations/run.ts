@@ -2,10 +2,11 @@
  * App migration planner.
  *
  * Computes which cella migrations an app still has to apply and prints them in order, so a
- * human or an agent can work the list. The source of truth for "already done" is the app's
- * applied-set file ({@link APPLIED_FILE} in the cella/ folder), not version math: pending =
- * every migration in `manifest.json` whose id is absent from the applied-set. This is stable
- * across release- and branch-tracking apps alike.
+ * human or an agent can work the list. Every `<id>/` folder here is one migration, described by
+ * its README.md (frontmatter, title, summary). The source of truth for "already done" is the
+ * app's applied-set file ({@link APPLIED_FILE} in the cella/ folder), not version math: pending
+ * = every folder whose id is absent from the applied-set. This is stable across release- and
+ * branch-tracking apps alike.
  *
  * Usage (from the repo root):
  *   pnpm exec tsx cella/migrations/run.ts            # print the pending plan (human)
@@ -15,20 +16,20 @@
  *   pnpm exec tsx cella/migrations/run.ts mark <id…> # record migrations as applied
  */
 
+import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { noteCodemod, noteIdPattern, parseMigrationNote } from '../../shared/scripts/check-migration-notes.ts'
 
-/** One migration as declared in `manifest.json`. */
-interface MigrationEntry {
+/** One migration, read from its folder. */
+interface Migration {
   /** Folder name and stable id: `<YYYYMMDDThhmm>-<slug>` (UTC, lexically sortable). */
   id: string
-  /** Cella release the change first ships in, or `"next"` until a release is cut. */
-  version: string
-  /** Human title. */
+  /** The README title. */
   title: string
-  /** How the change is applied. */
-  kind: 'codemod' | 'sql' | 'manual' | 'mixed'
+  /** `codemod` when the folder ships a script, else `manual` (steps in the README). */
+  kind: 'codemod' | 'manual'
   /** Changes upstream in a way app-specific code must follow. */
   syncBreaking: boolean
   /** Bumped `clientCacheVersion` or shipped a lens module. */
@@ -37,15 +38,8 @@ interface MigrationEntry {
   script: string | null
   /** Default scan roots for the codemod. */
   roots: string[]
-  /** Follow-up commands the migration needs (e.g. `pnpm generate`). */
-  requires: string[]
-  /** One-line summary. */
+  /** The README's summary paragraph. */
   summary: string
-}
-
-interface Manifest {
-  schemaVersion: number
-  migrations: MigrationEntry[]
 }
 
 /** App-owned record of applied migration ids, in the cella/ folder. */
@@ -53,25 +47,61 @@ const APPLIED_FILE = 'cella.migrations.json'
 
 const here = dirname(fileURLToPath(import.meta.url))
 const cellaDir = resolve(here, '..')
-const manifestPath = join(here, 'manifest.json')
+const repoDir = resolve(cellaDir, '..')
 const appliedPath = join(cellaDir, APPLIED_FILE)
 // Pre-relocation location (repo root). Read-only fallback so the pending plan stays correct in the
 // window between pulling this move and running the migration that git-mv's the file into cella/.
-const legacyAppliedPath = join(cellaDir, '..', APPLIED_FILE)
+const legacyAppliedPath = join(repoDir, APPLIED_FILE)
 
-/** Read and lightly validate `manifest.json`. */
-function readManifest(): Manifest {
-  const parsed = JSON.parse(readFileSync(manifestPath, 'utf8')) as Manifest
-  if (!Array.isArray(parsed.migrations)) throw new Error('manifest.json: `migrations` must be an array')
-  return parsed
+/** Every migration folder, sorted by id (timestamp prefix gives chronological order), plus shape warnings. */
+function readMigrations(): { migrations: Migration[]; warnings: string[] } {
+  const migrations: Migration[] = []
+  const warnings: string[] = []
+  const folders = readdirSync(here, { withFileTypes: true })
+    .filter((entry) => entry.isDirectory() && noteIdPattern.test(entry.name))
+    .map((entry) => entry.name)
+    .sort()
+  for (const id of folders) {
+    const readme = join(here, id, 'README.md')
+    if (!existsSync(readme)) {
+      warnings.push(`"${id}" is missing README.md`)
+      continue
+    }
+    const note = parseMigrationNote(readFileSync(readme, 'utf8'))
+    for (const error of note.errors) warnings.push(`"${id}" README: ${error}`)
+    const codemod = noteCodemod(readdirSync(join(here, id)))
+    const { title, syncBreaking, clientCacheBump, roots, summary } = note
+    const script = codemod ? `cella/migrations/${id}/${codemod}` : null
+    migrations.push({ id, title: title || id, kind: script ? 'codemod' : 'manual', syncBreaking, clientCacheBump, script, roots, summary })
+  }
+  return { migrations, warnings }
 }
 
-/** Read the app's applied-set; empty when the file is absent. */
-function readApplied(): Set<string> {
+/** Whether this checkout is the cella template itself, which never applies its own migrations. */
+function isTemplateRepo(): boolean {
+  try {
+    const origin = execFileSync('git', ['remote', 'get-url', 'origin'], { cwd: repoDir, encoding: 'utf8' }).trim()
+    return /[/:]cellajs\/cella(\.git)?$/.test(origin)
+  } catch {
+    return false
+  }
+}
+
+/**
+ * Read the app's applied-set. Without one, the app is a fresh scaffold whose code already holds
+ * every migration on disk: record them all, once, so only migrations from later syncs show up.
+ */
+function readApplied(migrations: Migration[]): Set<string> {
   const path = existsSync(appliedPath) ? appliedPath : legacyAppliedPath
-  if (!existsSync(path)) return new Set()
-  const parsed = JSON.parse(readFileSync(path, 'utf8')) as { applied?: string[] }
-  return new Set(parsed.applied ?? [])
+  if (existsSync(path)) {
+    const parsed = JSON.parse(readFileSync(path, 'utf8')) as { applied?: string[] }
+    return new Set(parsed.applied ?? [])
+  }
+  const applied = new Set(migrations.map((m) => m.id))
+  if (isTemplateRepo()) return applied
+  writeApplied(applied)
+  console.info(`No ${APPLIED_FILE} yet: recorded the ${applied.size} migration(s) already in this app as applied.\n`)
+  return applied
 }
 
 /** Write the applied-set back, sorted and de-duplicated. */
@@ -80,30 +110,8 @@ function writeApplied(ids: Set<string>): void {
   writeFileSync(appliedPath, `${JSON.stringify({ applied }, null, 2)}\n`)
 }
 
-/** Migrations sorted by id (timestamp prefix gives chronological order). */
-function ordered(manifest: Manifest): MigrationEntry[] {
-  return [...manifest.migrations].sort((a, b) => a.id.localeCompare(b.id))
-}
-
-/** Warn about drift between manifest entries and on-disk folders. */
-function driftWarnings(manifest: Manifest): string[] {
-  const warnings: string[] = []
-  const folders = readdirSync(here, { withFileTypes: true })
-    .filter((d) => d.isDirectory())
-    .map((d) => d.name)
-  const declared = new Set(manifest.migrations.map((m) => m.id))
-  for (const m of manifest.migrations) {
-    if (!folders.includes(m.id)) warnings.push(`manifest entry "${m.id}" has no folder`)
-    else if (!existsSync(join(here, m.id, 'README.md'))) warnings.push(`"${m.id}" is missing README.md`)
-  }
-  for (const f of folders) {
-    if (!declared.has(f)) warnings.push(`folder "${f}" is not in manifest.json`)
-  }
-  return warnings
-}
-
 /** Print the pending plan for humans. */
-function printPlan(pending: MigrationEntry[]): void {
+function printPlan(pending: Migration[]): void {
   if (pending.length === 0) {
     console.info('✓ No pending migrations. This app is up to date.')
     return
@@ -114,23 +122,21 @@ function printPlan(pending: MigrationEntry[]): void {
       .filter(Boolean)
       .join(', ')
     console.info(`${i + 1}. ${m.title}  [${tags}]`)
-    console.info(`   id:      ${m.id}  (ships in ${m.version})`)
+    console.info(`   id:      ${m.id}`)
     console.info(`   summary: ${m.summary}`)
     if (m.script) console.info(`   codemod: pnpm exec tsx ${m.script} ${m.roots.join(' ')}`)
-    if (m.requires.length) console.info(`   then:    ${m.requires.join(', ')}`)
     console.info(`   readme:  cella/migrations/${m.id}/README.md`)
     console.info('')
   }
-  console.info('After applying each, gate on `pnpm check`, then record it:')
+  console.info("Work each README's steps, gate on `pnpm check`, then record it:")
   console.info(`  pnpm exec tsx cella/migrations/run.ts mark ${pending.map((m) => m.id).join(' ')}`)
 }
 
 function main(): void {
   const argv = process.argv.slice(2)
   const cmd = argv[0]
-  const manifest = readManifest()
-  const applied = readApplied()
-  const all = ordered(manifest)
+  const { migrations: all, warnings } = readMigrations()
+  const applied = readApplied(all)
 
   if (cmd === 'mark') {
     const ids = argv.slice(1)
@@ -144,14 +150,14 @@ function main(): void {
     return
   }
 
-  const warnings = driftWarnings(manifest)
   for (const w of warnings) console.warn(`! ${w}`)
 
   const wantAll = argv.includes('--all')
   const pending = wantAll ? all : all.filter((m) => !applied.has(m.id))
 
   if (cmd === 'status') {
-    console.info(`applied: ${applied.size}  pending: ${all.length - applied.size}  total: ${all.length}`)
+    const open = all.filter((m) => !applied.has(m.id)).length
+    console.info(`applied: ${all.length - open}  pending: ${open}  total: ${all.length}`)
     return
   }
 

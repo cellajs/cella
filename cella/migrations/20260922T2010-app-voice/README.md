@@ -1,4 +1,17 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # app voice: no product name in identifiers and wire strings
+
+The domain verification TXT record is _<appConfig.slug>-verification.<domain> (was
+_cella-verification) and the HKDF salt behind encryptData is the neutral constant data-encryption
+(was cella:data-encryption), which re-keys every stored ciphertext: TOTP secrets encrypted before
+the change no longer decrypt, so delete them (no users) or keep the old salt with a marker. pnpm
+vocabulary:check gains a product-name rule rejecting cella_*, Cella*, _cella-* identifiers and
+cellajs.com literals in backend/src, shared/src and frontend/src; cella/AGENTS.md records that cella
+in code names the template only where it contrasts with the app.
 
 ## What & why
 

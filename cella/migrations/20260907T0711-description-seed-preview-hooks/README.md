@@ -1,4 +1,18 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Seed description builder, sheet static preview, shared description-update halves
+
+backend/scripts/seeds/description-document.ts is the one seed block builder (paragraphBlock,
+textDocument, mentionDocument) with explicit default props in BlockNote's key order so seeded
+documents round-trip the relay seed and the editor's on-load comparison; attachment and
+notifications seeds use it, apps drop local builders (raak createDescription, both mentionDocument).
+Attachment description sheet renders a faded BlockNoteFullHtml as waitingFallback. Apps compose
+patchCollaborativeDescription/persistStandaloneDescription in their description-update hooks (pc
+material hook is the reference; raak task hook and pc item hook still carry copies).
+20-attachment.seed.ts conflicts on sync after cella#1146.
 
 ## What & why
 

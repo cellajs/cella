@@ -1,4 +1,17 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Move cella sync files into the `cella/` folder
+
+Relocate cella.config.ts, cella.manifest.json and cella.migrations.json from the repo root into the
+cella/ folder (cella/cella.config.ts, cella/cella.manifest.json, cella/cella.migrations.json). The
+@cellajs/cli release with cella/-folder discovery finds them there (config loader, MANIFEST_FILE,
+managed-file match); run.ts reads/writes the applied-set at cella/cella.migrations.json with a
+read-only fallback to the old root path. Manual git mv, no codemod; sync-breaking, no wire-shape or
+DB change. App localPath values still resolve against the repo root and the config contents are
+unchanged.
 
 ## What & why
 

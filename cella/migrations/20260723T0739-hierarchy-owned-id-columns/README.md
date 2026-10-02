@@ -1,4 +1,14 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Hierarchy-owned id-column keys and row-location API
+
+EntityHierarchy instance owns row location: idColumnKeys/idColumnKey/idColumnName, resolve*,
+compute*Path, pathColumnSql, deepestAncestorSql. appConfig.entityIdColumnKeys now derives from
+hierarchy.idColumnKeys (replace the literal map in config.default.ts). backend pathColumnExpression
+removed in favor of hierarchy.pathColumnSql. No wire-shape or DB change.
 
 ## What & why
 

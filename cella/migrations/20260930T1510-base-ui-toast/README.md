@@ -1,4 +1,16 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Replace sonner with Base UI Toast
+
+Toasts render through Base UI Toast (frontend/src/modules/ui/toast.tsx, ported from the shadcn base
+toast) and the sonner dependency is removed. toaster.<severity>(message, options) keeps its shape
+with Base UI options (description, actionProps, timeout, id, onClose, priority); the unused sonner
+methods are removed and close replaces dismiss. toaster holds toasts shown before the Toaster
+mounts, which retires toast-store.ts, and ReloadPrompt shows a persistent toast. Apps that import
+sonner directly, pass sonner-only options or use useToastStore adjust those calls by hand.
 
 ## What & why
 

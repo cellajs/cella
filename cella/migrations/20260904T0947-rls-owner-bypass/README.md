@@ -1,4 +1,16 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # RLS owner bypass replaces BYPASSRLS: NO FORCE RLS, effective CDC role probe, smoke warnings
+
+RLS tables are ENABLE (never FORCE) so admin_role bypasses as owner; Scaleway cannot grant BYPASSRLS
+(found by the 0.10.0 smoke failure). create-db-roles and the test setup create admin_role without
+BYPASSRLS; verify asserts enabled-not-forced. CDC worker probes effective bypass per table
+(rlsBypass/rlsBlockedTables, health reason rls_bypass_missing replaces role_missing_bypassrls).
+Smoke results are ok/warn/fail (degraded warns via ::warning::, unhealthy fails); infra status gains
+live.components on the shared lib/health-components.ts.
 
 ## What & why
 

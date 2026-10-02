@@ -1,4 +1,16 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Deploy vocabulary: start-first/stop-first, pathPrefix, storeOutputs
+
+Planned generation roll: replacementStrategy values lb-overlap->start-first / exclusive->stop-first,
+lbPathBegin->pathPrefix (field + emitted x-service key), genId fingerprint key
+runMigrate->runRelease (deliberately re-rolls every generation on first deploy), flat db* stack
+outputs retired in favor of storeOutputs.<storeId>.<key> (db-exposure/seed CLI reads the primary
+store entry). Fork change is three seds in infra/config/services.config.ts plus any fork-local
+reader of the retired outputs; regenerate compose.gen.yml.
 
 ## What & why
 

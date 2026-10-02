@@ -1,4 +1,18 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # GeoIP databases come from the public bucket, not the image
+
+The Docker geoip build stage and backend/scripts/download-geoip.ts are removed;
+backend/src/lib/geoip.ts downloads the DB-IP Lite databases from GEOIP_SOURCE_URL (default: the
+geoip/ prefix of the app's public bucket, the shared template bucket in development) at boot and
+daily, and geolocates GEOIP_DEV_SAMPLE_IP instead of loopback in development.
+infra/tasks/geoip-refresh.ts publishes the data: pnpm infra → Refresh GeoIP data, the deploy
+pipeline with a 35-day gate, and the monthly geoip-refresh workflow. print-deploy-env emits
+public_bucket. The new sign-in notice drops its location line when the country is unknown ({{-
+location}} plus the email.account_security.location key).
 
 ## What & why
 

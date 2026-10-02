@@ -1,4 +1,16 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Dev service ports become one config knob (`devPorts`)
+
+Service listen ports and Vite proxy targets default from a single devPorts block in
+config.default.ts (api 4000, cdcHealth 4001, yjs 4002, mcp 4003) instead of five hardcodes;
+PORT-style env vars still override. Not sync-breaking and defaults are unchanged, but forks must add
+an offset devPorts override (paired with their frontendUrl port) to stop parallel stacks colliding
+on :4000, where the first backend up answers every fork's /api proxy. Also drop stale PORT= lines
+from backend/.env.
 
 ## What & why
 

@@ -1,4 +1,17 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # VM IAM principals and policies follow the service registry
+
+Bootstrap-owned IAM (vm-<service> applications, their path-conditioned policies, the singleVM host
+condition) derives from the service registry; compute, LB and key minting keep deriving from the
+enabled set. Toggling appConfig.services.<slug>.enabled needs no Apply infra change; adding a
+registry service or flipping singleVM does, and Apply creates the missing applications itself.
+Dormant principals must hold zero API keys: the deploy asserts it and the key mint purges them. One
+Apply infra change per bootstrapped stack after syncing (cella: host condition gains /mcp/; raak:
+new vm-yjs and vm-mcp principals).
 
 ## What & why
 

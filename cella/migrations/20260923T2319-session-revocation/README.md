@@ -1,4 +1,24 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Sessions are revoked, not deleted
+
+A session ends the way an API key does: sessions gains revokedAt, revokedBy (actor; null for the
+server's housekeeping) and revocationReason (sign_out, other_session, mfa_enabled, session_cap,
+replaced), and the row stays until the nightly sweep, so the sessions list shows revoked and expired
+sessions of the last 30 days. revokeSessions (auth-queries.ts) replaces deleteSession and
+deleteSessionsByIds; validateSession answers 401 session_revoked; the route deleteMySessions is
+revokeMySessions and returns the revoked rows; the auth event session.deleted is session.revoked.
+Locale keys terminate, terminate_all, success.session_terminated and success.sessions_terminated are
+removed in favour of revoke, revoke_all and success.revoke_resource; revocation_reason.*, revoked,
+expired and session_history are added. Three nullable columns (migration
+20260923232124_session_revocation); no clientCacheVersion bump. Passkeys and TOTP say delete
+everywhere (mail types passkey-deleted / totp-deleted, locale keys delete_mfa_last,
+passkey_delete_failed, totp_delete_failed; unlink, unlink_mfa_last, success.passkey_unlinked,
+success.totp_removed, passkey_unlink_failed, totp_remove_failed removed), and emails.lastVerifiedBy
+is lastVerifiedVia (markEmailVerified takes via) because every other *By column names an actor.
 
 ## What & why
 

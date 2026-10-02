@@ -1,4 +1,19 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Guard caches without broadcast, memberships versioned
+
+The auth_invalidate LISTEN/NOTIFY channel, listenForAuthInvalidation and the authInvalidation health
+component are removed. Memberships are cached under actors.bindings_version, which a trigger on
+memberships replaces on every write, cascades included. Sessions (with the system role and that
+version) are cached 10 seconds per process: the writer drops them through invalidateCache.user and
+revokeSessions, the API process when CDC reports a user, membership or system role change. OAuth
+grants and the API keys behind service tokens are read per request. invalidateCache.* clears only
+this process, takes no db argument and is synchronous. loadMemberships moves to
+middlewares/guard/membership-cache and takes the bindings version from resolveSession
+(ResolvedSession replaces SessionCacheEntry). pnpm generate emits the column and the trigger.
 
 ## What & why
 

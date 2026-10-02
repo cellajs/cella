@@ -1,4 +1,16 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Route tree generation script
+
+pnpm generate:routes (root) and pnpm gen:routes (frontend) regenerate
+frontend/src/routes/routeTree.gen.ts via frontend/vite/generate-routes.ts and
+@tanstack/router-generator, using the router options vite.config.ts now imports from
+frontend/vite/router-options.ts. The generated tree is app-owned and never syncs, so a sync that
+adds a route file failed typecheck until a Vite build or dev server ran. Apps add the two scripts
+and the dev dependency by hand; the vite/ files arrive with the sync.
 
 ## What & why
 

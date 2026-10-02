@@ -1,4 +1,17 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # The emails table records inbox proofs
+
+emails becomes the ledger of inboxes proven per account: lastVerifiedBy ('magic' or the OAuth
+provider whose verification mail was clicked) and lastVerifiedAt are stamped on every proof,
+verified/verifiedAt on the first. The OAuth verify click adds a differing provider address to the
+ledger through addProvenEmail (409 oauth_conflict when another account holds it), so a magic link
+for that address signs in to the same account and invitations to it bind directly. markEmailVerified
+takes by. Two nullable columns added and the write-only emails.tokenId dropped: apps run pnpm
+generate. Nothing is deleted as a side effect.
 
 ## What & why
 

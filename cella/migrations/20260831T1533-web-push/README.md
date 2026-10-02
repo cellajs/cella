@@ -1,4 +1,17 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Web Push for notifications; Periodic Background Sync retired
+
+New push module: push_subscriptions table (unique-endpoint upsert, grants only, no CDC), /push
+subscribe/unsubscribe/VAPID routes, sender delivering {t:'notif', activityId, channelId, type} to
+offline subscribers of fresh notification rows (online users subtracted via their SSE user channel;
+404/410 prunes, 429 backs off). Settings card gains a per-device toggle; SW gains
+push/notificationclick/pushsubscriptionchange and loses the periodicsync badge path. Double-gated:
+has.push config flag AND VAPID_* env keys. Apps run pnpm generate, set keys + flag to enable, and
+verify on desktop Chrome plus an installed iOS PWA.
 
 ## What & why
 

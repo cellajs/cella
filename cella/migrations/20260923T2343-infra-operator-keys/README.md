@@ -1,4 +1,18 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Operator API keys and privileged runs in the infra CLI
+
+Keys are named after their Scaleway bearer: the Owner API key (SCW_OWNER_*, your own key as
+organization Owner; a durable one mints a 30-minute key per privileged run) and the admin
+application key (SCW_ADMIN_* in infra/.env.<mode>; setup writes it, Fetch admin application key does
+elsewhere). SCW_BOOTSTRAP_* and SCW_STATE_* are read for one release with rename warnings. Apply
+validates the key, previews and confirms once, and verifies live grants and database privileges
+afterwards. Stack locks are renewed leases released on Ctrl-C. A preflight names owed Applies in the
+deploy and in the infra-preflight job on release PRs. keychain: and op: references resolve when the
+env file loads. Synced files arrive migrated; operators update their infra/.env.<mode> once.
 
 ## What & why
 

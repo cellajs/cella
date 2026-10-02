@@ -1,4 +1,17 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Guard trim: crossTenantGuard and noImpersonationGuard removed
+
+crossTenantGuard is removed: it repeated what userGuard sets (user, memberships, db = baseDb), and a
+route without tenantGuard is cross-tenant by itself. noImpersonationGuard is removed:
+refuseImpersonation(session) moves to modules/auth/step-up/helpers/step-up and runs in the handlers
+of the step-up routes and revokeMySessions; sysAdminGuard refuses an impersonation (403
+impersonation_forbidden, no security alert) before its role check, so every system route,
+startImpersonation included, refuses one. stepUpLimiter counts only 401 and 404 as failures, so the
+refusal spends none of the user's attempts. Apps drop both guards from their own routes.
 
 ## What & why
 

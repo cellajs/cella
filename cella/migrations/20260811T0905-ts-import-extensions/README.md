@@ -1,4 +1,16 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Explicit .ts import extensions in the Vite config-load graph
+
+Vite 8's future-default configLoader 'native' needs fully-specified ESM imports; vite.config.ts
+loads the whole shared/ graph at config time. All relative imports in shared/ and frontend/vite/
+gain .ts extensions, directory-index imports name index.ts explicitly, __dirname becomes
+import.meta.dirname, allowImportingTsExtensions hoists to root tsconfig, and a biome.jsonc override
+enforces correctness/useImportExtensions over the territory. Codemod = Biome's own fixer (see README
+Run). Not sync-breaking, no cache bump, no DB.
 
 ## What & why
 

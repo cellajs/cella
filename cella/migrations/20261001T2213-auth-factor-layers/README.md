@@ -1,4 +1,20 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Auth factors move to queries and operations
+
+The second-factor code follows the backend layering. verifyTotp moves from totps/helpers/totps to
+totps/operations/verify-totp; issuePasskeyChallenge, verifyPasskeyRegistration and
+verifyPasskeyAssertion from passkeys/helpers/passkey to passkeys/operations/passkey-challenges;
+general/helpers/mfa splits into mfa/operations/mfa-challenge (initiateMfa, validateConfirmMfaToken,
+completeMfaChallenge) and mfa/operations/factor-rules (mfaFactorRules). TOTP and passkey reads and
+writes are queries in totps/totps-queries and passkeys/passkeys-queries (insertTotp,
+findCredentialIdsByUser and insertPasskey leave auth-queries); heldFactors(ctx, userId) becomes
+getHeldFactors(ctx, { userId }) in mfa/mfa-queries; the MFA row lock is user-queries
+findUserForUpdate. The toggleMfa handler body becomes me/operations/toggle-mfa. Apps update imports
+and vi.mock paths.
 
 ## What & why
 

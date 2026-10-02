@@ -1,4 +1,14 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # IAM model v2: per-mode/per-service principals, per-deploy keys, S3 key retirement
+
+Operational migration: per-mode IAM principals in a group, admin app replaces operator, per-service
+secret folders with resource-level conditions, per-deploy key rotation + single-access handoff, s3
+managed key and s3AccessKeyId/Secret removed (backend signs with its service key; S3_* env names
+unchanged). Run the infra CLI 'Migrate IAM model' per environment.
 
 > **2026-08 update:** the legacy (v1) code paths, the `infra:iamModel` flag, and the
 > **Migrate IAM model** CLI action are removed (v2 only). A stack still on v1 must run the steps

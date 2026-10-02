@@ -1,4 +1,18 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Seam consolidation: derived memberships, module routes, product tables, app schemas
+
+memberships-db.ts, routes.ts and tables.ts lose their pins: membership channel columns and indexes
+derive from the hierarchy, route mounts are declared on defineBackendModule (routes with a phase),
+entityTables derives from channel-tables.ts plus the new pinned product-tables.ts (also home of the
+app partition and grant lists). setup-config-schema.ts and app-channel-counts.ts merge into the
+pinned schemas/app-schemas.ts. user-profile-content.tsx hosts a user.profile slot (cella's
+organizations grid is a tool). Template pins add modules.ts and drop nav-config.tsx,
+onboarding-config.ts and user-profile-content.tsx. Apps move their fills, take upstream for the five
+files, and run generate (index-only migration for sub-root channels).
 
 ## What & why
 
