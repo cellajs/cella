@@ -1,4 +1,15 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Generic channel-path resolver replaces the register-channel-paths seam
+
+resolveChannelPath in view-declaration.ts now reads the server-computed path off cached rows of
+every non-root hierarchy channel type itself; registerChannelPathResolver and the pinned
+frontend/src/query/realtime/register-channel-paths.ts seam are gone. Apps delete the file, drop its
+side-effect import from list-queries-config.tsx and remove the pinned entry from
+cella/cella.config.ts.
 
 ## What & why
 

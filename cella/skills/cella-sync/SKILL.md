@@ -26,9 +26,9 @@ advances one stage (steps 6 and 7).
 ## 1. Preflight
 
 1. Clean working tree, fresh branch (sync creates `cella/sync/<date>` itself).
-2. Diff `cella/migrations/manifest.json` against the app's `cella.migrations.json` applied set
-   and read each pending migration's README BEFORE resolving conflicts; conflicts usually belong
-   to one of them.
+2. Once the first run has merged, `pnpm cella migrate` lists the migration notes that arrived
+   (the merge already recorded them, conflicts or not). Read each one (`--show <id>`) BEFORE
+   resolving conflicts; conflicts usually belong to one of them.
 3. Skim `git log --oneline <old>..cella-upstream/main`. Upstream commits that ADOPT this app's
    contributions come back as conflicts where ours = theirs + app payload.
 
@@ -74,8 +74,8 @@ app-owned module folder (`owner: 'app'`) that started as an upstream module.
 ## 5. Migration bookkeeping
 
 Run the `migrate` skill; entries whose change originated here or arrived by an earlier sync are
-verified (README "Verify" steps) and marked, not re-applied. The pending list must be empty at
-the end of a sync.
+verified (README "Verify" steps) and marked, not re-applied. Handle the open notes in the sync PR
+when you can; one left for later stays listed by `pnpm cella migrate` until it is marked.
 
 ## 6. Commit, then drift triage
 

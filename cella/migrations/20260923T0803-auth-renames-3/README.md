@@ -1,4 +1,17 @@
+---
+syncBreaking: true
+clientCacheBump: true
+roots: backend/src, shared/src, frontend/src, yjs/src, locales, infra/config
+---
+
 # Auth substrate renames, round 3
+
+MissingScopeError/missing_scope -> MissingAncestorError/missing_ancestor (engine error for an absent
+ancestor channel id; no longer shares a word with RFC 6750 insufficient_scope); tenant restriction
+allowConsentedClients -> allowUnregisteredClients and refusal clients_not_allowed ->
+unregistered_clients_not_allowed (it gates consent to OAuth clients with no registration), with a
+migration rewriting the column default and stored rows; env MCP_API_URL -> MCP_URL. Tenant wire
+shape changes: clientCacheVersion v9-tenant-restrictions.
 
 ## What & why
 

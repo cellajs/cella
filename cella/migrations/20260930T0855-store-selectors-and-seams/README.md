@@ -1,4 +1,18 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Store selector gate, per-channel role types, idempotency and block-field seams, app bundle externals
+
+pnpm style fails a zustand store hook called without a selector, after the overlay providers
+re-rendered every UI-store reader on each open and close. checkIdempotency takes the table and
+builds the creator and request-scope predicate itself, evolutionContract.product declares
+blockFields and exposes assertBlockFields for creates and updates, the hierarchy role getters are
+typed per channel and shared exports OrganizationRole, the three tsup configs derive their externals
+from one keepOnDisk helper plus the pinned backend/src/bundle-config.ts, pnpm generate forwards
+extra arguments to drizzle-kit, security suites declare the member attachment policy they assume,
+and PR CI typechecks, builds the three service bundles and, on the release PR, the three images.
 
 ## What & why
 

@@ -1,4 +1,17 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Nullable store user and TreeItem-constrained tree rows
+
+useUserStore().user is MeUser | null (was MeUser seeded with `null as unknown as MeUser`);
+authenticated call sites use the new useCurrentUser()/getCurrentUser() accessors, which throw while
+signed out, and anything reachable signed out handles null. useTreeRows requires T extends TreeItem;
+buildTree is overloaded so other row shapes must pass all three accessors. Also widens
+getEntityPolicies/getPolicyPermissions to string and gives actorFrom/accessFrom a structural
+AccessContext (actorFrom now returns { anonymous: true } without a userId). Compile-time detected;
+no wire-shape or DB change.
 
 ## What & why
 

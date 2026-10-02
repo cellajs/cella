@@ -1,4 +1,21 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Scheduled jobs run on pg-boss through the jobs worker
+
+BackendJob is { name, cron, run }: pg-boss cron (UTC) on a singleton queue, run by the new jobs
+worker (MODE=jobs, devPorts.jobs 4006, jobs/ dev package, coHosted under singleVM, stop-first).
+defineBackendModule gains queues: [{ name, handler, ... }] (pg-boss queue options; the jobs worker
+creates and works them). The RUN_MIGRATIONS_ON_BOOT timers in main.api.ts are gone. The migrate
+companion installs the pgboss schema and grants runtime_role (installJobsSchema, side-effect block
+jobs_grants); every runtime process uses the runtime DSN with migrate: false. The MCP worker no
+longer starts pg-boss or needs DATABASE_ADMIN_URL; its health component drops queueDepth. /health
+gains a jobs component (cron freshness, per-queue depth, dead letters), pnpm jobs inspects the
+store. Pool defaults: DATABASE_POOL_MAX 20, cdc 10, YJS_DB_POOL_MAX 10. Apps convert each job, add
+services.jobs and devPorts.jobs to a pinned config, regenerate migrations and compose, and run Apply
+infra change once before deploying.
 
 ## What & why
 

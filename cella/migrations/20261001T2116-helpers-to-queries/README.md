@@ -1,4 +1,23 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Database helpers move into query files
+
+A module's helpers/ folder holds database-free code only; reads and writes are queries in
+<module>-queries.ts taking (ctx, opts). insertUsers moves to user-queries ({ users,
+onConflictDoNothing }), insertActors and deleteDanglingActors to the new actors-queries ({ ids, kind
+}), insertServiceAccount to service-accounts-queries ({ values }). issueApiKey is replaced by
+generateApiKey plus the insertApiKey query; managed-service-account.ts is gone, so operations call
+getValidChannel(ctx, organizationId, 'organization', 'update') and findServiceAccountInTenant
+themselves; updateServiceAccount is a tenant-scoped query. Notification reads leave helpers/:
+accessForUserIds becomes getUserAccess and findChannelNames moves to notification-queries,
+findSubjectNames to notification-sources, findReadableSubjectIds to operations/readable-subjects,
+and readableAccess is inlined in the fan-out. digest/run-digest and digest/build-digest move to
+operations/; describeDigestRow, renderSectionsHtml and DigestSection to helpers/render-digest-html.
+Every notification query takes (ctx, opts); background callers pass { var: { db: baseDb } }. The
+unused generateUniqueSlug is removed.
 
 ## What & why
 

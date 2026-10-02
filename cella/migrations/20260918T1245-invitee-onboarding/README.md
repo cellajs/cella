@@ -1,4 +1,18 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Onboarding picks its steps from the user's invitations
+
+Onboarding no longer sends an invited user through the create-organization steps. getOnboardingSteps
+takes { hasOrganizations, hasInvitations } and every step has a when: a user with pending
+invitations gets an invitations step (explicit accept or reject per invitation) and the profile
+step, a user with neither organizations nor invitations keeps the three founder steps, a member gets
+profile only. The /welcome route loads both queries before the step list locks, the footer reads
+currentStep from the stepper, and the completed screen links into the first organization or offers
+the menu's organization createAction. Apps that never edited frontend/src/modules/home/onboarding
+are unaffected; apps with their own steps add a when to each and pass the context.
 
 ## What & why
 

@@ -3,7 +3,7 @@
   "ignore": ["shared/config/config.template.ts"],
   "workspaces": {
     ".": {
-      "entry": ["cella/cella.config.ts", "cella/migrations/run.ts", "cella/migrations/*/*.ts", "cella/skills/**/*.mjs"],
+      "entry": ["cella/cella.config.ts", "cella/migrations/*/*.ts", "cella/skills/**/*.mjs"],
       // Git hooks run lefthook; migration READMEs run their codemods with `pnpm exec tsx` from the root.
       "ignoreDependencies": ["@evilmartians/lefthook", "tsx"]
     },

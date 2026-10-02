@@ -1,4 +1,17 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # oauth_accounts becomes identities, keyed on the provider subject
+
+oauth_accounts is renamed to identities, the one table for every external identity of a user (social
+OAuth now, SSO and LTI later). Identity is (provider, providerUserId, issuer) through a unique
+expression index; the asserted email is a nullable display snapshot, out of the key and out of the
+callback lookup, refreshed with lastUsedAt on every sign-in. New nullable columns kind (default
+'oauth'), issuer, connectionId, data. tokens.oauthAccountId becomes tokens.identityId;
+deleteOAuthVerificationTokens takes identityId. Apps run pnpm generate with the rename hints from
+the README so rows survive, swap the import, and rename the token column in their own code.
 
 ## What & why
 

@@ -1,4 +1,18 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Yjs relay: append-only update log, per-socket ordering, compaction
+
+The relay lost the first update of a burst (in-memory merge across awaits, no ordering). New
+yjs_updates table: every frame is appended before broadcast, each socket's frames run in order
+through a serial queue, compaction merges the log into yjs_documents.state under a per-document lock
+and deletes exactly the rows it read; last_edited_by dropped in favor of per-row user_id. Server
+sends its own Step1 so clients upload what the relay lacks; client watches pendingStructs and
+resyncs. Storage API renamed (loadBase/ensureDoc/appendUpdate/readLog/compactState/deleteDoc),
+materializeState folded into compactDocument, YJS_SAVE_DEBOUNCE_MS -> YJS_COMPACT_DEBOUNCE_MS, retry
+timers removed. Apps run pnpm generate and add yjs_updates to any RLS table list of their own.
 
 ## What & why
 

@@ -1,4 +1,15 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Members table config seam and hierarchy-aware test seeds
+
+memberStatIcons and hiddenMemberCountColumns move out of members-columns.tsx into the new pinned
+frontend/src/members-config.ts; buildInsertableProduct, the CDC event-bus test and the yjs
+permissions test derive ancestor ids from the hierarchy instead of inventing them. Apps add the pin,
+move their icon and hidden-column values into members-config.ts, and take upstream for the four
+files.
 
 ## What & why
 

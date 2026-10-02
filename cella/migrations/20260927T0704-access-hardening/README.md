@@ -1,4 +1,21 @@
+---
+syncBreaking: true
+clientCacheBump: true
+---
+
 # Access hardening: sessions, tokens, second factors, the authorization server, data access, realtime and infra
+
+Session cookies carry a random token the database stores hashed, every session ending goes through
+endSessions, and one token module issues and spends every token; sign-ups create an account only
+after inbox proof. Second factors are single-use, account-security actions and API key minting need
+a step-up, check-email answers only a recognized browser, and impersonation lives on its admin's
+session. One grant policy governs the authorization server, its session follows the app session, and
+revocations reach every process. Cross-scope reads return narrow shapes and uniform refusals,
+attachment keys and media references are organization-bound, the Yjs relay takes per-entity Ed25519
+tokens on an internal listener, secrets are scoped to their consumers, limits hold against bursts,
+and logs and traces are redacted. Stored blocks with external image URLs stop rendering. One schema
+migration and one side-effect set; new env vars and a privileged infra Apply; apps bump
+clientCacheVersion and cookieVersion, and everyone signs in again.
 
 ## What & why
 

@@ -1,4 +1,15 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Compose prepared mutations over useMutation (drop usePreparedMutation)
+
+Removed the usePreparedMutation hook; buildPreparedHandlers(mutation, prepare) stays. Mutation hooks
+now call useMutation directly and spread { ...mutation, ...buildPreparedHandlers(mutation, prepare)
+}, dropping five explicit generics and the Mutatable cast. PreparedVars/COALESCED unchanged.
+Frontend-only, no wire-shape change. Manual: each query.ts hook restructured (import swap + return
+rewrite + inline prepare input annotation).
 
 ## What & why
 

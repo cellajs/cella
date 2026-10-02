@@ -1,13 +1,24 @@
+---
+syncBreaking: true
+clientCacheBump: false
+roots: backend/src, frontend/src
+---
+
 <!--
-Copy this file to `<YYYYMMDDThhmm>-<slug>/README.md` and fill every section.
+Copy this file to `<YYYYMMDDThhmm>-<slug>/README.md`, fill every section and delete this comment.
 The timestamp is UTC, minute precision, from when the breaking change merges (`date -u +%Y%m%dT%H%M`).
-Keep the five headings below and their order: `run.ts` and agents rely on the shape.
+Frontmatter: `syncBreaking` and `clientCacheBump` are required; `roots` (the codemod's default scan
+roots) only when the folder ships a codemod, which is the one non-test `.ts` file in it.
+Keep the title, the summary paragraph and the five headings below in this order: `pnpm cella
+migrate`, the style check and agents rely on the shape.
 Word caps: What & why 80, Blast radius 50, Manual steps one line per step, Verify commands only.
-`manifest.json` `summary` already carries the one-paragraph version; do not repeat it here.
-Add a matching entry to `manifest.json` in the same PR.
+Nothing else to register: the folder is the migration.
 -->
 
 # <Title>
+
+<One paragraph that `pnpm cella migrate` prints as the summary: what an app has to change, with the concrete
+symbols, files or columns. The sections below carry the detail; do not repeat it there.>
 
 ## What & why
 

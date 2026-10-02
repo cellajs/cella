@@ -1,4 +1,15 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Deploy engine: waved rollout, internal routes, one deploy command
+
+Two-wave rollout with concurrent cutovers and one deferred reap; single 'infra deploy' command
+replaces the pulumi/roll-*/publish/smoke jobs (branch-protection checks change to 'deploy'); cdc
+binds the backend through the LB's ACL-guarded internal route (services.config: backend
+internalRoute + internalHost/internalPort binding); optional INFRA_PULUMI_DRIVER=automation and
+INFRA_STACK_TOPOLOGY=micro knobs.
 
 ## What & why
 

@@ -1,4 +1,18 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # identities are keyed on (kind, issuer, subject); provider becomes the issuer slug
+
+identities.provider and the nullable identities.issuer merge into one not-null issuer, always a slug
+namespaced by kind (a supported OAuth provider for 'oauth', an issuer-registry entry for sso and lti
+later); the issuer URL stays in config. providerUserId becomes subject, and the unique index is
+identities_kind_issuer_subject_idx on (kind, issuer, subject). Social lookups are scoped to kind =
+'oauth'. No API change. Apps already on identities run pnpm generate with the README hints and add
+UPDATE identities SET issuer = provider above the DROP COLUMN so rows survive; apps still on
+oauth_accounts use the combined hints from the README in place of those in
+20260918T0831-identities-table and get a plain rename.
 
 ## What & why
 

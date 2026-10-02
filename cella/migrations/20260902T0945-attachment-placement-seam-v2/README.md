@@ -1,4 +1,16 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Attachment placement seam v2
+
+The pinned attachment-placement seam gains attachmentHomeColumnKey, resolveAttachmentHomeScope and
+seedAttachmentPlacements; list reads take a generic channelId param; channelRelationColumns adds
+lazy ancestor foreign keys via registerChannelTable plus channelRelationIndexes;
+appConfig.attachmentUploadTargets gates the upload affordance; frontend placement handling is
+hierarchy-derived. Apps extend the seam file, register their channel tables, add the config key and
+take upstream for the surrounding files.
 
 ## What & why
 

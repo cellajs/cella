@@ -1,4 +1,12 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Rename the app product mock registry
+
+Rename the pinned product mock registry file and export to app-product-mocks.ts and appProductMocks.
+Internal extension API only; no wire-shape or database change.
 
 ## What & why
 

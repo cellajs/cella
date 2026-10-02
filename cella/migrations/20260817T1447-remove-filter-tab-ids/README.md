@@ -1,4 +1,16 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Remove the filterTabIds allow-list from nav tabs
+
+PageTabNav/resolveNavTabs lose the filterTabIds prop: an imperative allow-list with zero template
+consumers that the nav-tab guards never honored, so allow-list-hidden tabs stayed URL-reachable and
+could become the landing tab. Apps passing it must express each gate declaratively before syncing:
+navTab.requires + grants for permission gates, visibleTo + pairs for role gates on registry tabs, or
+placementOverrides/route removal for hard removal. Compile error at sync until call sites are
+migrated.
 
 ## What & why
 

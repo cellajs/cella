@@ -1,4 +1,19 @@
+---
+syncBreaking: true
+clientCacheBump: true
+---
+
 # Attachment variant keys collapse to a single jsonb map
+
+attachments' per-variant originalKey/convertedKey/thumbnailKey/thumbnailTinyKey columns collapse
+into one keys jsonb map (AttachmentKeys: { original, preview?, thumbnail?, converted? });
+selectVariantKey becomes keys[variant] ?? keys.original. Variant vocabulary realigned: mid-size
+thumbnail->preview, grid-cell thumbnail-tiny->thumbnail (attachmentVariantSchema/BlobVariant =
+original|preview|thumbnail|converted). Wire-breaking: clientCacheVersion bumped to
+v8-attachment-keys. DB: drop the four *_key columns, add keys jsonb with a jsonb_build_object
+backfill (thumbnail_key->preview, thumbnail_tiny_key->thumbnail). Manual: field-specific rename plus
+a data-preserving migration, no codemod. Apps that home attachments on a product entity keep their
+own taskId/projectId columns.
 
 ## What & why
 

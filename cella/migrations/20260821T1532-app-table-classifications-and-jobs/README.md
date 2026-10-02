@@ -1,4 +1,16 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # App table classifications and scheduled jobs move out of cella-owned files
+
+backend/src/tables.ts (pinned) gains appPartitionConfigs, appFullCrudTables and appReadOnlyTables;
+the partman and RLS migrations, the verify block and partman-parity.test.ts merge them after cella's
+entries. defineBackendModule gains a jobs slot ({ name, start }) that main.api.ts starts under the
+migration-owner guard and stops on shutdown; scheduleDbMaintenance is the first registrant. Apps
+move their partition/grant entries into tables.ts and their cron jobs onto the module, then drop the
+edits to the four cella-owned files.
 
 ## What & why
 

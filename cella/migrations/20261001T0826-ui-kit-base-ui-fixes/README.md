@@ -1,4 +1,21 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # UI kit fixes against Base UI 1.8
+
+Bug fixes from the shadcn/Base UI alignment audit. Button defaults to type="button", so an untyped
+Button inside a form no longer submits it, and its loading prop now disables the button, sets
+aria-busy and overlays a spinner. Select drops the label registry that only filled after the popup
+first opened: pass Base UI's items to Select when labels differ from values. InputOTP is rebuilt on
+Base UI's OTPField and input-otp is removed (length, onValueChange, className; slots take no index).
+TabsTrigger styles the active tab through data-active and merges className; switch, radio and label
+disabled styles use data-disabled. SelectRoleRadio and SelectRoles take a label legend, replacing a
+FormLabel that named every option after the group. PopoverContent and DropdownMenuContent take
+positionerClassName so z-index overrides apply; DropdownMenuSubContent builds on DropdownMenuContent
+and scrolls. Dialoger and sheeter render titles and descriptions only when set, so untitled overlays
+pass a title with a hidden header; the dropdowner drawer is named after its trigger.
 
 ## What & why
 

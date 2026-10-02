@@ -1,4 +1,16 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Media blocks carry an attachment reference
+
+Media block specs (image/video/audio/file) gain an attachmentId prop via withAttachmentRef, applied
+to both the frontend editor schema and the yjs relay's server schema so Y.Docs round-trip it;
+UppyFilePanel stamps it on upload. Dead checklistGroupConfig plus checklist-group-block/render
+deleted, the four mediaBlockTypes copies consolidated onto the shared/blocknote export, and
+derive-description-core added as the shared block walk for description derivation. No wire-shape or
+DB change.
 
 ## What & why
 

@@ -1,4 +1,13 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Role vocabulary derived from the hierarchy
+
+hierarchy.rootChannelType, getLeastPrivilegedRole and getMostPrivilegedRole replace every 'member'
+literal in cella tests, stories, email previews, membership column defaults and the invite default
+role. Apps with another vocabulary drop their `fork: role vocabulary` markers and take upstream.
 
 ## What & why
 

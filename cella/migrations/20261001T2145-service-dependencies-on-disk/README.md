@@ -1,4 +1,17 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Service dependencies are what the bundle loads from disk
+
+keepOnDisk takes the service's dependencies and throws on one the bundle inlines: a service image
+installs only dependencies (pnpm install --prod), so dependencies lists what the bundle loads from
+disk and every inlined package is a devDependency. jose, oidc-provider and web-push move to backend
+devDependencies; backend drops pg-logical-replication, @blocknote/server-util and react-dom, yjs
+drops @blocknote/core and frontend drops dexie-react-hooks. knip.json becomes knip.jsonc and pnpm
+deps:unused runs knip --dependencies. Apps move each package pnpm build names to devDependencies, or
+into appKeepOnDisk when it must load from disk.
 
 ## What & why
 

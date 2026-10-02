@@ -1,4 +1,18 @@
+---
+syncBreaking: true
+clientCacheBump: false
+roots: frontend/src
+---
+
 # App compositions leave the ui kit
+
+SubmitButton moves from ~/modules/ui/button to ~/modules/common/form-fields/submit-button,
+ComboboxSelect (with ComboboxSelectProps and ComboBoxOption) to
+~/modules/common/form-fields/select-combobox/combobox-select, ComboboxSearchInput to
+~/modules/common/combobox-search-input, and ResponsiveSelect to
+~/modules/common/form-fields/responsive-select, so every file in frontend/src/modules/ui maps to one
+upstream shadcn component. No behaviour changes. The codemod moves the named imports and drops
+emptied declarations; pnpm lint:fix sorts them.
 
 ## What & why
 

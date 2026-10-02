@@ -1,4 +1,14 @@
+---
+syncBreaking: true
+clientCacheBump: true
+---
+
 # Rename embedding propagation contract to embedded/host product
+
+PropagationHint fields sourceType->embeddedProduct, targetType->hostProduct, field->hostColumn on
+StreamNotification.propagation + catchup propagation; propagationTargets->hostsByEmbeddedProduct;
+product-type wire fields tightened to z.enum(productEntityTypes). Manual (field names too generic to
+codemod); apps bump clientCacheVersion.
 
 ## What & why
 

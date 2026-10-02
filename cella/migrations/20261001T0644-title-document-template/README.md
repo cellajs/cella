@@ -1,4 +1,22 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Title documents: templated, not enforced
+
+The BlockNote wrapper stops enforcing a title block: forcedTitle, forcedTitleExtension, the
+titleLevel menu filters, the block-0 drag-handle exclusion and the !important placeholder CSS are
+removed. Titled documents become a template: seed block 0 with emptyTitleDocument(level) and label
+it with the titlePlaceholder prop, which only an empty heading in block 0 shows.
+helpers/forced-title is renamed helpers/title-document; titleFromBlocks is replaced by
+titleFromDocument in shared/blocknote, which nameFromDocument uses too, so frontend and backend read
+the same title (block 0 inline text, no children or media file name). splitTitleBlocks keeps a
+non-text block 0 in the body, empty heading placeholders keep heading typography, and
+nameFromDocument clamps the derived name to 255 characters. Apps that passed forcedTitle swap it for
+titlePlaceholder and headingLevels without the title's level and above, keep required-title checks
+in their forms, switch titleFromBlocks imports to shared/blocknote, and drop any call-site code that
+re-adds a non-text block 0 to the split body.
 
 ## What & why
 

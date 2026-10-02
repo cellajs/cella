@@ -1,4 +1,21 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Mentions read from the body, one document derivation, comment emails
+
+No column stores mentions: the notification fan-out reads them from the row's stored description on
+a create or a body change, keeping the read check and the already-notified dedupe, so a mention edit
+is one CDC activity. mentionableColumns is deprecated and empty, writeMentions and deriveFrom are
+removed, and pnpm generate drops every mentions column; apps remove mentions from their mocks, seeds
+and bench seeds (raak task, projectcampus comment and item). deriveDocument in
+shared/utils/derive-description-core derives a description's name, keywords, attachment ids,
+mentions and counts in one parse. With has.commentEmail on, comment and reply notifications mail
+users who opted in, one mail per subject with a mention winning. registerEqualityFilterKeys lets a
+new row skip filtered lists a declared equality filter rules it out of. Backend test runs queue on
+one advisory lock, the digest reads lastDigestAt as UTC, and findPendingMentionEmails is
+findPendingInstantEmails.
 
 ## What & why
 

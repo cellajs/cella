@@ -1,4 +1,21 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # RLS defense in depth: explicit scope, lazy admin credential, verified catalog
+
+requestScopeWhere(ctx, table) adds the guarded tenant + organization predicate to every
+organization-bound product query and splitByPermission rejects unknown and out-of-scope ids, so
+removing RLS broadens no application query. The admin pool is lazy (getAdminDb(purpose),
+getSeedDb(); migrationDb, unsafeInternalAdminDb and seedDb are gone) and DATABASE_ADMIN_URL is
+optional for the request-serving API. The RLS and verify side-effect blocks refuse to run without
+runtime_role and admin_role; the verifier asserts owner, the four-policy contract
+(rlsPolicyContract), grants per classification and that runtime_role has no BYPASSRLS. Test global
+setup creates roles before migrating and refuses a degraded volume; verification tests inspect the
+catalog without repairing it. The backend suite also runs as runtime_role (test:core:runtime, CI
+step). The Yjs startup sweep lists and deletes per tenant inside tenant-scoped transactions;
+deleteStaleDoc takes the row.
 
 ## What & why
 

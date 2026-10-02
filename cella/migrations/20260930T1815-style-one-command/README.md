@@ -1,4 +1,16 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # One style command
+
+pnpm style is the only style entry point and pnpm style:audit adds review markers; comments:*,
+docs:style*, vocabulary:check, frontend:style, prose:check and prose:audit are removed, and the
+check modules in shared/scripts no longer run on their own. Every finding prints as file:line:column
+[rule] "term": message, with the same findings as before. An app whose own scripts or workflows call
+the removed scripts or node shared/scripts/check-*.ts switches them to pnpm style (raak:
+prose:check, frontend:comments and its check script).
 
 ## What & why
 

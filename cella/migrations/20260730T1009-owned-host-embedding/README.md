@@ -1,4 +1,16 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Product host FKs move to owned embeddings
+
+Child-side product-to-product host FK columns (taskId-style) are deprecated in favor of host-side id
+arrays registered as lifecycle 'owned' productEmbeddings. The template machinery (owned-embedding GC
+in the CDC worker, attachmentId media-block refs, derive-description-core collection, propagation
+id-array patching) already ships and activates on the first 'owned' entry. Template-side this is
+docs-only: apps without a host FK are unaffected; apps with one flip on their own schedule (host
+array + GIN, backfill from FK, drop FK and in-request cascades, own cache bump, feat!).
 
 ## What & why
 

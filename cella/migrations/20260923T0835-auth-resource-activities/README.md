@@ -1,4 +1,21 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # service accounts, API keys and OAuth clients are activity resources; one secret-column registry
+
+resourceTypes gains service_account, api_key and oauth_client (resourceTables maps them), so key
+minting and revocation, account changes and client registration land in activities; user-owned rows
+stay out and are covered by notifications. Secret columns are declared once in
+backend/src/db/secret-columns.ts (secretColumns by table name, secretLookingColumns with reasons,
+secretColumnPattern): createSelectSchema omits them from every response schema (hand .omit() calls
+for them become type errors), lib/redact-keys.ts derives the pino redact paths for the backend and
+the workers (createWorkerLog takes them as third argument; redactedFields moved out of lib/pino.ts),
+and the CDC worker strips them from the row image via compactRowData(tableMeta, rowData). A CDC test
+globs every *-db.ts and fails on a column ending in hash, secret, jwk, token or password that is in
+neither map. createActivity attributes an update to revokedBy when updatedBy is absent. pnpm
+generate adds the three tables to cdc_pub with REPLICA IDENTITY FULL.
 
 ## What & why
 

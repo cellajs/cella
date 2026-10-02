@@ -1,4 +1,17 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # The email-verification token type is removed
+
+sendVerificationEmail had no caller since password sign-up was removed, so the whole path goes: the
+sender, handleEmailVerification, the email-verification template and invokeToken branch, the
+'email-verification' entry in tokenTypes, and its error and email locale keys.
+deleteVerificationTokens became deleteOAuthVerificationTokens (identityId since 20260918T0831); the
+OAuth mail subject moved to email.oauth_verification.subject. No database change (tokens.type is an
+unconstrained varchar). Apps remove 'email-verification' from their own tokenTypes and drop the
+locale keys; the /auth/email-verification page stays for the OAuth flows.
 
 ## What & why
 

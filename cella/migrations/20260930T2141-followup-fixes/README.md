@@ -1,4 +1,20 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Follow-up fixes: comment email switch, table export, notification links
+
+A new has.commentEmail config flag (default false) shows the comment email switch in account
+settings; every app adds it to shared/config/config.default.ts. Table exports write the columns the
+table shows and take a column's exportValue(row), with exportDate for dates and no date guessing, so
+app tables using Export export raw values until they set it. Notification links carry contextId (the
+pinned routes-config.tsx may pass it on), the instant email pass runs only after a mention, and the
+weekly digest reaches users without a preferences row. The tenants list normalizes stored
+restrictions, a failed first table load shows its error, createBaseApp builds a server app so the
+folded MCP worker serves its own, service-account bindings take any channel role, and
+changeArbitraryQueryData with its types is removed. Stories render with Tailwind. raak and
+projectcampus drop the fork markers these fixes supersede.
 
 ## What & why
 

@@ -1,4 +1,22 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Tailwind theme in CSS, tw-animate-css
+
+frontend/tailwind.config.ts is removed. Colors move to @theme inline in
+frontend/src/styling/tailwind.css, with the radius scale, fonts, text-md, transition-spacing and the
+accordion, collapsible and status-pulse animations in @theme, the dark variant as @custom-variant
+dark (&:is(.dark *)) and the content globs as @source. Breakpoints from appConfig.theme.screenSizes,
+the 1400px container cap and the typography not-prose rewrite move to
+frontend/src/styling/tailwind-plugin.ts, loaded with @plugin. tailwindcss-animate is replaced by
+tw-animate-css, whose animate-in/animate-out read --tw-duration, so a duration-* next to them now
+applies. Removed: the icon-xs/sm/md/lg/xl utilities (the icon codemod rewrites them to size-*),
+soft-bg-hover, the sidebar-primary tokens and colors, and the unused waving-hand, spin-slow,
+heartbeat, hflip and vflip animations. Added: intent-* (sets --intent-color), --overlay with
+bg-overlay, text-2xs, font-heading and chart-1..5. Apps move their tailwind.config.ts edits into the
+CSS or the plugin file.
 
 ## What & why
 

@@ -1,4 +1,16 @@
+---
+syncBreaking: false
+clientCacheBump: false
+roots: backend/src, backend/tests, backend/emails, frontend/src, frontend/storybook, frontend/vite, shared, cdc/src, yjs/src, mcp/src, oauth/src, infra, bench/src, sdk/src
+---
+
 # Line width 150 with shallow objects collapsed
+
+biome.jsonc lineWidth goes from 120 to 150, and collapse-objects.ts removes the line break after {
+in shallow multi-line objects, type literals and destructuring patterns so Biome collapses each one
+that fits; literals nested three or more levels deep keep their shape. Formatting only. After the
+sync, keep the app's side in formatting conflicts, then run the codemod (roots default to the
+biome.jsonc includes), biome format until it reports no fixes, pnpm lint:fix and pnpm sdk.
 
 ## What & why
 

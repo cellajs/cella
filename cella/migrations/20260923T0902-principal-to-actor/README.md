@@ -1,4 +1,22 @@
+---
+syncBreaking: true
+clientCacheBump: false
+roots: backend/src, backend/tests, backend/scripts, shared/src, frontend/src, yjs/src, cdc/src
+---
+
 # Principal becomes actor
+
+The stored identity and the request-time value share one name. backend/src/modules/principals/ is
+backend/src/modules/actors/ (principalsTable -> actorsTable, principalKinds -> actorKinds,
+insertPrincipals -> insertActors, deleteDanglingPrincipals -> deleteDanglingActors), PrincipalId ->
+ActorId, api_keys.principal_id -> actor_id with its index and the *_principals_id_fkey constraints
+renamed in migration 20260923100637_principal_to_actor, access-token claim principal_kind ->
+actor_kind, rate-limit identifier principalId -> actorId, findApiKeysByPrincipal ->
+findApiKeysByActor, principalQuotaKeys -> machineQuotaKeys. The engine access field userId ->
+actorId on Access, PredicateActor, EngineAccess, ConditionActor and PermissionCheckOptions (manual:
+userId also names the membership column; pnpm check lists every literal). Docs and comments say
+actor; infra/ keeps principal for Scaleway IAM. The ApiKey wire shape carries actorId, which no
+client reads, so clientCacheVersion does not bump.
 
 ## What & why
 

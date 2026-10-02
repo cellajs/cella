@@ -1,4 +1,19 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Sign-ins enroll the browser in a devices table
+
+New devices table (devicesTable in backend/src/modules/auth/devices-db.ts) remembers which browsers
+a user signed in from, keyed on (userId, deviceIdHash), the per-user HMAC of the device-id cookie.
+createSession enrolls the browser on every non-impersonation sign-in; a first insert on an account
+that signed in before sends the new-sign-in account security email, except after a magic link or
+email sign-in and beyond three notices per user per day. A daily prune-devices job removes rows
+unseen for 400 days and keeps 50 per user. In the same change the device-id cookie becomes SameSite
+Lax so OAuth callbacks and emailed links can read it, mfa sessions get a device id, the same-browser
+replace and the maxSessionsPerUser cap, and account security emails escape their details. Apps run
+pnpm generate; an app that lists tables by hand adds devices.
 
 ## What & why
 

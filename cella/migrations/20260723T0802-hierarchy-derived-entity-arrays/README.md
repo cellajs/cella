@@ -1,4 +1,13 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Hierarchy-derived entity arrays in config
+
+config.default.ts derives entityTypes/channelEntityTypes/productEntityTypes from the hierarchy via
+nonEmpty(); bidirectional config-validation checks and EntityIdColumnKeysShape removed. Apps replace
+their literal arrays with the derived form. No wire or DB change.
 
 ## What & why
 

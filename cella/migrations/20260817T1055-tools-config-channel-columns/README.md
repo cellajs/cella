@@ -1,4 +1,16 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # toolsConfig moves into channelColumns()
+
+The toolsConfig jsonb column (sparse, NOT NULL DEFAULT '{}') moves from organizations into the
+shared channelColumns() factory; mockChannelColumns mirrors it. Additive DB change: every fork
+channel table gains tools_config on the next pnpm generate (dormant where unused; no backfill).
+CRITICAL: apps that hand-copied the column per 20260730T0858 step 5 must DELETE their local
+declaration: a leftover explicit key after the spread silently wins with no TS error. Supersedes
+the hand-copy instruction in 20260730T0858.
 
 ## What & why
 

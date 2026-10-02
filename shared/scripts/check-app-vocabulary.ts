@@ -49,8 +49,7 @@ const templateAllowlist: VocabularyAllowlist = {
     'shared/scripts/check-app-vocabulary.test.ts',
     'shared/scripts/check-app-vocabulary.ts',
   ],
-  // Migration READMEs and the manifest address app maintainers pulling template
-  // changes, an audience the CLI's source-control term describes precisely.
+  // Migration READMEs address app maintainers pulling template changes, an audience the CLI's source-control term describes precisely.
   prefixes: ['cella/migrations/'],
 };
 

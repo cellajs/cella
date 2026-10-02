@@ -1,4 +1,15 @@
+---
+syncBreaking: true
+clientCacheBump: false
+---
+
 # Generic app improvements adopted upstream
+
+tenantReadAs, wider resolveEmailLink input, getCreatedChannelRoute/getNearestAncestorRoute,
+text-compared host ids in recalculate-counters, derive-description-core in the frontend, a
+./config/* subpath export on the shared package, appConfig.memberStatProductTypes driving member
+stats, and channelRouteConfig.notificationSearch. Apps add the config key and the package export,
+then take upstream for the listed files.
 
 ## What & why
 

@@ -1,4 +1,17 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Notifications module: inbox, mentions and email digest
+
+New dormant-by-default notifications module: per-recipient inbox (partitioned notifications table +
+notification_preferences), mention derivation, permission/mute-filtered fan-out, instant mention
+email, daily/weekly digest job. Product modules opt in via a notifications source declaration on
+defineBackendModule
+(mentionable/loadRows/writeMentions/resolveRecipients/resolveContextId/loadPreview/loadContextNames/resolveEmailLink).
+Apps run pnpm generate for the tables, add the bell to their pinned nav-config, and (if they forked
+notifications before) reconcile onto the cella module with item_id renamed to context_id.
 
 ## What & why
 

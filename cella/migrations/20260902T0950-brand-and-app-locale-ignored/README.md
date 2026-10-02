@@ -1,4 +1,13 @@
+---
+syncBreaking: false
+clientCacheBump: false
+---
+
 # Brand assets and the app locale namespace are ignored, not pinned
+
+favicons, thumbnail.png, logo.tsx, legal-config.ts and locales/*/app.json move from pinned to
+ignored in the template cella.config.ts; cella's onboarding copy moves from app.json to common.json.
+Apps take upstream's lists, drop stale ignores and re-adopt comment-only pins.
 
 ## What & why
 
