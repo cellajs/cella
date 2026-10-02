@@ -246,11 +246,21 @@ describe('collaborative BlockNote commits', () => {
     expect(updateData).toHaveBeenCalledExactlyOnceWith(contentApi.current?.getContent());
   });
 
-  it('does not commit on unmount', async () => {
+  it('commits a changed document on unmount when no blur fired, so a dismissed sheet still patches the cache', async () => {
     const updateData = vi.fn();
     await renderEditor(seededFragment(), { updateData });
 
     await edit();
+    const edited = contentApi.current?.getContent();
+    await unmount();
+
+    expect(updateData).toHaveBeenCalledExactlyOnceWith(edited);
+  });
+
+  it('does not commit on unmount when untouched', async () => {
+    const updateData = vi.fn();
+    await renderEditor(seededFragment(), { updateData });
+
     await unmount();
 
     expect(updateData).not.toHaveBeenCalled();
@@ -329,7 +339,7 @@ describe('CollaborativeBlockNote with Yjs on', () => {
     liveConnection = null;
   });
 
-  it('makes no REST write on navigation or unmount, however the document changed', async () => {
+  it('makes no REST write on navigation or unmount, however the document changed: unmount patches the cache', async () => {
     liveConnection = { provider: {}, fragment: seededFragment(), synced: true, stopped: false, rebuilds: 0, unsynced: false };
     const updateData = vi.fn();
     await renderHost({ updateData });
@@ -337,9 +347,11 @@ describe('CollaborativeBlockNote with Yjs on', () => {
 
     await edit();
     await navigate();
+    expect(updateData).not.toHaveBeenCalled();
+    const edited = contentApi.current?.getContent();
     await unmount();
 
-    expect(updateData).not.toHaveBeenCalled();
+    expect(updateData).toHaveBeenCalledExactlyOnceWith(edited, true);
   });
 });
 

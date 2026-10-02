@@ -185,16 +185,17 @@ function BlockNote({
   const handleKeyDown = useEditorKeyboard({ editor, onEscapeClick, onEnterClick, commit: commitDocument });
 
   // A host dismissed by an outside press (a sheet) unmounts the editor while it still has focus, so
-  // no blur fires; the cleanup commits what blur would have. Standalone only: the relay owns
-  // collaborative writes. lastCommittedRef keeps a blur that did fire from committing twice.
+  // no blur fires; the cleanup commits what blur would have, after a user change: a REST write
+  // standalone, a cache patch collaborative, whose write the relay owns. lastCommittedRef keeps a
+  // blur that did fire from committing twice.
   const commitDocumentRef = useRef(commitDocument);
   commitDocumentRef.current = commitDocument;
   useEffect(() => {
-    if (!editable || commitOnEveryChange || collaborative) return;
+    if (!editable || commitOnEveryChange) return;
     return () => {
       if (touchedRef.current) commitDocumentRef.current();
     };
-  }, [editable, commitOnEveryChange, collaborative]);
+  }, [editable, commitOnEveryChange]);
 
   useImperativeHandle(
     contentApiRef,
