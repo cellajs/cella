@@ -53,7 +53,7 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: TokenRecor
       return { invitation: { ...invitation, entity }, tokenId: token.id, rawToken };
     }
 
-    const anchor = await findInvitationToken(txCtx, { id: oldToken.id }, { forUpdate: true });
+    const anchor = await findInvitationToken(txCtx, { id: oldToken.id, forUpdate: true });
     if (!anchor) return null;
 
     // A system invitation is every invitation token for the address outside a membership invitation; the new token

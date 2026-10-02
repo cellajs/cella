@@ -44,7 +44,7 @@ const app = new Hono<Env>()
     if (!isTokenType(type)) return ctx.body(null, 404);
     const outcome = await db
       .transaction(async (tx) => {
-        await spendCookieToken(ctx, type, { db: tx });
+        await spendCookieToken(ctx, type, { deleteCookie: 'after-commit', txCtx: { var: { db: tx } } });
         throw new Error('the completion failed after the spend');
       })
       .catch((err: Error) => err.message);

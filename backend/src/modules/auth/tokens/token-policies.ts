@@ -47,7 +47,7 @@ export type TokenPolicy =
 
 /**
  * One policy per token type; an app that adds a token type to `appConfig.tokenTypes` must add its policy here, and a
- * link type also its handler in `linkHandlers`.
+ * link type also its handler in `linkHandlers` (`operations/open-link-token.ts`).
  * - `invitation`: its single-use window outlasts a magic-link sign-in (15 minutes) plus a second-factor challenge, so
  *   answering an invitation from another account never expires midway.
  * - `invitation`, `oauth-verification` and `oauth-connect` are Lax: an OAuth provider's callback, a navigation another

@@ -18,7 +18,7 @@ type LinkHandler = (ctx: Context<Env>, rawToken: string) => Promise<Response>;
  * What opening each link token type does, keyed by every link type: a type added with a link policy does not compile
  * until it says what its link does, so no link falls through to another type's handling.
  */
-export const linkHandlers = {
+const linkHandlers = {
   // Only a magic link belongs to a sign-in method, so this route's switch is checked here, per token type.
   magic: async (ctx, rawToken) => {
     assertSwitchOn({ strategy: 'magic' });
@@ -40,3 +40,6 @@ export const linkHandlers = {
   },
   'step-up': openStepUpLink,
 } satisfies Record<LinkTokenType, LinkHandler>;
+
+/** Opens an emailed link of `type` from the raw value in its URL, by what that type's link does. */
+export const openLinkToken = (ctx: Context<Env>, type: LinkTokenType, rawToken: string) => linkHandlers[type](ctx, rawToken);

@@ -81,6 +81,20 @@ export const findSessionById = async (ctx: DbContext, { id }: FindSessionByIdOpt
   return session;
 };
 
+interface FindLiveSessionOpts {
+  id: string;
+}
+
+/** The session when it is still live, neither revoked nor expired; undefined otherwise. */
+export const findLiveSession = async (ctx: DbContext, { id }: FindLiveSessionOpts) => {
+  const [live] = await ctx.var.db
+    .select({ id: sessionsTable.id })
+    .from(sessionsTable)
+    .where(and(eq(sessionsTable.id, id), isNull(sessionsTable.revokedAt), gt(sessionsTable.expiresAt, getIsoDate())))
+    .limit(1);
+  return live;
+};
+
 interface InsertSessionOpts {
   values: InsertSessionModel;
 }
