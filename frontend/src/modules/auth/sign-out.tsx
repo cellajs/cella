@@ -1,14 +1,17 @@
 import { useRouter, useSearch } from '@tanstack/react-router';
 import { HeartIcon } from 'lucide-react';
-import { useEffect, useRef, useState } from 'react';
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { endSession } from '~/modules/auth/end-session';
-import { UnsavedEditsDialog, useUnsavedEdits } from '~/modules/auth/unsaved-edits-dialog';
+import type { UnsavedEdit } from '~/modules/auth/unsaved-edits-dialog';
 import { flushYjsStore } from '~/modules/common/blocknote/yjs-store';
 import { ContentPlaceholder } from '~/modules/common/content-placeholder';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { teardownUserState } from '~/utils/teardown-user-state';
+
+// Loaded on demand: the list reaches the Yjs connections and the editor chunk, which the auth pages never need.
+const UnsavedEditsGate = lazy(() => import('~/modules/auth/unsaved-edits-dialog').then((module) => ({ default: module.UnsavedEditsGate })));
 
 /**
  * Signs out, after asking while some edits no server holds would go with the session: the dialog lists them live, and
@@ -29,7 +32,7 @@ export function SignOut() {
       .finally(() => setFlushed(true));
   }, []);
 
-  const unsaved = useUnsavedEdits(!force && flushed);
+  const [unsaved, setUnsaved] = useState<UnsavedEdit[]>();
   const [confirmed, setConfirmed] = useState(false);
   const proceed = !!force || confirmed || unsaved?.length === 0;
 
@@ -65,7 +68,11 @@ export function SignOut() {
   return (
     <>
       <ContentPlaceholder className="h-svh" icon={HeartIcon} title="c:signing_out" />
-      {!proceed && !!unsaved?.length && <UnsavedEditsDialog edits={unsaved} onConfirm={() => setConfirmed(true)} onCancel={keepEditing} />}
+      {!force && flushed && (
+        <Suspense fallback={null}>
+          <UnsavedEditsGate onChange={setUnsaved} open={!proceed} onConfirm={() => setConfirmed(true)} onCancel={keepEditing} />
+        </Suspense>
+      )}
     </>
   );
 }
