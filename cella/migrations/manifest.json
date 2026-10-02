@@ -1671,7 +1671,7 @@
   ],
   "summary": "The ApiError body drops logId: requestId is the single id, equal to the X-Request-Id response header and the requestId on every log line of the request. The server generates it for every request and ignores an incoming X-Request-Id; the request span records it as http.response.header.x-request-id and log lines keep the trace id as trace_id. The frontend ApiError exposes requestId, and the error toast and details panel label it with c:request_id. Apps rename their own logId reads to requestId."
  },
-  {
+ {
    "id": "20261001T2116-helpers-to-queries",
    "version": "next",
    "title": "Database helpers move into query files",
@@ -1689,6 +1689,28 @@
     "pnpm check"
    ],
    "summary": "A module's helpers/ folder holds database-free code only; reads and writes are queries in <module>-queries.ts taking (ctx, opts). insertUsers moves to user-queries ({ users, onConflictDoNothing }), insertActors and deleteDanglingActors to the new actors-queries ({ ids, kind }), insertServiceAccount to service-accounts-queries ({ values }). issueApiKey is replaced by generateApiKey plus the insertApiKey query; managed-service-account.ts is gone, so operations call getValidChannel(ctx, organizationId, 'organization', 'update') and findServiceAccountInTenant themselves; updateServiceAccount is a tenant-scoped query. Notification reads leave helpers/: accessForUserIds becomes getUserAccess and findChannelNames moves to notification-queries, findSubjectNames to notification-sources, findReadableSubjectIds to operations/readable-subjects, and readableAccess is inlined in the fan-out. digest/run-digest and digest/build-digest move to operations/; describeDigestRow, renderSectionsHtml and DigestSection to helpers/render-digest-html. Every notification query takes (ctx, opts); background callers pass { var: { db: baseDb } }. The unused generateUniqueSlug is removed."
-  }
+  },
+ {
+  "id": "20261001T2145-service-dependencies-on-disk",
+  "version": "next",
+  "title": "Service dependencies are what the bundle loads from disk",
+  "kind": "manual",
+  "syncBreaking": true,
+  "clientCacheBump": false,
+  "script": null,
+  "roots": [
+   "backend/package.json",
+   "cdc/package.json",
+   "yjs/package.json",
+   "backend/tsup.config.ts",
+   "cdc/tsup.config.ts",
+   "yjs/tsup.config.ts"
+  ],
+  "requires": [
+   "pnpm install",
+   "pnpm check"
+  ],
+  "summary": "keepOnDisk takes the service's dependencies and throws on one the bundle inlines: a service image installs only dependencies (pnpm install --prod), so dependencies lists what the bundle loads from disk and every inlined package is a devDependency. jose, oidc-provider and web-push move to backend devDependencies; backend drops pg-logical-replication, @blocknote/server-util and react-dom, yjs drops @blocknote/core and frontend drops dexie-react-hooks. knip.json becomes knip.jsonc and pnpm deps:unused runs knip --dependencies. Apps move each package pnpm build names to devDependencies, or into appKeepOnDisk when it must load from disk."
+ }
  ]
 }
