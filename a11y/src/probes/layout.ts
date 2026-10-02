@@ -32,6 +32,9 @@ function horizontalOverflow(page: Page) {
       const text = node.textContent?.trim();
       const parent = node.parentElement;
       if (!text || !parent || reachable(parent)) continue;
+      // A 1px box is text for screen readers only; where its text would lie says nothing about the layout
+      const box = parent.getBoundingClientRect();
+      if (box.width <= 1 && box.height <= 1) continue;
       const range = document.createRange();
       range.selectNodeContents(node);
       if ([...range.getClientRects()].some(outside)) cut.add(`text "${text.slice(0, 40)}"`);
@@ -52,9 +55,9 @@ function horizontalOverflow(page: Page) {
 const spacingCss = `* { line-height: 1.5 !important; letter-spacing: 0.12em !important; word-spacing: 0.16em !important; }
 p { margin-bottom: 2em !important; }`;
 
-/** Text-bearing elements whose content no longer fits their clipping box. */
+/** Text-bearing elements whose content no longer fits their clipping box, each as `grid|path|text` or `page|path|text`. */
 function clippedText(page: Page) {
-  return page.evaluate(() => {
+  return page.evaluate((grids) => {
     const clipped: string[] = [];
     const path = (el: Element) => {
       const parts: string[] = [];
@@ -67,15 +70,18 @@ function clippedText(page: Page) {
     for (const el of document.body.querySelectorAll('*')) {
       const ownText = [...el.childNodes].some((n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim());
       if (!ownText || !(el instanceof HTMLElement) || !el.offsetParent) continue;
+      // A 1px box is text for screen readers only; it is clipped on purpose
+      if (el.clientWidth <= 1 || el.clientHeight <= 1) continue;
       const style = getComputedStyle(el);
       const clips = ['hidden', 'clip'].includes(style.overflowX) || ['hidden', 'clip'].includes(style.overflowY);
       if (!clips) continue;
       if (el.scrollHeight > el.clientHeight + 2 || el.scrollWidth > el.clientWidth + 2) {
-        clipped.push(`${path(el)}|${(el.textContent ?? '').trim().slice(0, 40)}`);
+        const where = el.closest(grids) ? 'grid' : 'page';
+        clipped.push(`${where}|${path(el)}|${(el.textContent ?? '').trim().slice(0, 40)}`);
       }
     }
     return clipped;
-  });
+  }, twoDimensional);
 }
 
 const textLength = (page: Page) =>
@@ -134,12 +140,24 @@ export const layout: Check = async (page, state) => {
   await page.waitForTimeout(300);
   const after = await clippedText(page);
   await style.evaluate((element) => (element as Element).remove());
+  const cut = after.filter((entry) => !before.has(entry)).map((entry) => entry.split('|'));
   findings.push({
     criteria: ['1.4.12'],
     check: 'probe:text-spacing',
     what: 'Text stays fully visible with WCAG text spacing applied',
-    problems: after.filter((entry) => !before.has(entry)).map((entry) => `"${entry.split('|')[1]}" is cut off`),
+    problems: cut.filter(([where]) => where === 'page').map(([, , text]) => `"${text}" is cut off`),
   });
+  // A grid cell truncates by design and its column can be resized, so whether the value stays reachable is for a person
+  const cells = cut.filter(([where]) => where === 'grid');
+  if (cells.length) {
+    findings.push({
+      criteria: ['1.4.12'],
+      check: 'probe:text-spacing',
+      what: 'Grid and table cells truncate more with text spacing: check that the full value stays reachable.',
+      problems: [],
+      review: `${cells.length} cells, such as "${cells[0][2]}"`,
+    });
+  }
 
   return findings;
 };

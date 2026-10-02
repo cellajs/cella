@@ -27,7 +27,7 @@ export function PreferencesContent() {
   return (
     <>
       <div className="mb-6 flex flex-col gap-4 pt-3">
-        <h3 className="px-4 font-medium text-muted-foreground/70 text-sm lowercase">{t('c:appearance')}</h3>
+        <h3 className="px-4 font-medium text-muted-foreground text-sm lowercase">{t('c:appearance')}</h3>
 
         <div className="flex items-center gap-4 px-4">
           <Switch
@@ -75,7 +75,7 @@ export function PreferencesContent() {
 
       {pwaEnabled && (
         <div className="flex flex-col gap-4 pb-8">
-          <h3 className="px-4 font-medium text-muted-foreground/70 text-sm lowercase">{t('c:offline')}</h3>
+          <h3 className="px-4 font-medium text-muted-foreground text-sm lowercase">{t('c:offline')}</h3>
           <OfflineAccessSwitch />
           <AlertBanner id="offline_access" animate variant="plain" icon={InfoIcon}>
             {t('c:offline_access.text')}

@@ -60,7 +60,7 @@ function PageCoverBase({ id, canUpdate, organizationId, url, coverUpdateCallback
           ref={uploadButtonRef}
           variant="secondary"
           size="sm"
-          className="relative top-3 mx-auto opacity-50 hover:bg-secondary hover:opacity-80"
+          className="relative top-3 mx-auto bg-secondary/80 hover:bg-secondary"
           onClick={openUploadDialog}
         >
           <UploadIcon />

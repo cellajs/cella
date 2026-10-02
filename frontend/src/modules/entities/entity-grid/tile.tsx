@@ -32,7 +32,7 @@ export function ChannelGridTile({ entity }: { entity: ChannelTileEntity }) {
             style={entity.bannerUrl ? { backgroundImage: `url(${entity.bannerUrl})` } : {}}
           >
             <div className="grow" />
-            <div className="flex min-h-14 w-full items-center gap-3 bg-background/50 px-4 py-2 backdrop-blur-xs transition-colors group-hover:bg-background/70">
+            <div className="flex min-h-14 w-full items-center gap-3 bg-background/50 px-4 py-2 backdrop-blur-xs transition-colors group-hover:bg-background/70 dark:bg-background/75 dark:group-hover:bg-background/85">
               <EntityAvatar className="size-10" type={entity.entityType} id={entity.id} name={entity.name} url={entity.thumbnailUrl} />
               <div className="flex grow flex-col gap-0.5 truncate">
                 <div className="truncate font-semibold text-sm leading-5">{entity.name}</div>

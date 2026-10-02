@@ -68,7 +68,7 @@ export function InfoContent() {
   return (
     <div className="flex flex-col gap-6 pt-3 pb-8">
       <div className="flex flex-col gap-1">
-        <h3 className="px-4 font-medium text-muted-foreground/70 text-sm lowercase">{t('c:support')}</h3>
+        <h3 className="px-4 font-medium text-muted-foreground text-sm lowercase">{t('c:support')}</h3>
         <Button variant="ghost" className="w-full justify-start px-3.5 text-left" render={<Link to={appConfig.aboutUrl} draggable={false} />}>
           <InfoIcon className="size-4" aria-hidden="true" />
           {t('c:about')}
@@ -91,7 +91,7 @@ export function InfoContent() {
 
       <div className="flex flex-col gap-1">
         <div className="flex items-center justify-between gap-2 px-4">
-          <h3 className="font-medium text-muted-foreground/70 text-sm lowercase">{t('c:status')}</h3>
+          <h3 className="font-medium text-muted-foreground text-sm lowercase">{t('c:status')}</h3>
           {hasStatusPage && (
             <Button
               variant="link"
