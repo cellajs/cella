@@ -783,6 +783,8 @@
   "institution_accounts.text": "Sign in through your institution's account for the organizations that offer it.",
   "connect_institution": "Connect {{institution}} account",
   "connected_to_institution": "Connected to {{institution}}",
+  "connect_institution_prompt.text": "You are signed in. Connect your {{institution}} account now to sign in through it from here on.",
+  "sso_recovery_send": "Email me a sign-in link",
   "allowed_sign_in_methods": "Allowed sign-in methods",
   "allowed_sign_in_methods.text": "Empty allows every enabled method. A member who connected an institution account must then sign in through it.",
   "connection": "Connection",

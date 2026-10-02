@@ -3,7 +3,7 @@ import { useSearch } from '@tanstack/react-router';
 import { BuildingIcon } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { type GetAuthHealthResponse, getSsoEntry } from 'sdk';
-import { appConfig } from 'shared';
+import { appConfig, type FederationConfig } from 'shared';
 import { safeRedirectPath } from '~/modules/auth/redirect-path';
 import { invitationResumePath } from '~/modules/auth/use-post-auth-redirect';
 import { Button } from '~/modules/ui/button';
@@ -23,6 +23,9 @@ export const ssoStartUrl = (
   if (redirectAfter) params.set('redirectAfter', redirectAfter);
   return `${base}?${params}`;
 };
+
+/** The logo a federation's config names, if any. Federation keys arrive as plain strings from the API. */
+const federationLogo = (key: string) => (appConfig.federations as Record<string, FederationConfig | undefined>)[key]?.logo;
 
 /** What an institution's entry page shows; public by the connection id. */
 export const ssoEntryQueryOptions = (connectionId: string) =>
@@ -53,16 +56,23 @@ export function SsoProviders({ connectionId, federations = [] }: SsoProvidersPro
           {
             href: ssoStartUrl({ connectionId: contextual.id }, { redirectAfter }),
             label: t('c:sign_in_with_institution', { institution: contextual.institution.displayName }),
+            logo: undefined,
           },
         ]
       : []),
     // The generic entrance of the federation the context already names would lead to the same institution.
     ...federations
       .filter((federation) => federation.key !== contextual?.federation.key)
-      .map((federation) => ({
-        href: ssoStartUrl({ federation: federation.key }, { redirectAfter }),
-        label: `${t('c:sign_in_with_your_institution')} ${t('c:sign_in_via_federation', { federation: federation.label })}`,
-      })),
+      .map((federation) => {
+        // A logo names the federation; without one the label does.
+        const logo = federationLogo(federation.key);
+        const via = t('c:sign_in_via_federation', { federation: federation.label });
+        return {
+          href: ssoStartUrl({ federation: federation.key }, { redirectAfter }),
+          label: logo ? t('c:sign_in_with_your_institution') : `${t('c:sign_in_with_your_institution')} ${via}`,
+          logo: logo ? { src: logo, alt: federation.label } : undefined,
+        };
+      }),
   ];
 
   if (!items.length) return null;
@@ -71,7 +81,7 @@ export function SsoProviders({ connectionId, federations = [] }: SsoProvidersPro
     <div className="flex flex-col gap-2">
       {items.map((item) => (
         <Button key={item.href} type="button" variant="plain" render={<a href={item.href} />}>
-          <BuildingIcon />
+          {item.logo ? <img src={item.logo.src} alt={item.logo.alt} className="h-5 w-auto" loading="lazy" /> : <BuildingIcon />}
           <span>{item.label}</span>
         </Button>
       ))}

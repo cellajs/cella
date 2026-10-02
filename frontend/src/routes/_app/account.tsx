@@ -1,4 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router';
+import { z } from 'zod';
 import { getErrorInfo } from '~/modules/common/error-helpers';
 import { errorSearchSchema } from '~/modules/common/search-params-schemas';
 import { type ToastSeverity, toaster } from '~/modules/common/toaster/toaster';
@@ -10,10 +11,13 @@ import { lazyNamed } from '~/utils/lazy-named';
 
 const UserAccountPage = lazyNamed(() => import('~/modules/me/account-page'), 'UserAccountPage');
 
-/** Accepts `error`/`severity` search params from backend OAuth connect redirects, toasts them, then strips them. */
+/**
+ * Accepts `error`/`severity` search params from backend OAuth connect redirects, toasts them, then strips them. `connect`
+ * names an institution's connection the authentication card offers to connect: where an SSO recovery link lands.
+ */
 export const Route = createFileRoute('/_app/account')({
   staticData: { isAuth: true },
-  validateSearch: errorSearchSchema,
+  validateSearch: errorSearchSchema.extend({ connect: z.uuid().optional().catch(undefined) }),
   head: () => ({ meta: [{ title: appTitle('Settings') }] }),
   beforeLoad: ({ search }) => {
     if (search.error) {

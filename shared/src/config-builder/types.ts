@@ -15,6 +15,11 @@ export type BaseAuthStrategies = 'passkey' | 'oauth' | 'totp' | 'magic' | 'sso';
 export interface FederationConfig {
   /** Shown on sign-in buttons and in session lists. */
   label: string;
+  /**
+   * Path of the federation's logo under the frontend's public folder. Its "sign in with your institution" button shows
+   * the logo in place of the generic icon and of the federation's name; use the file the federation publishes, unaltered.
+   */
+  logo?: string;
   /** OIDC issuer; endpoints come from its discovery document. Mode configs point a key at a test issuer. */
   issuer: string;
   /** SAML metadata feed listing the federation's institutions (entity ids, names, logos, domains); optional. */

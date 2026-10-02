@@ -1,11 +1,11 @@
 import type { Context } from 'hono';
-import { hierarchy } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { insertIdentity, updateIdentity } from '#/modules/auth/oauth/identities-queries';
 import type { SsoSignInFacts } from '#/modules/auth/sso/operations/provision-sso-user';
+import { roleFromClaims } from '#/modules/auth/sso/role-from-claims';
 import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findMembershipsByUserIdsAndChannel } from '#/modules/memberships/memberships-queries';
 import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
@@ -21,14 +21,14 @@ const dbCtx = { var: { db: baseDb } };
 /**
  * Connects an institution account to the user the `oauth-connect` pin names, issued signed in right before leaving
  * for the federation. The identity is verified at once (the institution's assertion is the proof), the asserted address
- * joins the account under address authority, and the user becomes a member of the institution's organization when
- * they hold no membership there yet.
+ * joins the account under address authority, and the user becomes a member of the institution's organization, with the
+ * role `roleFromClaims` gives, when they hold no membership there yet.
  * @throws AppError 401 `oauth-connect_not_found` without a live pin, 409 `oauth_conflict` when the institution account
  *   belongs to another user, and `addProvenEmail`'s 409 when another account holds the asserted address.
  */
 export const connectSsoIdentity = async (
   ctx: Context<Env>,
-  { federation, connection, profile, snapshot, subject, identity }: SsoSignInFacts,
+  { federation, connection, claims, profile, snapshot, subject, identity }: SsoSignInFacts,
 ): Promise<UserWithCounters> => {
   // Spent only while the session that issued it lives: a connect abandoned before a sign-out cannot be finished.
   const pin = await spendCookieToken(ctx, 'oauth-connect');
@@ -70,7 +70,7 @@ export const connectSsoIdentity = async (
     if (organization) {
       const [existing] = await findMembershipsByUserIdsAndChannel(txCtx, { userIds: [user.id], channelId: organization.id });
       if (!existing) {
-        const role = hierarchy.getLeastPrivilegedRole('organization');
+        const role = roleFromClaims({ federation: federation.key, connection, claims });
         await insertMemberships(txCtx, {
           items: [{ userId: user.id, role, entity: { ...organization, tenantId: connection.tenantId }, createdBy: user.id }],
         });

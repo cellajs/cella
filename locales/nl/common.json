@@ -7,6 +7,8 @@
   "claim_values.text": "De domeinen die de federatie voor deze instelling doorgeeft, gescheiden door komma's. Een login moet er een van doorgeven.",
   "connect_institution": "{{institution}}-account koppelen",
   "connected_to_institution": "Gekoppeld aan {{institution}}",
+  "connect_institution_prompt.text": "Je bent ingelogd. Koppel nu je {{institution}}-account om voortaan daarmee in te loggen.",
+  "sso_recovery_send": "Mail mij een inloglink",
   "connection": "Koppeling",
   "connection_other": "Koppelingen",
   "connections.text": "De instellingen waarvan de leden via een federatie inloggen bij de organisatie van deze tenant. Een koppeling blijft in afwachting tot de instelling de app bij de federatie heeft geactiveerd.",

@@ -248,6 +248,9 @@ import type {
   SendNewsletterData,
   SendNewsletterErrors,
   SendNewsletterResponses,
+  SendSsoRecoveryLinkData,
+  SendSsoRecoveryLinkErrors,
+  SendSsoRecoveryLinkResponses,
   SendStepUpLinkData,
   SendStepUpLinkErrors,
   SendStepUpLinkResponses,
@@ -478,6 +481,7 @@ import {
   zSendNewsletterBody,
   zSendNewsletterQuery,
   zSendNewsletterResponse,
+  zSendSsoRecoveryLinkResponse,
   zSendStepUpLinkBody,
   zSendStepUpLinkResponse,
   zSignInWithPasskeyBody,
@@ -1549,6 +1553,34 @@ export const ssoCallback = <ThrowOnError extends boolean = true>(
         .parseAsync(data),
     responseStyle: 'data',
     url: '/auth/sso/callback',
+    ...options,
+  });
+
+/**
+ * Send an SSO recovery link
+ *
+ * For a browser whose institution sign-in was refused because an account already holds the asserted address: mails a magic link to that address, which returns to the account page to connect the institution account. Takes no input; the browser holds the offer for ten minutes and spends it by asking.
+ *
+ * **POST /auth/sso/recovery-link** ·· [sendSsoRecoveryLink](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/sso/recovery-link) ·· [sendSsoRecoveryLink](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/sso/recovery-link) ·· _auth_cella_
+ *
+ * @param {sendSsoRecoveryLinkData} options
+ * @returns Possible status codes: 200, 400, 401, 403, 404, 409, 429
+ */
+export const sendSsoRecoveryLink = <ThrowOnError extends boolean = true>(
+  options?: Options<SendSsoRecoveryLinkData, ThrowOnError>,
+): RequestResult<SendSsoRecoveryLinkResponses, SendSsoRecoveryLinkErrors, ThrowOnError, 'data'> =>
+  (options?.client ?? client).post<SendSsoRecoveryLinkResponses, SendSsoRecoveryLinkErrors, ThrowOnError, 'data'>({
+    requestValidator: async (data) =>
+      await z
+        .object({
+          body: z.never().optional(),
+          path: z.never().optional(),
+          query: z.never().optional(),
+        })
+        .parseAsync(data),
+    responseValidator: async (data) => await zSendSsoRecoveryLinkResponse.parseAsync(data),
+    responseStyle: 'data',
+    url: '/auth/sso/recovery-link',
     ...options,
   });
 

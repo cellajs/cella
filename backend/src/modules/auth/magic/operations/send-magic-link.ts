@@ -19,6 +19,11 @@ interface SendMagicLinkOpts {
   email: string;
   /** The page to return to after signing in. */
   redirect?: string;
+  /**
+   * The connection whose institution asserted the address in this browser moments ago (`sendSsoRecoveryLinkOp`). That
+   * connection's own policy does not refuse the link: the holder proved the institution account and proves the mailbox.
+   */
+  assertedThrough?: string;
 }
 
 /**
@@ -26,7 +31,7 @@ interface SendMagicLinkOpts {
  * other address gets nothing, while this browser is marked as if a link went out, so the answer never tells whether the
  * address has an account.
  */
-export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect }: SendMagicLinkOpts) => {
+export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect, assertedThrough }: SendMagicLinkOpts) => {
   // Validated here and re-validated at invoke; invalid input degrades to the default path.
   const redirectPath = isValidRedirectPath(redirect);
 
@@ -36,10 +41,13 @@ export const sendMagicLinkOp = async (ctx: Context<Env>, { email, redirect }: Se
 
   // An address an institution proved inherits its tenant's sign-in policy (D16): while that policy excludes magic
   // links, the address sends none and the answer points at the institution's entry. The user keeps every other
-  // method and address; an unknown address still gets the silent answer below.
+  // method and address; an unknown address still gets the silent answer below. The one exception is a link asked for
+  // right after signing in at that same institution, which is how an account whose institution identifier changed gets
+  // back in: the link then takes the institution account and the mailbox together, more than either alone.
   if (existingUser) {
     const governance = await findAddressGovernance(ctx, { email: normalizedEmail });
-    if (governance && governance.status === 'active' && governance.authStrategies.length > 0 && !governance.authStrategies.includes('magic')) {
+    const excludesMagic = governance?.status === 'active' && governance.authStrategies.length > 0 && !governance.authStrategies.includes('magic');
+    if (excludesMagic && governance.connectionId !== assertedThrough) {
       throw new AppError(403, 'sso_required', 'warn', {
         meta: { connectionId: governance.connectionId, entryPath: `/auth/sso/${governance.connectionId}` },
       });
