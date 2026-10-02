@@ -1,5 +1,45 @@
 # Changelog
 
+## [0.14.0](https://github.com/cellajs/cella/compare/0.13.0...0.14.0) (2026-10-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* **auth:** token reads and writes move to tokens-queries ([#1268](https://github.com/cellajs/cella/issues/1268))
+* **auth:** sessions move to their own folder, with queries and operations ([#1267](https://github.com/cellajs/cella/issues/1267))
+* **auth:** step-up and devices move to queries and operations ([#1265](https://github.com/cellajs/cella/issues/1265))
+* **migrations:** notes describe themselves and stay upstream ([#1261](https://github.com/cellajs/cella/issues/1261))
+
+### 🎉 New features
+
+* **blocknote:** description sync redesign, release 1 ([#1260](https://github.com/cellajs/cella/issues/1260)) ([716254f](https://github.com/cellajs/cella/commit/716254f70fb2cac702d92ce218024a760290dffc))
+
+
+### 🐞 Bug fixes
+
+* **infra:** a deploy clears pointers a failed deploy left before it plans the stack ([#1266](https://github.com/cellajs/cella/issues/1266)) ([012b75b](https://github.com/cellajs/cella/commit/012b75b6983e0f554aeeb558c9f47fc7a10b2d91))
+* **infra:** single-VM deploys keep the old VM through the health gate, and hung boots report themselves ([#1264](https://github.com/cellajs/cella/issues/1264)) ([3358022](https://github.com/cellajs/cella/commit/335802274b795b44dd66c1776a028938d2383c71))
+* release PR checks wait for the edit's activity and preview live generations only ([#1269](https://github.com/cellajs/cella/issues/1269)) ([d5c7213](https://github.com/cellajs/cella/commit/d5c721318197645fd392f7843f303f20e01dd77e))
+* **yjs:** echo awareness to its sender so a lone editor stays connected ([#1258](https://github.com/cellajs/cella/issues/1258)) ([bdb66b2](https://github.com/cellajs/cella/commit/bdb66b21e979c28a4c2861046f9c84a05a7ae6e9))
+
+
+### 🔧 Small improvements
+
+* **auth:** sessions move to their own folder, with queries and operations ([#1267](https://github.com/cellajs/cella/issues/1267)) ([216933f](https://github.com/cellajs/cella/commit/216933f1ce6d2404de652ede081079929f475fc8))
+* **auth:** step-up and devices move to queries and operations ([#1265](https://github.com/cellajs/cella/issues/1265)) ([2b06b3e](https://github.com/cellajs/cella/commit/2b06b3ec5342647ffb2593bb727147184c37454b))
+* **auth:** token reads and writes move to tokens-queries ([#1268](https://github.com/cellajs/cella/issues/1268)) ([f36f852](https://github.com/cellajs/cella/commit/f36f852f8c25d9529ea9adfe07524a488053b711))
+* **migrations:** notes describe themselves and stay upstream ([#1261](https://github.com/cellajs/cella/issues/1261)) ([6249c8a](https://github.com/cellajs/cella/commit/6249c8a0d7b11beda6c88ef99780bcfcb475ee86))
+
+
+### 🧹 Chores
+
+* **deps:** update dependencies, pin typescript to 6.0.3 ([#1263](https://github.com/cellajs/cella/issues/1263)) ([d84e7e1](https://github.com/cellajs/cella/commit/d84e7e13fe862a8ed03d14f08a8207ff0f3958c1))
+
+
+### 🧪 Tests
+
+* **frontend:** pin how descriptions move between the editor and the cache ([#1259](https://github.com/cellajs/cella/issues/1259)) ([0a5924d](https://github.com/cellajs/cella/commit/0a5924d2adefc4f2101eaa05fe5c9a353727584e))
+
 ## [0.13.0](https://github.com/cellajs/cella/compare/0.12.2...0.13.0) (2026-10-02)
 
 
