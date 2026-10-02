@@ -1,8 +1,8 @@
 import { appConfig, type ProductEntityType, type TrackedEventType } from 'shared';
 import { defineBackendModule } from '#/lib/module';
 import type { MutationHandler, MutationPayload } from '#/lib/mutation-bus';
-import { retireYjsDocuments } from './operations/retire-yjs-documents';
 import { yjsHandlers } from './yjs-handlers';
+import { retireYjsDocuments } from './yjs-log';
 import { getYjsMaterializer } from './yjs-materializers';
 
 const idsOf = (rows: MutationPayload['before'] = []) => rows.flatMap((row) => (typeof row.id === 'string' ? [row.id] : []));

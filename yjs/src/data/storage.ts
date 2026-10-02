@@ -1,6 +1,7 @@
 import { and, asc, eq, inArray, lt, sql } from 'drizzle-orm';
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { yjsDocumentsTable, yjsUpdatesTable } from '#/modules/yjs/yjs-db';
+import type { LogRow } from '#/modules/yjs/yjs-log';
 import type { DocKey, DocScope } from '../constants';
 import { db, type Tx, withRlsTx } from './db';
 
@@ -18,12 +19,7 @@ const docWhere = ({ entityType, entityId, tenantId }: DocKey) =>
 const logWhere = ({ entityType, entityId, tenantId }: DocKey) =>
   and(eq(yjsUpdatesTable.entityType, entityType), eq(yjsUpdatesTable.entityId, entityId), eq(yjsUpdatesTable.tenantId, tenantId));
 
-/** One appended client update, in arrival order. */
-export interface LogRow {
-  id: number;
-  payload: Uint8Array;
-  userId: string | null;
-}
+export type { LogRow };
 
 /** The document row: its compacted base state (empty when seeded from a null description) and the generation of its seed. */
 export interface BaseRow {

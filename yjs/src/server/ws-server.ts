@@ -5,6 +5,7 @@ import { Hono } from 'hono';
 import { createHealthApp } from 'shared/health-app';
 import { getEventLoopLagMs } from 'shared/utils/event-loop-monitor';
 import { WebSocketServer } from 'ws';
+import { YJS_MAX_UPDATE_BYTES } from '#/modules/yjs/yjs-log';
 import { closeDb } from '../data/db';
 import { env } from '../env';
 import { log } from '../lib/pino';
@@ -51,7 +52,7 @@ export function startWsServer(): void {
   }) as Server;
   httpServer = server;
 
-  const wsServer = new WebSocketServer({ noServer: true, maxPayload: 2 * 1024 * 1024 });
+  const wsServer = new WebSocketServer({ noServer: true, maxPayload: YJS_MAX_UPDATE_BYTES });
   wss = wsServer;
 
   server.on('upgrade', setupUpgradeHandler(wsServer));
