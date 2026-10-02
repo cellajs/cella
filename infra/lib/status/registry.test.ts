@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ComponentsFact } from './providers/components';
 import type { GithubFacts } from './providers/github';
-import type { LiveServiceFact } from './providers/live';
+import { expectedRelease, type LiveServiceFact } from './providers/live';
 import type { IdentityFacts } from './providers/stack';
 import type { StoreValidationFact } from './providers/stores';
 import type { ToolingFacts } from './providers/tooling';
@@ -207,6 +207,26 @@ describe('live service checks', () => {
     expect(report.nextAction?.command).toContain('deploy --mode staging');
   });
 
+  it('a service on the singleVM host names the host its expectation comes from', () => {
+    const report = reportFor(
+      base({
+        live: [
+          {
+            slug: 'frontend',
+            healthUrl: 'https://app.example.com/health',
+            probe: { status: 200, version: 'oldsha00' },
+            expectedSha: 'abc123def456',
+            expectedFrom: 'backend',
+          },
+        ],
+      }),
+    );
+    expect(find(report.checks, 'live.frontend')).toMatchObject({
+      status: 'warn',
+      detail: 'serving oldsha0, expected abc123d (runs on the backend host)',
+    });
+  });
+
   it('an unreachable service is missing', () => {
     const report = reportFor(base({ live: [{ slug: 'backend', healthUrl: 'https://api.example.com/health', probe: { status: 0 } }] }));
     expect(find(report.checks, 'live.backend')?.status).toBe('missing');
@@ -309,5 +329,33 @@ describe('stack lock', () => {
     const check = find(report.checks, 'state.lock');
     expect(check?.status).toBe('warn');
     expect(check?.nextAction).toBeUndefined();
+  });
+});
+
+describe('expectedRelease', () => {
+  // The control object production carried after moving to singleVM: cdc and frontend kept pointers nothing updates.
+  const rollout = [
+    { slug: 'backend', activeSha: '79ee6cde4' },
+    { slug: 'cdc', activeSha: 'c4a6d59aa' },
+    { slug: 'frontend', activeSha: 'c4a6d59aa' },
+  ];
+  const singleVM = { services: {}, singleVM: true };
+
+  it('expects a service on the singleVM host to serve the host release, not its own leftover pointer', () => {
+    expect(expectedRelease(singleVM, 'frontend', rollout)).toEqual({ expectedSha: '79ee6cde4', expectedFrom: 'backend' });
+  });
+
+  it('gives a co-hosted service without a pointer of its own a real expectation', () => {
+    expect(expectedRelease(singleVM, 'yjs', rollout)).toEqual({ expectedSha: '79ee6cde4', expectedFrom: 'backend' });
+  });
+
+  it('expects a service with its own VM to serve its own active release', () => {
+    expect(expectedRelease(singleVM, 'backend', rollout)).toEqual({ expectedSha: '79ee6cde4' });
+    expect(expectedRelease({ services: {}, singleVM: false }, 'frontend', rollout)).toEqual({ expectedSha: 'c4a6d59aa' });
+  });
+
+  it('has no expectation for a disabled service or an unread control object', () => {
+    expect(expectedRelease({ services: { yjs: { enabled: false } }, singleVM: true }, 'yjs', rollout)).toEqual({});
+    expect(expectedRelease(singleVM, 'frontend', undefined)).toEqual({ expectedSha: undefined, expectedFrom: 'backend' });
   });
 });

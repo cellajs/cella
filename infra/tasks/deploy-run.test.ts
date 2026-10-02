@@ -53,6 +53,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
   const ops: string[] = [];
   const rolloutArgs: string[][] = [];
   const grantArgs: string[][] = [];
+  const taskArgs: Record<string, string[]> = {};
   const execCalls: Array<{ cmd: string; args: string[]; opts: Parameters<DeployEffects['exec']>[2] }> = [];
   const fx: DeployEffects = {
     initTelemetry: async () => {
@@ -64,6 +65,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     task: async (name, argv = []) => {
       ops.push(`task:${name}${argv[0] && !argv[0].startsWith('--') ? `:${argv[0]}` : ''}`);
       if (name === 'assert-vm-grants') grantArgs.push([...argv]);
+      taskArgs[name] = [...argv];
     },
     lease: async (_stack, operation) => {
       ops.push(`lease:acquire:${operation}`);
@@ -100,7 +102,7 @@ function makeFake(opts: { rolloutFails?: boolean; verifyFails?: boolean; updateF
     groupEnd: () => {},
     info: () => {},
   };
-  return { fx, ops, rolloutArgs, grantArgs, execCalls };
+  return { fx, ops, rolloutArgs, grantArgs, taskArgs, execCalls };
 }
 
 const baseOpts = { mode: 'production', sha: 'abc123', distDir: '/tmp/dist' };
@@ -180,6 +182,13 @@ describe('runDeploy sequencing', () => {
     expect(ops.some((op) => op.startsWith('verify:') && op.endsWith('/health'))).toBe(true);
     expect(ops).toContain('verify:https://www.cellajs.com/yjs/health');
     expect(ops.some((op) => op.startsWith('boot-diag'))).toBe(false);
+  });
+
+  it('reconciles pointers against the services the rollout cuts over', async () => {
+    const { fx, taskArgs } = makeFake();
+    await runDeploy(baseOpts, fx, fakeDeployEnv);
+    // The rollout matrices' rows: yjs runs on the host, so its pointers are dropped.
+    expect(taskArgs['sync-rollout-config']).toEqual(['--stack', 'production', '--reset-pending', '--deployed', 'backend,cdc,frontend']);
   });
 
   it('stops before the stack update when the preflight finds a pending privileged change', async () => {

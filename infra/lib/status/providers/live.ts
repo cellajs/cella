@@ -1,8 +1,9 @@
+import type { EngineConfig } from '../../../config/engine-config';
 import { healthContract } from '../../../config/health.config';
 import { createFetchProbe } from '../../../tasks/wait-for-version';
-import { serviceEndpoints } from '../../services';
+import { rolloutOwner, serviceEndpoints } from '../../services';
 import { check, deployAction, diagAction } from '../check';
-import type { StatusProvider } from '../types';
+import type { RolloutRowFact, StatusProvider } from '../types';
 
 /** First 7 chars of a git SHA, the length humans and logs use. */
 const short = (sha: string): string => sha.slice(0, 7);
@@ -15,6 +16,23 @@ export interface LiveServiceFact {
   probe?: { status: number; version?: string };
   /** Expected SHA from the control object's active generation, when known. */
   expectedSha?: string;
+  /** The service whose `active` pointer set `expectedSha`, when it is not this one: the singleVM host for a service running on its VM. */
+  expectedFrom?: string;
+}
+
+/**
+ * The release a public service must serve, from the active pointer of the service that rolls it out: its own when it boots its own VM, the singleVM
+ * host's when it runs on the host VM. A disabled service has no expectation.
+ */
+export function expectedRelease(
+  config: Pick<EngineConfig, 'services' | 'singleVM'>,
+  slug: string,
+  rollout: RolloutRowFact[] | undefined,
+): Pick<LiveServiceFact, 'expectedSha' | 'expectedFrom'> {
+  const owner = rolloutOwner(config.services, config.singleVM, slug);
+  if (!owner) return {};
+  const expectedSha = rollout?.find((r) => r.slug === owner)?.activeSha;
+  return owner === slug ? { expectedSha } : { expectedSha, expectedFrom: owner };
 }
 
 export const liveProvider: StatusProvider<LiveServiceFact[]> = {
@@ -38,7 +56,7 @@ export const liveProvider: StatusProvider<LiveServiceFact[]> = {
           slug: endpoint.slug,
           healthUrl,
           probe: { status: result.status, version: result.version },
-          expectedSha: rollout?.find((r) => r.slug === endpoint.slug)?.activeSha,
+          ...expectedRelease(session.appConfig, endpoint.slug, rollout),
         };
       }),
     );
@@ -53,8 +71,10 @@ export const liveProvider: StatusProvider<LiveServiceFact[]> = {
         return service.missing(`${how} at ${svc.healthUrl}`, diagAction(session.mode));
       }
       const served = svc.probe.version ?? '<none>';
-      if (svc.expectedSha && svc.probe.version !== svc.expectedSha)
-        return service.warn(`serving ${short(served)}, expected ${short(svc.expectedSha)}`, deployAction(session.mode));
+      if (svc.expectedSha && svc.probe.version !== svc.expectedSha) {
+        const source = svc.expectedFrom ? ` (runs on the ${svc.expectedFrom} host)` : '';
+        return service.warn(`serving ${short(served)}, expected ${short(svc.expectedSha)}${source}`, deployAction(session.mode));
+      }
       return service.ok(`serving ${served === '<none>' ? served : short(served)}`);
     });
   },

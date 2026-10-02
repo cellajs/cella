@@ -69,29 +69,46 @@ export function seedCandidates(metadata: RolloutGeneration[]): Map<string, Rollo
 }
 
 /**
- * Services whose `active` pointer names a generation the stack no longer has, while the stack does run generations for that service: the VM was
- * destroyed outside a promotion. Planning such a pointer as the overlap partner would recreate the old release's VM, so the pointer is dropped and the
- * next cutover runs as a first deploy. A service with no live generation at all (disabled, folded under singleVM) is left alone.
+ * Services whose `active` pointer names a generation the stack no longer has: the VM was destroyed outside a promotion. Planning such a pointer as
+ * the overlap partner would recreate the old release's VM, so the pointer is dropped and the next cutover runs as a first deploy.
+ * A service the stack runs no generation of at all counts only when `deployed` names it, as the config then gives it a VM the stack lacks. Without
+ * `deployed` it is skipped: it may be folded onto the singleVM host or disabled, and `reconcileRollout` drops such entries under `resetPending`.
  */
-export function staleActiveServices(rollout: Record<string, ServiceRollout>, metadata: RolloutGeneration[]): string[] {
+export function staleActiveServices(
+  rollout: Record<string, ServiceRollout>,
+  metadata: RolloutGeneration[],
+  deployed?: ReadonlySet<string>,
+): string[] {
   const live = generationsByService(metadata.filter((item) => item.genId.length > 0));
   return Object.entries(rollout).flatMap(([service, entry]) => {
-    const generations = live.get(service);
-    if (!entry.active || !generations) return [];
+    if (!entry.active) return [];
+    const generations = live.get(service) ?? (deployed?.has(service) ? [] : undefined);
+    if (!generations) return [];
     return generations.some((item) => item.genId === entry.active?.id) ? [] : [service];
   });
 }
 
-export interface ReconcileOptions {
-  /**
-   * Drop every pending deploy intent. Only the deploy passes this, and it runs under the stack lock, so a `pendingSha` it finds was left by a deploy that
-   * failed before promotion. Planning it would provision that release's generation again, under keys minted for the new release.
-   */
-  resetPending: boolean;
+/**
+ * `resetPending` drops every pending deploy intent. Only the deploy passes it, and it runs under the stack lock, so a `pendingSha` it finds was left by
+ * a deploy that failed before promotion. Planning it would provision that release's generation again, under keys minted for the new release.
+ * `deployed` lists the services the config gives their own VM, the ones the rollout cuts over. Every other service's entry is dropped: a service
+ * folded onto the singleVM host, or disabled, has no VM, and a leftover `active` would plan as a preexisting generation with no minted keys once
+ * the service boots its own VM again.
+ */
+export type ReconcileOptions = { resetPending: false } | { resetPending: true; deployed: readonly string[] };
+
+/** One line naming what a dropped rollout entry held. */
+function describeEntry(entry: ServiceRollout): string {
+  const parts = [
+    ...(entry.active ? [`active gen=${entry.active.id} sha=${entry.active.sha}`] : []),
+    ...(entry.pendingSha ? [`pending sha=${entry.pendingSha}`] : []),
+  ];
+  return parts.join(', ') || 'no pointers';
 }
 
 /**
  * The control object's rollout pointers reconciled against the generations the stack runs, with one line per change.
+ * Under `resetPending`, entries of services the config deploys no VM for are dropped first, then every leftover `pendingSha`.
  * Stale `active` pointers are dropped (see `staleActiveServices`), and a service with neither an `active` nor a `pendingSha` adopts its live
  * generation as `active`. A service whose stale `active` was just dropped is adopted only under `resetPending`: otherwise its pending deploy cuts over
  * as a first deploy. Under `resetPending` the adopted generation is the live VM the load balancer points at, which the next cutover overlaps and reaps.
@@ -101,9 +118,15 @@ export function reconcileRollout(
   metadata: RolloutGeneration[],
   opts: ReconcileOptions,
 ): { rollout: Record<string, ServiceRollout>; changes: string[] } {
-  const next: Record<string, ServiceRollout> = structuredClone(rollout);
+  let next: Record<string, ServiceRollout> = structuredClone(rollout);
   const changes: string[] = [];
-  if (opts.resetPending) {
+  const deployed = opts.resetPending ? new Set(opts.deployed) : undefined;
+  if (deployed) {
+    for (const [svc, entry] of Object.entries(next)) {
+      if (deployed.has(svc)) continue;
+      changes.push(`dropped ${svc}'s rollout entry (${describeEntry(entry)}): the config gives it no VM of its own`);
+    }
+    next = Object.fromEntries(Object.entries(next).filter(([svc]) => deployed.has(svc)));
     for (const [svc, entry] of Object.entries(next)) {
       if (!entry.pendingSha) continue;
       const { pendingSha, ...rest } = entry;
@@ -111,13 +134,15 @@ export function reconcileRollout(
       changes.push(`dropped ${svc}'s pending sha=${pendingSha}: left by a deploy that failed before promotion`);
     }
   }
-  const stale = new Set(staleActiveServices(next, metadata));
+  const stale = new Set(staleActiveServices(next, metadata, deployed));
   for (const svc of stale) {
     const { active, ...rest } = next[svc] ?? emptyRollout();
     next[svc] = rest;
     changes.push(`dropped ${svc}'s active gen=${active?.id} sha=${active?.sha}: the stack no longer has its VM`);
   }
   for (const [svc, gen] of seedCandidates(metadata)) {
+    // A VM of a service the config no longer deploys is reaped by the next stack update, never adopted.
+    if (deployed && !deployed.has(svc)) continue;
     if (stale.has(svc) && !opts.resetPending) continue;
     const current = next[svc] ?? emptyRollout();
     // Do not seed over an existing active, nor while a deploy intent is pending:
@@ -130,10 +155,21 @@ export function reconcileRollout(
   return { rollout: next, changes };
 }
 
+/** `--deployed <slug,...>`, required with `--reset-pending`: an empty list would drop every pointer. */
+export function parseReconcileOptions(argv: string[]): ReconcileOptions {
+  if (!argv.includes('--reset-pending')) return { resetPending: false };
+  const deployed = (getFlag(argv, '--deployed') ?? '')
+    .split(',')
+    .map((slug) => slug.trim())
+    .filter(Boolean);
+  if (deployed.length === 0) throw new Error('sync-rollout-config: --reset-pending needs --deployed <slug,...>, the services the config gives a VM');
+  return { resetPending: true, deployed };
+}
+
 export async function syncRolloutConfig(argv = process.argv.slice(2)): Promise<void> {
   const stack = getFlag(argv, '--stack');
-  if (!stack) throw new Error('Usage: sync-rollout-config.ts --stack <stack> [--reset-pending]');
-  const opts: ReconcileOptions = { resetPending: argv.includes('--reset-pending') };
+  if (!stack) throw new Error('Usage: sync-rollout-config.ts --stack <stack> [--reset-pending --deployed <slug,...>]');
+  const opts = parseReconcileOptions(argv);
 
   const rawMetadata = tryStackOutputRaw(stack, 'computeGenerationMetadata');
   if (!rawMetadata) {

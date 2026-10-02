@@ -165,8 +165,12 @@ export async function runDeploy(
     });
     await step('Pre-install Pulumi providers', () => fx.task('install-pulumi-providers'));
     // Under the lock, before anything plans the stack: drop pointers a failed deploy left behind, so neither the preflight nor the stack update
-    // plans that release's generation again, and adopt the live VM as the overlap partner.
-    await step('Reconcile rollout pointers', () => fx.task('sync-rollout-config', ['--stack', stack, '--reset-pending']));
+    // plans that release's generation again, and adopt the live VM as the overlap partner. The rollout rows name the services with a VM of their own;
+    // every other service's pointers are dropped.
+    const deployed = [...(JSON.parse(env.primary_rollout_matrix) as RolloutRow[]), ...(JSON.parse(env.roll_rest_matrix) as RolloutRow[])];
+    await step('Reconcile rollout pointers', () =>
+      fx.task('sync-rollout-config', ['--stack', stack, '--reset-pending', '--deployed', deployed.map((row) => row.service).join(',')]),
+    );
     // Privileged changes (a database privilege, a VM policy rule) need an operator Apply first: fail here, in seconds, with that command.
     await step('Preflight privileged changes', () => fx.task('preflight-privileged', ['--stack', stack, '--mode', opts.mode]));
 
