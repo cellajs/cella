@@ -302,10 +302,22 @@ export type User = {
 };
 
 /**
- * How the signed-in user signs in: connected OAuth providers, passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.
+ * How the signed-in user signs in: connected OAuth providers, the institutions of their organizations (connected or not), passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.
  */
 export type MeAuthData = {
   enabledOAuth: Array<'github'>;
+  institutions: Array<{
+    connectionId: string;
+    displayName: string;
+    federation: {
+      key: string;
+      label: string;
+    };
+    /**
+     * Whether the account already holds an identity through this connection
+     */
+    connected: boolean;
+  }>;
   hasTotp: boolean;
   sessions: Array<{
     id: string;
@@ -693,6 +705,13 @@ export type GetAuthHealthResponses = {
   200: {
     restrictedMode: boolean;
     retryAfter?: number;
+    /**
+     * Federations with a connected institution, for the "sign in with your institution" entrance
+     */
+    federations: Array<{
+      key: string;
+      label: string;
+    }>;
   };
 };
 
@@ -833,6 +852,7 @@ export type GetTokenDataResponses = {
     email: string;
     userId?: string;
     inactiveMembershipId?: string;
+    ssoConnectionId?: string;
     invitation?: {
       entityType: 'organization';
       entityName: string;

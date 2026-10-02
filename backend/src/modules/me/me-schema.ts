@@ -32,16 +32,25 @@ export const meSchema = z
     'x-tags': schemaTags('data', 'me', 'cella'),
   });
 
+/** An institution a member could sign in through: the active connection of a tenant they belong to. */
+const institutionAccountSchema = z.object({
+  connectionId: z.string(),
+  displayName: z.string(),
+  federation: z.object({ key: z.string(), label: z.string() }),
+  connected: z.boolean().describe('Whether the account already holds an identity through this connection'),
+});
+
 export const meAuthDataSchema = z
   .object({
     enabledOAuth: z.array(enabledOAuthProvidersSchema),
+    institutions: z.array(institutionAccountSchema),
     hasTotp: z.boolean(),
     sessions: z.array(sessionSchema.extend({ expiresAt: z.string() })),
     passkeys: z.array(passkeySchema),
   })
   .openapi('MeAuthData', {
     description:
-      'How the signed-in user signs in: connected OAuth providers, passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.',
+      'How the signed-in user signs in: connected OAuth providers, the institutions of their organizations (connected or not), passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.',
     example: mockMeAuthResponse(),
     'x-tags': schemaTags('data', 'me', 'cella'),
   });

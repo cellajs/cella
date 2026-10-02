@@ -1,7 +1,10 @@
-import { and, arrayOverlaps, eq, ne } from 'drizzle-orm';
+import { and, arrayOverlaps, eq, inArray, ne } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
+import { identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { type ConnectionModel, connectionsTable, type InsertConnectionModel } from '#/modules/connections/connections-db';
 import { organizationsTable } from '#/modules/organization/organization-db';
+import { tenantsTable } from '#/modules/tenants/tenants-db';
+import { emailsTable } from '#/modules/user/emails-db';
 
 interface FindConnectionsByTenantOpts {
   tenantId: string;
@@ -134,5 +137,84 @@ export const deleteConnection = async (ctx: DbContext, { id, tenantId }: DeleteC
     .delete(connectionsTable)
     .where(and(eq(connectionsTable.id, id), eq(connectionsTable.tenantId, tenantId)))
     .returning();
+  return row;
+};
+
+interface FindSsoConnectionByTenantOpts {
+  tenantId: string;
+}
+
+/** The tenant's SSO connection (one per tenant), whatever its status; undefined when none. */
+export const findSsoConnectionByTenant = async (ctx: DbContext, { tenantId }: FindSsoConnectionByTenantOpts) => {
+  const [row] = await ctx.var.db
+    .select()
+    .from(connectionsTable)
+    .where(and(eq(connectionsTable.tenantId, tenantId), eq(connectionsTable.kind, 'sso')))
+    .limit(1);
+  return row;
+};
+
+interface FindSsoConnectionsByTenantsOpts {
+  tenantIds: string[];
+}
+
+/** The active SSO connections of these tenants: the institutions a member could connect their account to. */
+export const findActiveSsoConnectionsByTenants = async (ctx: DbContext, { tenantIds }: FindSsoConnectionsByTenantsOpts) => {
+  if (!tenantIds.length) return [];
+  return ctx.var.db
+    .select()
+    .from(connectionsTable)
+    .where(and(inArray(connectionsTable.tenantId, tenantIds), eq(connectionsTable.kind, 'sso'), eq(connectionsTable.status, 'active')));
+};
+
+/** The federations with at least one active connection: the generic entrance shows a button per federation. */
+export const findActiveSsoFederations = async (ctx: DbContext) => {
+  const rows = await ctx.var.db
+    .selectDistinct({ issuer: connectionsTable.issuer })
+    .from(connectionsTable)
+    .where(and(eq(connectionsTable.kind, 'sso'), eq(connectionsTable.status, 'active')));
+  return rows.map(({ issuer }) => issuer);
+};
+
+interface FindConnectionBindingUserOpts {
+  userId: string;
+  tenantId: string;
+}
+
+/**
+ * The tenant's connection the user holds an identity through, if any: the fact that binds them to the tenant's
+ * sign-in policy (D17). Externals without such an identity are not bound.
+ */
+export const findConnectionBindingUser = async (ctx: DbContext, { userId, tenantId }: FindConnectionBindingUserOpts) => {
+  const [row] = await ctx.var.db
+    .select({ id: connectionsTable.id })
+    .from(identitiesTable)
+    .innerJoin(connectionsTable, eq(connectionsTable.id, identitiesTable.connectionId))
+    .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.kind, 'sso'), eq(connectionsTable.tenantId, tenantId)))
+    .limit(1);
+  return row;
+};
+
+interface FindAddressGovernanceOpts {
+  email: string;
+}
+
+/**
+ * The connection and tenant policy that govern an address proven through a federation (D16): the ledger row's proof
+ * names the federation, the account's identity through it names the connection, the connection's tenant holds the
+ * policy. Undefined for an address proven any other way.
+ */
+export const findAddressGovernance = async (ctx: DbContext, { email }: FindAddressGovernanceOpts) => {
+  const [row] = await ctx.var.db
+    .select({ connectionId: connectionsTable.id, status: connectionsTable.status, authStrategies: tenantsTable.authStrategies })
+    .from(emailsTable)
+    .innerJoin(
+      identitiesTable,
+      and(eq(identitiesTable.userId, emailsTable.userId), eq(identitiesTable.kind, 'sso'), eq(identitiesTable.issuer, emailsTable.lastVerifiedVia)),
+    )
+    .innerJoin(connectionsTable, eq(connectionsTable.id, identitiesTable.connectionId))
+    .innerJoin(tenantsTable, eq(tenantsTable.id, connectionsTable.tenantId))
+    .where(eq(emailsTable.email, email))
+    .limit(1);
   return row;
 };

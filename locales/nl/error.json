@@ -5,6 +5,8 @@
   "sso_not_active.text": "De instelling heeft de toegang tot deze app nog niet geactiveerd, of de koppeling is uitgeschakeld. Vraag het de beheerder van de instelling, of log op een andere manier in als je bent uitgenodigd.",
   "sso_not_configured": "Inloggen via instelling is niet ingesteld",
   "sso_not_configured.text": "Deze omgeving heeft nog geen client voor de federatie. Een beheerder stelt eerst het client-id en de secret in.",
+  "sso_required": "Log in via je instelling",
+  "sso_required.text": "Deze organisatie vereist inloggen via het account van je instelling. Log zo in om verder te gaan; je andere inlogmethoden blijven elders werken.",
   "sso_wrong_institution": "Account van een andere instelling",
   "sso_wrong_institution.text": "Je bent ingelogd met een account van een instelling die niet aan deze organisatie is gekoppeld. Gebruik je account bij de gekoppelde instelling, of log op een andere manier in als je bent uitgenodigd."
 }

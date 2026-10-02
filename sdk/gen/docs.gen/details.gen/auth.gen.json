@@ -10,7 +10,20 @@
           "type": "object",
           "properties": {
             "restrictedMode": { "type": "boolean", "required": true },
-            "retryAfter": { "type": "number", "required": false }
+            "retryAfter": { "type": "number", "required": false },
+            "federations": {
+              "type": "array",
+              "required": true,
+              "description": "Federations with a connected institution, for the \"sign in with your institution\" entrance",
+              "itemType": "object",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "key": { "type": "string", "required": true },
+                  "label": { "type": "string", "required": true }
+                }
+              }
+            }
           },
           "contentType": "application/json"
         }
@@ -207,6 +220,7 @@
             "email": { "type": "string", "required": true, "format": "email" },
             "userId": { "type": "string", "required": false },
             "inactiveMembershipId": { "type": "string", "required": false },
+            "ssoConnectionId": { "type": "string", "required": false },
             "invitation": {
               "type": "object",
               "required": false,

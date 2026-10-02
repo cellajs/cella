@@ -8,6 +8,7 @@ import { getApiKeyCache, setApiKeyCache } from '#/middlewares/guard/api-key-cach
 import { loadMemberships } from '#/middlewares/guard/membership-cache';
 import { getTokenGrantCache, setTokenGrantCache, type TokenGrantEntry } from '#/middlewares/guard/token-grant-cache';
 import { serviceBurstLimiter } from '#/middlewares/rate-limiter/limiters';
+import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { findLiveGrantBindings } from '#/modules/oauth-server/oauth-server-queries';
 import { resourceMetadataUrl } from '#/modules/oauth-server/resources';
@@ -40,7 +41,15 @@ export async function setActorFromToken(ctx: Context<Env>, jwt: string, scope: {
     ctx.set('user', user);
     ctx.set('userId', user.id);
     ctx.set('memberships', memberships);
-    ctx.set('actor', { kind: 'user', id: user.id, bindings: memberships, scopes: token.scopes });
+    ctx.set('actor', {
+      kind: 'user',
+      id: user.id,
+      bindings: memberships,
+      scopes: token.scopes,
+      // A string the enum does not know (an app renamed a method) reads as unknown, which a tenant policy refuses.
+      authStrategy: (token.authStrategy as AuthStrategy | null) ?? null,
+      connectionId: token.connectionId,
+    });
   } else {
     const account = await resolveServiceToken(token);
     ctx.set('actor', {

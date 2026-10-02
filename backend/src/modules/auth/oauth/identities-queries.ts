@@ -41,6 +41,19 @@ export const findVerifiedOAuthIdentities = async (ctx: DbContext, { userId }: Fi
     .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.kind, 'oauth'), eq(identitiesTable.verified, true)));
 };
 
+interface FindSsoIdentityConnectionIdsOpts {
+  userId: string;
+}
+
+/** The connections the user's SSO identities came through. */
+export const findSsoIdentityConnectionIds = async (ctx: DbContext, { userId }: FindSsoIdentityConnectionIdsOpts): Promise<string[]> => {
+  const rows = await ctx.var.db
+    .select({ connectionId: identitiesTable.connectionId })
+    .from(identitiesTable)
+    .where(and(eq(identitiesTable.userId, userId), eq(identitiesTable.kind, 'sso')));
+  return rows.map(({ connectionId }) => connectionId).filter((id): id is string => !!id);
+};
+
 interface InsertIdentityOpts {
   values: Pick<IdentityModel, 'userId' | 'issuer' | 'subject'> &
     Pick<InsertIdentityModel, 'kind' | 'connectionId' | 'data'> & { email: string | null };

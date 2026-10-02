@@ -11,6 +11,7 @@ import { clientKindOf, DrizzleAdapter } from '#/modules/oauth-server/adapter';
 import { grantRefusal } from '#/modules/oauth-server/grant-policy';
 import { appInteractionPolicy } from '#/modules/oauth-server/interaction-policy';
 import { loadSigningJwks } from '#/modules/oauth-server/keystore';
+import { findGrantSignIn } from '#/modules/oauth-server/oauth-server-queries';
 import { parseResource } from '#/modules/oauth-server/resources';
 import { revokeGrant } from '#/modules/oauth-server/revoke-grant';
 import { apiKeyRefusal } from '#/modules/service-accounts/helpers/api-key';
@@ -48,7 +49,9 @@ function grantableScopes(ctx: object, client: object): readonly AccessScope[] {
  * Claims this server adds to every access token; the guard reads them to build the actor, and asks the grant policy
  * about the grant (`gid`) or API key (`key_id`) the token rests on.
  */
-export type IssuedTokenClaims = { actor_kind: 'user'; tenant_id: string; gid: string } | { actor_kind: 'service'; tenant_id: string; key_id: string };
+export type IssuedTokenClaims =
+  | { actor_kind: 'user'; tenant_id: string; gid: string; auth_strategy: string | null; connection_id: string | null }
+  | { actor_kind: 'service'; tenant_id: string; key_id: string };
 
 /** The code or refresh token a grant is used through at the token endpoint, as `findAccount` receives it. */
 type GrantSource = { clientId?: string; grantId?: string; resource?: unknown };
@@ -171,13 +174,21 @@ export async function createProvider(): Promise<Provider> {
       url: (_ctx, interaction) => `/oauth/interaction/${interaction.uid}`,
     },
     findAccount: async (_ctx, sub, token) => ((await accountMayUseGrant(sub, token)) ? { accountId: sub, claims: async () => ({ sub }) } : undefined),
-    extraTokenClaims: (ctx, token) => {
+    extraTokenClaims: async (ctx, token) => {
       const aud = Array.isArray(token.aud) ? token.aud[0] : token.aud;
       const resource = parseResource(aud ?? '');
       // A token without one of this deployment's resources is never minted; the verifier would refuse it anyway.
       if (!resource) throw new errors.InvalidTarget();
       if ('accountId' in token && token.accountId) {
-        const claims: IssuedTokenClaims = { actor_kind: 'user', tenant_id: resource.tenantId, gid: token.grantId };
+        // The method and connection of the session that consented (D8): a tenant's sign-in policy reads them.
+        const signIn = await findGrantSignIn({ var: { db: baseDb } }, { grantId: token.grantId });
+        const claims: IssuedTokenClaims = {
+          actor_kind: 'user',
+          tenant_id: resource.tenantId,
+          gid: token.grantId,
+          auth_strategy: signIn.authStrategy,
+          connection_id: signIn.connectionId,
+        };
         return claims;
       }
       // Without a consenting person the token acts as a service account, so the client must have presented its API key.

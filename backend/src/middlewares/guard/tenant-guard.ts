@@ -3,6 +3,7 @@ import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
+import { findConnectionBindingUser } from '#/modules/connections/connections-queries';
 import { countOrganizationsByTenant } from '#/modules/organization/organization-queries';
 import { loadTenant } from '#/modules/tenants/operations/load-tenant';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
@@ -58,8 +59,21 @@ export const tenantGuard = xMiddleware(
       throw new AppError(403, 'forbidden', 'warn', { meta: { resource: 'tenant', tenantStatus: tenant.status } });
     }
 
-    // TODO(sso): Enforce non-empty tenant auth strategies for user actors, exempting system administrators.
-    // Reject mismatches with `sso_required` and a tenant-entry redirect hint.
+    // The tenant's sign-in policy (D17): a person who holds an identity through this tenant's connection must have
+    // signed in with an allowed method, whether by session or by a token their session authorized. Externals without
+    // such an identity are untouched, system admins exempt, and a session's method is in the cached facts, so only
+    // the mismatch pays for the lookup.
+    if (actor.kind === 'user' && !ctx.var.isSystemAdmin && tenant.authStrategies.length > 0) {
+      const strategy = actor.authStrategy ?? null;
+      if (!strategy || !tenant.authStrategies.includes(strategy)) {
+        const connection = await findConnectionBindingUser({ var: { db: baseDb } }, { userId: actor.id, tenantId: tenant.id });
+        if (connection) {
+          throw new AppError(403, 'sso_required', 'warn', {
+            meta: { resource: 'tenant', connectionId: connection.id, entryPath: `/auth/sso/${connection.id}` },
+          });
+        }
+      }
+    }
 
     // Handlers use tenantRead for product entity RLS reads.
     ctx.set('db', baseDb);

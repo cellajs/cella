@@ -251,10 +251,21 @@ export const zMe = z.object({
 });
 
 /**
- * How the signed-in user signs in: connected OAuth providers, passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.
+ * How the signed-in user signs in: connected OAuth providers, the institutions of their organizations (connected or not), passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.
  */
 export const zMeAuthData = z.object({
   enabledOAuth: z.array(z.enum(['github'])),
+  institutions: z.array(
+    z.object({
+      connectionId: z.string(),
+      displayName: z.string(),
+      federation: z.object({
+        key: z.string(),
+        label: z.string(),
+      }),
+      connected: z.boolean(),
+    }),
+  ),
   hasTotp: z.boolean(),
   sessions: z.array(
     z.object({
@@ -575,6 +586,12 @@ export const zApiKey = z.object({
 export const zGetAuthHealthResponse = z.object({
   restrictedMode: z.boolean(),
   retryAfter: z.number().optional(),
+  federations: z.array(
+    z.object({
+      key: z.string(),
+      label: z.string(),
+    }),
+  ),
 });
 
 export const zCheckEmailBody = z.object({
@@ -605,6 +622,7 @@ export const zGetTokenDataResponse = z.object({
   email: z.email(),
   userId: z.string().optional(),
   inactiveMembershipId: z.string().optional(),
+  ssoConnectionId: z.string().optional(),
   invitation: z
     .object({
       entityType: z.enum(['organization']),

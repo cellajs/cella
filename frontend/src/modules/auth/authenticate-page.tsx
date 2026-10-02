@@ -8,6 +8,7 @@ import { appConfig } from 'shared';
 import { useShallow } from 'zustand/react/shallow';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { OAuthProviders } from '~/modules/auth/oauth-providers';
+import { SsoProviders } from '~/modules/auth/sso-providers';
 import { AcceptInvitationStep, CheckEmailStep, InviteOnlyStep, MagicLinkSentStep, SignInStep, SignUpStep, WaitlistStep } from '~/modules/auth/steps';
 import { useGetTokenData } from '~/modules/auth/use-get-token-data';
 import { Spinner } from '~/modules/common/spinner';
@@ -23,7 +24,7 @@ const HEALTH_SLOW_MS = 5000;
 const HEALTH_TIMEOUT_MS = 20000;
 
 function shouldShowDivider(): boolean {
-  return enabledStrategies.includes('oauth');
+  return enabledStrategies.includes('oauth') || enabledStrategies.includes('sso');
 }
 
 export function AuthenticatePage() {
@@ -140,6 +141,7 @@ export function AuthenticatePage() {
               <span className="px-2 text-muted-foreground">{t('c:or')}</span>
             </div>
           )}
+          {enabledStrategies.includes('sso') && <SsoProviders connectionId={tokenData?.ssoConnectionId} federations={healthData?.federations} />}
           {enabledStrategies.includes('oauth') && <OAuthProviders authStep={step} />}
         </>
       )}
