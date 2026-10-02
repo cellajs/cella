@@ -33,6 +33,8 @@ export interface TelemetryOptions {
   /** Applied to every string value when records are serialized (export and black box), so a secret learned after a record was buffered still leaves it redacted. */
   redact?: (text: string) => string;
   now?: () => number;
+  /** Abort one export request after this long (default 10s), so an unresponsive sink delays a flush, never hangs it. */
+  exportTimeoutMs?: number;
 }
 
 export interface SpanHandle {
@@ -57,11 +59,11 @@ export interface Telemetry {
   eventsJsonl(): string;
   /** Attach or replace the OTLP export target after creation: the boot runner learns its ingest key only after secret hydration, and earlier records still export. */
   configureExport(config: { endpoint: string; headers?: Record<string, string> }): void;
-  /** Export buffered spans + events over OTLP/HTTP. Swallows failures; safe to call repeatedly. */
+  /** Export the spans + events buffered since the last export over OTLP/HTTP. Swallows failures; calls queue behind each other, so concurrent ones never export a record twice. */
   flush(): Promise<void>;
 }
 
-/** A buffered OTel emitter over the OTLP/JSON builders, one instance per process. Volume is dozens of records, so flushing whole buffers at phase ends is enough. */
+/** A buffered OTel emitter over the OTLP/JSON builders, one instance per process. Volume is hundreds of records at most, so each flush posts the whole unexported tail. */
 export function createTelemetry(opts: TelemetryOptions): Telemetry {
   const now = opts.now ?? Date.now;
   const fetchImpl = resolveFetch(opts.fetchImpl);
@@ -105,15 +107,38 @@ export function createTelemetry(opts: TelemetryOptions): Telemetry {
     };
   };
 
+  const exportTimeoutMs = opts.exportTimeoutMs ?? 10_000;
   const post = async (path: string, payload: unknown): Promise<void> => {
     if (!exporter) return;
-    const res = await fetchImpl(`${exporter.endpoint}${path}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...(exporter.headers ?? {}) },
-      body: serialize(payload),
-    });
-    if (!res.ok) throw new Error(`${path} -> ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), exportTimeoutMs);
+    try {
+      const res = await fetchImpl(`${exporter.endpoint}${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...(exporter.headers ?? {}) },
+        body: serialize(payload),
+        signal: controller.signal,
+      });
+      if (!res.ok) throw new Error(`${path} -> ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    } finally {
+      clearTimeout(timer);
+    }
   };
+
+  const exportPending = async (): Promise<void> => {
+    if (!exporter) return;
+    const newSpans = spans.slice(exported.spans);
+    const newRecords = records.slice(exported.records);
+    try {
+      if (newSpans.length > 0) await post('/traces', tracesPayload(opts.resource, newSpans));
+      exported.spans += newSpans.length;
+      if (newRecords.length > 0) await post('/logs', logsPayload(opts.resource, newRecords));
+      exported.records += newRecords.length;
+    } catch (err) {
+      onError(`telemetry export failed: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+  let flushing: Promise<void> = Promise.resolve();
 
   return {
     rootCtx,
@@ -142,18 +167,9 @@ export function createTelemetry(opts: TelemetryOptions): Telemetry {
     configureExport(config) {
       exporter = config;
     },
-    async flush() {
-      if (!exporter) return;
-      const newSpans = spans.slice(exported.spans);
-      const newRecords = records.slice(exported.records);
-      try {
-        if (newSpans.length > 0) await post('/traces', tracesPayload(opts.resource, newSpans));
-        exported.spans = spans.length;
-        if (newRecords.length > 0) await post('/logs', logsPayload(opts.resource, newRecords));
-        exported.records = records.length;
-      } catch (err) {
-        onError(`telemetry export failed: ${err instanceof Error ? err.message : String(err)}`);
-      }
+    flush() {
+      flushing = flushing.then(exportPending);
+      return flushing;
     },
   };
 }

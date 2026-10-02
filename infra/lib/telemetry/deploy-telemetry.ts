@@ -26,6 +26,7 @@ export const deployEvents = {
 export const bootEvents = {
   started: defineEvent('boot.started', '{service} boot started for {sha}'),
   stepCompleted: defineEvent('boot.step.completed', '{service} boot step {step} completed in {duration_s}s'),
+  stepRunning: defineEvent('boot.step.running', '{service} boot step {step} still running after {elapsed_s}s'),
   stepFailed: defineEvent('boot.step.failed', '{service} boot step {step} FAILED: {error}'),
   completed: defineEvent('boot.completed', '{service} booted {sha} successfully'),
   failed: defineEvent('boot.failed', '{service} boot FAILED: {error}'),

@@ -21,6 +21,9 @@ const pullAttemptTimeoutSeconds = 240;
 /** Ceiling on the quick docker calls (registry login, log capture, container cleanup). */
 const dockerCallTimeoutSeconds = 60;
 
+/** Seconds between heartbeats of a running phase: an event and a flush each, so a stuck phase shows up live in the telemetry sink. */
+const heartbeatSeconds = 30;
+
 export interface BootOptions {
   planPath: string;
   exec?: ExecFn;
@@ -159,22 +162,29 @@ export async function boot(opts: BootOptions): Promise<void> {
   });
   const bootSpan = telemetry.startSpan(`boot ${plan.service}`, { service: plan.service, sha: plan.releaseSha });
   telemetry.event(bootEvents.started, { service: plan.service, sha: plan.releaseSha });
+  // Exports run in the background: flush swallows its errors and bounds each request, so the sink can neither fail nor stall the boot.
+  const flushInBackground = () => void telemetry.flush();
   let failedPhase: string | undefined;
   const phase = async (step: string, run: () => Promise<unknown>): Promise<void> => {
     logger.log('info', step);
     const startedAt = Date.now();
+    const elapsedSeconds = () => Math.round((Date.now() - startedAt) / 1000);
+    const heartbeat = setInterval(() => {
+      logger.log('info', 'heartbeat', { phase: step, elapsed_s: elapsedSeconds() });
+      telemetry.event(bootEvents.stepRunning, { service: plan.service, step, elapsed_s: elapsedSeconds() }, { ctx: bootSpan.ctx });
+      flushInBackground();
+    }, heartbeatSeconds * 1000);
     try {
       await run();
+      telemetry.event(bootEvents.stepCompleted, { service: plan.service, step, duration_s: elapsedSeconds() }, { ctx: bootSpan.ctx });
     } catch (err) {
       failedPhase = step;
       telemetry.event(bootEvents.stepFailed, { service: plan.service, step, error: errorMessage(err) }, { severity: 'error', ctx: bootSpan.ctx });
       throw err;
+    } finally {
+      clearInterval(heartbeat);
+      flushInBackground();
     }
-    telemetry.event(
-      bootEvents.stepCompleted,
-      { service: plan.service, step, duration_s: Math.round((Date.now() - startedAt) / 1000) },
-      { ctx: bootSpan.ctx },
-    );
   };
   let bootRc = 0;
   let appLogs: string | undefined;
@@ -207,7 +217,11 @@ export async function boot(opts: BootOptions): Promise<void> {
     // Export only where the plan declares a sink (config/telemetry.config.ts on the engine side); no vendor endpoint is baked into the boot runner.
     const sink = plan.telemetry;
     const sinkKey = sink ? await sinkKeyFromRuntimeEnv('/opt/app/.env.runtime', sink.keyEnvVar) : undefined;
-    if (sink && sinkKey) telemetry.configureExport({ endpoint: sink.endpoint, headers: { [sink.keyHeader]: sinkKey } });
+    if (sink && sinkKey) {
+      telemetry.configureExport({ endpoint: sink.endpoint, headers: { [sink.keyHeader]: sinkKey } });
+      // Ship what was buffered before the key arrived (the boot start and the first phases).
+      flushInBackground();
+    }
     await phase('pull-image', () => pullImage(plan, exec));
     await phase('release-command', () => runReleaseCommand(plan, exec));
     await phase('start-service', () => startService(plan, exec));

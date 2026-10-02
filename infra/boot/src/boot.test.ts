@@ -223,4 +223,106 @@ describe('boot', () => {
     expect(bootLog?.body).toContain('failed_phase=release-command');
     expect(bootLog?.body).toContain('[migrate] Running migrations...');
   });
+
+  describe('live telemetry', () => {
+    /** A backend plan whose runtime manifest delivers the sink's ingest key, so boot telemetry exports. */
+    function writeSinkPlan(): void {
+      files.set('/etc/app/scw-access-key', 'SCWBOOTACCESSKEY0001\n');
+      files.set('/etc/app/scw-secret-key', 'boot-sk-1111-2222-3333\n');
+      files.set(
+        '/etc/app/boot-plan.json',
+        JSON.stringify({
+          schemaVersion: 1,
+          service: 'backend',
+          profile: 'backend',
+          releaseSha: 'abc123',
+          telemetry: { endpoint: 'https://ingest.example/v1', keyHeader: 'x-ingest-key', keyEnvVar: 'SINK_INGEST_KEY' },
+          imageContract: 'docker-node-boot-v1',
+          registry: 'rg.nl-ams.scw.cloud/ns',
+          region: 'nl-ams',
+          credentials: { scwAccessKeyFile: '/etc/app/scw-access-key', scwSecretKeyFile: '/etc/app/scw-secret-key' },
+          bootDiagnostics: { bucket: 'app-boot-diag', logFile: '/var/log/infra-boot.log' },
+          releaseCommand: { enabled: true, command: ['docker', 'compose', 'run', '--rm', 'backend-release'] },
+          docker: { composeFile: '/opt/app/compose.yml' },
+          files: {
+            compose: 'services: {}',
+            env: 'BACKEND_TAG=abc123',
+            runtimeSecretManifest: [{ envVar: 'SINK_INGEST_KEY', secretId: 'sink-id', required: false }],
+          },
+          timeouts: { privateNetworkSeconds: 5, pullAttempts: 1, pullRetrySeconds: 1, releaseCommandSeconds: 180 },
+        }),
+      );
+    }
+
+    /** Stub fetch: Secret Manager answers the sink key, the sink answers `sinkStatus`, and every sink and upload request is recorded. */
+    function stubNetwork(sinkStatus: number): Array<{ url: string; body: string }> {
+      const sent: Array<{ url: string; body: string }> = [];
+      vi.stubGlobal(
+        'fetch',
+        vi.fn(async (url: string, init?: { body?: string }) => {
+          if (url.includes('/secrets/')) return new Response(JSON.stringify({ data: Buffer.from('ik-123').toString('base64') }), { status: 200 });
+          sent.push({ url, body: String(init?.body ?? '') });
+          return new Response('', { status: url.startsWith('https://ingest.example/') ? sinkStatus : 200 });
+        }),
+      );
+      vi.spyOn(console, 'info').mockImplementation(() => {});
+      return sent;
+    }
+
+    /** An exec whose release companion runs for `releaseMs` of (fake) time; everything else succeeds at once. */
+    const slowReleaseExec =
+      (releaseMs: number): ExecFn =>
+      async (command, args) => {
+        const line = [command, ...args].join(' ');
+        if (line === 'ip -4 addr show') return { code: 0, stdout: 'inet 10.0.0.12/24 scope global ens2', stderr: '' };
+        if (line.includes(' run --rm ')) {
+          await new Promise((resolve) => setTimeout(resolve, releaseMs));
+        }
+        return { code: 0, stdout: '', stderr: '' };
+      };
+
+    const sinkEvents = (sent: Array<{ url: string; body: string }>) =>
+      sent
+        .filter((request) => request.url === 'https://ingest.example/v1/logs')
+        .flatMap(
+          (request) =>
+            JSON.parse(request.body).resourceLogs[0].scopeLogs[0].logRecords as Array<{ eventName: string; body?: { stringValue?: string } }>,
+        );
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('exports a heartbeat while a phase hangs, before the phase ends', async () => {
+      vi.useFakeTimers();
+      writeSinkPlan();
+      const sent = stubNetwork(200);
+      const booted = boot({ planPath: '/etc/app/boot-plan.json', exec: slowReleaseExec(65_000) });
+
+      await vi.advanceTimersByTimeAsync(31_000);
+      // The buffered start and early phases shipped once the key arrived; the release companion still runs.
+      const live = sinkEvents(sent).map((record) => record.eventName);
+      expect(live).toContain('boot.started');
+      expect(live).toContain('boot.step.completed');
+      const heartbeat = sinkEvents(sent).find((record) => record.eventName === 'boot.step.running');
+      expect(heartbeat?.body?.stringValue).toBe('backend boot step release-command still running after 30s');
+      expect(live).not.toContain('boot.completed');
+
+      await vi.advanceTimersByTimeAsync(40_000);
+      await expect(booted).resolves.toBeUndefined();
+      expect(sinkEvents(sent).filter((record) => record.eventName === 'boot.step.running')).toHaveLength(2);
+      // Every heartbeat and export timer is stopped once the boot returns.
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('boots and uploads its diagnostics while the sink rejects every export', async () => {
+      vi.useFakeTimers();
+      writeSinkPlan();
+      const sent = stubNetwork(500);
+      const booted = boot({ planPath: '/etc/app/boot-plan.json', exec: slowReleaseExec(35_000) });
+      await vi.advanceTimersByTimeAsync(40_000);
+      await expect(booted).resolves.toBeUndefined();
+      expect(sent.some((request) => request.url.startsWith('https://app-boot-diag.'))).toBe(true);
+    });
+  });
 });
