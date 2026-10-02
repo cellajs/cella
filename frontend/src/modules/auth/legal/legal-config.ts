@@ -1,4 +1,4 @@
-import type { CollectedDataCategory, LegalTexts, SharedDataType, Subprocessor } from '~/modules/auth/legal/legal-types';
+import type { AccessibilityReview, CollectedDataCategory, LegalTexts, SharedDataType, Subprocessor } from '~/modules/auth/legal/legal-types';
 import { lazyNamed } from '~/utils/lazy-named';
 
 export type LegalSubject = keyof typeof legalConfig;
@@ -41,6 +41,20 @@ export const legalConfig = {
       { id: 'indemnification', label: 'Indemnification' },
       { id: 'governing-law', label: 'Governing law' },
       { id: 'general', label: 'General' },
+    ],
+  },
+  accessibility: {
+    component: lazyNamed(() => import('~/modules/auth/legal/accessibility-text'), 'AccessibilityText'),
+    label: 'c:accessibility',
+    sections: [
+      { id: 'overview', label: null },
+      { id: 'commitment', label: 'Our commitment' },
+      { id: 'what-you-can-do', label: 'What you can do' },
+      { id: 'known-limitations', label: 'Known limitations' },
+      { id: 'third-party-content', label: 'Third-party content' },
+      { id: 'how-we-test', label: 'How we test' },
+      { id: 'conformance-report', label: 'Conformance report' },
+      { id: 'feedback', label: 'Feedback' },
     ],
   },
 } as const satisfies LegalTexts;
@@ -187,3 +201,11 @@ export const sharedDataTypes: SharedDataType[] = [
     optional: true,
   },
 ];
+
+/** Accessibility review results the statement shows; the review fills these in, nothing is claimed before it. */
+export const accessibilityReview: AccessibilityReview = {
+  standard: 'WCAG 2.2 Level AA',
+  reviewedAt: null,
+  limitations: [],
+  report: null,
+};

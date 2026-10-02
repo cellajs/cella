@@ -44,3 +44,28 @@ export interface SharedDataType {
   retentionPeriod: string;
   optional?: boolean;
 }
+
+export interface AccessibilityLimitation {
+  /** What does not work yet, in plain words. */
+  description: string;
+  /** WCAG success criteria it fails, e.g. `['2.1.4']`. */
+  criteria: string[];
+  /** Workaround or planned fix. */
+  workaround?: string;
+}
+
+export interface AccessibilityReport {
+  /** Template edition, e.g. `VPAT® 2.5Rev WCAG`. */
+  edition: string;
+  date: string;
+  /** Downloadable PDF, under `/static`. */
+  pdfUrl: string;
+}
+
+export interface AccessibilityReview {
+  standard: string;
+  /** Null until the first review is done. */
+  reviewedAt: string | null;
+  limitations: AccessibilityLimitation[];
+  report: AccessibilityReport | null;
+}
