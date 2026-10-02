@@ -1,14 +1,17 @@
-import { and, eq } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { baseDb } from '#/db/db';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
 import { deleteInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { insertMemberships } from '#/modules/memberships/helpers/membership-helpers';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { bindInactiveMemberships, findClaimableInactiveMembership, findInactiveMembershipForUser } from '#/modules/memberships/memberships-queries';
-import { getIsoDate } from '#/utils/iso-date';
+import {
+  bindInactiveMemberships,
+  deleteInactiveMembership,
+  findClaimableInactiveMembership,
+  findInactiveMembershipForUser,
+  updateInactiveMembershipRejected,
+} from '#/modules/memberships/memberships-queries';
+import { insertMemberships } from '#/modules/memberships/operations/insert-memberships';
 import { log } from '#/utils/logger';
 
 interface HandleMembershipInvitationOpts {
@@ -37,17 +40,15 @@ export async function handleMembershipInvitationOp(
   }
 
   await baseDb.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
     if (acceptOrReject === 'accept') {
       if (viaToken) {
         // Bind before activating: of two accounts racing for the same unbound invitation, exactly one wins.
-        const [bound] = await bindInactiveMemberships({ var: { db: tx } }, { ids: [inactiveMembership.id], userId });
+        const [bound] = await bindInactiveMemberships(txCtx, { ids: [inactiveMembership.id], userId });
         if (!bound) throw new AppError(409, 'user_mismatch', 'warn', { meta: { id: inactiveMembership.id } });
       }
 
-      const entity = await resolveEntity(
-        { var: { db: tx } },
-        { entityType: inactiveMembership.channelType, identifier: inactiveMembership.channelId },
-      );
+      const entity = await resolveEntity(txCtx, { entityType: inactiveMembership.channelType, identifier: inactiveMembership.channelId });
       if (!entity) throw new AppError(404, 'not_found', 'error', { entityType: inactiveMembership.channelType });
 
       // Invited on another address while already a member: the invitation is spent, the membership stays as it is.
@@ -55,24 +56,18 @@ export async function handleMembershipInvitationOp(
 
       const activatedMemberships = alreadyMember
         ? []
-        : await insertMemberships(
-            { var: { db: tx } },
-            { items: [{ entity, userId, role: inactiveMembership.role, createdBy: inactiveMembership.createdBy }] },
-          );
+        : await insertMemberships(txCtx, { items: [{ entity, userId, role: inactiveMembership.role, createdBy: inactiveMembership.createdBy }] });
 
-      await tx.delete(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
+      await deleteInactiveMembership(txCtx, { id: inactiveMembership.id });
       // The emailed link has no further use once the invitation is answered.
-      await deleteInvitationTokens({ var: { db: tx } }, { inactiveMembershipIds: [inactiveMembership.id] });
+      await deleteInvitationTokens(txCtx, { inactiveMembershipIds: [inactiveMembership.id] });
 
       log.info('Membership accepted', { ids: activatedMemberships.map((m) => m.id), viaToken, alreadyMember });
     }
 
     if (acceptOrReject === 'reject') {
-      await tx
-        .update(inactiveMembershipsTable)
-        .set({ rejectedAt: getIsoDate() })
-        .where(and(eq(inactiveMembershipsTable.id, inactiveMembership.id)));
-      await deleteInvitationTokens({ var: { db: tx } }, { inactiveMembershipIds: [inactiveMembership.id] });
+      await updateInactiveMembershipRejected(txCtx, { id: inactiveMembership.id });
+      await deleteInvitationTokens(txCtx, { inactiveMembershipIds: [inactiveMembership.id] });
     }
   });
   if (acceptOrReject === 'accept') invalidateCache.user(userId);

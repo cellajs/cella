@@ -2,7 +2,7 @@ import type { z } from '@hono/zod-openapi';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
 import { updateUser } from '#/modules/system/system-queries';
 import { findUserById } from '#/modules/user/user-queries';
 import type { userUpdateBodySchema } from '#/modules/user/user-schema';

@@ -4,7 +4,7 @@ import { AppError } from '#/core/error';
 import { xMiddleware } from '#/core/x-middleware';
 import { baseDb } from '#/db/db';
 import { countOrganizationsByTenant } from '#/modules/organization/organization-queries';
-import { loadTenant } from '#/modules/tenants/helpers/load-tenant';
+import { loadTenant } from '#/modules/tenants/operations/load-tenant';
 import type { TenantModel } from '#/modules/tenants/tenants-db';
 
 type Actor = NonNullable<Env['Variables']['actor']>;

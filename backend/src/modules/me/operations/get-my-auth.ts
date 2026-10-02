@@ -2,8 +2,8 @@ import type { z } from '@hono/zod-openapi';
 import type { EnabledOAuthProvider } from 'shared';
 import { appConfig } from 'shared';
 import type { UserContext } from '#/core/context';
-import { getAuthInfo } from '#/modules/me/helpers/get-user-info';
 import type { sessionSchema } from '#/modules/me/me-schema';
+import { getAuthInfo } from '#/modules/me/operations/get-user-info';
 
 interface GetMyAuthOpts {
   sessions: z.infer<typeof sessionSchema>[];

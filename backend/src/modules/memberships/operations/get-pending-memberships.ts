@@ -1,7 +1,7 @@
 import type { ChannelEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { findPendingMembershipsPaginated } from '#/modules/memberships/memberships-queries';
-import { withAuditUsers } from '#/modules/user/helpers/audit-user';
+import { withAuditUsers } from '#/modules/user/operations/with-audit-users';
 import { getValidChannel } from '#/permissions/get-valid-channel';
 
 interface GetPendingMembershipsInput {

@@ -2,7 +2,7 @@ import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { issueTokens } from '#/modules/auth/tokens/token-lifecycle';
 import { findSystemInvitationTokens } from '#/modules/auth/tokens/tokens-queries';
-import { sendInvitationMails } from '#/modules/memberships/helpers/invitation-mail';
+import { sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
 import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
 import { findVerifiedEmails } from '#/modules/system/system-queries';
 import { log } from '#/utils/logger';

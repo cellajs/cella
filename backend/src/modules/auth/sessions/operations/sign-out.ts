@@ -1,7 +1,7 @@
 import type { Context } from 'hono';
 import type { Env } from '#/core/context';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { dropHeldMagicLink } from '#/modules/auth/magic/helpers/magic-link-browser';
+import { dropHeldMagicLink } from '#/modules/auth/magic/operations/magic-link-browser';
 import { readOwnSession } from '#/modules/auth/sessions/operations/resolve-session';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
 import { spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';

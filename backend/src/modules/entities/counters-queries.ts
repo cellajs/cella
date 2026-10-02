@@ -1,6 +1,7 @@
 import { getColumns, getTableName, sql } from 'drizzle-orm';
 import type { EntityHierarchy } from 'shared';
 import { appConfig, type EntityType, entityIdColumnName, hierarchy, roles } from 'shared';
+import type { DbContext } from '#/core/context';
 import type { DbOrTx } from '#/db/db';
 import { channelCountersTable } from '#/modules/entities/channel-counters-db';
 import { productCountersTable } from '#/modules/entities/product-counters-db';
@@ -43,7 +44,8 @@ const upsertChannelCounters = (db: DbOrTx, selectSql: string) =>
   );
 
 /** Rebuilds counters from database state, for seeding or repair. */
-export const recalculateCounters = async (db: DbOrTx) => {
+export const recalculateCounters = async (ctx: DbContext) => {
+  const { db } = ctx.var;
   // ── Phase 1: Organization-level counters ──────────────────────────────
   const orgPairs = [
     ...membershipPairs('o', 'organization_id', 'organization', roles.all),

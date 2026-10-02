@@ -1,13 +1,16 @@
-import { and, count, eq, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, exists, inArray, type SQL, sql } from 'drizzle-orm';
 import { generateId } from 'shared/utils/entity-id';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { deleteDanglingActors, insertActors } from '#/modules/actors/actors-queries';
+import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
-import { emailsTable } from '#/modules/user/emails-db';
+import { type EmailProof, emailsTable } from '#/modules/user/emails-db';
+import { userMinimalColumns } from '#/modules/user/helpers/audit-user';
 import { memberSelect, userSelect } from '#/modules/user/helpers/select';
 import { userCountersTable } from '#/modules/user/user-counters-db';
 import { type InsertUserModel, type UserModel, usersTable } from '#/modules/user/user-db';
+import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 
 interface FindUsersPaginatedOpts {
@@ -166,4 +169,87 @@ export const insertUsers = async (ctx: DbContext, { users, onConflictDoNothing =
     }
     return inserted;
   });
+};
+
+interface FindEmailOpts {
+  email: string;
+}
+
+/** The email row of an address, whichever account holds it; undefined when none does. */
+export const findEmail = async (ctx: DbContext, { email }: FindEmailOpts) => {
+  const [row] = await ctx.var.db.select().from(emailsTable).where(eq(emailsTable.email, email)).limit(1);
+  return row;
+};
+
+interface EmailProofOpts {
+  userId: string;
+  email: string;
+  via: EmailProof;
+}
+
+/** The columns an inbox proof writes: the stamps every time, `verifiedAt` only when it was never set. */
+const proofStamps = (via: EmailProof, now: string) => ({
+  verified: true,
+  verifiedAt: sql<string>`coalesce(${emailsTable.verifiedAt}, ${now})`,
+  lastVerifiedVia: via,
+  lastVerifiedAt: now,
+});
+
+/** Stores an address as proven now, `via` the proof. Fails on the unique address when any account holds it. */
+export const insertEmail = async (ctx: DbContext, { userId, email, via }: EmailProofOpts) => {
+  const now = getIsoDate();
+  await ctx.var.db.insert(emailsTable).values({ email, userId, verified: true, verifiedAt: now, lastVerifiedVia: via, lastVerifiedAt: now });
+};
+
+/** Stamps a proof on the user's own row for the address; undefined when the user has no row for it. */
+export const updateEmailProof = async (ctx: DbContext, { userId, email, via }: EmailProofOpts) => {
+  const [stamped] = await ctx.var.db
+    .update(emailsTable)
+    .set(proofStamps(via, getIsoDate()))
+    .where(and(eq(emailsTable.email, email), eq(emailsTable.userId, userId)))
+    .returning({ id: emailsTable.id });
+  return stamped;
+};
+
+/**
+ * Stores a proven address for the user, or stamps the proof when the row is already theirs, in one statement: insert, or
+ * on a taken address update only when this user holds it. Undefined when another account holds the address.
+ */
+export const upsertProvenEmail = async (ctx: DbContext, { userId, email, via }: EmailProofOpts) => {
+  const now = getIsoDate();
+  const [row] = await ctx.var.db
+    .insert(emailsTable)
+    .values({ email, userId, verified: true, verifiedAt: now, lastVerifiedVia: via, lastVerifiedAt: now })
+    .onConflictDoUpdate({ target: emailsTable.email, set: proofStamps(via, now), setWhere: eq(emailsTable.userId, userId) })
+    .returning({ id: emailsTable.id });
+  return row;
+};
+
+/** EXISTS filter limiting user rows to those sharing an organization with `myOrgIds`: defense in depth mirroring relatableGuard. */
+export const sharesOrgFilter = (ctx: DbContext, { myOrgIds }: { myOrgIds: string[] }) => {
+  const { db } = ctx.var;
+  return exists(
+    db
+      .select({ id: membershipsTable.id })
+      .from(membershipsTable)
+      .where(and(eq(membershipsTable.userId, usersTable.id), inArray(membershipsTable.organizationId, myOrgIds))),
+  );
+};
+
+interface FindAuditUsersByIdsOpts {
+  ids: string[];
+}
+
+/** The minimal user columns of these users, for resolving `createdBy` and `updatedBy`. */
+export const findAuditUsersByIds = async (ctx: DbContext, { ids }: FindAuditUsersByIdsOpts) => {
+  return ctx.var.db.select(userMinimalColumns).from(usersTable).where(inArray(usersTable.id, ids));
+};
+
+interface FindUserModelsByIdsOpts {
+  ids: string[];
+}
+
+/** Full user rows by id. */
+export const findUserModelsByIds = async (ctx: DbContext, { ids }: FindUserModelsByIdsOpts) => {
+  return ctx.var.db.select().from(usersTable).where(inArray(usersTable.id, ids));
 };

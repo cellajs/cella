@@ -1,71 +1,20 @@
 import { OpenAPIHono } from '@hono/zod-openapi';
-import { appConfig } from 'shared';
-import { generateId } from 'shared/utils/entity-id';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { baseDb as db } from '#/db/db';
-import { mailer } from '#/lib/mailer';
-import { maySignUp } from '#/modules/auth/auth-queries';
 import { deleteAuthCookie, getAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { handleMagicLink } from '#/modules/auth/general/helpers/handle-magic';
-import { findOpenableMagicLink } from '#/modules/auth/magic/helpers/magic-link-browser';
-import { claimMagicLinkOwner } from '#/modules/auth/magic/helpers/magic-sign-up';
 import { authMagicLinkRoutes } from '#/modules/auth/magic/magic-routes';
-import { invokeToken, issueToken, rememberLinkRequest } from '#/modules/auth/tokens/token-lifecycle';
-import { tokenLinkUrl } from '#/modules/auth/tokens/token-policies';
-import { findUserByEmail } from '#/modules/user/user-queries';
+import { handleMagicLink } from '#/modules/auth/magic/operations/handle-magic';
+import { findOpenableMagicLink } from '#/modules/auth/magic/operations/magic-link-browser';
+import { claimMagicLinkOwner } from '#/modules/auth/magic/operations/magic-sign-up';
+import { sendMagicLinkOp } from '#/modules/auth/magic/operations/send-magic-link';
+import { invokeToken } from '#/modules/auth/tokens/token-lifecycle';
 import { defaultHook } from '#/utils/default-hook';
-import { isValidRedirectPath } from '#/utils/is-redirect-url';
-import { log } from '#/utils/logger';
-import { slugFromEmail } from '#/utils/slug-from-email';
-import { magicLinkEmail } from '../../../../emails';
 
 const app = new OpenAPIHono<Env>({ defaultHook });
 
 app.openapi(authMagicLinkRoutes.sendMagicLink, async (ctx) => {
   const { email, redirect } = ctx.req.valid('json');
-
-  // Validated here and re-validated at invoke; invalid input degrades to the default path.
-  const redirectPath = isValidRedirectPath(redirect);
-
-  const normalizedEmail = email.toLowerCase().trim();
-
-  const existingUser = await findUserByEmail(ctx, { email: normalizedEmail });
-
-  if (!existingUser) {
-    // Registration is closed to the public, but an invited address may still sign up. Anyone else gets the same 204
-    // as a real request, to prevent email enumeration.
-    if (!(await maySignUp(ctx, { email: normalizedEmail }))) {
-      log.info('Magic link requested for unknown email', { email: normalizedEmail });
-      await rememberLinkRequest(ctx, 'magic', generateId());
-      return ctx.body(null, 204);
-    }
-  }
-
-  // A sign-up link names no user: asking for it proves nothing about the address, so the account is created when the
-  // link is clicked (claimMagicLinkOwner).
-  const userId = existingUser?.id ?? null;
-  const { token: tokenRecord, rawToken } = await issueToken(
-    { var: { db } },
-    { type: 'magic', userId, email: normalizedEmail, createdBy: userId, redirectPath },
-  );
-
-  // Opening the link in this browser signs in directly; elsewhere it asks for a confirmation first.
-  await rememberLinkRequest(ctx, 'magic', tokenRecord.id);
-
-  const magicLinkUrl = tokenLinkUrl('magic', rawToken);
-
-  const staticProps = { magicLinkUrl, name: existingUser?.name ?? slugFromEmail(normalizedEmail), isNewUser: !existingUser };
-  const recipients = [{ email: normalizedEmail, lng: existingUser?.language ?? appConfig.defaultLanguage }];
-
-  mailer.prepareEmails(magicLinkEmail, staticProps, recipients);
-
-  if (appConfig.mode === 'development') {
-    console.info(`[magic-link] ${normalizedEmail} ${magicLinkUrl}`);
-  }
-
-  log.info('Magic link email sent', { userId, signUp: !existingUser });
-
+  await sendMagicLinkOp(ctx, { email, redirect });
   return ctx.body(null, 204);
 });
 

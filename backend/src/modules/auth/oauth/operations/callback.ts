@@ -1,25 +1,27 @@
-import { and, eq } from 'drizzle-orm';
 import type { Context } from 'hono';
 import { appConfig, type EnabledOAuthProvider } from 'shared';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { type DbOrTx, baseDb as db } from '#/db/db';
-import { maySignUp } from '#/modules/auth/auth-queries';
+import { baseDb } from '#/db/db';
 import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { finishSignIn } from '#/modules/auth/general/helpers/finish-sign-in';
-import { addProvenEmail, requireEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
-import { handleCreateUser } from '#/modules/auth/general/helpers/user';
-import { type IdentityModel, identitiesTable } from '#/modules/auth/identities-db';
-import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/helpers/send-oauth-verification-email';
+import { maySignUp } from '#/modules/auth/invitations/operations/may-sign-up';
 import type { TransformedUser } from '#/modules/auth/oauth/helpers/transform-user-data';
+import type { IdentityModel } from '#/modules/auth/oauth/identities-db';
+import { findIdentityBySubject, insertIdentity, updateIdentity } from '#/modules/auth/oauth/identities-queries';
 import type { OAuthCookiePayload } from '#/modules/auth/oauth/oauth-schema';
+import { sendOAuthVerificationEmail } from '#/modules/auth/oauth/operations/send-oauth-verification-email';
 import { readBoundToken, spendCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import type { PendingSignUp, TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import type { UserWithCounters } from '#/modules/user/helpers/select';
-import type { UserModel } from '#/modules/user/user-db';
+import { handleCreateUser } from '#/modules/user/operations/create-account';
+import { addProvenEmail, requireEmailVerified } from '#/modules/user/operations/email-proof';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { isValidRedirectPath } from '#/utils/is-redirect-url';
 import { getIsoDate } from '#/utils/iso-date';
+
+/** Reads and writes outside a flow's transaction run on the base pool, whatever the route's context holds. */
+const dbCtx = { var: { db: baseDb } };
 
 type OAuthFlowResult =
   | { type: 'verified'; user: UserWithCounters; identity: IdentityModel }
@@ -51,10 +53,7 @@ export const handleOAuthCallback = async (
   const { type, redirectAfter } = oauthPayload;
 
   // The provider's subject is the identity; the asserted address is a snapshot that may have changed since linking.
-  const [identity] = await db
-    .select()
-    .from(identitiesTable)
-    .where(and(eq(identitiesTable.kind, 'oauth'), eq(identitiesTable.issuer, provider), eq(identitiesTable.subject, providerUser.id)));
+  const identity = await findIdentityBySubject(dbCtx, { issuer: provider, subject: providerUser.id });
 
   const baseCallbackProps = { providerUser, provider, identity };
 
@@ -81,14 +80,14 @@ export const handleOAuthCallback = async (
 /** Basic OAuth authentication and signup: existing verified account, unverified account, or a sign-up that waits on its verification mail. */
 const authCallbackFlow = async ({ providerUser, provider, identity = null }: BaseCallbackProps): Promise<OAuthFlowResult> => {
   if (identity?.verified) {
-    const user = await findUserById({ var: { db } }, { id: identity.userId });
+    const user = await findUserById(dbCtx, { id: identity.userId });
     await touchIdentity(identity, providerUser);
     return { type: 'verified', user, identity };
   }
 
   // An unverified identity is a connect awaiting its mail: prompt the (re-)verification, mailed to the account's own address
   if (identity) {
-    const user = await findUserById({ var: { db } }, { id: identity.userId });
+    const user = await findUserById(dbCtx, { id: identity.userId });
     // Signed out, the provider holder has not shown they own this account, so verification never moves to another
     // inbox: proving that one would add it to the account and sign its holder in. Moving it takes connect, signed in.
     if (providerUser.email !== user.email) throw new AppError(409, 'oauth_conflict', 'warn');
@@ -97,11 +96,11 @@ const authCallbackFlow = async ({ providerUser, provider, identity = null }: Bas
   }
 
   // Existing user (by email) found -> suggest sign in and connect
-  const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
+  const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
   if (holder) throw new AppError(409, 'oauth_email_exists', 'warn');
 
   // The gate the sign-up's completion checks again: open registration, or an invitation to the address.
-  if (!(await maySignUp({ var: { db } }, { email: providerUser.email }))) {
+  if (!(await maySignUp(dbCtx, { email: providerUser.email }))) {
     throw new AppError(403, 'sign_up_restricted', 'info');
   }
 
@@ -130,7 +129,7 @@ const connectCallbackFlow = async ({
   if (!pin?.userId || !pin.sessionId) throw new AppError(401, 'oauth-connect_not_found', 'warn');
   const connectUserId = pin.userId;
 
-  const user = await findUserById({ var: { db } }, { id: connectUserId });
+  const user = await findUserById(dbCtx, { id: connectUserId });
   if (!user) throw new AppError(404, 'not_found', 'error', { entityType: 'user' });
 
   if (identity) {
@@ -148,10 +147,12 @@ const connectCallbackFlow = async ({
   }
 
   // New OAuth account connection → validate email isn't used by another user
-  const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
+  const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
   if (holder && holder.id !== connectUserId) throw new AppError(409, 'oauth_conflict', 'warn');
 
-  const newIdentity = await createIdentity(db, { userId: connectUserId, issuer: provider, subject: providerUser.id, email: providerUser.email });
+  const newIdentity = await insertIdentity(dbCtx, {
+    values: { userId: connectUserId, issuer: provider, subject: providerUser.id, email: providerUser.email },
+  });
   return { type: 'unverified', identity: newIdentity };
 };
 
@@ -177,19 +178,21 @@ const inviteCallbackFlow = async ({
   if (identity) throw new AppError(409, 'oauth_conflict', 'warn', { meta });
 
   // Address already held by an account, verified or not: every sign-up writes its email row, so one lookup covers both.
-  const holder = await findUserByEmail({ var: { db } }, { email: providerUser.email });
+  const holder = await findUserByEmail(dbCtx, { email: providerUser.email });
   if (holder) throw new AppError(409, 'oauth_email_exists', 'warn', { meta });
 
   if (!providerUser.emailVerified) return pendingSignUp(providerUser, provider);
 
   const { email } = invitationToken;
-  const created = await db.transaction(async (tx) => {
-    const user = await handleCreateUser({ var: { db: tx } }, { newUser: providerUser, via: provider });
-    const newIdentity = await createIdentity(tx, { userId: user.id, issuer: provider, subject: providerUser.id, email }, { verified: true });
+  const created = await baseDb.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
+    const user = await handleCreateUser(txCtx, { newUser: providerUser, via: provider });
+    const values = { userId: user.id, issuer: provider, subject: providerUser.id, email };
+    const newIdentity = await insertIdentity(txCtx, { values, verified: true });
     return { userId: user.id, identity: newIdentity };
   });
 
-  const user = await findUserById({ var: { db } }, { id: created.userId });
+  const user = await findUserById(dbCtx, { id: created.userId });
   return { type: 'verified', user, identity: created.identity };
 };
 
@@ -217,24 +220,22 @@ const verifyCallbackFlow = async ({
     throw new AppError(400, 'oauth_failed', 'error');
   }
 
-  const user = await findUserById({ var: { db } }, { id: identity.userId });
+  const user = await findUserById(dbCtx, { id: identity.userId });
 
   if (identity.verified) return { type: 'verified', user, identity };
 
   // Verify the identity and the address atomically
   const now = getIsoDate();
-  await db.transaction(async (tx) => {
-    await tx
-      .update(identitiesTable)
-      .set({ verified: true, verifiedAt: now, lastUsedAt: now })
-      .where(and(eq(identitiesTable.id, identity.id), eq(identitiesTable.userId, user.id)));
+  await baseDb.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
+    await updateIdentity(txCtx, { id: identity.id, userId: user.id, values: { verified: true, verifiedAt: now, lastUsedAt: now } });
 
     // The click proved the inbox: the account's own address is stamped, a differing provider address joins the ledger
     // (or is refused when another account holds it by now). Either way it is a magic-link sign-in identifier from here.
     if (verifyToken.email === user.email) {
-      await requireEmailVerified(tx, { userId: user.id, email: verifyToken.email, via: provider });
+      await requireEmailVerified(txCtx, { userId: user.id, email: verifyToken.email, via: provider });
     } else {
-      await addProvenEmail(tx, { userId: user.id, email: verifyToken.email, via: provider });
+      await addProvenEmail(txCtx, { userId: user.id, email: verifyToken.email, via: provider });
     }
   });
 
@@ -268,40 +269,29 @@ const completeSignUp = async ({
   }
 
   if (identity) throw new AppError(409, 'oauth_conflict', 'warn');
-  if (await findUserByEmail({ var: { db } }, { email })) throw new AppError(409, 'oauth_email_exists', 'warn');
+  if (await findUserByEmail(dbCtx, { email })) throw new AppError(409, 'oauth_email_exists', 'warn');
 
-  const created = await db.transaction(async (tx) => {
+  const created = await baseDb.transaction(async (tx) => {
+    const txCtx = { var: { db: tx } };
     // Registration may have closed since the mail went out. Checked before the spend, so a refusal leaves the
     // verification and this browser's cookie as they were.
-    if (!(await maySignUp({ var: { db: tx } }, { email }))) throw new AppError(403, 'sign_up_restricted', 'info');
+    if (!(await maySignUp(txCtx, { email }))) throw new AppError(403, 'sign_up_restricted', 'info');
 
     // Of two concurrent completions only the one that spends the verification creates the account.
-    const spent = await spendCookieToken(ctx, 'oauth-verification', { deleteCookie: 'after-commit', txCtx: { var: { db: tx } } });
+    const spent = await spendCookieToken(ctx, 'oauth-verification', { deleteCookie: 'after-commit', txCtx });
     if (spent?.id !== verifyToken.id) throw new AppError(401, 'oauth-verification_expired', 'warn');
 
     const { name, slug, firstName } = signUp;
-    const user = await handleCreateUser({ var: { db: tx } }, { newUser: { email, name, slug, firstName }, via: provider });
-    const newIdentity = await createIdentity(tx, { userId: user.id, issuer: provider, subject: signUp.subject, email }, { verified: true });
+    const user = await handleCreateUser(txCtx, { newUser: { email, name, slug, firstName }, via: provider });
+    const values = { userId: user.id, issuer: provider, subject: signUp.subject, email };
+    const newIdentity = await insertIdentity(txCtx, { values, verified: true });
     return { userId: user.id, identity: newIdentity };
   });
   // The spend is committed: the cookie that named the verification goes with it.
   deleteAuthCookie(ctx, 'oauth-verification');
 
-  const user = await findUserById({ var: { db } }, { id: created.userId });
+  const user = await findUserById(dbCtx, { id: created.userId });
   return { type: 'verified', user, identity: created.identity };
-};
-
-type NewIdentity = Pick<IdentityModel, 'userId' | 'issuer' | 'subject'> & { email: UserModel['email'] };
-
-/** Links a provider account; unverified unless an inbox proof in the same flow already stands for it. */
-const createIdentity = async (dbOrTx: DbOrTx, values: NewIdentity, { verified = false }: { verified?: boolean } = {}): Promise<IdentityModel> => {
-  const now = getIsoDate();
-  const [identity] = await dbOrTx
-    .insert(identitiesTable)
-    .values({ ...values, verified, ...(verified && { verifiedAt: now, lastUsedAt: now }) })
-    .returning();
-
-  return identity;
 };
 
 /**
@@ -310,12 +300,12 @@ const createIdentity = async (dbOrTx: DbOrTx, values: NewIdentity, { verified = 
  */
 const refreshIdentityEmail = async (identity: IdentityModel, providerUser: TransformedUser) => {
   if (identity.email === providerUser.email) return;
-  await db.update(identitiesTable).set({ email: providerUser.email }).where(eq(identitiesTable.id, identity.id));
+  await updateIdentity(dbCtx, { id: identity.id, values: { email: providerUser.email } });
 };
 
 /** A sign-in through the identity: record the use and refresh the address snapshot to what the provider asserts now. */
 const touchIdentity = async (identity: IdentityModel, providerUser: TransformedUser) => {
-  await db.update(identitiesTable).set({ lastUsedAt: getIsoDate(), email: providerUser.email }).where(eq(identitiesTable.id, identity.id));
+  await updateIdentity(dbCtx, { id: identity.id, values: { lastUsedAt: getIsoDate(), email: providerUser.email } });
 };
 
 /**

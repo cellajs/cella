@@ -1,4 +1,4 @@
-import { and, desc, eq, gt, inArray, isNull, ne, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, inArray, isNull, ne, or, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import type { ActorId } from '#/db/utils/ids';
 import { actorsTable } from '#/modules/actors/actors-db';
@@ -44,6 +44,21 @@ export const findLiveOwnSessions = async (ctx: DbContext, { userId, deviceIdHash
     .offset(offset);
 };
 
+interface FindUserSessionsOpts {
+  userId: string;
+  /** Revoked sessions are listed when revoked after this ISO timestamp. */
+  revokedSince: string;
+}
+
+/** The user's sessions newest first, secret stripped: live and expired ones, and those revoked after `revokedSince`. */
+export const findUserSessions = async (ctx: DbContext, { userId, revokedSince }: FindUserSessionsOpts) => {
+  return ctx.var.db
+    .select(sessionSafeColumns)
+    .from(sessionsTable)
+    .where(and(eq(sessionsTable.userId, userId), or(isNull(sessionsTable.revokedAt), gt(sessionsTable.revokedAt, revokedSince))))
+    .orderBy(desc(sessionsTable.createdAt));
+};
+
 interface FindSessionBySecretOpts {
   /** The hash of the session token, the only form the database stores. */
   secret: string;
@@ -69,6 +84,25 @@ export const findSessionBySecret = async (ctx: DbContext, { secret }: FindSessio
     .where(eq(sessionsTable.secret, secret))
     .limit(1);
   return result;
+};
+
+interface FindSessionStatesOpts {
+  ids: string[];
+}
+
+/** What decides whether these sessions still back a stream: owner, revocation, expiry and the admin session behind an impersonation. */
+export const findSessionStates = async (ctx: DbContext, { ids }: FindSessionStatesOpts) => {
+  return ctx.var.db
+    .select({
+      id: sessionsTable.id,
+      userId: sessionsTable.userId,
+      revokedAt: sessionsTable.revokedAt,
+      revocationReason: sessionsTable.revocationReason,
+      expiresAt: sessionsTable.expiresAt,
+      impersonatorSessionId: sessionsTable.impersonatorSessionId,
+    })
+    .from(sessionsTable)
+    .where(inArray(sessionsTable.id, ids));
 };
 
 interface FindSessionByIdOpts {

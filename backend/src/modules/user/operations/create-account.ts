@@ -3,13 +3,11 @@ import { nanoid } from 'shared/utils/nanoid';
 import type { DbContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { extractPgError } from '#/lib/error';
-import { claimEmailForUser } from '#/modules/auth/general/helpers/claim-email';
-import type { EmailProof } from '#/modules/auth/general/helpers/mark-email-verified';
-import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
-import { emailsTable } from '#/modules/user/emails-db';
+import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
+import type { EmailProof } from '#/modules/user/emails-db';
+import { claimEmailForUser } from '#/modules/user/operations/claim-email';
 import type { InsertUserModel, UserModel } from '#/modules/user/user-db';
-import { insertUsers } from '#/modules/user/user-queries';
-import { getIsoDate } from '#/utils/iso-date';
+import { insertEmail, insertUsers } from '#/modules/user/user-queries';
 
 /**
  * A unique violation on a user's address, on `users.email` or `emails.email`. Matched on the table and column part of
@@ -30,7 +28,6 @@ interface HandleCreateUserProps {
  * Throws 409 `email_exists` when the address is taken.
  */
 export const handleCreateUser = async (ctx: DbContext, { newUser, via }: HandleCreateUserProps): Promise<UserModel> => {
-  const { db } = ctx.var;
   const slugAvailable = await checkSlugAvailable(ctx, newUser.slug, 'user');
 
   try {
@@ -50,15 +47,7 @@ export const handleCreateUser = async (ctx: DbContext, { newUser, via }: HandleC
 
     // The account's one email row, proven at creation. A taken address never gets here: the users insert above
     // already failed on its unique email.
-    const now = getIsoDate();
-    await db.insert(emailsTable).values({
-      email: normalizedEmail,
-      userId: user.id,
-      verified: true,
-      verifiedAt: now,
-      lastVerifiedVia: via,
-      lastVerifiedAt: now,
-    });
+    await insertEmail(ctx, { userId: user.id, email: normalizedEmail, via });
     await claimEmailForUser(ctx, { userId: user.id, email: normalizedEmail });
 
     return user;

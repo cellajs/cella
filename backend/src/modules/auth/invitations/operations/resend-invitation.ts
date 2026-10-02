@@ -1,11 +1,9 @@
-import { and, eq, isNull } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { issueToken, type NewToken } from '#/modules/auth/tokens/token-lifecycle';
 import { findInvitationToken, type TokenRecord } from '#/modules/auth/tokens/tokens-queries';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import { sendInvitationMails } from '#/modules/memberships/helpers/invitation-mail';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
-import { updateInactiveMembershipToken } from '#/modules/memberships/memberships-queries';
+import { findPendingInactiveMembership, updateInactiveMembershipToken } from '#/modules/memberships/memberships-queries';
+import { sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
 import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
 import { findUserByEmail, findUserById } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
@@ -36,11 +34,7 @@ export const resendInvitationEmail = async (ctx: DbContext, oldToken: TokenRecor
 
     // The locked row is the invitation's anchor: a concurrent answer, rejection or resend waits for this one.
     if (inactiveMembershipId) {
-      const [invitation] = await tx
-        .select()
-        .from(inactiveMembershipsTable)
-        .where(and(eq(inactiveMembershipsTable.id, inactiveMembershipId), isNull(inactiveMembershipsTable.rejectedAt)))
-        .for('update');
+      const invitation = await findPendingInactiveMembership(txCtx, { id: inactiveMembershipId, forUpdate: true });
       if (!invitation) return null;
 
       const entity = await resolveEntity(txCtx, { entityType: invitation.channelType, identifier: invitation.channelId });

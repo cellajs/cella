@@ -9,7 +9,7 @@ import { baseDb as db, getAdminDb } from '#/db/db';
 import { mailer } from '#/lib/mailer';
 import { mockPastIsoDate } from '#/mocks';
 import { authCookieName, type CookieName, sealAuthCookie } from '#/modules/auth/general/helpers/cookie';
-import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/identities-db';
+import { type InsertIdentityModel, identitiesTable } from '#/modules/auth/oauth/identities-db';
 import { newSessionToken } from '#/modules/auth/sessions/helpers/session-token';
 import { type AuthStrategy, type SessionTypes, sessionsTable } from '#/modules/auth/sessions/sessions-db';
 import { type InsertTokenModel, tokensTable } from '#/modules/auth/tokens-db';

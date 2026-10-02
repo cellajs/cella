@@ -1,8 +1,8 @@
 import { eq } from 'drizzle-orm';
 import { afterEach, describe, expect, it } from 'vitest';
 import { baseDb as db } from '#/db/db';
-import { addProvenEmail, markEmailVerified, requireEmailVerified } from '#/modules/auth/general/helpers/mark-email-verified';
 import { emailsTable } from '#/modules/user/emails-db';
+import { addProvenEmail, markEmailVerified, requireEmailVerified } from '#/modules/user/operations/email-proof';
 import { createTestUser } from '../helpers';
 import { clearDatabase } from '../test-utils';
 
@@ -16,11 +16,11 @@ const emailRow = async (email: string) => {
 describe('markEmailVerified', () => {
   it('stamps every proof but keeps the first verification time', async () => {
     const user = await createTestUser('twice@example.com');
-    await markEmailVerified(db, { userId: user.id, email: user.email, via: 'magic' });
+    await markEmailVerified({ var: { db } }, { userId: user.id, email: user.email, via: 'magic' });
     const first = await emailRow(user.email);
 
     await new Promise((resolve) => setTimeout(resolve, 5));
-    await markEmailVerified(db, { userId: user.id, email: user.email, via: 'github' });
+    await markEmailVerified({ var: { db } }, { userId: user.id, email: user.email, via: 'github' });
     const second = await emailRow(user.email);
 
     expect(second.verifiedAt).toBe(first.verifiedAt);
@@ -32,7 +32,7 @@ describe('markEmailVerified', () => {
     const user = await createTestUser('verified@example.com');
     const before = await emailRow(user.email);
 
-    expect(await markEmailVerified(db, { userId: user.id, email: user.email, via: 'magic' })).toBe(true);
+    expect(await markEmailVerified({ var: { db } }, { userId: user.id, email: user.email, via: 'magic' })).toBe(true);
 
     expect((await emailRow(user.email)).verifiedAt).toBe(before.verifiedAt);
   });
@@ -41,17 +41,19 @@ describe('markEmailVerified', () => {
     const user = await createTestUser('owner@example.com');
     const other = await createTestUser('other@example.com');
 
-    expect(await markEmailVerified(db, { userId: user.id, email: 'nobody@example.com', via: 'magic' })).toBe(false);
+    expect(await markEmailVerified({ var: { db } }, { userId: user.id, email: 'nobody@example.com', via: 'magic' })).toBe(false);
     // Another account's address is never touched.
-    expect(await markEmailVerified(db, { userId: user.id, email: other.email, via: 'magic' })).toBe(false);
+    expect(await markEmailVerified({ var: { db } }, { userId: user.id, email: other.email, via: 'magic' })).toBe(false);
     expect((await emailRow(other.email)).lastVerifiedVia).toBeNull();
   });
 
   it('fails a verification flow on an address the account does not hold', async () => {
     const user = await createTestUser('owner@example.com');
 
-    await expect(requireEmailVerified(db, { userId: user.id, email: 'nobody@example.com', via: 'magic' })).rejects.toMatchObject({ status: 500 });
-    await expect(requireEmailVerified(db, { userId: user.id, email: user.email, via: 'magic' })).resolves.toBeUndefined();
+    await expect(requireEmailVerified({ var: { db } }, { userId: user.id, email: 'nobody@example.com', via: 'magic' })).rejects.toMatchObject({
+      status: 500,
+    });
+    await expect(requireEmailVerified({ var: { db } }, { userId: user.id, email: user.email, via: 'magic' })).resolves.toBeUndefined();
   });
 });
 
@@ -59,7 +61,7 @@ describe('addProvenEmail', () => {
   it('adds a proven inbox to the account as a verified, stamped row', async () => {
     const user = await createTestUser('owner@example.com');
 
-    await addProvenEmail(db, { userId: user.id, email: 'work@example.com', via: 'github' });
+    await addProvenEmail({ var: { db } }, { userId: user.id, email: 'work@example.com', via: 'github' });
 
     const row = await emailRow('work@example.com');
     expect(row).toMatchObject({ userId: user.id, verified: true, lastVerifiedVia: 'github' });
@@ -71,7 +73,7 @@ describe('addProvenEmail', () => {
     const user = await createTestUser('owner@example.com');
     const before = await emailRow(user.email);
 
-    await addProvenEmail(db, { userId: user.id, email: user.email, via: 'github' });
+    await addProvenEmail({ var: { db } }, { userId: user.id, email: user.email, via: 'github' });
 
     const after = await emailRow(user.email);
     expect(after.id).toBe(before.id);
@@ -83,7 +85,7 @@ describe('addProvenEmail', () => {
     const owner = await createTestUser('owner@example.com');
     const other = await createTestUser('other@example.com');
 
-    await expect(addProvenEmail(db, { userId: other.id, email: owner.email, via: 'github' })).rejects.toMatchObject({
+    await expect(addProvenEmail({ var: { db } }, { userId: other.id, email: owner.email, via: 'github' })).rejects.toMatchObject({
       status: 409,
       type: 'oauth_conflict',
     });

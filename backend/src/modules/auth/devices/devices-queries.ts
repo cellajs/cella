@@ -37,6 +37,21 @@ export const findDevicesByEmail = async (ctx: DbContext, { email }: FindDevicesB
     .where(eq(emailsTable.email, email));
 };
 
+interface FindNewDevicesOpts {
+  userId: string;
+  /** Devices first seen after this ISO timestamp. */
+  firstSeenAfter: string;
+}
+
+/** The user's devices first seen after `firstSeenAfter`, except their oldest: an account's first browser is never new. */
+export const findNewDevices = async (ctx: DbContext, { userId, firstSeenAfter }: FindNewDevicesOpts) => {
+  const oldestFirstSeen = sql`(select min(${devicesTable.firstSeenAt}) from ${devicesTable} where ${devicesTable.userId} = ${userId})`;
+  return ctx.var.db
+    .select({ deviceIdHash: devicesTable.deviceIdHash })
+    .from(devicesTable)
+    .where(and(eq(devicesTable.userId, userId), gt(devicesTable.firstSeenAt, firstSeenAfter), gt(devicesTable.firstSeenAt, oldestFirstSeen)));
+};
+
 interface CountNotifiedDevicesOpts {
   userId: string;
   /** Count notices sent after this ISO timestamp. */

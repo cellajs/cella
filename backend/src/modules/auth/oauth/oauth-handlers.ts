@@ -6,8 +6,7 @@ import type { BaseOAuthProviders } from 'shared/config-builder/types';
 import type z from 'zod';
 import type { Env } from '#/core/context';
 import { AppError } from '#/core/error';
-import { handleOAuthCallback } from '#/modules/auth/oauth/helpers/callback';
-import { handleOAuthInitiation, readOAuthCookie } from '#/modules/auth/oauth/helpers/initiation';
+import { readOAuthCookie } from '#/modules/auth/oauth/helpers/oauth-cookie';
 import {
   type GithubUserEmailProps,
   type GithubUserProps,
@@ -21,6 +20,8 @@ import {
 import { type TransformedUser, transformGithubUserData, transformSocialUserData } from '#/modules/auth/oauth/helpers/transform-user-data';
 import { authOAuthRoutes } from '#/modules/auth/oauth/oauth-routes';
 import type { oauthCallbackQuerySchema, oauthQuerySchema } from '#/modules/auth/oauth/oauth-schema';
+import { handleOAuthCallback } from '#/modules/auth/oauth/operations/callback';
+import { handleOAuthInitiation } from '#/modules/auth/oauth/operations/initiation';
 import { issueCookieToken } from '#/modules/auth/tokens/token-lifecycle';
 import { defaultHook } from '#/utils/default-hook';
 

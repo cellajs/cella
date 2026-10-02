@@ -3,9 +3,8 @@ import { eq, ilike, or, type SQL } from 'drizzle-orm';
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
-import { sharesOrgFilter } from '#/modules/user/helpers/relatable-filter';
 import { usersTable } from '#/modules/user/user-db';
-import { findUsersPaginated } from '#/modules/user/user-queries';
+import { findUsersPaginated, sharesOrgFilter } from '#/modules/user/user-queries';
 import type { userListQuerySchema } from '#/modules/user/user-schema';
 import { prepareStringForILikeFilter } from '#/utils/sql';
 

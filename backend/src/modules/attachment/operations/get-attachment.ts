@@ -1,6 +1,6 @@
 import type { ActorContext } from '#/core/context';
 import { findProductViewCount } from '#/modules/entities/entities-queries';
-import { withAuditUser } from '#/modules/user/helpers/audit-user';
+import { withAuditUser } from '#/modules/user/operations/with-audit-users';
 import { getValidProduct } from '#/permissions/get-valid-product';
 
 export async function getAttachmentOp(ctx: ActorContext, id: string) {

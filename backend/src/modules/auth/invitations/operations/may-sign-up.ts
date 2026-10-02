@@ -1,8 +1,7 @@
-import { and, eq, isNull } from 'drizzle-orm';
 import { appConfig } from 'shared';
 import type { DbContext } from '#/core/context';
 import { hasLiveInvitationToken } from '#/modules/auth/tokens/tokens-queries';
-import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
+import { findPendingInactiveMembershipByEmail } from '#/modules/memberships/memberships-queries';
 
 interface HasPendingInvitationOpts {
   email: string;
@@ -13,14 +12,7 @@ interface HasPendingInvitationOpts {
  * its emailed token), or a live invitation token (a system invite has no membership row).
  */
 export const hasPendingInvitation = async (ctx: DbContext, { email }: HasPendingInvitationOpts) => {
-  const { db } = ctx.var;
-
-  const [membershipInvitation] = await db
-    .select({ id: inactiveMembershipsTable.id })
-    .from(inactiveMembershipsTable)
-    .where(and(eq(inactiveMembershipsTable.email, email), isNull(inactiveMembershipsTable.rejectedAt)))
-    .limit(1);
-  if (membershipInvitation) return true;
+  if (await findPendingInactiveMembershipByEmail(ctx, { email })) return true;
 
   return hasLiveInvitationToken(ctx, { email });
 };

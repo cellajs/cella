@@ -1,7 +1,7 @@
 import type { UserContext } from '#/core/context';
 import { AppError } from '#/core/error';
 import { invalidateCache } from '#/middlewares/guard/invalidate-cache';
-import { checkSlugAvailable } from '#/modules/entities/helpers/check-slug';
+import { checkSlugAvailable } from '#/modules/entities/operations/check-slug';
 import { findCurrentUser, type UpdateMeOpts, updateMe } from '#/modules/me/me-queries';
 import { getIsoDate } from '#/utils/iso-date';
 
