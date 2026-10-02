@@ -1,3 +1,4 @@
+import { flushYjsStore } from '~/modules/common/blocknote/yjs-store';
 import { useUIStore } from '~/modules/ui/ui-store';
 import { useUserStore } from '~/modules/user/user-store';
 import { deleteLocalUserDb } from '~/query/local-user-db';
@@ -9,6 +10,9 @@ export const teardownUserState = async (wipe = true): Promise<void> => {
 
   // The badge belongs to the service worker, which outlives this page.
   if (typeof navigator !== 'undefined' && 'clearAppBadge' in navigator) void navigator.clearAppBadge().catch(() => {});
+
+  // Stored collaborative edits commit before the database closes: a lost session keeps them for the same user's next one.
+  await flushYjsStore();
 
   // Hard sign-out only: destroy all per-user persisted data while the owner is still known. Other tabs see the delete and sign out too.
   if (wipe) await deleteLocalUserDb();

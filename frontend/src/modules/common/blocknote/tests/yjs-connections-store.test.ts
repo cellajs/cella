@@ -141,7 +141,7 @@ vi.mock('~/modules/common/blocknote/yjs-store', async (importOriginal) => {
 const { useUserStore, yjsTokenKey } = await import('~/modules/user/user-store');
 const { bindLocalUserDb, closeLocalUserDb } = await import('~/query/local-user-db');
 const { createYDocWriter, flushYjsStore, storeTabId } = await import('~/modules/common/blocknote/yjs-store');
-const { findConnection, useYjsConnection } = await import('~/modules/common/blocknote/yjs-connections');
+const { findConnection, resumeConnection, useYjsConnection } = await import('~/modules/common/blocknote/yjs-connections');
 
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -572,5 +572,31 @@ describe('yjs connection with the store: other tabs', () => {
     Y.applyUpdate(behind, answer.update!);
     expect(behind.getText('t').toString()).toBe('shared and more');
     tab.channel.close();
+  });
+});
+
+describe('yjs connection with the store: boot resume', () => {
+  it('opens a background connection that fetches its token, uploads through the handshake, and goes once clean', async () => {
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout', 'setInterval', 'clearInterval'] });
+    await seedStored('resume-1', 'typed offline', { unsynced: true });
+    const record = (await db.yDocs.get(keyPath('resume-1')))!;
+    fetchQuery.mockResolvedValueOnce('token-resume');
+
+    const done = resumeConnection(record);
+    await vi.waitFor(() => expect(providers.at(-1)?.connect).toHaveBeenCalled());
+    const provider = providers.at(-1)!;
+    expect(provider.params.token).toBe('token-resume');
+    expect(provider.textAtConnect).toEqual(['typed offline']);
+
+    await handshake(provider);
+    await relaySaved(provider);
+    await act(async () => vi.advanceTimersByTimeAsync(1_000));
+    await done;
+    await settled();
+    expect(await db.yDocs.get(keyPath('resume-1'))).toMatchObject({ unsynced: 0 });
+
+    // No editor holds it: it goes after the grace period.
+    await act(async () => vi.advanceTimersByTimeAsync(30_000));
+    expect(provider.destroy).toHaveBeenCalledOnce();
   });
 });

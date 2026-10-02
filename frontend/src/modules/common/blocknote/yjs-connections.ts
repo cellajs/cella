@@ -25,7 +25,7 @@ import {
 import { onTabMessage, postTabHello, postTabUpdate, type TabMessage, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { useUserStore, yjsTokenKey } from '~/modules/user/user-store';
-import { getLocalUserDb, type UnsaveableReason } from '~/query/local-user-db';
+import { getLocalUserDb, type UnsaveableReason, type YDocRecord } from '~/query/local-user-db';
 import { queryClient } from '~/query/query-client';
 
 const GRACE_PERIOD_MS = 30_000;
@@ -880,6 +880,46 @@ export function watchUnstoredYDocs(cb: (docs: UnstoredYDoc[]) => void): () => vo
   };
   emit();
   return useYjsSyncStore.subscribe(emit);
+}
+
+/** How long boot resume waits for a background connection to upload before it opens the next one. */
+const RESUME_WAIT_MS = 60_000;
+/** How often boot resume looks whether a background connection is done. */
+const RESUME_POLL_MS = 1_000;
+
+/**
+ * Opens a background connection (no editor holds it) for a stored document with unsynced edits, so they reach the
+ * relay without the author reopening it. It fetches its own token, uploads through the handshake, and is reaped once
+ * clean. Resolves once it is clean, stopped or gone, or after RESUME_WAIT_MS, so boot resume opens a few at a time.
+ */
+export async function resumeConnection(record: YDocRecord): Promise<void> {
+  const { entityType, entityId, tenantId, organizationId } = record;
+  if (connections.has(entityId)) return;
+  const tokenKey = yjsTokenKey(entityType, entityId);
+  if (!useUserStore.getState().yjsTokens[tokenKey]) {
+    try {
+      const token = await queryClient.fetchQuery(yjsTokenQueryOptions({ entityType, entityId, tenantId, organizationId }));
+      useUserStore.getState().setYjsToken(tokenKey, token);
+    } catch (error) {
+      // A refusal leaves the edits stored for the next load, where the editor's own token query meets it; a network
+      // failure is retried when the browser is back online.
+      console.warn(`[yjs] No token to resume ${entityType}:${entityId}`, error);
+      return;
+    }
+  }
+  if (connections.has(entityId)) return;
+  const conn = acquireConnection(entityId, entityType, tenantId, organizationId);
+  releaseConnection(entityId);
+
+  await new Promise<void>((resolve) => {
+    const started = Date.now();
+    const timer = setInterval(() => {
+      const done = connections.get(entityId) !== conn || conn.stopped || (conn.loaded && !conn.unsynced);
+      if (!done && Date.now() - started < RESUME_WAIT_MS) return;
+      clearInterval(timer);
+      resolve();
+    }, RESUME_POLL_MS);
+  });
 }
 
 function releaseConnection(editSessionId: string) {

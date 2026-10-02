@@ -13,10 +13,14 @@ vi.mock('~/modules/common/blocknote/yjs-tab-channel', () => ({
 let offlineAccess = true;
 vi.mock('~/modules/ui/ui-store', () => ({ useUIStore: { getState: () => ({ offlineAccess }) } }));
 vi.mock('~/query/local-user-storage', () => ({ subscribeOwnerChange: () => () => {} }));
+let leader = true;
+vi.mock('~/query/realtime/tab-coordinator', () => ({ isLeader: () => leader, tabCoordinatorStore: { subscribe: () => () => {} } }));
+const resumeConnection = vi.fn();
+vi.mock('~/modules/common/blocknote/yjs-connections', () => ({ resumeConnection: (...args: unknown[]) => resumeConnection(...args) }));
 
 const { bindLocalUserDb, closeLocalUserDb, getLocalUserDb, LocalUserDatabase } = await import('~/query/local-user-db');
 const store = await import('~/modules/common/blocknote/yjs-store');
-const { createYDocWriter, evictYDocs, flushYjsStore, loadYDoc, trimYDoc, watchStoragePressure, watchUnsavedYDocs } = store;
+const { createYDocWriter, evictYDocs, flushYjsStore, loadYDoc, resumeYDocs, trimYDoc, watchStoragePressure, watchUnsavedYDocs } = store;
 
 type Db = InstanceType<typeof LocalUserDatabase>;
 type Writer = NonNullable<ReturnType<typeof createYDocWriter>>;
@@ -34,6 +38,8 @@ beforeEach(() => {
   db = bindLocalUserDb(owner);
   broadcasts.length = 0;
   offlineAccess = true;
+  leader = true;
+  resumeConnection.mockReset();
 });
 
 afterEach(async () => {
@@ -594,5 +600,48 @@ describe('yjs store: a database deleted elsewhere', () => {
     await flushYjsStore();
     expect(writer.failed).toBe(false);
     expect(await Dexie.exists(`test:${owner}`)).toBe(false);
+  });
+});
+
+describe('yjs store: boot resume', () => {
+  async function seedUnsynced(count: number) {
+    for (let i = 0; i < count; i++) {
+      await db.yDocs.put({
+        entityType: 'attachment',
+        entityId: `u${i}`,
+        ...scope,
+        syncedVector: null,
+        unsynced: 1,
+        bytes: 1,
+        updateBytes: 1,
+        updatedAt: 0,
+        lastOpenedAt: 0,
+      });
+    }
+    await db.yDocs.put({ ...key, ...scope, syncedVector: null, unsynced: 0, bytes: 1, updateBytes: 0, updatedAt: 0, lastOpenedAt: 0 });
+  }
+
+  it('the leader tab opens a background connection for each document with unsynced edits, three at a time', async () => {
+    await seedUnsynced(5);
+    let running = 0;
+    let most = 0;
+    resumeConnection.mockImplementation(async () => {
+      running++;
+      most = Math.max(most, running);
+      await new Promise((resolve) => setTimeout(resolve, 5));
+      running--;
+    });
+
+    await resumeYDocs();
+
+    expect(resumeConnection.mock.calls.map(([record]) => record.entityId).sort()).toEqual(['u0', 'u1', 'u2', 'u3', 'u4']);
+    expect(most).toBe(store.RESUME_CONCURRENCY);
+  });
+
+  it('a follower tab resumes nothing (positive control: the leader does)', async () => {
+    await seedUnsynced(1);
+    leader = false;
+    await resumeYDocs();
+    expect(resumeConnection).not.toHaveBeenCalled();
   });
 });

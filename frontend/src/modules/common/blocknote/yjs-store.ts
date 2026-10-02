@@ -4,9 +4,10 @@
  * proven saved, and only a proof clears it.
  */
 
+import { onlineManager } from '@tanstack/react-query';
 import { liveQuery } from 'dexie';
 import { useEffect, useState } from 'react';
-import type { ProductEntityType } from 'shared';
+import { appConfig, type ProductEntityType } from 'shared';
 import type * as Y from 'yjs';
 import { postTabUpdate, toTabKey } from '~/modules/common/blocknote/yjs-tab-channel';
 import { useUIStore } from '~/modules/ui/ui-store';
@@ -19,6 +20,7 @@ import {
   type YDocUpdateRecord,
 } from '~/query/local-user-db';
 import { subscribeOwnerChange } from '~/query/local-user-storage';
+import { isLeader, tabCoordinatorStore } from '~/query/realtime/tab-coordinator';
 
 /** The longest a load may hold up the provider's connect. */
 export const STORE_LOAD_TIMEOUT_MS = 5_000;
@@ -39,6 +41,8 @@ export const SESSION_KEEP_MS = 2 * 60 * 60_000;
 /** The device's storage runs low below this many free bytes, or past `LOW_STORAGE_RATIO` of the quota used. */
 export const LOW_STORAGE_BYTES = 100 * 1024 * 1024;
 export const LOW_STORAGE_RATIO = 0.9;
+/** Background connections boot resume opens at a time. */
+export const RESUME_CONCURRENCY = 3;
 
 /** The origin a stored state is applied with: no edit of this tab, and nothing to store again. */
 export const storageOrigin = Symbol('yjs-store');
@@ -730,4 +734,63 @@ export function useStoredYDoc(key: YDocKey | undefined): StoredState | undefined
   }, [entityType, entityId]);
 
   return id && state?.id === id ? state.value : undefined;
+}
+
+/** Documents with unsynced edits a background connection should upload. */
+export async function listUnsyncedYDocs(): Promise<YDocRecord[]> {
+  const db = getLocalUserDb();
+  if (!db) return [];
+  return db.yDocs.filter((record) => record.unsynced === 1).toArray();
+}
+
+let resuming: Promise<void> | null = null;
+
+/**
+ * In the leader tab, uploads the stored documents with unsynced edits through background connections, a few at a time:
+ * without it, edits made offline in a tab since closed reach other users only when their author reopens the document.
+ */
+export function resumeYDocs(): Promise<void> {
+  if (resuming) return resuming;
+  resuming = (async () => {
+    if (!isLeader() || !onlineManager.isOnline() || !appConfig.services.yjs.enabled || !appConfig.yjsUrl) return;
+    const queue = await listUnsyncedYDocs();
+    if (queue.length === 0) return;
+    const { resumeConnection } = await import('~/modules/common/blocknote/yjs-connections');
+    const worker = async () => {
+      for (let record = queue.shift(); record; record = queue.shift()) {
+        await resumeConnection(record).catch((error) => console.warn('[yjs-store] Resume failed', error));
+      }
+    };
+    await Promise.all(Array.from({ length: Math.min(RESUME_CONCURRENCY, queue.length) }, worker));
+  })().finally(() => {
+    resuming = null;
+  });
+  return resuming;
+}
+
+/**
+ * Starts the store's work outside editors: on each user's database every tab evicts, and the leader tab resumes
+ * unsynced documents, again when it becomes leader and when the browser is back online. Returns the stop.
+ */
+export function startYjsStore(): () => void {
+  const onBound = () => {
+    if (!getLocalUserDb()) return;
+    void evictYDocs().catch((error) => console.warn('[yjs-store] Eviction failed', error));
+    void resumeYDocs();
+  };
+  const stops = [
+    subscribeOwnerChange((owner) => {
+      if (owner) onBound();
+    }),
+    tabCoordinatorStore.subscribe((state, prev) => {
+      if (state.isLeader && !prev.isLeader) void resumeYDocs();
+    }),
+    onlineManager.subscribe((online) => {
+      if (online) void resumeYDocs();
+    }),
+  ];
+  onBound();
+  return () => {
+    for (const stop of stops) stop();
+  };
 }
