@@ -4,6 +4,7 @@ import { createInsertSchema, createSelectSchema } from '#/db/utils/drizzle-schem
 import { authStrategiesEnum } from '#/modules/auth/sessions-db';
 import { subscriptionStatusValues, tenantStatusValues, tenantsTable } from '#/modules/tenants/tenants-db';
 import { minimalBaseSchema, paginationQuerySchema, validNameSchema } from '#/schemas';
+import { mockTenantResponse } from './tenants-mocks';
 
 export type TenantStatus = (typeof tenantStatusValues)[number];
 
@@ -39,6 +40,7 @@ export const tenantSchema = z
   })
   .openapi('Tenant', {
     description: 'A tenant representing an isolated data partition for multi-tenancy.',
+    example: mockTenantResponse(),
     'x-tags': schemaTags('data', 'tenants', 'cella'),
   });
 

@@ -96,13 +96,13 @@
             "name": "totp enabled",
             "description": "Refused while totp sign-in is switched off"
           },
-          "serviceEnabled(oauth)": {
-            "name": "oauth enabled",
-            "description": "Answers 404 while the oauth service is switched off"
-          },
           "serviceEnabled(mcp)": {
             "name": "mcp enabled",
             "description": "Answers 404 while the mcp service is switched off"
+          },
+          "serviceEnabled(oauth)": {
+            "name": "oauth enabled",
+            "description": "Answers 404 while the oauth service is switched off"
           },
           "serviceEnabled(yjs)": {
             "name": "yjs enabled",
@@ -1715,6 +1715,15 @@
         },
         "required": ["id", "clientId", "clientName", "scopes", "resources", "createdAt", "expiresAt"],
         "description": "An OAuth consent (grant) of the current user.",
+        "example": {
+          "id": "01J9Z2Q0X7ZQ4S5M8NX3F2ABCD",
+          "clientId": "https://vscode.dev/oauth/client-metadata.json",
+          "clientName": "Visual Studio Code",
+          "scopes": ["attachment:read"],
+          "resources": ["http://localhost:3000/mcp/tenant01/org01/mcp"],
+          "createdAt": "2026-09-22T10:00:00.000Z",
+          "expiresAt": "2026-10-22T10:00:00.000Z"
+        },
         "x-tags": ["data", "me", "cella"]
       },
       "Request": {
@@ -1872,6 +1881,39 @@
           "organization"
         ],
         "description": "A tenant representing an isolated data partition for multi-tenancy.",
+        "example": {
+          "id": "l6ddop",
+          "name": "Lubowitz, Waters and Haley",
+          "status": "active",
+          "restrictions": {
+            "quotas": {
+              "user": 1000,
+              "organization": 1,
+              "attachment": 100,
+              "serviceAccount": 20,
+              "apiKey": 100
+            },
+            "rateLimits": {
+              "apiPointsPerHour": 1000
+            },
+            "allowUnregisteredClients": true
+          },
+          "authStrategies": [],
+          "createdBy": "97e6acf3-d1c3-4967-a839-e8b32adde60a",
+          "subscriptionId": null,
+          "subscriptionStatus": "none",
+          "subscriptionPlan": null,
+          "createdAt": "2024-02-09T07:11:04.461Z",
+          "updatedAt": "2024-03-30T20:43:34.109Z",
+          "domainsCount": 0,
+          "organization": {
+            "id": "c6e2f31a-be0a-4e1a-a760-f0b106b6bbcb",
+            "name": "Lubowitz, Waters and Haley",
+            "slug": "lubowitz-waters-and-haley",
+            "thumbnailUrl": null,
+            "entityType": "organization"
+          }
+        },
         "x-tags": ["data", "tenants", "cella"]
       },
       "ProtectedResourceMetadata": {
@@ -1902,7 +1944,16 @@
             "type": "string"
           }
         },
-        "required": ["resource", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"]
+        "required": ["resource", "authorization_servers", "scopes_supported", "bearer_methods_supported", "resource_documentation"],
+        "description": "RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.",
+        "example": {
+          "resource": "http://localhost:3000/api/t/m5jfjs",
+          "authorization_servers": ["http://localhost:3000/oauth"],
+          "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+          "bearer_methods_supported": ["header"],
+          "resource_documentation": "http://localhost:3000/docs"
+        },
+        "x-tags": ["data", "oauth-server", "cella"]
       },
       "Organization": {
         "type": "object",
@@ -2504,41 +2555,7 @@
           "updatedAt": "2024-09-01T22:49:17.262Z",
           "updatedBy": null
         },
-        "x-tags": ["service-accounts", "cella"]
-      },
-      "CreatedApiKey": {
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/ApiKey"
-          },
-          {
-            "type": "object",
-            "properties": {
-              "secret": {
-                "type": "string",
-                "description": "The plaintext API key; store it now, it is not shown again."
-              }
-            },
-            "required": ["secret"]
-          }
-        ],
-        "description": "A newly issued API key with its plaintext secret.",
-        "example": {
-          "id": "d4710b9b-020b-4142-9ab9-1d886a432815",
-          "actorId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",
-          "tenantId": "kr2nrm",
-          "name": "connect key",
-          "prefix": "cella-development_sk_test_Ab3d",
-          "last4": "2345",
-          "scopes": ["attachment:read"],
-          "expiresAt": null,
-          "revokedAt": null,
-          "revokedBy": null,
-          "createdBy": "b9151091-2c7d-4b2f-b091-683eca24cc52",
-          "createdAt": "2024-08-12T09:36:07.688Z",
-          "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123452H6a53"
-        },
-        "x-tags": ["service-accounts", "cella"]
+        "x-tags": ["data", "service-accounts", "cella"]
       },
       "ApiKey": {
         "type": "object",
@@ -2621,7 +2638,7 @@
           "createdBy": "e522e29f-f395-42f7-999b-7ea34c4cb760",
           "createdAt": "2024-11-05T21:01:57.922Z"
         },
-        "x-tags": ["service-accounts", "cella"]
+        "x-tags": ["data", "service-accounts", "cella"]
       }
     },
     "parameters": {}
@@ -8126,6 +8143,77 @@
             "description": "Tenants list",
             "content": {
               "application/json": {
+                "example": {
+                  "items": [
+                    {
+                      "id": "svjbtq",
+                      "name": "Predovic, Bahringer and Morar",
+                      "status": "active",
+                      "restrictions": {
+                        "quotas": {
+                          "user": 1000,
+                          "organization": 1,
+                          "attachment": 100,
+                          "serviceAccount": 20,
+                          "apiKey": 100
+                        },
+                        "rateLimits": {
+                          "apiPointsPerHour": 1000
+                        },
+                        "allowUnregisteredClients": true
+                      },
+                      "authStrategies": [],
+                      "createdBy": "d91cd87f-54ea-401d-9336-a3f30f204331",
+                      "subscriptionId": null,
+                      "subscriptionStatus": "none",
+                      "subscriptionPlan": null,
+                      "createdAt": "2024-11-25T05:49:32.040Z",
+                      "updatedAt": "2024-12-21T15:03:10.241Z",
+                      "domainsCount": 0,
+                      "organization": {
+                        "id": "ed4a4eac-b4a6-4c0f-ae21-2f50796fe855",
+                        "name": "Predovic, Bahringer and Morar",
+                        "slug": "predovic-bahringer-and-morar",
+                        "thumbnailUrl": null,
+                        "entityType": "organization"
+                      }
+                    },
+                    {
+                      "id": "b2dbwf",
+                      "name": "Crooks, Kuphal and Roob-Blick",
+                      "status": "active",
+                      "restrictions": {
+                        "quotas": {
+                          "user": 1000,
+                          "organization": 1,
+                          "attachment": 100,
+                          "serviceAccount": 20,
+                          "apiKey": 100
+                        },
+                        "rateLimits": {
+                          "apiPointsPerHour": 1000
+                        },
+                        "allowUnregisteredClients": true
+                      },
+                      "authStrategies": [],
+                      "createdBy": "35465948-59fc-43d4-bffc-d93da6f4757f",
+                      "subscriptionId": null,
+                      "subscriptionStatus": "none",
+                      "subscriptionPlan": null,
+                      "createdAt": "2024-01-02T16:12:28.968Z",
+                      "updatedAt": "2024-01-18T17:11:22.322Z",
+                      "domainsCount": 0,
+                      "organization": {
+                        "id": "cc2dc65b-1a01-4eb4-922d-b6339b813cf8",
+                        "name": "Crooks, Kuphal and Roob-Blick",
+                        "slug": "crooks-kuphal-and-roob-blick",
+                        "thumbnailUrl": null,
+                        "entityType": "organization"
+                      }
+                    }
+                  ],
+                  "total": 2
+                },
                 "schema": {
                   "type": "object",
                   "properties": {
@@ -8203,6 +8291,39 @@
             "description": "Created tenant",
             "content": {
               "application/json": {
+                "example": {
+                  "id": "l6ddop",
+                  "name": "Lubowitz, Waters and Haley",
+                  "status": "active",
+                  "restrictions": {
+                    "quotas": {
+                      "user": 1000,
+                      "organization": 1,
+                      "attachment": 100,
+                      "serviceAccount": 20,
+                      "apiKey": 100
+                    },
+                    "rateLimits": {
+                      "apiPointsPerHour": 1000
+                    },
+                    "allowUnregisteredClients": true
+                  },
+                  "authStrategies": [],
+                  "createdBy": "97e6acf3-d1c3-4967-a839-e8b32adde60a",
+                  "subscriptionId": null,
+                  "subscriptionStatus": "none",
+                  "subscriptionPlan": null,
+                  "createdAt": "2024-02-09T07:11:04.461Z",
+                  "updatedAt": "2024-03-30T20:43:34.109Z",
+                  "domainsCount": 0,
+                  "organization": {
+                    "id": "c6e2f31a-be0a-4e1a-a760-f0b106b6bbcb",
+                    "name": "Lubowitz, Waters and Haley",
+                    "slug": "lubowitz-waters-and-haley",
+                    "thumbnailUrl": null,
+                    "entityType": "organization"
+                  }
+                },
                 "schema": {
                   "$ref": "#/components/schemas/Tenant"
                 }
@@ -8327,6 +8448,39 @@
             "description": "Updated tenant",
             "content": {
               "application/json": {
+                "example": {
+                  "id": "l6ddop",
+                  "name": "Lubowitz, Waters and Haley",
+                  "status": "active",
+                  "restrictions": {
+                    "quotas": {
+                      "user": 1000,
+                      "organization": 1,
+                      "attachment": 100,
+                      "serviceAccount": 20,
+                      "apiKey": 100
+                    },
+                    "rateLimits": {
+                      "apiPointsPerHour": 1000
+                    },
+                    "allowUnregisteredClients": true
+                  },
+                  "authStrategies": [],
+                  "createdBy": "97e6acf3-d1c3-4967-a839-e8b32adde60a",
+                  "subscriptionId": null,
+                  "subscriptionStatus": "none",
+                  "subscriptionPlan": null,
+                  "createdAt": "2024-02-09T07:11:04.461Z",
+                  "updatedAt": "2024-03-30T20:43:34.109Z",
+                  "domainsCount": 0,
+                  "organization": {
+                    "id": "c6e2f31a-be0a-4e1a-a760-f0b106b6bbcb",
+                    "name": "Lubowitz, Waters and Haley",
+                    "slug": "lubowitz-waters-and-haley",
+                    "thumbnailUrl": null,
+                    "entityType": "organization"
+                  }
+                },
                 "schema": {
                   "$ref": "#/components/schemas/Tenant"
                 }
@@ -8742,6 +8896,13 @@
             "description": "Protected resource metadata",
             "content": {
               "application/json": {
+                "example": {
+                  "resource": "http://localhost:3000/api/t/m5jfjs",
+                  "authorization_servers": ["http://localhost:3000/oauth"],
+                  "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+                  "bearer_methods_supported": ["header"],
+                  "resource_documentation": "http://localhost:3000/docs"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ProtectedResourceMetadata"
                 }
@@ -11226,6 +11387,13 @@
             "description": "Protected resource metadata",
             "content": {
               "application/json": {
+                "example": {
+                  "resource": "http://localhost:3000/mcp/5pooo8/8c598ff2-1070-4bfe-af42-de4764db5aba/mcp",
+                  "authorization_servers": ["http://localhost:3000/oauth"],
+                  "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+                  "bearer_methods_supported": ["header"],
+                  "resource_documentation": "http://localhost:3000/docs"
+                },
                 "schema": {
                   "$ref": "#/components/schemas/ProtectedResourceMetadata"
                 }
@@ -12757,7 +12925,38 @@
                       "$ref": "#/components/schemas/ServiceAccount"
                     },
                     "apiKey": {
-                      "$ref": "#/components/schemas/CreatedApiKey"
+                      "allOf": [
+                        {
+                          "$ref": "#/components/schemas/ApiKey"
+                        },
+                        {
+                          "type": "object",
+                          "properties": {
+                            "secret": {
+                              "type": "string",
+                              "description": "The plaintext API key; store it now, it is not shown again."
+                            }
+                          },
+                          "required": ["secret"]
+                        }
+                      ],
+                      "description": "A newly issued API key with its plaintext secret.",
+                      "example": {
+                        "id": "d4710b9b-020b-4142-9ab9-1d886a432815",
+                        "actorId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",
+                        "tenantId": "kr2nrm",
+                        "name": "connect key",
+                        "prefix": "cella-development_sk_test_Ab3d",
+                        "last4": "2345",
+                        "scopes": ["attachment:read"],
+                        "expiresAt": null,
+                        "revokedAt": null,
+                        "revokedBy": null,
+                        "createdBy": "b9151091-2c7d-4b2f-b091-683eca24cc52",
+                        "createdAt": "2024-08-12T09:36:07.688Z",
+                        "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123452H6a53"
+                      },
+                      "x-tags": ["data", "service-accounts", "cella"]
                     }
                   },
                   "required": ["serviceAccount"]
@@ -13253,7 +13452,38 @@
                   "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123452H6a53"
                 },
                 "schema": {
-                  "$ref": "#/components/schemas/CreatedApiKey"
+                  "allOf": [
+                    {
+                      "$ref": "#/components/schemas/ApiKey"
+                    },
+                    {
+                      "type": "object",
+                      "properties": {
+                        "secret": {
+                          "type": "string",
+                          "description": "The plaintext API key; store it now, it is not shown again."
+                        }
+                      },
+                      "required": ["secret"]
+                    }
+                  ],
+                  "description": "A newly issued API key with its plaintext secret.",
+                  "example": {
+                    "id": "d4710b9b-020b-4142-9ab9-1d886a432815",
+                    "actorId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",
+                    "tenantId": "kr2nrm",
+                    "name": "connect key",
+                    "prefix": "cella-development_sk_test_Ab3d",
+                    "last4": "2345",
+                    "scopes": ["attachment:read"],
+                    "expiresAt": null,
+                    "revokedAt": null,
+                    "revokedBy": null,
+                    "createdBy": "b9151091-2c7d-4b2f-b091-683eca24cc52",
+                    "createdAt": "2024-08-12T09:36:07.688Z",
+                    "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123452H6a53"
+                  },
+                  "x-tags": ["data", "service-accounts", "cella"]
                 }
               }
             }

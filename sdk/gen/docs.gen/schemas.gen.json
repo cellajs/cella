@@ -470,7 +470,16 @@
       "module": ["me"],
       "owner": ["cella"]
     },
-    "description": "An OAuth consent (grant) of the current user."
+    "description": "An OAuth consent (grant) of the current user.",
+    "example": {
+      "id": "01J9Z2Q0X7ZQ4S5M8NX3F2ABCD",
+      "clientId": "https://vscode.dev/oauth/client-metadata.json",
+      "clientName": "Visual Studio Code",
+      "scopes": ["attachment:read"],
+      "resources": ["http://localhost:3000/mcp/tenant01/org01/mcp"],
+      "createdAt": "2026-09-22T10:00:00.000Z",
+      "expiresAt": "2026-10-22T10:00:00.000Z"
+    }
   },
   {
     "name": "Me",
@@ -969,6 +978,35 @@
     }
   },
   {
+    "name": "ProtectedResourceMetadata",
+    "ref": "#/components/schemas/ProtectedResourceMetadata",
+    "type": "object",
+    "schema": {
+      "type": "object",
+      "properties": {
+        "resource": { "type": "string", "required": true },
+        "authorization_servers": { "type": "array", "required": true, "itemType": "string" },
+        "scopes_supported": { "type": "array", "required": true, "itemType": "string" },
+        "bearer_methods_supported": { "type": "array", "required": true, "itemType": "string" },
+        "resource_documentation": { "type": "string", "required": true }
+      }
+    },
+    "schemaTag": "data",
+    "tagsByKind": {
+      "schema": ["data"],
+      "module": ["oauth-server"],
+      "owner": ["cella"]
+    },
+    "description": "RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.",
+    "example": {
+      "resource": "http://localhost:3000/api/t/m5jfjs",
+      "authorization_servers": ["http://localhost:3000/oauth"],
+      "scopes_supported": ["organization:read", "organization:write", "attachment:read", "attachment:write"],
+      "bearer_methods_supported": ["header"],
+      "resource_documentation": "http://localhost:3000/docs"
+    }
+  },
+  {
     "name": "Organization",
     "ref": "#/components/schemas/Organization",
     "type": "object",
@@ -1358,6 +1396,7 @@
     },
     "schemaTag": "data",
     "tagsByKind": {
+      "schema": ["data"],
       "module": ["service-accounts"],
       "owner": ["cella"]
     },
@@ -1375,71 +1414,6 @@
       "revokedBy": null,
       "createdBy": "e522e29f-f395-42f7-999b-7ea34c4cb760",
       "createdAt": "2024-11-05T21:01:57.922Z"
-    }
-  },
-  {
-    "name": "CreatedApiKey",
-    "ref": "#/components/schemas/CreatedApiKey",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "string", "required": true, "format": "uuid" },
-        "actorId": { "type": "string", "required": true, "format": "uuid" },
-        "tenantId": { "type": "string", "required": true, "maxLength": 24 },
-        "name": { "type": "string", "required": true, "maxLength": 255 },
-        "prefix": { "type": "string", "required": true, "maxLength": 255 },
-        "last4": { "type": "string", "required": true, "maxLength": 4 },
-        "scopes": {
-          "type": ["array", "null"],
-          "required": true,
-          "itemType": "string",
-          "enum": ["organization:read", "organization:write", "attachment:read", "attachment:write"]
-        },
-        "expiresAt": {
-          "type": ["string", "null"],
-          "required": true
-        },
-        "revokedAt": {
-          "type": ["string", "null"],
-          "required": true
-        },
-        "revokedBy": {
-          "type": ["string", "null"],
-          "required": true,
-          "format": "uuid"
-        },
-        "createdBy": {
-          "type": ["string", "null"],
-          "required": true,
-          "format": "uuid"
-        },
-        "createdAt": { "type": "string", "required": true },
-        "secret": { "type": "string", "required": true, "description": "The plaintext API key; store it now, it is not shown again." }
-      },
-      "extendsRef": "#/components/schemas/ApiKey"
-    },
-    "schemaTag": "data",
-    "tagsByKind": {
-      "module": ["service-accounts"],
-      "owner": ["cella"]
-    },
-    "description": "A newly issued API key with its plaintext secret.",
-    "extendsRef": "#/components/schemas/ApiKey",
-    "example": {
-      "id": "d4710b9b-020b-4142-9ab9-1d886a432815",
-      "actorId": "6b40b65d-1ea1-4132-892e-876f9e4e268a",
-      "tenantId": "kr2nrm",
-      "name": "connect key",
-      "prefix": "cella-development_sk_test_Ab3d",
-      "last4": "2345",
-      "scopes": ["attachment:read"],
-      "expiresAt": null,
-      "revokedAt": null,
-      "revokedBy": null,
-      "createdBy": "b9151091-2c7d-4b2f-b091-683eca24cc52",
-      "createdAt": "2024-08-12T09:36:07.688Z",
-      "secret": "cella-development_sk_test_Ab3dEfGhIjKlMnOpQrStUvWxYz0123452H6a53"
     }
   },
   {
@@ -1503,6 +1477,7 @@
     },
     "schemaTag": "data",
     "tagsByKind": {
+      "schema": ["data"],
       "module": ["service-accounts"],
       "owner": ["cella"]
     },
@@ -1629,7 +1604,38 @@
       "module": ["tenants"],
       "owner": ["cella"]
     },
-    "description": "A tenant representing an isolated data partition for multi-tenancy."
+    "description": "A tenant representing an isolated data partition for multi-tenancy.",
+    "example": {
+      "id": "l6ddop",
+      "name": "Lubowitz, Waters and Haley",
+      "status": "active",
+      "restrictions": {
+        "quotas": {
+          "user": 1000,
+          "organization": 1,
+          "attachment": 100,
+          "serviceAccount": 20,
+          "apiKey": 100
+        },
+        "rateLimits": { "apiPointsPerHour": 1000 },
+        "allowUnregisteredClients": true
+      },
+      "authStrategies": [],
+      "createdBy": "97e6acf3-d1c3-4967-a839-e8b32adde60a",
+      "subscriptionId": null,
+      "subscriptionStatus": "none",
+      "subscriptionPlan": null,
+      "createdAt": "2024-02-09T07:11:04.461Z",
+      "updatedAt": "2024-03-30T20:43:34.109Z",
+      "domainsCount": 0,
+      "organization": {
+        "id": "c6e2f31a-be0a-4e1a-a760-f0b106b6bbcb",
+        "name": "Lubowitz, Waters and Haley",
+        "slug": "lubowitz-waters-and-haley",
+        "thumbnailUrl": null,
+        "entityType": "organization"
+      }
+    }
   },
   {
     "name": "User",
@@ -2148,23 +2154,6 @@
       "severity": "warn",
       "timestamp": "2025-01-01T12:00:00.000Z"
     }
-  },
-  {
-    "name": "ProtectedResourceMetadata",
-    "ref": "#/components/schemas/ProtectedResourceMetadata",
-    "type": "object",
-    "schema": {
-      "type": "object",
-      "properties": {
-        "resource": { "type": "string", "required": true },
-        "authorization_servers": { "type": "array", "required": true, "itemType": "string" },
-        "scopes_supported": { "type": "array", "required": true, "itemType": "string" },
-        "bearer_methods_supported": { "type": "array", "required": true, "itemType": "string" },
-        "resource_documentation": { "type": "string", "required": true }
-      }
-    },
-    "schemaTag": "data",
-    "tagsByKind": {}
   },
   {
     "name": "StxBase",

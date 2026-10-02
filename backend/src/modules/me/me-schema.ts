@@ -8,7 +8,7 @@ import { inactiveMembershipSchema } from '#/modules/memberships/memberships-sche
 import { enabledOAuthProvidersSchema, userSchema } from '#/modules/user/user-schema';
 import { validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
-import { mockMeAuthResponse, mockMeResponse, mockUploadTokenResponse } from './me-mocks';
+import { mockConnectedApp, mockMeAuthResponse, mockMeResponse, mockUploadTokenResponse } from './me-mocks';
 
 /** A session row as stored, secret omitted: what a revoke returns. */
 export const sessionBaseSchema = createSelectSchema(sessionsTable);
@@ -79,6 +79,10 @@ export const connectedAppSchema = z
     createdAt: z.string(),
     expiresAt: z.string().nullable(),
   })
-  .openapi('ConnectedApp', { description: 'An OAuth consent (grant) of the current user.', 'x-tags': schemaTags('data', 'me', 'cella') });
+  .openapi('ConnectedApp', {
+    description: 'An OAuth consent (grant) of the current user.',
+    example: mockConnectedApp(),
+    'x-tags': schemaTags('data', 'me', 'cella'),
+  });
 
 export type ConnectedApp = z.infer<typeof connectedAppSchema>;

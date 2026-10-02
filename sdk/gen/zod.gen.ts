@@ -368,6 +368,9 @@ export const zTenant = z.object({
     .nullable(),
 });
 
+/**
+ * RFC 9728 metadata of a protected resource: the authorization servers that issue its tokens and the scopes it accepts.
+ */
 export const zProtectedResourceMetadata = z.object({
   resource: z.string(),
   authorization_servers: z.array(z.string()),
@@ -518,15 +521,6 @@ export const zApiKey = z.object({
   createdBy: z.uuid().nullable(),
   createdAt: z.string(),
 });
-
-/**
- * A newly issued API key with its plaintext secret.
- */
-export const zCreatedApiKey = zApiKey.and(
-  z.object({
-    secret: z.string(),
-  }),
-);
 
 /**
  * Auth health status
@@ -2177,7 +2171,13 @@ export const zCreateServiceAccountPath = z.object({
  */
 export const zCreateServiceAccountResponse = z.object({
   serviceAccount: zServiceAccount,
-  apiKey: zCreatedApiKey.optional(),
+  apiKey: zApiKey
+    .and(
+      z.object({
+        secret: z.string(),
+      }),
+    )
+    .optional(),
 });
 
 export const zUpdateServiceAccountBody = z.object({
@@ -2236,9 +2236,13 @@ export const zCreateApiKeyPath = z.object({
 });
 
 /**
- * API key was issued
+ * A newly issued API key with its plaintext secret.
  */
-export const zCreateApiKeyResponse = zCreatedApiKey;
+export const zCreateApiKeyResponse = zApiKey.and(
+  z.object({
+    secret: z.string(),
+  }),
+);
 
 export const zRevokeApiKeyPath = z.object({
   tenantId: z.string().max(50),

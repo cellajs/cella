@@ -7,13 +7,8 @@ type Props = Pick<DeleteItemsProps<Request, Request[]>, 'dialog' | 'callback'> &
 
 /** Cancel closes the dialog without reporting to `callback`. */
 export function DeleteRequests({ requests, ...props }: Props) {
+  const mutation = useDeleteRequestMutation();
   return (
-    <DeleteItems
-      items={requests}
-      useDelete={useDeleteRequestMutation}
-      toVariables={(items) => items}
-      onCancel={() => useDialoger.getState().remove()}
-      {...props}
-    />
+    <DeleteItems items={requests} mutation={mutation} toVariables={(items) => items} onCancel={() => useDialoger.getState().remove()} {...props} />
   );
 }

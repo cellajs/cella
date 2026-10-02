@@ -147,7 +147,6 @@ export type {
   CreateDomainErrors,
   CreateDomainResponse,
   CreateDomainResponses,
-  CreatedApiKey,
   CreateOrganizationsData,
   CreateOrganizationsError,
   CreateOrganizationsErrors,

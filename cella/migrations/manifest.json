@@ -1705,6 +1705,28 @@
    "pnpm check"
   ],
   "summary": "frontend/tailwind.config.ts is removed. Colors move to @theme inline in frontend/src/styling/tailwind.css, with the radius scale, fonts, text-md, transition-spacing and the accordion, collapsible and status-pulse animations in @theme, the dark variant as @custom-variant dark (&:is(.dark *)) and the content globs as @source. Breakpoints from appConfig.theme.screenSizes, the 1400px container cap and the typography not-prose rewrite move to frontend/src/styling/tailwind-plugin.ts, loaded with @plugin. tailwindcss-animate is replaced by tw-animate-css, whose animate-in/animate-out read --tw-duration, so a duration-* next to them now applies. Removed: the icon-xs/sm/md/lg/xl utilities (the icon codemod rewrites them to size-*), soft-bg-hover, the sidebar-primary tokens and colors, and the unused waving-hand, spin-slow, heartbeat, hflip and vflip animations. Added: intent-* (sets --intent-color), --overlay with bg-overlay, text-2xs, font-heading and chart-1..5. Apps move their tailwind.config.ts edits into the CSS or the plugin file."
+ },
+ {
+  "id": "20261001T2145-service-dependencies-on-disk",
+  "version": "next",
+  "title": "Service dependencies are what the bundle loads from disk",
+  "kind": "manual",
+  "syncBreaking": true,
+  "clientCacheBump": false,
+  "script": null,
+  "roots": [
+   "backend/package.json",
+   "cdc/package.json",
+   "yjs/package.json",
+   "backend/tsup.config.ts",
+   "cdc/tsup.config.ts",
+   "yjs/tsup.config.ts"
+  ],
+  "requires": [
+   "pnpm install",
+   "pnpm check"
+  ],
+  "summary": "keepOnDisk takes the service's dependencies and throws on one the bundle inlines: a service image installs only dependencies (pnpm install --prod), so dependencies lists what the bundle loads from disk and every inlined package is a devDependency. jose, oidc-provider and web-push move to backend devDependencies; backend drops pg-logical-replication, @blocknote/server-util and react-dom, yjs drops @blocknote/core and frontend drops dexie-react-hooks. knip.json becomes knip.jsonc and pnpm deps:unused runs knip --dependencies. Apps move each package pnpm build names to devDependencies, or into appKeepOnDisk when it must load from disk."
  }
  ]
 }

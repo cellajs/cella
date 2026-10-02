@@ -64,7 +64,7 @@
     "story": "pnpm --filter frontend storybook",
     "bench": "pnpm -C bench bench",
     "deps:bundle:analyze": "cross-env ANALYZE=true pnpm --filter frontend build",
-    "deps:unused": "knip",
+    "deps:unused": "knip --dependencies",
     "session": "bash session.sh"
   },
   "devDependencies": {

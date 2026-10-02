@@ -5,10 +5,11 @@ import { useOrganizationDeleteMutation } from '~/modules/organization/query';
 type Props = Pick<DeleteItemsProps<Organization, unknown>, 'dialog' | 'callback'> & { tenantId: string; organizations: Organization[] };
 
 export function DeleteOrganizations({ tenantId, organizations, ...props }: Props) {
+  const mutation = useOrganizationDeleteMutation();
   const toVariables = (items: Organization[]) => ({
     path: { tenantId },
     body: { ids: items.map(({ id }) => id) },
     organizations: items,
   });
-  return <DeleteItems items={organizations} useDelete={useOrganizationDeleteMutation} toVariables={toVariables} {...props} />;
+  return <DeleteItems items={organizations} mutation={mutation} toVariables={toVariables} {...props} />;
 }

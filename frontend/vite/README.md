@@ -13,3 +13,5 @@ Development builds add `docs-editor.ts`, which lets the pages table rewrite fron
 `router-options.ts` holds the file-based routing options for the TanStack Router plugin, and `generate-routes.ts` (`pnpm gen:routes`) runs the same generator on them without a build or dev server.
 
 `locales-plugin.ts` is separate from the docs pipeline: it builds and serves the merged locale namespaces (`../../locales/README.md`) and sends `i18next-hmr:update` on locale changes so the client reloads resources without a full refresh.
+
+`react-compiler-guard.ts` fails a production build when no module imports `react/compiler-runtime`, so a babel `include` that stops matching files cannot switch the React Compiler off unnoticed.
