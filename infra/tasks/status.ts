@@ -24,6 +24,7 @@ import {
   readControlState,
   stateBucket,
 } from '../lib/stack/control-store';
+import { readPendingOperations } from '../lib/stack/pending-operations';
 import { loadStackContext } from '../lib/stack/stack-context';
 import { buildStatusReport } from '../lib/status/registry';
 import type { CheckStatus, ProbeSession, ScalewayFacts, StatusReport } from '../lib/status/types';
@@ -51,8 +52,8 @@ function isNoSuchBucket(err: unknown): boolean {
 /**
  * Build the probe session the providers draw on: resolved stack context, the
  * key to probe with (the admin application key, else the key the process was
- * started with), and one memoized best-effort control-store read shared by
- * the state and live providers.
+ * started with), and one memoized best-effort state-bucket read (control
+ * object, lock, checkpoint) shared by the state and live providers.
  */
 export function buildSession(ctx: StatusContext): ProbeSession {
   const identity = resolveOperatorIdentity();
@@ -101,6 +102,12 @@ export function buildSession(ctx: StatusContext): ProbeSession {
               : { held: false };
           } catch {
             // Leave lock undefined (reported as unknown).
+          }
+          try {
+            // One GET of the checkpoint the state backend stores here; no checkpoint stays undefined (reported as unknown).
+            out.pendingOperations = await readPendingOperations(s3, bucket, ctx.mode);
+          } catch {
+            // Leave pendingOperations undefined (reported as unknown).
           }
         }
       } catch {

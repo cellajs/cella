@@ -201,7 +201,7 @@ async function chooseStackAction(): Promise<Exclude<CliMode, 'status'> | 'back'>
         description: 'Dry run of an Apply infra change (a CI deploy applies the same minus VM policy rules). Read-only.',
       },
       { name: 'Resume', value: 'resume', description: 'Re-sync config and GitHub secrets, and self-heal missing keys.' },
-      { name: 'Unlock', value: 'unlock', description: 'Clear a stale lock from an interrupted run.' },
+      { name: 'Unlock', value: 'unlock', description: 'Clear a stale lock and review the operations an interrupted run left in the Pulumi state.' },
       {
         name: 'Refresh GeoIP data',
         value: 'geoip-refresh',

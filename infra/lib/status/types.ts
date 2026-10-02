@@ -1,4 +1,5 @@
 import type { StackState } from '../stack/bootstrap-stack-state';
+import type { PendingOperation } from '../stack/pending-operations';
 
 /** Public JSON contract version for `infra status`. A breaking shape change bumps it. */
 export const STATUS_SCHEMA_VERSION = 1;
@@ -65,6 +66,8 @@ export interface ScalewayFacts {
   lock?: LockFacts;
   /** undefined = control object could not be read. */
   rollout?: RolloutRowFact[];
+  /** Operations an interrupted Pulumi run left in the stack checkpoint; undefined = checkpoint could not be read. */
+  pendingOperations?: PendingOperation[];
 }
 
 /** Everything a provider's `gather` may draw on: stack context, the probe key, and the memoized control-store read that lets the state and live providers share one S3 round-trip. */

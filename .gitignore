@@ -87,3 +87,6 @@ coverage/
 
 # infra operator debug captures (pnpm infra --debug-provider)
 infra/.debug/
+
+# infra state exports the Unlock action saves before it edits the Pulumi state (rollback copies)
+infra/.state-backups/

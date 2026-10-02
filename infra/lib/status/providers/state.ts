@@ -1,10 +1,10 @@
-import { check, deployAction, probed, runSetup, unlock } from '../check';
+import { check, clearPending, deployAction, probed, runSetup, unlock } from '../check';
 import type { ScalewayFacts, StatusProvider } from '../types';
 
 /** First 7 chars of a git SHA, the length humans and logs use. */
 const short = (sha: string): string => sha.slice(0, 7);
 
-/** State-bucket, stack-lock, and rollout checks from the shared control read. */
+/** State-bucket, stack-lock, rollout and pending-operation checks from the shared state-bucket read. */
 export const stateProvider: StatusProvider<ScalewayFacts> = {
   domain: 'state',
   gather(session) {
@@ -15,6 +15,7 @@ export const stateProvider: StatusProvider<ScalewayFacts> = {
     const bucket = check('state.bucket', 'State bucket', 'scaleway');
     const lock = check('state.lock', 'Stack lock', 'scaleway');
     const rollout = check('rollout', 'Rollout', 'scaleway');
+    const pending = check('state.pendingOperations', 'Pending operations', 'scaleway');
     return [
       probed(bucket, creds, facts?.stateBucketExists, 'could not read the state bucket', (exists) =>
         exists ? bucket.ok('present') : bucket.missing('absent; run setup to create it', runSetup),
@@ -33,6 +34,11 @@ export const stateProvider: StatusProvider<ScalewayFacts> = {
           .map((r) => `${r.slug}=${r.activeSha ? short(r.activeSha) : '-'}${r.pendingSha ? `→${short(r.pendingSha)}` : ''}`)
           .join(' ');
         return services.some((r) => r.pendingSha) ? rollout.warn(`pending rollout: ${summary}`, deployAction(session.mode)) : rollout.ok(summary);
+      }),
+      probed(pending, creds, facts?.pendingOperations, 'could not read the stack checkpoint', (operations) => {
+        if (operations.length === 0) return pending.ok('none');
+        const listed = operations.map((op) => `${op.kind} ${op.urn.split('::').pop()}`).join(', ');
+        return pending.warn(`${operations.length} interrupted: ${listed}`, clearPending);
       }),
     ];
   },

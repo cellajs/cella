@@ -52,7 +52,7 @@ interface ConditionalWrite {
 }
 
 /** GET an object's text body + etag; `{}` when the object does not exist. */
-async function getObjectText(s3: S3Like, bucket: string, key: string): Promise<{ body?: string; etag?: string }> {
+export async function readObjectText(s3: S3Like, bucket: string, key: string): Promise<{ body?: string; etag?: string }> {
   const { GetObjectCommand } = await s3sdk();
   try {
     const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
@@ -209,7 +209,7 @@ export function withoutPending(rollout: Record<string, ServiceRollout>): Record<
 
 /** Read the control object. Returns the empty state and no etag when the object does not exist yet. */
 export async function readControlState(s3: S3Like, bucket: string, key: string): Promise<{ state: ControlState; etag?: string }> {
-  const { body, etag } = await getObjectText(s3, bucket, key);
+  const { body, etag } = await readObjectText(s3, bucket, key);
   return { state: body ? parseControlState(body) : emptyControlState(), etag };
 }
 
@@ -328,7 +328,7 @@ function parseLockInfo(text: string): LockInfo | undefined {
 }
 
 async function readLock(s3: S3Like, bucket: string, key: string): Promise<{ info?: LockInfo; etag?: string }> {
-  const { body, etag } = await getObjectText(s3, bucket, key);
+  const { body, etag } = await readObjectText(s3, bucket, key);
   return { info: body ? parseLockInfo(body) : undefined, etag };
 }
 

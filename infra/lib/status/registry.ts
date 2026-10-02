@@ -39,6 +39,7 @@ const NEXT_ACTION_PRIORITY = [
   'live.',
   'dns.zone',
   'state.lock',
+  'state.pendingOperations',
 ];
 
 /** A check contributes a top-level action only when it actually needs doing. */

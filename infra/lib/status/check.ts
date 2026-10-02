@@ -5,6 +5,10 @@ export const runSetup: NextAction = { description: 'Run the infra CLI (setup on 
 export const installPulumi: NextAction = { description: 'Install the Pulumi CLI', command: 'brew install pulumi/tap/pulumi' };
 export const manageSecrets: NextAction = { description: 'Set the missing runtime secret(s) via "Manage runtime secrets"', command: 'pnpm infra' };
 export const unlock: NextAction = { description: 'Clear the stale stack lock via "Unlock" (only when no run is in progress)', command: 'pnpm infra' };
+export const clearPending: NextAction = {
+  description: 'Review the interrupted Pulumi operations via "Stack setup → Unlock" (only when no run is in progress)',
+  command: 'pnpm infra',
+};
 
 /** Local, self-contained deploy of the current HEAD for a mode. */
 export function deployAction(mode: string): NextAction {

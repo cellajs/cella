@@ -39,6 +39,7 @@ function base(overrides: Partial<Facts> = {}): Facts {
         { slug: 'backend', activeSha: 'abc123def456' },
         { slug: 'frontend', activeSha: 'abc123def456' },
       ],
+      pendingOperations: [],
     },
     secrets: [],
     live: [
@@ -120,7 +121,7 @@ describe('report envelope (public contract)', () => {
 describe('key degradation', () => {
   it('scaleway-tier checks are unknown (not error) without a Scaleway key', () => {
     const report = reportFor(base({ state: {}, secrets: undefined, identity: undefined }), { scalewayKeyAvailable: false });
-    for (const id of ['identity.adminApp', 'state.bucket', 'state.lock', 'rollout', 'secrets.required']) {
+    for (const id of ['identity.adminApp', 'state.bucket', 'state.lock', 'rollout', 'state.pendingOperations', 'secrets.required']) {
       const check = find(report.checks, id);
       expect(check?.status).toBe('unknown');
       expect(check?.credential).toBe('scaleway');
@@ -357,5 +358,28 @@ describe('expectedRelease', () => {
   it('has no expectation for a disabled service or an unread control object', () => {
     expect(expectedRelease({ services: { yjs: { enabled: false } }, singleVM: true }, 'yjs', rollout)).toEqual({});
     expect(expectedRelease(singleVM, 'frontend', undefined)).toEqual({ expectedSha: undefined, expectedFrom: 'backend' });
+  });
+});
+
+describe('pending operations', () => {
+  const withPending = (pendingOperations: ScalewayFacts['pendingOperations']) => reportFor(base({ state: { ...base().state, pendingOperations } }));
+
+  it('warns about an interrupted operation and points at Unlock', () => {
+    const report = withPending([
+      {
+        urn: 'urn:pulumi:production::infra::scaleway:iam/policy:Policy::vm-backend-policy',
+        type: 'scaleway:iam/policy:Policy',
+        kind: 'creating',
+        inState: true,
+      },
+    ]);
+    const check = find(report.checks, 'state.pendingOperations');
+    expect(check).toMatchObject({ status: 'warn', detail: '1 interrupted: creating vm-backend-policy', credential: 'scaleway' });
+    expect(check?.nextAction?.description).toContain('Unlock');
+    expect(report.nextAction?.description).toContain('Unlock');
+  });
+
+  it('is unknown, not ok, when the checkpoint could not be read', () => {
+    expect(find(withPending(undefined).checks, 'state.pendingOperations')?.status).toBe('unknown');
   });
 });
