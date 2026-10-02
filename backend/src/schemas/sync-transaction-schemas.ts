@@ -14,7 +14,8 @@ export const stxBaseSchema = z
     replayed: z.boolean().optional().describe('Set on a paused offline mutation being replayed: its field timestamps then arbitrate as intent time'),
   })
   .openapi('StxBase', {
-    description: 'Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.',
+    description:
+      'The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.',
     example: mockStxBase(),
     'x-tags': schemaTags('base', 'cella'),
   });

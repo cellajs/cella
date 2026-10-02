@@ -73,6 +73,7 @@ function OperationsTable() {
           columns={columns}
           setColumns={setColumns}
           tagFilters={tagFilters}
+          hasMcpTools={operations.some((op) => op.tool)}
         />
         <DataTable<GenOperationSummary>
           columns={columns}

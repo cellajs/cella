@@ -49,7 +49,7 @@
                     "type": ["object", "null"],
                     "required": true,
                     "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "Minimal user data for references."
+                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
                   },
                   "channelName": { "type": "string", "required": true },
                   "subjectTitle": { "type": "string", "required": true },

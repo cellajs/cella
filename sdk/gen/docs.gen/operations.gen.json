@@ -1861,7 +1861,12 @@
       "owner": ["cella"],
       "entity": ["product"]
     },
-    "entityType": "attachment"
+    "entityType": "attachment",
+    "tool": {
+      "description": "List attachments of the organization with optional search, sorting and paging. Returns metadata and the description as text.",
+      "approvalRequired": false,
+      "entity": "attachment"
+    }
   },
   {
     "id": "createAttachments",
@@ -1886,7 +1891,12 @@
       "owner": ["cella"],
       "entity": ["product"]
     },
-    "entityType": "attachment"
+    "entityType": "attachment",
+    "tool": {
+      "description": "Register already uploaded files as attachments. Give each a name, filename, MIME type, size and the storage key of the upload.",
+      "approvalRequired": true,
+      "entity": "attachment"
+    }
   },
   {
     "id": "deleteAttachments",
@@ -1911,7 +1921,8 @@
       "owner": ["cella"],
       "entity": ["product"]
     },
-    "entityType": "attachment"
+    "entityType": "attachment",
+    "tool": { "description": "Delete attachments by id. The stored files stay in storage.", "approvalRequired": true, "entity": "attachment" }
   },
   {
     "id": "getPresignedUrls",
@@ -1961,7 +1972,8 @@
       "owner": ["cella"],
       "entity": ["product"]
     },
-    "entityType": "attachment"
+    "entityType": "attachment",
+    "tool": { "description": "Read one attachment: its metadata and the description as text.", "approvalRequired": false, "entity": "attachment" }
   },
   {
     "id": "updateAttachment",
@@ -1986,7 +1998,8 @@
       "owner": ["cella"],
       "entity": ["product"]
     },
-    "entityType": "attachment"
+    "entityType": "attachment",
+    "tool": { "description": "Rename an attachment or replace its description.", "approvalRequired": true, "entity": "attachment" }
   },
   {
     "id": "getMcpProtectedResourceMetadata",

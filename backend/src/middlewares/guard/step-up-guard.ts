@@ -12,7 +12,7 @@ export const stepUpGuard = xMiddleware(
     type: 'x-guard',
     name: 'stepUp',
     description:
-      'Requires a recent proof of presence on this session: the enrolled passkey or TOTP, else a fresh sign-in or a confirmed email link. Refuses impersonation.',
+      'Requires a recent proof of presence on this session: a passkey or TOTP the user holds, else a fresh sign-in or emailed link; refuses impersonation',
   },
   async (ctx, next) => {
     await requireStepUp(ctx.var.session);

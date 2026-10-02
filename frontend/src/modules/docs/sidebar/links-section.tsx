@@ -39,10 +39,6 @@ export function LinksSection({ label, onClose }: LinksSectionProps) {
             {t('c:contact_us')}
           </Button>
 
-          <Button variant="ghost" className={rowClass} render={<Link to="/auth/authenticate" preload={false} draggable={false} onClick={onClose} />}>
-            {t('c:sign_in')}
-          </Button>
-
           <Button variant="ghost" className={rowClass} render={<Link to="/docs/overview" draggable={false} onClick={onClose} />}>
             openapi.json
           </Button>

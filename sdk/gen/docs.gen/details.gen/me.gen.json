@@ -10,12 +10,12 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "The currently authenticated user with their system admin status.",
+          "description": "The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.",
           "properties": {
             "user": {
               "type": "object",
               "required": true,
-              "description": "A user with profile data and activity timestamps.",
+              "description": "A full user account: profile, preferences such as language and newsletter, the MFA setting and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.",
               "properties": {
                 "createdAt": { "type": "string", "required": true },
                 "id": { "type": "string", "required": true, "format": "uuid" },
@@ -89,7 +89,11 @@
               },
               "ref": "#/components/schemas/User"
             },
-            "isSystemAdmin": { "type": "boolean", "required": true, "description": "Whether the current user has system admin privileges." }
+            "isSystemAdmin": {
+              "type": "boolean",
+              "required": true,
+              "description": "Whether the user holds the system admin role and the request comes from an allowed IP address."
+            }
           },
           "ref": "#/components/schemas/Me",
           "contentType": "application/json"
@@ -175,7 +179,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A user with profile data and activity timestamps.",
+          "description": "A full user account: profile, preferences such as language and newsletter, the MFA setting and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },
@@ -431,7 +435,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A user with profile data and activity timestamps.",
+          "description": "A full user account: profile, preferences such as language and newsletter, the MFA setting and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },
@@ -594,7 +598,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "Authentication metadata for the current user session.",
+          "description": "How the signed-in user signs in: connected OAuth providers, passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.",
           "properties": {
             "enabledOAuth": {
               "type": "array",
@@ -842,7 +846,7 @@
                   "entity": {
                     "type": "object",
                     "required": true,
-                    "description": "Base schema for entities with memberships (e.g. organization).",
+                    "description": "The fields every channel entity shares, such as organization; a channel owns memberships and roles. Used where a response names a channel without its details, such as the channel an invitation is for.",
                     "properties": {
                       "id": { "type": "string", "required": true },
                       "name": { "type": "string", "required": true },
@@ -872,7 +876,7 @@
                   "inactiveMembership": {
                     "type": "object",
                     "required": true,
-                    "description": "A membership record for a user who has not yet accepted an invitation.",
+                    "description": "An invitation to join a channel that is not accepted yet: the invited email, the role and who invited. It becomes a membership once accepted; the signed-in user's invitations list it with the channel it is for.",
                     "properties": {
                       "createdAt": { "type": "string", "required": true },
                       "id": { "type": "string", "required": true, "format": "uuid" },
@@ -911,7 +915,7 @@
                         "type": ["object", "null"],
                         "required": true,
                         "ref": "#/components/schemas/UserMinimalBase",
-                        "refDescription": "Minimal user data for references."
+                        "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
                       },
                       "organizationId": { "type": "string", "required": true, "format": "uuid" }
                     },
@@ -1297,7 +1301,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A signed token authorizing file uploads to the configured storage provider.",
+          "description": "Permission to upload files with one upload template, signed for the upload service, with the storage prefix the files land under. A client requests one before uploading; the template decides whether files are stored public or private.",
           "properties": {
             "publicBucket": {
               "type": "boolean",
@@ -1412,7 +1416,7 @@
               "ref": "#/components/schemas/MembershipBase",
               "items": {
                 "type": "object",
-                "description": "Core membership fields shared across active and inactive memberships.",
+                "description": "A user's membership in a channel without its audit fields: the role it grants, plus the member's own archive, mute and menu order. Returned for the signed-in user's own memberships, and as `included.membership` on a channel they belong to.",
                 "properties": {
                   "id": { "type": "string", "required": true, "format": "uuid" },
                   "tenantId": { "type": "string", "required": true, "maxLength": 24 },
@@ -1506,7 +1510,7 @@
               "ref": "#/components/schemas/ConnectedApp",
               "items": {
                 "type": "object",
-                "description": "An OAuth consent (grant) of the current user.",
+                "description": "An app the signed-in user consented to: its OAuth client, the scopes it may use and when the consent expires. Listed under Connected apps in account settings, where the user can revoke it.",
                 "properties": {
                   "id": { "type": "string", "required": true },
                   "clientId": { "type": "string", "required": true },

@@ -193,7 +193,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A user with profile data and activity timestamps.",
+          "description": "A full user account: profile, preferences such as language and newsletter, the MFA setting and activity timestamps. Returned to the user themselves and to system admins; other users see the `UserBase` fields.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },

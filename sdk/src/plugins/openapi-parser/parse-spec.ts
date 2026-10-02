@@ -6,6 +6,7 @@ import type {
   GenInfoSummary,
   GenOperationDetail,
   GenOperationSummary,
+  GenOperationTool,
   GenRequest,
   GenResponseSummary,
   GenSchema,
@@ -214,6 +215,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
       const entityType = opTags.map((tag: string) => tagToEntityType.get(tag)).find(Boolean);
       // Generated once, under whatever config ran the generator, so the docs page decides with its own app's config.
       const enabledBy = op['x-enabled-by'] as ConfigSwitch | undefined;
+      const tool = op['x-tool'] as GenOperationTool | undefined;
 
       operations.push({
         id: op.operationId,
@@ -232,6 +234,7 @@ export function parseOpenApiSpec(spec: OpenApiSpec): ParsedOpenApiSpec {
         tagsByKind: groupTagsByKind(op.tags ?? [], tagKindMap),
         ...(entityType && { entityType }),
         ...(enabledBy && { enabledBy }),
+        ...(tool && { tool }),
       });
 
       const operationDetail: GenOperationDetail = { operationId: op.operationId, responses };

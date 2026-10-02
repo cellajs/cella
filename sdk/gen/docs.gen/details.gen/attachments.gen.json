@@ -16,7 +16,7 @@
               "ref": "#/components/schemas/Attachment",
               "items": {
                 "type": "object",
-                "description": "A product entity for file attachment metadata.",
+                "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": { "type": "string", "required": true, "format": "uuid" },
@@ -34,7 +34,7 @@
                   "stx": {
                     "type": "object",
                     "required": true,
-                    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+                    "description": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.",
                     "properties": {
                       "mutationId": {
                         "type": "string",
@@ -72,13 +72,13 @@
                     "type": ["object", "null"],
                     "required": true,
                     "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "Minimal user data for references."
+                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
                   },
                   "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
                     "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "Minimal user data for references."
+                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
                   },
                   "deletedAt": {
                     "type": ["string", "null"],
@@ -323,7 +323,7 @@
               "ref": "#/components/schemas/Attachment",
               "items": {
                 "type": "object",
-                "description": "A product entity for file attachment metadata.",
+                "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": { "type": "string", "required": true, "format": "uuid" },
@@ -341,7 +341,7 @@
                   "stx": {
                     "type": "object",
                     "required": true,
-                    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+                    "description": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.",
                     "properties": {
                       "mutationId": {
                         "type": "string",
@@ -379,13 +379,13 @@
                     "type": ["object", "null"],
                     "required": true,
                     "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "Minimal user data for references."
+                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
                   },
                   "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
                     "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "Minimal user data for references."
+                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
                   },
                   "deletedAt": {
                     "type": ["string", "null"],
@@ -567,7 +567,7 @@
               "ref": "#/components/schemas/Attachment",
               "items": {
                 "type": "object",
-                "description": "A product entity for file attachment metadata.",
+                "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
                 "properties": {
                   "createdAt": { "type": "string", "required": true },
                   "id": { "type": "string", "required": true, "format": "uuid" },
@@ -585,7 +585,7 @@
                   "stx": {
                     "type": "object",
                     "required": true,
-                    "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+                    "description": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.",
                     "properties": {
                       "mutationId": {
                         "type": "string",
@@ -623,13 +623,13 @@
                     "type": ["object", "null"],
                     "required": true,
                     "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "Minimal user data for references."
+                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
                   },
                   "updatedBy": {
                     "type": ["object", "null"],
                     "required": true,
                     "ref": "#/components/schemas/UserMinimalBase",
-                    "refDescription": "Minimal user data for references."
+                    "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
                   },
                   "deletedAt": {
                     "type": ["string", "null"],
@@ -893,7 +893,7 @@
             "stx": {
               "type": "object",
               "required": true,
-              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+              "description": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.",
               "properties": {
                 "mutationId": {
                   "type": "string",
@@ -1170,7 +1170,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A product entity for file attachment metadata.",
+          "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },
@@ -1188,7 +1188,7 @@
             "stx": {
               "type": "object",
               "required": true,
-              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+              "description": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.",
               "properties": {
                 "mutationId": {
                   "type": "string",
@@ -1226,13 +1226,13 @@
               "type": ["object", "null"],
               "required": true,
               "ref": "#/components/schemas/UserMinimalBase",
-              "refDescription": "Minimal user data for references."
+              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
             },
             "updatedBy": {
               "type": ["object", "null"],
               "required": true,
               "ref": "#/components/schemas/UserMinimalBase",
-              "refDescription": "Minimal user data for references."
+              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
             },
             "deletedAt": {
               "type": ["string", "null"],
@@ -1402,7 +1402,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A product entity for file attachment metadata.",
+          "description": "A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.",
           "properties": {
             "createdAt": { "type": "string", "required": true },
             "id": { "type": "string", "required": true, "format": "uuid" },
@@ -1420,7 +1420,7 @@
             "stx": {
               "type": "object",
               "required": true,
-              "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+              "description": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.",
               "properties": {
                 "mutationId": {
                   "type": "string",
@@ -1458,13 +1458,13 @@
               "type": ["object", "null"],
               "required": true,
               "ref": "#/components/schemas/UserMinimalBase",
-              "refDescription": "Minimal user data for references."
+              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
             },
             "updatedBy": {
               "type": ["object", "null"],
               "required": true,
               "ref": "#/components/schemas/UserMinimalBase",
-              "refDescription": "Minimal user data for references."
+              "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
             },
             "deletedAt": {
               "type": ["string", "null"],
@@ -1650,7 +1650,7 @@
           "stx": {
             "type": "object",
             "required": true,
-            "description": "Sync transaction metadata for offline and realtime support, idempotency and HLC-based conflict resolution.",
+            "description": "The sync envelope on every product write: a mutation ID, a source ID and per-field timestamps. Clients send it with each create and update; the server merges concurrent edits by its timestamps, and a client recognizes its own writes coming back by the source ID.",
             "properties": {
               "mutationId": {
                 "type": "string",

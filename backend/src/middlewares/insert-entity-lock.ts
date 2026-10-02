@@ -12,7 +12,7 @@ export const insertEntityLock = xMiddleware(
     functionName: 'insertEntityLock',
     type: 'x-rate-limiter',
     name: 'insertEntityLock',
-    description: 'Prevents concurrent entity creation for the same tenant',
+    description: 'Creates per tenant: 1 at a time',
   },
   async (ctx, next) => {
     const tenantId = ctx.var.tenantId;

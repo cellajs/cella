@@ -22,7 +22,8 @@ export const channelBaseSchema = z
     bannerUrl: z.string().nullable(),
   })
   .openapi('ChannelBase', {
-    description: 'Base schema for entities with memberships (e.g. organization).',
+    description:
+      'The fields every channel entity shares, such as organization; a channel owns memberships and roles. Used where a response names a channel without its details, such as the channel an invitation is for.',
     example: mockChannelBase(),
     'x-tags': schemaTags('base', 'entities', 'cella'),
   });
@@ -37,7 +38,8 @@ export const productBaseSchema = z
     keywords: z.string(),
   })
   .openapi('ProductBase', {
-    description: 'Base schema for content entities with creator tracking (e.g. attachment).',
+    description:
+      'The fields every product entity shares, such as attachment: user-facing content that inherits access from its channel and syncs to clients. No endpoint returns it on its own; every product response starts with these fields.',
     example: mockProductBase(),
     'x-tags': schemaTags('base', 'entities', 'cella'),
   });

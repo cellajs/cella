@@ -51,5 +51,5 @@ export const sysAdminGuard = setMiddlewareExtension(combinedMiddleware, {
   functionName: 'sysAdminGuard',
   type: 'x-guard',
   name: 'sysAdmin',
-  description: 'Requires system admin + IP whitelist, never an impersonation',
+  description: 'Requires the system admin role and an allowed IP address; refuses impersonation',
 });

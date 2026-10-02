@@ -100,9 +100,9 @@ export function MarketingNav() {
               hash=""
               replace={location.pathname === '/about'}
               className="focus-effect relative rounded-md p-0.5 transition-transform sm:active:scale-100 sm:hover:scale-105 md:pr-4"
-              aria-label="Go to about page"
+              aria-label={t('c:go_to_about')}
             >
-              <Logo height={36} />
+              <Logo height={36} title={t('c:go_to_about')} />
 
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" className="absolute top-0.5 right-0.5 max-md:hidden">
                 <title>We support Ukraine</title>

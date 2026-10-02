@@ -9,6 +9,7 @@ import { FilePanelController, GridSuggestionMenuController, useCreateBlockNote }
 import { BlockNoteView } from '@blocknote/shadcn';
 import { type MouseEventHandler, type RefObject, useCallback, useEffect, useImperativeHandle, useRef } from 'react';
 import { appConfig } from 'shared';
+import { mediaBlockTypes } from 'shared/blocknote';
 import { type DescriptionBlock, findSummarySource } from 'shared/utils/derive-description-core';
 import type { WebsocketProvider } from 'y-websocket';
 import type { XmlFragment } from 'yjs';
@@ -118,9 +119,14 @@ function BlockNote({
   const collaborative = !!collaboration;
   const blockNoteRef = useRef<HTMLDivElement | null>(null);
 
+  // Without an upload path the menus offer no media blocks: BlockNote's own panel can only embed a URL, which the media
+  // grammar refuses. Stored media blocks still render.
+  const canUpload = !!filePanel || (!!baseFilePanelProps && appConfig.has.uploadEnabled);
   const defaultAllowedBlockTypes = Object.keys(customSchema.blockSpecs) as CustomBlockTypes[];
-  const allowedBlockTypes = defaultAllowedBlockTypes.filter(
-    (type) => !excludeBlockTypes?.includes(type as CustomBlockRegularTypes) && !excludeFileBlockTypes?.includes(type as CustomBlockFileTypes),
+  const allowedBlockTypes = defaultAllowedBlockTypes.filter((type) =>
+    mediaBlockTypes.has(type)
+      ? canUpload && !excludeFileBlockTypes?.includes(type as CustomBlockFileTypes)
+      : !excludeBlockTypes?.includes(type as CustomBlockRegularTypes),
   );
 
   // Parse initial content once at creation time so the undo history starts clean
@@ -319,9 +325,7 @@ function BlockNote({
         )
       ) : filePanel ? (
         <FilePanelController filePanel={filePanel} />
-      ) : (
-        <FilePanelController />
-      )}
+      ) : null}
     </BlockNoteView>
   );
 }

@@ -84,8 +84,9 @@ export function MarketingFooter() {
               scrollTo(0, 0);
             }}
             className="focus-effect mt-12 rounded-sm p-1 hover:opacity-90 active:scale-95"
+            aria-label={t('c:go_to_about')}
           >
-            <Logo textColor="white" iconColor="#b07a939e" />
+            <Logo textColor="white" iconColor="#b07a939e" title={t('c:go_to_about')} />
           </Link>
 
           <ul className="mt-6 mb-12 flex flex-wrap justify-center gap-x-4 gap-y-4 border-white/20 border-t pt-12 text-center text-sm text-white/60">

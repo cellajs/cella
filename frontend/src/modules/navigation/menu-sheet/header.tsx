@@ -42,8 +42,13 @@ export function MenuSheetHeader() {
   return (
     <div className="relative h-14 p-3 pb-1">
       <div className="flex h-10 items-center justify-between">
-        <Link to="/home" draggable={false} className="focus-effect active:press block rounded-md transition-transform hover:scale-105">
-          <Logo className="mx-1 h-8" />
+        <Link
+          to="/home"
+          draggable={false}
+          className="focus-effect active:press block rounded-md transition-transform hover:scale-105"
+          aria-label={t('c:go_to_home')}
+        >
+          <Logo className="mx-1 h-8" title={t('c:go_to_home')} />
         </Link>
 
         {/* Only shown inside a floating-nav layout. */}

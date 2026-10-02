@@ -353,4 +353,20 @@ describe('parseOpenApiSpec, golden fixture', () => {
     expect(byId.get('serviceOp')?.enabledBy).toEqual({ service: 'yjs' });
     expect(byId.get('providerOp')?.enabledBy).toEqual({ strategy: 'oauth', provider: 'google' });
   });
+
+  it('carries the MCP tool an operation is exposed as', () => {
+    const tool = { description: 'Read one attachment.', approvalRequired: false, entity: 'attachment' };
+    const spec = {
+      openapi: '3.1.0',
+      info: { title: 'Tool API', version: '1.0.0' },
+      paths: {
+        '/plain': { get: { operationId: 'plainOp', responses: { '200': { description: 'OK' } } } },
+        '/tool': { get: { operationId: 'toolOp', 'x-tool': tool, responses: { '200': { description: 'OK' } } } },
+      },
+    } as OpenApiSpec;
+
+    const byId = new Map(parseOpenApiSpec(spec).operations.map((o) => [o.id, o]));
+    expect(byId.get('plainOp')).not.toHaveProperty('tool');
+    expect(byId.get('toolOp')?.tool).toEqual(tool);
+  });
 });

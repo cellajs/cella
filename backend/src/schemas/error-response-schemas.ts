@@ -23,42 +23,47 @@ const errorResponseOptions = [
     code: 400,
     name: 'BadRequestError',
     description: 'Bad request: problem processing request.',
-    schemaDescription: 'Error returned when the request is malformed or contains invalid data.',
+    schemaDescription: 'The request is malformed or fails validation (400). `type` names the problem, such as `invalid_request`.',
     ref: '#/components/responses/BadRequestError',
   },
   {
     code: 401,
     name: 'UnauthorizedError',
     description: 'Unauthorized: authentication required.',
-    schemaDescription: 'Error returned when authentication is missing or invalid.',
+    schemaDescription:
+      'The request carries no valid session, API key or access token, or it expired (401). Sign in again, or send a valid key or token.',
     ref: '#/components/responses/UnauthorizedError',
   },
   {
     code: 403,
     name: 'ForbiddenError',
     description: 'Forbidden: insufficient permissions.',
-    schemaDescription: 'Error returned when the user lacks permission for the requested action.',
+    schemaDescription:
+      'The caller is known but may not do this (403): their role denies the action, a recent step-up is required, or the action is refused while impersonating. `type` names the reason, such as `step_up_required`.',
     ref: '#/components/responses/ForbiddenError',
   },
   {
     code: 404,
     name: 'NotFoundError',
     description: 'Not found: resource does not exist.',
-    schemaDescription: 'Error returned when the requested resource cannot be found.',
+    schemaDescription:
+      'The resource does not exist, or the caller may not read it (404). Both get the same answer, so a response never confirms that an id exists.',
     ref: '#/components/responses/NotFoundError',
   },
   {
     code: 409,
     name: 'ConflictError',
     description: 'Conflict: resource state conflict.',
-    schemaDescription: 'Error returned when the request conflicts with current resource state.',
+    schemaDescription:
+      'The request conflicts with the current state (409), such as a link that belongs to another account (`user_mismatch`) or a create already in progress. Reload the current state before retrying.',
     ref: '#/components/responses/ConflictError',
   },
   {
     code: 429,
     name: 'TooManyRequestsError',
     description: 'Rate limit: too many requests.',
-    schemaDescription: 'Error returned when rate limits are exceeded.',
+    schemaDescription:
+      "A rate limit refused the request (429). The `Retry-After` header says when to try again; an operation's rate limiters show what is counted.",
     ref: '#/components/responses/TooManyRequestsError',
   },
 ] as const;

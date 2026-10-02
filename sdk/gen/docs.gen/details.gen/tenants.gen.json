@@ -457,7 +457,7 @@
               "ref": "#/components/schemas/Tenant",
               "items": {
                 "type": "object",
-                "description": "A tenant representing an isolated data partition for multi-tenancy.",
+                "description": "The top-level isolation and billing boundary. Tenant and organization are 1:1: a tenant holds one organization, or none until that organization is created. System admins list and update tenants; a signed-in user can create one of their own.",
                 "properties": {
                   "id": { "type": "string", "required": true, "maxLength": 24 },
                   "name": { "type": "string", "required": true, "maxLength": 255 },
@@ -703,7 +703,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A tenant representing an isolated data partition for multi-tenancy.",
+          "description": "The top-level isolation and billing boundary. Tenant and organization are 1:1: a tenant holds one organization, or none until that organization is created. System admins list and update tenants; a signed-in user can create one of their own.",
           "properties": {
             "id": { "type": "string", "required": true, "maxLength": 24 },
             "name": { "type": "string", "required": true, "maxLength": 255 },
@@ -898,7 +898,7 @@
         "contentType": "application/json",
         "schema": {
           "type": "object",
-          "description": "A tenant representing an isolated data partition for multi-tenancy.",
+          "description": "The top-level isolation and billing boundary. Tenant and organization are 1:1: a tenant holds one organization, or none until that organization is created. System admins list and update tenants; a signed-in user can create one of their own.",
           "properties": {
             "id": { "type": "string", "required": true, "maxLength": 24 },
             "name": { "type": "string", "required": true, "maxLength": 255 },

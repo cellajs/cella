@@ -38,7 +38,8 @@ export const attachmentSchema = z
     viewCount: productViewCountSchema,
   })
   .openapi('Attachment', {
-    description: 'A product entity for file attachment metadata.',
+    description:
+      'A file in an organization: a product entity that syncs to clients and works offline. It holds the file metadata and storage keys, not the file itself; a client fetches the file through a signed URL.',
     example: mockAttachmentResponse(),
     'x-tags': schemaTags('data', 'attachments', 'cella'),
   });

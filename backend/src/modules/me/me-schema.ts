@@ -22,10 +22,12 @@ export const sessionSchema = sessionBaseSchema.extend({
 export const meSchema = z
   .object({
     user: userSchema,
-    isSystemAdmin: z.boolean().openapi({ description: 'Whether the current user has system admin privileges.' }),
+    isSystemAdmin: z
+      .boolean()
+      .openapi({ description: 'Whether the user holds the system admin role and the request comes from an allowed IP address.' }),
   })
   .openapi('Me', {
-    description: 'The currently authenticated user with their system admin status.',
+    description: 'The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.',
     example: mockMeResponse(),
     'x-tags': schemaTags('data', 'me', 'cella'),
   });
@@ -38,7 +40,8 @@ export const meAuthDataSchema = z
     passkeys: z.array(passkeySchema),
   })
   .openapi('MeAuthData', {
-    description: 'Authentication metadata for the current user session.',
+    description:
+      'How the signed-in user signs in: connected OAuth providers, passkeys, whether TOTP is set up, and their live sessions. The account page lists it, where sessions can be ended and sign-in methods changed.',
     example: mockMeAuthResponse(),
     'x-tags': schemaTags('data', 'me', 'cella'),
   });
@@ -55,7 +58,8 @@ export const uploadTokenSchema = z
       .nullable(),
   })
   .openapi('UploadToken', {
-    description: 'A signed token authorizing file uploads to the configured storage provider.',
+    description:
+      'Permission to upload files with one upload template, signed for the upload service, with the storage prefix the files land under. A client requests one before uploading; the template decides whether files are stored public or private.',
     example: mockUploadTokenResponse(),
     'x-tags': schemaTags('data', 'me', 'cella'),
   });
@@ -80,7 +84,8 @@ export const connectedAppSchema = z
     expiresAt: z.string().nullable(),
   })
   .openapi('ConnectedApp', {
-    description: 'An OAuth consent (grant) of the current user.',
+    description:
+      'An app the signed-in user consented to: its OAuth client, the scopes it may use and when the consent expires. Listed under Connected apps in account settings, where the user can revoke it.',
     example: mockConnectedApp(),
     'x-tags': schemaTags('data', 'me', 'cella'),
   });

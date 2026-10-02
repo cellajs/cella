@@ -1,12 +1,15 @@
 import { useMemo } from 'react';
 import type { GenOperationSummary } from 'sdk/docs-types';
 
+/** The filter value for operations exposed as MCP tools; tag filters always hold a colon, so it never collides. */
+export const mcpToolFilter = 'mcp';
+
 interface FilterOptions {
   /** Free-text query; space-separated terms are AND-combined. */
   q: string;
   /**
    * Tag filter encoded as `${kind}:${value}` (e.g. `'owner:cella'`); restricts to operations whose
-   * `tagsByKind[kind]` includes `value`.
+   * `tagsByKind[kind]` includes `value`. `mcpToolFilter` restricts to MCP tools.
    */
   tag?: string;
 }
@@ -25,7 +28,9 @@ const matchesTerm = (op: GenOperationSummary, term: string): boolean =>
 export function useFilteredOperations(operations: GenOperationSummary[], { q, tag }: FilterOptions) {
   return useMemo(() => {
     let ops = operations;
-    if (tag) {
+    if (tag === mcpToolFilter) {
+      ops = ops.filter((op) => op.tool);
+    } else if (tag) {
       const sep = tag.indexOf(':');
       if (sep > 0) {
         const kind = tag.slice(0, sep);
