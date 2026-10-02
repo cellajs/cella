@@ -85,6 +85,7 @@ export type CommonBlockNoteProps = {
   onFocus?: () => void;
   onEscapeClick?: () => void;
   onEnterClick?: () => void;
+  /** Runs before a route loads, once the user changed the document since the editor mounted. */
   onBeforeLoad?: (editor: CustomBlockNoteEditor) => void;
 } & (
   | { filePanel: (props: FilePanelProps) => React.ReactElement; baseFilePanelProps?: never }

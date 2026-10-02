@@ -156,7 +156,10 @@ function CollaborativeHost({
   );
 }
 
-/** The editor of a type with Yjs off, built from `description` and writing through `updateData`. */
+/**
+ * The editor of a type with Yjs off, built from `description` and writing through `updateData`. Unmount and navigation
+ * commit only after a user change; navigation compares with the description current then.
+ */
 function StandaloneHost({
   entityType: _entityType,
   entityId,
@@ -175,8 +178,7 @@ function StandaloneHost({
       updateData={(blocks) => void updateData(blocks, false)}
       onBeforeLoad={(editor) => {
         const strBlocks = JSON.stringify(editor.document);
-        if (description === null || strBlocks === description) return;
-        void updateData(strBlocks, false);
+        if (strBlocks !== description) void updateData(strBlocks, false);
       }}
       {...blockNoteProps}
     />

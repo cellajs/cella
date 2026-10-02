@@ -13,9 +13,11 @@ vi.mock('~/query/query-client', async () => {
   const { QueryClient } = await import('@tanstack/react-query');
   return { queryClient: new QueryClient() };
 });
-vi.mock('~/hooks/use-online-manager', () => ({ useOnlineManager: () => false }));
-vi.mock('~/modules/common/blocknote/hooks/use-yjs-token', () => ({ useYjsToken: () => ({ token: undefined, refused: false }) }));
-vi.mock('~/modules/common/blocknote/yjs-connections', () => ({ useYjsConnection: () => null }));
+// A collaborative host's relay: online with a token, and the connection a test sets up.
+vi.mock('~/hooks/use-online-manager', () => ({ useOnlineManager: () => true }));
+vi.mock('~/modules/common/blocknote/hooks/use-yjs-token', () => ({ useYjsToken: () => ({ token: 'token', refused: false }) }));
+let liveConnection: unknown = null;
+vi.mock('~/modules/common/blocknote/yjs-connections', () => ({ useYjsConnection: (id: string | undefined) => (id ? liveConnection : null) }));
 vi.mock('~/modules/user/user-store', async (importOriginal) => ({
   ...(await importOriginal<typeof import('~/modules/user/user-store')>()),
   useCurrentUser: () => ({ name: 'Editor' }),
@@ -178,6 +180,30 @@ describe('standalone BlockNote commits', () => {
 
     expect(updateData).not.toHaveBeenCalled();
   });
+
+  it('does not commit on unmount when untouched, though defaultValue moved after mount', async () => {
+    const updateData = vi.fn();
+    await renderEditor({ defaultValue: stored, updateData });
+
+    await renderEditor({ defaultValue: otherStored, updateData });
+    expect(contentApi.current?.getContent()).toBe(stored);
+    await unmount();
+
+    expect(updateData).not.toHaveBeenCalled();
+  });
+
+  it('does not commit on unmount a stored document it serializes differently when untouched', async () => {
+    const updateData = vi.fn();
+    const unnormalized = JSON.stringify([
+      { id: 'p', type: 'paragraph', props: {}, content: [{ type: 'text', text: 'hello', styles: {} }], children: [] },
+    ]);
+    await renderEditor({ defaultValue: unnormalized, updateData });
+    expect(contentApi.current?.getContent()).not.toBe(unnormalized);
+
+    await unmount();
+
+    expect(updateData).not.toHaveBeenCalled();
+  });
 });
 
 describe('collaborative BlockNote commits', () => {
@@ -220,10 +246,10 @@ describe('collaborative BlockNote commits', () => {
   });
 });
 
-describe('CollaborativeBlockNote standalone navigation write', () => {
+describe('CollaborativeBlockNote with Yjs off', () => {
   withYjsOff();
 
-  it('writes the editor document as a standalone update when it differs from the description', async () => {
+  it('writes the editor document on navigation once the user changed it', async () => {
     const updateData = vi.fn();
     await renderHost({ updateData });
 
@@ -233,16 +259,17 @@ describe('CollaborativeBlockNote standalone navigation write', () => {
     expect(updateData).toHaveBeenCalledExactlyOnceWith(contentApi.current?.getContent(), false);
   });
 
-  it('does not write when the document equals the description', async () => {
+  it('does not write on navigation when untouched, though the description moved after mount', async () => {
     const updateData = vi.fn();
     await renderHost({ updateData });
 
+    await renderHost({ description: otherStored, updateData });
     await navigate();
 
     expect(updateData).not.toHaveBeenCalled();
   });
 
-  it('does not write when the description is null', async () => {
+  it('does not write on navigation when untouched and the description is null', async () => {
     const updateData = vi.fn();
     await renderHost({ description: null, updateData });
 
@@ -250,55 +277,57 @@ describe('CollaborativeBlockNote standalone navigation write', () => {
 
     expect(updateData).not.toHaveBeenCalled();
   });
-});
 
-describe('behaviour the description sync redesign changes', () => {
-  withYjsOff();
-
-  it('commits on unmount when defaultValue changed after mount, though the user never touched the document', async () => {
-    const updateData = vi.fn();
-    const renderEditor = (defaultValue: string) =>
-      act(async () => root.render(<BlockNote id="doc" defaultValue={defaultValue} updateData={updateData} contentApiRef={contentApi} />));
-    await renderEditor(stored);
-
-    await renderEditor(otherStored);
-    expect(contentApi.current?.getContent()).toBe(stored);
-    await unmount();
-
-    expect(updateData).toHaveBeenCalledExactlyOnceWith(stored);
-  });
-
-  it('commits on unmount a stored document the editor serializes differently, though the user never touched it', async () => {
-    const updateData = vi.fn();
-    const unnormalized = JSON.stringify([
-      { id: 'p', type: 'paragraph', props: {}, content: [{ type: 'text', text: 'hello', styles: {} }], children: [] },
-    ]);
-    await act(async () => root.render(<BlockNote id="doc" defaultValue={unnormalized} updateData={updateData} contentApiRef={contentApi} />));
-
-    await unmount();
-
-    expect(updateData).toHaveBeenCalledOnce();
-    expect(updateData.mock.calls[0][0]).not.toBe(unnormalized);
-  });
-
-  it('compares the navigation write against the description it mounted with', async () => {
+  it('compares the navigation write with the description current then', async () => {
     const updateData = vi.fn();
     await renderHost({ updateData });
 
-    // A newer description arrives; the editor still holds the one it mounted with.
-    await renderHost({ description: otherStored, updateData });
+    await edit();
+    const edited = contentApi.current?.getContent();
+    // The edit's own write landed in the description: nothing is left to write.
+    await renderHost({ description: edited, updateData });
     await navigate();
 
     expect(updateData).not.toHaveBeenCalled();
   });
 
-  it('writes the mounted document over a newer description on unmount, as a standalone update', async () => {
+  it('does not write on unmount when untouched, though the description moved after mount', async () => {
     const updateData = vi.fn();
     await renderHost({ updateData });
 
     await renderHost({ description: otherStored, updateData });
     await unmount();
 
-    expect(updateData).toHaveBeenCalledExactlyOnceWith(stored, false);
+    expect(updateData).not.toHaveBeenCalled();
+  });
+
+  it('writes on unmount once the user changed the document', async () => {
+    const updateData = vi.fn();
+    await renderHost({ updateData });
+
+    await edit();
+    const edited = contentApi.current?.getContent();
+    await unmount();
+
+    expect(updateData).toHaveBeenCalledExactlyOnceWith(edited, false);
+  });
+});
+
+describe('CollaborativeBlockNote with Yjs on', () => {
+  afterEach(() => {
+    liveConnection = null;
+  });
+
+  it('makes no REST write on navigation or unmount, however the document changed', async () => {
+    liveConnection = { provider: {}, fragment: seededFragment(), synced: true, stopped: false, rebuilds: 0, unsynced: false };
+    const updateData = vi.fn();
+    await renderHost({ updateData });
+    expect(contentApi.current?.getContent()).toBe(stored);
+
+    await edit();
+    await navigate();
+    await unmount();
+
+    expect(updateData).not.toHaveBeenCalled();
   });
 });
