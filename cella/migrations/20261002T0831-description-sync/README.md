@@ -42,6 +42,7 @@ No script: manual.
 10. raak `task/card/card-description-slot.tsx`: rebuild it on `useDescriptionSlot({ editing, canEdit: !isReadOnly, description, holdOnExit: state === 'expanded', cursorAtPoint: state === 'expanded' })` and `<DescriptionLayers>`. Hover calls `warm('hover')`/`cool('hover')`. Delete `task/card/preserve-description-height.tsx` and the outer wrapper in task-card.tsx.
 11. projectcampus `item/item-document.tsx`, `material/material-document.tsx`: rebuild them on the hook. The kebab's warm event becomes `warm('menu')`, with `cool('menu')` when the menu closes. Drop the inner `PreserveDescriptionHeight` and render the title error as a sibling. Remove `[data-sonner-toaster]` from the outside-press allowlist.
 12. Checkbox clicks on the static now commit through the editor: a cache patch with the derivation, or one REST write with Yjs off.
+13. A slot-hosted editor takes no `autoFocus`. It focuses the start after the slot placed the cursor; the slot focuses the editor itself.
 
 ## Verify
 
