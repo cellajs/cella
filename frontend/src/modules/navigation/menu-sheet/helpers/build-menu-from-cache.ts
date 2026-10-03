@@ -10,26 +10,20 @@ const menuEntityTypes = Array.from(
   new Set(appConfig.menuStructure.flatMap((s) => [s.entityType, s.subentityType].filter(Boolean))),
 ) as ChannelEntityType[];
 
+/** Menu items of one entity type from its list query data: the entities that carry the user's membership. */
+export const menuItemsFromList = (data: unknown): UserMenuItem[] => {
+  // biome-ignore lint/suspicious/noExplicitAny: query data shape is heterogeneous across entity types.
+  const items = data ? flattenInfiniteData<any>(data as any) : [];
+  return items.filter((item): item is UserMenuItem => !!(item as Partial<UserMenuItem>).membership);
+};
+
 /** Assumes entity lists were already enriched with memberships by the cache subscriber (initChannelEnrichment). */
 export function buildMenuFromCache(userId: string): UserMenu {
-  const registry = channelListQueriesByType;
   const byType = new Map<ChannelEntityType, UserMenuItem[]>();
 
   for (const entityType of menuEntityTypes) {
-    const factory = registry[entityType];
-    if (!factory) {
-      byType.set(entityType, []);
-      continue;
-    }
-
-    const data = queryClient.getQueryData(factory({ relatableUserId: userId }).queryKey);
-    // biome-ignore lint/suspicious/noExplicitAny: query data shape is heterogeneous across entity types.
-    const items = data ? flattenInfiniteData<any>(data as any) : [];
-
-    byType.set(
-      entityType,
-      items.filter((item): item is UserMenuItem => !!(item as Partial<UserMenuItem>).membership),
-    );
+    const factory = channelListQueriesByType[entityType];
+    byType.set(entityType, factory ? menuItemsFromList(queryClient.getQueryData(factory({ relatableUserId: userId }).queryKey)) : []);
   }
 
   return buildMenu(byType, appConfig.menuStructure);
