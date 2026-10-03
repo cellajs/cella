@@ -13,7 +13,7 @@ import {
   systemInvite,
 } from 'sdk';
 import { appConfig } from 'shared';
-import type { ApiError } from '~/lib/api';
+import { ApiError } from '~/lib/api';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { requestsSearchDefaults } from '~/modules/requests/search-params-schemas';
 import { offsetPaging, pageQuery } from '~/query/basic/infinite-query-options';
@@ -51,10 +51,17 @@ export const requestsListQueryOptions = ({ limit = appConfig.requestLimits.reque
   });
 };
 
+/** Public forms send one-shot requests: a failure surfaces at once, and the form never waits on offline replay. */
 export const useCreateRequestMutation = () => {
   return useMutation<CreateRequestResponse, ApiError, CreateRequestData['body']>({
     mutationKey: requestsKeys.create,
     mutationFn: (body) => createRequest({ body }),
+    networkMode: 'always',
+    retry: false,
+    // The global handler toasts every ApiError and stays silent on the rest (no response, or one that is not an API error).
+    onError: (error) => {
+      if (!(error instanceof ApiError)) toaster.error(t('c:server_unreachable.text'));
+    },
   });
 };
 

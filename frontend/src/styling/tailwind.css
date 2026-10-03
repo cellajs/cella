@@ -317,6 +317,11 @@
   }
 }
 
+/* Draws the focus-effect ring inside the element, for rows in clipping containers such as collapsible nav lists. */
+@utility focus-inset {
+  @apply focus-visible:ring-inset focus-visible:ring-offset-0;
+}
+
 /* Spotlight lift for virtualized rows (spotlighter/use-spotlighter.ts): virtua's row wrappers have
    `contain: layout style`, so escaping the z-110 overlay needs the z-index on the wrapper itself;
    the row marks itself and this rule climbs one level (pairs with `spotlightLift`, relative z-111). */

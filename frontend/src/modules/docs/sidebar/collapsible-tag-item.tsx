@@ -83,7 +83,7 @@ function CollapsibleTagItemBase<T>({
             draggable={false}
             className={cn(
               buttonVariants({ variant: 'ghost' }),
-              'group h-8 w-full pl-5 font-normal opacity-80',
+              'group focus-inset h-8 w-full pl-5 font-normal opacity-80',
               'group-data-[active=true]/tag:bg-accent group-data-[expanded=true]/tag:opacity-100',
               triggerClassName,
             )}

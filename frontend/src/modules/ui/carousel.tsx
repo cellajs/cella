@@ -210,9 +210,9 @@ function CarouselNext({ className, variant = 'outline', size = 'icon', ...props 
   );
 }
 
-const dotsVariants = cva('rounded-full transition-all duration-300', {
+const dotsVariants = cva('group/dot relative flex cursor-pointer items-center justify-center rounded-full', {
   variants: {
-    size: { default: 'size-5 text-xs', sm: 'size-6 text-sm', lg: 'size-7 text-md' },
+    size: { default: 'size-5', sm: 'size-6', lg: 'size-7' },
     gap: { default: 'mx-1', sm: 'mx-1', lg: 'mx-1' },
   },
   defaultVariants: { size: 'default', gap: 'default' },
@@ -237,7 +237,16 @@ function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
   }, [api]);
 
   return (
-    <div role="tablist" className={cn('mx-2 flex cursor-default justify-center', className)} {...props}>
+    // ::before widens the strip's hover zone without layout: nearing the dots enlarges them all, so the pointer finds a target before it lands.
+    // The buttons are positioned, so they paint above it and keep their clicks; z-10 lifts the zone over neighboring decoration such as a device bezel.
+    <div
+      role="tablist"
+      className={cn(
+        'group/dots relative z-10 mx-auto flex w-fit cursor-default justify-center before:absolute before:-inset-x-8 before:-inset-y-4',
+        className,
+      )}
+      {...props}
+    >
       {Array.from({ length }).map((_, index) => (
         <button
           type="button"
@@ -249,13 +258,16 @@ function CarouselDots({ className, size, gap, ...props }: CarouselDotsProps) {
           aria-selected={current === index ? 'true' : 'false'}
           aria-label={`Slide ${index + 1}`}
           onClick={() => api?.scrollTo(index)}
-          className={cn(
-            dotsVariants({ size, gap, className }),
-            'focus-effect cursor-pointer leading-3',
-            current === index ? 'text-foreground' : 'text-muted',
-          )}
+          className={cn(dotsVariants({ size, gap }), 'focus-effect')}
         >
-          ●
+          <span
+            aria-hidden="true"
+            className={cn(
+              'size-[30%] rounded-full transition-[width,height,background-color] duration-200',
+              'pointer-coarse:size-[45%] group-hover/dots:size-[45%] group-has-[:focus-visible]/dots:size-[45%]',
+              current === index ? 'bg-foreground' : 'bg-muted-foreground/40 group-hover/dot:bg-muted-foreground',
+            )}
+          />
         </button>
       ))}
     </div>

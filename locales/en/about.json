@@ -232,7 +232,7 @@
   "entity_buckets.chats": "Chats",
   "entity_buckets.messages": "Messages",
   "entity_buckets.foundation": "REST API · Postgres · React Query",
-  "how.text": "Cella's selective sync engine is built around two guiding principles:",
+  "how.text": "Cella's selective sync engine is built around two guiding principles.",
   "how.concept_1": "Sync processes don't compete, they complement the REST API",
   "how.concept_2": "Synced data should be shaped & treated like non-synced data",
   "how.title": "Sync architecture",
@@ -275,5 +275,5 @@
   "why.text_3": "Infrastructure as Code and a CLI allow you to easily deploy everything on European infrastructure.",
   "why.title_2": "Selective sync engine",
   "why.title_1": "Batteries included template",
-  "why.title_3": "EU cloud infrastructure"
+  "why.title_3": "100% EU cloud infra"
 }

@@ -245,7 +245,7 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
           />
         </>
       )}
-      {!isDialog && <CarouselDots size="sm" gap="lg" className="relative mt-[calc(1rem+2%)] p-1" />}
+      {!isDialog && <CarouselDots size="sm" gap="lg" className="relative mt-[calc(1rem+2%)]" />}
     </BaseCarousel>
   );
 }
