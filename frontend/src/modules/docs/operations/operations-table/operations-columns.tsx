@@ -14,6 +14,9 @@ import { getMethodColor } from '../../helpers/get-method-color';
 /** Tag kinds whose columns start hidden, to keep the default table narrow; the columns menu shows them. */
 const hiddenTagKinds = new Set(['owner', 'entity']);
 
+/** Tag kinds shown as plain small text; the other kinds get a badge per value. */
+const plainTagKinds = new Set(['owner']);
+
 interface LabelItem {
   key: string;
   label: string;
@@ -23,15 +26,14 @@ interface LabelItem {
 /** Comma-separated labels; one with a tooltip gets a dotted underline that brightens on hover. */
 function LabelList({ items }: { items: LabelItem[] }) {
   return (
-    <div className="truncate text-xs">
+    <div className="truncate text-foreground/75 text-xs">
       {items.map(({ key, label, tooltip }, index) => (
         <Fragment key={key}>
           {index > 0 && <span className="opacity-60">, </span>}
           <span
             className={cn(
               'cursor-default',
-              tooltip &&
-                'text-foreground/75 underline decoration-foreground/40 decoration-dotted underline-offset-3 hover:text-foreground hover:decoration-foreground',
+              tooltip && 'underline decoration-foreground/40 decoration-dotted underline-offset-3 hover:text-foreground hover:decoration-foreground',
             )}
             data-tooltip={tooltip ? 'true' : undefined}
             data-tooltip-content={tooltip}
@@ -96,11 +98,14 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
       sortable: true,
       minBreakpoint: 'md',
       resizable: true,
+      // A set width keeps the spare room for the path column
+      width: plainTagKinds.has(kind) ? 90 : 130,
       minWidth: 80,
       placeholderValue: '-',
       renderCell: ({ row }: { row: GenOperationSummary }) => {
         const values = row.tagsByKind?.[kind];
         if (!values?.length) return null;
+        if (plainTagKinds.has(kind)) return <LabelList items={values.map((tag) => ({ key: tag, label: tag }))} />;
         return (
           <div className="flex flex-wrap gap-1">
             {values.map((tag) => (
@@ -120,11 +125,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         sortable: true,
         width: 80,
         minWidth: 80,
-        renderCell: ({ row }) => (
-          <Badge variant="secondary" className={cn('bg-transparent font-mono text-xs uppercase shadow-none', getMethodColor(row.method))}>
-            {row.method.toUpperCase()}
-          </Badge>
-        ),
+        renderCell: ({ row }) => <span className={cn('font-medium font-mono text-xs', getMethodColor(row.method))}>{row.method.toUpperCase()}</span>,
       },
       {
         key: 'path',
@@ -191,6 +192,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         hidden: true,
         sortable: true,
         resizable: true,
+        minWidth: 200,
         renderCell: ({ row }) => <span className="truncate text-sm">{row.summary || row.id}</span>,
       },
       ...extensionColumns,
