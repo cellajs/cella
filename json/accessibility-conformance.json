@@ -1,0 +1,1661 @@
+{
+  "edition": "VPAT® 2.5Rev WCAG",
+  "standard": "WCAG 2.2 Level AA",
+  "auditedAt": "2026-10-02",
+  "scope": [
+    "marketing-home",
+    "features",
+    "sync-engine",
+    "contact",
+    "legal-privacy",
+    "legal-accessibility",
+    "docs-overview",
+    "docs-operations",
+    "docs-schemas",
+    "docs-page",
+    "docs-search",
+    "sign-in",
+    "sign-in-email",
+    "auth-error",
+    "home",
+    "account",
+    "org-attachments",
+    "org-members",
+    "org-settings",
+    "system-users",
+    "system-organizations",
+    "menu-sheet",
+    "search-sheet",
+    "account-sheet",
+    "invite-dialog",
+    "member-sheet"
+  ],
+  "criteria": [
+    {
+      "id": "1.1.1",
+      "name": "Non-text Content",
+      "level": "A",
+      "en301549": "9.1.1.1",
+      "status": "partially-supports",
+      "remarks": "In tables, a small dot on the View button means some columns are hidden, but the dot has no text: open the View menu to see which columns are off. In account settings, each session shows a desktop or phone icon for the device type without text. The end-of-list marker under tables is read aloud as stray symbols and can be ignored.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Checked facts.images, every img and icon control in tree.yml, and the screenshot of all 26 states. All img elements are named (marketing-home 23 logos and flags, github icon, org-attachments 2 thumbnails named by filename, org-settings img 'Locked'); every icon-only control in the trees has a name. Failures: (1) org-attachments and system-organizations: the View button carries an empty Badge dot that means columns are hidden (data-table/columns-view.tsx:33, no children); tree.yml shows only button 'View'; absent on org-members and system-users where no column is hidden. (2) account: session tiles render MonitorIcon or SmartphoneIcon by session.deviceType (me/session-tile.tsx:31) with no text alternative; tree.yml shows 'Unnamed device Current' with empty paragraphs. Lesser: org-attachments, member-sheet and system-users end with text '· · · °', the decorative all-loaded marker (infinite-loader.tsx AllLoaded) exposed as text. Borderline, not counted: the sync-engine data-flow diagram is an aria-hidden SVG in a button 'Toggle all data-flow labels'; its edge labels are hidden, but the Part 2 and 3 paragraphs describe the flow. Not evaluated: the contact page map does not load in development.",
+          "where": [
+            "org-attachments",
+            "system-organizations",
+            "account",
+            "member-sheet",
+            "system-users"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe image-alt passed on 5 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "1.2.1",
+      "name": "Audio-only and Video-only (Prerecorded)",
+      "level": "A",
+      "en301549": "9.1.2.1",
+      "status": "not-applicable",
+      "remarks": "The product publishes no audio or video of its own. The only media that plays are files that members upload as attachments; what those contain is up to the person who uploads them.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "not-applicable",
+          "summary": "Searched frontend/src for video, audio, iframe, embed URLs and media files: the only media elements are the attachment renderers frontend/src/modules/attachment/render/video.tsx:7 and audio.tsx:7, mounted by attachment-render.tsx:77-78 for an uploaded file's URL. frontend/public/static holds png, svg and font files, no mp4/webm/mp3/gif. Marketing pages and docs MDX embed no players. Uploads allow video and audio (uploader/helpers/restrictions-note.ts:6-7), so the criterion concerns user-generated content only.",
+          "where": [
+            "frontend/src/modules/attachment/render/video.tsx",
+            "frontend/src/modules/attachment/render/audio.tsx"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "code:media",
+          "result": "review",
+          "summary": "The app plays media in frontend/src/modules/attachment/render/audio.tsx, frontend/src/modules/attachment/render/video.tsx. A person decides whether it publishes media of its own or only plays files users upload.",
+          "where": [
+            "frontend/src/modules/attachment/render/audio.tsx",
+            "frontend/src/modules/attachment/render/video.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.2.2",
+      "name": "Captions (Prerecorded)",
+      "level": "A",
+      "en301549": "9.1.2.2",
+      "status": "not-applicable",
+      "remarks": "The product publishes no video of its own. Videos that members upload play without captions: the player can show a caption track, but the product has no way to upload one.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "not-applicable",
+          "summary": "Same search as 1.2.1: no product video. The player is media-chrome (video.tsx:1-8), which renders a captions control when a text track exists, but RenderVideo passes only src and no track (video.tsx:7), and the attachment model has no caption file. video.tsx:6 carries 'biome-ignore lint/a11y/useMediaCaption: by author'. A person may decide whether the missing caption upload should be listed as a product limitation.",
+          "where": [
+            "frontend/src/modules/attachment/render/video.tsx"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "code:media",
+          "result": "review",
+          "summary": "The app plays media in frontend/src/modules/attachment/render/audio.tsx, frontend/src/modules/attachment/render/video.tsx. A person decides whether it publishes media of its own or only plays files users upload.",
+          "where": [
+            "frontend/src/modules/attachment/render/audio.tsx",
+            "frontend/src/modules/attachment/render/video.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.2.3",
+      "name": "Audio Description or Media Alternative (Prerecorded)",
+      "level": "A",
+      "en301549": "9.1.2.3",
+      "status": "not-applicable",
+      "remarks": "The product publishes no video of its own. Videos that members upload play without an audio description or text alternative; the product has no field for either.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "not-applicable",
+          "summary": "Same search as 1.2.1: no product video or synchronized media. Uploaded video renders through video.tsx:7 with src only; the attachment description (attachments-carousel.tsx:67, 201) is free text the uploader may fill, not a media alternative the product requires.",
+          "where": [
+            "frontend/src/modules/attachment/render/video.tsx"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "code:media",
+          "result": "review",
+          "summary": "The app plays media in frontend/src/modules/attachment/render/audio.tsx, frontend/src/modules/attachment/render/video.tsx. A person decides whether it publishes media of its own or only plays files users upload.",
+          "where": [
+            "frontend/src/modules/attachment/render/audio.tsx",
+            "frontend/src/modules/attachment/render/video.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.2.4",
+      "name": "Captions (Live)",
+      "level": "AA",
+      "en301549": "9.1.2.4",
+      "status": "not-applicable",
+      "remarks": "The product has no live audio or video.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "not-applicable",
+          "summary": "No streaming or live media anywhere: the only media elements are the attachment renderers for stored files (video.tsx:7, audio.tsx:7); no WebRTC, HLS, live or broadcast code in frontend/src or backend/src.",
+          "where": [],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "code:media",
+          "result": "review",
+          "summary": "The app plays media in frontend/src/modules/attachment/render/audio.tsx, frontend/src/modules/attachment/render/video.tsx. A person decides whether it publishes media of its own or only plays files users upload.",
+          "where": [
+            "frontend/src/modules/attachment/render/audio.tsx",
+            "frontend/src/modules/attachment/render/video.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.2.5",
+      "name": "Audio Description (Prerecorded)",
+      "level": "AA",
+      "en301549": "9.1.2.5",
+      "status": "not-applicable",
+      "remarks": "The product publishes no video of its own. Videos that members upload play without an audio description track; the product has no field for one.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "not-applicable",
+          "summary": "Same search as 1.2.1 and 1.2.3: no product video; uploaded video plays through video.tsx:7 with src only and no alternative audio track.",
+          "where": [
+            "frontend/src/modules/attachment/render/video.tsx"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "code:media",
+          "result": "review",
+          "summary": "The app plays media in frontend/src/modules/attachment/render/audio.tsx, frontend/src/modules/attachment/render/video.tsx. A person decides whether it publishes media of its own or only plays files users upload.",
+          "where": [
+            "frontend/src/modules/attachment/render/audio.tsx",
+            "frontend/src/modules/attachment/render/video.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.3.1",
+      "name": "Info and Relationships",
+      "level": "A",
+      "en301549": "9.1.3.1",
+      "status": "partially-supports",
+      "remarks": "Section titles on the account settings page, the organization settings page, the API docs Operations and Schemas pages, and the authentication error page look like headings but are not marked as headings, so a screen reader cannot jump to them by heading; the sections are still reachable by reading down the page or through the side navigation links. In account settings, the Email digest options (Off, Daily, Weekly) are not grouped under their label.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Compared screenshot against tree.yml and facts.headings for all 26 states. Lists, tables (legal-privacy 2 tables with column headers; all data grids with columnheaders), form labels (facts.fields) and dialogs match their visual structure in 21 states. Failures: (1) account: card titles General, Sessions, Authentication, Connected apps, Notifications, Delete account are not headings; facts.headings lists only 'Settings'. (2) org-settings: General, Details, API keys, Tabs, Delete organization likewise. Both come from ToolCard > CardTitle, a div (ui/card.tsx:27-28). (3) docs-operations: the 20 tag section titles are CardTitle divs (operations-page.tsx:110); facts.headings has only 'Operations'. (4) docs-schemas: data, base, errors likewise (schemas-page.tsx:91). (5) auth-error: the title 'Error' is a CardTitle div (error-notice.tsx:68); facts.headings is empty. (6) account: the Email digest radiogroup has no accessible name (account-notifications-card.tsx:59-66: the Label has no htmlFor and the RadioGroup no aria-labelledby); the invite-dialog group is correctly 'radiogroup Role'. Lesser: org-settings 'Languages*' label is not associated with its control (select-languages.tsx); docs-overview spec table is a grid without row or column headers.",
+          "where": [
+            "account",
+            "org-settings",
+            "docs-operations",
+            "docs-schemas",
+            "auth-error"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-hidden-body passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe list passed on 22 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe listitem passed on 22 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe td-headers-attr passed on 1 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe th-has-data-cells passed on 1 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-required-children passed on 8 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-required-parent passed on 8 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "1.3.2",
+      "name": "Meaningful Sequence",
+      "level": "A",
+      "en301549": "9.1.3.2",
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "Compared tree.yml order with the screenshot for all 26 states. Every state reads header or sidebar, main content, then footer; dialog states expose only the dialog; docs-page puts the On this page navigation after the content; app pages put the left navigation bar first. The only CSS reordering is input-group addons (org-settings handle prefix follows the textbox in the tree while shown before it), which does not change the meaning.",
+          "where": [],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "1.3.3",
+      "name": "Sensory Characteristics",
+      "level": "A",
+      "en301549": "9.1.3.3",
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "Read every instruction and hint in the trees of all 26 states. org-attachments alert names its target (\"Double-click on a cell in the 'Name' column\"); invite-dialog alert ('Type an email address and press ENTER', 'Click here if you want to invite members in bulk'); legal-privacy '(listed below)' points to the named Subprocessors section; account 'PNG or JPG below 10MB'; org-settings editor placeholder \"type '/' for commands\". None relies on shape, color, size, position or sound alone. sync-engine 'Try me' with an arrow icon sits next to the toggle it points at and the toggles are named.",
+          "where": [],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "1.3.4",
+      "name": "Orientation",
+      "level": "AA",
+      "en301549": "9.1.3.4",
+      "status": "supports",
+      "remarks": "The same content shows in portrait and landscape passed on all 19 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:orientation",
+          "result": "pass",
+          "summary": "The same content shows in portrait and landscape passed on all 19 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "1.3.5",
+      "name": "Identify Input Purpose",
+      "level": "AA",
+      "en301549": "9.1.3.5",
+      "status": "supports",
+      "remarks": "axe autocomplete-valid passed on 13 states. Inputs for personal data declare their purpose passed on all 3 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe autocomplete-valid passed on 13 states.",
+          "where": []
+        },
+        {
+          "check": "probe:autocomplete",
+          "result": "pass",
+          "summary": "Inputs for personal data declare their purpose passed on all 3 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "1.4.1",
+      "name": "Use of Color",
+      "level": "A",
+      "en301549": "9.1.4.1",
+      "status": "partially-supports",
+      "remarks": "Which option is currently selected is shown only by a light grey background in a few places: the All, Documentation and API reference filters at the bottom of the docs search, the switches on the sync engine page, the list and table switch on the API Operations page, the current page in the docs sidebar, and the current section in the settings side navigation. The switches and sidebar links still announce the selected option; the search filters do not, so pick a filter again if unsure.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Checked links in text, status badges, required markers, method badges, selected and current states, and icons across all 26 states. Links inside paragraphs are underlined; required fields use an asterisk; badges carry text; the Sign out and Delete links in red also carry text; page tabs mark the current tab with an underline bar. Failures, all the same style (selected background rgb(240,240,244) against white, 1.14:1): (1) docs-search: scope chips 'All', 'Documentation', 'API reference' (docs-search.tsx:150-165) differ only by bg-accent and text color, no pressed state. (2) sync-engine toggle groups and docs-operations list/table toggle: ui/toggle.tsx data-pressed:bg-accent, no other cue. (3) docs-page sidebar current page: page-tree-item.tsx data-[active=true]:bg-accent, text identical. (4) account and org-settings side navigation current section: common/page/aside.tsx data-spy-active:bg-secondary. Not covered by the packets: form validation error states and dark mode.",
+          "where": [
+            "docs-search",
+            "sync-engine",
+            "docs-operations",
+            "docs-page",
+            "account",
+            "org-settings"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe link-in-text-block passed on 4 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "1.4.2",
+      "name": "Audio Control",
+      "level": "A",
+      "en301549": "9.1.4.2",
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "Nothing plays sound by itself. The video and audio elements carry no autoplay attribute (video.tsx:7, audio.tsx:7). The embla autoplay plugin (attachments-carousel.tsx:113) runs only outside the dialog, on the marketing device mockup (device-mockup.tsx:31) whose slides are PNG screenshots. No new Audio(), AudioContext, speechSynthesis or .play() calls in frontend/src. Push notifications go through the service worker's showNotification (lib/sw.ts:73), whose sound is the operating system's.",
+          "where": [
+            "frontend/src/modules/attachment/attachments-carousel.tsx"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "code:autoplay",
+          "result": "review",
+          "summary": "Autoplay is set in frontend/src/modules/attachment/attachments-carousel.tsx; check that none of it plays sound.",
+          "where": [
+            "frontend/src/modules/attachment/attachments-carousel.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.4.3",
+      "name": "Contrast (Minimum)",
+      "level": "AA",
+      "en301549": "9.1.4.3",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 13 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "fail",
+          "summary": "axe color-contrast: Elements must meet minimum color contrast ratio thresholds (21 elements).",
+          "where": [
+            "account (light)",
+            "org-attachments (light)",
+            "org-members (light)",
+            "org-settings (light)",
+            "invite-dialog (light)",
+            "member-sheet (light)",
+            "account (dark)",
+            "org-attachments (dark)",
+            "org-members (dark)",
+            "org-settings (dark)",
+            "account-sheet (dark)",
+            "invite-dialog (dark)",
+            "member-sheet (dark)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.4.4",
+      "name": "Resize Text",
+      "level": "AA",
+      "en301549": "9.1.4.4",
+      "status": "supports",
+      "remarks": "axe meta-viewport passed on 26 states. Content fits at 200% zoom (a 640px viewport) without loss passed on all 26 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe meta-viewport passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "probe:resize",
+          "result": "pass",
+          "summary": "Content fits at 200% zoom (a 640px viewport) without loss passed on all 26 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "1.4.5",
+      "name": "Images of Text",
+      "level": "AA",
+      "en301549": "9.1.4.5",
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "Read facts.images and the screenshot of all 26 states. The only images are logos (the app wordmark, the stack and integration logos on marketing-home, the github icon), flags, and two user-uploaded attachment thumbnails on org-attachments. All headings, hero text, counters, badges, code blocks and the sync-engine diagram labels are real text (the diagram is SVG and HTML text).",
+          "where": [],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "1.4.10",
+      "name": "Reflow",
+      "level": "AA",
+      "en301549": "9.1.4.10",
+      "status": "supports",
+      "remarks": "Content fits a 320px-wide viewport without sideways scrolling passed on all 26 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:reflow",
+          "result": "pass",
+          "summary": "Content fits a 320px-wide viewport without sideways scrolling passed on all 26 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "1.4.11",
+      "name": "Non-text Contrast",
+      "level": "AA",
+      "en301549": "9.1.4.11",
+      "status": "partially-supports",
+      "remarks": "Borders of text fields, dropdowns, unchecked checkboxes and radio buttons are very light in both light and dark mode (about 1.4:1 in light, about 2:1 in dark), and an 'off' switch in light mode is almost invisible, so the edges of form controls are hard to see. The sort arrows in grid headers and the drag handles in organization settings are also faint in light mode. Focus outlines and icon buttons have strong contrast.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Measured computed colors (oklch resolved through canvas, composited over the real background) and cross-checked rendered pixels. Light: input, textarea and select-trigger border #d7d7db on #fbfbfc card = 1.39:1 (on white 1.44:1) on account firstName, bio, Language; org-settings name, API key name; org-members Role select; contact name, message; sign-in email (the --input token, tailwind.css:414). Unchecked checkbox border 1.39 to 1.44:1; radio 1.39:1; unchecked switch track #d2d2d4 on #fbfbfc = 1.46:1, thumb white on track 1.51:1. Members header sort icons #ababae at 0.5 opacity on white = 2.29:1; Language select chevron 2.29:1; org-settings Tabs grip icon #a0a0a8 on #fbfbfc = 2.51:1. Dark: input borders #4c4c53 on #1d1d22 = 1.97:1 (on #151519 = 2.14:1); checkbox and radio 1.97 to 2.14:1; unchecked switch track 2.03:1 but thumb #f2f3f3 at 15.1:1 against the page; sort icons 3.39:1; grip 8.85:1. Pass: focus ring 15.7 to 17.9:1 light, 8.4 to 11.9:1 dark; grid cell outline 17.9:1 light, 11.1:1 dark; sidebar and toolbar icons 16 to 18:1; Help and lock icons 3.37:1 light, 4.75:1 dark; Download and file icons 7.9:1 and 9.6:1. Outline buttons with text have borders at 1.12 to 1.27:1 light and 1.35 to 2.14:1 dark; their text identifies them, so not counted. Other row (2.4.7): below the sm breakpoint .focus-effect sets outline-hidden and draws no ring, so a focused contact input at 375px has no visible focus indicator.",
+          "where": [
+            "account",
+            "org-settings",
+            "org-members",
+            "org-attachments",
+            "contact",
+            "sign-in",
+            "invite-dialog"
+          ],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "1.4.12",
+      "name": "Text Spacing",
+      "level": "AA",
+      "en301549": "9.1.4.12",
+      "status": "partially-supports",
+      "remarks": "Automated checks found failures on 1 of the reviewed pages and states.",
+      "decidedBy": "audit",
+      "open": [
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe avoid-inline-spacing passed on 23 states.",
+          "where": []
+        },
+        {
+          "check": "probe:text-spacing",
+          "result": "fail",
+          "summary": "Text stays fully visible with WCAG text spacing applied failed on 1 of 26 states. menu-sheet: \"Hauck, Watsica and Douglas\" is cut off; \"Grady, Ebert and Farrell\" is cut off; \"Smith, Lynch and Kozey\" is cut off",
+          "where": [
+            "menu-sheet"
+          ]
+        },
+        {
+          "check": "probe:text-spacing",
+          "result": "review",
+          "summary": "Grid and table cells truncate more with text spacing: check that the full value stays reachable. docs-operations: 10 cells, such as \"resendInvitationWithToken\" | org-members: 10 cells, such as \"admin-test@cellajs.com\" | org-settings: 1 cells, such as \"Visible\"",
+          "where": [
+            "docs-operations",
+            "org-members",
+            "org-settings",
+            "system-users",
+            "invite-dialog",
+            "member-sheet"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "1.4.13",
+      "name": "Content on Hover or Focus",
+      "level": "AA",
+      "en301549": "9.1.4.13",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": [
+        {
+          "check": "probe:hover-content",
+          "result": "pass",
+          "summary": "Tooltips are hoverable and dismissible with Escape passed on all 9 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.1.1",
+      "name": "Keyboard",
+      "level": "A",
+      "en301549": "9.2.1.1",
+      "status": "partially-supports",
+      "remarks": "Three things cannot be done with the keyboard: changing the order of the tabs in organization settings (drag only), changing the order of organizations in the menu's 'Manage content' mode (drag only; archive and mute work), and opening collapsed parts of a schema in the API docs (the small arrows are mouse only; the 'type', 'zod' and 'example' views show the full schema and work with the keyboard). The docs sidebar width can only be changed by dragging. Everything else tested works: menus, sheets, search, the members grid, the invite dialog, the attachment viewer, renaming attachments.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Keyboard only. menu-sheet: Enter on 'Menu' opens it, Tab reaches Organizations, Manage content, Create, each organization link, Archived, Preferences, Info; Enter navigates; Escape closes. search-sheet: type, ArrowDown highlights (aria-activedescendant), Enter opens the user sheet. account-sheet: View profile, Settings, System panel, Sign out, Preferences, Info by Tab; Enter navigates; Escape closes. org-members grid: Tab enters at Select All, arrows move between cells, Space on a row's Select cell selects and shows 'Remove'; Enter on the Select All header selects all; Enter on a Name header sorts (aria-sort, url sort=name); Enter on a name button opens the member sheet (Escape closes, focus returns); Enter or F2 on a Role cell opens the inline role listbox; View and Export menus work; Remove plus Enter opens the confirm dialog. invite-dialog: Tab to Invite, Enter, 'Add by email', type address plus Enter makes a chip, ArrowLeft on the radios picks Admin, Enter on Invite sends the request. org-attachments: Enter on the thumbnail opens the viewer (Open, Download, Close, Zoom, Rotate, Toggle pan, Reset reachable; Escape returns focus); Enter, F2 or typing on the Name cell opens the inline rename; Enter on Description opens the description sheet. org-settings: Space toggles a tab's Visible switch; on the drag-handle cell of the Tabs grid Space, Enter, modifier plus ArrowDown and Shift+F10 change nothing, the row has no move control (tabs-arrangement-card.tsx, row-drag.tsx: pointer drag only). menu-sheet Manage content: organization rows are draggable divs with no tabindex; Tab reaches only Archive and Mute per row; the hint reads 'drag to change order'. docs-schemas: 10 collapsed nodes such as 'fieldTimestamps' and the truncated description are click-only elements with no tabindex (json-node.tsx:322, primitive-value.tsx:92); the format, example, zod and type buttons work by keyboard. docs-search: type, ArrowDown, Enter navigates. Docs 'Resize sidebar' button: focusable, but arrows, Enter and Space leave the width unchanged (onPointerDown only). The other flagged pointer handlers have keyboard paths (Escape or Close for backdrops, arrows and Enter for grid cells, a focusable input in select-emails, onKeyDown on the sync diagram toggle, Escape for the sheet overlay, a focusable anchor in the tag table). Not verified in this environment: opening txt and pdf attachments and Download fail because the seed files are CORS-blocked, and the description editor stayed at 'Connecting...' (yjs relay not running). Other row: after sorting with Enter focus leaves the grid to body (2.4.3).",
+          "where": [
+            "org-settings",
+            "menu-sheet",
+            "docs-schemas",
+            "docs-operations"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe scrollable-region-focusable passed on 2 states.",
+          "where": []
+        },
+        {
+          "check": "probe:keyboard",
+          "result": "review",
+          "summary": "Tab order recorded for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"Install command\" → button \"Copy\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
+          "where": [
+            "marketing-home",
+            "features",
+            "sync-engine",
+            "contact",
+            "legal-privacy",
+            "legal-accessibility",
+            "docs-overview",
+            "docs-operations",
+            "docs-schemas",
+            "docs-page",
+            "docs-search",
+            "sign-in",
+            "sign-in-email",
+            "auth-error",
+            "home",
+            "account",
+            "org-attachments",
+            "org-members",
+            "org-settings",
+            "system-users",
+            "system-organizations",
+            "menu-sheet",
+            "search-sheet",
+            "account-sheet",
+            "invite-dialog",
+            "member-sheet"
+          ]
+        },
+        {
+          "check": "code:keyboard-handlers",
+          "result": "review",
+          "summary": "12 elements handle pointer events without a keyboard equivalent, in frontend/src/modules/attachment/render/attachment-render.tsx, frontend/src/modules/attachment/table/description-cell.tsx, frontend/src/modules/common/blocknote/full-html.tsx, frontend/src/modules/common/board/board-panel.tsx, frontend/src/modules/common/data-grid/cell.tsx, frontend/src/modules/common/form-fields/select-emails.tsx, frontend/src/modules/common/json-viewer/json-node.tsx, frontend/src/modules/common/json-viewer/primitive-value.tsx, frontend/src/modules/docs/tag-table.tsx, frontend/src/modules/marketing/about/sync-diagram.tsx, frontend/src/modules/navigation/menu-sheet/sheet-panel.tsx; check that each has a keyboard path.",
+          "where": [
+            "frontend/src/modules/attachment/render/attachment-render.tsx",
+            "frontend/src/modules/attachment/table/description-cell.tsx",
+            "frontend/src/modules/common/blocknote/full-html.tsx",
+            "frontend/src/modules/common/board/board-panel.tsx",
+            "frontend/src/modules/common/data-grid/cell.tsx",
+            "frontend/src/modules/common/form-fields/select-emails.tsx",
+            "frontend/src/modules/common/json-viewer/json-node.tsx",
+            "frontend/src/modules/common/json-viewer/primitive-value.tsx",
+            "frontend/src/modules/docs/tag-table.tsx",
+            "frontend/src/modules/marketing/about/sync-diagram.tsx",
+            "frontend/src/modules/navigation/menu-sheet/sheet-panel.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2.1.2",
+      "name": "No Keyboard Trap",
+      "level": "A",
+      "en301549": "9.2.1.2",
+      "status": "supports",
+      "remarks": "Focus never gets stuck, and Escape closes overlays passed on all 26 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:keyboard",
+          "result": "pass",
+          "summary": "Focus never gets stuck, and Escape closes overlays passed on all 26 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.1.4",
+      "name": "Character Key Shortcuts",
+      "level": "A",
+      "en301549": "9.2.1.4",
+      "status": "supports",
+      "remarks": "Keyboard shortcuts need Ctrl, Alt or Meta, or can be turned off passed on all 1 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:shortcuts",
+          "result": "pass",
+          "summary": "Keyboard shortcuts need Ctrl, Alt or Meta, or can be turned off passed on all 1 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.2.1",
+      "name": "Timing Adjustable",
+      "level": "A",
+      "en301549": "9.2.2.1",
+      "status": "partially-supports",
+      "remarks": "Messages in the corner of the screen close by themselves after 4 seconds, including error messages that show a request id to quote to support, and messages that say how long to wait after too many attempts. Hovering the message or pressing F6 holds it; there is no setting to keep messages longer. Setting up an authenticator app must be finished within 5 minutes; after that the form is replaced by 'Setup session expired' without a warning and you start again. Sign-in links and checks expire after 5 to 15 minutes but can be requested again without losing work; your session lasts a week.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Toasts: timeout={4000} for every toast (toaster-provider.tsx:9); Base UI pauses the timer on hover, focus and F6 but there is no warning or setting to turn off, adjust or extend. The global error handler puts the request id in the toast description (query/on-error.ts:83-89) and the retry wait of a 429 (on-error.ts:78-82); no other place shows them. Actionable toasts are persistent (reload-prompt.tsx:54, unsaveable-notices.tsx:96). TOTP setup: the form switches to the expired state after 4.5 minutes (totp-setup.tsx:23-27, 83-90) because the backend cookie lives 5 minutes (auth/totps/totps-handlers.ts:29); no warning, no extension. Other limits, restartable without data loss: magic link 15 min, invitation 7 days, oauth-verification 2 h, confirm-mfa 10 min, step-up 10 min (auth/tokens/token-policies.ts:59-92); passkey challenge 5 min; OAuth round trip 5 min; consent 10 min. Sessions last one week (sessions/operations/create-session.ts:88). A lost session redirects to sign-in with a return path and keeps unsynced local work (on-error.ts:92-104). No countdowns or idle timeouts in frontend/src.",
+          "where": [
+            "frontend/src/modules/common/toaster/toaster-provider.tsx",
+            "frontend/src/query/on-error.ts",
+            "frontend/src/modules/me/totp-setup.tsx",
+            "backend/src/modules/auth/totps/totps-handlers.ts"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "code:timing",
+          "result": "review",
+          "summary": "Sessions last a week, beyond the 20-hour exception. Sign-in challenges (passkey, email link, step-up) expire after 5 to 10 minutes and can be requested again. Toasts close after 4 seconds; check that none carries information users need to act on.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.2.2",
+      "name": "Pause, Stop, Hide",
+      "level": "A",
+      "en301549": "9.2.2.2",
+      "status": "partially-supports",
+      "remarks": "On the home page the screenshot carousels in the device mockups advance every 4 seconds and keep going; moving the mouse over one stops it, but there is no pause button, and keyboard or touch users have no way to stop it. On the home page, the sync engine page, the welcome screen for new users and the info panel of the menu, small animations (a bouncing arrow, moving dashes, a pulsing status dot) run without end, cannot be paused, and keep running when your system asks for reduced motion.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Carousels: Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true }) with loop: true (attachments-carousel.tsx:112-113), used with isDialog={false} by device-mockup.tsx:31 on marketing-home (why.tsx:48, showcase.tsx:71). The plugin stops only on mouseenter, pointer down, focus inside a slide (slides hold only images) and tab hide; the prev/next buttons and dots do not stop it; no pause button, no prefers-reduced-motion check. Infinite animations beside content: hero arrow animate-bounce (about-page.tsx:85); sync-engine marching dashes while in view (entity-buckets.tsx:126-127, sync-diagram.tsx:449-450) and the 'Try me' arrows until first use (entity-buckets.tsx:202, sync-diagram.tsx:254); onboarding arrow animate-bounce (home/onboarding/welcome-text.tsx:31); menu sheet Info panel status dot animate-status-pulse 3.5s infinite (menu-sheet/info-section.tsx:27, tailwind.css:36). Reduced motion: the only CSS rule is for the page-enter curtain (tailwind.css:547-551); motion/react has no MotionConfig reducedMotion. Exempt loading indicators checked (spinner, skeleton, infinite-loader, code-viewer placeholder): each shows only while that content loads. Finite: logo pulse repeat 1, count-up 1.5 s, text effect 1.7 s, success checkmark, json highlight 3 s.",
+          "where": [
+            "frontend/src/modules/attachment/attachments-carousel.tsx",
+            "frontend/src/modules/marketing/device-mockup.tsx",
+            "frontend/src/modules/marketing/about/about-page.tsx",
+            "frontend/src/modules/marketing/about/entity-buckets.tsx",
+            "frontend/src/modules/marketing/about/sync-diagram.tsx",
+            "frontend/src/modules/home/onboarding/welcome-text.tsx",
+            "frontend/src/modules/navigation/menu-sheet/info-section.tsx"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "code:motion",
+          "result": "review",
+          "summary": "Looping animations in frontend/src/modules/attachment/attachments-carousel.tsx, frontend/src/modules/common/data-table/infinite-loader.tsx, frontend/src/modules/docs/code-viewer.tsx, frontend/src/modules/home/onboarding/welcome-text.tsx, frontend/src/modules/marketing/about/about-page.tsx, frontend/src/modules/ui/skeleton.tsx; check that any that runs longer than 5 seconds beside other content can be paused or stops with reduced motion.",
+          "where": [
+            "frontend/src/modules/attachment/attachments-carousel.tsx",
+            "frontend/src/modules/common/data-table/infinite-loader.tsx",
+            "frontend/src/modules/docs/code-viewer.tsx",
+            "frontend/src/modules/home/onboarding/welcome-text.tsx",
+            "frontend/src/modules/marketing/about/about-page.tsx",
+            "frontend/src/modules/ui/skeleton.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2.3.1",
+      "name": "Three Flashes or Below Threshold",
+      "level": "A",
+      "en301549": "9.2.3.1",
+      "status": "supports",
+      "remarks": "Nothing in the interface flashes or blinks.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "code:motion",
+          "result": "pass",
+          "summary": "Nothing in the interface flashes or blinks.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.4.1",
+      "name": "Bypass Blocks",
+      "level": "A",
+      "en301549": "9.2.4.1",
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "facts.landmarks of all 26 states: a main landmark on every page (app pages: main 'Main Content'; public pages: main; docs: aside and main). The three overlay states axe left open hold focus: docs-search, menu-sheet and search-sheet tree.yml contain only the notifications region and the dialog (the page behind is hidden from assistive technology), tab-order.json never leaves the dialog, and the keyboard probe 'Focus stays inside an open overlay' passed on all 6 overlay states, so no bypass is needed while they are open. menu-sheet and account-sheet also carry 'Go to page content' and 'Back to navigation' skip buttons. App pages have no skip link, but the repeated block is a 4-button nav bar followed by main.",
+          "where": [],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "axe",
+          "result": "review",
+          "summary": "axe bypass needs a person to check 3 states: Page must have means to bypass repeated blocks.",
+          "where": [
+            "docs-search (light)",
+            "menu-sheet (light)",
+            "search-sheet (light)"
+          ]
+        },
+        {
+          "check": "probe:landmarks",
+          "result": "pass",
+          "summary": "A main landmark or skip link to bypass repeated navigation passed on all 19 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.4.2",
+      "name": "Page Titled",
+      "level": "A",
+      "en301549": "9.2.4.2",
+      "status": "supports",
+      "remarks": "axe document-title passed on 26 states. A distinct, descriptive page title passed on all 19 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe document-title passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "probe:titles",
+          "result": "pass",
+          "summary": "A distinct, descriptive page title passed on all 19 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.4.3",
+      "name": "Focus Order",
+      "level": "A",
+      "en301549": "9.2.4.3",
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "tab-order.json of all 26 states compared with the screenshots. Order follows layout everywhere: public pages header (logo, Features, Sync engine, Docs, theme, GitHub, Sign in) then main then footer; docs sidebar then content then the 'On this page' list; app pages nav bar (Menu, Search, Notifications, Account) then cover, Leave button, tabs, side nav, toolbar, grid; legal pages side nav before content; contact form Name, Email, Message, Send, then the contact links. Overlays: all stops inside the dialog (probe passed on 6 states), initial focus on the first item; focus return on close is not captured by the packets, but the sheeter and dialoger pass finalFocus to the trigger (sheeter/sheet.tsx:104, dialoger/dialog.tsx:75). Coverage limit: docs-operations, docs-overview, org-attachments, org-members, system-users and system-organizations hit the 60-Tab cap, so only their first part is checked; in those grids every cell is a Tab stop in row order, which is in order but means many Tabs to get past a grid (a 2.1.1 note). marketing-home: carousel controls (Previous slide, Next slide, Slide 1 to 3) are in position order but invisible until scrolled into view (a 2.4.7 point).",
+          "where": [],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "probe:keyboard",
+          "result": "review",
+          "summary": "Tab order recorded for a person to compare with the visual order. marketing-home: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"View on GitHub\" → input \"Install command\" → button \"Copy\" → button \"Read more\" → a \"and more\" | features: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → a \"About\" → a \"Sign up\" → a \"API docs\" → a \"Architecture\" → a \"Contact us\" | sync-engine: a \"Go to about page\" → a \"Features\" → a \"Sync engine\" → a \"Docs\" → button \"Change theme\" → button \"Github repository\" → a \"Sign in\" → button \"Todo app\" → button \"Part 1\" → div \"Toggle all data-flow labels\" → a \"About\" → a \"Sign up\"",
+          "where": [
+            "marketing-home",
+            "features",
+            "sync-engine",
+            "contact",
+            "legal-privacy",
+            "legal-accessibility",
+            "docs-overview",
+            "docs-operations",
+            "docs-schemas",
+            "docs-page",
+            "docs-search",
+            "sign-in",
+            "sign-in-email",
+            "auth-error",
+            "home",
+            "account",
+            "org-attachments",
+            "org-members",
+            "org-settings",
+            "system-users",
+            "system-organizations",
+            "menu-sheet",
+            "search-sheet",
+            "account-sheet",
+            "invite-dialog",
+            "member-sheet"
+          ]
+        },
+        {
+          "check": "probe:keyboard",
+          "result": "pass",
+          "summary": "Focus stays inside an open overlay passed on all 6 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.4.4",
+      "name": "Link Purpose (In Context)",
+      "level": "A",
+      "en301549": "9.2.4.4",
+      "status": "partially-supports",
+      "remarks": "On the API reference pages (Operations and Schemas), each section ends with a link named only 'Show details'. Which section it opens is clear on screen but not from the link text. Workaround: read the section name shown above the link, or open a section from the sidebar's operations and schemas lists.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Every link in tree.yml of all 26 states read with its sentence, list item or row. docs-operations: 21 links named 'Show details' with different targets (/docs/operations?operationTag=<tag>); docs-schemas: 3 (?schemaTag=data, base, errors). The section name above each is plain text in a card title, not a heading, list item, table cell or the same paragraph (docs/tag-expand-link.tsx:32 inside CardContent in operations-page.tsx and schemas-page.tsx), so no programmatically determined context. All other links pass: operation path links repeated per method sit in named grid rows, footer 'Social' and 'Chat' sit under the 'Connect' list item, member and organization links carry the name, 'and more' and 'synced in real-time' sit in sentences.",
+          "where": [
+            "docs-operations",
+            "docs-schemas"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe link-name passed on 23 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.4.5",
+      "name": "Multiple Ways",
+      "level": "AA",
+      "en301549": "9.2.4.5",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "review",
+          "summary": "Ways per state from tree.yml of all 26: docs pages have sidebar, docs search and 'On this page'; /about via header logo, footer 'About', auth footer, docs sidebar logo and the menu sheet Info panel; /features and /sync-engine via header plus in-text links on the about page; legal pages via footer links plus the legal side nav; sign-in via header, footer and auth-error; /account via account-sheet 'Settings', the home MFA alert link and member-sheet 'Settings'; organization pages via menu-sheet links, search-sheet, system-organizations grid links and member-sheet cards; system pages via account-sheet 'System panel' plus the system tabs. Two pages have a single route: /contact is reached only by the footer link 'Contact us' (every public page), and /home only by the menu-sheet link 'Go to home page' plus the sign-in redirect. There is no site search or site map for the public pages. Whether a footer on every page counts as two techniques (a list of links plus home page links) is a judgement for a person.",
+          "where": [
+            "contact",
+            "home"
+          ],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "2.4.6",
+      "name": "Headings and Labels",
+      "level": "AA",
+      "en301549": "9.2.4.6",
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "facts.headings and facts.fields of all 26 states. Headings name their section (Settings, Sessions, Sync architecture, Data we collect, Quickstart with Create, Run, Check, organization and user names, System panel); features and sync-engine start at h2 and contact has two h1 (a level matter, not 2.4.6). Field labels name their content (First name, User handle with its description, Notification email, Visible, Select All and Select in grids). Note: the invite-dialog heading reads 'Go back Email' to assistive technology while it shows 'Invite > Email'; the aria-label is recorded under 2.5.3 and fixing it fixes the heading name too.",
+          "where": [],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "2.4.7",
+      "name": "Focus Visible",
+      "level": "AA",
+      "en301549": "9.2.4.7",
+      "status": "supports",
+      "remarks": "A visible change on every element that receives keyboard focus passed on all 26 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:keyboard",
+          "result": "pass",
+          "summary": "A visible change on every element that receives keyboard focus passed on all 26 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.4.11",
+      "name": "Focus Not Obscured (Minimum)",
+      "level": "AA",
+      "en301549": null,
+      "status": "supports",
+      "remarks": "Focused elements are never entirely covered by other content passed on all 26 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:keyboard",
+          "result": "pass",
+          "summary": "Focused elements are never entirely covered by other content passed on all 26 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.5.1",
+      "name": "Pointer Gestures",
+      "level": "A",
+      "en301549": "9.2.5.1",
+      "status": "partially-supports",
+      "remarks": "On a phone, pulling the page down refreshes the data; the app has no button for this. In a browser the reload button does the same; in the installed app there is no alternative. Other gestures have a button: zoom in the image viewer has plus and minus buttons, a swiped-away message has a close button, a drawer closes by tapping outside it or pressing Escape, and the attachment carousel has previous and next buttons and the arrow keys.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Pull to refresh: window touchstart/touchmove/touchend listeners (common/pull-to-refresh.tsx:132-138) trigger handleRefresh (common/app/app-router.tsx:19-26); no in-app refresh button; the PWA runs standalone (vite.config.ts:450-467), so the installed app has no browser reload. Image viewer: wheel and pinch zoom (render/use-pan-zoom.ts:96-108) have zoom in, zoom out and reset buttons (render/image.tsx:46-72). Drawer swipe to dismiss (ui/drawer.tsx:109-118): pointer dismissal and Escape. Toast swipe (ui/toast.tsx:43) has a close button (toast.tsx:61-68). Carousel swipe: previous/next buttons (attachments-carousel.tsx:239-247, ui/carousel.tsx:167-211), dots, and arrow keys (carousel.tsx:95-109); in the dialog the buttons are opacity-0 until hover or focus (attachments-carousel.tsx:241-245), so verify on a touch device that they can be reached. Contact page map (gestureHandling greedy) has zoom buttons; shown only with a googleMapsKey (production).",
+          "where": [
+            "frontend/src/modules/common/pull-to-refresh.tsx",
+            "frontend/src/modules/common/app/app-router.tsx"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "code:gestures",
+          "result": "review",
+          "summary": "Gesture handlers in frontend/src/hooks/use-breakpoints.tsx, frontend/src/modules/attachment/render/image-zoom.ts, frontend/src/modules/attachment/render/use-pan-zoom.ts, frontend/src/modules/common/sheeter/drawer.tsx, frontend/src/modules/navigation/floating-nav/button.tsx, frontend/src/modules/ui/toast.tsx; check each has a single-pointer alternative such as a button.",
+          "where": [
+            "frontend/src/hooks/use-breakpoints.tsx",
+            "frontend/src/modules/attachment/render/image-zoom.ts",
+            "frontend/src/modules/attachment/render/use-pan-zoom.ts",
+            "frontend/src/modules/common/sheeter/drawer.tsx",
+            "frontend/src/modules/navigation/floating-nav/button.tsx",
+            "frontend/src/modules/ui/toast.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2.5.2",
+      "name": "Pointer Cancellation",
+      "level": "A",
+      "en301549": "9.2.5.2",
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "Searched frontend/src for onMouseDown, onPointerDown, onTouchStart and the native listener names (14 hits, none in tests or stories). Down events only start drags, focus or record a position: image pan start (use-pan-zoom.ts:90, 93), column resize start (data-grid/header-cell.tsx:227-242), docs sidebar resize start (docs/docs-layout.tsx:143), pull start (pull-to-refresh.tsx:134), floating nav records the touch point and acts on touchend, aborted when the finger moved more than 12 px (floating-nav/button.tsx:44-53). Grid cells focus on mousedown (data-grid/cell.tsx:82-88); row selection on press needs rowSelectionMode, which no app table sets. An editing cell commits on a mousedown outside it (edit-cell.tsx:72-73), as a blur would. Base UI menus and selects open on mousedown but close again when the pointer is released outside (up reversal). Checkbox and expand toggles act on click. All other actions use onClick.",
+          "where": [],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "2.5.3",
+      "name": "Label in Name",
+      "level": "A",
+      "en301549": "9.2.5.3",
+      "status": "partially-supports",
+      "remarks": "A few buttons have a spoken name that differs from the text on them, so voice control users cannot activate them by saying what they see: the green role button at the top of an organization page (shows 'Admin' or 'Member', is named 'Leave'), the 'Invite' step in the invite dialog title (named 'Go back'), the 'Go to Github' button at the bottom of the About page (named 'Start building'), the 'EN' language button on the authentication error page (named 'Change language'), and 'Read more about Cella' on the About page (named 'Read more'). Workaround: use your voice tool's numbered overlay, or the keyboard.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "facts.labelNotInName of all 26 states plus every button and link in tree.yml whose name differs from its text. Fails (aria-label confirmed in source): org-attachments, org-members, org-settings (and behind invite-dialog, member-sheet): button 'Leave' showing the role (memberships/joined-button.tsx:47); invite-dialog: button 'Go back' showing Invite (user/invite-users.tsx:56); marketing-home: button 'Start building' showing Go to Github (marketing/about/call-to-action.tsx:23) and button 'Read more' showing Read more about Cella (about-page.tsx:83, name is only a prefix); auth-error: button 'Change language' showing EN (me/user-language.tsx:70). Minor, for a person to weigh: org-settings button 'Select language' showing English under the visible label 'Languages'. Not failures: combobox values, the member-sheet sort select showing only an icon, menu-sheet links named after the organization next to an avatar letter and count badge, the logo link 'Go to about page', button 'Open contact form' showing Contact and 'Expand all' showing Expand (name contains the text).",
+          "where": [
+            "marketing-home",
+            "auth-error",
+            "org-attachments",
+            "org-members",
+            "org-settings",
+            "invite-dialog"
+          ],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "2.5.4",
+      "name": "Motion Actuation",
+      "level": "A",
+      "en301549": "9.2.5.4",
+      "status": "not-applicable",
+      "remarks": "No function responds to shaking or tilting the device.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "code:motion-actuation",
+          "result": "not-applicable",
+          "summary": "No function responds to shaking or tilting the device.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "2.5.7",
+      "name": "Dragging Movements",
+      "level": "AA",
+      "en301549": null,
+      "status": "partially-supports",
+      "remarks": "Some things can only be done by dragging: changing the order of tabs in organization settings, changing the order of items in the menu's edit mode, moving a zoomed image in the attachment viewer (zoom out or reset instead), setting the width of the docs sidebar, and setting a column width in tables (double-click the column edge to fit it to its content). Blocks in the text editor move by dragging their handle; cut and paste moves text too.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Tabs card (org-settings): the drag-handle column is the only reorder path (entities/tabs-arrangement-card.tsx:98-106, 156-157; data-grid/row-drag.tsx:172-183); the tree shows only a Visible switch per row; no move buttons or menu. Menu sheet edit mode: each item is its own drag handle (menu-sheet/item-edit-wrapper.tsx:54), the drop reorders displayOrder (menu-sheet.tsx:24-60), and the item offers only archive and mute buttons (item-edit.tsx:66-77). Image viewer: panning only by drag while pan mode is on (render/use-pan-zoom.ts:61-95; render/image.tsx:39-40, 60-70); buttons exist for zoom, rotate, pan toggle and reset but none move the view. Docs sidebar: width set only by dragging the 1 px handle (docs/docs-layout.tsx:33-61, 140-145). Column resize on 30 columns in 9 tables: drag handle (header-cell.tsx:223-277); double-click fits to content (262-264), Ctrl+Arrow is keyboard (177-186). Editor blocks: the side menu grip is draggable and its menu holds only a block type reset (blocknote/custom-side-menu/side-menu.tsx:80-110). Contact map pan (contact-form-map.tsx:107-108) renders only with a googleMapsKey (production). Not in use: column reorder, the board layout, pages-table row drag (development only). File drop in the uploader has the file picker.",
+          "where": [
+            "frontend/src/modules/entities/tabs-arrangement-card.tsx",
+            "frontend/src/modules/navigation/menu-sheet/item-edit-wrapper.tsx",
+            "frontend/src/modules/attachment/render/use-pan-zoom.ts",
+            "frontend/src/modules/docs/docs-layout.tsx",
+            "frontend/src/modules/common/data-grid/header-cell.tsx",
+            "frontend/src/modules/common/blocknote/custom-side-menu/side-menu.tsx"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "code:dragging",
+          "result": "review",
+          "summary": "Drag and drop in frontend/src/modules/common/blocknote/custom-side-menu/side-menu.tsx, frontend/src/modules/common/board/board-layout.tsx, frontend/src/modules/common/data-grid/header-cell.tsx, frontend/src/modules/common/data-grid/row-drag.tsx, frontend/src/modules/navigation/menu-sheet/item-edit-wrapper.tsx, frontend/src/modules/navigation/menu-sheet/menu-sheet.tsx; check each has a single-pointer alternative.",
+          "where": [
+            "frontend/src/modules/common/blocknote/custom-side-menu/side-menu.tsx",
+            "frontend/src/modules/common/board/board-layout.tsx",
+            "frontend/src/modules/common/data-grid/header-cell.tsx",
+            "frontend/src/modules/common/data-grid/row-drag.tsx",
+            "frontend/src/modules/navigation/menu-sheet/item-edit-wrapper.tsx",
+            "frontend/src/modules/navigation/menu-sheet/menu-sheet.tsx"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2.5.8",
+      "name": "Target Size (Minimum)",
+      "level": "AA",
+      "en301549": null,
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "Listed every visible interactive element on the 7 states axe left open (plus an opened schema page) and, for each smaller than 24 by 24 CSS px, checked that a 24px circle centred on it touches no other target. contact: 0 undersized of 28. docs-operations: 109 route links 20px high, 36px row pitch, no intersections. docs-schemas: 30 schema links, none. org-attachments: 6 row checkboxes 20x20, 52px row pitch, none. org-members: 20 row checkboxes and 21 mailto links, 52px pitch, none. org-settings: 2 tab switches 32x18, 56px apart, none. invite-dialog: the chip's remove button 18x18 is 118px from the input, radios 16x16 are 83px apart, the bulk-invite link is an inline text link in the hint sentence. Near miss: the docs 'Resize sidebar' handle is 1px wide (12px hit area); its circle overlaps a sidebar button by 0.5px only when the sidebar is scrolled so a button sits at mid height.",
+          "where": [
+            "contact",
+            "docs-operations",
+            "docs-schemas",
+            "invite-dialog",
+            "org-attachments",
+            "org-members",
+            "org-settings"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "axe",
+          "result": "review",
+          "summary": "axe target-size needs a person to check 7 states: All touch targets must be 24px large, or leave sufficient space.",
+          "where": [
+            "docs-operations (light)",
+            "docs-schemas (light)",
+            "org-attachments (light)",
+            "org-members (light)",
+            "org-settings (light)",
+            "system-users (light)",
+            "system-organizations (light)"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "3.1.1",
+      "name": "Language of Page",
+      "level": "A",
+      "en301549": "9.3.1.1",
+      "status": "supports",
+      "remarks": "axe html-has-lang passed on 26 states. axe html-lang-valid passed on 26 states. The page language follows the language the user picks passed on all 20 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe html-has-lang passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe html-lang-valid passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "probe:language",
+          "result": "pass",
+          "summary": "The page language follows the language the user picks passed on all 20 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "3.1.2",
+      "name": "Language of Parts",
+      "level": "AA",
+      "en301549": "9.3.1.2",
+      "status": "partially-supports",
+      "remarks": "The Dutch language name 'Nederlands' appears in English text (in the accessibility statement and in the language menus) without being marked as Dutch, so a screen reader reads that one word with English pronunciation. Nothing else is affected.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "facts.otherLanguages is empty in all 26 states and facts.lang is en everywhere; all tree.yml text read for non-English passages: names and the fake address are proper names, KvK and bank data are data. One word is Dutch by intent: legal-accessibility list item 'Choose your language: English or Nederlands.' rendered from t('c:nl') with no lang attribute (auth/legal/accessibility-text.tsx:66). The same string fills the language menus (me/user-language.tsx:59, the account Language select, org-settings language selects). WCAG's Understanding marks language names in a language selector with lang (H58) but also says single words count as the surrounding language, so a person may downgrade this to a note.",
+          "where": [
+            "legal-accessibility"
+          ],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "3.2.1",
+      "name": "On Focus",
+      "level": "A",
+      "en301549": "9.3.2.1",
+      "status": "supports",
+      "remarks": "Moving focus never navigates or opens anything passed on all 26 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:keyboard",
+          "result": "pass",
+          "summary": "Moving focus never navigates or opens anything passed on all 26 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "3.2.2",
+      "name": "On Input",
+      "level": "A",
+      "en301549": "9.3.2.2",
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "Changed each kind of field with the keyboard and watched URL, focus, overlays, popups and write requests. sign-in (email), contact (name, email, message), account (first name, bio, Language select, Newsletter checkbox, mention switch, Email digest radios), org-settings (name, Default language select, Country and Timezone comboboxes, tab Visible switches, API key name), org-members (search, Role filter, row checkbox), invite-dialog (role radio). Nothing navigated, submitted or opened a window. Settings switches and radios save at once with focus staying on the control; search and role filter change the query string of the same page with focus staying in the field; Language in account only changes the field until Save.",
+          "where": [
+            "sign-in",
+            "contact",
+            "account",
+            "org-settings",
+            "org-members",
+            "invite-dialog"
+          ],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "3.2.3",
+      "name": "Consistent Navigation",
+      "level": "AA",
+      "en301549": "9.3.2.3",
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "tree.yml of all 26 states. Public header (logo, Features, Sync engine, Docs, Change theme, Github repository, Sign in) and footer (Product, Documentation, Connect lists, newsletter, logo, Legal, Accessibility) are identical in order on marketing-home, features, sync-engine, contact, legal-privacy, legal-accessibility. Docs sidebar identical on docs-overview, docs-operations, docs-schemas, docs-page. App nav (Menu, Search, Notifications, Account) identical on home, account, org-attachments, org-members, org-settings, system-users, system-organizations; organization tabs and system tabs in the same order; menu-sheet and account-sheet end with Preferences, Info, Go to page content, Back to navigation. Auth footer: sign-in and sign-in-email have logo, About, Contact; auth-error keeps About before Contact and adds Sign in and Legal.",
+          "where": [],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "3.2.4",
+      "name": "Consistent Identification",
+      "level": "AA",
+      "en301549": "9.3.2.4",
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "Repeated controls compared across all 26 states in tree.yml: Search (nav button, docs sidebar, table toolbar), Change theme, Close, Help, Upload, Upload cover, Invite, Create, Export, View, Focus view, Select All and Select, Actions, Impersonate, Save changes, Copy, Copy code and Copy link (three functions, each consistent), Leave, Role, Preferences, Info all carry the same name and icon wherever they recur. Contact form openers: docs sidebar and menu-sheet Info use 'Contact us', auth pages 'Contact' (named 'Open contact form'), consistent though not identical. Links to the same destination with different names on one page (Sign in and Sign up, Docs and API docs, Github repository and View on GitHub) are distinct components, each consistent across pages.",
+          "where": [],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "3.2.6",
+      "name": "Consistent Help",
+      "level": "A",
+      "en301549": null,
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "tree.yml of all 26 states. Help mechanisms per set of pages, same relative place on each page of the set: public pages (6 states) footer Connect list with Contact us and Chat, after main and before the newsletter form; docs pages (4 states plus docs-search) sidebar Links section with Contact us, after the navigation lists and before openapi.json; auth pages (3 states) footer Contact after About; app pages (7 states plus 5 overlays) the menu sheet Info panel with About, API docs and Contact us (info-section.tsx), reached from the same nav bar on every page. The three sets place help differently from each other; WCAG requires consistency within a set of pages.",
+          "where": [],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "3.3.1",
+      "name": "Error Identification",
+      "level": "A",
+      "en301549": "9.3.3.1",
+      "status": "supports",
+      "remarks": "Submitting required fields empty identifies each error in text passed on all 3 states.",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:form-errors",
+          "result": "pass",
+          "summary": "Submitting required fields empty identifies each error in text passed on all 3 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "3.3.2",
+      "name": "Labels or Instructions",
+      "level": "A",
+      "en301549": "9.3.3.2",
+      "status": "partially-supports",
+      "remarks": "Two inputs have no visible label. The email field on the sign-in page shows 'Email' only as placeholder text, which disappears while you type. The filter above the members and users tables shows only its current value ('All') and no label saying it filters by role. Both have a hidden name for screen readers. Workaround: the sign-in page has one field and it takes your email; opening the filter shows the role options.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "facts.fields of all 26 states against the screenshots. Fails: sign-in and sign-in-email {label: '', type: email, placeholder: Email} (tree.yml textbox 'Email'; in sign-in-email the field shows the typed address with no label left); org-members and system-users {label: Role, type: button} with facts.labelNotInName {visible: 'All', name: 'Role'} and tree.yml combobox 'Role': All, the screenshot shows only 'All' (also behind invite-dialog and member-sheet). Passes: account, org-settings and contact forms have visible labels with an asterisk for required and descriptions; search fields show a magnifier icon; invite-dialog 'Add an email' has the instruction 'Type an email address and press ENTER'; the newsletter field has 'Leave your email' above it; org-settings 'API key name' has the adjacent button Create API key; the member-sheet sort select is labelled by its sort icon with name 'Sort: Alphabetical'.",
+          "where": [
+            "sign-in",
+            "sign-in-email",
+            "org-members",
+            "system-users"
+          ],
+          "date": "2026-10-02"
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe form-field-multiple-labels passed on 19 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "3.3.3",
+      "name": "Error Suggestion",
+      "level": "AA",
+      "en301549": "9.3.3.3",
+      "status": "partially-supports",
+      "remarks": "Some messages say only that a value is wrong, not how to fix it: a one-letter name on the contact form gets 'Name is required' (two letters are needed); a wrong email gets 'Invalid email address' with no example of the expected form; a wrong handle in account or organization settings gets a technical pattern instead of plain words. Length messages on name fields do give the minimum.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Submitted wrong input and quoted the messages. contact: empty gives 'Name is required' and 'Invalid email address', toast 'Form is not yet valid. Email: Format of the input is invalid. Name: Value is too small'; name 'A' gives inline 'Name is required' (schema is min 2, contact-form.tsx:31); 'x@' and 'a@b' get only 'Invalid email address'. sign-in: empty or 'a@b' gives 'Invalid email address'. account: empty first or last name gives 'Too small: expected string to have >=2 characters' (gives the fix); handle 'a b!' gives 'Invalid string: must match pattern /^[a-z0-9]+(-{0,3}[a-z0-9]+)*$/'; 300 chars gives 'Too big: expected string to have <=255 characters'. org-settings: same name and handle messages; website 'foo:bar' gives 'URL must start with https://' (good); notification email 'a@b' was accepted and saved. invite-dialog: submit with no email gives 'Too small: expected array to have >=1 items' (the hint above the field does say 'Type an email address and press ENTER'); 'not-an-email' plus Enter gives toast 'Invalid email address' listing the text.",
+          "where": [
+            "contact",
+            "sign-in",
+            "account",
+            "org-settings",
+            "invite-dialog"
+          ],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "3.3.4",
+      "name": "Error Prevention (Legal, Financial, Data)",
+      "level": "AA",
+      "en301549": "9.3.3.4",
+      "status": "partially-supports",
+      "remarks": "Deleting an organization, your account, members or attachments and leaving an organization each ask 'Are you sure' first. Revoking an API key in organization settings happens at once with one click and cannot be undone; sessions are also revoked with one click (you can sign in again on that device). Be careful with the Revoke buttons.",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Opened each flow to the confirmation. org-settings 'Delete organization' gives a dialog 'Are you sure you want to delete organization ...?' with Delete and Cancel, Escape closes, no request. account 'Delete account' gives 'Are you sure you want to delete your ... account ...?'. org-members: select a row, 'Remove' gives 'Are you sure you want to delete membership of ... for this organization?'. org page 'Admin' button (aria-label Leave) gives a popconfirm 'Are you sure you want to leave ...?'. org-attachments: select a row, 'Delete' gives 'Are you sure you want to delete 1 attachment?'. account Sessions 'Revoke' on one session sends DELETE /api/me/sessions at once, no dialog (sessions-list.tsx:60). org-settings API keys: created a key and clicked 'Revoke': DELETE .../service-accounts/<id>/keys/<id> sent at once, no dialog, key shown as revoked (service-account-tile.tsx:26-29).",
+          "where": [
+            "org-settings",
+            "account"
+          ],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "3.3.7",
+      "name": "Redundant Entry",
+      "level": "A",
+      "en301549": null,
+      "status": "supports",
+      "remarks": "",
+      "decidedBy": "agent",
+      "open": [],
+      "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "sign-in: typed an address, Continue: the next step shows the email prefilled (disabled field) with 'Sign in with email' and 'Sign in with passkey'; after 'Sign in with email' the page says 'We sent a sign-in link to <address>'. A new address, 'New here? Sign up': the sign-up step shows 'By signing up with <that email>' with the field prefilled. invite-dialog: email entered once as a chip, role chosen, submit sends both; nothing asked twice. Create organization (menu sheet): typing the name fills the handle. /welcome redirects to /home for this admin (has organizations), so onboarding was not exercised; it is not a scope state. The sign-in API refuses Playwright's headless user agent as a bot, so a desktop user agent was set for this check.",
+          "where": [
+            "sign-in",
+            "sign-in-email",
+            "invite-dialog",
+            "menu-sheet"
+          ],
+          "date": "2026-10-02"
+        }
+      ]
+    },
+    {
+      "id": "3.3.8",
+      "name": "Accessible Authentication (Minimum)",
+      "level": "AA",
+      "en301549": null,
+      "status": "supports",
+      "remarks": "Sign-in fields accept autofill and pasted text passed on all 1 states. Sign-in uses passkey, oauth, totp, magic, sso: no password to remember, and one-time codes support autofill (autocomplete=\"one-time-code\").",
+      "decidedBy": "audit",
+      "open": [],
+      "evidence": [
+        {
+          "check": "probe:autocomplete",
+          "result": "pass",
+          "summary": "Sign-in fields accept autofill and pasted text passed on all 1 states.",
+          "where": []
+        },
+        {
+          "check": "code:authentication",
+          "result": "pass",
+          "summary": "Sign-in uses passkey, oauth, totp, magic, sso: no password to remember, and one-time codes support autofill (autocomplete=\"one-time-code\").",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "4.1.2",
+      "name": "Name, Role, Value",
+      "level": "A",
+      "en301549": "9.4.1.2",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual",
+        "review"
+      ],
+      "evidence": [
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-allowed-attr passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-conditional-attr passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-deprecated-role passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-hidden-body passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "review",
+          "summary": "axe aria-hidden-focus needs a person to check 7 states: ARIA hidden element must not be focusable or contain focusable elements.",
+          "where": [
+            "docs-search (light)",
+            "sign-in-email (light)",
+            "menu-sheet (light)",
+            "search-sheet (light)",
+            "account-sheet (light)",
+            "invite-dialog (light)",
+            "member-sheet (light)"
+          ]
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-prohibited-attr passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-required-attr passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-roles passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "review",
+          "summary": "axe aria-valid-attr-value needs a person to check 3 states: ARIA attributes must conform to valid values.",
+          "where": [
+            "docs-search (light)",
+            "account (light)",
+            "search-sheet (light)"
+          ]
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-valid-attr passed on 26 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe button-name passed on 25 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe label passed on 19 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe link-name passed on 23 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe nested-interactive passed on 25 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-command-name passed on 1 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe duplicate-id-aria passed on 11 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-toggle-field-name passed on 7 states.",
+          "where": []
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe aria-input-field-name passed on 1 states.",
+          "where": []
+        }
+      ]
+    },
+    {
+      "id": "4.1.3",
+      "name": "Status Messages",
+      "level": "AA",
+      "en301549": "9.4.1.3",
+      "status": null,
+      "remarks": "",
+      "decidedBy": null,
+      "open": [
+        "manual"
+      ],
+      "evidence": [
+        {
+          "check": "probe:status-messages",
+          "result": "pass",
+          "summary": "Status messages render inside a live region passed on all 1 states.",
+          "where": []
+        }
+      ]
+    }
+  ]
+}

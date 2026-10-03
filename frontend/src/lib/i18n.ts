@@ -28,6 +28,11 @@ const initOptions: InitOptions = {
 
 const instance = i18n.use(Backend).use(LanguageDetector).use(initReactI18next);
 
+// The page declares the language its text is in, so screen readers pronounce it right; an unsupported pick falls back
+instance.on('languageChanged', (lng) => {
+  if (typeof document !== 'undefined') document.documentElement.lang = instance.resolvedLanguage ?? lng;
+});
+
 instance.init(initOptions);
 
 // HMR for lazy-loaded locales (non-bundled languages and HTTP-loaded namespaces)

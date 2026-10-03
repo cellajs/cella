@@ -1,5 +1,6 @@
 import { ChevronUpIcon, CircleQuestionMarkIcon } from 'lucide-react';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '~/modules/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '~/modules/ui/popover';
 import { cn } from '~/utils/cn';
@@ -12,6 +13,7 @@ interface HelpTextProps {
 }
 
 export function HelpText({ content, children, className, type }: HelpTextProps) {
+  const { t } = useTranslation();
   const [collapsed, setCollapsed] = useState(true);
 
   if (type === 'popover') {
@@ -19,7 +21,9 @@ export function HelpText({ content, children, className, type }: HelpTextProps) 
       <div className={cn('mb-4 flex items-center gap-2', className)}>
         {children}
         <Popover>
-          <PopoverTrigger render={<Button variant="ghost" size="icon" press={false} className="size-6 opacity-50 hover:opacity-100" />}>
+          <PopoverTrigger
+            render={<Button variant="ghost" size="icon" press={false} className="size-6 opacity-50 hover:opacity-100" aria-label={t('c:help')} />}
+          >
             <CircleQuestionMarkIcon />
           </PopoverTrigger>
           <PopoverContent className="w-80 max-w-full text-muted-foreground text-sm" align="start" side="top" collisionPadding={8}>
@@ -39,6 +43,8 @@ export function HelpText({ content, children, className, type }: HelpTextProps) 
           variant="ghost"
           size="icon"
           onClick={() => setCollapsed(!collapsed)}
+          aria-label={t('c:help')}
+          aria-expanded={!collapsed}
           press={false}
           className="size-6 opacity-50 hover:opacity-100"
         >

@@ -51,7 +51,11 @@ export function SpyNavItem({ id, isActive, layoutId, group, staticIndicator, cla
       <Button
         variant="ghost"
         size="sm"
-        className={cn('h-8 w-full justify-start gap-2 text-left font-normal text-sm opacity-75 hover:bg-accent/50', groupClassName.active, className)}
+        className={cn(
+          'h-auto min-h-8 w-full justify-start gap-2 whitespace-normal py-1.5 text-left font-normal text-sm opacity-75 hover:bg-accent/50',
+          groupClassName.active,
+          className,
+        )}
         render={
           <Link
             to="."
@@ -66,7 +70,7 @@ export function SpyNavItem({ id, isActive, layoutId, group, staticIndicator, cla
           />
         }
       >
-        <span className="truncate text-sm">{children}</span>
+        <span className="line-clamp-2 text-sm">{children}</span>
       </Button>
     </div>
   );

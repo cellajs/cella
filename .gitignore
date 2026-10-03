@@ -52,6 +52,7 @@ sdk/src/.spec-hash
 
 # Bench baseline snapshots (local only)
 bench/.baselines/
+a11y/results/
 
 # Migration scripts
 scripts/migration/

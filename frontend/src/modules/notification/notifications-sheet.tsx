@@ -92,7 +92,7 @@ function NotificationRow({ notification, onOpen }: { notification: Notification;
             channel: channelName || t('c:unknown'),
           })}
         </span>
-        <span className="text-muted-foreground/70 text-xs">{relativeDate}</span>
+        <span className="text-muted-foreground text-xs">{relativeDate}</span>
       </span>
     </>
   );

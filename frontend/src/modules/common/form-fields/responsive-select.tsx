@@ -48,6 +48,7 @@ export function ResponsiveSelect({
           variant="input"
           disabled={disabled}
           className={cn('w-auto justify-between gap-2 font-normal', className)}
+          aria-label={title ? `${title}: ${selectedOption?.label ?? placeholder}` : undefined}
           onClick={() => setDrawerOpen(true)}
         >
           <span className="truncate text-sm">{selectedOption?.label ?? placeholder}</span>
@@ -91,7 +92,7 @@ export function ResponsiveSelect({
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger disabled={disabled} className={cn('w-auto', className)}>
+      <SelectTrigger disabled={disabled} className={cn('w-auto', className)} aria-label={title}>
         {selectedOption?.icon}
         {selectedOption?.label ?? placeholder}
       </SelectTrigger>

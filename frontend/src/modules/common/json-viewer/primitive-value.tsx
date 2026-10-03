@@ -97,7 +97,7 @@ export function PrimitiveValue({ value, type, theme, collapseStringsAfterLength,
         >
           <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span>
           {isMatch ? highlightText(displayValue, searchText, theme.string, theme.searchMatch) : <span className={theme.string}>{displayValue}</span>}
-          {!isExpanded && shouldTruncate && <span className="opacity-50">…</span>}
+          {!isExpanded && shouldTruncate && <span className="text-muted-foreground">…</span>}
           <span className="group-data-[openapi-mode=schema]/jv:hidden">"</span>
         </span>
       );

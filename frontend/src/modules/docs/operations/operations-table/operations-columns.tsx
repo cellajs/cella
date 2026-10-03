@@ -156,7 +156,7 @@ export const useColumns = (extensions: GenExtensionDefinition[] = [], tagKinds: 
         width: 50,
         renderCell: ({ row, tabIndex }) => {
           // No response body means examples are not applicable
-          if (!row.hasResponseBody) return <span className="block w-full text-center text-muted-foreground/70 text-xs">na</span>;
+          if (!row.hasResponseBody) return <span className="block w-full text-center text-muted-foreground text-xs">na</span>;
           // Has response body but no example yet
           if (!row.hasExample) return <span className="block w-full text-center text-muted-foreground">-</span>;
           return (

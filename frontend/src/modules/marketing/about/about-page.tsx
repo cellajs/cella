@@ -37,7 +37,7 @@ export function AboutPage() {
     <>
       <MarketingNav />
 
-      <div className="container max-w-none px-0">
+      <main className="container max-w-none px-0">
         {/* Hero landing */}
         <Hero
           key={'welcome'}
@@ -59,6 +59,7 @@ export function AboutPage() {
             <div className="glow-button relative max-sm:hidden">
               <Input
                 readOnly
+                aria-label={t('c:install_command')}
                 value="pnpm create @cellajs/cella"
                 className="block h-14 w-80 rounded-full border border-transparent bg-background px-8 py-6 font-light font-mono text-sm ring-4 ring-primary/10 transition focus:border-gray-500 focus:outline-hidden focus-visible:ring-primary/20 sm:w-96"
               />
@@ -70,6 +71,7 @@ export function AboutPage() {
 
               <Button
                 onClick={() => copyToClipboard('pnpm create @cellajs/cella')}
+                aria-label={t('c:copy')}
                 size="icon"
                 variant="ghost"
                 className="absolute top-2 right-2 rounded-full"
@@ -129,7 +131,7 @@ export function AboutPage() {
         {/* <AboutSection key={'faqs'} sectionId="faqs" title="about:faq.title" text="about:faq.text" alternate={true}>
             <FAQ />
           </AboutSection> */}
-      </div>
+      </main>
       <MarketingFooter />
     </>
   );

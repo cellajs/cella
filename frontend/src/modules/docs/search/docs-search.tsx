@@ -122,20 +122,20 @@ export function DocsSearch() {
         />
         {/* Height and scrolling live on the ScrollArea viewport; the list's own max-h/overflow are neutralized */}
         <ScrollArea className="sm:h-[45vh]">
-          <ComboboxList className="h-full max-h-none overflow-visible">
-            {results === null && recentSearches.length > 0 && <SearchHistoryGroup searches={recentSearches} onRemove={deleteRecentSearch} />}
-            {results === null && recentSearches.length === 0 && (
-              <ContentPlaceholder icon={SearchIcon} title="c:docs.search.text" className="sm:h-[41vh]" />
-            )}
-            {results !== null && results.length === 0 && (
-              <ContentPlaceholder
-                icon={SearchIcon}
-                title="c:no_resource_found"
-                titleProps={{ resource: t('c:results').toLowerCase() }}
-                className="sm:h-[41vh]"
-              />
-            )}
-            {results !== null && results.length > 0 && (
+          {results === null && recentSearches.length === 0 && (
+            <ContentPlaceholder icon={SearchIcon} title="c:docs.search.text" className="sm:h-[41vh]" />
+          )}
+          {results !== null && results.length === 0 && (
+            <ContentPlaceholder
+              icon={SearchIcon}
+              title="c:no_resource_found"
+              titleProps={{ resource: t('c:results').toLowerCase() }}
+              className="sm:h-[41vh]"
+            />
+          )}
+          <ComboboxList className="h-full max-h-none overflow-visible" hidden={results === null ? !recentSearches.length : !results.length}>
+            {results === null && <SearchHistoryGroup searches={recentSearches} onRemove={deleteRecentSearch} />}
+            {results !== null && (
               <div className="p-1">
                 {results.map((item) => (
                   <ComboboxItem key={item.id} value={item} className="py-2">

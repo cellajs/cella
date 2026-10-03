@@ -9,7 +9,7 @@ import { OperationsSidebar } from '~/modules/docs/sidebar/operations-sidebar';
 import { SchemasSidebar } from '~/modules/docs/sidebar/schemas-sidebar';
 import { buttonVariants } from '~/modules/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '~/modules/ui/collapsible';
-import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarMenuItem } from '~/modules/ui/sidebar';
+import { SidebarGroup, SidebarGroupContent, SidebarGroupLabel } from '~/modules/ui/sidebar';
 import { queryClient } from '~/query/query-client';
 import { cn } from '~/utils/cn';
 
@@ -64,7 +64,7 @@ export function ApiReferenceSection({ label, tags }: ApiReferenceSectionProps) {
         <SidebarGroup className="p-1 pt-0">
           <Collapsible open={isListMode && expandedSection === 'operations' && forcedCollapsed !== 'operations'}>
             {/* Sticky tier-1 row: opaque bg so section content passes underneath */}
-            <SidebarMenuItem className="sticky top-2 z-10 list-none bg-card">
+            <div className="group/menu-item relative sticky top-2 z-10 bg-card">
               <CollapsibleTrigger
                 render={
                   <Link
@@ -101,7 +101,7 @@ export function ApiReferenceSection({ label, tags }: ApiReferenceSectionProps) {
                   )}
                 />
               </CollapsibleTrigger>
-            </SidebarMenuItem>
+            </div>
             <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
               <SidebarGroupContent>
                 <Suspense fallback={null}>
@@ -114,7 +114,7 @@ export function ApiReferenceSection({ label, tags }: ApiReferenceSectionProps) {
 
         <SidebarGroup className="p-1 pt-0">
           <Collapsible open={expandedSection === 'schemas' && forcedCollapsed !== 'schemas'}>
-            <SidebarMenuItem className="sticky top-2 z-10 list-none bg-card">
+            <div className="group/menu-item relative sticky top-2 z-10 bg-card">
               <CollapsibleTrigger
                 render={
                   <Link
@@ -148,7 +148,7 @@ export function ApiReferenceSection({ label, tags }: ApiReferenceSectionProps) {
                   )}
                 />
               </CollapsibleTrigger>
-            </SidebarMenuItem>
+            </div>
             <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
               <SidebarGroupContent>
                 <Suspense fallback={null}>

@@ -1,9 +1,9 @@
-import { createFileRoute } from '@tanstack/react-router';
-import { AccessibilityPage } from '~/modules/marketing/accessibility-page';
-import { appTitle } from '~/utils/app-title';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
+/** Short public URL for the accessibility statement, which lives on the legal page. */
 export const Route = createFileRoute('/_public/_marketing/accessibility')({
   staticData: { isAuth: false },
-  head: () => ({ meta: [{ title: appTitle('Accessibility') }] }),
-  component: AccessibilityPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/legal/$subject', params: { subject: 'accessibility' } });
+  },
 });

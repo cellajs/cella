@@ -12,7 +12,7 @@ interface CollapsedPreviewProps {
 export function CollapsedPreview({ itemCount, closeBracket, hiddenMatchCount, displayDataTypes, typeLabel, theme }: CollapsedPreviewProps) {
   return (
     <>
-      <span className="mx-1.5 whitespace-nowrap text-xs italic opacity-50">
+      <span className="mx-1.5 whitespace-nowrap text-muted-foreground text-xs italic">
         {itemCount} {itemCount === 1 ? 'item' : 'items'}
       </span>
       <span className={cn('font-medium', theme.bracket, 'group-data-[openapi-mode=schema]/jv:hidden')}>{closeBracket}</span>
@@ -21,7 +21,7 @@ export function CollapsedPreview({ itemCount, closeBracket, hiddenMatchCount, di
           {hiddenMatchCount} {hiddenMatchCount === 1 ? 'match' : 'matches'}
         </span>
       )}
-      {displayDataTypes && <span className="ml-2 text-sm opacity-50">{typeLabel}</span>}
+      {displayDataTypes && <span className="ml-2 text-muted-foreground text-sm">{typeLabel}</span>}
     </>
   );
 }

@@ -24,8 +24,8 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   } = dialog;
   const isMobile = useBreakpointBelow('sm', false);
 
-  // A container renders the dialog inline and keeps page scroll enabled
-  const modal = !container;
+  // A container renders the dialog inline: the page keeps scrolling and taking pointer input, focus stays in the dialog
+  const inline = !!container;
   const containerElement = container?.ref?.current ?? undefined;
 
   const removeDialog = () => useDialoger.getState().remove(dialog.id);
@@ -40,7 +40,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
     // An outside press landing on a dropdown must not close the dialog
     if (!nextOpen && eventDetails.reason === 'outside-press') {
       const dropdown = useDropdowner.getState().dropdown;
-      if (dropdown || !modal) return;
+      if (dropdown || inline) return;
     }
 
     // URL-driven dialogs remove in the same tick, so the exit animation cannot reopen them
@@ -56,7 +56,7 @@ export function DialogerDialog({ dialog }: { dialog: InternalDialog }) {
   const finalFocusRef = useLatestRef(triggerRef?.current ?? null);
 
   return (
-    <Dialog key={id} open={open} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete} modal={modal}>
+    <Dialog key={id} open={open} onOpenChange={onOpenChange} onOpenChangeComplete={onOpenChangeComplete} modal={inline ? 'trap-focus' : true}>
       {container?.overlay &&
         (container.overlayRef?.current ? (
           createPortal(

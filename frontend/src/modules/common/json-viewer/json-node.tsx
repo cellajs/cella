@@ -136,7 +136,7 @@ export const JsonNode = memo(
             searchText={searchText}
             openapiMode={openapiMode}
           />
-          {displayDataTypes && <span className="ml-2 text-sm opacity-50">{getTypeLabel(value, valueType)}</span>}
+          {displayDataTypes && <span className="ml-2 text-muted-foreground text-sm">{getTypeLabel(value, valueType)}</span>}
         </div>
       );
     }

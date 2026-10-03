@@ -39,7 +39,7 @@ export function ThumbnailCell({ row, tabIndex }: ThumbnailCellProps) {
   const badge = <SyncStatusBadge attachmentId={id} />;
 
   return (
-    <Button ref={cellRef} variant="cell" size="cell" tabIndex={tabIndex} className={wrapClass} onClick={handleClick}>
+    <Button ref={cellRef} variant="cell" size="cell" tabIndex={tabIndex} className={wrapClass} aria-label={filename} onClick={handleClick}>
       {preview}
       {badge}
     </Button>

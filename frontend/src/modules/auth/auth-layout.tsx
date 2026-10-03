@@ -30,7 +30,9 @@ export function AuthLayout() {
 
       <div className="mt-auto mb-auto">
         <div className="mx-auto mt-8 mb-40 flex w-[90vw] xs:w-80 translate-y-4 flex-col justify-center gap-4 opacity-0 transition-[opacity,transform] duration-500 ease-out will-change-transform has-[.error-notice]:w-[90vw] group-data-[started=false]:scale-95 group-data-[started=true]:opacity-100 sm:w-lg has-[.error-notice]:sm:w-200">
-          <Outlet />
+          <main className="flex flex-col gap-4">
+            <Outlet />
+          </main>
 
           <Link to="/about" className="focus-effect mx-auto rounded-md p-4 hover:opacity-90 active:scale-95" aria-label={t('c:go_to_about')}>
             <Logo height={40} title={t('c:go_to_about')} />

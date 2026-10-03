@@ -1,0 +1,24 @@
+{
+  "name": "a11y",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "Accessibility audit: axe scans, browser probes and code checks that fill the WCAG conformance ledger",
+  "scripts": {
+    "a11y": "cross-env NODE_ENV=development tsx src/audit.ts",
+    "report": "cross-env NODE_ENV=production tsx src/report.ts",
+    "decide": "cross-env NODE_ENV=production tsx src/decide.ts",
+    "ts": "tsgo --pretty"
+  },
+  "dependencies": {
+    "shared": "workspace:*"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
+    "@types/node": "^26.6.3",
+    "cross-env": "^10.1.0",
+    "playwright": "^1.63.0",
+    "tsx": "^4.23.15",
+    "typescript": "6.0.3"
+  }
+}

@@ -16,6 +16,8 @@ export function PreferencesContent() {
   const detailedMenu = useNavigationStore((state) => state.detailedMenu);
   const toggleDetailedMenu = useNavigationStore((state) => state.toggleDetailedMenu);
   const toggleKeepOpenPreference = useNavigationStore((state) => state.toggleKeepOpenPreference);
+  const keyboardShortcuts = useNavigationStore((state) => state.keyboardShortcuts);
+  const toggleKeyboardShortcuts = useNavigationStore((state) => state.toggleKeyboardShortcuts);
 
   const showDesktopMenuOption = appConfig.menuStructure.some(({ subentityType }) => subentityType);
 
@@ -25,7 +27,7 @@ export function PreferencesContent() {
   return (
     <>
       <div className="mb-6 flex flex-col gap-4 pt-3">
-        <h3 className="px-4 font-medium text-muted-foreground/70 text-sm lowercase">{t('c:appearance')}</h3>
+        <h3 className="px-4 font-medium text-muted-foreground text-sm lowercase">{t('c:appearance')}</h3>
 
         <div className="flex items-center gap-4 px-4">
           <Switch
@@ -58,11 +60,22 @@ export function PreferencesContent() {
             </label>
           </div>
         )}
+        <div className="flex items-center gap-4 px-4">
+          <Switch
+            id="keyboardShortcuts"
+            checked={keyboardShortcuts}
+            onCheckedChange={toggleKeyboardShortcuts}
+            aria-label={t('c:keyboard_shortcuts')}
+          />
+          <label htmlFor="keyboardShortcuts" className="cursor-pointer select-none font-medium text-sm leading-none">
+            {t('c:keyboard_shortcuts')}
+          </label>
+        </div>
       </div>
 
       {pwaEnabled && (
         <div className="flex flex-col gap-4 pb-8">
-          <h3 className="px-4 font-medium text-muted-foreground/70 text-sm lowercase">{t('c:offline')}</h3>
+          <h3 className="px-4 font-medium text-muted-foreground text-sm lowercase">{t('c:offline')}</h3>
           <OfflineAccessSwitch />
           <AlertBanner id="offline_access" animate variant="plain" icon={InfoIcon}>
             {t('c:offline_access.text')}

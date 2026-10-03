@@ -32,7 +32,7 @@ export function PageHeader({ entity, panel, parents, parent, ...coverProps }: Pa
     <div className="relative w-full">
       <PageCover id={entity.id} url={entity.bannerUrl} {...coverProps} />
 
-      <div className="absolute bottom-0 flex h-18 w-full bg-background/50 px-1 py-1 backdrop-blur-xs" id="pt">
+      <div className="absolute bottom-0 flex min-h-18 w-full bg-background/50 px-1 py-1 backdrop-blur-xs dark:bg-background/75" id="pt">
         <EntityAvatar
           id={entity.id}
           name={entity.name}
@@ -44,7 +44,7 @@ export function PageHeader({ entity, panel, parents, parent, ...coverProps }: Pa
         />
 
         <div className="flex flex-col truncate py-1.5 pl-1">
-          <h1 className="mb-1 truncate font-semibold leading-6 md:text-xl">{entity.name}</h1>
+          <h1 className="mb-1 font-semibold leading-6 max-sm:line-clamp-2 max-sm:whitespace-normal sm:truncate md:text-xl">{entity.name}</h1>
 
           <div className="flex items-center gap-2 text-sm">
             <Breadcrumb className="max-sm:hidden">
@@ -69,7 +69,7 @@ export function PageHeader({ entity, panel, parents, parent, ...coverProps }: Pa
                 })}
                 <BreadcrumbItem className="flex items-center text-muted-foreground">
                   <span>{t(`c:${entity.entityType}`).toLowerCase()}</span>
-                  {appConfig.mode === 'development' && <span className="ml-2 text-muted-foreground/70 text-xs max-sm:hidden">{entity.id}</span>}
+                  {appConfig.mode === 'development' && <span className="ml-2 text-muted-foreground text-xs max-sm:hidden">{entity.id}</span>}
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>

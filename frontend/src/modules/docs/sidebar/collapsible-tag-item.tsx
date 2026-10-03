@@ -68,50 +68,48 @@ function CollapsibleTagItemBase<T>({
   const collapseOnClick = isExpanded && isAtTag;
 
   return (
-    <Collapsible open={isExpanded}>
-      <SidebarMenuItem className="group/tag relative" data-expanded={isExpanded} data-active={isActive}>
-        <div className="pointer-events-none absolute top-4.5 bottom-3 left-2.5 hidden flex-col items-center group-data-[expanded=true]/tag:flex">
-          <div className="w-px flex-1 bg-muted-foreground/30" />
+    <Collapsible open={isExpanded} render={<SidebarMenuItem className="group/tag relative" data-expanded={isExpanded} data-active={isActive} />}>
+      <div className="pointer-events-none absolute top-4.5 bottom-3 left-2.5 hidden flex-col items-center group-data-[expanded=true]/tag:flex">
+        <div className="w-px flex-1 bg-muted-foreground/30" />
+      </div>
+      <CollapsibleTrigger
+        render={
+          <Link
+            to={linkTo}
+            search={(prev) => ({ ...prev, ...getSearch(collapseOnClick, tag.name) })}
+            hash={hash}
+            replace
+            resetScroll={false}
+            draggable={false}
+            className={cn(
+              buttonVariants({ variant: 'ghost' }),
+              'group h-8 w-full pl-5 font-normal opacity-80',
+              'group-data-[active=true]/tag:bg-accent group-data-[expanded=true]/tag:opacity-100',
+              triggerClassName,
+            )}
+            onMouseEnter={!isExpanded ? onPrerender : undefined}
+            onClick={() => {
+              requestAnimationFrame(() => scrollToSectionById(hash));
+              if (!isMobile) useSheeter.getState().remove('docs-sidebar');
+            }}
+          />
+        }
+      >
+        <div className="absolute left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/tag:bg-muted-foreground/60" />
+        <span>{tag.name}</span>
+        <span className="text-muted-foreground text-xs opacity-0 transition-opacity group-data-[expanded=true]/tag:hidden sm:group-hover:opacity-100">
+          {tag.count}
+        </span>
+        <ChevronDownIcon className="invisible ml-auto size-4 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/tag:rotate-180" />
+      </CollapsibleTrigger>
+      <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
+        <div className="relative flex flex-col px-0 py-1">
+          <ActiveIndicator activeIndex={activeItemIndex} layoutId={layoutId} isMobile={isMobile} />
+          {items.map((item, index) => (
+            <div key={itemKey(item)}>{renderItem(item, index, activeItemIndex === index)}</div>
+          ))}
         </div>
-        <CollapsibleTrigger
-          render={
-            <Link
-              to={linkTo}
-              search={(prev) => ({ ...prev, ...getSearch(collapseOnClick, tag.name) })}
-              hash={hash}
-              replace
-              resetScroll={false}
-              draggable={false}
-              className={cn(
-                buttonVariants({ variant: 'ghost' }),
-                'group h-8 w-full pl-5 font-normal opacity-80',
-                'group-data-[active=true]/tag:bg-accent group-data-[expanded=true]/tag:opacity-100',
-                triggerClassName,
-              )}
-              onMouseEnter={!isExpanded ? onPrerender : undefined}
-              onClick={() => {
-                requestAnimationFrame(() => scrollToSectionById(hash));
-                if (!isMobile) useSheeter.getState().remove('docs-sidebar');
-              }}
-            />
-          }
-        >
-          <div className="absolute left-[0.53rem] size-1 rounded-full bg-muted-foreground/30 group-data-[expanded=true]/tag:bg-muted-foreground/60" />
-          <span>{tag.name}</span>
-          <span className="text-muted-foreground text-xs opacity-0 transition-opacity group-data-[expanded=true]/tag:hidden sm:group-hover:opacity-100">
-            {tag.count}
-          </span>
-          <ChevronDownIcon className="invisible ml-auto size-4 opacity-40 transition-transform duration-200 group-hover:visible group-data-[expanded=true]/tag:rotate-180" />
-        </CollapsibleTrigger>
-        <CollapsibleContent className={'overflow-hidden md:data-closed:animate-collapsible-up md:data-open:animate-collapsible-down'}>
-          <div className="relative flex flex-col px-0 py-1">
-            <ActiveIndicator activeIndex={activeItemIndex} layoutId={layoutId} isMobile={isMobile} />
-            {items.map((item, index) => (
-              <div key={itemKey(item)}>{renderItem(item, index, activeItemIndex === index)}</div>
-            ))}
-          </div>
-        </CollapsibleContent>
-      </SidebarMenuItem>
+      </CollapsibleContent>
     </Collapsible>
   );
 }

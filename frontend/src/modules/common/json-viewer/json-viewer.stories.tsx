@@ -315,7 +315,7 @@ export const ShouldShowCopyOnHover: Story = {
   tags: ['!dev', '!autodocs'],
   args: { value: simpleObject, enableClipboard: true, rootName: false, defaultInspectDepth: 0 },
   play: async ({ canvas, step }) => {
-    const copyButton = await canvas.findByTitle('Copy to clipboard');
+    const copyButton = await canvas.findByRole('button', { name: /copy/i });
 
     await step('Copy button is faded out inside the hover group of its node', async () => {
       // The reveal is a CSS group-hover; synthetic pointer events do not set :hover, so the resting state is checked.

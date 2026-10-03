@@ -35,6 +35,7 @@ function BlockNoteContentFormField<TFieldValues extends FieldValues>({
           defaultValue: value,
           excludeBlockTypes,
           updateData: onChange,
+          ariaLabel: typeof label === 'string' ? label : undefined,
           ...restBlockNoteProps,
         };
         return (

@@ -1,5 +1,6 @@
 import { EllipsisVerticalIcon } from 'lucide-react';
 import { type RefObject, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DropdownActionItem } from '~/modules/common/dropdowner/dropdown-action-item';
 import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
 import type { IconComponent } from '~/modules/common/icons/types';
@@ -19,6 +20,7 @@ interface Props<T> {
 
 /** Ellipsis cell button opening a dropdown, or a drawer on mobile. */
 export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options }: Props<T>) {
+  const { t } = useTranslation();
   const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const openDropdown = () => {
@@ -44,6 +46,7 @@ export function TableEllipsis<T extends { id: string }>({ row, tabIndex, options
       size="cell"
       tabIndex={tabIndex}
       className="justify-center data-dropdowner-active:bg-accent/50"
+      aria-label={t('c:actions')}
       onClick={openDropdown}
     >
       <EllipsisVerticalIcon />

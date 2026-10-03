@@ -94,7 +94,7 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
               <MenuSheetItems type={options.entityType} data={data} isArchived={false} options={options} />
             )}
             {!!data.length && (
-              <div className="group/archived" data-has-archived={!!archivedCount} data-submenu={false} data-archived-visible={isArchivedVisible}>
+              <li className="group/archived" data-has-archived={!!archivedCount} data-submenu={false} data-archived-visible={isArchivedVisible}>
                 {(!!archivedCount || isEditing) && (
                   <SectionArchiveButton
                     archiveToggleClick={archiveToggleClick}
@@ -118,7 +118,7 @@ export function MenuSheetSection({ data, options }: MenuSheetSectionProps) {
                     </motion.ul>
                   )}
                 </AnimatePresence>
-              </div>
+              </li>
             )}
           </motion.ul>
         )}

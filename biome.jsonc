@@ -23,6 +23,7 @@
       "oauth/src/**",
       "infra/**",
       "bench/src/**",
+      "a11y/src/**",
       "sdk/gen/**",
       "sdk/src/**",
       "locales",

@@ -19,7 +19,7 @@ export function MarketingLayout({ title, children }: MarketingLayoutProps) {
     <div>
       <MarketingNav />
       <Suspense fallback={<PageSpinner />}>
-        <div className="max-w-none px-0">
+        <main className="max-w-none px-0">
           <section className="rich-gradient relative py-14 pb-16 sm:min-h-40 sm:py-20">
             {title && (
               <h1 className="mx-auto mt-12 mb-4 max-w-2xl px-4 text-center font-semibold text-4xl sm:w-full md:text-5xl">{t(title as TKey)}</h1>
@@ -28,7 +28,7 @@ export function MarketingLayout({ title, children }: MarketingLayoutProps) {
           </section>
 
           {children}
-        </div>
+        </main>
         <MarketingFooter />
       </Suspense>
     </div>
