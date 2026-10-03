@@ -1,37 +1,43 @@
-// Two-tab realtime sync diagnosis for cella attachments. See SKILL.md for auth setup and the experiment matrix.
-// Drives two signed-in tabs (shared session, real tab-coordinator semantics); captures per-tab console, seqCursor network bodies, SSE connections, screenshots.
-// Usage: ORG_PATH=<tenantId>/<orgSlug> SESSION_COOKIE=<value> [OUT_DIR=...] node two-tab-driver.mjs
-import { globSync, writeFileSync, mkdirSync } from 'node:fs';
+// Two-tab realtime sync diagnosis for attachments and their descriptions. See SKILL.md for the experiment matrix.
+// Drives two signed-in tabs (shared session, real tab-coordinator semantics); captures per-tab console, seqCursor network bodies, SSE and relay connections, screenshots.
+// Usage, from the repo root: [EMAIL=<user email>] [ORG_PATH=<tenantId>/<orgSlug>] [OUT_DIR=...] node cella/skills/two-tab-sync-test/two-tab-driver.mjs
+import { spawnSync } from 'node:child_process';
+import { globSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 // Playwright lives in the pnpm store (frontend devDep), not resolvable by bare import from here.
 // Run from the repo root so the glob resolves.
 const [pwPath] = globSync('node_modules/.pnpm/playwright@*/node_modules/playwright/index.mjs').sort().reverse().map((p) => resolve(p));
+if (!pwPath) throw new Error('No playwright under node_modules/.pnpm: run from the repo root, after pnpm install.');
 const { chromium } = await import(pwPath);
 
 const OUT = process.env.OUT_DIR ?? process.cwd();
 const SHOTS = join(OUT, 'shots');
 mkdirSync(SHOTS, { recursive: true });
 
+const EMAIL = process.env.EMAIL ?? 'xbench-user-0000@xbench.local';
 const ORG_PATH = process.env.ORG_PATH ?? 'xbench/xbench-org';
-const URL_ATTACHMENTS = `http://localhost:3000/${ORG_PATH}/organization/attachments`;
-const COOKIE = {
-  name: 'cella-development-session-v2',
-  value: process.env.SESSION_COOKIE ?? 'e08a3f990277c545edfa77756948ae130da52f0e5059ba5c30538486499be388.00000000-0000-4000-a007-000000000000.',
-  domain: 'localhost',
-  path: '/',
-  httpOnly: true,
-  secure: false,
-  sameSite: 'Strict',
-};
+
+// The mint script prints `<cookie name>=<signed value>` and a curl line carrying the API URL, both from this checkout's
+// config. Reading them here keeps the cookie version and the ports (a linked worktree has its own) out of this file.
+const minted = spawnSync('pnpm', ['--silent', '--filter', 'backend', 'session:mint', EMAIL, '2'], { encoding: 'utf8' });
+const cookieMatch = /^([\w-]+-session-v\d+)=(\S+)$/m.exec(minted.stdout);
+const apiMatch = /^curl (\S+)\/me /m.exec(minted.stdout);
+if (!cookieMatch || !apiMatch) throw new Error(`Could not mint a session for ${EMAIL}:\n${minted.stdout}\n${minted.stderr}`);
+
+const BASE = new URL(apiMatch[1]).origin;
+const URL_ATTACHMENTS = `${BASE}/${ORG_PATH}/organization/attachments`;
+const COOKIE = { name: cookieMatch[1], value: cookieMatch[2], url: BASE, httpOnly: true, sameSite: 'Strict' };
 
 const evidence = [];
 const createPosts = [];
+// Text typed into a description; a delta fetch reports whether the server row holds it yet.
+let watchedText = null;
 const t0 = Date.now();
 const log = (tab, kind, detail) => {
   const entry = { ms: Date.now() - t0, tab, kind, detail };
   evidence.push(entry);
-  if (kind !== 'console' || /CacheOps|handleEntity|handleApp|stream|sync|seq/i.test(String(detail?.text ?? ''))) {
+  if (kind !== 'console' || /CacheOps|handleEntity|handleApp|TabCoordinator|stream|sync|seq|yjs/i.test(String(detail?.text ?? ''))) {
     console.log(`+${String(entry.ms).padStart(6)}ms [${tab}] ${kind}: ${JSON.stringify(detail).slice(0, 400)}`);
   }
 };
@@ -41,7 +47,14 @@ function instrument(page, tab) {
   page.on('pageerror', (err) => log(tab, 'pageerror', { message: String(err).slice(0, 500) }));
   page.on('request', (req) => {
     const u = req.url();
-    if (u.includes('/entities/app/stream')) log(tab, 'sse-connect', { url: u });
+    // GET opens the SSE stream, POST on the same path is the catchup request
+    if (u.includes('/entities/app/stream')) log(tab, 'sse-connect', { method: req.method(), url: u });
+  });
+  // The description editor syncs over the relay socket; pull and push over HTTP mean the socket is out of reach.
+  page.on('websocket', (ws) => {
+    if (!ws.url().includes('/yjs')) return;
+    log(tab, 'relay-connect', { url: ws.url().replace(/token=[^&]+/, 'token=…').slice(0, 160) });
+    ws.on('close', () => log(tab, 'relay-close', {}));
   });
   page.on('response', async (res) => {
     const u = res.url();
@@ -50,12 +63,20 @@ function instrument(page, tab) {
       let items = null;
       try {
         const body = await res.json();
-        items = (body.items ?? body.data?.items ?? []).map((i) => ({ id: i.id, name: i.name, deletedAt: i.deletedAt ?? null, seq: i.seq ?? null }));
+        items = (body.items ?? body.data?.items ?? []).map((i) => ({
+          id: i.id,
+          name: i.name,
+          deletedAt: i.deletedAt ?? null,
+          seq: i.seq ?? null,
+          ...(watchedText && { hasWatchedText: String(i.description ?? '').includes(watchedText) }),
+        }));
       } catch { /* non-json */ }
       log(tab, 'delta-fetch', { status: res.status(), url: u.slice(u.indexOf('?')), items });
+    } else if (/\/yjs\/(token|pull|push)/.test(u)) {
+      log(tab, 'relay-http', { status: res.status(), path: new URL(u).pathname.split('/').slice(-2).join('/') });
     } else if (method === 'POST' && /\/attachments$/.test(u.split('?')[0])) {
       let ids = null;
-      try { const body = await res.json(); ids = (Array.isArray(body) ? body : body.items ?? [body]).map((i) => i?.id); } catch {}
+      try { const body = await res.json(); ids = (body.data ?? []).map((i) => i?.id); } catch {}
       createPosts.push({ tab, ids });
       log(tab, 'create-post', { status: res.status(), ids });
     } else if (method === 'DELETE' && u.includes('/attachments')) {
@@ -86,7 +107,9 @@ async function pollFor(page, tab, what, predicate, timeoutMs) {
   return { ok: false, ms: timeoutMs };
 }
 
-const rowByName = (page, name) => page.locator('.rdg-row').filter({ hasText: name });
+// Exact name: bench rows are numbered, so "… 2" is also the start of "… 20" and "… 201".
+const exactText = (text) => new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
+const rowByName = (page, name) => page.locator('.rdg-row').filter({ has: page.locator('span.truncate.font-medium', { hasText: exactText(name) }) });
 
 async function deleteRowInTab(page, tab, name) {
   const row = rowByName(page, name).first();
@@ -96,6 +119,26 @@ async function deleteRowInTab(page, tab, name) {
   await dialog.getByRole('button', { name: /^delete$/i }).click();
   log(tab, 'action', { did: 'delete', name });
 }
+
+// The grid's edit mode on the description cell opens the sheet that holds the collaborative editor.
+async function openDescriptionEditor(page, name) {
+  const headers = await page.locator('[role="columnheader"]').allTextContents();
+  const column = headers.findIndex((h) => /description/i.test(h));
+  if (column < 0) throw new Error(`no description column in ${JSON.stringify(headers)}`);
+  await rowByName(page, name).first().locator('[role="gridcell"][aria-colindex]').nth(column).dblclick();
+  const sheet = page.getByRole('dialog').filter({ has: page.getByRole('heading', { name: exactText(name) }) }).last();
+  const editor = sheet.locator('.bn-editor[contenteditable="true"]').first();
+  await editor.waitFor({ timeout: 20_000 });
+  return editor;
+}
+
+// Remote cursor labels sit inside the editor's text, so they are cut before matching.
+const editorText = (editor) =>
+  editor.evaluate((el) => {
+    const copy = el.cloneNode(true);
+    for (const cursor of copy.querySelectorAll('.bn-collaboration-cursor__base')) cursor.remove();
+    return copy.textContent ?? '';
+  });
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1600, height: 1000 } });
@@ -108,6 +151,7 @@ instrument(tabB, 'tabB');
 
 try {
   // ── Setup: load both tabs ──────────────────────────────────────────────────
+  log('harness', 'target', { url: URL_ATTACHMENTS, email: EMAIL, cookie: COOKIE.name });
   await tabA.goto(URL_ATTACHMENTS, { waitUntil: 'domcontentloaded', timeout: 120_000 });
   await tabA.locator('.rdg-row').first().waitFor({ timeout: 60_000 });
   log('tabA', 'loaded', { visibility: await tabA.evaluate(() => document.visibilityState) });
@@ -121,9 +165,8 @@ try {
   const namesB = await visibleRowNames(tabB);
   log('both', 'initial-rows', { tabA: namesA.slice(0, 6), tabB: namesB.slice(0, 6) });
   const shared = namesA.filter((n) => namesB.includes(n));
-  if (shared.length < 2) throw new Error('need >=2 rows visible in both tabs');
-  const renameTarget = shared[0];
-  const preseededDeleteTarget = shared[1];
+  if (shared.length < 3) throw new Error('need >=3 rows visible in both tabs');
+  const [renameTarget, preseededDeleteTarget, descriptionTarget] = shared;
   await shot(tabA, '00-initial-tabA');
   await shot(tabB, '00-initial-tabB');
 
@@ -193,19 +236,45 @@ try {
     log('tabA', 'exp4-error', { message: String(err).slice(0, 300) });
   }
 
-  // ── Experiment 5: reload observer tab, server-state truth ─────────────────
+  // ── Experiment 5: DESCRIPTION (typing over the relay, then the saved row) ──
+  const marker = `desc-probe-${Date.now().toString(36)}`;
+  watchedText = marker;
+  try {
+    const editorA = await openDescriptionEditor(tabA, descriptionTarget);
+    const editorB = await openDescriptionEditor(tabB, descriptionTarget);
+    await editorA.click();
+    // Meta+End stops at the end of the visual line on macOS; Meta+ArrowDown is the document end
+    await tabA.keyboard.press(process.platform === 'darwin' ? 'Meta+ArrowDown' : 'Control+End');
+    await tabA.keyboard.type(` ${marker}`, { delay: 20 });
+    log('tabA', 'action', { did: 'type-description', row: descriptionTarget, marker });
+    const live = await pollFor(tabB, 'tabB', `EXP5 typed "${marker}" appears LIVE in observer tab's editor`, async () => (await editorText(editorB)).includes(marker), 10_000);
+    await shot(tabB, `05-description-live-tabB-${live.ok ? 'PASS' : 'FAIL'}`);
+    await tabA.keyboard.press('Escape');
+    await tabB.keyboard.press('Escape');
+    // The relay saves the row after a quiet window (3s, at most 10s); the saved row then travels the entity path like a rename.
+    // The table cell is no proof: the tab's own editor already patched it.
+    const savedRowFetched = () => evidence.some((e) => e.tab === 'tabB' && e.kind === 'delta-fetch' && e.detail.items?.some((i) => i.hasWatchedText));
+    const saved = await pollFor(tabB, 'tabB', 'EXP5 saved row with the typed text reaches observer tab (delta fetch)', async () => savedRowFetched(), 25_000);
+    await shot(tabB, `05-description-saved-tabB-${saved.ok ? 'PASS' : 'FAIL'}`);
+  } catch (err) {
+    log('tabA', 'exp5-error', { message: String(err).slice(0, 300) });
+    await shot(tabA, '05-description-tabA-ERROR');
+  }
+
+  // ── Experiment 6: reload observer tab, server-state truth ─────────────────
   {
     await tabB.reload({ waitUntil: 'domcontentloaded' });
     await tabB.locator('.rdg-row').first().waitFor({ timeout: 30_000 });
     await tabB.waitForTimeout(2000);
     const names = await visibleRowNames(tabB);
-    log('tabB', 'exp5-after-reload', {
+    log('tabB', 'exp6-after-reload', {
       renamedVisible: names.includes(newName),
       freshCreatedThenDeletedVisible: names.includes(probeName),
       preseededDeletedVisible: names.includes(preseededDeleteTarget),
+      descriptionSaved: (await rowByName(tabB, descriptionTarget).filter({ hasText: marker }).count()) > 0,
       top: names.slice(0, 6),
     });
-    await shot(tabB, '05-reload-tabB');
+    await shot(tabB, '06-reload-tabB');
   }
 } catch (err) {
   log('harness', 'error', { message: String(err).slice(0, 800) });
