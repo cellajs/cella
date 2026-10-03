@@ -197,7 +197,7 @@ try {
     const shown = await pollFor(async () => (await cursor.count()) > 0, 5_000, 100);
     check('live: the peer sees the cursor', shown.ok, shown);
     await shot(b.page, '01-live-peer');
-    // The relay passes two awareness frames a second per socket and drops the rest: a removal right after a keystroke is one of them
+    // The relay passes two awareness frames a second per socket and drops the rest: a removal right after a cursor move is one of them
     await a.page.waitForTimeout(600);
     await a.page.keyboard.press('Escape');
     await sheet.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => {});
