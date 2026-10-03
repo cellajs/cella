@@ -5,6 +5,7 @@ import { ArrowUpIcon, MenuIcon } from 'lucide-react';
 import type { CSSProperties } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import { useBreakpointAbove } from '~/hooks/use-breakpoints';
+import { useFirstTimeHint } from '~/hooks/use-first-time-hint';
 import { useHotkeys } from '~/hooks/use-hot-keys';
 import { useScrolledPast } from '~/hooks/use-scrolled-past';
 import { useSheeter } from '~/modules/common/sheeter/use-sheeter';
@@ -29,6 +30,9 @@ function DocsLayout() {
   const [resizedSidebarWidth, setResizedSidebarWidth] = useState<number | null>(null);
 
   const showScrollTop = useScrolledPast(300, !isDesktop);
+  // First-visit affordance: the menu button reads "menu" while at the top of the page
+  const atTop = !useScrolledPast(8, !isDesktop);
+  const showMenuLabel = useFirstTimeHint('floating-menu-docs', !isDesktop && atTop);
 
   const startSidebarResize = (e: React.PointerEvent) => {
     e.preventDefault();
@@ -118,7 +122,15 @@ function DocsLayout() {
   };
 
   const floatingNavItems: FloatingNavItem[] = [
-    { id: 'docs-menu', icon: MenuIcon, onClick: toggleSidebar, ariaLabel: 'Toggle menu', direction: 'left' },
+    {
+      id: 'docs-menu',
+      icon: MenuIcon,
+      onClick: toggleSidebar,
+      ariaLabel: 'Toggle menu',
+      direction: 'left',
+      label: i18n.t('c:menu'),
+      labelVisible: showMenuLabel,
+    },
     {
       id: 'docs-scroll-top',
       icon: ArrowUpIcon,

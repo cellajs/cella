@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { appConfig } from 'shared';
 import { useBreakpointBelow } from '~/hooks/use-breakpoints';
+import { useFirstTimeHint } from '~/hooks/use-first-time-hint';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { useScrolledPast } from '~/hooks/use-scrolled-past';
 import { GithubIcon } from '~/modules/common/icons/github';
@@ -23,6 +24,9 @@ export function MarketingNav() {
   const isMobile = useBreakpointBelow('sm');
 
   const showScrollTop = useScrolledPast(300, isMobile);
+  // First-visit affordance: the menu button reads "menu" while at the top of the page (iOS overscroll stays <= 0, so it counts as top)
+  const atTop = !useScrolledPast(8, isMobile);
+  const showMenuLabel = useFirstTimeHint('floating-menu-marketing', isMobile && atTop);
 
   const closeDrawer = () => setDrawerOpen(false);
 
@@ -77,6 +81,8 @@ export function MarketingNav() {
       onClick: () => setDrawerOpen((prev) => !prev),
       ariaLabel: 'Toggle menu',
       direction: 'left',
+      label: t('c:menu'),
+      labelVisible: showMenuLabel,
     },
     {
       id: 'marketing-scroll-top',

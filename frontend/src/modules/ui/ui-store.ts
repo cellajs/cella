@@ -19,6 +19,9 @@ interface UIStoreState {
   publicAlertsSeen: string[]; // Public route alert IDs dismissed before a user DB exists
   setPublicAlertSeen: (alertSeen: string) => void;
 
+  hintsSeen: string[]; // One-time UI hint IDs already shown (e.g. floating nav menu label)
+  setHintSeen: (hint: string) => void;
+
   focusView: boolean;
   setFocusView: (status: boolean) => void;
 
@@ -32,11 +35,12 @@ interface UIStoreState {
 // Guarded so tests in a node environment can import modules that reach this store
 const browserMode = typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
-const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'publicAlertsSeen' | 'focusView' | 'uiLocks'> = {
+const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'publicAlertsSeen' | 'hintsSeen' | 'focusView' | 'uiLocks'> = {
   mode: browserMode,
   theme: 'none',
   offlineAccess: false,
   publicAlertsSeen: [],
+  hintsSeen: [],
   focusView: false,
   uiLocks: [],
 };
@@ -65,6 +69,11 @@ export const useUIStore = create<UIStoreState>()(
         setPublicAlertSeen: (alertSeen) => {
           set((state) => {
             if (!state.publicAlertsSeen.includes(alertSeen)) state.publicAlertsSeen.push(alertSeen);
+          });
+        },
+        setHintSeen: (hint) => {
+          set((state) => {
+            if (!state.hintsSeen.includes(hint)) state.hintsSeen.push(hint);
           });
         },
         setFocusView: (status) => {
@@ -98,6 +107,7 @@ export const useUIStore = create<UIStoreState>()(
           mode: state.mode,
           theme: state.theme,
           publicAlertsSeen: state.publicAlertsSeen,
+          hintsSeen: state.hintsSeen,
         }),
         storage: createJSONStorage(() => localStorage),
       },
