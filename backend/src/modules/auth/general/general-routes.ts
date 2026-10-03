@@ -35,7 +35,8 @@ const authGeneralRoutes = createXRoutes(['auth', 'cella'], {
     path: '/impersonation/stop',
     xGuard: [userGuard],
     summary: 'Stop impersonating',
-    description: 'Ends impersonation by clearing the current impersonation session and restoring the admin context.',
+    description:
+      'Ends impersonation by clearing the current impersonation session and restoring the admin context. A request that presents no impersonation gets the same answer.',
     responses: { 204: { description: 'Stopped impersonating' } },
   }),
   checkEmail: xRoute({

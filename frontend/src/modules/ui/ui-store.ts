@@ -10,9 +10,6 @@ interface UIStoreState {
   offlineAccess: boolean;
   toggleOfflineAccess: () => void;
 
-  impersonating: boolean;
-  setImpersonating: (status: boolean) => void;
-
   mode: Mode; // Current color mode (default to system preference)
   setMode: (mode: Mode) => void;
 
@@ -35,17 +32,16 @@ interface UIStoreState {
 // Guarded so tests in a node environment can import modules that reach this store
 const browserMode = typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
-const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'impersonating' | 'publicAlertsSeen' | 'focusView' | 'uiLocks'> = {
+const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'publicAlertsSeen' | 'focusView' | 'uiLocks'> = {
   mode: browserMode,
   theme: 'none',
   offlineAccess: false,
-  impersonating: false,
   publicAlertsSeen: [],
   focusView: false,
   uiLocks: [],
 };
 
-/** UI store for non-user-identifiable state: offline access, impersonation, theme. */
+/** UI store for non-user-identifiable state: offline access, theme. */
 export const useUIStore = create<UIStoreState>()(
   devtools(
     persist(
@@ -54,11 +50,6 @@ export const useUIStore = create<UIStoreState>()(
         toggleOfflineAccess: () => {
           set((state) => {
             state.offlineAccess = !state.offlineAccess;
-          });
-        },
-        setImpersonating: (status) => {
-          set((state) => {
-            state.impersonating = status;
           });
         },
         setMode: (mode) => {
@@ -96,15 +87,14 @@ export const useUIStore = create<UIStoreState>()(
             }
           });
         },
-        // Partial reset (not `set(initStore)`): only session flags are cleared; mode/theme/uiLocks persist.
-        reset: () => set(() => ({ offlineAccess: false, impersonating: false })),
+        // Partial reset (not `set(initStore)`): only the session flag is cleared; mode/theme/uiLocks persist.
+        reset: () => set(() => ({ offlineAccess: false })),
       })),
       {
         version: 1,
         name: `${appConfig.slug}-ui`,
         partialize: (state) => ({
           offlineAccess: state.offlineAccess,
-          impersonating: state.impersonating,
           mode: state.mode,
           theme: state.theme,
           publicAlertsSeen: state.publicAlertsSeen,

@@ -1,5 +1,5 @@
 import i18n from 'i18next';
-import type { User } from 'sdk';
+import type { Me, User, UserMinimalBase } from 'sdk';
 import { appConfig, type ProductEntityType } from 'shared';
 import { create } from 'zustand';
 import { createJSONStorage, devtools, persist } from 'zustand/middleware';
@@ -21,19 +21,21 @@ interface UserStoreState {
   /** Current user. `null` while signed out; set by the authenticated route guard. */
   user: MeUser | null;
   isSystemAdmin: boolean;
+  /** The system admin acting as `user` through an impersonation, as `/me` names them; `null` on the user's own session. */
+  impersonator: UserMinimalBase | null;
   lastUser: LastUser | null; // Identity of the last signed-out user
   yjsTokens: Record<string, string>; // Map of "entityType:entityId" → signed Yjs token (not persisted)
-  setUser: (user: MeUser, skipLastUser?: boolean) => void; // Also updates lastUser
-  setIsSystemAdmin: (isSystemAdmin: boolean) => void;
+  setMe: (me: Me) => void; // What `/me` answered, in one write; also updates lastUser, unless impersonated
   setLastUser: (lastUser: LastUser) => void;
   setYjsToken: (key: string, token: string | null) => void;
-  updateUser: (user: User) => void; // Also adjusts lastUser
+  updateUser: (user: User) => void; // Also adjusts lastUser, unless impersonated
   reset: () => void;
 }
 
-const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'lastUser' | 'yjsTokens'> = {
+const initStore: Pick<UserStoreState, 'user' | 'isSystemAdmin' | 'impersonator' | 'lastUser' | 'yjsTokens'> = {
   user: null,
   isSystemAdmin: false,
+  impersonator: null,
   lastUser: null,
   yjsTokens: {},
 };
@@ -44,24 +46,23 @@ export const useUserStore = create<UserStoreState>()(
       immer((set) => ({
         ...initStore,
         updateUser: (user) => {
-          set((state) => ({ user: { ...state.user, ...user }, lastUser: { id: user.id, email: user.email } }));
+          set((state) => ({
+            user: { ...state.user, ...user },
+            lastUser: state.impersonator ? state.lastUser : { id: user.id, email: user.email },
+          }));
 
           syncLanguage(user.language);
         },
-        setUser: (user, skipLastUser) => {
+        setMe: ({ user, isSystemAdmin, impersonator }) => {
           set((state) => {
             state.user = user;
-            if (skipLastUser) return;
-
-            state.lastUser = { id: user.id, email: user.email };
+            state.isSystemAdmin = isSystemAdmin;
+            state.impersonator = impersonator;
+            // The browser's last user stays its admin: an impersonated user never signed in here.
+            if (!impersonator) state.lastUser = { id: user.id, email: user.email };
           });
 
           syncLanguage(user.language);
-        },
-        setIsSystemAdmin: (isSystemAdmin) => {
-          set((state) => {
-            state.isSystemAdmin = isSystemAdmin;
-          });
         },
         setLastUser: (lastUser) => {
           set((state) => {
@@ -82,7 +83,12 @@ export const useUserStore = create<UserStoreState>()(
       {
         version: 1,
         name: `${appConfig.slug}-user`,
-        partialize: (state) => ({ user: state.user, isSystemAdmin: state.isSystemAdmin, lastUser: state.lastUser }),
+        partialize: (state) => ({
+          user: state.user,
+          isSystemAdmin: state.isSystemAdmin,
+          impersonator: state.impersonator,
+          lastUser: state.lastUser,
+        }),
         storage: createJSONStorage(() => localStorage),
       },
     ),

@@ -1,21 +1,35 @@
 import { eq } from 'drizzle-orm';
-import { deleteUsers, getMe, revokeMySessions, signOut, startImpersonation } from 'sdk';
+import pino from 'pino';
+import { deleteUsers, getMe, revokeMySessions, signOut, startImpersonation, stopImpersonation } from 'sdk';
 import { appConfig } from 'shared';
 import { generateId } from 'shared/utils/entity-id';
-import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, onTestFinished } from 'vitest';
 import { getAdminDb } from '#/db/db';
 import { env } from '#/env';
 import { activityBus } from '#/lib/activity-bus';
+import { requestLogger } from '#/lib/pino';
 import { systemRolesTable } from '#/modules/system/system-roles-db';
 import { defaultHeaders, overrideConfig } from '../fixtures';
-import { authCookie, cookieChange, createSystemAdminUser, createTestUser, expectRefusal, mailsTo, sessionRow, sessionsOf } from '../helpers';
+import {
+  authCookie,
+  cookieChange,
+  createSystemAdminUser,
+  createTestUser,
+  expectRefusal,
+  insertTestSession,
+  mailsTo,
+  sessionRow,
+  sessionsOf,
+} from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearSecurityTestData } from './helpers';
 import {
+  asSession,
   cancelOpenStreams,
   expectClosedWith,
   expectStillOpen,
   impersonationSetBy,
+  insertImpersonation,
   insertSession,
   openStream,
   type TestSession,
@@ -177,5 +191,107 @@ describe('impersonation lives on its admin', async () => {
     expect(await sessionRow(impersonation.id)).toBeUndefined();
 
     expect(await meAs(kept.impersonation)).toMatchObject({ status: 200, userId: kept.target.id });
+  });
+});
+
+/**
+ * The server says who acts through a session, so a client keeps no impersonation state of its own: `/me` and the
+ * request log name the admin behind an impersonation, its session records how that admin signed in, and stopping
+ * answers the same once the impersonation is gone.
+ */
+describe('impersonation names its admin', async () => {
+  const call = await createAppClient();
+
+  /** A system admin's session with an impersonation of a fresh user layered on it. */
+  const impersonating = async (label: string) => {
+    const admin = await createSystemAdminUser(`${label}-admin@security-test.com`);
+    const adminSession = await insertSession(admin);
+    const target = await createTestUser(`${label}-target@security-test.com`);
+    return { admin, adminSession, target, impersonation: await insertImpersonation(adminSession, target) };
+  };
+
+  it('must not pass as the user alone via /me, nor show more of its admin than a minimal user', async () => {
+    const { admin, adminSession, target, impersonation } = await impersonating('named');
+
+    const impersonated = await call(getMe, { headers: impersonation.headers });
+    expect(impersonated.data).toMatchObject({ user: { id: target.id }, isSystemAdmin: false });
+    expect((impersonated.data as { impersonator: unknown }).impersonator).toEqual({
+      id: admin.id,
+      name: admin.name,
+      slug: admin.slug,
+      thumbnailUrl: admin.thumbnailUrl,
+      entityType: 'user',
+    });
+
+    // A session of one's own names nobody: the admin's, and the user's.
+    const own = await call(getMe, { headers: adminSession.headers });
+    expect(own.data).toMatchObject({ user: { id: admin.id }, impersonator: null });
+    const targetsOwn = await call(getMe, { headers: (await insertSession(target)).headers });
+    expect(targetsOwn.data).toMatchObject({ user: { id: target.id }, impersonator: null });
+  });
+
+  describe('request log lines', () => {
+    const lines: string[] = [];
+    const originalLevel = requestLogger.level;
+    const originalStream = Object.getOwnPropertyDescriptor(requestLogger, pino.symbols.streamSym);
+
+    beforeAll(() => {
+      requestLogger.level = 'info';
+      Object.assign(requestLogger, { [pino.symbols.streamSym]: { write: (line: string) => lines.push(line) } });
+    });
+
+    afterAll(() => {
+      requestLogger.level = originalLevel;
+      if (originalStream) Object.defineProperty(requestLogger, pino.symbols.streamSym, originalStream);
+    });
+
+    it('must not log an impersonated request as the user alone', async () => {
+      const { admin, adminSession, target, impersonation } = await impersonating('logged');
+      lines.length = 0;
+
+      expect((await call(getMe, { headers: impersonation.headers })).response.status).toBe(200);
+      expect((await call(getMe, { headers: adminSession.headers })).response.status).toBe(200);
+
+      const logged = lines.map((line) => JSON.parse(line) as { userId?: string; impersonatorId?: string });
+      expect(logged.find((line) => line.userId === target.id)).toMatchObject({ impersonatorId: admin.id });
+      // A request on a session of one's own carries no such field.
+      const own = logged.find((line) => line.userId === admin.id);
+      expect(own).toBeDefined();
+      expect(own).not.toHaveProperty('impersonatorId');
+    });
+  });
+
+  it('must not record a sign-in method its admin never used', async () => {
+    const admin = await createSystemAdminUser('method-admin@security-test.com');
+    const { id, cookie } = await insertTestSession(admin, { authStrategy: 'magic' });
+    const adminSession = asSession(id, cookie);
+    const target = await createTestUser('method-target@security-test.com');
+
+    const started = await call(startImpersonation, { body: { targetUserId: target.id }, headers: adminSession.headers });
+    expect(started.response.status).toBe(204);
+
+    const impersonation = await impersonationSetBy(started.response, adminSession);
+    expect(await sessionRow(impersonation.id)).toMatchObject({ type: 'impersonation', authStrategy: 'magic', connectionId: null });
+  });
+
+  it('must not refuse a stop from a browser whose impersonation already ended, nor end a session for it', async () => {
+    const { admin, adminSession, impersonation } = await impersonating('stale');
+
+    const stopped = await call(stopImpersonation, { headers: impersonation.headers });
+    expect(stopped.response.status).toBe(204);
+    expect(cookieChange(stopped.response, 'impersonation')).toBe('cleared');
+
+    // A tab that missed the end asks again, now on the admin's own session: the same answer, and nothing ends.
+    const again = await call(stopImpersonation, { headers: adminSession.headers });
+    expect(again.response.status).toBe(204);
+    expect(cookieChange(again.response, 'session')).toBeUndefined();
+    expect((await sessionRow(adminSession.id)).revokedAt).toBeNull();
+    expect((await call(getMe, { headers: adminSession.headers })).data).toMatchObject({ user: { id: admin.id }, impersonator: null });
+
+    // Any user may ask: there is nothing of theirs to stop either.
+    const user = await createTestUser('stale-bystander@security-test.com');
+    const userSession = await insertSession(user);
+    expect((await call(stopImpersonation, { headers: userSession.headers })).response.status).toBe(204);
+    expect((await sessionRow(userSession.id)).revokedAt).toBeNull();
   });
 });

@@ -17,10 +17,10 @@ export const teardownUserState = async (wipe = true): Promise<void> => {
   // Hard sign-out only: destroy all per-user persisted data while the owner is still known. Other tabs see the delete and sign out too.
   if (wipe) await deleteLocalUserDb();
 
-  // Reset the bootstrap UI session flags (impersonation, offline access); theme/mode persist.
+  // Reset the bootstrap UI session flag (offline access); theme/mode persist.
   useUIStore.getState().reset();
 
   // Nulling the user closes the local DB and resets every per-user store; only a wipe forgets `lastUser`.
   if (wipe) useUserStore.getState().reset();
-  else useUserStore.setState({ user: null, isSystemAdmin: false, yjsTokens: {} });
+  else useUserStore.setState({ user: null, isSystemAdmin: false, impersonator: null, yjsTokens: {} });
 };

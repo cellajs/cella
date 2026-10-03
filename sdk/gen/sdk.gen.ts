@@ -749,7 +749,7 @@ export const startImpersonation = <ThrowOnError extends boolean = true>(
 /**
  * Stop impersonating
  *
- * Ends impersonation by clearing the current impersonation session and restoring the admin context.
+ * Ends impersonation by clearing the current impersonation session and restoring the admin context. A request that presents no impersonation gets the same answer.
  *
  * **POST /auth/impersonation/stop** ·· [stopImpersonation](https://www.cellajs.com/docs/operations?operationTag=auth#tag/auth/POST/auth/impersonation/stop) ·· [stopImpersonation](https://www.cellajs.com/docs/operations?operationTag=cella#tag/cella/POST/auth/impersonation/stop) ·· _auth_cella_
  *

@@ -713,6 +713,13 @@
           "type": "boolean",
           "required": true,
           "description": "Whether the user holds the system admin role and the request comes from an allowed IP address."
+        },
+        "impersonator": {
+          "type": ["object", "null"],
+          "required": true,
+          "ref": "#/components/schemas/UserMinimalBase",
+          "description": "The system admin acting as the user through an impersonation; null on the user's own session.",
+          "refDescription": "The smallest user shape: id, name, slug and avatar. Embedded wherever a row names a user, such as `createdBy` and `updatedBy`."
         }
       }
     },
@@ -722,7 +729,7 @@
       "module": ["me"],
       "owner": ["cella"]
     },
-    "description": "The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.",
+    "description": "The signed-in user, with whether they have system admin access on this request and, in an impersonation, the system admin acting as them. A client reads it to learn who is signed in.",
     "example": {
       "user": {
         "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
@@ -745,7 +752,8 @@
         "lastSignInAt": "2024-05-02T20:53:18.498Z",
         "lastSeenAt": "2024-05-02T20:53:18.498Z"
       },
-      "isSystemAdmin": false
+      "isSystemAdmin": false,
+      "impersonator": null
     }
   },
   {

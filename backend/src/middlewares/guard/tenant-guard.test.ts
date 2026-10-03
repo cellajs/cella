@@ -22,9 +22,9 @@ const membership = (tenantId: string) =>
 
 type Actor = { kind: 'user' | 'service'; id: string; bindings: unknown[]; scopes: null; tenantId?: string; authStrategy?: string | null };
 
-const mockCtx = (opts: { actor?: Actor; isSystemAdmin?: boolean; tenantId?: string | undefined }) => ({
+const mockCtx = (opts: { actor?: Actor; isSystemAdmin?: boolean; impersonator?: { id: string } | null; tenantId?: string | undefined }) => ({
   req: { param: (name: string) => (name === 'tenantId' ? opts.tenantId : undefined) },
-  var: { actor: opts.actor, isSystemAdmin: opts.isSystemAdmin ?? false },
+  var: { actor: opts.actor, isSystemAdmin: opts.isSystemAdmin ?? false, impersonator: opts.impersonator ?? null },
   set: vi.fn(),
 });
 
@@ -79,7 +79,7 @@ describe('tenantGuard', () => {
       expect((await runExpectingError(mockCtx({ actor: member(null), tenantId: TENANT_ID }))).type).toBe('sso_required');
     });
 
-    it('admits an allowed method without a lookup, an external without an identity, a system admin, and every tenant without a policy', async () => {
+    it('admits an allowed method without a lookup, an external without an identity, a system admin as themselves or as a user, and every tenant without a policy', async () => {
       setTenantCache(TENANT_ID, tenantRow('active', ['surfconext']));
       expect(await run(mockCtx({ actor: member('surfconext'), tenantId: TENANT_ID }))).toHaveBeenCalled();
       expect(findConnectionBindingUser).not.toHaveBeenCalled();
@@ -90,6 +90,8 @@ describe('tenantGuard', () => {
 
       vi.mocked(findConnectionBindingUser).mockResolvedValue(bound);
       expect(await run(mockCtx({ actor: member('magic'), isSystemAdmin: true, tenantId: TENANT_ID }))).toHaveBeenCalled();
+      // An impersonation: the method is its admin's, who proved nothing as the bound member.
+      expect(await run(mockCtx({ actor: member('magic'), impersonator: { id: 'admin' }, tenantId: TENANT_ID }))).toHaveBeenCalled();
       expect(await run(mockCtx({ actor: service(TENANT_ID), tenantId: TENANT_ID }))).toHaveBeenCalled();
 
       setTenantCache(TENANT_ID, tenantRow('active', []));

@@ -3,11 +3,13 @@
 import type { EnabledOAuthProvider } from 'shared';
 import type { PasskeyModel } from '#/modules/auth/passkeys/passkeys-db';
 import type { SessionModel } from '#/modules/auth/sessions/sessions-db';
+import type { UserMinimalBase } from '#/modules/user/helpers/audit-user';
 import type { UserModel } from '#/modules/user/user-db';
 
 export interface MeResponse {
   user: UserModel;
   isSystemAdmin: boolean;
+  impersonator: UserMinimalBase | null;
 }
 
 /** Session for auth data response (token already omitted by SessionModel) */

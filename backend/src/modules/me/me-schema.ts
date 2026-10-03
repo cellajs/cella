@@ -8,6 +8,7 @@ import { inactiveMembershipSchema } from '#/modules/memberships/memberships-sche
 import { enabledOAuthProvidersSchema, userSchema } from '#/modules/user/user-schema';
 import { validUuidSchema } from '#/schemas';
 import { channelBaseSchema } from '#/schemas/entity-base';
+import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 import { mockConnectedApp, mockMeAuthResponse, mockMeResponse, mockUploadTokenResponse } from './me-mocks';
 
 /** A session row as stored, secret omitted: what a revoke returns. */
@@ -25,9 +26,13 @@ export const meSchema = z
     isSystemAdmin: z
       .boolean()
       .openapi({ description: 'Whether the user holds the system admin role and the request comes from an allowed IP address.' }),
+    impersonator: z
+      .union([userMinimalBaseSchema, z.null()])
+      .openapi({ description: "The system admin acting as the user through an impersonation; null on the user's own session." }),
   })
   .openapi('Me', {
-    description: 'The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.',
+    description:
+      'The signed-in user, with whether they have system admin access on this request and, in an impersonation, the system admin acting as them. A client reads it to learn who is signed in.',
     example: mockMeResponse(),
     'x-tags': schemaTags('data', 'me', 'cella'),
   });

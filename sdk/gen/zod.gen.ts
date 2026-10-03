@@ -242,11 +242,12 @@ export const zUser = z.object({
 });
 
 /**
- * The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.
+ * The signed-in user, with whether they have system admin access on this request and, in an impersonation, the system admin acting as them. A client reads it to learn who is signed in.
  */
 export const zMe = z.object({
   user: zUser,
   isSystemAdmin: z.boolean(),
+  impersonator: zUserMinimalBase.nullable(),
 });
 
 /**

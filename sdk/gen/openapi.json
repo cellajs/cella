@@ -1193,10 +1193,21 @@
           "isSystemAdmin": {
             "type": "boolean",
             "description": "Whether the user holds the system admin role and the request comes from an allowed IP address."
+          },
+          "impersonator": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserMinimalBase"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "The system admin acting as the user through an impersonation; null on the user's own session."
           }
         },
-        "required": ["user", "isSystemAdmin"],
-        "description": "The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.",
+        "required": ["user", "isSystemAdmin", "impersonator"],
+        "description": "The signed-in user, with whether they have system admin access on this request and, in an impersonation, the system admin acting as them. A client reads it to learn who is signed in.",
         "example": {
           "user": {
             "id": "b0b37ce7-7136-4b90-8970-aee863ab7334",
@@ -1221,7 +1232,8 @@
             "lastSignInAt": "2024-05-02T20:53:18.498Z",
             "lastSeenAt": "2024-05-02T20:53:18.498Z"
           },
-          "isSystemAdmin": false
+          "isSystemAdmin": false,
+          "impersonator": null
         },
         "x-tags": ["data", "me", "cella"]
       },
@@ -3235,7 +3247,7 @@
         "operationId": "stopImpersonation",
         "tags": ["auth", "cella"],
         "summary": "Stop impersonating",
-        "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context.",
+        "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context. A request that presents no impersonation gets the same answer.",
         "x-guard": ["userGuard"],
         "x-rate-limiter": [],
         "x-cache": [],
@@ -5640,7 +5652,8 @@
                     "lastSignInAt": "2024-05-02T20:53:18.498Z",
                     "lastSeenAt": "2024-05-02T20:53:18.498Z"
                   },
-                  "isSystemAdmin": false
+                  "isSystemAdmin": false,
+                  "impersonator": null
                 },
                 "schema": {
                   "$ref": "#/components/schemas/Me"
