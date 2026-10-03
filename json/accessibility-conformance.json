@@ -42,6 +42,13 @@
       "open": [],
       "evidence": [
         {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "After the Batch F fixes, re-read facts.images and every img, button and link in tree.yml of all 26 states: none is without a name. The three earlier failures are gone. org-attachments and system-organizations: the View button reads 'View Some columns hidden' (data-table/columns-view.tsx). account: each session's device icon is img 'Desktop' or 'Mobile' (me/session-tile.tsx), and the session values read 'Period: ...', 'Method: ...'. The all-loaded marker under tables is aria-hidden (data-table/infinite-loader.tsx) and no longer in the tree of org-attachments, member-sheet or system-users. Unchanged and not counted: the sync-engine data-flow diagram is an aria-hidden SVG inside the button 'Toggle all data-flow labels', and the Part 2 and 3 paragraphs describe the flow. Not evaluated: the contact page map does not load in development.",
+          "where": [],
+          "date": "2026-10-03"
+        },
+        {
           "check": "axe",
           "result": "pass",
           "summary": "axe image-alt passed on 5 states.",
@@ -52,13 +59,6 @@
           "result": "pass",
           "summary": "axe svg-img-alt passed on 1 states.",
           "where": []
-        },
-        {
-          "check": "review:agent",
-          "result": "pass",
-          "summary": "After the Batch F fixes, re-read facts.images and every img, button and link in tree.yml of all 26 states: none is without a name. The three earlier failures are gone. org-attachments and system-organizations: the View button reads 'View Some columns hidden' (data-table/columns-view.tsx). account: each session's device icon is img 'Desktop' or 'Mobile' (me/session-tile.tsx), and the session values read 'Period: ...', 'Method: ...'. The all-loaded marker under tables is aria-hidden (data-table/infinite-loader.tsx) and no longer in the tree of org-attachments, member-sheet or system-users. Unchanged and not counted: the sync-engine data-flow diagram is an aria-hidden SVG inside the button 'Toggle all data-flow labels', and the Part 2 and 3 paragraphs describe the flow. Not evaluated: the contact page map does not load in development.",
-          "where": [],
-          "date": "2026-10-03"
         }
       ]
     },
@@ -222,6 +222,15 @@
       "open": [],
       "evidence": [
         {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "After the Batch F fixes, compared screenshot, tree.yml and facts.headings of all 26 states. The earlier failures are gone: account lists h1 Settings and h2 General, Sessions, Authentication, Connected apps, Notifications, Delete account; org-settings h2 General, Details, API keys, Tabs, Delete organization (ToolCard > CardTitle level 2); docs-operations h1 Operations and 20 h2 tag sections; docs-schemas h2 data, base, errors; auth-error h1 Error; account has radiogroup 'Email digest'. Remaining: docs-overview renders the API facts as a grid with two gridcells per row and no rowheader or columnheader (docs/overview-table.tsx: a DataGrid with empty column names). Lesser, not counted: org-settings text 'Languages*' is not tied to its button, whose own name is 'Select languages: English'; axe's best-practice rule empty-table-header reports header cells without text on org-attachments, org-settings, system-users and system-organizations (selection and icon columns).",
+          "where": [
+            "docs-overview"
+          ],
+          "date": "2026-10-03"
+        },
+        {
           "check": "axe",
           "result": "pass",
           "summary": "axe aria-hidden-body passed on 26 states.",
@@ -262,15 +271,6 @@
           "result": "pass",
           "summary": "axe aria-required-parent passed on 8 states.",
           "where": []
-        },
-        {
-          "check": "review:agent",
-          "result": "fail",
-          "summary": "After the Batch F fixes, compared screenshot, tree.yml and facts.headings of all 26 states. The earlier failures are gone: account lists h1 Settings and h2 General, Sessions, Authentication, Connected apps, Notifications, Delete account; org-settings h2 General, Details, API keys, Tabs, Delete organization (ToolCard > CardTitle level 2); docs-operations h1 Operations and 20 h2 tag sections; docs-schemas h2 data, base, errors; auth-error h1 Error; account has radiogroup 'Email digest'. Remaining: docs-overview renders the API facts as a grid with two gridcells per row and no rowheader or columnheader (docs/overview-table.tsx: a DataGrid with empty column names). Lesser, not counted: org-settings text 'Languages*' is not tied to its button, whose own name is 'Select languages: English'; axe's best-practice rule empty-table-header reports header cells without text on org-attachments, org-settings, system-users and system-organizations (selection and icon columns).",
-          "where": [
-            "docs-overview"
-          ],
-          "date": "2026-10-03"
         }
       ]
     },
@@ -365,17 +365,17 @@
       "open": [],
       "evidence": [
         {
-          "check": "axe",
-          "result": "pass",
-          "summary": "axe link-in-text-block passed on 4 states.",
-          "where": []
-        },
-        {
           "check": "review:agent",
           "result": "pass",
           "summary": "After the Batch F fixes, checked links in text, badges, required markers, and selected and current states across all 26 states; the four earlier failures now carry a second cue, measured in the live page. docs-search: the scope chips have aria-pressed, and the selected chip has a 3.35:1 border where the others have 1.27:1. docs-operations list/table toggle and the sync-engine toggle groups ('Todo app', 'Part 1'): the pressed toggle draws a 1px inset outline in the --input colour (ui/toggle.tsx) that unpressed ones lack. docs-page sidebar: the current page is weight 600, the others 400. account and org-settings side navigation: the current section is weight 600 against 500, has the same inset outline, and is the only link with aria-current (common/page/aside.tsx). Unchanged passes: links inside paragraphs are underlined (axe link-in-text-block passes), required fields use an asterisk, badges carry text, page tabs mark the current tab with an underline bar. Dark mode uses the same classes and was not measured separately.",
           "where": [],
           "date": "2026-10-03"
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe link-in-text-block passed on 4 states.",
+          "where": []
         }
       ]
     },
@@ -468,7 +468,7 @@
         {
           "check": "review:agent",
           "result": "review",
-          "summary": "After the token changes axe color-contrast reports no failing element in any of the 52 visits (26 states in light and dark; it was 21 elements on 13 states). It leaves 552 text nodes undecided on 38 visits, counted with a contrast-only rerun: 288 short texts, almost all avatar initials (text-black at 50% opacity on the placeholder colours, common/entity-avatar.tsx:35; 2.2:1 to 3.8:1 by axe's own colours) plus the hidden all-loaded marker; 226 where a pseudo-element or gradient sits behind the text (marketing navigation, footer and hero on the public pages); 26 overlapping labels in the sync-engine diagrams; 8 on image backgrounds; 4 partly covered. For a person: decide whether avatar initials are decoration (the name stands next to them in grids, the menu and search; the account button shows the initial alone), and check the gradient-backed text by eye or with a picker.",
+          "summary": "After the token changes axe color-contrast reports no failing element in any of the 52 visits (26 states in light and dark; it was 21 elements on 13 states). It leaves 552 text nodes undecided on 38 visits. The 264 that are not short text were measured from rendered pixels (the text colour over the dominant colours behind it): 260 pass, the lowest at 5.3:1 ('Request info' in the public footer). The footer's column titles, 'Request info' and the credits line measured 2.6:1 to 4.2:1 and were raised to text-white/60 in the same change (marketing/footer.tsx). Two readings are artefacts of the method, the hero heading and its bold words on marketing-home, where the letters fill most of the box: in the screenshots they are near-black on a pale gradient (light) and near-white on a dark one (dark). Two nodes are an empty placeholder. The other 288 are short texts: avatar initials (text-black at 50% opacity on the placeholder colours, common/entity-avatar.tsx:35; 2.2:1 to 3.8:1 by axe's own colours) and the hidden all-loaded marker. For a person: decide whether avatar initials are decoration (the name stands next to them in grids, the menu and search; the account button shows the initial alone).",
           "where": [],
           "date": "2026-10-03"
         }
@@ -608,12 +608,6 @@
       ],
       "evidence": [
         {
-          "check": "probe:hover-content",
-          "result": "pass",
-          "summary": "Tooltips are hoverable and dismissible with Escape passed on all 9 states.",
-          "where": []
-        },
-        {
           "check": "review:agent",
           "result": "review",
           "summary": "Content that appears on hover or focus is of two kinds. Tooltips: the audit's probe passes on all 9 states with tooltips (hoverable, Escape closes), and no Tooltip in frontend/src sets disableHoverablePopup. One hover card: the status entries in the menu sheet's Info panel (navigation/menu-sheet/info-section.tsx:42). Driven in the live page: it opens on hover, stays open with the pointer on the card, and Escape closes it, but the same Escape also closes the whole menu sheet, which moves focus. A person decides whether that still counts as dismissible.",
@@ -621,6 +615,12 @@
             "menu-sheet"
           ],
           "date": "2026-10-03"
+        },
+        {
+          "check": "probe:hover-content",
+          "result": "pass",
+          "summary": "Tooltips are hoverable and dismissible with Escape passed on all 9 states.",
+          "where": []
         }
       ]
     },
@@ -634,6 +634,16 @@
       "decidedBy": "agent",
       "open": [],
       "evidence": [
+        {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Fixed in Batch F and driven by keyboard in the live page. docs-schemas, section 'data' open: 30 expander buttons with aria-expanded (json-viewer/json-node.tsx); Enter on a collapsed one gives aria-expanded true, Space collapses it again, and it shows the focus ring; 3 truncated strings are role button with aria-expanded, Enter grows one from 203 to 264 characters (json-viewer/primitive-value.tsx). Docs 'Resize sidebar' button: ArrowRight twice, ArrowLeft, End, Home move the sidebar 288 -> 320 -> 304 -> 400 -> 220 px (docs/docs-layout.tsx). Still drag only, code unchanged: org-settings Tabs grid has no move control on the drag-handle cell (entities/tabs-arrangement-card.tsx, data-grid/row-drag.tsx); menu-sheet 'Manage content' rows are draggable divs with no tabindex, Tab reaches only Archive and Mute. The keyboard flows of the earlier pass (menu, search and account sheets, members grid, invite dialog, attachments, docs search) were not redone; that code is unchanged except for names.",
+          "where": [
+            "org-settings",
+            "menu-sheet"
+          ],
+          "date": "2026-10-03"
+        },
         {
           "check": "axe",
           "result": "pass",
@@ -689,16 +699,6 @@
             "frontend/src/modules/marketing/about/sync-diagram.tsx",
             "frontend/src/modules/navigation/menu-sheet/sheet-panel.tsx"
           ]
-        },
-        {
-          "check": "review:agent",
-          "result": "fail",
-          "summary": "Fixed in Batch F and driven by keyboard in the live page. docs-schemas, section 'data' open: 30 expander buttons with aria-expanded (json-viewer/json-node.tsx); Enter on a collapsed one gives aria-expanded true, Space collapses it again, and it shows the focus ring; 3 truncated strings are role button with aria-expanded, Enter grows one from 203 to 264 characters (json-viewer/primitive-value.tsx). Docs 'Resize sidebar' button: ArrowRight twice, ArrowLeft, End, Home move the sidebar 288 -> 320 -> 304 -> 400 -> 220 px (docs/docs-layout.tsx). Still drag only, code unchanged: org-settings Tabs grid has no move control on the drag-handle cell (entities/tabs-arrangement-card.tsx, data-grid/row-drag.tsx); menu-sheet 'Manage content' rows are draggable divs with no tabindex, Tab reaches only Archive and Mute. The keyboard flows of the earlier pass (menu, search and account sheets, members grid, invite dialog, attachments, docs search) were not redone; that code is unchanged except for names.",
-          "where": [
-            "org-settings",
-            "menu-sheet"
-          ],
-          "date": "2026-10-03"
         }
       ]
     },
@@ -749,17 +749,17 @@
       "open": [],
       "evidence": [
         {
-          "check": "code:timing",
-          "result": "review",
-          "summary": "Sessions last a week, beyond the 20-hour exception. Sign-in challenges (passkey, email link, step-up) expire after 5 to 10 minutes and can be requested again. Toasts close after 4 seconds; check that none carries information users need to act on.",
-          "where": []
-        },
-        {
           "check": "review:agent",
           "result": "fail",
           "summary": "Fixed in Batch F: the global error handler gives a toast with a request id or a 429 retry wait timeout 0 (query/on-error.ts). Driven in the live page: account with GET /api/me/auth answered by a 400 error carrying a request id; the toast with that id was still visible 9 s after it appeared. Other toasts keep timeout 4000 (toaster/toaster-provider.tsx:9); Base UI pauses on hover, focus and F6; no setting. TOTP setup: the QR text now states the 5 minute limit and that a new code can be made (locales/en/common.json totp_qr.description); the form still switches to 'Setup session expired' after 4.5 minutes with no extension (totp-setup.tsx). Unchanged: magic link 15 min, confirm-mfa and step-up 10 min, passkey challenge and OAuth round trip 5 min, all restartable without data loss; sessions last one week.",
           "where": [],
           "date": "2026-10-03"
+        },
+        {
+          "check": "code:timing",
+          "result": "review",
+          "summary": "Sessions last a week, beyond the 20-hour exception. Sign-in challenges (passkey, email link, step-up) expire after 5 to 10 minutes and can be requested again. Toasts close after 4 seconds; check that none carries information users need to act on.",
+          "where": []
         }
       ]
     },
@@ -774,6 +774,16 @@
       "open": [],
       "evidence": [
         {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Fixed in Batch F and driven in the live page (marketing-home). The carousel has a button 'Pause'; slides advance while it plays; Enter on it turns it into 'Play' and the slides stay still for 9 s; after scrolling away and back (the carousel remounts) it is still paused; Enter plays again. With prefers-reduced-motion the button starts as 'Play' and nothing advances (attachment/attachments-carousel.tsx). Hero arrow: animation bounce with iteration count 5, and none under reduced motion (about-page.tsx); the onboarding arrow has the same classes (home/onboarding/welcome-text.tsx); the 'Try me' arrows repeat 4 times (entity-buckets.tsx, sync-diagram.tsx). Remaining, from the code: the marching dashes run with repeat Infinity while in view and stop only for useReducedMotion (entity-buckets.tsx, sync-diagram.tsx flowDashes); the status dot keeps animate-status-pulse infinite with motion-reduce:animate-none (navigation/menu-sheet/info-section.tsx). Loading indicators are exempt as before.",
+          "where": [
+            "sync-engine",
+            "menu-sheet"
+          ],
+          "date": "2026-10-03"
+        },
+        {
           "check": "code:motion",
           "result": "review",
           "summary": "Looping animations in frontend/src/modules/attachment/attachments-carousel.tsx, frontend/src/modules/common/data-table/infinite-loader.tsx, frontend/src/modules/docs/code-viewer.tsx, frontend/src/modules/home/onboarding/welcome-text.tsx, frontend/src/modules/marketing/about/about-page.tsx, frontend/src/modules/ui/skeleton.tsx; check that any that runs longer than 5 seconds beside other content can be paused or stops with reduced motion.",
@@ -785,16 +795,6 @@
             "frontend/src/modules/marketing/about/about-page.tsx",
             "frontend/src/modules/ui/skeleton.tsx"
           ]
-        },
-        {
-          "check": "review:agent",
-          "result": "fail",
-          "summary": "Fixed in Batch F and driven in the live page (marketing-home). The carousel has a button 'Pause'; slides advance while it plays; Enter on it turns it into 'Play' and the slides stay still for 9 s; after scrolling away and back (the carousel remounts) it is still paused; Enter plays again. With prefers-reduced-motion the button starts as 'Play' and nothing advances (attachment/attachments-carousel.tsx). Hero arrow: animation bounce with iteration count 5, and none under reduced motion (about-page.tsx); the onboarding arrow has the same classes (home/onboarding/welcome-text.tsx); the 'Try me' arrows repeat 4 times (entity-buckets.tsx, sync-diagram.tsx). Remaining, from the code: the marching dashes run with repeat Infinity while in view and stop only for useReducedMotion (entity-buckets.tsx, sync-diagram.tsx flowDashes); the status dot keeps animate-status-pulse infinite with motion-reduce:animate-none (navigation/menu-sheet/info-section.tsx). Loading indicators are exempt as before.",
-          "where": [
-            "sync-engine",
-            "menu-sheet"
-          ],
-          "date": "2026-10-03"
         }
       ]
     },
@@ -944,17 +944,17 @@
       "open": [],
       "evidence": [
         {
-          "check": "axe",
-          "result": "pass",
-          "summary": "axe link-name passed on 23 states.",
-          "where": []
-        },
-        {
           "check": "review:agent",
           "result": "pass",
           "summary": "After the Batch F fix, read every link in tree.yml of docs-operations and docs-schemas: each expand link is named with its section, 'Show details: attachments', 'Show details: auth' and so on (19 on docs-operations, 3 on docs-schemas; docs/tag-expand-link.tsx), and no link named only 'Show details' is left. The other 24 states were read in the earlier pass and their links are unchanged: operation path links sit in named grid rows, footer 'Social' and 'Chat' under the 'Connect' list item, member and organization links carry the name.",
           "where": [],
           "date": "2026-10-03"
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe link-name passed on 23 states.",
+          "where": []
         }
       ]
     },
@@ -1248,17 +1248,17 @@
       "open": [],
       "evidence": [
         {
-          "check": "axe",
-          "result": "pass",
-          "summary": "axe valid-lang passed on 3 states.",
-          "where": []
-        },
-        {
           "check": "review:agent",
           "result": "pass",
           "summary": "After the Batch F fix, facts.otherLanguages of legal-accessibility lists 'Nederlands' with lang nl (auth/legal/accessibility-text.tsx). Driven in the live page: the account Language select's options carry lang ('en: English', 'nl: Nederlands'); the language menu and the organization language selects set the same attribute in code (me/user-language.tsx, form-fields/select-language.tsx, select-languages.tsx). All other text in the 26 trees is English or a proper name, as in the earlier pass.",
           "where": [],
           "date": "2026-10-03"
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe valid-lang passed on 3 states.",
+          "where": []
         }
       ]
     },
