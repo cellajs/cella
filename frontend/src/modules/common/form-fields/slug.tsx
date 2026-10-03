@@ -53,7 +53,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
   const prefix = customPrefix;
 
   const inputClassName = cn({
-    'ring-2 sm:focus-visible:ring-2': isSlugAvailable !== 'blank',
+    'ring-2 focus-ring:focus-visible:ring-2': isSlugAvailable !== 'blank',
     'ring-success focus-visible:ring-success': isSlugAvailable === 'available',
     'ring-destructive focus-visible:ring-destructive': isSlugAvailable === 'notAvailable',
   });
@@ -139,7 +139,7 @@ export function SlugFormField<TFieldValues extends FieldValues>({
               </InputGroupAddon>
             )}
           </InputGroup>
-          <FormMessage />
+          <FormMessage messages={{ invalid_format: t('error:invalid_handle') }} />
         </FormItem>
       )}
     />

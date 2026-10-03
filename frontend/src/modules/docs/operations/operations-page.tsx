@@ -107,7 +107,7 @@ function TagSection({ tag, operations, isOpen, onPrerender }: TagSectionProps) {
     <Collapsible open={deferredIsOpen}>
       <Card id={`spy-tag/${tag.name}`} className={cn('scroll-mt-4 border-0', deferredIsOpen && 'rounded-b-none')}>
         <CardHeader className="group">
-          <CardTitle className="gap-2 text-2xl leading-12">
+          <CardTitle level={2} className="gap-2 text-2xl leading-12">
             {tag.name}
             <HashUrlButton url={getHashUrl(`tag/${tag.name}`)} />
           </CardTitle>
@@ -121,6 +121,7 @@ function TagSection({ tag, operations, isOpen, onPrerender }: TagSectionProps) {
             loading={isOpen && detailsLoading}
             to="."
             search={(prev) => ({ ...prev, operationTag: isOpen ? undefined : tag.name })}
+            tagName={tag.name}
             onMouseEnter={onPrerender}
           />
         </CardContent>

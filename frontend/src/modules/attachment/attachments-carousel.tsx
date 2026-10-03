@@ -1,7 +1,8 @@
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import Autoplay from 'embla-carousel-autoplay';
 import i18n from 'i18next';
-import { ChevronUpIcon, DownloadIcon, ExternalLinkIcon, InfoIcon } from 'lucide-react';
+import { ChevronUpIcon, DownloadIcon, ExternalLinkIcon, InfoIcon, PauseIcon, PlayIcon } from 'lucide-react';
+import { useReducedMotion } from 'motion/react';
 import { useCallback, useRef, useState } from 'react';
 import useDownloader from 'react-use-downloader';
 import { textFromDocument } from 'shared/blocknote';
@@ -51,6 +52,9 @@ type CarouselProps =
   | (CarouselPropsBase & { isDialog: true; saveInSearchParams: boolean })
   | (CarouselPropsBase & { isDialog?: false; saveInSearchParams?: never });
 
+// A reader who paused the slides keeps them paused: the marketing carousels remount each time they scroll back into view.
+let autoplayPaused = false;
+
 export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, saveInSearchParams = false, classNameContainer }: CarouselProps) {
   const navigate = useNavigate();
   const removeDialog = useDialoger((state) => state.remove);
@@ -93,6 +97,17 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
 
   const toggleWatchDrag = (enabled: boolean) => setWatchDrag(enabled && items.length > 1);
 
+  // Slides that advance by themselves get a pause button, and stay still for a reader who asked for reduced motion.
+  const reducedMotion = useReducedMotion();
+  const apiRef = useRef<CarouselApi>(undefined);
+  const [autoplaying, setAutoplaying] = useState(false);
+  const toggleAutoplay = () => {
+    const autoplay = apiRef.current?.plugins().autoplay;
+    autoplayPaused = autoplaying;
+    if (autoplaying) autoplay?.stop();
+    else autoplay?.play();
+  };
+
   // Stable setApi registers Embla's `select` listener once; an inline one stacks duplicate listeners.
   const itemsRef = useLatestRef(items);
   const handleSelect = useLatestCallback(updateSearchParam);
@@ -100,6 +115,11 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
     (api: CarouselApi) => {
       if (!api) return;
       api.on('select', () => handleSelect(itemsRef.current[api.selectedScrollSnap()]));
+
+      // The plugin emits before it flips its own flag, so the event names the new state and `isPlaying()` only seeds it.
+      apiRef.current = api;
+      api.on('autoplay:play', () => setAutoplaying(true)).on('autoplay:stop', () => setAutoplaying(false));
+      setAutoplaying(api.plugins().autoplay?.isPlaying() ?? false);
     },
     [itemsRef, handleSelect],
   );
@@ -110,7 +130,9 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
     <BaseCarousel
       isDialog={isDialog}
       opts={{ duration: 20, loop: true, startIndex: startIndexRef.current ?? 0, watchDrag }}
-      plugins={isDialog ? [] : [Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true })]}
+      plugins={
+        isDialog ? [] : [Autoplay({ delay: 4000, stopOnInteraction: true, stopOnMouseEnter: true, playOnInit: !reducedMotion && !autoplayPaused })]
+      }
       className="group size-full"
       setApi={handleSetApi}
     >
@@ -245,7 +267,22 @@ export function AttachmentsCarousel({ items, isDialog = false, itemIndex = 0, sa
           />
         </>
       )}
-      {!isDialog && <CarouselDots size="sm" gap="lg" className="relative mt-[calc(1rem+2%)]" />}
+      {!isDialog && (
+        <div className="relative mx-auto mt-[calc(1rem+2%)] w-fit">
+          <CarouselDots size="sm" gap="lg" />
+          {items.length > 1 && (
+            <Button
+              variant="ghost"
+              size="micro"
+              aria-label={i18n.t(autoplaying ? 'c:pause' : 'c:play')}
+              onClick={toggleAutoplay}
+              className="absolute top-1/2 left-full z-10 ml-3 size-6 -translate-y-1/2 rounded-full p-0 text-muted-foreground hover:text-foreground"
+            >
+              {autoplaying ? <PauseIcon className="size-3" /> : <PlayIcon className="size-3" />}
+            </Button>
+          )}
+        </div>
+      )}
     </BaseCarousel>
   );
 }

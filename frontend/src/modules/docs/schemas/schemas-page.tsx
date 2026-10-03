@@ -88,7 +88,7 @@ function SchemaTagSection({ tag, schemas: tagSchemas, tagKinds, isOpen, onPreren
     <Collapsible open={isOpen}>
       <Card id={`spy-${tag.name}`} className={cn('scroll-mt-4 border-0', isOpen && 'rounded-b-none')}>
         <CardHeader className="group">
-          <CardTitle className="gap-2 text-2xl leading-12">
+          <CardTitle level={2} className="gap-2 text-2xl leading-12">
             {tag.name}
             <HashUrlButton url={getHashUrl(tag.name)} />
           </CardTitle>
@@ -102,6 +102,7 @@ function SchemaTagSection({ tag, schemas: tagSchemas, tagKinds, isOpen, onPreren
             to="."
             search={(prev) => ({ ...prev, schemaTag: isOpen ? undefined : tag.name })}
             hash={isOpen ? undefined : tag.name}
+            tagName={tag.name}
             onMouseEnter={onPrerender}
             onClick={() => {
               if (!isOpen) scrollToSectionById(tag.name);

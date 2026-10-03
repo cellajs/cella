@@ -53,7 +53,7 @@ export function InviteUsers({ channel, dialog: isDialog, mode: baseMode, childre
       titleContent: (
         <div className="flex items-center gap-2">
           {mode[0] ? (
-            <button type="button" aria-label="Go back" onClick={() => updateMode([])}>
+            <button type="button" onClick={() => updateMode([])}>
               {t('c:invite')}
             </button>
           ) : (

@@ -65,7 +65,9 @@ export function ErrorNotice({ error, children, resetErrorBoundary, boundary, hom
         <div className="mx-auto my-auto">
           <Card className="mt-8 w-[80vw] max-w-[80vw] border-none bg-transparent sm:w-160">
             <CardHeader className="p-0 text-center">
-              <CardTitle className="mb-2 justify-center font-normal text-2xl">{title}</CardTitle>
+              <CardTitle level={1} className="mb-2 justify-center font-normal text-2xl">
+                {title}
+              </CardTitle>
               <CardDescription className="flex-col gap-2 p-0 text-base text-foreground">
                 <span className="block">{message}</span>
                 <span className="mt-2 block">

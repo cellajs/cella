@@ -52,7 +52,7 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
             className="w-full justify-between gap-4"
             onSelect={() => changeLanguage(lang)}
           >
-            <span>{t(`c:${lang}`)}</span>
+            <span lang={lang}>{t(`c:${lang}`)}</span>
             <CheckIcon className={cn('text-success', currentLang === lang ? 'visible' : 'invisible')} />
           </DropdownActionItem>
         ))}
@@ -67,7 +67,7 @@ export function UserLanguage({ triggerClassName = '' }: Props) {
       variant="ghost"
       size="icon"
       className={cn('data-dropdowner-active:bg-accent', triggerClassName)}
-      aria-label="Change language"
+      aria-label={`${language.toUpperCase()}, ${t('c:change_language')}`}
       onClick={openDropdown}
     >
       <span className="font-normal">{language.toUpperCase()}</span>

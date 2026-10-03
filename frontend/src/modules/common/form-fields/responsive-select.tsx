@@ -11,7 +11,11 @@ interface ResponsiveSelectOption {
   value: string;
   label: string;
   icon?: React.ReactNode;
+  /** Language of the label when it differs from the page's, such as a language's own name. */
+  lang?: string;
 }
+
+const labelOf = (option: ResponsiveSelectOption) => (option.lang ? <span lang={option.lang}>{option.label}</span> : option.label);
 
 interface ResponsiveSelectProps {
   options: ResponsiveSelectOption[];
@@ -51,8 +55,8 @@ export function ResponsiveSelect({
           aria-label={title ? `${title}: ${selectedOption?.label ?? placeholder}` : undefined}
           onClick={() => setDrawerOpen(true)}
         >
-          <span className="truncate text-sm">{selectedOption?.label ?? placeholder}</span>
-          <ChevronDownIcon className="size-4 shrink-0 opacity-50" />
+          <span className="truncate text-sm">{selectedOption ? labelOf(selectedOption) : placeholder}</span>
+          <ChevronDownIcon className="size-4 shrink-0 opacity-70" />
         </Button>
 
         <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
@@ -78,7 +82,7 @@ export function ResponsiveSelect({
                 >
                   <span className="flex items-center gap-2">
                     {option.icon}
-                    {option.label}
+                    {labelOf(option)}
                   </span>
                   {option.value === value && <CheckIcon strokeWidth={3} className="text-success" />}
                 </button>
@@ -92,16 +96,20 @@ export function ResponsiveSelect({
 
   return (
     <Select value={value} onValueChange={onChange}>
-      <SelectTrigger disabled={disabled} className={cn('w-auto', className)} aria-label={title}>
+      <SelectTrigger
+        disabled={disabled}
+        className={cn('w-auto', className)}
+        aria-label={title ? `${title}: ${selectedOption?.label ?? placeholder}` : undefined}
+      >
         {selectedOption?.icon}
-        {selectedOption?.label ?? placeholder}
+        {selectedOption ? labelOf(selectedOption) : placeholder}
       </SelectTrigger>
       <SelectContent align={align}>
         {options.map((option) => (
           <SelectItem key={option.value} value={option.value}>
             <span className="flex items-center gap-2">
               {option.icon}
-              {option.label}
+              {labelOf(option)}
             </span>
           </SelectItem>
         ))}

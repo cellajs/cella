@@ -24,7 +24,7 @@ export function ToolCard({ label, resource, description, unsaved, id, className,
   return (
     <Card id={id} className={className}>
       <CardHeader>
-        <CardTitle>{unsaved ? <UnsavedBadge title={title} /> : title}</CardTitle>
+        <CardTitle level={2}>{unsaved ? <UnsavedBadge title={title} /> : title}</CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
       <CardContent>{children}</CardContent>

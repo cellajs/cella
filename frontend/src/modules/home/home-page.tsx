@@ -41,7 +41,7 @@ export function HomePage() {
       <div className="mt-6 mb-24 hidden has-[div[role='grid']]:block">
         <Card className="pb-0">
           <CardHeader>
-            <CardTitle>{t('c:pending_invitations')}</CardTitle>
+            <CardTitle level={2}>{t('c:pending_invitations')}</CardTitle>
           </CardHeader>
           <CardContent>
             <InvitationsTable />

@@ -166,7 +166,7 @@ interface FieldStateContextValue {
   invalid: boolean;
   isDirty: boolean;
   isTouched: boolean;
-  error?: { message?: string };
+  error?: { type?: string | number; message?: string };
 }
 
 const FieldStateContext = React.createContext<FieldStateContextValue>({ invalid: false, isDirty: false, isTouched: false });
@@ -315,10 +315,11 @@ export function FormControl({ children }: { children: React.ReactElement }) {
   return <Field.Control render={children} />;
 }
 
-export function FormMessage({ className, children, ...props }: React.ComponentProps<'p'>) {
+/** `messages` gives plain words per error type, for a rule whose own message is technical (a pattern, for instance). */
+export function FormMessage({ className, children, messages, ...props }: React.ComponentProps<'p'> & { messages?: Record<string, string> }) {
   const { t, i18n } = useTranslation();
   const { error } = useFieldState();
-  const message = error?.message ?? '';
+  const message = (error?.type && messages?.[error.type]) || (error?.message ?? '');
   const body = error ? (message && i18n?.exists?.(message) ? t(message as TKey) : message) : children;
 
   if (!body) return null;

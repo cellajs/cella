@@ -1,7 +1,10 @@
 import { onlineManager, useQuery } from '@tanstack/react-query';
 import { KeyRoundIcon, UnplugIcon } from 'lucide-react';
+import type { MouseEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { ApiKey, ServiceAccount } from 'sdk';
+import { useDropdowner } from '~/modules/common/dropdowner/use-dropdowner';
+import { PopConfirm } from '~/modules/common/popconfirm';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { apiKeysQueryOptions, useRevokeApiKeyMutation } from '~/modules/service-accounts/query';
 import { Badge } from '~/modules/ui/badge';
@@ -26,6 +29,31 @@ export function ServiceAccountTile({ account, path }: ServiceAccountTileProps) {
   const handleRevoke = (apiKey: ApiKey) => {
     if (!onlineManager.isOnline()) return toaster.warning(t('c:action.offline.text'));
     revoke({ path: { ...path, id: account.id, keyId: apiKey.id } });
+  };
+
+  // A revoked key cannot be restored and whatever uses it stops working, so the click asks first.
+  const openRevokeConfirm = (apiKey: ApiKey, event: MouseEvent<HTMLButtonElement>) => {
+    const { create, remove } = useDropdowner.getState();
+    create(
+      <PopConfirm title={t('c:confirm.revoke_api_key', { name: apiKey.name })}>
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <Button
+            variant="destructive"
+            className="justify-center sm:w-auto"
+            onClick={() => {
+              remove();
+              handleRevoke(apiKey);
+            }}
+          >
+            {t('c:revoke')}
+          </Button>
+          <Button type="reset" variant="secondary" data-autofocus onClick={() => remove()}>
+            {t('c:cancel')}
+          </Button>
+        </div>
+      </PopConfirm>,
+      { id: 'revoke-api-key', triggerId: `revoke-api-key-${apiKey.id}`, triggerRef: { current: event.currentTarget }, align: 'end' },
+    );
   };
 
   return (
@@ -54,10 +82,11 @@ export function ServiceAccountTile({ account, path }: ServiceAccountTileProps) {
                 {apiKey.prefix}…{apiKey.last4}
               </span>
             </div>
-            <span className="text-muted-foreground text-xs max-sm:hidden" aria-describedby={t('c:created_at')}>
+            <span className="text-muted-foreground text-xs max-sm:hidden">
+              <span className="sr-only">{t('c:created_at')}: </span>
               {dateShort(apiKey.createdAt)}
             </span>
-            <Button variant="plain" size="sm" className="ml-auto" loading={isPending} onClick={() => handleRevoke(apiKey)}>
+            <Button variant="plain" size="sm" className="ml-auto" loading={isPending} onClick={(event) => openRevokeConfirm(apiKey, event)}>
               <UnplugIcon />
               <span className="max-md:hidden">{t('c:revoke')}</span>
             </Button>

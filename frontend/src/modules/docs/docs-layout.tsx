@@ -60,6 +60,15 @@ function DocsLayout() {
     document.body.style.cursor = 'col-resize';
   };
 
+  // The keyboard path of the same handle: arrows move it in steps, Home and End jump to the limits.
+  const resizeSidebarByKey = (e: React.KeyboardEvent) => {
+    const width = sidebarRef.current?.getBoundingClientRect().width ?? MIN_SIDEBAR_WIDTH;
+    const target = { ArrowLeft: width - 16, ArrowRight: width + 16, Home: MIN_SIDEBAR_WIDTH, End: MAX_SIDEBAR_WIDTH }[e.key];
+    if (target === undefined) return;
+    e.preventDefault();
+    setResizedSidebarWidth(Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, target)));
+  };
+
   const { data: tags } = useSuspenseQuery(tagsQueryOptions);
 
   const sidebarOpen = useSheeter((state) => state.sheets.some((s) => s.id === 'docs-sidebar'));
@@ -139,8 +148,9 @@ function DocsLayout() {
         <ScrollArea className="size-full">{sidebarContent}</ScrollArea>
         <button
           type="button"
-          aria-label="Resize sidebar"
+          aria-label="Resize sidebar with the left and right arrow keys"
           onPointerDown={startSidebarResize}
+          onKeyDown={resizeSidebarByKey}
           className="absolute top-0 right-0 z-30 h-full w-px cursor-col-resize bg-border transition-colors after:absolute after:inset-y-0 after:-right-1.5 after:w-3 after:content-[''] hover:bg-primary/50 focus-visible:bg-primary"
         />
       </aside>

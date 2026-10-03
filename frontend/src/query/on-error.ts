@@ -86,7 +86,8 @@ export const onError = (error: Error | ApiError, meta?: QueryMeta) => {
       }
 
       const toastType = error.severity === 'error' ? 'error' : error.severity === 'warn' ? 'warning' : 'info';
-      toaster[toastType](errorMessage, { description });
+      // A toast that carries a request id or a wait time stays until dismissed: 4 seconds is too short to note either.
+      toaster[toastType](errorMessage, { description, timeout: description ? 0 : undefined });
     }
 
     if (statusCode === 401 && isSessionLost(error) && !location.pathname.startsWith('/auth/')) {

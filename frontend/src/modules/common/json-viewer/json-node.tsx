@@ -1,3 +1,4 @@
+import i18n from 'i18next';
 import { ChevronRightIcon } from 'lucide-react';
 import { memo, useEffect, useState } from 'react';
 import { cn } from '~/utils/cn';
@@ -319,7 +320,7 @@ export const JsonNode = memo(
     return (
       <div data-properties-node={isFlattenedNode || undefined}>
         {!hideExpandHeader && (
-          // biome-ignore lint/a11y/useKeyWithClickEvents: developer-facing JSON tree viewer; expand/collapse is a visual affordance for mouse users.
+          // biome-ignore lint/a11y/useKeyWithClickEvents: the whole row toggles for the mouse; the chevron button inside is the keyboard path.
           <div
             className={cn(
               'group/node -mx-1 -my-px inline-flex items-center gap-0.5 rounded px-1 py-px',
@@ -339,9 +340,21 @@ export const JsonNode = memo(
                 : undefined
             }
           >
-            <span className={cn('inline-flex size-4 shrink-0 items-center justify-center', isExpandable ? 'opacity-60' : '-ml-3.5 opacity-0')}>
-              <ChevronRightIcon className={cn('size-3.5 transition-transform', isExpanded ? 'rotate-90' : 'rotate-0')} />
-            </span>
+            {isExpandable ? (
+              // No handler of its own: its click bubbles to the row, so Enter and Space toggle the node as a mouse click does.
+              <button
+                type="button"
+                aria-expanded={isExpanded}
+                aria-label={i18n.t(isExpanded ? 'c:collapse' : 'c:expand')}
+                className="focus-effect inline-flex size-4 shrink-0 cursor-pointer items-center justify-center rounded opacity-60 focus-visible:opacity-100"
+              >
+                <ChevronRightIcon className={cn('size-3.5 transition-transform', isExpanded ? 'rotate-90' : 'rotate-0')} />
+              </button>
+            ) : (
+              <span className="-ml-3.5 inline-flex size-4 shrink-0 items-center justify-center opacity-0">
+                <ChevronRightIcon className="size-3.5" />
+              </span>
+            )}
             <KeyRenderer {...keyProps} />
             {keyName !== false && <span className="mr-1 opacity-70">:</span>}
             <span className={bracketClass}>{openBracket}</span>

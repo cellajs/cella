@@ -28,7 +28,7 @@ export function WelcomeText({ invitations, onboardingToStepper }: WelcomeTextPro
       <Button onClick={onboardingToStepper} className="max-sm:w-full">
         {t('c:get_started')}
         <div className="ml-4 -rotate-90">
-          <ArrowDownIcon className="animate-bounce" />
+          <ArrowDownIcon className="animate-bounce [animation-iteration-count:5] motion-reduce:animate-none" />
         </div>
       </Button>
     </div>

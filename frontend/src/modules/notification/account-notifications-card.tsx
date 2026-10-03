@@ -57,9 +57,10 @@ export function AccountNotificationsCard() {
 
         <div className="mt-3 flex flex-col gap-1.5">
           <HelpText type="popover" content={t('c:notifications.digest.text')} className="mb-0">
-            <Label>{t('c:notifications.digest')}</Label>
+            <Label id="digest-label">{t('c:notifications.digest')}</Label>
           </HelpText>
           <RadioGroup
+            aria-labelledby="digest-label"
             value={data.digest}
             onValueChange={(digest) => mutate({ digest: digest as DigestFrequency })}
             className="flex flex-wrap items-center gap-4"

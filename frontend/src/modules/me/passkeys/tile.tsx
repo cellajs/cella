@@ -26,7 +26,7 @@ export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPassk
   const DeviceIcon = passkey.deviceType === 'desktop' ? MonitorIcon : SmartphoneIcon;
 
   return (
-    <Card className="group/tile w-full py-0 transition-all sm:py-0 sm:has-[button:focus]:ring-2" data-expanded={expanded}>
+    <Card className="group/tile w-full py-0 transition-all focus-ring:has-[button:focus]:ring-2 sm:py-0" data-expanded={expanded}>
       <CardContent className="flex gap-2 p-2 sm:gap-3 sm:p-3 lg:items-center">
         <DeviceIcon className="size-4 max-sm:mt-0.5 sm:size-8" strokeWidth={1.5} />
 
@@ -42,13 +42,16 @@ export function PasskeyTile({ passkey, handleDeletePasskey, isPending, onlyPassk
           </div>
 
           <div className="flex flex-wrap items-start gap-x-2 gap-y-1 text-muted-foreground text-sm md:gap-x-5">
-            <p className="truncate" aria-describedby={t('c:created_at')}>
+            <p className="truncate">
+              <span className="sr-only">{t('c:created_at')}: </span>
               {dateShort(passkey.createdAt)}
             </p>
-            <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby="OS">
+            <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline">
+              <span className="sr-only">OS: </span>
               {passkey.deviceOs}
             </p>
-            <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline" aria-describedby={t('c:browser')}>
+            <p className="hidden truncate max-lg:group-data-[expanded=true]/tile:inline lg:inline">
+              <span className="sr-only">{t('c:browser')}: </span>
               {passkey.browser}
             </p>
 

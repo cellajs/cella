@@ -33,6 +33,7 @@ export function ColumnsView<TData>({ columns, setColumns, className = '', childr
           {filteredColumns.some((column) => column.hidden) && <Badge className="absolute -top-1 -right-1 z-10 flex size-2 justify-center p-0" />}
           <SlidersHorizontalIcon className="size-4" />
           <span className="ml-1 max-xl:hidden">{t('c:view')}</span>
+          {filteredColumns.some((column) => column.hidden) && <span className="sr-only">{t('c:columns_hidden')}</span>}
         </DropdownMenuTrigger>
       </TooltipButton>
       <DropdownMenuContent align="end" className="min-w-56 p-1" collisionPadding={16}>

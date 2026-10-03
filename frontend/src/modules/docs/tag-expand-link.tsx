@@ -6,6 +6,8 @@ import { cn } from '~/utils/cn';
 
 type TagExpandLinkProps = Pick<LinkProps, 'to' | 'search' | 'hash'> & {
   isOpen: boolean;
+  /** The section the link expands; it joins the link's accessible name, since every section repeats the same text. */
+  tagName: string;
   /** Show a spinner while details data is loading. */
   loading?: boolean;
   onMouseEnter?: () => void;
@@ -13,8 +15,9 @@ type TagExpandLinkProps = Pick<LinkProps, 'to' | 'search' | 'hash'> & {
 };
 
 /** The chevron stays mounted across toggles so its rotation animates smoothly. */
-export function TagExpandLink({ isOpen, loading, to, search, hash, onMouseEnter, onClick }: TagExpandLinkProps) {
+export function TagExpandLink({ isOpen, tagName, loading, to, search, hash, onMouseEnter, onClick }: TagExpandLinkProps) {
   const { t } = useTranslation();
+  const text = isOpen ? t('c:docs.hide_details') : t('c:docs.show_details');
 
   return (
     <div className="flex w-full justify-center">
@@ -26,10 +29,11 @@ export function TagExpandLink({ isOpen, loading, to, search, hash, onMouseEnter,
         draggable={false}
         resetScroll={false}
         className={cn(buttonVariants({ variant: isOpen ? 'outlineGhost' : 'plain', size: 'lg' }), 'rounded-full')}
+        aria-label={`${text}: ${tagName}`}
         onMouseEnter={onMouseEnter}
         onClick={onClick}
       >
-        {isOpen ? t('c:docs.hide_details') : t('c:docs.show_details')}
+        {text}
         {loading ? (
           <LoaderCircleIcon className="size-4 animate-spin opacity-50" />
         ) : (
