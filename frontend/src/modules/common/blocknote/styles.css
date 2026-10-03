@@ -53,8 +53,18 @@ li:has(.is-focused) {
   padding: 0;
 }
 
-.bn-shadcn.bn-container.inline > p {
+/* An inline document (BlockNoteFullHtml `inline`): the block wrappers drop out of the layout, so the text flows with what follows it. */
+.bn-shadcn.bn-inline,
+.bn-shadcn.bn-inline .bn-inline-content {
   display: inline;
+}
+
+.bn-shadcn.bn-inline .bn-static-editor,
+.bn-shadcn.bn-inline .bn-block-group,
+.bn-shadcn.bn-inline .bn-block-outer,
+.bn-shadcn.bn-inline .bn-block,
+.bn-shadcn.bn-inline .bn-block-content {
+  display: contents;
 }
 
 .bn-shadcn p:has(> .ProseMirror-trailingBreak)::before {

@@ -85,7 +85,11 @@ export const blockPlainText = (block: DescriptionBlock): string =>
 export type DerivedDocument = {
   /** Block 0's inline text (`titleFromDocument`): the title of a title document, empty when block 0 has none (an image). */
   name: string;
-  /** Search text of every block, link and media URL terms included, whitespace-collapsed, at most 900 characters. */
+  /**
+   * Search text of every block, link and media URL terms included, whitespace-collapsed, at most 900 characters: enough for a list
+   * filter. An app whose search needs every word derives its own column in its update operation and leaves this one out of its
+   * client derivation.
+   */
   keywords: string;
   /** The `findSummarySource` block as a one-block document (`JSON.stringify([block])`), rendered at view time; empty without one. */
   summary: string;

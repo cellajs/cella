@@ -23,8 +23,8 @@
   "scripts": {
     "docker": "pnpm --filter backend docker:up --detach",
     "docker:test": "docker compose -f backend/compose.yaml --profile test up -d --wait db_test",
-    "docker:test:down": "docker compose -f backend/compose.yaml --profile test down",
-    "docker:test:reset": "docker compose -f backend/compose.yaml --profile test down -v",
+    "docker:test:down": "docker compose -f backend/compose.yaml --profile test down db_test",
+    "docker:test:reset": "docker compose -f backend/compose.yaml --profile test down -v db_test",
     "stop": "pnpm -r --parallel --stream stop",
     "generate": "pnpm --filter backend generate",
     "generate:routes": "pnpm --filter frontend gen:routes",

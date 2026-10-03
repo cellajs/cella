@@ -15,6 +15,9 @@ const DATABASE_URL = testDatabaseUrl;
 const testRunLockKey = 7_365_224;
 // Resolve from __dirname so Vitest workspace cwd does not affect migration lookup.
 const migrationsFolder = path.resolve(__dirname, '../drizzle');
+const resetHint = '   Reset the test volume: `pnpm docker:test:reset && pnpm docker:test`, then run tests again.\n';
+/** Postgres codes for a statement that creates what the database already holds: duplicate column, table, object. */
+const alreadyExistsCodes = new Set(['42701', '42P07', '42710']);
 
 /**
  * Global test setup: provisions the RLS roles, then creates and migrates the test databases. The order matters: the RLS,
@@ -94,6 +97,11 @@ export default async function globalSetup(project: TestProject) {
   } catch (error) {
     spinner.fail('Migration failed');
     console.error(error);
+    // Applied migrations are tracked by folder name, so one applied under another name (a renamed folder, another branch) runs again.
+    if (alreadyExistsCodes.has(postgresErrorCode(error) ?? '')) {
+      console.error(`\n${crossMark}  A migration ran again on a test database that already holds what it creates`);
+      console.error(resetHint);
+    }
     process.exit(1);
   }
 
@@ -102,7 +110,7 @@ export default async function globalSetup(project: TestProject) {
     console.error(
       `\n${crossMark}  Test database ${found.database} was migrated without the RLS roles (yjs_documents: ${JSON.stringify(found.state)})`,
     );
-    console.error('   Reset the test volume: `pnpm docker:test:reset && pnpm docker:test`, then run tests again.\n');
+    console.error(resetHint);
   }
   if (degraded.length) process.exit(1);
 
@@ -110,6 +118,14 @@ export default async function globalSetup(project: TestProject) {
   return async () => {
     await lockClient.end();
   };
+}
+
+/** The Postgres error code of a failed query: the driver's error sits under the ORM's as `cause`. */
+function postgresErrorCode(error: unknown): string | undefined {
+  for (let current = error; current instanceof Error; current = current.cause) {
+    if ('code' in current && typeof current.code === 'string') return current.code;
+  }
+  return undefined;
 }
 
 /**
