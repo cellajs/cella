@@ -36,6 +36,8 @@ export interface LedgerRow {
 }
 
 export interface Ledger {
+  /** Name of the app the results are about. A ledger of another app (a fresh scaffold carries the template's) is never read. */
+  product: string;
   edition: string;
   standard: string;
   auditedAt: string;
@@ -44,6 +46,9 @@ export interface Ledger {
 }
 
 export const ledgerPath = path.join(repoRoot, 'json/accessibility-conformance.json');
+
+/** The root package name: the same in every mode, where the config slug differs between development and production. */
+export const product = (JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8')) as { name: string }).name;
 
 /**
  * Decides a row from its evidence. Any failure makes it Partially Supports; only rows whose checks all ran and passed
@@ -71,9 +76,11 @@ function decide(criterion: Criterion, evidence: Evidence[]): Pick<LedgerRow, 'st
   return { status: 'supports', remarks: evidence.map((e) => e.summary).join(' '), decidedBy: 'audit', open };
 }
 
-function readLedger(): Ledger | null {
+/** This app's ledger, or null when there is none yet or the file holds another app's results. */
+export function readLedger(): Ledger | null {
   if (!existsSync(ledgerPath)) return null;
-  return JSON.parse(readFileSync(ledgerPath, 'utf8')) as Ledger;
+  const ledger = JSON.parse(readFileSync(ledgerPath, 'utf8')) as Ledger;
+  return ledger.product === product ? ledger : null;
 }
 
 /** The family a check belongs to: `axe`, `probe`, `code` or `review`. */
@@ -103,6 +110,7 @@ export function writeLedger(evidenceById: Map<string, Evidence[]>, scope: string
   });
 
   const ledger: Ledger = {
+    product,
     edition: 'VPAT® 2.5Rev WCAG',
     standard: 'WCAG 2.2 Level AA',
     auditedAt: new Date().toISOString().slice(0, 10),
@@ -129,7 +137,7 @@ export interface Decision {
 /** Records reviewers' decisions in the ledger. Refuses what the evidence cannot carry; nothing is written unless all are valid. */
 export function recordDecisions(decisions: Decision[]) {
   const ledger = readLedger();
-  if (!ledger) throw new Error('No ledger yet: run `pnpm a11y` first.');
+  if (!ledger) throw new Error(`No ledger for ${product} yet: run \`pnpm a11y\` first.`);
 
   for (const { id, status, by, remarks = '', evidence, where = [] } of decisions) {
     const row = ledger.criteria.find((candidate) => candidate.id === id);

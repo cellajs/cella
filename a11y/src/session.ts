@@ -1,7 +1,9 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
-import { type Browser, type BrowserContext, chromium, type Page } from 'playwright';
+import { type Browser, type BrowserContext, type BrowserContextOptions, chromium, type Page } from 'playwright';
 import { appConfig } from 'shared';
+import { placeholders, prepare } from '../scope-config.ts';
+import type { AuditApi } from './scope.ts';
 
 export const repoRoot = path.resolve(import.meta.dirname, '../..');
 export const baseUrl = appConfig.frontendUrl;
@@ -14,7 +16,8 @@ export interface Session {
   browser: Browser;
   /** Cookies and local storage of a browser that has loaded the app once, as after a real sign-in. */
   storage: StorageState | null;
-  orgPath: string | null;
+  /** Resolved `{name}` placeholders of the scope paths. */
+  values: Record<string, string | null>;
 }
 
 /** Elements that exist only in development builds; scans and probes ignore them. */
@@ -28,15 +31,21 @@ function mintCookie(email: string) {
   return { name: match[1], value: match[2] };
 }
 
-/** Starts the browser and, when an email is given, a session plus the path of that user's first organization. */
+/** Starts the browser and, when an email is given, a session plus the values of the scope's path placeholders. */
 export async function startSession(email: string | null): Promise<Session> {
   const browser = await chromium.launch();
-  if (!email) return { browser, storage: null, orgPath: null };
+  if (!email) return { browser, storage: null, values: {} };
 
   const cookie = mintCookie(email);
-  const response = await fetch(`${appConfig.backendUrl}/organizations?limit=1`, { headers: { cookie: `${cookie.name}=${cookie.value}` } });
-  const { items } = (await response.json()) as { items: { tenantId: string; slug: string }[] };
-  const org = items[0];
+  const api: AuditApi = async (apiPath, init) => {
+    const headers = { cookie: `${cookie.name}=${cookie.value}`, ...(init && { 'content-type': 'application/json' }) };
+    const response = await fetch(`${appConfig.backendUrl}${apiPath}`, { method: init?.method, headers, body: init && JSON.stringify(init.body) });
+    if (!response.ok) throw new Error(`${init?.method ?? 'GET'} ${apiPath} answered ${response.status}`);
+    return response.json();
+  };
+  await prepare(api);
+  const values: Session['values'] = {};
+  for (const [name, resolve] of Object.entries(placeholders)) values[name] = await resolve(api);
 
   // Route guards read the user store, which a real sign-in fills before any deep link is opened
   const context = await browser.newContext();
@@ -48,7 +57,7 @@ export async function startSession(email: string | null): Promise<Session> {
   const storage = await context.storageState();
   await context.close();
 
-  return { browser, storage, orgPath: org ? `/${org.tenantId}/${org.slug}` : null };
+  return { browser, storage, values };
 }
 
 interface ContextOptions {
@@ -58,8 +67,11 @@ interface ContextOptions {
 
 export const defaultViewport = { width: 1280, height: 900 };
 
-/** A fresh browser context: theme preset, dev banner dismissed, signed in (with the stored session) when `auth` is set. */
-export async function newContext(session: Session, { auth, mode }: ContextOptions) {
+/**
+ * A fresh browser context: theme preset, dev banner dismissed, signed in (with the stored session) when `auth` is set.
+ * `overrides` change the browser settings for one check, such as the viewport or the motion preference.
+ */
+export async function newContext(session: Session, { auth, mode }: ContextOptions, overrides: BrowserContextOptions = {}) {
   if (auth && !session.storage) throw new Error('This state needs a signed-in session: pass --email or set ADMIN_EMAIL.');
   const storageState = auth ? (session.storage ?? undefined) : undefined;
   const context = await session.browser.newContext({
@@ -68,6 +80,7 @@ export async function newContext(session: Session, { auth, mode }: ContextOption
     reducedMotion: 'reduce',
     serviceWorkers: 'block',
     storageState,
+    ...overrides,
   });
   const uiState = { state: { mode, theme: 'none', offlineAccess: false, impersonating: false, publicAlertsSeen: ['test-credentials'] }, version: 1 };
   // tsx keeps function names with an `__name` helper that does not exist in the page
@@ -109,11 +122,13 @@ export async function settle(page: Page, quiet = 400, cap = 3000) {
   await waited.catch(() => page.waitForTimeout(quiet));
 }
 
-/** Resolves `{org}` in a scope path. */
+/** Fills the `{name}` placeholders of a scope path. */
 export function resolvePath(session: Session, statePath: string) {
-  if (!statePath.includes('{org}')) return statePath;
-  if (!session.orgPath) throw new Error('The audit user belongs to no organization, so organization states cannot run.');
-  return statePath.replace('{org}', session.orgPath);
+  return statePath.replace(/\{(\w+)\}/g, (_, name: string) => {
+    const value = session.values[name];
+    if (!value) throw new Error(`No value for {${name}}: its resolver in a11y/scope-config.ts found nothing for the audit user.`);
+    return value;
+  });
 }
 
 /** Opens a path and waits until the route has rendered its main content. */

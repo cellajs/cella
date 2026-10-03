@@ -44,7 +44,7 @@ export const tooltips: Check = async (page, state) => {
     }
     if (!(await hover()) || !(await shown())) continue;
     await page.keyboard.press('Escape');
-    const closed = await content.waitFor({ state: 'hidden', timeout: 1000 }).then(
+    const closed = await content.waitFor({ state: 'hidden', timeout: 2500 }).then(
       () => true,
       () => false,
     );

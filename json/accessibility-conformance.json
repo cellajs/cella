@@ -1,4 +1,5 @@
 {
+  "product": "cella",
   "edition": "VPAT® 2.5Rev WCAG",
   "standard": "WCAG 2.2 Level AA",
   "auditedAt": "2026-10-03",
@@ -222,6 +223,13 @@
       "open": [],
       "evidence": [
         {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "After the leftovers round, compared screenshot, tree.yml and facts.headings of all 26 states. docs-overview: the API facts are a table whose rows start with a rowheader ('Title', 'Version', 'Description', 'OpenAPI version' and two counts; docs/overview-table.tsx). Unchanged from the Batch F check: settings cards, docs sections and the error page title are headings, and the Email digest group has a name. Lesser, not counted: org-settings text 'Languages*' is not tied to its button, whose own name is 'Select languages: English'; axe's best-practice rule empty-table-header reports header cells without text on org-attachments, org-settings, system-users and system-organizations (selection, drag-handle and icon columns).",
+          "where": [],
+          "date": "2026-10-03"
+        },
+        {
           "check": "axe",
           "result": "pass",
           "summary": "axe aria-hidden-body passed on 26 states.",
@@ -262,13 +270,6 @@
           "result": "pass",
           "summary": "axe aria-required-parent passed on 7 states.",
           "where": []
-        },
-        {
-          "check": "review:agent",
-          "result": "pass",
-          "summary": "After the leftovers round, compared screenshot, tree.yml and facts.headings of all 26 states. docs-overview: the API facts are a table whose rows start with a rowheader ('Title', 'Version', 'Description', 'OpenAPI version' and two counts; docs/overview-table.tsx). Unchanged from the Batch F check: settings cards, docs sections and the error page title are headings, and the Email digest group has a name. Lesser, not counted: org-settings text 'Languages*' is not tied to its button, whose own name is 'Select languages: English'; axe's best-practice rule empty-table-header reports header cells without text on org-attachments, org-settings, system-users and system-organizations (selection, drag-handle and icon columns).",
-          "where": [],
-          "date": "2026-10-03"
         }
       ]
     },
@@ -417,39 +418,23 @@
       "open": [],
       "evidence": [
         {
-          "check": "axe",
-          "result": "review",
-          "summary": "axe color-contrast needs a person to check 21 states: Elements must meet minimum color contrast ratio thresholds.",
-          "where": [
-            "marketing-home (light)",
-            "features (light)",
-            "sync-engine (light)",
-            "contact (light)",
-            "legal-privacy (light)",
-            "legal-accessibility (light)",
-            "docs-search (light)",
-            "org-attachments (light)",
-            "system-users (light)",
-            "search-sheet (light)",
-            "marketing-home (dark)",
-            "features (dark)",
-            "sync-engine (dark)",
-            "contact (dark)",
-            "legal-privacy (dark)",
-            "legal-accessibility (dark)",
-            "docs-search (dark)",
-            "org-attachments (dark)",
-            "system-users (dark)",
-            "menu-sheet (dark)",
-            "search-sheet (dark)"
-          ]
-        },
-        {
           "check": "review:agent",
           "result": "pass",
           "summary": "axe color-contrast reports no failing element in any of the 52 visits (26 states in light and dark) and leaves 552 text nodes undecided; those were measured from rendered pixels on the final build. The 264 that are not short text: 260 pass, the lowest at 5.3:1 ('Request info' in the public footer, text-white/60). Two readings are artefacts of the method, the hero heading and its bold words on marketing-home, where the letters fill most of the box: in the screenshots they are near-black on a pale gradient (light) and near-white on a dark one (dark); a person should glance at the hero. Two nodes are an empty placeholder. Avatar initials, now text-black at 85% opacity (common/entity-avatar.tsx): measured as the letter's core colour against the avatar colour on up to 14 initials each of org-members, system-users, system-organizations, home, menu-sheet and account-sheet, in both modes; the lowest is 4.55:1 (system-users, light, inside a table cell that dims its content to 75%), 5.35:1 or more outside table cells, 5.5:1 or more in dark mode. The all-loaded marker under tables is decoration and hidden from assistive technology. Not measured: no audited state shows a warning, so the ochre warning colour is checked by calculation only (5.9:1 to 8.0:1).",
           "where": [],
           "date": "2026-10-03"
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe color-contrast found no failing element; what it left undecided on 21 visits is measured by a probe.",
+          "where": []
+        },
+        {
+          "check": "probe:text-contrast",
+          "result": "pass",
+          "summary": "Text the scanner cannot decide (over gradients and images, or too short) reaches its contrast, measured from rendered pixels passed on all 15 states. The lowest measured is 5.29:1.",
+          "where": []
         }
       ]
     },
@@ -530,6 +515,12 @@
           "summary": "Measured in the live page after the --input change, computed colours resolved through canvas and composited over the real background, light / dark. account: first name, bio and Language select borders 3.24 / 3.32; Language chevron 3.5 / 5.46; Newsletter checkbox border 3.24 / 3.32; Email digest radio border 3.24 / 3.32; the off MFA switch track against the card 3.24 / 3.32. org-members: header sort icon 3.5 / 5.46; Role filter border and Select All checkbox border 3.35 / 3.6. org-settings: name field border 3.24 / 3.32; Tabs grip icon 7.04 / 9.2. contact: name and message borders 3.35 / 3.6. sign-in: email border 3.35 / 3.6. Every measured value is at or above 3:1. Unchanged from the earlier pass: focus ring 15.7 to 17.9:1 light and 8.4 to 11.9:1 dark, grid cell outline, sidebar and toolbar icons, Help and lock icons 3.37:1 light. Outline buttons with text keep light borders (1.1 to 1.3:1 light); their text identifies them, so they are not counted.",
           "where": [],
           "date": "2026-10-03"
+        },
+        {
+          "check": "probe:control-contrast",
+          "result": "pass",
+          "summary": "The edge of form controls (fields, selects, checkboxes, radios, switches) reaches 3:1 against what surrounds it passed on all 38 states. The lowest measured is 3.24:1.",
+          "where": []
         }
       ]
     },
@@ -554,7 +545,7 @@
         {
           "check": "probe:text-spacing",
           "result": "fail",
-          "summary": "Text stays fully visible with WCAG text spacing applied failed on 1 of 26 states. menu-sheet: \"Hauck, Watsica and Douglas\" is cut off; \"Grady, Ebert and Farrell\" is cut off; \"Murphy, Wisoky and Ebert\" is cut off",
+          "summary": "Text stays fully visible with WCAG text spacing applied failed on 1 of 26 states. menu-sheet: \"Halvorson, Skiles and Hirthe\" is cut off; \"Rath, Brekke and Langworth\" is cut off; \"McLaughlin - VonRueden\" is cut off",
           "where": [
             "menu-sheet"
           ]
@@ -562,7 +553,7 @@
         {
           "check": "probe:text-spacing",
           "result": "review",
-          "summary": "Grid and table cells truncate more with text spacing: check that the full value stays reachable. docs-operations: 10 cells, such as \"resendInvitationWithToken\" | org-members: 10 cells, such as \"admin-test@cellajs.com\" | org-settings: 1 cells, such as \"Visible\"",
+          "summary": "Grid and table cells truncate more with text spacing: check that the full value stays reachable. docs-operations: 9 cells, such as \"resendInvitationWithToken\" | org-members: 8 cells, such as \"admin-test@cellajs.com\" | org-settings: 1 cells, such as \"Visible\"",
           "where": [
             "docs-operations",
             "org-members",
@@ -585,17 +576,17 @@
       "open": [],
       "evidence": [
         {
-          "check": "probe:hover-content",
-          "result": "pass",
-          "summary": "Tooltips are hoverable and dismissible with Escape passed on all 9 states.",
-          "where": []
-        },
-        {
           "check": "review:agent",
           "result": "pass",
           "summary": "Tooltips: the audit's probe passes on all 9 states with tooltips, including menu-sheet, where Escape now closes the tooltip and leaves the sheet open (ui/tooltip.tsx closes on Escape from anywhere; the sheet, dialog and menu panel let an open tooltip or hover card take the key first). No Tooltip sets disableHoverablePopup. The one hover card, the status entries in the menu sheet's Info panel, driven in the live page: it opens on hover and on keyboard focus, stays open with the pointer on the card, and Escape closes it with the pointer still resting on the trigger; the panel and the sheet stay open and focus does not move; the next Escape closes the panel.",
           "where": [],
           "date": "2026-10-03"
+        },
+        {
+          "check": "probe:hover-content",
+          "result": "pass",
+          "summary": "Tooltips are hoverable and dismissible with Escape passed on all 9 states.",
+          "where": []
         }
       ]
     },
@@ -609,6 +600,13 @@
       "decidedBy": "agent",
       "open": [],
       "evidence": [
+        {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "The two remaining gaps are closed and were driven by keyboard in the live page. org-settings Tabs: each row has 'Move up: <tab>' and 'Move down: <tab>' buttons; Enter on 'Move down: Attachments' twice moves it from first to last, focus stays on the button, a status message reads 'Attachments is now 3 of 3.', and the order survives a reload (entities/tabs-arrangement-card.tsx). menu-sheet 'Manage content': each item has Move up and Move down buttons beside Archive and Mute; Enter on 'Move down: <organization>' reorders the list at once and keeps focus (navigation/menu-sheet/item-edit.tsx). Unchanged from the Batch F check: JSON viewer expanders, truncated strings, the docs sidebar width by arrow keys, and the flows of the first pass (menu, search and account sheets, members grid, invite dialog, attachment viewer, docs search). For a person to weigh: opening txt and pdf attachments and Download could not run here (seed files are CORS-blocked), and the collaborative description editor stayed at 'Connecting...' (no relay in the audit stack); the plain editor on org-settings takes typing, selection and its block shortcuts.",
+          "where": [],
+          "date": "2026-10-03"
+        },
         {
           "check": "axe",
           "result": "pass",
@@ -664,13 +662,6 @@
             "frontend/src/modules/marketing/about/sync-diagram.tsx",
             "frontend/src/modules/navigation/menu-sheet/sheet-panel.tsx"
           ]
-        },
-        {
-          "check": "review:agent",
-          "result": "pass",
-          "summary": "The two remaining gaps are closed and were driven by keyboard in the live page. org-settings Tabs: each row has 'Move up: <tab>' and 'Move down: <tab>' buttons; Enter on 'Move down: Attachments' twice moves it from first to last, focus stays on the button, a status message reads 'Attachments is now 3 of 3.', and the order survives a reload (entities/tabs-arrangement-card.tsx). menu-sheet 'Manage content': each item has Move up and Move down buttons beside Archive and Mute; Enter on 'Move down: <organization>' reorders the list at once and keeps focus (navigation/menu-sheet/item-edit.tsx). Unchanged from the Batch F check: JSON viewer expanders, truncated strings, the docs sidebar width by arrow keys, and the flows of the first pass (menu, search and account sheets, members grid, invite dialog, attachment viewer, docs search). For a person to weigh: opening txt and pdf attachments and Download could not run here (seed files are CORS-blocked), and the collaborative description editor stayed at 'Connecting...' (no relay in the audit stack); the plain editor on org-settings takes typing, selection and its block shortcuts.",
-          "where": [],
-          "date": "2026-10-03"
         }
       ]
     },
@@ -721,17 +712,17 @@
       "open": [],
       "evidence": [
         {
-          "check": "code:timing",
-          "result": "review",
-          "summary": "Sessions last a week, beyond the 20-hour exception. Sign-in challenges (passkey, email link, step-up) expire after 5 to 10 minutes and can be requested again. ",
-          "where": []
-        },
-        {
           "check": "review:agent",
           "result": "fail",
           "summary": "Driven in the live page. With 'Keep messages open' off, the toast after muting an organization is gone 6 s later; with it on (menu sheet, Preferences; stored in the ui store) the same toast is still visible after 6 s (toaster/toaster-provider.tsx: timeout 0). The switch is only reachable signed in, so public-page toasts (contact form, newsletter) keep the 4 s limit with hover, focus and F6 as the only hold. Unchanged from the Batch F check: toasts with a request id or a retry wait stay until dismissed; TOTP setup states its 5 minute limit and has no extension; the other limits restart without data loss.",
           "where": [],
           "date": "2026-10-03"
+        },
+        {
+          "check": "code:timing",
+          "result": "review",
+          "summary": "Sessions last a week, beyond the 20-hour exception. Sign-in challenges (passkey, email link, step-up) expire after 5 to 10 minutes and can be requested again. ",
+          "where": []
         }
       ]
     },
@@ -746,6 +737,13 @@
       "open": [],
       "evidence": [
         {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "Every motion that starts by itself now ends within five seconds or has a pause control, checked in the live page. sync-engine, sampled once a second with motion allowed: the diagram dashes move for the first four seconds and are still from the fifth (8 runs of 0.6 s per start; entity-buckets.tsx, sync-diagram.tsx); a mode switch or scrolling back into view starts another run of the same length. Menu sheet Info panel: the status dot's animation is 2.4 s x 2 (tailwind.css --animate-status-pulse). Unchanged from the Batch F check: the marketing carousels have a Pause button that holds across remounts and do not start under reduced motion; the hero, onboarding and 'Try me' arrows stop after five runs; dashes, dot and arrows are still under reduced motion. Loading indicators are exempt.",
+          "where": [],
+          "date": "2026-10-03"
+        },
+        {
           "check": "code:motion",
           "result": "review",
           "summary": "Looping animations in frontend/src/modules/attachment/attachments-carousel.tsx, frontend/src/modules/common/data-table/infinite-loader.tsx, frontend/src/modules/docs/code-viewer.tsx, frontend/src/modules/home/onboarding/welcome-text.tsx, frontend/src/modules/marketing/about/about-page.tsx, frontend/src/modules/ui/skeleton.tsx; check that any that runs longer than 5 seconds beside other content can be paused or stops with reduced motion.",
@@ -757,13 +755,6 @@
             "frontend/src/modules/marketing/about/about-page.tsx",
             "frontend/src/modules/ui/skeleton.tsx"
           ]
-        },
-        {
-          "check": "review:agent",
-          "result": "pass",
-          "summary": "Every motion that starts by itself now ends within five seconds or has a pause control, checked in the live page. sync-engine, sampled once a second with motion allowed: the diagram dashes move for the first four seconds and are still from the fifth (8 runs of 0.6 s per start; entity-buckets.tsx, sync-diagram.tsx); a mode switch or scrolling back into view starts another run of the same length. Menu sheet Info panel: the status dot's animation is 2.4 s x 2 (tailwind.css --animate-status-pulse). Unchanged from the Batch F check: the marketing carousels have a Pause button that holds across remounts and do not start under reduced motion; the hero, onboarding and 'Try me' arrows stop after five runs; dashes, dot and arrows are still under reduced motion. Loading indicators are exempt.",
-          "where": [],
-          "date": "2026-10-03"
         }
       ]
     },
@@ -1016,6 +1007,13 @@
       "open": [],
       "evidence": [
         {
+          "check": "review:agent",
+          "result": "pass",
+          "summary": "Pull to refresh now has a button: the account sheet shows 'Refresh' when the app runs installed (navigation/account-sheet.tsx). Driven in the live page with the display-mode query answered as an installed app: the button is absent in a browser tab, present when installed, and a click refetches the lists (/me/memberships, /notifications, /unseen/counts, /me/invitations). Unchanged from the first pass: zoom has plus and minus buttons, a swiped toast has a close button, drawers close by tapping outside or Escape, the carousel has previous and next buttons and arrow keys. For a person: in the attachment dialog the previous and next buttons are transparent until hover or focus; check on a touch device that they can be reached. The contact map loads only with a maps key (production) and was not evaluated.",
+          "where": [],
+          "date": "2026-10-03"
+        },
+        {
           "check": "code:gestures",
           "result": "review",
           "summary": "Gesture handlers in frontend/src/hooks/use-breakpoints.tsx, frontend/src/modules/attachment/render/image-zoom.ts, frontend/src/modules/attachment/render/use-pan-zoom.ts, frontend/src/modules/common/sheeter/drawer.tsx, frontend/src/modules/navigation/floating-nav/button.tsx, frontend/src/modules/ui/toast.tsx; check each has a single-pointer alternative such as a button.",
@@ -1027,13 +1025,6 @@
             "frontend/src/modules/navigation/floating-nav/button.tsx",
             "frontend/src/modules/ui/toast.tsx"
           ]
-        },
-        {
-          "check": "review:agent",
-          "result": "pass",
-          "summary": "Pull to refresh now has a button: the account sheet shows 'Refresh' when the app runs installed (navigation/account-sheet.tsx). Driven in the live page with the display-mode query answered as an installed app: the button is absent in a browser tab, present when installed, and a click refetches the lists (/me/memberships, /notifications, /unseen/counts, /me/invitations). Unchanged from the first pass: zoom has plus and minus buttons, a swiped toast has a close button, drawers close by tapping outside or Escape, the carousel has previous and next buttons and arrow keys. For a person: in the attachment dialog the previous and next buttons are transparent until hover or focus; check on a touch device that they can be reached. The contact map loads only with a maps key (production) and was not evaluated.",
-          "where": [],
-          "date": "2026-10-03"
         }
       ]
     },
@@ -1104,6 +1095,16 @@
       "open": [],
       "evidence": [
         {
+          "check": "review:agent",
+          "result": "fail",
+          "summary": "Driven in the live page by click, no drag. org-settings Tabs: 'Move up' and 'Move down' buttons per row reorder the tabs. menu-sheet 'Manage content': Move up and Move down buttons per item. Editor (org-settings Introduction): the block handle's menu has 'Move up' and 'Move down'; 'Move down' on the first of two blocks swaps them (blocknote/custom-side-menu/side-menu.tsx). Attachment viewer: zoomed in, four pan buttons appear; left and down move the image by 120px each (attachment/render/image.tsx). Docs sidebar: a double-click on the handle returns it from 320px to its default 288px; an arbitrary width still needs a drag or the arrow keys (docs/docs-layout.tsx). Table columns: drag, double-click to fit, or Ctrl+Arrow, unchanged. File drop in the uploader has the file picker. The contact map renders only with a maps key (production) and was not evaluated.",
+          "where": [
+            "docs-overview",
+            "org-members"
+          ],
+          "date": "2026-10-03"
+        },
+        {
           "check": "code:dragging",
           "result": "review",
           "summary": "Drag and drop in frontend/src/modules/common/blocknote/custom-side-menu/side-menu.tsx, frontend/src/modules/common/board/board-layout.tsx, frontend/src/modules/common/data-grid/header-cell.tsx, frontend/src/modules/common/data-grid/row-drag.tsx, frontend/src/modules/navigation/menu-sheet/item-edit-wrapper.tsx, frontend/src/modules/navigation/menu-sheet/menu-sheet.tsx; check each has a single-pointer alternative.",
@@ -1115,16 +1116,6 @@
             "frontend/src/modules/navigation/menu-sheet/item-edit-wrapper.tsx",
             "frontend/src/modules/navigation/menu-sheet/menu-sheet.tsx"
           ]
-        },
-        {
-          "check": "review:agent",
-          "result": "fail",
-          "summary": "Driven in the live page by click, no drag. org-settings Tabs: 'Move up' and 'Move down' buttons per row reorder the tabs. menu-sheet 'Manage content': Move up and Move down buttons per item. Editor (org-settings Introduction): the block handle's menu has 'Move up' and 'Move down'; 'Move down' on the first of two blocks swaps them (blocknote/custom-side-menu/side-menu.tsx). Attachment viewer: zoomed in, four pan buttons appear; left and down move the image by 120px each (attachment/render/image.tsx). Docs sidebar: a double-click on the handle returns it from 320px to its default 288px; an arbitrary width still needs a drag or the arrow keys (docs/docs-layout.tsx). Table columns: drag, double-click to fit, or Ctrl+Arrow, unchanged. File drop in the uploader has the file picker. The contact map renders only with a maps key (production) and was not evaluated.",
-          "where": [
-            "docs-overview",
-            "org-members"
-          ],
-          "date": "2026-10-03"
         }
       ]
     },
@@ -1354,17 +1345,17 @@
       "open": [],
       "evidence": [
         {
-          "check": "axe",
-          "result": "pass",
-          "summary": "axe form-field-multiple-labels passed on 19 states.",
-          "where": []
-        },
-        {
           "check": "review:agent",
           "result": "pass",
           "summary": "facts.fields of all 26 states against the screenshots after the leftovers round. sign-in and sign-in-email: the email field has the visible label 'Email' and an example address as placeholder (auth/steps/check-email.tsx; the sign-in and sign-up steps got the same label). org-members, system-users (and behind invite-dialog and member-sheet): the role filter shows 'Role: All' (form-fields/responsive-select.tsx showTitle). Fields still without a visible label are the ones judged fine before: search fields with a magnifier icon (docs, app search), the invite dialog's 'Add an email' under its instruction 'Type an email address and press ENTER'. Account, organization settings and contact forms have visible labels with an asterisk for required.",
           "where": [],
           "date": "2026-10-03"
+        },
+        {
+          "check": "axe",
+          "result": "pass",
+          "summary": "axe form-field-multiple-labels passed on 19 states.",
+          "where": []
         }
       ]
     },
@@ -1585,6 +1576,13 @@
           "result": "pass",
           "summary": "axe aria-input-field-name passed on 1 states.",
           "where": []
+        },
+        {
+          "check": "review:agent",
+          "result": "review",
+          "summary": "axe finds no failing element; what it leaves for a person on the overlay states was looked at in the page. (1) Content behind an open sheet or dialog is aria-hidden and inert (docs-search, menu-sheet, search-sheet, account-sheet, invite-dialog, member-sheet); the keyboard probe confirms focus stays inside the overlay on each. (2) The focus guards of those overlays are aria-hidden with tabindex 0 by design: they pass focus on and never hold it. (3) docs-search and search-sheet: the search input's aria-controls names the result list, which is in the page but hidden while there are no results. (4) sign-in-email: the toast's Close button is aria-hidden while the toast is idle and still in the Tab order; check with a screen reader that it is announced once focused. Fixed earlier and worth hearing: the settings side navigation marks only the current section as current. What a screen reader announces for the custom controls (menus, tabs, toggles, the grid, the editor) still needs the pass in a11y/results/manual-pass.md.",
+          "where": [],
+          "date": "2026-10-03"
         }
       ]
     },

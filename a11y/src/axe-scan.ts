@@ -5,6 +5,7 @@ import type { Evidence } from './ledger.ts';
 import { devOnlySelectors } from './session.ts';
 
 const wcagTags = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22a', 'wcag22aa'];
+const contrastRule = 'color-contrast';
 
 interface AxeNode {
   target: string;
@@ -26,6 +27,8 @@ export interface AxeScan {
   failed: (AxeRule & { nodes: AxeNode[] })[];
   review: AxeRule[];
   passed: AxeRule[];
+  /** Selectors of the text whose contrast axe could not decide; the text-contrast probe measures them. */
+  undecidedContrast: string[];
 }
 
 /**
@@ -34,7 +37,7 @@ export interface AxeScan {
  */
 export async function axeScan(page: Page, where: string, contrastOnly = false): Promise<AxeScan> {
   let builder = new AxeBuilder({ page });
-  builder = contrastOnly ? builder.withRules(['color-contrast']) : builder.withTags([...wcagTags, 'best-practice']);
+  builder = contrastOnly ? builder.withRules([contrastRule]) : builder.withTags([...wcagTags, 'best-practice']);
   for (const selector of devOnlySelectors) builder = builder.exclude(selector);
   const result = await builder.analyze();
 
@@ -52,11 +55,16 @@ export async function axeScan(page: Page, where: string, contrastOnly = false): 
     })),
     review: result.incomplete.map(rule),
     passed: result.passes.map(rule),
+    undecidedContrast: result.incomplete.filter(({ id }) => id === contrastRule).flatMap(({ nodes }) => nodes.map((node) => node.target.join(' '))),
   };
 }
 
-/** Evidence per criterion from all scans, plus the raw report for fixing: every failing element per rule and state. */
-export function summarizeAxe(scans: AxeScan[]) {
+/**
+ * Evidence per criterion from all scans, plus the raw report for fixing: every failing element per rule and state.
+ * With `contrastMeasured`, what axe could not decide about contrast is the text-contrast probe's to judge, so it
+ * leaves no review note here.
+ */
+export function summarizeAxe(scans: AxeScan[], contrastMeasured = false) {
   const rules = new Map<string, AxeRule & { failed: Map<string, AxeNode[]>; review: string[]; passed: number }>();
   const advisories = new Map<string, { help: string; where: string[] }>();
   const tally = (rule: AxeRule) => {
@@ -80,14 +88,21 @@ export function summarizeAxe(scans: AxeScan[]) {
     const elements = [...rule.failed.values()].reduce((sum, nodes) => sum + nodes.length, 0);
     const item: Evidence = failedWhere.length
       ? { check: 'axe', result: 'fail', summary: `axe ${rule.id}: ${rule.help} (${elements} elements).`, where: failedWhere }
-      : rule.review.length
+      : rule.review.length && !(contrastMeasured && rule.id === contrastRule)
         ? {
             check: 'axe',
             result: 'review',
             summary: `axe ${rule.id} needs a person to check ${rule.review.length} states: ${rule.help}.`,
             where: rule.review,
           }
-        : { check: 'axe', result: 'pass', summary: `axe ${rule.id} passed on ${rule.passed} states.`, where: [] };
+        : rule.review.length
+          ? {
+              check: 'axe',
+              result: 'pass',
+              summary: `axe ${rule.id} found no failing element; what it left undecided on ${rule.review.length} visits is measured by a probe.`,
+              where: [],
+            }
+          : { check: 'axe', result: 'pass', summary: `axe ${rule.id} passed on ${rule.passed} states.`, where: [] };
     for (const id of rule.criteria) evidence.set(id, [...(evidence.get(id) ?? []), item]);
   }
 
