@@ -45,6 +45,6 @@ export async function toggleMfaOp(ctx: Context<Env>, mfaRequired: boolean) {
 
   sendAccountSecurityEmail(user, mfaRequired ? 'mfa-enabled' : 'mfa-disabled');
 
-  // Re-select to include the user_counters subqueries
+  // Re-select to include the activity times of the user's actors row
   return findCurrentUser(ctx);
 }

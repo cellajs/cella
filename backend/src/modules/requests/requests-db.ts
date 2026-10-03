@@ -15,7 +15,9 @@ export const requestsTable = snakeCase.table(
     message: varchar({ length: maxLength.field }),
     email: varchar({ length: maxLength.field }).notNull(),
     type: varchar({ enum: requestTypeEnum }).notNull(),
-    tokenId: uuid(), // References tokens.id logically (no FK due to partitioning)
+    // The invitation token sent for this request, by its id: no foreign key, since the id outlives the swept or spent
+    // token and keeps marking the request as invited (`wasInvited`).
+    tokenId: uuid(),
   },
   (table) => [
     index('requests_emails').on(table.email.desc()),

@@ -4,6 +4,7 @@ import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { baseDb as db } from '#/db/db';
 import { mailer } from '#/lib/mailer';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { devicesTable } from '#/modules/auth/devices/devices-db';
 import { enrollDevice } from '#/modules/auth/devices/operations/enroll-device';
 import { notifyNewSignIn } from '#/modules/auth/devices/operations/notify-sign-in';
@@ -11,7 +12,6 @@ import { pruneDevices } from '#/modules/auth/devices/operations/prune-devices';
 import type { SignInContext } from '#/modules/auth/sessions/helpers/sign-in-context';
 import { createSession } from '#/modules/auth/sessions/operations/create-session';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
-import { userCountersTable } from '#/modules/user/user-counters-db';
 import { hashDeviceIdForUser } from '#/utils/hash-pii';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { authCookie, createMfaToken, createTestSession, createTestUser, createTotpUser, sentMails, setCookiePair } from '../helpers';
@@ -33,9 +33,12 @@ const browser = (deviceId: string | null = nanoid(24)): SignInContext => ({
   deviceId,
 });
 
-/** Marks the account as one that has signed in before; createTestUser leaves user_counters empty. */
+/** Marks the account as one that has signed in before; createTestUser leaves lastSignInAt empty. */
 const seedEarlierSignIn = (userId: string) =>
-  db.insert(userCountersTable).values({ userId, lastSignInAt: new Date(Date.now() - 86_400_000).toISOString() });
+  db
+    .update(actorsTable)
+    .set({ lastSignInAt: new Date(Date.now() - 86_400_000).toISOString() })
+    .where(eq(actorsTable.id, userId));
 
 const devicesOf = (userId: string) => db.select().from(devicesTable).where(eq(devicesTable.userId, userId));
 

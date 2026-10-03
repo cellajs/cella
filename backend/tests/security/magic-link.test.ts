@@ -316,7 +316,7 @@ describe('magic-link sign-up', async () => {
 
     const { users, emails } = await rowsFor(email);
     expect(users).toHaveLength(1);
-    expect(emails).toEqual([expect.objectContaining({ userId: users[0].id, verified: true, lastVerifiedVia: 'magic' })]);
+    expect(emails).toEqual([expect.objectContaining({ userId: users[0].id, verifiedAt: expect.any(String), lastVerifiedVia: 'magic' })]);
     expect(await tokensFor(email)).toEqual([expect.objectContaining({ userId: users[0].id })]);
   });
 
@@ -351,7 +351,7 @@ describe('magic-link sign-up', async () => {
 
     const { users, emails } = await rowsFor(email);
     expect(users.map((user) => user.id)).toEqual([holder.id]);
-    expect(emails).toEqual([expect.objectContaining({ verified: true, lastVerifiedVia: 'magic' })]);
+    expect(emails).toEqual([expect.objectContaining({ verifiedAt: expect.any(String), lastVerifiedVia: 'magic' })]);
   });
 
   it('must not create an account via a sign-up link once registration has closed', async () => {

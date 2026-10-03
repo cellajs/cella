@@ -257,19 +257,9 @@
         "kind": {
           "type": "string",
           "required": true,
-          "enum": ["sso", "lti"]
+          "enum": ["sso"]
         },
         "issuer": { "type": "string", "required": true, "maxLength": 255 },
-        "clientId": {
-          "type": ["string", "null"],
-          "required": true,
-          "maxLength": 255
-        },
-        "deploymentId": {
-          "type": ["string", "null"],
-          "required": true,
-          "maxLength": 255
-        },
         "claimValues": { "type": "array", "required": true, "itemType": "string" },
         "displayName": { "type": "string", "required": true, "maxLength": 255 },
         "status": {
@@ -323,8 +313,6 @@
       "tenantId": "gc9llm",
       "kind": "sso",
       "issuer": "surfconext",
-      "clientId": null,
-      "deploymentId": null,
       "claimValues": ["uu.nl"],
       "displayName": "Utrecht University",
       "status": "active",
@@ -714,10 +702,6 @@
               "type": ["string", "null"],
               "required": true
             },
-            "lastStartedAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
             "lastSignInAt": {
               "type": ["string", "null"],
               "required": true
@@ -758,7 +742,6 @@
         "createdAt": "2024-05-02T20:53:18.498Z",
         "updatedAt": "2024-05-02T20:53:18.498Z",
         "updatedBy": null,
-        "lastStartedAt": "2024-05-02T20:53:18.498Z",
         "lastSignInAt": "2024-05-02T20:53:18.498Z",
         "lastSeenAt": "2024-05-02T20:53:18.498Z"
       },
@@ -1899,10 +1882,6 @@
           "type": ["string", "null"],
           "required": true
         },
-        "lastStartedAt": {
-          "type": ["string", "null"],
-          "required": true
-        },
         "lastSignInAt": {
           "type": ["string", "null"],
           "required": true
@@ -1934,7 +1913,6 @@
       "createdAt": "2024-06-15T02:53:22.776Z",
       "updatedAt": "2024-06-15T02:53:22.776Z",
       "updatedBy": null,
-      "lastStartedAt": "2024-06-15T02:53:22.776Z",
       "lastSignInAt": "2024-06-15T02:53:22.776Z",
       "lastSeenAt": "2024-06-15T02:53:22.776Z"
     }

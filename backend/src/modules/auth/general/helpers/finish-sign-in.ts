@@ -5,7 +5,7 @@ import { resolvePostAuthRedirectPath } from '#/modules/auth/general/helpers/redi
 import { initiateMfa } from '#/modules/auth/mfa/operations/mfa-challenge';
 import { type SessionExtras, setUserSession } from '#/modules/auth/sessions/operations/create-session';
 import type { AuthStrategy } from '#/modules/auth/sessions/sessions-db';
-import type { UserWithCounters } from '#/modules/user/helpers/select';
+import type { UserWithActivity } from '#/modules/user/helpers/select';
 
 /**
  * Shared tail of every browser-navigated sign-in flow: start an MFA challenge when required, otherwise set the session,
@@ -14,7 +14,7 @@ import type { UserWithCounters } from '#/modules/user/helpers/select';
  */
 export const finishSignIn = async (
   ctx: Context<Env>,
-  user: UserWithCounters,
+  user: UserWithActivity,
   strategy: AuthStrategy,
   redirectPath?: string | null,
   extras: SessionExtras = {},

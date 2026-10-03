@@ -256,10 +256,6 @@
               "type": ["string", "null"],
               "required": true
             },
-            "lastStartedAt": {
-              "type": ["string", "null"],
-              "required": true
-            },
             "lastSignInAt": {
               "type": ["string", "null"],
               "required": true
@@ -286,7 +282,6 @@
           "createdAt": "2024-06-15T02:53:22.776Z",
           "updatedAt": "2024-06-15T02:53:22.776Z",
           "updatedBy": null,
-          "lastStartedAt": "2024-06-15T02:53:22.776Z",
           "lastSignInAt": "2024-06-15T02:53:22.776Z",
           "lastSeenAt": "2024-06-15T02:53:22.776Z"
         }

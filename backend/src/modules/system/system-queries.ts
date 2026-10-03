@@ -13,10 +13,7 @@ interface FindVerifiedEmailsOpts {
 
 export const findVerifiedEmails = async (ctx: DbContext, { emails }: FindVerifiedEmailsOpts) => {
   const { db } = ctx.var;
-  return db
-    .select({ email: emailsTable.email })
-    .from(emailsTable)
-    .where(and(inArray(emailsTable.email, emails), eq(emailsTable.verified, true)));
+  return db.select({ email: emailsTable.email }).from(emailsTable).where(inArray(emailsTable.email, emails));
 };
 
 interface FindUsersByIdsOpts {

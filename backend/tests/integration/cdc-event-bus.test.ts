@@ -39,7 +39,7 @@ describe.skipIf(process.env.TEST_MODE !== 'full')('Full CDC Flow', () => {
     const userData = mockUser();
     const [insertedUser] = await insertUsers({ var: { db } }, { users: [userData] });
     testUser = { id: insertedUser.id, email: insertedUser.email };
-    await db.insert(emailsTable).values({ email: testUser.email, userId: testUser.id, verified: true });
+    await db.insert(emailsTable).values({ email: testUser.email, userId: testUser.id, verifiedAt: new Date().toISOString() });
 
     // Strict sub-organization ancestor columns carry foreign keys, so their rows must exist.
     plan = await seedAttachmentHome(testOrg, testUser.id);

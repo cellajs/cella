@@ -14,7 +14,7 @@ import type { AuthStrategy, SessionTypes, StepUpProof } from '#/modules/auth/ses
 import { findLiveOwnSessions, insertSession } from '#/modules/auth/sessions/sessions-queries';
 import { findSystemRole } from '#/modules/system/system-queries';
 import type { UserModel } from '#/modules/user/user-db';
-import { findLastSignInAt, upsertLastSignInAt } from '#/modules/user/user-queries';
+import { findLastSignInAt, updateLastSignInAt } from '#/modules/user/user-queries';
 import { hashDeviceIdForUser, hashIpForUser, hashSubnet } from '#/utils/hash-pii';
 import { toSubnet } from '#/utils/ip-subnet';
 import { getIsoDate } from '#/utils/iso-date';
@@ -48,9 +48,9 @@ const enrollNewDevice = async (userId: string, deviceId: string): Promise<NewDev
     const { deviceIdHash, isNew } = await enrollDevice(userId, deviceId);
     if (!isNew) return null;
 
-    const counters = await findLastSignInAt(dbCtx, { userId });
+    const actor = await findLastSignInAt(dbCtx, { userId });
 
-    return { deviceIdHash, previousSignInAt: counters?.lastSignInAt ?? null };
+    return { deviceIdHash, previousSignInAt: actor?.lastSignInAt ?? null };
   } catch (err) {
     log.error('Failed to enroll device on sign-in', { userId, err });
     return null;
@@ -127,7 +127,7 @@ export const createSession = async (
 
   const newDevice = deviceId ? await enrollNewDevice(user.id, deviceId) : null;
 
-  await upsertLastSignInAt(dbCtx, { userId: user.id, lastSignInAt: getIsoDate() });
+  await updateLastSignInAt(dbCtx, { userId: user.id, lastSignInAt: getIsoDate() });
 
   return { sessionId, sessionToken, timeSpan, newDevice };
 };

@@ -8,8 +8,8 @@ import { usersTable } from '#/modules/user/user-db';
 
 export const supportedOAuthProviders = ['github', 'google', 'microsoft'] as const;
 
-/** Trust class of an external identity: social OAuth, an institution's SSO federation, or (later) an LTI launch. */
-export const identityKinds = ['oauth', 'sso', 'lti'] as const;
+/** Trust class of an external identity: social OAuth, or an institution's SSO federation. */
+export const identityKinds = ['oauth', 'sso'] as const;
 export type IdentityKind = (typeof identityKinds)[number];
 
 /**
@@ -35,7 +35,7 @@ export const identitiesTable = snakeCase.table(
     verifiedAt: timestamp({ mode: 'string' }),
     /** The connection (an institution's trust) an sso identity came through; null for social identities. */
     connectionId: uuid().references(() => connectionsTable.id, { onDelete: 'set null' }),
-    /** Claims snapshot for non-social kinds (affiliations, acr, LTI context); nothing reads it for authorization. */
+    /** Claims snapshot for sso identities (affiliations, acr); nothing reads it for authorization. */
     data: jsonb().$type<Record<string, unknown>>(),
     lastUsedAt: timestamp({ mode: 'string' }),
   },

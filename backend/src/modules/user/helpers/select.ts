@@ -1,31 +1,33 @@
-import { getColumns, sql } from 'drizzle-orm';
+import { eq, getColumns, sql } from 'drizzle-orm';
 import { appConfig, type UserFlags } from 'shared';
-import { userCountersTable } from '#/modules/user/user-counters-db';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { type UserModel, usersTable } from '#/modules/user/user-db';
 import { userMinimalBaseSchema } from '#/schemas/minimal-base';
 import { userBaseSchema } from '#/schemas/user-schema-base';
 import { pick } from '#/utils/pick';
 
-/** User with timestamps from the user_counters table. */
-export type UserWithCounters = UserModel & { lastSeenAt: string | null; lastStartedAt: string | null; lastSignInAt: string | null };
+/** User with the activity times its `actors` row holds. */
+export type UserWithActivity = UserModel & { lastSeenAt: string | null; lastSignInAt: string | null };
 
-/** Merges userFlags with the defaults; timestamps come from user_counters subqueries to avoid CDC noise. */
+/**
+ * Joins a user's `actors` row, which holds the activity times. Every query that selects {@link userSelect} or
+ * {@link memberSelect} needs it: without the join Postgres refuses the query.
+ */
+export const userActorJoin = eq(actorsTable.id, usersTable.id);
+
+/** Merges userFlags with the defaults; the activity times come from `actors` ({@link userActorJoin}), outside CDC. */
 export const userSelect = (() => {
   const { userFlags: _uf, ...safeUserSelect } = getColumns(usersTable);
   return {
     ...safeUserSelect,
     userFlags: sql<UserFlags>` ${JSON.stringify(appConfig.defaultUserFlags)}::jsonb  || ${usersTable.userFlags}`,
-    lastSeenAt: sql<
-      string | null
-    >`(SELECT ${userCountersTable.lastSeenAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id})`,
-    lastStartedAt: sql<
-      string | null
-    >`(SELECT ${userCountersTable.lastStartedAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id})`,
-    lastSignInAt: sql<
-      string | null
-    >`(SELECT ${userCountersTable.lastSignInAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id})`,
+    lastSeenAt: actorsTable.lastSeenAt,
+    lastSignInAt: actorsTable.lastSignInAt,
   };
 })();
+
+/** Sort key for "last seen": never-seen users sort as oldest, since a plain DESC puts nulls first in Postgres. */
+export const lastSeenOrder = sql`COALESCE(${actorsTable.lastSeenAt}, '-infinity')`;
 
 type TableColumns = (typeof usersTable)['_']['columns'];
 type UserBaseKeys = keyof typeof userBaseSchema.shape;
@@ -37,14 +39,9 @@ export const userBaseSelect: UserBaseSelect = (() => {
   return pick(cols, keys);
 })();
 
-/** Limited to userBaseSelect columns plus lastSeenAt, for cross-tenant user endpoints and member lists. */
+/** Limited to userBaseSelect columns plus lastSeenAt, for cross-tenant user endpoints and member lists; needs {@link userActorJoin}. */
 export const memberSelect = (() => {
-  return {
-    ...userBaseSelect,
-    lastSeenAt: sql<
-      string | null
-    >`(SELECT ${userCountersTable.lastSeenAt} FROM ${userCountersTable} WHERE ${userCountersTable.userId} = ${usersTable.id})`,
-  };
+  return { ...userBaseSelect, lastSeenAt: actorsTable.lastSeenAt };
 })();
 
 type UserMinimalBaseKeys = keyof typeof userMinimalBaseSchema.shape;

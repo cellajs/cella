@@ -116,12 +116,11 @@ export const insertSeenBy = async (ctx: DbContext, { userId, productType, organi
       RETURNING product_id
     ),
     counters AS (
-      INSERT INTO product_counters (product_id, product_type, view_count, last_viewed_at)
-      SELECT product_id, ${productType}, 1, now()
+      INSERT INTO product_counters (product_id, product_type, view_count)
+      SELECT product_id, ${productType}, 1
       FROM inserted
       ON CONFLICT (product_id) DO UPDATE SET
-        view_count = product_counters.view_count + 1,
-        last_viewed_at = now()
+        view_count = product_counters.view_count + 1
     )
     SELECT count(*)::int AS new_count FROM inserted
   `);

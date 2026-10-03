@@ -34,7 +34,7 @@ export const tenantSchema = z
     ...createSelectSchema(tenantsTable, {
       restrictions: restrictionsSchema,
       authStrategies: z.array(z.enum(authStrategiesEnum)),
-    }).omit({ subscriptionData: true }).shape,
+    }).shape,
     organization: minimalBaseSchema('organization').nullable().describe('The organization this tenant holds, or null if none'),
   })
   .openapi('Tenant', {

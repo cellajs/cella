@@ -52,8 +52,7 @@ const activityStamp = (t: MemberStatTable): PgColumn => t.publishedAt ?? t.creat
 
 /**
  * Select fragment for the members query: `counts: memberCountsSelect(...)`. Correlated scalar
- * subqueries per row (the `memberSelect.lastSeenAt` precedent); cost scales with page size and
- * per-user content, not channel volume.
+ * subqueries per row; cost scales with page size and per-user content, not channel volume.
  */
 export const memberCountsSelect = (entityType: ChannelEntityType, entityId: string, organizationId: string) => {
   // Membership counts per descendant channel type, scoped by the viewed channel's ancestor column

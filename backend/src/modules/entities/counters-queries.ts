@@ -199,13 +199,12 @@ export const recalculateCounters = async (ctx: DbContext) => {
   // 4a: viewCount from seen_by, unique user views over the 90-day partition retention window.
   await db.execute(
     sql.raw(`
-    INSERT INTO product_counters (product_id, product_type, view_count, last_viewed_at)
-    SELECT sb.product_id, sb.product_type, COUNT(DISTINCT sb.user_id)::int, MAX(sb.created_at)
+    INSERT INTO product_counters (product_id, product_type, view_count)
+    SELECT sb.product_id, sb.product_type, COUNT(DISTINCT sb.user_id)::int
     FROM seen_by sb
     GROUP BY sb.product_id, sb.product_type
     ON CONFLICT (product_id) DO UPDATE SET
-      view_count = EXCLUDED.view_count,
-      last_viewed_at = EXCLUDED.last_viewed_at
+      view_count = EXCLUDED.view_count
   `),
   );
 

@@ -4,10 +4,10 @@ import { appConfig } from 'shared';
 import { nanoid } from 'shared/utils/nanoid';
 import { afterEach, describe, expect, it, onTestFinished } from 'vitest';
 import { baseDb as db } from '#/db/db';
+import { actorsTable } from '#/modules/actors/actors-db';
 import { tokensTable } from '#/modules/auth/tokens-db';
 import { inactiveMembershipsTable } from '#/modules/memberships/inactive-memberships-db';
 import { addProvenEmail } from '#/modules/user/operations/email-proof';
-import { userCountersTable } from '#/modules/user/user-counters-db';
 import { usersTable } from '#/modules/user/user-db';
 import { defaultHeaders, signUpUser } from '../fixtures';
 import { authCookie, cookieChange, createTestOrganization, createUser, enableMFAForUser, insertTestToken } from '../helpers';
@@ -19,9 +19,9 @@ setTestConfig({ enabledAuthStrategies: ['magic'], selfRegistration: true });
 
 afterEach(async () => await clearDatabase());
 
-/** Mark a user as returning; without a counters row `lastSignInAt` resolves to null (new user). */
+/** Mark a user as returning; without a stamp `lastSignInAt` resolves to null (new user). */
 async function markReturning(userId: string) {
-  await db.insert(userCountersTable).values({ userId, lastSignInAt: new Date().toISOString() });
+  await db.update(actorsTable).set({ lastSignInAt: new Date().toISOString() }).where(eq(actorsTable.id, userId));
 }
 
 /**
