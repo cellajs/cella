@@ -3,9 +3,8 @@ import type { ComponentProps } from 'react';
 import { scrollToSectionById } from '~/hooks/use-scroll-spy-store';
 import { DataTable } from '~/modules/common/data-table/data-table';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
-import { cn } from '~/utils/cn';
 
-type TagHashLinkProps = Pick<ComponentProps<'a'>, 'title' | 'dir' | 'className' | 'children'> & {
+type TagHashLinkProps = Pick<ComponentProps<'a'>, 'title' | 'dir' | 'children'> & {
   /** Search param that records the expanded tag. */
   tagParam: 'operationTag' | 'schemaTag';
   tagName: string;
@@ -13,8 +12,8 @@ type TagHashLinkProps = Pick<ComponentProps<'a'>, 'title' | 'dir' | 'className' 
   tabIndex: number;
 };
 
-/** Row link to a section of the tag list: enqueues the scroll (the store retries until laid out), then navigates. */
-export function TagHashLink({ tagParam, tagName, hash, tabIndex, className, ...props }: TagHashLinkProps) {
+/** Cell-filling row link to a section of the tag list: enqueues the scroll (the store retries until laid out), then navigates. */
+export function TagHashLink({ tagParam, tagName, hash, tabIndex, title, dir, children }: TagHashLinkProps) {
   const navigate = useNavigate();
   const search = (prev: Record<string, unknown>) => ({ ...prev, [tagParam]: tagName });
 
@@ -33,9 +32,14 @@ export function TagHashLink({ tagParam, tagName, hash, tabIndex, className, ...p
       resetScroll={false}
       draggable={false}
       tabIndex={tabIndex}
-      className={cn('truncate font-mono text-sm decoration-foreground/30 underline-offset-3 hover:underline', className)}
-      {...props}
-    />
+      title={title}
+      className="group/link flex h-full min-w-0 flex-1 items-center font-mono text-sm outline-hidden"
+    >
+      {/* The underline sits on the text alone, while the whole cell takes the click */}
+      <span dir={dir} className="min-w-0 flex-1 truncate text-left decoration-foreground/30 underline-offset-3 group-hover/link:underline">
+        {children}
+      </span>
+    </Link>
   );
 }
 

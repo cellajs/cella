@@ -1,7 +1,6 @@
 import type { GenOperationSummary } from 'sdk/docs-types';
 import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { TagHashLink, TagTable } from '~/modules/docs/tag-table';
-import { Badge } from '~/modules/ui/badge';
 import { cn } from '~/utils/cn';
 import { getMethodColor } from './helpers/get-method-color';
 
@@ -18,12 +17,8 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       key: 'method',
       name: '',
 
-      width: 80,
-      renderCell: ({ row }) => (
-        <Badge variant="secondary" className={cn('bg-transparent font-mono text-xs uppercase shadow-none', getMethodColor(row.method))}>
-          {row.method.toUpperCase()}
-        </Badge>
-      ),
+      width: 64,
+      renderCell: ({ row }) => <span className={cn('font-medium font-mono text-xs', getMethodColor(row.method))}>{row.method.toUpperCase()}</span>,
     },
     {
       key: 'path',
@@ -31,7 +26,7 @@ function useColumns(tagName: string): ColumnOrColumnGroup<GenOperationSummary>[]
       minWidth: 200,
 
       renderCell: ({ row, tabIndex }) => (
-        <TagHashLink tagParam="operationTag" tagName={tagName} hash={row.hash} tabIndex={tabIndex} title={row.path} dir="rtl" className="text-left">
+        <TagHashLink tagParam="operationTag" tagName={tagName} hash={row.hash} tabIndex={tabIndex} title={row.path} dir="rtl">
           &lrm;{row.path}
         </TagHashLink>
       ),
