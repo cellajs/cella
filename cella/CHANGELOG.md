@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.16.0](https://github.com/cellajs/cella/compare/0.15.0...0.16.0) (2026-10-03)
+
+
+### ⚠ BREAKING CHANGES
+
+* **db:** invitations and requests no longer point at a token ([#1295](https://github.com/cellajs/cella/issues/1295))
+* **auth:** the server names the admin behind an impersonation ([#1297](https://github.com/cellajs/cella/issues/1297))
+
+### 🎉 New features
+
+* **skills:** description driver checks two users, offline and a relay outage ([#1299](https://github.com/cellajs/cella/issues/1299)) ([1b5b217](https://github.com/cellajs/cella/commit/1b5b217f72d7288fa546d450aab4148ec1671eed))
+
+
+### 🐞 Bug fixes
+
+* **a11y:** leftovers from the review, reorder without dragging, menu sheet updates again ([#1304](https://github.com/cellajs/cella/issues/1304)) ([372489c](https://github.com/cellajs/cella/commit/372489c79af8e210577ab98eff19b114adafaa5c))
+* **a11y:** status colors, field borders and focus ring meet contrast, plus the agent review's fixes ([#1302](https://github.com/cellajs/cella/issues/1302)) ([ee8157c](https://github.com/cellajs/cella/commit/ee8157cd4e2e5e57e63c2d326e5bec5f0696ee51))
+* **auth:** the server names the admin behind an impersonation ([#1297](https://github.com/cellajs/cella/issues/1297)) ([7df4e3b](https://github.com/cellajs/cella/commit/7df4e3b85d327b4f194268d981afb98672790ef6))
+* **docs:** operations tables get readable column widths, plain method and owner text, full-cell links ([#1303](https://github.com/cellajs/cella/issues/1303)) ([6122544](https://github.com/cellajs/cella/commit/612254400daceaf695f9ea3860c7d0cba1e28442))
+* **skills:** two-tab driver signs in on any checkout, skills match the current code ([#1296](https://github.com/cellajs/cella/issues/1296)) ([bd06066](https://github.com/cellajs/cella/commit/bd060668b8821cb61538e96b799866735ffcb020))
+* **test:** test database reset keeps the dev database; summaries render inline ([#1300](https://github.com/cellajs/cella/issues/1300)) ([b0f7738](https://github.com/cellajs/cella/commit/b0f7738dfdeed7f57bdf044da4c52b3f4f2fbcab))
+* **yjs:** relay sends the latest awareness state its rate limit held back ([#1301](https://github.com/cellajs/cella/issues/1301)) ([34889ae](https://github.com/cellajs/cella/commit/34889ae94110390bc534078064f9f8de5cdb7e66))
+
+
+### 🔧 Small improvements
+
+* **db:** invitations and requests no longer point at a token ([#1295](https://github.com/cellajs/cella/issues/1295)) ([9de6f13](https://github.com/cellajs/cella/commit/9de6f134855045266e8a8e324d7ec99b63e7f595))
+
 ## [0.15.0](https://github.com/cellajs/cella/compare/0.14.0...0.15.0) (2026-10-03)
 
 
