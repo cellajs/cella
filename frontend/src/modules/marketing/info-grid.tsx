@@ -32,11 +32,11 @@ function InfoTile({ id, namespace, layers, image, invertClassName, tileClassName
   if (image) {
     return (
       <div className={cn('relative overflow-hidden rounded-lg p-2', tileClassName)}>
-        <div className="flex h-44 flex-col justify-between gap-2 rounded-md p-6">
+        <div className="flex h-44 flex-col justify-between gap-2 rounded-md p-2 sm:p-6">
           <img
             src={`/static/marketing/features/${id}.svg`}
             alt={t(title)}
-            className={cn('mb-2 size-8 object-contain', invertClassName)}
+            className={cn('plus-dither mb-2 size-12 object-contain', invertClassName)}
             loading="lazy"
           />
           <h3 className="font-medium">{t(title)}</h3>
