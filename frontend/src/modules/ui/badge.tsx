@@ -40,7 +40,7 @@ export const badgeVariants = cva(
       {
         variant: 'destructive',
         soft: false,
-        className: 'bg-destructive text-destructive-foreground dark:bg-destructive/60 [a&]:hover:bg-destructive/90',
+        className: 'bg-destructive text-destructive-foreground [a&]:hover:bg-destructive/90',
       },
       { variant: 'warning', soft: false, className: 'bg-warning text-warning-foreground' },
     ],

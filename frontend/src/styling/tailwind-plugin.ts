@@ -17,16 +17,21 @@ const typography = typographyPlugin() as unknown as { handler: (api: PluginApi) 
 
 /**
  * The parts of the Tailwind setup that CSS can't express, loaded by `@plugin` in tailwind.css: breakpoints from
- * `appConfig.theme.screenSizes` (use-breakpoints reads the same object at runtime), the container's 1400px cap, and the
- * typography plugin with class selectors for not-prose.
+ * `appConfig.theme.screenSizes` (use-breakpoints reads the same object at runtime), the `focus-ring` variant built on
+ * the `sm` one, the container's 1400px cap, and the typography plugin with class selectors for not-prose.
  */
 export default plugin(
-  (api) =>
+  (api) => {
+    // Where focus draws a ring: from `sm` up, and at any width with a fine pointer. A narrow touch screen draws none, like
+    // a native app; a desktop zoomed to 400% is a 320px viewport and still has to show keyboard focus.
+    api.addVariant('focus-ring', `@media (width >= ${appConfig.theme.screenSizes.sm}), (pointer: fine)`);
+
     typography.handler({
       ...api,
       addVariant: (name, variant) => api.addVariant(name, rewriteNotProse(variant) as never),
       addComponents: (components, options) => api.addComponents(rewriteNotProse(components) as never, options),
-    }),
+    });
+  },
   {
     theme: {
       ...typography.config.theme,

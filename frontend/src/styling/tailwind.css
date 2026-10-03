@@ -220,14 +220,11 @@
 }
 
 /* Intent-colored text for soft variants. The `:root &` bump outranks sibling one-class text
-   utilities like Card's `text-card-foreground` in light mode. In dark mode the intent tokens
-   are too dark on the tinted fill, so lift them toward white to restore contrast. */
+   utilities like Card's `text-card-foreground`. The status tokens are text-safe on their own
+   tinted fill in both modes, so the copy takes the token as it is. */
 @utility soft-text {
   :root & {
     color: var(--intent-color);
-  }
-  .dark & {
-    color: color-mix(in oklch, var(--intent-color), white 35%);
   }
 }
 
@@ -245,7 +242,7 @@
     color: color-mix(in oklch, var(--intent-color), black 10%);
   }
   .dark & {
-    color: color-mix(in oklch, var(--intent-color), white 45%);
+    color: color-mix(in oklch, var(--intent-color), white 10%);
   }
 }
 @utility soft-text-stronger {
@@ -253,7 +250,7 @@
     color: color-mix(in oklch, var(--intent-color), black 20%);
   }
   .dark & {
-    color: color-mix(in oklch, var(--intent-color), white 55%);
+    color: color-mix(in oklch, var(--intent-color), white 20%);
   }
 }
 
@@ -265,17 +262,11 @@
    reads as strongly as the words inside it. */
 @utility soft-border-strong {
   border-color: var(--intent-color);
-  .dark & {
-    border-color: color-mix(in oklch, var(--intent-color), white 35%);
-  }
 }
 
 /* Button-weight frame: 40% of the full-contrast one at rest; hover steps up to soft-border-strong. */
 @utility soft-border-medium {
   border-color: color-mix(in srgb, var(--intent-color) 40%, var(--background));
-  .dark & {
-    border-color: color-mix(in srgb, color-mix(in oklch, var(--intent-color), white 35%) 40%, var(--background));
-  }
 }
 
 /* From shadcn's tailwind.css so ported upstream classes work: Base UI sets `data-orientation`, never `data-horizontal`.
@@ -310,10 +301,11 @@
   }
 }
 
-/* The ring is desktop-only on purpose: below sm, focus draws nothing, like a native app. outline-hidden keeps the forced-colors outline. */
+/* The ring draws under `focus-ring` only (tailwind-plugin.ts): a narrow touch screen shows nothing on focus, on purpose.
+   outline-hidden keeps the forced-colors outline. */
 @layer components {
   .focus-effect {
-    @apply focus-visible:outline-hidden sm:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+    @apply focus-visible:outline-hidden focus-ring:focus-visible:ring-2 focus-visible:ring-ring focus-visible:shadow-none focus-visible:ring-offset-2 focus-visible:ring-offset-background;
   }
 }
 
@@ -416,12 +408,12 @@
     --destructive: oklch(0.5137 0.2082 29.23);
     --destructive-foreground: oklch(0.9851 0 0);
     --border: oklch(0.92 0.004 285.75);
-    --input: oklch(0.88 0.005 285.75);
+    --input: oklch(0.64 0.005 285.75);
     --ring: oklch(0.2067 0.01 285.49);
     --radius: 0.5rem;
-    --success: oklch(0.5917 0.2014 142.5);
+    --success: oklch(0.49 0.167 142.5);
     --success-foreground: oklch(0.9851 0 0);
-    --warning: oklch(0.68 0.16 70);
+    --warning: oklch(0.5 0.125 70);
     --warning-foreground: oklch(0.9851 0 0);
     --brand: oklch(0.2061 0.006 285.56);
     --brand-foreground: oklch(0.9627 0 0);
@@ -457,9 +449,15 @@
     --muted-foreground: oklch(0.8089 0.0128 285.86);
     --accent: oklch(0.3138 0.0102 285.63);
     --accent-foreground: oklch(0.9851 0 0);
+    --destructive: oklch(0.72 0.17 29.23);
+    --destructive-foreground: oklch(0.1963 0.0092 285.53);
     --border: oklch(0.36 0.011 285.63);
-    --input: oklch(0.42 0.011 285.63);
+    --input: oklch(0.54 0.011 285.63);
     --ring: oklch(0.86 0.0096 285.72);
+    --success: oklch(0.72 0.2 142.5);
+    --success-foreground: oklch(0.1963 0.0092 285.53);
+    --warning: oklch(0.75 0.16 70);
+    --warning-foreground: oklch(0.1963 0.0092 285.53);
     --brand: oklch(0.9851 0 0);
     --brand-foreground: oklch(0.3138 0.0102 285.63);
 
