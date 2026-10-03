@@ -19,7 +19,8 @@ export const YJS_LOG_NOTICE_DELAY_MS = 50;
 export const YJS_MAX_SERVER_ROW_IDS = 10_000;
 /** Sync messages a socket may queue while its entity access is still being verified. */
 export const YJS_PENDING_QUEUE_CAP = 100;
-export const YJS_AWARENESS_RATE_LIMIT = 2; // Max 2 awareness updates per client per second to prevent spam and DoS
+/** Awareness frames a socket relays per second. What it sends in between is held, the latest state per client, and relayed when the window ends. */
+export const YJS_AWARENESS_RATE_LIMIT = 2;
 /** Entries one awareness frame may carry: y-websocket announces its own client alone, and its larger frames re-send changes to other clients. */
 export const YJS_AWARENESS_MAX_ENTRIES = 8;
 /** Awareness clients one socket may hold: its own, plus a few that another socket of its user held or whose socket left. */

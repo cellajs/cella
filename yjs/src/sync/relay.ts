@@ -34,7 +34,19 @@ const YSync = { Step1: 0, Step2: 1, Update: 2 } as const;
 
 const savedFrame = encoding.encode((encoder) => encoding.writeVarUint(encoder, YMessage.Saved));
 
-const awarenessTimestamps = new WeakMap<WebSocket, number>();
+/** Between two awareness frames a socket relays. */
+const awarenessWindowMs = 1000 / YJS_AWARENESS_RATE_LIMIT;
+
+/** A socket's awareness rate window: what it sent inside the window waits here and is relayed as one frame when the window ends. */
+interface AwarenessWindow {
+  /** When the socket last relayed a frame, epoch ms; 0 before its first. */
+  relayedAt: number;
+  /** The latest entry per client id among the frames held back. */
+  held: Map<number, AwarenessEntry>;
+  timer?: ReturnType<typeof setTimeout>;
+}
+
+const awarenessWindows = new WeakMap<WebSocket, AwarenessWindow>();
 
 /** The frame's leading varint; null when it is cut short or out of range, on which lib0 throws. */
 function readMessageType(decoder: decoding.Decoder): number | null {
@@ -132,9 +144,69 @@ function encodeAwarenessMessage(entries: AwarenessEntry[]): Uint8Array {
 }
 
 /**
+ * Relays the entries a socket may announce, to every socket of the session, and starts the socket's rate window when
+ * any was relayed. Presence for another user's client would move or remove their cursor, so it is left out, and a
+ * frame of such entries alone (y-websocket re-sends every change it applies) relays nothing and starts no window.
+ */
+function relayAwareness(
+  ctx: SocketContext,
+  collab: CollabSession,
+  ws: WebSocket,
+  rate: AwarenessWindow,
+  entries: AwarenessEntry[],
+  frame?: Uint8Array,
+): void {
+  const relayed: AwarenessEntry[] = [];
+  for (const entry of entries) {
+    const verdict = claimAwarenessClient(collab, ws, ctx.userId, { clientId: entry.clientId, clock: entry.clock, removes: entry.state === 'null' });
+    if (verdict === 'refuse') {
+      refuseFrame(collab.scope, ctx.userId, ws, 'Too many awareness clients');
+      return;
+    }
+    if (verdict === 'relay') relayed.push(entry);
+  }
+  if (relayed.length === 0) return;
+  rate.relayedAt = Date.now();
+  // The sender receives its relayed entries too: y-websocket closes a socket that received nothing for 30 s, and an
+  // editor alone on its document receives nothing else. An entry at the clock the sender holds changes nothing there.
+  broadcastToCollab(collab, frame && relayed.length === entries.length ? frame : encodeAwarenessMessage(relayed));
+}
+
+/**
+ * Holds a socket's entries until its rate window ends: per client the latest state, since only that one matters to a
+ * peer. The position a quick series of cursor moves ends on, an editor's first cursor and a removal right after a move
+ * all arrive inside a window, so dropping them would leave peers with a stale cursor until the client's 15 s renewal.
+ */
+function holdAwareness(
+  ctx: SocketContext,
+  collab: CollabSession,
+  ws: WebSocket,
+  rate: AwarenessWindow,
+  entries: AwarenessEntry[],
+  waitMs: number,
+): void {
+  for (const entry of entries) {
+    const owner = collab.awarenessOwners.get(entry.clientId);
+    if (owner && owner.userId !== ctx.userId) continue;
+    const held = rate.held.get(entry.clientId);
+    if (held ? held.clock <= entry.clock : rate.held.size < YJS_AWARENESS_MAX_ENTRIES) rate.held.set(entry.clientId, entry);
+  }
+  if (rate.held.size === 0) return;
+  rate.timer ??= setTimeout(() => {
+    rate.timer = undefined;
+    const latest = [...rate.held.values()];
+    rate.held.clear();
+    // The socket closed, or its session ended under it, while its entries waited.
+    if (ws.readyState !== ws.OPEN || !getCollab(collab.scope)?.clients.has(ws)) return;
+    relayAwareness(ctx, collab, ws, rate, latest);
+  }, waitMs);
+}
+
+/**
  * Applies one frame. Sync frames reach this only through the socket's serial queue, after entity
  * authorization, so they run in arrival order; awareness is ephemeral, relayed only from an
- * authorized open socket and rate limited per client. Both act in the socket's authorized scope.
+ * authorized open socket, at most YJS_AWARENESS_RATE_LIMIT frames a second per socket. Both act in
+ * the socket's authorized scope.
  */
 export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uint8Array): Promise<void> {
   if (data.length < 2) return;
@@ -175,11 +247,6 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
     }
   } else if (messageType === YMessage.Awareness) {
     if (ws.readyState !== ws.OPEN) return;
-    const now = Date.now();
-    const lastTime = awarenessTimestamps.get(ws) ?? 0;
-    if (now - lastTime < 1000 / YJS_AWARENESS_RATE_LIMIT) return;
-    awarenessTimestamps.set(ws, now);
-
     let entries: AwarenessEntry[] | null;
     try {
       entries = decodeAwarenessEntries(decoding.readVarUint8Array(decoder));
@@ -189,17 +256,15 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
     }
     // A frame with more entries than a client announces reaches no peer and holds no client.
     if (!entries) return;
-    // Presence for another user's client would move or remove their cursor.
-    const relayed: AwarenessEntry[] = [];
-    for (const entry of entries) {
-      const verdict = claimAwarenessClient(collab, ws, ctx.userId, { clientId: entry.clientId, clock: entry.clock, removes: entry.state === 'null' });
-      if (verdict === 'refuse') return refuseFrame(scope, ctx.userId, ws, 'Too many awareness clients');
-      if (verdict === 'relay') relayed.push(entry);
+
+    let rate = awarenessWindows.get(ws);
+    if (!rate) {
+      rate = { relayedAt: 0, held: new Map() };
+      awarenessWindows.set(ws, rate);
     }
-    if (relayed.length === 0) return;
-    // The sender receives its relayed entries too: y-websocket closes a socket that received nothing for 30 s, and an
-    // editor alone on its document receives nothing else. An entry at the clock the sender holds changes nothing there.
-    broadcastToCollab(collab, relayed.length === entries.length ? data : encodeAwarenessMessage(relayed));
+    const waitMs = rate.relayedAt + awarenessWindowMs - Date.now();
+    if (waitMs <= 0 && !rate.timer) relayAwareness(ctx, collab, ws, rate, entries, data);
+    else holdAwareness(ctx, collab, ws, rate, entries, Math.max(waitMs, 0));
   }
 }
 
@@ -209,6 +274,12 @@ export async function handleMessage(ctx: SocketContext, ws: WebSocket, data: Uin
  * drop its cursor at once, without waiting for their 30 s timeout. A client another socket of its user took over stays.
  */
 export function handleLeave(doc: DocKey, ws: WebSocket): void {
+  const rate = awarenessWindows.get(ws);
+  if (rate) {
+    clearTimeout(rate.timer);
+    rate.timer = undefined;
+    rate.held.clear();
+  }
   const released = leaveCollab(doc, ws);
   const collab = getCollab(doc);
   if (!collab || released.length === 0) return;

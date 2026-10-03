@@ -540,25 +540,77 @@ describe('handleMessage: Saved', () => {
 });
 
 describe('handleMessage: awareness', () => {
-  it('is broadcast to peers from a verified socket and rate limited per client', async () => {
+  it('is broadcast to peers from a verified socket, one frame per rate window and socket', async () => {
+    const { ctx: c, scope, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+
+    // The first frame goes out at once and opens the window; what follows inside it waits.
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1 })));
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 2 })));
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 3 })));
+    expect(peer.sent).toHaveLength(1);
+
+    // Another socket has a window of its own.
+    const other = mockWebSocket();
+    joinCollab(scope, other as never);
+    await handleMessage(c, other as never, buildAwarenessMessage(awarenessUpdate({ clientId: 3 })));
+    expect(peer.sent).toHaveLength(2);
+
+    // The window ends: the latest state held goes out as one frame, and opens the next window.
+    vi.advanceTimersByTime(499);
+    expect(peer.sent).toHaveLength(2);
+    vi.advanceTimersByTime(1);
+    expect(peer.sent.map(awarenessEntries).at(-1)).toEqual([{ clientId: 1, clock: 3, state: { user: { name: 'client 1' } } }]);
+    expect(peer.sent).toHaveLength(3);
+
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 4 })));
+    expect(peer.sent).toHaveLength(3);
+    vi.advanceTimersByTime(500);
+    expect(peer.sent.map(awarenessClientIds)).toEqual([[1], [3], [1], [1]]);
+    leaveCollab(collab.scope, peer as never);
+    leaveCollab(collab.scope, other as never);
+  });
+
+  it('must not lose the cursor a burst of moves ends on, or a removal sent inside the window: both reach the peers when it ends', async () => {
+    const { ctx: c, scope, ws, collab } = session();
+    const peer = mockWebSocket();
+    joinCollab(scope, peer as never);
+
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, state: { cursor: 1 } })));
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 2, state: { cursor: 2 } })));
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 3, state: { cursor: 3 } })));
+    vi.advanceTimersByTime(500);
+    expect(peer.sent.map(awarenessEntries)).toEqual([
+      [{ clientId: 1, clock: 1, state: { cursor: 1 } }],
+      [{ clientId: 1, clock: 3, state: { cursor: 3 } }],
+    ]);
+
+    // The editor closes right after a cursor move: its removal arrives inside the window that move opened.
+    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 4, state: null })));
+    expect(peer.sent).toHaveLength(2);
+    vi.advanceTimersByTime(500);
+    expect(peer.sent.map(awarenessEntries).at(-1)).toEqual([{ clientId: 1, clock: 4, state: null }]);
+    expect(collab.awarenessOwners.has(1)).toBe(false);
+    leaveCollab(collab.scope, peer as never);
+  });
+
+  it('must not send what a socket held once it left: the peers get its removal alone', async () => {
     const { ctx: c, scope, ws, collab } = session();
     const peer = mockWebSocket();
     joinCollab(scope, peer as never);
 
     await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1 })));
     await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 2 })));
-    expect(peer.sent).toHaveLength(1);
-
-    const other = mockWebSocket();
-    joinCollab(scope, other as never);
-    await handleMessage(c, other as never, buildAwarenessMessage(awarenessUpdate({ clientId: 3 })));
-    expect(peer.sent).toHaveLength(2);
-
+    handleLeave(scope, ws as never);
     vi.advanceTimersByTime(600);
-    await handleMessage(c, ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 1, clock: 3 })));
-    expect(peer.sent).toHaveLength(3);
+
+    // One clock past the last one relayed, which every peer holds.
+    expect(peer.sent.map(awarenessEntries)).toEqual([
+      [{ clientId: 1, clock: 1, state: { user: { name: 'client 1' } } }],
+      [{ clientId: 1, clock: 2, state: null }],
+    ]);
     leaveCollab(collab.scope, peer as never);
-    leaveCollab(collab.scope, other as never);
   });
 
   it('reaches its sender as well as its peers, so an editor alone on its document keeps receiving frames', async () => {
@@ -643,6 +695,26 @@ describe('handleMessage: awareness ownership', () => {
     for (const ws of [peer.ws, other.ws, sender.ws]) leaveCollab(collab.scope, ws as never);
   });
 
+  it("opens no window for a frame of another user's clients alone, and holds none of them: the sender's own presence is not delayed by it", async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const other = joined(scope, 'user-other');
+    const sender = joined(scope, 'user-sender');
+    await handleMessage(other.ctx, other.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 30 })));
+
+    // y-websocket re-sends the change it applied; the sender's own presence right after goes out at once.
+    await handleMessage(sender.ctx, sender.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 30 })));
+    await handleMessage(sender.ctx, sender.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 40 })));
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[30], [40]]);
+
+    // Inside its window the same holds: the frame sent when the window ends carries its own client alone.
+    await handleMessage(sender.ctx, sender.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 30, clock: 9, state: null })));
+    await handleMessage(sender.ctx, sender.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 40, clock: 2 })));
+    vi.advanceTimersByTime(500);
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[30], [40], [40]]);
+    for (const ws of [peer.ws, other.ws, sender.ws]) leaveCollab(collab.scope, ws as never);
+  });
+
   it("must not return another user's client to the sender: a frame of it alone reaches no socket, the sender's included", async () => {
     const { scope, collab } = session();
     const victim = joined(scope, 'user-victim');
@@ -721,6 +793,22 @@ describe('handleMessage: awareness ownership', () => {
     leaveCollab(collab.scope, attacker.ws as never);
     expect(collab.awarenessOwners.size).toBe(0);
     leaveCollab(collab.scope, peer.ws as never);
+  });
+
+  it('closes a socket whose fifth awareness client waited in its window, when the window ends', async () => {
+    const { scope, collab } = session();
+    const peer = joined(scope, 'user-peer');
+    const attacker = joined(scope, 'user-attacker');
+
+    for (let i = 0; i < 5; i++)
+      await handleMessage(attacker.ctx, attacker.ws as never, buildAwarenessMessage(awarenessUpdate({ clientId: 2_000 + i })));
+    expect(attacker.ws.closed).toBeNull();
+    vi.advanceTimersByTime(500);
+
+    expect(attacker.ws.closed).toEqual({ code: 4400, reason: 'Too many awareness clients' });
+    // The refused frame reaches no one.
+    expect(peer.ws.sent.map(awarenessClientIds)).toEqual([[2000]]);
+    for (const ws of [peer.ws, attacker.ws]) leaveCollab(collab.scope, ws as never);
   });
 
   it('never closes a socket for the changes y-websocket re-sends: removals take no client (positive control)', async () => {
