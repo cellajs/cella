@@ -1,11 +1,14 @@
 ---
 name: two-tab-sync-test
-description: Drive two signed-in browser tabs with playwright to verify or diagnose realtime sync at runtime, for entity changes (CDC → SSE → fetch prioritizer → cache patch) and for collaborative descriptions (Yjs relay → saved row).
+description: Drive two signed-in browser tabs or two users with playwright to verify or diagnose realtime sync at runtime, for entity changes (CDC → SSE → fetch prioritizer → cache patch) and for collaborative descriptions (Yjs relay → saved row, outside writes, offline, a relay outage).
 ---
 
 # Two-tab realtime sync testing
 
-Use when a live-sync symptom needs runtime evidence ("create doesn't show up in the other tab", "typing doesn't reach the other editor") or to verify sync changes end-to-end. The driver runs a fixed matrix (rename control, create, delete-fresh, delete-preseeded, description typing and save, reload truth-check) and captures per-tab console, `seqCursor` network bodies, SSE and relay connections, screenshots.
+Use when a live-sync symptom needs runtime evidence ("create doesn't show up in the other tab", "typing doesn't reach the other editor", "offline edits are gone") or to verify sync changes end-to-end. Two drivers, each a fixed matrix with per-tab console, network evidence and screenshots:
+
+- `two-tab-driver.mjs`: one user in two tabs. Rename control, create, delete-fresh, delete-preseeded, description typing and save, reload truth-check.
+- `description-driver.mjs`: two users (and a third who may only read) on one description. Cursors, saves while typing, an outside write, offline from storage, a relay outage, sign-out with unsynced edits, two offline tabs, a delete under unsaved edits.
 
 ## Preconditions
 
@@ -20,8 +23,9 @@ No UI login, and no cookie built by hand: the app signs every cookie. The driver
 
 - **Default, the bench user** (needs `pnpm --filter bench db:seed` once): `xbench-user-0000@xbench.local` is admin of `xbench/xbench-org`. The seed sets that tenant's attachment quota to unlimited, so every experiment runs there, creates included.
 - **Any other seeded org**: pick an admin and pass `EMAIL` and `ORG_PATH`.
-  `SELECT o.tenant_id, o.slug, e.email FROM organizations o JOIN memberships m ON m.organization_id = o.id AND m.role = 'admin' JOIN emails e ON e.user_id = m.user_id WHERE o.slug <> 'xbench-org' LIMIT 5;`
+  `SELECT o.tenant_id, o.slug, m.role, e.email FROM organizations o JOIN memberships m ON m.organization_id = o.id JOIN emails e ON e.user_id = m.user_id WHERE o.slug <> 'xbench-org' ORDER BY o.slug, m.role LIMIT 20;`
   An org at its attachment quota (100 by default, `appConfig.defaultRestrictions.quotas.attachment`) answers creates with **429 `restrict_by_org`**.
+- **The description driver mints one session per user**: `EMAIL` and `EMAIL_B` both edit (bench users 0000 and 0001 by default), `EMAIL_VIEWER` may read the row and not update it. With the template's permissions that is a `member` who did not create the row; every bench member is an admin, so the read-only experiment needs another org and is skipped without `EMAIL_VIEWER`.
 
 ## Run
 
@@ -33,6 +37,14 @@ From the repo root:
 ```
 
 Writes `evidence.json` (every console line / delta fetch / assert, ms timestamps) and `shots/*.png`. Tab A acts, tab B observes. Asserts print PASS/FAIL live. The first line, `target`, names the URL and cookie in use: check it against the stack you mean to test.
+
+```
+[EMAIL=<editor>] [EMAIL_B=<editor>] [EMAIL_VIEWER=<member>] [ORG_PATH=<tenantId>/<orgSlug>] \
+  [ROW=<name>] [DELETE_ROW=<name>] [ONLY=live,typing,outside,viewer,offline,outage,signout,tabs,delete] OUT_DIR=<scratch> \
+  node cella/skills/two-tab-sync-test/description-driver.mjs
+```
+
+Writes `description-evidence.json` and `shots/*.png`, about two minutes for the whole matrix. User A acts, user B keeps the description of `ROW` (the first row by default) open and observes; server truth is read through the API, so no table cell is trusted. It ends with the count of passed asserts and exits 1 when one failed.
 
 ## Reading the evidence: entity changes
 
@@ -66,15 +78,33 @@ Decision rule: **no `relay-connect`** → token or socket (the `yjs/token` statu
 
 The table cell of an editing tab proves no save: its own editor already patched the cache. Only the delta fetch and the reload show the server row.
 
+The description driver's experiments, by their `ONLY` name:
+
+| Experiment | Passes when | A failure points at |
+|---|---|---|
+| `live` | typed text and the cursor reach the peer, and the cursor leaves when the sheet closes | relay broadcast and awareness (`yjs/src/sync/relay.ts`) |
+| `typing` | the server row holds the text while nonstop typing goes on (about 10s in) | the max-wait compaction (`YJS_COMPACT_MAX_WAIT_MS`) and materialization |
+| `outside` | a description written through the API shows in both open editors, with no reconnect and no toast | `recordYjsOutsideWrite` and the relay's log listener |
+| `viewer` | a user without update rights gets the static only: no token request, no socket | `canEdit` in `collaborative-blocknote.tsx` |
+| `offline` | a stored document opens editable offline, keeps its edit across a reopen, and syncs once online with no notice | `yjs-store.ts`, and the load before connect in `yjs-connections.ts` |
+| `outage` | the limited-sync status after about 5s, edits crossing over HTTP both ways, the socket back with no reload | `yjs-http.ts` and the transport switch in `yjs-connections.ts` |
+| `signout` | the sign-out page lists the unsynced document, "keep editing" stays signed in, the edit saves once a server is in reach | `modules/auth/unsaved-edits-dialog.tsx`, the resume of stored documents |
+| `tabs` | two offline tabs of one user show each other's edits, and both reach the server row | `yjs-tab-channel.ts` |
+| `delete` | a row deleted under unsaved edits brings the copy-or-discard notice and the deleted status | `unsaveable-notices.tsx`, the relay's 4410 close and the routes' 404 |
+
+`relay-http` lines with route `pull` or `push` during `outage` are the HTTP transport at work; the same lines in any other experiment mean the socket failed there.
+
 ## Gotchas
 
 - Upload button: match exact name `Upload`; `/upload/i` also hits the page-header "Upload cover" button (org cover-image editor).
 - Uppy dialog: hidden `input[type="file"]` inside the dialog; `setInputFiles` then click `.uppy-StatusBar-actionBtn--upload`. Use a tiny PDF (an image opens the image-editor step). Upload succeeds without S3 (local-first fallback); the `POST …/attachments` (201) is what matters.
 - Table: rows virtualized (~15–20 in DOM), sorted `createdAt desc` so new rows are in the viewport. Selectors: row `.rdg-row`, name `span.truncate.font-medium`, row checkbox `[aria-label="Select"]`, rename = dblclick name cell → `input[data-slot="edit-cell-input"]` → Enter, delete = checkbox → destructive `Delete` bar button → confirm dialog `Delete`. Match a row by its exact name: bench rows are numbered, so `… 2` is also the start of `… 20`.
-- Description editor: dblclick the row's description cell (find the column by its header) → sheet `[role="dialog"]` with the row name as heading → `.bn-editor[contenteditable="true"]`. Remote cursor labels sit inside the editor's text: cut `.bn-collaboration-cursor__base` before matching. On macOS `Meta+End` stops at the end of the visual line; `Meta+ArrowDown` is the document end.
+- Description editor: dblclick the row's description cell (find the column by its header) → sheet `[role="dialog"]` with the row name as heading → `.bn-editor[contenteditable="true"]`. Remote cursor labels sit inside the editor's text: cut `.bn-collaboration-cursor__base` before matching.
+- Caret: the editor reads a moved caret a moment later, so text typed straight after a click or `Meta+ArrowDown` goes to the caret before it (two users clicking the same spot then type into each other's text). Set the DOM selection (`selectAllChildren` + `collapseToEnd`) and wait about 150ms. A fresh editor also places its own caret right after it shows: wait half a second before the first key.
+- Cursors: the relay passes two awareness frames a second per socket and drops the rest (`YJS_AWARENESS_RATE_LIMIT`). A peer's view of a cursor can stay behind the end of a typing burst, and a removal sent within half a second of a keystroke is dropped, until the next move or the client's 15s refresh.
 - Relay outage: DevTools "Block request URL" and CDP `Network.setBlockedURLs` do not stop WebSocket handshakes. Route the socket with playwright (`context.routeWebSocket(/\/yjs\//, …)`: `connectToServer()` passes it through, closing the routed sockets drops it) or stop the relay process. `setBlockedURLs` does block the HTTP pull and push. `context.setOffline(true)` leaves an open socket open; the app's own online handler disconnects the editor.
-- Two users (cursors, a member who may only read): one browser context per user, each with its own minted cookie. The driver's two tabs share one session.
+- Two users (cursors, a member who may only read): one browser context per user, each with its own minted cookie, as `description-driver.mjs` does. The two tabs of `two-tab-driver.mjs` share one session.
 - A description written through the API (an outside write) needs `stx.fieldTimestamps.description` as an HLC, `<ms>:<4+ digit counter>:<5 chars [0-9a-z]>`, else 400.
 - Offline console noise: S3 thumbnail CORS failures + `[DownloadService] … marked as failed` are harmless. Large orgs also churn the presignedUrl rate limiter (2000/h/user) via thumbnail fetches.
 - Backend request logging is off for the xbench tenant (bench identity); use DB probes there.
-- Leftovers: the driver renames one row, soft-deletes one pre-seeded row, leaves a probe row tombstoned and a probe line in one description. `pnpm --filter bench db:seed` restores xbench; faker orgs are throwaway.
+- Leftovers: the two-tab driver renames one row, soft-deletes one pre-seeded row, leaves a probe row tombstoned and a probe line in one description. The description driver leaves probe lines in the description of `ROW` and soft-deletes `DELETE_ROW` (the second row by default; `ONLY` without `delete` keeps it). `pnpm --filter bench db:seed` restores xbench; faker orgs are throwaway.

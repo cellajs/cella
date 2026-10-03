@@ -1,15 +1,9 @@
 // Two-tab realtime sync diagnosis for attachments and their descriptions. See SKILL.md for the experiment matrix.
 // Drives two signed-in tabs (shared session, real tab-coordinator semantics); captures per-tab console, seqCursor network bodies, SSE and relay connections, screenshots.
 // Usage, from the repo root: [EMAIL=<user email>] [ORG_PATH=<tenantId>/<orgSlug>] [OUT_DIR=...] node cella/skills/two-tab-sync-test/two-tab-driver.mjs
-import { spawnSync } from 'node:child_process';
-import { globSync, mkdirSync, writeFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-
-// Playwright lives in the pnpm store (frontend devDep), not resolvable by bare import from here.
-// Run from the repo root so the glob resolves.
-const [pwPath] = globSync('node_modules/.pnpm/playwright@*/node_modules/playwright/index.mjs').sort().reverse().map((p) => resolve(p));
-if (!pwPath) throw new Error('No playwright under node_modules/.pnpm: run from the repo root, after pnpm install.');
-const { chromium } = await import(pwPath);
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { caretToEnd, chromium, editorText, exactText, mintSession, rowByName } from './driver-lib.mjs';
 
 const OUT = process.env.OUT_DIR ?? process.cwd();
 const SHOTS = join(OUT, 'shots');
@@ -18,16 +12,8 @@ mkdirSync(SHOTS, { recursive: true });
 const EMAIL = process.env.EMAIL ?? 'xbench-user-0000@xbench.local';
 const ORG_PATH = process.env.ORG_PATH ?? 'xbench/xbench-org';
 
-// The mint script prints `<cookie name>=<signed value>` and a curl line carrying the API URL, both from this checkout's
-// config. Reading them here keeps the cookie version and the ports (a linked worktree has its own) out of this file.
-const minted = spawnSync('pnpm', ['--silent', '--filter', 'backend', 'session:mint', EMAIL, '2'], { encoding: 'utf8' });
-const cookieMatch = /^([\w-]+-session-v\d+)=(\S+)$/m.exec(minted.stdout);
-const apiMatch = /^curl (\S+)\/me /m.exec(minted.stdout);
-if (!cookieMatch || !apiMatch) throw new Error(`Could not mint a session for ${EMAIL}:\n${minted.stdout}\n${minted.stderr}`);
-
-const BASE = new URL(apiMatch[1]).origin;
+const { base: BASE, cookie: COOKIE } = mintSession(EMAIL);
 const URL_ATTACHMENTS = `${BASE}/${ORG_PATH}/organization/attachments`;
-const COOKIE = { name: cookieMatch[1], value: cookieMatch[2], url: BASE, httpOnly: true, sameSite: 'Strict' };
 
 const evidence = [];
 const createPosts = [];
@@ -107,10 +93,6 @@ async function pollFor(page, tab, what, predicate, timeoutMs) {
   return { ok: false, ms: timeoutMs };
 }
 
-// Exact name: bench rows are numbered, so "… 2" is also the start of "… 20" and "… 201".
-const exactText = (text) => new RegExp(`^${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`);
-const rowByName = (page, name) => page.locator('.rdg-row').filter({ has: page.locator('span.truncate.font-medium', { hasText: exactText(name) }) });
-
 async function deleteRowInTab(page, tab, name) {
   const row = rowByName(page, name).first();
   await row.locator('[aria-label="Select"]').click();
@@ -131,14 +113,6 @@ async function openDescriptionEditor(page, name) {
   await editor.waitFor({ timeout: 20_000 });
   return editor;
 }
-
-// Remote cursor labels sit inside the editor's text, so they are cut before matching.
-const editorText = (editor) =>
-  editor.evaluate((el) => {
-    const copy = el.cloneNode(true);
-    for (const cursor of copy.querySelectorAll('.bn-collaboration-cursor__base')) cursor.remove();
-    return copy.textContent ?? '';
-  });
 
 const browser = await chromium.launch({ headless: true });
 const context = await browser.newContext({ viewport: { width: 1600, height: 1000 } });
@@ -242,9 +216,7 @@ try {
   try {
     const editorA = await openDescriptionEditor(tabA, descriptionTarget);
     const editorB = await openDescriptionEditor(tabB, descriptionTarget);
-    await editorA.click();
-    // Meta+End stops at the end of the visual line on macOS; Meta+ArrowDown is the document end
-    await tabA.keyboard.press(process.platform === 'darwin' ? 'Meta+ArrowDown' : 'Control+End');
+    await caretToEnd(tabA, editorA);
     await tabA.keyboard.type(` ${marker}`, { delay: 20 });
     log('tabA', 'action', { did: 'type-description', row: descriptionTarget, marker });
     const live = await pollFor(tabB, 'tabB', `EXP5 typed "${marker}" appears LIVE in observer tab's editor`, async () => (await editorText(editorB)).includes(marker), 10_000);
