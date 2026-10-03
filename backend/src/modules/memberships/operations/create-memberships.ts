@@ -166,8 +166,6 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
   let insertedInactiveMemberships: Array<{ id: string; email: string }> = [];
 
   if (newUserTokenEmails.length > 0 && issuedTokens.length > 0) {
-    const tokensByEmail = new Map(issuedTokens.map(({ token }) => [token.email, token.id]));
-
     const newUserInactiveMemberships = newUserTokenEmails.map((email) => ({
       id: newUserInactiveMembershipIdsByEmail.get(email)!,
       email,
@@ -175,7 +173,6 @@ export async function createMembershipsOp(ctx: UserContext, input: CreateMembers
       entity,
       createdBy: user.id,
       channelType: entityType,
-      tokenId: tokensByEmail.get(email)!,
       tenantId: ctx.var.tenantId,
       ...getMembershipEntityIds(entity),
       channelId: entity.id,

@@ -10,9 +10,10 @@ import { inactiveMembershipsTable } from '#/modules/memberships/inactive-members
 import { membershipsTable } from '#/modules/memberships/memberships-db';
 import { dispatchDeferredInvites } from '#/modules/memberships/operations/deferred-invites';
 import { organizationsTable } from '#/modules/organization/organization-db';
+import { handleCreateUser } from '#/modules/user/operations/create-account';
 import { hashToken } from '#/utils/hash-token';
 import { adminRole, defaultHeaders, memberRole } from '../fixtures';
-import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser, mailedLink } from '../helpers';
+import { createOrganizationAdminUser, createTestOrganization, createTestSession, createTestUser, mailedLink, mailsTo } from '../helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
@@ -51,6 +52,9 @@ describe('Draft context invite deferral', async () => {
     return await db.select().from(inactiveMembershipsTable).where(eq(inactiveMembershipsTable.channelId, channelId));
   };
 
+  /** The link tokens of an invitation: one while it goes by link, none once an account answers it in-app. */
+  const linksOf = (invitationId: string) => db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, invitationId));
+
   it('defers member invites against a draft context (row created, no dispatch, no membership)', async () => {
     const { organization, sessionCookie } = await createDraftOrgWorld();
 
@@ -60,7 +64,7 @@ describe('Draft context invite deferral', async () => {
     const [row] = await getInactiveRows(organization.id);
     expect(row).toBeDefined();
     expect(row.role).toBe(memberRole);
-    expect(row.tokenId).toBeTruthy(); // token minted for the new user
+    expect(await linksOf(row.id)).toHaveLength(1); // token minted for the new user
     expect(row.remindedAt).toBeNull(); // but email dispatch was held
     expect(mailer.prepareEmails).not.toHaveBeenCalled();
 
@@ -107,7 +111,7 @@ describe('Draft context invite deferral', async () => {
 
     await invite(organization, ['deferred@example.com'], memberRole, sessionCookie);
     const [beforeRow] = await getInactiveRows(organization.id);
-    const originalTokenId = beforeRow.tokenId;
+    const [original] = await linksOf(beforeRow.id);
     expect(beforeRow.remindedAt).toBeNull();
 
     const ctx = publisherContext(admin);
@@ -116,10 +120,11 @@ describe('Draft context invite deferral', async () => {
 
     const [afterRow] = await getInactiveRows(organization.id);
     expect(afterRow.remindedAt).not.toBeNull();
-    expect(afterRow.tokenId).toBeTruthy();
-    expect(afterRow.tokenId).not.toBe(originalTokenId); // raw secrets are unrecoverable → rotate
+    const rotatedLinks = await linksOf(afterRow.id);
+    expect(rotatedLinks).toHaveLength(1);
+    const [rotated] = rotatedLinks;
+    expect(rotated.id).not.toBe(original.id); // raw secrets are unrecoverable → rotate
     // The dispatched mail carries the rotated token's link.
-    const [rotated] = await db.select().from(tokensTable).where(eq(tokensTable.id, afterRow.tokenId!));
     expect(rotated.secret).toBe(hashToken(mailedLink('inviteLink').token));
 
     // Second dispatch inside the throttle window: no re-send, no token churn
@@ -127,20 +132,21 @@ describe('Draft context invite deferral', async () => {
     expect(second.dispatched).toBe(0);
     const [afterSecond] = await getInactiveRows(organization.id);
     expect(afterSecond.remindedAt).toBe(afterRow.remindedAt);
-    expect(afterSecond.tokenId).toBe(afterRow.tokenId);
+    expect((await linksOf(afterSecond.id)).map((link) => link.id)).toEqual([rotated.id]);
   });
 
   it('lists a dispatched invite once: rotating its link retires the old one', async () => {
     const { organization, admin, sessionCookie } = await createDraftOrgWorld();
     await invite(organization, ['deferred@example.com'], memberRole, sessionCookie);
     const [held] = await getInactiveRows(organization.id);
+    const [heldLink] = await linksOf(held.id);
 
     await db.update(organizationsTable).set({ publishedAt: new Date().toISOString() }).where(eq(organizationsTable.id, organization.id));
     await dispatchDeferredInvites(publisherContext(admin), { channelIds: [organization.id] });
 
-    const [dispatched] = await getInactiveRows(organization.id);
-    const links = await db.select().from(tokensTable).where(eq(tokensTable.inactiveMembershipId, held.id));
-    expect(links.map((link) => link.id)).toEqual([dispatched.tokenId]);
+    const links = await linksOf(held.id);
+    expect(links).toHaveLength(1);
+    expect(links[0].id).not.toBe(heldLink.id);
 
     const { data } = await call(getPendingMemberships, {
       path: { tenantId: organization.tenantId, organizationId: organization.id },
@@ -186,6 +192,7 @@ describe('Draft context invite deferral', async () => {
 
     await invite(organization, [newcomer], memberRole, sessionCookie);
     const [initial] = await getInactiveRows(organization.id);
+    const [initialLink] = await linksOf(initial.id);
     const eightDaysAgo = new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString();
     await db.update(inactiveMembershipsTable).set({ remindedAt: eightDaysAgo }).where(eq(inactiveMembershipsTable.id, initial.id));
 
@@ -195,6 +202,31 @@ describe('Draft context invite deferral', async () => {
     expect(new Date(reminded.remindedAt!).getTime()).toBeGreaterThan(Date.now() - 24 * 60 * 60 * 1000);
     // The emailed link stays the one link: a reminder mints no token.
     const links = await db.select().from(tokensTable).where(eq(tokensTable.email, newcomer));
-    expect(links.map((link) => link.id)).toEqual([initial.tokenId]);
+    expect(links.map((link) => link.id)).toEqual([initialLink.id]);
+  });
+
+  it('dispatches a held invite to an invitee who signed up meanwhile as one to an account, minting no link', async () => {
+    const { organization, admin, sessionCookie } = await createDraftOrgWorld();
+    const newcomer = 'newcomer@example.com';
+    await invite(organization, [newcomer], memberRole, sessionCookie);
+
+    // The invitee signs up before the context is published: the proven inbox binds the held invitation and ends its link.
+    const account = await handleCreateUser(
+      { var: { db } },
+      { newUser: { email: newcomer, name: 'New Comer', slug: 'newcomer', firstName: 'New', lastName: 'Comer' }, via: 'magic' },
+    );
+    const [bound] = await getInactiveRows(organization.id);
+    expect(bound.userId).toBe(account.id);
+    expect(await db.select().from(tokensTable).where(eq(tokensTable.email, newcomer))).toHaveLength(0);
+
+    await db.update(organizationsTable).set({ publishedAt: new Date().toISOString() }).where(eq(organizationsTable.id, organization.id));
+    const { dispatched } = await dispatchDeferredInvites(publisherContext(admin), { channelIds: [organization.id] });
+    expect(dispatched).toBe(1);
+
+    // An account answers in-app: the mail links the channel's page, and no token is minted for it.
+    expect(await db.select().from(tokensTable).where(eq(tokensTable.email, newcomer))).toHaveLength(0);
+    const [mail] = mailsTo(newcomer);
+    expect(mail.recipient).toHaveProperty('memberInviteLink');
+    expect(mail.recipient).not.toHaveProperty('inviteLink');
   });
 });

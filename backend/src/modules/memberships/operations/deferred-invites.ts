@@ -2,11 +2,7 @@ import type { ChannelEntityType } from 'shared';
 import type { UserContext } from '#/core/context';
 import { issueToken } from '#/modules/auth/tokens/token-lifecycle';
 import { resolveEntity } from '#/modules/entities/entities-queries';
-import {
-  findPendingInactiveMembershipsByChannels,
-  stampInactiveMembershipsReminded,
-  updateInactiveMembershipToken,
-} from '#/modules/memberships/memberships-queries';
+import { findPendingInactiveMembershipsByChannels, stampInactiveMembershipsReminded } from '#/modules/memberships/memberships-queries';
 import { type InvitedAddress, sendInvitationMails } from '#/modules/memberships/operations/invitation-mail';
 import { log } from '#/utils/logger';
 
@@ -16,8 +12,10 @@ interface DispatchDeferredInvitesOpts {
 }
 
 /**
- * Sends invites held while their context was unpublished and stamps `remindedAt`. Invitation tokens are rotated
- * (fresh secret and expiry) because raw tokens are unrecoverable; the throttle skips rows emailed in the last seven days.
+ * Sends invites held while their context was unpublished and stamps `remindedAt`. An invitation no account holds yet
+ * goes by link: its token is rotated (fresh secret and expiry) because raw tokens are unrecoverable. One an account
+ * holds, including an invitee who signed up while it was held, is answered in-app and gets no link. The throttle skips
+ * rows emailed in the last seven days.
  */
 export async function dispatchDeferredInvites(ctx: UserContext, { channelIds }: DispatchDeferredInvitesOpts) {
   const user = ctx.var.user;
@@ -48,15 +46,14 @@ export async function dispatchDeferredInvites(ctx: UserContext, { channelIds }: 
     const invited: InvitedAddress[] = [];
 
     for (const row of group) {
-      if (row.tokenId) {
-        // Rotate the invitation token: fresh secret + expiry, re-pointed from the invite row
-        const { token, rawToken } = await issueToken(ctx, {
+      if (!row.userId) {
+        // Rotate the invitation token: fresh secret + expiry, replacing the invitation's earlier tokens
+        const { rawToken } = await issueToken(ctx, {
           type: 'invitation',
           email: row.email,
           createdBy: row.createdBy,
           inactiveMembershipId: row.id,
         });
-        await updateInactiveMembershipToken(ctx, { id: row.id, tokenId: token.id });
         invited.push({ email: row.email, rawToken });
       } else {
         invited.push({ email: row.email, userId: row.userId });

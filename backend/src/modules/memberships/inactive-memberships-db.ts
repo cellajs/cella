@@ -26,9 +26,6 @@ export const inactiveMembershipsTable = snakeCase.table(
     userId: uuid()
       .references(() => usersTable.id, { onDelete: 'cascade' })
       .$type<UserId>(),
-    // The invitation's latest token, by its id: no foreign key, since the id outlives the swept or spent token and keeps
-    // marking an invitation sent by link, which a reminder rotates (`deferred-invites.ts`).
-    tokenId: uuid(),
     role: varchar({ enum: roleEnum }).notNull().default(hierarchy.getLeastPrivilegedRole('organization')),
     rejectedAt: timestamp({ mode: 'string' }),
     remindedAt: timestamp({ mode: 'string' }),

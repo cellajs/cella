@@ -5,20 +5,20 @@ import { type ActivityEvent, activityBus, getEventData } from '#/lib/activity-bu
 import { createRequestOp } from '#/modules/requests/operations/create-request';
 import { deleteRequestsOp } from '#/modules/requests/operations/delete-requests';
 import { getRequestsOp } from '#/modules/requests/operations/get-requests';
-import { linkWaitlistRequest } from '#/modules/requests/requests-queries';
+import { stampWaitlistRequestInvited } from '#/modules/requests/requests-queries';
 import { requestRoutes } from '#/modules/requests/requests-routes';
 import { defaultHook } from '#/utils/default-hook';
 import { log } from '#/utils/logger';
 
-// ActivityBus: link waitlist requests to invitation tokens
+// ActivityBus: an invitation to an address no account holds answers that address's waitlist request
 activityBus.on('inactive_membership.created', async (event: ActivityEvent) => {
   const membership = getEventData(event, 'inactive_membership');
-  if (!membership?.tokenId || !membership.email) return;
+  if (!membership?.email || membership.userId) return;
 
   try {
-    await linkWaitlistRequest({ var: { db: baseDb } }, { email: membership.email, tokenId: membership.tokenId });
+    await stampWaitlistRequestInvited({ var: { db: baseDb } }, { email: membership.email });
   } catch (error) {
-    log.error('Failed to link waitlist request to token', { error, email: membership.email });
+    log.error('Failed to stamp waitlist request as invited', { error, email: membership.email });
   }
 });
 

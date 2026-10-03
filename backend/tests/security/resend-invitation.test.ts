@@ -80,7 +80,7 @@ describe('Resend an invitation', async () => {
     const recipient = expect.objectContaining({ email: invitedEmail });
     expect(sentMails()).toEqual([expect.objectContaining({ template: memberInviteWithTokenEmail, recipient })]);
 
-    // One live token under a new id, pointed at by its invitation, holding the mailed link's hash.
+    // One live token under a new id, pointing at its invitation, holding the mailed link's hash.
     const tokens = await invitationTokensOf(invitedEmail);
     expect(tokens).toHaveLength(1);
     const [fresh] = tokens;
@@ -89,11 +89,6 @@ describe('Resend an invitation', async () => {
     expect(new Date(fresh.expiresAt).getTime()).toBeGreaterThan(Date.now() + 6 * 24 * 60 * 60 * 1000);
     const rawFresh = mailedRawToken();
     expect(fresh.secret).toBe(hashToken(rawFresh));
-    const [pointed] = await db
-      .select({ tokenId: inactiveMembershipsTable.tokenId })
-      .from(inactiveMembershipsTable)
-      .where(eq(inactiveMembershipsTable.id, inactiveMembership.id));
-    expect(pointed.tokenId).toBe(fresh.id);
 
     const opened = await invoke(rawFresh);
     expect(opened.response.status).toBe(302);

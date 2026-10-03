@@ -1,7 +1,8 @@
-import { and, count, eq, getColumns, inArray, type SQL, sql } from 'drizzle-orm';
+import { and, count, eq, getColumns, inArray, isNull, type SQL, sql } from 'drizzle-orm';
 import type { DbContext } from '#/core/context';
 import { resolveListTotal } from '#/db/utils/list-total';
 import { type RequestModel, requestsTable } from '#/modules/requests/requests-db';
+import { getIsoDate } from '#/utils/iso-date';
 import { getOrderColumns } from '#/utils/order-column';
 import { pick } from '#/utils/pick';
 
@@ -14,7 +15,7 @@ interface InsertRequestOpts {
 /** Returns undefined when the unique signup index (lower(email) for waitlist/newsletter) rejects the row as a duplicate. */
 export const insertRequest = async (ctx: DbContext, { email, type, message }: InsertRequestOpts) => {
   const { db } = ctx.var;
-  const { tokenId, ...requestsSelect } = getColumns(requestsTable);
+  const { invitedAt, ...requestsSelect } = getColumns(requestsTable);
   const [created] = await db
     .insert(requestsTable)
     .values({ email, type, message })
@@ -34,7 +35,7 @@ interface FindRequestsPaginatedOpts {
 export const findRequestsPaginated = async (ctx: DbContext, opts: FindRequestsPaginatedOpts) => {
   const { db } = ctx.var;
   const { filter, sort, order, limit, offset } = opts;
-  const { tokenId, ...requestsSelect } = getColumns(requestsTable);
+  const { invitedAt, ...requestsSelect } = getColumns(requestsTable);
 
   const orderBy = getOrderColumns({
     sort,
@@ -45,7 +46,7 @@ export const findRequestsPaginated = async (ctx: DbContext, opts: FindRequestsPa
   });
 
   const itemsQuery = db
-    .select({ ...requestsSelect, wasInvited: sql<boolean>`(${requestsTable.tokenId} IS NOT NULL)::boolean`.as('wasInvited') })
+    .select({ ...requestsSelect, wasInvited: sql<boolean>`(${requestsTable.invitedAt} IS NOT NULL)::boolean`.as('wasInvited') })
     .from(requestsTable)
     .where(filter)
     .orderBy(...orderBy)
@@ -70,15 +71,15 @@ export const deleteRequestsByIds = async (ctx: DbContext, { ids }: DeleteRequest
   return db.delete(requestsTable).where(inArray(requestsTable.id, ids));
 };
 
-interface LinkWaitlistRequestOpts {
+interface StampWaitlistRequestInvitedOpts {
   email: string;
-  tokenId: string;
 }
 
-export const linkWaitlistRequest = async (ctx: DbContext, { email, tokenId }: LinkWaitlistRequestOpts) => {
+/** Stamps the address's waitlist request as invited now; a request invited before keeps its first time. */
+export const stampWaitlistRequestInvited = async (ctx: DbContext, { email }: StampWaitlistRequestInvitedOpts) => {
   const { db } = ctx.var;
   return db
     .update(requestsTable)
-    .set({ tokenId })
-    .where(and(eq(requestsTable.email, email), eq(requestsTable.type, 'waitlist')));
+    .set({ invitedAt: getIsoDate() })
+    .where(and(eq(requestsTable.email, email), eq(requestsTable.type, 'waitlist'), isNull(requestsTable.invitedAt)));
 };

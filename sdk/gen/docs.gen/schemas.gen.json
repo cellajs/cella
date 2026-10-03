@@ -1048,11 +1048,6 @@
           "required": true,
           "format": "uuid"
         },
-        "tokenId": {
-          "type": ["string", "null"],
-          "required": true,
-          "format": "uuid"
-        },
         "role": {
           "type": "string",
           "required": true,
@@ -1088,13 +1083,12 @@
       "channelId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
       "email": "dixie.ohara@gmail.com",
       "userId": "2506d9e6-5415-468a-814e-d89fa24cf791",
-      "tokenId": "c72c120a-aea2-4d54-840a-eff3fb000b8b",
       "role": "admin",
       "rejectedAt": null,
       "remindedAt": null,
       "createdAt": "2024-02-07T13:46:57.160Z",
       "createdBy": {
-        "id": "ebefcdf1-3a71-453a-99a7-e765c6d86737",
+        "id": "c72c120a-aea2-4d54-840a-eff3fb000b8b",
         "name": "Lizzie Aufderhar",
         "slug": "lizzie_aufderhar85",
         "thumbnailUrl": null,

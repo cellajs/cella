@@ -41,7 +41,6 @@ export async function createInvitation({
       id: inactiveMembershipId,
       email,
       userId: boundTo,
-      tokenId,
       channelId: organization.id,
       organizationId: organization.id,
       tenantId: organization.tenantId,

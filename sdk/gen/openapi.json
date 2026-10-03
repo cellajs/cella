@@ -1629,10 +1629,6 @@
             "type": ["string", "null"],
             "format": "uuid"
           },
-          "tokenId": {
-            "type": ["string", "null"],
-            "format": "uuid"
-          },
           "role": {
             "type": "string",
             "enum": ["admin", "member"]
@@ -1666,7 +1662,6 @@
           "channelId",
           "email",
           "userId",
-          "tokenId",
           "role",
           "rejectedAt",
           "remindedAt",
@@ -1680,13 +1675,12 @@
           "channelId": "a6050a0e-4d57-4c82-a942-641f6844a7a8",
           "email": "dixie.ohara@gmail.com",
           "userId": "2506d9e6-5415-468a-814e-d89fa24cf791",
-          "tokenId": "c72c120a-aea2-4d54-840a-eff3fb000b8b",
           "role": "admin",
           "rejectedAt": null,
           "remindedAt": null,
           "createdAt": "2024-02-07T13:46:57.160Z",
           "createdBy": {
-            "id": "ebefcdf1-3a71-453a-99a7-e765c6d86737",
+            "id": "c72c120a-aea2-4d54-840a-eff3fb000b8b",
             "name": "Lizzie Aufderhar",
             "slug": "lizzie_aufderhar85",
             "thumbnailUrl": null,
@@ -6034,13 +6028,12 @@
                         "channelId": "6fd95285-52d9-45de-b10d-8a4e316d3ad2",
                         "email": "carolyn5@yahoo.com",
                         "userId": "fdad27c1-21b8-4610-ac73-58603f33f5e5",
-                        "tokenId": "915e1951-a439-40dc-9303-6bdbd6aea838",
                         "role": "member",
                         "rejectedAt": null,
                         "remindedAt": null,
                         "createdAt": "2024-11-13T15:29:06.546Z",
                         "createdBy": {
-                          "id": "228db2dc-c869-402a-b1c2-b305fd00a860",
+                          "id": "915e1951-a439-40dc-9303-6bdbd6aea838",
                           "name": "Sister Monahan",
                           "slug": "sister.monahan13",
                           "thumbnailUrl": null,
@@ -6068,13 +6061,12 @@
                         "channelId": "745044ce-0a11-4cc4-84d6-fece04b9aca9",
                         "email": "orion_king81@hotmail.com",
                         "userId": "ca0c17be-8d73-40a0-95e9-9f5949340302",
-                        "tokenId": "7dee4eb2-c5eb-4722-91aa-d911de2e383b",
                         "role": "admin",
                         "rejectedAt": null,
                         "remindedAt": null,
                         "createdAt": "2024-04-11T17:15:50.993Z",
                         "createdBy": {
-                          "id": "dcc8a336-19bf-450f-b2bc-92443279eeb9",
+                          "id": "7dee4eb2-c5eb-4722-91aa-d911de2e383b",
                           "name": "John Morar",
                           "slug": "john.morar34",
                           "thumbnailUrl": null,
@@ -13080,7 +13072,7 @@
                       "role": "member",
                       "createdAt": "2024-11-21T01:19:53.533Z",
                       "createdBy": {
-                        "id": "8d10af2a-4b70-40b6-a3f2-0bc295d29966",
+                        "id": "617f1449-7605-4cc9-8f52-1e3f100f6db2",
                         "name": "Agustin Kirlin",
                         "slug": "agustin_kirlin",
                         "thumbnailUrl": null,
@@ -13093,7 +13085,7 @@
                       "role": "member",
                       "createdAt": "2024-10-29T04:35:17.725Z",
                       "createdBy": {
-                        "id": "7d580cc1-edd9-4017-be5b-49fb1c3cc0f3",
+                        "id": "ba7cf4de-5ede-48cc-9fef-453bf074c2ef",
                         "name": "Nya Nikolaus",
                         "slug": "nya_nikolaus",
                         "thumbnailUrl": null,

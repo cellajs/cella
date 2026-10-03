@@ -370,7 +370,6 @@ export type InactiveMembership = {
   channelId: string;
   email: string;
   userId: string | null;
-  tokenId: string | null;
   role: 'admin' | 'member';
   rejectedAt: string | null;
   remindedAt: string | null;

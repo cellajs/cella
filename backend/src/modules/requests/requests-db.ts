@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { index, snakeCase, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
+import { index, snakeCase, timestamp, uniqueIndex, uuid, varchar } from 'drizzle-orm/pg-core';
 import { generateId } from 'shared/utils/entity-id';
 import { maxLength } from '#/db/utils/constraints';
 import { timestampColumns } from '#/db/utils/timestamp-columns';
@@ -15,9 +15,8 @@ export const requestsTable = snakeCase.table(
     message: varchar({ length: maxLength.field }),
     email: varchar({ length: maxLength.field }).notNull(),
     type: varchar({ enum: requestTypeEnum }).notNull(),
-    // The invitation token sent for this request, by its id: no foreign key, since the id outlives the swept or spent
-    // token and keeps marking the request as invited (`wasInvited`).
-    tokenId: uuid(),
+    /** When an invitation first went out to a waitlist request's address; responses carry it as `wasInvited`. */
+    invitedAt: timestamp({ mode: 'string' }),
   },
   (table) => [
     index('requests_emails').on(table.email.desc()),
