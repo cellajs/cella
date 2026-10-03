@@ -40,11 +40,14 @@ Writes `evidence.json` (every console line / delta fetch / assert, ms timestamps
 
 ```
 [EMAIL=<editor>] [EMAIL_B=<editor>] [EMAIL_VIEWER=<member>] [ORG_PATH=<tenantId>/<orgSlug>] \
-  [ROW=<name>] [DELETE_ROW=<name>] [ONLY=live,typing,outside,viewer,offline,outage,signout,tabs,delete] OUT_DIR=<scratch> \
+  [ROW=<name>] [DELETE_ROW=<name>] [ONLY=live,typing,outside,viewer,offline,outage,signout,tabs,delete] \
+  [RELAY=ws://localhost:<port>] OUT_DIR=<scratch> \
   node cella/skills/two-tab-sync-test/description-driver.mjs
 ```
 
 Writes `description-evidence.json` and `shots/*.png`, about two minutes for the whole matrix. User A acts, user B keeps the description of `ROW` (the first row by default) open and observes; server truth is read through the API, so no table cell is trusted. It ends with the count of passed asserts and exits 1 when one failed.
+
+A relay change in a worktree runs beside the main stack, with no stack of its own: start that checkout's relay alone, pointed at the main backend (`BACKEND_INTERNAL_URL=<the main backend's internal URL> pnpm --filter yjs-worker dev`; it listens on the worktree's own relay port and, with the same `backend/.env` values, shares the database and the token key), then run the driver from the main checkout with `RELAY=ws://localhost:<that port>`. Every editor socket of the run goes to that relay, and the main stack serves the rest.
 
 ## Reading the evidence: entity changes
 
@@ -82,7 +85,7 @@ The description driver's experiments, by their `ONLY` name:
 
 | Experiment | Passes when | A failure points at |
 |---|---|---|
-| `live` | typed text and the cursor reach the peer, and the cursor leaves when the sheet closes | relay broadcast and awareness (`yjs/src/sync/relay.ts`) |
+| `live` | typed text reaches the peer, its cursor follows a burst of arrow keys to where it ends, and leaves when the sheet closes right after a move | relay broadcast and the awareness rate window (`yjs/src/sync/relay.ts`) |
 | `typing` | the server row holds the text while nonstop typing goes on (about 10s in) | the max-wait compaction (`YJS_COMPACT_MAX_WAIT_MS`) and materialization |
 | `outside` | a description written through the API shows in both open editors, with no reconnect and no toast | `recordYjsOutsideWrite` and the relay's log listener |
 | `viewer` | a user without update rights gets the static only: no token request, no socket | `canEdit` in `collaborative-blocknote.tsx` |
@@ -101,8 +104,8 @@ The description driver's experiments, by their `ONLY` name:
 - Table: rows virtualized (~15–20 in DOM), sorted `createdAt desc` so new rows are in the viewport. Selectors: row `.rdg-row`, name `span.truncate.font-medium`, row checkbox `[aria-label="Select"]`, rename = dblclick name cell → `input[data-slot="edit-cell-input"]` → Enter, delete = checkbox → destructive `Delete` bar button → confirm dialog `Delete`. Match a row by its exact name: bench rows are numbered, so `… 2` is also the start of `… 20`.
 - Description editor: dblclick the row's description cell (find the column by its header) → sheet `[role="dialog"]` with the row name as heading → `.bn-editor[contenteditable="true"]`. Remote cursor labels sit inside the editor's text: cut `.bn-collaboration-cursor__base` before matching.
 - Caret: the editor reads a moved caret a moment later, so text typed straight after a click or `Meta+ArrowDown` goes to the caret before it (two users clicking the same spot then type into each other's text). Set the DOM selection (`selectAllChildren` + `collapseToEnd`) and wait about 150ms. A fresh editor also places its own caret right after it shows: wait half a second before the first key.
-- Cursors: typing moves no cursor, which sticks to its neighbouring character; clicks, arrow keys and selections do. The relay passes two awareness frames a second per socket and drops the rest (`YJS_AWARENESS_RATE_LIMIT`): the position a quick series of moves ends on, an editor's first cursor and a removal within half a second of a move reach no peer until the next cursor change or the client's 15s refresh.
-- Relay outage: DevTools "Block request URL" and CDP `Network.setBlockedURLs` do not stop WebSocket handshakes. Route the socket with playwright (`context.routeWebSocket(/\/yjs\//, …)`: `connectToServer()` passes it through, closing the routed sockets drops it) or stop the relay process. `setBlockedURLs` does block the HTTP pull and push. `context.setOffline(true)` leaves an open socket open; the app's own online handler disconnects the editor.
+- Cursors: typing moves no cursor, which sticks to its neighbouring character; clicks, arrow keys and selections do. The relay sends a socket's first awareness frame at once and holds what follows for half a second, the latest state per client (`YJS_AWARENESS_RATE_LIMIT`), so a peer's view trails a move by up to that long: poll for it.
+- Relay outage: DevTools "Block request URL" and CDP `Network.setBlockedURLs` do not stop WebSocket handshakes. Route the socket with playwright (`context.routeWebSocket(/\/yjs\//, …)`: `connectToServer()` passes it through, closing the routed sockets drops it) or stop the relay process. A routed socket that is bridged by hand, with no `connectToServer()`, shows in no `page.on('websocket')` event: count sockets in the route handler. `setBlockedURLs` does block the HTTP pull and push. `context.setOffline(true)` leaves an open socket open; the app's own online handler disconnects the editor.
 - Two users (cursors, a member who may only read): one browser context per user, each with its own minted cookie, as `description-driver.mjs` does. The two tabs of `two-tab-driver.mjs` share one session.
 - A description written through the API (an outside write) needs `stx.fieldTimestamps.description` as an HLC, `<ms>:<4+ digit counter>:<5 chars [0-9a-z]>`, else 400.
 - Offline console noise: S3 thumbnail CORS failures + `[DownloadService] … marked as failed` are harmless. Large orgs also churn the presignedUrl rate limiter (2000/h/user) via thumbnail fetches.

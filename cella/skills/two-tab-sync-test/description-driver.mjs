@@ -18,6 +18,8 @@ const [TENANT] = ORG_PATH.split('/');
 const ALL = ['live', 'typing', 'outside', 'viewer', 'offline', 'outage', 'signout', 'tabs', 'delete'];
 const ONLY = process.env.ONLY ? process.env.ONLY.split(',') : ALL;
 const runs = (name) => ONLY.includes(name);
+// Another relay for every editor socket, e.g. `ws://localhost:4102`: the relay of a worktree under test beside this stack.
+const RELAY = process.env.RELAY;
 
 // Status lines and button labels as this checkout words them, so a copy change breaks no assert.
 const strings = JSON.parse(readFileSync('locales/en/common.json', 'utf8'));
@@ -40,18 +42,10 @@ const check = (what, ok, detail = {}) => {
   log('assert', ok ? 'assert-pass' : 'assert-fail', { what, ...detail });
 };
 
-/** Console, relay sockets and the relay's HTTP routes of one page; `seen` holds what an assert needs. */
-function instrument(page, tab) {
-  const seen = { sockets: 0, tokenRequests: 0, entityId: null, organizationId: null };
+/** Console and the relay's HTTP routes of one page; `seen` is its user's, and holds what an assert needs. */
+function instrument(page, tab, seen) {
   page.on('console', (msg) => log(tab, 'console', { type: msg.type(), text: msg.text().slice(0, 500) }));
   page.on('pageerror', (err) => log(tab, 'pageerror', { message: String(err).slice(0, 500) }));
-  page.on('websocket', (ws) => {
-    if (!ws.url().includes('/yjs/')) return;
-    seen.sockets++;
-    seen.entityId = new URL(ws.url()).pathname.split('/').pop();
-    log(tab, 'relay-connect', { url: ws.url().replace(/token=[^&]+/, 'token=…').slice(0, 160) });
-    ws.on('close', () => log(tab, 'relay-close', {}));
-  });
   // Pull and push over HTTP mean the socket is out of reach.
   page.on('response', (res) => {
     const match = /\/([^/]+)\/yjs\/(token|pull|push)/.exec(res.url());
@@ -62,7 +56,6 @@ function instrument(page, tab) {
     }
     log(tab, 'relay-http', { status: res.status(), route: match[2] });
   });
-  return seen;
 }
 
 const shot = (page, name) => page.screenshot({ path: join(SHOTS, `${name}.png`) }).catch(() => {});
@@ -82,31 +75,63 @@ const marker = (prefix) => `${prefix}-${Date.now().toString(36)}`;
 
 const browser = await chromium.launch({ headless: true });
 
+const dropped = { code: 1001, reason: 'relay down' };
+
+/** The stack's own relay. Returns how to drop the socket. */
+function passToRelay(ws) {
+  ws.connectToServer();
+  return () => ws.close(dropped);
+}
+
+/** The relay named by `RELAY`: frames and the relay's close code cross both ways. Returns how to drop the socket. */
+function bridgeToRelay(ws) {
+  const { pathname, search } = new URL(ws.url());
+  const server = new WebSocket(`${RELAY}${pathname}${search}`);
+  server.binaryType = 'arraybuffer';
+  const waiting = [];
+  server.onopen = () => {
+    for (const message of waiting.splice(0)) server.send(message);
+  };
+  server.onmessage = ({ data }) => ws.send(typeof data === 'string' ? data : Buffer.from(data));
+  // 1005 and 1006 report a close without a code, which no socket may send
+  server.onclose = ({ code, reason }) => void ws.close(code === 1005 || code === 1006 ? dropped : { code, reason }).catch(() => {});
+  ws.onMessage((message) => (server.readyState === WebSocket.OPEN ? server.send(message) : waiting.push(message)));
+  ws.onClose(() => server.close());
+  return () => {
+    server.onclose = null;
+    server.close();
+    return ws.close(dropped);
+  };
+}
+
 /** One signed-in user with storage of its own. `relay` takes the relay away from this user alone. */
 async function user(tab, cookie) {
   const context = await browser.newContext({ viewport: { width: 1600, height: 1000 }, locale: 'en-US' });
   await context.addCookies([cookie]);
+  const seen = { sockets: 0, tokenRequests: 0, entityId: null, organizationId: null };
   // DevTools URL blocking does not stop a WebSocket handshake, so relay sockets are routed: passed through while up;
-  // while down, open ones are dropped and new ones closed at once.
-  const relay = { down: false, live: new Set(), passed: 0 };
+  // while down, open ones are dropped and new ones closed at once. A routed socket shows in no page event, so it is counted here.
+  const relay = { down: false, drops: new Set() };
   await context.routeWebSocket(/\/yjs\//, (ws) => {
-    if (relay.down) return void ws.close({ code: 1001, reason: 'relay down' });
-    relay.passed++;
-    ws.connectToServer();
-    relay.live.add(ws);
+    if (relay.down) return void ws.close(dropped);
+    seen.sockets++;
+    seen.entityId = new URL(ws.url()).pathname.split('/').pop();
+    log(tab, 'relay-connect', { url: ws.url().replace(/token=[^&]+/, 'token=…').slice(0, 160) });
+    relay.drops.add(RELAY ? bridgeToRelay(ws) : passToRelay(ws));
   });
   relay.set = async (down) => {
     relay.down = down;
     log(tab, 'relay', { down });
     if (!down) return;
-    for (const ws of relay.live) await ws.close({ code: 1001, reason: 'relay down' }).catch(() => {});
-    relay.live.clear();
+    for (const drop of relay.drops) await drop().catch(() => {});
+    relay.drops.clear();
   };
   const newPage = async (name = tab) => {
     const page = await context.newPage();
-    return { page, seen: instrument(page, name) };
+    instrument(page, name, seen);
+    return page;
   };
-  return { tab, context, relay, newPage, ...(await newPage()) };
+  return { tab, context, relay, seen, newPage, page: await newPage() };
 }
 
 /** Blocks the relay's HTTP routes for one page, or none of them: with the relay down too, no edit reaches a server. */
@@ -145,6 +170,16 @@ async function openStored(page, name) {
   return opened;
 }
 
+/** The editor's text up to the first remote cursor; empty without one. */
+const textBeforeCursor = (editor) =>
+  editor.evaluate((el) => {
+    const cursor = el.querySelector('.bn-collaboration-cursor__base');
+    if (!cursor) return '';
+    const range = document.createRange();
+    range.setStart(el, 0);
+    range.setEndBefore(cursor);
+    return range.toString();
+  });
 const statusText = async (sheet) => (await sheet.locator('p[role="status"]').allTextContents()).join(' | ');
 const toastText = async (page) => (await page.locator('[data-slot="toast"]').allTextContents()).join(' | ');
 
@@ -179,7 +214,7 @@ try {
   const names = await a.page.locator('.rdg-row span.truncate.font-medium').allTextContents();
   const ROW = process.env.ROW ?? names[0];
   const DELETE_ROW = process.env.DELETE_ROW ?? names.find((name) => name !== ROW);
-  log('harness', 'target', { url: URL_ATTACHMENTS, cookie: cookies.a.name, editors: [EMAIL, EMAIL_B], viewer: EMAIL_VIEWER ?? null, ROW, DELETE_ROW });
+  log('harness', 'target', { url: URL_ATTACHMENTS, cookie: cookies.a.name, editors: [EMAIL, EMAIL_B], viewer: EMAIL_VIEWER ?? null, relay: RELAY ?? 'the stack', ROW, DELETE_ROW });
 
   // The peer keeps the description open for the whole run and observes.
   const peer = await openEditor(b.page, ROW);
@@ -193,15 +228,18 @@ try {
     await typeAtEnd(a.page, editor, ` ${lastMarker}`);
     const live = await pollFor(async () => (await editorText(peer.editor)).includes(lastMarker), 10_000, 100);
     check('live: typed text appears in the peer editor', live.ok, live);
-    const cursor = peer.sheet.locator('.bn-collaboration-cursor__base');
-    const shown = await pollFor(async () => (await cursor.count()) > 0, 5_000, 100);
-    check('live: the peer sees the cursor', shown.ok, shown);
+    // Typing moves no cursor, which sticks to its neighbouring character; arrow keys do. The relay sends a socket's
+    // first frame at once and holds the rest for half a second: the position the six moves end on still arrives.
+    for (let i = 0; i < 6; i++) await a.page.keyboard.press('ArrowLeft', { delay: 30 });
+    const caught = await pollFor(async () => (await textBeforeCursor(peer.editor)).endsWith(lastMarker.slice(0, -6)), 3_000, 100);
+    check('live: the peer cursor follows a burst of moves to its end', caught.ok, { ...caught, cursorAfter: (await textBeforeCursor(peer.editor)).slice(-12) });
     await shot(b.page, '01-live-peer');
-    // The relay passes two awareness frames a second per socket and drops the rest: a removal right after a cursor move is one of them
-    await a.page.waitForTimeout(600);
+    // One more move, then closed inside the window that move opened: the removal waits for its end.
+    await a.page.keyboard.press('ArrowLeft');
+    await a.page.waitForTimeout(100);
     await a.page.keyboard.press('Escape');
     await sheet.waitFor({ state: 'hidden', timeout: 5_000 }).catch(() => {});
-    const left = await pollFor(async () => (await cursor.count()) === 0, 30_000, 100);
+    const left = await pollFor(async () => (await peer.sheet.locator('.bn-collaboration-cursor__base').count()) === 0, 3_000, 100);
     check('live: the cursor leaves when the sheet closes', left.ok, left);
   });
 
@@ -317,9 +355,9 @@ try {
     check('outage: the peer edit arrives with a pull', arrived.ok, arrived);
     await shot(me.page, '06-outage');
 
-    const passed = me.relay.passed;
+    const sockets = me.seen.sockets;
     await me.relay.set(false);
-    const back = await pollFor(async () => (await statusText(sheet)) === '' && me.relay.passed > passed, 60_000, 500);
+    const back = await pollFor(async () => (await statusText(sheet)) === '' && me.seen.sockets > sockets, 60_000, 500);
     check('outage: back on the relay with no reload', back.ok, { ...back, status: await statusText(sheet) });
     const text = marker('back');
     await typeAtEnd(me.page, editor, ` ${text}`);
@@ -361,12 +399,12 @@ try {
     const me = await user('A1', cookies.a);
     const second = await me.newPage('A2');
     const one = await openStored(me.page, ROW);
-    const two = await openStored(second.page, ROW);
+    const two = await openStored(second, ROW);
     await me.context.setOffline(true);
     await me.page.waitForTimeout(1000);
     const [first, other] = [marker('tab1'), marker('tab2')];
     await typeAtEnd(me.page, one.editor, ` ${first}`);
-    await typeAtEnd(second.page, two.editor, ` ${other}`);
+    await typeAtEnd(second, two.editor, ` ${other}`);
     const crossed = await pollFor(async () => (await editorText(one.editor)).includes(other) && (await editorText(two.editor)).includes(first), 10_000);
     check('tabs: each tab shows the other tab edit while offline', crossed.ok, crossed);
     await me.context.setOffline(false);
