@@ -1,22 +1,15 @@
 import { useSuspenseQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { DataTable } from '~/modules/common/data-table/data-table';
-import type { ColumnOrColumnGroup } from '~/modules/common/data-table/types';
 import { infoQueryOptions } from '~/modules/docs/query';
 import { Card, CardContent } from '~/modules/ui/card';
 
-interface InfoRow {
-  key: string;
-  label: string;
-  value: string;
-}
-
+/** The API's facts as label and value rows. A plain table: each label is its row's header, which a grid cell cannot be. */
 export function OverviewTable() {
   const { t } = useTranslation();
 
   const { data: info } = useSuspenseQuery(infoQueryOptions);
 
-  const rows: InfoRow[] = [
+  const rows = [
     { key: 'title', label: t('c:title'), value: info.title },
     { key: 'version', label: t('c:version'), value: info.version },
     { key: 'description', label: t('c:description'), value: info.description },
@@ -25,40 +18,21 @@ export function OverviewTable() {
     { key: 'hiddenOps', label: t('c:docs.hidden_operations'), value: String(info.hiddenOperationCount) },
   ];
 
-  const columns: ColumnOrColumnGroup<InfoRow>[] = [
-    {
-      key: 'label',
-      name: '',
-      width: 200,
-      renderCell: ({ row }) => <span className="font-medium">{row.label}</span>,
-    },
-    {
-      key: 'value',
-      name: '',
-      resizable: true,
-      wrapText: 5,
-      renderCell: ({ row }) => <div className="text-muted-foreground leading-5">{row.value}</div>,
-    },
-  ];
-
   return (
     <Card className="mb-12 border-0">
-      <CardContent className="rdg-readonly">
-        <DataTable<InfoRow>
-          className="mb-0 border-b pb-0"
-          hideHeader
-          columns={columns}
-          rows={rows}
-          hasNextPage={false}
-          rowKeyGetter={(row) => row.key}
-          isLoading={false}
-          isFetching={false}
-          limit={rows.length}
-          isFiltered={false}
-          rowHeight={42}
-          readOnly
-          enableVirtualization={false}
-        />
+      <CardContent>
+        <table className="w-full text-sm">
+          <tbody>
+            {rows.map(({ key, label, value }) => (
+              <tr key={key} className="border-b">
+                <th scope="row" className="w-50 py-3 pr-4 text-left align-top font-medium">
+                  {label}
+                </th>
+                <td className="py-3 text-muted-foreground leading-5">{value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </CardContent>
     </Card>
   );
