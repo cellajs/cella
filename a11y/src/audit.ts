@@ -86,7 +86,7 @@ scans.sort((a, b) => Number(a.where.endsWith('(dark)')) - Number(b.where.endsWit
 const evidence = new EvidenceSet();
 mkdirSync(resultsDir, { recursive: true });
 if (parts.axe) {
-  const axe = summarizeAxe(scans);
+  const axe = summarizeAxe(scans, parts.probes);
   for (const [id, items] of axe.evidence) for (const item of items) evidence.add([id], item);
   writeFileSync(path.join(resultsDir, 'axe.json'), `${JSON.stringify({ ...axe.report, errors }, null, 2)}\n`);
 }

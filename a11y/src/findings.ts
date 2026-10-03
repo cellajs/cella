@@ -15,6 +15,8 @@ export interface Finding {
   review?: string;
   /** Raw value for checks that compare states with each other, such as the page title. */
   value?: string;
+  /** Lowest ratio a contrast check measured on this state; the evidence quotes the lowest of all states. */
+  lowest?: number;
 }
 
 /** A check inspects one open page. It returns nothing where it does not apply. */
@@ -55,7 +57,9 @@ export class EvidenceSet {
           .join(' | ');
         this.add(criteria, { check, result: 'review', summary: `${what} ${sample}`, where: notes.map((finding) => finding.state) });
       } else {
-        this.add(criteria, { check, result: 'pass', summary: `${what} passed on all ${group.length} states.`, where: [] });
+        const ratios = group.flatMap((finding) => (finding.lowest === undefined ? [] : [finding.lowest]));
+        const lowest = ratios.length ? ` The lowest measured is ${Math.min(...ratios)}:1.` : '';
+        this.add(criteria, { check, result: 'pass', summary: `${what} passed on all ${group.length} states.${lowest}`, where: [] });
       }
     }
   }
