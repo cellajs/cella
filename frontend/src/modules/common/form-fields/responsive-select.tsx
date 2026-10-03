@@ -23,6 +23,8 @@ interface ResponsiveSelectProps {
   onChange: (value: string) => void;
   placeholder?: string;
   title?: string;
+  /** Shows the title before the value ("Role: All"), for a select that stands without a label, as in a filter bar. */
+  showTitle?: boolean;
   className?: string;
   disabled?: boolean;
   align?: 'start' | 'center' | 'end';
@@ -35,6 +37,7 @@ export function ResponsiveSelect({
   onChange,
   placeholder,
   title,
+  showTitle,
   className,
   disabled = false,
   align = 'end',
@@ -43,6 +46,7 @@ export function ResponsiveSelect({
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const selectedOption = options.find((o) => o.value === value);
+  const prefix = showTitle && title ? <span className="text-muted-foreground">{title}:</span> : null;
 
   if (isMobile) {
     return (
@@ -55,7 +59,9 @@ export function ResponsiveSelect({
           aria-label={title ? `${title}: ${selectedOption?.label ?? placeholder}` : undefined}
           onClick={() => setDrawerOpen(true)}
         >
-          <span className="truncate text-sm">{selectedOption ? labelOf(selectedOption) : placeholder}</span>
+          <span className="truncate text-sm">
+            {prefix} {selectedOption ? labelOf(selectedOption) : placeholder}
+          </span>
           <ChevronDownIcon className="size-4 shrink-0 opacity-70" />
         </Button>
 
@@ -102,6 +108,7 @@ export function ResponsiveSelect({
         aria-label={title ? `${title}: ${selectedOption?.label ?? placeholder}` : undefined}
       >
         {selectedOption?.icon}
+        {prefix}
         {selectedOption ? labelOf(selectedOption) : placeholder}
       </SelectTrigger>
       <SelectContent align={align}>

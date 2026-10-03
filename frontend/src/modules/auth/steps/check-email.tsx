@@ -10,7 +10,7 @@ import type { z } from 'zod';
 import type { ApiError } from '~/lib/api';
 import { useAuthStore } from '~/modules/auth/auth-store';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
@@ -59,8 +59,9 @@ export function CheckEmailStep() {
             render={({ field }) => (
               // Custom css due to html injection by browser extensions
               <FormItem className="gap-0">
+                <FormLabel className="mb-2">{t('c:email')}</FormLabel>
                 <FormControl>
-                  <Input {...field} className="h-12" type="email" autoFocus={!isMobile} autoComplete="email" placeholder={t('c:email')} />
+                  <Input {...field} className="h-12" type="email" autoFocus={!isMobile} autoComplete="email" placeholder="name@example.com" />
                 </FormControl>
                 <FormMessage className="mt-2" />
               </FormItem>

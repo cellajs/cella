@@ -1,9 +1,30 @@
 import { PreviewCard as PreviewCardPrimitive } from '@base-ui/react/preview-card';
+import { useState } from 'react';
+import { useCloseOnEscape } from '~/hooks/use-close-on-escape';
 import { cn } from '~/utils/cn';
 
-/** Preview of the content behind a link, shown on hover or keyboard focus of the trigger (Base UI Preview Card). */
-export function HoverCard({ ...props }: PreviewCardPrimitive.Root.Props) {
-  return <PreviewCardPrimitive.Root data-slot="hover-card" {...props} />;
+/**
+ * Preview of the content behind a link, shown on hover or keyboard focus of the trigger (Base UI Preview Card).
+ * Escape closes it from anywhere, also when the pointer opened it and focus is elsewhere. A caller that controls
+ * `open` handles Escape itself.
+ */
+export function HoverCard({ open, defaultOpen = false, onOpenChange, ...props }: PreviewCardPrimitive.Root.Props) {
+  const [ownOpen, setOwnOpen] = useState(defaultOpen);
+  const controlled = open !== undefined;
+  const isOpen = controlled ? open : ownOpen;
+  useCloseOnEscape(!controlled && isOpen, () => setOwnOpen(false));
+
+  return (
+    <PreviewCardPrimitive.Root
+      data-slot="hover-card"
+      open={isOpen}
+      onOpenChange={(nextOpen, eventDetails) => {
+        setOwnOpen(nextOpen);
+        onOpenChange?.(nextOpen, eventDetails);
+      }}
+      {...props}
+    />
+  );
 }
 
 /** Renders a link by default; `delay` and `closeDelay` set the open and close timing. */

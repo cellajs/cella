@@ -23,6 +23,8 @@ export function PreferencesContent() {
 
   const mode = useUIStore((state) => state.mode);
   const setMode = useUIStore((state) => state.setMode);
+  const keepMessages = useUIStore((state) => state.keepMessages);
+  const setKeepMessages = useUIStore((state) => state.setKeepMessages);
 
   return (
     <>
@@ -69,6 +71,12 @@ export function PreferencesContent() {
           />
           <label htmlFor="keyboardShortcuts" className="cursor-pointer select-none font-medium text-sm leading-none">
             {t('c:keyboard_shortcuts')}
+          </label>
+        </div>
+        <div className="flex items-center gap-4 px-4">
+          <Switch id="keepMessages" checked={keepMessages} onCheckedChange={setKeepMessages} aria-label={t('c:keep_messages')} />
+          <label htmlFor="keepMessages" className="cursor-pointer select-none font-medium text-sm leading-none">
+            {t('c:keep_messages')}
           </label>
         </div>
       </div>

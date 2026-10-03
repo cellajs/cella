@@ -49,6 +49,14 @@ export function PageHeader({ entity, panel, parents, parent, ...coverProps }: Pa
           <div className="flex items-center gap-2 text-sm">
             <Breadcrumb className="max-sm:hidden">
               <BreadcrumbList>
+                <BreadcrumbItem>
+                  <BreadcrumbLink className="flex items-center text-muted-foreground" render={<Link to="/home" />}>
+                    {t('c:home')}
+                  </BreadcrumbLink>
+                </BreadcrumbItem>
+                <BreadcrumbSeparator className="text-muted-foreground/70">
+                  <ChevronRightIcon className="size-3" />
+                </BreadcrumbSeparator>
                 {crumbs.map((crumb) => {
                   const crumbRoute = getChannelRoute(crumb);
                   return (

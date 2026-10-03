@@ -17,7 +17,7 @@ import { invitationResumePath } from '~/modules/auth/use-post-auth-redirect';
 import { SubmitButton } from '~/modules/common/form-fields/submit-button';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { Button } from '~/modules/ui/button';
-import { Form, FormControl, FormField, FormItem, FormMessage } from '~/modules/ui/field';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '~/modules/ui/field';
 import { Input } from '~/modules/ui/input';
 import { defaultOnInvalid } from '~/utils/form-on-invalid';
 
@@ -93,8 +93,9 @@ export function SignUpStep({ tokenData }: { tokenData?: TokenData }) {
               name="email"
               render={({ field }) => (
                 <FormItem className="-mb-2 gap-0">
+                  <FormLabel className="mb-2">{t('c:email')}</FormLabel>
                   <FormControl>
-                    <Input {...field} type="email" className="h-12" autoFocus={!isMobile} autoComplete="email" placeholder={t('c:email')} />
+                    <Input {...field} type="email" className="h-12" autoFocus={!isMobile} autoComplete="email" placeholder="name@example.com" />
                   </FormControl>
                   <FormMessage className="mt-2" />
                 </FormItem>

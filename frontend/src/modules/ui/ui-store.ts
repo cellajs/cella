@@ -16,6 +16,9 @@ interface UIStoreState {
   theme: Theme; // Selected theme ('none' for default)
   setTheme: (theme: Theme) => void;
 
+  keepMessages: boolean; // Toasts stay until dismissed, for a reader who needs more than a few seconds
+  setKeepMessages: (status: boolean) => void;
+
   publicAlertsSeen: string[]; // Public route alert IDs dismissed before a user DB exists
   setPublicAlertSeen: (alertSeen: string) => void;
 
@@ -32,10 +35,11 @@ interface UIStoreState {
 // Guarded so tests in a node environment can import modules that reach this store
 const browserMode = typeof window !== 'undefined' && window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 
-const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'publicAlertsSeen' | 'focusView' | 'uiLocks'> = {
+const initStore: Pick<UIStoreState, 'mode' | 'theme' | 'offlineAccess' | 'keepMessages' | 'publicAlertsSeen' | 'focusView' | 'uiLocks'> = {
   mode: browserMode,
   theme: 'none',
   offlineAccess: false,
+  keepMessages: false,
   publicAlertsSeen: [],
   focusView: false,
   uiLocks: [],
@@ -60,6 +64,11 @@ export const useUIStore = create<UIStoreState>()(
         setTheme: (theme) => {
           set((state) => {
             state.theme = theme;
+          });
+        },
+        setKeepMessages: (status) => {
+          set((state) => {
+            state.keepMessages = status;
           });
         },
         setPublicAlertSeen: (alertSeen) => {
@@ -97,6 +106,7 @@ export const useUIStore = create<UIStoreState>()(
           offlineAccess: state.offlineAccess,
           mode: state.mode,
           theme: state.theme,
+          keepMessages: state.keepMessages,
           publicAlertsSeen: state.publicAlertsSeen,
         }),
         storage: createJSONStorage(() => localStorage),

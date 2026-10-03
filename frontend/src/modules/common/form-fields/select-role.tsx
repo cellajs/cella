@@ -27,6 +27,7 @@ export function SelectRole({ entityType, onChange, value, className }: SelectRol
       onChange={(role: string) => onChange(role === 'all' ? undefined : role)}
       placeholder={t('c:placeholder.select_role')}
       title={t('c:role')}
+      showTitle
       className={className}
       disabled={!isOnline}
     />
