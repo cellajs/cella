@@ -1,4 +1,15 @@
-import { HandGrabIcon, HandIcon, MinusIcon, PlusIcon, RefreshCwIcon, RotateCwSquareIcon } from 'lucide-react';
+import {
+  ArrowDownIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ArrowUpIcon,
+  HandGrabIcon,
+  HandIcon,
+  MinusIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  RotateCwSquareIcon,
+} from 'lucide-react';
 import type React from 'react';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -16,6 +27,9 @@ type RenderImageProps = {
   /** Dialog viewer: sizes the image to its content so the letterbox falls through to the backdrop, while panning on the image still works. */
   backdropDismiss?: boolean;
 };
+
+/** Pixels one press of a pan button moves the zoomed image. */
+const PAN_STEP = 120;
 
 interface ControlButtonProps {
   tooltipContent: string;
@@ -37,7 +51,7 @@ export function ReactPanZoom({ image, alt, showButtons, imageClassName, onPanSta
   const { t } = useTranslation();
   // On by default when no onPanStateToggle is passed.
   const [panState, setPanState] = useState(!onPanStateToggle);
-  const { rotation, panProps, layerStyle, zoomIn, zoomOut, rotateRight, reset } = usePanZoom(panState);
+  const { rotation, zoomed, panBy, panProps, layerStyle, zoomIn, zoomOut, rotateRight, reset } = usePanZoom(panState);
 
   return (
     <>
@@ -67,6 +81,35 @@ export function ReactPanZoom({ image, alt, showButtons, imageClassName, onPanSta
               icon={panState ? <HandGrabIcon className="size-3.5" /> : <HandIcon className="size-3.5" />}
               className="border-r-0"
             />
+          )}
+
+          {zoomed && (
+            <>
+              <ControlButton
+                tooltipContent={t('c:move_left')}
+                onClick={() => panBy(-PAN_STEP, 0)}
+                icon={<ArrowLeftIcon className="size-3.5" />}
+                className="border-r-0"
+              />
+              <ControlButton
+                tooltipContent={t('c:move_up')}
+                onClick={() => panBy(0, -PAN_STEP)}
+                icon={<ArrowUpIcon className="size-3.5" />}
+                className="border-r-0"
+              />
+              <ControlButton
+                tooltipContent={t('c:move_down')}
+                onClick={() => panBy(0, PAN_STEP)}
+                icon={<ArrowDownIcon className="size-3.5" />}
+                className="border-r-0"
+              />
+              <ControlButton
+                tooltipContent={t('c:move_right')}
+                onClick={() => panBy(PAN_STEP, 0)}
+                icon={<ArrowRightIcon className="size-3.5" />}
+                className="border-r-0"
+              />
+            </>
           )}
 
           <ControlButton tooltipContent={t('c:reset')} onClick={reset} icon={<RefreshCwIcon className="size-3.5" />} className="rounded-r-md" />

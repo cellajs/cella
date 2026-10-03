@@ -1,4 +1,4 @@
-import { GripVerticalIcon, LockIcon } from 'lucide-react';
+import { ChevronDownIcon, ChevronUpIcon, GripVerticalIcon, LockIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SlotToolsConfig, ToolsConfig } from 'shared/tools-config';
@@ -11,6 +11,7 @@ import { HelpText } from '~/modules/common/help-text';
 import { getNavTabCandidates } from '~/modules/common/page/tab-nav';
 import { ToolCard } from '~/modules/common/tool-card';
 import type { EnrichedChannel } from '~/modules/entities/types';
+import { Button } from '~/modules/ui/button';
 import { Switch } from '~/modules/ui/switch';
 import { tw } from '~/utils/tw';
 
@@ -84,14 +85,29 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
     persistSlot({ order: rows.map((row) => row.id), hidden: nextHidden });
   };
 
+  const reorder = (ids: string[]) => {
+    setDraftOrder(ids);
+    persistSlot({ order: ids, hidden: [...hidden] });
+  };
+
   const onRowReorder = (fromIdx: number, toIdx: number, edge: 'top' | 'bottom') => {
     const ids = rows.map((row) => row.id);
     const [moved] = ids.splice(fromIdx, 1);
     let insertAt = edge === 'bottom' ? toIdx + 1 : toIdx;
     if (fromIdx < insertAt) insertAt -= 1;
     ids.splice(insertAt, 0, moved);
-    setDraftOrder(ids);
-    persistSlot({ order: ids, hidden: [...hidden] });
+    reorder(ids);
+  };
+
+  // The same reorder one step at a time, for the keyboard and for a pointer that cannot drag
+  const [moveStatus, setMoveStatus] = useState('');
+  const moveRow = (fromIdx: number, step: -1 | 1) => {
+    const toIdx = fromIdx + step;
+    if (toIdx < 0 || toIdx >= rows.length) return;
+    const ids = rows.map((row) => row.id);
+    [ids[fromIdx], ids[toIdx]] = [ids[toIdx], ids[fromIdx]];
+    reorder(ids);
+    setMoveStatus(t('c:success.move_position', { name: rows[fromIdx].name, position: toIdx + 1, total: rows.length }));
   };
 
   const columns: ColumnOrColumnGroup<TabRow>[] = [
@@ -129,6 +145,37 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
       },
     },
     {
+      key: 'move',
+      name: t('c:order'),
+      width: 72,
+      cellClass: tw('flex items-center justify-center'),
+      headerCellClass: 'text-center',
+      renderCell: ({ row, rowIdx }) => (
+        <>
+          <Button
+            variant="ghost"
+            size="micro"
+            className="size-7 aria-disabled:cursor-default aria-disabled:opacity-40"
+            aria-label={`${t('c:move_up')}: ${row.name}`}
+            aria-disabled={rowIdx === 0}
+            onClick={() => moveRow(rowIdx, -1)}
+          >
+            <ChevronUpIcon />
+          </Button>
+          <Button
+            variant="ghost"
+            size="micro"
+            className="size-7 aria-disabled:cursor-default aria-disabled:opacity-40"
+            aria-label={`${t('c:move_down')}: ${row.name}`}
+            aria-disabled={rowIdx === rows.length - 1}
+            onClick={() => moveRow(rowIdx, 1)}
+          >
+            <ChevronDownIcon />
+          </Button>
+        </>
+      ),
+    },
+    {
       key: 'visible',
       name: t('c:visible'),
       width: 64,
@@ -156,6 +203,9 @@ export function TabsArrangementCard({ entity, parentRouteId, persist }: TabsArra
         onRowReorder={onRowReorder}
         renderRowDragPreview={renderRowDragPreview}
       />
+      <span className="sr-only" role="status">
+        {moveStatus}
+      </span>
     </ToolCard>
   );
 }

@@ -113,6 +113,10 @@ export function usePanZoom(panEnabled: boolean) {
 
   return {
     rotation,
+    /** Zoomed in, so there is something to pan to. */
+    zoomed: zoom > 1,
+    // The drag one step at a time, for the keyboard and for a pointer that cannot drag
+    panBy: (x: number, y: number) => setOffset((prev) => ({ x: prev.x + x, y: prev.y + y })),
     panProps,
     layerStyle: { transform: `matrix(${zoom},0,0,${zoom},var(--pan-x,0),var(--pan-y,0))` },
     zoomIn: () => setZoom(zoom + ZOOM_STEP),

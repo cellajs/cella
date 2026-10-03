@@ -1,8 +1,8 @@
 import { SideMenuExtension } from '@blocknote/core/extensions';
-import { SideMenu, SideMenuController, useExtension, useExtensionState, usePortalElement } from '@blocknote/react';
-import { GripVerticalIcon } from 'lucide-react';
+import { SideMenu, SideMenuController, useComponentsContext, useExtension, useExtensionState, usePortalElement } from '@blocknote/react';
+import { ArrowDownIcon, ArrowUpIcon, GripVerticalIcon } from 'lucide-react';
 import { useRef, useState } from 'react';
-import { customBlockTypeSwitchItems } from '~/modules/common/blocknote/blocknote-config';
+import { useTranslation } from 'react-i18next';
 import { ResetBlockTypeItem } from '~/modules/common/blocknote/custom-side-menu/reset-block-type';
 import type { CustomBlockNoteMenuProps } from '~/modules/common/blocknote/types';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from '~/modules/ui/dropdown-menu';
@@ -16,14 +16,7 @@ export function CustomSideMenu({ editor, allowedTypes, headingLevels }: CustomBl
         if (block === undefined) return null;
         return (
           <SideMenu {...props}>
-            <DragHandle
-              sideMenu={sideMenu}
-              block={block}
-              hasMenu={customBlockTypeSwitchItems.includes(block.type)}
-              editor={editor}
-              allowedTypes={allowedTypes}
-              headingLevels={headingLevels}
-            />
+            <DragHandle sideMenu={sideMenu} block={block} editor={editor} allowedTypes={allowedTypes} headingLevels={headingLevels} />
           </SideMenu>
         );
       }}
@@ -35,7 +28,6 @@ export function CustomSideMenu({ editor, allowedTypes, headingLevels }: CustomBl
 function DragHandle({
   sideMenu,
   block,
-  hasMenu,
   editor,
   allowedTypes,
   headingLevels,
@@ -44,7 +36,6 @@ function DragHandle({
   sideMenu: any;
   // biome-ignore lint/suspicious/noExplicitAny: Block type depends on editor schema
   block: any;
-  hasMenu: boolean;
   editor: CustomBlockNoteMenuProps['editor'];
   allowedTypes: CustomBlockNoteMenuProps['allowedTypes'];
   headingLevels: CustomBlockNoteMenuProps['headingLevels'];
@@ -68,7 +59,7 @@ function DragHandle({
   };
 
   const handleClick = () => {
-    if (isDragging.current || !hasMenu) return;
+    if (isDragging.current) return;
     setMenuOpen((prev) => {
       const next = !prev;
       if (next) sideMenu.freezeMenu();
@@ -91,8 +82,6 @@ function DragHandle({
     </button>
   );
 
-  if (!hasMenu) return gripButton;
-
   return (
     <DropdownMenu
       open={menuOpen}
@@ -105,8 +94,57 @@ function DragHandle({
     >
       <DropdownMenuTrigger render={gripButton} />
       <DropdownMenuContent container={portalElement} side="left" className="bn-menu-dropdown bn-drag-handle-menu">
+        <MoveBlockItems
+          editor={editor}
+          block={block}
+          onMoved={() => {
+            setMenuOpen(false);
+            sideMenu.unfreezeMenu();
+          }}
+        />
         <ResetBlockTypeItem editor={editor} allowedTypes={allowedTypes} headingLevels={headingLevels} />
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/** Moves the block one place, for a pointer that cannot drag; the keyboard has the editor's own shortcut. */
+function MoveBlockItems({
+  editor,
+  block,
+  onMoved,
+}: {
+  editor: CustomBlockNoteMenuProps['editor'];
+  // biome-ignore lint/suspicious/noExplicitAny: Block type depends on editor schema
+  block: any;
+  onMoved: () => void;
+}) {
+  const { t } = useTranslation();
+  const Components = useComponentsContext()!;
+  if (!editor.isEditable) return null;
+
+  return (
+    <>
+      <Components.Generic.Menu.Item
+        className="bn-menu-item"
+        icon={<ArrowUpIcon />}
+        onClick={() => {
+          editor.moveBlocksUp(block);
+          onMoved();
+        }}
+      >
+        {t('c:move_up')}
+      </Components.Generic.Menu.Item>
+      <Components.Generic.Menu.Item
+        className="bn-menu-item"
+        icon={<ArrowDownIcon />}
+        onClick={() => {
+          editor.moveBlocksDown(block);
+          onMoved();
+        }}
+      >
+        {t('c:move_down')}
+      </Components.Generic.Menu.Item>
+    </>
   );
 }
