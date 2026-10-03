@@ -15,7 +15,7 @@ export function SyncEnginePage() {
   return (
     <MarketingLayout>
       <AboutSection title="about:selective_sync.title" text="about:selective_sync.text" textComponents={{ em: <em className="italic" /> }}>
-        <p className="mx-auto mb-6 max-w-3xl text-foreground leading-normal sm:text-lg sm:leading-7">
+        <p className="mx-auto mb-6 max-w-3xl text-foreground leading-normal">
           <Trans
             t={t}
             i18nKey="about:cella_approach_intro"
@@ -25,7 +25,7 @@ export function SyncEnginePage() {
           />
         </p>
 
-        <p className="mx-auto mb-6 max-w-3xl text-foreground leading-normal sm:text-lg sm:leading-7">
+        <p className="mx-auto mb-6 max-w-3xl text-foreground leading-normal">
           <Trans
             t={t}
             i18nKey="about:cella_approach"
@@ -35,13 +35,13 @@ export function SyncEnginePage() {
           />
         </p>
 
-        <p className="mx-auto mb-2 max-w-3xl font-semibold text-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
+        <p className="mx-auto mb-2 max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
           <Trans t={t} i18nKey="about:cella_approach_point_1" />
         </p>
-        <p className="mx-auto mb-2 max-w-3xl font-semibold text-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
+        <p className="mx-auto mb-2 max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
           <Trans t={t} i18nKey="about:cella_approach_point_2" />
         </p>
-        <p className="mx-auto mb-8 max-w-3xl font-semibold text-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
+        <p className="mx-auto mb-8 max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
           <Trans t={t} i18nKey="about:cella_approach_point_3" />
         </p>
 
@@ -49,10 +49,10 @@ export function SyncEnginePage() {
       </AboutSection>
 
       <AboutSection title="about:how.title" text="about:how.text" alternate>
-        <p className="mx-auto -mt-8 mb-2 max-w-3xl font-semibold text-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
+        <p className="mx-auto -mt-8 max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
           {t('about:how.concept_1')}
         </p>
-        <p className="mx-auto mb-12 max-w-3xl font-semibold text-foreground leading-normal sm:text-center sm:text-lg sm:leading-7">
+        <p className="mx-auto mt-2 mb-10 max-w-3xl rounded-full bg-accent/50 px-4 py-2 font-semibold text-foreground leading-normal sm:text-center">
           {t('about:how.concept_2')}
         </p>
         <SyncDiagram />

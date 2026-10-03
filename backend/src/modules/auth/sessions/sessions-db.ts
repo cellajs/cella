@@ -77,7 +77,7 @@ export const sessionsTable = snakeCase.table(
       .references(() => actorsTable.id, { onDelete: 'set null' })
       .$type<ActorId>(),
     revocationReason: varchar({ enum: sessionRevocationReasons }),
-    /** An impersonation's admin session: where the admin's browser returns, and without which it never authenticates. */
+    /** TODO: review, risky? An impersonation's admin session: where the admin's browser returns, and without which it never authenticates. */
     impersonatorSessionId: uuid().references((): AnyPgColumn => sessionsTable.id, { onDelete: 'cascade' }),
     /** When the session last proved its user's presence again (a step-up); account-security actions need it recent. */
     steppedUpAt: timestamp({ mode: 'string' }),

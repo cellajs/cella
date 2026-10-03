@@ -60,7 +60,7 @@ export function PageBranch({ node, variant, activePageId, expandedIds, onToggle 
             'group w-full justify-start gap-2 pl-5 text-left lowercase',
             isRoot
               ? 'px-3 font-medium data-[active=true]:bg-accent'
-              : 'h-8 font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
+              : 'focus-inset h-8 font-normal opacity-80 data-[active=true]:bg-accent data-[active=true]:opacity-100 data-[expanded=true]:opacity-100',
           )}
           onClick={(e) => {
             if (e.metaKey || e.ctrlKey) return;
@@ -136,7 +136,7 @@ function PageLeaf({ page, isActive }: { page: DocPage; isActive: boolean }) {
       variant="ghost"
       size="sm"
       className={cn(
-        'h-8 w-full justify-start gap-2 pl-5 text-left font-normal text-sm opacity-70 hover:bg-accent/50',
+        'focus-inset h-8 w-full justify-start gap-2 pl-5 text-left font-normal text-sm opacity-70 hover:bg-accent/50',
         'data-[active=true]:bg-accent data-[active=true]:opacity-100',
       )}
       render={

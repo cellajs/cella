@@ -53,9 +53,6 @@ export function ContactForm({ dialog: isDialog }: { dialog?: boolean }) {
         if (isDialog) useDialoger.getState().remove();
         form.reset();
       },
-      onError: () => {
-        toaster.error(t('error:reported_try_later'));
-      },
     });
   };
 

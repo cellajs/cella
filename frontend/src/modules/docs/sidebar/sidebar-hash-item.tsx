@@ -19,7 +19,11 @@ export function SidebarHashItem({ to, hash, isActive, className, children }: Sid
     <Button
       variant="ghost"
       size="sm"
-      className={cn('h-8 w-full gap-2 pl-5 text-left font-normal text-sm opacity-70 hover:bg-accent/50', 'data-[active=true]:opacity-100', className)}
+      className={cn(
+        'focus-inset h-8 w-full gap-2 pl-5 text-left font-normal text-sm opacity-70 hover:bg-accent/50',
+        'data-[active=true]:opacity-100',
+        className,
+      )}
       render={
         <Link
           to={to}

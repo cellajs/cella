@@ -86,7 +86,7 @@ export function LegalAside({ subjects, currentSubject, className }: LegalAsidePr
                     }}
                     className={cn(
                       buttonVariants({ variant: 'ghost' }),
-                      'group h-8 w-full pl-5 text-left font-normal opacity-80',
+                      'group focus-inset h-8 w-full pl-5 text-left font-normal opacity-80',
                       'group-data-[active=true]/subject:bg-accent group-data-[expanded=true]/subject:opacity-100',
                     )}
                   />

@@ -52,7 +52,7 @@ export function SpyNavItem({ id, isActive, layoutId, group, staticIndicator, cla
         variant="ghost"
         size="sm"
         className={cn(
-          'h-auto min-h-8 w-full justify-start gap-2 whitespace-normal py-1.5 text-left font-normal text-sm opacity-75 hover:bg-accent/50',
+          'focus-inset h-auto min-h-8 w-full justify-start gap-2 whitespace-normal py-1.5 text-left font-normal text-sm opacity-75 hover:bg-accent/50',
           groupClassName.active,
           className,
         )}
