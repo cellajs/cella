@@ -90,6 +90,11 @@ interface BlockNoteFullHtmlProps {
   defaultValue: string;
   className?: string;
   dense?: boolean;
+  /**
+   * Lays the document out as inline text, so what follows it (a badge, a button) stays on its last line: for a one-block summary.
+   * The surrounding block then sets the line height.
+   */
+  inline?: boolean;
   clickOpensPreview?: boolean;
   /** Needed to resolve private (id-referenced) inline media via presigned URLs. */
   tenantId?: string;
@@ -135,6 +140,7 @@ function BlockNoteFullHtml({
   defaultValue,
   className = '',
   dense = false,
+  inline = false,
   clickOpensPreview = false,
   tenantId: propTenantId,
   organizationId: propOrganizationId,
@@ -222,7 +228,7 @@ function BlockNoteFullHtml({
       id={id}
       ref={containerRef}
       role="presentation"
-      className={cn('bn-container bn-shadcn', dense && 'bn-dense', mode === 'dark' && 'dark', className)}
+      className={cn('bn-container bn-shadcn', dense && 'bn-dense', inline && 'bn-inline', mode === 'dark' && 'dark', className)}
       data-color-scheme={mode}
       onClick={handleClick}
     >

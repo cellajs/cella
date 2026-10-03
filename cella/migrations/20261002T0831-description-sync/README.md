@@ -36,13 +36,14 @@ No script: manual.
 4. `waitingFallback` is also the read-only view: don't fade it for viewers. `waitingFallback={null}` renders no static (a warm or hidden editor).
 5. Replace imports from the deleted `derive-description-props.ts` (`deriveDescriptionProps`, `deriveDescriptionCounts`) with `deriveDocument` (`shared/utils/derive-description-core`), which now returns `summary` and `summaryLength`.
 6. Next to `registerEntityQueryKeys`, register each described type's derivation with `registerDescriptionDerivation('<type>', (d) => ({ … }))`, and its derived columns with `registerYjsOwnedFields('<type>', ['description', …])`. Then stop passing those fields through `extra`.
-7. raak: the task ops store `deriveDocument(d).summary` and `.summaryLength`. Register summary, summaryLength, keywords and counts for `task`. Render the summary with `BlockNoteFullHtml`. Backfill `tasks.summary` from `description` (hand-written: a script running `deriveDocument` per row). Bump `clientCacheVersion`.
+7. raak: the task ops store `deriveDocument(d).summary` and `.summaryLength`. Register summary, summaryLength, keywords and counts for `task`. Render the summary with `BlockNoteFullHtml` (`inline` keeps what follows it on the text's line). Backfill `tasks.summary` from `description` in a hand-written SQL migration that mirrors `findSummarySource`, checked against `deriveDocument`: a deploy runs SQL migrations only, as the table's owner with RLS not forced, so the statement reads every row. Bump `clientCacheVersion`.
 8. projectcampus: register `name` as `deriveDocument(d).name.slice(0, 255).trim()`, and leave it out when empty.
 9. Fakes or wrappers of `BlockNoteContentApi` add `commit()`. `onEditorReady` fires once per editor instance; `BlockNoteFullHtml.onReady` also fires for an empty description.
 10. raak `task/card/card-description-slot.tsx`: rebuild it on `useDescriptionSlot({ editing, canEdit: !isReadOnly, description, holdOnExit: state === 'expanded', cursorAtPoint: state === 'expanded' })` and `<DescriptionLayers>`. Hover calls `warm('hover')`/`cool('hover')`. Delete `task/card/preserve-description-height.tsx` and the outer wrapper in task-card.tsx.
 11. projectcampus `item/item-document.tsx`, `material/material-document.tsx`: rebuild them on the hook. The kebab's warm event becomes `warm('menu')`, with `cool('menu')` when the menu closes. Drop the inner `PreserveDescriptionHeight` and render the title error as a sibling. Remove `[data-sonner-toaster]` from the outside-press allowlist.
 12. Checkbox clicks on the static now commit through the editor: a cache patch with the derivation, or one REST write with Yjs off.
 13. A slot-hosted editor takes no `autoFocus`. It focuses the start after the slot placed the cursor; the slot focuses the editor itself.
+14. `deriveDocument(d).keywords` holds at most 900 characters. An app whose search matches on a longer keyword column keeps deriving that column in its update operation and leaves `keywords` out of its `registerDescriptionDerivation`.
 
 ## Verify
 
