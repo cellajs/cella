@@ -6,7 +6,11 @@ import { resourceUri } from '#/modules/oauth-server/resources';
 import { mockUserResponse } from '#/modules/user/user-mocks';
 import { mockChannelBase } from '#/schemas/entity-base-mocks';
 
-export const mockMeResponse = (key = 'me:default'): MeResponse => ({ user: mockUserResponse(`${key}:user`), isSystemAdmin: false });
+export const mockMeResponse = (key = 'me:default'): MeResponse => ({
+  user: mockUserResponse(`${key}:user`),
+  isSystemAdmin: false,
+  impersonator: null,
+});
 
 export const mockMeAuthResponse = (key = 'me-auth:default'): MeAuthResponse =>
   withFakerSeed(key, () => {

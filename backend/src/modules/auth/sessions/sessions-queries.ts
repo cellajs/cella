@@ -105,16 +105,6 @@ export const findSessionStates = async (ctx: DbContext, { ids }: FindSessionStat
     .where(inArray(sessionsTable.id, ids));
 };
 
-interface FindSessionByIdOpts {
-  id: string;
-}
-
-/** The user a session belongs to, whatever its state; undefined once the row is gone. */
-export const findSessionById = async (ctx: DbContext, { id }: FindSessionByIdOpts) => {
-  const [session] = await ctx.var.db.select({ userId: sessionsTable.userId }).from(sessionsTable).where(eq(sessionsTable.id, id));
-  return session;
-};
-
 interface FindLiveSessionOpts {
   id: string;
 }

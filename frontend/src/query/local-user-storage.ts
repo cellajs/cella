@@ -3,7 +3,6 @@ import { useBoardStore } from '~/modules/common/board/board-store';
 import { useDraftStore } from '~/modules/common/form-draft/draft-store';
 import { useNavigationStore } from '~/modules/navigation/navigation-store';
 import { seenStore } from '~/modules/seen/seen-store';
-import { useUIStore } from '~/modules/ui/ui-store';
 import { userStore } from '~/modules/user/user-store';
 import { extraLocalUserStores } from '~/query/extra-local-user-stores';
 import { bindLocalUserDb, closeLocalUserDb, deletedElsewhereListeners, notifyOwnerChange } from '~/query/local-user-db';
@@ -25,10 +24,11 @@ let readyPromise: Promise<void> = Promise.resolve();
 // The owner listeners live with the database, so light modules subscribe without loading every per-user store.
 export { subscribeOwnerChange } from '~/query/local-user-db';
 
-/** Owner to bind: the current user, unless impersonating (then ephemeral, no durable DB). */
+/** Owner to bind: the current user, unless impersonated (then ephemeral, no durable DB). */
 function resolveOwner(): string | null {
-  if (useUIStore.getState().impersonating) return null;
-  const id = userStore.getState().user?.id;
+  const { user, impersonator } = userStore.getState();
+  if (impersonator) return null;
+  const id = user?.id;
   return typeof id === 'string' && id.length > 0 ? id : null;
 }
 
@@ -67,7 +67,6 @@ export function localUserStorageReady(): Promise<void> {
 }
 
 userStore.subscribe(syncOwner);
-useUIStore.subscribe(syncOwner);
 syncOwner();
 
 // Another tab's hard sign-out deleted this user's database: mirror it here, then leave the app. Lazy imports keep the

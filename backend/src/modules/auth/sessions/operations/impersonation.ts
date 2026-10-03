@@ -5,7 +5,6 @@ import { deleteAuthCookie } from '#/modules/auth/general/helpers/cookie';
 import { sendAccountSecurityEmail } from '#/modules/auth/general/helpers/send-account-security-email';
 import { setUserSession } from '#/modules/auth/sessions/operations/create-session';
 import { revokeSessions } from '#/modules/auth/sessions/operations/revoke-sessions';
-import { findSessionById } from '#/modules/auth/sessions/sessions-queries';
 import { findUserById } from '#/modules/user/user-queries';
 import { log } from '#/utils/logger';
 
@@ -24,7 +23,8 @@ export const startImpersonationOp = async (ctx: Context<Env>, { targetUserId }: 
   if (!user) throw new AppError(404, 'not_found', 'warn', { entityType: 'user', meta: { targetUserId } });
 
   const adminUser = ctx.var.user;
-  await setUserSession(ctx, user, 'passkey', 'impersonation');
+  // The user proved nothing here: the session records the method its admin signed in with.
+  await setUserSession(ctx, user, ctx.var.session.authStrategy, 'impersonation');
 
   log.info('Started impersonation', { adminId: adminUser.id, targetUserId });
   sendAccountSecurityEmail(user, 'impersonation-started', { adminName: adminUser.name || adminUser.email });
@@ -32,24 +32,18 @@ export const startImpersonationOp = async (ctx: Context<Env>, { targetUserId }: 
 
 /**
  * Stops the impersonation this request presents: its session ends and its cookie goes, so the browser is back on the
- * admin's own session.
- * @throws AppError 400 `invalid_request` when the request presents no impersonation, 401 `unauthorized` when the admin
- *   session behind it is gone.
+ * admin's own session. A request that presents none has nothing to stop and is answered the same, so a tab that missed
+ * the end of an impersonation can always leave it.
  */
 export const stopImpersonationOp = async (ctx: Context<Env>) => {
   // userGuard read an impersonation only from its own cookie, on top of the admin session this browser holds.
-  const { session } = ctx.var;
-  if (session.type !== 'impersonation' || !session.impersonatorSessionId) {
-    throw new AppError(400, 'invalid_request', 'warn');
-  }
-
-  const admin = await findSessionById(ctx, { id: session.impersonatorSessionId });
-  if (!admin) throw new AppError(401, 'unauthorized', 'warn');
-
-  await revokeSessions(ctx, { userId: session.userId, sessionIds: [session.id], reason: 'impersonation_stopped', by: admin.userId });
+  const { session, impersonator } = ctx.var;
 
   // The admin's session cookie never left this browser: without the impersonation cookie it authenticates again.
   deleteAuthCookie(ctx, 'impersonation');
+  if (session.type !== 'impersonation' || !impersonator) return;
 
-  log.info('Stopped impersonation', { adminId: admin.userId, targetUserId: session.userId });
+  await revokeSessions(ctx, { userId: session.userId, sessionIds: [session.id], reason: 'impersonation_stopped', by: impersonator.id });
+
+  log.info('Stopped impersonation', { adminId: impersonator.id, targetUserId: session.userId });
 };

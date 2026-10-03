@@ -86,6 +86,8 @@ export type Env = {
     session: SessionFacts;
     /** Row id of the authenticated session, so long-lived connections can be closed when it ends. */
     sessionId: string;
+    /** The system admin acting as `user` through an impersonation; null on a user's own session (`userGuard` only). */
+    impersonator: UserModel | null;
     requestId: string;
     db: DbOrTx;
     tenantId: string;

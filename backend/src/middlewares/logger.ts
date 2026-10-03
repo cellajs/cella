@@ -3,7 +3,10 @@ import { appConfig } from 'shared';
 import { requestLogger } from '#/lib/pino';
 import { isBenchTraffic } from '#/utils/logger';
 
-/** Logs requests with timing, status, user id and the request id set before it. pino-pretty formats in dev. */
+/**
+ * Logs requests with timing, status, user id and the request id set before it; a request made through an impersonation
+ * also names its admin. pino-pretty formats in dev.
+ */
 export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   const start = Date.now();
   const { url, method } = ctx.req;
@@ -19,7 +22,8 @@ export const loggerMiddleware: MiddlewareHandler = async (ctx, next) => {
   // Suppress bench traffic logs in development (only log errors)
   if (isBenchTraffic(userId, ctx.get('tenantId')) && status < 500) return;
 
-  const logData = { requestId: ctx.get('requestId'), method, url: path, status, responseTime, userId };
+  const impersonatorId = ctx.get('impersonator')?.id;
+  const logData = { requestId: ctx.get('requestId'), method, url: path, status, responseTime, userId, ...(impersonatorId && { impersonatorId }) };
 
   if (status >= 500) requestLogger.error(logData);
   else if (status >= 400) requestLogger.warn(logData);

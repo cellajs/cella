@@ -12,8 +12,17 @@ import { connectionsTable, type InsertConnectionModel } from '#/modules/connecti
 import { tenantsTable } from '#/modules/tenants/tenants-db';
 import { emailsTable } from '#/modules/user/emails-db';
 import { defaultHeaders, memberRole } from '../fixtures';
-import { createOrganizationAdminUser, createTestOrganization, createTestSession, createUser, expectRefusal, linkIdentity } from '../helpers';
+import {
+  createOrganizationAdminUser,
+  createSystemAdminUser,
+  createTestOrganization,
+  createTestSession,
+  createUser,
+  expectRefusal,
+  linkIdentity,
+} from '../helpers';
 import { createInvitation } from '../invitations/helpers';
+import { insertImpersonation, insertSession } from '../security/session-helpers';
 import { createAppClient } from '../test-client';
 import { clearDatabase, setTestConfig } from '../test-utils';
 
@@ -88,6 +97,12 @@ describe("the tenant's sign-in policy", async () => {
       headers: { ...defaultHeaders, Cookie: await createTestSession(coach, { authStrategy: 'magic' }) },
     });
     expect(external.response.status).toBe(200);
+
+    // A system admin acting as the bound member: the policy judges how a person signed in, and the member did not.
+    const admin = await createSystemAdminUser(`admin-${suffix()}@company.example`);
+    const impersonation = await insertImpersonation(await insertSession(admin), student);
+    const impersonated = await call(getOrganization, { path, headers: impersonation.headers });
+    expect(impersonated.response.status).toBe(200);
 
     // Without a policy the bound member signs in any way.
     await setPolicy(organization.tenantId, []);

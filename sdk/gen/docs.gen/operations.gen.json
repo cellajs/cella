@@ -144,7 +144,7 @@
     "path": "/auth/impersonation/stop",
     "tags": ["auth"],
     "summary": "Stop impersonating",
-    "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context.",
+    "description": "Ends impersonation by clearing the current impersonation session and restoring the admin context. A request that presents no impersonation gets the same answer.",
     "deprecated": false,
     "hasParams": false,
     "hasRequestBody": false,

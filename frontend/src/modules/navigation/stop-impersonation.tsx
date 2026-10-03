@@ -5,7 +5,7 @@ import { appConfig } from 'shared';
 import { toaster } from '~/modules/common/toaster/toaster';
 import { stopImpersonationFlow } from '~/modules/me/helpers';
 import { SidebarMenuButton, SidebarMenuItem } from '~/modules/ui/sidebar';
-import { useUIStore } from '~/modules/ui/ui-store';
+import { useUserStore } from '~/modules/user/user-store';
 
 const { hasSidebarTextLabels } = appConfig.theme.navigation;
 
@@ -17,7 +17,7 @@ export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
   const { t } = useTranslation();
   const navigate = useNavigate();
 
-  const impersonating = useUIStore((state) => state.impersonating);
+  const impersonator = useUserStore((state) => state.impersonator);
 
   const stopImpersonation = async () => {
     await stopImpersonationFlow();
@@ -25,7 +25,7 @@ export function StopImpersonation({ isCollapsed }: StopImpersonationProps) {
     toaster.success(t('c:success.stopped_impersonation'));
   };
 
-  if (!impersonating) return null;
+  if (!impersonator) return null;
 
   const showTooltip = isCollapsed || !hasSidebarTextLabels;
 

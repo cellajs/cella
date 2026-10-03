@@ -263,7 +263,7 @@ export type SsoEntry = {
 };
 
 /**
- * The signed-in user, with whether they have system admin access on this request. A client reads it to learn who is signed in.
+ * The signed-in user, with whether they have system admin access on this request and, in an impersonation, the system admin acting as them. A client reads it to learn who is signed in.
  */
 export type Me = {
   user: User;
@@ -271,6 +271,10 @@ export type Me = {
    * Whether the user holds the system admin role and the request comes from an allowed IP address.
    */
   isSystemAdmin: boolean;
+  /**
+   * The system admin acting as the user through an impersonation; null on the user's own session.
+   */
+  impersonator: UserMinimalBase | null;
 };
 
 /**
